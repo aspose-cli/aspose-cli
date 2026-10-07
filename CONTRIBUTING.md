@@ -23,9 +23,9 @@ Windows x64 with:
    the display order) and `eng/distribution.json` (read in code through `DistributionInfo`).
 3. While you work, run the tests each commit reaches. Before you push, run
    `scripts/test.ps1 -Configuration Release -Scope Full` with a license, or `-Scope Affected`
-   when you have none, because CI runs without a license and skips the licensed cases (see
-   [Tests](#tests)). Use the built CLI the way its Skills describe for the workflows you changed;
-   passing tests do not show that an agent can do the task.
+   when you have none, because CI runs without a license and skips the licensed cases, and then
+   `-Scope Changed -CiLike` (see [Tests](#tests)). Use the built CLI the way its Skills describe
+   for the workflows you changed; passing tests do not show that an agent can do the task.
 4. For publishing or installer changes, check `scripts/install-local.ps1`, which publishes and
    installs a development build (`-Update` and `-Uninstall` work as in `install.ps1`).
 5. Open a pull request as described below.
@@ -125,6 +125,48 @@ scope except `Full`, which needs the license. Before you push, also run:
 ```powershell
 .\scripts\test.ps1 -Configuration Release -Scope Changed -Base origin/master -CiLike
 ```
+
+### Gates
+
+These checks judge a change without a reviewer reading it: the behavior every command keeps and
+the boundaries the code keeps. Fix the product or the code to pass them, never the check.
+
+- **Scenarios and invariants.** `tests/Aspose.Cli.TestKit/Scenarios` runs declarative JSON
+  scenarios (seed files, command lines, expectations) against the built CLI; its README documents
+  the format. Add a reproduction or an executable example as a `*.scenario.json` in
+  `tests/Aspose.Cli.Platform.Tests/Invariants/Scenarios`. The `*InvariantTests` classes generate
+  cases from the live `capabilities` output and each product's ops schema and check what every
+  command must keep: no internal error, one valid error envelope, suggestions for mistakes that
+  write nothing, refused unwritable outputs, read-only commands that succeed and write nothing,
+  dry runs that write nothing, outputs that reopen, and secrets (options and `*Env` operation
+  fields) that stay hidden whether the password is right or wrong. The product defects they find
+  today are listed in `Invariants/known-violations.json`, grouped by root cause in `cause`. A case
+  passes only when its violations, and their text, match its entries for the run's license mode:
+  a new or changed violation fails, and so does a listed one that now holds: fix the product and
+  delete its entry. The slow cases an entry names run unmarked, so every pull request checks every
+  entry of its license mode; an entry that applies to one license mode names it in `modes`. A
+  pull request that adds an entry or widens its `modes` fails the `conventions` check unless the
+  owner adds the `quality-exception` label.
+- **Analyzers.** Production code builds with a set of .NET analyzers as errors, configured in the
+  `[src/**.cs]` section of `.editorconfig`: unused private members, parameters and assignments,
+  unnecessary usings, private members that could be static, and cheap correctness rules. The
+  unnecessary-using rule reports only when the compiler writes a documentation file, so
+  `Directory.Build.props` writes one for `src` projects into `obj`; documentation comments must
+  therefore be well formed. Fix a violation rather than suppressing it. Tests keep the default
+  analyzer set.
+- **Skill operations.** Every operation a product Skill shows, in example files, fenced `json`
+  blocks or inline `--ops` arguments, must parse and match the product's ops schema
+  (`SkillOperationDocuments`).
+
+### Code health
+
+Code metrics are a diagnostic, not a gate: no test fails on them, so never change code only to
+move a number. `dotnet run -c Release --project eng/tools/CodeHealth` reports per-member cognitive
+complexity, cyclomatic complexity, body length and parameters, file length, exact token clones,
+and git hotspots (commits and `fix` commits times complexity; `--history <range>`). `--base <ref>`
+reads that revision from git without touching the working tree and lists new, worse, better and
+removed members and files with total deltas, so a reviewer can see whether a refactor removed
+complexity or only moved it; `--top <n>` and `--json` shape the output.
 
 ### Known SDK issues
 

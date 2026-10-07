@@ -31,6 +31,8 @@ the fixed distribution identity; the generated projections and the solution come
 - Derive contracts from one source: generate what can be generated and test that it is current,
   rather than keeping hand-written copies in sync.
 - Prefer deleting unused surface to preserving it.
+- The gates in [CONTRIBUTING.md](CONTRIBUTING.md#gates) judge a change: never add a known
+  violation to make a change pass. Code metrics are a diagnostic, never a target.
 
 ## Must not break
 
