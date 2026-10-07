@@ -9,6 +9,7 @@ internal static class EditCommand
     {
         Contracts = ProductJsonContext.Definition,
         VerifyDescription = "Read the staged output back and check the effect of each form, redaction, bookmark, metadata, attachment and page operation.",
+        Writes = PdfFormats.Document,
     };
 
     public static Command Create(IProductCommandHost<IPdfEngine> host) =>
@@ -24,9 +25,7 @@ internal static class EditCommand
             [],
             (_, edit, standard) => standard.OpenEngine().ApplyOps(standard.Input, edit.Batch, new PdfEditRequest
             {
-                OutputPath = edit.Target.OutputPath,
-                Overwrite = edit.Target.Overwrite,
-                BackupPath = edit.Target.BackupPath,
+                Output = standard.Output,
                 Options = edit.Options,
                 Password = standard.InputPassword,
                 Verify = edit.Verify,

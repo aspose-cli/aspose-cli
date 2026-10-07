@@ -7,7 +7,7 @@ namespace Aspose.Cli.Product.Cells.Commands;
 internal static class CellsCommands
 {
     /// <summary>The password a writing command can put on its workbook.</summary>
-    public static readonly EncryptedOutput EncryptedWorkbook = new("the output file", CellsFormats.EncryptableIds);
+    public static readonly EncryptedOutput EncryptedWorkbook = new("the output file");
 
     /// <summary>The workbook a reading command opens, with the command's own help.</summary>
     public static InputDocument Workbook(string description) => new(description, "the workbook");

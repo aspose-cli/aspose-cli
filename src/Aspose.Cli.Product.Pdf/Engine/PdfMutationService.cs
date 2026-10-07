@@ -35,7 +35,6 @@ internal sealed class PdfMutationService
     public PdfEditResult ApplyOps(string filePath, PdfOpsBatch batch, PdfEditRequest request)
     {
         batch = PdfOp.Catalog.Prepare(batch);
-        EnsurePdfOutput(request.OutputPath);
         LicenseState state = _licenseGate.EnsureApplied();
         FileWritePrecondition precondition = FileWritePrecondition.Capture(filePath);
         using InputResourceScope operationInputs = _inputs.CreateScope();
@@ -219,18 +218,18 @@ internal sealed class PdfMutationService
         PdfEditVerification? verification = null;
         if (!request.Options.DryRun)
         {
-            using var transaction = new AtomicOutputSetWriter(_writer, Path.GetDirectoryName(request.OutputPath)!, "pdf-edit");
+            using var transaction = new AtomicOutputSetWriter(_writer, request.Output.Directory, "pdf-edit");
             StagedOutput write = transaction.Stage(
-                request.OutputPath,
-                request.Overwrite,
-                request.BackupPath,
+                request.Output.Path,
+                request.Output.Overwrite,
+                request.Output.BackupPath,
                 precondition,
                 temp =>
                 {
                     Save(document, temp, encryptCopy, request.OpSecrets);
                     using LoadedPdf reopened = _loader.OpenPublishedCandidate(temp, outputPassword);
                 });
-            output = BuildOutput(request.OutputPath, "pdf", write.SizeBytes) with
+            output = BuildOutput(request.Output.Path, "pdf", write.SizeBytes) with
             {
                 Fingerprint = write.Fingerprint,
             };

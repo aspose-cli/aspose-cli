@@ -27,7 +27,7 @@ public sealed class SlidesMutationAndSecurityTests
         };
         var request = new PresentationEditRequest
         {
-            OutputPath = output,
+            Output = TestOutput.At(output),
             Options = new EditCommandOptions { BestEffort = bestEffort },
         };
         if (bestEffort)
@@ -82,7 +82,7 @@ public sealed class SlidesMutationAndSecurityTests
         CliException error = Assert.Throws<CliException>(() =>
             fixture.Engine.Create(new NewPresentationRequest
             {
-                OutputPath = output,
+                Output = TestOutput.At(output),
                 MarkdownPath = markdown,
             }));
 
@@ -115,7 +115,7 @@ public sealed class SlidesMutationAndSecurityTests
         Assert.ThrowsAny<Exception>(() => fixture.Engine.ApplyOps(
             input,
             batch,
-            new PresentationEditRequest { OutputPath = atomicOutput }));
+            new PresentationEditRequest { Output = TestOutput.At(atomicOutput) }));
         Assert.False(File.Exists(atomicOutput));
 
         SlidesEditResult result = fixture.Engine.ApplyOps(
@@ -123,7 +123,7 @@ public sealed class SlidesMutationAndSecurityTests
             batch,
             new PresentationEditRequest
             {
-                OutputPath = output,
+                Output = TestOutput.At(output),
                 Options = new EditCommandOptions { BestEffort = true },
             });
 
@@ -157,7 +157,7 @@ public sealed class SlidesMutationAndSecurityTests
             },
             new PresentationEditRequest
             {
-                OutputPath = output,
+                Output = TestOutput.At(output),
                 EncryptPassword = "correct",
             });
 
@@ -206,7 +206,7 @@ public sealed class SlidesMutationAndSecurityTests
                     new SlidesSetPropertiesOp { Title = "Q4", Author = "CLI" },
                 ],
             },
-            new PresentationEditRequest { OutputPath = output });
+            new PresentationEditRequest { Output = TestOutput.At(output) });
 
         Assert.All(result.Applied, static operation => Assert.Equal("ok", operation.Status));
         Assert.All(result.Applied, static operation => Assert.NotEmpty(operation.Targets));
@@ -247,7 +247,7 @@ public sealed class SlidesMutationAndSecurityTests
         SlidesEditResult result = fixture.Engine.ApplyOps(
             input,
             new SlidesOpsBatch { Ops = [new SetFooterOp { Text = "Confidential", ShowNumber = true }] },
-            new PresentationEditRequest { OutputPath = output });
+            new PresentationEditRequest { Output = TestOutput.At(output) });
 
         BoundedOperationOutcome applied = Assert.Single(result.Applied);
         Assert.Equal(1, applied.ItemsAffected);
@@ -307,7 +307,7 @@ public sealed class SlidesMutationAndSecurityTests
                     },
                 ],
             },
-            new PresentationEditRequest { OutputPath = output });
+            new PresentationEditRequest { Output = TestOutput.At(output) });
 
         Assert.All(result.Applied, static operation => Assert.Equal("ok", operation.Status));
         float slideWidth;

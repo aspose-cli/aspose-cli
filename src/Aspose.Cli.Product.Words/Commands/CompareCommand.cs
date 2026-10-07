@@ -24,7 +24,7 @@ internal static class CompareCommand
             {
                 Input = new InputDocument("Original document.", "the original document", "left"),
                 Other = new InputDocument("Changed document.", "the changed document", "right"),
-                Output = OutputTarget.File("Optional redline output; its extension selects the format, such as .docx or .pdf."),
+                Output = OutputTarget.File("Optional redline output; its extension selects the format, such as .docx or .pdf.", WordsFormats.Writable),
                 UsesFonts = true,
             },
             [ignoreFormatting, granularity, author],
@@ -44,8 +44,7 @@ internal static class CompareCommand
                     IgnoreFormatting = parse.GetValue(ignoreFormatting),
                     Granularity = parse.GetValue(granularity)!,
                     Author = name,
-                    OutputPath = standard.RequestedOutputPath(),
-                    Overwrite = standard.Overwrite,
+                    Output = standard.RequestedOutputPath() is null ? null : standard.Output,
                     LeftPassword = standard.InputPassword,
                     RightPassword = standard.OtherPassword,
                 });

@@ -46,7 +46,7 @@ internal sealed class PdfExtractionService
         LicenseState state = _licenseGate.EnsureApplied();
         using LoadedPdf loaded = _loader.Open(filePath, request.Password);
         IReadOnlyList<SplitPart> parts = SplitParts(loaded.Document, request);
-        string root = Path.GetFullPath(request.OutputDirectory);
+        string root = request.Output.Path;
         using var writer = new AtomicOutputSetWriter(_writer, root, "pdf-split");
         string stem = Path.GetFileNameWithoutExtension(filePath);
         var targets = new List<(SplitPart Part, string Path)>();
@@ -65,7 +65,7 @@ internal sealed class PdfExtractionService
                     "Include {n}, {pages} or {bookmark} so every output name is unique.");
             }
             string target = Path.Combine(root, name);
-            writer.Stage(target, request.Overwrite, staged =>
+            writer.Stage(target, request.Output.Overwrite, staged =>
             {
                 Document source = loaded.Document;
                 int[] pages = [.. part.Pages];
@@ -124,8 +124,8 @@ internal sealed class PdfExtractionService
             ?? Enumerable.Range(1, loaded.Document.Pages.Count).ToArray();
         using var guard = new ExtractionGuard(
             _resourceBudgets,
-            request.OutputDirectory,
-            request.Overwrite);
+            request.Output.Path,
+            request.Output.Overwrite);
         IReadOnlyList<PdfExtractedItem> items = request.What switch
         {
             "images" => ExtractImages(loaded.Document, pages, guard, _resourceBudgets),

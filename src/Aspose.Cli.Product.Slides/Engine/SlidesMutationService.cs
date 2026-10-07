@@ -33,7 +33,7 @@ internal sealed class SlidesMutationService
         PresentationEditRequest request)
     {
         batch = SlidesOp.Catalog.Prepare(batch);
-        string format = SlidesFormats.ForOutput(request.OutputPath);
+        string format = request.Output.Format.Id;
 
         LicenseState state = _licenseGate.EnsureApplied();
         FileWritePrecondition precondition = FileWritePrecondition.Capture(filePath);
@@ -124,11 +124,11 @@ internal sealed class SlidesMutationService
         {
             Presentation presentation = loaded.Presentation;
             Encrypt(presentation, request.EncryptPassword);
-            using var transaction = new AtomicOutputSetWriter(_writer, Path.GetDirectoryName(request.OutputPath)!, "slides-edit");
+            using var transaction = new AtomicOutputSetWriter(_writer, request.Output.Directory, "slides-edit");
             StagedOutput write = transaction.Stage(
-                request.OutputPath,
-                request.Overwrite,
-                request.BackupPath,
+                request.Output.Path,
+                request.Output.Overwrite,
+                request.Output.BackupPath,
                 precondition,
                 temp =>
                 {
@@ -140,7 +140,7 @@ internal sealed class SlidesMutationService
                 });
             output = new OutputInfo
             {
-                Path = request.OutputPath,
+                Path = request.Output.Path,
                 Format = format,
                 SizeBytes = write.SizeBytes,
             };

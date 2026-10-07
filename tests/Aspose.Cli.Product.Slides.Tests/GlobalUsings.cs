@@ -7,3 +7,4 @@ global using Aspose.Cli.Sdk.Addressing;
 global using Aspose.Cli.Sdk.Contracts;
 global using Aspose.Cli.Sdk.Extensibility.Commanding;
 global using Aspose.Cli.Sdk.Text;
+global using Aspose.Cli.Sdk.IO;

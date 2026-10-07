@@ -38,7 +38,7 @@ public sealed class WordsEditSafetyTests
         document.Save(input);
 
         fixture.Engine.ApplyOps(input, new WordsOpsBatch { Ops = [new UpdateFieldsOp()] },
-            new WordsEditRequest { OutputPath = output });
+            new WordsEditRequest { Output = TestOutput.At(output) });
 
         var updated = new Document(output);
         Assert.Equal("quarterly.docx", Assert.Single(updated.Range.Fields.Cast<Aspose.Words.Fields.Field>(),
@@ -59,10 +59,8 @@ public sealed class WordsEditSafetyTests
         string backup = fixture.Temp.File("original.backup.docx");
         WordsEditResult result = fixture.Engine.ApplyOps(input, TextBatch(), new WordsEditRequest
         {
-            OutputPath = output,
+            Output = TestOutput.At(output, overwrite: inPlace, backup: inPlace ? backup : null),
             Password = OriginalPassword,
-            Overwrite = inPlace,
-            BackupPath = inPlace ? backup : null,
             Verify = verify,
         });
 
@@ -88,8 +86,10 @@ public sealed class WordsEditSafetyTests
         string output = fixture.Temp.File("rotated.docx");
         fixture.Engine.ApplyOps(input, TextBatch(), new WordsEditRequest
         {
-            OutputPath = output, Password = OriginalPassword,
-            EncryptPassword = ReplacementPassword, Verify = verify,
+            Output = TestOutput.At(output),
+            Password = OriginalPassword,
+            EncryptPassword = ReplacementPassword,
+            Verify = verify,
         });
         Assert.Equal(ErrorCodes.PasswordInvalid, Assert.Throws<CliException>(() =>
             fixture.Engine.GetInfo(output, new DocumentInfoRequest { Password = OriginalPassword })).Code);
@@ -102,7 +102,7 @@ public sealed class WordsEditSafetyTests
         using var fixture = new WordsFixture();
         string input = fixture.CreateReport();
         string output = fixture.Temp.File("plain.docx");
-        fixture.Engine.ApplyOps(input, TextBatch(), new WordsEditRequest { OutputPath = output, Password = OriginalPassword });
+        fixture.Engine.ApplyOps(input, TextBatch(), new WordsEditRequest { Output = TestOutput.At(output), Password = OriginalPassword });
         Assert.False(FileFormatUtil.DetectFileFormat(output).IsEncrypted);
     }
 
@@ -120,16 +120,16 @@ public sealed class WordsEditSafetyTests
         fixture.Engine.ApplyOps(
             fixture.CreateReport(),
             new WordsOpsBatch { Ops = [new ProtectOp { Mode = "readOnly", PasswordEnv = "PROTECT_PASSWORD" }] },
-            new WordsEditRequest { OutputPath = protectedPath, OpSecrets = secrets });
+            new WordsEditRequest { Output = TestOutput.At(protectedPath), OpSecrets = secrets });
         Assert.Equal("readOnly", fixture.Engine.GetInfo(protectedPath, new DocumentInfoRequest()).Document.Protection);
 
         CliException wrong = Assert.Throws<CliException>(() => fixture.Engine.ApplyOps(
             protectedPath, Unprotect("OTHER_PASSWORD"),
-            new WordsEditRequest { OutputPath = fixture.Temp.File("wrong.docx"), OpSecrets = secrets }));
+            new WordsEditRequest { Output = TestOutput.At(fixture.Temp.File("wrong.docx")), OpSecrets = secrets }));
         Assert.Equal(WordsDiagnostics.DocumentProtected, wrong.Code);
         fixture.Engine.ApplyOps(
             protectedPath, Unprotect("PROTECT_PASSWORD"),
-            new WordsEditRequest { OutputPath = output, OpSecrets = secrets });
+            new WordsEditRequest { Output = TestOutput.At(output), OpSecrets = secrets });
         Assert.Equal(ProtectionType.NoProtection, new Document(output).ProtectionType);
         Assert.Equal("none", fixture.Engine.GetInfo(output, new DocumentInfoRequest()).Document.Protection);
 
@@ -148,7 +148,8 @@ public sealed class WordsEditSafetyTests
         string output = fixture.Temp.File("edited.txt");
         WordsEditResult result = fixture.Engine.ApplyOps(input, TextBatch(), new WordsEditRequest
         {
-            OutputPath = output, Password = OriginalPassword,
+            Output = TestOutput.At(output),
+            Password = OriginalPassword,
             Options = new EditCommandOptions { DryRun = dryRun },
         });
         Assert.Equal(!dryRun, File.Exists(output));
@@ -156,8 +157,10 @@ public sealed class WordsEditSafetyTests
         Assert.Equal(original, File.ReadAllBytes(input));
         Assert.Throws<CliException>(() => fixture.Engine.ApplyOps(input, TextBatch(), new WordsEditRequest
         {
-            OutputPath = fixture.Temp.File("invalid.txt"), Password = OriginalPassword,
-            EncryptPassword = ReplacementPassword, Options = new EditCommandOptions { DryRun = dryRun },
+            Output = TestOutput.At(fixture.Temp.File("invalid.txt")),
+            Password = OriginalPassword,
+            EncryptPassword = ReplacementPassword,
+            Options = new EditCommandOptions { DryRun = dryRun },
         }));
         Assert.False(File.Exists(fixture.Temp.File("invalid.txt")));
     }
@@ -171,7 +174,8 @@ public sealed class WordsEditSafetyTests
         string backup = fixture.Temp.File("unused.backup.docx");
         WordsEditResult result = fixture.Engine.ApplyOps(input, TextBatch(), new WordsEditRequest
         {
-            OutputPath = input, Password = OriginalPassword, Overwrite = true, BackupPath = backup,
+            Output = TestOutput.At(input, overwrite: true, backup: backup),
+            Password = OriginalPassword,
             Options = new EditCommandOptions { DryRun = true },
         });
         Assert.True(result.DryRun);

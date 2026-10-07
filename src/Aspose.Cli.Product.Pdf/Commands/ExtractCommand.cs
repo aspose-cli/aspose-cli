@@ -1,6 +1,7 @@
 using System.CommandLine;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Extensibility;
+using Aspose.Cli.Sdk.IO;
 
 namespace Aspose.Cli.Product.Pdf.Commands;
 
@@ -11,8 +12,6 @@ internal static class ExtractCommand
         var what = new Option<string>("--what") { Required = true, Description = "images, attachments, text, tables or forms." }.WithInput(InputKind.None);
         what.AcceptOnlyFromAmong([.. PdfExtractKinds.All, "forms"]);
         var pages = new Option<string?>("--pages") { Description = "Optional page range for images, text or tables." }.WithInput(InputKind.None);
-        var to = new Option<string?>("--to") { Description = "Form export format: json, fdf or xfdf; only with --what forms." }.WithInput(InputKind.None);
-        to.AcceptOnlyFromAmong("json", "fdf", "xfdf");
         var bom = new Option<bool>("--bom")
         {
             Description = "Start each table's CSV with a UTF-8 byte order mark, so Excel reads its non-English text "
@@ -28,14 +27,16 @@ internal static class ExtractCommand
                 Output = OutputTarget.FileOrDirectory(
                     "Form-data output file; only with --what forms. Default extension follows --to.",
                     "Safe extraction directory; required unless --what forms."),
+                Target = TargetFormat.Among(
+                    "Form export format: json, fdf or xfdf; only with --what forms. Default: the --out extension's.",
+                    PdfFormats.FormData),
             },
-            [what, pages, to, bom],
+            [what, pages, bom],
             (parse, standard) =>
             {
                 // Every usage check runs before the input is resolved or read.
                 string kind = parse.GetRequiredValue(what);
                 string? pageText = parse.GetValue(pages);
-                string? format = parse.GetValue(to);
                 bool byteOrderMark = parse.GetValue(bom);
                 if (byteOrderMark && kind != "tables")
                 {
@@ -49,21 +50,19 @@ internal static class ExtractCommand
                         throw CliErrors.OptionInvalid("--what", "forms cannot be combined with --pages or --out-dir", "Use --what forms --to <json|fdf|xfdf> and optionally --out.");
                     }
 
-                    if (format is null)
+                    if (!standard.TargetRequested && standard.RequestedOutputPath() is null)
                     {
                         throw CliErrors.OptionInvalid("--to", "is required with --what forms", "Use --to json, --to fdf or --to xfdf.");
                     }
 
                     return standard.OpenEngine().ExportForm(standard.Input, new PdfFormExportRequest
                     {
-                        TargetFormatId = format,
-                        OutputPath = standard.OutputPath("." + format),
-                        Overwrite = standard.Overwrite,
+                        Output = standard.Output,
                         Password = standard.InputPassword,
                     });
                 }
 
-                string? formOption = format is not null ? "--to" : standard.RequestedOutputPath() is not null ? "--out" : null;
+                string? formOption = standard.TargetRequested ? "--to" : standard.RequestedOutputPath() is not null ? "--out" : null;
                 if (formOption is not null)
                 {
                     throw CliErrors.OptionInvalid(
@@ -78,13 +77,12 @@ internal static class ExtractCommand
                 }
 
                 PageRange? range = pageText is null ? null : PageRange.Parse(pageText);
-                string directory = standard.OutputDirectory;
+                ResolvedDirectory directory = standard.DirectoryOutput;
                 return standard.OpenEngine().Extract(standard.Input, new PdfExtractRequest
                 {
                     What = kind,
-                    OutputDirectory = directory,
+                    Output = directory,
                     Pages = range,
-                    Overwrite = standard.Overwrite,
                     Password = standard.InputPassword,
                     ByteOrderMark = byteOrderMark,
                 });

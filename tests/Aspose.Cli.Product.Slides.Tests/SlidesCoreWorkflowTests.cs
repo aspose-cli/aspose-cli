@@ -71,8 +71,8 @@ public sealed class SlidesCoreWorkflowTests
 
         SlidesCreateResult created = fixture.Engine.Create(new NewPresentationRequest
         {
+            Output = TestOutput.At(presentation),
             MarkdownPath = markdown,
-            OutputPath = presentation,
         });
 
         Assert.True(File.Exists(presentation));
@@ -93,8 +93,8 @@ public sealed class SlidesCoreWorkflowTests
             searchable,
             new PresentationExtractRequest
             {
+                Output = new ResolvedDirectory(fixture.File("text")),
                 What = PresentationExtractKinds.Text,
-                OutputDirectory = fixture.File("text"),
             });
         Assert.NotEmpty(extracted.Items);
         Assert.All(extracted.Items, item =>
@@ -122,8 +122,7 @@ public sealed class SlidesCoreWorkflowTests
             input,
             new PresentationConvertRequest
             {
-                TargetFormatId = format,
-                OutputPath = output,
+                Output = TestOutput.At(output, format: format),
                 Slides = PageRange.Parse("1"),
             });
 

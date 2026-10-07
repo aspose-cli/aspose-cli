@@ -30,10 +30,8 @@ public sealed class CellsTextSelectionTests : IClassFixture<CellsTextSelectionFi
         byte[] sourceBytes = File.ReadAllBytes(source);
         var request = new ConvertRequest
         {
-            TargetFormatId = format,
+            Output = TestOutput.At(output, format: format, overwrite: true),
             SheetName = "Detail",
-            OutputPath = output,
-            Overwrite = true,
         };
 
         ConvertResult result = _fixture.Engine.Convert(source, request);
@@ -55,10 +53,8 @@ public sealed class CellsTextSelectionTests : IClassFixture<CellsTextSelectionFi
         string output = _fixture.Temp.File($"text-first.{format}");
         ConvertResult result = _fixture.Engine.Convert(source, new ConvertRequest
         {
-            TargetFormatId = format,
+            Output = TestOutput.At(output, format: format, overwrite: true),
             SheetName = "Dashboard",
-            OutputPath = output,
-            Overwrite = true,
         });
 
         Assert.Equal("Dashboard", result.Sheet);
@@ -77,9 +73,7 @@ public sealed class CellsTextSelectionTests : IClassFixture<CellsTextSelectionFi
         string output = _fixture.Temp.File($"text-default.{format}");
         ConvertResult result = _fixture.Engine.Convert(source, new ConvertRequest
         {
-            TargetFormatId = format,
-            OutputPath = output,
-            Overwrite = true,
+            Output = TestOutput.At(output, format: format, overwrite: true),
         });
 
         string text = File.ReadAllText(output);

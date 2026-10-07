@@ -37,7 +37,7 @@ internal sealed class WordsExtractionService
     {
         LicenseState state = _licenseGate.EnsureApplied();
         using LoadedDocument loaded = _loader.Open(filePath, request.Password);
-        using var writer = new WordsSplitWriter(_writer, request.OutputDirectory, request.Overwrite);
+        using var writer = new WordsSplitWriter(_writer, request.Output.Path, request.Output.Overwrite);
         if (request.By == "section")
         {
             for (int index = 0; index < loaded.Document.Sections.Count; index++)
@@ -91,7 +91,7 @@ internal sealed class WordsExtractionService
     {
         LicenseState state = _licenseGate.EnsureApplied();
         using LoadedDocument loaded = _loader.Open(filePath, request.Password);
-        using var guard = new ExtractionGuard(_resourceBudgets, request.OutputDirectory, request.Overwrite);
+        using var guard = new ExtractionGuard(_resourceBudgets, request.Output.Path, request.Output.Overwrite);
         var index = new DocumentBlockIndex(loaded.Document, loaded.Evaluation);
         var items = new List<ExtractedItem>();
         var warnings = new List<Warning>();

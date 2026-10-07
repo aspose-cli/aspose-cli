@@ -1,3 +1,4 @@
+using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Text;
 
 namespace Aspose.Cli.Product.Slides.Contracts;
@@ -24,9 +25,8 @@ public sealed record PresentationReadRequest
 /// <summary>Options for presentation conversion.</summary>
 public sealed record PresentationConvertRequest
 {
-    public required string TargetFormatId { get; init; }
-    public required string OutputPath { get; init; }
-    public bool Overwrite { get; init; }
+    /// <summary>The resolved output: its format, path and overwrite permission.</summary>
+    public required ResolvedOutput Output { get; init; }
     public PageRange? Slides { get; init; }
     public string? Password { get; init; }
     public string? EncryptPassword { get; init; }
@@ -35,9 +35,8 @@ public sealed record PresentationConvertRequest
 /// <summary>Options for rendering one or more slides.</summary>
 public sealed record PresentationRenderRequest
 {
-    public required string TargetFormatId { get; init; }
-    public required string OutputPath { get; init; }
-    public bool Overwrite { get; init; }
+    /// <summary>The resolved output: its format, path and overwrite permission.</summary>
+    public required ResolvedOutput Output { get; init; }
     public PageRange? Slides { get; init; }
     public bool AllSlides { get; init; }
     public int? Dpi { get; init; }
@@ -48,8 +47,8 @@ public sealed record PresentationRenderRequest
 /// <summary>Options for creating a presentation from a bounded source.</summary>
 public sealed record NewPresentationRequest
 {
-    public required string OutputPath { get; init; }
-    public bool Overwrite { get; init; }
+    /// <summary>The resolved output: its format, path and overwrite permission.</summary>
+    public required ResolvedOutput Output { get; init; }
     public string? MarkdownPath { get; init; }
     public string? TemplatePath { get; init; }
     public string? Size { get; init; }
@@ -60,8 +59,8 @@ public sealed record NewPresentationRequest
 public sealed record PresentationExtractRequest
 {
     public required string What { get; init; }
-    public required string OutputDirectory { get; init; }
-    public bool Overwrite { get; init; }
+    /// <summary>The resolved directory that receives the files.</summary>
+    public required ResolvedDirectory Output { get; init; }
     public PageRange? Slides { get; init; }
     public string? Password { get; init; }
 }
@@ -69,9 +68,8 @@ public sealed record PresentationExtractRequest
 /// <summary>Options for one atomic presentation edit batch.</summary>
 public sealed record PresentationEditRequest
 {
-    public required string OutputPath { get; init; }
-    public bool Overwrite { get; init; }
-    public string? BackupPath { get; init; }
+    /// <summary>The resolved output: its format, path, overwrite permission and in-place backup.</summary>
+    public required ResolvedOutput Output { get; init; }
     public EditCommandOptions Options { get; init; } = new();
     public string? Password { get; init; }
     public string? EncryptPassword { get; init; }

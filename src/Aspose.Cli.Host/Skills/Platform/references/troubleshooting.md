@@ -71,9 +71,14 @@ aspose-cli capabilities --output json
   the closest ones in its hint and `details.suggestions`, a command by its
   full path such as `pdf inspect`; a token starting with `--`
   is never taken as a file argument, so pass such a file name after a `--`
-  token, which ends the options. A `convert` or `render` `--to` that
-  contradicts the `--out` extension, such as `--to pdf --out a.docx`, is
-  refused; match the extension to the format.
+  token, which ends the options. An output whose extension is not one of its
+  format's is refused before anything is read; `details.option` names the
+  option or argument and the message lists the extensions to use. That covers
+  a `convert` or `render` `--out` with no extension or one that contradicts
+  `--to`, such as `--to pdf --out a.docx`, and an `edit` or `create` output
+  that names a format the command does not write, such as `--out report.pdf`,
+  whose hint names the product command that writes it: write the command's
+  own format first, then run that `convert` or `render`.
 
 **Input (exit 3)**
 
@@ -130,10 +135,7 @@ aspose-cli capabilities --output json
 **Format (exit 6)**
 
 - `FORMAT_UNSUPPORTED`: `capabilities` lists the formats each product loads,
-  converts and renders. When an `edit` or `create` output names a format that
-  command does not write, such as `--out report.pdf`, `details.option` names
-  the option, and the hint names the product command that writes the format:
-  write the command's own format first, then run that `convert` or `render`.
+  converts and renders.
 - `FORMAT_MISMATCH`: the extension disagrees with the content, such as a Word
   document renamed to `.pdf`; check the real file type. `details.path` names the
   file and `details.detected` the product the content looks like, whose command

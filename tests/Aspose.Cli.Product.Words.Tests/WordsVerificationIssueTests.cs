@@ -23,7 +23,7 @@ public sealed class WordsVerificationIssueTests
 
         VerificationIssue issue = VerifyAsText(fixture, input, new WordsEditRequest
         {
-            OutputPath = fixture.Temp.File("fields.txt"),
+            Output = TestOutput.At(fixture.Temp.File("fields.txt")),
             Verify = true,
         });
 
@@ -44,7 +44,7 @@ public sealed class WordsVerificationIssueTests
         using var fixture = new WordsFixture();
         VerificationIssue issue = VerifyAsText(fixture, fixture.CreateReport(), new WordsEditRequest
         {
-            OutputPath = fixture.Temp.File("revisions.txt"),
+            Output = TestOutput.At(fixture.Temp.File("revisions.txt")),
             Verify = true,
             TrackChanges = true,
             Author = "Reviewer",
@@ -62,7 +62,7 @@ public sealed class WordsVerificationIssueTests
         WordsEditResult result = fixture.Engine.ApplyOps(
             fixture.CreateReport(),
             new WordsOpsBatch { Ops = [new ProtectOp { Mode = "readOnly" }] },
-            new WordsEditRequest { OutputPath = fixture.Temp.File("protection.txt"), Verify = true });
+            new WordsEditRequest { Output = TestOutput.At(fixture.Temp.File("protection.txt")), Verify = true });
 
         Assert.False(result.Verification!.Ok);
         Assert.True(result.HasFailures);

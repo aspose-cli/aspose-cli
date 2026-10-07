@@ -24,8 +24,7 @@ public sealed class SlidesRasterConversionTests
         byte[] original = File.ReadAllBytes(input);
         SlidesConvertResult result = fixture.Engine.Convert(input, new PresentationConvertRequest
         {
-            TargetFormatId = format,
-            OutputPath = fixture.File("converted" + SlidesFormats.Definitions.ExtensionFor(format)),
+            Output = TestOutput.At(fixture.File("converted" + SlidesFormats.Definitions.ExtensionFor(format)), format: format),
             Slides = PageRange.Parse("1,3"),
         });
 
@@ -60,8 +59,7 @@ public sealed class SlidesRasterConversionTests
 
         CliException error = Assert.Throws<CliException>(() => fixture.Engine.Convert(input, new PresentationConvertRequest
         {
-            TargetFormatId = format,
-            OutputPath = output,
+            Output = TestOutput.At(output, format: format),
         }));
 
         Assert.Equal(ErrorCodes.RenderTooLarge, error.Code);
@@ -69,41 +67,30 @@ public sealed class SlidesRasterConversionTests
         Assert.Empty(Directory.GetFiles(fixture.Temp.Path, "oversized.s*"));
     }
 
-    [Fact]
-    public void ConvertImages_RefusesAnOutputWithoutAnExtensionToNumberSlidesBefore()
-    {
-        // An --out such as deliver\png reads as a folder, yet would yield png.s1, png.s2 beside it.
-        using var fixture = new SlidesEngineFixture();
-        string input = fixture.CreatePresentation(slides: 2);
-        string output = fixture.File("png");
-
-        CliException error = Assert.Throws<CliException>(() => fixture.Engine.Convert(input, new PresentationConvertRequest
-        {
-            TargetFormatId = "png",
-            OutputPath = output,
-        }));
-
-        Assert.Equal(ErrorCodes.OptionInvalid, error.Code);
-        Assert.Empty(Directory.GetFiles(fixture.Temp.Path, "png*"));
-    }
-
-    /// <summary>A single slide is refused an output without an extension, as several slides are.</summary>
-    [Fact]
-    public void RenderImage_OfOneSlideWithoutAnExtensionIsRefused()
+    /// <summary>
+    /// An image output without an extension, such as deliver\png that reads as a folder, is
+    /// refused before anything is read or written.
+    /// </summary>
+    [Theory]
+    [InlineData("render")]
+    [InlineData("convert")]
+    public void ImageOutput_WithoutAnExtensionIsRefused(string command)
     {
         using var fixture = new SlidesEngineFixture();
         string input = fixture.CreatePresentation(slides: 2);
-        string output = fixture.File("slides");
+        using var workspace = new TempWorkspace();
+        File.Copy(input, workspace.File("deck.pptx"));
 
-        CliException error = Assert.Throws<CliException>(() => fixture.Engine.Render(input, new PresentationRenderRequest
-        {
-            TargetFormatId = "png",
-            OutputPath = output,
-        }));
+        CliResult refused = workspace.Run("slides", command, "deck.pptx", "--to", "png", "--out", "png", "--output", "json");
 
-        Assert.Equal(ErrorCodes.OptionInvalid, error.Code);
-        Assert.Contains(output + ".png", error.Hint, StringComparison.Ordinal);
-        Assert.False(Path.Exists(output));
+        Assert.Equal(2, refused.ExitCode);
+        JsonNode error = JsonNode.Parse(refused.StdErr)!["error"]!;
+        Assert.Equal("USAGE_ERROR", error["code"]!.GetValue<string>());
+        Assert.Equal(
+            $"Give --out the .png extension, as in png.png, or name a file inside the png folder, as in {Path.Combine("png", "page.png")}; "
+                + "an output of several parts is written beside that file as numbered files.",
+            error["hint"]!.GetValue<string>());
+        Assert.Equal(["deck.pptx"], Directory.GetFileSystemEntries(workspace.Path).Select(Path.GetFileName));
     }
 
     [Theory]
@@ -124,16 +111,14 @@ public sealed class SlidesRasterConversionTests
         {
             fixture.Engine.Convert(input, new PresentationConvertRequest
             {
-                TargetFormatId = format,
-                OutputPath = output,
+                Output = TestOutput.At(output, format: format),
             });
         }
         else
         {
             fixture.Engine.Render(input, new PresentationRenderRequest
             {
-                TargetFormatId = format,
-                OutputPath = output,
+                Output = TestOutput.At(output, format: format),
             });
         }
 

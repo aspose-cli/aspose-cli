@@ -15,8 +15,8 @@ public sealed class PdfBudgetTests
 
         PdfExtractResult result = fixture.Engine.Extract(input, new PdfExtractRequest
         {
+            Output = new ResolvedDirectory(fixture.File("images")),
             What = "images",
-            OutputDirectory = fixture.File("images"),
         });
 
         Assert.Equal([1, 2], result.Items.Select(static item => item.Page));
@@ -34,11 +34,11 @@ public sealed class PdfBudgetTests
         string input = fixture.CreateRawDocument("blank-first.pdf", pages: 2, textPages: new HashSet<int> { 2 });
         string converted = fixture.File("blank-first.txt");
 
-        fixture.Engine.Convert(input, new PdfConvertRequest { TargetFormatId = "txt", OutputPath = converted });
+        fixture.Engine.Convert(input, new PdfConvertRequest { Output = TestOutput.At(converted, format: "txt") });
         string extracted = Assert.Single(fixture.Engine.Extract(input, new PdfExtractRequest
         {
+            Output = new ResolvedDirectory(fixture.File("blank-first")),
             What = "text",
-            OutputDirectory = fixture.File("blank-first"),
         }).Items).Path;
 
         foreach (string text in new[] { File.ReadAllText(converted), File.ReadAllText(extracted) })
@@ -59,8 +59,8 @@ public sealed class PdfBudgetTests
 
         CliException error = Assert.Throws<CliException>(() => fixture.Engine.Extract(input, new PdfExtractRequest
         {
+            Output = new ResolvedDirectory(output),
             What = "images",
-            OutputDirectory = output,
         }));
 
         Assert.Equal(ErrorCodes.RenderTooLarge, error.Code);
@@ -76,8 +76,8 @@ public sealed class PdfBudgetTests
         string source = fixture.CreateRawDocument("with-image.pdf", pages: 1, imagePages: new HashSet<int> { 1 });
         string extracted = Assert.Single(fixture.Engine.Extract(source, new PdfExtractRequest
         {
+            Output = new ResolvedDirectory(fixture.File("mark")),
             What = "images",
-            OutputDirectory = fixture.File("mark"),
         }).Items).Path;
         File.Copy(extracted, image);
         string input = fixture.CreateDocument("pages.pdf", pages: 3);
@@ -93,7 +93,7 @@ public sealed class PdfBudgetTests
             long before = invocation.ResourceBudgets.Remaining(ResourceBudgetKinds.InputBytes);
             new PdfEngine(owner.Gate, invocation.ResourceBudgets, invocation.Writer).ApplyOps(path,
                 new PdfOpsBatch { Ops = [new AddWatermarkImageOp { Path = image, Pages = pages }] },
-                new PdfEditRequest { OutputPath = owner.File(output) });
+                new PdfEditRequest { Output = TestOutput.At(owner.File(output)) });
             return before - invocation.ResourceBudgets.Remaining(ResourceBudgetKinds.InputBytes);
         }
     }

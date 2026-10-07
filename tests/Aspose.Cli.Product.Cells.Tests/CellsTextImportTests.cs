@@ -170,8 +170,7 @@ public sealed class CellsTextImportTests : IClassFixture<CellsFixture>
     private ConvertResult ImportText(string path, TextImportOptions import) =>
         _fixture.Engine.Convert(path, new ConvertRequest
         {
-            TargetFormatId = "xlsx",
-            OutputPath = _fixture.Temp.File(Path.GetFileNameWithoutExtension(path) + "-" + Guid.NewGuid().ToString("N") + ".xlsx"),
+            Output = TestOutput.At(_fixture.Temp.File(Path.GetFileNameWithoutExtension(path) + "-" + Guid.NewGuid().ToString("N") + ".xlsx"), format: "xlsx"),
             TextImport = import,
         });
 

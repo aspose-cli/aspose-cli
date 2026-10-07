@@ -28,7 +28,7 @@ public sealed class WordsMergeGapTests
         WordsEditResult result = fixture.Engine.ApplyOps(
             input,
             new WordsOpsBatch { Ops = [new MailMergeOp { Path = path }] },
-            new WordsEditRequest { OutputPath = output, Verify = true });
+            new WordsEditRequest { Output = TestOutput.At(output), Verify = true });
 
         Warning warning = Assert.Single(result.Warnings ?? [], static w => w.Code == WordsDiagnostics.MergeValueMissing);
         Assert.Contains("Salary: record 2.", warning.Message, StringComparison.Ordinal);
@@ -57,7 +57,7 @@ public sealed class WordsMergeGapTests
             string output = fixture.Temp.File(name);
             WordsOpsBatch batch = WordsOp.Catalog.Parse<WordsOpsBatch>(
                 $$"""{"ops":[{"op":"mail_merge",{{data}}}]}""", Aspose.Cli.Generated.ProductJsonContext.Definition);
-            fixture.Engine.ApplyOps(input, batch, new WordsEditRequest { OutputPath = output });
+            fixture.Engine.ApplyOps(input, batch, new WordsEditRequest { Output = TestOutput.At(output) });
             return new Document(output).Sections[0].Body.GetText();
         }
 
@@ -80,7 +80,7 @@ public sealed class WordsMergeGapTests
             {
                 Ops = [new MailMergeOp { Inline = [new Dictionary<string, object?> { ["Name"] = "Ava", ["Salary"] = 28000.5, ["Active"] = true }] }],
             },
-            new WordsEditRequest { OutputPath = output });
+            new WordsEditRequest { Output = TestOutput.At(output) });
 
         Assert.Contains("Ava 28000.5 true", new Document(output).Sections[0].Body.GetText(), StringComparison.Ordinal);
     }
@@ -105,7 +105,7 @@ public sealed class WordsMergeGapTests
             {
                 Ops = [new MailMergeOp { Inline = [new Dictionary<string, object?> { ["name"] = "Ava", [quoted ?? "Photo"] = null }] }],
             },
-            new WordsEditRequest { OutputPath = output });
+            new WordsEditRequest { Output = TestOutput.At(output) });
 
         Warning warning = Assert.Single(result.Warnings ?? [], static w => w.Code == WordsDiagnostics.MergeValueMissing);
         Assert.EndsWith(": " + expected, warning.Message, StringComparison.Ordinal);
@@ -135,7 +135,7 @@ public sealed class WordsMergeGapTests
                     },
                 ],
             },
-            new WordsEditRequest { OutputPath = output });
+            new WordsEditRequest { Output = TestOutput.At(output) });
 
         Warning warning = Assert.Single(result.Warnings ?? [], static w => w.Code == WordsDiagnostics.MergeValueMissing);
         Assert.Contains("Salary: record 2; Bonus: records 1, 3.", warning.Message, StringComparison.Ordinal);
@@ -152,7 +152,7 @@ public sealed class WordsMergeGapTests
         WordsEditResult result = fixture.Engine.ApplyOps(
             input,
             new WordsOpsBatch { Ops = [new MailMergeOp { Path = path }] },
-            new WordsEditRequest { OutputPath = fixture.Temp.File("merged.docx") });
+            new WordsEditRequest { Output = TestOutput.At(fixture.Temp.File("merged.docx")) });
 
         Warning warning = Assert.Single(result.Warnings ?? [], static w => w.Code == WordsDiagnostics.MergeValueMissing);
         Assert.Contains("Salary: records 1, 2 (did you mean the unused data field 'Salery'?).", warning.Message, StringComparison.Ordinal);
@@ -171,7 +171,7 @@ public sealed class WordsMergeGapTests
         WordsEditResult result = fixture.Engine.ApplyOps(
             input,
             new WordsOpsBatch { Ops = [new MailMergeOp { Inline = rows }] },
-            new WordsEditRequest { OutputPath = output });
+            new WordsEditRequest { Output = TestOutput.At(output) });
 
         Warning warning = Assert.Single(result.Warnings ?? [], static w => w.Code == WordsDiagnostics.MergeValueMissing);
         Assert.Contains("Name: records 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 and 3 more.", warning.Message, StringComparison.Ordinal);
@@ -196,7 +196,7 @@ public sealed class WordsMergeGapTests
                     },
                 ],
             },
-            new WordsEditRequest { OutputPath = output });
+            new WordsEditRequest { Output = TestOutput.At(output) });
 
         Assert.DoesNotContain(result.Warnings ?? [], static w => w.Code == WordsDiagnostics.MergeValueMissing);
     }
@@ -235,7 +235,7 @@ public sealed class WordsMergeGapTests
         WordsEditResult result = fixture.Engine.ApplyOps(
             input,
             new WordsOpsBatch { Ops = [new MailMergeOp { Regions = true, Inline = [first, second] }] },
-            new WordsEditRequest { OutputPath = output });
+            new WordsEditRequest { Output = TestOutput.At(output) });
 
         Warning warning = Assert.Single(result.Warnings ?? [], static w => w.Code == WordsDiagnostics.MergeValueMissing);
         Assert.EndsWith(": " + expected, warning.Message, StringComparison.Ordinal);

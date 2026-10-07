@@ -21,6 +21,7 @@ internal static class EditCommand
             SetDirectiveParser.Parse,
             static ops => new CellsOpsBatch { Ops = ops }),
         VerifyDescription = "Verify the staged output and report its cell changes and formula errors.",
+        Writes = CellsFormats.Editable,
     };
 
     public static Command Create(IProductCommandHost<ICellsEngine> host)
@@ -30,7 +31,7 @@ internal static class EditCommand
         return bounded.Create(
             host,
             "edit",
-            $"Apply a batch of edit ops atomically. Editable outputs: {string.Join(", ", CellsFormats.EditIds)}.",
+            $"Apply a batch of edit ops atomically. Editable outputs: {string.Join(", ", CellsFormats.Editable.Select(static format => format.Id))}.",
             new CommandTraits
             {
                 Input = CellsCommands.Workbook("Workbook to edit."),
@@ -40,12 +41,10 @@ internal static class EditCommand
             [noRecalc],
             (parse, edit, standard) =>
             {
-                string? encryptPassword = standard.EncryptPassword(CellsFormats.ForOutputPath(edit.Target.OutputPath, CellsFormats.EditIds));
+                string? encryptPassword = standard.EncryptPassword();
                 return standard.OpenEngine().ApplyOps(standard.Input, edit.Batch, new EditRequest
                 {
-                    OutputPath = edit.Target.OutputPath,
-                    Overwrite = edit.Target.Overwrite,
-                    BackupPath = edit.Target.BackupPath,
+                    Output = standard.Output,
                     Options = edit.Options,
                     Recalculate = !parse.GetValue(noRecalc),
                     OpSecrets = edit.Secrets,

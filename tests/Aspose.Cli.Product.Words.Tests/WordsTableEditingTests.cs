@@ -99,7 +99,7 @@ public sealed class WordsTableEditingTests : IClassFixture<WordsFixture>
                 : [new SetTableCellOp { At = new WordsTarget { Block = tableBlock }, Row = 1, Col = 1, Text = "30 Oct 2026" }],
         }, new WordsEditRequest
         {
-            OutputPath = output,
+            Output = TestOutput.At(output),
             TrackChanges = trackChanges,
             Author = trackChanges ? "Delivery reviewer" : null,
         });
@@ -168,7 +168,7 @@ public sealed class WordsTableEditingTests : IClassFixture<WordsFixture>
             ],
         }, new WordsEditRequest
         {
-            OutputPath = output,
+            Output = TestOutput.At(output),
             TrackChanges = trackChanges,
             Author = trackChanges ? "Contract desk" : null,
         });
@@ -222,7 +222,7 @@ public sealed class WordsTableEditingTests : IClassFixture<WordsFixture>
         CliException ambiguous = Assert.Throws<CliException>(() => _fixture.Engine.ApplyOps(input, new WordsOpsBatch
         {
             Ops = [new RepeatTableRowOp { At = at, Items = [] }],
-        }, new WordsEditRequest { OutputPath = output }));
+        }, new WordsEditRequest { Output = TestOutput.At(output) }));
         Assert.Equal(ErrorCodes.OpsInvalid, ambiguous.Code);
         Assert.Contains("rows 2, 3", ambiguous.Message, StringComparison.Ordinal);
         Assert.Contains("Pass row", ambiguous.Hint, StringComparison.Ordinal);
@@ -243,7 +243,7 @@ public sealed class WordsTableEditingTests : IClassFixture<WordsFixture>
                     ],
                 },
             ],
-        }, new WordsEditRequest { OutputPath = output });
+        }, new WordsEditRequest { Output = TestOutput.At(output) });
 
         string[][] cells = CellTexts(FirstTable(new Document(output)));
         Assert.Equal(["{{code}}", "{{ name }}", "{{price}} USD"], cells[1]);
@@ -272,7 +272,7 @@ public sealed class WordsTableEditingTests : IClassFixture<WordsFixture>
                     ],
                 },
             ],
-        }, new WordsEditRequest { OutputPath = output }));
+        }, new WordsEditRequest { Output = TestOutput.At(output) }));
 
         Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
         Assert.Contains("item 2 has no value for {{name}}, {{price}}", error.Message, StringComparison.Ordinal);
@@ -294,7 +294,7 @@ public sealed class WordsTableEditingTests : IClassFixture<WordsFixture>
                     Items = [new Dictionary<string, object?> { ["code"] = "A-100", ["naem"] = "Widget", ["price"] = "1" }],
                 },
             ],
-        }, new WordsEditRequest { OutputPath = _fixture.Temp.File("repeat-typo-changed.docx") }));
+        }, new WordsEditRequest { Output = TestOutput.At(_fixture.Temp.File("repeat-typo-changed.docx")) }));
 
         Assert.Contains("item 1 has no value for {{name}} (did you mean its unused key 'naem'?)", error.Message, StringComparison.Ordinal);
     }
@@ -308,7 +308,7 @@ public sealed class WordsTableEditingTests : IClassFixture<WordsFixture>
         WordsEditResult result = _fixture.Engine.ApplyOps(input, new WordsOpsBatch
         {
             Ops = [new RepeatTableRowOp { At = new WordsTarget { Find = "{{code}}" }, Items = [] }],
-        }, new WordsEditRequest { OutputPath = output });
+        }, new WordsEditRequest { Output = TestOutput.At(output) });
 
         Assert.Equal(0, Assert.Single(result.Applied).ItemsAffected);
         Assert.Equal([["Code", "Name", "Price"], ["Total", "", "19.50"]], CellTexts(FirstTable(new Document(output))));
@@ -325,7 +325,7 @@ public sealed class WordsTableEditingTests : IClassFixture<WordsFixture>
         WordsEditResult result = _fixture.Engine.ApplyOps(input, new WordsOpsBatch
         {
             Ops = [new RepeatTableRowOp { At = new WordsTarget { Find = "{{code}}" }, Path = items }],
-        }, new WordsEditRequest { OutputPath = output });
+        }, new WordsEditRequest { Output = TestOutput.At(output) });
 
         Assert.Equal(0, Assert.Single(result.Applied).ItemsAffected);
         Assert.Equal([["Code", "Name", "Price"], ["Total", "", "19.50"]], CellTexts(FirstTable(new Document(output))));
@@ -342,7 +342,7 @@ public sealed class WordsTableEditingTests : IClassFixture<WordsFixture>
         WordsEditResult result = _fixture.Engine.ApplyOps(input, new WordsOpsBatch
         {
             Ops = [new RepeatTableRowOp { At = new WordsTarget { Find = "{{code}}" }, Path = items }],
-        }, new WordsEditRequest { OutputPath = output });
+        }, new WordsEditRequest { Output = TestOutput.At(output) });
 
         Assert.Equal(2, Assert.Single(result.Applied).ItemsAffected);
         Assert.Equal(
@@ -368,7 +368,7 @@ public sealed class WordsTableEditingTests : IClassFixture<WordsFixture>
                     Items = [new Dictionary<string, object?> { ["code"] = code, ["name"] = name, ["price"] = "{{code}}" }],
                 },
             ],
-        }, new WordsEditRequest { OutputPath = output });
+        }, new WordsEditRequest { Output = TestOutput.At(output) });
 
         Assert.Equal([code, name, "{{code}} USD"], CellTexts(FirstTable(new Document(output)))[1]);
     }
@@ -403,7 +403,7 @@ public sealed class WordsTableEditingTests : IClassFixture<WordsFixture>
         _fixture.Engine.ApplyOps(input, new WordsOpsBatch
         {
             Ops = [new InsertTableOp { At = new WordsTarget { Block = tables[1].Block }, Position = "after", RowCount = 1, ColumnCount = 1, Style = tables[0].Style }],
-        }, new WordsEditRequest { OutputPath = output });
+        }, new WordsEditRequest { Output = TestOutput.At(output) });
 
         IReadOnlyList<TableData> changed = _fixture.Engine.GetInfo(output, new DocumentInfoRequest { Details = ["tables"] }).Tables!;
         Assert.Equal(["Table Grid", null, "Table Grid"], changed.Select(static table => table.Style));
@@ -420,7 +420,7 @@ public sealed class WordsTableEditingTests : IClassFixture<WordsFixture>
         WordsEditResult result = _fixture.Engine.ApplyOps(input, new WordsOpsBatch
         {
             Ops = [new FormatTableOp { At = new WordsTarget { Block = tableBlock }, KeepTogether = true }],
-        }, new WordsEditRequest { OutputPath = output });
+        }, new WordsEditRequest { Output = TestOutput.At(output) });
 
         Assert.Equal(6, Assert.Single(result.Applied).ItemsAffected);
         var changed = new Document(output);
@@ -447,7 +447,7 @@ public sealed class WordsTableEditingTests : IClassFixture<WordsFixture>
         _fixture.Engine.ApplyOps(input, new WordsOpsBatch
         {
             Ops = [new FormatTableOp { At = at, KeepTogether = true, HeaderRowCount = 3 }],
-        }, new WordsEditRequest { OutputPath = kept });
+        }, new WordsEditRequest { Output = TestOutput.At(kept) });
 
         WordsEditResult result = _fixture.Engine.ApplyOps(kept, new WordsOpsBatch
         {
@@ -456,7 +456,7 @@ public sealed class WordsTableEditingTests : IClassFixture<WordsFixture>
                 new FormatTableOp { At = at, KeepTogether = false, AllowRowBreakAcrossPages = true, HeaderRowCount = 1 },
                 new FormatTableOp { At = at, KeepWithNext = true },
             ],
-        }, new WordsEditRequest { OutputPath = output });
+        }, new WordsEditRequest { Output = TestOutput.At(output) });
 
         Assert.Equal([6L, 1L], result.Applied.Select(static applied => applied.ItemsAffected));
         Table table = FirstTable(new Document(output));
@@ -478,14 +478,14 @@ public sealed class WordsTableEditingTests : IClassFixture<WordsFixture>
         CliException tooMany = Assert.Throws<CliException>(() => _fixture.Engine.ApplyOps(input, new WordsOpsBatch
         {
             Ops = [new FormatTableOp { At = new WordsTarget { Block = tableBlock }, HeaderRowCount = 7 }],
-        }, new WordsEditRequest { OutputPath = output }));
+        }, new WordsEditRequest { Output = TestOutput.At(output) }));
         Assert.Equal(ErrorCodes.OpsInvalid, tooMany.Code);
         Assert.Contains("headerRowCount 7 is more than the table's 6 rows", tooMany.Message, StringComparison.Ordinal);
 
         CliException notTable = Assert.Throws<CliException>(() => _fixture.Engine.ApplyOps(input, new WordsOpsBatch
         {
             Ops = [new FormatTableOp { At = new WordsTarget { Block = 1 }, KeepTogether = true }],
-        }, new WordsEditRequest { OutputPath = output }));
+        }, new WordsEditRequest { Output = TestOutput.At(output) }));
         Assert.Equal(ErrorCodes.OpsInvalid, notTable.Code);
         Assert.Contains("format_table must target one table block", notTable.Message, StringComparison.Ordinal);
         Assert.False(File.Exists(output));
@@ -501,7 +501,7 @@ public sealed class WordsTableEditingTests : IClassFixture<WordsFixture>
             Ops = [new FormatTableOp { At = new WordsTarget { Block = tableBlock }, KeepTogether = true }],
         }, new WordsEditRequest
         {
-            OutputPath = _fixture.Temp.File("format-table-tracked-changed.docx"),
+            Output = TestOutput.At(_fixture.Temp.File("format-table-tracked-changed.docx")),
             TrackChanges = true,
             Author = "Editor",
         }));

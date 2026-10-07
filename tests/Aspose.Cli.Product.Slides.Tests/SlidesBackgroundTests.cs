@@ -20,13 +20,13 @@ public sealed class SlidesBackgroundTests
         using var fixture = new SlidesEngineFixture();
         string source = BeigeDeck(fixture, "source.pptx");
         string destination = fixture.File("destination.pptx");
-        fixture.Engine.Create(new NewPresentationRequest { OutputPath = destination });
+        fixture.Engine.Create(new NewPresentationRequest { Output = TestOutput.At(destination) });
         string output = fixture.File($"merged-{masterPolicy}.pptx");
 
         SlidesEditResult result = fixture.Engine.ApplyOps(destination, new SlidesOpsBatch
         {
             Ops = [new AppendPresentationOp { Path = source, MasterPolicy = masterPolicy }],
-        }, new PresentationEditRequest { OutputPath = output });
+        }, new PresentationEditRequest { Output = TestOutput.At(output) });
 
         using var deck = new Presentation(output);
         Assert.Equal(kept, IsBeige(deck.Slides[1]));
@@ -38,7 +38,7 @@ public sealed class SlidesBackgroundTests
     {
         using var fixture = new SlidesEngineFixture();
         string input = fixture.File("deck.pptx");
-        fixture.Engine.Create(new NewPresentationRequest { OutputPath = input });
+        fixture.Engine.Create(new NewPresentationRequest { Output = TestOutput.At(input) });
         fixture.Engine.ApplyOps(input, new SlidesOpsBatch
         {
             Ops =
@@ -46,11 +46,11 @@ public sealed class SlidesBackgroundTests
                 new AddSlideOp { Layout = "Title and Content" },
                 new AddSlideOp { Layout = "Title and Content" },
             ],
-        }, new PresentationEditRequest { OutputPath = input, Overwrite = true });
+        }, new PresentationEditRequest { Output = TestOutput.At(input, overwrite: true) });
         fixture.Engine.ApplyOps(input, new SlidesOpsBatch
         {
             Ops = [new SetBackgroundOp { Color = Beige }],
-        }, new PresentationEditRequest { OutputPath = input, Overwrite = true });
+        }, new PresentationEditRequest { Output = TestOutput.At(input, overwrite: true) });
         string output = fixture.File("relaid.pptx");
 
         SlidesEditResult result = fixture.Engine.ApplyOps(input, new SlidesOpsBatch
@@ -61,7 +61,7 @@ public sealed class SlidesBackgroundTests
                 new SetBackgroundOp { Slides = "3", Color = Beige },
                 new ApplyLayoutOp { Slides = "2", Layout = "Title and Content" },
             ],
-        }, new PresentationEditRequest { OutputPath = output });
+        }, new PresentationEditRequest { Output = TestOutput.At(output) });
 
         // Only a slide that had its own background is named.
         Warning warning = Assert.Single(result.Warnings!, static warning => warning.Code == "SLIDE_BACKGROUND_RESET");
@@ -80,7 +80,7 @@ public sealed class SlidesBackgroundTests
         fixture.Engine.ApplyOps(
             fixture.CreatePresentation("plain-" + name, slides: 1),
             new SlidesOpsBatch { Ops = [new SetBackgroundOp { Color = Beige }] },
-            new PresentationEditRequest { OutputPath = path });
+            new PresentationEditRequest { Output = TestOutput.At(path) });
         return path;
     }
 

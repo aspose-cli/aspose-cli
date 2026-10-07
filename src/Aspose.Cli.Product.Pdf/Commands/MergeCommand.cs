@@ -25,7 +25,7 @@ internal static class MergeCommand
             new CommandTraits
             {
                 PasswordSubject = "all input PDFs",
-                Output = OutputTarget.File("Merged PDF output path.", required: true),
+                Output = OutputTarget.File("Merged PDF output path.", PdfFormats.Document, required: true),
             },
             [inputs, bookmarks],
             (parse, standard) =>
@@ -34,8 +34,7 @@ internal static class MergeCommand
                 return standard.OpenEngine().Merge(new PdfMergeRequest
                 {
                     InputPaths = inputPaths,
-                    OutputPath = standard.OutputPath(),
-                    Overwrite = standard.Overwrite,
+                    Output = standard.Output,
                     PreserveBookmarks = parse.GetRequiredValue(bookmarks) == "preserve",
                     Password = standard.InputPassword,
                 });

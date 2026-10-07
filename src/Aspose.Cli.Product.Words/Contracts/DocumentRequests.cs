@@ -1,3 +1,4 @@
+using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Text;
 
 namespace Aspose.Cli.Product.Words.Contracts;
@@ -25,9 +26,8 @@ public sealed record DocumentReadRequest
 /// <summary>Options for document conversion.</summary>
 public sealed record WordsConvertRequest
 {
-    public required string TargetFormatId { get; init; }
-    public required string OutputPath { get; init; }
-    public bool Overwrite { get; init; }
+    /// <summary>The resolved output: its format, path and overwrite permission.</summary>
+    public required ResolvedOutput Output { get; init; }
     public PageRange? Pages { get; init; }
     public string? Password { get; init; }
     public string? EncryptPassword { get; init; }
@@ -36,9 +36,8 @@ public sealed record WordsConvertRequest
 /// <summary>Options for page rendering.</summary>
 public sealed record WordsRenderRequest
 {
-    public required string TargetFormatId { get; init; }
-    public required string OutputPath { get; init; }
-    public bool Overwrite { get; init; }
+    /// <summary>The resolved output: its format, path and overwrite permission.</summary>
+    public required ResolvedOutput Output { get; init; }
     public PageRange? Pages { get; init; }
     public bool AllPages { get; init; }
     public int Dpi { get; init; } = 192;
@@ -48,8 +47,8 @@ public sealed record WordsRenderRequest
 /// <summary>Options for creating one document.</summary>
 public sealed record NewDocumentRequest
 {
-    public required string OutputPath { get; init; }
-    public bool Overwrite { get; init; }
+    /// <summary>The resolved output: its format, path and overwrite permission.</summary>
+    public required ResolvedOutput Output { get; init; }
     public string? MarkdownPath { get; init; }
     public string? TextPath { get; init; }
     public string? TemplatePath { get; init; }
@@ -60,9 +59,8 @@ public sealed record NewDocumentRequest
 /// <summary>Options for an atomic Words edit batch.</summary>
 public sealed record WordsEditRequest
 {
-    public required string OutputPath { get; init; }
-    public bool Overwrite { get; init; }
-    public string? BackupPath { get; init; }
+    /// <summary>The resolved output: its format, path, overwrite permission and in-place backup.</summary>
+    public required ResolvedOutput Output { get; init; }
     public EditCommandOptions Options { get; init; } = new();
     public bool Verify { get; init; }
     public bool TrackChanges { get; init; }
@@ -83,8 +81,8 @@ public sealed record WordsCompareRequest
     public string Granularity { get; init; } = DefaultGranularity;
     /// <summary>The author of the redline's revisions; null records <c>Aspose CLI</c>.</summary>
     public string? Author { get; init; }
-    public string? OutputPath { get; init; }
-    public bool Overwrite { get; init; }
+    /// <summary>The resolved redline output, or null when the comparison writes none.</summary>
+    public ResolvedOutput? Output { get; init; }
     public string? LeftPassword { get; init; }
     public string? RightPassword { get; init; }
 }
@@ -101,8 +99,8 @@ public sealed record WordsSplitRequest
 {
     public required string By { get; init; }
     public PageRange? Pages { get; init; }
-    public required string OutputDirectory { get; init; }
-    public bool Overwrite { get; init; }
+    /// <summary>The resolved directory that receives the files.</summary>
+    public required ResolvedDirectory Output { get; init; }
     public string? Password { get; init; }
 }
 
@@ -110,8 +108,8 @@ public sealed record WordsSplitRequest
 public sealed record WordsExtractRequest
 {
     public required string What { get; init; }
-    public required string OutputDirectory { get; init; }
-    public bool Overwrite { get; init; }
+    /// <summary>The resolved directory that receives the files.</summary>
+    public required ResolvedDirectory Output { get; init; }
     public string? Password { get; init; }
 }
 

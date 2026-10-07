@@ -15,6 +15,9 @@ namespace Aspose.Cli.Product.Words.Engine;
 /// <summary>Owns document conversion, rendering, preview and creation.</summary>
 internal sealed class WordsProductionService
 {
+    /// <summary>Marks the page number in a multi-page output name: <c>report.p3.png</c>.</summary>
+    private const string PagePart = "p";
+
     private const int CssDpi = 96;
     private const int EvidenceDpi = 150;
     private const int DisplayDpi = 192;
@@ -44,18 +47,18 @@ internal sealed class WordsProductionService
         LicenseState state = _licenseGate.EnsureApplied();
         using LoadedDocument loaded = _loader.Open(filePath, request.Password);
         IReadOnlyList<int>? pages = request.Pages?.Resolve(loaded.Document.PageCount);
-        SaveOptions options = WordsSavePipeline.Options(request.TargetFormatId, request.EncryptPassword, pages);
-        WordsSavePipeline.RemoveMacrosUnlessKept(loaded.Document, request.TargetFormatId);
-        long size = _writer.Write(request.OutputPath, request.Overwrite, temp =>
+        SaveOptions options = WordsSavePipeline.Options(request.Output.Format.Id, request.EncryptPassword, pages);
+        WordsSavePipeline.RemoveMacrosUnlessKept(loaded.Document, request.Output.Format.Id);
+        long size = _writer.Write(request.Output.Path, request.Output.Overwrite, temp =>
         {
             try { loaded.Document.Save(temp, options); }
             finally { loaded.Resources.ThrowIfFailed(); }
         });
-        var warnings = OutputWarnings(state, loaded, request.TargetFormatId);
+        var warnings = OutputWarnings(state, loaded, request.Output.Format.Id);
         return new WordsConvertResult
         {
             Input = InfoProjection.Source(filePath, loaded),
-            Output = BuildOutput(request.OutputPath, request.TargetFormatId, size),
+            Output = BuildOutput(request.Output.Path, request.Output.Format.Id, size),
             Pages = request.Pages?.Text,
             License = EnvelopeParts.License(state),
             Warnings = warnings,
@@ -70,7 +73,7 @@ internal sealed class WordsProductionService
         IReadOnlyList<int> pages = request.AllPages
             ? Enumerable.Range(1, loaded.Document.PageCount).ToArray()
             : request.Pages?.Resolve(loaded.Document.PageCount) ?? [1];
-        using var transaction = new AtomicOutputSetWriter(_writer, Path.GetDirectoryName(request.OutputPath)!, "words-render");
+        using var transaction = new AtomicOutputSetWriter(_writer, request.Output.Directory, "words-render");
         var outputs = new List<PageOutput>(pages.Count);
         foreach (int page in pages)
         {
@@ -78,10 +81,10 @@ internal sealed class WordsProductionService
             long width = (long)Math.Ceiling(info.WidthInPoints / 72d * request.Dpi);
             long height = (long)Math.Ceiling(info.HeightInPoints / 72d * request.Dpi);
             RenderPixelGuard.EnsureFits(_resourceBudgets, width, height, request.Dpi, RenderHint);
-            string path = PartOutputPath.For(request.OutputPath, PartOutputPath.Page, page, pages.Count, request.TargetFormatId);
-            SaveOptions options = WordsSavePipeline.Options(request.TargetFormatId, pages: [page], dpi: request.Dpi);
-            long size = transaction.Stage(path, request.Overwrite, temp => loaded.Document.Save(temp, options)).SizeBytes;
-            outputs.Add(new PageOutput { Page = page, Output = BuildOutput(path, request.TargetFormatId, size) });
+            string path = request.Output.Part(PagePart, page, pages.Count);
+            SaveOptions options = WordsSavePipeline.Options(request.Output.Format.Id, pages: [page], dpi: request.Dpi);
+            long size = transaction.Stage(path, request.Output.Overwrite, temp => loaded.Document.Save(temp, options)).SizeBytes;
+            outputs.Add(new PageOutput { Page = page, Output = BuildOutput(path, request.Output.Format.Id, size) });
         }
 
         loaded.Resources.ThrowIfFailed();
@@ -90,9 +93,9 @@ internal sealed class WordsProductionService
         {
             Input = InfoProjection.Source(filePath, loaded),
             Outputs = outputs,
-            Dpi = request.TargetFormatId == "svg" ? null : request.Dpi,
+            Dpi = request.Output.Format.Id == "svg" ? null : request.Dpi,
             License = EnvelopeParts.License(state),
-            Warnings = OutputWarnings(state, loaded, request.TargetFormatId, rendered: true),
+            Warnings = OutputWarnings(state, loaded, request.Output.Format.Id, rendered: true),
         };
     }
 
@@ -160,14 +163,14 @@ internal sealed class WordsProductionService
     {
         LicenseState state = _licenseGate.EnsureApplied();
         using CreatedDocument created = Build(request);
-        string formatId = WordsFormats.ForOutput(request.OutputPath);
+        string formatId = request.Output.Format.Id;
         SaveOptions options = WordsSavePipeline.Options(formatId, request.EncryptPassword);
         WordsSavePipeline.RemoveMacrosUnlessKept(created.Document, formatId);
-        long size = _writer.Write(request.OutputPath, request.Overwrite, temp => created.Save(temp, options));
+        long size = _writer.Write(request.Output.Path, request.Output.Overwrite, temp => created.Save(temp, options));
 
         return new WordsCreateResult
         {
-            Output = BuildOutput(request.OutputPath, formatId, size),
+            Output = BuildOutput(request.Output.Path, formatId, size),
             License = EnvelopeParts.License(state),
             Warnings = CreationWarnings(state, created, formatId),
         };

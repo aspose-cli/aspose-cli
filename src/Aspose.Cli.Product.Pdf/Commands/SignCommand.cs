@@ -2,6 +2,7 @@ using System.CommandLine;
 using System.Globalization;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Extensibility;
+using Aspose.Cli.Sdk.IO;
 
 namespace Aspose.Cli.Product.Pdf.Commands;
 
@@ -42,7 +43,7 @@ internal static class SignCommand
             new CommandTraits
             {
                 Input = PdfCommands.Document with { PasswordSubject = "the input PDF" },
-                Output = OutputTarget.File("Signed PDF path. Default: <input>.signed.pdf."),
+                Output = OutputTarget.File("Signed PDF path. Default: <input>.signed.pdf.", PdfFormats.Document, derivedMarker: ".signed"),
                 UsesFonts = true,
             },
             [certificate, certificatePasswordEnv, visible, page, rect, reason, location, contact],
@@ -62,7 +63,7 @@ internal static class SignCommand
                 OptionGuards.EnsureInRange("--page", pageNumber, 1, int.MaxValue, "Use a 1-based page number.");
                 string input = standard.Input;
                 string certificatePath = standard.RequiredInputFile(certificate);
-                string output = standard.OutputPath(".signed.pdf");
+                ResolvedOutput output = standard.Output;
                 string variable = parse.GetRequiredValue(certificatePasswordEnv);
                 string? certificatePassword = standard.ReadEnvironment(variable);
                 if (string.IsNullOrEmpty(certificatePassword))
@@ -77,8 +78,7 @@ internal static class SignCommand
                 {
                     CertificatePath = certificatePath,
                     CertificatePassword = certificatePassword,
-                    OutputPath = output,
-                    Overwrite = standard.Overwrite,
+                    Output = output,
                     Password = standard.InputPassword,
                     Page = pageNumber,
                     Visible = isVisible,

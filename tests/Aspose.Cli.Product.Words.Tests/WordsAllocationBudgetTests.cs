@@ -24,7 +24,7 @@ public sealed class WordsAllocationBudgetTests
             {
                 Ops = [new InsertTableOp { At = new WordsTarget { Block = 1 }, Position = "after", RowCount = 100, ColumnCount = 20 }],
             },
-            new WordsEditRequest { OutputPath = output }));
+            new WordsEditRequest { Output = TestOutput.At(output) }));
 
         Assert.Equal(ErrorCodes.InputBudgetExceeded, error.Code);
         Assert.Contains("pre-allocation", error.Message + error.Details, StringComparison.Ordinal);
@@ -44,7 +44,7 @@ public sealed class WordsAllocationBudgetTests
         CliException error = Assert.Throws<CliException>(() => Engine(fixture, nodes: 500).ApplyOps(
             input,
             new WordsOpsBatch { Ops = [new MailMergeOp { Inline = rows }] },
-            new WordsEditRequest { OutputPath = output }));
+            new WordsEditRequest { Output = TestOutput.At(output) }));
 
         Assert.Equal(ErrorCodes.InputBudgetExceeded, error.Code);
         Assert.False(File.Exists(output));
@@ -74,7 +74,7 @@ public sealed class WordsAllocationBudgetTests
             {
                 Ops = [new MailMergeOp { Regions = true, Inline = [new Dictionary<string, object?> { ["Name"] = "Ava" }] }],
             },
-            new WordsEditRequest { OutputPath = output }));
+            new WordsEditRequest { Output = TestOutput.At(output) }));
 
         Assert.Equal(WordsDiagnostics.MergeDataInvalid, error.Code);
         Assert.Contains("People", error.Message, StringComparison.Ordinal);
@@ -93,7 +93,7 @@ public sealed class WordsAllocationBudgetTests
         CliException error = Assert.Throws<CliException>(() => fixture.Engine.ApplyOps(
             input,
             new WordsOpsBatch { Ops = [new AddWatermarkOp { ImagePath = missing }] },
-            new WordsEditRequest { OutputPath = fixture.Temp.File("watermarked.docx") }));
+            new WordsEditRequest { Output = TestOutput.At(fixture.Temp.File("watermarked.docx")) }));
 
         Assert.Equal(ErrorCodes.FileNotFound, error.Code);
     }
@@ -113,7 +113,7 @@ public sealed class WordsAllocationBudgetTests
         CliException error = Assert.Throws<CliException>(() => Engine(fixture, memoryBytes: 4L * 1024 * 1024).ApplyOps(
             input,
             new WordsOpsBatch { Ops = [new AddWatermarkOp { ImagePath = image }] },
-            new WordsEditRequest { OutputPath = fixture.Temp.File("watermarked.docx") }));
+            new WordsEditRequest { Output = TestOutput.At(fixture.Temp.File("watermarked.docx")) }));
 
         Assert.Equal(ErrorCodes.InputBudgetExceeded, error.Code);
     }

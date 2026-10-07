@@ -25,7 +25,7 @@ public sealed class SlidesShapeAddressingTests
             },
             new PresentationEditRequest
             {
-                OutputPath = output,
+                Output = TestOutput.At(output),
                 Options = new EditCommandOptions { DryRun = dryRun },
             });
 
@@ -59,7 +59,7 @@ public sealed class SlidesShapeAddressingTests
             {
                 Ops = [new DeleteShapeOp { Slide = 2, ShapeName = "title 2" }],
             },
-            new PresentationEditRequest { OutputPath = output }));
+            new PresentationEditRequest { Output = TestOutput.At(output) }));
 
         Assert.Equal(SlidesDiagnostics.ShapeNotFound, error.Code);
         Assert.Contains("'shapeId'", error.Hint!, StringComparison.Ordinal);
@@ -86,7 +86,7 @@ public sealed class SlidesShapeAddressingTests
         CliException error = Assert.Throws<CliException>(() => fixture.Engine.ApplyOps(
             input,
             new SlidesOpsBatch { Ops = [new SetTextOp { Slide = 1, ShapeName = "Box", Text = "Which?" }] },
-            new PresentationEditRequest { OutputPath = fixture.File("shared-names-out.pptx") }));
+            new PresentationEditRequest { Output = TestOutput.At(fixture.File("shared-names-out.pptx")) }));
 
         Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
         Assert.Contains("matches 2 shapes", error.Message, StringComparison.Ordinal);
@@ -102,11 +102,11 @@ public sealed class SlidesShapeAddressingTests
         CliException byNumber = Assert.Throws<CliException>(() => fixture.Engine.ApplyOps(
             input,
             new SlidesOpsBatch { Ops = [new SetNotesOp { Slide = 9, Text = "Late" }] },
-            new PresentationEditRequest { OutputPath = fixture.File("number.pptx") }));
+            new PresentationEditRequest { Output = TestOutput.At(fixture.File("number.pptx")) }));
         CliException byId = Assert.Throws<CliException>(() => fixture.Engine.ApplyOps(
             input,
             new SlidesOpsBatch { Ops = [new SetNotesOp { SlideId = 99999, Text = "Late" }] },
-            new PresentationEditRequest { OutputPath = fixture.File("id.pptx") }));
+            new PresentationEditRequest { Output = TestOutput.At(fixture.File("id.pptx")) }));
 
         Assert.Equal(SlidesDiagnostics.SlideNotFound, byNumber.Code);
         Assert.Equal("9", (string?)byNumber.Details!["requested"]);
@@ -130,7 +130,7 @@ public sealed class SlidesShapeAddressingTests
             },
             new PresentationEditRequest
             {
-                OutputPath = fixture.File("layout.pptx"),
+                Output = TestOutput.At(fixture.File("layout.pptx")),
                 Options = new EditCommandOptions { BestEffort = true },
             });
 
@@ -168,7 +168,7 @@ public sealed class SlidesShapeAddressingTests
         SlidesEditResult edit = fixture.Engine.ApplyOps(input, new SlidesOpsBatch
         {
             Ops = [new SetTextOp { Slide = 3, ShapeId = shape.ShapeId, Text = "Saved" }],
-        }, new PresentationEditRequest { OutputPath = output });
+        }, new PresentationEditRequest { Output = TestOutput.At(output) });
         Assert.Equal([$"slide/{all.Slides[2].SlideId}/shape/{shape.ShapeId}"], edit.Applied[0].Targets);
         PresentationReadResult changed = fixture.Engine.Read(output, new PresentationReadRequest
         {
@@ -227,7 +227,7 @@ public sealed class SlidesShapeAddressingTests
         SlidesEditResult removed = fixture.Engine.ApplyOps(saved, new SlidesOpsBatch
         {
             Ops = [new DeleteShapeOp { Slide = 2, ShapeId = projectedGroup.ShapeId }],
-        }, new PresentationEditRequest { OutputPath = output });
+        }, new PresentationEditRequest { Output = TestOutput.At(output) });
         Assert.Equal([$"slide/{read.Slides[0].SlideId}/shape/{groupId}"], removed.Applied[0].Targets);
         PresentationReadResult final = fixture.Engine.Read(output, new PresentationReadRequest
         {
@@ -267,7 +267,7 @@ public sealed class SlidesShapeAddressingTests
                     },
                 ],
             },
-            new PresentationEditRequest { OutputPath = output });
+            new PresentationEditRequest { Output = TestOutput.At(output) });
 
         PresentationReadResult read = fixture.Engine.Read(output, new PresentationReadRequest
         {
@@ -307,7 +307,7 @@ public sealed class SlidesShapeAddressingTests
                     new SetShapeBoundsOp { Slide = 2, ShapeName = "Figures", Y = 200, Width = 400, Height = 100 },
                 ],
             },
-            new PresentationEditRequest { OutputPath = output });
+            new PresentationEditRequest { Output = TestOutput.At(output) });
 
         Assert.All(result.Applied, static operation => Assert.Equal("ok", operation.Status));
         PresentationReadResult read = fixture.Engine.Read(output, new PresentationReadRequest

@@ -2657,6 +2657,7 @@
         {
           "id": "tiff",
           "extensions": [
+            ".tif",
             ".tiff"
           ],
           "aliases": [],
@@ -3494,7 +3495,7 @@
               "secret": false,
               "valueSource": "command-line",
               "inputKind": "none",
-              "description": "Form export format: json, fdf or xfdf; only with --what forms."
+              "description": "Form export format: json, fdf or xfdf; only with --what forms. Default: the --out extension's."
             },
             {
               "name": "--what",
@@ -5545,6 +5546,7 @@
         {
           "id": "tiff",
           "extensions": [
+            ".tif",
             ".tiff"
           ],
           "aliases": [],
@@ -13546,7 +13548,7 @@
           "secret": false,
           "valueSource": "command-line",
           "inputKind": "none",
-          "description": "Form export format: json, fdf or xfdf; only with --what forms."
+          "description": "Form export format: json, fdf or xfdf; only with --what forms. Default: the --out extension's."
         },
         {
           "name": "--what",

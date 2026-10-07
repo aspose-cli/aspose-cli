@@ -24,8 +24,7 @@ public sealed class SlidesConvertSelectionTests
         string output = fixture.File($"selected.{format}");
         SlidesConvertResult result = fixture.Engine.Convert(input, new PresentationConvertRequest
         {
-            TargetFormatId = format,
-            OutputPath = output,
+            Output = TestOutput.At(output, format: format),
             Slides = PageRange.Parse("2-3"),
         });
 
@@ -50,8 +49,7 @@ public sealed class SlidesConvertSelectionTests
 
         fixture.Engine.Convert(input, new PresentationConvertRequest
         {
-            TargetFormatId = "pptx",
-            OutputPath = output,
+            Output = TestOutput.At(output, format: "pptx"),
             Slides = PageRange.Parse("1"),
             Password = "secret",
         });

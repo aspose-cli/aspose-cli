@@ -250,7 +250,7 @@ public sealed class StandardCommandTests : IDisposable
     }
 
     [Fact]
-    public void TargetFormat_RendersTheExplicitToThenTheOutputExtensionThenTheDefault()
+    public void Output_RendersTheExplicitToThenTheOutputExtensionThenTheDefault()
     {
         FormatDescriptor[] formats =
         [
@@ -265,39 +265,49 @@ public sealed class StandardCommandTests : IDisposable
             Output = OutputTarget.File("Output path."),
             Target = TargetFormat.Render("Image format.", formats),
         };
-        Command command = Create(traits, (_, standard) => Result(standard.TargetFormat()));
+        Command command = Create(traits, (_, standard) => Result(standard.Output.Format.Id + "|" + Path.GetFileName(standard.Output.Path)));
 
         Assert.Equal(["--to", "--mode", "--out", "--overwrite", "--password", "--password-env", "--password-stdin"],
             command.Options.Select(static option => option.Name));
-        Assert.Equal("png", Run(command, "report.test"));
-        Assert.Equal("svg", Run(command, "report.test", "--out", "page.SVG"));
-        Assert.Equal("png", Run(command, "report.test", "--out", "page"));
-        Assert.Equal("svg", Run(command, "report.test", "--to", "SVG", "--out", "page.svg"));
-        Assert.Equal("jpeg", Run(command, "report.test", "--to", "JPG", "--out", "page.jpeg"));
+        Assert.Equal("png|report.png", Run(command, "report.test"));
+        Assert.Equal("svg|page.SVG", Run(command, "report.test", "--out", "page.SVG"));
+        Assert.Equal("svg|page.svg", Run(command, "report.test", "--to", "SVG", "--out", "page.svg"));
+        Assert.Equal("jpeg|page.jpeg", Run(command, "report.test", "--to", "JPG", "--out", "page.jpeg"));
+        Assert.Equal("jpeg|page.jpg", Run(command, "report.test", "--out", "page.jpg"));
         Assert.NotEmpty(command.Parse(["report.test", "--to", "doc"]).Errors);
-        foreach (string[] arguments in new[] { new[] { "report.test", "--out", "page.doc" }, new[] { "report.test", "--to", "png", "--out", "page.doc" } })
+        foreach (string[] arguments in new[] { new[] { "report.test", "--out", "page.doc" }, new[] { "report.test", "--out", "page" } })
         {
             CliException foreign = RunFailing(command, arguments);
             Assert.Equal(ErrorCodes.UsageError, foreign.Code);
-            Assert.Contains("--out 'page.doc' has the .doc extension, which names no render format; use .png, .jpg, .jpeg, .svg", foreign.Message, StringComparison.Ordinal);
+            Assert.Equal("--out", foreign.Details!["option"]!.GetValue<string>());
+            Assert.EndsWith("; use .png, .jpg, .jpeg, .svg.", foreign.Message, StringComparison.Ordinal);
         }
 
         CliException conflict = RunFailing(command, "report.test", "--to", "png", "--out", "page.svg");
         Assert.Equal(ErrorCodes.UsageError, conflict.Code);
-        Assert.Contains("--to png", conflict.Message, StringComparison.Ordinal);
-        Assert.Contains("--out 'page.svg'", conflict.Message, StringComparison.Ordinal);
+        Assert.Equal("--to png contradicts --out 'page.svg': its .svg extension is not a png extension; use .png.", conflict.Message);
+        Assert.Equal("Give --out the .png extension, as in page.png, or pass --to svg to write svg.", conflict.Hint);
+
+        // An output without an extension often names a folder: the hint names both corrected paths.
+        CliException folder = RunFailing(command, "report.test", "--to", "jpeg", "--out", Path.Combine("deliver", "png"));
+        Assert.Equal(
+            $"Give --out the .jpg or .jpeg extension, as in {Path.Combine("deliver", "png.jpg")}, or name a file inside the "
+                + $"{Path.Combine("deliver", "png")} folder, as in {Path.Combine("deliver", "png", "page.jpg")}; "
+                + "an output of several parts is written beside that file as numbered files.",
+            folder.Hint);
         Assert.Throws<ArgumentException>(() => Create(traits with { Output = null }, (_, _) => Result()));
         Assert.Throws<ArgumentException>(() => Create(
             traits with { Target = TargetFormat.Render("Image format.", formats, "doc") }, (_, _) => Result()));
     }
 
     [Fact]
-    public void TargetFormat_ConvertsToARequiredFormatNamedByItsIdOrAlias()
+    public void Output_ConvertsToARequiredFormatNamedByItsIdOrAliasUnderOneOfItsExtensions()
     {
         FormatDescriptor[] formats =
         [
             FormatDescriptor.Declare("docx", FormatUse.Convert, null, 0, null, false, ".docx"),
             FormatDescriptor.Declare("md", FormatUse.Convert, null, 1, null, false, ".md") with { Aliases = ["markdown"] },
+            FormatDescriptor.Declare("csv", FormatUse.Convert, null, 2, null, false, ".csv", ".txt"),
             FormatDescriptor.Declare("png", FormatUse.Render, null, null, 0, false, ".png"),
         ];
         Command command = Create(
@@ -307,20 +317,117 @@ public sealed class StandardCommandTests : IDisposable
                 Output = OutputTarget.File("Output path."),
                 Target = TargetFormat.Convert("Target format.", formats),
             },
-            (_, standard) => Result(standard.TargetFormat()));
+            (_, standard) => Result(standard.Output.Format.Id + "|" + Path.GetFileName(standard.Output.Path)));
 
-        Assert.Equal("md", Run(command, "report.test", "--to", "Markdown", "--out", "page.MD"));
-        Assert.Equal("md", Run(command, "report.test", "--to", "md", "--out", "page.markdown"));
-        Assert.Equal("docx", Run(command, "report.test", "--to", "DOCX"));
+        Assert.Equal("md|page.MD", Run(command, "report.test", "--to", "Markdown", "--out", "page.MD"));
+        Assert.Equal("docx|report.docx", Run(command, "report.test", "--to", "DOCX"));
+        Assert.Equal("csv|rows.txt", Run(command, "report.test", "--to", "csv", "--out", "rows.txt"));
         Assert.NotEmpty(command.Parse(["report.test"]).Errors);
         Assert.NotEmpty(command.Parse(["report.test", "--to", "png"]).Errors);
-        foreach (string extension in new[] { "docx", "png" })
+        foreach (string output in new[] { "page.docx", "page.png", "page.markdown", "page" })
         {
-            CliException conflict = RunFailing(command, "report.test", "--to", "md", "--out", $"page.{extension}");
+            CliException conflict = RunFailing(command, "report.test", "--to", "md", "--out", output);
             Assert.Equal(ErrorCodes.UsageError, conflict.Code);
-            Assert.Contains($"--to md contradicts --out 'page.{extension}'", conflict.Message, StringComparison.Ordinal);
-            Assert.Contains("the .md extension", conflict.Message, StringComparison.Ordinal);
+            Assert.StartsWith($"--to md contradicts --out '{output}': ", conflict.Message, StringComparison.Ordinal);
+            Assert.EndsWith("; use .md.", conflict.Message, StringComparison.Ordinal);
+            Assert.Equal("md", conflict.Details!["format"]!.GetValue<string>());
         }
+    }
+
+    [Fact]
+    public void Output_OfACreatedFileIsTheFormatItsExtensionNames()
+    {
+        FormatDescriptor[] writes =
+        [
+            FormatDescriptor.Declare("tst", FormatUse.Input | FormatUse.Convert, 0, 0, null, false, ".tst", ".test") with { Protectable = true },
+            FormatDescriptor.Declare("tsx", FormatUse.Input | FormatUse.Convert, 1, 1, null, false, ".tsx"),
+        ];
+        FormatDescriptor pdf = FormatDescriptor.Declare("pdf", FormatUse.Convert, null, 2, null, false, ".pdf");
+        Command create = StandardCommand.Create(
+            _host, "create", "Creates.",
+            new CommandTraits { Output = OutputTarget.CreatedFile("File to create.", writes), Encrypt = new EncryptedOutput("the file") },
+            [],
+            (_, standard) => Result(standard.Output.Format.Id + "|" + standard.EncryptPassword()));
+        Command convert = StandardCommand.Create(
+            _host, "convert", "Converts.",
+            new CommandTraits { Input = Report, Output = OutputTarget.File("Output path."), Target = TargetFormat.Convert("Target format.", [.. writes, pdf]) },
+            [], (_, _) => Result());
+        var root = new RootCommand { new Command("test") { create, convert } };
+        CliException Refused(string file)
+        {
+            _host.Error = null;
+            root.Parse(["test", "create", file]).Invoke();
+            return Assert.IsType<CliException>(_host.Error);
+        }
+
+        Assert.Equal("tsx|", Run(create, "new.TSX"));
+        Assert.Equal("tst|secret", Run(create, "new.test", "--encrypt", "secret"));
+        CliException unprotectable = RunFailing(create, "new.tsx", "--encrypt-env", "MISSING");
+        Assert.Equal(ErrorCodes.OptionInvalid, unprotectable.Code);
+        Assert.Equal("--encrypt-env", unprotectable.Details!["option"]!.GetValue<string>());
+        Assert.Contains("Protect only tst outputs", unprotectable.Hint, StringComparison.Ordinal);
+
+        CliException producer = Refused("new.pdf");
+        Assert.Equal(ErrorCodes.UsageError, producer.Code);
+        Assert.Equal("file 'new.pdf' asks for pdf, which aspose-cli test create does not write; use .tst, .test, .tsx.", producer.Message);
+        Assert.Equal("Give file one of these extensions, then run 'aspose-cli test convert <that file> --to pdf' for pdf.", producer.Hint);
+        Assert.Equal("file", producer.Details!["option"]!.GetValue<string>());
+        foreach (string file in new[] { "new.foo", "new" })
+        {
+            CliException refused = Refused(file);
+            Assert.Equal(ErrorCodes.UsageError, refused.Code);
+            Assert.Equal("Give file one of these extensions.", refused.Hint);
+        }
+    }
+
+    [Fact]
+    public void Output_OfAnEditKeepsTheInputFormatUnlessItsOutputNamesAnother()
+    {
+        FormatDescriptor[] writes =
+        [
+            FormatDescriptor.Declare("tst", FormatUse.Input | FormatUse.Convert, 0, 0, null, false, ".test"),
+            FormatDescriptor.Declare("old", FormatUse.Input | FormatUse.Convert, 1, 1, null, false, ".test"),
+            FormatDescriptor.Declare("tsx", FormatUse.Input | FormatUse.Convert, 2, 2, null, false, ".tsx"),
+        ];
+        Command edit = StandardCommand.Create(
+            _host, "edit", "Edits.",
+            new CommandTraits { Input = Report, Output = OutputTarget.Mutation(writes) },
+            [],
+            (_, standard) => Result(string.Join('|',
+                standard.Output.Format.Id, standard.Output.Keeping("old").Id, standard.Output.InPlace, Path.GetFileName(standard.Output.Path))));
+        File.WriteAllText(_temp.File("report.foo"), "foo");
+
+        Assert.Equal("tst|old|False|report.out.test", Run(edit, "report.test"));
+        Assert.Equal("tst|old|True|report.test", Run(edit, "report.test", "--in-place"));
+        Assert.Equal("tsx|tsx|False|copy.tsx", Run(edit, "report.test", "--out", "copy.tsx"));
+        CliException input = RunFailing(edit, "report.foo");
+        Assert.Equal(ErrorCodes.UsageError, input.Code);
+        Assert.Equal("--out", input.Details!["option"]!.GetValue<string>());
+        Assert.StartsWith("The input 'report.foo', whose name the output keeps without --out, has the .foo extension", input.Message, StringComparison.Ordinal);
+        Assert.Equal("--out", RunFailing(edit, "report.test", "--out", "copy.foo").Details!["option"]!.GetValue<string>());
+    }
+
+    [Fact]
+    public void Output_DerivesTheOnlyFormatWithTheCommandsMarker()
+    {
+        FormatDescriptor pdf = FormatDescriptor.Declare("pdf", FormatUse.Convert, null, 0, null, false, ".pdf");
+        Command sign = Create(
+            new CommandTraits { Input = Report, Output = OutputTarget.File("Signed file.", [pdf], derivedMarker: ".signed") },
+            (_, standard) => Result(Path.GetFileName(standard.Output.Path)));
+
+        Assert.Equal("report.signed.pdf", Run(sign, "report.test"));
+        Assert.Equal("copy.pdf", Run(sign, "report.test", "--out", "copy.pdf"));
+        Assert.Equal(ErrorCodes.UsageError, RunFailing(sign, "report.test", "--out", "copy.png").Code);
+    }
+
+    [Fact]
+    public void ResolvedOutput_NamesItsPartsBesideIt()
+    {
+        var output = new ResolvedOutput(FormatDescriptor.Declare("png", FormatUse.Render, null, null, 0, false, ".png"), _temp.File("deck.png"));
+
+        Assert.Equal(_temp.File("deck.png"), output.Part("s", 1, 1));
+        Assert.Equal(_temp.File("deck.s3.png"), output.Part("s", 3, 4));
+        Assert.Equal(_temp.File("deck.Summary.png"), output.Part("Summary"));
     }
 
     /// <summary>
@@ -330,8 +437,6 @@ public sealed class StandardCommandTests : IDisposable
     [Theory]
     [InlineData("new.pdf", "file 'new.pdf' asks for pdf, which aspose-cli test create does not write; it writes tst, tsx.",
         "Give file the .tst or .tsx extension, then run 'aspose-cli test convert <that file> --to pdf' for pdf.")]
-    [InlineData("new.png", "file 'new.png' asks for png, which aspose-cli test create does not write; it writes tst, tsx.",
-        "Give file the .tst or .tsx extension.")]
     [InlineData("new.foo", "Unsupported format 'foo'. Supported formats: tst, tsx", null)]
     // The command writes tst, so an error about tst concerns another file, such as one an operation reads.
     [InlineData("new.tst", "Unsupported format 'tst'. Supported formats: tst, tsx", null)]

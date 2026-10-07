@@ -10,7 +10,7 @@ internal static class WordsCommands
     public static readonly InputDocument Document = new("Document to open.", "the document");
 
     /// <summary>The password a writing command can put on its document.</summary>
-    public static readonly EncryptedOutput EncryptedDocument = new("the output document", WordsFormats.EncryptIds);
+    public static readonly EncryptedOutput EncryptedDocument = new("the output document");
 
     public static Command Create(IProductCommandHost<IWordsEngine> host)
     {

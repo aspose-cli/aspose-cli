@@ -1,3 +1,4 @@
+using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Text;
 
 namespace Aspose.Cli.Product.Cells.Contracts;
@@ -51,14 +52,8 @@ public sealed record ReadRequest
 /// <summary>Options of <c>cells convert</c>.</summary>
 public sealed record ConvertRequest
 {
-    /// <summary>Canonical target format id (already resolved).</summary>
-    public required string TargetFormatId { get; init; }
-
-    /// <summary>Absolute output path.</summary>
-    public required string OutputPath { get; init; }
-
-    /// <summary>Whether an existing output file may be replaced.</summary>
-    public bool Overwrite { get; init; }
+    /// <summary>The resolved output: its format, path and overwrite permission.</summary>
+    public required ResolvedOutput Output { get; init; }
 
     /// <summary>Restrict the conversion to one sheet, where the format supports it.</summary>
     public string? SheetName { get; init; }
@@ -92,14 +87,8 @@ public sealed record TextImportOptions
 /// <summary>Options of <c>cells render</c>.</summary>
 public sealed record RenderRequest
 {
-    /// <summary>Canonical target format id (already resolved).</summary>
-    public required string TargetFormatId { get; init; }
-
-    /// <summary>Absolute output path.</summary>
-    public required string OutputPath { get; init; }
-
-    /// <summary>Whether an existing output file may be replaced.</summary>
-    public bool Overwrite { get; init; }
+    /// <summary>The resolved output: its format, path and overwrite permission.</summary>
+    public required ResolvedOutput Output { get; init; }
 
     /// <summary>Sheet to render; the active sheet when null.</summary>
     public string? SheetName { get; init; }
@@ -109,7 +98,7 @@ public sealed record RenderRequest
 
     /// <summary>
     /// Render every visible sheet, each to its own file derived from
-    /// <see cref="OutputPath"/> (<c>&lt;base&gt;.&lt;Sheet&gt;&lt;ext&gt;</c>).
+    /// <see cref="Output"/> (<c>&lt;base&gt;.&lt;Sheet&gt;&lt;ext&gt;</c>).
     /// Mutually exclusive with <see cref="SheetName"/> and <see cref="Range"/>;
     /// the command layer enforces that before the request is built.
     /// </summary>
@@ -128,14 +117,8 @@ public sealed record EditRequest
     /// <summary>Transient environment secret values; never part of ops JSON or result envelopes.</summary>
     public IReadOnlyDictionary<string, string>? OpSecrets { get; init; }
 
-    /// <summary>Absolute output path.</summary>
-    public required string OutputPath { get; init; }
-
-    /// <summary>Whether an existing output file may be replaced.</summary>
-    public bool Overwrite { get; init; }
-
-    /// <summary>Stable backup path for an in-place mutation; null disables backup.</summary>
-    public string? BackupPath { get; init; }
+    /// <summary>The resolved output: its format, path, overwrite permission and in-place backup.</summary>
+    public required ResolvedOutput Output { get; init; }
 
     /// <summary>Shared stale-input, dry-run, and best-effort semantics.</summary>
     public EditCommandOptions Options { get; init; } = new();
@@ -159,11 +142,8 @@ public sealed record EditRequest
 /// <summary>Options of <c>cells create</c>.</summary>
 public sealed record NewWorkbookRequest
 {
-    /// <summary>Absolute output path.</summary>
-    public required string OutputPath { get; init; }
-
-    /// <summary>Whether an existing output file may be replaced.</summary>
-    public bool Overwrite { get; init; }
+    /// <summary>The resolved output: its format, path and overwrite permission.</summary>
+    public required ResolvedOutput Output { get; init; }
 
     /// <summary>Sheet names, in order; already validated non-empty and unique.</summary>
     public required IReadOnlyList<string> SheetNames { get; init; }

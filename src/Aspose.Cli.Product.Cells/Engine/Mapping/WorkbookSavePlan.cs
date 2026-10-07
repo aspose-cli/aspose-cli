@@ -1,4 +1,5 @@
 using System.Text;
+using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cells;
 using Aspose.Cells.Rendering;
@@ -10,12 +11,13 @@ internal sealed record WorkbookSavePlan(string FormatId, SaveFormat Format, Save
 {
     /// <remarks>
     /// The commands reject an output password for a format that cannot carry one, naming the
-    /// option the caller passed (<see cref="Sdk.Extensibility.Commanding.StandardInvocation.EncryptPassword"/>).
+    /// option the caller passed (<see cref="Sdk.Extensibility.Commanding.StandardInvocation.EncryptPassword()"/>).
     /// </remarks>
-    internal static WorkbookSavePlan Create(string formatId, LicenseState licenseState,
+    internal static WorkbookSavePlan Create(FormatDescriptor output, LicenseState licenseState,
         string? encryptPassword = null, string? inputPassword = null, int? selectedSheet = null, bool byteOrderMark = false)
     {
-        bool encryptable = CellsFormats.EncryptableIds.Contains(formatId, StringComparer.Ordinal);
+        string formatId = output.Id;
+        bool encryptable = output.Protectable;
         if (encryptPassword is not null && !encryptable)
         {
             throw new InvalidOperationException($"An output password reached the '{formatId}' format, which cannot carry one.");

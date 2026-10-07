@@ -31,7 +31,7 @@ internal sealed class SlidesExtractionService
         IReadOnlyList<int> slides = request.Slides is null
             ? Enumerable.Range(1, loaded.Presentation.Slides.Count).ToArray()
             : ResolveSlideRange(request.Slides, loaded.Presentation.Slides.Count);
-        using var guard = new ExtractionGuard(_resourceBudgets, request.OutputDirectory, request.Overwrite);
+        using var guard = new ExtractionGuard(_resourceBudgets, request.Output.Path, request.Output.Overwrite);
         var items = new List<SlidesExtractedItem>();
 
         if (request.What == PresentationExtractKinds.Media)

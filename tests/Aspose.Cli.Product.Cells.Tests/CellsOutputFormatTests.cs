@@ -51,9 +51,7 @@ public sealed class CellsOutputFormatTests : IClassFixture<CellsFixture>
 
         ConvertResult result = _fixture.Engine.Convert(_fixture.CreateSalesWorkbook("convert-source.xlsx"), new ConvertRequest
         {
-            TargetFormatId = "xltx",
-            OutputPath = output,
-            Overwrite = true,
+            Output = TestOutput.At(output, format: "xltx", overwrite: true),
         });
 
         Assert.Equal("xltx", result.Output.Format);
@@ -69,14 +67,36 @@ public sealed class CellsOutputFormatTests : IClassFixture<CellsFixture>
 
     [Theory]
     [InlineData("book.xltx", "xltx")]
-    [InlineData("book.xltm", "xltm")]
-    [InlineData("book.xlsx", "xlsx")]
-    public void AnOutputPath_NamesItsTemplateFormat(string path, string format) =>
-        Assert.Equal(format, CellsFormats.ForOutputPath(path));
+    [InlineData("book.XLTM", "xltm")]
+    [InlineData("book.htm", "html")]
+    public void ACreatedWorkbook_IsTheFormatItsExtensionNames(string path, string format)
+    {
+        using var workspace = new TempWorkspace();
+
+        CliResult created = workspace.Run("cells", "create", path, "--output", "json");
+
+        Assert.True(created.ExitCode == 0, created.StdErr);
+        Assert.Equal(format, System.Text.Json.Nodes.JsonNode.Parse(created.StdOut)!["output"]!["format"]!.GetValue<string>());
+    }
+
+    [Theory]
+    [InlineData("book")]
+    [InlineData("book.docx")]
+    public void ACreatedWorkbookWithoutAWorkbookExtension_IsRefusedBeforeAnythingIsWritten(string path)
+    {
+        using var workspace = new TempWorkspace();
+
+        CliResult refused = workspace.Run("cells", "create", path, "--output", "json");
+
+        Assert.Equal(2, refused.ExitCode);
+        Assert.Contains("\"USAGE_ERROR\"", refused.StdErr, StringComparison.Ordinal);
+        Assert.Contains(".xlsx", refused.StdErr, StringComparison.Ordinal);
+        Assert.Empty(Directory.GetFileSystemEntries(workspace.Path));
+    }
 
     private EditResult Apply(string source, string output) =>
         _fixture.Engine.ApplyOps(
             source,
             CellsOp.Catalog.Parse<CellsOpsBatch>(Edit, Aspose.Cli.Generated.ProductJsonContext.Definition),
-            new EditRequest { OutputPath = output, Overwrite = true });
+            new EditRequest { Output = TestOutput.At(output, overwrite: true) });
 }

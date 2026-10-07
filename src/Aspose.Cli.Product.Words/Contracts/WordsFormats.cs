@@ -9,19 +9,19 @@ public static class WordsFormats
     internal static readonly IReadOnlyList<FormatDescriptor> Definitions =
         FileFormatRecognition.AttachTo(
     [
-        FormatDescriptor.Declare("doc", FormatUse.Input | FormatUse.Convert, 0, 0, null, true, ".doc"),
-        FormatDescriptor.Declare("dot", FormatUse.Input | FormatUse.Convert, 1, 1, null, true, ".dot"),
-        FormatDescriptor.Declare("docx", FormatUse.Input | FormatUse.Convert, 2, 2, null, true, ".docx"),
-        FormatDescriptor.Declare("docm", FormatUse.Input | FormatUse.Convert, 3, 3, null, true, ".docm"),
-        FormatDescriptor.Declare("dotx", FormatUse.Input | FormatUse.Convert, 4, 4, null, true, ".dotx"),
-        FormatDescriptor.Declare("dotm", FormatUse.Input | FormatUse.Convert, 5, 5, null, true, ".dotm"),
-        FormatDescriptor.Declare("flatopc", FormatUse.Input | FormatUse.Convert, 6, 6, null, false, ".xml"),
+        FormatDescriptor.Declare("doc", FormatUse.Input | FormatUse.Convert, 0, 0, null, true, ".doc") with { Protectable = true },
+        FormatDescriptor.Declare("dot", FormatUse.Input | FormatUse.Convert, 1, 1, null, true, ".dot") with { Protectable = true },
+        FormatDescriptor.Declare("docx", FormatUse.Input | FormatUse.Convert, 2, 2, null, true, ".docx") with { Protectable = true },
+        FormatDescriptor.Declare("docm", FormatUse.Input | FormatUse.Convert, 3, 3, null, true, ".docm") with { Protectable = true },
+        FormatDescriptor.Declare("dotx", FormatUse.Input | FormatUse.Convert, 4, 4, null, true, ".dotx") with { Protectable = true },
+        FormatDescriptor.Declare("dotm", FormatUse.Input | FormatUse.Convert, 5, 5, null, true, ".dotm") with { Protectable = true },
+        FormatDescriptor.Declare("flatopc", FormatUse.Input | FormatUse.Convert, 6, 6, null, false, ".xml") with { Protectable = true },
         FormatDescriptor.Declare("rtf", FormatUse.Input | FormatUse.Convert, 7, 7, null, true, ".rtf"),
         FormatDescriptor.Declare("wordml", FormatUse.Input | FormatUse.Convert, 8, 8, null, false, ".xml"),
         FormatDescriptor.Declare("html", FormatUse.Input | FormatUse.Convert, 9, 15, null, false, ".html", ".htm"),
         FormatDescriptor.Declare("mhtml", FormatUse.Input | FormatUse.Convert, 10, 17, null, false, ".mhtml"),
-        FormatDescriptor.Declare("odt", FormatUse.Input | FormatUse.Convert, 11, 21, null, true, ".odt"),
-        FormatDescriptor.Declare("ott", FormatUse.Input | FormatUse.Convert, 12, 22, null, true, ".ott"),
+        FormatDescriptor.Declare("odt", FormatUse.Input | FormatUse.Convert, 11, 21, null, true, ".odt") with { Protectable = true },
+        FormatDescriptor.Declare("ott", FormatUse.Input | FormatUse.Convert, 12, 22, null, true, ".ott") with { Protectable = true },
         FormatDescriptor.Declare("txt", FormatUse.Input | FormatUse.Convert, 13, 23, null, true, ".txt"),
         FormatDescriptor.Declare("md", FormatUse.Input | FormatUse.Convert, 14, 24, null, true, ".md"),
         FormatDescriptor.Declare("pdf", FormatUse.Input | FormatUse.Convert, 15, 9, null, false, ".pdf"),
@@ -49,8 +49,6 @@ public static class WordsFormats
     public static IReadOnlyList<string> RenderIds { get; } =
         Definitions.IdsFor(FormatUse.Render);
     public static IReadOnlyList<string> FixedPageConvertIds { get; } = ["pdf", "xps", "openxps", "ps", "pcl"];
-    public static IReadOnlyList<string> EncryptIds { get; } =
-        ["doc", "dot", "docx", "docm", "dotx", "dotm", "flatopc", "odt", "ott"];
 
     /// <summary>Microsoft Word formats, which keep fields, revisions and protection.</summary>
     public static IReadOnlyList<string> WordIds { get; } =
@@ -77,17 +75,7 @@ public static class WordsFormats
 
     public static bool IsLoad(string id) => LoadIds.Contains(id, StringComparer.Ordinal);
 
-    /// <summary>
-    /// The save format an output path selects. A source format that owns the extension is kept,
-    /// so an in-place edit of a WordML <c>.xml</c> file stays WordML; otherwise the first
-    /// convertible format declaring the extension wins (<c>.xml</c> is Flat OPC, <c>.html</c> is HTML).
-    /// </summary>
-    public static string ForOutput(string path, string? sourceFormatId = null)
-    {
-        string extension = Path.GetExtension(path);
-        IReadOnlyList<FormatDescriptor> candidates = Definitions.WithExtension(FormatUse.Convert, extension);
-        return candidates.FirstOrDefault(format => string.Equals(format.Id, sourceFormatId, StringComparison.Ordinal))?.Id
-            ?? candidates.FirstOrDefault()?.Id
-            ?? throw Sdk.Errors.CliErrors.FormatUnsupported(extension.TrimStart('.').ToLowerInvariant(), ConvertIds);
-    }
+    /// <summary>The formats create, edit and compare write: every convert format.</summary>
+    internal static IReadOnlyList<FormatDescriptor> Writable { get; } =
+        [.. Definitions.Where(static format => format.Uses.HasFlag(FormatUse.Convert)).OrderBy(static format => format.ConvertOrder)];
 }

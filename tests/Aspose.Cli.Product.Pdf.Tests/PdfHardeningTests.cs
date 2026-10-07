@@ -46,7 +46,7 @@ public sealed class PdfHardeningTests
         using (new FileStream(source, FileMode.Open, FileAccess.Read,
                    FileShare.ReadWrite | FileShare.Delete, 1, FileOptions.DeleteOnClose))
         {
-            fixture.Engine.Create(new NewPdfRequest { TextPath = source, Markdown = markdown, OutputPath = output });
+            fixture.Engine.Create(new NewPdfRequest { Output = TestOutput.At(output), TextPath = source });
         }
 
         using var created = new Document(output);
@@ -65,7 +65,7 @@ public sealed class PdfHardeningTests
         string output = fixture.File("regex-timeout.out.pdf");
         CliException error = Assert.Throws<CliException>(() => fixture.Engine.ApplyOps(input,
             new PdfOpsBatch { Ops = [new RedactTextOp { Pattern = pattern, Regex = true }] },
-            new PdfEditRequest { OutputPath = output }));
+            new PdfEditRequest { Output = TestOutput.At(output) }));
         Assert.Equal(ErrorCodes.OperationTimeout, error.Code);
         Assert.False(File.Exists(output));
     }
@@ -84,8 +84,9 @@ public sealed class PdfHardeningTests
             new PdfOpsBatch { Ops = [new InsertPagesFromOp { Path = source, At = 1, PasswordEnv = password is null ? null : "SOURCE_PWD" }] },
             new PdfEditRequest
             {
-                OutputPath = output,
-                OpSecrets = password is null ? null : new Dictionary<string, string> { ["SOURCE_PWD"] = password },
+                Output = TestOutput.At(output),
+                OpSecrets = password is null ? null : new Dictionary<string,
+                string> { ["SOURCE_PWD"] = password },
             }));
 
         Assert.Equal(code, error.Code.Name);
@@ -105,7 +106,7 @@ public sealed class PdfHardeningTests
         string output = fixture.File("zero-width.out.pdf");
         CliException error = Assert.Throws<CliException>(() => fixture.Engine.ApplyOps(input,
             new PdfOpsBatch { Ops = [new RedactTextOp { Pattern = pattern, Regex = true }] },
-            new PdfEditRequest { OutputPath = output }));
+            new PdfEditRequest { Output = TestOutput.At(output) }));
         Assert.Contains("empty string", error.Message, StringComparison.Ordinal);
         Assert.False(File.Exists(output));
     }
@@ -127,7 +128,7 @@ public sealed class PdfHardeningTests
         string output = fixture.File("poster" + PdfFormats.Definitions.ExtensionFor(format));
         CliException error = Assert.Throws<CliException>(() => fixture.Engine.Convert(
             input,
-            new PdfConvertRequest { TargetFormatId = format, OutputPath = output }));
+            new PdfConvertRequest { Output = TestOutput.At(output, format: format) }));
 
         Assert.Equal(ErrorCodes.RenderTooLarge, error.Code);
         Assert.False(File.Exists(output));

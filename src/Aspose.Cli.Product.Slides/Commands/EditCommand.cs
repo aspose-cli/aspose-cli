@@ -9,6 +9,7 @@ internal static class EditCommand
     private static readonly BoundedEditDefinition<SlidesOp, SlidesOpsBatch> Definition = new()
     {
         Contracts = ProductJsonContext.Definition,
+        Writes = SlidesFormats.Writable,
     };
 
     public static Command Create(IProductCommandHost<ISlidesEngine> host) =>
@@ -25,12 +26,10 @@ internal static class EditCommand
             [],
             (parse, edit, standard) =>
             {
-                string? encryptPassword = standard.EncryptPassword(SlidesFormats.ForOutput(edit.Target.OutputPath));
+                string? encryptPassword = standard.EncryptPassword();
                 return standard.OpenEngine().ApplyOps(standard.Input, edit.Batch, new PresentationEditRequest
                 {
-                    OutputPath = edit.Target.OutputPath,
-                    Overwrite = edit.Target.Overwrite,
-                    BackupPath = edit.Target.BackupPath,
+                    Output = standard.Output,
                     Options = edit.Options,
                     Password = standard.InputPassword,
                     EncryptPassword = encryptPassword,

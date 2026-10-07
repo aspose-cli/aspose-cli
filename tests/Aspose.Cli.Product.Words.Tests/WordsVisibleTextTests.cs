@@ -50,7 +50,7 @@ public sealed class WordsVisibleTextTests : IClassFixture<WordsFixture>
         CliException anchor = Assert.Throws<CliException>(() => _fixture.Engine.ApplyOps(
             input,
             new WordsOpsBatch { Ops = [new SetTextOp { At = new WordsTarget { Find = "example.com" }, Text = "x" }] },
-            new WordsEditRequest { OutputPath = _fixture.Temp.File("anchor.docx") }));
+            new WordsEditRequest { Output = TestOutput.At(_fixture.Temp.File("anchor.docx")) }));
 
         Assert.Equal(Visible, Assert.Single(link.Hits).Snippet);
         Assert.Empty(code.Hits);
@@ -65,8 +65,8 @@ public sealed class WordsVisibleTextTests : IClassFixture<WordsFixture>
 
         WordsExtractResult result = _fixture.Engine.Extract(input, new WordsExtractRequest
         {
+            Output = new ResolvedDirectory(_fixture.Temp.File($"text-{Guid.NewGuid():N}")),
             What = "text",
-            OutputDirectory = _fixture.Temp.File($"text-{Guid.NewGuid():N}"),
         });
 
         Assert.Equal(Visible, File.ReadAllText(Assert.Single(result.Items).Path));
@@ -114,11 +114,11 @@ public sealed class WordsVisibleTextTests : IClassFixture<WordsFixture>
         _fixture.Engine.ApplyOps(
             input,
             new WordsOpsBatch { Ops = [new SetTextOp { At = new WordsTarget { Find = "1.2 Second" }, Text = "Changed clause" }] },
-            new WordsEditRequest { OutputPath = output });
+            new WordsEditRequest { Output = TestOutput.At(output) });
         WordsExtractResult extracted = _fixture.Engine.Extract(output, new WordsExtractRequest
         {
+            Output = new ResolvedDirectory(_fixture.Temp.File($"numbered-text-{Guid.NewGuid():N}")),
             What = "text",
-            OutputDirectory = _fixture.Temp.File($"numbered-text-{Guid.NewGuid():N}"),
         });
 
         Assert.Equal("1.2 Second clause", Assert.Single(search.Hits).Snippet);

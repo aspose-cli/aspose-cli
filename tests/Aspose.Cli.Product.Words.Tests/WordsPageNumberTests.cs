@@ -84,7 +84,7 @@ public sealed class WordsPageNumberTests : IClassFixture<WordsFixture>
                 new SetPageNumbersOp { Location = location, Alignment = "center", Section = 2, Start = 9, Format = "upperRoman" },
                 new UpdateFieldsOp(),
             ],
-        }, new WordsEditRequest { OutputPath = output });
+        }, new WordsEditRequest { Output = TestOutput.At(output) });
 
         var changed = new Document(output);
         HeaderFooter target = changed.Sections[1].HeadersFooters[type];

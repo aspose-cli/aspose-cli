@@ -82,9 +82,8 @@ public sealed class CellsSheetReferenceTests : IClassFixture<CellsFixture>
     {
         string created = _fixture.Engine.Create(new NewWorkbookRequest
         {
-            OutputPath = _fixture.Temp.File("apostrophe.xlsx"),
+            Output = TestOutput.At(_fixture.Temp.File("apostrophe.xlsx"), overwrite: true),
             SheetNames = dataSheet == hostSheet ? [dataSheet] : [dataSheet, hostSheet],
-            Overwrite = true,
         }).Output.Path;
         string quoted = "'" + dataSheet.Replace("'", "''", StringComparison.Ordinal) + "'";
         string output = Apply(
@@ -235,9 +234,8 @@ public sealed class CellsSheetReferenceTests : IClassFixture<CellsFixture>
     {
         string created = _fixture.Engine.Create(new NewWorkbookRequest
         {
-            OutputPath = _fixture.Temp.File("references.xlsx"),
+            Output = TestOutput.At(_fixture.Temp.File("references.xlsx"), overwrite: true),
             SheetNames = [dataSheet, "Dash"],
-            Overwrite = true,
         }).Output.Path;
         return Apply(
             created,
@@ -249,5 +247,5 @@ public sealed class CellsSheetReferenceTests : IClassFixture<CellsFixture>
         _fixture.Engine.ApplyOps(
             path,
             CellsOp.Catalog.Parse<CellsOpsBatch>(operations, Aspose.Cli.Generated.ProductJsonContext.Definition),
-            new EditRequest { OutputPath = _fixture.Temp.File(output), Overwrite = true }).Output!.Path;
+            new EditRequest { Output = TestOutput.At(_fixture.Temp.File(output), overwrite: true) }).Output!.Path;
 }

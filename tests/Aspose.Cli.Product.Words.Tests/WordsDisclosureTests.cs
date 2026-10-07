@@ -53,7 +53,7 @@ public sealed class WordsDisclosureTests
         WordsEditResult result = fixture.Engine.ApplyOps(input, new WordsOpsBatch
         {
             Ops = [new ReplaceTextOp { Find = "Locked", Replace = "Changed" }],
-        }, new WordsEditRequest { OutputPath = output });
+        }, new WordsEditRequest { Output = TestOutput.At(output) });
 
         Assert.Contains(result.Warnings ?? [], static warning => warning.Code == WarningCodes.ProtectionNotEnforced);
         Assert.Equal(ProtectionType.ReadOnly, new Document(output).ProtectionType);
@@ -75,13 +75,12 @@ public sealed class WordsDisclosureTests
 
         WordsConvertResult converted = fixture.Engine.Convert(input, new WordsConvertRequest
         {
-            TargetFormatId = "pdf",
-            OutputPath = fixture.Temp.File("marked.pdf"),
+            Output = TestOutput.At(fixture.Temp.File("marked.pdf"), format: "pdf"),
         });
         WordsEditResult edited = fixture.Engine.ApplyOps(input, new WordsOpsBatch
         {
             Ops = [new ReplaceTextOp { Find = "one", Replace = "two" }],
-        }, new WordsEditRequest { OutputPath = fixture.Temp.File("edited.docx") });
+        }, new WordsEditRequest { Output = TestOutput.At(fixture.Temp.File("edited.docx")) });
 
         // Without a license, opening the document adds the marks itself, and EVAL_MODE says so.
         int expected = fixture.LicenseState == LicenseState.Licensed ? 1 : 0;
@@ -100,8 +99,8 @@ public sealed class WordsDisclosureTests
         source.Save(input, SaveFormat.Docx);
         var batch = new WordsOpsBatch { Ops = [new ReplaceTextOp { Find = "Locked", Replace = "Changed" }] };
 
-        WordsEditResult text = fixture.Engine.ApplyOps(input, batch, new WordsEditRequest { OutputPath = fixture.Temp.File("edited.txt") });
-        WordsEditResult word = fixture.Engine.ApplyOps(input, batch, new WordsEditRequest { OutputPath = fixture.Temp.File("edited.docx") });
+        WordsEditResult text = fixture.Engine.ApplyOps(input, batch, new WordsEditRequest { Output = TestOutput.At(fixture.Temp.File("edited.txt")) });
+        WordsEditResult word = fixture.Engine.ApplyOps(input, batch, new WordsEditRequest { Output = TestOutput.At(fixture.Temp.File("edited.docx")) });
 
         // One LOSSY_CONVERSION names the restrictions; the format's own one names other features.
         Warning lost = Assert.Single(text.Warnings ?? [], static warning => warning.Code == WarningCodes.LossyConversion
@@ -128,8 +127,7 @@ public sealed class WordsDisclosureTests
 
         WordsConvertResult converted = fixture.Engine.Convert(input, new WordsConvertRequest
         {
-            TargetFormatId = format,
-            OutputPath = fixture.Temp.File("converted." + format),
+            Output = TestOutput.At(fixture.Temp.File("converted." + format), format: format),
         });
 
         Assert.Equal(lost, (converted.Warnings ?? []).Any(static warning => warning.Code == WarningCodes.LossyConversion
@@ -150,13 +148,13 @@ public sealed class WordsDisclosureTests
         source.Save(pdf, SaveFormat.Pdf);
         source.Save(docx, SaveFormat.Docx);
 
-        WordsConvertResult fromPdf = fixture.Engine.Convert(pdf, new WordsConvertRequest { TargetFormatId = "docx", OutputPath = fixture.Temp.File("from-pdf.docx") });
-        WordsConvertResult fromDocx = fixture.Engine.Convert(docx, new WordsConvertRequest { TargetFormatId = "docx", OutputPath = fixture.Temp.File("from-docx.docx") });
+        WordsConvertResult fromPdf = fixture.Engine.Convert(pdf, new WordsConvertRequest { Output = TestOutput.At(fixture.Temp.File("from-pdf.docx"), format: "docx") });
+        WordsConvertResult fromDocx = fixture.Engine.Convert(docx, new WordsConvertRequest { Output = TestOutput.At(fixture.Temp.File("from-docx.docx"), format: "docx") });
 
         WordsEditResult edited = fixture.Engine.ApplyOps(pdf, new WordsOpsBatch
         {
             Ops = [new ReplaceTextOp { Find = "one", Replace = "two" }],
-        }, new WordsEditRequest { OutputPath = fixture.Temp.File("edited.docx") });
+        }, new WordsEditRequest { Output = TestOutput.At(fixture.Temp.File("edited.docx")) });
 
         Warning lossy = Assert.Single(fromPdf.Warnings ?? [], static warning => warning.Code == WarningCodes.LossyConversion);
         Assert.Contains("may become body text, or headers and footers in which a number", lossy.Message, StringComparison.Ordinal);
@@ -174,7 +172,7 @@ public sealed class WordsDisclosureTests
         string pdf = fixture.Temp.File("chinese.pdf");
         source.Save(pdf, SaveFormat.Pdf);
 
-        WordsConvertResult converted = fixture.Engine.Convert(pdf, new WordsConvertRequest { TargetFormatId = "docx", OutputPath = fixture.Temp.File("chinese.docx") });
+        WordsConvertResult converted = fixture.Engine.Convert(pdf, new WordsConvertRequest { Output = TestOutput.At(fixture.Temp.File("chinese.docx"), format: "docx") });
 
         Warning[] lossy = [.. (converted.Warnings ?? []).Where(static warning => warning.Code == WarningCodes.LossyConversion)];
         Assert.Equal(2, lossy.Length);
@@ -194,7 +192,7 @@ public sealed class WordsDisclosureTests
         WordsEditResult result = fixture.Engine.ApplyOps(input, new WordsOpsBatch
         {
             Ops = accept ? [new AcceptRevisionsOp()] : [new ReplaceTextOp { Find = "Other", Replace = "More" }],
-        }, new WordsEditRequest { OutputPath = output });
+        }, new WordsEditRequest { Output = TestOutput.At(output) });
 
         Assert.Equal(disclosed, (result.Warnings ?? []).Any(static warning => warning.Code == WordsDiagnostics.TrackedChangesPresent));
         Assert.Equal(disclosed, new Document(output).HasRevisions);
@@ -219,13 +217,12 @@ public sealed class WordsDisclosureTests
 
         WordsConvertResult converted = fixture.Engine.Convert(input, new WordsConvertRequest
         {
-            TargetFormatId = format,
-            OutputPath = convertedPath,
+            Output = TestOutput.At(convertedPath, format: format),
         });
         WordsEditResult edited = fixture.Engine.ApplyOps(input, new WordsOpsBatch
         {
             Ops = [new ReplaceTextOp { Find = "Other", Replace = "More" }],
-        }, new WordsEditRequest { OutputPath = editedPath });
+        }, new WordsEditRequest { Output = TestOutput.At(editedPath) });
 
         foreach (IReadOnlyList<Warning>? warnings in new[] { converted.Warnings, edited.Warnings })
         {
@@ -251,8 +248,7 @@ public sealed class WordsDisclosureTests
         // A render shows the document as it looks; the source keeps its revisions.
         WordsRenderResult rendered = fixture.Engine.Render(input, new WordsRenderRequest
         {
-            TargetFormatId = "png",
-            OutputPath = fixture.Temp.File("page.png"),
+            Output = TestOutput.At(fixture.Temp.File("page.png"), format: "png"),
         });
 
         Assert.DoesNotContain(rendered.Warnings ?? [], static warning => warning.Code == WarningCodes.LossyConversion);
@@ -271,13 +267,12 @@ public sealed class WordsDisclosureTests
 
         WordsConvertResult converted = fixture.Engine.Convert(input, new WordsConvertRequest
         {
-            TargetFormatId = format,
-            OutputPath = fixture.Temp.File("converted." + format),
+            Output = TestOutput.At(fixture.Temp.File("converted." + format), format: format),
         });
         WordsEditResult edited = fixture.Engine.ApplyOps(input, new WordsOpsBatch
         {
             Ops = [new ReplaceTextOp { Find = "Other", Replace = "More" }],
-        }, new WordsEditRequest { OutputPath = fixture.Temp.File("edited." + format) });
+        }, new WordsEditRequest { Output = TestOutput.At(fixture.Temp.File("edited." + format)) });
 
         foreach (IReadOnlyList<Warning>? warnings in new[] { converted.Warnings, edited.Warnings })
         {
@@ -298,7 +293,7 @@ public sealed class WordsDisclosureTests
         WordsEditResult result = fixture.Engine.ApplyOps(input, new WordsOpsBatch
         {
             Ops = [new RemoveCommentsOp(), new AcceptRevisionsOp()],
-        }, new WordsEditRequest { OutputPath = output });
+        }, new WordsEditRequest { Output = TestOutput.At(output) });
 
         Warning lossy = Assert.Single(result.Warnings ?? [], static warning => warning.Code == WarningCodes.LossyConversion);
         Assert.Equal("Conversion to txt cannot preserve every Word feature.", lossy.Message);
@@ -346,13 +341,12 @@ public sealed class WordsDisclosureTests
 
         WordsConvertResult converted = fixture.Engine.Convert(input, new WordsConvertRequest
         {
-            TargetFormatId = format,
-            OutputPath = fixture.Temp.File("converted." + format),
+            Output = TestOutput.At(fixture.Temp.File("converted." + format), format: format),
         });
         WordsEditResult edited = fixture.Engine.ApplyOps(input, new WordsOpsBatch
         {
             Ops = [new ReplaceTextOp { Find = "Macro", Replace = "Edited" }],
-        }, new WordsEditRequest { OutputPath = fixture.Temp.File("edited." + format) });
+        }, new WordsEditRequest { Output = TestOutput.At(fixture.Temp.File("edited." + format)) });
 
         Assert.Equal(dropped, (converted.Warnings ?? []).Any(static warning => warning.Code == WordsDiagnostics.MacrosDropped));
         Assert.Equal(dropped, (edited.Warnings ?? []).Any(static warning => warning.Code == WordsDiagnostics.MacrosDropped));
@@ -372,8 +366,7 @@ public sealed class WordsDisclosureTests
 
         WordsConvertResult converted = fixture.Engine.Convert(input, new WordsConvertRequest
         {
-            TargetFormatId = format,
-            OutputPath = fixture.Temp.File("converted" + extension),
+            Output = TestOutput.At(fixture.Temp.File("converted" + extension), format: format),
         });
 
         Assert.DoesNotContain(converted.Warnings ?? [], static warning => warning.Code == WordsDiagnostics.MacrosDropped);
@@ -390,8 +383,7 @@ public sealed class WordsDisclosureTests
 
         WordsRenderResult rendered = fixture.Engine.Render(input, new WordsRenderRequest
         {
-            TargetFormatId = "png",
-            OutputPath = fixture.Temp.File("page.png"),
+            Output = TestOutput.At(fixture.Temp.File("page.png"), format: "png"),
         });
 
         Assert.DoesNotContain(rendered.Warnings ?? [], static warning => warning.Code == WordsDiagnostics.MacrosDropped);
@@ -405,12 +397,12 @@ public sealed class WordsDisclosureTests
 
         WordsSplitResult split = fixture.Engine.Split(input, new WordsSplitRequest
         {
+            Output = new ResolvedDirectory(fixture.Temp.File("parts")),
             By = "section",
-            OutputDirectory = fixture.Temp.File("parts"),
         });
         WordsCompareResult compared = fixture.Engine.Compare(input, input, new WordsCompareRequest
         {
-            OutputPath = fixture.Temp.File("redline.docx"),
+            Output = TestOutput.At(fixture.Temp.File("redline.docx")),
         });
 
         Assert.Contains(split.Warnings ?? [], static warning => warning.Code == WordsDiagnostics.MacrosDropped);
@@ -467,8 +459,8 @@ public sealed class WordsDisclosureTests
 
         WordsSplitResult result = fixture.Engine.Split(input, new WordsSplitRequest
         {
+            Output = new ResolvedDirectory(fixture.Temp.File("parts")),
             By = "heading1",
-            OutputDirectory = fixture.Temp.File("parts"),
         });
 
         Assert.Equal(2, result.Outputs.Count);
@@ -506,8 +498,8 @@ public sealed class WordsDisclosureTests
 
         WordsSplitResult result = fixture.Engine.Split(input, new WordsSplitRequest
         {
+            Output = new ResolvedDirectory(fixture.Temp.File("preamble-parts")),
             By = "heading1",
-            OutputDirectory = fixture.Temp.File("preamble-parts"),
         });
 
         Assert.Equal(["blocks-1-1", "blocks-2-3", "blocks-4-5"], result.Outputs.Select(static part => part.Source));

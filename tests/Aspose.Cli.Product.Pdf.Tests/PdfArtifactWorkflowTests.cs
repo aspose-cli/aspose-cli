@@ -19,8 +19,7 @@ public sealed class PdfArtifactWorkflowTests
 
         PdfRenderResult result = fixture.Engine.Render(input, new PdfRenderRequest
         {
-            TargetFormatId = "png",
-            OutputPath = output,
+            Output = TestOutput.At(output, format: "png"),
             Pages = Sdk.Addressing.PageRange.Parse("2"),
             Dpi = 96,
         });
@@ -40,9 +39,8 @@ public sealed class PdfArtifactWorkflowTests
         string output = fixture.File("appendix.pdf");
         fixture.Engine.Create(new NewPdfRequest
         {
+            Output = TestOutput.At(output),
             TextPath = markdown,
-            Markdown = true,
-            OutputPath = output,
             PageSize = "Letter",
             Margins = new PdfMargins(72, 54, 60, 90),
         });
@@ -68,8 +66,8 @@ public sealed class PdfArtifactWorkflowTests
 
         fixture.Engine.Create(new NewPdfRequest
         {
+            Output = TestOutput.At(output),
             TextPath = text,
-            OutputPath = output,
             PageSize = "Letter",
             Margins = new PdfMargins(72, 54, 60, 90),
         });
@@ -100,8 +98,8 @@ public sealed class PdfArtifactWorkflowTests
 
         fixture.Engine.Create(new NewPdfRequest
         {
+            Output = TestOutput.At(created),
             TextPath = text,
-            OutputPath = created,
         });
         using (var document = new Document(created))
         {
@@ -115,8 +113,8 @@ public sealed class PdfArtifactWorkflowTests
         string merged = fixture.File("merged.pdf");
         fixture.Engine.Merge(new PdfMergeRequest
         {
+            Output = TestOutput.At(merged),
             InputPaths = [created, second],
-            OutputPath = merged,
         });
         using (var document = new Document(merged))
         {
@@ -125,8 +123,8 @@ public sealed class PdfArtifactWorkflowTests
 
         PdfSplitResult split = fixture.Engine.Split(merged, new PdfSplitRequest
         {
+            Output = new ResolvedDirectory(fixture.File("parts")),
             Every = 1,
-            OutputDirectory = fixture.File("parts"),
         });
         Assert.Equal(2, split.Outputs.Count);
         Assert.All(split.Outputs, part =>
@@ -145,8 +143,8 @@ public sealed class PdfArtifactWorkflowTests
 
         PdfSplitResult split = fixture.Engine.Split(input, new PdfSplitRequest
         {
+            Output = new ResolvedDirectory(fixture.File("parts")),
             PageGroups = [Sdk.Addressing.PageRange.Parse("1-3"), Sdk.Addressing.PageRange.Parse("1,3-4"), Sdk.Addressing.PageRange.Parse("2")],
-            OutputDirectory = fixture.File("parts"),
             NameTemplate = "{stem}-p{pages}.pdf",
         });
 
@@ -172,13 +170,13 @@ public sealed class PdfArtifactWorkflowTests
 
         PdfSplitResult byBookmarks = fixture.Engine.Split(input, new PdfSplitRequest
         {
+            Output = new ResolvedDirectory(fixture.File("regions")),
             ByBookmarks = true,
-            OutputDirectory = fixture.File("regions"),
         });
         PdfSplitResult byPage = fixture.Engine.Split(input, new PdfSplitRequest
         {
+            Output = new ResolvedDirectory(fixture.File("pages")),
             Every = 1,
-            OutputDirectory = fixture.File("pages"),
         });
 
         Assert.Equal(
@@ -214,12 +212,12 @@ public sealed class PdfArtifactWorkflowTests
                     },
                 ],
             },
-            new PdfEditRequest { OutputPath = input });
+            new PdfEditRequest { Output = TestOutput.At(input) });
 
         PdfSplitResult split = fixture.Engine.Split(input, new PdfSplitRequest
         {
+            Output = new ResolvedDirectory(fixture.File("parts")),
             PageGroups = [Sdk.Addressing.PageRange.Parse("2-4"), Sdk.Addressing.PageRange.Parse("1,4")],
-            OutputDirectory = fixture.File("parts"),
         });
 
         Assert.Equal(
@@ -255,8 +253,8 @@ public sealed class PdfArtifactWorkflowTests
 
         CliException error = Assert.Throws<CliException>(() => fixture.Engine.Split(input, new PdfSplitRequest
         {
+            Output = new ResolvedDirectory(parts),
             Every = 1,
-            OutputDirectory = parts,
             NameTemplate = "{stem}.pdf",
         }));
 
@@ -283,7 +281,7 @@ public sealed class PdfArtifactWorkflowTests
         byte[] original = File.ReadAllBytes(input);
         string directory = fixture.File("extracted");
         PdfExtractResult result = fixture.Engine.Extract(input,
-            new PdfExtractRequest { What = "attachments", OutputDirectory = directory });
+            new PdfExtractRequest { Output = new ResolvedDirectory(directory), What = "attachments" });
 
         Assert.Equal(2, result.Items.Count);
         var evidence = Assert.Single(result.Items, item => item.Name == "evidence.bin");
@@ -321,7 +319,7 @@ public sealed class PdfArtifactWorkflowTests
         File.WriteAllText(unrelated, "Unrelated original file");
 
         CliException error = Assert.Throws<CliException>(() => engine.Extract(input,
-            new PdfExtractRequest { What = "attachments", OutputDirectory = output }));
+            new PdfExtractRequest { Output = new ResolvedDirectory(output), What = "attachments" }));
 
         Assert.Equal(ErrorCodes.ExtractBudgetExceeded, error.Code);
         Assert.Equal(original, File.ReadAllBytes(input));

@@ -1,6 +1,7 @@
 using System.CommandLine;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Extensibility;
+using Aspose.Cli.Sdk.IO;
 
 namespace Aspose.Cli.Product.Cells.Commands;
 
@@ -42,7 +43,7 @@ internal static class RenderCommand
             [sheet, rangeOption, allSheetsOption, .. dpi.Options],
             (parse, standard) =>
             {
-                string format = standard.TargetFormat();
+                ResolvedOutput output = standard.Output;
                 int resolution = dpi.Read(parse);
                 bool allSheets = parse.GetValue(allSheetsOption);
                 if (allSheets && parse.GetValue(sheet) is not null)
@@ -63,12 +64,9 @@ internal static class RenderCommand
 
                 (string? sheetName, RangeRef? range) = SheetRangeInput.Resolve(
                     parse.GetValue(sheet), parse.GetValue(rangeOption));
-                string output = standard.OutputPath(CellsFormats.Definitions.ExtensionFor(format));
                 return standard.OpenEngine().Render(standard.Input, new RenderRequest
                 {
-                    TargetFormatId = format,
-                    OutputPath = output,
-                    Overwrite = standard.Overwrite,
+                    Output = output,
                     SheetName = sheetName,
                     Range = range,
                     AllSheets = allSheets,

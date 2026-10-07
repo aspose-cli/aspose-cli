@@ -1,6 +1,7 @@
 using Aspose.Cli.Product.Words.Engine.Editing;
 using Aspose.Cli.Product.Words.Engine.Mapping;
 using Aspose.Cli.Sdk.Errors;
+using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Results;
@@ -48,10 +49,10 @@ internal sealed class WordsMutationService
         ProtectionType inputProtection = loaded.Document.ProtectionType;
         using InputResourceScope operationInputs = _inputs.CreateScope();
         ValidateRequest(request, batch);
-        string format = WordsFormats.ForOutput(request.OutputPath, loaded.FormatId);
+        FormatDescriptor written = request.Output.Keeping(loaded.FormatId);
+        string format = written.Id;
         string? outputPassword = request.EncryptPassword
-            ?? (loaded.Format.IsEncrypted && WordsFormats.EncryptIds.Contains(format, StringComparer.Ordinal)
-                ? request.Password : null);
+            ?? (loaded.Format.IsEncrypted && written.Protectable ? request.Password : null);
         SaveOptions saveOptions = WordsSavePipeline.Options(format, outputPassword);
         if (request.Verify && !WordsFormats.IsLoad(format))
         {
@@ -229,11 +230,11 @@ internal sealed class WordsMutationService
         string? truncation = null;
         if (!request.Options.DryRun)
         {
-            using var transaction = new AtomicOutputSetWriter(_writer, Path.GetDirectoryName(request.OutputPath)!, "words-edit");
+            using var transaction = new AtomicOutputSetWriter(_writer, request.Output.Directory, "words-edit");
             StagedOutput write = transaction.Stage(
-                request.OutputPath,
-                request.Overwrite,
-                request.BackupPath,
+                request.Output.Path,
+                request.Output.Overwrite,
+                request.Output.BackupPath,
                 precondition,
                 temp =>
                 {
@@ -249,7 +250,7 @@ internal sealed class WordsMutationService
                         using LoadedDocument reopened = _loader.OpenPublishedCandidate(temp, outputPassword);
                     }
                 });
-            output = new OutputInfo { Path = request.OutputPath, Format = format, SizeBytes = write.SizeBytes };
+            output = new OutputInfo { Path = request.Output.Path, Format = format, SizeBytes = write.SizeBytes };
             backup = write.Backup;
 
             if (request.Verify)

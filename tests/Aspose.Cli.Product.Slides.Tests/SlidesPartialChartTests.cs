@@ -20,7 +20,7 @@ public sealed class SlidesPartialChartTests
         fixture.Engine.ApplyOps(seed, new SlidesOpsBatch
         {
             Ops = [new UpdateChartDataOp { Slide = 1, ShapeId = id, Categories = ["C", "D"] }],
-        }, new PresentationEditRequest { OutputPath = output });
+        }, new PresentationEditRequest { Output = TestOutput.At(output) });
         using var reopened = new Presentation(output);
         IChart chart = Chart(reopened);
         Assert.Equal(["C", "D"], chart.ChartData.Categories.Select(category => category.AsCell.Value.ToString()!));
@@ -39,7 +39,7 @@ public sealed class SlidesPartialChartTests
         CliException error = Assert.Throws<CliException>(() => fixture.Engine.ApplyOps(seed, new SlidesOpsBatch
         {
             Ops = [new UpdateChartDataOp { Slide = 1, ShapeId = ChartId(seed), Categories = ["C", "D"] }],
-        }, new PresentationEditRequest { OutputPath = output }));
+        }, new PresentationEditRequest { Output = TestOutput.At(output) }));
 
         Assert.Equal(SlidesDiagnostics.ChartDataInvalid, error.Code);
         Assert.False(File.Exists(output));
@@ -61,7 +61,7 @@ public sealed class SlidesPartialChartTests
                     Series = [new SlidesChartSeriesInput { Name = "New", Values = [50, 60], XValues = [5, 6] }],
                 },
             ],
-        }, new PresentationEditRequest { OutputPath = output });
+        }, new PresentationEditRequest { Output = TestOutput.At(output) });
         using var reopened = new Presentation(output);
         IChart chart = Chart(reopened);
         Assert.Equal(["A", "B"], RowLabels(chart));
@@ -90,7 +90,7 @@ public sealed class SlidesPartialChartTests
                 },
             ],
         };
-        var request = new PresentationEditRequest { OutputPath = output, Options = new EditCommandOptions { BestEffort = bestEffort } };
+        var request = new PresentationEditRequest { Output = TestOutput.At(output), Options = new EditCommandOptions { BestEffort = bestEffort } };
         if (bestEffort)
         {
             SlidesEditResult result = fixture.Engine.ApplyOps(seed, batch, request);
@@ -127,7 +127,7 @@ public sealed class SlidesPartialChartTests
                     ],
                 },
             ],
-        }, new PresentationEditRequest { OutputPath = output });
+        }, new PresentationEditRequest { Output = TestOutput.At(output) });
         return output;
     }
 

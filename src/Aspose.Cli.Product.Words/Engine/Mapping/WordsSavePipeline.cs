@@ -80,7 +80,10 @@ internal static class WordsSavePipeline
                 case OoxmlSaveOptions ooxml: ooxml.Password = password; break;
                 case DocSaveOptions doc: doc.Password = password; break;
                 case OdtSaveOptions odt: odt.Password = password; break;
-                default: throw CliErrors.FormatUnsupported(formatId, WordsFormats.EncryptIds);
+                default: throw CliErrors.OptionInvalid(
+                    "--encrypt",
+                    $"the '{formatId}' format cannot be password-protected",
+                    "Write a Word or OpenDocument format, or drop the password.");
             }
         }
 

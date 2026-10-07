@@ -19,6 +19,9 @@ namespace Aspose.Cli.Product.Pdf.Engine;
 /// <summary>Owns PDF conversion, rendering, creation, merge, and preview production.</summary>
 internal sealed class PdfProductionService
 {
+    /// <summary>Marks the page number in a multi-page output name: <c>report.p3.png</c>.</summary>
+    private const string PagePart = "p";
+
     private const int ImageDpi = 192;
     private readonly ILicenseGate _licenseGate;
     private readonly ResourceBudgetLedger _resourceBudgets;
@@ -102,30 +105,25 @@ internal sealed class PdfProductionService
 
     internal PdfRenderResult Render(string filePath, PdfRenderRequest request)
     {
-        if (!PdfFormats.IsRender(request.TargetFormatId))
-        {
-            throw CliErrors.FormatUnsupported(request.TargetFormatId, PdfFormats.RenderIds);
-        }
-
         PdfRenderGrid? grid = RenderGrid(request);
         LicenseState state = _licenseGate.EnsureApplied();
         using LoadedPdf loaded = _loader.Open(filePath, request.Password);
         IReadOnlyList<int> pages = request.AllPages
             ? Enumerable.Range(1, loaded.Document.Pages.Count).ToArray()
             : request.Pages?.Resolve(loaded.Document.Pages.Count) ?? [1];
-        string outputDirectory = Path.GetDirectoryName(Path.GetFullPath(request.OutputPath))!;
+        string outputDirectory = request.Output.Directory;
         using var writer = new AtomicOutputSetWriter(_writer, outputDirectory, "pdf-render");
         var staged = new List<(int Page, string Path)>();
         foreach (int pageNumber in pages)
         {
-            string path = PartOutputPath.For(request.OutputPath, PartOutputPath.Page, pageNumber, pages.Count, request.TargetFormatId);
-            writer.Stage(path, request.Overwrite, stagedPath =>
+            string path = request.Output.Part(PagePart, pageNumber, pages.Count);
+            writer.Stage(path, request.Output.Overwrite, stagedPath =>
             {
                 using FileStream stream = File.Create(stagedPath);
                 RenderPage(
                     loaded.Document,
                     pageNumber,
-                    request.TargetFormatId,
+                    request.Output.Format.Id,
                     request.Dpi,
                     stream,
                     grid);
@@ -140,9 +138,9 @@ internal sealed class PdfProductionService
             Outputs = staged.Select((item, index) => new PdfPageOutput
             {
                 Page = item.Page,
-                Output = BuildOutput(item.Path, request.TargetFormatId, sizes[index]),
+                Output = BuildOutput(item.Path, request.Output.Format.Id, sizes[index]),
             }).ToArray(),
-            Dpi = request.TargetFormatId == "svg" ? null : request.Dpi,
+            Dpi = request.Output.Format.Id == "svg" ? null : request.Dpi,
             Grid = grid,
             License = EnvelopeParts.License(state),
             Warnings = EnvelopeParts.OutputWarnings(state),
@@ -194,7 +192,7 @@ internal sealed class PdfProductionService
 
                 break;
             default:
-                throw CliErrors.FormatUnsupported(format, PdfFormats.RenderIds);
+                throw new InvalidOperationException($"'{format}' is not a PDF render format.");
         }
     }
 
@@ -237,7 +235,7 @@ internal sealed class PdfProductionService
             return null;
         }
 
-        if (request.TargetFormatId == "svg")
+        if (request.Output.Format.Id == "svg")
         {
             throw CliErrors.OptionInvalid(
                 "--grid",
@@ -270,7 +268,6 @@ internal sealed class PdfProductionService
 
     internal PdfWriteResult Create(NewPdfRequest request)
     {
-        EnsurePdfOutput(request.OutputPath);
         int sources = request.ImagePaths is { Count: > 0 } ? 1 : 0;
         sources += request.HtmlPath is null ? 0 : 1;
         sources += request.TextPath is null ? 0 : 1;
@@ -290,7 +287,9 @@ internal sealed class PdfProductionService
         byte[]? html = EnsureCreationInputs(_resourceBudgets, request);
         // The Markdown importer resolves the Markdown's relative references against the
         // working directory and reads files itself; the check holds them until the save.
-        using MarkdownImportResources? markdown = request.Markdown && request.TextPath is { } markdownPath
+        bool fromMarkdown = request.TextPath is { } textPath
+            && string.Equals(Path.GetExtension(textPath), ".md", StringComparison.OrdinalIgnoreCase);
+        using MarkdownImportResources? markdown = fromMarkdown && request.TextPath is { } markdownPath
             ? new MarkdownImportResources(markdownPath, _resourceBudgets, Environment.CurrentDirectory) : null;
         LicenseState state = _licenseGate.EnsureApplied();
         using HtmlImportResources? resources = request.HtmlPath is { } htmlPath
@@ -299,9 +298,9 @@ internal sealed class PdfProductionService
             ? CreateFromImages(images, request, _resourceBudgets)
             : request.HtmlPath is not null
                 ? CreateFromHtml(request.HtmlPath, request, resources!)
-                : CreateFromText(request.TextPath!, request.Markdown, request);
+                : CreateFromText(request.TextPath!, fromMarkdown, request);
         resources?.ThrowIfFailed();
-        if (request.HtmlPath is not null || request.Markdown)
+        if (request.HtmlPath is not null || fromMarkdown)
         {
             // Both importers set the title, author and subject to a placeholder
             // (PDF-IMPORT-INFO-PLACEHOLDER); keep only the title the HTML states.
@@ -310,7 +309,7 @@ internal sealed class PdfProductionService
             document.Info.Subject = string.Empty;
         }
 
-        long size = _writer.Write(request.OutputPath, request.Overwrite, path =>
+        long size = _writer.Write(request.Output.Path, request.Output.Overwrite, path =>
         {
             try { document.Save(path); }
             finally { resources?.ThrowIfFailed(); }
@@ -325,7 +324,7 @@ internal sealed class PdfProductionService
         return new PdfWriteResult
         {
             Action = "create",
-            Output = BuildOutput(request.OutputPath, "pdf", size),
+            Output = BuildOutput(request.Output.Path, "pdf", size),
             Inputs = CreationInputs(request),
             License = EnvelopeParts.License(state),
             Warnings = warnings.Count == 0 ? null : warnings,
@@ -567,7 +566,6 @@ internal sealed class PdfProductionService
 
     internal PdfWriteResult Merge(PdfMergeRequest request)
     {
-        EnsurePdfOutput(request.OutputPath);
         if (request.InputPaths.Count < 2)
         {
             throw CliErrors.Usage(["Pass at least two PDF inputs to merge."]);
@@ -605,7 +603,7 @@ internal sealed class PdfProductionService
             bookmarks,
             Math.Max(0, PdfNavigationCensus.Unresolved(merged).Links - brokenInputLinks),
             namedDestinations);
-        long size = _writer.Write(request.OutputPath, request.Overwrite, merged.Save);
+        long size = _writer.Write(request.Output.Path, request.Output.Overwrite, merged.Save);
         List<Warning> warnings = [.. EnvelopeParts.OutputWarnings(state) ?? []];
         if (navigation.ToWarning(
                 "lost their exact target: merged bookmarks open their page at Fit zoom, and named destinations are not carried into the merged document",
@@ -618,7 +616,7 @@ internal sealed class PdfProductionService
         return new PdfWriteResult
         {
             Action = "merge",
-            Output = BuildOutput(request.OutputPath, "pdf", size),
+            Output = BuildOutput(request.Output.Path, "pdf", size),
             Inputs = inputs,
             License = EnvelopeParts.License(state),
             Warnings = warnings.Count == 0 ? null : warnings,
@@ -627,17 +625,12 @@ internal sealed class PdfProductionService
 
     internal PdfConvertResult Convert(string filePath, PdfConvertRequest request)
     {
-        if (!PdfFormats.IsConvert(request.TargetFormatId))
-        {
-            throw CliErrors.FormatUnsupported(request.TargetFormatId, PdfFormats.ConvertIds);
-        }
-
         LicenseState state = _licenseGate.EnsureApplied();
         using LoadedPdf loaded = _loader.Open(filePath, request.Password);
         IReadOnlyList<int> pages = request.Pages?.Resolve(loaded.Document.Pages.Count)
             ?? Enumerable.Range(1, loaded.Document.Pages.Count).ToArray();
         List<Warning> warnings = [.. EnvelopeParts.OutputWarnings(state) ?? []];
-        IReadOnlyList<OutputInfo> outputs = request.TargetFormatId switch
+        IReadOnlyList<OutputInfo> outputs = request.Output.Format.Id switch
         {
             "png" or "jpeg" or "svg" => ConvertPages(loaded.Document, pages, request),
             "tiff" => [ConvertTiff(loaded.Document, pages, request)],
@@ -646,13 +639,13 @@ internal sealed class PdfProductionService
             _ => [ConvertDocument(loaded.Document, pages, request, state, warnings)],
         };
 
-        if (request.TargetFormatId is not ("xps" or "svg" or "png" or "jpeg" or "tiff" or "pdfa-1b" or "pdfa-2b" or "pdfa-3b"))
+        if (request.Output.Format.Id is not ("xps" or "svg" or "png" or "jpeg" or "tiff" or "pdfa-1b" or "pdfa-2b" or "pdfa-3b"))
         {
             warnings.Add(new Warning
             {
                 Code = WarningCodes.LossyConversion,
-                Message = $"PDF conversion to {request.TargetFormatId} may not preserve every layout or interactive feature.",
-                Hint = request.TargetFormatId == "html"
+                Message = $"PDF conversion to {request.Output.Format.Id} may not preserve every layout or interactive feature.",
+                Hint = request.Output.Format.Id == "html"
                     ? "Open the HTML in a browser and compare it with the PDF before relying on exact pagination, forms or annotations; review does not lay out HTML made from a PDF, so review the PDF itself."
                     : "Inspect the produced file before relying on exact pagination, forms or annotations.",
             });
@@ -687,7 +680,7 @@ internal sealed class PdfProductionService
             warnings.Add(navigation);
         }
 
-        SaveFormat format = request.TargetFormatId switch
+        SaveFormat format = request.Output.Format.Id switch
         {
             "docx" => SaveFormat.DocX,
             "xlsx" => SaveFormat.Excel,
@@ -696,14 +689,14 @@ internal sealed class PdfProductionService
             "epub" => SaveFormat.Epub,
             "md" => SaveFormat.Markdown,
             "xps" => SaveFormat.Xps,
-            _ => throw CliErrors.FormatUnsupported(request.TargetFormatId, PdfFormats.ConvertIds),
+            _ => throw new InvalidOperationException($"'{request.Output.Format.Id}' is not a PDF document export."),
         };
         long size = _writer.Write(
-            request.OutputPath,
-            request.Overwrite,
+            request.Output.Path,
+            request.Output.Overwrite,
             temp =>
             {
-                if (request.TargetFormatId == "html")
+                if (request.Output.Format.Id == "html")
                 {
                     // The HTML writer leaves <title> empty unless it is given the PDF title.
                     selected.Save(temp, new HtmlSaveOptions
@@ -717,7 +710,7 @@ internal sealed class PdfProductionService
                     selected.Save(temp, format);
                 }
             });
-        return BuildOutput(request.OutputPath, request.TargetFormatId, size);
+        return BuildOutput(request.Output.Path, request.Output.Format.Id, size);
     }
 
     /// <summary>
@@ -774,9 +767,9 @@ internal sealed class PdfProductionService
 
     private OutputInfo ConvertText(Document source, IReadOnlyList<int> pages, PdfConvertRequest request)
     {
-        long size = _writer.Write(request.OutputPath, request.Overwrite, temp =>
+        long size = _writer.Write(request.Output.Path, request.Output.Overwrite, temp =>
             File.WriteAllText(temp, DocumentText(source, pages), new UTF8Encoding(encoderShouldEmitUTF8Identifier: false)));
-        return BuildOutput(request.OutputPath, "txt", size);
+        return BuildOutput(request.Output.Path, "txt", size);
     }
 
     /// <summary>
@@ -793,13 +786,13 @@ internal sealed class PdfProductionService
         LicenseState state,
         List<Warning> warnings)
     {
-        string profile = request.TargetFormatId;
+        string profile = request.Output.Format.Id;
         PdfFormat format = profile switch
         {
             "pdfa-1b" => PdfFormat.PDF_A_1B,
             "pdfa-2b" => PdfFormat.PDF_A_2B,
             "pdfa-3b" => PdfFormat.PDF_A_3B,
-            _ => throw CliErrors.FormatUnsupported(profile, PdfFormats.PdfaConvertIds),
+            _ => throw new InvalidOperationException($"'{profile}' is not a PDF/A profile."),
         };
 
         // Navigation is counted around the page deletion alone; a bookmark the conversion
@@ -819,7 +812,7 @@ internal sealed class PdfProductionService
             .ToArray();
         int bookmarks = Editing.PdfMutationSupport.CountOutline(document.Outlines);
         int changed = 0;
-        long size = _writer.Write(request.OutputPath, request.Overwrite, temp =>
+        long size = _writer.Write(request.Output.Path, request.Output.Overwrite, temp =>
         {
             using var log = new MemoryStream();
             PdfComplianceLog.EnsureConverted(
@@ -880,7 +873,7 @@ internal sealed class PdfProductionService
             });
         }
 
-        return BuildOutput(request.OutputPath, profile, size);
+        return BuildOutput(request.Output.Path, profile, size);
     }
 
     /// <summary>
@@ -952,23 +945,23 @@ internal sealed class PdfProductionService
         IReadOnlyList<int> pages,
         PdfConvertRequest request)
     {
-        string outputDirectory = Path.GetDirectoryName(Path.GetFullPath(request.OutputPath))!;
+        string outputDirectory = request.Output.Directory;
         using var writer = new AtomicOutputSetWriter(_writer, outputDirectory, "pdf-convert");
         var paths = new List<string>(pages.Count);
         foreach (int pageNumber in pages)
         {
-            string path = PartOutputPath.For(request.OutputPath, PartOutputPath.Page, pageNumber, pages.Count, request.TargetFormatId);
-            writer.Stage(path, request.Overwrite, temp =>
+            string path = request.Output.Part(PagePart, pageNumber, pages.Count);
+            writer.Stage(path, request.Output.Overwrite, temp =>
             {
                 using FileStream stream = File.Create(temp);
-                RenderPage(document, pageNumber, request.TargetFormatId, ImageDpi, stream);
+                RenderPage(document, pageNumber, request.Output.Format.Id, ImageDpi, stream);
             });
             paths.Add(path);
         }
 
         IReadOnlyList<long> sizes = writer.Commit();
         return paths.Select((path, index) =>
-            BuildOutput(path, request.TargetFormatId, sizes[index])).ToArray();
+            BuildOutput(path, request.Output.Format.Id, sizes[index])).ToArray();
     }
 
     private OutputInfo ConvertTiff(
@@ -982,13 +975,13 @@ internal sealed class PdfProductionService
         }
 
         using Document selected = Select(source, pages);
-        long size = _writer.Write(request.OutputPath, request.Overwrite, temp =>
+        long size = _writer.Write(request.Output.Path, request.Output.Overwrite, temp =>
         {
             using FileStream stream = File.Create(temp);
             var device = new TiffDevice(new Resolution(ImageDpi), new TiffSettings());
             device.Process(selected, 1, selected.Pages.Count, stream);
         });
-        return BuildOutput(request.OutputPath, "tiff", size);
+        return BuildOutput(request.Output.Path, "tiff", size);
     }
 
     private static MarginInfo Margin(PdfMargins margins) => new()

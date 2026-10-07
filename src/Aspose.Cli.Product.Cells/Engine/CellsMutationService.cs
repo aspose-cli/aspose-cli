@@ -42,10 +42,11 @@ internal sealed class CellsMutationService
         ArgumentException.ThrowIfNullOrEmpty(filePath);
         ArgumentNullException.ThrowIfNull(batch);
         ArgumentNullException.ThrowIfNull(options);
-        string format = CellsFormats.ForOutputPath(options.OutputPath, CellsFormats.EditIds);
+        ResolvedOutput output = options.Output;
+        string format = output.Format.Id;
         batch = CellsOp.Catalog.Prepare(batch);
         using AtomicOutputSetWriter? transaction = options.Options.DryRun ? null
-            : _saver.CreateOutputSet([Path.GetDirectoryName(options.OutputPath)!], "cells-edit", options.BackupPath);
+            : _saver.CreateOutputSet([output.Directory], "cells-edit", output.BackupPath);
 
         LicenseState licenseState = _licenseGate.EnsureApplied();
         FileWritePrecondition precondition = FileWritePrecondition.Capture(filePath);
@@ -62,7 +63,7 @@ internal sealed class CellsMutationService
 
         using CellsEditBaseline? baseline = options.Verify
             ? CellsEditBaseline.Capture(filePath, precondition, _budgets) : null;
-        WorkbookSavePlan savePlan = WorkbookSavePlan.Create(format, licenseState, options.EncryptPassword,
+        WorkbookSavePlan savePlan = WorkbookSavePlan.Create(output.Format, licenseState, options.EncryptPassword,
             loaded.IsEncrypted ? options.Password : null);
         using var importSources = new CellsImportSources(_loader, _budgets, options.OpSecrets);
         var protection = new CellsProtectionTracker();
@@ -70,7 +71,7 @@ internal sealed class CellsMutationService
         (IReadOnlyList<BoundedOperationOutcome> applied, bool defaultedToActiveSheet, IReadOnlyList<Cell> formulaAnchors) = ApplyOperations(
             workbook, batch, options.Options.BestEffort, options.OpSecrets, operationInputs, importSources, protection);
         Warning? skippedSheet = loaded.SkippedSheetWarning(defaultedToActiveSheet);
-        Warning? unenforced = protection.Warning(format);
+        Warning? unenforced = protection.Warning(output.Format);
         Warning? relativeLinks = RelativeLinkWarning(workbook, linksBefore);
         Warning? unknownFunctions = UnknownFunctions.Warning(workbook, formulaAnchors);
         if (options.Recalculate)
@@ -88,8 +89,7 @@ internal sealed class CellsMutationService
                 loaded.RestoreActiveSheet(savePlan);
             }
 
-            saved = _saver.Stage(transaction, workbook, savePlan, options.OutputPath, options.Overwrite,
-                options.BackupPath, precondition, verifyReopen: true);
+            saved = _saver.Stage(transaction, workbook, savePlan, output, precondition, verifyReopen: true);
         }
 
         Warning?[] editWarnings = [skippedSheet, unenforced, relativeLinks, unknownFunctions];

@@ -1,6 +1,7 @@
 using System.CommandLine;
 using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.Extensibility.Commanding;
+using Aspose.Cli.Sdk.IO;
 
 namespace Aspose.Cli.Product.Slides.Commands;
 
@@ -18,7 +19,7 @@ internal static class NewCommand
             "Create a blank, template-based or Markdown-authored presentation.",
             new CommandTraits
             {
-                Output = OutputTarget.CreatedFile("PPTX or PPTM path to create."),
+                Output = OutputTarget.CreatedFile("PPTX or PPTM path to create.", SlidesFormats.Writable),
                 Encrypt = SlidesCommands.EncryptedPresentation,
                 UsesFonts = true,
             },
@@ -27,12 +28,11 @@ internal static class NewCommand
             {
                 string? markdownPath = standard.InputFile(markdown);
                 string? templatePath = standard.InputFile(template);
-                string outputPath = standard.CreatedPath;
-                string? encryptPassword = standard.EncryptPassword(SlidesFormats.ForOutput(outputPath));
+                ResolvedOutput output = standard.Output;
+                string? encryptPassword = standard.EncryptPassword();
                 return standard.OpenEngine().Create(new NewPresentationRequest
                 {
-                    OutputPath = outputPath,
-                    Overwrite = standard.Overwrite,
+                    Output = output,
                     MarkdownPath = markdownPath,
                     TemplatePath = templatePath,
                     Size = parse.GetValue(size),

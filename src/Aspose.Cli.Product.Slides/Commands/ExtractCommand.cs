@@ -27,8 +27,7 @@ internal static class ExtractCommand
                 return standard.OpenEngine().Extract(standard.Input, new PresentationExtractRequest
                 {
                     What = parse.GetRequiredValue(what),
-                    OutputDirectory = standard.OutputDirectory,
-                    Overwrite = standard.Overwrite,
+                    Output = standard.DirectoryOutput,
                     Slides = range is null ? null : PageRange.Parse(range),
                     Password = standard.InputPassword,
                 });
