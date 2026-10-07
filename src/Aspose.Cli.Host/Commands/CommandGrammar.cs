@@ -67,6 +67,7 @@ internal static class CommandGrammar
             MaximumArity = option.Arity.MaximumNumberOfValues,
             Required = option.Required,
             Recursive = option.Recursive,
+            Hidden = option.Hidden,
             HasDefault = option.HasDefaultValue,
             Default = option.HasDefaultValue && !secret
                 ? ReadDefault(option)

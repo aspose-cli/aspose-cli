@@ -600,6 +600,33 @@ $", result.StdOut);
         Assert.StartsWith($"Did you mean '{suggestion}'?", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
     }
 
+    [Theory]
+    [InlineData("app", "--route", true)]
+    [InlineData("cells query range", "--scan-range", true)]
+    [InlineData("cells convert", "--out", false)]
+    public void Capabilities_PublishWhetherAnOptionIsHidden(string command, string option, bool hidden)
+    {
+        CliResult result = _workspace.Run("capabilities", "--output", "json");
+
+        JsonNode described = Parse(result.StdOut)["commands"]!.AsArray()
+            .Single(item => item!["path"]!.GetValue<string>() == $"aspose-cli {command}")!["options"]!.AsArray()
+            .Single(item => item!["name"]!.GetValue<string>() == option)!;
+        Assert.Equal(hidden, described["hidden"]!.GetValue<bool>());
+    }
+
+    [Theory]
+    [InlineData("app --routee", "--route")]
+    [InlineData("cells query range a.xlsx --sacn-range", "--scan-range")]
+    public void UnknownOption_NeverSuggestsAHiddenOption(string commandLine, string hidden)
+    {
+        CliResult result = _workspace.Run([.. commandLine.Split(' '), "--output", "json"]);
+
+        Assert.Equal(2, result.ExitCode);
+        JsonNode error = Parse(result.StdErr)["error"]!;
+        Assert.DoesNotContain(hidden, (error["details"]!["suggestions"]?.AsArray() ?? []).Select(static item => item!.GetValue<string>()));
+        Assert.DoesNotContain(hidden, error["details"]!["available"]!.AsArray().Select(static item => item!.GetValue<string>()));
+    }
+
     [Fact]
     public void UnknownOption_OfTheRootCommandSuggestsItsOwnOptions()
     {

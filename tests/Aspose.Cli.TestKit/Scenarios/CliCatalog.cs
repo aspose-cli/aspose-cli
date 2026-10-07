@@ -105,6 +105,7 @@ public sealed class CliCatalog
         option["name"]!.GetValue<string>(),
         option["type"]!.GetValue<string>(),
         option["required"]!.GetValue<bool>(),
+        option["hidden"]!.GetValue<bool>(),
         option["secret"]!.GetValue<bool>(),
         option["valueSource"]!.GetValue<string>(),
         Strings(option["allowedValues"]));
@@ -160,11 +161,12 @@ public sealed record CliCommand(
     public override string ToString() => Words.Length == 0 ? "aspose-cli" : Words;
 }
 
-/// <summary>One option of a command.</summary>
+/// <summary>One option of a command; a hidden one is left out of help and suggestions.</summary>
 public sealed record CliOption(
     string Name,
     string Type,
     bool Required,
+    bool Hidden,
     bool Secret,
     string ValueSource,
     IReadOnlyList<string> AllowedValues);

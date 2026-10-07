@@ -141,9 +141,11 @@ internal static class InvariantCases
     private static IEnumerable<InvariantCase> UnknownOptionCases(CliCommand command)
     {
         string[] names = [.. command.Options.Select(static option => option.Name.TrimStart('-'))];
-        for (int index = 0; index < command.Options.Count; index++)
+        // A hidden option is never suggested, so a typo of one has no suggestion to check.
+        CliOption[] visible = [.. command.Options.Where(static option => !option.Hidden)];
+        for (int index = 0; index < visible.Length; index++)
         {
-            CliOption option = command.Options[index];
+            CliOption option = visible[index];
             string typo = "--" + Typo(option.Name.TrimStart('-'), names);
             yield return Case(UnknownOption, $"{command} {option.Name} as {typo}", ShardOf(command),
                 slow: index > 0 && command.Words.Length > 0,
