@@ -65,3 +65,7 @@ dotnet_diagnostic.IDE0059.severity = error
 dotnet_diagnostic.IDE0060.severity = error
 # Unnecessary usings; needs the documentation file that Directory.Build.props enables.
 dotnet_diagnostic.IDE0005.severity = error
+# Private members that use no instance data are static. Wider members are left alone:
+# JSON contract properties and members that tests call through an instance must stay.
+dotnet_diagnostic.CA1822.severity = error
+dotnet_code_quality.CA1822.api_surface = private

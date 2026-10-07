@@ -229,7 +229,7 @@ internal sealed class ViewerHttpServer : IDisposable
     /// immutable, so their files are cached forever and only what an edit
     /// changed is ever fetched again.
     /// </summary>
-    private void Serve(HttpListenerResponse response, LiveRevision? revision, string? file)
+    private static void Serve(HttpListenerResponse response, LiveRevision? revision, string? file)
     {
         using Stream? content = file is null ? null : revision?.Files.TryOpenRead(Uri.UnescapeDataString(file));
         if (content is null)
