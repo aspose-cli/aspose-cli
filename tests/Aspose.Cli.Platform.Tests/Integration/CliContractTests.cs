@@ -567,7 +567,7 @@ $", result.StdOut);
         Assert.DoesNotContain(".docx", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
         Assert.DoesNotContain(".pdf", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
         Assert.Equal(suggestion, error["details"]!["suggestions"]![0]!.GetValue<string>());
-        Assert.StartsWith($"Did you mean {suggestion}", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.StartsWith($"Did you mean '{suggestion}'", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -581,7 +581,23 @@ $", result.StdOut);
         Assert.Equal(
             ["--left-password-env", "--right-password-env"],
             error["details"]!["suggestions"]!.AsArray().Select(static item => item!.GetValue<string>()));
-        Assert.StartsWith("Did you mean --left-password-env or --right-password-env?", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.StartsWith("Did you mean '--left-password-env' or '--right-password-env'?", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("docs edting", "editing")]
+    [InlineData("schema v2/common/not-found-detail", "v2/common/not-found-details")]
+    [InlineData("schema v2/pdf/ops --operation rotate_page", "rotate_pages")]
+    public void UnknownName_ListsWhatExistsAndSuggestsTheClosest(string commandLine, string suggestion)
+    {
+        CliResult result = _workspace.Run([.. commandLine.Split(' '), "--output", "json"]);
+
+        Assert.Equal(2, result.ExitCode);
+        JsonNode error = Parse(result.StdErr)["error"]!;
+        Assert.Equal("OPTION_INVALID", error["code"]!.GetValue<string>());
+        Assert.Contains(suggestion, error["details"]!["available"]!.AsArray().Select(static item => item!.GetValue<string>()));
+        Assert.Equal(suggestion, error["details"]!["suggestions"]![0]!.GetValue<string>());
+        Assert.StartsWith($"Did you mean '{suggestion}'?", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
     }
 
     [Fact]

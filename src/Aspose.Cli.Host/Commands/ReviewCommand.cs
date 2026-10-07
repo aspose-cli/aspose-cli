@@ -145,11 +145,11 @@ internal static class ReviewCommand
         string? foreign = requested.FirstOrDefault(code => !available.Contains(code, StringComparer.Ordinal));
         if (foreign is not null)
         {
-            throw CliErrors.OptionInvalidAvailable(
+            throw CliErrors.OptionInvalid(
                 "--code",
                 $"'{foreign}' is not a review check of {definition.Manifest.Id}",
                 "Use the codes this product's review reports.",
-                available);
+                Mistake.Of(foreign, available));
         }
 
         return [.. requested.Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal)];

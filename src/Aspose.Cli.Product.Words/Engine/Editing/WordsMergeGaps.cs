@@ -1,5 +1,5 @@
 using System.Globalization;
-using Aspose.Cli.Sdk.Text;
+using Aspose.Cli.Sdk.Errors;
 using Aspose.Words;
 using Aspose.Words.Fields;
 
@@ -88,11 +88,12 @@ internal static class WordsMergeGaps
     }
 
     /// <summary>
-    /// Names the unused data key closest to a template field, such as a misspelled column, as
-    /// " (did you mean {kind} 'key'?)", or returns an empty string when none is close.
+    /// Names the unused data keys closest to a template field, such as a misspelled column, as an
+    /// aside that follows the field (see <see cref="Mistake.Aside"/>), or returns an empty string
+    /// when none is close.
     /// </summary>
     internal static string Suggestion(string field, IEnumerable<string> unused, string kind) =>
-        NameSuggestions.Closest(field, unused) is [var key, ..] ? $" (did you mean {kind} '{key}'?)" : string.Empty;
+        Mistake.Of(field, unused).Aside(kind);
 
     private static string? Value(IReadOnlyDictionary<string, string?> row, string field) =>
         row.TryGetValue(field, out string? value)

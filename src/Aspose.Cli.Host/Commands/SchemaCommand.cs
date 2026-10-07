@@ -73,17 +73,13 @@ internal static class SchemaCommand
         {
             if (!schemas.TryRead(id, out _))
             {
-                throw CliErrors.OptionInvalidAvailable(
-                    "schema id",
-                    $"unknown schema id '{id}'",
-                    "Choose one of the available schema ids.",
-                    available);
+                throw UnknownId(id, available);
             }
 
             IReadOnlyList<string> operations = schemas.GetOperations(id);
             return schemas.TryReadOperation(id, operationId, out string? selected)
                 ? selected
-                : throw CliErrors.OptionInvalidAvailable(
+                : throw CliErrors.OptionInvalid(
                     "--operation",
                     operations.Count == 0
                         ? $"schema '{id}' has no indexed operations"
@@ -91,15 +87,17 @@ internal static class SchemaCommand
                     operations.Count == 0
                         ? "Use --operation only with a product ops schema."
                         : "Choose an operation advertised by capabilities.",
-                    operations);
+                    Mistake.Of(operationId, operations));
         }
 
         return schemas.TryRead(id, out string? document)
             ? document
-            : throw CliErrors.OptionInvalidAvailable(
-                "schema id",
-                $"unknown schema id '{id}'",
-                "Choose one of the available schema ids.",
-                available);
+            : throw UnknownId(id, available);
     }
+
+    private static CliException UnknownId(string id, IReadOnlyList<string> available) => CliErrors.OptionInvalid(
+        "schema id",
+        $"unknown schema id '{id}'",
+        "Choose one of the available schema ids.",
+        Mistake.Of(id, available));
 }

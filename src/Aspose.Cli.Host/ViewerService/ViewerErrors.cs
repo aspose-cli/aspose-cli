@@ -32,16 +32,13 @@ internal static class ViewerErrors
             return;
         }
 
-        var values = new JsonArray();
-        foreach (string item in available)
-        {
-            values.Add(item);
-        }
-
+        var mistake = Mistake.Of(view, available);
+        var details = new JsonObject();
+        mistake.WriteTo(details);
         throw new CliException(
             ErrorCodes.FeatureUnsupported,
             $"View '{view}' is not supported by the {product} product.",
-            hint: $"Use one of: {string.Join(", ", available)}.",
-            details: new JsonObject { ["available"] = values });
+            hint: mistake.Hint($"Use one of: {string.Join(", ", available)}."),
+            details: details);
     }
 }
