@@ -9,7 +9,7 @@ namespace Aspose.Cli.Sdk.Text;
 /// the other or that the request extends, as "replacement" extends "replace", before one that
 /// merely holds the request inside, as "maxReplacementCount" does.
 /// </summary>
-public static class NameSuggestions
+internal static class NameSuggestions
 {
     /// <summary>The most suggestions returned for one request.</summary>
     public const int MaximumSuggestions = 3;

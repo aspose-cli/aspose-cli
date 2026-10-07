@@ -2,7 +2,6 @@ using System.Globalization;
 using System.Text.Json.Nodes;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.IO;
-using Aspose.Cli.Sdk.Text;
 
 namespace Aspose.Cli.Sdk.Errors;
 
@@ -14,24 +13,19 @@ namespace Aspose.Cli.Sdk.Errors;
 /// </summary>
 public static partial class CliErrors
 {
-    /// <summary>The most names a not-found error lists in <c>details.available</c>.</summary>
+    /// <summary>The most names an error lists in <c>details.available</c>.</summary>
     public const int MaximumAvailableNames = 50;
 
     /// <summary>
-    /// The error for a command line that does not parse. <paramref name="suggestions"/> are the
-    /// options of the command closest to an unknown one; the hint names them first.
+    /// The error for a command line that does not parse. <paramref name="mistake"/> is the first
+    /// unknown command, option or value, whose closest names the hint asks about first.
     /// </summary>
-    public static CliException Usage(IReadOnlyList<string> problems, IReadOnlyList<string>? suggestions = null)
+    public static CliException Usage(IReadOnlyList<string> problems, Mistake? mistake = null)
     {
         var details = new JsonObject { ["errors"] = Strings(problems) };
-        string hint = $"Run the command again with --help for usage; '{DistributionInfo.CommandName} --help' lists the commands and '{DistributionInfo.CommandName} docs' the documentation topics.";
-        if (suggestions is [_, ..])
-        {
-            details["suggestions"] = Strings(suggestions);
-            hint = $"Did you mean {string.Join(" or ", suggestions)}? {hint}";
-        }
-
-        return new CliException(ErrorCodes.UsageError, string.Join("; ", problems), hint, details);
+        mistake?.WriteTo(details);
+        string next = $"Run the command again with --help for usage; '{DistributionInfo.CommandName} --help' lists the commands and '{DistributionInfo.CommandName} docs' the documentation topics.";
+        return new CliException(ErrorCodes.UsageError, string.Join("; ", problems), mistake?.Hint(next) ?? next, details);
     }
 
     public static CliException FileNotFound(string path) => new(
@@ -604,24 +598,16 @@ public static partial class CliErrors
         hint: hint,
         details: new JsonObject { ["option"] = option });
 
-    public static CliException OptionInvalidAvailable(
-        string option,
-        string reason,
-        string hint,
-        IReadOnlyList<string> available)
+    /// <summary>
+    /// An option or argument value that names none of the values it accepts; the details list
+    /// them and the closest ones, which the hint asks about before <paramref name="hint"/>.
+    /// </summary>
+    public static CliException OptionInvalid(string option, string reason, string hint, Mistake mistake)
     {
-        ArgumentNullException.ThrowIfNull(available);
-        JsonArray values = Strings(available);
-
-        return new CliException(
-            ErrorCodes.OptionInvalid,
-            $"Invalid use of {option}: {reason}",
-            hint: hint,
-            details: new JsonObject
-            {
-                ["option"] = option,
-                ["available"] = values,
-            });
+        ArgumentNullException.ThrowIfNull(mistake);
+        var details = new JsonObject { ["option"] = option };
+        mistake.WriteTo(details);
+        return new CliException(ErrorCodes.OptionInvalid, $"Invalid use of {option}: {reason}", mistake.Hint(hint), details);
     }
 
     /// <summary>Creates an error for an unavailable product capability.</summary>
@@ -709,7 +695,7 @@ public static partial class CliErrors
     /// <param name="subject">What was looked up, e.g. <c>sheet</c> or <c>bookmark</c>.</param>
     /// <param name="requested">The name as the caller wrote it.</param>
     /// <param name="available">Every name of this kind in document order.</param>
-    /// <param name="hint">A product-specific next step; by default the closest name or the available names.</param>
+    /// <param name="hint">A product-specific next step, after the question that names the closest names; by default that question or the available names.</param>
     public static CliException NotFound(
         ErrorCode code,
         string subject,
@@ -722,22 +708,17 @@ public static partial class CliErrors
         ArgumentNullException.ThrowIfNull(requested);
         ArgumentNullException.ThrowIfNull(available);
 
-        IReadOnlyList<string> suggestions = NameSuggestions.Closest(requested, available);
+        var mistake = Mistake.Of(requested, available);
         var details = new JsonObject
         {
             ["subject"] = subject,
             ["requested"] = requested,
             ["availableCount"] = available.Count,
-            ["available"] = Strings(available.Take(MaximumAvailableNames)),
         };
-        if (suggestions.Count > 0)
-        {
-            details["suggestions"] = Strings(suggestions);
-        }
-
-        hint ??= suggestions.Count > 0 ? $"Did you mean '{suggestions[0]}'?"
-            : available.Count == 0 ? $"The document has no {subject} to select."
-            : $"Use one of the names in details.available.";
+        mistake.WriteTo(details);
+        hint = hint is not null ? mistake.Hint(hint)
+            : mistake.Question
+                ?? (available.Count == 0 ? $"The document has no {subject} to select." : "Use one of the names in details.available.");
         return new CliException(code, $"No {subject} '{requested}' was found.", hint, details);
     }
 

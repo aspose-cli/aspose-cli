@@ -279,7 +279,7 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
             new EditRequest { OutputPath = _fixture.Temp.File("sheet-typo.out.xlsx") });
 
         Warning warning = Assert.Single(result.Warnings!, static warning => warning.Code == "EXTERNAL_LINK_RELATIVE");
-        Assert.StartsWith("No sheet is named 'Secnd'; did you mean 'Second'?", warning.Hint, StringComparison.Ordinal);
+        Assert.StartsWith("No sheet is named 'Secnd'. Did you mean 'Second'?", warning.Hint, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -301,7 +301,7 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
 
         Warning warning = Assert.Single(result.Warnings!, static warning => warning.Code == "FORMULA_FUNCTION_UNKNOWN");
         Assert.StartsWith(
-            "Aspose.Cells does not know the function(s) in 'Data'!E2: summ (did you mean SUM?); 'Data'!E5: VLOKUP (did you mean VLOOKUP?); 'Data'!E6: FOOBAR.",
+            "Aspose.Cells does not know the function(s) in 'Data'!E2: summ (did you mean 'SUM'?); 'Data'!E5: VLOKUP (did you mean 'VLOOKUP'?); 'Data'!E6: FOOBAR.",
             warning.Message,
             StringComparison.Ordinal);
     }
@@ -345,7 +345,7 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
 
         Warning warning = Assert.Single(result.Warnings!, static warning => warning.Code == "FORMULA_FUNCTION_UNKNOWN");
         Assert.StartsWith(
-            "Aspose.Cells does not know the function(s) in 'Data'!E4: summ (did you mean SUM?); 'Notes'!B1: VLOKUP (did you mean VLOOKUP?).",
+            "Aspose.Cells does not know the function(s) in 'Data'!E4: summ (did you mean 'SUM'?); 'Notes'!B1: VLOKUP (did you mean 'VLOOKUP'?).",
             warning.Message,
             StringComparison.Ordinal);
     }

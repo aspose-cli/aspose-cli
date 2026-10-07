@@ -5,7 +5,6 @@ using System.Text.Json;
 using Aspose.Cli.Product.Words.Engine.Mapping;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
-using Aspose.Cli.Sdk.Text;
 using Aspose.Words;
 using Aspose.Words.Drawing;
 using Aspose.Words.Fields;
@@ -291,7 +290,6 @@ internal sealed partial class WordsMutationHandlers
     /// </summary>
     private Warning AuthorNoMatch(string author, string items, IReadOnlyCollection<string> authors)
     {
-        IReadOnlyList<string> closest = NameSuggestions.Closest(author, authors);
         string listed = string.Join(", ", authors.Select(static name => $"'{name}'"));
         return new Warning
         {
@@ -299,7 +297,7 @@ internal sealed partial class WordsMutationHandlers
             Message = $"{WordsOp.Catalog.NameOf(_resolved.Op)} changed nothing: the document has no {items} by '{author}'.",
             Hint = authors.Count == 0
                 ? $"The document has no {items}s; check 'words inspect --detail revisions comments'."
-                : $"{(closest.Count > 0 ? $"Did you mean '{closest[0]}'? " : string.Empty)}Authors match exactly; the document's are {listed}.",
+                : Mistake.Of(author, authors).Hint($"Authors match exactly; the document's are {listed}."),
         };
     }
 

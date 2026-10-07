@@ -1,7 +1,6 @@
 using System.Globalization;
 using Aspose.Cli.Product.Words.Engine.Mapping;
 using Aspose.Cli.Sdk.Errors;
-using Aspose.Cli.Sdk.Text;
 using Aspose.Words;
 
 namespace Aspose.Cli.Product.Words.Engine.Editing;
@@ -198,7 +197,7 @@ internal static class WordsAnchorResolver
             .Select(static entry => WordsEngineSupport.Truncate(WordsText.Of(entry.Node).Trim(), 80))
             .Where(static text => text.Length > 0)];
         string? hint = null;
-        if (NameSuggestions.Closest(needle, available).Count == 0 && Closest(index, needle) is { } closest)
+        if (Mistake.Of(needle, available).Suggestions.Count == 0 && Closest(index, needle) is { } closest)
         {
             string text = WordsText.Of(closest.Node).Trim();
             string heading = subject == "heading" && !candidates.Contains(closest) ? ", but it is not a heading" : string.Empty;

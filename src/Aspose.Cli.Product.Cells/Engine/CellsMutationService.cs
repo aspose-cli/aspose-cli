@@ -5,7 +5,7 @@ using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Operations;
 using Aspose.Cli.Sdk.Results;
 using Aspose.Cli.Sdk.IO;
-using Aspose.Cli.Sdk.Text;
+using Aspose.Cli.Sdk.Errors;
 using static Aspose.Cli.Product.Cells.Engine.CellsEngineSupport;
 
 namespace Aspose.Cli.Product.Cells.Engine;
@@ -200,7 +200,7 @@ internal sealed class CellsMutationService
     // A workbook file name has an extension; a mistyped sheet name has none.
     private static string SheetTypo(Workbook workbook, string source) =>
         Path.GetExtension(source).Length == 0
-        && NameSuggestions.Closest(source, workbook.Worksheets.Cast<Worksheet>().Select(static sheet => sheet.Name)) is [string closest, ..]
-            ? $"No sheet is named '{source}'; did you mean '{closest}'? Correct the formula's sheet name. "
+        && Mistake.Of(source, workbook.Worksheets.Cast<Worksheet>().Select(static sheet => sheet.Name)) is { Question: { } question }
+            ? $"No sheet is named '{source}'. {question} Correct the formula's sheet name. "
             : string.Empty;
 }

@@ -3,7 +3,6 @@ using Aspose.Cli.Host.Output;
 using System.CommandLine.Parsing;
 using Aspose.Cli.Sdk;
 using Aspose.Cli.Sdk.Errors;
-using Aspose.Cli.Sdk.Text;
 
 namespace Aspose.Cli.Host.Invocation;
 
@@ -40,7 +39,7 @@ internal sealed class ParsedInvocation
     {
         if (UnknownCommand() is { } unknown)
         {
-            throw CliErrors.Usage([unknown.Problem], unknown.Suggestions);
+            throw CliErrors.Usage([unknown.Problem], unknown.Mistake);
         }
 
         string[] problems =
@@ -50,7 +49,7 @@ internal sealed class ParsedInvocation
         ];
         if (problems.Length > 0)
         {
-            throw CliErrors.Usage(problems, OptionSuggestions());
+            throw CliErrors.Usage(problems, UnknownOption());
         }
     }
 
@@ -72,7 +71,7 @@ internal sealed class ParsedInvocation
     /// the token is a mistyped command, so the tokens after it are not reported on their own and
     /// the closest commands are suggested by their full path, as unknown options are.
     /// </summary>
-    private (string Problem, IReadOnlyList<string> Suggestions)? UnknownCommand()
+    private (string Problem, Mistake Mistake)? UnknownCommand()
     {
         string[] commands = [.. Command.Subcommands.Where(static command => !command.Hidden).Select(static command => command.Name)];
         if (commands.Length == 0 || Command.Arguments.Count > 0
@@ -85,26 +84,25 @@ internal sealed class ParsedInvocation
         string parent = string.Join(' ', [DistributionInfo.CommandName, .. path]);
         return (
             $"'{token}' is not a command of '{parent}'; its commands: {string.Join(", ", commands)}.",
-            [.. NameSuggestions.Closest(token, commands).Select(name => string.Join(' ', [.. path, name]))]);
+            Mistake.Of(token, commands.Select(name => string.Join(' ', [.. path, name])), keyOf: static name => name[(name.LastIndexOf(' ') + 1)..]));
     }
 
-    /// <summary>The command's options closest to the first unknown option, compared without their dashes.</summary>
-    private IReadOnlyList<string> OptionSuggestions()
+    /// <summary>The first unknown option among the command's options, compared without their dashes; null when there is none.</summary>
+    private Mistake? UnknownOption()
     {
         if (ParseResult.UnmatchedTokens.Concat(OptionLikeArguments())
             .FirstOrDefault(static token => token.StartsWith('-')) is not { } unknown)
         {
-            return [];
+            return null;
         }
 
-        Dictionary<string, string> options = CommandPath
+        IEnumerable<string> options = CommandPath
             .SelectMany(command => command == Command ? command.Options : command.Options.Where(static option => option.Recursive))
             .Concat(ParseResult.RootCommandResult.Command.Options.Where(static option => option.Recursive))
             .Where(static option => !option.Hidden)
             .Select(static option => option.Name)
-            .DistinctBy(static name => name.TrimStart('-'), StringComparer.Ordinal)
-            .ToDictionary(static name => name.TrimStart('-'), StringComparer.Ordinal);
-        return [.. NameSuggestions.Closest(unknown.TrimStart('-'), options.Keys).Select(name => options[name])];
+            .Distinct(StringComparer.Ordinal);
+        return Mistake.Of(unknown, options, keyOf: static name => name.TrimStart('-'));
     }
 }
 

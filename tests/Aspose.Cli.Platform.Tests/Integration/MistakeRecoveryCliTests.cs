@@ -76,6 +76,25 @@ public sealed class MistakeRecoveryCliTests : IDisposable
         Assert.Contains("then run 'aspose-cli cells render <that file> --to png'", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// Table output states a mistake's question once, in the hint, for a target the document does
+    /// not contain and for an unknown option alike.
+    /// </summary>
+    [Theory]
+    [InlineData("cells query range a.xlsx --range Shet1!A1:B2", "error SHEET_NOT_FOUND: ", "Did you mean 'Sheet1'?")]
+    [InlineData("cells query range a.xlsx --rnage Sheet1!A1", "error USAGE_ERROR: ", "Did you mean '--range'?")]
+    public void TableOutput_AsksTheMistakesQuestionOnce(string commandLine, string error, string question)
+    {
+        Assert.Equal(0, _workspace.Run("cells", "create", "a.xlsx", "--output", "json").ExitCode);
+
+        CliResult result = _workspace.Run([.. commandLine.Split(' '), "--output", "table"]);
+
+        Assert.NotEqual(0, result.ExitCode);
+        Assert.Contains(error, result.StdErr, StringComparison.Ordinal);
+        Assert.Contains($"  hint: {question}", result.StdErr, StringComparison.Ordinal);
+        Assert.Single(result.StdErr.Split('\n'), static line => line.Contains("did you mean", StringComparison.OrdinalIgnoreCase));
+    }
+
     [Theory]
     [InlineData("slides edit a.pptx --ops ops.json --out noext", "noext")]
     [InlineData("slides edit a.pptx --ops ops.json --out dotonly.", "dotonly")]

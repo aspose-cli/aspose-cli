@@ -1,6 +1,7 @@
 using System.Text.RegularExpressions;
 using Aspose.Cells;
 using Aspose.Cli.Product.Cells.Engine.Mapping;
+using Aspose.Cli.Sdk.Errors;
 
 namespace Aspose.Cli.Product.Cells.Engine.Editing;
 
@@ -42,7 +43,7 @@ internal static partial class UnknownFunctions
         Cell probe = scratch.Worksheets[0].Cells[0, 0];
         string[] findings = [.. cells.Select(cell => (Cell: cell, Names: Called(cell.Formula)
                 .Where(name => !defined.Contains(name) && !IsFunction(probe, name))
-                .Select(name => Closest(probe, name) is { } closest ? $"{name} (did you mean {closest}?)" : name)
+                .Select(name => name + Mistake.Of(name, [], meant: Closest(probe, name)).Aside())
                 .ToArray()))
             .Where(static entry => entry.Names.Length > 0)
             .Select(static entry => $"{Sheets.QuotedName(entry.Cell.Worksheet.Name)}!{entry.Cell.Name}: {string.Join(", ", entry.Names)}")];
