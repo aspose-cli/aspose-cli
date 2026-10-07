@@ -1,0 +1,35 @@
+{
+  "name": "cells edit previews with --dry-run, then writes a new workbook that reopens",
+  "files": {
+    "input.xlsx": { "fixture": "cells.xlsx" },
+    "ops.json": { "text": "{\"ops\":[{\"op\":\"set_values\",\"sheet\":\"Sheet1\",\"range\":\"C1\",\"values\":[[\"Total\"]]}]}" }
+  },
+  "steps": [
+    {
+      "args": ["cells", "edit", "input.xlsx", "--ops", "ops.json", "--dry-run"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "dryRun", "equals": true },
+          { "path": "applied[0].op", "equals": "set_values" }
+        ],
+        "files": { "nothingWritten": true }
+      }
+    },
+    {
+      "args": ["cells", "edit", "input.xlsx", "--ops", "ops.json", "--out", "edited.xlsx"],
+      "expect": {
+        "exitCode": 0,
+        "files": { "present": ["edited.xlsx"], "unchanged": ["input.xlsx"] },
+        "reopens": ["edited.xlsx"]
+      }
+    },
+    {
+      "args": ["cells", "query", "search", "edited.xlsx", "--pattern", "Total", "--sheet", "Sheet1"],
+      "expect": {
+        "exitCode": 0,
+        "files": { "nothingWritten": true }
+      }
+    }
+  ]
+}

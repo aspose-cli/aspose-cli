@@ -1,0 +1,17 @@
+{
+  "name": "pdf convert refuses an --out extension that contradicts --to and writes nothing",
+  "files": {
+    "input.pdf": { "fixture": "pdf.pdf" }
+  },
+  "steps": [
+    {
+      "args": ["pdf", "convert", "input.pdf", "--to", "docx", "--out", "out.xlsx"],
+      "expect": {
+        "exitCode": 2,
+        "error": "USAGE_ERROR",
+        "json": [{ "path": "error.message", "contains": "contradicts --out" }],
+        "files": { "absent": ["out.xlsx", "out.docx"], "nothingWritten": true }
+      }
+    }
+  ]
+}
