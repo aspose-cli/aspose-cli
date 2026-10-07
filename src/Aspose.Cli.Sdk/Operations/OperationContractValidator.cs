@@ -77,7 +77,7 @@ internal static class OperationContractValidator
         {
             if (constraint.Check(value) is { } reason)
             {
-                throw new OperationInvalidException($"{path} {reason}");
+                throw new OperationInvalidException($"{path} {reason}", mistake: constraint.MistakeOf(value));
             }
         }
 

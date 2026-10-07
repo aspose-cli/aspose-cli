@@ -33,17 +33,17 @@ public sealed class BoundedOperationPipelineTests
 
     [Theory]
     [InlineData("""{"ops":[{"op":"set","vlaue":1}]}""", "set",
-        "unknown field 'vlaue'; set accepts: op, id, value (did you mean 'value'?)", "op,id,value", "value")]
+        "unknown field 'vlaue'; set accepts: op, id, value", "op,id,value", "value")]
     [InlineData("""{"ops":[{"op":"set","amount":1}]}""", "set",
-        "unknown field 'amount'; set accepts: op, id, value (did you mean 'value'?)", "op,id,value", "value")]
+        "unknown field 'amount'; set accepts: op, id, value", "op,id,value", "value")]
     [InlineData("""{"ops":[{"op":"note","text":"a","colour":"red"}]}""", "note",
         "unknown field 'colour'; note accepts: op, id, text, pinned", "op,id,text,pinned", null)]
     [InlineData("""{"ops":[{"op":"place","pages":"1","all":true,"box":{"widht":2}}]}""", "place",
-        "unknown field 'box.widht'; box accepts: width (did you mean 'width'?)", "width", "width")]
+        "unknown field 'box.widht'; box accepts: width", "width", "width")]
     [InlineData("""{"ops":[{"op":"place","pages":"1","all":true,"style":{"FontWeight":true}}]}""", "place",
-        "unknown field 'style.FontWeight'; style accepts: font, size, bold (did you mean 'bold'?)", "font,size,bold", "bold")]
+        "unknown field 'style.FontWeight'; style accepts: font, size, bold", "font,size,bold", "bold")]
     [InlineData("""{"ops":[{"op":"place","pages":"1","all":true,"style":{"typeface":"Arial"}}]}""", "place",
-        "unknown field 'style.typeface'; style accepts: font, size, bold (did you mean 'font'?)", "font,size,bold", "font")]
+        "unknown field 'style.typeface'; style accepts: font, size, bold", "font,size,bold", "font")]
     public void Parse_NamesTheAcceptedFieldsOfAnUnknownField(
         string document, string op, string reason, string allowed, string? suggestion)
     {
@@ -54,7 +54,7 @@ public sealed class BoundedOperationPipelineTests
         Assert.Equal(op, error.Details["op"]!.GetValue<string>());
         Assert.Equal(reason, error.Details["reason"]!.GetValue<string>());
         Assert.Equal(allowed.Split(','), error.Details["allowedFields"]!.AsArray().Select(static item => item!.GetValue<string>()));
-        Assert.Equal(suggestion, error.Details["suggestion"]?.GetValue<string>());
+        Assert.Equal(suggestion, error.Details["suggestions"]?[0]?.GetValue<string>());
     }
 
     [Fact]
@@ -85,7 +85,7 @@ public sealed class BoundedOperationPipelineTests
         Assert.Equal("value must be at least 0", errors[0]!["reason"]!.GetValue<string>());
         Assert.Equal("set", errors[1]!["op"]!.GetValue<string>());
         Assert.Equal("value must be a whole number", errors[1]!["reason"]!.GetValue<string>());
-        Assert.Equal("set", errors[2]!["suggestion"]!.GetValue<string>());
+        Assert.Equal(["set"], errors[2]!["suggestions"]!.AsArray().Select(static item => item!.GetValue<string>()));
     }
 
     [Fact]
@@ -113,7 +113,7 @@ public sealed class BoundedOperationPipelineTests
         Assert.Null(error.Details["op"]);
         Assert.StartsWith($"unknown op '{name}'; valid ops: label, link, note,", error.Details["reason"]!.GetValue<string>(), StringComparison.Ordinal);
         Assert.Equal(Catalog.Names, error.Details["available"]!.AsArray().Select(static item => item!.GetValue<string>()));
-        Assert.Equal(suggestion, error.Details["suggestion"]?.GetValue<string>());
+        Assert.Equal(suggestion, error.Details["suggestions"]?[0]?.GetValue<string>());
     }
 
     [Theory]
@@ -127,8 +127,8 @@ public sealed class BoundedOperationPipelineTests
         CliException error = Assert.Throws<CliException>(() => Catalog.Parse<TestBatch>(
             $$"""{"ops":[{{operation}}]}""", TestContracts.Json));
 
-        Assert.Equal(suggestion, error.Details!["suggestion"]?.GetValue<string>());
-        Assert.EndsWith($"(did you mean '{suggestion}'?)", error.Details["reason"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.Equal(suggestion, error.Details!["suggestions"]?[0]?.GetValue<string>());
+        Assert.StartsWith($"Did you mean '{suggestion}'", error.Hint, StringComparison.Ordinal);
     }
 
     [Theory]
@@ -145,16 +145,16 @@ public sealed class BoundedOperationPipelineTests
         Assert.Equal("place", error.Details["op"]!.GetValue<string>());
         Assert.Equal(reason, error.Details["reason"]!.GetValue<string>());
         Assert.Equal(allowed.Split(','), error.Details["allowedFields"]!.AsArray().Select(static item => item!.GetValue<string>()));
-        Assert.Null(error.Details["suggestion"]);
+        Assert.Null(error.Details["suggestions"]);
     }
 
     [Theory]
     [InlineData("""{"ops":[{"op":"set","value":1}],"extra":1}""",
         "unknown field 'extra'; the document accepts: schema, schemaVersion, ifMatch, ops", null)]
     [InlineData("""{"op":[{"op":"set","value":1}]}""",
-        "unknown field 'op'; the document accepts: schema, schemaVersion, ifMatch, ops (did you mean 'ops'?)", "ops")]
+        "unknown field 'op'; the document accepts: schema, schemaVersion, ifMatch, ops", "ops")]
     [InlineData("""{"steps":[{"op":"set","value":1}]}""",
-        "unknown field 'steps'; the document accepts: schema, schemaVersion, ifMatch, ops (did you mean 'ops'?)", "ops")]
+        "unknown field 'steps'; the document accepts: schema, schemaVersion, ifMatch, ops", "ops")]
     public void Parse_NamesTheAcceptedFieldsOfAnUnknownDocumentField(string document, string reason, string? suggestion)
     {
         CliException error = Assert.Throws<CliException>(() => Catalog.Parse<TestBatch>(document, TestContracts.Json));
@@ -164,7 +164,7 @@ public sealed class BoundedOperationPipelineTests
         Assert.Equal(reason, error.Details["reason"]!.GetValue<string>());
         Assert.Equal(["schema", "schemaVersion", "ifMatch", "ops"],
             error.Details["allowedFields"]!.AsArray().Select(static item => item!.GetValue<string>()));
-        Assert.Equal(suggestion, error.Details["suggestion"]?.GetValue<string>());
+        Assert.Equal(suggestion, error.Details["suggestions"]?[0]?.GetValue<string>());
     }
 
     [Fact]

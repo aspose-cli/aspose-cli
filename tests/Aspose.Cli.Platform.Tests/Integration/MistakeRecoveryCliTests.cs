@@ -28,7 +28,26 @@ public sealed class MistakeRecoveryCliTests : IDisposable
 
         JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
         Assert.Equal("OPS_INVALID", error["code"]!.GetValue<string>());
-        Assert.Equal(suggestion, error["details"]!["suggestion"]!.GetValue<string>());
+        Assert.Equal(suggestion, error["details"]!["suggestions"]![0]!.GetValue<string>());
+        Assert.StartsWith($"Did you mean '{suggestion}'", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("""{"op":"clear_rnage","range":"A1"}""", "clear_range")]
+    [InlineData("""{"op":"clear_range","range":"A1","waht":"all"}""", "what")]
+    [InlineData("""{"op":"clear_range","range":"A1","what":"contnets"}""", "contents")]
+    public void CellsOperationMistake_SuggestsAnArrayOfNames(string operation, string suggestion)
+    {
+        File.WriteAllText(_workspace.File("ops.json"), $$"""{"ops":[{{operation}}]}""");
+        CliResult created = _workspace.Run("cells", "create", "a.xlsx", "--output", "json");
+        Assert.Equal(0, created.ExitCode);
+
+        CliResult result = _workspace.Run("cells", "edit", "a.xlsx", "--ops", "ops.json", "--dry-run", "--output", "json");
+
+        JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
+        Assert.Equal("OPS_INVALID", error["code"]!.GetValue<string>());
+        Assert.Equal(suggestion, error["details"]!["suggestions"]!.AsArray()[0]!.GetValue<string>());
+        Assert.Null(error["details"]!["suggestion"]);
     }
 
     [Theory]

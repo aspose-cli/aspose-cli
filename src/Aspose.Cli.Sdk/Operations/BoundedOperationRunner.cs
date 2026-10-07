@@ -67,7 +67,7 @@ public static class BoundedOperationRunner
             }
             catch (OperationInvalidException invalid)
             {
-                rejection = OperationErrors.InvalidAt(index, name, invalid.Message, invalid.Hint ?? catalog.DefaultHint);
+                rejection = OperationErrors.InvalidAt(index, name, invalid.Message, invalid.Hint ?? catalog.DefaultHint, value: invalid.Mistake);
             }
             catch (CliException failure) when (!failure.IsInvocationFailure)
             {

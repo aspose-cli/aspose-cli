@@ -57,10 +57,12 @@ A PDF batch, for example:
   carries `details.index` (zero-based), `details.op` and, for validation
   failures, `details.reason` (such as `unknown field 'style.shiny'; style
   accepts: ...`). An unknown field also lists the fields its operation,
-  nested object or top-level document accepts in `details.allowedFields`, and an
-  unknown `op` lists the operations in `details.available`; when one is likely
-  meant, `details.suggestion` names it, preferring a close name whose operation
-  accepts the fields the entry gives. When several entries fail the same
+  nested object or top-level document accepts in `details.allowedFields`, an
+  unknown `op` lists the operations and a value outside a field's enum lists
+  its values in `details.available`. When some are likely meant,
+  `details.suggestions` names up to three, best first, and the hint asks about
+  them; an op suggestion prefers a close name whose operation accepts the
+  fields the entry gives. When several entries fail the same
   check, `details.errors` lists the same details for each of them. Fix those
   entries and run the whole batch again.
 - **`--best-effort`.** Successful operations are kept and saved; each failed

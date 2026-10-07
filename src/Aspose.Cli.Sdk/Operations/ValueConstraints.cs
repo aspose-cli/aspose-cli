@@ -47,6 +47,13 @@ public abstract class ValueConstraintAttribute : Attribute
     /// </param>
     public abstract string? Check(object value);
 
+    /// <summary>
+    /// The mistake <paramref name="value"/> makes when it names none of the values the constraint
+    /// allows, with the closest ones; null for a constraint that does not list its values.
+    /// </summary>
+    /// <param name="value">A value <see cref="Check"/> rejected.</param>
+    public virtual Mistake? MistakeOf(object value) => null;
+
     /// <summary>Writes the constraint's keywords into the schema of a value it applies to.</summary>
     /// <param name="schema">The value's schema.</param>
     /// <param name="value">The value's shape, which names a record's members.</param>
@@ -340,6 +347,10 @@ public class AllowedValuesAttribute : ValueConstraintAttribute
     /// <inheritdoc />
     public override string? Check(object value) =>
         Values.Any(allowed => Same(allowed, value)) ? null : $"must be one of: {Listed}";
+
+    /// <inheritdoc />
+    public override Mistake? MistakeOf(object value) =>
+        value is string text ? Mistake.Of(text, Values.Select(Spell)) : null;
 
     /// <inheritdoc />
     public override void Describe(JsonObject schema, OperationValue value) =>
