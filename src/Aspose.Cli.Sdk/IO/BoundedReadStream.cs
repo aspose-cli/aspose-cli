@@ -8,6 +8,7 @@ public sealed class BoundedReadStream : Stream
     private readonly string _kind;
     private readonly string _phase;
     private readonly bool _leaveOpen;
+    private bool _innerDisposed;
 
     public BoundedReadStream(
         Stream inner,
@@ -88,8 +89,9 @@ public sealed class BoundedReadStream : Stream
 
     protected override void Dispose(bool disposing)
     {
-        if (disposing && !_leaveOpen)
+        if (disposing && !_leaveOpen && !_innerDisposed)
         {
+            _innerDisposed = true;
             _inner.Dispose();
         }
         base.Dispose(disposing);
@@ -97,11 +99,14 @@ public sealed class BoundedReadStream : Stream
 
     public override async ValueTask DisposeAsync()
     {
-        if (!_leaveOpen)
+        if (!_leaveOpen && !_innerDisposed)
         {
+            _innerDisposed = true;
             await _inner.DisposeAsync().ConfigureAwait(false);
         }
-        GC.SuppressFinalize(this);
+
+        // The base runs Dispose(true), which now leaves the inner stream alone.
+        await base.DisposeAsync().ConfigureAwait(false);
     }
 
     private void Charge(int read)
