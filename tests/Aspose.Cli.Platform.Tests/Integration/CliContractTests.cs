@@ -585,6 +585,32 @@ $", result.StdOut);
     }
 
     [Theory]
+    [InlineData("cells inspect a.xlsx --detail cahrts", "charts")]
+    [InlineData("--license-mode autoo cells inspect a.xlsx", "auto")]
+    [InlineData("skill install --host calude-code", "claude-code")]
+    public void UnknownValue_ListsTheAllowedValuesAndSuggestsTheClosest(string commandLine, string suggestion)
+    {
+        CliResult result = _workspace.Run([.. commandLine.Split(' '), "--output", "json"]);
+
+        Assert.Equal(2, result.ExitCode);
+        JsonNode error = Parse(result.StdErr)["error"]!;
+        Assert.Equal("USAGE_ERROR", error["code"]!.GetValue<string>());
+        Assert.Contains(suggestion, error["details"]!["available"]!.AsArray().Select(static item => item!.GetValue<string>()));
+        Assert.Equal(suggestion, error["details"]!["suggestions"]![0]!.GetValue<string>());
+        Assert.StartsWith($"Did you mean '{suggestion}'?", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void UnknownOption_OfTheRootCommandSuggestsItsOwnOptions()
+    {
+        CliResult result = _workspace.Run("--vresion", "--output", "json");
+
+        Assert.Equal(2, result.ExitCode);
+        JsonNode error = Parse(result.StdErr)["error"]!;
+        Assert.Equal(["--version"], error["details"]!["suggestions"]!.AsArray().Select(static item => item!.GetValue<string>()));
+    }
+
+    [Theory]
     [InlineData("docs edting", "editing")]
     [InlineData("schema v2/common/not-found-detail", "v2/common/not-found-details")]
     [InlineData("schema v2/pdf/ops --operation rotate_page", "rotate_pages")]

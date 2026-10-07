@@ -94,7 +94,7 @@ internal static class CommandGrammar
             Default = argument.HasDefaultValue && !argument.GetParameterMetadata().Secret
                 ? ReadDefault(argument)
                 : null,
-            AllowedValues = ReadAllowedValues(argument),
+            AllowedValues = OptionCompletions.Read(argument),
             InputKind = argument.GetParameterMetadata().InputKind.ToContractName(),
             ValueSource = argument.GetParameterMetadata().ValueSource.ToContractName(),
             Secret = argument.GetParameterMetadata().Secret,
@@ -166,24 +166,6 @@ internal static class CommandGrammar
         return ReadAllowedValues(
             option.CompletionSources.Concat(
                 ReadOptionArgumentCompletionSources(option)));
-    }
-
-    private static IReadOnlyList<string> ReadAllowedValues(Argument argument)
-    {
-        try
-        {
-            return argument.GetCompletions(CompletionContext.Empty)
-                .Select(static item => item.InsertText)
-                .Where(static value => !string.IsNullOrWhiteSpace(value))
-                .Select(static value => value!)
-                .Distinct(StringComparer.Ordinal)
-                .Order(StringComparer.Ordinal)
-                .ToArray();
-        }
-        catch (Exception)
-        {
-            return ReadAllowedValues(argument.CompletionSources);
-        }
     }
 
     private static IEnumerable<
