@@ -49,7 +49,7 @@ internal sealed class ParsedInvocation
         ];
         if (problems.Length > 0)
         {
-            throw CliErrors.Usage(problems, UnknownOption());
+            throw CliErrors.Usage(problems, UnknownOption() ?? UnknownValue());
         }
     }
 
@@ -87,7 +87,10 @@ internal sealed class ParsedInvocation
             Mistake.Of(token, commands.Select(name => string.Join(' ', [.. path, name])), keyOf: static name => name[(name.LastIndexOf(' ') + 1)..]));
     }
 
-    /// <summary>The first unknown option among the command's options, compared without their dashes; null when there is none.</summary>
+    /// <summary>
+    /// The first unknown option among the options the command accepts: its own, the recursive
+    /// ones of its parents and the root's, compared without their dashes; null when there is none.
+    /// </summary>
     private Mistake? UnknownOption()
     {
         if (ParseResult.UnmatchedTokens.Concat(OptionLikeArguments())
@@ -96,13 +99,38 @@ internal sealed class ParsedInvocation
             return null;
         }
 
-        IEnumerable<string> options = CommandPath
-            .SelectMany(command => command == Command ? command.Options : command.Options.Where(static option => option.Recursive))
+        IEnumerable<string> options = Command.Options
+            .Concat(CommandPath.SelectMany(static command => command.Options.Where(static option => option.Recursive)))
             .Concat(ParseResult.RootCommandResult.Command.Options.Where(static option => option.Recursive))
             .Where(static option => !option.Hidden)
             .Select(static option => option.Name)
             .Distinct(StringComparer.Ordinal);
         return Mistake.Of(unknown, options, keyOf: static name => name.TrimStart('-'));
+    }
+
+    /// <summary>
+    /// The first value the parser refused that its option or argument declares a list of values
+    /// for, such as a mistyped <c>--detail</c>; null when no refused value has such a list.
+    /// </summary>
+    private Mistake? UnknownValue()
+    {
+        foreach (ParseError error in ParseResult.Errors)
+        {
+            (IReadOnlyList<string> allowed, IReadOnlyList<Token> tokens) = error.SymbolResult switch
+            {
+                OptionResult option => (OptionCompletions.Read(option.Option), option.Tokens),
+                ArgumentResult { Parent: OptionResult option } argument => (OptionCompletions.Read(option.Option), argument.Tokens),
+                ArgumentResult argument => (OptionCompletions.Read(argument.Argument), argument.Tokens),
+                _ => ([], []),
+            };
+            if (allowed.Count > 0
+                && tokens.Select(static token => token.Value).LastOrDefault(value => !allowed.Contains(value, StringComparer.Ordinal)) is { } value)
+            {
+                return Mistake.Of(value, allowed);
+            }
+        }
+
+        return null;
     }
 }
 

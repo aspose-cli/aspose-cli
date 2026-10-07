@@ -66,9 +66,10 @@ aspose-cli capabilities --output json
 
 **Usage (exit 2)**
 
-- `USAGE_ERROR`: the command line cannot run as written. An unknown option or
-  command names the closest ones in its hint and `details.suggestions`, a
-  command by its full path such as `pdf inspect`; a token starting with `--`
+- `USAGE_ERROR`: the command line cannot run as written. An unknown command,
+  option or option value lists what exists in `details.available` and names
+  the closest ones in its hint and `details.suggestions`, a command by its
+  full path such as `pdf inspect`; a token starting with `--`
   is never taken as a file argument, so pass such a file name after a `--`
   token, which ends the options. A `convert` or `render` `--to` that
   contradicts the `--out` extension, such as `--to pdf --out a.docx`, is
