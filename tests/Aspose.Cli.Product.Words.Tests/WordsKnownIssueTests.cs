@@ -1,3 +1,4 @@
+using System.Globalization;
 using Aspose.Cli.TestKit;
 using Aspose.Words;
 using Aspose.Words.Saving;
@@ -140,25 +141,39 @@ public sealed class WordsKnownIssueTests
         using var fixture = new WordsFixture();
         const string clause = "乙方向甲方供应数控加工中心 2 台，合同总价人民币 1,920,000.00 元（大写：壹佰玖拾贰万元整）。";
         string clauses = string.Concat(Enumerable.Repeat(clause, 4));
+        // The English case breaks against the rules only while the process culture is Chinese, as
+        // on a Chinese Windows; under an English culture the layout follows them.
+        CultureInfo previous = CultureInfo.CurrentCulture;
+        CultureInfo previousUi = CultureInfo.CurrentUICulture;
+        try
+        {
+            CultureInfo.CurrentCulture = CultureInfo.CurrentUICulture = new CultureInfo("zh-CN");
 
-        // Calibri with Microsoft YaHei for East Asian text: whose East Asian language is English,
-        // a line may start with a comma or full stop.
-        IReadOnlyList<string> english = WordsFixture.LayoutLines(EastAsianText(clauses, "Calibri", 1033, modern: true));
-        IReadOnlyList<string> chinese = WordsFixture.LayoutLines(EastAsianText(clauses, "Calibri", 2052, modern: true));
-        static bool Punctuated(IReadOnlyList<string> lines) =>
-            lines.Any(static line => line.StartsWith('，') || line.StartsWith('。'));
-        // Microsoft YaHei for all text, as PDF loading writes it: outside Word 2013 compatibility
-        // mode, the amount in words after a space breaks only at that space, so the line ends early.
-        IReadOnlyList<string> legacy = WordsFixture.LayoutLines(EastAsianText(clause, "Microsoft YaHei", 2052, modern: false));
-        IReadOnlyList<string> modern = WordsFixture.LayoutLines(EastAsianText(clause, "Microsoft YaHei", 2052, modern: true));
-        static bool Early(IReadOnlyList<string> lines) =>
-            lines.Any(static line => line.StartsWith("元（大写", StringComparison.Ordinal));
+            // Calibri with Microsoft YaHei for East Asian text: whose East Asian language is
+            // English, a line may start with a comma or full stop.
+            IReadOnlyList<string> english = WordsFixture.LayoutLines(EastAsianText(clauses, "Calibri", 1033, modern: true));
+            IReadOnlyList<string> chinese = WordsFixture.LayoutLines(EastAsianText(clauses, "Calibri", 2052, modern: true));
+            static bool Punctuated(IReadOnlyList<string> lines) =>
+                lines.Any(static line => line.StartsWith('，') || line.StartsWith('。'));
+            // Microsoft YaHei for all text, as PDF loading writes it: outside Word 2013
+            // compatibility mode, the amount in words after a space breaks only at that space, so
+            // the line ends early.
+            IReadOnlyList<string> legacy = WordsFixture.LayoutLines(EastAsianText(clause, "Microsoft YaHei", 2052, modern: false));
+            IReadOnlyList<string> modern = WordsFixture.LayoutLines(EastAsianText(clause, "Microsoft YaHei", 2052, modern: true));
+            static bool Early(IReadOnlyList<string> lines) =>
+                lines.Any(static line => line.StartsWith("元（大写", StringComparison.Ordinal));
 
-        KnownIssue.Reproduces(
-            "WORDS-CJK-LINE-BREAK",
-            Punctuated(english) && !Punctuated(chinese) && Early(legacy) && !Early(modern),
-            $"English: {string.Join(" | ", english)}; Chinese: {string.Join(" | ", chinese)}; "
-                + $"legacy mode: {string.Join(" | ", legacy)}; Word 2013 mode: {string.Join(" | ", modern)}");
+            KnownIssue.Reproduces(
+                "WORDS-CJK-LINE-BREAK",
+                Punctuated(english) && !Punctuated(chinese) && Early(legacy) && !Early(modern),
+                $"English: {string.Join(" | ", english)}; Chinese: {string.Join(" | ", chinese)}; "
+                    + $"legacy mode: {string.Join(" | ", legacy)}; Word 2013 mode: {string.Join(" | ", modern)}");
+        }
+        finally
+        {
+            CultureInfo.CurrentCulture = previous;
+            CultureInfo.CurrentUICulture = previousUi;
+        }
     }
 
     /// <summary>

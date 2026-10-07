@@ -414,7 +414,8 @@ How they are reproduced and retired: [CONTRIBUTING.md](CONTRIBUTING.md#known-sdk
 - **Defect:** page layout breaks East Asian lines against the line-breaking rules the paragraph
   turns on (`ParagraphFormat.FarEastLineBreakControl`). Text whose East Asian language is not
   Chinese, Japanese or Korean, such as the English that a new `Document` and many converted
-  documents declare, may start a line with "，" or "。". And in a document without Word 2013
+  documents declare, may start a line with "，" or "。" while the process culture is Chinese,
+  as on a Chinese Windows. And in a document without Word 2013
   compatibility mode, East Asian text drawn in one font for all scripts, as PDF loading writes
   it, breaks only at spaces after Latin text, so "人民币 1,920,000.00 元（大写：…）" ends its
   line after the number although the rest would fit in part.
