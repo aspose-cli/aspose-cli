@@ -671,17 +671,21 @@ public abstract class ProductContractTests<TModule>
 
     /// <summary>
     /// Keeps every operation document a product Skill shows valid against the generated schema:
-    /// each example <c>*.json</c> file and each fenced <c>json</c> block in the Skill's Markdown
-    /// that holds an <c>ops</c> array. A Skill therefore cannot teach a field, value or shape the
-    /// build rejects.
+    /// the example <c>*.json</c> files, fenced <c>json</c> blocks and inline <c>--ops</c>
+    /// arguments that <see cref="SkillOperationDocuments"/> finds. A document that does not parse
+    /// fails, as does an example command naming an ops file that is not there. A Skill therefore
+    /// cannot teach a field, value or shape the build rejects.
     /// </summary>
     [Fact]
     public void SkillOperationDocuments_ConformToTheGeneratedSchema()
     {
         ProductCatalog catalog = ProductCatalog.Build([new TModule()]);
         ProductDefinition definition = Assert.Single(catalog.Products);
-        string[] operationSchemas = definition.Manifest.Operations
-            .Select(static operation => operation.Descriptor.InputSchema)
+        ProductOperationDescriptor[] operations = definition.Manifest.Operations
+            .Select(static operation => operation.Descriptor)
+            .ToArray();
+        string[] operationSchemas = operations
+            .Select(static operation => operation.InputSchema)
             .Distinct(StringComparer.Ordinal)
             .ToArray();
         string skills = Path.Combine(RepositoryPaths.Root, "src", typeof(TModule).Assembly.GetName().Name!, "Skills");
@@ -691,41 +695,26 @@ public abstract class ProductContractTests<TModule>
         }
 
         JsonSchema[] schemas = [.. operationSchemas.Select(id => ParseSchema(catalog.Resources.Read(id)))];
-        var documents = new List<(string Source, string Json)>();
-        foreach (string file in Directory.EnumerateFiles(skills, "*", SearchOption.AllDirectories))
-        {
-            if (file.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
-            {
-                documents.Add((file, File.ReadAllText(file)));
-            }
-            else if (file.EndsWith(".md", StringComparison.OrdinalIgnoreCase))
-            {
-                documents.AddRange(FencedJson(File.ReadAllText(file)).Select(block => (file, block)));
-            }
-        }
-
-        var failures = new List<string>();
-        foreach ((string source, string json) in documents)
+        (IReadOnlyList<SkillOperationDocument> documents, IReadOnlyList<string> problems) =
+            SkillOperationDocuments.Collect(skills);
+        var failures = new List<string>(problems);
+        foreach (SkillOperationDocument document in documents)
         {
             JsonNode? node;
             try
             {
-                node = JsonNode.Parse(json);
+                node = JsonNode.Parse(document.Json);
             }
-            catch (System.Text.Json.JsonException)
+            catch (JsonException error)
             {
+                failures.Add($"{document.Location}: does not parse: {error.Message}");
                 continue;
             }
 
-            if (node is not JsonObject { } document || document["ops"] is not JsonArray)
-            {
-                continue;
-            }
-
-            using JsonDocument instance = JsonDocument.Parse(json);
+            using JsonDocument instance = JsonDocument.Parse(document.Json);
             if (!schemas.Any(schema => schema.Evaluate(instance.RootElement).IsValid))
             {
-                failures.Add($"{Path.GetRelativePath(RepositoryPaths.Root, source)}: {json.ReplaceLineEndings(" ")[..Math.Min(json.Length, 160)]}");
+                failures.Add($"{document.Location}: {DescribeRejection(catalog, operations, node)}");
             }
         }
 
@@ -733,24 +722,53 @@ public abstract class ProductContractTests<TModule>
             + string.Join(Environment.NewLine, failures));
     }
 
-    private static IEnumerable<string> FencedJson(string markdown)
+    /// <summary>Names the operations of a rejected document that fail on their own, and why.</summary>
+    private static string DescribeRejection(
+        ProductCatalog catalog,
+        IReadOnlyList<ProductOperationDescriptor> operations,
+        JsonNode? document)
     {
-        string[] lines = markdown.ReplaceLineEndings("\n").Split('\n');
-        for (int index = 0; index < lines.Length; index++)
+        if (document is not JsonObject batch || batch["ops"] is not JsonArray ops)
         {
-            if (!lines[index].TrimStart().StartsWith("```json", StringComparison.Ordinal))
+            return "not an object with an 'ops' array";
+        }
+
+        var reasons = new List<string>();
+        for (int index = 0; index < ops.Count; index++)
+        {
+            string? name = ops[index] is JsonObject operation && operation["op"] is JsonValue value
+                && value.TryGetValue(out string? text) ? text : null;
+            string[] views = [.. operations
+                .Where(descriptor => name is not null && descriptor.Ops.Contains(name, StringComparer.Ordinal))
+                .Select(descriptor => catalog.Resources.TryReadOperation(descriptor.InputSchema, name!, out string? view) ? view : null)
+                .OfType<string>()];
+            if (views.Length == 0)
+            {
+                reasons.Add($"ops[{index}] has unknown op '{name}'");
+                continue;
+            }
+
+            using JsonDocument single = JsonDocument.Parse(new JsonObject { ["ops"] = new JsonArray(ops[index]!.DeepClone()) }.ToJsonString());
+            EvaluationResults[] results = [.. views.Select(view => ParseSchema(view).Evaluate(
+                single.RootElement,
+                new EvaluationOptions { OutputFormat = OutputFormat.List }))];
+            if (results.Any(static result => result.IsValid))
             {
                 continue;
             }
 
-            var block = new System.Text.StringBuilder();
-            for (index++; index < lines.Length && !lines[index].TrimStart().StartsWith("```", StringComparison.Ordinal); index++)
-            {
-                block.AppendLine(lines[index]);
-            }
-
-            yield return block.ToString();
+            IEnumerable<string> errors = (results[0].Details ?? [])
+                .Where(static detail => detail.Errors is { Count: > 0 })
+                .SelectMany(static detail => detail.Errors!.Select(error => $"{detail.InstanceLocation} {error.Value}"))
+                .Distinct(StringComparer.Ordinal)
+                .Take(4);
+            reasons.Add($"ops[{index}] '{name}': {string.Join("; ", errors)}");
         }
+
+        string json = batch.ToJsonString();
+        return reasons.Count > 0
+            ? string.Join(" | ", reasons)
+            : "the document level is invalid: " + json[..Math.Min(json.Length, 160)];
     }
 
     /// <summary>The JSON types and allowed values one schema states for a named field.</summary>
