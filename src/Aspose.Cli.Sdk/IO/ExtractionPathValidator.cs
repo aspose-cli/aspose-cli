@@ -12,7 +12,7 @@ internal static class ExtractionPathValidator
         string normalized = suggestedPath.Normalize(NormalizationForm.FormC)
             .Replace('\\', '/');
         if (string.IsNullOrWhiteSpace(normalized)
-            || normalized.StartsWith("/", StringComparison.Ordinal)
+            || normalized.StartsWith('/')
             || Path.IsPathRooted(normalized))
         {
             throw Refused($"unsafe extraction name '{suggestedPath}'");

@@ -69,3 +69,16 @@ dotnet_diagnostic.IDE0005.severity = error
 # JSON contract properties and members that tests call through an instance must stay.
 dotnet_diagnostic.CA1822.severity = error
 dotnet_code_quality.CA1822.api_surface = private
+# Cheap correctness and performance rules that the code already meets or fixes mechanically.
+dotnet_diagnostic.CA1806.severity = error
+dotnet_diagnostic.CA1812.severity = error
+dotnet_diagnostic.CA1823.severity = error
+dotnet_diagnostic.CA1827.severity = error
+dotnet_diagnostic.CA1828.severity = error
+dotnet_diagnostic.CA1829.severity = error
+dotnet_diagnostic.CA1847.severity = error
+dotnet_diagnostic.CA1865.severity = error
+dotnet_diagnostic.CA1866.severity = error
+dotnet_diagnostic.CA1867.severity = error
+dotnet_diagnostic.CA2016.severity = error
+dotnet_diagnostic.CA2215.severity = error
