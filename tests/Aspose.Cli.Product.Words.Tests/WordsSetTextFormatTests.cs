@@ -32,7 +32,7 @@ public sealed class WordsSetTextFormatTests
 
         Run run = SetText(fixture, input, new WordsEditRequest
         {
-            OutputPath = fixture.Temp.File("plain.out.docx"),
+            Output = TestOutput.At(fixture.Temp.File("plain.out.docx")),
             TrackChanges = trackChanges,
             Author = trackChanges ? "Reviewer" : null,
         });
@@ -56,7 +56,7 @@ public sealed class WordsSetTextFormatTests
         string input = fixture.Temp.File("source.pdf");
         document.Save(input, SaveFormat.Pdf);
 
-        Run run = SetText(fixture, input, new WordsEditRequest { OutputPath = fixture.Temp.File("from-pdf.docx") });
+        Run run = SetText(fixture, input, new WordsEditRequest { Output = TestOutput.At(fixture.Temp.File("from-pdf.docx")) });
 
         AssertFont(run, "Arial", 11);
     }
@@ -67,7 +67,7 @@ public sealed class WordsSetTextFormatTests
             input,
             new WordsOpsBatch { Ops = [new SetTextOp { At = new WordsTarget { Find = "liability" }, Text = NewText }] },
             request);
-        return new Document(request.OutputPath).GetChildNodes(NodeType.Run, true).Cast<Run>()
+        return new Document(request.Output.Path).GetChildNodes(NodeType.Run, true).Cast<Run>()
             .Single(static run => run.Text == NewText);
     }
 

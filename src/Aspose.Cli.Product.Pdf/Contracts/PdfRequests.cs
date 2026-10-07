@@ -1,3 +1,4 @@
+using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Text;
 
 namespace Aspose.Cli.Product.Pdf.Contracts;
@@ -22,9 +23,8 @@ public sealed record PdfReadRequest
 /// <summary>Options for PDF conversion.</summary>
 public sealed record PdfConvertRequest
 {
-    public required string TargetFormatId { get; init; }
-    public required string OutputPath { get; init; }
-    public bool Overwrite { get; init; }
+    /// <summary>The resolved output: its format, path and overwrite permission.</summary>
+    public required ResolvedOutput Output { get; init; }
     public PageRange? Pages { get; init; }
     public string? Password { get; init; }
 }
@@ -32,9 +32,8 @@ public sealed record PdfConvertRequest
 /// <summary>Options for page rendering.</summary>
 public sealed record PdfRenderRequest
 {
-    public required string TargetFormatId { get; init; }
-    public required string OutputPath { get; init; }
-    public bool Overwrite { get; init; }
+    /// <summary>The resolved output: its format, path and overwrite permission.</summary>
+    public required ResolvedOutput Output { get; init; }
     public PageRange? Pages { get; init; }
     public bool AllPages { get; init; }
     public int Dpi { get; init; } = 192;
@@ -47,15 +46,16 @@ public sealed record PdfRenderRequest
 /// <summary>Options for creating one PDF from exactly one source family.</summary>
 public sealed record NewPdfRequest
 {
-    public required string OutputPath { get; init; }
-    public bool Overwrite { get; init; }
+    /// <summary>The resolved output: its format, path and overwrite permission.</summary>
+    public required ResolvedOutput Output { get; init; }
     public IReadOnlyList<string>? ImagePaths { get; init; }
     public string? HtmlPath { get; init; }
 
     /// <summary>Lets the HTML importer request the network resources the HTML names; each is disclosed.</summary>
     public bool AllowNetworkResources { get; init; }
+
+    /// <summary>A UTF-8 text file, read as Markdown when its extension is <c>.md</c>.</summary>
     public string? TextPath { get; init; }
-    public bool Markdown { get; init; }
     public string PageSize { get; init; } = "A4";
     public PdfMargins Margins { get; init; } = PdfMargins.Default;
 }
@@ -70,8 +70,8 @@ public sealed record PdfMargins(double Top, double Right, double Bottom, double 
 public sealed record PdfMergeRequest
 {
     public required IReadOnlyList<string> InputPaths { get; init; }
-    public required string OutputPath { get; init; }
-    public bool Overwrite { get; init; }
+    /// <summary>The resolved output: its format, path and overwrite permission.</summary>
+    public required ResolvedOutput Output { get; init; }
     public bool PreserveBookmarks { get; init; } = true;
     public string? Password { get; init; }
 }
@@ -82,9 +82,9 @@ public sealed record PdfSplitRequest
     public IReadOnlyList<PageRange>? PageGroups { get; init; }
     public int? Every { get; init; }
     public bool ByBookmarks { get; init; }
-    public required string OutputDirectory { get; init; }
+    /// <summary>The resolved directory that receives the files.</summary>
+    public required ResolvedDirectory Output { get; init; }
     public string NameTemplate { get; init; } = "{stem}.{n}.pdf";
-    public bool Overwrite { get; init; }
     public string? Password { get; init; }
 }
 
@@ -92,9 +92,9 @@ public sealed record PdfSplitRequest
 public sealed record PdfExtractRequest
 {
     public required string What { get; init; }
-    public required string OutputDirectory { get; init; }
+    /// <summary>The resolved directory that receives the files.</summary>
+    public required ResolvedDirectory Output { get; init; }
     public PageRange? Pages { get; init; }
-    public bool Overwrite { get; init; }
     public string? Password { get; init; }
 
     /// <summary>Whether each table's UTF-8 CSV starts with a byte order mark.</summary>
@@ -117,9 +117,8 @@ public static class PdfExtractKinds
 
 public sealed record PdfEditRequest
 {
-    public required string OutputPath { get; init; }
-    public bool Overwrite { get; init; }
-    public string? BackupPath { get; init; }
+    /// <summary>The resolved output: its path, overwrite permission and in-place backup.</summary>
+    public required ResolvedOutput Output { get; init; }
     public EditCommandOptions Options { get; init; } = new();
     public string? Password { get; init; }
 
@@ -133,9 +132,8 @@ public sealed record PdfEditRequest
 public sealed record PdfFormReadRequest { public string? Password { get; init; } }
 public sealed record PdfFormExportRequest
 {
-    public required string TargetFormatId { get; init; }
-    public required string OutputPath { get; init; }
-    public bool Overwrite { get; init; }
+    /// <summary>The resolved output: its format, path and overwrite permission.</summary>
+    public required ResolvedOutput Output { get; init; }
     public string? Password { get; init; }
 }
 public sealed record PdfSearchRequest
@@ -155,8 +153,8 @@ public sealed record PdfSignRequest
 {
     public required string CertificatePath { get; init; }
     public required string CertificatePassword { get; init; }
-    public required string OutputPath { get; init; }
-    public bool Overwrite { get; init; }
+    /// <summary>The resolved output: its format, path and overwrite permission.</summary>
+    public required ResolvedOutput Output { get; init; }
     public string? Password { get; init; }
     public int Page { get; init; } = 1;
     public bool Visible { get; init; }

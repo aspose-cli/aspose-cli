@@ -1,5 +1,6 @@
 using System.CommandLine;
 using Aspose.Cli.Sdk.Extensibility;
+using Aspose.Cli.Sdk.IO;
 
 namespace Aspose.Cli.Product.Pdf.Commands;
 
@@ -30,12 +31,10 @@ internal static class RenderCommand
             {
                 PartSelection selection = pages.Read(parse);
                 int resolution = dpi.Read(parse);
-                string format = standard.TargetFormat();
+                ResolvedOutput output = standard.Output;
                 return standard.OpenEngine().Render(standard.Input, new PdfRenderRequest
                 {
-                    TargetFormatId = format,
-                    OutputPath = standard.OutputPath(PdfFormats.Definitions.ExtensionFor(format)),
-                    Overwrite = standard.Overwrite,
+                    Output = output,
                     Pages = selection.Range,
                     AllPages = selection.All,
                     Dpi = resolution,

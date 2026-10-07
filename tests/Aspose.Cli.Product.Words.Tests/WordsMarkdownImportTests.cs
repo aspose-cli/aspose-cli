@@ -15,7 +15,7 @@ public sealed class WordsMarkdownImportTests
         string markdown = fixture.Temp.File("bid.md");
         File.WriteAllText(markdown, "# Chapter one\n\nBody text.\n");
         string created = fixture.Temp.File("bid.docx");
-        fixture.Engine.Create(new NewDocumentRequest { OutputPath = created, MarkdownPath = markdown });
+        fixture.Engine.Create(new NewDocumentRequest { Output = TestOutput.At(created), MarkdownPath = markdown });
         string output = fixture.Temp.File("bid-toc.docx");
 
         fixture.Engine.ApplyOps(created, new WordsOpsBatch
@@ -30,7 +30,7 @@ public sealed class WordsMarkdownImportTests
                 },
                 new InsertTocOp { At = new WordsTarget { Block = 1 }, Position = "before" },
             ],
-        }, new WordsEditRequest { OutputPath = output });
+        }, new WordsEditRequest { Output = TestOutput.At(output) });
 
         DocumentInfoResult info = fixture.Engine.GetInfo(output, new DocumentInfoRequest { Details = ["outline"] });
         Assert.Equal(["Chapter one"], info.Outline!.Select(static item => item.Text));
@@ -50,7 +50,7 @@ public sealed class WordsMarkdownImportTests
         File.WriteAllText(markdown, "施行。~~原《守则》~~同时废止。\n\n施行。<del>原《守则》</del>同时废止。\n");
         string output = fixture.Temp.File("struck.docx");
 
-        fixture.Engine.Create(new NewDocumentRequest { OutputPath = output, MarkdownPath = markdown });
+        fixture.Engine.Create(new NewDocumentRequest { Output = TestOutput.At(output), MarkdownPath = markdown });
 
         Paragraph[] paragraphs = [.. new Document(output).FirstSection.Body.Paragraphs.Cast<Paragraph>().TakeLast(2)];
         Assert.Equal("施行。~~原《守则》~~同时废止。", paragraphs[0].GetText().TrimEnd('\r'));
@@ -66,7 +66,7 @@ public sealed class WordsMarkdownImportTests
         File.WriteAllText(markdown, string.Concat(Enumerable.Repeat("甲，乙。", 120)) + "\n");
         string output = fixture.Temp.File("clauses.docx");
 
-        fixture.Engine.Create(new NewDocumentRequest { OutputPath = output, MarkdownPath = markdown });
+        fixture.Engine.Create(new NewDocumentRequest { Output = TestOutput.At(output), MarkdownPath = markdown });
 
         IReadOnlyList<string> lines = WordsFixture.LayoutLines(new Document(output));
         Assert.True(lines.Count > 4, string.Join(" | ", lines));
@@ -81,7 +81,7 @@ public sealed class WordsMarkdownImportTests
         File.WriteAllText(markdown, "# Brief\n\nPlain **bold** and `code`.\n");
         string output = fixture.Temp.File("brief.docx");
 
-        fixture.Engine.Create(new NewDocumentRequest { OutputPath = output, MarkdownPath = markdown });
+        fixture.Engine.Create(new NewDocumentRequest { Output = TestOutput.At(output), MarkdownPath = markdown });
 
         var document = new Document(output);
         Section section = Assert.Single(document.Sections.Cast<Section>());
@@ -117,7 +117,7 @@ public sealed class WordsMarkdownImportTests
         File.WriteAllText(markdown, "# Report\n\n![Completion](chart.png)\n");
         string output = fixture.Temp.File("report.docx");
 
-        fixture.Engine.Create(new NewDocumentRequest { OutputPath = output, MarkdownPath = markdown });
+        fixture.Engine.Create(new NewDocumentRequest { Output = TestOutput.At(output), MarkdownPath = markdown });
 
         var document = new Document(output);
         PageSetup page = document.FirstSection.PageSetup;
@@ -133,7 +133,7 @@ public sealed class WordsMarkdownImportTests
         string markdown = fixture.Temp.File("fonts.md");
         File.WriteAllText(markdown, "# Title\n\nHello 你好\n");
         string output = fixture.Temp.File("fonts.docx");
-        fixture.Engine.Create(new NewDocumentRequest { OutputPath = output, MarkdownPath = markdown });
+        fixture.Engine.Create(new NewDocumentRequest { Output = TestOutput.At(output), MarkdownPath = markdown });
 
         DocumentInfoResult info = fixture.Engine.GetInfo(output, new DocumentInfoRequest { Details = ["fonts"] });
 
@@ -187,7 +187,7 @@ public sealed class WordsMarkdownImportTests
                 },
                 new SetHeaderOp { Markdown = "## Confidential" },
             ],
-        }, new WordsEditRequest { OutputPath = output });
+        }, new WordsEditRequest { Output = TestOutput.At(output) });
 
         var document = new Document(output);
         Assert.Null(document.Styles["Heading 2_0"]);
@@ -214,7 +214,7 @@ public sealed class WordsMarkdownImportTests
         fixture.Engine.ApplyOps(input, new WordsOpsBatch
         {
             Ops = [new SetHeaderOp { Kind = kind, Paragraphs = ["Header"] }],
-        }, new WordsEditRequest { OutputPath = output });
+        }, new WordsEditRequest { Output = TestOutput.At(output) });
 
         PageSetup setup = new Document(output).FirstSection.PageSetup;
         Assert.Equal(kind == "first", setup.DifferentFirstPageHeaderFooter);
@@ -240,7 +240,7 @@ public sealed class WordsMarkdownImportTests
         fixture.Engine.ApplyOps(input, new WordsOpsBatch
         {
             Ops = [new SetHeaderOp { Paragraphs = ["New header"] }, new SetFooterOp { Paragraphs = ["New footer"] }],
-        }, new WordsEditRequest { OutputPath = output });
+        }, new WordsEditRequest { Output = TestOutput.At(output) });
 
         Section section = new Document(output).FirstSection;
         Paragraph header = WordsFixture.FirstAuthoredParagraph(section.HeadersFooters[HeaderFooterType.HeaderPrimary]);
@@ -276,7 +276,7 @@ public sealed class WordsMarkdownImportTests
         fixture.Engine.ApplyOps(input, new WordsOpsBatch
         {
             Ops = [new SetHeaderOp { Paragraphs = ["New header"], Section = target }],
-        }, new WordsEditRequest { OutputPath = output });
+        }, new WordsEditRequest { Output = TestOutput.At(output) });
 
         Section second = new Document(output).Sections[1];
         Paragraph header = WordsFixture.FirstAuthoredParagraph(second.HeadersFooters[HeaderFooterType.HeaderPrimary]);

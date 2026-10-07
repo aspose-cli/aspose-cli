@@ -1,6 +1,7 @@
 using System.CommandLine;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Extensibility;
+using Aspose.Cli.Sdk.IO;
 
 namespace Aspose.Cli.Product.Words.Commands;
 
@@ -19,7 +20,7 @@ internal static class NewCommand
             "Create a document from one content source, optionally inside a template.",
             new CommandTraits
             {
-                Output = OutputTarget.CreatedFile("Document path to create."),
+                Output = OutputTarget.CreatedFile("Document path to create.", WordsFormats.Writable),
                 Encrypt = WordsCommands.EncryptedDocument,
                 UsesFonts = true,
             },
@@ -41,12 +42,11 @@ internal static class NewCommand
                 string? markdownPath = standard.InputFile(markdown);
                 string? textPath = standard.InputFile(text);
                 string? templatePath = standard.InputFile(template);
-                string outputPath = standard.CreatedPath;
-                string? encryptPassword = standard.EncryptPassword(WordsFormats.ForOutput(outputPath));
+                ResolvedOutput output = standard.Output;
+                string? encryptPassword = standard.EncryptPassword();
                 return standard.OpenEngine().Create(new NewDocumentRequest
                 {
-                    OutputPath = outputPath,
-                    Overwrite = standard.Overwrite,
+                    Output = output,
                     MarkdownPath = markdownPath,
                     TextPath = textPath,
                     TemplatePath = templatePath,

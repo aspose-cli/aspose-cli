@@ -105,7 +105,7 @@ internal sealed class SlidesProductionService
             ? null
             : ResolveSlideRange(request.Slides, loaded.Presentation.Slides.Count);
         IReadOnlyList<OutputInfo> outputs = ConvertOutputs(loaded, request, slides);
-        List<Warning> warnings = BuildConvertWarnings(state, loaded, request.TargetFormatId);
+        List<Warning> warnings = BuildConvertWarnings(state, loaded, request.Output.Format.Id);
         return new SlidesConvertResult
         {
             Input = Source(filePath, loaded.FormatId),
@@ -122,33 +122,20 @@ internal sealed class SlidesProductionService
         IReadOnlyList<int>? slides)
     {
         Presentation presentation = loaded.Presentation;
-        if (request.TargetFormatId is "png" or "jpeg" or "svg")
+        if (request.Output.Format.Id is "png" or "jpeg" or "svg")
         {
             IReadOnlyList<int> selected = slides ?? AllSlides(presentation.Slides.Count);
-            return RenderImages(loaded, new PresentationRenderRequest
-            {
-                TargetFormatId = request.TargetFormatId,
-                OutputPath = request.OutputPath,
-                Overwrite = request.Overwrite,
-            }, selected, "slides-convert").Select(static item => item.Output).ToArray();
+            return RenderImages(loaded, new PresentationRenderRequest { Output = request.Output }, selected, "slides-convert")
+                .Select(static item => item.Output).ToArray();
         }
         else
         {
-            SaveFormat format = SaveFormatFor(request.TargetFormatId);
-            long size = _writer.Write(request.OutputPath, request.Overwrite, temp =>
+            SaveFormat format = SaveFormatFor(request.Output.Format.Id);
+            return _writer.Write(request.Output, temp =>
             {
                 Save(temp);
                 loaded.Resources.ThrowIfFailed();
             });
-            return
-            [
-                new OutputInfo
-                {
-                    Path = request.OutputPath,
-                    Format = request.TargetFormatId,
-                    SizeBytes = size,
-                },
-            ];
 
             void Save(string temp)
             {
@@ -206,10 +193,10 @@ internal sealed class SlidesProductionService
         {
             Input = Source(filePath, loaded.FormatId),
             Outputs = outputs,
-            Dpi = request.TargetFormatId == "svg" || request.Width is not null
+            Dpi = request.Output.Format.Id == "svg" || request.Width is not null
                 ? null
                 : request.Dpi ?? DefaultRasterDpi,
-            Width = request.TargetFormatId == "svg" ? null : request.Width,
+            Width = request.Output.Format.Id == "svg" ? null : request.Width,
             License = EnvelopeParts.License(state),
             Warnings = OutputWarnings(state, loaded, textRead: false),
         };
@@ -223,7 +210,7 @@ internal sealed class SlidesProductionService
     {
         Presentation presentation = loaded.Presentation;
         float scale = RenderScale(presentation, request);
-        if (request.TargetFormatId != "svg")
+        if (request.Output.Format.Id != "svg")
         {
             long width = (long)Math.Ceiling(presentation.SlideSize.Size.Width * scale);
             long height = (long)Math.Ceiling(presentation.SlideSize.Size.Height * scale);
@@ -234,17 +221,17 @@ internal sealed class SlidesProductionService
                 request.Width is null ? request.Dpi ?? DefaultRasterDpi : null);
         }
 
-        string directory = Path.GetDirectoryName(request.OutputPath)!;
+        string directory = request.Output.Directory;
         using var transaction = new AtomicOutputSetWriter(_writer, directory, transactionName);
         var targets = new List<(int Number, uint SlideId, string Path)>(slides.Count);
         foreach (int number in slides)
         {
             ISlide slide = presentation.Slides[number - 1];
-            string path = PartOutputPath.For(request.OutputPath, SlidePartMarker, number, slides.Count, request.TargetFormatId);
+            string path = request.Output.Part(SlidePartMarker, number, slides.Count);
             targets.Add((number, slide.SlideId, path));
-            transaction.Stage(path, request.Overwrite, temp =>
+            transaction.Stage(path, request.Output.Overwrite, temp =>
             {
-                if (request.TargetFormatId == "svg")
+                if (request.Output.Format.Id == "svg")
                 {
                     using FileStream stream = File.Create(temp);
                     slide.WriteAsSvg(stream);
@@ -255,7 +242,7 @@ internal sealed class SlidesProductionService
                 using FileStream outputStream = File.Create(temp);
                 image.Save(
                     outputStream,
-                    request.TargetFormatId == "png" ? ImageFormat.Png : ImageFormat.Jpeg,
+                    request.Output.Format.Id == "png" ? ImageFormat.Png : ImageFormat.Jpeg,
                     quality: 92);
             });
         }
@@ -269,7 +256,7 @@ internal sealed class SlidesProductionService
             Output = new OutputInfo
             {
                 Path = target.Path,
-                Format = request.TargetFormatId,
+                Format = request.Output.Format.Id,
                 SizeBytes = sizes[index],
             },
         }).ToArray();
@@ -277,7 +264,7 @@ internal sealed class SlidesProductionService
     internal SlidesCreateResult Create(NewPresentationRequest request)
     {
         LicenseState state = _licenseGate.EnsureApplied();
-        string format = SlidesFormats.ForOutput(request.OutputPath);
+        string format = request.Output.Format.Id;
 
         using LoadedPresentation template = request.TemplatePath is null
             ? SlidesPresentationLoader.OpenDefaultTemplate()
@@ -300,8 +287,8 @@ internal sealed class SlidesProductionService
 
         Encrypt(presentation, request.EncryptPassword);
         long size = _writer.Write(
-            request.OutputPath,
-            request.Overwrite,
+            request.Output.Path,
+            request.Output.Overwrite,
             temp =>
             {
                 presentation.Save(temp, SaveFormatFor(format));
@@ -311,7 +298,7 @@ internal sealed class SlidesProductionService
         {
             Output = new OutputInfo
             {
-                Path = request.OutputPath,
+                Path = request.Output.Path,
                 Format = format,
                 SizeBytes = size,
             },

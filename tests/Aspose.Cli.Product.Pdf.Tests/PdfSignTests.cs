@@ -18,9 +18,9 @@ public sealed class PdfSignTests
 
         var result = fixture.Engine.Sign(input, new PdfSignRequest
         {
+            Output = TestOutput.At(output),
             CertificatePath = certificate,
             CertificatePassword = certificatePassword,
-            OutputPath = output,
             Visible = visible,
             Page = 2,
             Rect = visible ? new PdfSignatureRect(36, 48, 180, 60) : null,
@@ -56,9 +56,9 @@ public sealed class PdfSignTests
 
         var exception = Assert.Throws<Sdk.Errors.CliException>(() => fixture.Engine.Sign(input, new PdfSignRequest
         {
+            Output = TestOutput.At(output),
             CertificatePath = certificate,
             CertificatePassword = "wrong-password",
-            OutputPath = output,
         }));
         Assert.Equal("SIGN_CERT_INVALID", exception.Code.Name);
         Assert.False(File.Exists(output));

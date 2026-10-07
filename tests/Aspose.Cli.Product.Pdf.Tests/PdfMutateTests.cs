@@ -27,7 +27,7 @@ public sealed class PdfMutateTests
                 new AddPageNumbersOp { Format = "第 {n} 页 / 共 {N} 页", Position = PdfPositions.BottomRight },
                 new AddHeaderTextOp { Text = "机密文件", Position = PdfPositions.TopLeft },
             ],
-        }, new PdfEditRequest { OutputPath = output });
+        }, new PdfEditRequest { Output = TestOutput.At(output) });
 
         using var reopened = new Document(output);
         Page page = reopened.Pages[1];
@@ -82,7 +82,7 @@ public sealed class PdfMutateTests
                 Page = 1,
                 Rect = new PdfRectInput { X = rect.X - 1, Y = rect.Y - 1, Width = rect.Width + 2, Height = rect.Height + 2 },
             }],
-        }, new PdfEditRequest { OutputPath = output });
+        }, new PdfEditRequest { Output = TestOutput.At(output) });
         string text = fixture.Engine.Read(output, new PdfReadRequest()).Pages[0].Text;
         Assert.DoesNotContain("SECRET", text, StringComparison.Ordinal);
         Assert.Contains("PUBLIC", text, StringComparison.Ordinal);
@@ -104,7 +104,7 @@ public sealed class PdfMutateTests
         fixture.Engine.ApplyOps(input, new PdfOpsBatch
         {
             Ops = [new RotatePagesOp { Pages = "1-2", Angle = 0 }],
-        }, new PdfEditRequest { OutputPath = output });
+        }, new PdfEditRequest { Output = TestOutput.At(output) });
 
         Assert.All(
             fixture.Engine.GetInfo(output, new PdfInfoRequest { IncludePreview = true }).Pages!,
@@ -131,7 +131,7 @@ public sealed class PdfMutateTests
         string output = fixture.File("context.out.pdf");
         PdfEditResult edited = fixture.Engine.ApplyOps(input,
             new PdfOpsBatch { Ops = [new RedactTextOp { Pattern = pattern, Regex = regex }] },
-            new PdfEditRequest { OutputPath = output });
+            new PdfEditRequest { Output = TestOutput.At(output) });
         Assert.Equal(1, Assert.Single(edited.Applied).ItemsAffected);
         Assert.Contains("PUBLIC: 1234", fixture.Engine.Read(output, new PdfReadRequest()).Pages[0].Text, StringComparison.Ordinal);
         Assert.Empty(fixture.Engine.Search(output, Find(pattern, regex)).Hits);
@@ -173,7 +173,7 @@ public sealed class PdfMutateTests
                     Rect = new PdfRectInput { X = 20, Y = 100, Width = 40, Height = 20 },
                 },
             ],
-        }, new PdfEditRequest { OutputPath = output });
+        }, new PdfEditRequest { Output = TestOutput.At(output) });
 
         Assert.NotNull(result.Input.Fingerprint);
         Assert.NotNull(result.Output?.Fingerprint);
@@ -212,7 +212,7 @@ public sealed class PdfMutateTests
             {
                 Ranges = [new PdfPageLabelRange { StartPage = startPage, Prefix = "R-", StartingValue = 7 }],
             }],
-        }, new PdfEditRequest { OutputPath = output });
+        }, new PdfEditRequest { Output = TestOutput.At(output) });
 
         PdfInfoResult info = fixture.Engine.GetInfo(output, new PdfInfoRequest());
         PdfPageLabelInfo label = Assert.Single(info.PageLabels!, item => item.Prefix == "R-");
@@ -251,7 +251,7 @@ public sealed class PdfMutateTests
                     Ranges = [new PdfPageLabelRange { StartPage = 1, Style = "roman-lower", Prefix = "A-" }],
                 },
             ],
-        }, new PdfEditRequest { OutputPath = first });
+        }, new PdfEditRequest { Output = TestOutput.At(first) });
 
         using (var reopened = new Document(first))
         {
@@ -286,7 +286,7 @@ public sealed class PdfMutateTests
                 new RemoveAttachmentOp { Name = logicalName },
                 new RemoveAttachmentOp { Name = Path.GetFileName(defaultNamedAttachment) },
             ],
-        }, new PdfEditRequest { OutputPath = final });
+        }, new PdfEditRequest { Output = TestOutput.At(final) });
 
         using var cleaned = new Document(final);
         Assert.Empty(cleaned.Outlines);
@@ -307,7 +307,7 @@ public sealed class PdfMutateTests
         PdfEditResult filledResult = fixture.Engine.ApplyOps(input, new PdfOpsBatch
         {
             Ops = [new SetFormFieldOp { Name = "Customer", Value = "Contoso" }],
-        }, new PdfEditRequest { OutputPath = filled });
+        }, new PdfEditRequest { Output = TestOutput.At(filled) });
         Assert.Equal(["pdf/form"], Assert.Single(filledResult.Applied).Targets);
         Assert.NotNull(filledResult.Input.Fingerprint);
         Assert.NotNull(filledResult.Output?.Fingerprint);
@@ -315,8 +315,7 @@ public sealed class PdfMutateTests
 
         PdfFormExportResult exported = fixture.Engine.ExportForm(filled, new PdfFormExportRequest
         {
-            TargetFormatId = "json",
-            OutputPath = fixture.File("form.json"),
+            Output = TestOutput.At(fixture.File("form.json"), format: "json"),
         });
         Assert.True(exported.Output.SizeBytes > 0);
 
@@ -328,7 +327,7 @@ public sealed class PdfMutateTests
                 new SetFormFieldOp { Name = "Customer", Value = "Northwind" },
                 new FlattenFormsOp(),
             ],
-        }, new PdfEditRequest { OutputPath = flattened });
+        }, new PdfEditRequest { Output = TestOutput.At(flattened) });
         Assert.All(flattenResult.Applied, static item => Assert.Equal(["pdf/form"], item.Targets));
         using var reopened = new Document(flattened);
         Assert.Empty(reopened.Form.Fields);
@@ -365,7 +364,7 @@ public sealed class PdfMutateTests
         CliException exception = Assert.Throws<CliException>(() => fixture.Engine.ApplyOps(
             input,
             new PdfOpsBatch { Ops = [new SetFormFieldOp { Name = "seed", Value = "value" }] },
-            new PdfEditRequest { OutputPath = output }));
+            new PdfEditRequest { Output = TestOutput.At(output) }));
 
         Assert.Equal("FORM_XFA_UNSUPPORTED", exception.Code.Name);
         Assert.False(File.Exists(output));
@@ -394,7 +393,7 @@ public sealed class PdfMutateTests
                     Permissions = new PdfPermissionsInput { Print = true },
                 },
             ],
-        }, new PdfEditRequest { OutputPath = encrypted, OpSecrets = secrets });
+        }, new PdfEditRequest { Output = TestOutput.At(encrypted), OpSecrets = secrets });
 
         Assert.Throws<InvalidPasswordException>(() => new Document(encrypted));
         using (var opened = new Document(encrypted, "reader"))
@@ -412,7 +411,7 @@ public sealed class PdfMutateTests
         string plain = fixture.File("decrypted.pdf");
         fixture.Engine.ApplyOps(encrypted, new PdfOpsBatch { Ops = [new DecryptPdfOp()] }, new PdfEditRequest
         {
-            OutputPath = plain,
+            Output = TestOutput.At(plain),
             Password = "owner",
         });
         using var decrypted = new Document(plain);
@@ -439,9 +438,10 @@ public sealed class PdfMutateTests
             ],
         }, new PdfEditRequest
         {
-            OutputPath = output,
+            Output = TestOutput.At(output),
             Verify = true,
-            OpSecrets = new Dictionary<string, string> { ["PDF_OWNER"] = "owner" },
+            OpSecrets = new Dictionary<string,
+            string> { ["PDF_OWNER"] = "owner" },
         });
 
         Assert.True(result.Verification!.Ok);
@@ -473,7 +473,7 @@ public sealed class PdfMutateTests
         CliException error = Assert.Throws<CliException>(() => fixture.Engine.ApplyOps(
             input,
             new PdfOpsBatch { Ops = [new SetMetadataOp { Subject = "采购申请" }, new RotatePagesOp { Pages = "1", Angle = 90 }] },
-            new PdfEditRequest { OutputPath = output, Password = "owner" }));
+            new PdfEditRequest { Output = TestOutput.At(output), Password = "owner" }));
         fixture.Engine.ApplyOps(
             input,
             new PdfOpsBatch
@@ -485,7 +485,7 @@ public sealed class PdfMutateTests
                     new EncryptPdfOp { OwnerPasswordEnv = "PDF_OWNER" },
                 ],
             },
-            new PdfEditRequest { OutputPath = output, Password = "owner", OpSecrets = secrets });
+            new PdfEditRequest { Output = TestOutput.At(output), Password = "owner", OpSecrets = secrets });
 
         Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
         Assert.Contains("encrypt", error.Hint, StringComparison.Ordinal);
@@ -542,9 +542,10 @@ public sealed class PdfMutateTests
             ],
         }, new PdfEditRequest
         {
-            OutputPath = output,
+            Output = TestOutput.At(output),
             Password = password,
-            OpSecrets = new Dictionary<string, string> { ["PDF_USER"] = "new-reader", ["PDF_OWNER"] = "new-owner" },
+            OpSecrets = new Dictionary<string,
+            string> { ["PDF_USER"] = "new-reader", ["PDF_OWNER"] = "new-owner" },
         });
 
         Warning? warning = result.Warnings?.SingleOrDefault(static item => item.Code == WarningCodes.ProtectionNotEnforced);
@@ -572,7 +573,7 @@ public sealed class PdfMutateTests
         PdfEditResult result = fixture.Engine.ApplyOps(input, new PdfOpsBatch
         {
             Ops = [new SetMetadataOp { Title = "Changed" }],
-        }, new PdfEditRequest { OutputPath = fixture.File("owner-only.out.pdf") });
+        }, new PdfEditRequest { Output = TestOutput.At(fixture.File("owner-only.out.pdf")) });
 
         Warning warning = Assert.Single(result.Warnings!, static item => item.Code == WarningCodes.ProtectionNotEnforced);
         Assert.StartsWith(
@@ -593,7 +594,7 @@ public sealed class PdfMutateTests
             Ops = [new SetMetadataOp { Title = "Changed" }, new DecryptPdfOp()],
         }, new PdfEditRequest
         {
-            OutputPath = output,
+            Output = TestOutput.At(output),
             Password = "reader",
             Options = new EditCommandOptions { DryRun = true },
         });
@@ -624,12 +625,12 @@ public sealed class PdfMutateTests
         Assert.ThrowsAny<Exception>(() => fixture.Engine.ApplyOps(
             input,
             batch,
-            new PdfEditRequest { OutputPath = output }));
+            new PdfEditRequest { Output = TestOutput.At(output) }));
         Assert.False(File.Exists(output));
 
         PdfEditResult partial = fixture.Engine.ApplyOps(input, batch, new PdfEditRequest
         {
-            OutputPath = output,
+            Output = TestOutput.At(output),
             Options = new EditCommandOptions { BestEffort = true },
         });
         Assert.True(partial.HasFailures);
@@ -650,7 +651,7 @@ public sealed class PdfMutateTests
             Ops = [new RotatePagesOp { Pages = "1", Angle = 90 }],
         }, new PdfEditRequest
         {
-            OutputPath = dryOutput,
+            Output = TestOutput.At(dryOutput),
             Options = new EditCommandOptions { DryRun = true },
         });
         Assert.True(dry.DryRun);
@@ -689,7 +690,7 @@ public sealed class PdfMutateTests
                     RemoveUnusedObjects = true,
                 },
             ],
-        }, new PdfEditRequest { OutputPath = output });
+        }, new PdfEditRequest { Output = TestOutput.At(output) });
 
         Assert.True(new FileInfo(output).Length < new FileInfo(input).Length);
     }
@@ -710,8 +711,8 @@ public sealed class PdfMutateTests
 
         PdfExtractResult tables = fixture.Engine.Extract(input, new PdfExtractRequest
         {
+            Output = new ResolvedDirectory(fixture.File("tables")),
             What = "tables",
-            OutputDirectory = fixture.File("tables"),
         });
         Assert.NotEmpty(tables.Items);
         Assert.All(tables.Items, static table =>
@@ -733,8 +734,8 @@ public sealed class PdfMutateTests
 
         PdfExtractResult tables = fixture.Engine.Extract(input, new PdfExtractRequest
         {
+            Output = new ResolvedDirectory(fixture.File("tables")),
             What = "tables",
-            OutputDirectory = fixture.File("tables"),
             ByteOrderMark = true,
         });
 
@@ -756,7 +757,7 @@ public sealed class PdfMutateTests
         CliException error = Assert.Throws<CliException>(() => fixture.Engine.ApplyOps(
             input,
             new PdfOpsBatch { Ops = [new SetFormFieldOp { Name = "Approved", Value = "true" }] },
-            new PdfEditRequest { OutputPath = fixture.File("checkbox.invalid.pdf") }));
+            new PdfEditRequest { Output = TestOutput.At(fixture.File("checkbox.invalid.pdf")) }));
 
         // Storing /true leaves the box drawn empty while a query reads back "true".
         Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
@@ -773,7 +774,7 @@ public sealed class PdfMutateTests
         CliException error = Assert.Throws<CliException>(() => fixture.Engine.ApplyOps(
             input,
             new PdfOpsBatch { Ops = [new SetFormFieldOp { Name = "customer", Value = "Contoso" }] },
-            new PdfEditRequest { OutputPath = fixture.File("form.missing.pdf") }));
+            new PdfEditRequest { Output = TestOutput.At(fixture.File("form.missing.pdf")) }));
 
         Assert.Equal("FIELD_NOT_FOUND", error.Code.Name);
         Assert.Equal("customer", error.Details!["requested"]!.GetValue<string>());
@@ -807,7 +808,7 @@ public sealed class PdfMutateTests
             ],
         }, new PdfEditRequest
         {
-            OutputPath = fixture.File("levels.failed.pdf"),
+            Output = TestOutput.At(fixture.File("levels.failed.pdf")),
             Options = new EditCommandOptions { BestEffort = true },
         });
 
@@ -840,7 +841,7 @@ public sealed class PdfMutateTests
                 new AddBookmarkOp { Title = "Intro", Page = 1 },
                 new AddBookmarkOp { Title = "Scope", Page = 2, Parent = "1" },
             ],
-        }, new PdfEditRequest { OutputPath = outlined });
+        }, new PdfEditRequest { Output = TestOutput.At(outlined) });
 
         PdfOutlineItem[] outline = OutlineOf(fixture, outlined);
         Assert.Equal(["1 Intro 1", "1/1 Scope 2"], outline.Select(static item => $"{item.Index} {item.Title} {item.Page}"));
@@ -853,7 +854,7 @@ public sealed class PdfMutateTests
                 new DeleteBookmarksOp { Indexes = [outline[1].Index] },
                 new AddBookmarkOp { Title = "Detail", Page = outline[1].Page!.Value, Parent = outline[0].Index },
             ],
-        }, new PdfEditRequest { OutputPath = edited });
+        }, new PdfEditRequest { Output = TestOutput.At(edited) });
 
         Assert.Equal(
             ["1 Intro 1", "1/1 Detail 2"],
@@ -878,7 +879,7 @@ public sealed class PdfMutateTests
         fixture.Engine.ApplyOps(input, new PdfOpsBatch
         {
             Ops = [new DeleteBookmarksOp { Indexes = [slashed.Index] }],
-        }, new PdfEditRequest { OutputPath = edited });
+        }, new PdfEditRequest { Output = TestOutput.At(edited) });
 
         Assert.Equal(
             ["1 A 1", "1/1 B 2"],
@@ -904,7 +905,7 @@ public sealed class PdfMutateTests
                 new DeleteBookmarksOp { Indexes = [outline[1].Index] },
                 new AddBookmarkOp { Title = "Detail", Page = 3, Parent = outline[0].Index },
             ],
-        }, new PdfEditRequest { OutputPath = edited });
+        }, new PdfEditRequest { Output = TestOutput.At(edited) });
 
         Assert.Equal(
             ["1 Results 1", "1/1 Detail 3"],
@@ -931,7 +932,7 @@ public sealed class PdfMutateTests
                 new AddBookmarkOp { Title = "Child", Page = 3, Parent = outline[0].Index },
                 new DeleteBookmarksOp { Indexes = [outline[1].Index] },
             ],
-        }, new PdfEditRequest { OutputPath = edited });
+        }, new PdfEditRequest { Output = TestOutput.At(edited) });
 
         Assert.Equal(
             ["1  1", "1/1 Child 3"],
@@ -953,7 +954,7 @@ public sealed class PdfMutateTests
         fixture.Engine.ApplyOps(input, new PdfOpsBatch
         {
             Ops = [new DeleteBookmarksOp { Indexes = ["1"] }, new DeleteBookmarksOp { Indexes = ["1"] }],
-        }, new PdfEditRequest { OutputPath = edited });
+        }, new PdfEditRequest { Output = TestOutput.At(edited) });
 
         Assert.Equal(
             ["1 Third 3"],
@@ -977,7 +978,7 @@ public sealed class PdfMutateTests
         fixture.Engine.ApplyOps(input, new PdfOpsBatch
         {
             Ops = [new DeleteBookmarksOp { Indexes = ["2"] }],
-        }, new PdfEditRequest { OutputPath = edited });
+        }, new PdfEditRequest { Output = TestOutput.At(edited) });
 
         Assert.Equal(
             ["1 Parent 1", "1/1 Results 2", "2 Tail 1"],
@@ -999,7 +1000,7 @@ public sealed class PdfMutateTests
         fixture.Engine.ApplyOps(input, new PdfOpsBatch
         {
             Ops = [new DeleteBookmarksOp { Indexes = ["1", "2"] }],
-        }, new PdfEditRequest { OutputPath = edited });
+        }, new PdfEditRequest { Output = TestOutput.At(edited) });
 
         Assert.Equal(
             ["1 Results 3"],
@@ -1016,7 +1017,7 @@ public sealed class PdfMutateTests
         fixture.Engine.ApplyOps(input, new PdfOpsBatch
         {
             Ops = [new DeleteBookmarksOp { Indexes = ["4/1", "2/1"] }],
-        }, new PdfEditRequest { OutputPath = edited });
+        }, new PdfEditRequest { Output = TestOutput.At(edited) });
 
         Assert.Equal(
             ["1 First 1", "2 Second 2", "3 Third 3", "4 Fourth 1", "4/1 Fourth.B 3"],
@@ -1039,7 +1040,7 @@ public sealed class PdfMutateTests
         fixture.Engine.ApplyOps(input, new PdfOpsBatch
         {
             Ops = [new DeleteBookmarksOp { Indexes = ["1"] }],
-        }, new PdfEditRequest { OutputPath = edited });
+        }, new PdfEditRequest { Output = TestOutput.At(edited) });
 
         Assert.Equal(
             ["1 Results 3"],
@@ -1062,7 +1063,7 @@ public sealed class PdfMutateTests
         PdfEditResult result = fixture.Engine.ApplyOps(input, new PdfOpsBatch
         {
             Ops = [new DeleteBookmarksOp { Indexes = [first, second] }],
-        }, new PdfEditRequest { OutputPath = edited });
+        }, new PdfEditRequest { Output = TestOutput.At(edited) });
 
         // Second, its child and Third, each addressed as it was before the deletion.
         Assert.Equal(3, Assert.Single(result.Applied).ItemsAffected);
@@ -1082,7 +1083,7 @@ public sealed class PdfMutateTests
         PdfEditResult result = fixture.Engine.ApplyOps(input, new PdfOpsBatch
         {
             Ops = [new DeleteBookmarksOp { All = true }],
-        }, new PdfEditRequest { OutputPath = edited });
+        }, new PdfEditRequest { Output = TestOutput.At(edited) });
 
         Assert.Equal(7, Assert.Single(result.Applied).ItemsAffected);
         Assert.Equal(["pdf/bookmark"], result.Applied[0].Targets);
@@ -1098,7 +1099,7 @@ public sealed class PdfMutateTests
         CliException error = Assert.Throws<CliException>(() => fixture.Engine.ApplyOps(input, new PdfOpsBatch
         {
             Ops = [new DeleteBookmarksOp { Indexes = ["1", "2/5"] }],
-        }, new PdfEditRequest { OutputPath = fixture.File("partial.failed.pdf") }));
+        }, new PdfEditRequest { Output = TestOutput.At(fixture.File("partial.failed.pdf")) }));
         Assert.Equal("BOOKMARK_NOT_FOUND", error.Code.Name);
         Assert.Equal("2/5", error.Details!["requested"]!.GetValue<string>());
 
@@ -1112,7 +1113,7 @@ public sealed class PdfMutateTests
             ],
         }, new PdfEditRequest
         {
-            OutputPath = edited,
+            Output = TestOutput.At(edited),
             Options = new EditCommandOptions { BestEffort = true },
         });
 
@@ -1180,7 +1181,7 @@ public sealed class PdfMutateTests
             ],
         }, new PdfEditRequest
         {
-            OutputPath = fixture.File("short.out.pdf"),
+            Output = TestOutput.At(fixture.File("short.out.pdf")),
             Options = new EditCommandOptions { BestEffort = true },
         });
 
@@ -1203,7 +1204,7 @@ public sealed class PdfMutateTests
         fixture.Engine.ApplyOps(
             input,
             new PdfOpsBatch { Ops = [new SetFormFieldOp { Name = "Approved", Value = "Yes" }] },
-            new PdfEditRequest { OutputPath = output });
+            new PdfEditRequest { Output = TestOutput.At(output) });
 
         using var reopened = new Document(output);
         var checkbox = (CheckboxField)reopened.Form.Fields.Single();
@@ -1244,7 +1245,7 @@ public sealed class PdfMutateTests
                     new SetFormFieldOp { Name = "color", Value = buttons[1].OnValue! },
                 ],
             },
-            new PdfEditRequest { OutputPath = output });
+            new PdfEditRequest { Output = TestOutput.At(output) });
 
         using var reopened = new Document(output);
         var checkbox = (CheckboxField)reopened.Form["agree"];
@@ -1269,7 +1270,7 @@ public sealed class PdfMutateTests
         PdfEditResult result = fixture.Engine.ApplyOps(
             input,
             new PdfOpsBatch { Ops = [new FlattenFormsOp { Fields = ["color"] }] },
-            new PdfEditRequest { OutputPath = output, Verify = true });
+            new PdfEditRequest { Output = TestOutput.At(output), Verify = true });
 
         Assert.Equal(2, Assert.Single(result.Applied).ItemsAffected);
         Assert.True(result.Verification!.Ok, string.Join("; ", result.Verification.Issues.Select(static issue => issue.Message)));
@@ -1288,7 +1289,7 @@ public sealed class PdfMutateTests
         CliException error = Assert.Throws<CliException>(() => fixture.Engine.ApplyOps(
             input,
             new PdfOpsBatch { Ops = [new SetFormFieldOp { Name = "colour", Value = "Red" }] },
-            new PdfEditRequest { OutputPath = fixture.File("choices.missing.pdf") }));
+            new PdfEditRequest { Output = TestOutput.At(fixture.File("choices.missing.pdf")) }));
 
         Assert.Equal("FIELD_NOT_FOUND", error.Code.Name);
         string[] available = [.. error.Details!["available"]!.AsArray().Select(static name => name!.GetValue<string>())];
@@ -1310,7 +1311,7 @@ public sealed class PdfMutateTests
         CliException error = Assert.Throws<CliException>(() => fixture.Engine.ApplyOps(
             input,
             new PdfOpsBatch { Ops = [new SetFormFieldOp { Name = "color", Value = value }] },
-            new PdfEditRequest { OutputPath = fixture.File("choices.invalid.pdf") }));
+            new PdfEditRequest { Output = TestOutput.At(fixture.File("choices.invalid.pdf")) }));
 
         Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
         Assert.Contains("Red, Blue", error.Message, StringComparison.Ordinal);
@@ -1346,7 +1347,7 @@ public sealed class PdfMutateTests
         PdfEditResult result = fixture.Engine.ApplyOps(input, new PdfOpsBatch
         {
             Ops = [.. new[] { "color", "agree", "name", "size" }.Select(static name => new SetFormFieldOp { Name = name, Value = null })],
-        }, new PdfEditRequest { OutputPath = output, Verify = true });
+        }, new PdfEditRequest { Output = TestOutput.At(output), Verify = true });
 
         Assert.True(result.Verification!.Ok);
         using var reopened = new Document(output);
@@ -1414,7 +1415,7 @@ public sealed class PdfMutateTests
             {
                 Ops = [new RedactTextOp { Pattern = "Portable", FillColor = fillColor }],
             },
-            new PdfEditRequest { OutputPath = output });
+            new PdfEditRequest { Output = TestOutput.At(output) });
 
         using var reopened = new Document(output);
         Assert.DoesNotContain("Portable", PageText(reopened.Pages[1]), StringComparison.Ordinal);
@@ -1442,7 +1443,7 @@ public sealed class PdfMutateTests
                     new RedactTextOp { Pattern = "ID 4711", Pages = "1" },
                 ],
             },
-            new PdfEditRequest { OutputPath = fixture.File("unmatched.out.pdf"), Verify = !dryRun, Options = new EditCommandOptions { DryRun = dryRun } });
+            new PdfEditRequest { Output = TestOutput.At(fixture.File("unmatched.out.pdf")), Verify = !dryRun, Options = new EditCommandOptions { DryRun = dryRun } });
 
         Warning warning = Assert.Single(result.Warnings!, static warning => warning.Code == "REDACTION_NO_MATCH");
         Assert.Contains("'op-0002' (redact_text)", warning.Message, StringComparison.Ordinal);
@@ -1477,7 +1478,7 @@ public sealed class PdfMutateTests
                     new RedactTextOp { Pattern = "order.", Pages = "3" },
                 ],
             },
-            new PdfEditRequest { OutputPath = fixture.File("runs.out.pdf"), Verify = true });
+            new PdfEditRequest { Output = TestOutput.At(fixture.File("runs.out.pdf")), Verify = true });
 
         Assert.True(result.Verification!.Ok);
         Warning warning = Assert.Single(result.Warnings!, static warning => warning.Code == "REDACTION_TEXT_MOVED");
@@ -1504,7 +1505,7 @@ public sealed class PdfMutateTests
         PdfEditResult result = fixture.Engine.ApplyOps(
             input,
             new PdfOpsBatch { Ops = [new RedactTextOp { Pattern = @"\d{18}|555\d{4}", Regex = true }] },
-            new PdfEditRequest { OutputPath = output, Verify = true });
+            new PdfEditRequest { Output = TestOutput.At(output), Verify = true });
 
         Assert.True(result.Verification!.Ok);
         Assert.Equal(2, Assert.Single(result.Applied).ItemsAffected);
@@ -1531,7 +1532,7 @@ public sealed class PdfMutateTests
         PdfEditResult result = fixture.Engine.ApplyOps(
             input,
             new PdfOpsBatch { Ops = [new RedactTextOp { Pattern = @"555\d{4}", Regex = true }] },
-            new PdfEditRequest { OutputPath = output });
+            new PdfEditRequest { Output = TestOutput.At(output) });
 
         Assert.Equal(2, Assert.Single(result.Applied).ItemsAffected);
         using var reopened = new Document(output);
@@ -1563,7 +1564,7 @@ public sealed class PdfMutateTests
                     Rect = new PdfRectInput { X = hit.Rect.X, Y = hit.Rect.Y, Width = hit.Rect.Width, Height = hit.Rect.Height },
                 })],
             },
-            new PdfEditRequest { OutputPath = output });
+            new PdfEditRequest { Output = TestOutput.At(output) });
 
         Assert.Equal(2, hits.Count);
         using var reopened = new Document(output);
@@ -1587,7 +1588,7 @@ public sealed class PdfMutateTests
         string output = fixture.File("autospace.out.pdf");
         PdfEditResult edited = fixture.Engine.ApplyOps(input,
             new PdfOpsBatch { Ops = [new RedactTextOp { Pattern = "2026年10月31日" }] },
-            new PdfEditRequest { OutputPath = output, Verify = true });
+            new PdfEditRequest { Output = TestOutput.At(output), Verify = true });
 
         Assert.Equal(1, Assert.Single(edited.Applied).ItemsAffected);
         Assert.True(edited.Verification!.Ok);
@@ -1625,7 +1626,7 @@ public sealed class PdfMutateTests
 
         PdfEditResult edited = fixture.Engine.ApplyOps(input,
             new PdfOpsBatch { Ops = [new RedactTextOp { Pattern = "2026年10月" }] },
-            new PdfEditRequest { OutputPath = fixture.File("twolines.out.pdf"), Verify = true });
+            new PdfEditRequest { Output = TestOutput.At(fixture.File("twolines.out.pdf")), Verify = true });
 
         Assert.Equal(0, Assert.Single(edited.Applied).ItemsAffected);
         Assert.Single(edited.Warnings!, static warning => warning.Code == "REDACTION_NO_MATCH");

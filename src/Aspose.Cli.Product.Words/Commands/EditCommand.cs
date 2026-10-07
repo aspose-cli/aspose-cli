@@ -17,6 +17,7 @@ internal static class EditCommand
             ParseSet,
             static ops => new WordsOpsBatch { Ops = ops }),
         VerifyDescription = "Compare the staged document after save and reopen to report semantic verification.",
+        Writes = WordsFormats.Writable,
     };
 
     public static Command Create(IProductCommandHost<IWordsEngine> host)
@@ -36,12 +37,10 @@ internal static class EditCommand
             [trackChanges, author],
             (parse, edit, standard) =>
             {
-                string? encryptPassword = standard.EncryptPassword(WordsFormats.ForOutput(edit.Target.OutputPath));
+                string? encryptPassword = standard.EncryptPassword();
                 return standard.OpenEngine().ApplyOps(standard.Input, edit.Batch, new WordsEditRequest
                 {
-                    OutputPath = edit.Target.OutputPath,
-                    Overwrite = edit.Target.Overwrite,
-                    BackupPath = edit.Target.BackupPath,
+                    Output = standard.Output,
                     Options = edit.Options,
                     Verify = edit.Verify,
                     TrackChanges = parse.GetValue(trackChanges),

@@ -89,7 +89,7 @@ public sealed class WordsTextScopeTests : IClassFixture<WordsFixture>
         WordsEditResult edit = _fixture.Engine.ApplyOps(
             input,
             new WordsOpsBatch { Ops = [new ReplaceTextOp { Scope = "all", Find = "needle", Replace = "pin" }] },
-            new WordsEditRequest { OutputPath = _fixture.Temp.File("named-headers-out.docx") });
+            new WordsEditRequest { Output = TestOutput.At(_fixture.Temp.File("named-headers-out.docx")) });
 
         Assert.Equivalent(
             new[]
@@ -121,7 +121,7 @@ public sealed class WordsTextScopeTests : IClassFixture<WordsFixture>
         WordsEditResult result = _fixture.Engine.ApplyOps(
             input,
             new WordsOpsBatch { Ops = [new ReplaceTextOp { Scope = scope, Find = "needle", Replace = "pin" }] },
-            new WordsEditRequest { OutputPath = output });
+            new WordsEditRequest { Output = TestOutput.At(output) });
 
         var document = new Document(output);
         Assert.Equal(expected.Length, result.Applied[0].ItemsAffected);
@@ -149,7 +149,7 @@ public sealed class WordsTextScopeTests : IClassFixture<WordsFixture>
         _fixture.Engine.ApplyOps(
             input,
             new WordsOpsBatch { Ops = [new ReplaceTextOp { Find = "1,860,000.00 元（大写：壹佰捌拾陆万元整 ）", Replace = "1,920,000.00 元（大写：壹佰玖拾贰万元整）" }] },
-            new WordsEditRequest { OutputPath = output });
+            new WordsEditRequest { Output = TestOutput.At(output) });
 
         Run replaced = new Document(output).GetChildNodes(NodeType.Run, true).Cast<Run>()
             .Single(static run => run.Text.Contains("壹佰玖拾贰", StringComparison.Ordinal));

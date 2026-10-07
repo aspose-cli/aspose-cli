@@ -84,7 +84,7 @@ public sealed class CellsResourceLoadingTests
         string output = fixture.Temp.File("converted-" + extension + ".xlsx");
         AssertOmission(fixture.Engine.Convert(input, new ConvertRequest
         {
-            TargetFormatId = "xlsx", OutputPath = output,
+            Output = TestOutput.At(output, format: "xlsx"),
         }).Warnings);
         var sink = new MemoryArtifactSink();
         AssertOmission(fixture.Engine.RenderView(

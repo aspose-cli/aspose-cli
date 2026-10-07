@@ -28,7 +28,8 @@ public sealed class SlidesTargetLivenessTests
         };
         var request = new PresentationEditRequest
         {
-            OutputPath = output, Options = new EditCommandOptions { BestEffort = bestEffort, DryRun = dryRun },
+            Output = TestOutput.At(output),
+            Options = new EditCommandOptions { BestEffort = bestEffort, DryRun = dryRun },
         };
         if (bestEffort)
         {
@@ -61,7 +62,7 @@ public sealed class SlidesTargetLivenessTests
         SlidesEditResult result = fixture.Engine.ApplyOps(input, new SlidesOpsBatch
         {
             Ops = [new DeleteSlidesOp { Slides = "2" }, new SetSlideHiddenOp { Slides = "1-2", Hidden = true }],
-        }, new PresentationEditRequest { OutputPath = output, Options = new EditCommandOptions { BestEffort = true } });
+        }, new PresentationEditRequest { Output = TestOutput.At(output), Options = new EditCommandOptions { BestEffort = true } });
         Assert.Equal(["ok", "failed"], result.Applied.Select(operation => operation.Status));
         using var reopened = new Presentation(output);
         Assert.All(reopened.Slides, slide => Assert.False(slide.Hidden));
@@ -89,7 +90,7 @@ public sealed class SlidesTargetLivenessTests
                 new SetNotesOp { Slide = 2, Text = "Safe" },
             ],
         };
-        var request = new PresentationEditRequest { OutputPath = output, Options = new EditCommandOptions { BestEffort = bestEffort } };
+        var request = new PresentationEditRequest { Output = TestOutput.At(output), Options = new EditCommandOptions { BestEffort = bestEffort } };
         if (!bestEffort)
         {
             Assert.Throws<CliException>(() => fixture.Engine.ApplyOps(input, batch, request));
@@ -114,7 +115,7 @@ public sealed class SlidesTargetLivenessTests
         fixture.Engine.ApplyOps(input, new SlidesOpsBatch
         {
             Ops = [new MoveSlideOp { Slide = 1, To = 3 }, new SetNotesOp { Slide = 1, Text = "Safe" }],
-        }, new PresentationEditRequest { OutputPath = output });
+        }, new PresentationEditRequest { Output = TestOutput.At(output) });
         using var reopened = new Presentation(output);
         Assert.Equal(originalId, reopened.Slides[2].SlideId);
         Assert.Contains("Safe", reopened.Slides[2].NotesSlideManager.NotesSlide!.NotesTextFrame!.Text, StringComparison.Ordinal);

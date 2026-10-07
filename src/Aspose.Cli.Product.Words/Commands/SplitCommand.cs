@@ -35,8 +35,7 @@ internal static class SplitCommand
                 {
                     By = mode,
                     Pages = pageText is null ? null : PageRange.Parse(pageText),
-                    OutputDirectory = standard.OutputDirectory,
-                    Overwrite = standard.Overwrite,
+                    Output = standard.DirectoryOutput,
                     Password = standard.InputPassword,
                 });
             })

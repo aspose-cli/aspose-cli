@@ -38,7 +38,7 @@ public sealed class SlidesChartPresentationTests
                     },
                 ],
             },
-            new PresentationEditRequest { OutputPath = output });
+            new PresentationEditRequest { Output = TestOutput.At(output) });
         return output;
     }
 
@@ -93,7 +93,7 @@ public sealed class SlidesChartPresentationTests
                 ShapeId = FindChartShapeId(seeded),
                 Series = [new SlidesChartSeriesInput { Name = "Amount", Values = [first, second, third] }],
             }],
-        }, new PresentationEditRequest { OutputPath = output });
+        }, new PresentationEditRequest { Output = TestOutput.At(output) });
 
         Assert.Equal("0", ReadAxisScale(output, "valAx", "min"));
         Assert.Null(ReadAxisScale(output, "catAx", "min"));
@@ -117,7 +117,7 @@ public sealed class SlidesChartPresentationTests
                 ShapeId = FindChartShapeId(seeded),
                 Series = [new SlidesChartSeriesInput { Name = "Amount", Values = [95, -100, 105] }],
             }],
-        }, new PresentationEditRequest { OutputPath = output });
+        }, new PresentationEditRequest { Output = TestOutput.At(output) });
 
         // This verifies stored data and range preservation, not rendered visibility.
         // The fixed range must be reviewed separately when the new data falls outside it.
@@ -163,7 +163,7 @@ public sealed class SlidesChartPresentationTests
                     },
                 ],
             },
-            new PresentationEditRequest { OutputPath = output });
+            new PresentationEditRequest { Output = TestOutput.At(output) });
 
         Assert.Equal("50", ReadAxisScale(output, "valAx", "min"));
         Assert.Equal("200", ReadAxisScale(output, "valAx", "max"));
@@ -195,7 +195,7 @@ public sealed class SlidesChartPresentationTests
                     },
                 ],
             },
-            new PresentationEditRequest { OutputPath = output });
+            new PresentationEditRequest { Output = TestOutput.At(output) });
 
         // Two series that cannot be told apart are unreadable.
         Assert.True(HasLegend(output));
@@ -225,7 +225,7 @@ public sealed class SlidesChartPresentationTests
                 Categories = ["Q4 2025", "Q1 2026", "Q2 2026", "Q3 2026"],
                 Series = [new SlidesChartSeriesInput { Name = "Revenue", Values = [10850, 11200, 11960, 12800] }],
             }],
-        }, new PresentationEditRequest { OutputPath = output });
+        }, new PresentationEditRequest { Output = TestOutput.At(output) });
 
         using var reopened = new Presentation(output);
         float angle = Chart(reopened).Axes.HorizontalAxis.TextFormat.TextBlockFormat.RotationAngle;
@@ -300,7 +300,7 @@ public sealed class SlidesChartPresentationTests
                     new SlidesChartSeriesInput { Name = "Target", Values = [45] },
                 ],
             }],
-        }, new PresentationEditRequest { OutputPath = output });
+        }, new PresentationEditRequest { Output = TestOutput.At(output) });
 
         using var reopened = new Presentation(output);
         IChart result = Chart(reopened);
@@ -316,7 +316,7 @@ public sealed class SlidesChartPresentationTests
         // The built-in design's title slide is dark; a content slide is light, and a slide
         // given its own dark background is dark whatever its layout.
         string seed = fixture.File("contrast-seed.pptx");
-        fixture.Engine.Create(new NewPresentationRequest { OutputPath = seed });
+        fixture.Engine.Create(new NewPresentationRequest { Output = TestOutput.At(seed) });
         fixture.Engine.ApplyOps(seed, new SlidesOpsBatch
         {
             Ops =
@@ -324,7 +324,7 @@ public sealed class SlidesChartPresentationTests
                 new AddSlideOp { Layout = "Title and Content" },
                 new AddSlideOp { Layout = "Title and Content" },
             ],
-        }, new PresentationEditRequest { OutputPath = seed, Overwrite = true });
+        }, new PresentationEditRequest { Output = TestOutput.At(seed, overwrite: true) });
         string output = fixture.File("contrast.pptx");
 
         fixture.Engine.ApplyOps(seed, new SlidesOpsBatch
@@ -341,7 +341,7 @@ public sealed class SlidesChartPresentationTests
                     Series = [new SlidesChartSeriesInput { Name = "Revenue", Values = [2.4, 1.82] }],
                 }),
             ],
-        }, new PresentationEditRequest { OutputPath = output });
+        }, new PresentationEditRequest { Output = TestOutput.At(output) });
 
         // On the light slide the chart keeps its style's own text color.
         using var deck = new Presentation(output);
@@ -402,7 +402,7 @@ public sealed class SlidesChartPresentationTests
                 ],
                 Title = "Efficiency improvement (%)",
             }],
-        }, new PresentationEditRequest { OutputPath = output });
+        }, new PresentationEditRequest { Output = TestOutput.At(output) });
         return output;
     }
 

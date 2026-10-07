@@ -20,7 +20,7 @@ public sealed class PdfNavigationTests
 
         PdfEditResult result = fixture.Engine.ApplyOps(input,
             new PdfOpsBatch { Ops = [new MovePagesOp { Pages = "3", To = 1 }] },
-            new PdfEditRequest { OutputPath = fixture.File("move.out.pdf") });
+            new PdfEditRequest { Output = TestOutput.At(fixture.File("move.out.pdf")) });
 
         // "Three" and the explicit link are retargeted; "appendix" has left 0, which may stand
         // for an omitted coordinate, so it and the bookmark and link that use it are counted.
@@ -76,7 +76,7 @@ public sealed class PdfNavigationTests
         // Pages 2 and 3 move to the front: 2 becomes 1 and 3 becomes 2.
         PdfEditResult result = fixture.Engine.ApplyOps(input,
             new PdfOpsBatch { Ops = [new MovePagesOp { Pages = "2-3", To = 1 }] },
-            new PdfEditRequest { OutputPath = fixture.File("exact.out.pdf") });
+            new PdfEditRequest { Output = TestOutput.At(fixture.File("exact.out.pdf")) });
 
         Assert.DoesNotContain(result.Warnings ?? [], static item => item.Code == "NAVIGATION_DEGRADED");
         using var moved = new Document(result.Output!.Path);
@@ -121,7 +121,7 @@ public sealed class PdfNavigationTests
 
         PdfEditResult result = fixture.Engine.ApplyOps(input,
             new PdfOpsBatch { Ops = [new SetMetadataOp { Title = "Kept" }, new RotatePagesOp { Pages = "3", Angle = 90 }] },
-            new PdfEditRequest { OutputPath = fixture.File("metadata.out.pdf") });
+            new PdfEditRequest { Output = TestOutput.At(fixture.File("metadata.out.pdf")) });
 
         Assert.DoesNotContain(result.Warnings ?? [], static item => item.Code == "NAVIGATION_DEGRADED");
     }
@@ -134,7 +134,7 @@ public sealed class PdfNavigationTests
 
         PdfEditResult result = fixture.Engine.ApplyOps(input,
             new PdfOpsBatch { Ops = [new SetMetadataOp { Title = "Kept" }] },
-            new PdfEditRequest { OutputPath = fixture.File("attachments.out.pdf") });
+            new PdfEditRequest { Output = TestOutput.At(fixture.File("attachments.out.pdf")) });
 
         Assert.DoesNotContain(result.Warnings ?? [], static item => item.Code == "NAVIGATION_DEGRADED");
         using var edited = new Document(result.Output!.Path);
@@ -165,8 +165,8 @@ public sealed class PdfNavigationTests
 
         PdfWriteResult result = fixture.Engine.Merge(new PdfMergeRequest
         {
+            Output = TestOutput.At(fixture.File("merged.pdf")),
             InputPaths = [first, second],
-            OutputPath = fixture.File("merged.pdf"),
         });
 
         // "Two" was Fit and survives; "Three" (XYZ) becomes Fit and "Named" loses its name.

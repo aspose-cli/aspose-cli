@@ -22,7 +22,9 @@ public sealed class WordsResourceLoadingTests
         string output = fixture.Temp.File("created.docx");
         var created = fixture.Engine.Create(new NewDocumentRequest
         {
-            TemplatePath = input, OutputPath = output, Title = "Resource owner",
+            Output = TestOutput.At(output),
+            TemplatePath = input,
+            Title = "Resource owner",
         });
         Assert.Contains(created.Warnings!, warning => warning.Code == WarningCodes.RemoteResourcesBlocked);
         var document = new Document(output);
@@ -45,7 +47,7 @@ public sealed class WordsResourceLoadingTests
         string output = Path.Combine(documents, "updated.docx");
 
         fixture.Engine.ApplyOps(input, new WordsOpsBatch { Ops = [new UpdateFieldsOp()] },
-            new WordsEditRequest { OutputPath = output });
+            new WordsEditRequest { Output = TestOutput.At(output) });
 
         Assert.DoesNotContain("OUTSIDE-SECRET", new Document(output).GetText(), StringComparison.Ordinal);
     }
@@ -89,10 +91,10 @@ public sealed class WordsResourceLoadingTests
                 new InsertImageOp { At = new WordsTarget { Block = 1 }, Position = "after", Path = svg },
                 new UpdateFieldsOp(),
             ],
-        }, new WordsEditRequest { OutputPath = edited });
+        }, new WordsEditRequest { Output = TestOutput.At(edited) });
         fixture.Engine.Read(edited, new DocumentReadRequest());
-        fixture.Engine.Render(edited, new WordsRenderRequest { TargetFormatId = "png", OutputPath = fixture.Temp.File("page.png") });
-        fixture.Engine.Convert(edited, new WordsConvertRequest { TargetFormatId = "pdf", OutputPath = fixture.Temp.File("edited.pdf") });
+        fixture.Engine.Render(edited, new WordsRenderRequest { Output = TestOutput.At(fixture.Temp.File("page.png"), format: "png") });
+        fixture.Engine.Convert(edited, new WordsConvertRequest { Output = TestOutput.At(fixture.Temp.File("edited.pdf"), format: "pdf") });
 
         Assert.True(server.RequestCount == 0, string.Join("; ", server.Requests));
     }
@@ -123,7 +125,7 @@ public sealed class WordsResourceLoadingTests
         string output = fixture.Temp.File("converted.docx");
         var converted = fixture.Engine.Convert(input, new WordsConvertRequest
         {
-            OutputPath = output, TargetFormatId = "docx",
+            Output = TestOutput.At(output, format: "docx"),
         });
         Assert.Contains(converted.Warnings!, warning =>
             warning.Code == WarningCodes.RemoteResourcesBlocked && warning.AffectsCompleteness);

@@ -54,13 +54,13 @@ internal sealed class WordsInspectionService
         });
         Revision[] revisions = compared.Revisions.Cast<Revision>().ToArray();
         OutputInfo? output = null;
-        if (request.OutputPath is not null)
+        if (request.Output is { } redline)
         {
-            string format = WordsFormats.ForOutput(request.OutputPath, leftLoaded.FormatId);
+            string format = redline.Keeping(leftLoaded.FormatId).Id;
             SaveOptions options = WordsSavePipeline.Options(format);
             WordsSavePipeline.RemoveMacrosUnlessKept(compared, format);
-            long size = _writer.Write(request.OutputPath, request.Overwrite, temp => compared.Save(temp, options));
-            output = BuildOutput(request.OutputPath, format, size);
+            long size = _writer.Write(redline.Path, redline.Overwrite, temp => compared.Save(temp, options));
+            output = BuildOutput(redline.Path, format, size);
         }
 
         return new WordsCompareResult

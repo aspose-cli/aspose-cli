@@ -58,7 +58,7 @@ internal sealed class CellsProductionService
         // The imported rows come over as they are; say which of them are not table data.
         IReadOnlyList<Warning> textLayout = TextTableLayout.Warnings(loaded, _resourceBudgets);
 
-        SaveFormat saveFormat = FormatMapper.ToSaveFormat(request.TargetFormatId);
+        SaveFormat saveFormat = FormatMapper.ToSaveFormat(request.Output.Format.Id);
         string? resolvedSheetName = null;
         int? selectedSheet = null;
 
@@ -74,12 +74,12 @@ internal sealed class CellsProductionService
             Worksheet sheet = Sheets.Resolve(workbook, request.SheetName);
             resolvedSheetName = sheet.Name;
 
-            if (WorkbookSavePlan.WritesActiveSheetOnlyFor(request.TargetFormatId))
+            if (WorkbookSavePlan.WritesActiveSheetOnlyFor(request.Output.Format.Id))
             {
                 // Text formats export the active sheet.
                 workbook.Worksheets.ActiveSheetIndex = sheet.Index;
             }
-            else if (request.TargetFormatId is "pdf")
+            else if (request.Output.Format.Id is "pdf")
             {
                 selectedSheet = sheet.Index;
             }
@@ -88,44 +88,44 @@ internal sealed class CellsProductionService
                 // Command-layer validation prevents this; guard against future drift.
                 throw CliErrors.OptionInvalid(
                     "--sheet",
-                    $"the '{request.TargetFormatId}' format always converts the whole workbook",
+                    $"the '{request.Output.Format.Id}' format always converts the whole workbook",
                     $"Drop --sheet, or convert to {string.Join(", ", CellsFormats.SheetScopedConvertIds)} for a single-sheet export.");
             }
         }
 
-        if (WorkbookSavePlan.WritesActiveSheetOnlyFor(request.TargetFormatId)
+        if (WorkbookSavePlan.WritesActiveSheetOnlyFor(request.Output.Format.Id)
             && licenseState == LicenseState.Evaluation && request.SheetName is not null)
         {
             // The evaluation SDK writes the first sheet regardless of ActiveSheetIndex.
             Worksheet active = workbook.Worksheets[workbook.Worksheets.ActiveSheetIndex];
             Worksheet first = workbook.Worksheets[0];
             if (active.Index != 0)
-            { throw CellsErrors.TextExportEvaluationLimit(request.TargetFormatId, active.Name, first.Name); }
+            { throw CellsErrors.TextExportEvaluationLimit(request.Output.Format.Id, active.Name, first.Name); }
         }
 
-        Warning? chartsSplit = request.TargetFormatId is "pdf" ? PrintedPages.SplitChartsWarning(workbook, selectedSheet) : null;
+        Warning? chartsSplit = request.Output.Format.Id is "pdf" ? PrintedPages.SplitChartsWarning(workbook, selectedSheet) : null;
         int refsBefore = _saver.CountRefFormulas(workbook);
-        WorkbookSavePlan savePlan = WorkbookSavePlan.Create(request.TargetFormatId, licenseState,
+        WorkbookSavePlan savePlan = WorkbookSavePlan.Create(request.Output.Format, licenseState,
             request.EncryptPassword, loaded.IsEncrypted ? request.Password : null, selectedSheet, request.ByteOrderMark);
         loaded.RestoreActiveSheet(savePlan);
         Warning? sheetsDropped = savePlan.DetectSheetLoss(workbook);
         // Read before the save, which may add a warning sheet of its own (EVALUATION_SHEET_ADDED).
-        Warning? exportedWarningSheets = CellsEvaluation.DescribeExportedWarningSheets(workbook, request.TargetFormatId, selectedSheet);
+        Warning? exportedWarningSheets = CellsEvaluation.DescribeExportedWarningSheets(workbook, request.Output.Format.Id, selectedSheet);
         Warning? evaluationSheetAdded = null;
-        long sizeBytes = _saver.Write(request.OutputPath, request.Overwrite,
+        long sizeBytes = _saver.Write(request.Output.Path, request.Output.Overwrite,
             path => evaluationSheetAdded = _saver.Produce(workbook, savePlan, path));
         Warning? formulasBroken = _saver.BuildBrokenFormulaWarning(
             refsBefore,
             _saver.CountRefFormulas(workbook),
-            request.TargetFormatId);
+            request.Output.Format.Id);
 
         return new ConvertResult
         {
             Input = input,
             Output = new OutputInfo
             {
-                Path = request.OutputPath,
-                Format = request.TargetFormatId,
+                Path = request.Output.Path,
+                Format = request.Output.Format.Id,
                 SizeBytes = sizeBytes,
                 Encrypted = savePlan.Encrypts,
             },
@@ -135,7 +135,7 @@ internal sealed class CellsProductionService
             // formats write every sheet.
             Warnings = CombineWarnings(licenseState, [loaded.Resources.CoverageWarning, loaded.CalculatedOnOpen,
                 loaded.SkippedSheetWarning(request.SheetName is null && savePlan.WritesActiveSheetOnly), sheetsDropped, dataTruncated, formulasBroken, savePlan.EncryptionWarning, evaluationSheetAdded, chartsSplit,
-                CellsEvaluation.DescribeAddedNotice(licenseState, request.TargetFormatId), exportedWarningSheets, .. textLayout]),
+                CellsEvaluation.DescribeAddedNotice(licenseState, request.Output.Format.Id), exportedWarningSheets, .. textLayout]),
         };
     }
 
@@ -154,8 +154,7 @@ internal sealed class CellsProductionService
 
         WorkbookStagedSave saved = _saver.Save(
             workbook,
-            request.OutputPath,
-            request.Overwrite,
+            request.Output,
             licenseState,
             request.EncryptPassword);
 
@@ -186,7 +185,7 @@ internal sealed class CellsProductionService
         }
 
         Worksheet sheet = Sheets.Resolve(workbook, request.SheetName);
-        bool isRaster = FormatMapper.IsRaster(request.TargetFormatId);
+        bool isRaster = FormatMapper.IsRaster(request.Output.Format.Id);
 
         // A hidden sheet renders to zero pages (and would crash the page-size
         // probe below). The caller explicitly asked for THIS sheet, so reveal it
@@ -205,8 +204,8 @@ internal sealed class CellsProductionService
             renderedRange = A1.FormatRange(range);
         }
 
-        using var transaction = new AtomicOutputSetWriter(_fileWriter, Path.GetDirectoryName(request.OutputPath)!, "cells-render");
-        long sizeBytes = StageSheet(transaction, sheet, request, renderedRange, request.OutputPath).SizeBytes;
+        using var transaction = new AtomicOutputSetWriter(_fileWriter, request.Output.Directory, "cells-render");
+        long sizeBytes = StageSheet(transaction, sheet, request, renderedRange, request.Output.Path).SizeBytes;
         transaction.Commit();
 
         return new RenderResult
@@ -214,8 +213,8 @@ internal sealed class CellsProductionService
             Input = input,
             Output = new OutputInfo
             {
-                Path = request.OutputPath,
-                Format = request.TargetFormatId,
+                Path = request.Output.Path,
+                Format = request.Output.Format.Id,
                 SizeBytes = sizeBytes,
             },
             Sheet = sheet.Name,
@@ -236,11 +235,11 @@ internal sealed class CellsProductionService
     /// </summary>
     private StagedOutput StageSheet(AtomicOutputSetWriter transaction, Worksheet sheet, RenderRequest request, string? printArea, string outputPath)
     {
-        bool isRaster = FormatMapper.IsRaster(request.TargetFormatId);
+        bool isRaster = FormatMapper.IsRaster(request.Output.Format.Id);
 
         var imageOptions = new ImageOrPrintOptions
         {
-            ImageType = FormatMapper.ToImageType(request.TargetFormatId),
+            ImageType = FormatMapper.ToImageType(request.Output.Format.Id),
             OnePagePerSheet = true,
         };
 
@@ -278,7 +277,7 @@ internal sealed class CellsProductionService
 
             return transaction.Stage(
                 outputPath,
-                request.Overwrite,
+                request.Output.Overwrite,
                 tempPath => render.ToImage(0, tempPath));
         }
         catch (CellsException ex)
@@ -316,9 +315,9 @@ internal sealed class CellsProductionService
             }
         }
 
-        IReadOnlyList<string> outputPaths = DerivePerSheetPaths(request.OutputPath, candidates);
+        IReadOnlyList<string> outputPaths = DerivePerSheetPaths(request.Output, candidates);
 
-        using var transaction = new AtomicOutputSetWriter(_fileWriter, Path.GetDirectoryName(request.OutputPath)!, "cells-render");
+        using var transaction = new AtomicOutputSetWriter(_fileWriter, request.Output.Directory, "cells-render");
         var rendered = new List<SheetRenderOutput>();
         var skipped = new List<string>();
         CliException? firstSkip = null;
@@ -366,11 +365,11 @@ internal sealed class CellsProductionService
             Output = new OutputInfo
             {
                 Path = rendered[0].Path,
-                Format = request.TargetFormatId,
+                Format = request.Output.Format.Id,
                 SizeBytes = rendered[0].SizeBytes,
             },
             Sheet = rendered[0].Sheet,
-            Dpi = FormatMapper.IsRaster(request.TargetFormatId) ? request.Dpi : null,
+            Dpi = FormatMapper.IsRaster(request.Output.Format.Id) ? request.Dpi : null,
             Outputs = rendered,
             License = EnvelopeParts.License(licenseState),
             Warnings = CombineWarnings(licenseState, [.. loaded.Warnings() ?? [], sheetsSkipped]),
@@ -394,31 +393,26 @@ internal sealed class CellsProductionService
     /// files everywhere; a collision after sanitizing appends the sheet's
     /// zero-based workbook index.
     /// </summary>
-    private static IReadOnlyList<string> DerivePerSheetPaths(string outputPath, IReadOnlyList<Worksheet> sheets)
+    private static IReadOnlyList<string> DerivePerSheetPaths(ResolvedOutput output, IReadOnlyList<Worksheet> sheets)
     {
-        string directory = Path.GetDirectoryName(outputPath) ?? string.Empty;
-        string baseName = Path.GetFileNameWithoutExtension(outputPath);
-        string extension = Path.GetExtension(outputPath);
-
         var paths = new string[sheets.Count];
         var taken = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         for (int i = 0; i < sheets.Count; i++)
         {
-            string stem = $"{baseName}.{SanitizeFileNamePart(sheets[i].Name)}";
-            string fileName = stem + extension;
-            if (!taken.Add(fileName))
+            string label = SanitizeFileNamePart(sheets[i].Name);
+            if (!taken.Add(label))
             {
-                fileName = $"{stem}{sheets[i].Index}{extension}";
-                for (int suffix = 2; !taken.Add(fileName); suffix++)
+                label = $"{label}{sheets[i].Index}";
+                for (int suffix = 2; !taken.Add(label); suffix++)
                 {
                     // Degenerate double collision (a sheet literally named like
                     // another's fallback); keep appending until unique so two
                     // sheets can never target the same file.
-                    fileName = $"{stem}{sheets[i].Index}-{suffix}{extension}";
+                    label = $"{SanitizeFileNamePart(sheets[i].Name)}{sheets[i].Index}-{suffix}";
                 }
             }
 
-            paths[i] = Path.Combine(directory, fileName);
+            paths[i] = output.Part(label);
         }
 
         return paths;

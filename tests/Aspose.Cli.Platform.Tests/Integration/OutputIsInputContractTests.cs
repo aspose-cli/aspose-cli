@@ -20,8 +20,9 @@ public sealed class OutputIsInputContractTests
     {
         ["file"] = (["cells", "convert", "book.xlsx", "--to", "xlsx", "--out", "./BOOK.xlsx"], "--out"),
         ["required file over product inputs"] = (["pdf", "merge", "doc.pdf", "other.pdf", "--out", "./OTHER.pdf"], "--out"),
-        ["file or directory"] = (["pdf", "extract", "doc.pdf", "--what", "forms", "--to", "json", "--out", "./DOC.pdf"], "--out"),
-        ["file named by a product option"] = (["pdf", "sign", "doc.pdf", "--certificate", "cert.pfx", "--certificate-password-env", "CERT_PASSWORD", "--out", "./CERT.pfx"], "--out"),
+        // Each output carries its format's extension, so the input it names carries it too.
+        ["file or directory"] = (["pdf", "extract", "form.json", "--what", "forms", "--to", "json", "--out", "./FORM.json"], "--out"),
+        ["file named by a product option"] = (["pdf", "sign", "doc.pdf", "--certificate", "cert.pdf", "--certificate-password-env", "CERT_PASSWORD", "--out", "./CERT.pdf"], "--out"),
         ["created file"] = (["words", "create", "./DOC.docx", "--template", "doc.docx", "--overwrite"], "file"),
         ["mutation"] = (["cells", "edit", "book.xlsx", "--set", "Sheet1!A1=1", "--out", "./BOOK.xlsx"], "--out"),
     };
@@ -33,7 +34,7 @@ public sealed class OutputIsInputContractTests
     public void AnOutputThatResolvesToAnInputIsRefused(string shape)
     {
         using var workspace = new TempWorkspace();
-        string[] inputs = ["book.xlsx", "doc.pdf", "other.pdf", "doc.docx", "cert.pfx"];
+        string[] inputs = ["book.xlsx", "doc.pdf", "other.pdf", "doc.docx", "cert.pdf", "form.json"];
         foreach (string input in inputs)
         {
             File.WriteAllText(workspace.File(input), "input");

@@ -36,7 +36,7 @@ public sealed class SlidesChartUpdateTests
                     Series = [new SlidesChartSeriesInput { Name = "Rev", Values = [5, 4, 3, 2, 1] }],
                 },
             ],
-        }, new PresentationEditRequest { OutputPath = output });
+        }, new PresentationEditRequest { Output = TestOutput.At(output) });
 
         using var deck = new Presentation(output);
         IChart chart = Chart(deck);
@@ -76,7 +76,7 @@ public sealed class SlidesChartUpdateTests
                     ],
                 },
             ],
-        }, new PresentationEditRequest { OutputPath = output });
+        }, new PresentationEditRequest { Output = TestOutput.At(output) });
 
         using var deck = new Presentation(output);
         IChart chart = Chart(deck);
@@ -107,7 +107,7 @@ public sealed class SlidesChartUpdateTests
                     Series = [new SlidesChartSeriesInput { Name = "One", Values = [10, 20], XValues = [1, 2] }],
                 },
             ],
-        }, new PresentationEditRequest { OutputPath = seed });
+        }, new PresentationEditRequest { Output = TestOutput.At(seed) });
         using (var styled = new Presentation(seed))
         {
             Chart(styled).ChartData.Series[0].Marker.Symbol = MarkerStyleType.Triangle;
@@ -125,7 +125,7 @@ public sealed class SlidesChartUpdateTests
                     Series = [new SlidesChartSeriesInput { Name = "One", Values = [11, 21, 31], XValues = [1.5, 2.5, 3.5] }],
                 },
             ],
-        }, new PresentationEditRequest { OutputPath = output });
+        }, new PresentationEditRequest { Output = TestOutput.At(output) });
 
         using var deck = new Presentation(output);
         IChartSeries series = Assert.Single(Chart(deck).ChartData.Series);
@@ -152,7 +152,7 @@ public sealed class SlidesChartUpdateTests
                     Series = [new SlidesChartSeriesInput { Name = "One", Values = [1, 2, 3], XValues = [1, 2, 3] }],
                 },
             ],
-        }, new PresentationEditRequest { OutputPath = output }));
+        }, new PresentationEditRequest { Output = TestOutput.At(output) }));
 
         Assert.Equal(SlidesDiagnostics.ChartDataInvalid, error.Code);
         Assert.Contains("insert_chart", error.Message, StringComparison.Ordinal);

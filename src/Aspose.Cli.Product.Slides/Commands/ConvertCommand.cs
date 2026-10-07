@@ -1,6 +1,7 @@
 using System.CommandLine;
 using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.Extensibility.Commanding;
+using Aspose.Cli.Sdk.IO;
 
 namespace Aspose.Cli.Product.Slides.Commands;
 
@@ -24,14 +25,12 @@ internal static class ConvertCommand
             [slides],
             (parse, standard) =>
             {
-                string format = standard.TargetFormat();
+                ResolvedOutput output = standard.Output;
                 string? range = parse.GetValue(slides);
-                string? encryptPassword = standard.EncryptPassword(format);
+                string? encryptPassword = standard.EncryptPassword();
                 return standard.OpenEngine().Convert(standard.Input, new PresentationConvertRequest
                 {
-                    TargetFormatId = format,
-                    OutputPath = standard.OutputPath(SlidesFormats.Definitions.ExtensionFor(format)),
-                    Overwrite = standard.Overwrite,
+                    Output = output,
                     Slides = range is null ? null : PageRange.Parse(range),
                     Password = standard.InputPassword,
                     EncryptPassword = encryptPassword,

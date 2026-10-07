@@ -1,5 +1,6 @@
 using System.CommandLine;
 using Aspose.Cli.Sdk.Extensibility;
+using Aspose.Cli.Sdk.IO;
 
 namespace Aspose.Cli.Product.Pdf.Commands;
 
@@ -22,13 +23,11 @@ internal static class ConvertCommand
             [pages],
             (parse, standard) =>
             {
-                string format = standard.TargetFormat();
+                ResolvedOutput output = standard.Output;
                 string? range = parse.GetValue(pages);
                 return standard.OpenEngine().Convert(standard.Input, new PdfConvertRequest
                 {
-                    TargetFormatId = format,
-                    OutputPath = standard.OutputPath(PdfFormats.Definitions.ExtensionFor(format)),
-                    Overwrite = standard.Overwrite,
+                    Output = output,
                     Pages = range is null ? null : PageRange.Parse(range),
                     Password = standard.InputPassword,
                 });

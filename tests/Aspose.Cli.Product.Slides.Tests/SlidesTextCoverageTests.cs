@@ -22,7 +22,7 @@ public sealed class SlidesTextCoverageTests
         SlidesEditResult result = fixture.Engine.ApplyOps(
             input,
             new SlidesOpsBatch { Ops = [new SlidesReplaceTextOp { Find = "bc", Replace = "Q" }] },
-            new PresentationEditRequest { OutputPath = output });
+            new PresentationEditRequest { Output = TestOutput.At(output) });
 
         Assert.Equal(1, Assert.Single(result.Applied).ItemsAffected);
         using var deck = new Presentation(output);
@@ -50,7 +50,7 @@ public sealed class SlidesTextCoverageTests
                     new SlidesReplaceTextOp { Find = "q", Replace = "z" },
                 ],
             },
-            new PresentationEditRequest { OutputPath = fixture.File("unmatched.pptx") });
+            new PresentationEditRequest { Output = TestOutput.At(fixture.File("unmatched.pptx")) });
 
         // Only the first operation matched nothing: "bc" is on the slide, not in its notes.
         Assert.Equal([0L, 4L], result.Applied.Select(static outcome => outcome.ItemsAffected));
@@ -77,7 +77,7 @@ public sealed class SlidesTextCoverageTests
                     new SlidesReplaceTextOp { Find = "(t)y", Replace = "$1Y", Regex = true },
                 ],
             },
-            new PresentationEditRequest { OutputPath = output });
+            new PresentationEditRequest { Output = TestOutput.At(output) });
 
         Assert.Equal([4L, 1L], result.Applied.Select(static outcome => outcome.ItemsAffected));
         using var deck = new Presentation(output);
@@ -106,7 +106,7 @@ public sealed class SlidesTextCoverageTests
             new PresentationSearchRequest { Query = new SearchQuery(TextSearch.Create("q", regex: false, caseSensitive: true), 100, PresentationSearchScopes.Shapes) });
         SlidesExtractResult extract = fixture.Engine.Extract(
             input,
-            new PresentationExtractRequest { What = PresentationExtractKinds.Text, OutputDirectory = fixture.File("text") });
+            new PresentationExtractRequest { Output = new ResolvedDirectory(fixture.File("text")), What = PresentationExtractKinds.Text });
 
         SlideShapeData[] shapes = Assert.Single(read.Slides).Shapes.ToArray();
         Assert.Contains(shapes, static shape => shape.Type == "table" && shape.Text == "tq ty");
@@ -135,7 +135,7 @@ public sealed class SlidesTextCoverageTests
 
         SlidesExtractResult extract = fixture.Engine.Extract(
             input,
-            new PresentationExtractRequest { What = PresentationExtractKinds.Text, OutputDirectory = fixture.File("text") });
+            new PresentationExtractRequest { Output = new ResolvedDirectory(fixture.File("text")), What = PresentationExtractKinds.Text });
         SlidesSearchResult search = fixture.Engine.Search(
             input,
             new PresentationSearchRequest { Query = new SearchQuery(TextSearch.Create("cd", regex: false, caseSensitive: true), 100, PresentationSearchScopes.Shapes) });
@@ -199,7 +199,7 @@ public sealed class SlidesTextCoverageTests
         string input = fixture.CreatePresentation("long-text.pptx", slides: 1);
         string output = fixture.File("long-text-replaced.pptx");
         var batch = new SlidesOpsBatch { Ops = [new SlidesReplaceTextOp { Find = "Slide 1", Replace = "Intro" }] };
-        var request = new PresentationEditRequest { OutputPath = output };
+        var request = new PresentationEditRequest { Output = TestOutput.At(output) };
 
         if (fixture.LicenseState == Sdk.Licensing.LicenseState.Licensed)
         {

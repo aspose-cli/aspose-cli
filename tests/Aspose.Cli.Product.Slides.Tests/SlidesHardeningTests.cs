@@ -78,8 +78,7 @@ public sealed class SlidesHardeningTests
             input,
             new PresentationRenderRequest
             {
-                TargetFormatId = "png",
-                OutputPath = fixture.File("bounded.png"),
+                Output = TestOutput.At(fixture.File("bounded.png"), format: "png"),
                 Slides = PageRange.Parse("1,12"),
                 Width = 320,
             });
@@ -109,14 +108,14 @@ public sealed class SlidesHardeningTests
         bool evaluation = fixture.LicenseState == Sdk.Licensing.LicenseState.Evaluation;
 
         Assert.Equal(evaluation, CutShort(fixture.Engine.Read(input, new PresentationReadRequest { Scope = PresentationReadScopes.Text }).Warnings));
-        Assert.Equal(evaluation, CutShort(fixture.Engine.Extract(input, new PresentationExtractRequest { What = PresentationExtractKinds.Text, OutputDirectory = fixture.File("text") }).Warnings));
-        Assert.Equal(evaluation, CutShort(fixture.Engine.Convert(input, new PresentationConvertRequest { TargetFormatId = "md", OutputPath = fixture.File("cut-short.out.md") }).Warnings));
-        Assert.False(CutShort(fixture.Engine.Convert(input, new PresentationConvertRequest { TargetFormatId = "pdf", OutputPath = fixture.File("cut-short.pdf") }).Warnings));
-        Assert.False(CutShort(fixture.Engine.Create(new NewPresentationRequest { OutputPath = fixture.File("created.pptx"), MarkdownPath = markdown }).Warnings));
+        Assert.Equal(evaluation, CutShort(fixture.Engine.Extract(input, new PresentationExtractRequest { Output = new ResolvedDirectory(fixture.File("text")), What = PresentationExtractKinds.Text }).Warnings));
+        Assert.Equal(evaluation, CutShort(fixture.Engine.Convert(input, new PresentationConvertRequest { Output = TestOutput.At(fixture.File("cut-short.out.md"), format: "md") }).Warnings));
+        Assert.False(CutShort(fixture.Engine.Convert(input, new PresentationConvertRequest { Output = TestOutput.At(fixture.File("cut-short.pdf"), format: "pdf") }).Warnings));
+        Assert.False(CutShort(fixture.Engine.Create(new NewPresentationRequest { Output = TestOutput.At(fixture.File("created.pptx")), MarkdownPath = markdown }).Warnings));
         Assert.False(CutShort(fixture.Engine.ApplyOps(
             input,
             new SlidesOpsBatch { Ops = [new SlidesSetPropertiesOp { Title = "Briefing" }] },
-            new PresentationEditRequest { OutputPath = fixture.File("edited.pptx") }).Warnings));
+            new PresentationEditRequest { Output = TestOutput.At(fixture.File("edited.pptx")) }).Warnings));
 
         static bool CutShort(IReadOnlyList<Warning>? warnings) =>
             warnings?.Any(static warning => warning.Code == WarningCodes.EvalInputTruncated) == true;
@@ -143,8 +142,7 @@ public sealed class SlidesHardeningTests
                 input,
                 new PresentationRenderRequest
                 {
-                    TargetFormatId = "png",
-                    OutputPath = output,
+                    Output = TestOutput.At(output, format: "png"),
                     AllSlides = true,
                     Dpi = 1200,
                 }));
@@ -164,14 +162,12 @@ public sealed class SlidesHardeningTests
 
         fixture.Engine.Render(input, new PresentationRenderRequest
         {
-            TargetFormatId = "png",
-            OutputPath = widthOutput,
+            Output = TestOutput.At(widthOutput, format: "png"),
             Width = 640,
         });
         fixture.Engine.Render(input, new PresentationRenderRequest
         {
-            TargetFormatId = "png",
-            OutputPath = dpiOutput,
+            Output = TestOutput.At(dpiOutput, format: "png"),
             Dpi = 150,
         });
 
@@ -207,8 +203,7 @@ public sealed class SlidesHardeningTests
                 input,
                 new PresentationConvertRequest
                 {
-                    TargetFormatId = "pdf",
-                    OutputPath = output,
+                    Output = TestOutput.At(output, format: "pdf"),
                 }));
 
         Assert.Equal(ErrorCodes.FileCorrupt, error.Code);

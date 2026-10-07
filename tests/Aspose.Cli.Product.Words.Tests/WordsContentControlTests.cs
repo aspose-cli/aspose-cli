@@ -36,8 +36,8 @@ public sealed class WordsContentControlTests : IClassFixture<WordsFixture>
 
         WordsExtractResult result = _fixture.Engine.Extract(input, new WordsExtractRequest
         {
+            Output = new ResolvedDirectory(_fixture.Temp.File($"text-{Guid.NewGuid():N}")),
             What = "text",
-            OutputDirectory = _fixture.Temp.File($"text-{Guid.NewGuid():N}"),
         });
 
         Assert.Equal(string.Join('\n', Blocks), File.ReadAllText(Assert.Single(result.Items).Path));
@@ -52,7 +52,7 @@ public sealed class WordsContentControlTests : IClassFixture<WordsFixture>
         _fixture.Engine.ApplyOps(input, new WordsOpsBatch
         {
             Ops = [new SetTextOp { At = new WordsTarget { Block = 3 }, Text = "Replaced" }],
-        }, new WordsEditRequest { OutputPath = output });
+        }, new WordsEditRequest { Output = TestOutput.At(output) });
 
         var document = new Document(output);
         StructuredDocumentTag control = Controls(document).First();
@@ -69,7 +69,7 @@ public sealed class WordsContentControlTests : IClassFixture<WordsFixture>
         _fixture.Engine.ApplyOps(input, new WordsOpsBatch
         {
             Ops = [new DeleteBlocksOp { Target = new WordsTarget { Blocks = "2-4" } }],
-        }, new WordsEditRequest { OutputPath = output });
+        }, new WordsEditRequest { Output = TestOutput.At(output) });
 
         Assert.Empty(Controls(new Document(output)));
         DocumentReadResult read = _fixture.Engine.Read(output, new DocumentReadRequest { Scope = "text" });
@@ -84,7 +84,7 @@ public sealed class WordsContentControlTests : IClassFixture<WordsFixture>
         CliException error = Assert.Throws<CliException>(() => _fixture.Engine.ApplyOps(input, new WordsOpsBatch
         {
             Ops = [new InsertBreakOp { At = new WordsTarget { Block = 2 }, Position = "after", Kind = "section" }],
-        }, new WordsEditRequest { OutputPath = _fixture.Temp.File($"break-{Guid.NewGuid():N}.docx") }));
+        }, new WordsEditRequest { Output = TestOutput.At(_fixture.Temp.File($"break-{Guid.NewGuid():N}.docx")) }));
 
         Assert.Contains("content control", error.Message, StringComparison.Ordinal);
     }

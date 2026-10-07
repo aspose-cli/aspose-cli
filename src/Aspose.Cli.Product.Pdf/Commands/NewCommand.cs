@@ -2,6 +2,7 @@ using System.CommandLine;
 using System.Globalization;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Extensibility;
+using Aspose.Cli.Sdk.IO;
 
 namespace Aspose.Cli.Product.Pdf.Commands;
 
@@ -29,7 +30,7 @@ internal static class NewCommand
             "Create a PDF from exactly one source family.",
             new CommandTraits
             {
-                Output = OutputTarget.CreatedFile("PDF path to create."),
+                Output = OutputTarget.CreatedFile("PDF path to create.", PdfFormats.Document),
                 UsesFonts = true,
             },
             [images, html, allowNetwork, text, pageSize, margins],
@@ -49,17 +50,14 @@ internal static class NewCommand
                 string[]? imagePaths = imageValues.Length == 0 ? null : standard.InputFiles(images);
                 string? htmlPath = standard.InputFile(html);
                 string? textPath = standard.InputFile(text);
-                string outputPath = standard.CreatedPath;
+                ResolvedOutput output = standard.Output;
                 return standard.OpenEngine().Create(new NewPdfRequest
                 {
-                    OutputPath = outputPath,
-                    Overwrite = standard.Overwrite,
+                    Output = output,
                     ImagePaths = imagePaths,
                     HtmlPath = htmlPath,
                     AllowNetworkResources = parse.GetValue(allowNetwork),
                     TextPath = textPath,
-                    Markdown = textPath is not null
-                        && string.Equals(Path.GetExtension(textPath), ".md", StringComparison.OrdinalIgnoreCase),
                     PageSize = parse.GetValue(pageSize) ?? "A4",
                     Margins = ParseMargins(parse.GetValue(margins) ?? "36"),
                 });

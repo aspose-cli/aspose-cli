@@ -30,6 +30,12 @@ public sealed record BoundedEditDefinition<TOp, TBatch>
     /// <summary>The product's source-generated contract serializer.</summary>
     public required ProductJsonDefinition Contracts { get; init; }
 
+    /// <summary>
+    /// The formats the edit writes; the output's extension, or the input's when no
+    /// <c>--out</c> is named, chooses among them.
+    /// </summary>
+    public IReadOnlyList<FormatDescriptor>? Writes { get; init; }
+
     /// <summary>The <c>--set</c> shorthand, or null when the product has none.</summary>
     public SetDirectiveGrammar<TOp, TBatch>? SetDirectives { get; init; }
 
@@ -51,7 +57,11 @@ public sealed record BoundedEditInvocation<TBatch>(
     MutationTarget Target,
     EditCommandOptions Options,
     bool Verify,
-    IReadOnlyDictionary<string, string> Secrets);
+    IReadOnlyDictionary<string, string> Secrets)
+{
+    /// <summary>The resolved output, when the edit declares the formats it writes.</summary>
+    public ResolvedOutput? Output { get; init; }
+}
 
 /// <summary>
 /// The one command skeleton of every bounded, atomic product edit. It owns the operation
@@ -172,7 +182,7 @@ public sealed class BoundedEditCommand<TOp, TBatch>
             host,
             name,
             description,
-            traits with { Output = OutputTarget.Mutation },
+            traits with { Output = OutputTarget.Mutation(_definition.Writes) },
             [.. _options, .. parameters],
             parse => parse.GetValue(_ops) == StandardInputSource,
             (parse, standard) =>
@@ -218,7 +228,10 @@ public sealed class BoundedEditCommand<TOp, TBatch>
                 "Run the dry run first, then edit with --verify.");
         }
 
-        MutationTarget target = standard.MutationTarget();
+        ResolvedOutput? output = _definition.Writes is null ? null : standard.Output;
+        MutationTarget target = output is null
+            ? standard.MutationTarget()
+            : new MutationTarget(output.Path, output.Overwrite, output.InPlace, output.BackupPath);
         PathResolver paths = standard.Paths;
         TOp[] compiled = _definition.SetDirectives is { } grammar
             ? directives.Select(grammar.Parse).ToArray()
@@ -255,7 +268,10 @@ public sealed class BoundedEditCommand<TOp, TBatch>
                 BestEffort = parse.GetValue(_bestEffort),
             },
             verify,
-            ResolveSecrets(batch, standard.ReadEnvironment));
+            ResolveSecrets(batch, standard.ReadEnvironment))
+        {
+            Output = output,
+        };
     }
 
     private static IReadOnlyDictionary<string, string> ResolveSecrets(TBatch batch, Func<string, string?> readEnvironment)

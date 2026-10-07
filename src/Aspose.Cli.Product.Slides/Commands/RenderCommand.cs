@@ -2,6 +2,7 @@ using System.CommandLine;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.Extensibility.Commanding;
+using Aspose.Cli.Sdk.IO;
 
 namespace Aspose.Cli.Product.Slides.Commands;
 
@@ -40,17 +41,15 @@ internal static class RenderCommand
                     OptionGuards.EnsureInRange("--width", pixelWidth.Value, 64, 20_000, "Use 64-20000 pixels.");
                 }
 
-                string format = standard.TargetFormat();
-                if (format == "svg" && (explicitDpi || pixelWidth is not null))
+                ResolvedOutput output = standard.Output;
+                if (output.Format.Id == "svg" && (explicitDpi || pixelWidth is not null))
                 {
                     throw CliErrors.Usage(["SVG is vector output; omit --dpi and --width."]);
                 }
 
                 return standard.OpenEngine().Render(standard.Input, new PresentationRenderRequest
                 {
-                    TargetFormatId = format,
-                    OutputPath = standard.OutputPath(SlidesFormats.Definitions.ExtensionFor(format)),
-                    Overwrite = standard.Overwrite,
+                    Output = output,
                     Slides = selection.Range,
                     AllSlides = selection.All,
                     Dpi = pixelWidth is null ? resolution : null,

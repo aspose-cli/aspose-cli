@@ -158,9 +158,8 @@ public sealed class CellsPivotCalculationTests : IClassFixture<CellsFixture>
 
     private string CreateWorkbook(string output) => _fixture.Engine.Create(new NewWorkbookRequest
     {
-        OutputPath = _fixture.Temp.File(output),
+        Output = TestOutput.At(_fixture.Temp.File(output), overwrite: true),
         SheetNames = ["Data", "Pivot"],
-        Overwrite = true,
     }).Output.Path;
 
     private string Apply(string source, string operations, string output) => _fixture.Engine.ApplyOps(
@@ -168,8 +167,7 @@ public sealed class CellsPivotCalculationTests : IClassFixture<CellsFixture>
         ParseOps(operations),
         new EditRequest
         {
-            OutputPath = _fixture.Temp.File(output),
-            Overwrite = true,
+            Output = TestOutput.At(_fixture.Temp.File(output), overwrite: true),
         }).Output!.Path;
 
     private static CellsOpsBatch ParseOps(string json) =>

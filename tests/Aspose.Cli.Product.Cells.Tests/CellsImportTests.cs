@@ -197,8 +197,7 @@ public sealed class CellsImportTests : IClassFixture<CellsFixture>
                 """),
             new EditRequest
             {
-                OutputPath = _fixture.Temp.File("best-effort.out.xlsx"),
-                Overwrite = true,
+                Output = TestOutput.At(_fixture.Temp.File("best-effort.out.xlsx"), overwrite: true),
                 Options = new EditCommandOptions { BestEffort = true },
             });
 
@@ -378,9 +377,9 @@ public sealed class CellsImportTests : IClassFixture<CellsFixture>
             Parse($$"""{ "ops": [ { "op": "import_sheet", "sheet": "Totals", "path": {{Json(source)}}{{passwordEnv}} } ] }"""),
             new EditRequest
             {
-                OutputPath = _fixture.Temp.File($"encrypted-{code}.out.xlsx"),
-                Overwrite = true,
-                OpSecrets = password is null ? null : new Dictionary<string, string> { ["SOURCE_PWD"] = password },
+                Output = TestOutput.At(_fixture.Temp.File($"encrypted-{code}.out.xlsx"), overwrite: true),
+                OpSecrets = password is null ? null : new Dictionary<string,
+                string> { ["SOURCE_PWD"] = password },
             }));
 
         Assert.Equal(code, error.Code.Name);
@@ -548,7 +547,7 @@ public sealed class CellsImportTests : IClassFixture<CellsFixture>
         EditResult result = _fixture.Engine.ApplyOps(
             path,
             Parse($$"""{ "ops": [ {{operations}} ] }"""),
-            new EditRequest { OutputPath = _fixture.Temp.File(Path.GetFileNameWithoutExtension(path) + ".out.xlsx"), Overwrite = true, Recalculate = recalculate, Verify = verify });
+            new EditRequest { Output = TestOutput.At(_fixture.Temp.File(Path.GetFileNameWithoutExtension(path) + ".out.xlsx"), overwrite: true), Recalculate = recalculate, Verify = verify });
         Assert.All(result.Applied, static outcome => Assert.Equal(OpStatuses.Ok, outcome.Status));
         return result;
     }

@@ -82,8 +82,7 @@ public sealed class PdfRenderGridTests
 
         PdfRenderResult result = fixture.Engine.Render(input, new PdfRenderRequest
         {
-            TargetFormatId = "jpeg",
-            OutputPath = output,
+            Output = TestOutput.At(output, format: "jpeg"),
             Dpi = 72,
             Grid = 20,
         });
@@ -120,8 +119,7 @@ public sealed class PdfRenderGridTests
 
         CliException error = Assert.Throws<CliException>(() => fixture.Engine.Render(input, new PdfRenderRequest
         {
-            TargetFormatId = format,
-            OutputPath = output,
+            Output = TestOutput.At(output, format: format),
             Grid = spacing,
         }));
 
@@ -133,8 +131,7 @@ public sealed class PdfRenderGridTests
     private static PdfRenderResult Render(PdfEngineFixture fixture, string input, string output, int? grid) =>
         fixture.Engine.Render(input, new PdfRenderRequest
         {
-            TargetFormatId = "png",
-            OutputPath = output,
+            Output = TestOutput.At(output, format: "png"),
             Dpi = 144,
             Grid = grid,
         });

@@ -240,15 +240,4 @@ internal static class PdfEngineSupport
                 hint: "Simplify the expression or search a narrower page range.", innerException: exception);
         }
     }
-
-    internal static void EnsurePdfOutput(string path)
-    {
-        if (!string.Equals(Path.GetExtension(path), ".pdf", StringComparison.OrdinalIgnoreCase))
-        {
-            throw CliErrors.OptionInvalid(
-                "--out",
-                $"PDF output must use the .pdf extension: '{path}'",
-                "Choose a path ending in .pdf.");
-        }
-    }
 }

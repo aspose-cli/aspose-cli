@@ -22,8 +22,7 @@ internal static class ExtractCommand
             (parse, standard) => standard.OpenEngine().Extract(standard.Input, new WordsExtractRequest
             {
                 What = parse.GetRequiredValue(what),
-                OutputDirectory = standard.OutputDirectory,
-                Overwrite = standard.Overwrite,
+                Output = standard.DirectoryOutput,
                 Password = standard.InputPassword,
             }))
             .WithExamples(

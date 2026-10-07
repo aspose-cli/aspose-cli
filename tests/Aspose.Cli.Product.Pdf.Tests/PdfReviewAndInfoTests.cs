@@ -133,7 +133,7 @@ public sealed class PdfReviewAndInfoTests
                     new RedactTextOp { Pattern = "order.", Pages = "2" },
                 ],
             },
-            new PdfEditRequest { OutputPath = output });
+            new PdfEditRequest { Output = TestOutput.At(output) });
 
         JsonNode review = Review(workspace, output);
 

@@ -181,7 +181,7 @@ public sealed class SlidesShapeStyleTests
         fixture.Engine.ApplyOps(
             fixture.CreatePresentation("blank-" + name, slides: 1),
             new SlidesOpsBatch { Ops = [insert] },
-            new PresentationEditRequest { OutputPath = seed });
+            new PresentationEditRequest { Output = TestOutput.At(seed) });
         return seed;
     }
 
@@ -191,7 +191,7 @@ public sealed class SlidesShapeStyleTests
         fixture.Engine.ApplyOps(
             seed,
             new SlidesOpsBatch { Ops = [new SetShapeStyleOp { Slide = 1, ShapeId = shapeId, Style = style }] },
-            new PresentationEditRequest { OutputPath = output });
+            new PresentationEditRequest { Output = TestOutput.At(output) });
         return output;
     }
 

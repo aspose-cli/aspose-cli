@@ -25,12 +25,9 @@ internal static class RenderCommand
             {
                 PartSelection selection = pages.Read(parse);
                 int resolution = dpi.Read(parse);
-                string format = standard.TargetFormat();
                 return standard.OpenEngine().Render(standard.Input, new WordsRenderRequest
                 {
-                    TargetFormatId = format,
-                    OutputPath = standard.OutputPath(WordsFormats.Definitions.ExtensionFor(format)),
-                    Overwrite = standard.Overwrite,
+                    Output = standard.Output,
                     Pages = selection.Range,
                     AllPages = selection.All,
                     Dpi = resolution,

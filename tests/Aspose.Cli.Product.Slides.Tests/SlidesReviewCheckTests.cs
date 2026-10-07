@@ -202,7 +202,7 @@ public sealed class SlidesReviewCheckTests
         File.WriteAllText(markdown, "# Proposal\n\nSales team\n\n## Next steps\n\n- Confirm the pilot site\n- Sign the letter of intent\n");
         string deck = fixture.File("deck.pptx");
         string edited = fixture.File("deck.long-title.pptx");
-        fixture.Engine.Create(new NewPresentationRequest { MarkdownPath = markdown, OutputPath = deck });
+        fixture.Engine.Create(new NewPresentationRequest { Output = TestOutput.At(deck), MarkdownPath = markdown });
         fixture.Engine.ApplyOps(
             deck,
             new SlidesOpsBatch
@@ -216,7 +216,7 @@ public sealed class SlidesReviewCheckTests
                     },
                 ],
             },
-            new PresentationEditRequest { OutputPath = edited });
+            new PresentationEditRequest { Output = TestOutput.At(edited) });
 
         SlidesReviewAnalysis before = Review(fixture, deck);
         SlidesReviewAnalysis after = Review(fixture, edited);
@@ -237,7 +237,7 @@ public sealed class SlidesReviewCheckTests
         File.WriteAllText(markdown, "## Short title\n\n" + string.Concat(Enumerable.Range(1, 12).Select(static item =>
             $"- 培训 Training {item}：每季度一次线下集训，线上课程全年开放 on-demand courses for every partner\n")));
         string deck = fixture.File("long-bullets.pptx");
-        fixture.Engine.Create(new NewPresentationRequest { MarkdownPath = markdown, OutputPath = deck });
+        fixture.Engine.Create(new NewPresentationRequest { Output = TestOutput.At(deck), MarkdownPath = markdown });
 
         Assert.DoesNotContain(Review(fixture, deck).Findings, static finding => finding.Code == SlidesReviewChecks.TextOverflowsShape.Code);
     }
@@ -252,7 +252,7 @@ public sealed class SlidesReviewCheckTests
         File.WriteAllText(markdown, "## 风险清单 Risk Register\n\n" + string.Concat(Enumerable.Range(1, 10).Select(static item =>
             $"- 风险 {item}：跨市场数据合规要求不一致导致项目延期 Risk {item}: inconsistent cross-market data compliance delays delivery\n")));
         string deck = fixture.File("bilingual-risks.pptx");
-        fixture.Engine.Create(new NewPresentationRequest { MarkdownPath = markdown, OutputPath = deck });
+        fixture.Engine.Create(new NewPresentationRequest { Output = TestOutput.At(deck), MarkdownPath = markdown });
 
         PresentationReadResult read = fixture.Engine.Read(deck, new PresentationReadRequest { Scope = PresentationReadScopes.Full });
         SlideShapeData body = Assert.Single(read.Slides[0].Shapes, static shape => shape.Placeholder == "body");

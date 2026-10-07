@@ -1,6 +1,7 @@
 using System.CommandLine;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Extensibility;
+using Aspose.Cli.Sdk.IO;
 
 namespace Aspose.Cli.Product.Cells.Commands;
 
@@ -19,19 +20,18 @@ internal static class NewCommand
             "Create a new workbook.",
             new CommandTraits
             {
-                Output = OutputTarget.CreatedFile("Path of the workbook to create, e.g. report.xlsx."),
+                Output = OutputTarget.CreatedFile("Path of the workbook to create, e.g. report.xlsx.", CellsFormats.Convertible),
                 Encrypt = CellsCommands.EncryptedWorkbook,
             },
             [sheets],
             (parse, standard) =>
             {
                 IReadOnlyList<string> sheetNames = ParseSheetNames(parse.GetValue(sheets));
-                string outputPath = standard.CreatedPath;
-                string? encryptPassword = standard.EncryptPassword(CellsFormats.ForOutputPath(outputPath));
+                ResolvedOutput output = standard.Output;
+                string? encryptPassword = standard.EncryptPassword();
                 return standard.OpenEngine().Create(new NewWorkbookRequest
                 {
-                    OutputPath = outputPath,
-                    Overwrite = standard.Overwrite,
+                    Output = output,
                     SheetNames = sheetNames,
                     EncryptPassword = encryptPassword,
                 });

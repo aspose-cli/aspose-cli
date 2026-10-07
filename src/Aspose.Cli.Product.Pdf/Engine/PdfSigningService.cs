@@ -34,7 +34,6 @@ internal sealed class PdfSigningService
 
     public PdfSignResult Sign(string filePath, PdfSignRequest request)
     {
-        EnsurePdfOutput(request.OutputPath);
         EnsureCertificate(_resourceBudgets, request.CertificatePath);
         ValidateCertificate(request.CertificatePath, request.CertificatePassword);
         LicenseState state = _licenseGate.EnsureApplied();
@@ -65,8 +64,8 @@ internal sealed class PdfSigningService
                 checked((int)Math.Round(visibleRect.Width)),
                 checked((int)Math.Round(visibleRect.Height)));
         using var transaction = new AtomicOutputSetWriter(
-            _writer, Path.GetDirectoryName(request.OutputPath)!, "pdf-sign");
-        StagedOutput write = transaction.Stage(request.OutputPath, request.Overwrite, temp =>
+            _writer, request.Output.Directory, "pdf-sign");
+        StagedOutput write = transaction.Stage(request.Output.Path, request.Output.Overwrite, temp =>
         {
             using var facade = new PdfFileSignature(loaded.Document);
             var signature = new PKCS7(request.CertificatePath, request.CertificatePassword)
@@ -89,7 +88,7 @@ internal sealed class PdfSigningService
             Input = PdfInfoProjection.Source(filePath),
             Output = new OutputInfo
             {
-                Path = Path.GetFullPath(request.OutputPath),
+                Path = Path.GetFullPath(request.Output.Path),
                 Format = "pdf",
                 SizeBytes = write.SizeBytes,
             },

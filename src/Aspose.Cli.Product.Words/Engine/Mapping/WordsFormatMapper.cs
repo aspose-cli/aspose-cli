@@ -67,9 +67,7 @@ internal static class WordsFormatMapper
     public static SaveFormat ToSaveFormat(string id) =>
         SaveFormats.TryGetValue(id, out SaveFormat format)
             ? format
-            : throw Sdk.Errors.CliErrors.FormatUnsupported(
-                id,
-                [.. WordsFormats.ConvertIds, .. WordsFormats.RenderIds]);
+            : throw new InvalidOperationException($"'{id}' has no document save format.");
 
     public static string Extension(string id) => id switch
     {

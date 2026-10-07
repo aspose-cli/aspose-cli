@@ -14,7 +14,7 @@ public sealed class WordsBookmarkTextTests
         string input = CreateDocument(fixture);
         string output = fixture.Temp.File("mid.docx");
 
-        fixture.Engine.ApplyOps(input, Batch("Mid", "Acme Ltd"), new WordsEditRequest { OutputPath = output });
+        fixture.Engine.ApplyOps(input, Batch("Mid", "Acme Ltd"), new WordsEditRequest { Output = TestOutput.At(output) });
 
         var document = new Document(output);
         Paragraph paragraph = Paragraphs(document).Single(item => item.GetText().Contains("Party:", StringComparison.Ordinal));
@@ -33,7 +33,7 @@ public sealed class WordsBookmarkTextTests
         string input = CreateDocument(fixture);
         string output = fixture.Temp.File("cell.docx");
 
-        fixture.Engine.ApplyOps(input, Batch("Amount", "250"), new WordsEditRequest { OutputPath = output });
+        fixture.Engine.ApplyOps(input, Batch("Amount", "250"), new WordsEditRequest { Output = TestOutput.At(output) });
 
         var document = new Document(output);
         Table table = (Table)document.GetChild(NodeType.Table, 0, true);

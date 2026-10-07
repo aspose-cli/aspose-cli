@@ -199,7 +199,7 @@ public sealed class SlidesAuthoringTests
         fixture.Engine.ApplyOps(input, new SlidesOpsBatch
         {
             Ops = [new SetTitleOp { Slide = 1, Text = "One" }, new SetTitleOp { Slide = 1, Text = "Two" }],
-        }, new PresentationEditRequest { OutputPath = output });
+        }, new PresentationEditRequest { Output = TestOutput.At(output) });
 
         using var deck = new Presentation(output);
         IAutoShape[] shapes = deck.Slides[0].Shapes.OfType<IAutoShape>().ToArray();
@@ -249,17 +249,17 @@ public sealed class SlidesAuthoringTests
         string markdown = fixture.File("outline.md");
         File.WriteAllText(markdown, "## Results\n- Draft\n");
         string input = fixture.File("outline.pptx");
-        fixture.Engine.Create(new NewPresentationRequest { MarkdownPath = markdown, OutputPath = input });
+        fixture.Engine.Create(new NewPresentationRequest { Output = TestOutput.At(input), MarkdownPath = markdown });
         string filled = fixture.File("filled.pptx");
         fixture.Engine.ApplyOps(input, new SlidesOpsBatch
         {
             Ops = [new SetBodyOp { Slide = 1, Paragraphs = [new SlidesParagraphInput { Text = "Final" }] }],
-        }, new PresentationEditRequest { OutputPath = filled });
+        }, new PresentationEditRequest { Output = TestOutput.At(filled) });
         string addressed = fixture.File("addressed.pptx");
         fixture.Engine.ApplyOps(input, new SlidesOpsBatch
         {
             Ops = [new SetTextOp { Slide = 1, Placeholder = "body", Text = "Final" }],
-        }, new PresentationEditRequest { OutputPath = addressed });
+        }, new PresentationEditRequest { Output = TestOutput.At(addressed) });
 
         foreach (string output in new[] { filled, addressed })
         {
@@ -280,16 +280,16 @@ public sealed class SlidesAuthoringTests
     private static string SetBodyOfAContentSlide(SlidesEngineFixture fixture, params SlidesParagraphInput[] paragraphs)
     {
         string input = fixture.File("layout.pptx");
-        fixture.Engine.Create(new NewPresentationRequest { OutputPath = input });
+        fixture.Engine.Create(new NewPresentationRequest { Output = TestOutput.At(input) });
         fixture.Engine.ApplyOps(input, new SlidesOpsBatch
         {
             Ops = [new AddSlideOp { Layout = "Title and Content" }],
-        }, new PresentationEditRequest { OutputPath = input, Overwrite = true });
+        }, new PresentationEditRequest { Output = TestOutput.At(input, overwrite: true) });
         string edited = fixture.File("layout.body.pptx");
         fixture.Engine.ApplyOps(input, new SlidesOpsBatch
         {
             Ops = [new SetBodyOp { Slide = 2, Paragraphs = paragraphs }],
-        }, new PresentationEditRequest { OutputPath = edited });
+        }, new PresentationEditRequest { Output = TestOutput.At(edited) });
         return edited;
     }
 }

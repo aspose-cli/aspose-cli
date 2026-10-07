@@ -25,18 +25,18 @@ public static class PdfFormats
         FormatDescriptor.Routed("png", FormatUse.Convert | FormatUse.Render, null, 12, 0, ".png"),
         FormatDescriptor.Routed("jpeg", FormatUse.Convert | FormatUse.Render, null, 13, 1, ".jpg", ".jpeg")
             with { Aliases = ["jpg"] },
-        FormatDescriptor.Routed("tiff", FormatUse.Convert, null, 14, null, ".tiff"),
+        FormatDescriptor.Routed("tiff", FormatUse.Convert, null, 14, null, ".tiff", ".tif"),
     ], PdfFormatRecognition.Rules);
 
-    public static IReadOnlyList<string> RenderIds { get; } =
-        Definitions.IdsFor(FormatUse.Render);
+    /// <summary>The PDF document format, which create, merge, sign and edit write.</summary>
+    internal static IReadOnlyList<FormatDescriptor> Document { get; } =
+        [.. Definitions.Where(static format => format.Id == "pdf")];
 
-    public static IReadOnlyList<string> ConvertIds { get; } =
-        Definitions.IdsFor(FormatUse.Convert);
-
-    public static IReadOnlyList<string> ImageConvertIds { get; } = ["png", "jpeg", "tiff"];
-    public static IReadOnlyList<string> PdfaConvertIds { get; } = ["pdfa-1b", "pdfa-2b", "pdfa-3b"];
-
-    public static bool IsConvert(string id) => ConvertIds.Contains(id, StringComparer.Ordinal);
-    public static bool IsRender(string id) => RenderIds.Contains(id, StringComparer.Ordinal);
+    /// <summary>The formats <c>extract --what forms</c> exports form data in.</summary>
+    internal static IReadOnlyList<FormatDescriptor> FormData { get; } =
+    [
+        new("json", FormatUse.Convert, ".json"),
+        new("fdf", FormatUse.Convert, ".fdf"),
+        new("xfdf", FormatUse.Convert, ".xfdf"),
+    ];
 }

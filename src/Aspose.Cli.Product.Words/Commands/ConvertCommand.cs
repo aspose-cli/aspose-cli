@@ -1,6 +1,7 @@
 using System.CommandLine;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Extensibility;
+using Aspose.Cli.Sdk.IO;
 
 namespace Aspose.Cli.Product.Words.Commands;
 
@@ -24,19 +25,18 @@ internal static class ConvertCommand
             [pages],
             (parse, standard) =>
             {
-                string format = standard.TargetFormat();
+                ResolvedOutput output = standard.Output;
+                string format = output.Format.Id;
                 string? pageText = parse.GetValue(pages);
                 if (pageText is not null && !WordsFormats.FixedPageConvertIds.Contains(format, StringComparer.Ordinal))
                 {
                     throw CliErrors.OptionInvalid("--pages", $"'{format}' is a flow format", "Use --pages only with PDF, XPS, OpenXPS, PS or PCL.");
                 }
 
-                string? encryptPassword = standard.EncryptPassword(format);
+                string? encryptPassword = standard.EncryptPassword();
                 return standard.OpenEngine().Convert(standard.Input, new WordsConvertRequest
                 {
-                    TargetFormatId = format,
-                    OutputPath = standard.OutputPath(WordsFormats.Definitions.ExtensionFor(format)),
-                    Overwrite = standard.Overwrite,
+                    Output = output,
                     Pages = pageText is null ? null : PageRange.Parse(pageText),
                     Password = standard.InputPassword,
                     EncryptPassword = encryptPassword,

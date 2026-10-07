@@ -11,7 +11,7 @@ internal static class SlidesCommands
     public static readonly InputDocument Presentation = new("Presentation file path.", "the presentation");
 
     /// <summary>The password a writing command can put on its presentation.</summary>
-    public static readonly EncryptedOutput EncryptedPresentation = new("the output presentation", SlidesFormats.EncryptIds);
+    public static readonly EncryptedOutput EncryptedPresentation = new("the output presentation");
 
     public static Command Create(IProductCommandHost<ISlidesEngine> host)
     {

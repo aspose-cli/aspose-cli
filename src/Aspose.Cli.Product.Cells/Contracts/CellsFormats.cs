@@ -1,4 +1,3 @@
-using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Extensibility;
 
 namespace Aspose.Cli.Product.Cells.Contracts;
@@ -14,13 +13,13 @@ public static class CellsFormats
     internal static readonly IReadOnlyList<FormatDescriptor> Definitions =
         FileFormatRecognition.AttachTo(
     [
-        FormatDescriptor.Declare("xlsx", FormatUse.Input | FormatUse.Convert, 0, 0, null, true, ".xlsx"),
-        FormatDescriptor.Declare("xltx", FormatUse.Input | FormatUse.Convert, 1, 1, null, true, ".xltx"),
-        FormatDescriptor.Declare("xlsm", FormatUse.Input | FormatUse.Convert, 2, 2, null, true, ".xlsm"),
-        FormatDescriptor.Declare("xltm", FormatUse.Input | FormatUse.Convert, 3, 3, null, true, ".xltm"),
-        FormatDescriptor.Declare("xlsb", FormatUse.Input | FormatUse.Convert, 4, 4, null, true, ".xlsb"),
-        FormatDescriptor.Declare("xls", FormatUse.Input | FormatUse.Convert, 5, 5, null, true, ".xls"),
-        FormatDescriptor.Declare("ods", FormatUse.Input | FormatUse.Convert, 6, 6, null, true, ".ods"),
+        FormatDescriptor.Declare("xlsx", FormatUse.Input | FormatUse.Convert, 0, 0, null, true, ".xlsx") with { Protectable = true },
+        FormatDescriptor.Declare("xltx", FormatUse.Input | FormatUse.Convert, 1, 1, null, true, ".xltx") with { Protectable = true },
+        FormatDescriptor.Declare("xlsm", FormatUse.Input | FormatUse.Convert, 2, 2, null, true, ".xlsm") with { Protectable = true },
+        FormatDescriptor.Declare("xltm", FormatUse.Input | FormatUse.Convert, 3, 3, null, true, ".xltm") with { Protectable = true },
+        FormatDescriptor.Declare("xlsb", FormatUse.Input | FormatUse.Convert, 4, 4, null, true, ".xlsb") with { Protectable = true },
+        FormatDescriptor.Declare("xls", FormatUse.Input | FormatUse.Convert, 5, 5, null, true, ".xls") with { Protectable = true },
+        FormatDescriptor.Declare("ods", FormatUse.Input | FormatUse.Convert, 6, 6, null, true, ".ods") with { Protectable = true },
         FormatDescriptor.Declare("csv", FormatUse.Input | FormatUse.Convert, 7, 7, null, true, ".csv"),
         FormatDescriptor.Declare("tsv", FormatUse.Input | FormatUse.Convert, 8, 8, null, true, ".tsv"),
         FormatDescriptor.Declare("html", FormatUse.Input | FormatUse.Convert, 9, 9, null, false, ".html", ".htm"),
@@ -37,31 +36,12 @@ public static class CellsFormats
     ], CellsFormatRecognition.Rules);
 
     /// <summary>Workbook formats whose edited output can be reopened and verified.</summary>
-    public static IReadOnlyList<string> EditIds { get; } = Array.AsReadOnly(new[]
-    { "xlsx", "xltx", "xlsm", "xltm", "xlsb", "xls", "ods", "csv", "tsv", "html", "mhtml" });
+    internal static IReadOnlyList<FormatDescriptor> Editable { get; } =
+        [.. Definitions.Where(static format => format.Id is "xlsx" or "xltx" or "xlsm" or "xltm" or "xlsb" or "xls" or "ods" or "csv" or "tsv" or "html" or "mhtml")];
 
-    /// <summary>Workbook formats that can carry a password.</summary>
-    public static IReadOnlyList<string> EncryptableIds { get; } = Array.AsReadOnly(new[]
-    { "xlsx", "xltx", "xlsm", "xltm", "xlsb", "xls", "ods" });
-
-    /// <summary>The convert format whose id, alias or declared extension a path carries; xlsx without one.</summary>
-    /// <exception cref="CliException"><c>FORMAT_UNSUPPORTED</c> when the extension names no format.</exception>
-    public static string ForOutputPath(string path) => ForOutputPath(path, Definitions.IdsFor(FormatUse.Convert));
-
-    /// <summary>
-    /// The format whose id, alias or declared extension a path carries, one of the formats a
-    /// command writes; xlsx without one.
-    /// </summary>
-    /// <exception cref="CliException"><c>FORMAT_UNSUPPORTED</c>, listing <paramref name="writes"/>, when the extension names no format among them.</exception>
-    public static string ForOutputPath(string path, IReadOnlyList<string> writes)
-    {
-        string extension = Path.GetExtension(path);
-        string format = extension.Length <= 1 ? "xlsx"
-            : (Definitions.Named(FormatUse.Convert, extension[1..])
-                ?? Definitions.WithExtension(FormatUse.Convert, extension).FirstOrDefault())?.Id
-            ?? extension[1..];
-        return writes.Contains(format, StringComparer.Ordinal) ? format : throw CliErrors.FormatUnsupported(format, writes);
-    }
+    /// <summary>The formats a new workbook can be created in.</summary>
+    internal static IReadOnlyList<FormatDescriptor> Convertible { get; } =
+        [.. Definitions.Where(static format => format.Uses.HasFlag(FormatUse.Convert)).OrderBy(static format => format.ConvertOrder)];
 
     /// <summary>
     /// Convert formats that can be limited to a single sheet with

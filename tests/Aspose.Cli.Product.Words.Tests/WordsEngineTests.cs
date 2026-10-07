@@ -111,7 +111,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
         CliException edit = Assert.Throws<CliException>(() => _fixture.Engine.ApplyOps(
             input,
             new WordsOpsBatch { Ops = [new DeleteBlocksOp { Target = new WordsTarget { Blocks = "2-99" } }] },
-            new WordsEditRequest { OutputPath = _fixture.Temp.File("past-the-end.docx") }));
+            new WordsEditRequest { Output = TestOutput.At(_fixture.Temp.File("past-the-end.docx")) }));
 
         Assert.Equal(WordsDiagnostics.BlockNotFound, read.Code);
         Assert.Equal("99", read.Details!["requested"]!.GetValue<string>());
@@ -248,7 +248,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
                 new InsertParagraphsOp { At = new WordsTarget { Block = 4 }, Position = "before", Paragraphs = [new ParagraphInput { Text = "After a revision." }] },
                 new InsertParagraphsOp { At = new WordsTarget { Block = 4 }, Position = "after", Paragraphs = [new ParagraphInput { Text = "Styled.", Style = "Quote" }] },
             ],
-        }, new WordsEditRequest { OutputPath = output });
+        }, new WordsEditRequest { Output = TestOutput.At(output) });
 
         var document = new Document(output);
         Paragraph Find(string text) => document.FirstSection.Body.Paragraphs.Cast<Paragraph>()
@@ -283,7 +283,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
         _fixture.Engine.ApplyOps(input, new WordsOpsBatch
         {
             Ops = [new InsertParagraphsOp { At = new WordsTarget { Block = 2 }, Position = "before", Paragraphs = [new ParagraphInput { Text = "Inserted clause." }] }],
-        }, new WordsEditRequest { OutputPath = output, TrackChanges = true, Author = "Reviewer" });
+        }, new WordsEditRequest { Output = TestOutput.At(output), TrackChanges = true, Author = "Reviewer" });
 
         Paragraph inserted = new Document(output).FirstSection.Body.Paragraphs.Cast<Paragraph>()
             .Single(static paragraph => paragraph.GetText().StartsWith("Inserted clause.", StringComparison.Ordinal));
@@ -310,7 +310,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
         _fixture.Engine.ApplyOps(input, new WordsOpsBatch
         {
             Ops = [new InsertParagraphsOp { At = new WordsTarget { Block = 1 }, Position = "after", Paragraphs = [new ParagraphInput { Text = "Inserted clause." }] }],
-        }, new WordsEditRequest { OutputPath = output });
+        }, new WordsEditRequest { Output = TestOutput.At(output) });
 
         Paragraph inserted = new Document(output).FirstSection.Body.Paragraphs.Cast<Paragraph>()
             .Single(static paragraph => paragraph.GetText().StartsWith("Inserted clause.", StringComparison.Ordinal));
@@ -380,7 +380,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
                 new SetDefaultFontOp { EastAsianFont = "SimHei" },
                 new DefineStyleOp { Name = "Normal", Font = "SimSun", LatinFont = "Times New Roman" },
             ],
-        }, new WordsEditRequest { OutputPath = output });
+        }, new WordsEditRequest { Output = TestOutput.At(output) });
 
         var document = new Document(output);
         Aspose.Words.Font normal = document.Styles[StyleIdentifier.Normal].Font;
@@ -412,7 +412,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
                 new FormatTextOp { Target = new WordsTarget { Block = 1 }, LatinFont = "Arial", EastAsianFont = "SimSun" },
                 new FormatTextOp { Target = new WordsTarget { Block = 2 }, Font = "SimHei", EastAsianFont = "SimSun" },
             ],
-        }, new WordsEditRequest { OutputPath = output });
+        }, new WordsEditRequest { Output = TestOutput.At(output) });
 
         DocumentReadResult full = _fixture.Engine.Read(output, new DocumentReadRequest { Scope = "full" });
         Assert.Equal(
@@ -446,7 +446,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
     private WordsEditResult Edit(string input, string name, WordsOp op) => _fixture.Engine.ApplyOps(
         input,
         new WordsOpsBatch { Ops = [op] },
-        new WordsEditRequest { OutputPath = _fixture.Temp.File($"not-found-{name}.docx") });
+        new WordsEditRequest { Output = TestOutput.At(_fixture.Temp.File($"not-found-{name}.docx")) });
 
     private static string[] Names(CliException error, string key) =>
         error.Details![key]!.AsArray().Select(static node => node!.GetValue<string>()).ToArray();
@@ -487,7 +487,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
         string markdown = _fixture.Temp.File("banner-source.md");
         File.WriteAllText(markdown, "Contents\n\n# One\n\nSee [the source](https://example.com/source).\n");
         string input = _fixture.Temp.File("banner-source.docx");
-        _fixture.Engine.Create(new NewDocumentRequest { OutputPath = input, MarkdownPath = markdown });
+        _fixture.Engine.Create(new NewDocumentRequest { Output = TestOutput.At(input), MarkdownPath = markdown });
         string[] original = BlockTexts(input);
         string appended = _fixture.Temp.File("banner-appended.docx");
         string merged = _fixture.Temp.File("banner-merged.docx");
@@ -495,7 +495,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
         _fixture.Engine.ApplyOps(
             input,
             new WordsOpsBatch { Ops = [new AppendDocumentOp { Path = input }] },
-            new WordsEditRequest { OutputPath = appended });
+            new WordsEditRequest { Output = TestOutput.At(appended) });
         _fixture.Engine.ApplyOps(
             input,
             new WordsOpsBatch
@@ -508,7 +508,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
                     },
                 ],
             },
-            new WordsEditRequest { OutputPath = merged });
+            new WordsEditRequest { Output = TestOutput.At(merged) });
 
         Assert.Equal([.. original, .. original], BlockTexts(appended));
         Assert.Equal([.. original, .. original], BlockTexts(merged));
@@ -522,18 +522,15 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
     [Fact]
     public void Render_OfOnePageWithoutAnExtensionIsRefused()
     {
-        string input = _fixture.CreateReport();
-        string output = _fixture.Temp.File("pages-" + Guid.NewGuid().ToString("N"));
+        using var workspace = new TempWorkspace();
+        new Document().Save(workspace.File("report.docx"));
 
-        CliException error = Assert.Throws<CliException>(() => _fixture.Engine.Render(input, new WordsRenderRequest
-        {
-            TargetFormatId = "png",
-            OutputPath = output,
-        }));
+        CliResult refused = workspace.Run("words", "render", "report.docx", "--to", "png", "--out", "pages", "--output", "json");
 
-        Assert.Equal(ErrorCodes.OptionInvalid, error.Code);
-        Assert.Contains(output + ".png", error.Hint, StringComparison.Ordinal);
-        Assert.False(Path.Exists(output));
+        Assert.Equal(2, refused.ExitCode);
+        Assert.Equal("USAGE_ERROR", System.Text.Json.Nodes.JsonNode.Parse(refused.StdErr)!["error"]!["code"]!.GetValue<string>());
+        Assert.Contains(".png", refused.StdErr, StringComparison.Ordinal);
+        Assert.False(Path.Exists(workspace.File("pages")));
     }
 
     [Fact]
@@ -546,21 +543,17 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
 
         var converted = _fixture.Engine.Convert(input, new WordsConvertRequest
         {
-            TargetFormatId = "pdf",
-            OutputPath = pdf,
-            Overwrite = false,
+            Output = TestOutput.At(pdf, format: "pdf", overwrite: false),
         });
         var rendered = _fixture.Engine.Render(input, new WordsRenderRequest
         {
-            TargetFormatId = "png",
-            OutputPath = image,
-            Overwrite = false,
+            Output = TestOutput.At(image, format: "png", overwrite: false),
             Dpi = 150,
         });
         var extracted = _fixture.Engine.Extract(input, new WordsExtractRequest
         {
+            Output = new ResolvedDirectory(assets),
             What = "text",
-            OutputDirectory = assets,
         });
 
         Assert.True(HasHeader(pdf, [0x25, 0x50, 0x44, 0x46]));
@@ -629,8 +622,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
 
         _fixture.Engine.Convert(input, new WordsConvertRequest
         {
-            TargetFormatId = "docx",
-            OutputPath = output,
+            Output = TestOutput.At(output, format: "docx"),
             Password = inputPassword,
             EncryptPassword = outputPassword,
         });
@@ -666,8 +658,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
         CliException conversion = Assert.Throws<CliException>(() =>
             _fixture.Engine.Convert(input, new WordsConvertRequest
             {
-                TargetFormatId = "pdf",
-                OutputPath = output,
+                Output = TestOutput.At(output, format: "pdf"),
             }));
 
         Assert.Equal(ErrorCodes.FileCorrupt, inspection.Code);
@@ -680,9 +671,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
         CliException replacement = Assert.Throws<CliException>(() =>
             _fixture.Engine.Convert(input, new WordsConvertRequest
             {
-                TargetFormatId = "pdf",
-                OutputPath = output,
-                Overwrite = true,
+                Output = TestOutput.At(output, format: "pdf", overwrite: true),
             }));
         Assert.Equal(ErrorCodes.FileCorrupt, replacement.Code);
         Assert.Equal(retained, File.ReadAllBytes(output));
@@ -699,7 +688,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
         File.WriteAllBytes(input, bytes[..(bytes.Length / 2)]);
 
         CliException error = Assert.Throws<CliException>(() =>
-            _fixture.Engine.Convert(input, new WordsConvertRequest { TargetFormatId = "docx", OutputPath = _fixture.Temp.File("truncated.docx") }));
+            _fixture.Engine.Convert(input, new WordsConvertRequest { Output = TestOutput.At(_fixture.Temp.File("truncated.docx"), format: "docx") }));
 
         Assert.Equal(ErrorCodes.FileCorrupt, error.Code);
         Assert.StartsWith("Input is not a valid PDF document: ", error.Message, StringComparison.Ordinal);
@@ -718,8 +707,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
             CliException error = Assert.Throws<CliException>(() =>
                 _fixture.Engine.Convert(input, new WordsConvertRequest
                 {
-                    TargetFormatId = "pdf",
-                    OutputPath = output,
+                    Output = TestOutput.At(output, format: "pdf"),
                 }));
             Assert.Equal(ErrorCodes.FileLocked, error.Code);
             Assert.False(File.Exists(output));
@@ -737,8 +725,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
         CliException error = Assert.Throws<CliException>(() =>
             _fixture.Engine.Convert(input, new WordsConvertRequest
             {
-                TargetFormatId = "pdf",
-                OutputPath = output,
+                Output = TestOutput.At(output, format: "pdf"),
             }));
         Assert.Equal(ErrorCodes.FileNotFound, error.Code);
         Assert.False(File.Exists(output));
@@ -765,8 +752,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
 
         WordsEditResult result = _fixture.Engine.ApplyOps(input, batch, new WordsEditRequest
         {
-            OutputPath = output,
-            Overwrite = false,
+            Output = TestOutput.At(output, overwrite: false),
         });
         DocumentReadResult read = _fixture.Engine.Read(output, new DocumentReadRequest
         {
@@ -798,7 +784,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
 
         WordsEditResult result = _fixture.Engine.ApplyOps(input, batch, new WordsEditRequest
         {
-            OutputPath = _fixture.Temp.File("tracked-pages-out.docx"),
+            Output = TestOutput.At(_fixture.Temp.File("tracked-pages-out.docx")),
             TrackChanges = true,
             Author = "Reviewer",
         });
@@ -829,7 +815,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
 
         WordsEditResult result = _fixture.Engine.ApplyOps(input, batch, new WordsEditRequest
         {
-            OutputPath = _fixture.Temp.File("moved-pages-out.docx"),
+            Output = TestOutput.At(_fixture.Temp.File("moved-pages-out.docx")),
         });
 
         // Gamma takes the place of the deleted Beta on page 2, and Delta follows it there.
@@ -854,7 +840,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
         _fixture.Engine.ApplyOps(
             input,
             new WordsOpsBatch { Ops = [new AddWatermarkOp { Text = text, Font = font }] },
-            new WordsEditRequest { OutputPath = output });
+            new WordsEditRequest { Output = TestOutput.At(output) });
 
         // The SDK writes the watermark into each header of the section.
         Assert.Equal([expected ?? new TextWatermarkOptions().FontFamily], WatermarkFonts(output, text));
@@ -864,13 +850,13 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
     public void AddWatermark_DrawsEastAsianTextOfACreatedDocumentInAnEastAsianFont()
     {
         string input = _fixture.Temp.File($"created-{Guid.NewGuid():N}.docx");
-        _fixture.Engine.Create(new NewDocumentRequest { OutputPath = input });
+        _fixture.Engine.Create(new NewDocumentRequest { Output = TestOutput.At(input) });
         string output = _fixture.Temp.File($"created-watermarked-{Guid.NewGuid():N}.docx");
 
         _fixture.Engine.ApplyOps(
             input,
             new WordsOpsBatch { Ops = [new AddWatermarkOp { Text = "内部资料" }] },
-            new WordsEditRequest { OutputPath = output });
+            new WordsEditRequest { Output = TestOutput.At(output) });
 
         Assert.Equal(["Microsoft YaHei"], WatermarkFonts(output, "内部资料"));
     }
@@ -911,7 +897,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
         WordsEditResult result = _fixture.Engine.ApplyOps(
             input,
             new WordsOpsBatch { Ops = [new ReplaceTextOp { Find = "Kappa", Replace = "Lambda", Scope = WordsTextScopes.All }] },
-            new WordsEditRequest { OutputPath = _fixture.Temp.File($"note-pages-out-{Guid.NewGuid():N}.docx") });
+            new WordsEditRequest { Output = TestOutput.At(_fixture.Temp.File($"note-pages-out-{Guid.NewGuid():N}.docx")) });
 
         Assert.Equal(1, result.Applied[0].ItemsAffected);
         Assert.Equal([2], result.PagesTouched);
@@ -946,7 +932,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
         };
 
         Sdk.Errors.CliException error = Assert.Throws<Sdk.Errors.CliException>(() =>
-            _fixture.Engine.ApplyOps(input, batch, new WordsEditRequest { OutputPath = output }));
+            _fixture.Engine.ApplyOps(input, batch, new WordsEditRequest { Output = TestOutput.At(output) }));
 
         Assert.Equal(Sdk.Errors.ErrorCodes.OpsInvalid, error.Code);
         Assert.False(File.Exists(output));
@@ -976,7 +962,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
                     },
                 ],
             },
-            new WordsEditRequest { OutputPath = output });
+            new WordsEditRequest { Output = TestOutput.At(output) });
 
         var changed = new Document(output);
         Assert.Contains("done token token", changed.GetText(), StringComparison.Ordinal);
@@ -1009,7 +995,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
                     },
                 ],
             },
-            new WordsEditRequest { OutputPath = output });
+            new WordsEditRequest { Output = TestOutput.At(output) });
 
         var merged = new Document(output);
         string text = merged.GetText();
@@ -1038,7 +1024,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
         CliException error = Assert.Throws<CliException>(() => _fixture.Engine.ApplyOps(
             input,
             new WordsOpsBatch { Ops = [new MailMergeOp { Path = path, Regions = regions }] },
-            new WordsEditRequest { OutputPath = output }));
+            new WordsEditRequest { Output = TestOutput.At(output) }));
 
         Assert.Equal(WordsDiagnostics.MergeDataInvalid, error.Code);
         Assert.Contains("mail_merge needs at least one row", error.Message, StringComparison.Ordinal);
@@ -1056,8 +1042,8 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
         Sdk.Errors.CliException error = Assert.Throws<Sdk.Errors.CliException>(() =>
             _fixture.Engine.Split(input, new WordsSplitRequest
             {
+                Output = new ResolvedDirectory(outputDirectory),
                 By = "section",
-                OutputDirectory = outputDirectory,
             }));
 
         Assert.Equal(Sdk.Errors.ErrorCodes.OutputExists, error.Code);
@@ -1085,7 +1071,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
             Ops = [new SetTextOp { At = new WordsTarget { Blocks = "1-2" }, Text = "Replaced" }],
         }, new WordsEditRequest
         {
-            OutputPath = output,
+            Output = TestOutput.At(output),
             Options = new EditCommandOptions { BestEffort = true },
         });
 
@@ -1109,8 +1095,8 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
 
         var extracted = _fixture.Engine.Extract(input, new WordsExtractRequest
         {
+            Output = new ResolvedDirectory(_fixture.Temp.File("extract-comments")),
             What = "comments",
-            OutputDirectory = _fixture.Temp.File("extract-comments"),
         });
 
         string json = File.ReadAllText(Assert.Single(extracted.Items).Path);
@@ -1130,8 +1116,8 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
 
         var extracted = _fixture.Engine.Extract(input, new WordsExtractRequest
         {
+            Output = new ResolvedDirectory(_fixture.Temp.File("extract-linked-image")),
             What = "images",
-            OutputDirectory = _fixture.Temp.File("extract-linked-image"),
         });
 
         Assert.Empty(extracted.Items);
@@ -1152,8 +1138,8 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
 
         CliException refused = Assert.Throws<CliException>(() => _fixture.Engine.Extract(input, new WordsExtractRequest
         {
+            Output = new ResolvedDirectory(directory),
             What = "text",
-            OutputDirectory = directory,
         }));
         Assert.Equal(ErrorCodes.OutputExists, refused.Code);
         Assert.Equal("kept", File.ReadAllText(existing));
@@ -1161,9 +1147,8 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
 
         string replaced = Assert.Single(_fixture.Engine.Extract(input, new WordsExtractRequest
         {
+            Output = new ResolvedDirectory(directory, overwrite: true),
             What = "text",
-            OutputDirectory = directory,
-            Overwrite = true,
         }).Items).Path;
         Assert.Equal(existing, replaced);
         Assert.Contains("Extracted text", File.ReadAllText(existing), StringComparison.Ordinal);
@@ -1183,11 +1168,11 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
         string txt = _fixture.Temp.File("figures.txt");
         string directory = _fixture.Temp.File("figures-text");
 
-        _fixture.Engine.Convert(input, new WordsConvertRequest { TargetFormatId = "txt", OutputPath = txt });
+        _fixture.Engine.Convert(input, new WordsConvertRequest { Output = TestOutput.At(txt, format: "txt") });
         string extracted = Assert.Single(_fixture.Engine.Extract(input, new WordsExtractRequest
         {
+            Output = new ResolvedDirectory(directory),
             What = "text",
-            OutputDirectory = directory,
         }).Items).Path;
 
         string[] converted = File.ReadAllLines(txt);
@@ -1213,8 +1198,8 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
 
         WordsExtractResult result = _fixture.Engine.Extract(input, new WordsExtractRequest
         {
+            Output = new ResolvedDirectory(_fixture.Temp.File("tables-out")),
             What = "tables",
-            OutputDirectory = _fixture.Temp.File("tables-out"),
         });
 
         Assert.Equal(["table-001.csv:2", "table-002.csv:4"], result.Items.Select(static item => $"{Path.GetFileName(item.Path)}:{item.Block}"));
@@ -1265,7 +1250,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
         WordsEditResult result = _fixture.Engine.ApplyOps(
             input,
             new WordsOpsBatch { Ops = [new SetPropertiesOp { Title = "Accepted" }] },
-            new WordsEditRequest { OutputPath = output, Verify = true });
+            new WordsEditRequest { Output = TestOutput.At(output), Verify = true });
 
         // Document.Compare only models the body, so a metadata-only edit leaves it
         // silent. That is evidence, not a fault: the operation outcome already says

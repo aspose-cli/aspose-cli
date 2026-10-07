@@ -74,6 +74,67 @@ public sealed class AtomicOutputSetWriter : IDisposable
             inputPrecondition, verify);
     }
 
+    /// <summary>
+    /// Stages a file whose engine also writes companion files beside it, such as the scripts
+    /// and style sheets of an HTML5 presentation, and stages each companion as a target beside
+    /// the file, so the set is published, refused or rolled back as a whole. The file comes first.
+    /// </summary>
+    public IReadOnlyList<StagedOutput> StageFileSet(string targetPath, bool overwrite, Action<string> write)
+    {
+        ArgumentNullException.ThrowIfNull(write);
+        string? staged = null;
+        StagedOutput main = Stage(targetPath, overwrite, path =>
+        {
+            staged = path;
+            write(path);
+        });
+        string targetDirectory = Path.GetDirectoryName(main.TargetPath)!;
+        string[] companions = [.. Directory.EnumerateFileSystemEntries(Path.GetDirectoryName(staged!)!)
+            .Where(entry => !string.Equals(entry, staged, StringComparison.OrdinalIgnoreCase))
+            .Order(StringComparer.Ordinal)];
+        var outputs = new List<StagedOutput> { main };
+        try
+        {
+            foreach (string entry in companions)
+            {
+                if (Directory.Exists(entry))
+                {
+                    throw CliErrors.CompanionDirectoryUnpublished(main.TargetPath, Path.GetFileName(entry));
+                }
+
+                outputs.Add(Stage(Path.Combine(targetDirectory, Path.GetFileName(entry)), overwrite, path =>
+                {
+                    using (FileStream source = File.OpenRead(entry))
+                    using (FileStream target = new(path, FileMode.Truncate, FileAccess.Write))
+                    {
+                        source.CopyTo(target);
+                    }
+
+                    File.Delete(entry);
+                }));
+            }
+        }
+        catch
+        {
+            // The staging area holds only what the transaction owns, so it can be removed.
+            foreach (string entry in companions)
+            {
+                if (Directory.Exists(entry))
+                {
+                    Directory.Delete(entry, recursive: true);
+                }
+                else
+                {
+                    File.Delete(entry);
+                }
+            }
+
+            throw;
+        }
+
+        return outputs;
+    }
+
     internal StagedOutput StagePrepared(string targetPath, bool overwrite, string? requestedBackup,
         FilePublicationSnapshot expectedTarget, Action<string> write,
         FileWritePrecondition? inputPrecondition = null)

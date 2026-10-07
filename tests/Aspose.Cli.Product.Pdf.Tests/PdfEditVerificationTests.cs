@@ -311,13 +311,13 @@ public sealed class PdfEditVerificationTests
         PdfEditResult result = fixture.Engine.ApplyOps(input, new PdfOpsBatch
         {
             Ops = [new SetMetadataOp { Title = "Plain" }],
-        }, new PdfEditRequest { OutputPath = fixture.File("plain.pdf") });
+        }, new PdfEditRequest { Output = TestOutput.At(fixture.File("plain.pdf")) });
 
         Assert.Null(result.Verification);
     }
 
     private static PdfEditRequest Request(PdfEngineFixture fixture, string output) =>
-        new() { OutputPath = fixture.File(output), Verify = true };
+        new() { Output = TestOutput.At(fixture.File(output)), Verify = true };
 
     /// <summary>
     /// Two pages ("Customer Secret 42", "Public text"), a text field Customer on page 1, one

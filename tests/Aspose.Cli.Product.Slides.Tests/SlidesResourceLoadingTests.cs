@@ -33,13 +33,11 @@ public sealed class SlidesResourceLoadingTests
         PresentationReadResult read = fixture.Engine.Read(input, new PresentationReadRequest { Scope = PresentationReadScopes.Full });
         SlidesRenderResult rendered = fixture.Engine.Render(input, new PresentationRenderRequest
         {
-            TargetFormatId = "png",
-            OutputPath = fixture.File("slide.png"),
+            Output = TestOutput.At(fixture.File("slide.png"), format: "png"),
         });
         SlidesConvertResult converted = fixture.Engine.Convert(input, new PresentationConvertRequest
         {
-            TargetFormatId = "pdf",
-            OutputPath = fixture.File("linked.pdf"),
+            Output = TestOutput.At(fixture.File("linked.pdf"), format: "pdf"),
         });
         ViewManifest view = fixture.Engine.RenderView(
             input,
@@ -77,8 +75,7 @@ public sealed class SlidesResourceLoadingTests
 
         SlidesRenderResult beside = fixture.Engine.Render(input, new PresentationRenderRequest
         {
-            TargetFormatId = "png",
-            OutputPath = fixture.File("beside.png"),
+            Output = TestOutput.At(fixture.File("beside.png"), format: "png"),
         });
         Assert.DoesNotContain(beside.Warnings ?? [], IsOmission);
 
@@ -89,8 +86,7 @@ public sealed class SlidesResourceLoadingTests
         }
         SlidesRenderResult outside = fixture.Engine.Render(input, new PresentationRenderRequest
         {
-            TargetFormatId = "png",
-            OutputPath = fixture.File("outside-render.png"),
+            Output = TestOutput.At(fixture.File("outside-render.png"), format: "png"),
         });
         Assert.Contains(outside.Warnings!, IsOmission);
     }

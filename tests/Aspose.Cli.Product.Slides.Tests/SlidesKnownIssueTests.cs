@@ -200,13 +200,11 @@ public sealed class SlidesKnownIssueTests
 
         SlidesConvertResult affected = fixture.Engine.Convert(input, new PresentationConvertRequest
         {
-            TargetFormatId = "pdf",
-            OutputPath = fixture.File("implicit-title.pdf"),
+            Output = TestOutput.At(fixture.File("implicit-title.pdf"), format: "pdf"),
         });
         SlidesConvertResult unaffected = fixture.Engine.Convert(plain, new PresentationConvertRequest
         {
-            TargetFormatId = "pdf",
-            OutputPath = fixture.File("plain.pdf"),
+            Output = TestOutput.At(fixture.File("plain.pdf"), format: "pdf"),
         });
 
         Warning warning = Assert.Single(affected.Warnings!, static item => item.Code == SlidesDiagnostics.ChartTitleOverlaid);

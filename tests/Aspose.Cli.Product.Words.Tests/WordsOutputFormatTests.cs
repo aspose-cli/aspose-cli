@@ -6,14 +6,27 @@ namespace Aspose.Cli.Product.Words.Tests;
 public sealed class WordsOutputFormatTests
 {
     [Theory]
-    [InlineData("out.docx", null, "docx")]
-    [InlineData("out.xml", null, "flatopc")]
-    [InlineData("out.xml", "wordml", "wordml")]
-    [InlineData("out.XML", "flatopc", "flatopc")]
-    [InlineData("out.htm", null, "html")]
-    [InlineData("out.pdf", "docx", "pdf")]
-    public void ForOutput_KeepsTheSourceFormatThatOwnsTheExtension(string path, string? source, string expected) =>
-        Assert.Equal(expected, WordsFormats.ForOutput(path, source));
+    [InlineData("docx", "out.docx", "docx")]
+    [InlineData("docx", "out.xml", "flatopc")]
+    [InlineData("wordml", "out.xml", "wordml")]
+    [InlineData("flatopc", "out.XML", "flatopc")]
+    [InlineData("docx", "out.htm", "html")]
+    [InlineData("docx", "out.pdf", "pdf")]
+    public void AnEditedDocument_KeepsTheSourceFormatThatOwnsTheOutputExtension(string source, string output, string expected)
+    {
+        using var workspace = new TempWorkspace();
+        var document = new Document();
+        new DocumentBuilder(document).Write("Clause one.");
+        string input = workspace.File(source == "docx" ? "source.docx" : "source.xml");
+        document.Save(input, source == "wordml" ? SaveFormat.WordML : source == "flatopc" ? SaveFormat.FlatOpc : SaveFormat.Docx);
+
+        CliResult edited = workspace.Run(
+            "words", "edit", Path.GetFileName(input), "--ops", "{\"ops\":[{\"op\":\"update_fields\"}]}",
+            "--out", output, "--output", "json");
+
+        Assert.True(edited.ExitCode == 0, edited.StdErr);
+        Assert.Equal(expected, System.Text.Json.Nodes.JsonNode.Parse(edited.StdOut)!["output"]!["format"]!.GetValue<string>());
+    }
 
     [Theory]
     [InlineData("html")]
@@ -48,7 +61,7 @@ public sealed class WordsOutputFormatTests
         document.Save(input);
         string output = fixture.Temp.File("picture.rtf");
 
-        fixture.Engine.Convert(input, new WordsConvertRequest { TargetFormatId = "rtf", OutputPath = output });
+        fixture.Engine.Convert(input, new WordsConvertRequest { Output = TestOutput.At(output, format: "rtf") });
 
         Assert.True(new FileInfo(output).Length < 100_000, $"{new FileInfo(output).Length} bytes");
         Assert.Single(new Document(output).FirstSection.Body.GetChildNodes(NodeType.Shape, true).Cast<Aspose.Words.Drawing.Shape>(), static shape => shape.HasImage);
@@ -57,17 +70,18 @@ public sealed class WordsOutputFormatTests
     [Fact]
     public void InPlaceEditOfWordML_StaysWordML()
     {
-        using var fixture = new WordsFixture();
-        string docx = fixture.CreateReport();
-        string input = fixture.Temp.File("report.xml");
-        new Document(docx).Save(input, SaveFormat.WordML);
+        using var workspace = new TempWorkspace();
+        var document = new Document();
+        new DocumentBuilder(document).Write("Revenue increased by twelve percent.");
+        string input = workspace.File("report.xml");
+        document.Save(input, SaveFormat.WordML);
 
-        WordsEditResult result = fixture.Engine.ApplyOps(input, new WordsOpsBatch
-        {
-            Ops = [new ReplaceTextOp { Find = "twelve", Replace = "ten" }],
-        }, new WordsEditRequest { OutputPath = input, Overwrite = true });
+        CliResult edited = workspace.Run(
+            "words", "edit", "report.xml", "--ops", "{\"ops\":[{\"op\":\"replace_text\",\"find\":\"twelve\",\"replace\":\"ten\"}]}",
+            "--in-place", "--output", "json");
 
-        Assert.Equal("wordml", result.Output!.Format);
+        Assert.True(edited.ExitCode == 0, edited.StdErr);
+        Assert.Equal("wordml", System.Text.Json.Nodes.JsonNode.Parse(edited.StdOut)!["output"]!["format"]!.GetValue<string>());
         Assert.Equal(LoadFormat.WordML, FileFormatUtil.DetectFileFormat(input).LoadFormat);
     }
 
@@ -82,7 +96,7 @@ public sealed class WordsOutputFormatTests
         changed.Save(right);
         string output = fixture.Temp.File("redline.pdf");
 
-        WordsCompareResult result = fixture.Engine.Compare(left, right, new WordsCompareRequest { OutputPath = output });
+        WordsCompareResult result = fixture.Engine.Compare(left, right, new WordsCompareRequest { Output = TestOutput.At(output) });
 
         Assert.Equal("pdf", result.Output!.Format);
         Assert.Equal("%PDF", System.Text.Encoding.ASCII.GetString(File.ReadAllBytes(output), 0, 4));

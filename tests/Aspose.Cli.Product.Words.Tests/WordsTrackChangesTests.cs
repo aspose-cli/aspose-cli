@@ -25,7 +25,7 @@ public sealed class WordsTrackChangesTests
                     new SetPageSetupOp { Setup = new PageSetupInput { Orientation = "landscape" } },
                 ],
             },
-            new WordsEditRequest { OutputPath = output, TrackChanges = true, Author = "Reviewer" }));
+            new WordsEditRequest { Output = TestOutput.At(output), TrackChanges = true, Author = "Reviewer" }));
 
         Assert.Equal(ErrorCodes.OptionInvalid, error.Code);
         Assert.Contains("format_text, set_page_setup", error.Message, StringComparison.Ordinal);
@@ -49,7 +49,7 @@ public sealed class WordsTrackChangesTests
                     new AddCommentOp { At = new WordsTarget { Block = 1 }, Author = "Reviewer", Text = "Check" },
                 ],
             },
-            new WordsEditRequest { OutputPath = output, TrackChanges = true, Author = "Reviewer" });
+            new WordsEditRequest { Output = TestOutput.At(output), TrackChanges = true, Author = "Reviewer" });
 
         var document = new Document(output);
         Assert.True(document.HasRevisions);
@@ -62,7 +62,7 @@ public sealed class WordsTrackChangesTests
         using var fixture = new WordsFixture();
         string input = fixture.CreateReport();
         string commented = fixture.Temp.File("commented.docx");
-        var tracked = new WordsEditRequest { OutputPath = commented, TrackChanges = true, Author = "Reviewer" };
+        var tracked = new WordsEditRequest { Output = TestOutput.At(commented), TrackChanges = true, Author = "Reviewer" };
 
         fixture.Engine.ApplyOps(
             input,
@@ -82,7 +82,7 @@ public sealed class WordsTrackChangesTests
         Assert.Equal(["deletion:twelve", "insertion:fifteen"], info.Revisions!.Select(static r => $"{r.Type}:{r.Text}"));
 
         string removed = fixture.Temp.File("removed.docx");
-        fixture.Engine.ApplyOps(commented, new WordsOpsBatch { Ops = [new RemoveCommentsOp()] }, tracked with { OutputPath = removed });
+        fixture.Engine.ApplyOps(commented, new WordsOpsBatch { Ops = [new RemoveCommentsOp()] }, tracked with { Output = TestOutput.At(removed) });
         var document = new Document(removed);
 
         Assert.Equal(0, document.GetChildNodes(NodeType.Comment, true).Count);
@@ -153,7 +153,7 @@ public sealed class WordsTrackChangesTests
         changed.Save(right);
         string output = fixture.Temp.File("redline.docx");
 
-        fixture.Engine.Compare(left, right, new WordsCompareRequest { OutputPath = output, Author = author });
+        fixture.Engine.Compare(left, right, new WordsCompareRequest { Output = TestOutput.At(output), Author = author });
 
         Assert.Equal([expected], new Document(output).Revisions.Select(static r => r.Author).Distinct());
     }
@@ -266,11 +266,11 @@ public sealed class WordsTrackChangesTests
         CliException refused = Assert.Throws<CliException>(() => fixture.Engine.ApplyOps(
             input,
             new WordsOpsBatch { Ops = [new AcceptRevisionsOp { Revisions = [1] }] },
-            new WordsEditRequest { OutputPath = fixture.Temp.File("one.docx") }));
+            new WordsEditRequest { Output = TestOutput.At(fixture.Temp.File("one.docx")) }));
         WordsEditResult both = fixture.Engine.ApplyOps(
             input,
             new WordsOpsBatch { Ops = [new AcceptRevisionsOp { Revisions = [1, 2] }] },
-            new WordsEditRequest { OutputPath = fixture.Temp.File("both.docx") });
+            new WordsEditRequest { Output = TestOutput.At(fixture.Temp.File("both.docx")) });
 
         Assert.Equal(ErrorCodes.OpsInvalid, refused.Code);
         Assert.Contains("revisions 1 and 2", refused.Message, StringComparison.Ordinal);

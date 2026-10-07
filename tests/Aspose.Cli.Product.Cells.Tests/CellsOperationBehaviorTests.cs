@@ -369,8 +369,7 @@ public sealed class CellsOperationBehaviorTests : IClassFixture<CellsFixture>
                 """),
             new EditRequest
             {
-                OutputPath = _fixture.Temp.File("pivot-rollback.out.xlsx"),
-                Overwrite = true,
+                Output = TestOutput.At(_fixture.Temp.File("pivot-rollback.out.xlsx"), overwrite: true),
                 Options = new EditCommandOptions { BestEffort = true },
             });
 
@@ -396,8 +395,7 @@ public sealed class CellsOperationBehaviorTests : IClassFixture<CellsFixture>
                 """),
             new EditRequest
             {
-                OutputPath = _fixture.Temp.File("pie.out.xlsx"),
-                Overwrite = true,
+                Output = TestOutput.At(_fixture.Temp.File("pie.out.xlsx"), overwrite: true),
                 Options = new EditCommandOptions { BestEffort = true },
             });
 
@@ -504,5 +502,5 @@ public sealed class CellsOperationBehaviorTests : IClassFixture<CellsFixture>
         _fixture.Engine.ApplyOps(
             path,
             Parse($$"""{ "ops": [ {{operations}} ] }"""),
-            new EditRequest { OutputPath = _fixture.Temp.File(output), Overwrite = true });
+            new EditRequest { Output = TestOutput.At(_fixture.Temp.File(output), overwrite: true) });
 }

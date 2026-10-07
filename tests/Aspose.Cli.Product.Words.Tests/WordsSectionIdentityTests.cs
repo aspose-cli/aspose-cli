@@ -27,7 +27,8 @@ public sealed class WordsSectionIdentityTests
         };
         CliException error = Assert.Throws<CliException>(() => fixture.Engine.ApplyOps(input, batch, new WordsEditRequest
         {
-            OutputPath = output, Options = new EditCommandOptions { BestEffort = bestEffort, DryRun = dryRun },
+            Output = TestOutput.At(output),
+            Options = new EditCommandOptions { BestEffort = bestEffort, DryRun = dryRun },
         }));
         Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
         Assert.False(File.Exists(output));
@@ -45,7 +46,7 @@ public sealed class WordsSectionIdentityTests
         Assert.Throws<CliException>(() => fixture.Engine.ApplyOps(input, new WordsOpsBatch
         {
             Ops = [new DeleteSectionOp { Section = 1 }, new DeleteSectionOp { Section = 1 }],
-        }, new WordsEditRequest { OutputPath = output, Options = new EditCommandOptions { BestEffort = bestEffort } }));
+        }, new WordsEditRequest { Output = TestOutput.At(output), Options = new EditCommandOptions { BestEffort = bestEffort } }));
         Assert.False(File.Exists(output));
     }
 
@@ -62,7 +63,7 @@ public sealed class WordsSectionIdentityTests
                 new DeleteBlocksOp { Target = new WordsTarget { Find = "First" } },
                 new DeleteSectionOp { Section = 1 },
             ],
-        }, new WordsEditRequest { OutputPath = output }));
+        }, new WordsEditRequest { Output = TestOutput.At(output) }));
         Assert.False(File.Exists(output));
     }
 
@@ -85,7 +86,7 @@ public sealed class WordsSectionIdentityTests
                 new SetTextOp { At = new WordsTarget { Find = "Third" }, Text = "Safe" },
                 new AddSectionOp { Position = "after", After = 1 },
             ],
-        }, new WordsEditRequest { OutputPath = output });
+        }, new WordsEditRequest { Output = TestOutput.At(output) });
         var reopened = new Document(output);
         Assert.Equal(4, reopened.Sections.Count);
         Assert.Contains("First", reopened.Sections[1].Body.GetText(), StringComparison.Ordinal);
@@ -107,7 +108,7 @@ public sealed class WordsSectionIdentityTests
         fixture.Engine.ApplyOps(input, new WordsOpsBatch
         {
             Ops = [new DeleteSectionOp { Section = 1 }, new DeleteSectionOp { Section = 2 }],
-        }, new WordsEditRequest { OutputPath = output });
+        }, new WordsEditRequest { Output = TestOutput.At(output) });
         var reopened = new Document(output);
         Assert.Single(reopened.Sections.Cast<Section>());
         Assert.Contains("Third", reopened.GetText(), StringComparison.Ordinal);
@@ -122,7 +123,7 @@ public sealed class WordsSectionIdentityTests
         fixture.Engine.ApplyOps(input, new WordsOpsBatch
         {
             Ops = [new AddSectionOp { Position = "start" }, new SetHeaderOp { Paragraphs = ["All"] }],
-        }, new WordsEditRequest { OutputPath = output });
+        }, new WordsEditRequest { Output = TestOutput.At(output) });
         var reopened = new Document(output);
         Assert.Equal(4, reopened.Sections.Count);
         fixture.AssertNoOwnHeader(reopened.FirstSection);
@@ -143,7 +144,7 @@ public sealed class WordsSectionIdentityTests
                 new DeleteSectionOp { Section = 1 }, new DeleteSectionOp { Section = 2 },
                 new DeleteSectionOp { Section = 3 }, new SetPropertiesOp { Title = "Kept" },
             ],
-        }, new WordsEditRequest { OutputPath = output, Options = new EditCommandOptions { BestEffort = true } });
+        }, new WordsEditRequest { Output = TestOutput.At(output), Options = new EditCommandOptions { BestEffort = true } });
         Assert.Equal(["ok", "ok", "failed", "ok"], result.Applied.Select(operation => operation.Status));
         var reopened = new Document(output);
         Assert.Single(reopened.Sections.Cast<Section>());

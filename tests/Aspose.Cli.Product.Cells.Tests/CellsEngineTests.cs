@@ -36,7 +36,7 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
             ParseOps("""{"ops":[{"op":"set_values","sheet":"Data","range":"B2","values":[[7]]}]}"""),
             new EditRequest
             {
-                OutputPath = source, Overwrite = true, BackupPath = backup,
+                Output = TestOutput.At(source, overwrite: true, backup: backup),
                 Verify = verify,
             });
         Assert.Equal(original, File.ReadAllBytes(backup));
@@ -62,7 +62,7 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
                   {"op":"remove_duplicates","sheet":"Orders","range":"A1:B5","hasHeader":true}
                 ]}
                 """),
-            new EditRequest { OutputPath = _fixture.Temp.File("dedupe-count.out.xlsx") });
+            new EditRequest { Output = TestOutput.At(_fixture.Temp.File("dedupe-count.out.xlsx")) });
 
         Assert.Equal(2, result.Applied.Single(static outcome => outcome.Op == "remove_duplicates").ItemsAffected);
     }
@@ -72,7 +72,8 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
     {
         CreateResult result = _fixture.Engine.Create(new NewWorkbookRequest
         {
-            OutputPath = _fixture.Temp.File("multiple.csv"), SheetNames = ["One", "Two"],
+            Output = TestOutput.At(_fixture.Temp.File("multiple.csv")),
+            SheetNames = ["One", "Two"],
         });
         Assert.Contains(result.Warnings ?? [], warning => warning.Code == "SHEETS_DROPPED" && warning.AffectsCompleteness);
     }
@@ -83,7 +84,7 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
         string source = _fixture.CreateSalesWorkbook("text-loss.xlsx");
         EditResult result = _fixture.Engine.ApplyOps(source,
             ParseOps("""{"ops":[{"op":"set_values","sheet":"Data","range":"B2","values":[[7]]}]}"""),
-            new EditRequest { OutputPath = _fixture.Temp.File("text-loss.csv"), Verify = true });
+            new EditRequest { Output = TestOutput.At(_fixture.Temp.File("text-loss.csv")), Verify = true });
         Assert.True(File.Exists(result.Output!.Path));
         Warning dropped = Assert.Single(result.Warnings ?? [], warning => warning.Code == "SHEETS_DROPPED");
         Assert.False(result.Verification!.Ok);
@@ -116,7 +117,7 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
         string source = _fixture.CreateSalesWorkbook("verify-formula-error.xlsx");
         EditResult result = _fixture.Engine.ApplyOps(source,
             ParseOps("""{"ops":[{"op":"set_formula","sheet":"Data","range":"E5","formula":"=1/0"}]}"""),
-            new EditRequest { OutputPath = _fixture.Temp.File("verify-formula-error.out.xlsx"), Verify = true });
+            new EditRequest { Output = TestOutput.At(_fixture.Temp.File("verify-formula-error.out.xlsx")), Verify = true });
 
         Assert.False(result.Verification!.Ok);
         CellError error = Assert.Single(result.Verification.FormulaErrors);
@@ -141,7 +142,7 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
 
         EditResult result = _fixture.Engine.ApplyOps(source,
             ParseOps("""{"ops":[{"op":"set_formula","sheet":"Data","range":"E6:E7","formula":"=2/0"}]}"""),
-            new EditRequest { OutputPath = _fixture.Temp.File("verify-preexisting-error.out.xlsx"), Verify = true });
+            new EditRequest { Output = TestOutput.At(_fixture.Temp.File("verify-preexisting-error.out.xlsx")), Verify = true });
 
         Assert.False(result.Verification!.Ok);
         Assert.Equal(
@@ -158,7 +159,7 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
         string source = _fixture.CreateSalesWorkbook("verify-formula-errors-capped.xlsx");
         EditResult result = _fixture.Engine.ApplyOps(source,
             ParseOps("""{"ops":[{"op":"set_formula","sheet":"Second","range":"B1:B1001","formula":"=1/0"}]}"""),
-            new EditRequest { OutputPath = _fixture.Temp.File("verify-formula-errors-capped.out.xlsx"), Verify = true });
+            new EditRequest { Output = TestOutput.At(_fixture.Temp.File("verify-formula-errors-capped.out.xlsx")), Verify = true });
 
         EditVerification verification = result.Verification!;
         Assert.Equal(1000, verification.FormulaErrors.Count);
@@ -180,7 +181,7 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
         string rows = string.Join(",", Enumerable.Range(1, 1001).Select(static value => $"[{value}]"));
         EditResult result = _fixture.Engine.ApplyOps(source,
             ParseOps($$"""{"ops":[{"op":"set_values","sheet":"Second","range":"B1","values":[{{rows}}]}]}"""),
-            new EditRequest { OutputPath = _fixture.Temp.File("verify-diff-truncated.out.xlsx"), Verify = true });
+            new EditRequest { Output = TestOutput.At(_fixture.Temp.File("verify-diff-truncated.out.xlsx")), Verify = true });
 
         Assert.True(result.Verification!.Ok);
         Assert.True(result.Verification.Truncated);
@@ -189,7 +190,7 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
 
         EditResult broken = _fixture.Engine.ApplyOps(source,
             ParseOps($$"""{"ops":[{"op":"set_values","sheet":"Second","range":"B1","values":[{{rows}}]},{"op":"set_formula","sheet":"Second","range":"C1002","formula":"=1/0"}]}"""),
-            new EditRequest { OutputPath = _fixture.Temp.File("verify-diff-truncated-error.out.xlsx"), Verify = true });
+            new EditRequest { Output = TestOutput.At(_fixture.Temp.File("verify-diff-truncated-error.out.xlsx")), Verify = true });
 
         Assert.False(broken.Verification!.Ok);
         Assert.Equal("'Second'!C1002", Assert.Single(broken.Verification.Issues).Location);
@@ -201,7 +202,7 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
         string source = _fixture.CreateSalesWorkbook("verify-anchored-matrix.xlsx");
         EditResult result = _fixture.Engine.ApplyOps(source,
             ParseOps("""{"ops":[{"op":"set_values","sheet":"Data","range":"A5","values":[["West",900],["North",700]]}]}"""),
-            new EditRequest { OutputPath = _fixture.Temp.File("verify-anchored-matrix.out.xlsx"), Verify = true });
+            new EditRequest { Output = TestOutput.At(_fixture.Temp.File("verify-anchored-matrix.out.xlsx")), Verify = true });
 
         EditVerification verification = result.Verification!;
         Assert.Equal(["A5", "B5", "A6", "B6"], verification.DirectChanges.Select(static change => change.Cell));
@@ -216,7 +217,7 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
         string source = _fixture.CreateSalesWorkbook("verify-renamed.xlsx");
         EditResult result = _fixture.Engine.ApplyOps(source,
             ParseOps("""{"ops":[{"op":"set_values","sheet":"Second","range":"A1","values":[["before"]]},{"op":"rename_sheet","sheet":"Second","to":"Notes"},{"op":"set_values","sheet":"Notes","range":"B1","values":[["after"]]}]}"""),
-            new EditRequest { OutputPath = _fixture.Temp.File("verify-renamed.out.xlsx"), Verify = true });
+            new EditRequest { Output = TestOutput.At(_fixture.Temp.File("verify-renamed.out.xlsx")), Verify = true });
 
         EditVerification verification = result.Verification!;
         Assert.Equal(["Notes!A1", "Notes!B1"], verification.DirectChanges.Select(static change => $"{change.Sheet}!{change.Cell}"));
@@ -230,7 +231,7 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
         string source = _fixture.CreateSalesWorkbook("verify-unknown-function.xlsx");
         EditResult result = _fixture.Engine.ApplyOps(source,
             ParseOps("""{"ops":[{"op":"set_formula","sheet":"Data","range":"D2","formula":"=求和(B2:C2)"}]}"""),
-            new EditRequest { OutputPath = _fixture.Temp.File("verify-unknown-function.out.xlsx"), Verify = true });
+            new EditRequest { Output = TestOutput.At(_fixture.Temp.File("verify-unknown-function.out.xlsx")), Verify = true });
 
         Assert.Equal("#NAME?", Assert.Single(result.Verification!.FormulaErrors).Error);
         Assert.Contains("English function names", Assert.Single(result.Verification.Issues).Hint, StringComparison.Ordinal);
@@ -242,7 +243,7 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
         string source = _fixture.CreateSalesWorkbook("verify-clean.xlsx");
         EditResult result = _fixture.Engine.ApplyOps(source,
             ParseOps("""{"ops":[{"op":"set_values","sheet":"Data","range":"B2","values":[[7]]}]}"""),
-            new EditRequest { OutputPath = _fixture.Temp.File("verify-clean.out.xlsx"), Verify = true });
+            new EditRequest { Output = TestOutput.At(_fixture.Temp.File("verify-clean.out.xlsx")), Verify = true });
 
         Assert.True(result.Verification!.Ok);
         Assert.Empty(result.Verification.Issues);
@@ -258,10 +259,10 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
 
         EditResult result = _fixture.Engine.ApplyOps(source,
             ParseOps($$"""{"ops":[{"op":"set_formula","sheet":"Data","range":"E5","formula":{{beside}}},{"op":"set_formula","sheet":"Data","range":"E6","formula":"='C:\\far\\[far.xlsx]Rates'!$B$2"}]}"""),
-            new EditRequest { OutputPath = output, Overwrite = true });
+            new EditRequest { Output = TestOutput.At(output, overwrite: true) });
         EditResult again = _fixture.Engine.ApplyOps(output,
             ParseOps("""{"ops":[{"op":"set_formula","sheet":"Data","range":"E7","formula":"='[fx.xlsx]Rates'!$B$3"}]}"""),
-            new EditRequest { OutputPath = _fixture.Temp.File("relative-link-again.out.xlsx"), Overwrite = true });
+            new EditRequest { Output = TestOutput.At(_fixture.Temp.File("relative-link-again.out.xlsx"), overwrite: true) });
 
         Warning warning = Assert.Single(result.Warnings!, static warning => warning.Code == "EXTERNAL_LINK_RELATIVE");
         Assert.Contains("fx.xlsx", warning.Message, StringComparison.Ordinal);
@@ -276,7 +277,7 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
 
         EditResult result = _fixture.Engine.ApplyOps(source,
             ParseOps("""{"ops":[{"op":"set_formula","sheet":"Data","range":"E5","formula":"='Secnd'!A1"}]}"""),
-            new EditRequest { OutputPath = _fixture.Temp.File("sheet-typo.out.xlsx") });
+            new EditRequest { Output = TestOutput.At(_fixture.Temp.File("sheet-typo.out.xlsx")) });
 
         Warning warning = Assert.Single(result.Warnings!, static warning => warning.Code == "EXTERNAL_LINK_RELATIVE");
         Assert.StartsWith("No sheet is named 'Secnd'. Did you mean 'Second'?", warning.Hint, StringComparison.Ordinal);
@@ -297,7 +298,7 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
                   {"op":"set_formula","sheet":"Data","range":"E8","formula":"=LET(fn,LAMBDA(a,a+1),fn(2))"}
                 ]}
                 """),
-            new EditRequest { OutputPath = _fixture.Temp.File("function-typo.out.xlsx") });
+            new EditRequest { Output = TestOutput.At(_fixture.Temp.File("function-typo.out.xlsx")) });
 
         Warning warning = Assert.Single(result.Warnings!, static warning => warning.Code == "FORMULA_FUNCTION_UNKNOWN");
         Assert.StartsWith(
@@ -318,7 +319,7 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
                   {"op":"set_formula","sheet":"Data","range":"E3","formula":"=SUMME(B3:C3)"}
                 ]}
                 """),
-            new EditRequest { OutputPath = _fixture.Temp.File("function-localized.out.xlsx") });
+            new EditRequest { Output = TestOutput.At(_fixture.Temp.File("function-localized.out.xlsx")) });
 
         Warning warning = Assert.Single(result.Warnings!, static warning => warning.Code == "FORMULA_FUNCTION_UNKNOWN");
         Assert.StartsWith("Aspose.Cells does not know the function(s) in 'Data'!E2: 求和; 'Data'!E3: SUMME", warning.Message, StringComparison.Ordinal);
@@ -341,7 +342,7 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
                   {"op":"insert_rows","sheet":"Data","at":1,"count":2}
                 ]}
                 """),
-            new EditRequest { OutputPath = _fixture.Temp.File("function-typo-moved.out.xlsx") });
+            new EditRequest { Output = TestOutput.At(_fixture.Temp.File("function-typo-moved.out.xlsx")) });
 
         Warning warning = Assert.Single(result.Warnings!, static warning => warning.Code == "FORMULA_FUNCTION_UNKNOWN");
         Assert.StartsWith(
@@ -487,7 +488,7 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
         string path = _fixture.Temp.File("vocabulary.xlsx");
         _fixture.Engine.ApplyOps(source,
             ParseOps($$"""{"ops":[{{string.Join(",", charts.Concat(validations))}}]}"""),
-            new EditRequest { OutputPath = path });
+            new EditRequest { Output = TestOutput.At(path) });
         using (var workbook = new Aspose.Cells.Workbook(path))
         {
             Aspose.Cells.Charts.ChartCollection sdkCharts = workbook.Worksheets["Data"].Charts;
@@ -522,7 +523,7 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
                    "header":"Roster","footer":"Page &P of &N"}
                 ]}
                 """),
-            new EditRequest { OutputPath = path });
+            new EditRequest { Output = TestOutput.At(path) });
 
         WorkbookInfoResult result = _fixture.Engine.GetInfo(path, new InfoRequest { Details = [InfoDetails.Layout] });
 
@@ -565,8 +566,7 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
 
         ConvertResult result = _fixture.Engine.Convert(path, new ConvertRequest
         {
-            TargetFormatId = "pdf",
-            OutputPath = output,
+            Output = TestOutput.At(output, format: "pdf"),
         });
 
         Assert.Equal(output, result.Output.Path);
@@ -584,8 +584,7 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
 
         ConvertResult result = _fixture.Engine.Convert(path, new ConvertRequest
         {
-            TargetFormatId = "xlsx",
-            OutputPath = output,
+            Output = TestOutput.At(output, format: "xlsx"),
         });
 
         Assert.Equal("csv", result.Input.Format);
@@ -600,8 +599,7 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
 
         ConvertResult result = _fixture.Engine.Convert(path, new ConvertRequest
         {
-            TargetFormatId = "csv",
-            OutputPath = output,
+            Output = TestOutput.At(output, format: "csv"),
         });
 
         // The sales fixture is multi-sheet, so a csv export also carries a
@@ -623,30 +621,28 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
         WorkbookReadResult read = _fixture.Engine.Read(marked, new ReadRequest());
         ConvertResult csv = _fixture.Engine.Convert(marked, new ConvertRequest
         {
-            TargetFormatId = "csv",
-            OutputPath = _fixture.Temp.File("marked.csv"),
+            Output = TestOutput.At(_fixture.Temp.File("marked.csv"), format: "csv"),
         });
         ConvertResult copied = _fixture.Engine.Convert(marked, new ConvertRequest
         {
-            TargetFormatId = "xlsx",
-            OutputPath = _fixture.Temp.File("marked-copy.xlsx"),
+            Output = TestOutput.At(_fixture.Temp.File("marked-copy.xlsx"), format: "xlsx"),
         });
         EditResult edited = _fixture.Engine.ApplyOps(marked,
             ParseOps("""{"ops":[{"op":"set_values","range":"A2","values":[["edited"]]}]}"""),
-            new EditRequest { OutputPath = _fixture.Temp.File("marked-edited.xlsx"), Overwrite = true });
+            new EditRequest { Output = TestOutput.At(_fixture.Temp.File("marked-edited.xlsx"), overwrite: true) });
         EditResult activated = _fixture.Engine.ApplyOps(marked,
             ParseOps("""{"ops":[{"op":"set_active_sheet","sheet":"Data"}]}"""),
-            new EditRequest { OutputPath = _fixture.Temp.File("marked-activated.xlsx"), Overwrite = true });
+            new EditRequest { Output = TestOutput.At(_fixture.Temp.File("marked-activated.xlsx"), overwrite: true) });
         EditResult notActivated = _fixture.Engine.ApplyOps(marked,
             ParseOps("""{"ops":[{"op":"set_active_sheet","sheet":"Missing"},{"op":"set_values","range":"A2","values":[["edited"]]}]}"""),
             new EditRequest
             {
-                OutputPath = _fixture.Temp.File("marked-not-activated.xlsx"), Overwrite = true,
+                Output = TestOutput.At(_fixture.Temp.File("marked-not-activated.xlsx"), overwrite: true),
                 Options = new EditCommandOptions { BestEffort = true },
             });
         EditResult editedCsv = _fixture.Engine.ApplyOps(marked,
             ParseOps("""{"ops":[{"op":"set_values","range":"A2","values":[["edited"]]}]}"""),
-            new EditRequest { OutputPath = _fixture.Temp.File("marked-edited.csv"), Overwrite = true });
+            new EditRequest { Output = TestOutput.At(_fixture.Temp.File("marked-edited.csv"), overwrite: true) });
         WorkbookReadResult kept = _fixture.Engine.Read(lookalike, new ReadRequest());
 
         Assert.Equal("Data", read.Sheet!.Name);
@@ -709,13 +705,11 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
 
         ConvertResult marked = _fixture.Engine.Convert(workspace.File("marked.xlsx"), new ConvertRequest
         {
-            TargetFormatId = "pdf",
-            OutputPath = _fixture.Temp.File("marked-export.pdf"),
+            Output = TestOutput.At(_fixture.Temp.File("marked-export.pdf"), format: "pdf"),
         });
         ConvertResult clean = _fixture.Engine.Convert(unmarked, new ConvertRequest
         {
-            TargetFormatId = "pdf",
-            OutputPath = _fixture.Temp.File("unmarked-export.pdf"),
+            Output = TestOutput.At(_fixture.Temp.File("unmarked-export.pdf"), format: "pdf"),
         });
 
         Warning notice = Assert.Single(marked.Warnings!, static warning => warning.Code == "EVALUATION_NOTICE_ADDED");
@@ -730,8 +724,7 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
 
         CliException exception = Assert.Throws<CliException>(() => _fixture.Engine.Convert(path, new ConvertRequest
         {
-            TargetFormatId = "csv",
-            OutputPath = _fixture.Temp.File("never.csv"),
+            Output = TestOutput.At(_fixture.Temp.File("never.csv"), format: "csv"),
             SheetName = "Dat",
         }));
 
@@ -758,9 +751,7 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
 
         ConvertResult result = _fixture.Engine.Convert(src, new ConvertRequest
         {
-            TargetFormatId = "xls",
-            OutputPath = _fixture.Temp.File("tall.xls"),
-            Overwrite = true,
+            Output = TestOutput.At(_fixture.Temp.File("tall.xls"), format: "xls", overwrite: true),
         });
 
         Warning? warning = result.Warnings?.FirstOrDefault(w => w.Code == "DATA_TRUNCATED");
@@ -782,9 +773,7 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
 
         ConvertResult result = _fixture.Engine.Convert(src, new ConvertRequest
         {
-            TargetFormatId = "xls",
-            OutputPath = _fixture.Temp.File("wide.xls"),
-            Overwrite = true,
+            Output = TestOutput.At(_fixture.Temp.File("wide.xls"), format: "xls", overwrite: true),
         });
 
         Warning? warning = result.Warnings?.FirstOrDefault(w => w.Code == "DATA_TRUNCATED");
@@ -800,9 +789,7 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
 
         ConvertResult result = _fixture.Engine.Convert(src, new ConvertRequest
         {
-            TargetFormatId = "xls",
-            OutputPath = _fixture.Temp.File("small.xls"),
-            Overwrite = true,
+            Output = TestOutput.At(_fixture.Temp.File("small.xls"), format: "xls", overwrite: true),
         });
 
         Assert.DoesNotContain(result.Warnings ?? [], w => w.Code == "DATA_TRUNCATED");
@@ -821,9 +808,7 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
 
         ConvertResult result = _fixture.Engine.Convert(src, new ConvertRequest
         {
-            TargetFormatId = "xlsb",
-            OutputPath = _fixture.Temp.File("tall2.xlsb"),
-            Overwrite = true,
+            Output = TestOutput.At(_fixture.Temp.File("tall2.xlsb"), format: "xlsb", overwrite: true),
         });
 
         Assert.DoesNotContain(result.Warnings ?? [], w => w.Code == "DATA_TRUNCATED");
@@ -845,7 +830,7 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
         EditResult result = _fixture.Engine.ApplyOps(
             src,
             ParseOps("""{ "ops": [ { "op": "set_values", "sheet": "Sheet1", "range": "A1", "values": [["x"]] } ] }"""),
-            new EditRequest { OutputPath = _fixture.Temp.File("edit-tall.xls"), Overwrite = true });
+            new EditRequest { Output = TestOutput.At(_fixture.Temp.File("edit-tall.xls"), overwrite: true) });
 
         Assert.Contains(result.Warnings ?? [], w => w.Code == "DATA_TRUNCATED");
     }
@@ -863,7 +848,7 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
         EditResult result = _fixture.Engine.ApplyOps(
             src,
             ParseOps("""{ "ops": [ { "op": "set_formula", "range": "B1", "formula": "=1" } ] }"""),
-            new EditRequest { OutputPath = _fixture.Temp.File("calc-tall.xls"), Overwrite = true });
+            new EditRequest { Output = TestOutput.At(_fixture.Temp.File("calc-tall.xls"), overwrite: true) });
 
         Assert.Contains(result.Warnings ?? [], w => w.Code == "DATA_TRUNCATED");
     }
@@ -887,9 +872,7 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
 
         ConvertResult result = _fixture.Engine.Convert(src, new ConvertRequest
         {
-            TargetFormatId = "xls",
-            OutputPath = _fixture.Temp.File("wholecol.xls"),
-            Overwrite = true,
+            Output = TestOutput.At(_fixture.Temp.File("wholecol.xls"), format: "xls", overwrite: true),
         });
 
         Warning? warning = result.Warnings?.FirstOrDefault(w => w.Code == "FORMULAS_BROKEN");
@@ -914,9 +897,7 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
 
         ConvertResult result = _fixture.Engine.Convert(src, new ConvertRequest
         {
-            TargetFormatId = "xlsb",
-            OutputPath = _fixture.Temp.File("wholecol2.xlsb"),
-            Overwrite = true,
+            Output = TestOutput.At(_fixture.Temp.File("wholecol2.xlsb"), format: "xlsb", overwrite: true),
         });
 
         Assert.DoesNotContain(result.Warnings ?? [], w => w.Code == "FORMULAS_BROKEN");
@@ -930,8 +911,7 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
 
         RenderResult result = _fixture.Engine.Render(path, new RenderRequest
         {
-            TargetFormatId = "png",
-            OutputPath = output,
+            Output = TestOutput.At(output, format: "png"),
             SheetName = "Data",
             Range = new RangeRef(new CellRef(0, 0), new CellRef(2, 2)),
             Dpi = 96,
@@ -951,8 +931,7 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
 
         RenderResult result = _fixture.Engine.Render(path, new RenderRequest
         {
-            TargetFormatId = "svg",
-            OutputPath = output,
+            Output = TestOutput.At(output, format: "svg"),
             SheetName = "Data",
         });
 

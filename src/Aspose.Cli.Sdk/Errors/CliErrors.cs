@@ -325,6 +325,16 @@ public static partial class CliErrors
         hint: "Give every output, including a backup, its own path.",
         details: new JsonObject { ["path"] = path });
 
+    /// <summary>
+    /// The engine wrote a directory beside an output published with its companion files. Only
+    /// files are published with an output, so the set is refused and nothing is published.
+    /// </summary>
+    internal static CliException CompanionDirectoryUnpublished(string path, string directory) => new(
+        ErrorCodes.OutputPublicationFailed,
+        $"The output set could not be published: the engine wrote the directory '{directory}' beside {path}, and only companion files are published with an output.",
+        hint: "Nothing was written. Convert to another format that keeps its content in one file, and report the format that wrote a directory.",
+        details: new JsonObject { ["path"] = path, ["directory"] = directory });
+
     public static CliException OutputUnwritable(
         string path,
         string reason,
@@ -503,6 +513,37 @@ public static partial class CliErrors
                 + $"it writes {string.Join(", ", supported)}.",
             hint,
             details: new JsonObject { ["option"] = parameter, ["requested"] = requested, ["supported"] = Strings(supported) });
+    }
+
+    /// <summary>
+    /// An output the caller named, or the one derived from the input, has an extension that is
+    /// not one of the format it would be written in, or that names no format the command writes.
+    /// It is refused before any work, so nothing is written.
+    /// </summary>
+    /// <param name="parameter">The option or argument that names the output, such as <c>--out</c>.</param>
+    /// <param name="output">The output as the caller gave it, or the input it is derived from.</param>
+    /// <param name="subject">The start of the message naming the file, such as <c>--out 'x.ppt'</c>.</param>
+    /// <param name="problem">What is wrong with its extension, completing a sentence about the subject.</param>
+    /// <param name="extensions">The extensions the output may have.</param>
+    /// <param name="hint">How to fix the command line.</param>
+    /// <param name="facts">The format or formats that decided <paramref name="extensions"/>.</param>
+    internal static CliException OutputExtensionInvalid(
+        string parameter,
+        string output,
+        string subject,
+        string problem,
+        IReadOnlyList<string> extensions,
+        string hint,
+        JsonObject facts)
+    {
+        facts["option"] = parameter;
+        facts["extension"] = Path.GetExtension(output);
+        facts["extensions"] = Strings(extensions);
+        return new CliException(
+            ErrorCodes.UsageError,
+            $"{subject} {problem}; use {string.Join(", ", extensions)}.",
+            hint,
+            details: facts);
     }
 
     /// <summary>Creates an extension/content ownership conflict error.</summary>

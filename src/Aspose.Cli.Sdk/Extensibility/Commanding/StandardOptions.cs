@@ -42,34 +42,44 @@ public sealed record CommandTraits
 }
 
 /// <summary>
-/// The format a convert or render command writes, chosen by <c>--to</c> by a format id or
-/// alias in any case.
+/// The format a command writes, chosen by <c>--to</c> by a format id or alias in any case.
 /// </summary>
 public sealed class TargetFormat
 {
-    private TargetFormat(FormatUse use, string description, IReadOnlyList<FormatDescriptor> formats, string? defaultFormat)
+    private TargetFormat(FormatUse? use, string description, IReadOnlyList<FormatDescriptor> formats, string? defaultFormat, bool required)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(description);
         ArgumentNullException.ThrowIfNull(formats);
-        Use = use;
         Description = description;
-        Formats = formats;
-        Default = defaultFormat;
-    }
+        Offered = use is { } selected ? [.. formats.IdsFor(selected).Select(id => formats.Named(selected, id)!)] : formats;
+        if (Offered.Count == 0)
+        {
+            throw new ArgumentException($"The product declares no {use.ToString()!.ToLowerInvariant()} format.", nameof(formats));
+        }
 
-    internal FormatUse Use { get; }
+        if (defaultFormat is not null && Named(defaultFormat) is null)
+        {
+            throw new ArgumentException($"The default format '{defaultFormat}' is not offered.", nameof(defaultFormat));
+        }
+
+        Default = defaultFormat;
+        Required = required;
+    }
 
     internal string Description { get; }
 
-    internal IReadOnlyList<FormatDescriptor> Formats { get; }
+    /// <summary>The formats <c>--to</c> offers, in their declared order.</summary>
+    internal IReadOnlyList<FormatDescriptor> Offered { get; }
 
     internal string? Default { get; }
+
+    internal bool Required { get; }
 
     /// <summary>A required <c>--to</c> among the product's convert formats.</summary>
     /// <param name="description">Help for <c>--to</c>.</param>
     /// <param name="formats">The product's format declarations; those with the convert use are offered.</param>
     public static TargetFormat Convert(string description, IReadOnlyList<FormatDescriptor> formats) =>
-        new(FormatUse.Convert, description, formats, defaultFormat: null);
+        new(FormatUse.Convert, description, formats, defaultFormat: null, required: true);
 
     /// <summary>
     /// An optional <c>--to</c> among the product's render formats; when it is omitted, the
@@ -79,7 +89,19 @@ public sealed class TargetFormat
     /// <param name="formats">The product's format declarations; those with the render use are offered.</param>
     /// <param name="defaultFormat">The render format id used when nothing else names one.</param>
     public static TargetFormat Render(string description, IReadOnlyList<FormatDescriptor> formats, string defaultFormat = "png") =>
-        new(FormatUse.Render, description, formats, defaultFormat);
+        new(FormatUse.Render, description, formats, defaultFormat, required: false);
+
+    /// <summary>
+    /// An optional <c>--to</c> among <paramref name="formats"/>, such as the formats a command
+    /// exports data in; when it is omitted, the <c>--out</c> extension names the format.
+    /// </summary>
+    public static TargetFormat Among(string description, IReadOnlyList<FormatDescriptor> formats) =>
+        new(use: null, description, formats, defaultFormat: null, required: false);
+
+    /// <summary>The offered format whose id or alias is <paramref name="name"/>, ignoring case.</summary>
+    internal FormatDescriptor? Named(string name) =>
+        Offered.FirstOrDefault(format => string.Equals(format.Id, name, StringComparison.OrdinalIgnoreCase)
+            || format.Aliases.Contains(name, StringComparer.OrdinalIgnoreCase));
 }
 
 /// <summary>A document a command reads.</summary>
@@ -94,15 +116,34 @@ public sealed record InputDocument(
     string PasswordSubject,
     string Argument = "file");
 
-/// <summary>Where a command publishes its result.</summary>
+/// <summary>
+/// Where a command publishes its result and the formats it can write there. The command
+/// template resolves the output once per invocation (<see cref="StandardInvocation.Output"/>):
+/// the format <c>--to</c> names when the command has one, else the format among those it writes
+/// that the named output's extension declares, else the edited input's format or the
+/// <c>--to</c> default; the output's extension must belong to that format.
+/// </summary>
 public sealed class OutputTarget
 {
-    private OutputTarget(OutputKind kind, string? fileDescription, string? directoryDescription, bool required)
+    private OutputTarget(
+        OutputKind kind,
+        string? fileDescription,
+        string? directoryDescription,
+        bool required,
+        IReadOnlyList<FormatDescriptor>? writes = null,
+        string? derivedMarker = null)
     {
+        if (writes is { Count: 0 })
+        {
+            throw new ArgumentException("An output writes at least one format.", nameof(writes));
+        }
+
         Kind = kind;
         FileDescription = fileDescription;
         DirectoryDescription = directoryDescription;
         Required = required;
+        Writes = writes;
+        DerivedMarker = derivedMarker;
     }
 
     internal OutputKind Kind { get; }
@@ -113,12 +154,27 @@ public sealed class OutputTarget
 
     internal bool Required { get; }
 
+    /// <summary>The formats the command writes, or null when its <c>--to</c> chooses among them.</summary>
+    internal IReadOnlyList<FormatDescriptor>? Writes { get; }
+
+    /// <summary>What a derived output inserts before the extension, such as <c>.signed</c>.</summary>
+    internal string? DerivedMarker { get; }
+
     /// <summary>
-    /// One file named by <c>--out</c>, beside <c>--overwrite</c>. Unless it is required, an
-    /// omitted <c>--out</c> is derived from the input.
+    /// One file named by <c>--out</c>, beside <c>--overwrite</c>, in the format the command's
+    /// <c>--to</c> chooses. Unless it is required, an omitted <c>--out</c> is derived from the input.
     /// </summary>
     public static OutputTarget File(string description, bool required = false) =>
         new(OutputKind.File, Help(description), null, required);
+
+    /// <summary>
+    /// One file named by <c>--out</c>, beside <c>--overwrite</c>, in the format among
+    /// <paramref name="writes"/> its extension declares. Unless it is required, an omitted
+    /// <c>--out</c> is the input path with <paramref name="derivedMarker"/> and the extension of
+    /// the first format inserted.
+    /// </summary>
+    public static OutputTarget File(string description, IReadOnlyList<FormatDescriptor> writes, bool required = false, string? derivedMarker = null) =>
+        new(OutputKind.File, Help(description), null, required, Declared(writes), derivedMarker);
 
     /// <summary>A set of files in the directory named by the required <c>--out-dir</c>, beside <c>--overwrite</c>.</summary>
     public static OutputTarget Directory(string description) =>
@@ -126,10 +182,18 @@ public sealed class OutputTarget
 
     /// <summary>
     /// Either a set of files in the directory named by <c>--out-dir</c> or one file named by
-    /// <c>--out</c> beside <c>--overwrite</c>; both are optional and the command picks the mode.
+    /// <c>--out</c> beside <c>--overwrite</c>, in the format the command's <c>--to</c> chooses;
+    /// both are optional and the command picks the mode.
     /// </summary>
     public static OutputTarget FileOrDirectory(string fileDescription, string directoryDescription) =>
         new(OutputKind.FileOrDirectory, Help(fileDescription), Help(directoryDescription), required: false);
+
+    /// <summary>
+    /// A new file named by the required <c>file</c> argument, beside <c>--overwrite</c>, in the
+    /// format among <paramref name="writes"/> its extension declares.
+    /// </summary>
+    public static OutputTarget CreatedFile(string description, IReadOnlyList<FormatDescriptor> writes) =>
+        new(OutputKind.CreatedFile, Help(description), null, required: true, Declared(writes));
 
     /// <summary>A new file named by the required <c>file</c> argument, beside <c>--overwrite</c>.</summary>
     public static OutputTarget CreatedFile(string description) =>
@@ -137,18 +201,26 @@ public sealed class OutputTarget
 
     /// <summary>
     /// The edited input document, published to <c>--out</c> (by default beside the input) or
-    /// atomically in place with <c>--in-place</c> and an optional <c>--backup</c>.
+    /// atomically in place with <c>--in-place</c> and an optional <c>--backup</c>, in the format
+    /// among <paramref name="writes"/> the output's extension declares.
     /// </summary>
-    internal static OutputTarget Mutation { get; } = new(
+    internal static OutputTarget Mutation(IReadOnlyList<FormatDescriptor>? writes) => new(
         OutputKind.Mutation,
         "Output path. Default: the input path with '.out' inserted before the extension.",
         null,
-        required: false);
+        required: false,
+        writes);
 
     private static string Help(string description)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(description);
         return description;
+    }
+
+    private static IReadOnlyList<FormatDescriptor> Declared(IReadOnlyList<FormatDescriptor> writes)
+    {
+        ArgumentNullException.ThrowIfNull(writes);
+        return writes;
     }
 }
 
@@ -159,7 +231,15 @@ internal enum OutputKind { File, Directory, FileOrDirectory, CreatedFile, Mutati
 /// <param name="ProtectableFormats">The output format ids that can carry a password.</param>
 public sealed record EncryptedOutput(
     string Subject,
-    IReadOnlyList<string> ProtectableFormats);
+    IReadOnlyList<string> ProtectableFormats)
+{
+    /// <summary>A password on an output whose resolved format decides whether it can carry one.</summary>
+    /// <param name="subject">The output as the password help names it.</param>
+    public EncryptedOutput(string subject)
+        : this(subject, [])
+    {
+    }
+}
 
 /// <summary>
 /// The one mapping from <see cref="CommandTraits"/> to the common arguments and options. It
@@ -270,6 +350,7 @@ public sealed class StandardOptions
             ProtectableFormats = encrypt.ProtectableFormats;
         }
 
+        OutputTarget = traits.Output;
         Fonts = traits.UsesFonts ? new FontDirectoryOptions() : null;
         if (traits.Target is { } target)
         {
@@ -312,6 +393,8 @@ public sealed class StandardOptions
     internal Option<string>? To { get; }
 
     internal TargetFormat? Target { get; }
+
+    internal OutputTarget? OutputTarget { get; }
 
     /// <summary>
     /// Creates the command: the document arguments, the command's own arguments, then the
@@ -412,34 +495,23 @@ public sealed class StandardOptions
 
     private static Option<string> TargetOption(TargetFormat target)
     {
-        IReadOnlyList<string> ids = target.Formats.IdsFor(target.Use);
-        if (ids.Count == 0)
-        {
-            throw new ArgumentException($"The product declares no {target.Use.ToString().ToLowerInvariant()} format.", nameof(target));
-        }
-
-        if (target.Default is { } defaultFormat && !ids.Contains(defaultFormat, StringComparer.Ordinal))
-        {
-            throw new ArgumentException($"The default format '{defaultFormat}' is not a {target.Use.ToString().ToLowerInvariant()} format.", nameof(target));
-        }
-
-        string[] names = [.. ids.SelectMany(id => target.Formats.Named(target.Use, id)!.Aliases.Prepend(id))];
         var option = new Option<string>(StandardOptionNames.To)
         {
             Description = target.Description,
-            Required = target.Default is null,
+            Required = target.Required,
         }.WithInput(InputKind.None);
         if (target.Default is { } fallback)
         {
             option.DefaultValueFactory = _ => fallback;
         }
 
-        option.CompletionSources.Add([.. ids]);
+        option.CompletionSources.Add([.. target.Offered.Select(static format => format.Id)]);
+        string names = string.Join(", ", target.Offered.SelectMany(static format => format.Aliases.Prepend(format.Id)));
         option.Validators.Add(result =>
         {
-            if (result.Tokens.Count > 0 && target.Formats.Named(target.Use, result.Tokens[^1].Value) is null)
+            if (result.Tokens.Count > 0 && target.Named(result.Tokens[^1].Value) is null)
             {
-                result.AddError($"Argument '{result.Tokens[^1].Value}' not recognized. Must be one of: {string.Join(", ", names)}.");
+                result.AddError($"Argument '{result.Tokens[^1].Value}' not recognized. Must be one of: {names}.");
             }
         });
         Targets.Add(option, target);
@@ -464,7 +536,7 @@ public sealed class StandardOptions
 /// operations read), a password is refused for a format that cannot carry one before its secret
 /// is read, and standard input already carrying data is never read for a password.
 /// </summary>
-public class StandardInvocation
+public partial class StandardInvocation
 {
     private readonly StandardOptions _options;
     private readonly ParseResult _parse;
@@ -547,7 +619,7 @@ public class StandardInvocation
                     .OfType<TargetFormat>()
                     .Select(target => (command.Name, target))),
         ];
-        FormatDescriptor[] formats = [.. siblings.SelectMany(static sibling => sibling.Target.Formats).Distinct()];
+        FormatDescriptor[] formats = [.. siblings.SelectMany(static sibling => sibling.Target.Offered).Distinct()];
         IReadOnlyList<FormatDescriptor> named = formats.DeclaringExtension(extension);
         string extensionId = extension[1..];
         bool namesRequested = string.Equals(extensionId, requested, StringComparison.OrdinalIgnoreCase)
@@ -565,7 +637,7 @@ public class StandardInvocation
 
         string[] path = CommandPath();
         string? producer = siblings
-            .Select(sibling => sibling.Target.Formats.WithExtension(sibling.Target.Use, extension) is [var format, ..]
+            .Select(sibling => sibling.Target.Offered.DeclaringExtension(extension) is [var format, ..]
                 ? string.Join(' ', [DistributionInfo.CommandName, .. path[..^1], sibling.Command, "<that file>", "--to", format.Id])
                 : null)
             .FirstOrDefault(static line => line is not null);
@@ -689,57 +761,9 @@ public class StandardInvocation
     public string? RequestedOutputPath() =>
         Declared(_options.OutputFile, "output file").Resolve(_parse, Paths, DeclaredInputs());
 
-    /// <summary>
-    /// The target format id that <c>--to</c> names by its id or an alias in any case. It must
-    /// not contradict a format of the product that the <c>--out</c> extension names, so one
-    /// format's bytes are never written under another format's extension; an alias extension
-    /// of the same format such as .jpeg, and an extension that names no format of the product,
-    /// are accepted. When a render command omits <c>--to</c>, the render format the
-    /// <c>--out</c> extension names is used, so <c>--out page.svg</c> writes SVG, and otherwise
-    /// the default; an <c>--out</c> extension that names no render format, such as a convert
-    /// format's, is refused rather than given image bytes.
-    /// </summary>
-    /// <exception cref="CliException"><c>USAGE_ERROR</c> when a render <c>--out</c> extension names no render format, or <c>--to</c> and the extension name different formats.</exception>
-    public string TargetFormat()
-    {
-        Option<string> to = Declared(_options.To, "target format");
-        TargetFormat target = _options.Target!;
-        string requested = _parse.GetRequiredValue(to);
-        FormatDescriptor format = target.Formats.Named(target.Use, requested)!;
-        string? extension = _options.OutputFile?.RequestedExtension(_parse);
-        IReadOnlyList<FormatDescriptor> named = extension is null ? [] : target.Formats.DeclaringExtension(extension);
-        if (target.Use == FormatUse.Render && extension is not null
-            && !named.Any(static candidate => candidate.Uses.HasFlag(FormatUse.Render)))
-        {
-            string[] extensions = target.Formats
-                .Where(static candidate => candidate.Uses.HasFlag(FormatUse.Render))
-                .SelectMany(static candidate => candidate.Extensions)
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .ToArray();
-            throw CliErrors.Usage(
-            [
-                $"{StandardOptionNames.Out} '{_parse.GetValue(_options.OutputFile!.Option)}' has the {extension} extension, "
-                    + $"which names no render format; use {string.Join(", ", extensions)}",
-            ]);
-        }
-
-        if (target.Use == FormatUse.Render && _parse.GetResult(to) is not { Implicit: false })
-        {
-            return named.FirstOrDefault(static candidate => candidate.Uses.HasFlag(FormatUse.Render))?.Id ?? format.Id;
-        }
-
-        if (named.Count > 0 && !named.Contains(format))
-        {
-            throw CliErrors.Usage(
-            [
-                $"{to.Name} {requested} contradicts {StandardOptionNames.Out} '{_parse.GetValue(_options.OutputFile!.Option)}', "
-                    + $"whose {extension} extension names {string.Join(" or ", named.Select(static match => match.Id))}; "
-                    + $"give the output the {target.Formats.ExtensionFor(format.Id)} extension or change {to.Name}",
-            ]);
-        }
-
-        return format.Id;
-    }
+    /// <summary>The id of the format the resolved <see cref="Output"/> is written in.</summary>
+    /// <exception cref="CliException"><c>USAGE_ERROR</c> for an output extension that is not the format's.</exception>
+    public string TargetFormat() => Output.Format.Id;
 
     /// <summary>The file a creating command writes, named by its <c>file</c> argument.</summary>
     /// <exception cref="CliException"><c>OPTION_INVALID</c> when the file is one of the inputs.</exception>

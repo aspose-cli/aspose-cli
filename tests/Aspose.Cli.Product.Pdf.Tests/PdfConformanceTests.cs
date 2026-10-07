@@ -67,8 +67,7 @@ public sealed class PdfConformanceTests
 
         PdfConvertResult result = fixture.Engine.Convert(input, new PdfConvertRequest
         {
-            TargetFormatId = "pdfa-2b",
-            OutputPath = fixture.File("convertible.pdfa.pdf"),
+            Output = TestOutput.At(fixture.File("convertible.pdfa.pdf"), format: "pdfa-2b"),
         });
 
         Assert.True(File.Exists(Assert.Single(result.Outputs).Path));
@@ -86,13 +85,12 @@ public sealed class PdfConformanceTests
             <input type="checkbox" name="urgent"/> Urgent
             </form></body></html>
             """);
-        string form = fixture.Engine.Create(new NewPdfRequest { HtmlPath = html, OutputPath = fixture.File("form.pdf") }).Output.Path;
+        string form = fixture.Engine.Create(new NewPdfRequest { Output = TestOutput.At(fixture.File("form.pdf")), HtmlPath = html }).Output.Path;
         string output = fixture.File("form.pdfa.pdf");
 
         CliException error = Assert.Throws<CliException>(() => fixture.Engine.Convert(form, new PdfConvertRequest
         {
-            TargetFormatId = "pdfa-2b",
-            OutputPath = output,
+            Output = TestOutput.At(output, format: "pdfa-2b"),
         }));
 
         Assert.Equal("PDFA_CONVERSION_FAILED", error.Code.Name);
@@ -106,8 +104,8 @@ public sealed class PdfConformanceTests
 
         // The remedy the hint names, flattening only the named fields, makes the conversion conform.
         string flattened = fixture.File("form.flat.pdf");
-        fixture.Engine.ApplyOps(form, new PdfOpsBatch { Ops = [new FlattenFormsOp { Fields = ["radio"] }] }, new PdfEditRequest { OutputPath = flattened });
-        fixture.Engine.Convert(flattened, new PdfConvertRequest { TargetFormatId = "pdfa-2b", OutputPath = output });
+        fixture.Engine.ApplyOps(form, new PdfOpsBatch { Ops = [new FlattenFormsOp { Fields = ["radio"] }] }, new PdfEditRequest { Output = TestOutput.At(flattened) });
+        fixture.Engine.Convert(flattened, new PdfConvertRequest { Output = TestOutput.At(output, format: "pdfa-2b") });
         Assert.True(fixture.Engine.Validate(output, new PdfValidateRequest { Profile = "pdfa-2b" }).Valid);
     }
 
@@ -122,8 +120,7 @@ public sealed class PdfConformanceTests
 
         PdfConvertResult result = fixture.Engine.Convert(input, new PdfConvertRequest
         {
-            TargetFormatId = profile,
-            OutputPath = fixture.File("archive.pdf"),
+            Output = TestOutput.At(fixture.File("archive.pdf"), format: profile),
         });
 
         string output = Assert.Single(result.Outputs).Path;
@@ -180,14 +177,14 @@ public sealed class PdfConformanceTests
                 new AddAttachmentOp { Path = scan, MimeType = "image/png" },
                 new AddAttachmentOp { Path = scan, Name = "untyped.png" },
             ],
-        }, new PdfEditRequest { OutputPath = attached });
+        }, new PdfEditRequest { Output = TestOutput.At(attached) });
 
         Assert.Equal(
             [("license-scan.png", "image/png"), ("untyped.png", null)],
             MediaTypes(attached));
 
         string archive = fixture.File("archive.pdf");
-        fixture.Engine.Convert(attached, new PdfConvertRequest { TargetFormatId = "pdfa-3b", OutputPath = archive });
+        fixture.Engine.Convert(attached, new PdfConvertRequest { Output = TestOutput.At(archive, format: "pdfa-3b") });
         Assert.Equal(
             [("license-scan.png", "image/png"), ("untyped.png", "application/octet-stream")],
             MediaTypes(archive));
@@ -220,8 +217,7 @@ public sealed class PdfConformanceTests
 
         PdfConvertResult result = fixture.Engine.Convert(input, new PdfConvertRequest
         {
-            TargetFormatId = "pdfa-2b",
-            OutputPath = fixture.File("every-page.pdf"),
+            Output = TestOutput.At(fixture.File("every-page.pdf"), format: "pdfa-2b"),
             Pages = Sdk.Addressing.PageRange.Parse("1-2"),
         });
 
@@ -236,8 +232,7 @@ public sealed class PdfConformanceTests
 
         PdfConvertResult result = fixture.Engine.Convert(input, new PdfConvertRequest
         {
-            TargetFormatId = "pdfa-2b",
-            OutputPath = fixture.File("page-two.pdf"),
+            Output = TestOutput.At(fixture.File("page-two.pdf"), format: "pdfa-2b"),
             Pages = Sdk.Addressing.PageRange.Parse("2"),
         });
 
@@ -257,8 +252,7 @@ public sealed class PdfConformanceTests
 
         PdfConvertResult result = fixture.Engine.Convert(input, new PdfConvertRequest
         {
-            TargetFormatId = "pdfa-2b",
-            OutputPath = fixture.File("encrypted.pdfa.pdf"),
+            Output = TestOutput.At(fixture.File("encrypted.pdfa.pdf"), format: "pdfa-2b"),
             Password = "user-secret",
         });
 
@@ -272,8 +266,7 @@ public sealed class PdfConformanceTests
         using var fixture = new PdfEngineFixture();
         string output = Assert.Single(fixture.Engine.Convert(CreateArchivable(fixture), new PdfConvertRequest
         {
-            TargetFormatId = "pdfa-2b",
-            OutputPath = fixture.File("archive.pdf"),
+            Output = TestOutput.At(fixture.File("archive.pdf"), format: "pdfa-2b"),
         }).Outputs).Path;
         var request = new PdfInfoRequest { Details = ["metadata"] };
 
@@ -374,9 +367,9 @@ public sealed class PdfConformanceTests
     private static PdfSignResult Sign(PdfEngineFixture fixture, string input, string certificate, string password, string output) =>
         fixture.Engine.Sign(input, new PdfSignRequest
         {
+            Output = TestOutput.At(fixture.File(output)),
             CertificatePath = certificate,
             CertificatePassword = password,
-            OutputPath = fixture.File(output),
             Page = 1,
         });
 }

@@ -527,7 +527,7 @@ internal static class SlidesEngineSupport
         "tiff" => SaveFormat.Tiff,
         "gif" => SaveFormat.Gif,
         "md" => SaveFormat.Md,
-        _ => throw Sdk.Errors.CliErrors.FormatUnsupported(format, SlidesFormats.ConvertIds),
+        _ => throw new InvalidOperationException($"'{format}' has no presentation save format."),
     };
 
 }

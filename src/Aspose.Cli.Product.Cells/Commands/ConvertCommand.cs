@@ -1,6 +1,7 @@
 using System.CommandLine;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Extensibility;
+using Aspose.Cli.Sdk.IO;
 
 namespace Aspose.Cli.Product.Cells.Commands;
 
@@ -46,7 +47,8 @@ internal static class ConvertCommand
             [sheet, encoding, culture, bom],
             (parse, standard) =>
             {
-                string format = standard.TargetFormat();
+                ResolvedOutput output = standard.Output;
+                string format = output.Format.Id;
                 string? encodingName = parse.GetValue(encoding);
                 string? cultureName = parse.GetValue(culture);
                 string? sheetName = parse.GetValue(sheet);
@@ -64,13 +66,10 @@ internal static class ConvertCommand
                     throw CliErrors.OptionInvalid("--bom", $"a '{format}' output is not CSV or TSV text", "Drop --bom.");
                 }
 
-                string? encryptPassword = standard.EncryptPassword(format);
-                string output = standard.OutputPath(CellsFormats.Definitions.ExtensionFor(format));
+                string? encryptPassword = standard.EncryptPassword();
                 return standard.OpenEngine().Convert(standard.Input, new ConvertRequest
                 {
-                    TargetFormatId = format,
-                    OutputPath = output,
-                    Overwrite = standard.Overwrite,
+                    Output = output,
                     SheetName = sheetName,
                     Password = standard.InputPassword,
                     EncryptPassword = encryptPassword,

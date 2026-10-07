@@ -17,26 +17,24 @@ internal sealed class CellsSavePipeline(SafeFileWriter writer, CellsWorkbookLoad
         new(_writer, backupPath is null ? directories : directories.Append(Path.GetDirectoryName(backupPath)!), operation);
 
     internal WorkbookStagedSave Save(
-        Workbook workbook, string outputPath, bool overwrite, LicenseState licenseState, string? encryptPassword = null,
-        string? backupPath = null, FileWritePrecondition? inputPrecondition = null,
-        bool verifyReopen = false, string? inputPassword = null)
+        Workbook workbook, ResolvedOutput output, LicenseState licenseState, string? encryptPassword = null,
+        FileWritePrecondition? inputPrecondition = null, bool verifyReopen = false, string? inputPassword = null)
     {
-        WorkbookSavePlan plan = WorkbookSavePlan.Create(CellsFormats.ForOutputPath(outputPath), licenseState, encryptPassword, inputPassword);
-        using AtomicOutputSetWriter transaction = CreateOutputSet([Path.GetDirectoryName(outputPath)!], "cells-save", backupPath);
-        WorkbookStagedSave saved = Stage(transaction, workbook, plan, outputPath, overwrite, backupPath, inputPrecondition, verifyReopen);
+        WorkbookSavePlan plan = WorkbookSavePlan.Create(output.Format, licenseState, encryptPassword, inputPassword);
+        using AtomicOutputSetWriter transaction = CreateOutputSet([output.Directory], "cells-save", output.BackupPath);
+        WorkbookStagedSave saved = Stage(transaction, workbook, plan, output, inputPrecondition, verifyReopen);
         transaction.Commit();
         return saved;
     }
 
     internal WorkbookStagedSave Stage(AtomicOutputSetWriter transaction, Workbook workbook,
-        WorkbookSavePlan plan, string outputPath, bool overwrite, string? backupPath,
-        FileWritePrecondition? inputPrecondition, bool verifyReopen)
+        WorkbookSavePlan plan, ResolvedOutput output, FileWritePrecondition? inputPrecondition, bool verifyReopen)
     {
         Warning? truncated = DetectGridTruncation(workbook, plan.Format);
         Warning? sheetsDropped = plan.DetectSheetLoss(workbook);
         int refsBefore = CountRefFormulas(workbook);
         Warning? evaluationSheetAdded = null;
-        StagedOutput candidate = transaction.Stage(outputPath, overwrite, backupPath, inputPrecondition,
+        StagedOutput candidate = transaction.Stage(output.Path, output.Overwrite, output.BackupPath, inputPrecondition,
             path => evaluationSheetAdded = Produce(workbook, plan, path),
             verify: verifyReopen ? path =>
             {

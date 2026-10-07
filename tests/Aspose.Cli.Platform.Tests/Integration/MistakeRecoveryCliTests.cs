@@ -51,9 +51,9 @@ public sealed class MistakeRecoveryCliTests : IDisposable
     }
 
     [Theory]
-    [InlineData("cells edit a.xlsx --set Sheet1!A1=5 --out x.pdf", "--out", "it writes xlsx,", "aspose-cli cells convert <that file> --to pdf")]
-    [InlineData("slides edit a.pptx --ops ops.json --out x.pdf", "--out", "it writes pptx,", "aspose-cli slides convert <that file> --to pdf")]
-    [InlineData("slides create x.ppt --from-markdown deck.md", "file", "it writes pptx,", "aspose-cli slides convert <that file> --to ppt")]
+    [InlineData("cells edit a.xlsx --set Sheet1!A1=5 --out x.pdf", "--out", "use .xlsx,", "aspose-cli cells convert <that file> --to pdf")]
+    [InlineData("slides edit a.pptx --ops ops.json --out x.pdf", "--out", "use .pptx,", "aspose-cli slides convert <that file> --to pdf")]
+    [InlineData("slides create x.ppt --from-markdown deck.md", "file", "use .pptx,", "aspose-cli slides convert <that file> --to ppt")]
     public void OutputFormatTheCommandCannotWrite_PointsToTheCommandThatWritesIt(
         string commandLine, string option, string writes, string producer)
     {
@@ -65,9 +65,9 @@ public sealed class MistakeRecoveryCliTests : IDisposable
 
         CliResult result = _workspace.Run([.. arguments, "--output", "json"]);
 
-        Assert.Equal(6, result.ExitCode);
+        Assert.Equal(2, result.ExitCode);
         JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
-        Assert.Equal("FORMAT_UNSUPPORTED", error["code"]!.GetValue<string>());
+        Assert.Equal("USAGE_ERROR", error["code"]!.GetValue<string>());
         Assert.Equal(option, error["details"]!["option"]!.GetValue<string>());
         Assert.StartsWith($"{option} '", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
         Assert.Contains($"which aspose-cli {arguments[0]} {arguments[1]} does not write; {writes}", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
@@ -84,13 +84,13 @@ public sealed class MistakeRecoveryCliTests : IDisposable
 
         CliResult result = _workspace.Run("cells", "edit", "a.xlsx", "--set", "Sheet1!A1=5", "--out", "x.png", "--output", "json");
 
-        Assert.Equal(6, result.ExitCode);
+        Assert.Equal(2, result.ExitCode);
         JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
-        Assert.Equal("FORMAT_UNSUPPORTED", error["code"]!.GetValue<string>());
+        Assert.Equal("USAGE_ERROR", error["code"]!.GetValue<string>());
         Assert.Equal(
             ["xlsx", "xltx", "xlsm", "xltm", "xlsb", "xls", "ods", "csv", "tsv", "html", "mhtml"],
             error["details"]!["supported"]!.AsArray().Select(static id => id!.GetValue<string>()));
-        Assert.EndsWith("it writes xlsx, xltx, xlsm, xltm, xlsb, xls, ods, csv, tsv, html, mhtml.", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.EndsWith("use .xlsx, .xltx, .xlsm, .xltm, .xlsb, .xls, .ods, .csv, .tsv, .html, .htm, .mhtml.", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
         Assert.DoesNotContain(".pdf", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
         Assert.Contains("then run 'aspose-cli cells render <that file> --to png'", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
     }
@@ -121,7 +121,7 @@ public sealed class MistakeRecoveryCliTests : IDisposable
     [InlineData("slides create dotonly. --from-markdown deck.md", "dotonly")]
     [InlineData("words edit a.docx --ops words.json --out noext", "noext")]
     [InlineData("words create noext --markdown deck.md", "noext")]
-    public void OutputWithoutExtension_IsAnUnsupportedFormat(string commandLine, string output)
+    public void OutputWithoutExtension_IsAUsageError(string commandLine, string output)
     {
         File.WriteAllText(_workspace.File("a.pptx"), "not a document");
         File.WriteAllText(_workspace.File("a.docx"), "not a document");
@@ -131,10 +131,12 @@ public sealed class MistakeRecoveryCliTests : IDisposable
 
         CliResult result = _workspace.Run([.. commandLine.Split(' '), "--output", "json"]);
 
-        Assert.Equal(6, result.ExitCode);
+        Assert.Equal(2, result.ExitCode);
         JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
-        Assert.Equal("FORMAT_UNSUPPORTED", error["code"]!.GetValue<string>());
-        Assert.Equal(string.Empty, error["details"]!["requested"]!.GetValue<string>());
+        Assert.Equal("USAGE_ERROR", error["code"]!.GetValue<string>());
+        Assert.Contains("has no extension", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.Null(error["details"]!["requested"]);
+        Assert.NotEmpty(error["details"]!["extensions"]!.AsArray());
         Assert.False(File.Exists(_workspace.File(output)));
     }
 }

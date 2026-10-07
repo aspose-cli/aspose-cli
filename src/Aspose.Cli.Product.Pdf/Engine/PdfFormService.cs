@@ -1,4 +1,3 @@
-using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Results;
@@ -145,29 +144,25 @@ internal sealed class PdfFormService
 
     public PdfFormExportResult ExportForm(string filePath, PdfFormExportRequest request)
     {
-        if (request.TargetFormatId is not ("json" or "fdf" or "xfdf"))
-        {
-            throw CliErrors.FormatUnsupported(request.TargetFormatId, ["json", "fdf", "xfdf"]);
-        }
-
         LicenseState state = _licenseGate.EnsureApplied();
         using LoadedPdf loaded = _loader.Open(filePath, request.Password);
         EnsureAcroForm(loaded.Document);
-        long size = _writer.Write(request.OutputPath, request.Overwrite, temp =>
+        long size = _writer.Write(request.Output.Path, request.Output.Overwrite, temp =>
         {
             var facade = new Aspose.Pdf.Facades.Form(loaded.Document);
             using FileStream stream = File.Create(temp);
-            switch (request.TargetFormatId)
+            switch (request.Output.Format.Id)
             {
                 case "json": facade.ExportJson(stream, indented: true); break;
                 case "fdf": facade.ExportFdf(stream); break;
                 case "xfdf": facade.ExportXfdf(stream); break;
+                default: throw new InvalidOperationException($"'{request.Output.Format.Id}' is not a form data format.");
             }
         });
         return new PdfFormExportResult
         {
             Input = PdfInfoProjection.Source(filePath),
-            Output = BuildOutput(request.OutputPath, request.TargetFormatId, size),
+            Output = BuildOutput(request.Output.Path, request.Output.Format.Id, size),
             License = EnvelopeParts.License(state),
             Warnings = EnvelopeParts.OutputWarnings(state),
         };

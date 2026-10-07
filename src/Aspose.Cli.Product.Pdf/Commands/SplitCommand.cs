@@ -37,9 +37,8 @@ internal static class SplitCommand
                     PageGroups = groupTexts.Length == 0 ? null : groupTexts.Select(PageRange.Parse).ToArray(),
                     Every = parse.GetValue(every),
                     ByBookmarks = parse.GetValue(bookmarks),
-                    OutputDirectory = standard.OutputDirectory,
+                    Output = standard.DirectoryOutput,
                     NameTemplate = parse.GetValue(name) ?? "{stem}.{n}.pdf",
-                    Overwrite = standard.Overwrite,
                     Password = standard.InputPassword,
                 });
             });

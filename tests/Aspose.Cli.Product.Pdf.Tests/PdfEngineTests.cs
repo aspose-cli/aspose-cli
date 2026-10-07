@@ -66,7 +66,7 @@ public sealed class PdfEngineTests
             <body><h1>Report</h1></body></html>
             """);
 
-        PdfWriteResult result = fixture.Engine.Create(new NewPdfRequest { HtmlPath = input, OutputPath = fixture.File("report.pdf") });
+        PdfWriteResult result = fixture.Engine.Create(new NewPdfRequest { Output = TestOutput.At(fixture.File("report.pdf")), HtmlPath = input });
 
         PdfInfoResult info = fixture.Engine.GetInfo(result.Output.Path, new PdfInfoRequest { Details = ["metadata"] });
         Assert.Equal("2026 Q3 运营报告 & East", info.Metadata!["title"]);
@@ -86,7 +86,7 @@ public sealed class PdfEngineTests
             </form></body></html>
             """);
 
-        PdfWriteResult result = fixture.Engine.Create(new NewPdfRequest { HtmlPath = input, OutputPath = fixture.File("form.pdf") });
+        PdfWriteResult result = fixture.Engine.Create(new NewPdfRequest { Output = TestOutput.At(fixture.File("form.pdf")), HtmlPath = input });
 
         using var document = new Document(result.Output.Path);
         CheckboxField[] boxes = [.. document.Form.Fields.OfType<CheckboxField>()];
@@ -102,7 +102,7 @@ public sealed class PdfEngineTests
         string input = fixture.File("notes.md");
         File.WriteAllText(input, "# Notes\n\nBody text.\n");
 
-        PdfWriteResult result = fixture.Engine.Create(new NewPdfRequest { TextPath = input, Markdown = true, OutputPath = fixture.File("notes.pdf") });
+        PdfWriteResult result = fixture.Engine.Create(new NewPdfRequest { Output = TestOutput.At(fixture.File("notes.pdf")), TextPath = input });
 
         PdfInfoResult info = fixture.Engine.GetInfo(result.Output.Path, new PdfInfoRequest { Details = ["metadata"] });
         Assert.Null(info.Metadata!["title"]);
@@ -121,8 +121,8 @@ public sealed class PdfEngineTests
 
         PdfWriteResult result = fixture.Engine.Create(new NewPdfRequest
         {
+            Output = TestOutput.At(fixture.File("images.pdf")),
             ImagePaths = [landscape, portrait],
-            OutputPath = fixture.File("images.pdf"),
             Margins = new PdfMargins(36, 36, 36, 36),
         });
 
@@ -159,14 +159,14 @@ public sealed class PdfEngineTests
 
         PdfWriteResult created = fixture.Engine.Create(new NewPdfRequest
         {
+            Output = TestOutput.At(fixture.File("portrait.pdf")),
             ImagePaths = [portrait],
-            OutputPath = fixture.File("portrait.pdf"),
             Margins = margins,
         });
         CliException refused = Assert.Throws<CliException>(() => fixture.Engine.Create(new NewPdfRequest
         {
+            Output = TestOutput.At(fixture.File("mixed.pdf")),
             ImagePaths = [portrait, landscape],
-            OutputPath = fixture.File("mixed.pdf"),
             Margins = margins,
         }));
 
@@ -235,7 +235,7 @@ public sealed class PdfEngineTests
         string image = fixture.File("image.svg");
         File.WriteAllText(image, svg);
 
-        PdfWriteResult result = fixture.Engine.Create(new NewPdfRequest { ImagePaths = [image], OutputPath = fixture.File("svg.pdf") });
+        PdfWriteResult result = fixture.Engine.Create(new NewPdfRequest { Output = TestOutput.At(fixture.File("svg.pdf")), ImagePaths = [image] });
 
         using var document = new Document(result.Output.Path);
         Page page = document.Pages[1];
@@ -255,7 +255,7 @@ public sealed class PdfEngineTests
         string photo = fixture.File("photo.jpg");
         File.WriteAllBytes(photo, OrientedJpeg(200, 100, orientation: 6));
 
-        PdfWriteResult result = fixture.Engine.Create(new NewPdfRequest { ImagePaths = [photo], OutputPath = fixture.File("photo.pdf") });
+        PdfWriteResult result = fixture.Engine.Create(new NewPdfRequest { Output = TestOutput.At(fixture.File("photo.pdf")), ImagePaths = [photo] });
 
         using var document = new Document(result.Output.Path);
         Page page = document.Pages[1];
@@ -278,7 +278,7 @@ public sealed class PdfEngineTests
         File.WriteAllBytes(images[1], Bitmap(300, 100));
         File.WriteAllBytes(images[2], Bitmap(100, 100));
         File.WriteAllBytes(images[3], Bitmap(100, 300));
-        PdfWriteResult created = fixture.Engine.Create(new NewPdfRequest { ImagePaths = images, OutputPath = fixture.File("scans.pdf") });
+        PdfWriteResult created = fixture.Engine.Create(new NewPdfRequest { Output = TestOutput.At(fixture.File("scans.pdf")), ImagePaths = images });
 
         PdfReadResult read = fixture.Engine.Read(created.Output.Path, new PdfReadRequest());
         CliResult review = workspace.Run(["review", created.Output.Path, "--out", workspace.File("review"), "--output", "json"]);
@@ -643,8 +643,7 @@ public sealed class PdfEngineTests
 
         var result = fixture.Engine.Convert(input, new PdfConvertRequest
         {
-            TargetFormatId = "html",
-            OutputPath = output,
+            Output = TestOutput.At(output, format: "html"),
         });
 
         Assert.Single(result.Outputs);
@@ -666,7 +665,7 @@ public sealed class PdfEngineTests
         }
         string output = fixture.File("titled.html");
 
-        PdfConvertResult result = fixture.Engine.Convert(input, new PdfConvertRequest { TargetFormatId = "html", OutputPath = output });
+        PdfConvertResult result = fixture.Engine.Convert(input, new PdfConvertRequest { Output = TestOutput.At(output, format: "html") });
 
         Warning lossy = Assert.Single(result.Warnings!, static warning => warning.Code == WarningCodes.LossyConversion);
         Assert.StartsWith("Open the HTML in a browser", lossy.Hint, StringComparison.Ordinal);
@@ -693,8 +692,7 @@ public sealed class PdfEngineTests
 
         fixture.Engine.Convert(input, new PdfConvertRequest
         {
-            TargetFormatId = "xps",
-            OutputPath = output,
+            Output = TestOutput.At(output, format: "xps"),
             Pages = pages is null ? null : CliPageRange.Parse(pages),
         });
 
@@ -725,8 +723,7 @@ public sealed class PdfEngineTests
 
         PdfConvertResult result = fixture.Engine.Convert(input, new PdfConvertRequest
         {
-            TargetFormatId = "docx",
-            OutputPath = fixture.File("chapters.docx"),
+            Output = TestOutput.At(fixture.File("chapters.docx"), format: "docx"),
             Pages = CliPageRange.Parse(pages),
         });
 
@@ -762,8 +759,7 @@ public sealed class PdfEngineTests
 
         var result = fixture.Engine.Convert(input, new PdfConvertRequest
         {
-            TargetFormatId = format,
-            OutputPath = output,
+            Output = TestOutput.At(output, format: format),
         });
 
         Assert.NotEmpty(result.Outputs);
@@ -778,22 +774,22 @@ public sealed class PdfEngineTests
         }
     }
 
-    /// <summary>A single page is refused an output without an extension, as several pages are.</summary>
+    /// <summary>An image output without an extension is refused before anything is read or written.</summary>
     [Theory]
     [InlineData("render")]
     [InlineData("convert")]
-    public void ImageOutput_OfOnePageWithoutAnExtensionIsRefused(string command)
+    public void ImageOutput_WithoutAnExtensionIsRefused(string command)
     {
         using var fixture = new PdfEngineFixture();
         string input = fixture.CreateDocument(pages: 2);
-        string output = fixture.File("pages");
+        using var workspace = new TempWorkspace();
+        File.Copy(input, workspace.File("input.pdf"));
 
-        CliException error = Assert.Throws<CliException>(() => command == "render"
-            ? fixture.Engine.Render(input, new PdfRenderRequest { TargetFormatId = "png", OutputPath = output })
-            : (object)fixture.Engine.Convert(input, new PdfConvertRequest { TargetFormatId = "png", OutputPath = output, Pages = CliPageRange.Parse("1") }));
+        CliResult refused = workspace.Run("pdf", command, "input.pdf", "--to", "png", "--out", "pages", "--output", "json");
 
-        Assert.Equal(ErrorCodes.OptionInvalid, error.Code);
-        Assert.Contains(output + ".png", error.Hint, StringComparison.Ordinal);
-        Assert.False(Path.Exists(output));
+        Assert.Equal(2, refused.ExitCode);
+        Assert.Contains("\"USAGE_ERROR\"", refused.StdErr, StringComparison.Ordinal);
+        Assert.Contains(".png", refused.StdErr, StringComparison.Ordinal);
+        Assert.Equal(["input.pdf"], Directory.GetFileSystemEntries(workspace.Path).Select(Path.GetFileName));
     }
 }

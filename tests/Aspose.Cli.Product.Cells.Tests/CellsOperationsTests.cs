@@ -27,8 +27,7 @@ public sealed class CellsOperationsTests : IClassFixture<CellsFixture>
             ParseOps(operations),
             new EditRequest
             {
-                OutputPath = _fixture.Temp.File(output),
-                Overwrite = true,
+                Output = TestOutput.At(_fixture.Temp.File(output), overwrite: true),
                 OpSecrets = secrets,
             });
 
@@ -52,8 +51,7 @@ public sealed class CellsOperationsTests : IClassFixture<CellsFixture>
             ParseOps("{\"ops\":[{\"op\":\"set_values\",\"sheet\":\"Data\",\"range\":\"A1\",\"values\":[[1]]},{\"op\":\"clear_range\",\"sheet\":\"Missing\",\"range\":\"A1:B1\"}]}"),
             new EditRequest
             {
-                OutputPath = _fixture.Temp.File("attempted.out.xlsx"),
-                Overwrite = true,
+                Output = TestOutput.At(_fixture.Temp.File("attempted.out.xlsx"), overwrite: true),
                 Options = new EditCommandOptions { BestEffort = true },
             });
 
@@ -72,7 +70,7 @@ public sealed class CellsOperationsTests : IClassFixture<CellsFixture>
         CliException error = Assert.Throws<CliException>(() => _fixture.Engine.ApplyOps(
             source,
             ParseOps("{\"ops\":[{\"op\":\"set_formula\",\"range\":\"A1:XFD1048576\",\"formula\":\"=1\"}]}"),
-            new EditRequest { OutputPath = output, Overwrite = true }));
+            new EditRequest { Output = TestOutput.At(output, overwrite: true) }));
 
         Assert.Equal(ErrorCodes.InputBudgetExceeded, error.Code);
         Assert.False(File.Exists(output));
@@ -146,9 +144,8 @@ public sealed class CellsOperationsTests : IClassFixture<CellsFixture>
     {
         string created = _fixture.Engine.Create(new NewWorkbookRequest
         {
-            OutputPath = _fixture.Temp.File("pivot.xlsx"),
+            Output = TestOutput.At(_fixture.Temp.File("pivot.xlsx"), overwrite: true),
             SheetNames = ["Data", "Pivot"],
-            Overwrite = true,
         }).Output.Path;
         string seeded = Apply(
             created,

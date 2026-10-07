@@ -50,13 +50,13 @@ public sealed class SlidesContractDriftTests
 
         SlidesExtractResult all = fixture.Engine.Extract(input, new PresentationExtractRequest
         {
+            Output = new ResolvedDirectory(fixture.File("all")),
             What = PresentationExtractKinds.Media,
-            OutputDirectory = fixture.File("all"),
         });
         SlidesExtractResult selected = fixture.Engine.Extract(input, new PresentationExtractRequest
         {
+            Output = new ResolvedDirectory(fixture.File("selected")),
             What = PresentationExtractKinds.Media,
-            OutputDirectory = fixture.File("selected"),
             Slides = PageRange.Parse("2"),
         });
 
@@ -107,7 +107,7 @@ public sealed class SlidesContractDriftTests
         fixture.Engine.ApplyOps(
             input,
             new SlidesOpsBatch { Ops = [new SlidesInsertImageOp { Slide = 1, Path = picture, AltText = "Logo" }] },
-            new PresentationEditRequest { OutputPath = output });
+            new PresentationEditRequest { Output = TestOutput.At(output) });
         PresentationReadResult read = fixture.Engine.Read(output, new PresentationReadRequest { Scope = PresentationReadScopes.Shapes });
 
         SlideShapeData image = Assert.Single(Assert.Single(read.Slides).Shapes, static shape => shape.Type == "image");

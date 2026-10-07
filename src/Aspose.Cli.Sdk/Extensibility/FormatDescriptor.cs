@@ -164,6 +164,20 @@ public sealed record FormatDescriptor
     /// <summary>The extension for newly produced files, or null when the format declares none.</summary>
     internal string? PreferredExtension => OutputExtension ?? Extensions.FirstOrDefault();
 
+    /// <summary>Whether an output of this format can carry a password (<c>--encrypt</c>).</summary>
+    public bool Protectable { get; init; }
+
+    /// <summary>
+    /// Whether the engine writes companion files, such as scripts and style sheets, beside an
+    /// output of this format; the SDK publishes them with the named file as one set.
+    /// </summary>
+    public bool CompanionFiles { get; init; }
+
+    /// <summary>Whether a file name carries one of this format's extensions, ignoring case.</summary>
+    internal bool Names(string path) =>
+        Path.GetExtension(path) is { Length: > 1 } extension
+        && Extensions.Contains(extension, StringComparer.OrdinalIgnoreCase);
+
     /// <summary>Generic-routing ownership for input extensions.</summary>
     public RouteOwnership Ownership { get; init; } = RouteOwnership.Explicit;
 

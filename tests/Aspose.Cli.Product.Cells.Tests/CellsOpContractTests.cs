@@ -197,5 +197,5 @@ public sealed class CellsOpContractTests : IClassFixture<CellsFixture>
         _fixture.Engine.ApplyOps(
             path,
             Parse(operations),
-            new EditRequest { OutputPath = _fixture.Temp.File(output), Overwrite = true }).Output!.Path;
+            new EditRequest { Output = TestOutput.At(_fixture.Temp.File(output), overwrite: true) }).Output!.Path;
 }

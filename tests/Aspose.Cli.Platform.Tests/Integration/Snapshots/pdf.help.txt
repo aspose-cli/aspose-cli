@@ -147,9 +147,9 @@ Arguments:
   <file>  PDF document to open.
 
 Options:
+  --to <fdf|json|xfdf>                                      Form export format: json, fdf or xfdf; only with --what forms. Default: the --out extension's.
   --what <attachments|forms|images|tables|text> (REQUIRED)  images, attachments, text, tables or forms.
   --pages <pages>                                           Optional page range for images, text or tables.
-  --to <fdf|json|xfdf>                                      Form export format: json, fdf or xfdf; only with --what forms.
   --bom                                                     Start each table's CSV with a UTF-8 byte order mark, so Excel reads its non-English text correctly; only with --what tables. Default: UTF-8 without one.
   --out-dir <out-dir>                                       Safe extraction directory; required unless --what forms.
   -o, --out <out>                                           Form-data output file; only with --what forms. Default extension follows --to.
