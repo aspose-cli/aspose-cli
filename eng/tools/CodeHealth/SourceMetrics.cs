@@ -1,0 +1,280 @@
+using System.Text.RegularExpressions;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Text;
+
+namespace Aspose.Cli.CodeHealth;
+
+/// <summary>A measured declaration of one source file.</summary>
+/// <param name="Key"><c>path::Type.Member(parameterTypes)</c>; see <see cref="SourceMetrics"/>.</param>
+/// <param name="Declaration">The declaration the key names.</param>
+/// <param name="Body">The body measured for complexity and length, or null for a signature-only unit.</param>
+/// <param name="Parameters">The parameter count, or null when the unit has no parameter list.</param>
+internal sealed record CodeUnit(string Key, SyntaxNode Declaration, SyntaxNode? Body, int? Parameters);
+
+/// <summary>One parsed source file with its measured declarations.</summary>
+internal sealed record ParsedSource(string Path, SourceText Text, CompilationUnitSyntax Root, IReadOnlyList<CodeUnit> Units);
+
+/// <summary>
+/// Measures member and file metrics from C# syntax alone, so the result does not depend on a
+/// compilation, the machine, its culture or the file's line endings.
+/// <para>
+/// <b>Units.</b> A unit is a declaration with a body: a method, constructor, static constructor,
+/// finalizer, operator or conversion operator (<c>Type.Name&lt;T&gt;(A, B)</c>,
+/// <c>Type..ctor(A)</c>, <c>Type..cctor()</c>, <c>Type.Finalize()</c>, <c>Type.operator +(A, B)</c>,
+/// <c>Type.implicit operator T(S)</c>); a property, indexer or event accessor
+/// (<c>Type.Name.get</c>, <c>Type.this[A].set</c>; an expression-bodied property is its
+/// <c>.get</c>); a field, event-field or property initializer (<c>Type.Name=</c>); and a local
+/// function (<c>containingKey/Name(A)</c>). Lambdas and anonymous methods belong to the unit that
+/// contains them. Signature-only units carry just a parameter count: delegates
+/// (<c>Type.Name(A)</c>), indexers (<c>Type.this[A]</c>) and primary constructors
+/// (<c>Type..ctor(A)</c>). Declarations without a body (abstract, interface, extern and partial
+/// definitions) are not measured; their implementations are. Types are named by their nesting
+/// chain with type parameters, without the namespace, since the path is part of every key.
+/// A key that repeats within a file gets <c>#2</c>, <c>#3</c>, ... in document order.
+/// </para>
+/// <para>
+/// <b>Cognitive complexity</b> (<see cref="CognitiveComplexity"/>) follows the SonarSource
+/// definition: it counts breaks in the linear flow and charges more for them the deeper they nest,
+/// so a flat <c>switch</c> or a chain of guard clauses scores low and nested branching high.
+/// </para>
+/// <para>
+/// <b>Cyclomatic complexity</b> of a body is 1 plus one for each <c>if</c>, <c>while</c>,
+/// <c>do</c>, <c>for</c>, <c>foreach</c>, <c>catch</c>, <c>case</c> label (not <c>default</c>),
+/// switch-expression arm (not a final <c>_</c> arm without <c>when</c>), <c>?:</c>, <c>&amp;&amp;</c>,
+/// <c>||</c>, <c>??</c>, <c>??=</c>, <c>?.</c>/<c>?[]</c>, and pattern <c>and</c>/<c>or</c>.
+/// A <c>when</c> clause, <c>else</c>, <c>goto</c> and <c>break</c> add nothing.
+/// </para>
+/// <para>
+/// <b>Method length</b> is the number of lines of the body, braces included, on which a token
+/// starts or continues; blank lines and comment-only lines do not count.
+/// </para>
+/// <para>
+/// Complexity and length of a unit exclude the local functions nested in its body, which are
+/// units of their own. <b>File length</b> is the number of lines holding anything but whitespace.
+/// </para>
+/// </summary>
+internal static partial class SourceMetrics
+{
+    private static readonly CSharpParseOptions ParseOptions = new(LanguageVersion.Preview, DocumentationMode.Parse);
+
+    /// <summary>Parses <paramref name="text"/> with LF line endings and collects its units.</summary>
+    public static ParsedSource Parse(string path, string text)
+    {
+        SourceText source = SourceText.From(text.ReplaceLineEndings("\n"));
+        CompilationUnitSyntax root = (CompilationUnitSyntax)CSharpSyntaxTree.ParseText(source, ParseOptions).GetRoot();
+        return new ParsedSource(path, source, root, CollectUnits(path, root));
+    }
+
+    /// <summary>Whether the file declares itself generated, by name or by an auto-generated header.</summary>
+    public static bool IsGenerated(ParsedSource source)
+    {
+        string path = source.Path;
+        string name = System.IO.Path.GetFileName(path);
+        if (new[] { ".g.cs", ".g.i.cs", ".designer.cs", ".generated.cs" }.Any(
+            suffix => name.EndsWith(suffix, StringComparison.OrdinalIgnoreCase)))
+        {
+            return true;
+        }
+        SyntaxToken first = source.Root.GetFirstToken(includeZeroWidth: true);
+        return first.LeadingTrivia.Any(trivia =>
+            trivia.IsKind(SyntaxKind.SingleLineCommentTrivia) || trivia.IsKind(SyntaxKind.MultiLineCommentTrivia)
+                ? trivia.ToString().Contains("<auto-generated", StringComparison.OrdinalIgnoreCase)
+                    || trivia.ToString().Contains("<autogenerated", StringComparison.OrdinalIgnoreCase)
+                : false);
+    }
+
+    /// <summary>The metrics of every unit of <paramref name="source"/>, in document order.</summary>
+    public static IReadOnlyList<MemberMetrics> MeasureMembers(ParsedSource source) =>
+        source.Units.Select(unit => unit.Body is null
+            ? new MemberMetrics(unit.Key, source.Path, false, 0, 0, 0, unit.Parameters ?? 0)
+            : new MemberMetrics(unit.Key, source.Path, true, CognitiveComplexity(unit.Body), CyclomaticComplexity(unit.Body),
+                BodyLines(source.Text, unit.Body), unit.Parameters ?? 0))
+            .ToList();
+
+    /// <summary>The metrics of the file <paramref name="source"/>, given its <paramref name="members"/>.</summary>
+    public static FileMetrics MeasureFile(ParsedSource source, IReadOnlyList<MemberMetrics> members) =>
+        new(source.Path,
+            FileLines(source.Text),
+            members.Sum(member => member.Cognitive),
+            members.Count(member => member.HasBody),
+            source.Root.DescendantNodes().Count(node => node is BaseTypeDeclarationSyntax or DelegateDeclarationSyntax));
+
+    /// <summary>
+    /// The SonarSource cognitive complexity of <paramref name="body"/>, outside nested local functions.
+    /// <para>
+    /// Each <c>if</c>, <c>?:</c>, <c>switch</c> statement or expression, <c>for</c>, <c>foreach</c>,
+    /// <c>while</c>, <c>do</c> and <c>catch</c> adds 1 plus its nesting level; <c>else if</c> and
+    /// <c>else</c> add 1 without a nesting charge; each <c>goto</c> adds 1; and each run of the same
+    /// logical operator (<c>&amp;&amp;</c>, <c>||</c>, pattern <c>and</c>, pattern <c>or</c>) adds 1,
+    /// so <c>a &amp;&amp; b &amp;&amp; c</c> adds 1 and <c>a &amp;&amp; b || c</c> adds 2. The bodies
+    /// of those structures, and lambdas and anonymous methods, are one level deeper. <c>case</c>
+    /// labels, <c>??</c> and <c>?.</c> add nothing. Recursion, which Sonar also counts, needs a
+    /// semantic model and is left out.
+    /// </para>
+    /// </summary>
+    public static int CognitiveComplexity(SyntaxNode body)
+    {
+        CognitiveComplexityWalker walker = new();
+        walker.Visit(body);
+        return walker.Total;
+    }
+
+    /// <summary>1 plus the decision points of <paramref name="body"/>, outside nested local functions.</summary>
+    public static int CyclomaticComplexity(SyntaxNode body)
+    {
+        int complexity = 1;
+        foreach (SyntaxNode node in body.DescendantNodesAndSelf(OutsideLocalFunctions(body)))
+        {
+            complexity += node switch
+            {
+                SwitchExpressionArmSyntax { Pattern: DiscardPatternSyntax, WhenClause: null } => 0,
+                _ => node.Kind() switch
+                {
+                    SyntaxKind.IfStatement or SyntaxKind.WhileStatement or SyntaxKind.DoStatement
+                        or SyntaxKind.ForStatement or SyntaxKind.ForEachStatement or SyntaxKind.ForEachVariableStatement
+                        or SyntaxKind.CatchClause or SyntaxKind.ConditionalExpression
+                        or SyntaxKind.CaseSwitchLabel or SyntaxKind.CasePatternSwitchLabel or SyntaxKind.SwitchExpressionArm
+                        or SyntaxKind.LogicalAndExpression or SyntaxKind.LogicalOrExpression
+                        or SyntaxKind.CoalesceExpression or SyntaxKind.CoalesceAssignmentExpression
+                        or SyntaxKind.ConditionalAccessExpression or SyntaxKind.AndPattern or SyntaxKind.OrPattern => 1,
+                    _ => 0,
+                },
+            };
+        }
+        return complexity;
+    }
+
+    /// <summary>Lines of <paramref name="body"/> that hold a token, outside nested local functions.</summary>
+    public static int BodyLines(SourceText text, SyntaxNode body)
+    {
+        HashSet<int> lines = [];
+        foreach (SyntaxToken token in body.DescendantTokens(OutsideLocalFunctions(body)))
+        {
+            if (token.Span.IsEmpty)
+            {
+                continue;
+            }
+            LinePositionSpan span = text.Lines.GetLinePositionSpan(token.Span);
+            for (int line = span.Start.Line; line <= span.End.Line; line++)
+            {
+                lines.Add(line);
+            }
+        }
+        return lines.Count;
+    }
+
+    /// <summary>Lines of <paramref name="text"/> holding anything but whitespace.</summary>
+    public static int FileLines(SourceText text) =>
+        text.Lines.Count(line => !string.IsNullOrWhiteSpace(text.ToString(line.Span)));
+
+    private static Func<SyntaxNode, bool> OutsideLocalFunctions(SyntaxNode body) =>
+        node => node == body || node is not LocalFunctionStatementSyntax;
+
+    private static List<CodeUnit> CollectUnits(string path, CompilationUnitSyntax root)
+    {
+        List<CodeUnit> units = [];
+        Dictionary<SyntaxNode, string> keys = [];
+        Dictionary<string, int> occurrences = new(StringComparer.Ordinal);
+        foreach (SyntaxNode node in root.DescendantNodes())
+        {
+            if (Describe(node) is not var (name, body, parameters))
+            {
+                continue;
+            }
+            string? container = node is LocalFunctionStatementSyntax
+                ? node.Ancestors().Select(ancestor => keys.GetValueOrDefault(ancestor)).FirstOrDefault(key => key is not null)
+                : null;
+            string key = container is not null ? $"{container}/{name}" : $"{path}::{Qualify(node, name)}";
+            int occurrence = occurrences[key] = occurrences.GetValueOrDefault(key) + 1;
+            if (occurrence > 1)
+            {
+                key += "#" + occurrence.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            }
+            keys[node] = key;
+            units.Add(new CodeUnit(key, node, body, parameters));
+        }
+        return units;
+    }
+
+    private static (string Name, SyntaxNode? Body, int? Parameters)? Describe(SyntaxNode node) => node switch
+    {
+        MethodDeclarationSyntax method when HasBody(method) =>
+            (method.Identifier.Text + TypeParameters(method.TypeParameterList) + Parameters(method.ParameterList), Body(method), method.ParameterList.Parameters.Count),
+        ConstructorDeclarationSyntax constructor when HasBody(constructor) =>
+            (constructor.Modifiers.Any(SyntaxKind.StaticKeyword) ? ".cctor()" : ".ctor" + Parameters(constructor.ParameterList),
+                Body(constructor), constructor.ParameterList.Parameters.Count),
+        DestructorDeclarationSyntax destructor when HasBody(destructor) => ("Finalize()", Body(destructor), null),
+        OperatorDeclarationSyntax op when HasBody(op) =>
+            ("operator " + op.OperatorToken.Text + Parameters(op.ParameterList), Body(op), op.ParameterList.Parameters.Count),
+        ConversionOperatorDeclarationSyntax conversion when HasBody(conversion) =>
+            ($"{conversion.ImplicitOrExplicitKeyword.Text} operator {TypeText(conversion.Type)}{Parameters(conversion.ParameterList)}",
+                Body(conversion), conversion.ParameterList.Parameters.Count),
+        LocalFunctionStatementSyntax local when local.Body is not null || local.ExpressionBody is not null =>
+            (local.Identifier.Text + TypeParameters(local.TypeParameterList) + Parameters(local.ParameterList),
+                (SyntaxNode?)local.Body ?? local.ExpressionBody, local.ParameterList.Parameters.Count),
+        AccessorDeclarationSyntax accessor when accessor.Body is not null || accessor.ExpressionBody is not null =>
+            (MemberName(accessor.Parent!.Parent!) + "." + accessor.Keyword.Text, (SyntaxNode?)accessor.Body ?? accessor.ExpressionBody, null),
+        PropertyDeclarationSyntax { ExpressionBody: { } expression } property => (property.Identifier.Text + ".get", expression, null),
+        PropertyDeclarationSyntax { Initializer: { } initializer } property => (property.Identifier.Text + "=", initializer, null),
+        IndexerDeclarationSyntax indexer => (MemberName(indexer), indexer.ExpressionBody, indexer.ParameterList.Parameters.Count),
+        VariableDeclaratorSyntax { Initializer: { } initializer, Parent.Parent: BaseFieldDeclarationSyntax } field =>
+            (field.Identifier.Text + "=", initializer, null),
+        DelegateDeclarationSyntax @delegate =>
+            (@delegate.Identifier.Text + TypeParameters(@delegate.TypeParameterList) + Parameters(@delegate.ParameterList), null, @delegate.ParameterList.Parameters.Count),
+        TypeDeclarationSyntax { ParameterList: { } primary } => (".ctor" + Parameters(primary), null, primary.Parameters.Count),
+        _ => null,
+    };
+
+    private static bool HasBody(BaseMethodDeclarationSyntax method) => Body(method) is not null;
+
+    private static SyntaxNode? Body(BaseMethodDeclarationSyntax method) => (SyntaxNode?)method.Body ?? method.ExpressionBody;
+
+    private static string MemberName(SyntaxNode member) => member switch
+    {
+        PropertyDeclarationSyntax property => property.Identifier.Text,
+        EventDeclarationSyntax @event => @event.Identifier.Text,
+        IndexerDeclarationSyntax indexer => "this[" + string.Join(", ", indexer.ParameterList.Parameters.Select(ParameterText)) + "]",
+        _ => throw new InvalidOperationException($"Unexpected accessor owner {member.Kind()}."),
+    };
+
+    /// <summary>Prefixes the nesting chain of types around <paramref name="node"/> (including itself).</summary>
+    private static string Qualify(SyntaxNode node, string name)
+    {
+        string types = string.Join(".", node.AncestorsAndSelf().OfType<BaseTypeDeclarationSyntax>().Reverse().Select(TypeName));
+        return types.Length == 0 ? name : types + "." + name;
+    }
+
+    /// <summary>The name of <paramref name="type"/> with its type parameters.</summary>
+    public static string TypeName(BaseTypeDeclarationSyntax type) =>
+        type.Identifier.Text + (type is TypeDeclarationSyntax declaration ? TypeParameters(declaration.TypeParameterList) : "");
+
+    private static string TypeParameters(TypeParameterListSyntax? list) =>
+        list is null ? "" : "<" + string.Join(", ", list.Parameters.Select(parameter => parameter.Identifier.Text)) + ">";
+
+    private static string Parameters(BaseParameterListSyntax list) =>
+        "(" + string.Join(", ", list.Parameters.Select(ParameterText)) + ")";
+
+    private static string ParameterText(BaseParameterSyntax parameter)
+    {
+        string modifiers = string.Concat(parameter.Modifiers
+            .Where(modifier => modifier.Kind() is SyntaxKind.RefKeyword or SyntaxKind.OutKeyword or SyntaxKind.InKeyword or SyntaxKind.ParamsKeyword)
+            .Select(modifier => modifier.Text + " "));
+        return modifiers + (parameter.Type is null ? "" : TypeText(parameter.Type));
+    }
+
+    /// <summary>The written type with whitespace normalized: none inside brackets, one after each comma.</summary>
+    private static string TypeText(TypeSyntax type)
+    {
+        string text = Whitespace().Replace(type.ToString(), " ");
+        text = AroundPunctuation().Replace(text, "$1");
+        return text.Replace(",", ", ", StringComparison.Ordinal);
+    }
+
+    [GeneratedRegex(@"\s+", RegexOptions.CultureInvariant)]
+    private static partial Regex Whitespace();
+
+    [GeneratedRegex(@" ?([<>()\[\],?]) ?", RegexOptions.CultureInvariant)]
+    private static partial Regex AroundPunctuation();
+}

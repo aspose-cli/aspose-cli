@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    A diagnostic report of code health for agents and reviewers; nothing enforces its numbers.
+    It is never shipped or packaged. tests/Aspose.Cli.Tests references it, so the solution builds
+    and tests it on every run. CodeHealthCommand.cs documents the usage.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Aspose.Cli.CodeHealth</RootNamespace>
+    <Description>Reports code-health metrics of the source and how a change moves them.</Description>
+    <IsPackable>false</IsPackable>
+    <IsPublishable>false</IsPublishable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
+    <InternalsVisibleTo Include="Aspose.Cli.Tests" />
+  </ItemGroup>
+
+</Project>
