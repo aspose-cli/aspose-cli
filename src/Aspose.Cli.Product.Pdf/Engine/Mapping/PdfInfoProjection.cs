@@ -1,12 +1,9 @@
 using System.Globalization;
 using System.Text.RegularExpressions;
-using Aspose.Cli.Product.Pdf.Contracts;
 using Aspose.Cli.Product.Pdf.Engine.Editing;
-using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Results;
 using Aspose.Pdf;
-using Aspose.Pdf.Annotations;
 using Aspose.Pdf.Facades;
 using Aspose.Pdf.Forms;
 using Aspose.Pdf.Text;

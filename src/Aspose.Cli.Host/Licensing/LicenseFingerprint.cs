@@ -1,5 +1,4 @@
 using Aspose.Cli.Sdk.Errors;
-using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.Licensing;
 
 namespace Aspose.Cli.Host.Licensing;

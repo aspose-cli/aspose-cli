@@ -1,8 +1,6 @@
 using System.Globalization;
 using System.Text;
 using Aspose.Cells;
-using Aspose.Cli.Product.Cells.Contracts;
-using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
 

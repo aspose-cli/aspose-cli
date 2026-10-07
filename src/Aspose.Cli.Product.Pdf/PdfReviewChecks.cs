@@ -1,5 +1,3 @@
-using Aspose.Cli.Sdk.Contracts;
-
 namespace Aspose.Cli.Product.Pdf;
 
 /// <summary>Every check the PDF review can report; <see cref="PdfViewAdapter"/> builds its findings only from these.</summary>

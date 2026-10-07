@@ -1,8 +1,6 @@
 using System.Drawing;
 using System.Globalization;
 using Aspose.Cells;
-using Aspose.Cli.Product.Cells.Contracts;
-using Aspose.Cli.Sdk.Contracts;
 
 namespace Aspose.Cli.Product.Cells.Engine.Editing;
 

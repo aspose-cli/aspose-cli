@@ -1,5 +1,4 @@
 using Aspose.Cli.Sdk.Errors;
-using Aspose.Cli.Sdk.Extensibility;
 
 namespace Aspose.Cli.Host.Catalog;
 

@@ -1,6 +1,5 @@
 using System.Globalization;
 using System.Text.RegularExpressions;
-using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Licensing;
 

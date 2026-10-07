@@ -1,7 +1,6 @@
 using System.Text.Json.Nodes;
 using Aspose.Cli.Host.Output.Rendering;
 using Aspose.Cli.Sdk.Contracts;
-using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.Serialization;
 
 namespace Aspose.Cli.Host.Output;

@@ -1,6 +1,3 @@
-using Aspose.Cli.Product.Words.Contracts;
-using Aspose.Cli.Sdk.Addressing;
-using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Text;
 
 namespace Aspose.Cli.Product.Words.Contracts;

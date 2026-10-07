@@ -1,4 +1,3 @@
-using Aspose.Cli.Product.Slides.Engine.Mapping;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Results;
 using Aspose.Slides;

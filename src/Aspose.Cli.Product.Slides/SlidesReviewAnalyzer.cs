@@ -1,8 +1,6 @@
 using System.Drawing;
 using System.Globalization;
 using System.Text;
-using Aspose.Cli.Product.Slides.Contracts;
-using Aspose.Cli.Sdk.Contracts;
 
 namespace Aspose.Cli.Product.Slides;
 

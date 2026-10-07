@@ -44,6 +44,9 @@ internal sealed class AppCliGateway
     {
     }
 
+    /// <param name="catalog">The products the commands run against.</param>
+    /// <param name="globals">The global options every command inherits.</param>
+    /// <param name="configDirectory">The user configuration directory.</param>
     /// <param name="run">Runs one CLI command; tests replace the child process.</param>
     /// <param name="clock">Times a kept font failure; tests replace the system clock.</param>
     internal AppCliGateway(

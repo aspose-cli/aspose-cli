@@ -1,7 +1,5 @@
 using System.Globalization;
 using Aspose.Cells;
-using Aspose.Cli.Product.Cells.Contracts.Addressing;
-using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.IO;
 
 namespace Aspose.Cli.Product.Cells.Engine.Mapping;
@@ -29,6 +27,11 @@ internal enum TextTableFindingKind
 }
 
 /// <summary>One layout finding; rows and columns are zero-based.</summary>
+/// <param name="Kind">What the finding reports.</param>
+/// <param name="HeaderRow">The header row of the table.</param>
+/// <param name="LastRow">The last row of the table.</param>
+/// <param name="Rows">The rows the finding concerns.</param>
+/// <param name="Labels">The distinct total labels of those rows; empty for other findings.</param>
 /// <param name="NumberColumn">For total rows, the column the first one holds a number in, or null.</param>
 internal sealed record TextTableFinding(
     TextTableFindingKind Kind,

@@ -1,6 +1,4 @@
 using System.CommandLine;
-using Aspose.Cli.Product.Pdf.Contracts;
-using Aspose.Cli.Sdk.Addressing;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Extensibility;
 

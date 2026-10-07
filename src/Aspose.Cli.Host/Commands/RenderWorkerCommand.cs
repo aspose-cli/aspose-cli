@@ -1,5 +1,4 @@
 using System.CommandLine;
-using Aspose.Cli.Host.Catalog;
 using Aspose.Cli.Host.Invocation;
 using Aspose.Cli.Host.Viewer;
 using Aspose.Cli.Host.ViewerService;

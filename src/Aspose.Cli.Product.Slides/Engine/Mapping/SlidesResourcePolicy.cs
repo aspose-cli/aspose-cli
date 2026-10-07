@@ -1,4 +1,3 @@
-using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Slides;
 

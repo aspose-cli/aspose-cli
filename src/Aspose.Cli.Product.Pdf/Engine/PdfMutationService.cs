@@ -1,25 +1,10 @@
-using System.Globalization;
-using System.Text.RegularExpressions;
-using Aspose.Cli.Product.Pdf.Contracts;
 using Aspose.Cli.Product.Pdf.Engine.Editing;
-using Aspose.Cli.Product.Pdf.Engine.Mapping;
-using Aspose.Cli.Sdk.Addressing;
-using Aspose.Cli.Sdk.Contracts;
-using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Execution;
 using Aspose.Cli.Sdk.IO;
-using Aspose.Cli.Sdk.Operations;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Results;
-using Aspose.Cli.Sdk.Text;
 using Aspose.Pdf;
-using Aspose.Pdf.Annotations;
-using Aspose.Pdf.Devices;
-using Aspose.Pdf.Forms;
-using Aspose.Pdf.Optimization;
-using Aspose.Pdf.Text;
 using static Aspose.Cli.Product.Pdf.Engine.PdfEngineSupport;
-using PdfColor = Aspose.Pdf.Color;
 
 namespace Aspose.Cli.Product.Pdf.Engine;
 

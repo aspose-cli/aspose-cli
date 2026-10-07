@@ -1,5 +1,4 @@
 using System.Text;
-using Aspose.Cli.Product.Slides.Engine.Mapping;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Results;

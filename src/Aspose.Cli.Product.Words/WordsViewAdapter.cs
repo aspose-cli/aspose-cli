@@ -1,5 +1,3 @@
-using Aspose.Cli.Product.Words.Contracts;
-using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.Views;
 

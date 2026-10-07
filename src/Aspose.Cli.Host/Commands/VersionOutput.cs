@@ -3,7 +3,6 @@ using System.CommandLine.Invocation;
 using System.CommandLine.Parsing;
 using Aspose.Cli.Host.Invocation;
 using Aspose.Cli.Sdk.Contracts;
-using Aspose.Cli.Sdk.Extensibility;
 
 namespace Aspose.Cli.Host.Commands;
 

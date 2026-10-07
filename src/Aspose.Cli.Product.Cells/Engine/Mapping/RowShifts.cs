@@ -1,8 +1,6 @@
 using System.Runtime.InteropServices;
 using System.Text;
 using Aspose.Cells;
-using Aspose.Cli.Product.Cells.Contracts;
-using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Execution;
 
 namespace Aspose.Cli.Product.Cells.Engine.Mapping;

@@ -1,8 +1,5 @@
 using System.Drawing;
 using System.Globalization;
-using Aspose.Cli.Product.Slides.Engine.Mapping;
-using Aspose.Cli.Sdk.Addressing;
-using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Slides;
 using Aspose.Slides.Charts;

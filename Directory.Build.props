@@ -28,6 +28,18 @@
     <AsposeCliAnalyzerGlobalPropertiesToRemove>RuntimeIdentifier;RuntimeIdentifiers;SelfContained;PublishReadyToRun;PublishSingleFile;PublishTrimmed;PublishAot</AsposeCliAnalyzerGlobalPropertiesToRemove>
   </PropertyGroup>
 
+  <!--
+    The compiler binds documentation comments only when it writes a documentation file, and
+    IDE0005 (unnecessary usings) is reported in the build only then. Production code writes the
+    file to obj and never copies or publishes it; public members need no comment (CS1591).
+  -->
+  <PropertyGroup Condition="$(MSBuildProjectDirectory.StartsWith('$(MSBuildThisFileDirectory)src\', StringComparison.OrdinalIgnoreCase))">
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <CopyDocumentationFileToOutputDirectory>false</CopyDocumentationFileToOutputDirectory>
+    <PublishDocumentationFile>false</PublishDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+
   <PropertyGroup>
     <Product>Aspose CLI</Product>
     <Authors>Aspose</Authors>

@@ -1,4 +1,3 @@
-using Aspose.Cli.Product.Slides.Contracts;
 using Aspose.Slides;
 using Aspose.Slides.Charts;
 

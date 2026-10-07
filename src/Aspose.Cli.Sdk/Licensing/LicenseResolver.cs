@@ -27,6 +27,7 @@ public static class LicenseResolver
     /// <param name="getEnvironmentVariable">Environment lookup (injected for testability).</param>
     /// <param name="workingDirectory">Base directory for project-level files.</param>
     /// <param name="userConfigDirectory">Directory of user-level files.</param>
+    /// <param name="changes">Pending user-level license changes that override the files on disk, if any.</param>
     /// <exception cref="CliException">
     /// <c>LICENSE_FILE_NOT_FOUND</c> when an explicit source names a missing file or a directory.
     /// </exception>

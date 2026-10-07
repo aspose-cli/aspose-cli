@@ -1,8 +1,6 @@
 using Aspose.Cells;
-using Aspose.Cli.Product.Cells.Contracts;
 using Aspose.Cli.Product.Cells.Engine.Editing;
 using Aspose.Cli.Product.Cells.Engine.Mapping;
-using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Operations;
 using Aspose.Cli.Sdk.Results;

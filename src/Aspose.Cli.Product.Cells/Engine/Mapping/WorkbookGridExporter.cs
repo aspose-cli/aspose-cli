@@ -1,9 +1,6 @@
 using System.Text;
 using Aspose.Cells;
-using Aspose.Cells.Drawing;
-using Aspose.Cells.Rendering;
 using Aspose.Cli.Sdk.IO;
-using Aspose.Cli.Sdk.Rendering;
 
 namespace Aspose.Cli.Product.Cells.Engine.Mapping;
 

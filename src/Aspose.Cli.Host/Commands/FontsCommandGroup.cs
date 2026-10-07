@@ -2,7 +2,6 @@ using System.CommandLine;
 using Aspose.Cli.Host.Catalog;
 using Aspose.Cli.Host.Invocation;
 using Aspose.Cli.Sdk.Errors;
-using Aspose.Cli.Sdk.Extensibility.Commanding;
 using Aspose.Cli.Sdk.Ports;
 
 namespace Aspose.Cli.Host.Commands;

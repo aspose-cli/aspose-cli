@@ -2,10 +2,7 @@ using System.CommandLine;
 using Aspose.Cli.Host.Catalog;
 using Aspose.Cli.Host.Invocation;
 using Aspose.Cli.Host.Review;
-using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
-using Aspose.Cli.Sdk.Extensibility;
-using Aspose.Cli.Sdk.Extensibility.Commanding;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Views;
 

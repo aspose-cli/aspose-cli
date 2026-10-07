@@ -1,6 +1,4 @@
 using System.CommandLine;
-using Aspose.Cli.Product.Words.Contracts;
-using Aspose.Cli.Sdk.Addressing;
 using Aspose.Cli.Sdk.Extensibility;
 
 namespace Aspose.Cli.Product.Words.Commands;

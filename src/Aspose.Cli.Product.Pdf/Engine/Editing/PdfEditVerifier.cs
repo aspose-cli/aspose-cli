@@ -1,11 +1,8 @@
 using System.Globalization;
 using System.Text.RegularExpressions;
-using Aspose.Cli.Product.Pdf.Contracts;
-using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Diagnostics;
 using Aspose.Cli.Sdk.Execution;
 using Aspose.Cli.Sdk.Licensing;
-using Aspose.Cli.Sdk.Text;
 using Aspose.Pdf;
 using Aspose.Pdf.Forms;
 using Aspose.Pdf.Text;

@@ -1,5 +1,4 @@
 using System.Globalization;
-using Aspose.Cli.Product.Slides.Contracts;
 using Aspose.Cli.Sdk.Extensibility.Output;
 
 namespace Aspose.Cli.Product.Slides.Output;

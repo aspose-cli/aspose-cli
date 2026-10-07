@@ -1,5 +1,3 @@
-using Aspose.Cli.Sdk.Contracts;
-
 namespace Aspose.Cli.Product.Words;
 
 /// <summary>Every check a Words review can report, declared once.</summary>
