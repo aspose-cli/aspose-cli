@@ -237,7 +237,7 @@ internal static class UpdateClient
         string[] reserved = ["CON", "PRN", "AUX", "NUL", "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9", "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9"];
         if (normalized.Length is 0 or > 512
             || normalized.StartsWith('/')
-            || normalized.Contains(":", StringComparison.Ordinal)
+            || normalized.Contains(':')
             || segments.Any(segment => segment.Length is 0 or > 255
                 || segment is "." or ".."
                 || segment.EndsWith('.')
