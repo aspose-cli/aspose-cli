@@ -114,6 +114,18 @@ $env:ASPOSE_CLI_TEST_LICENSE_PATH = 'C:\private\Aspose.Total.lic'
 .\scripts\test.ps1 -Configuration Release -Scope Full
 ```
 
+A licensed developer machine differs from the CI runner in more than the license. `-CiLike`
+runs the tests the way CI does, so a failure that only CI would see shows before the push: the
+test processes and the CLI processes they start get no license, the runner's en-US culture
+(set by a startup hook in every .NET process; native code and Windows PowerShell 5.1 still see
+the machine's locale) and `DOTNET_TieredCompilation=0`, whose fully optimized code inlines
+frames as a busy runner does. The caller's environment is left unchanged. It combines with every
+scope except `Full`, which needs the license. Before you push, also run:
+
+```powershell
+.\scripts\test.ps1 -Configuration Release -Scope Changed -Base origin/master -CiLike
+```
+
 ### Known SDK issues
 
 Each issue in [KNOWN-ISSUES.md](KNOWN-ISSUES.md) is recorded once under its id and reproduced with
