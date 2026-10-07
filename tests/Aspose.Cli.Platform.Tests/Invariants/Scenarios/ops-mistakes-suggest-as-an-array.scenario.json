@@ -1,0 +1,57 @@
+{
+  "name": "a mistyped op name, field or enum value is refused with details.suggestions as an array",
+  "files": {
+    "book.xlsx": { "fixture": "cells.xlsx" },
+    "doc.docx": { "fixture": "words.docx" },
+    "op-name.json": { "text": "{\"ops\":[{\"op\":\"set_valuez\",\"sheet\":\"Sheet1\",\"range\":\"C1\",\"values\":[[\"x\"]]}]}" },
+    "op-field.json": { "text": "{\"ops\":[{\"op\":\"set_values\",\"sheet\":\"Sheet1\",\"rnage\":\"C1\",\"values\":[[\"x\"]]}]}" },
+    "op-value.json": { "text": "{\"ops\":[{\"op\":\"clear_range\",\"sheet\":\"Sheet1\",\"range\":\"C1\",\"what\":\"contnets\"}]}" },
+    "words-op-name.json": { "text": "{\"ops\":[{\"op\":\"add_watermrk\",\"text\":\"Draft\"}]}" }
+  },
+  "steps": [
+    {
+      "args": ["cells", "edit", "book.xlsx", "--ops", "op-name.json", "--dry-run"],
+      "expect": {
+        "error": "OPS_INVALID",
+        "json": [
+          { "path": "error.details.suggestions", "contains": "set_values" },
+          { "path": "error.details.suggestion", "exists": false }
+        ],
+        "files": { "nothingWritten": true }
+      }
+    },
+    {
+      "args": ["cells", "edit", "book.xlsx", "--ops", "op-field.json", "--dry-run"],
+      "expect": {
+        "error": "OPS_INVALID",
+        "json": [
+          { "path": "error.details.suggestions", "contains": "range" },
+          { "path": "error.details.suggestion", "exists": false }
+        ],
+        "files": { "nothingWritten": true }
+      }
+    },
+    {
+      "args": ["cells", "edit", "book.xlsx", "--ops", "op-value.json", "--dry-run"],
+      "expect": {
+        "error": "OPS_INVALID",
+        "json": [
+          { "path": "error.details.suggestions", "contains": "contents" },
+          { "path": "error.details.suggestion", "exists": false }
+        ],
+        "files": { "nothingWritten": true }
+      }
+    },
+    {
+      "args": ["words", "edit", "doc.docx", "--ops", "words-op-name.json", "--dry-run"],
+      "expect": {
+        "error": "OPS_INVALID",
+        "json": [
+          { "path": "error.details.suggestions", "contains": "add_watermark" },
+          { "path": "error.details.suggestion", "exists": false }
+        ],
+        "files": { "nothingWritten": true }
+      }
+    }
+  ]
+}

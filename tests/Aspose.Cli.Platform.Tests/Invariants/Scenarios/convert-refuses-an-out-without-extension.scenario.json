@@ -1,0 +1,59 @@
+{
+  "name": "every product refuses an --out without an extension the same way and writes nothing",
+  "files": {
+    "book.xlsx": { "fixture": "cells.xlsx" },
+    "input.pdf": { "fixture": "pdf.pdf" },
+    "deck.pptx": { "fixture": "slides.pptx" },
+    "doc.docx": { "fixture": "words.docx" }
+  },
+  "steps": [
+    {
+      "args": ["cells", "convert", "book.xlsx", "--to", "csv", "--out", "cells-out"],
+      "expect": {
+        "exitCode": 2,
+        "error": "USAGE_ERROR",
+        "json": [
+          { "path": "error.message", "contains": "--out" },
+          { "path": "error.message", "contains": ".csv" }
+        ],
+        "files": { "absent": ["cells-out"], "nothingWritten": true }
+      }
+    },
+    {
+      "args": ["pdf", "convert", "input.pdf", "--to", "docx", "--out", "pdf-out"],
+      "expect": {
+        "exitCode": 2,
+        "error": "USAGE_ERROR",
+        "json": [
+          { "path": "error.message", "contains": "--out" },
+          { "path": "error.message", "contains": ".docx" }
+        ],
+        "files": { "absent": ["pdf-out"], "nothingWritten": true }
+      }
+    },
+    {
+      "args": ["slides", "convert", "deck.pptx", "--to", "pdf", "--out", "slides-out"],
+      "expect": {
+        "exitCode": 2,
+        "error": "USAGE_ERROR",
+        "json": [
+          { "path": "error.message", "contains": "--out" },
+          { "path": "error.message", "contains": ".pdf" }
+        ],
+        "files": { "absent": ["slides-out"], "nothingWritten": true }
+      }
+    },
+    {
+      "args": ["words", "convert", "doc.docx", "--to", "pdf", "--out", "words-out"],
+      "expect": {
+        "exitCode": 2,
+        "error": "USAGE_ERROR",
+        "json": [
+          { "path": "error.message", "contains": "--out" },
+          { "path": "error.message", "contains": ".pdf" }
+        ],
+        "files": { "absent": ["words-out"], "nothingWritten": true }
+      }
+    }
+  ]
+}

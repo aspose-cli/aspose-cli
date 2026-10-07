@@ -1,0 +1,17 @@
+{
+  "name": "a mistyped --to value is a usage error that suggests the format",
+  "files": {
+    "book.xlsx": { "fixture": "cells.xlsx" }
+  },
+  "steps": [
+    {
+      "args": ["cells", "convert", "book.xlsx", "--to", "csvv", "--out", "out.csv"],
+      "expect": {
+        "exitCode": 2,
+        "error": "USAGE_ERROR",
+        "json": [{ "path": "error.details.suggestions", "contains": "csv" }],
+        "files": { "absent": ["out.csv"], "nothingWritten": true }
+      }
+    }
+  ]
+}

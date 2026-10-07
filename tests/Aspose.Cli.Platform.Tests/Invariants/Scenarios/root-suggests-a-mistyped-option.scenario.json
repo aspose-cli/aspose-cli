@@ -1,0 +1,14 @@
+{
+  "name": "a mistyped root option suggests the option",
+  "steps": [
+    {
+      "args": ["--vresion"],
+      "expect": {
+        "exitCode": 2,
+        "error": "USAGE_ERROR",
+        "json": [{ "path": "error.details.suggestions", "contains": "--version" }],
+        "files": { "nothingWritten": true }
+      }
+    }
+  ]
+}
