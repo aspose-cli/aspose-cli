@@ -223,15 +223,15 @@ public sealed class CellsCliTests : IDisposable
         Assert.Equal(4, renamed.ExitCode);
         JsonNode rename = JsonNode.Parse(renamed.StdErr)!["error"]!;
         Assert.Equal("OPS_INVALID", rename["code"]!.GetValue<string>());
-        Assert.Equal("unknown field 'name'; rename_sheet accepts: op, id, sheet, to (did you mean 'to'?)",
+        Assert.Equal("unknown field 'name'; rename_sheet accepts: op, id, sheet, to",
             rename["details"]!["reason"]!.GetValue<string>());
         Assert.Equal(["op", "id", "sheet", "to"],
             rename["details"]!["allowedFields"]!.AsArray().Select(static item => item!.GetValue<string>()));
-        Assert.Equal("to", rename["details"]!["suggestion"]!.GetValue<string>());
+        Assert.Equal(["to"], rename["details"]!["suggestions"]!.AsArray().Select(static item => item!.GetValue<string>()));
         JsonNode sort = JsonNode.Parse(sorted.StdErr)!["error"]!["details"]!;
         Assert.Equal("unknown field 'by[0].direction'; by[0] accepts: column, order",
             sort["reason"]!.GetValue<string>());
-        Assert.Null(sort["suggestion"]);
+        Assert.Null(sort["suggestions"]);
     }
 
     [Fact]

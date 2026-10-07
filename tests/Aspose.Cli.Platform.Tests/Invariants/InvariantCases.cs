@@ -219,7 +219,7 @@ internal static class InvariantCases
                 {
                     ExitCode = [4],
                     Error = ["OPS_INVALID"],
-                    Json = [new JsonAssertion { Path = "error.details.suggestion", Value = op }],
+                    Json = [new JsonAssertion { Path = "error.details.suggestions", Contains = op }],
                     Files = new ScenarioFiles { NothingWritten = true },
                 });
 
@@ -238,7 +238,7 @@ internal static class InvariantCases
                 {
                     ExitCode = [4],
                     Error = ["OPS_INVALID"],
-                    Json = [new JsonAssertion { Path = "error.details.suggestion", Value = field }],
+                    Json = [new JsonAssertion { Path = "error.details.suggestions", Contains = field }],
                     Files = new ScenarioFiles { NothingWritten = true },
                 });
         }

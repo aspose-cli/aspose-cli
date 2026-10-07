@@ -234,7 +234,7 @@ public sealed class OperationCatalog<TOp>
         }
         catch (OperationInvalidException rejection)
         {
-            return OperationErrors.InvalidAt(index, record.Name, rejection.Message, rejection.Hint ?? DefaultHint);
+            return OperationErrors.InvalidAt(index, record.Name, rejection.Message, rejection.Hint ?? DefaultHint, value: rejection.Mistake);
         }
         catch (CliException failure) when (!failure.IsInvocationFailure)
         {
@@ -350,7 +350,8 @@ public sealed class OperationCatalog<TOp>
     /// </summary>
     private CliException InvalidAt(JsonElement root, int index, JsonException failure) =>
         NameAt(root, index) is { } name && !_byName.ContainsKey(name)
-            ? OperationErrors.UnknownAt(index, failure.Message, DefaultHint, Names, Closest(name, root.GetProperty("ops")[index]))
+            ? OperationErrors.UnknownAt(index, failure.Message, DefaultHint,
+                Mistake.Of(name, Names, meant: Closest(name, root.GetProperty("ops")[index])))
             : OperationErrors.InvalidAt(
                 index, KnownNameAt(root, index), failure.Message, DefaultHint, field: failure as AllowedFieldsException);
 

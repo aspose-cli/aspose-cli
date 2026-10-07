@@ -13,21 +13,25 @@ internal static class OperationErrors
 {
     /// <summary>
     /// Rejects the document as a whole. An unknown field, or another kind of value where an
-    /// object belongs, adds <c>allowedFields</c> and, when one is likely meant, <c>suggestion</c>.
+    /// object belongs, adds <c>allowedFields</c> and, when some are likely meant, <c>suggestions</c>.
     /// </summary>
     internal static CliException Invalid(string reason, string hint, AllowedFieldsException? field = null)
     {
         var details = new JsonObject { ["reason"] = reason };
         AddAllowedFields(details, field);
-        return new CliException(ErrorCodes.OpsInvalid, $"The operation document is invalid: {reason}", hint: hint, details: details);
+        return new CliException(ErrorCodes.OpsInvalid, $"The operation document is invalid: {reason}",
+            hint: field?.Mistake?.Hint(hint) ?? hint, details: details);
     }
 
     /// <summary>
     /// Rejects one operation; <paramref name="name"/> is null when the entry names no known
-    /// operation. An unknown or mistyped field adds details as <see cref="Invalid"/> does.
+    /// operation. An unknown or mistyped field adds details as <see cref="Invalid"/> does, and a
+    /// value that names none of its allowed values adds them as <c>available</c> with the closest
+    /// as <c>suggestions</c>.
     /// </summary>
     internal static CliException InvalidAt(
-        int index, string? name, string reason, string hint, ErrorCode? cause = null, AllowedFieldsException? field = null)
+        int index, string? name, string reason, string hint, ErrorCode? cause = null,
+        AllowedFieldsException? field = null, Mistake? value = null)
     {
         var details = new JsonObject { ["index"] = index };
         if (name is not null)
@@ -40,8 +44,11 @@ internal static class OperationErrors
             details["cause"] = cause.Name;
         }
         AddAllowedFields(details, field);
+        value?.WriteTo(details);
+        Mistake? mistake = value ?? field?.Mistake;
         string subject = name is null ? $"Operation {index}" : $"Operation {index} ({name})";
-        return new CliException(ErrorCodes.OpsInvalid, $"{subject} is invalid: {reason}", hint: hint, details: details);
+        return new CliException(ErrorCodes.OpsInvalid, $"{subject} is invalid: {reason}",
+            hint: mistake?.Hint(hint) ?? hint, details: details);
     }
 
     /// <summary>
@@ -66,22 +73,18 @@ internal static class OperationErrors
 
     /// <summary>
     /// Rejects an entry whose op names no operation of the vocabulary, listing the operations in
-    /// <c>available</c> and, when one is likely meant, naming it in <c>suggestion</c>.
+    /// <c>available</c> and, when some are likely meant, naming them in <c>suggestions</c>.
     /// </summary>
-    internal static CliException UnknownAt(int index, string reason, string hint, IReadOnlyList<string> available, string? suggestion)
+    internal static CliException UnknownAt(int index, string reason, string hint, Mistake operation)
     {
         var details = new JsonObject
         {
             ["index"] = index,
             ["reason"] = reason,
-            ["available"] = new JsonArray([.. available.Select(static item => (JsonNode)item)]),
         };
-        if (suggestion is not null)
-        {
-            details["suggestion"] = suggestion;
-        }
-
-        return new CliException(ErrorCodes.OpsInvalid, $"Operation {index} is invalid: {reason}", hint: hint, details: details);
+        operation.WriteTo(details);
+        return new CliException(ErrorCodes.OpsInvalid, $"Operation {index} is invalid: {reason}",
+            hint: operation.Hint(hint), details: details);
     }
 
     private static void AddAllowedFields(JsonObject details, AllowedFieldsException? field)
@@ -92,10 +95,7 @@ internal static class OperationErrors
         }
 
         details["allowedFields"] = new JsonArray([.. field.AllowedFields.Select(static item => (JsonNode)item)]);
-        if (field.Suggestion is not null)
-        {
-            details["suggestion"] = field.Suggestion;
-        }
+        field.Mistake?.WriteTo(details, maximumAvailable: 0);
     }
 
     /// <summary>Keeps a domain failure's own code (for example SHEET_NOT_FOUND) and adds its position.</summary>

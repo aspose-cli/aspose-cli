@@ -11,7 +11,7 @@ namespace Aspose.Cli.Sdk.Serialization;
 /// The wire protocol of an operation vocabulary; declare it on the vocabulary's base record
 /// with <c>[JsonConverter(typeof(OperationJsonConverter&lt;TOp&gt;))]</c>. It reads the
 /// <c>op</c> discriminator, rejects unknown, null and duplicated members in wire terms (an
-/// unknown member with the fields its object accepts and the closest one), and
+/// unknown member with the fields its object accepts and the closest ones), and
 /// writes every omitted member that has a default before the payload is read, so the schema's
 /// <c>default</c> is exactly the value applied.
 /// </summary>
@@ -39,8 +39,7 @@ public sealed class OperationJsonConverter<TOp> : JsonConverter<TOp>
         string name = discriminator.GetString()!;
         if (!TOp.Catalog.TryGetOperation(name, out OperationRecord? record))
         {
-            throw new JsonException($"unknown op '{name}'; valid ops: {ValidOperations}"
-                + (TOp.Catalog.Closest(name, root) is { } closest ? $" (did you mean '{closest}'?)" : string.Empty));
+            throw new JsonException($"unknown op '{name}'; valid ops: {ValidOperations}");
         }
 
         // The payload below omits the discriminator, so only its duplicates need a check here;
