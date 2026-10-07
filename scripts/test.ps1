@@ -32,6 +32,23 @@ built playwright.ps1 provisions, and the license.
 
 Skipped tests are listed after the run, with licensed cases called out, and so is every test
 that ran longer than 10 seconds without a category.
+
+-CiLike runs the tests the way the CI runner does, to catch before a push the failures that only
+CI would see. The test processes it starts, and the processes they start, get:
+
+- no license: ASPOSE_CLI_TEST_LICENSE_PATH, the only license source of a test run, is removed,
+  so the commercial SDKs run in evaluation mode and the licensed cases are skipped;
+- the en-US culture of the runner: a startup hook, compiled into the run's results directory,
+  sets the current culture and UI culture of every .NET process before its code runs. The
+  Windows user locale itself is unchanged, so native code that reads it, and Windows PowerShell
+  5.1, still see the machine's locale;
+- DOTNET_TieredCompilation=0, so methods are compiled fully optimized from the start, with the
+  inlining that hides stack frames on a busy runner.
+
+The caller's environment is left unchanged, and -CiLike combines with Fast, Changed and Affected.
+Full requires a license, which CI never has, so it rejects -CiLike. Before a push, run:
+
+    scripts/test.ps1 -Configuration Release -Scope Changed -Base origin/master -CiLike
 #>
 [CmdletBinding()]
 param(
@@ -46,11 +63,17 @@ param(
 
     [switch] $NoBuild,
 
+    # Runs the tests without a license, under en-US and without tiered compilation, as on CI.
+    [switch] $CiLike,
+
     # A test that stays silent this long is reported with its name and a mini dump.
     [string] $HangTimeout = '15m'
 )
 
 $ErrorActionPreference = 'Stop'
+if ($CiLike -and $Scope -eq 'Full') {
+    throw 'The Full scope requires a license, which CI never has, so it cannot run with -CiLike. Run -CiLike with Fast, Changed or Affected.'
+}
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $generator = Join-Path $PSScriptRoot 'generate-product-catalog.ps1'
 $layoutResolver = Join-Path $PSScriptRoot 'resolve-project-layout.ps1'
@@ -232,7 +255,8 @@ if ($runsInstaller -and $env:OS -eq 'Windows_NT') {
         $missing += "Installer tests need Windows PowerShell 5.1 at $windowsPowerShell."
     }
 }
-$licensePath = $env:ASPOSE_CLI_TEST_LICENSE_PATH
+$licenseVariable = 'ASPOSE_CLI_TEST_LICENSE_PATH'
+$licensePath = [Environment]::GetEnvironmentVariable($licenseVariable)
 if ($requireLicense -and ([string]::IsNullOrWhiteSpace($licensePath) -or -not (Test-Path -LiteralPath $licensePath -PathType Leaf))) {
     $missing += 'The Full scope needs ASPOSE_CLI_TEST_LICENSE_PATH to name an existing commercial license file.'
 }
@@ -284,7 +308,11 @@ function Start-Dotnet {
     )
     $start = [Diagnostics.ProcessStartInfo]::new('dotnet')
     foreach ($argument in $Arguments) { $start.ArgumentList.Add($argument) }
-    foreach ($name in $Environment.Keys) { $start.Environment[$name] = $Environment[$name] }
+    # A null value removes the variable from the started process only.
+    foreach ($name in $Environment.Keys) {
+        if ($null -eq $Environment[$name]) { [void]$start.Environment.Remove($name) }
+        else { $start.Environment[$name] = $Environment[$name] }
+    }
     $start.UseShellExecute = $false
     $start.RedirectStandardOutput = $true
     $start.RedirectStandardError = $true
@@ -344,6 +372,35 @@ try {
     $runId = [DateTime]::UtcNow.ToString('yyyyMMddTHHmmssfffZ') + '-' + [Guid]::NewGuid().ToString('N')
     $resultsRoot = Join-Path $repoRoot "artifacts/TestResults/$runId"
     $markedFilter = ($categories | ForEach-Object { "Category=$_" }) -join '|'
+    $testEnvironment = @{}
+    $ciArguments = @()
+    if ($CiLike) {
+        # The startup hook gives every .NET process of the run the runner's culture; the Windows
+        # user locale has no per-process override, and no runtime variable sets the culture.
+        $cultureHook = Join-Path $resultsRoot 'ci-like/CiLikeCulture.dll'
+        [IO.Directory]::CreateDirectory((Split-Path -Parent $cultureHook)) | Out-Null
+        Add-Type -OutputAssembly $cultureHook -OutputType Library -TypeDefinition @'
+using System.Globalization;
+
+internal static class StartupHook
+{
+    public static void Initialize()
+    {
+        CultureInfo culture = CultureInfo.GetCultureInfo("en-US");
+        CultureInfo.DefaultThreadCurrentCulture = culture;
+        CultureInfo.DefaultThreadCurrentUICulture = culture;
+        CultureInfo.CurrentCulture = culture;
+        CultureInfo.CurrentUICulture = culture;
+    }
+}
+'@
+        # The license is removed from the whole test process tree; the culture hook and the
+        # compilation mode reach only the test hosts and the processes they start, so dotnet
+        # test itself keeps its usual speed.
+        $testEnvironment[$licenseVariable] = $null
+        $ciArguments = @('--environment', 'DOTNET_TieredCompilation=0', '--environment', "DOTNET_STARTUP_HOOKS=$cultureHook")
+        Write-Host 'CI-LIKE tests run as on the CI runner: no license, en-US culture, DOTNET_TieredCompilation=0.'
+    }
     # Concurrent projects share the processor: each runs at most its share of 1.5 test threads
     # per core, so tests with process-start and I/O budgets are not starved.
     $threadsPerProject = [Math]::Max(2, [int][Math]::Ceiling([Environment]::ProcessorCount * 1.5 / $selected.Count))
@@ -358,11 +415,11 @@ try {
             '--blame-hang-timeout', $HangTimeout,
             '--blame-hang-dump-type', 'mini',
             '--logger', 'trx;LogFileName=results.trx',
-            '--results-directory', $resultsDirectory)
+            '--results-directory', $resultsDirectory) + $ciArguments
         if ($null -ne $filter) { $arguments += @('--filter', $filter) }
         $arguments += @('--', "xUnit.MaxParallelThreads=$threadsPerProject")
         Write-Host "TEST $projectName $(if ($null -eq $filter) { '(all tests)' } else { "($filter)" })"
-        $test = Start-Dotnet $arguments (Join-Path $resultsDirectory 'test.log') @{ ASPOSE_CLI_TEST_ARTIFACTS = $resultsDirectory }
+        $test = Start-Dotnet $arguments (Join-Path $resultsDirectory 'test.log') ($testEnvironment + @{ ASPOSE_CLI_TEST_ARTIFACTS = $resultsDirectory })
         # A project that runs marked tests lists them, so the slow-test report can leave them out.
         $listing = if ($included[$project].Count -eq 0) { $null } else {
             Start-Dotnet @('test', $project, '--configuration', $Configuration, '--no-build', '--no-restore', '--nologo',
@@ -413,7 +470,10 @@ try {
         foreach ($test in $skipped | Sort-Object Project, Name) {
             Write-Host "  [$($test.Project)] $($test.Name): $($test.Reason)"
         }
-        if ($licensedSkips.Count -ne 0) {
+        if ($licensedSkips.Count -ne 0 -and $CiLike) {
+            Write-Host 'Licensed cases were not exercised, as on CI (-CiLike removes the license).'
+        }
+        elseif ($licensedSkips.Count -ne 0) {
             Write-Host 'Licensed cases were not exercised: set ASPOSE_CLI_TEST_LICENSE_PATH (see CONTRIBUTING.md) to run them.'
         }
     }
@@ -431,7 +491,7 @@ try {
         throw "$Scope test run failed:$([Environment]::NewLine)$($failures -join [Environment]::NewLine)"
     }
 
-    Write-Host "PASS $Scope scope: $($selected.Count) test projects after one solution build."
+    Write-Host "PASS $Scope scope$(if ($CiLike) { ', CI-like' }): $($selected.Count) test projects after one solution build."
     Write-Host "Test results: $resultsRoot"
 }
 finally {
