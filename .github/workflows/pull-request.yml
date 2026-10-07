@@ -1,9 +1,10 @@
 name: Pull request
-# Checks the branch name, the title and every commit subject against CONTRIBUTING.md. It reruns
-# when the title is edited, which does not rerun CI.
+# Checks the branch name, the title and every commit subject against CONTRIBUTING.md, and that a
+# new known invariant violation carries the owner's approval. It reruns when the title is edited
+# or a label changes, which do not rerun CI.
 on:
   pull_request:
-    types: [opened, edited, reopened, synchronize]
+    types: [opened, edited, reopened, synchronize, labeled, unlabeled]
 permissions:
   contents: read
 jobs:
@@ -52,3 +53,47 @@ jobs:
             check "Commit subject" "$line"
           done <<< "$subjects"
           exit $status
+      - name: Require approval to add a known violation
+        env:
+          HEAD: ${{ github.event.pull_request.head.sha }}
+          APPROVED: ${{ contains(github.event.pull_request.labels.*.name, 'quality-exception') }}
+        run: |
+          file=tests/Aspose.Cli.Platform.Tests/Invariants/known-violations.json
+          base=$(git merge-base "origin/$GITHUB_BASE_REF" "$HEAD")
+          # entries COMMIT OUT: the list at a commit, or an empty one where the file is missing.
+          entries() { git show "$1:$file" > "$2" 2>/dev/null || echo '{"violations":[]}' > "$2"; }
+          entries "$base" "$RUNNER_TEMP/base.json"
+          entries "$HEAD" "$RUNNER_TEMP/head.json"
+          # An entry is keyed by its case and invariant. A new key or wider modes (omitted modes
+          # mean both) accepts a violation the base did not; removing an entry, narrowing its
+          # modes or changing its cause needs no approval. A reworded actual text is shown to the
+          # owner as a notice.
+          jq -r --slurpfile base "$RUNNER_TEMP/base.json" '
+            ($base[0].violations | map({key: "\(.case) / \(.invariant)", value: .actual}) | from_entries) as $was
+            | .violations[]
+            | "\(.case) / \(.invariant)" as $key
+            | select($was[$key] != null and $was[$key] != .actual)
+            | "::notice::'"$file"' reworded \($key): \(.actual)"' "$RUNNER_TEMP/head.json"
+          widened=$(jq -r --slurpfile base "$RUNNER_TEMP/base.json" '
+            ($base[0].violations | map({key: "\(.case) / \(.invariant)", value: .}) | from_entries) as $was
+            | .violations[]
+            | "\(.case) / \(.invariant)" as $key
+            | $was[$key] as $before
+            | if $before == null then "added \($key)"
+              elif $before.modes != null and (.modes == null or (.modes - $before.modes | length) > 0) then "widened the modes of \($key)"
+              else empty end' "$RUNNER_TEMP/head.json")
+          if [ -z "$widened" ]; then
+            echo "No known violation was added or widened."
+            exit 0
+          fi
+          level=error
+          if [ "$APPROVED" = true ]; then
+            level=notice
+          fi
+          while IFS= read -r line; do
+            echo "::$level::$file $line"
+          done <<< "$widened"
+          if [ "$APPROVED" != true ]; then
+            echo "::error::Fix the product instead. Accepting a new or wider known violation takes the owner's approval: the 'quality-exception' label on this pull request (CONTRIBUTING.md#gates)."
+            exit 1
+          fi
