@@ -55,3 +55,11 @@ dotnet_naming_symbols.private_fields.applicable_kinds = field
 dotnet_naming_symbols.private_fields.applicable_accessibilities = private
 dotnet_naming_style.underscore_camel.capitalization = camel_case
 dotnet_naming_style.underscore_camel.required_prefix = _
+
+# Analyzers for production code only; tests keep the defaults.
+[src/**.cs]
+# Unused private members, parameters and assignments.
+dotnet_diagnostic.IDE0051.severity = error
+dotnet_diagnostic.IDE0052.severity = error
+dotnet_diagnostic.IDE0059.severity = error
+dotnet_diagnostic.IDE0060.severity = error

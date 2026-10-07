@@ -23,7 +23,6 @@ internal sealed partial class AppHost : IDisposable
     private readonly AppLog _log;
     private readonly AppDocumentSession _sessions;
     private readonly AppWorkspace _workspace;
-    private readonly Func<CapabilitiesResult> _capabilities;
     private readonly AppStatusQuery _status;
     private readonly Action _touch;
     private readonly Action _stop;
@@ -46,7 +45,6 @@ internal sealed partial class AppHost : IDisposable
         Action stop)
     {
         _catalog = catalog ?? throw new ArgumentNullException(nameof(catalog));
-        _capabilities = capabilities;
         _globals = globals;
         _port = port;
         _touch = touch ?? throw new ArgumentNullException(nameof(touch));

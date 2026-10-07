@@ -19,7 +19,7 @@ public sealed class OperationDeadline : IDisposable
     {
         OriginalBudget = originalBudget;
         _expiresAtTick = expiresAtTick;
-        if (expiresAtTick is { } expires)
+        if (expiresAtTick is not null)
         {
             _deadlineCancellation = new CancellationTokenSource();
             TimeSpan remaining = Remaining ?? TimeSpan.Zero;

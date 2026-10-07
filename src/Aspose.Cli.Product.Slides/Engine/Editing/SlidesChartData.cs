@@ -95,7 +95,7 @@ internal static class SlidesChartData
             EnsureWorksheetBacked(existing.Take(op.Series.Count), static point => [point.Value]);
         }
 
-        CellGrid grid = CellGrid.ForCategories(data, categories, existing);
+        CellGrid grid = CellGrid.ForCategories(categories, existing);
         IChartDataWorkbook workbook = data.ChartDataWorkbook;
 
         // Categories: rewrite in place, extend along the category direction, trim from the end.
@@ -393,7 +393,7 @@ internal static class SlidesChartData
                 : (header.Row, Category(point).Column);
         }
 
-        internal static CellGrid ForCategories(IChartData data, IChartCategory[] categories, IChartSeries[] series)
+        internal static CellGrid ForCategories(IChartCategory[] categories, IChartSeries[] series)
         {
             IChartDataCell? category = categories.FirstOrDefault()?.AsCell;
             IChartDataCell? name = series.Select(NameCell).FirstOrDefault(static cell => cell is not null);
