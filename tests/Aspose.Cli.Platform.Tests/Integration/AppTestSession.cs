@@ -46,7 +46,7 @@ internal sealed class AppTestSession : IAsyncDisposable
 
     internal CliResult Open(string file)
     {
-        CliResult result = Workspace.Run("app", Workspace.File(file), "--no-open", "--output", "json");
+        CliResult result = Workspace.Run("app", "open", Workspace.File(file), "--no-open", "--output", "json");
         Assert.True(result.ExitCode == 0, result.StdErr);
         int pid = JsonNode.Parse(result.StdOut)!["pid"]!.GetValue<int>();
         if (!_processes.Any(process => process.Id == pid))

@@ -138,7 +138,7 @@ aspose-cli capabilities --output json
   document renamed to `.pdf`; check the real file type. `details.path` names the
   file and `details.detected` the product the content looks like, whose command
   a product command's hint names: use it, rename the file, or pass
-  `--product <id>` to `review` or `preview`, which then lets that engine read it.
+  `--product <id>` to `review` or `preview open`, which then lets that engine read it.
   A damaged file of a format the command reads, such as a PDF given to
   `words convert`, stays `FILE_CORRUPT`. A product command reads its input by
   content, so a file of its own product under another extension, such as that

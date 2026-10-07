@@ -12,7 +12,7 @@ public sealed class AppControlRecoveryTests
         string originalUrl = (await app.Status())["previewUrl"]!.GetValue<string>();
         // Generic routing cannot distinguish this one-column text from a Words text document.
         File.WriteAllText(app.Workspace.File("ambiguous.csv"), "Marker\nambiguous text\n");
-        var refused = app.Workspace.Run("app", app.Workspace.File("ambiguous.csv"), "--no-open", "--output", "json");
+        var refused = app.Workspace.Run("app", "open", app.Workspace.File("ambiguous.csv"), "--no-open", "--output", "json");
         Assert.NotEqual(0, refused.ExitCode);
         Assert.Equal(originalUrl, (await app.Status())["previewUrl"]!.GetValue<string>());
         Assert.Equal("first.csv", (await app.Status())["file"]!.GetValue<string>());

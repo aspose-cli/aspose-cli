@@ -64,7 +64,7 @@ both a width and a height takes the proportions of its viewBox.
 
 ## Preview and licensing
 
-`aspose-cli preview report.pdf --open` shows the `pages` view: pages, thumbnails,
+`aspose-cli preview open report.pdf --open` shows the `pages` view: pages, thumbnails,
 the size of the page in view, zoom and a mark on what a change touched
 (`aspose-cli docs preview`). Without a PDF license, output is watermarked and
 results carry `EVAL_MODE`; `review` reports such pages as

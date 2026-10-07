@@ -2,7 +2,9 @@ using System.CommandLine;
 using Aspose.Cli.Host.Invocation;
 using Aspose.Cli.Host.LocalServices;
 using Aspose.Cli.Host.ViewerService;
+using Aspose.Cli.Sdk;
 using Aspose.Cli.Sdk.Contracts;
+using Aspose.Cli.Sdk.Errors;
 
 namespace Aspose.Cli.Host.Commands;
 
@@ -15,86 +17,100 @@ internal static class AppCommand
         Func<CapabilitiesResult> capabilities,
         GlobalOptions globals)
     {
-        var fileArgument = new Argument<string?>("file")
-        {
-            Description = "File to open directly in the local App.",
-            Arity = ArgumentArity.ZeroOrOne,
-        }.WithInput(InputKind.File);
         var welcomeOption = new Option<bool>("--welcome")
         {
             Description = "Open the first-run workspace guide.",
         };
-        var foregroundOption = new Option<bool>("--foreground")
-        {
-            Description = "Keep the App in this process for debugging, containers and tests.",
-        };
-        var portOption = new Option<int>("--port")
-        {
-            Description = "Loopback port; 0 chooses a free port.",
-            DefaultValueFactory = _ => 0,
-        };
-        var noOpenOption = new Option<bool>("--no-open")
-        {
-            Description = "Start or activate the App without opening a browser.",
-        };
         var routeOption = new Option<string?>("--route") { Hidden = true }.WithInput(InputKind.None);
-
         var app = new Command("app", "Open the local file workspace in a browser.");
-        app.Arguments.Add(fileArgument);
+        StartOptions home = StartOptions.AddTo(app);
         app.Options.Add(welcomeOption);
-        app.Options.Add(foregroundOption);
-        app.Options.Add(portOption);
-        app.Options.Add(noOpenOption);
         app.Options.Add(routeOption);
+        app.SetAction(parseResult => Start(executor, catalog, capabilities, globals, parseResult, home, _ => new ViewerAppRequest
+        {
+            Route = parseResult.GetValue(routeOption)
+                ?? (parseResult.GetValue(welcomeOption) ? AppRoutes.Welcome : AppRoutes.Home),
+        }));
 
+        app.Subcommands.Add(CreateOpen(executor, catalog, capabilities, globals));
         app.Subcommands.Add(CreateStatus(executor, globals));
         app.Subcommands.Add(CreateStop(executor, globals));
-
-        app.SetAction(parseResult =>
-        {
-            int port = parseResult.GetValue(portOption);
-            OptionGuards.EnsureInRange("--port", port, 0, 65535,
-                "Pass --port 0 for a free port, or a port between 1 and 65535.");
-            bool openBrowser = !parseResult.GetValue(noOpenOption);
-            if (parseResult.GetValue(foregroundOption))
-            {
-                // Debugging, containers and browser tests: the service, the
-                // App and this command are one process that does not detach.
-                return executor.RunHosted(parseResult, globals, values =>
-                    ViewerServiceHosting.Start(
-                        values,
-                        port,
-                        catalog,
-                        capabilities,
-                        Page(parseResult, values, routeOption, welcomeOption, fileArgument),
-                        openBrowser));
-            }
-            return executor.RunLightweight(parseResult, globals, (values, budgets) =>
-            {
-                ViewerAppRequest page = Page(parseResult, values, routeOption, welcomeOption, fileArgument);
-                var client = new ViewerServiceClient();
-                bool reused = client.Status(budgets.Deadline) is not null;
-                ViewerAppResponse opened = client.App(values, page, port, budgets.Deadline);
-                if (openBrowser)
-                {
-                    BrowserLauncher.Open(opened.Url);
-                }
-                return new AppResult
-                {
-                    Running = true,
-                    Url = opened.Url,
-                    Port = opened.Port,
-                    Pid = opened.Pid,
-                    Reused = reused,
-                    Route = opened.Route,
-                    File = opened.File,
-                };
-            });
-        });
 
         // The App is one shared workspace that follows the configured license.
         return app.WithInvocationPolicy(new CommandInvocationPolicy(
             Execution: CommandExecutionOwnership.Service, RefusesEvaluationRequest: true));
+    }
+
+    private static Command CreateOpen(
+        CommandExecutor executor,
+        ProductCatalog catalog,
+        Func<CapabilitiesResult> capabilities,
+        GlobalOptions globals)
+    {
+        var fileArgument = new Argument<string?>("file")
+        {
+            Description = "File to open in the local App.",
+            Arity = ArgumentArity.ZeroOrOne,
+        }.WithInput(InputKind.File);
+        var open = new Command("open", "Open a file in the local App.");
+        open.Arguments.Add(fileArgument);
+        StartOptions options = StartOptions.AddTo(open);
+        open.SetAction(parseResult => Start(executor, catalog, capabilities, globals, parseResult, options, values => new ViewerAppRequest
+        {
+            Route = AppRoutes.Preview,
+            File = ResolveFile(parseResult.GetValue(fileArgument), values),
+        }));
+        return open;
+    }
+
+    /// <summary>Starts or activates the App and lands on the page <paramref name="page"/> chooses.</summary>
+    private static int Start(
+        CommandExecutor executor,
+        ProductCatalog catalog,
+        Func<CapabilitiesResult> capabilities,
+        GlobalOptions globals,
+        ParseResult parseResult,
+        StartOptions options,
+        Func<GlobalValues, ViewerAppRequest> page)
+    {
+        int port = parseResult.GetValue(options.Port);
+        OptionGuards.EnsureInRange("--port", port, 0, 65535,
+            "Pass --port 0 for a free port, or a port between 1 and 65535.");
+        bool openBrowser = !parseResult.GetValue(options.NoOpen);
+        if (parseResult.GetValue(options.Foreground))
+        {
+            // Debugging, containers and browser tests: the service, the
+            // App and this command are one process that does not detach.
+            return executor.RunHosted(parseResult, globals, values =>
+                ViewerServiceHosting.Start(
+                    values,
+                    port,
+                    catalog,
+                    capabilities,
+                    page(values),
+                    openBrowser));
+        }
+        return executor.RunLightweight(parseResult, globals, (values, budgets) =>
+        {
+            ViewerAppRequest request = page(values);
+            var client = new ViewerServiceClient();
+            bool reused = client.Status(budgets.Deadline) is not null;
+            ViewerAppResponse opened = client.App(values, request, port, budgets.Deadline);
+            if (openBrowser)
+            {
+                BrowserLauncher.Open(opened.Url);
+            }
+            return new AppResult
+            {
+                Running = true,
+                Url = opened.Url,
+                Port = opened.Port,
+                Pid = opened.Pid,
+                Reused = reused,
+                Route = opened.Route,
+                File = opened.File,
+            };
+        });
     }
 
     private static Command CreateStatus(CommandExecutor executor, GlobalOptions globals)
@@ -148,35 +164,45 @@ internal static class AppCommand
     private static int? PortOf(string url) =>
         Uri.TryCreate(url, UriKind.Absolute, out Uri? parsed) ? parsed.Port : null;
 
-    /// <summary>The page the browser lands on, and the file it shows there.</summary>
-    private static ViewerAppRequest Page(
-        ParseResult parseResult,
-        GlobalValues values,
-        Option<string?> routeOption,
-        Option<bool> welcomeOption,
-        Argument<string?> fileArgument)
+    private static string ResolveFile(string? value, GlobalValues globals)
     {
-        string? file = ResolveFile(parseResult.GetValue(fileArgument), values);
-        return new ViewerAppRequest
+        if (value is not { Length: > 0 })
         {
-            Route = parseResult.GetValue(routeOption)
-                ?? (file is not null
-                    ? AppRoutes.Preview
-                    : parseResult.GetValue(welcomeOption) ? AppRoutes.Welcome : AppRoutes.Home),
-            File = file,
-        };
-    }
-
-    private static string? ResolveFile(string? value, GlobalValues globals)
-    {
-        if (value is null)
-        {
-            return null;
+            throw CliErrors.OptionInvalid(
+                "file",
+                "no file was given",
+                $"Run '{DistributionInfo.CommandName} app open <file>'.");
         }
 
         string baseDirectory = globals.WorkDir is null
             ? Directory.GetCurrentDirectory()
             : Path.GetFullPath(globals.WorkDir);
         return Path.GetFullPath(value, baseDirectory);
+    }
+
+    /// <summary>The options that start or activate the App, one set for each command that does.</summary>
+    private sealed record StartOptions(Option<bool> Foreground, Option<int> Port, Option<bool> NoOpen)
+    {
+        public static StartOptions AddTo(Command command)
+        {
+            var options = new StartOptions(
+                new Option<bool>("--foreground")
+                {
+                    Description = "Keep the App in this process for debugging, containers and tests.",
+                },
+                new Option<int>("--port")
+                {
+                    Description = "Loopback port; 0 chooses a free port.",
+                    DefaultValueFactory = _ => 0,
+                },
+                new Option<bool>("--no-open")
+                {
+                    Description = "Start or activate the App without opening a browser.",
+                });
+            command.Options.Add(options.Foreground);
+            command.Options.Add(options.Port);
+            command.Options.Add(options.NoOpen);
+            return options;
+        }
     }
 }

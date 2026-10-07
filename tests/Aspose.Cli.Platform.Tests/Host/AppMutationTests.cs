@@ -99,7 +99,7 @@ public sealed class AppMutationTests
             // before this App started.
             string sessions = Directory.CreateDirectory(Path.Combine(UserStorage.TemporaryRoot(), "app")).FullName;
             var existing = Directory.GetDirectories(sessions).ToHashSet(StringComparer.OrdinalIgnoreCase);
-            CliResult started = _workspace.Run("app", Original, "--no-open", "--output", "json");
+            CliResult started = _workspace.Run("app", "open", Original, "--no-open", "--output", "json");
             Assert.True(started.ExitCode == 0, started.StdErr);
             JsonNode result = JsonNode.Parse(started.StdOut)!;
             Url = new Uri(result["url"]!.GetValue<string>());

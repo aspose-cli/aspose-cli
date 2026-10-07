@@ -1,11 +1,11 @@
 # Live preview for a person
 
-`preview` shows a document in the local viewer and follows every change to
+`preview open` shows a document in the local viewer and follows every change to
 the file. It is a review aid for people; agents verify with reads and
 `review` evidence (`aspose-cli docs verification`).
 
 ```text
-aspose-cli preview <file> --open --output json
+aspose-cli preview open <file> --open --output json
 ```
 
 The result carries `id`, `product`, `url`, `pid`, `file`, `view`, `reused`

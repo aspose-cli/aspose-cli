@@ -19,7 +19,7 @@ public sealed class AppPreferencesHttpTests
         File.WriteAllText(input, "Heading,Value\nA,42\n");
         try
         {
-            CliResult start = workspace.Run("app", input, "--no-open", "--output", "json");
+            CliResult start = workspace.Run("app", "open", input, "--no-open", "--output", "json");
             Assert.True(start.ExitCode == 0, start.StdErr);
             var url = new Uri(JsonNode.Parse(start.StdOut)!["url"]!.GetValue<string>());
             using var client = new HttpClient(new HttpClientHandler { UseCookies = false })

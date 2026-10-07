@@ -54,8 +54,8 @@ When unsure about a command, option, operation or field, ask the CLI
 
 Read the product overview before the first command on that document type.
 `capabilities --summary` lists each product's load, convert and render
-formats. The product-neutral commands `review`, `preview` and `fonts check`
-choose the product from the file's content; `review` and `preview` accept `--product` to
+formats. The product-neutral commands `review`, `preview open` and `fonts check`
+choose the product from the file's content; `review` and `preview open` accept `--product` to
 override the choice.
 
 ## Golden rules

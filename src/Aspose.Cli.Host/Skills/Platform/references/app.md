@@ -10,7 +10,7 @@ aspose-cli app status --output json
 
 ```text
 aspose-cli app
-aspose-cli app <file>
+aspose-cli app open <file>
 aspose-cli app --welcome
 aspose-cli app stop
 ```

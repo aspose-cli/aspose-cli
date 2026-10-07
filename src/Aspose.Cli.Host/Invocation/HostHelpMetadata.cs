@@ -22,6 +22,7 @@ internal static class HostHelpMetadata
         Find(root, "app").WithExamples(
             [
                 "app",
+                "app open <file>",
                 "app --welcome",
                 "app --foreground --port 4680",
                 "app status --output json",
@@ -29,6 +30,7 @@ internal static class HostHelpMetadata
             [new("aspose-cli docs app", "welcome, files, preview, settings and lifecycle")]);
         Find(root, "preview").WithExamples(
             [
+                "preview open <file> --open --output json",
                 "preview status --output json",
                 "preview stop --all --output json",
             ]);

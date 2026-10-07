@@ -18,8 +18,8 @@ Options:
   --version                                   Show version information
 
 Commands:
-  app <file>                        Open the local file workspace in a browser.
-  preview <file>                    Watch a file in the local viewer and follow every change.
+  app                               Open the local file workspace in a browser.
+  preview                           Watch files in the local viewer and follow every change.
   review <file>                     Create a portable static evidence directory for visual inspection.
   cells                             Spreadsheet operations (Excel and friends) with engine-grade fidelity.
   pdf                               PDF automation with page, security and fixed-layout semantics.
@@ -56,13 +56,50 @@ Description:
   Open the local file workspace in a browser.
 
 Usage:
-  aspose-cli app [<file>] [command] [options]
-
-Arguments:
-  <file>  File to open directly in the local App.
+  aspose-cli app [command] [options]
 
 Options:
+  --foreground                                Keep the App in this process for debugging, containers and tests.
+  --port <port>                               Loopback port; 0 chooses a free port. [default: 0]
+  --no-open                                   Start or activate the App without opening a browser.
   --welcome                                   Open the first-run workspace guide.
+  -?, -h, --help                              Show help and usage information
+  -f, --output <compact|json|markdown|table>  Output format: json (contract envelopes), compact (the same JSON on one line), table (human text) or markdown. Default: table on a terminal, json when redirected.
+  -q, --quiet                                 Suppress warnings and notices on stderr (errors still print).
+  -v, --verbose                               Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
+  --license <license>                         Path to an Aspose license file; overrides every other license source.
+  --license-mode <auto|evaluation>            auto (default) resolves the license sources in order; evaluation reads none of them and runs this command in evaluation mode. Cannot be combined with --license.
+  --workdir <workdir>                         Base directory for relative paths. Default: the current directory.
+  --timeout <timeout>                         Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
+  --max-input-bytes <max-input-bytes>         Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
+
+Commands:
+  open <file>  Open a file in the local App.
+  status       Show whether the local App is running.
+  stop         Stop the local App, its documents and the viewer service.
+
+Examples:
+  aspose-cli app
+  aspose-cli app open <file>
+  aspose-cli app --welcome
+  aspose-cli app --foreground --port 4680
+  aspose-cli app status --output json
+
+Learn more:
+  aspose-cli docs app  welcome, files, preview, settings and lifecycle
+
+
+## aspose-cli app open --help
+Description:
+  Open a file in the local App.
+
+Usage:
+  aspose-cli app open [<file>] [options]
+
+Arguments:
+  <file>  File to open in the local App.
+
+Options:
   --foreground                                Keep the App in this process for debugging, containers and tests.
   --port <port>                               Loopback port; 0 chooses a free port. [default: 0]
   --no-open                                   Start or activate the App without opening a browser.
@@ -76,29 +113,13 @@ Options:
   --timeout <timeout>                         Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
   --max-input-bytes <max-input-bytes>         Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
 
-Commands:
-  status  Show whether the local App is running.
-  stop    Stop the local App, its documents and the viewer service.
-
-Examples:
-  aspose-cli app
-  aspose-cli app --welcome
-  aspose-cli app --foreground --port 4680
-  aspose-cli app status --output json
-
-Learn more:
-  aspose-cli docs app  welcome, files, preview, settings and lifecycle
-
 
 ## aspose-cli app status --help
 Description:
   Show whether the local App is running.
 
 Usage:
-  aspose-cli app [<file>] status [options]
-
-Arguments:
-  <file>  File to open directly in the local App.
+  aspose-cli app status [options]
 
 Options:
   -?, -h, --help                              Show help and usage information
@@ -117,10 +138,7 @@ Description:
   Stop the local App, its documents and the viewer service.
 
 Usage:
-  aspose-cli app [<file>] stop [options]
-
-Arguments:
-  <file>  File to open directly in the local App.
+  aspose-cli app stop [options]
 
 Options:
   -?, -h, --help                              Show help and usage information
@@ -416,10 +434,39 @@ Options:
 
 ## aspose-cli preview --help
 Description:
-  Watch a file in the local viewer and follow every change.
+  Watch files in the local viewer and follow every change.
 
 Usage:
-  aspose-cli preview [<file>] [command] [options]
+  aspose-cli preview [command] [options]
+
+Options:
+  -?, -h, --help                              Show help and usage information
+  -f, --output <compact|json|markdown|table>  Output format: json (contract envelopes), compact (the same JSON on one line), table (human text) or markdown. Default: table on a terminal, json when redirected.
+  -q, --quiet                                 Suppress warnings and notices on stderr (errors still print).
+  -v, --verbose                               Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
+  --license <license>                         Path to an Aspose license file; overrides every other license source.
+  --license-mode <auto|evaluation>            auto (default) resolves the license sources in order; evaluation reads none of them and runs this command in evaluation mode. Cannot be combined with --license.
+  --workdir <workdir>                         Base directory for relative paths. Default: the current directory.
+  --timeout <timeout>                         Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
+  --max-input-bytes <max-input-bytes>         Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
+
+Commands:
+  open <file>  Open a file in the local viewer and follow every change.
+  status <id>  List the documents the local viewer has open.
+  stop <id>    Close one document, or stop the local viewer service.
+
+Examples:
+  aspose-cli preview open <file> --open --output json
+  aspose-cli preview status --output json
+  aspose-cli preview stop --all --output json
+
+
+## aspose-cli preview open --help
+Description:
+  Open a file in the local viewer and follow every change.
+
+Usage:
+  aspose-cli preview open [<file>] [options]
 
 Arguments:
   <file>  File to preview; content detection selects the product unless --product is supplied.
@@ -444,25 +491,16 @@ Options:
   --timeout <timeout>                         Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
   --max-input-bytes <max-input-bytes>         Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
 
-Commands:
-  status <id>  List the documents the local viewer has open.
-  stop <id>    Close one document, or stop the local viewer service.
-
-Examples:
-  aspose-cli preview status --output json
-  aspose-cli preview stop --all --output json
-
 
 ## aspose-cli preview status --help
 Description:
   List the documents the local viewer has open.
 
 Usage:
-  aspose-cli preview [<file>] status [<id>] [options]
+  aspose-cli preview status [<id>] [options]
 
 Arguments:
-  <file>  File to preview; content detection selects the product unless --product is supplied.
-  <id>    Optional document id.
+  <id>  Optional document id.
 
 Options:
   -?, -h, --help                              Show help and usage information
@@ -481,11 +519,10 @@ Description:
   Close one document, or stop the local viewer service.
 
 Usage:
-  aspose-cli preview [<file>] stop [<id>] [options]
+  aspose-cli preview stop [<id>] [options]
 
 Arguments:
-  <file>  File to preview; content detection selects the product unless --product is supplied.
-  <id>    Document id to close.
+  <id>  Document id to close.
 
 Options:
   --all                                       Close every document and stop the viewer service.

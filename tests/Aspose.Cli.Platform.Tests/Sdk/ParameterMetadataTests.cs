@@ -18,6 +18,16 @@ public sealed class ParameterMetadataTests
     }
 
     [Fact]
+    public void CommandWithSubcommands_TakesNoArgument()
+    {
+        var command = new Command("viewer");
+        command.Arguments.Add(new Argument<string?>("file").WithInput(InputKind.File));
+        command.Subcommands.Add(new Command("status"));
+
+        Assert.Contains("viewer", Assert.Throws<InvalidOperationException>(command.ValidateParameters).Message);
+    }
+
+    [Fact]
     public void Scalars_DefaultToOrdinaryValues()
     {
         new RootCommand().ValidateParameters();

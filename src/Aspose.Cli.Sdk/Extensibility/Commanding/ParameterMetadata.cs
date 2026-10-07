@@ -68,9 +68,20 @@ public static class ParameterMetadataExtensions
         throw new InvalidOperationException($"Parameter '{symbol.Name}' has no declaration for type '{type.Name}'.");
     }
 
+    /// <summary>
+    /// Checks the declarations of a command tree: every argument and option declares its input
+    /// role, and a command with subcommands takes no arguments, so a mistyped subcommand is a
+    /// usage error rather than a file name.
+    /// </summary>
     public static void ValidateParameters(this Command command)
     {
         ArgumentNullException.ThrowIfNull(command);
+        if (command.Subcommands.Count > 0 && command.Arguments.Count > 0)
+        {
+            // A mistyped subcommand would be taken as the argument, such as a file name.
+            throw new InvalidOperationException(
+                $"Command '{command.Name}' has both subcommands and arguments; give the arguments to a subcommand.");
+        }
         foreach (Argument argument in command.Arguments)
         {
             _ = argument.GetParameterMetadata();

@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://schemas.aspose.com/aspose-cli/v2/common/preview-session.schema.json",
   "title": "Product preview session result",
-  "description": "Result of `aspose-cli preview <file>`.",
+  "description": "Result of `aspose-cli preview open <file>`.",
   "type": "object",
   "required": ["schema", "schemaVersion", "id", "product", "url", "pid", "file", "view", "reused"],
   "properties": {
