@@ -61,7 +61,7 @@ public sealed class McpCommandTests
     [InlineData("app", "stop")]
     [InlineData("update", "install")]
     [InlineData("app")]
-    [InlineData("preview", "input.xlsx")]
+    [InlineData("preview", "open", "input.xlsx")]
     [InlineData("update")]
     public void Execute_RejectsPrivilegedAndLifecycleCommands(
         params string[] args)

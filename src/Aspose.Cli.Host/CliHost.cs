@@ -80,7 +80,7 @@ public static class CliHost
         return args.Length == 1
             && File.Exists(args[0])
             && parser.Parse(args).ParseResult.Errors.Count > 0
-            ? ["app", args[0]]
+            ? ["app", "open", args[0]]
             : args;
     }
 

@@ -4,7 +4,7 @@ The viewer service, its lifecycle and the App are shared by every product:
 `aspose-cli docs preview`. This page covers what a workbook shows.
 
 ```
-aspose-cli preview book.xlsx --open --output json
+aspose-cli preview open book.xlsx --open --output json
 ```
 
 - The default `workbook` view is the product's own grid: cell text stays

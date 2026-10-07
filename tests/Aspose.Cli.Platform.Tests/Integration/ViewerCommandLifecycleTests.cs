@@ -119,7 +119,7 @@ public sealed class ViewerCommandLifecycleTests
         File.WriteAllText(workspace.File("broken.docx"), "not a document");
         try
         {
-            CliResult result = workspace.Run("preview", "broken.docx", "--output", "json");
+            CliResult result = workspace.Run("preview", "open", "broken.docx", "--output", "json");
 
             Assert.NotEqual(0, result.ExitCode);
             JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
@@ -133,7 +133,7 @@ public sealed class ViewerCommandLifecycleTests
     }
 
     private static JsonNode Start(TempWorkspace workspace, string file) =>
-        workspace.Run("preview", file, "--output", "json").Json();
+        workspace.Run("preview", "open", file, "--output", "json").Json();
 
     private static void CreateWorkbook(TempWorkspace workspace, string file) =>
         workspace.Run("cells", "create", file, "--sheets", "Data", "--output", "json").Succeeded();

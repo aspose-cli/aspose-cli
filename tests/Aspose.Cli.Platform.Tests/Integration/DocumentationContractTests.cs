@@ -46,7 +46,7 @@ public sealed class DocumentationContractTests(DocumentationContractFixture fixt
     [InlineData("aspose-cli cells")]
     [InlineData("aspose-cli --timeout 30 cells inspect book.xlsx")]
     [InlineData("aspose-cli cells query range book.xlsx --range A1:B2")]
-    [InlineData("aspose-cli preview document.pdf --open")]
+    [InlineData("aspose-cli preview open document.pdf --open")]
     [InlineData("aspose-cli preview status")]
     [InlineData("aspose-cli docs cells/editing")]
     [InlineData("aspose-cli docs pdf/forms-security")]

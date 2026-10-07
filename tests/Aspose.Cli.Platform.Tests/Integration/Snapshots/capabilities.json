@@ -10753,6 +10753,73 @@
           "description": "Open the first-run workspace guide."
         }
       ],
+      "arguments": []
+    },
+    {
+      "path": "aspose-cli app open",
+      "name": "open",
+      "aliases": [],
+      "description": "Open a file in the local App.",
+      "hidden": false,
+      "options": [
+        {
+          "name": "--foreground",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hidden": false,
+          "hasDefault": true,
+          "default": "false",
+          "allowedValues": [
+            "False",
+            "True"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "inputKind": "none",
+          "description": "Keep the App in this process for debugging, containers and tests."
+        },
+        {
+          "name": "--no-open",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hidden": false,
+          "hasDefault": true,
+          "default": "false",
+          "allowedValues": [
+            "False",
+            "True"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "inputKind": "none",
+          "description": "Start or activate the App without opening a browser."
+        },
+        {
+          "name": "--port",
+          "aliases": [],
+          "type": "integer",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hidden": false,
+          "hasDefault": true,
+          "default": "0",
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "inputKind": "none",
+          "description": "Loopback port; 0 chooses a free port."
+        }
+      ],
       "arguments": [
         {
           "name": "file",
@@ -10765,7 +10832,7 @@
           "required": false,
           "hasDefault": false,
           "allowedValues": [],
-          "description": "File to open directly in the local App."
+          "description": "File to open in the local App."
         }
       ]
     },
@@ -14926,7 +14993,16 @@
       "path": "aspose-cli preview",
       "name": "preview",
       "aliases": [],
-      "description": "Watch a file in the local viewer and follow every change.",
+      "description": "Watch files in the local viewer and follow every change.",
+      "hidden": false,
+      "options": [],
+      "arguments": []
+    },
+    {
+      "path": "aspose-cli preview open",
+      "name": "open",
+      "aliases": [],
+      "description": "Open a file in the local viewer and follow every change.",
       "hidden": false,
       "options": [
         {

@@ -555,6 +555,8 @@ $", result.StdOut);
     [InlineData("pdf inspcet a.pdf", "pdf inspect", "'inspcet' is not a command of 'aspose-cli pdf'")]
     [InlineData("pdf extact a.pdf --pages 1", "pdf extract", "'extact' is not a command of 'aspose-cli pdf'")]
     [InlineData("wrods convert a.docx", "words", "'wrods' is not a command of 'aspose-cli'")]
+    [InlineData("app sattus", "app status", "'sattus' is not a command of 'aspose-cli app'")]
+    [InlineData("preview sattus", "preview status", "'sattus' is not a command of 'aspose-cli preview'")]
     public void UnknownCommand_SuggestsTheClosestCommands(string commandLine, string suggestion, string message)
     {
         CliResult result = _workspace.Run([.. commandLine.Split(' '), "--output", "json"]);

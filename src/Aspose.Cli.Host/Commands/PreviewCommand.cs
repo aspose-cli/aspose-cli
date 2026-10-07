@@ -2,6 +2,7 @@ using System.CommandLine;
 using Aspose.Cli.Host.Invocation;
 using Aspose.Cli.Host.LocalServices;
 using Aspose.Cli.Host.ViewerService;
+using Aspose.Cli.Sdk;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Rendering;
@@ -23,21 +24,28 @@ internal static class PreviewCommand
         ProductCatalog catalog,
         GlobalOptions globals)
     {
+        var preview = new Command("preview", "Watch files in the local viewer and follow every change.");
+        preview.Subcommands.Add(CreateOpen(executor, catalog, globals));
+        preview.Subcommands.Add(CreateStatus(executor, globals));
+        preview.Subcommands.Add(CreateStop(executor, globals));
+        return preview.WithInvocationPolicy(new CommandInvocationPolicy(Execution: CommandExecutionOwnership.Service));
+    }
+
+    private static Command CreateOpen(CommandExecutor executor, ProductCatalog catalog, GlobalOptions globals)
+    {
         var file = new Argument<string?>("file")
         {
             Description = "File to preview; content detection selects the product unless --product is supplied.",
             Arity = ArgumentArity.ZeroOrOne,
         }.WithInput(InputKind.File);
         StartSymbols symbols = StartSymbols.Create(catalog);
-        Command preview = symbols.Standard.CreateCommand(
-            "preview",
-            "Watch a file in the local viewer and follow every change.",
+        Command open = symbols.Standard.CreateCommand(
+            "open",
+            "Open a file in the local viewer and follow every change.",
             [file, symbols.Port, symbols.Product, symbols.View, symbols.Open, symbols.Effect]);
-        preview.Subcommands.Add(CreateStatus(executor, globals));
-        preview.Subcommands.Add(CreateStop(executor, globals));
-        preview.SetAction(parse => executor.Run(parse, globals, context =>
+        open.SetAction(parse => executor.Run(parse, globals, context =>
             Start(parse, context, file, symbols)));
-        return preview.WithInvocationPolicy(new CommandInvocationPolicy(Execution: CommandExecutionOwnership.Service));
+        return open;
     }
 
     private static ProductPreviewStartResult Start(
@@ -51,7 +59,7 @@ internal static class PreviewCommand
             throw CliErrors.OptionInvalid(
                 "file",
                 "no file was given",
-                "Run 'aspose-cli preview <file>'.");
+                $"Run '{DistributionInfo.CommandName} preview open <file>'.");
         }
         int port = parse.GetValue(symbols.Port);
         OptionGuards.EnsureInRange(

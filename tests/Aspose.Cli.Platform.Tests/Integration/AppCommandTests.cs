@@ -76,7 +76,7 @@ public sealed class AppCommandTests : IDisposable
 
             CliResult opened = _workspace.Run(
                 "app",
-                workbook,
+                "open", workbook,
                 "--no-open",
                 "--output",
                 "json");

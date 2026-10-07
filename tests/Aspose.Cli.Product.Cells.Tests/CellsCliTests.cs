@@ -498,7 +498,7 @@ public sealed class CellsCliTests : IDisposable
             {
                 ["ASPOSE_CLI_NO_OPEN"] = "1",
             },
-            "preview", "sales.csv", "--output", "json");
+            "preview", "open", "sales.csv", "--output", "json");
 
         Assert.True(started.ExitCode == 0, started.StdErr);
         JsonNode json = JsonNode.Parse(started.StdOut)!;
@@ -531,7 +531,7 @@ public sealed class CellsCliTests : IDisposable
 
         _previewRequested = true;
         CliResult started = _workspace.Run(
-            "preview", "preview-sheet.xlsx", "--view", "sheets",
+            "preview", "open", "preview-sheet.xlsx", "--view", "sheets",
             "--port", "0", "--output", "json");
 
         Assert.True(started.ExitCode == 0, started.StdErr);

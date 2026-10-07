@@ -49,7 +49,7 @@ project or user scope.
 
 ```powershell
 aspose-cli app --welcome
-aspose-cli preview document.pdf --open
+aspose-cli preview open document.pdf --open
 aspose-cli mcp serve
 ```
 

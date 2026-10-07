@@ -74,7 +74,7 @@ internal sealed class ParsedInvocation
     private (string Problem, Mistake Mistake)? UnknownCommand()
     {
         string[] commands = [.. Command.Subcommands.Where(static command => !command.Hidden).Select(static command => command.Name)];
-        if (commands.Length == 0 || Command.Arguments.Count > 0
+        if (commands.Length == 0
             || ParseResult.UnmatchedTokens.FirstOrDefault() is not { } token || token.StartsWith('-'))
         {
             return null;

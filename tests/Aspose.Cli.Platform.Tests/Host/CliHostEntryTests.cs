@@ -26,7 +26,7 @@ public sealed class CliHostEntryTests
         try
         {
             Assert.Equal(
-                ["app", path],
+                ["app", "open", path],
                 Normalize([path], interactiveDesktop: true));
         }
         finally

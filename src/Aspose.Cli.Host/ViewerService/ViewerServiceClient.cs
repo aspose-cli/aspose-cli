@@ -146,7 +146,7 @@ internal sealed class ViewerServiceClient
             throw CliErrors.OptionInvalid(
                 "preview",
                 "the viewer service could not be started",
-                "Run 'aspose-cli doctor', then retry 'aspose-cli preview <file> --verbose'.");
+                "Run 'aspose-cli doctor', then retry 'aspose-cli preview open <file> --verbose'.");
         }
 
         return LocalServiceStartHandshake.WaitForReady(
@@ -168,7 +168,7 @@ internal sealed class ViewerServiceClient
                 : CliErrors.OptionInvalid(
                     "preview",
                     $"the viewer service exited with code {exitCode}",
-                    "Run 'aspose-cli doctor', then retry 'aspose-cli preview <file> --verbose'."),
+                    "Run 'aspose-cli doctor', then retry 'aspose-cli preview open <file> --verbose'."),
             deadline);
     }
 

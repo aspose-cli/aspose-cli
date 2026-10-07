@@ -4,7 +4,7 @@ The viewer service, its commands and its reuse rules are in
 `aspose-cli docs preview`.
 
 ```powershell
-aspose-cli preview contract.docx --open --output json
+aspose-cli preview open contract.docx --open --output json
 ```
 
 Word-processing input opens in the `pages` view. The page shows the laid-out
