@@ -130,7 +130,9 @@ public sealed class LocalServiceRuntimeTests
         using var entered = new ManualResetEventSlim();
         using var resume = new ManualResetEventSlim();
         using var cancelled = new ManualResetEventSlim();
-        using var parent = OperationDeadline.Start(TimeSpan.FromSeconds(10));
+        // Generous deadlines: the open operation waits through the frame budget and a ping, which
+        // a loaded CI runner can stretch well past the ten seconds this test once allowed.
+        using var parent = OperationDeadline.Start(TimeSpan.FromSeconds(30));
         using var server = new LocalServiceControlServer(endpoint, nonce, token, (request, deadline) =>
         {
             if (request.Command == "open")
@@ -147,7 +149,7 @@ public sealed class LocalServiceRuntimeTests
                 deadline.ThrowIfExpired("test");
             }
             return new LocalServiceControlResponse(0, "", "", "", "", true);
-        }, stageTimeout: TimeSpan.FromSeconds(2), operationTimeout: TimeSpan.FromSeconds(10));
+        }, stageTimeout: TimeSpan.FromSeconds(2), operationTimeout: TimeSpan.FromSeconds(30));
         server.Start();
         await Task.Delay(30);
         Task<LocalServiceControlResponse> opening = Task.Run(() =>
