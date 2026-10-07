@@ -7,6 +7,8 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Aspose.Cli\Aspose.Cli.csproj" />
     <ProjectReference Include="..\..\src\Aspose.Cli.Sdk\Aspose.Cli.Sdk.csproj" />
+    <!-- The code health report tool (CodeHealth/ holds its tests); this reference builds it with the solution. -->
+    <ProjectReference Include="..\..\eng\tools\CodeHealth\CodeHealth.csproj" />
   </ItemGroup>
 
 </Project>
