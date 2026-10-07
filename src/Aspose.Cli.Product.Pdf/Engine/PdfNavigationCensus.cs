@@ -49,7 +49,9 @@ internal readonly record struct PdfNavigationCensus(int Bookmarks, int Links, in
     /// <summary>
     /// The names of the document's named destinations. The engine throws
     /// <see cref="NullReferenceException"/> for a name tree without a Dests entry, such as one
-    /// that holds only attachments (PDF-NAMES-WITHOUT-DESTS); that document has none.
+    /// that holds only attachments (PDF-NAMES-WITHOUT-DESTS); that document has none. The engine
+    /// call is the only code in the try, so no filter is needed, and none could tell its frames
+    /// apart: optimized code inlines its getters into this method.
     /// </summary>
     internal static string[] NamedDestinationNames(Document document)
     {
@@ -57,7 +59,7 @@ internal readonly record struct PdfNavigationCensus(int Bookmarks, int Links, in
         {
             return document.NamedDestinations.Names;
         }
-        catch (NullReferenceException exception) when (exception.TargetSite?.DeclaringType?.Assembly == typeof(Document).Assembly)
+        catch (NullReferenceException)
         {
             return [];
         }
