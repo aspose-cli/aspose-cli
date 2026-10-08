@@ -9,6 +9,23 @@ namespace Aspose.Cli.Product.Words.Engine.Mapping;
 
 internal sealed class WordsDocumentLoader
 {
+    /// <summary>
+    /// How a word-processing input that does not load is reported: Aspose.Words raises
+    /// <see cref="IncorrectPasswordException"/> for a missing or wrong password,
+    /// <see cref="FileCorruptedException"/> for damaged bytes and
+    /// <see cref="UnsupportedFileFormatException"/> for a format it cannot load.
+    /// </summary>
+    internal static readonly InputLoading Loading = new(
+        "supported word-processing document",
+        "Verify the file opens in Word and that its content matches a format listed by 'aspose-cli capabilities'.",
+        Classify);
+
+    // A damaged PDF is named as a PDF, so the hint sends the reader to a PDF reader, not Word.
+    private static readonly InputLoading PdfLoading = new(
+        "PDF document",
+        "Verify the file opens in a PDF reader; a damaged or truncated PDF cannot be read.",
+        Classify);
+
     private readonly ResourceBudgetLedger _resourceBudgets;
     private readonly ILicenseGate? _licenseGate;
 
@@ -62,43 +79,24 @@ internal sealed class WordsDocumentLoader
 
     private LoadedDocument OpenCore(string path, Secret? password, IWarningCallback? warnings)
     {
-        FileStream input;
-        try
-        {
-            input = InputFiles.OpenRead(path);
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-        {
-            throw TranslateIo(path, ex);
-        }
-
-        using (input)
-        {
-            return OpenCore(input, path, password?.Reveal(), warnings);
-        }
+        InputLoading loading = For(path);
+        using FileStream input = loading.Load(path, password, () => InputFiles.OpenRead(path));
+        return OpenCore(input, path, password, loading, warnings);
     }
 
-    private LoadedDocument OpenCore(FileStream input, string path, string? password, IWarningCallback? warnings)
+    private LoadedDocument OpenCore(FileStream input, string path, Secret? password, InputLoading loading, IWarningCallback? warnings)
     {
-        FileFormatInfo detected;
-        try
+        FileFormatInfo detected = loading.Load(path, password, () =>
         {
-            detected = FileFormatUtil.DetectFileFormat(input);
+            FileFormatInfo format = FileFormatUtil.DetectFileFormat(input);
             input.Position = 0;
-        }
-        catch (Exception ex) when (ex is FileCorruptedException or UnsupportedFileFormatException)
-        {
-            throw InvalidDocument(path, ex.Message, ex);
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-        {
-            throw TranslateIo(path, ex);
-        }
+            return format;
+        });
 
         string id = WordsFormatMapper.ToId(detected.LoadFormat);
         if (id == "unknown" || IsTextFallbackForNonTextPath(id, path))
         {
-            throw InvalidDocument(
+            throw loading.Unreadable(
                 path,
                 id == "unknown"
                     ? "the SDK could not identify a supported document format"
@@ -107,19 +105,19 @@ internal sealed class WordsDocumentLoader
 
         if (!WordsFormats.IsLoad(id))
         {
-            throw CliErrors.FormatUnsupported(id, WordsFormats.LoadIds);
+            throw loading.Unloadable(path, id);
         }
 
-        if (detected.IsEncrypted && string.IsNullOrEmpty(password))
+        if (detected.IsEncrypted && password is null)
         {
-            throw CliErrors.PasswordRequired(path);
+            throw InputLoading.PasswordRefused(path, password);
         }
 
         var resources = new LocalDocumentResourceLoader(path, _resourceBudgets);
         try
         {
             Document document = Load(options => new Document(input, options),
-                detected.LoadFormat, resources, path, password, warnings);
+                detected.LoadFormat, resources, path, password, loading, warnings);
             // A stream carries no name; FILENAME fields name the file, as a path load does.
             document.FieldOptions.FileName = path;
             return new LoadedDocument(document, detected, id, resources,
@@ -141,7 +139,7 @@ internal sealed class WordsDocumentLoader
             Encoding.UTF8.GetByteCount(markdown), "bytes", "markdown-buffer");
         using var input = new MemoryStream(Encoding.UTF8.GetBytes(markdown), writable: false);
         Document document = Load(options => new Document(input, options),
-            LoadFormat.Markdown, owner.Resources, "inline Markdown", password: null, warnings: null);
+            LoadFormat.Markdown, owner.Resources, "inline Markdown", password: null, Loading, warnings: null, onDisk: false);
         owner.Retain(document);
         return document;
     }
@@ -173,14 +171,15 @@ internal sealed class WordsDocumentLoader
             "pre-allocation");
 
     private Document Load(Func<LoadOptions, Document> open, LoadFormat format,
-        LocalDocumentResourceLoader resources, string path, string? password, IWarningCallback? warnings)
+        LocalDocumentResourceLoader resources, string path, Secret? password, InputLoading loading, IWarningCallback? warnings,
+        bool onDisk = true)
     {
         Document? document = null;
         try
         {
             document = open(new LoadOptions
             {
-                Password = password,
+                Password = password?.Reveal(),
                 LoadFormat = format,
                 BaseUri = resources.BaseUri,
                 ResourceLoadingCallback = new BlockingResourceCallback(resources),
@@ -195,33 +194,25 @@ internal sealed class WordsDocumentLoader
             try
             {
                 resources.ThrowIfFailed();
-                if (exception is IncorrectPasswordException)
+                if (exception is CliException or OperationCanceledException)
                 {
-                    throw string.IsNullOrEmpty(password)
-                        ? CliErrors.PasswordRequired(path) : CliErrors.PasswordInvalid(path);
+                    throw;
                 }
-                if (exception is FileCorruptedException or UnsupportedFileFormatException)
-                {
-                    throw InvalidDocument(path, exception.Message, exception);
-                }
-                if (exception is IOException or UnauthorizedAccessException)
-                {
-                    throw TranslateIo(path, exception);
-                }
-                throw;
+                throw onDisk ? loading.Failure(exception, path, password) : loading.InMemoryFailure(exception, path);
             }
             finally { document?.Cleanup(); }
         }
     }
 
-    // These catches surround SDK input detection/parsing, not output publication.
-    private static CliException TranslateIo(string path, Exception exception) => exception switch
+    private static LoadFailureKind Classify(Exception exception) => exception switch
     {
-        FileNotFoundException or DirectoryNotFoundException => CliErrors.FileNotFound(path),
-        UnauthorizedAccessException => CliErrors.FileAccessDenied(path),
-        IOException io when FileAccessProbe.IsSharingViolation(io) => CliErrors.FileLocked(path),
-        _ => InvalidDocument(path, exception.Message, exception),
+        IncorrectPasswordException => LoadFailureKind.Password,
+        FileCorruptedException or UnsupportedFileFormatException => LoadFailureKind.Corrupt,
+        _ => LoadFailureKind.Other,
     };
+
+    /// <summary>The translation for an input: a file that starts as a PDF is named as one.</summary>
+    private static InputLoading For(string path) => StartsAsPdf(path) ? PdfLoading : Loading;
 
     private static bool IsTextFallbackForNonTextPath(string formatId, string path)
     {
@@ -234,20 +225,6 @@ internal sealed class WordsDocumentLoader
         return formatId == "txt"
             ? !string.Equals(extension, ".txt", StringComparison.OrdinalIgnoreCase)
             : !string.Equals(extension, ".md", StringComparison.OrdinalIgnoreCase);
-    }
-
-    // A damaged PDF is named as a PDF, so the hint sends the reader to a PDF reader, not Word.
-    private static CliException InvalidDocument(string path, string reason, Exception? inner = null)
-    {
-        bool pdf = StartsAsPdf(path);
-        return CliErrors.InputUnreadable(
-            path,
-            pdf ? "PDF document" : "supported word-processing document",
-            reason,
-            pdf
-                ? "Verify the file opens in a PDF reader; a damaged or truncated PDF cannot be read."
-                : "Verify the file opens in Word and that its content matches a format listed by 'aspose-cli capabilities'.",
-            inner);
     }
 
     /// <summary>Whether a file begins with the PDF header; false when it cannot be read.</summary>
