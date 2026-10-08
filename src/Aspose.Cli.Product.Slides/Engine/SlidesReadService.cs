@@ -137,7 +137,6 @@ internal sealed class SlidesReadService
                 request.Scope,
                 request.IncludeNotes,
                 comments,
-                state == LicenseState.Evaluation,
                 ref remaining);
             slides.Add(projected);
             if (remaining <= 0)

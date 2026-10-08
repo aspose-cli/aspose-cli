@@ -70,6 +70,11 @@ internal static class SlidesReviewChecks
         ReviewSeverities.Info,
         "An empty placeholder is invisible in a slide show but shows its prompt text when the deck is edited.");
 
+    public static ReviewCheck EvaluationWatermark { get; } = new(
+        "SLIDES_EVALUATION_WATERMARK",
+        ReviewSeverities.Warning,
+        "A slide carries the watermark text box that an Aspose.Slides save without a license added; a licensed re-save keeps it.");
+
     public static IReadOnlyList<ReviewCheck> All { get; } =
     [
         SlideDuplicate,
@@ -85,5 +90,6 @@ internal static class SlidesReviewChecks
         TextOverflowsShape,
         TextLowContrast,
         PlaceholderEmpty,
+        EvaluationWatermark,
     ];
 }

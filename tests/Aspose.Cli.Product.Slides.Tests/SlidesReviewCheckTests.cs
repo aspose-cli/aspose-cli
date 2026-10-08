@@ -40,6 +40,7 @@ public sealed class SlidesReviewCheckTests
                 Runs = [new SlideTextRunData { Text = "White", Color = "#FFFFFF" }],
                 Backdrop = System.Drawing.Color.White,
             }),
+            Slide(14, Shape(1, new(100, 100, 400, 80), "Evaluation only.") with { EvaluationWatermark = true }),
         ];
 
         SlidesReviewAnalysis analysis = SlidesReviewAnalyzer.Analyze(slides, Width, Height);
@@ -365,10 +366,10 @@ public sealed class SlidesReviewCheckTests
     }
 
     [Fact]
-    public void EvaluationWatermarkOverATable_IsLeftOutOnlyByAnEvaluationReview()
+    public void EvaluationWatermarkOverATable_IsReportedAndLeftOutOfTheOtherChecks()
     {
         // A box shaped like the watermark an evaluation save adds, which an evaluation save adds
-        // once more: an evaluation review leaves both out, a licensed review judges the copy.
+        // once more: every review reports the watermark and leaves it out of the other checks.
         using var fixture = new SlidesEngineFixture();
         string deck = fixture.File("watermarked.pptx");
         using (var presentation = new Presentation())
@@ -387,15 +388,9 @@ public sealed class SlidesReviewCheckTests
 
         SlidesReviewAnalysis analysis = Review(fixture, deck);
 
-        if (fixture.LicenseState == Sdk.Licensing.LicenseState.Licensed)
-        {
-            Assert.Equal(0, analysis.ExcludedEvaluationWatermarks);
-            Assert.Contains(analysis.Findings, static finding => finding.Code == SlidesReviewChecks.TextOverlapsObject.Code);
-            return;
-        }
-
-        Assert.Equal(2, analysis.ExcludedEvaluationWatermarks);
-        Assert.Empty(analysis.Findings);
+        Assert.Equal(fixture.LicenseState == Sdk.Licensing.LicenseState.Licensed ? 1 : 2, analysis.ExcludedEvaluationWatermarks);
+        ReviewFinding finding = Assert.Single(analysis.Findings);
+        Assert.Equal("SLIDES_EVALUATION_WATERMARK", finding.Code);
     }
 
     [Fact]
