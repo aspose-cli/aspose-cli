@@ -34,6 +34,26 @@ public sealed class InputResourceScopeTests
         Assert.Throws<ObjectDisposedException>(() => scope.OpenFile(temp.File("first.bin")));
     }
 
+    [Fact]
+    public void AnAuxiliaryInputThatCannotBeOpened_IsNamedByTheSdk()
+    {
+        using var temp = new TempDirectory();
+        string image = temp.File("image.png");
+        File.WriteAllBytes(image, [1, 2, 3]);
+        using var deadline = OperationDeadline.Start(null);
+        var budgets = new ResourceBudgetLedger(deadline);
+        // A path as an operation states it, not yet resolved; the error names the file it resolves to.
+        string stated = Path.Combine(temp.Path, "images", "..", "image.png");
+        using (new FileStream(image, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+        {
+            CliException error = Assert.Throws<CliException>(() => budgets.Inputs.ReadAllBytes(stated));
+            Assert.Equal(ErrorCodes.FileLocked, error.Code);
+            Assert.Equal(Path.GetFullPath(image), error.Details!["path"]!.GetValue<string>());
+        }
+
+        Assert.Equal([1, 2, 3], budgets.Inputs.ReadAllBytes(image));
+    }
+
     [Theory]
     [InlineData("images/a.png", true)]
     [InlineData("bad\0name.png", false)]
