@@ -1,4 +1,4 @@
-namespace Aspose.Cli.Sdk.Text;
+namespace Aspose.Cli.Sdk.Errors;
 
 /// <summary>
 /// Ranks the existing names closest to a name that was not found, so a caller can correct a
