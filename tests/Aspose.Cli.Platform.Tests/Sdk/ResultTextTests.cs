@@ -123,6 +123,19 @@ public sealed class ResultTextTests
         Assert.Empty(Render(surface => ResultText.List(surface, "fonts", null)));
     }
 
+    [Fact]
+    public void Properties_KeepsTheMapOrderOrSortsByNameAndSpellsMissingValues()
+    {
+        var properties = new Dictionary<string, string?> { ["Title"] = "Plan", ["Author"] = null };
+
+        string kept = Render(surface => ResultText.Properties(surface, "metadata", properties, nameColumn: "property"));
+        string sorted = Render(surface => ResultText.Properties(surface, "properties", properties, missing: "-", sortByName: true));
+
+        Assert.Equal(["metadata:", "property  value", "Title     Plan", "Author"], Lines(kept).Select(static line => line.TrimEnd()));
+        Assert.Equal(["properties:", "name    value", "Author  -", "Title   Plan"], Lines(sorted).Select(static line => line.TrimEnd()));
+        Assert.Empty(Render(surface => ResultText.Properties(surface, "properties", null)));
+    }
+
     private static string Render(Action<TableSurface> render, TableFormat format = TableFormat.Plain)
     {
         using var writer = new StringWriter();

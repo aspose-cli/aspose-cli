@@ -55,16 +55,7 @@ internal static class SlidesRenderers
             static comment => [TableText.Int(comment.Slide), comment.Author, comment.Text]);
         ResultText.List(surface, "fonts", result.Fonts);
 
-        if (result.Properties is { } properties && ResultText.Section(surface, "properties", properties.Count == 0))
-        {
-            var table = new TextTable("name", "value");
-            foreach ((string name, string? value) in properties)
-            {
-                table.AddRow(name, value ?? string.Empty);
-            }
-
-            table.WriteTo(surface.Out, surface.Format);
-        }
+        ResultText.Properties(surface, "properties", result.Properties);
     }
 
     public static void Render(PresentationReadResult result, TableSurface surface)
