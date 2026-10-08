@@ -13,7 +13,6 @@ internal sealed class McpCommandRunner
     internal const int MaximumArgumentBytes = 4 * 1024;
     internal const int MaximumArgumentsBytes = 64 * 1024;
     internal const int MaximumInputBytes = 1024 * 1024;
-    internal const int MaximumOutputBytes = TimeoutWorkerSupervisor.MaximumOutputBytes;
     internal static readonly TimeSpan ShutdownGracePeriod = ChildProcess.TerminationGrace;
     private readonly SemaphoreSlim _gate = new(1, 1);
     private readonly InvocationParser _parser;

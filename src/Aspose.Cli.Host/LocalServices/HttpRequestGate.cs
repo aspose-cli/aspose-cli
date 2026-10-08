@@ -24,17 +24,6 @@ internal sealed class HttpRequestGate : IDisposable
 
     public int Capacity { get; }
 
-    public int Active
-    {
-        get
-        {
-            lock (_sync)
-            {
-                return _active;
-            }
-        }
-    }
-
     public bool TryEnter(out IDisposable? lease)
     {
         lock (_sync)

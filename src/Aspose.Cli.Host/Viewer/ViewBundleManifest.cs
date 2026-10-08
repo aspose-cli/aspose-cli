@@ -34,15 +34,7 @@ internal sealed class ViewBundleManifest
 
     public string EntryFileName { get; }
 
-    public int FileCount => _files.Count;
-
-    public IReadOnlyList<string> Files => _files.Keys
-        .Order(StringComparer.Ordinal)
-        .ToArray();
-
     public long TotalBytes { get; }
-
-    public long EntryLength => _files[EntryFileName].Length;
 
     public static ViewBundleManifest Validate(
         string directory,

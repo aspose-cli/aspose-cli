@@ -5,33 +5,6 @@ internal static class BoundedStreamCopy
 {
     private const int BufferSize = 81920;
 
-    public static long Copy(
-        Stream input,
-        Stream output,
-        long limit,
-        Func<long, Exception> limitExceeded)
-    {
-        Validate(input, output, limit, limitExceeded);
-        byte[] buffer = new byte[BufferSize];
-        long total = 0;
-        while (true)
-        {
-            int read = input.Read(buffer, 0, buffer.Length);
-            if (read == 0)
-            {
-                return total;
-            }
-
-            total = checked(total + read);
-            if (total > limit)
-            {
-                throw limitExceeded(total);
-            }
-
-            output.Write(buffer, 0, read);
-        }
-    }
-
     public static async Task<long> CopyAsync(
         Stream input,
         Stream output,

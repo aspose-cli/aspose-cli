@@ -15,7 +15,6 @@ internal sealed partial class AppHost
 
     internal void CompleteOnboarding() => Mutate(_workspace.CompleteOnboarding);
     internal AppApiResult PickAndOpen() => Mutate(_workspace.PickAndOpen);
-    internal void OpenPath(string path) => Mutate(() => _workspace.OpenPath(path, uploadedCopy: false));
     internal void OpenRecent(string id) => Mutate(() => _workspace.OpenRecent(id));
     internal void ActivateDocument(string id) => Mutate(() => _workspace.Activate(id));
     internal void CloseDocument(string id) => Mutate(() => _workspace.Close(id));
