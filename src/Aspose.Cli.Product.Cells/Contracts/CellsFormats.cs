@@ -24,10 +24,10 @@ public static class CellsFormats
         FormatDescriptor.Declare("tsv", FormatUse.Input | FormatUse.Convert, 8, 8, null, true, ".tsv"),
         FormatDescriptor.Declare("html", FormatUse.Input | FormatUse.Convert, 9, 9, null, false, ".html", ".htm"),
         FormatDescriptor.Declare("mhtml", FormatUse.Input | FormatUse.Convert, 10, 10, null, false, ".mhtml"),
-        FormatDescriptor.Declare("pdf", FormatUse.Input | FormatUse.Convert, 11, 11, null, false, ".pdf"),
-        FormatDescriptor.Declare("xps", FormatUse.Input | FormatUse.Convert, 12, 12, null, false, ".xps"),
-        FormatDescriptor.Declare("json", FormatUse.Input | FormatUse.Convert, 13, 13, null, false, ".json"),
-        FormatDescriptor.Declare("md", FormatUse.Input | FormatUse.Convert, 14, 14, null, false, ".md")
+        FormatDescriptor.Declare("pdf", FormatUse.Convert, null, 11, null, false, ".pdf"),
+        FormatDescriptor.Declare("xps", FormatUse.Convert, null, 12, null, false, ".xps"),
+        FormatDescriptor.Declare("json", FormatUse.Convert, null, 13, null, false, ".json"),
+        FormatDescriptor.Declare("md", FormatUse.Convert, null, 14, null, false, ".md")
             with { Aliases = ["markdown"] },
         FormatDescriptor.Declare("png", FormatUse.Render, null, null, 0, false, ".png"),
         FormatDescriptor.Declare("jpeg", FormatUse.Render, null, null, 1, false, ".jpg", ".jpeg")
