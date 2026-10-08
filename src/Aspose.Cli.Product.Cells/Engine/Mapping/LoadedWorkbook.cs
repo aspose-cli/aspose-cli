@@ -22,7 +22,7 @@ internal sealed record LoadedWorkbook(Workbook Workbook, WorkbookResources Resou
     internal bool IsDelimitedText { get; init; }
 
     /// <summary>
-    /// The <c>EVALUATION_SHEET_SKIPPED</c> warning when <paramref name="defaultedToActiveSheet"/>,
+    /// The <c>ACTIVE_SHEET_SKIPPED</c> warning when <paramref name="defaultedToActiveSheet"/>,
     /// that is when the command read or wrote the active sheet because no sheet was named;
     /// null for a command that named its sheet or covers every sheet.
     /// </summary>

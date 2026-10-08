@@ -13,23 +13,23 @@ namespace Aspose.Cli.Product.Cells.Engine;
 /// <summary>Owns bounded mutation: opens a workbook, applies an ops batch and publishes the result.</summary>
 internal sealed class CellsMutationService
 {
-    private readonly ILicenseGate _licenseGate;
+    private readonly OutputPipeline<Workbook> _outputs;
     private readonly CellsWorkbookLoader _loader;
     private readonly CellsSavePipeline _saver;
     private readonly ResourceBudgetLedger _budgets;
     private readonly CellsEditVerifier _verifier;
 
     internal CellsMutationService(
-        ILicenseGate licenseGate,
+        OutputPipeline<Workbook> outputs,
         CellsWorkbookLoader loader,
         CellsSavePipeline saver,
         ResourceBudgetLedger budgets,
         CellsEditVerifier verifier)
     {
-        ArgumentNullException.ThrowIfNull(licenseGate);
+        ArgumentNullException.ThrowIfNull(outputs);
         ArgumentNullException.ThrowIfNull(loader);
         ArgumentNullException.ThrowIfNull(saver);
-        _licenseGate = licenseGate;
+        _outputs = outputs;
         _loader = loader;
         _saver = saver;
         _budgets = budgets;
@@ -45,10 +45,10 @@ internal sealed class CellsMutationService
         ResolvedOutput output = options.Output;
         string format = output.Format.Id;
         batch = CellsOp.Catalog.Prepare(batch);
-        using AtomicOutputSetWriter? transaction = options.Options.DryRun ? null
+        using OutputSet<Workbook>? transaction = options.Options.DryRun ? null
             : _saver.CreateOutputSet([output.Directory], "cells-edit", output.BackupPath);
 
-        LicenseState licenseState = _licenseGate.EnsureApplied();
+        LicenseState licenseState = _outputs.License;
         FileWritePrecondition precondition = FileWritePrecondition.Capture(filePath);
         using InputResourceScope operationInputs = _budgets.Inputs.CreateScope();
         // The edit recalculates after its operations, or was told not to calculate at all.
@@ -96,8 +96,7 @@ internal sealed class CellsMutationService
         IReadOnlyList<Warning>? warnings = saved is null
             ? EnvelopeParts.CombineWarnings(loaded.Warnings(editWarnings), importSources.Warnings())
             : EnvelopeParts.CombineWarnings(
-                CombineWarnings(licenseState, [loaded.Resources.CoverageWarning, .. editWarnings, saved.Truncated, saved.FormulasBroken, saved.SheetsDropped, savePlan.EncryptionWarning, saved.EvaluationSheetAdded,
-                    CellsEvaluation.DescribeAddedNotice(licenseState, format)]),
+                CombineWarnings([loaded.Resources.CoverageWarning, .. editWarnings, saved.Truncated, saved.FormulasBroken, saved.SheetsDropped, savePlan.EncryptionWarning]),
                 importSources.Warnings(),
                 EnvelopeParts.BackupWarnings(saved.Backup));
         if (transaction is not null)

@@ -10,19 +10,19 @@ namespace Aspose.Cli.Product.Cells.Engine;
 /// <summary>Owns the workbook info summary and windowed sheet reads.</summary>
 internal sealed class CellsReadService
 {
-    private readonly ILicenseGate _licenseGate;
+    private readonly ILicenseState _license;
     private readonly ResourceBudgetLedger _resourceBudgets;
     private readonly CellsWorkbookLoader _loader;
 
     internal CellsReadService(
-        ILicenseGate licenseGate,
+        ILicenseState license,
         ResourceBudgetLedger resourceBudgets,
         CellsWorkbookLoader loader)
     {
-        ArgumentNullException.ThrowIfNull(licenseGate);
+        ArgumentNullException.ThrowIfNull(license);
         ArgumentNullException.ThrowIfNull(resourceBudgets);
         ArgumentNullException.ThrowIfNull(loader);
-        _licenseGate = licenseGate;
+        _license = license;
         _resourceBudgets = resourceBudgets;
         _loader = loader;
     }
@@ -32,7 +32,7 @@ internal sealed class CellsReadService
         ArgumentException.ThrowIfNullOrEmpty(filePath);
         ArgumentNullException.ThrowIfNull(request);
 
-        LicenseState licenseState = _licenseGate.EnsureApplied();
+        LicenseState licenseState = _license.License;
         using LoadedWorkbook loaded = _loader.Open(filePath, request.Password);
         Workbook workbook = loaded.Workbook;
 
@@ -55,7 +55,7 @@ internal sealed class CellsReadService
         ArgumentException.ThrowIfNullOrEmpty(filePath);
         ArgumentNullException.ThrowIfNull(request);
 
-        LicenseState licenseState = _licenseGate.EnsureApplied();
+        LicenseState licenseState = _license.License;
         using LoadedWorkbook loaded = _loader.Open(filePath, request.Password);
         Workbook workbook = loaded.Workbook;
         (SheetProjection sheet, IReadOnlyDictionary<string, StyleData>? styles, ResultWindow window) =

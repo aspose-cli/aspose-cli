@@ -647,9 +647,9 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
 
         Assert.Equal("Data", read.Sheet!.Name);
         Warning skipped = Assert.Single(read.Warnings!);
-        Assert.Equal("EVALUATION_SHEET_SKIPPED", skipped.Code);
+        Assert.Equal("ACTIVE_SHEET_SKIPPED", skipped.Code);
         Assert.Equal("Evaluation Warning", skipped.Location);
-        Assert.Contains(csv.Warnings!, static warning => warning.Code == "EVALUATION_SHEET_SKIPPED");
+        Assert.Contains(csv.Warnings!, static warning => warning.Code == "ACTIVE_SHEET_SKIPPED");
         Assert.StartsWith("data", File.ReadAllText(csv.Output.Path), StringComparison.Ordinal);
         Assert.Null(copied.Warnings);
         using var copy = new Aspose.Cells.Workbook(copied.Output.Path);
@@ -657,7 +657,7 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
         // Skipping changes the default only: whole-workbook saves keep the input's active sheet
         // unless the batch chose one.
         Assert.Equal("Evaluation Warning", ActiveSheet(copied.Output.Path));
-        Assert.Contains(edited.Warnings!, static warning => warning.Code == "EVALUATION_SHEET_SKIPPED");
+        Assert.Contains(edited.Warnings!, static warning => warning.Code == "ACTIVE_SHEET_SKIPPED");
         Assert.Equal("Evaluation Warning", ActiveSheet(edited.Output!.Path));
         using (var editedBook = new Aspose.Cells.Workbook(edited.Output.Path))
         {
@@ -692,8 +692,37 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
     }
 
     /// <summary>
+    /// A licensed edit of a workbook an evaluation save marked, defaulting to its active warning
+    /// sheet, says once that the output keeps the marks (the write pipeline) and once that it
+    /// used another sheet (the product's defaulting notice); no code repeats.
+    /// </summary>
+    [Fact]
+    public void Licensed_EditOfAMarkedWorkbookDisclosesTheMarksOnce()
+    {
+        string marked = _fixture.Temp.File("marked-once.xlsx");
+        using (var workbook = new Aspose.Cells.Workbook())
+        {
+            workbook.Worksheets[0].Name = "Data";
+            Aspose.Cells.Worksheet warning = workbook.Worksheets.Add("Evaluation Warning");
+            warning.Cells["A5"].PutValue("Evaluation Only. Created with Aspose.Cells for .NET.Copyright 2003 - 2026 Aspose Pty Ltd.");
+            workbook.Worksheets.ActiveSheetIndex = warning.Index;
+            workbook.Save(marked);
+        }
+
+        EditResult edited = _fixture.Disclosed(engine => engine.ApplyOps(marked,
+            ParseOps("""{"ops":[{"op":"set_values","range":"A1","values":[[1]]}]}"""),
+            new EditRequest { Output = TestOutput.At(_fixture.Temp.File("marked-once-edited.xlsx"), overwrite: true) }));
+
+        string[] codes = [.. edited.Warnings!.Select(static warning => warning.Code)];
+        Assert.Equal(codes.Distinct(StringComparer.Ordinal), codes);
+        Assert.Contains(WarningCodes.EvalInputMarked, codes);
+        Assert.Contains("ACTIVE_SHEET_SKIPPED", codes);
+    }
+
+    /// <summary>
     /// A licensed whole-workbook pdf export prints the warning sheets an earlier evaluation save
-    /// added and says so, as review does; an unmarked workbook exports without the warning.
+    /// added and the write pipeline says so, as review does; an unmarked workbook exports without
+    /// the warning.
     /// </summary>
     [Fact]
     public void Licensed_APdfExportDisclosesTheWarningSheetsAnEvaluationSaveAdded()
@@ -703,18 +732,18 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
         Assert.Equal(0, workspace.Run("cells", "create", "marked.xlsx", "--sheets", "Data", "--license-mode", "evaluation").ExitCode);
         string unmarked = _fixture.CreateSalesWorkbook("unmarked-export.xlsx");
 
-        ConvertResult marked = _fixture.Engine.Convert(workspace.File("marked.xlsx"), new ConvertRequest
+        ConvertResult marked = _fixture.Disclosed(engine => engine.Convert(workspace.File("marked.xlsx"), new ConvertRequest
         {
             Output = TestOutput.At(_fixture.Temp.File("marked-export.pdf"), format: "pdf"),
-        });
-        ConvertResult clean = _fixture.Engine.Convert(unmarked, new ConvertRequest
+        }));
+        ConvertResult clean = _fixture.Disclosed(engine => engine.Convert(unmarked, new ConvertRequest
         {
             Output = TestOutput.At(_fixture.Temp.File("unmarked-export.pdf"), format: "pdf"),
-        });
+        }));
 
-        Warning notice = Assert.Single(marked.Warnings!, static warning => warning.Code == "EVALUATION_NOTICE_ADDED");
-        Assert.Equal("Evaluation Warning", notice.Location);
-        Assert.DoesNotContain(clean.Warnings ?? [], static warning => warning.Code == "EVALUATION_NOTICE_ADDED");
+        Warning notice = Assert.Single(marked.Warnings!, static warning => warning.Code == WarningCodes.EvalInputMarked);
+        Assert.Contains("the pages of the evaluation warning sheet 'Evaluation Warning'", notice.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain(clean.Warnings ?? [], static warning => warning.Code == WarningCodes.EvalInputMarked);
     }
 
     [Fact]

@@ -6,16 +6,16 @@ namespace Aspose.Cli.Product.Cells.Engine;
 /// <summary>Projects the sheet, dimension, print-area and chart layout facts the review adapter checks.</summary>
 internal sealed class CellsReviewLayoutService
 {
-    private readonly ILicenseGate _licenseGate;
+    private readonly ILicenseState _license;
     private readonly CellsWorkbookLoader _loader;
 
     internal CellsReviewLayoutService(
-        ILicenseGate licenseGate,
+        ILicenseState license,
         CellsWorkbookLoader loader)
     {
-        ArgumentNullException.ThrowIfNull(licenseGate);
+        ArgumentNullException.ThrowIfNull(license);
         ArgumentNullException.ThrowIfNull(loader);
-        _licenseGate = licenseGate;
+        _license = license;
         _loader = loader;
     }
 
@@ -24,7 +24,7 @@ internal sealed class CellsReviewLayoutService
         Secret? password)
     {
         ArgumentException.ThrowIfNullOrEmpty(filePath);
-        _ = _licenseGate.EnsureApplied();
+        _ = _license.License;
         using LoadedWorkbook loaded = _loader.Open(filePath, password);
         return ReviewLayoutProjection.Inspect(loaded.Workbook) with { Warnings = loaded.Warnings() };
     }

@@ -33,9 +33,8 @@ to workbooks.
 | `FORMULA_FUNCTION_UNKNOWN` | A formula the edit wrote calls a function Aspose.Cells does not know, so it evaluates to `#NAME?`; the message names each cell and function and, when one is a single edit away, the closest known function after it, such as `SUM` for `SUMM`. Correct the name, in English; an add-in or VBA function, or one newer than the engine, stays in the file for Excel. |
 | `CHART_SPLIT_ACROSS_PAGES` | A PDF conversion printed a chart across two or more pages; the message names each chart and its page count. Fit the sheet with `set_page_setup` (`fitToWidth` 1 and `fitToHeight` 0, or `orientation` landscape), or move or resize the chart, and convert again. |
 | `MHTML_RESOURCE_COVERAGE_UNVERIFIED` | The engine resolves MHTML resources without reporting missing ones; check images and styles yourself. |
-| `EVALUATION_SHEET_ADDED` | An evaluation save added the warning sheet `location` names and made it the active sheet in place of the one the message names; see below. |
-| `EVALUATION_NOTICE_ADDED` | An evaluation save wrote its notice into a CSV, TSV, Markdown or JSON output as content (a last row, a heading, records and warning sheets), or a PDF, XPS, HTML or MHTML export printed the input's warning sheets as extra pages; it is not data. See below. |
-| `EVALUATION_SHEET_SKIPPED` | The input's active sheet is the evaluation warning sheet `location` names, and this command named no sheet, so it used the sheet the message names instead; see below. |
+| `ACTIVE_SHEET_SKIPPED` | The input's active sheet is the evaluation warning sheet `location` names, and this command named no sheet, so it used the sheet the message names instead; see below. |
+| `EVAL_INPUT_MARKED` | With a license, the output keeps the warning sheets an earlier evaluation save added, or a render shows them; see below. |
 | `ROWS_SHIFTED` | `cells compare` found rows one side inserted or deleted (the message names them, `location` the sheet); the cells below each shift are compared with different rows, so their differences are not edits. Apply the same `insert_rows` or `delete_rows` to a copy of the left workbook and compare the copy. |
 | `PROTECTION_NOT_ENFORCED` | The edit changed a protected sheet (`location` names it when there is one) or the protected workbook structure; protection guides Excel only, so the edit went through it. Confirm the change is authorized. |
 | `TEXT_TABLE_LAYOUT` | A CSV or TSV input is not a plain table from row 1; one warning per finding, with the rows in `location`. The header comes after a title or notes, rows that hold at most one value each or a block such as `Export time: …, Query: …` that an empty row separates from a wider header (`1:3`: the header is the row after them), empty rows lie inside the table, a trailing row is labeled as a total (`合计`, `总计`, `小计`, `Total`, `Grand Total`, `Subtotal`, `Sum`), or the last row is the notice of an evaluation export. The rows are imported as they are; see below. |
@@ -67,14 +66,15 @@ sheet plus watermark content. Disclose it (`aspose-cli docs licensing`), and
 handle these effects:
 
 - The engine appends the warning sheet and makes it the active sheet; no
-  option keeps your active sheet (`set_active_sheet` included). The result
-  says so with `EVALUATION_SHEET_ADDED`.
+  option keeps your active sheet (`set_active_sheet` included). The
+  `EVAL_MODE` message names the warning sheets the output carries and which
+  of them is active.
 - When a workbook's active sheet is such a warning sheet, every command that
   defaults to the active sheet (`query range` or `render` without `--sheet`,
   `convert` to CSV, TSV or Markdown without `--sheet`, an operation without
   `"sheet"`, the workbook preview) uses the first other sheet instead,
-  preferring a visible one, and warns `EVALUATION_SHEET_SKIPPED`, licensed or
-  not. Only the default changes: the input file is not changed, and an edit
+  preferring a visible one, and warns `ACTIVE_SHEET_SKIPPED` with the skipped
+  sheet in `location`, licensed or not. Only the default changes: the input file is not changed, and an edit
   or `convert` to a multi-sheet format keeps the warning sheet active unless
   a `set_active_sheet` in the batch succeeded. A command that names its sheet
   or covers every sheet does not warn.
@@ -83,17 +83,19 @@ handle these effects:
   sheet order.
 - Each further save adds another ("Evaluation Warning (1)", ...); `inspect`
   lists them. Do not delete them.
-- Data outputs carry the notice as content, and the result warns
-  `EVALUATION_NOTICE_ADDED`: CSV and TSV gain an `Evaluation Only. ...` last
+- Data outputs carry the notice as content, and the `EVAL_MODE` message
+  says where: CSV and TSV gain an `Evaluation Only. ...` last
   row after the data, Markdown a closing `# Evaluation Only. ...` heading, and
   JSON a `{"watermark": ...}` record after the records of each sheet with data
   rows, plus the warning sheets. Remove it before anything reads the output as data;
   until then `cells inspect` warns `TEXT_TABLE_LAYOUT` and `review` reports
   `CELLS_EVALUATION_NOTICE` on the CSV or TSV notice row.
 - A whole-workbook PDF, XPS, HTML or MHTML export prints the warning sheets an
-  earlier evaluation save added as extra pages that hold only the notice, and
-  warns `EVALUATION_NOTICE_ADDED` with their names, licensed or not; `review`
-  then reports findings on those pages. Export the content sheets with `--sheet` (PDF), or
+  earlier evaluation save added as extra pages that hold only the notice; the
+  `EVAL_MODE` message, or with a license `EVAL_INPUT_MARKED`, names them, and
+  `review` then reports findings on those pages. A licensed edit or
+  conversion to a workbook format keeps the warning sheets and warns
+  `EVAL_INPUT_MARKED` too. Export the content sheets with `--sheet` (PDF), or
   rebuild the workbook and the export with a license.
 - CSV, TSV and Markdown export only the first worksheet. Without `--sheet` the
   first sheet is written even when another one is active, and
