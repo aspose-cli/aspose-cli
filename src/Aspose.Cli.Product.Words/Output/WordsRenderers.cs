@@ -147,7 +147,7 @@ internal static class WordsRenderers
             static image => [Block(image.Block), image.Name ?? "-", $"{Points(image.Width)} x {Points(image.Height)} pt"]);
         ResultText.Table(surface, "tables", result.Tables, ["block", "rows", "columns", "style"],
             static item => [TableText.Int(item.Block), TableText.Int(item.RowCount), TableText.Int(item.ColumnCount), item.Style ?? "-"]);
-        RenderProperties(result, surface);
+        ResultText.Properties(surface, "properties", result.Properties, missing: "-", sortByName: true);
     }
 
     // Page setup, then the header and footer paragraphs of every section that has any.
@@ -182,24 +182,6 @@ internal static class WordsRenderers
         if (sections.Any(static section => section.HeadersFooters.Count > 0))
         {
             headersFooters.WriteTo(surface.Out, surface.Format);
-        }
-    }
-
-    private static void RenderProperties(
-        DocumentInfoResult result,
-        TableSurface surface)
-    {
-        if (result.Properties is { } properties && ResultText.Section(surface, "properties", properties.Count == 0))
-        {
-            var table = new TextTable("name", "value");
-            foreach ((string name, string? value) in properties.OrderBy(
-                         static property => property.Key,
-                         StringComparer.Ordinal))
-            {
-                table.AddRow(name, value ?? "-");
-            }
-
-            table.WriteTo(surface.Out, surface.Format);
         }
     }
 

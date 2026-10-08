@@ -86,6 +86,35 @@ public static class ResultText
         }
     }
 
+    /// <summary>
+    /// Writes a requested name/value map, such as document properties or metadata, as a
+    /// two-column <see cref="Table{T}"/>.
+    /// </summary>
+    /// <param name="surface">The surface to write to.</param>
+    /// <param name="title">The section heading.</param>
+    /// <param name="properties">The map; <see langword="null"/> when it was not requested.</param>
+    /// <param name="nameColumn">The heading of the name column.</param>
+    /// <param name="missing">The text that stands for a value the map holds as <see langword="null"/>.</param>
+    /// <param name="sortByName">Whether to order the rows by ordinal name rather than keep the map's order.</param>
+    public static void Properties(
+        TableSurface surface,
+        string title,
+        IReadOnlyDictionary<string, string?>? properties,
+        string nameColumn = "name",
+        string missing = "",
+        bool sortByName = false)
+    {
+        if (properties is null)
+        {
+            return;
+        }
+
+        KeyValuePair<string, string?>[] rows = sortByName
+            ? [.. properties.OrderBy(static property => property.Key, StringComparer.Ordinal)]
+            : [.. properties];
+        Table(surface, title, rows, [nameColumn, "value"], property => [property.Key, property.Value ?? missing]);
+    }
+
     /// <summary>Writes the backup line when an in-place edit made or kept one.</summary>
     public static void Backup(TableSurface surface, BackupInfo? backup)
     {

@@ -102,19 +102,7 @@ internal static class PdfRenderers
             ]);
         ResultText.List(surface, "layers", result.Layers);
 
-        if (result.Metadata is { } metadata)
-        {
-            var table = new TextTable("property", "value");
-            foreach ((string key, string? value) in metadata)
-            {
-                table.AddRow(key, value ?? string.Empty);
-            }
-
-            if (ResultText.Section(surface, "metadata", metadata.Count == 0))
-            {
-                table.WriteTo(surface.Out, surface.Format);
-            }
-        }
+        ResultText.Properties(surface, "metadata", result.Metadata, nameColumn: "property");
     }
 
     public static void Render(PdfReadResult result, TableSurface surface)
