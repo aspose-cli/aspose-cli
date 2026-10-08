@@ -15,11 +15,7 @@ internal static class SignCommand
             Required = true,
             Description = "PKCS#12 certificate path (.pfx or .p12).",
         }.WithInput(InputKind.File);
-        var certificatePasswordEnv = new Option<string>("--certificate-password-env")
-        {
-            Required = true,
-            Description = "Environment variable containing the certificate password.",
-        }.WithInput(InputKind.None, ParameterValueSource.EnvironmentVariableName, secret: true);
+        PasswordOptions certificatePassword = PasswordOptions.RequiredEnvironment("--certificate-password", "the PKCS#12 certificate");
         var visible = new Option<bool>("--visible")
         {
             Description = "Place a visible signature appearance on the selected page.",
@@ -46,7 +42,7 @@ internal static class SignCommand
                 Output = OutputTarget.File("Signed PDF path. Default: <input>.signed.pdf.", PdfFormats.Document, derivedMarker: ".signed"),
                 UsesFonts = true,
             },
-            [certificate, certificatePasswordEnv, visible, page, rect, reason, location, contact],
+            [certificate, .. certificatePassword.Options, visible, page, rect, reason, location, contact],
             (parse, standard) =>
             {
                 bool isVisible = parse.GetValue(visible);
@@ -64,17 +60,12 @@ internal static class SignCommand
                 string input = standard.Input;
                 string certificatePath = standard.RequiredInputFile(certificate);
                 ResolvedOutput output = standard.Output;
-                string variable = parse.GetRequiredValue(certificatePasswordEnv);
-                string? certificatePassword = standard.ReadEnvironment(variable);
-                if (string.IsNullOrEmpty(certificatePassword))
-                {
-                    throw CliErrors.SecretMissing("--certificate-password-env", variable);
-                }
+                Secret certificateSecret = standard.Password(certificatePassword);
 
                 return standard.OpenEngine().Sign(input, new PdfSignRequest
                 {
                     CertificatePath = certificatePath,
-                    CertificatePassword = new Secret(certificatePassword),
+                    CertificatePassword = certificateSecret,
                     Output = output,
                     Password = standard.InputPassword,
                     Page = pageNumber,

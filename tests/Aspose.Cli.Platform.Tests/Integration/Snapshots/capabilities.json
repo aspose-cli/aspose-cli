@@ -4411,7 +4411,7 @@
               "secret": true,
               "valueSource": "environment-variable-name",
               "inputKind": "none",
-              "description": "Environment variable containing the certificate password."
+              "description": "Name of an environment variable holding the password for the PKCS#12 certificate."
             },
             {
               "name": "--contact",
@@ -14482,7 +14482,7 @@
           "secret": true,
           "valueSource": "environment-variable-name",
           "inputKind": "none",
-          "description": "Environment variable containing the certificate password."
+          "description": "Name of an environment variable holding the password for the PKCS#12 certificate."
         },
         {
           "name": "--contact",

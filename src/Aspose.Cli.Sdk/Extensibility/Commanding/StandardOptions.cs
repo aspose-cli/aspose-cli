@@ -631,6 +631,24 @@ public partial class StandardInvocation
     public Secret? OtherPassword => _otherPassword.Value;
 
     /// <summary>
+    /// The password one of the command's own <see cref="PasswordOptions.RequiredEnvironment"/>
+    /// parameters names, read from its environment variable.
+    /// </summary>
+    /// <exception cref="CliException"><c>OPTION_INVALID</c> when the variable is missing or empty.</exception>
+    public Secret Password(PasswordOptions password)
+    {
+        ArgumentNullException.ThrowIfNull(password);
+        Command command = _parse.CommandResult.Command;
+        if (!password.Options.All(command.Options.Contains))
+        {
+            throw new InvalidOperationException("The password options are not parameters of the command.");
+        }
+
+        return password.Resolve(_parse, Inputs, ReadEnvironment)
+            ?? throw new InvalidOperationException("A required password option resolved no password.");
+    }
+
+    /// <summary>
     /// The resolved file named by one of the command's own <see cref="InputKind.File"/> options,
     /// or null when it was omitted.
     /// </summary>
@@ -686,7 +704,7 @@ public partial class StandardInvocation
         Declared(_options.Fonts, "font directories").Read(_parse, Paths);
 
     /// <summary>Reads a named environment variable through this invocation's input source.</summary>
-    public Func<string, string?> ReadEnvironment { get; }
+    internal Func<string, string?> ReadEnvironment { get; }
 
     internal PathResolver Paths { get; }
 

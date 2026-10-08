@@ -481,6 +481,25 @@ public sealed class StandardCommandTests : IDisposable
     }
 
     [Fact]
+    public void RequiredEnvironmentPassword_IsNamedOnlyByItsVariable()
+    {
+        PasswordOptions key = PasswordOptions.RequiredEnvironment("--key-password", "the signing key");
+        Command command = StandardCommand.Create(
+            _host, "sign", "Signs.", new CommandTraits { Input = Report }, [.. key.Options],
+            (_, standard) => Result(standard.Password(key).Reveal()));
+
+        Option environment = Assert.Single(
+            command.Options, static option => option.Name.StartsWith("--key-password", StringComparison.Ordinal));
+        Assert.Equal("--key-password-env", environment.Name);
+        Assert.True(environment.Required);
+        Assert.Equal("a", Run(command, "report.test", "--key-password-env", "LEFT"));
+        CliException missing = RunFailing(command, "report.test", "--key-password-env", "MISSING");
+        Assert.Equal(ErrorCodes.OptionInvalid, missing.Code);
+        Assert.Equal("--key-password-env", missing.Details!["option"]!.GetValue<string>());
+        Assert.DoesNotContain("another source", missing.Hint, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Continuation_RepeatsThePathInputAndPasswordVariableButNeverThePassword()
     {
         Command command = StandardCommand.Create(
