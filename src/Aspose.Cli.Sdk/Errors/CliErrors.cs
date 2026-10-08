@@ -118,6 +118,28 @@ public static partial class CliErrors
         hint: "Check the file permissions and that no security policy prevents the process from reading it.",
         details: new JsonObject { ["path"] = path });
 
+    /// <summary>
+    /// An input that cannot be read as the document the command expects: damaged, truncated or
+    /// another kind of file. <c>details.path</c> always names the file, so the Host can tell which
+    /// input of a command failed and name the product whose format a renamed file has.
+    /// </summary>
+    /// <param name="path">The input file.</param>
+    /// <param name="document">What the file should be, such as <c>PDF document</c> or <c>spreadsheet</c>.</param>
+    /// <param name="reason">Why it is not one, completing a sentence.</param>
+    /// <param name="hint">How to check the file, in the terms of the product that reads it.</param>
+    /// <param name="innerException">The engine or IO failure, if any.</param>
+    public static CliException InputUnreadable(
+        string path,
+        string document,
+        string reason,
+        string hint,
+        Exception? innerException = null) => new(
+        ErrorCodes.FileCorrupt,
+        $"Input is not a valid {document}: {path} ({reason}).",
+        hint: hint,
+        details: new JsonObject { ["path"] = Path.GetFullPath(path), ["reason"] = reason },
+        innerException: innerException);
+
     public static CliException FileTooLarge(long sizeBytes, long limitBytes) => new(
         ErrorCodes.FileTooLarge,
         $"Input file is {sizeBytes} bytes, exceeding the {limitBytes}-byte budget.",

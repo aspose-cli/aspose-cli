@@ -198,11 +198,12 @@ internal sealed class SlidesPresentationLoader(
         _ => "unknown",
     };
 
-    private static CliException Invalid(string path, string reason, Exception? inner = null) => new(
-        ErrorCodes.FileCorrupt,
-        $"Input is not a valid supported presentation: {path} ({reason}).",
-        hint: $"Use one of: {string.Join(", ", SlidesFormats.LoadIds)}. Verify the file opens in a presentation editor and is not merely renamed.",
-        innerException: inner);
+    private static CliException Invalid(string path, string reason, Exception? inner = null) => CliErrors.InputUnreadable(
+        path,
+        "supported presentation",
+        reason,
+        $"Use one of: {string.Join(", ", SlidesFormats.LoadIds)}. Verify the file opens in a presentation editor and is not merely renamed.",
+        inner);
 }
 
 internal sealed record LoadedPresentation(Presentation Presentation, string FormatId, SlidesResourcePolicy Resources)

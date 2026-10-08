@@ -1,0 +1,23 @@
+{
+  "name": "slides append_presentation of a Word document named .pptx names that source and what it is",
+  "files": {
+    "deck.pptx": { "fixture": "slides.pptx" },
+    "renamed.pptx": { "fixture": "words.docx" },
+    "append.json": { "text": "{\"ops\":[{\"op\":\"append_presentation\",\"path\":\"renamed.pptx\"}]}" }
+  },
+  "steps": [
+    {
+      "args": ["slides", "edit", "deck.pptx", "--ops", "append.json", "--out", "out.pptx"],
+      "expect": {
+        "exitCode": 6,
+        "error": "FORMAT_MISMATCH",
+        "json": [
+          { "path": "error.details.path", "contains": "renamed.pptx" },
+          { "path": "error.details.declared", "equals": "slides" },
+          { "path": "error.details.detected", "contains": "words" }
+        ],
+        "files": { "absent": ["out.pptx"], "unchanged": ["deck.pptx", "renamed.pptx"] }
+      }
+    }
+  ]
+}

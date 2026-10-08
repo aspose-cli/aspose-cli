@@ -104,14 +104,12 @@ internal sealed class PdfDocumentLoader(
         }
     }
 
-    // The path names the input among several, such as those of a merge, and lets the host
-    // detect what the file really is.
-    private static CliException InvalidPdf(string path, string reason, Exception? inner = null) => new(
-        ErrorCodes.FileCorrupt,
-        $"Input is not a valid PDF document: {path} ({reason}).",
-        hint: "Verify the file opens in a PDF reader and that its bytes are a PDF rather than a renamed file.",
-        details: new System.Text.Json.Nodes.JsonObject { ["path"] = Path.GetFullPath(path) },
-        innerException: inner);
+    private static CliException InvalidPdf(string path, string reason, Exception? inner = null) => CliErrors.InputUnreadable(
+        path,
+        "PDF document",
+        reason,
+        "Verify the file opens in a PDF reader and that its bytes are a PDF rather than a renamed file.",
+        inner);
 }
 
 /// <summary>A loaded document and the input stream it reads from, disposed together.</summary>
