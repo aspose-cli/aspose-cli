@@ -228,20 +228,8 @@ internal sealed class WordsDocumentLoader
     }
 
     /// <summary>Whether a file begins with the PDF header; false when it cannot be read.</summary>
-    private static bool StartsAsPdf(string path)
-    {
-        try
-        {
-            using FileStream input = InputFiles.OpenRead(path);
-            Span<byte> header = stackalloc byte[5];
-            return input.ReadAtLeast(header, header.Length, throwOnEndOfStream: false) == header.Length
-                && header.SequenceEqual("%PDF-"u8);
-        }
-        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
-        {
-            return false;
-        }
-    }
+    private static bool StartsAsPdf(string path) =>
+        ContainerSignatures.StartsWithPdfHeader(ContainerSignatures.ReadPrefix(path, ContainerSignatures.PdfHeader.Length));
 
     private sealed class DenyAllResources : IResourceLoadingCallback
     {

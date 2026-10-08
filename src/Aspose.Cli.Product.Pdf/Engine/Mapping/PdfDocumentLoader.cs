@@ -87,14 +87,11 @@ internal sealed class PdfDocumentLoader(
         bool found = Loading.Load(path, password: null, () =>
         {
             using FileStream stream = InputFiles.OpenRead(path);
-            int length = (int)Math.Min(1024, stream.Length);
-            Span<byte> bytes = stackalloc byte[length];
-            _ = stream.Read(bytes);
-            return bytes.IndexOf("%PDF-"u8) >= 0;
+            return ContainerSignatures.HasPdfHeader(ContainerSignatures.ReadPrefix(stream));
         });
         if (!found)
         {
-            throw Loading.Unreadable(path, "the PDF header was not found in the first 1024 bytes");
+            throw Loading.Unreadable(path, $"the PDF header was not found in the first {ContainerSignatures.PdfHeaderWindow} bytes");
         }
     }
 }

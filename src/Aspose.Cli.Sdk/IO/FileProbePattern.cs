@@ -48,6 +48,14 @@ public sealed class FileProbePattern
             bytes);
     }
 
+    /// <summary>Matches the OLE compound file signature at the start of the file.</summary>
+    public static FileProbePattern OleCompoundFile() =>
+        BytesAt(0, ContainerSignatures.OleCompoundFile.ToArray());
+
+    /// <summary>Matches the PDF header at the start of the file.</summary>
+    public static FileProbePattern PdfHeader() =>
+        BytesAt(0, ContainerSignatures.PdfHeader.ToArray());
+
     /// <summary>Matches an exact ASCII byte sequence at a bounded offset.</summary>
     public static FileProbePattern AsciiBytesAt(
         int offset,
@@ -202,7 +210,7 @@ public sealed class FileProbePattern
 
     private ProbePatternResult EvaluateZip(ReadOnlySpan<byte> bytes)
     {
-        if (!IsZip(bytes))
+        if (!ContainerSignatures.IsZip(bytes))
         {
             return new ProbePatternResult(
                 ProbePatternKind.NoMatch,
@@ -246,17 +254,6 @@ public sealed class FileProbePattern
         }
         return controls * 100 <= bytes.Length;
     }
-
-    private static bool IsZip(ReadOnlySpan<byte> bytes) =>
-        Starts(bytes, [0x50, 0x4B, 0x03, 0x04])
-        || Starts(bytes, [0x50, 0x4B, 0x05, 0x06])
-        || Starts(bytes, [0x50, 0x4B, 0x07, 0x08]);
-
-    private static bool Starts(
-        ReadOnlySpan<byte> bytes,
-        ReadOnlySpan<byte> signature) =>
-        bytes.Length >= signature.Length
-        && bytes[..signature.Length].SequenceEqual(signature);
 
     private static bool HasSlice(
         ReadOnlySpan<byte> bytes,
