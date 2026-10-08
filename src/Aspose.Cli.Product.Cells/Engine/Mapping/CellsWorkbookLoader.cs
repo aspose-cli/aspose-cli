@@ -15,6 +15,21 @@ internal sealed class CellsWorkbookLoader(ResourceBudgetLedger resourceBudgets)
     // Excel's limit on the length of a sheet name.
     private const int MaxSheetNameLength = 31;
 
+    /// <summary>
+    /// How a workbook input that does not load is reported. Opening a file fails only inside the
+    /// engine, so an exception the engine raises is the file's: a pathological xls can make the
+    /// reader throw a raw <see cref="ArgumentOutOfRangeException"/> rather than a
+    /// <see cref="CellsException"/>, which is a damaged input the user can act on, never a defect
+    /// of the CLI. An encrypted workbook opened without its password, or with a wrong one, fails
+    /// with <see cref="ExceptionType.IncorrectPassword"/> or <see cref="ExceptionType.Permission"/>.
+    /// </summary>
+    internal static readonly InputLoading Loading = new(
+        "spreadsheet",
+        "Verify the file opens in a spreadsheet application and is one of the supported input formats.",
+        static exception => exception is CellsException { Code: ExceptionType.IncorrectPassword or ExceptionType.Permission }
+            ? LoadFailureKind.Password
+            : LoadFailureKind.Corrupt);
+
     private static readonly HashSet<FileFormatType> OpenableFormats =
     [
         FileFormatType.Xlsx,
@@ -77,6 +92,12 @@ internal sealed class CellsWorkbookLoader(ResourceBudgetLedger resourceBudgets)
         string? resourceSource = null)
     {
         LoadPlan plan = ResolveLoadPlan(path, textImport, published);
+        if (plan.Encrypted && password is null)
+        {
+            // Detection already knows the workbook is encrypted: refuse before the engine runs.
+            throw InputLoading.PasswordRefused(path, password);
+        }
+
         var resources = new WorkbookResources(resourceSource ?? path, resourceBudgets, plan.Format == LoadFormat.MHtml);
         Workbook? workbook = null;
         bool transferred = false;
@@ -120,7 +141,9 @@ internal sealed class CellsWorkbookLoader(ResourceBudgetLedger resourceBudgets)
         catch (Exception exception) when (exception is not CliException and not OperationCanceledException)
         {
             resources.ThrowIfFailed();
-            throw ErrorTranslator.TranslateLoad(exception, path, passwordProvided: password is not null);
+            throw exception is CellsException { Code: ExceptionType.License }
+                ? CellsErrors.EvaluationOpenLimit(path)
+                : Loading.Failure(exception, path, password);
         }
         finally
         {
@@ -156,19 +179,11 @@ internal sealed class CellsWorkbookLoader(ResourceBudgetLedger resourceBudgets)
 
     private static LoadPlan ResolveFormatPlan(string path)
     {
-        FileFormatInfo detected;
-        try
+        FileFormatInfo detected = Loading.Load(path, password: null, () =>
         {
             using FileStream input = InputFiles.OpenRead(path);
-            detected = FileFormatUtil.DetectFileFormat(input);
-        }
-        catch (Exception exception) when (exception is not CliException)
-        {
-            throw ErrorTranslator.TranslateLoad(
-                exception,
-                path,
-                passwordProvided: false);
-        }
+            return FileFormatUtil.DetectFileFormat(input);
+        });
 
         if (detected.IsEncrypted)
         {
@@ -211,12 +226,14 @@ internal sealed class CellsWorkbookLoader(ResourceBudgetLedger resourceBudgets)
             }
         }
 
-        string reason = detected.FileFormatType != FileFormatType.Unknown
-            ? $"the file's content is {detected.FileFormatType}, not a spreadsheet"
-            : StartsWithZipSignature(path)
-                ? "it is an incomplete or damaged ZIP container, as an interrupted download or copy leaves it; ask for the file again"
-                : "content does not match any supported spreadsheet format";
-        throw CellsErrors.FileCorrupt(path, reason);
+        if (detected.FileFormatType != FileFormatType.Unknown)
+        {
+            throw Loading.Unloadable(path, detected.FileFormatType.ToString());
+        }
+
+        throw Loading.Unreadable(path, StartsWithZipSignature(path)
+            ? "it is an incomplete or damaged ZIP container, as an interrupted download or copy leaves it; ask for the file again"
+            : "content does not match any supported spreadsheet format");
     }
 
     private static char? DetectDelimiter(string path)
