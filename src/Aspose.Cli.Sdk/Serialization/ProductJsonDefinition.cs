@@ -39,13 +39,6 @@ public sealed class ProductJsonDefinition
     /// <summary>Frozen options for product-local contract tests and parsers.</summary>
     public JsonSerializerOptions LocalOptions => _localOptions;
 
-    /// <summary>Serializes a product-local contract value using its runtime type.</summary>
-    public string Serialize(object value)
-    {
-        ArgumentNullException.ThrowIfNull(value);
-        return JsonSerializer.Serialize(value, value.GetType(), _localOptions);
-    }
-
     /// <summary>Deserializes one product-local contract root.</summary>
     public T Deserialize<T>(string json)
     {
@@ -80,9 +73,6 @@ public sealed class ContractJsonSerializer
         _compactOptions = new JsonSerializerOptions(_options) { WriteIndented = false };
         _compactOptions.MakeReadOnly();
     }
-
-    /// <summary>Frozen options used by this serializer.</summary>
-    public JsonSerializerOptions Options => _options;
 
     /// <summary>Serializes a contract value using its runtime type.</summary>
     public string Serialize(object value)

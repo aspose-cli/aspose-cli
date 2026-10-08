@@ -72,17 +72,6 @@ public sealed record FormatDescriptor
             uses.HasFlag(FormatUse.Input),
             extensions);
 
-    /// <summary>Creates an explicitly routed input format.</summary>
-    public static FormatDescriptor Input(
-        string id,
-        int inputOrder,
-        params string[] extensions) =>
-        Input(
-            id,
-            inputOrder,
-            RouteOwnership.Explicit,
-            extensions);
-
     /// <summary>Creates an input format with explicit routing ownership.</summary>
     public static FormatDescriptor Input(
         string id,
@@ -93,38 +82,6 @@ public sealed record FormatDescriptor
         {
             Ownership = ownership,
             InputOrder = inputOrder,
-        };
-
-    /// <summary>Creates a conversion-only output format.</summary>
-    public static FormatDescriptor Output(
-        string id,
-        int convertOrder,
-        params string[] extensions) =>
-        new(id, FormatUse.Convert, extensions)
-        {
-            ConvertOrder = convertOrder,
-        };
-
-    /// <summary>Creates a rendering-only output format.</summary>
-    public static FormatDescriptor Render(
-        string id,
-        int renderOrder,
-        params string[] extensions) =>
-        new(id, FormatUse.Render, extensions)
-        {
-            RenderOrder = renderOrder,
-        };
-
-    /// <summary>Creates a format supported by conversion and rendering.</summary>
-    public static FormatDescriptor Output(
-        string id,
-        int convertOrder,
-        int renderOrder,
-        params string[] extensions) =>
-        new(id, FormatUse.Convert | FormatUse.Render, extensions)
-        {
-            ConvertOrder = convertOrder,
-            RenderOrder = renderOrder,
         };
 
     /// <summary>Creates one unconditional format declaration.</summary>
@@ -239,7 +196,7 @@ public static class FormatDescriptorExtensions
     public static IReadOnlyList<string> IdsFor(
         this IEnumerable<FormatDescriptor> descriptors,
         FormatUse use) =>
-        Array.AsReadOnly(Ordered(descriptors, use, extension: null)
+        Array.AsReadOnly(Ordered(descriptors, use)
             .Select(static format => format.Id)
             .ToArray());
 
@@ -253,22 +210,9 @@ public static class FormatDescriptorExtensions
         string name)
     {
         ArgumentNullException.ThrowIfNull(name);
-        return Ordered(descriptors, use, extension: null).FirstOrDefault(format =>
+        return Ordered(descriptors, use).FirstOrDefault(format =>
             string.Equals(format.Id, name, StringComparison.OrdinalIgnoreCase)
             || format.Aliases.Contains(name, StringComparer.OrdinalIgnoreCase));
-    }
-
-    /// <summary>
-    /// Returns the formats for one use that declare a file extension such as <c>.htm</c>,
-    /// in that use's declared stable order. Extensions compare case-insensitively.
-    /// </summary>
-    public static IReadOnlyList<FormatDescriptor> WithExtension(
-        this IEnumerable<FormatDescriptor> descriptors,
-        FormatUse use,
-        string extension)
-    {
-        ArgumentNullException.ThrowIfNull(extension);
-        return Array.AsReadOnly(Ordered(descriptors, use, extension).ToArray());
     }
 
     /// <summary>
@@ -288,8 +232,7 @@ public static class FormatDescriptorExtensions
 
     private static IEnumerable<FormatDescriptor> Ordered(
         IEnumerable<FormatDescriptor> descriptors,
-        FormatUse use,
-        string? extension)
+        FormatUse use)
     {
         ArgumentNullException.ThrowIfNull(descriptors);
         if (use is not (FormatUse.Input or FormatUse.Convert or FormatUse.Render))
@@ -301,8 +244,7 @@ public static class FormatDescriptorExtensions
         }
 
         return descriptors
-            .Where(format => format.Uses.HasFlag(use)
-                && (extension is null || format.Extensions.Contains(extension, StringComparer.OrdinalIgnoreCase)))
+            .Where(format => format.Uses.HasFlag(use))
             .OrderBy(format => Order(format, use))
             .ThenBy(static format => format.Id, StringComparer.Ordinal);
     }

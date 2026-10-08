@@ -205,7 +205,9 @@ public sealed class CellsOperationsTests : IClassFixture<CellsFixture>
         using var workbook = new Workbook(result.Output!.Path);
         Assert.True(workbook.Worksheets["Data"].Protection.AllowSorting);
         Assert.True(workbook.Worksheets["Data"].IsProtected);
-        Assert.DoesNotContain(secret, ProductJsonContext.Definition.Serialize(result), StringComparison.Ordinal);
+        string json = System.Text.Json.JsonSerializer.Serialize(
+            result, result.GetType(), ProductJsonContext.Definition.LocalOptions);
+        Assert.DoesNotContain(secret, json, StringComparison.Ordinal);
     }
     [Fact]
     public void SheetProtection_LeavesCellsFormattedUnlockedEditable()

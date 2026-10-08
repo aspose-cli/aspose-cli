@@ -218,10 +218,6 @@ public sealed class ProductCatalog
         return eligible;
     }
 
-    /// <summary>Final resolved extension ownership for this distribution.</summary>
-    public IReadOnlyDictionary<string, string> ResolvedOwners =>
-        _resolvedOwners;
-
     /// <summary>
     /// Explicitly declared default product, or null when this distribution has
     /// no implicit default. Catalog ordering is never used as a fallback.
