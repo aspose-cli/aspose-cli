@@ -1,6 +1,6 @@
 using System.Text;
 
-namespace Aspose.Cli.Sdk.Extensibility;
+namespace Aspose.Cli.Sdk.IO;
 
 /// <summary>
 /// Immutable, product-neutral expression evaluated against one bounded file

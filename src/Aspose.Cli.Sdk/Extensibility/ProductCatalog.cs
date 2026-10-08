@@ -3,6 +3,7 @@ namespace Aspose.Cli.Sdk.Extensibility;
 using System.Collections.Frozen;
 using System.Collections.ObjectModel;
 using Aspose.Cli.Sdk.Contracts;
+using Aspose.Cli.Sdk.IO;
 
 /// <summary>Validated, immutable catalog of build-time product definitions.</summary>
 public sealed class ProductCatalog

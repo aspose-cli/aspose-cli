@@ -294,15 +294,15 @@ internal sealed class DefinitionPurityWalker : OperationWalker
         return typeName switch
         {
             "Aspose.Cli.Sdk.Extensibility.Product" => member == "Define",
-            "Aspose.Cli.Sdk.Extensibility.FormatDescriptor" =>
+            "Aspose.Cli.Sdk.IO.FormatDescriptor" =>
                 member is ".ctor" or "Declare" or "Input" or "Output" or "Render"
                     or "Routed"
                     || IsDataMember(symbol),
-            "Aspose.Cli.Sdk.Extensibility.FormatDescriptorExtensions" =>
+            "Aspose.Cli.Sdk.IO.FormatDescriptorExtensions" =>
                 member is "IdsFor" or "ExtensionFor",
-            "Aspose.Cli.Sdk.Extensibility.FileFormatRecognition" =>
+            "Aspose.Cli.Sdk.IO.FileFormatRecognition" =>
                 member is "AttachTo" or "Match" or "FirstOf",
-            "Aspose.Cli.Sdk.Extensibility.FileProbePattern" => true,
+            "Aspose.Cli.Sdk.IO.FileProbePattern" => true,
             "Aspose.Cli.Sdk.Contracts.ResourceBudgetCapabilities" =>
                 member == "Domain",
             "Aspose.Cli.Sdk.Errors.ErrorCode" =>
@@ -367,7 +367,7 @@ internal sealed class DefinitionPurityWalker : OperationWalker
     private static bool IsDefinitionValue(string typeName) =>
         typeName is
             "Aspose.Cli.Sdk.Extensibility.ProductManifest"
-            or "Aspose.Cli.Sdk.Extensibility.RouteOwnership"
+            or "Aspose.Cli.Sdk.IO.RouteOwnership"
             or "Aspose.Cli.Sdk.Views.ProductView"
             or "Aspose.Cli.Sdk.Serialization.ProductJsonDefinition";
 

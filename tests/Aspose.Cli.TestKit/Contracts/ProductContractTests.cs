@@ -8,6 +8,7 @@ using System.CommandLine.Completions;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Diagnostics;
 using Aspose.Cli.Sdk.Extensibility;
+using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Serialization;
 using Json.Schema;
 using Xunit;

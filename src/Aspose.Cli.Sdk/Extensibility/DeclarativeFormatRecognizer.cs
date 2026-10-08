@@ -1,3 +1,5 @@
+using Aspose.Cli.Sdk.IO;
+
 namespace Aspose.Cli.Sdk.Extensibility;
 
 /// <summary>
