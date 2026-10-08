@@ -52,14 +52,23 @@ internal sealed class CellsWorkbookLoader(ResourceBudgetLedger resourceBudgets)
         FileFormatType.MHtml,
     ];
 
+    // The extensions under which content no format recognizes is imported as delimited text.
     private static readonly HashSet<string> TextExtensions =
         new(StringComparer.Ordinal)
         {
             ".csv",
             ".tsv",
             ".txt",
-            ".json",
         };
+
+    // The extensions of every declared input: delimited text the engine detects imports under
+    // any of them, as a tab-separated "Excel" export named .xls does, but never under an
+    // extension no input declares, such as .json.
+    private static readonly HashSet<string> InputExtensions =
+        [.. CellsFormats.Definitions
+            .Where(static format => format.Uses.HasFlag(FormatUse.Input))
+            .SelectMany(static format => format.Extensions)
+            .Select(static extension => extension.ToLowerInvariant())];
 
     /// <summary>
     /// Opens a user input. A workbook that asks to be calculated when opened is calculated, as
@@ -195,6 +204,11 @@ internal sealed class CellsWorkbookLoader(ResourceBudgetLedger resourceBudgets)
             if (detected.FileFormatType
                 is FileFormatType.Csv or FileFormatType.TabDelimited)
             {
+                if (!InputExtensions.Contains(Path.GetExtension(path).ToLowerInvariant()))
+                {
+                    throw NotNamedAsInput(path);
+                }
+
                 char separator = DetectDelimiter(path)
                     ?? (detected.FileFormatType == FileFormatType.TabDelimited
                         ? '\t'
@@ -215,9 +229,7 @@ internal sealed class CellsWorkbookLoader(ResourceBudgetLedger resourceBudgets)
             string extension = Path.GetExtension(path).ToLowerInvariant();
             if (TextExtensions.Contains(extension))
             {
-                return extension == ".json"
-                    ? LoadPlan.Auto
-                    : new LoadPlan(null, DetectDelimiter(path) ?? ',');
+                return new LoadPlan(null, DetectDelimiter(path) ?? ',');
             }
 
             if (ContentLooksLikeHtml(path))
@@ -234,6 +246,16 @@ internal sealed class CellsWorkbookLoader(ResourceBudgetLedger resourceBudgets)
         throw Loading.Unreadable(path, ContainerSignatures.IsZip(ContainerSignatures.ReadPrefix(path, ContainerSignatures.ZipLocalFileHeader.Length))
             ? "it is an incomplete or damaged ZIP container, as an interrupted download or copy leaves it; ask for the file again"
             : "content does not match any supported spreadsheet format");
+    }
+
+    private static CliException NotNamedAsInput(string path)
+    {
+        string extension = Path.GetExtension(path);
+        string named = extension.Length > 1 ? $"its {extension} extension names no" : "it has no extension that names a";
+        return Loading.Unreadable(
+            path,
+            $"its content is delimited text, but {named} spreadsheet input; "
+                + $"give it a {string.Join(", ", TextExtensions)} extension to import it as text");
     }
 
     private static char? DetectDelimiter(string path)
