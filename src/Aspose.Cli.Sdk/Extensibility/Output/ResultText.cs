@@ -5,7 +5,8 @@ namespace Aspose.Cli.Sdk.Extensibility.Output;
 
 /// <summary>
 /// Human-readable lines for the result parts every product shares: produced files,
-/// safety backups and bounded-edit outcomes. Products add only their own evidence.
+/// detail sections, safety backups and bounded-edit outcomes. Products add only their own
+/// evidence.
 /// </summary>
 public static class ResultText
 {
@@ -44,6 +45,45 @@ public static class ResultText
         }
 
         return !empty;
+    }
+
+    /// <summary>
+    /// Writes a requested detail list as a table under its <see cref="Section"/> heading, one
+    /// row per item. A list that was not requested (<see langword="null"/>) writes nothing; an
+    /// empty one writes its heading and <c>none</c>.
+    /// </summary>
+    public static void Table<T>(
+        TableSurface surface,
+        string title,
+        IReadOnlyList<T>? items,
+        string[] columns,
+        Func<T, string[]> row)
+    {
+        ArgumentNullException.ThrowIfNull(row);
+        if (items is null || !Section(surface, title, items.Count == 0))
+        {
+            return;
+        }
+
+        var table = new TextTable(columns);
+        foreach (T item in items)
+        {
+            table.AddRow(row(item));
+        }
+
+        table.WriteTo(surface.Out, surface.Format);
+    }
+
+    /// <summary>
+    /// Writes a requested list of names on one comma-separated line under its
+    /// <see cref="Section"/> heading; <see langword="null"/> writes nothing.
+    /// </summary>
+    public static void List(TableSurface surface, string title, IReadOnlyList<string>? values)
+    {
+        if (values is not null && Section(surface, title, values.Count == 0))
+        {
+            surface.Out.WriteLine(string.Join(", ", values));
+        }
     }
 
     /// <summary>Writes the backup line when an in-place edit made or kept one.</summary>

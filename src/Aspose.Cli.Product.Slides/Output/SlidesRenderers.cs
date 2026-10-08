@@ -41,76 +41,19 @@ internal static class SlidesRenderers
     /// <summary>The sections --detail asked for, in the order the JSON result lists them.</summary>
     private static void RenderDetails(PresentationInfoResult result, TableSurface surface)
     {
-        if (result.Sections is { } sections && ResultText.Section(surface, "sections", sections.Count == 0))
-        {
-            var table = new TextTable("name", "id", "start slide");
-            foreach (PresentationSectionInfo section in sections)
-            {
-                table.AddRow(section.Name, section.SectionId, TableText.Int(section.StartSlide));
-            }
-
-            table.WriteTo(surface.Out, surface.Format);
-        }
-
-        if (result.Masters is { } masters && ResultText.Section(surface, "masters", masters.Count == 0))
-        {
-            var table = new TextTable("name", "slides");
-            foreach (PresentationMasterInfo master in masters)
-            {
-                table.AddRow(master.Name, TableText.Int(master.SlideCount));
-            }
-
-            table.WriteTo(surface.Out, surface.Format);
-        }
-
-        if (result.Layouts is { } layouts && ResultText.Section(surface, "layouts", layouts.Count == 0))
-        {
-            var table = new TextTable("name", "master", "slides");
-            foreach (PresentationLayoutInfo layout in layouts)
-            {
-                table.AddRow(layout.Name, layout.Master ?? string.Empty, TableText.Int(layout.SlideCount));
-            }
-
-            table.WriteTo(surface.Out, surface.Format);
-        }
-
-        if (result.Media is { } media && ResultText.Section(surface, "media", media.Count == 0))
-        {
-            var table = new TextTable("index", "type", "content type", "size");
-            foreach (PresentationMediaInfo item in media)
-            {
-                table.AddRow(TableText.Int(item.Index), item.Type, item.ContentType ?? string.Empty, TableText.Bytes(item.SizeBytes));
-            }
-
-            table.WriteTo(surface.Out, surface.Format);
-        }
-
-        if (result.Notes is { } notes && ResultText.Section(surface, "notes", notes.Count == 0))
-        {
-            var table = new TextTable("slide", "present", "characters");
-            foreach (PresentationNotesInfo note in notes)
-            {
-                table.AddRow(TableText.Int(note.Slide), TableText.YesNo(note.Present), TableText.Int(note.CharacterCount));
-            }
-
-            table.WriteTo(surface.Out, surface.Format);
-        }
-
-        if (result.Comments is { } comments && ResultText.Section(surface, "comments", comments.Count == 0))
-        {
-            var table = new TextTable("slide", "author", "text");
-            foreach (PresentationCommentInfo comment in comments)
-            {
-                table.AddRow(TableText.Int(comment.Slide), comment.Author, comment.Text);
-            }
-
-            table.WriteTo(surface.Out, surface.Format);
-        }
-
-        if (result.Fonts is { } fonts && ResultText.Section(surface, "fonts", fonts.Count == 0))
-        {
-            surface.Out.WriteLine(string.Join(", ", fonts));
-        }
+        ResultText.Table(surface, "sections", result.Sections, ["name", "id", "start slide"],
+            static section => [section.Name, section.SectionId, TableText.Int(section.StartSlide)]);
+        ResultText.Table(surface, "masters", result.Masters, ["name", "slides"],
+            static master => [master.Name, TableText.Int(master.SlideCount)]);
+        ResultText.Table(surface, "layouts", result.Layouts, ["name", "master", "slides"],
+            static layout => [layout.Name, layout.Master ?? string.Empty, TableText.Int(layout.SlideCount)]);
+        ResultText.Table(surface, "media", result.Media, ["index", "type", "content type", "size"],
+            static item => [TableText.Int(item.Index), item.Type, item.ContentType ?? string.Empty, TableText.Bytes(item.SizeBytes)]);
+        ResultText.Table(surface, "notes", result.Notes, ["slide", "present", "characters"],
+            static note => [TableText.Int(note.Slide), TableText.YesNo(note.Present), TableText.Int(note.CharacterCount)]);
+        ResultText.Table(surface, "comments", result.Comments, ["slide", "author", "text"],
+            static comment => [TableText.Int(comment.Slide), comment.Author, comment.Text]);
+        ResultText.List(surface, "fonts", result.Fonts);
 
         if (result.Properties is { } properties && ResultText.Section(surface, "properties", properties.Count == 0))
         {

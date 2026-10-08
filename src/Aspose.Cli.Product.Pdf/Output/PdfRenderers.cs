@@ -56,22 +56,13 @@ internal static class PdfRenderers
     /// <summary>The sections --detail asked for, in the order the JSON result lists them.</summary>
     private static void RenderDetails(PdfInfoResult result, TableSurface surface)
     {
-        if (result.Outline is { } outline)
-        {
-            var table = new TextTable("index", "title", "page");
-            foreach (PdfOutlineItem item in outline)
-            {
-                table.AddRow(
-                    item.Index,
-                    new string(' ', 2 * (item.Level - 1)) + item.Title,
-                    item.Page?.ToString(CultureInfo.InvariantCulture) ?? string.Empty);
-            }
-
-            if (ResultText.Section(surface, "outline", outline.Count == 0))
-            {
-                table.WriteTo(surface.Out, surface.Format);
-            }
-        }
+        ResultText.Table(surface, "outline", result.Outline, ["index", "title", "page"],
+            static item =>
+            [
+                item.Index,
+                new string(' ', 2 * (item.Level - 1)) + item.Title,
+                item.Page?.ToString(CultureInfo.InvariantCulture) ?? string.Empty,
+            ]);
 
         if (result.Forms is { } forms)
         {
@@ -79,36 +70,15 @@ internal static class PdfRenderers
             surface.Out.WriteLine($"{forms.Type}: {forms.FieldCount} field(s){(forms.ReadOnly ? ", read-only" : string.Empty)}");
         }
 
-        if (result.Attachments is { } attachments)
-        {
-            var table = new TextTable("name", "type", "size");
-            foreach (PdfAttachmentInfo attachment in attachments)
-            {
-                table.AddRow(
-                    attachment.Name,
-                    attachment.MimeType ?? string.Empty,
-                    attachment.SizeBytes is long size ? TableText.Bytes(size) : string.Empty);
-            }
-
-            if (ResultText.Section(surface, "attachments", attachments.Count == 0))
-            {
-                table.WriteTo(surface.Out, surface.Format);
-            }
-        }
-
-        if (result.Fonts is { } fonts)
-        {
-            var table = new TextTable("font", "embedded", "subset");
-            foreach (PdfFontInfo font in fonts)
-            {
-                table.AddRow(font.Name, TableText.YesNo(font.Embedded), TableText.YesNo(font.Subset));
-            }
-
-            if (ResultText.Section(surface, "fonts", fonts.Count == 0))
-            {
-                table.WriteTo(surface.Out, surface.Format);
-            }
-        }
+        ResultText.Table(surface, "attachments", result.Attachments, ["name", "type", "size"],
+            static attachment =>
+            [
+                attachment.Name,
+                attachment.MimeType ?? string.Empty,
+                attachment.SizeBytes is long size ? TableText.Bytes(size) : string.Empty,
+            ]);
+        ResultText.Table(surface, "fonts", result.Fonts, ["font", "embedded", "subset"],
+            static font => [font.Name, TableText.YesNo(font.Embedded), TableText.YesNo(font.Subset)]);
 
         if (result.Permissions is { } permissions)
         {
@@ -123,27 +93,14 @@ internal static class PdfRenderers
                 + $"high-resolution print: {TableText.YesNo(permissions.PrintHighResolution)}");
         }
 
-        if (result.Signatures is { } signatures)
-        {
-            var table = new TextTable("field", "signed", "valid");
-            foreach (PdfSignatureInfo signature in signatures)
-            {
-                table.AddRow(
-                    signature.Name,
-                    TableText.YesNo(signature.Signed),
-                    signature.Valid is bool valid ? TableText.YesNo(valid) : string.Empty);
-            }
-
-            if (ResultText.Section(surface, "signatures", signatures.Count == 0))
-            {
-                table.WriteTo(surface.Out, surface.Format);
-            }
-        }
-
-        if (result.Layers is { } layers && ResultText.Section(surface, "layers", layers.Count == 0))
-        {
-            surface.Out.WriteLine(string.Join(", ", layers));
-        }
+        ResultText.Table(surface, "signatures", result.Signatures, ["field", "signed", "valid"],
+            static signature =>
+            [
+                signature.Name,
+                TableText.YesNo(signature.Signed),
+                signature.Valid is bool valid ? TableText.YesNo(valid) : string.Empty,
+            ]);
+        ResultText.List(surface, "layers", result.Layers);
 
         if (result.Metadata is { } metadata)
         {
