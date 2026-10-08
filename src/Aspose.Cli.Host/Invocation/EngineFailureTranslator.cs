@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using Aspose.Cli.Sdk.Errors;
@@ -57,18 +56,15 @@ internal sealed class EngineFailureTranslator
             return CliErrors.RegexTimeout(regex);
         }
 
-        Assembly[] frames = new StackTrace(exception, fNeedFileInfo: false).GetFrames()
-            .Select(static frame => frame.GetMethod()?.DeclaringType?.Assembly)
-            .OfType<Assembly>()
-            .ToArray();
-        string? product = frames.Select(assembly => _products.GetValueOrDefault(assembly)).FirstOrDefault(static name => name is not null);
+        string? product = ExceptionOrigin.Frames(exception)
+            .Select(assembly => _products.GetValueOrDefault(assembly))
+            .FirstOrDefault(static name => name is not null);
         if (product is null)
         {
             return null;
         }
 
-        Assembly? owner = frames.FirstOrDefault(assembly => !IsRuntime(assembly));
-        if (exception is EngineOpException || owner is not null && !_own.Contains(owner))
+        if (exception is EngineOpException || ExceptionOrigin.IsThirdParty(exception, _own))
         {
             return EngineErrors.EngineFailed($"{product} failed inside its document engine: {exception.Message}", exception);
         }
@@ -80,13 +76,5 @@ internal sealed class EngineFailureTranslator
         }
 
         return null;
-    }
-
-    private static bool IsRuntime(Assembly assembly)
-    {
-        string name = assembly.GetName().Name ?? string.Empty;
-        return name is "mscorlib" or "netstandard"
-            || name.StartsWith("System.", StringComparison.Ordinal)
-            || name.StartsWith("Microsoft.", StringComparison.Ordinal);
     }
 }
