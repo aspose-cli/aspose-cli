@@ -22,7 +22,6 @@ public static class OperationSecrets
         return secrets is not null && secrets.TryGetValue(variable, out string? value) && !string.IsNullOrEmpty(value)
             ? value
             : throw new OperationInvalidException(
-                $"environment variable '{variable}' is missing or empty",
-                $"Set {variable} to the secret before running the edit.");
+                Errors.CliErrors.SecretMissingReason(variable), Errors.CliErrors.SecretMissingHint(variable));
     }
 }

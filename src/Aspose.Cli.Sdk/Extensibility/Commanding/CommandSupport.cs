@@ -324,10 +324,7 @@ internal sealed class PasswordOptions
             string? value = readEnvironment(environmentName);
             return !string.IsNullOrEmpty(value)
                 ? value
-                : throw CliErrors.OptionInvalid(
-                    $"{_prefix}-env",
-                    $"environment variable '{environmentName}' is not set or is empty",
-                    "Set the variable to the password before running, or choose another source.");
+                : throw CliErrors.SecretMissing($"{_prefix}-env", environmentName);
         }
 
         if (!fromStandardInput)

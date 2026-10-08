@@ -68,10 +68,7 @@ internal static class SignCommand
                 string? certificatePassword = standard.ReadEnvironment(variable);
                 if (string.IsNullOrEmpty(certificatePassword))
                 {
-                    throw CliErrors.OptionInvalid(
-                        "--certificate-password-env",
-                        $"environment variable '{variable}' is missing or empty",
-                        "Set the variable to the PKCS#12 password and run the command again.");
+                    throw CliErrors.SecretMissing("--certificate-password-env", variable);
                 }
 
                 return standard.OpenEngine().Sign(input, new PdfSignRequest

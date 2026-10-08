@@ -720,6 +720,26 @@ public static partial class CliErrors
         details: new JsonObject { ["option"] = option });
 
     /// <summary>
+    /// An <c>*-env</c> option names an environment variable that is not set or is empty. An
+    /// operation's <c>*Env</c> field reports the same mistake with the same words.
+    /// </summary>
+    /// <param name="option">The option, such as <c>--password-env</c>.</param>
+    /// <param name="variable">The variable it names.</param>
+    public static CliException SecretMissing(string option, string variable) => new(
+        ErrorCodes.OptionInvalid,
+        $"Invalid use of {option}: {SecretMissingReason(variable)}",
+        hint: SecretMissingHint(variable),
+        details: new JsonObject { ["option"] = option, ["variable"] = variable });
+
+    /// <summary>The reason of a <see cref="SecretMissing"/> mistake.</summary>
+    internal static string SecretMissingReason(string variable) =>
+        $"environment variable '{variable}' is not set or is empty";
+
+    /// <summary>The hint of a <see cref="SecretMissing"/> mistake.</summary>
+    internal static string SecretMissingHint(string variable) =>
+        $"Set {variable} to the secret, then run the command again.";
+
+    /// <summary>
     /// An option or argument value that names none of the values it accepts; the details list
     /// them and the closest ones, which the hint asks about before <paramref name="hint"/>.
     /// </summary>
