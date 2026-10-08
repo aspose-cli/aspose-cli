@@ -51,11 +51,10 @@ internal static class PdfEvaluation
         }
         catch (Exception exception) when (IsCollectionLimit(exception) && licenseGate.EnsureApplied() == LicenseState.Evaluation)
         {
-            throw new CliException(
-                ErrorCodes.EvaluationLimit,
-                $"Evaluation mode lets the PDF engine read only the first {VisiblePages} pages of a document; {cause ?? "this command needs a later page"}.",
-                hint: $"Apply an Aspose.PDF license. Without one, {remedy ?? $"only pages 1-{VisiblePages} can be read: a command that takes --pages can be limited to them"}. No output was written.",
-                docs: "licensing",
+            throw CliErrors.EvaluationLimit(
+                $"Evaluation mode lets the PDF engine read only the first {VisiblePages} pages of a document; {cause ?? "this command needs a later page"}, so no output was written.",
+                "Aspose.PDF",
+                remedy ?? $"limit a command that takes --pages to pages 1-{VisiblePages}",
                 innerException: exception);
         }
     }

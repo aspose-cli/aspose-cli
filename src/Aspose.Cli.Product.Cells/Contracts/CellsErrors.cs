@@ -14,24 +14,22 @@ public static class CellsErrors
     internal static CliException TextExportEvaluationLimit(
         string format,
         string requestedSheet,
-        string firstSheet) => new(
-        ErrorCodes.EvaluationLimit,
-        $"Evaluation mode can export only the first worksheet '{firstSheet}' to {format}; requested worksheet '{requestedSheet}' was not exported.",
-        hint: "Apply an Aspose.Cells license to export the requested worksheet, or explicitly choose the first worksheet with --sheet. No output was written.",
-        details: new JsonObject
+        string firstSheet) => CliErrors.EvaluationLimit(
+        $"Evaluation mode can export only the first worksheet '{firstSheet}' to {format}; requested worksheet '{requestedSheet}' was not exported and no output was written.",
+        "Aspose.Cells",
+        "explicitly choose the first worksheet with --sheet",
+        new JsonObject
         {
             ["format"] = format,
             ["requestedSheet"] = requestedSheet,
             ["firstSheet"] = firstSheet,
-        },
-        docs: "licensing");
+        });
 
     /// <summary>The evaluation engine refuses to open more files in this process.</summary>
-    internal static CliException EvaluationOpenLimit(string path) => new(
-        ErrorCodes.EvaluationLimit,
+    internal static CliException EvaluationOpenLimit(string path) => CliErrors.EvaluationLimit(
         $"Evaluation mode opens at most 100 workbooks per process, and this process has reached that limit; {path} was not opened.",
-        hint: "Apply an Aspose.Cells license, or run the command again in a new process.",
-        docs: "licensing");
+        "Aspose.Cells",
+        "run the command again in a new process");
 
     internal static CliException RangeInvalid(string spec, string reason) => new(
         CellsDiagnostics.RangeInvalid,
