@@ -115,7 +115,12 @@ aspose-cli capabilities --output json
   it. An `--out` that resolves to the input is refused: use `--in-place`. A
   `*-env` option, such as `--password-env`, whose variable is not set or is
   empty names that variable in `details.variable`; an operation's `*Env` field
-  reports it with the same words as `OPS_INVALID`.
+  reports it with the same words as `OPS_INVALID`. `capabilities` with an
+  unknown product or command names its positional argument in
+  `details.option` (`product` or `command`) and lists what exists in
+  `details.available` and the closest names in `details.suggestions`; a list
+  longer than 50 names is cut there and `details.availableCount` gives the
+  total.
 - `OPS_INVALID`: `details.index`, `details.op` and `details.reason` locate the
   failing operation (`aspose-cli docs editing`).
 - `*_NOT_FOUND`: `details.available` and `details.suggestions` list what

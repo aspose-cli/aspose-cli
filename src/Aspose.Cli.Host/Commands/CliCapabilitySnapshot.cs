@@ -1,5 +1,4 @@
 using System.CommandLine;
-using System.Text.Json.Nodes;
 using Aspose.Cli.Host.Invocation;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
@@ -324,25 +323,16 @@ internal sealed class CliCapabilitySnapshot
         IEnumerable<string> available,
         string? product = null)
     {
-        var values = new JsonArray(
-            available.Order(StringComparer.Ordinal)
-                .Select(static value => JsonValue.Create(value))
-                .ToArray());
         string scope = product is null
             ? "this build"
             : $"product '{product}'";
-        return new CliException(
-            ErrorCodes.OptionInvalid,
-            $"Unknown capability {selection} '{requested}' for {scope}.",
-            hint: selection == "product"
+        return CliErrors.OptionInvalid(
+            selection,
+            $"unknown {selection} '{requested}' for {scope}",
+            selection == "product"
                 ? "Choose a product from details.available."
                 : "Choose a product-relative command path from details.available.",
-            details: new JsonObject
-            {
-                ["selection"] = selection,
-                ["requested"] = requested,
-                ["available"] = values,
-            });
+            Mistake.Of(requested, available.Order(StringComparer.Ordinal)));
     }
 
     private static void ValidateOperationCommands(
