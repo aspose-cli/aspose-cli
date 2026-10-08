@@ -10,8 +10,6 @@ internal static class WordsDiagnostics
     internal static readonly ErrorCode AnchorNotFound = ErrorCode.NotFound("ANCHOR_NOT_FOUND");
     internal static readonly ErrorCode RevisionNotFound = ErrorCode.NotFound("REVISION_NOT_FOUND");
     internal static readonly ErrorCode MergeDataInvalid = Validation("MERGE_DATA_INVALID");
-    internal static readonly ErrorCode DocumentProtected =
-        new("DOCUMENT_PROTECTED", ExitCode.InputError);
     internal static readonly ErrorCode DocumentHasRevisions =
         new("DOCUMENT_HAS_REVISIONS", ExitCode.InputError);
 
@@ -38,7 +36,6 @@ internal static class WordsDiagnostics
         Error(AnchorNotFound, "validation"),
         Error(RevisionNotFound, "validation"),
         Error(MergeDataInvalid, "validation"),
-        Error(DocumentProtected, "input"),
         Error(DocumentHasRevisions, "input"),
         Warning(EncryptionRemoved),
         Warning(TrackedChangesPresent),

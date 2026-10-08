@@ -207,10 +207,7 @@ internal sealed partial class WordsMutationHandlers
         bool removed = _document.Unprotect(password);
         if (!removed)
         {
-            throw new CliException(
-                WordsDiagnostics.DocumentProtected,
-                "The supplied protection password is invalid.",
-                hint: "Provide the correct environment variable named by passwordEnv.");
+            throw CliErrors.ProtectionPassword(passwordGiven: true, "the document", "passwordEnv");
         }
 
         return 1;

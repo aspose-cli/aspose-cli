@@ -19390,16 +19390,6 @@
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
-      "code": "DOCUMENT_PROTECTED",
-      "owner": "words",
-      "severity": "error",
-      "exitCode": 3,
-      "category": "input",
-      "messageTemplateId": "words.document-protected.message.v1",
-      "hintTemplateId": "words.document-protected.hint.v1",
-      "detailsSchemaId": "v2/common/diagnostic-details"
-    },
-    {
       "code": "EVALUATION_LIMIT",
       "owner": "common",
       "severity": "error",

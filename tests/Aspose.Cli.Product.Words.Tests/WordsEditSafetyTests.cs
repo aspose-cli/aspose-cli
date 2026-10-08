@@ -126,7 +126,9 @@ public sealed class WordsEditSafetyTests
         CliException wrong = Assert.Throws<CliException>(() => fixture.Engine.ApplyOps(
             protectedPath, Unprotect("OTHER_PASSWORD"),
             new WordsEditRequest { Output = TestOutput.At(fixture.Temp.File("wrong.docx")), OpSecrets = secrets }));
-        Assert.Equal(WordsDiagnostics.DocumentProtected, wrong.Code);
+        // A wrong protection password is the same mistake as a wrong open password.
+        Assert.Equal(ErrorCodes.PasswordInvalid, wrong.Code);
+        Assert.Contains("\"passwordEnv\"", wrong.Hint, StringComparison.Ordinal);
         fixture.Engine.ApplyOps(
             protectedPath, Unprotect("PROTECT_PASSWORD"),
             new WordsEditRequest { Output = TestOutput.At(output), OpSecrets = secrets });
