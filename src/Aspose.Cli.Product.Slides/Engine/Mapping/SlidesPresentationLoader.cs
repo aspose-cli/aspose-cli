@@ -7,6 +7,24 @@ namespace Aspose.Cli.Product.Slides.Engine.Mapping;
 internal sealed class SlidesPresentationLoader(
     ResourceBudgetLedger resourceBudgets)
 {
+    /// <summary>
+    /// How a presentation input that does not load is reported: Aspose.Slides raises
+    /// <see cref="InvalidPasswordException"/> for a missing or wrong password, and its own
+    /// exceptions, <see cref="ArgumentException"/> or <see cref="InvalidOperationException"/>
+    /// for bytes it cannot read.
+    /// </summary>
+    internal static readonly InputLoading Loading = new(
+        "supported presentation",
+        $"Use one of: {string.Join(", ", SlidesFormats.LoadIds)}. Verify the file opens in a presentation editor and is not merely renamed.",
+        static exception => exception switch
+        {
+            InvalidPasswordException => LoadFailureKind.Password,
+            ArgumentException or InvalidOperationException => LoadFailureKind.Corrupt,
+            _ when exception.GetType().Assembly.GetName().Name?.StartsWith("Aspose.Slides", StringComparison.Ordinal) == true
+                => LoadFailureKind.Corrupt,
+            _ => LoadFailureKind.Other,
+        });
+
     public LoadedPresentation Open(string path, Secret? password)
     {
         InputSizeGuard.Ensure(resourceBudgets, path);
@@ -46,20 +64,12 @@ internal sealed class SlidesPresentationLoader(
             string format = FormatId(info.LoadFormat);
             if (!SlidesFormats.LoadIds.Contains(format, StringComparer.Ordinal))
             {
-                throw Invalid(path, $"detected format is {info.LoadFormat}");
+                throw Loading.Unloadable(path, info.LoadFormat.ToString());
             }
 
-            if (info.IsPasswordProtected)
+            if (info.IsPasswordProtected && (password is null || !info.CheckPassword(password)))
             {
-                if (string.IsNullOrEmpty(password))
-                {
-                    throw CliErrors.PasswordRequired(path);
-                }
-
-                if (!info.CheckPassword(password))
-                {
-                    throw CliErrors.PasswordInvalid(path);
-                }
+                throw InputLoading.PasswordRefused(path, secret);
             }
 
             // Engine code creates presentations only here or from the default template: without a
@@ -104,43 +114,9 @@ internal sealed class SlidesPresentationLoader(
             source = null;
             return loaded;
         }
-        catch (CliException)
+        catch (Exception exception) when (exception is not CliException and not OperationCanceledException)
         {
-            throw;
-        }
-        catch (InvalidPasswordException)
-        {
-            throw string.IsNullOrEmpty(password)
-                ? CliErrors.PasswordRequired(path)
-                : CliErrors.PasswordInvalid(path);
-        }
-        catch (FileNotFoundException)
-        {
-            throw CliErrors.FileNotFound(path);
-        }
-        catch (UnauthorizedAccessException)
-        {
-            throw CliErrors.FileAccessDenied(path);
-        }
-        catch (IOException exception)
-        {
-            if (!File.Exists(path))
-            {
-                throw CliErrors.FileNotFound(path);
-            }
-
-            if (FileAccessProbe.CanOpenForRead(path))
-            {
-                throw Invalid(path, exception.Message, exception);
-            }
-
-            throw CliErrors.FileLocked(path);
-        }
-        catch (Exception exception) when (
-            exception.GetType().Assembly.GetName().Name?.StartsWith("Aspose.Slides", StringComparison.Ordinal) == true
-            || exception is ArgumentException or InvalidOperationException)
-        {
-            throw Invalid(path, exception.Message, exception);
+            throw Loading.Failure(exception, path, secret);
         }
         finally
         {
@@ -198,13 +174,6 @@ internal sealed class SlidesPresentationLoader(
         LoadFormat.Fodp => "fodp",
         _ => "unknown",
     };
-
-    private static CliException Invalid(string path, string reason, Exception? inner = null) => CliErrors.InputUnreadable(
-        path,
-        "supported presentation",
-        reason,
-        $"Use one of: {string.Join(", ", SlidesFormats.LoadIds)}. Verify the file opens in a presentation editor and is not merely renamed.",
-        inner);
 }
 
 internal sealed record LoadedPresentation(Presentation Presentation, string FormatId, SlidesResourcePolicy Resources)
