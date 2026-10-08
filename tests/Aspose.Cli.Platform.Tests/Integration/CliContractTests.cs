@@ -411,7 +411,7 @@ $", result.StdOut);
                 selection == "unknown-product"
                     ? "product"
                     : "command",
-                details["selection"]!.GetValue<string>());
+                details["option"]!.GetValue<string>());
             Assert.NotEmpty(details["available"]!.AsArray());
             return;
         }
