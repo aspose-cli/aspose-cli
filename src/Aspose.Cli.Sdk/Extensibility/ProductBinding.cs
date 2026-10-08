@@ -2,6 +2,7 @@ using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Ports;
 using Aspose.Cli.Sdk.Rendering;
+using Aspose.Cli.Sdk.Results;
 
 namespace Aspose.Cli.Sdk.Extensibility;
 
@@ -64,7 +65,8 @@ public abstract class ProductBinding
         Type portType,
         Func<object> port,
         ILicenseGate licenseGate,
-        Lazy<IFontEnvironment>? fontEnvironment)
+        Lazy<IFontEnvironment>? fontEnvironment,
+        OutputPipeline? outputs)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(productId);
         ProductId = productId;
@@ -73,6 +75,7 @@ public abstract class ProductBinding
         LicenseGate = licenseGate
             ?? throw new ArgumentNullException(nameof(licenseGate));
         FontEnvironmentFactory = fontEnvironment;
+        Publishing = outputs;
     }
 
     /// <summary>Stable product identifier.</summary>
@@ -83,6 +86,12 @@ public abstract class ProductBinding
 
     /// <summary>Product-specific license gate.</summary>
     public ILicenseGate LicenseGate { get; }
+
+    /// <summary>
+    /// The product's write pipeline, through which it publishes every output and which discloses
+    /// evaluation output in the command's result; null for a binding that creates none.
+    /// </summary>
+    public OutputPipeline? Publishing { get; }
 
     /// <summary>Product-specific font environment, when the engine exposes one.</summary>
     public IFontEnvironment? FontEnvironment => FontEnvironmentFactory?.Value;
@@ -127,6 +136,38 @@ public abstract class ProductBinding
     }
 
     /// <summary>
+    /// Creates a licensed-engine binding whose product publishes its outputs through the SDK
+    /// write pipeline, which recognizes evaluation marks through <paramref name="evaluation"/>.
+    /// The product and font ports are deferred independently.
+    /// </summary>
+    public static ProductBinding<TPort> Create<TPort, TDocument>(
+        ProductActivationContext context,
+        string productId,
+        Func<LicenseResolution, ILicenseGate> createLicenseGate,
+        IEvaluationProfile<TDocument> evaluation,
+        Func<OutputPipeline<TDocument>, TPort> createPort,
+        Func<ILicenseState, IFontEnvironment> createFontEnvironment)
+        where TPort : class
+        where TDocument : class
+    {
+        ArgumentNullException.ThrowIfNull(context);
+        ArgumentNullException.ThrowIfNull(evaluation);
+        ArgumentNullException.ThrowIfNull(createPort);
+        ArgumentNullException.ThrowIfNull(createFontEnvironment);
+        ILicenseGate license = ProductLicenseGateFactory.Create(
+            context,
+            productId,
+            createLicenseGate);
+        var outputs = new OutputPipeline<TDocument>(license, evaluation, context.SafeFileWriter);
+        return new ProductBinding<TPort>(
+            productId,
+            new Lazy<TPort>(() => createPort(outputs)),
+            license,
+            new Lazy<IFontEnvironment>(() => createFontEnvironment(outputs)),
+            outputs);
+    }
+
+    /// <summary>
     /// Creates a binding with independently deferred product and font ports.
     /// </summary>
     public static ProductBinding<TPort> Create<TPort>(
@@ -147,7 +188,8 @@ public abstract class ProductBinding
             productId,
             new Lazy<TPort>(() => createPort(license)),
             license,
-            new Lazy<IFontEnvironment>(() => createFontEnvironment(license)));
+            new Lazy<IFontEnvironment>(() => createFontEnvironment(license)),
+            outputs: null);
     }
 
     /// <summary>Creates a licensed-engine binding without font diagnostics.</summary>
@@ -167,7 +209,8 @@ public abstract class ProductBinding
             productId,
             new Lazy<TPort>(() => createPort(license)),
             license,
-            fontEnvironment: null);
+            fontEnvironment: null,
+            outputs: null);
     }
 
     /// <summary>
@@ -185,7 +228,8 @@ public abstract class ProductBinding
             productId,
             new Lazy<TPort>(() => createPort(license)),
             license,
-            fontEnvironment: null);
+            fontEnvironment: null,
+            outputs: null);
     }
 
     /// <summary>Creates a license-free binding with independently deferred product and font ports.</summary>
@@ -202,7 +246,8 @@ public abstract class ProductBinding
             productId,
             new Lazy<TPort>(() => createPort(license)),
             license,
-            new Lazy<IFontEnvironment>(() => createFontEnvironment(license)));
+            new Lazy<IFontEnvironment>(() => createFontEnvironment(license)),
+            outputs: null);
     }
 }
 
@@ -217,8 +262,9 @@ public sealed class ProductBinding<TPort> : ProductBinding
         string productId,
         Lazy<TPort> port,
         ILicenseGate licenseGate,
-        Lazy<IFontEnvironment>? fontEnvironment)
-        : base(productId, typeof(TPort), () => port.Value, licenseGate, fontEnvironment)
+        Lazy<IFontEnvironment>? fontEnvironment,
+        OutputPipeline? outputs)
+        : base(productId, typeof(TPort), () => port.Value, licenseGate, fontEnvironment, outputs)
     {
         _port = port ?? throw new ArgumentNullException(nameof(port));
     }

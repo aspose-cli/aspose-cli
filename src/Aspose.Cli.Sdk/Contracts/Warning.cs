@@ -46,6 +46,13 @@ public static partial class WarningCodes
     public const string SignatureInvalidated = "SIGNATURE_INVALIDATED";
     public const string EvalInputTruncated = "EVAL_INPUT_TRUNCATED";
 
+    /// <summary>
+    /// With a license, the output keeps evaluation marks that an earlier save without a license
+    /// wrote into its input, or renders a source that carries them. Only the write pipeline
+    /// reports it.
+    /// </summary>
+    public const string EvalInputMarked = "EVAL_INPUT_MARKED";
+
     /// <summary>A list inside a result was capped; the warning.s location names the list.</summary>
     public const string ListTruncated = "LIST_TRUNCATED";
 

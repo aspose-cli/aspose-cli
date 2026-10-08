@@ -40,13 +40,14 @@ public static class EnvelopeParts
     };
 
     /// <summary>
-    /// The warnings of a command that asked for evaluation mode: each <c>EVAL_MODE</c> warning
-    /// becomes <see cref="RequestedEvaluationWatermark"/>; every other warning is kept.
+    /// The warnings of a command that asked for evaluation mode: each <see cref="EvaluationWatermark"/>
+    /// becomes <see cref="RequestedEvaluationWatermark"/>; every other warning is kept, including
+    /// the disclosure of the write pipeline, which names the request itself.
     /// </summary>
     public static IReadOnlyList<Warning>? ForRequestedEvaluation(IReadOnlyList<Warning>? warnings) =>
-        warnings?.Any(static warning => warning.Code == WarningCodes.EvalMode) == true
+        warnings?.Contains(EvaluationWatermark) == true
             ? [.. warnings.Select(static warning =>
-                warning.Code == WarningCodes.EvalMode ? RequestedEvaluationWatermark : warning)]
+                warning == EvaluationWatermark ? RequestedEvaluationWatermark : warning)]
             : warnings;
 
     /// <summary>Maps the license state to the contract representation.</summary>

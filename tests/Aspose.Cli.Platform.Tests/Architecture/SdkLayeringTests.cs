@@ -45,7 +45,7 @@ public sealed class SdkLayeringTests
     /// <item>Operations: the operation vocabulary, its catalog and its runner.</item>
     /// <item>Services the products bind: licensing, diagnostics and the font port. They
     /// take product data as values, never a Product* type from Extensibility.</item>
-    /// <item>Results: envelope parts filled from the license state.</item>
+    /// <item>Results: the write pipeline (OutputPipeline, OutputSet) and the envelope parts it fills.</item>
     /// <item>Extensibility: product modules, definitions and the catalog, which compose
     /// everything below.</item>
     /// <item>Commanding: the System.CommandLine vocabulary product commands share, built on
