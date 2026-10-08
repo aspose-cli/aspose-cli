@@ -32,7 +32,11 @@ internal static class InvariantCases
     public const string DryRun = "dry-run";
     public const string OutputReopens = "output-reopens";
     public const string SecretHidden = "secret-hidden";
+    public const string EvaluationDisclosed = "evaluation-disclosed";
     public const string Platform = "platform";
+
+    /// <summary>The warning that discloses evaluation output (<c>aspose-cli docs licensing</c>).</summary>
+    private const string EvaluationWarning = "EVAL_MODE";
 
     /// <summary>The shard of the slow part of every product's format matrix.</summary>
     public const string FormatMatrix = "formats";
@@ -50,7 +54,7 @@ internal static class InvariantCases
     {
         ScenarioContract.NoInternalError, ScenarioContract.ErrorEnvelope, ScenarioContract.ResultEnvelope,
         MissingInput, CorruptInput, UnknownOption, UnknownCommand, UnknownOp, UnknownField, InvalidEnum,
-        UnwritableOutput, ReadOnly, DryRun, OutputReopens, SecretHidden,
+        UnwritableOutput, ReadOnly, DryRun, OutputReopens, SecretHidden, EvaluationDisclosed,
     };
 
     public static IReadOnlyDictionary<string, InvariantCase> All => Generated.Value;
@@ -91,6 +95,7 @@ internal static class InvariantCases
             cases.AddRange(UnknownOptionCases(command));
             cases.AddRange(UnknownCommandCases(catalog, command));
             cases.AddRange(InvalidEnumCases(command));
+            cases.AddRange(EvaluationDisclosedCases(command));
         }
         foreach (CliProduct product in catalog.Products.Where(static product => ScenarioFixtures.Products.Contains(product.Id)))
         {
@@ -527,6 +532,37 @@ internal static class InvariantCases
             yield return Case(SecretHidden, $"{product.Id} edit {op}", product.Id, slow: false, invocation,
                 new ScenarioExpectation { ExitCode = outcomes, Hidden = [ScenarioFixtures.Password] });
         }
+    }
+
+    // ----- (h) every successful write discloses evaluation mode -----------------------------
+
+    /// <summary>
+    /// Every product command that writes a document, run as its smallest valid invocation: in
+    /// evaluation mode it succeeds and its result warns <see cref="EvaluationWarning"/>, so the
+    /// marks the engine saved into the output are disclosed; with a license it does not claim them.
+    /// Review writes evidence, not a deliverable, and is left out.
+    /// </summary>
+    private static IEnumerable<InvariantCase> EvaluationDisclosedCases(CliCommand command)
+    {
+        bool writes = command.Verb == "create" || command.Has("--out") || command.Has("--out-dir") || command.Has("--in-place");
+        if (command.Product is not { } product || command.Verb == "review" || !writes)
+        {
+            yield break;
+        }
+        Invocation invocation = Invocation.For(command);
+        if (command.Has("--out") && !command.Has("--to") && !invocation.Args.Contains("--out", StringComparer.Ordinal))
+        {
+            // Without --to, an optional --out is what makes the command write: an edit writes a new
+            // file rather than its input, and a compare writes its redline.
+            invocation.Add("--out", "output." + ScenarioFixtures.PrimaryFormat(product));
+        }
+        yield return Case(EvaluationDisclosed, $"{command}", product, slow: false, invocation, new ScenarioExpectation
+        {
+            ExitCode = [0],
+            Warnings = ScenarioLicense.Licensed
+                ? new ScenarioCodes { Absent = [EvaluationWarning] }
+                : new ScenarioCodes { Present = [EvaluationWarning] },
+        });
     }
 
     // ----- helpers ---------------------------------------------------------------------------
