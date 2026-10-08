@@ -216,15 +216,8 @@ internal sealed class MarkdownImportResources : IDisposable
                 throw Refusal(reference, source, "is an absolute path, a drive, a share or a URL");
             }
 
-            string full;
-            try
-            {
-                full = Path.GetFullPath(Path.Combine(baseDirectory, interpretation.Replace('/', '\\')));
-            }
-            catch (Exception exception) when (exception is ArgumentException or NotSupportedException or PathTooLongException)
-            {
-                throw Refusal(reference, source, "is not a valid file path");
-            }
+            string full = PathResolver.TryResolve(baseDirectory, interpretation.Replace('/', '\\'))
+                ?? throw Refusal(reference, source, "is not a valid file path");
 
             if (!full.StartsWith(_rootPrefix, StringComparison.OrdinalIgnoreCase))
             {
