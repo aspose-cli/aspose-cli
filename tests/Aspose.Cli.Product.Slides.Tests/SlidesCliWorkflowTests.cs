@@ -197,5 +197,35 @@ public sealed class SlidesCliWorkflowTests : IDisposable
         ];
     }
 
+    /// <summary>
+    /// Evaluation mode cuts read text short, so replace_text refuses only when the text in its
+    /// scope was cut: short shape text is replaced while long speaker notes stay out of scope.
+    /// </summary>
+    [Fact]
+    public void Evaluation_ReplaceTextRefusesOnlyWhenTheTextInItsScopeWasCutShort()
+    {
+        using (var presentation = new Presentation())
+        {
+            ISlide slide = presentation.Slides[0];
+            slide.Shapes.AddAutoShape(ShapeType.Rectangle, 50, 50, 200, 60).TextFrame.Text = "Hi";
+            slide.NotesSlideManager.AddNotesSlide().NotesTextFrame.Text = "Speaker notes long enough to be cut short.";
+            presentation.Save(_workspace.File("deck.pptx"), SaveFormat.Pptx);
+        }
+
+        File.WriteAllText(_workspace.File("shapes.json"), """{"ops":[{"op":"replace_text","find":"Hi","replace":"Yo","scope":"shapes"}]}""");
+        File.WriteAllText(_workspace.File("all.json"), """{"ops":[{"op":"replace_text","find":"Hi","replace":"Yo","scope":"all"}]}""");
+
+        CliResult shapes = _workspace.Run("slides", "edit", "deck.pptx", "--ops", "shapes.json", "--out", "shapes.pptx",
+            "--license-mode", "evaluation", "--output", "json");
+        CliResult all = _workspace.Run("slides", "edit", "deck.pptx", "--ops", "all.json", "--out", "all.pptx",
+            "--license-mode", "evaluation", "--output", "json");
+
+        Assert.True(shapes.ExitCode == 0, shapes.StdErr);
+        Assert.Equal(1, JsonNode.Parse(shapes.StdOut)!["applied"]![0]!["itemsAffected"]!.GetValue<long>());
+        Assert.Equal(7, all.ExitCode);
+        Assert.Equal("EVALUATION_LIMIT", JsonNode.Parse(all.StdErr)!["error"]!["code"]!.GetValue<string>());
+        Assert.False(File.Exists(_workspace.File("all.pptx")));
+    }
+
     public void Dispose() => _workspace.Dispose();
 }
