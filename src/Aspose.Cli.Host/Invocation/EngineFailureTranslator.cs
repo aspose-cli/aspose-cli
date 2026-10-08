@@ -51,13 +51,9 @@ internal sealed class EngineFailureTranslator
         {
             return null;
         }
-        if (exception is RegexMatchTimeoutException)
+        if (exception is RegexMatchTimeoutException regex)
         {
-            return new CliException(
-                ErrorCodes.OperationTimeout,
-                "A regular expression exceeded its execution budget.",
-                hint: "Simplify the expression or search a narrower part of the document.",
-                innerException: exception);
+            return CliErrors.RegexTimeout(regex);
         }
 
         Assembly[] frames = new StackTrace(exception, fNeedFileInfo: false).GetFrames()

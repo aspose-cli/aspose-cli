@@ -235,9 +235,7 @@ internal static class PdfEngineSupport
         }
         catch (RegexMatchTimeoutException exception)
         {
-            throw new CliException(ErrorCodes.OperationTimeout,
-                "The PDF regular expression exceeded its one-second execution budget.",
-                hint: "Simplify the expression or search a narrower page range.", innerException: exception);
+            throw CliErrors.RegexTimeout(exception);
         }
     }
 }

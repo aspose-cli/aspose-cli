@@ -159,7 +159,10 @@ aspose-cli capabilities --output json
 **Timeout (exit 9)**
 
 - `OPERATION_TIMEOUT`: `--timeout <seconds>` expired. Supervised work was
-  stopped and staged outputs were recovered before the exit.
+  stopped and staged outputs were recovered before the exit. With
+  `details.phase` `regex`, a regular expression you supplied exceeded its own
+  execution budget, which `--timeout` does not raise: simplify the expression
+  or search a narrower part of the document.
 
 ## Shared warnings
 
