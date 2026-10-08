@@ -312,7 +312,7 @@ public sealed class BoundedEditCommand<TOp, TBatch>
             // means the shell removed them, as Windows PowerShell does to embedded quotes
             // in native arguments. Same code and message; the hint names the ways out.
             string shorthand = _set is null ? string.Empty : ", or use --set";
-            throw new CliException(
+            throw CliException.Create(
                 exception.Code,
                 exception.Message,
                 hint: $"{exception.Hint} The value reached the CLI without any double quotes; "

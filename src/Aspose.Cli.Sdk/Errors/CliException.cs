@@ -7,9 +7,14 @@ namespace Aspose.Cli.Sdk.Errors;
 /// The only exception type that crosses layer boundaries. Engine adapters
 /// translate every SDK exception into a <see cref="CliException"/>; the
 /// command executor turns it into the error envelope and the exit code.
+/// A product builds its own codes with the constructor; a shared code of
+/// <see cref="ErrorCodes"/> is built only by a <see cref="CliErrors"/> factory,
+/// so each situation has one message, hint and details shape.
 /// </summary>
 public sealed class CliException : Exception
 {
+    /// <summary>Creates an error with a code the product declares.</summary>
+    /// <exception cref="ArgumentException"><paramref name="code"/> is a shared code of <see cref="ErrorCodes"/>.</exception>
     public CliException(
         ErrorCode code,
         string message,
@@ -17,6 +22,17 @@ public sealed class CliException : Exception
         JsonObject? details = null,
         string? docs = null,
         Exception? innerException = null)
+        : this(message, innerException, RefuseShared(code), hint, details, docs)
+    {
+    }
+
+    private CliException(
+        string message,
+        Exception? innerException,
+        ErrorCode code,
+        string? hint,
+        JsonObject? details,
+        string? docs)
         : base(message, innerException)
     {
         ArgumentNullException.ThrowIfNull(code);
@@ -32,6 +48,24 @@ public sealed class CliException : Exception
         Hint = hint;
         Details = details;
         Docs = docs;
+    }
+
+    /// <summary>Creates an error with any code; the SDK's factories build shared codes with it.</summary>
+    internal static CliException Create(
+        ErrorCode code,
+        string message,
+        string? hint = null,
+        JsonObject? details = null,
+        string? docs = null,
+        Exception? innerException = null) => new(message, innerException, code, hint, details, docs);
+
+    private static ErrorCode RefuseShared(ErrorCode code)
+    {
+        ArgumentNullException.ThrowIfNull(code);
+        return ErrorCodes.IsShared(code)
+            ? throw new ArgumentException(
+                $"Error code '{code.Name}' is a shared code; build it with a CliErrors factory.", nameof(code))
+            : code;
     }
 
     /// <summary>The stable error code.</summary>

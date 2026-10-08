@@ -52,10 +52,10 @@ public sealed class CorruptInputDetectionTests
         ParsedInvocation invocation = ActualCommandTree.Parser.Parse(
             ["pdf", "merge", "other.pdf", "renamed.pdf", "--out", "merged.pdf"]);
         GlobalValues globals = Globals(workspace);
-        var unnamed = new CliException(ErrorCodes.FileCorrupt, "The file is corrupt.");
-        var named = new CliException(
-            ErrorCodes.FileCorrupt, "The file is corrupt.",
-            details: new JsonObject { ["path"] = workspace.File("renamed.pdf") });
+        // A product names the file; an error another process reported may not.
+        CliException unnamed = CliErrors.FromRemote("FILE_CORRUPT", ExitCode.InputError, "The file is corrupt.");
+        CliException named = CliErrors.InputUnreadable(
+            workspace.File("renamed.pdf"), "PDF document", "the PDF header was not found", "Check the file.");
 
         // Without a named file, a command with several inputs cannot tell which one failed.
         Assert.Same(unnamed, CorruptInputDetection.Explain(
@@ -76,8 +76,8 @@ public sealed class CorruptInputDetectionTests
         Assert.False(File.Exists(Path.Combine(Directory.GetCurrentDirectory(), "renamed.pdf")));
         ParsedInvocation invocation = ActualCommandTree.Parser.Parse(["pdf", "inspect", "renamed.pdf"]);
         GlobalValues globals = Globals(workspace);
-        var corrupt = new CliException(
-            ErrorCodes.FileCorrupt, "The file is corrupt.", details: new JsonObject { ["path"] = "renamed.pdf" });
+        CliException corrupt = CliErrors.FromRemote(
+            "FILE_CORRUPT", ExitCode.InputError, "The file is corrupt.", details: new JsonObject { ["path"] = "renamed.pdf" });
 
         var explained = Assert.IsType<CliException>(CorruptInputDetection.Explain(
             corrupt, invocation.ParseResult, globals, ActualCommandTree.Host.Catalog));
