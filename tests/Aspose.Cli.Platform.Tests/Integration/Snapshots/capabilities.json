@@ -140,11 +140,7 @@
         "csv",
         "tsv",
         "html",
-        "mhtml",
-        "pdf",
-        "xps",
-        "json",
-        "md"
+        "mhtml"
       ],
       "engine": {
         "id": "aspose",
@@ -380,19 +376,12 @@
           ],
           "aliases": [],
           "uses": [
-            "input",
             "convert"
           ],
-          "operations": [
-            "app",
-            "fonts",
-            "open",
-            "preview",
-            "review"
-          ],
+          "operations": [],
           "declaredOwnership": "explicit",
           "genericAvailable": false,
-          "explicitAvailable": true
+          "explicitAvailable": false
         },
         {
           "id": "md",
@@ -403,20 +392,13 @@
             "markdown"
           ],
           "uses": [
-            "input",
             "convert"
           ],
-          "operations": [
-            "app",
-            "fonts",
-            "open",
-            "preview",
-            "review"
-          ],
+          "operations": [],
           "declaredOwnership": "explicit",
           "finalOwner": "words",
           "genericAvailable": false,
-          "explicitAvailable": true
+          "explicitAvailable": false
         },
         {
           "id": "mhtml",
@@ -470,20 +452,13 @@
           ],
           "aliases": [],
           "uses": [
-            "input",
             "convert"
           ],
-          "operations": [
-            "app",
-            "fonts",
-            "open",
-            "preview",
-            "review"
-          ],
+          "operations": [],
           "declaredOwnership": "explicit",
           "finalOwner": "pdf",
           "genericAvailable": false,
-          "explicitAvailable": true
+          "explicitAvailable": false
         },
         {
           "id": "png",
@@ -688,19 +663,12 @@
           ],
           "aliases": [],
           "uses": [
-            "input",
             "convert"
           ],
-          "operations": [
-            "app",
-            "fonts",
-            "open",
-            "preview",
-            "review"
-          ],
+          "operations": [],
           "declaredOwnership": "explicit",
           "genericAvailable": false,
-          "explicitAvailable": true
+          "explicitAvailable": false
         }
       ],
       "commands": [

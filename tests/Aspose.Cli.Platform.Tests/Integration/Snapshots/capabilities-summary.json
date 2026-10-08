@@ -20,11 +20,7 @@
         "csv",
         "tsv",
         "html",
-        "mhtml",
-        "pdf",
-        "xps",
-        "json",
-        "md"
+        "mhtml"
       ],
       "convertFormats": [
         "xlsx",
