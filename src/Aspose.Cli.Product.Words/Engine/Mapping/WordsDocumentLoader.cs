@@ -240,16 +240,14 @@ internal sealed class WordsDocumentLoader
     private static CliException InvalidDocument(string path, string reason, Exception? inner = null)
     {
         bool pdf = StartsAsPdf(path);
-        return new(
-            ErrorCodes.FileCorrupt,
+        return CliErrors.InputUnreadable(
+            path,
+            pdf ? "PDF document" : "supported word-processing document",
+            reason,
             pdf
-                ? $"Input is not a valid PDF document: {path} ({reason})."
-                : $"Input is not a valid supported word-processing document: {path} ({reason}).",
-            hint: pdf
                 ? "Verify the file opens in a PDF reader; a damaged or truncated PDF cannot be read."
                 : "Verify the file opens in Word and that its content matches a format listed by 'aspose-cli capabilities'.",
-            details: File.Exists(path) ? new System.Text.Json.Nodes.JsonObject { ["path"] = Path.GetFullPath(path) } : null,
-            innerException: inner);
+            inner);
     }
 
     /// <summary>Whether a file begins with the PDF header; false when it cannot be read.</summary>

@@ -88,7 +88,8 @@ aspose-cli capabilities --output json
   to close it and retry the same command; nothing was written.
 - `FILE_ACCESS_DENIED`: the process may not read the file.
 - `FILE_CORRUPT`: the content is not a readable document of that type, nor one
-  another product reads. Renaming a file does not change its format. A legacy
+  another product reads; `details.path` names the file and `details.reason`
+  says what is wrong. Renaming a file does not change its format. A legacy
   binary file (`.doc`, `.xls`, `.ppt`) and an encrypted Office Open XML file
   share one container signature, so a legacy file renamed to `.docx`, `.xlsx`
   or `.pptx` reaches that extension's product and fails there, with

@@ -86,9 +86,9 @@ public static class CellsErrors
             + "(or another culture that writes a decimal comma). The culture also reads its dates.",
         details: new JsonObject { ["path"] = path, ["sample"] = sample, ["line"] = line });
 
-    public static CliException FileCorrupt(string path, string reason) => new(
-        ErrorCodes.FileCorrupt,
-        $"File could not be read as a spreadsheet: {path} ({reason})",
-        hint: "Verify the file opens in a spreadsheet application and is one of the supported input formats.",
-        details: new JsonObject { ["path"] = path, ["reason"] = reason });
+    internal static CliException FileCorrupt(string path, string reason) => CliErrors.InputUnreadable(
+        path,
+        "spreadsheet",
+        reason,
+        "Verify the file opens in a spreadsheet application and is one of the supported input formats.");
 }
