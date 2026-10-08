@@ -541,15 +541,15 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
         string image = _fixture.Temp.File("page.png");
         string assets = Path.Combine(_fixture.Temp.Path, "assets");
 
-        var converted = _fixture.Engine.Convert(input, new WordsConvertRequest
+        var converted = _fixture.Disclosed(engine => engine.Convert(input, new WordsConvertRequest
         {
             Output = TestOutput.At(pdf, format: "pdf", overwrite: false),
-        });
-        var rendered = _fixture.Engine.Render(input, new WordsRenderRequest
+        }));
+        var rendered = _fixture.Disclosed(engine => engine.Render(input, new WordsRenderRequest
         {
             Output = TestOutput.At(image, format: "png", overwrite: false),
             Dpi = 150,
-        });
+        }));
         var extracted = _fixture.Engine.Extract(input, new WordsExtractRequest
         {
             Output = new ResolvedDirectory(assets),

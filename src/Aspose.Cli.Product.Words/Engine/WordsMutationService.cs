@@ -20,19 +20,16 @@ namespace Aspose.Cli.Product.Words.Engine;
 /// </summary>
 internal sealed class WordsMutationService
 {
-    private readonly ILicenseGate _licenseGate;
-    private readonly SafeFileWriter _writer;
+    private readonly OutputPipeline<Document> _outputs;
     private readonly WordsDocumentLoader _loader;
     private readonly InputSource _inputs;
 
     internal WordsMutationService(
-        ILicenseGate licenseGate,
-        SafeFileWriter writer,
+        OutputPipeline<Document> outputs,
         WordsDocumentLoader loader,
         InputSource inputs)
     {
-        _licenseGate = licenseGate ?? throw new ArgumentNullException(nameof(licenseGate));
-        _writer = writer ?? throw new ArgumentNullException(nameof(writer));
+        _outputs = outputs ?? throw new ArgumentNullException(nameof(outputs));
         _loader = loader ?? throw new ArgumentNullException(nameof(loader));
         _inputs = inputs ?? throw new ArgumentNullException(nameof(inputs));
     }
@@ -41,7 +38,7 @@ internal sealed class WordsMutationService
     internal WordsEditResult ApplyOps(string filePath, WordsOpsBatch batch, WordsEditRequest request)
     {
         batch = WordsOp.Catalog.Prepare(batch);
-        LicenseState state = _licenseGate.EnsureApplied();
+        LicenseState state = _outputs.License;
         FileWritePrecondition precondition = FileWritePrecondition.Capture(filePath);
         using LoadedDocument loaded = _loader.Open(filePath, request.Password);
         bool inputHadRevisions = loaded.Document.Revisions.Count > 0;
@@ -127,7 +124,6 @@ internal sealed class WordsMutationService
             Verification = verification,
             License = EnvelopeParts.License(state),
             Warnings = EnvelopeParts.CombineWarnings(outputWarnings, EnvelopeParts.BackupWarnings(backup), operationWarnings, PdfInputWarnings(loaded), MutationWarnings(
-                state,
                 loaded.Document,
                 format,
                 // The input's revisions are disclosed while the output still contains revisions;
@@ -194,7 +190,7 @@ internal sealed class WordsMutationService
                 // An operation without a block address, such as replace_text, names the
                 // original blocks that hold the nodes it changed.
                 var nodes = new List<Node>();
-                long count = new WordsMutationHandlers(loaded, resolved[index], _loader, _inputs, operationInputs, request.OpSecrets, tracking, warnings, nodes, pageFields).Run();
+                long count = new WordsMutationHandlers(loaded, resolved[index], _outputs, _loader, _inputs, operationInputs, request.OpSecrets, tracking, warnings, nodes, pageFields).Run();
                 changed.AddRange(nodes);
                 return new AppliedOperation(
                     count,
@@ -230,12 +226,11 @@ internal sealed class WordsMutationService
         string? truncation = null;
         if (!request.Options.DryRun)
         {
-            using var transaction = new AtomicOutputSetWriter(_writer, request.Output.Directory, "words-edit");
+            using OutputSet<Document> transaction = _outputs.BeginSet([request.Output.Directory], "words-edit");
             StagedOutput write = transaction.Stage(
                 request.Output.Path,
                 request.Output.Overwrite,
-                request.Output.BackupPath,
-                precondition,
+                document,
                 temp =>
                 {
                     try { document.Save(temp, saveOptions); }
@@ -249,7 +244,9 @@ internal sealed class WordsMutationService
                     {
                         using LoadedDocument reopened = _loader.OpenPublishedCandidate(temp, outputPassword);
                     }
-                });
+                },
+                backupPath: request.Output.BackupPath,
+                inputPrecondition: precondition);
             output = new OutputInfo { Path = request.Output.Path, Format = format, SizeBytes = write.SizeBytes };
             backup = write.Backup;
 
@@ -423,7 +420,6 @@ internal sealed class WordsMutationService
             : $"{format} may not keep {state}; save to docx or another Word format and verify again.";
 
     private static IReadOnlyList<Warning>? MutationWarnings(
-        LicenseState state,
         Document document,
         string format,
         bool revisionsKept,
@@ -469,7 +465,7 @@ internal sealed class WordsMutationService
             extra.Add(EvaluationTruncated);
         }
 
-        return EnvelopeParts.CombineWarnings(EnvelopeParts.OutputWarnings(state), extra);
+        return EnvelopeParts.CombineWarnings(extra);
     }
 
     private sealed record ExpectedDocumentState(int FieldCount, int RevisionCount, string Protection);

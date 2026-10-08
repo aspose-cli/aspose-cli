@@ -28,16 +28,16 @@ internal sealed class WordsDocumentLoader
         Classify);
 
     private readonly ResourceBudgetLedger _resourceBudgets;
-    private readonly ILicenseGate? _licenseGate;
+    private readonly ILicenseState? _license;
 
     /// <summary>
-    /// Creates a loader. With a license gate, loaded documents know whether evaluation mode
+    /// Creates a loader. With the license state, loaded documents know whether evaluation mode
     /// altered them; without one (font inspection) no evaluation artifacts are reported.
     /// </summary>
-    internal WordsDocumentLoader(ResourceBudgetLedger resourceBudgets, ILicenseGate? licenseGate = null)
+    internal WordsDocumentLoader(ResourceBudgetLedger resourceBudgets, ILicenseState? license = null)
     {
         _resourceBudgets = resourceBudgets ?? throw new ArgumentNullException(nameof(resourceBudgets));
-        _licenseGate = licenseGate;
+        _license = license;
     }
 
     /// <summary>
@@ -122,7 +122,7 @@ internal sealed class WordsDocumentLoader
             // A stream carries no name; FILENAME fields name the file, as a path load does.
             document.FieldOptions.FileName = path;
             return new LoadedDocument(document, detected, id, resources,
-                _licenseGate?.EnsureApplied() == LicenseState.Evaluation);
+                _license?.IsEvaluation == true);
         }
         catch
         {

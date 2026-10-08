@@ -272,7 +272,7 @@ internal sealed class CliCapabilitySnapshot
 
     private static bool IsLicenseSurfaceDiagnostic(string code) =>
         code.StartsWith("LICENSE_", StringComparison.Ordinal)
-        || code is "EVALUATION_LIMIT" or "EVAL_MODE";
+        || code is "EVALUATION_LIMIT" or WarningCodes.EvalMode or WarningCodes.EvalInputMarked;
 
     private static Command ProductCommand(
         IReadOnlyDictionary<string, Command> productCommands,

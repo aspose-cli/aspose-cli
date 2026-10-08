@@ -19400,15 +19400,6 @@
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
-      "code": "EVALUATION_MARKS_PRESENT",
-      "owner": "words",
-      "severity": "warning",
-      "category": "warning",
-      "messageTemplateId": "words.evaluation-marks-present.message.v1",
-      "hintTemplateId": "words.evaluation-marks-present.hint.v1",
-      "detailsSchemaId": "v2/common/diagnostic-details"
-    },
-    {
       "code": "EVALUATION_NOTICE_ADDED",
       "owner": "cells",
       "severity": "warning",
@@ -19433,6 +19424,15 @@
       "category": "warning",
       "messageTemplateId": "cells.evaluation-sheet-skipped.message.v1",
       "hintTemplateId": "cells.evaluation-sheet-skipped.hint.v1",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
+      "code": "EVAL_INPUT_MARKED",
+      "owner": "common",
+      "severity": "warning",
+      "category": "warning",
+      "messageTemplateId": "common.eval-input-marked.message.v1",
+      "hintTemplateId": "common.eval-input-marked.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {

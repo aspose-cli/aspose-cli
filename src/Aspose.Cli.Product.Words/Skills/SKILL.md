@@ -163,8 +163,8 @@ records): the output then keeps only its first sections, ends with the
 engine's truncation notice, and `--verify` reports `OUTPUT_TRUNCATED`. The
 result is incomplete whatever `itemsAffected` says. Evaluation marks saved
 into a file are reported by a licensed `review` as `WORDS_EVALUATION_MARKS`
-([verification](references/verification.md)) and by a licensed `convert` or
-`edit` as `EVALUATION_MARKS_PRESENT`
+([verification](references/verification.md)) and, when a licensed command's
+output keeps them, as `EVAL_INPUT_MARKED`
 ([troubleshooting](references/troubleshooting.md)).
 
 ## References

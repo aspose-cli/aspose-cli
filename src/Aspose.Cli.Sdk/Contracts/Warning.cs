@@ -73,6 +73,7 @@ public static partial class WarningCodes
         LossyConversion,
         SignatureInvalidated,
         EvalInputTruncated,
+        EvalInputMarked,
         ListTruncated,
         BackupPredatesEdit,
         ProtectionNotEnforced,

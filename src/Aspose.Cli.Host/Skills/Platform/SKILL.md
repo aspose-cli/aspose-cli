@@ -76,8 +76,9 @@ override the choice.
 6. **Verify before delivery.** A clean exit code is not done: read changes
    back, run `review`, and open every image it lists
    (`aspose-cli docs verification`).
-7. **Disclose evaluation mode.** Any `EVAL_MODE` warning means the delivered
-   file carries evaluation marks; tell the user (`aspose-cli docs licensing`).
+7. **Disclose evaluation mode.** Any `EVAL_MODE` or `EVAL_INPUT_MARKED` warning
+   means the delivered file carries evaluation marks; tell the user
+   (`aspose-cli docs licensing`).
 8. **Recover from the error envelope.** Read `error.hint` and `error.details`
    first; never retry unchanged input in a loop
    (`aspose-cli docs troubleshooting`).

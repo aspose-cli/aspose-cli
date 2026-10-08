@@ -1,5 +1,6 @@
 using Aspose.Cli.Product.Words.Engine.Mapping;
 using Aspose.Cli.Sdk.IO;
+using Aspose.Cli.Sdk.Results;
 using Aspose.Words;
 using Aspose.Words.Fields;
 
@@ -15,6 +16,7 @@ internal sealed partial class WordsMutationHandlers : IWordsOpHandler<long>
     private readonly LoadedDocument _loaded;
     private readonly Document _document;
     private readonly ResolvedWordsOp _resolved;
+    private readonly OutputPipeline<Document> _outputs;
     private readonly WordsDocumentLoader _loader;
     private readonly InputSource _inputs;
     private readonly InputResourceScope _operationInputs;
@@ -27,6 +29,7 @@ internal sealed partial class WordsMutationHandlers : IWordsOpHandler<long>
     /// <summary>Creates the handlers of one resolved operation.</summary>
     /// <param name="loaded">The document being edited.</param>
     /// <param name="resolved">The operation with its original anchors and sections.</param>
+    /// <param name="outputs">The write pipeline, which neutralizes the evaluation marks of imported documents.</param>
     /// <param name="loader">Opens the documents and Markdown that operations import.</param>
     /// <param name="inputs">Reads the merge data and watermark images that operations read.</param>
     /// <param name="operationInputs">Opens and charges the images that operations insert.</param>
@@ -38,6 +41,7 @@ internal sealed partial class WordsMutationHandlers : IWordsOpHandler<long>
     internal WordsMutationHandlers(
         LoadedDocument loaded,
         ResolvedWordsOp resolved,
+        OutputPipeline<Document> outputs,
         WordsDocumentLoader loader,
         InputSource inputs,
         InputResourceScope operationInputs,
@@ -50,6 +54,7 @@ internal sealed partial class WordsMutationHandlers : IWordsOpHandler<long>
         _loaded = loaded;
         _document = loaded.Document;
         _resolved = resolved;
+        _outputs = outputs;
         _loader = loader;
         _inputs = inputs;
         _operationInputs = operationInputs;

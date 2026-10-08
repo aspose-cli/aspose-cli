@@ -1,7 +1,6 @@
 using System.Globalization;
 using Aspose.Cli.Product.Words.Engine.Mapping;
 using Aspose.Cli.Sdk.IO;
-using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Results;
 using Aspose.Words;
 
@@ -35,11 +34,12 @@ internal static class WordsEngineSupport
     };
 
     /// <summary>
-    /// The warnings for writing a loaded document to a format. A page render passes
-    /// <paramref name="rendered"/>: an image shows the document as it looks and is never a copy
-    /// of it, so it is not told that it drops the source's revisions or macros.
+    /// The warnings for writing a loaded document to a format; the write pipeline adds the
+    /// evaluation disclosure. A page render passes <paramref name="rendered"/>: an image shows
+    /// the document as it looks and is never a copy of it, so it is not told that it drops the
+    /// source's revisions or macros.
     /// </summary>
-    internal static IReadOnlyList<Warning>? OutputWarnings(LicenseState state, LoadedDocument loaded, string format, bool rendered = false)
+    internal static IReadOnlyList<Warning>? WrittenWarnings(LoadedDocument loaded, string format, bool rendered = false)
     {
         var extra = new List<Warning>();
         extra.AddRange(InputWarnings(loaded) ?? []);
@@ -56,23 +56,18 @@ internal static class WordsEngineSupport
         }
 
         extra.AddRange(SaveWarnings(loaded, format, rendered));
-        return EnvelopeParts.CombineWarnings(EnvelopeParts.OutputWarnings(state), extra);
+        return EnvelopeParts.CombineWarnings(extra);
     }
 
     /// <summary>
-    /// The warnings for what a saved copy of a loaded document carries over or loses: the
-    /// macros the format drops, unless the output is a page render, and the evaluation marks it keeps.
+    /// The warnings for what a saved copy of a loaded document loses: the macros the format
+    /// drops, unless the output is a page render.
     /// </summary>
     internal static IEnumerable<Warning> SaveWarnings(LoadedDocument loaded, string format, bool rendered = false)
     {
         if (!rendered && MacrosDropped(loaded, format) is { } macros)
         {
             yield return macros;
-        }
-
-        if (EvaluationMarks(loaded) is { } marks)
-        {
-            yield return marks;
         }
     }
 
@@ -99,21 +94,6 @@ internal static class WordsEngineSupport
         Message = "A PDF input is rebuilt as flowing text, and its headers and footers are guessed: they may become body text, or headers and footers in which a number, such as a version number, becomes a page-number field; the new layout may add pages.",
         Hint = "Check the headers, footers and fields with 'aspose-cli words inspect <file> --detail sections fields' and the body with 'words query blocks'; correct them with 'words edit' and set_header, set_footer, set_page_numbers or delete_blocks.",
     };
-
-    /// <summary>
-    /// The warning for a document that holds the marks a save without a license wrote into it,
-    /// which an output keeps, or null. Without a license, opening a document adds the marks
-    /// itself, and EVAL_MODE says so.
-    /// </summary>
-    private static Warning? EvaluationMarks(LoadedDocument loaded) =>
-        !loaded.Evaluation && WordsEvaluation.IsMarked(loaded.Document)
-            ? new Warning
-            {
-                Code = WordsDiagnostics.EvaluationMarksPresent,
-                Message = "The document holds the evaluation banner, footer text or truncation notice that a save without a license wrote into it, and the output keeps them; a license does not remove them.",
-                Hint = "Regenerate the document from its original inputs with an Aspose.Words license; editing this file keeps the marks.",
-            }
-            : null;
 
     /// <summary>The warning for a source with macros saved to a format that drops them, or null.</summary>
     internal static Warning? MacrosDropped(LoadedDocument source, string format) =>
@@ -197,20 +177,8 @@ internal static class WordsEngineSupport
         }
     }
 
-    internal static IReadOnlyList<Warning>? CompareWarnings(
-        LicenseState state,
-        LoadedDocument left,
-        LoadedDocument right,
-        bool producedOutput)
-    {
-        var warnings = new List<Warning>();
-        warnings.AddRange(InputWarnings(left) ?? []);
-        warnings.AddRange(InputWarnings(right) ?? []);
-        IReadOnlyList<Warning>? outputWarnings = producedOutput
-            ? EnvelopeParts.OutputWarnings(state)
-            : null;
-        return EnvelopeParts.CombineWarnings(outputWarnings, warnings);
-    }
+    internal static IReadOnlyList<Warning>? CompareWarnings(LoadedDocument left, LoadedDocument right) =>
+        EnvelopeParts.CombineWarnings(InputWarnings(left), InputWarnings(right));
 
     internal static OutputInfo BuildOutput(string path, string format, long size) =>
         new() { Path = path, Format = format, SizeBytes = size };

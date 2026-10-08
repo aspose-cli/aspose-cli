@@ -1,6 +1,8 @@
 using System.Text.RegularExpressions;
 using Aspose.Cli.Product.Words.Engine.Mapping;
+using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Licensing;
+using Aspose.Cli.Sdk.Results;
 using Aspose.Cli.TestKit;
 using Aspose.Words;
 using Aspose.Words.Vba;
@@ -29,7 +31,8 @@ public sealed class WordsDisclosureTests
         string input = fixture.Temp.File("quotes.docx");
         source.Save(input, SaveFormat.Docx);
 
-        var loader = new WordsDocumentLoader(ProductTestBudgets.Create<WordsModule>(), new FixedGate(state));
+        ResourceBudgetLedger budgets = ProductTestBudgets.Create<WordsModule>();
+        var loader = new WordsDocumentLoader(budgets, new OutputPipeline<Document>(new FixedGate(state), new WordsEvaluationProfile(), new SafeFileWriter(budgets)));
         using LoadedDocument loaded = loader.Open(input, null);
         var index = new DocumentBlockIndex(loaded.Document, loaded.Evaluation);
 
@@ -73,19 +76,27 @@ public sealed class WordsDisclosureTests
         string input = fixture.Temp.File("marked.docx");
         source.Save(input, SaveFormat.Docx);
 
-        WordsConvertResult converted = fixture.Engine.Convert(input, new WordsConvertRequest
+        WordsConvertResult converted = fixture.Disclosed(engine => engine.Convert(input, new WordsConvertRequest
         {
             Output = TestOutput.At(fixture.Temp.File("marked.pdf"), format: "pdf"),
-        });
-        WordsEditResult edited = fixture.Engine.ApplyOps(input, new WordsOpsBatch
+        }));
+        WordsEditResult edited = fixture.Disclosed(engine => engine.ApplyOps(input, new WordsOpsBatch
         {
             Ops = [new ReplaceTextOp { Find = "one", Replace = "two" }],
-        }, new WordsEditRequest { Output = TestOutput.At(fixture.Temp.File("edited.docx")) });
+        }, new WordsEditRequest { Output = TestOutput.At(fixture.Temp.File("edited.docx")) }));
 
         // Without a license, opening the document adds the marks itself, and EVAL_MODE says so.
-        int expected = fixture.LicenseState == LicenseState.Licensed ? 1 : 0;
-        Assert.Equal(expected, (converted.Warnings ?? []).Count(static warning => warning.Code == "EVALUATION_MARKS_PRESENT"));
-        Assert.Equal(expected, (edited.Warnings ?? []).Count(static warning => warning.Code == "EVALUATION_MARKS_PRESENT"));
+        string expected = fixture.LicenseState == LicenseState.Licensed ? WarningCodes.EvalInputMarked : WarningCodes.EvalMode;
+        foreach (ResultEnvelope result in new ResultEnvelope[] { converted, edited })
+        {
+            Warning disclosure = Assert.Single(result.Warnings!, static warning => warning.Code.StartsWith("EVAL_", StringComparison.Ordinal));
+            Assert.Equal(expected, disclosure.Code);
+            if (expected == WarningCodes.EvalInputMarked)
+            {
+                Assert.Contains("the evaluation banner", disclosure.Message, StringComparison.Ordinal);
+                Assert.Contains("the footer sentence", disclosure.Message, StringComparison.Ordinal);
+            }
+        }
     }
 
     [Fact]

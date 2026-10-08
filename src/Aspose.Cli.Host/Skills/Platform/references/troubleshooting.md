@@ -174,8 +174,8 @@ aspose-cli capabilities --output json
 
 ## Shared warnings
 
-- `EVAL_MODE`, `EVAL_INPUT_TRUNCATED`: evaluation mode; disclose it
-  (`aspose-cli docs licensing`).
+- `EVAL_MODE`, `EVAL_INPUT_TRUNCATED`, `EVAL_INPUT_MARKED`: evaluation mode,
+  now or in an earlier save of the input; disclose it (`aspose-cli docs licensing`).
 - `BACKUP_PREDATES_EDIT`: an in-place edit kept an existing backup that holds an
   earlier version than the file it replaced; the replaced version has no backup.
 - `LIST_TRUNCATED`: a list in the result was capped; its hint names the command

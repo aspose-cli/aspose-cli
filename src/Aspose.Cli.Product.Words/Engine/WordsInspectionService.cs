@@ -1,6 +1,5 @@
 using Aspose.Cli.Product.Words.Engine.Mapping;
 using Aspose.Cli.Sdk.Errors;
-using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Results;
 using Aspose.Cli.Sdk.Text;
@@ -17,24 +16,21 @@ internal sealed class WordsInspectionService
     // The revision samples a comparison returns; the revision counts always cover every revision.
     private const int SampleLimit = 50;
 
-    private readonly ILicenseGate _licenseGate;
-    private readonly SafeFileWriter _writer;
+    private readonly OutputPipeline<Document> _outputs;
     private readonly WordsDocumentLoader _loader;
 
     internal WordsInspectionService(
-        ILicenseGate licenseGate,
-        SafeFileWriter writer,
+        OutputPipeline<Document> outputs,
         WordsDocumentLoader loader)
     {
-        _licenseGate = licenseGate ?? throw new ArgumentNullException(nameof(licenseGate));
-        _writer = writer ?? throw new ArgumentNullException(nameof(writer));
+        _outputs = outputs ?? throw new ArgumentNullException(nameof(outputs));
         _loader = loader ?? throw new ArgumentNullException(nameof(loader));
     }
 
     /// <summary>Compares two documents and optionally writes a reviewed copy.</summary>
     internal WordsCompareResult Compare(string leftPath, string rightPath, WordsCompareRequest request)
     {
-        LicenseState state = _licenseGate.EnsureApplied();
+        LicenseState state = _outputs.License;
         using LoadedDocument leftLoaded = _loader.Open(leftPath, request.LeftPassword);
         using LoadedDocument rightLoaded = _loader.Open(rightPath, request.RightPassword);
         if (leftLoaded.Document.Revisions.Count > 0 || rightLoaded.Document.Revisions.Count > 0)
@@ -60,7 +56,7 @@ internal sealed class WordsInspectionService
             format = redline.Keeping(leftLoaded.FormatId).Id;
             SaveOptions options = WordsSavePipeline.Options(format);
             WordsSavePipeline.RemoveMacrosUnlessKept(compared, format);
-            long size = _writer.Write(redline.Path, redline.Overwrite, temp => compared.Save(temp, options));
+            long size = _outputs.Write(redline.Path, redline.Overwrite, compared, temp => compared.Save(temp, options));
             output = BuildOutput(redline.Path, format, size);
         }
 
@@ -86,7 +82,7 @@ internal sealed class WordsInspectionService
             Output = output,
             License = EnvelopeParts.License(state),
             Warnings = EnvelopeParts.CombineWarnings(
-                CompareWarnings(state, leftLoaded, rightLoaded, output is not null),
+                CompareWarnings(leftLoaded, rightLoaded),
                 format is not null && MacrosDropped(leftLoaded, format) is { } macros ? [macros] : null,
                 revisions.Length > SampleLimit
                     ? [EnvelopeParts.ListTruncated("samples", SampleLimit, revisions.Length, "Write the redline with --out to review every revision.")]
@@ -97,7 +93,7 @@ internal sealed class WordsInspectionService
     /// <summary>Searches selected document scopes within the configured hit budget.</summary>
     internal WordsSearchResult Search(string filePath, WordsSearchRequest request)
     {
-        LicenseState state = _licenseGate.EnsureApplied();
+        LicenseState state = _outputs.License;
         using LoadedDocument loaded = _loader.Open(filePath, request.Password);
         var index = new DocumentBlockIndex(loaded.Document, loaded.Evaluation);
         SearchQuery query = request.Query;

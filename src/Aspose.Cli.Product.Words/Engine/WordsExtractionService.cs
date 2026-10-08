@@ -15,29 +15,23 @@ namespace Aspose.Cli.Product.Words.Engine;
 /// <summary>Owns atomic document splitting and bounded artifact extraction.</summary>
 internal sealed class WordsExtractionService
 {
-    private readonly ILicenseGate _licenseGate;
-    private readonly SafeFileWriter _writer;
+    private readonly OutputPipeline<Document> _outputs;
     private readonly WordsDocumentLoader _loader;
-    private readonly ResourceBudgetLedger _resourceBudgets;
 
     internal WordsExtractionService(
-        ILicenseGate licenseGate,
-        SafeFileWriter writer,
-        WordsDocumentLoader loader,
-        ResourceBudgetLedger resourceBudgets)
+        OutputPipeline<Document> outputs,
+        WordsDocumentLoader loader)
     {
-        _licenseGate = licenseGate ?? throw new ArgumentNullException(nameof(licenseGate));
-        _writer = writer ?? throw new ArgumentNullException(nameof(writer));
+        _outputs = outputs ?? throw new ArgumentNullException(nameof(outputs));
         _loader = loader ?? throw new ArgumentNullException(nameof(loader));
-        _resourceBudgets = resourceBudgets ?? throw new ArgumentNullException(nameof(resourceBudgets));
     }
 
     /// <summary>Splits a document and commits all outputs atomically.</summary>
     internal WordsSplitResult Split(string filePath, WordsSplitRequest request)
     {
-        LicenseState state = _licenseGate.EnsureApplied();
+        LicenseState state = _outputs.License;
         using LoadedDocument loaded = _loader.Open(filePath, request.Password);
-        using var writer = new WordsSplitWriter(_writer, request.Output.Path, request.Output.Overwrite);
+        using var writer = new WordsSplitWriter(_outputs, request.Output.Path, request.Output.Overwrite);
         if (request.By == "section")
         {
             for (int index = 0; index < loaded.Document.Sections.Count; index++)
@@ -81,17 +75,17 @@ internal sealed class WordsExtractionService
             Outputs = outputs,
             License = EnvelopeParts.License(state),
             Warnings = request.By == "pages"
-                ? EnvelopeParts.CombineWarnings(OutputWarnings(state, loaded, "docx"), [new Warning { Code = WordsDiagnostics.LayoutMayDiffer, Message = "Page extraction can slightly reflow complex layouts.", Hint = "Visually inspect the split pages." }])
-                : OutputWarnings(state, loaded, "docx"),
+                ? EnvelopeParts.CombineWarnings(WrittenWarnings(loaded, "docx"), [new Warning { Code = WordsDiagnostics.LayoutMayDiffer, Message = "Page extraction can slightly reflow complex layouts.", Hint = "Visually inspect the split pages." }])
+                : WrittenWarnings(loaded, "docx"),
         };
     }
 
     /// <summary>Extracts bounded document artifacts into a guarded directory.</summary>
     internal WordsExtractResult Extract(string filePath, WordsExtractRequest request)
     {
-        LicenseState state = _licenseGate.EnsureApplied();
+        LicenseState state = _outputs.License;
         using LoadedDocument loaded = _loader.Open(filePath, request.Password);
-        using var guard = new ExtractionGuard(_resourceBudgets, request.Output.Path, request.Output.Overwrite);
+        using ExtractionGuard guard = _outputs.BeginExtraction(request.Output.Path, request.Output.Overwrite);
         var index = new DocumentBlockIndex(loaded.Document, loaded.Evaluation);
         var items = new List<ExtractedItem>();
         var warnings = new List<Warning>();
@@ -164,7 +158,7 @@ internal sealed class WordsExtractionService
             What = request.What,
             Items = items,
             License = EnvelopeParts.License(state),
-            Warnings = EnvelopeParts.CombineWarnings(EnvelopeParts.CombineWarnings(EnvelopeParts.OutputWarnings(state), InputWarnings(loaded)), warnings),
+            Warnings = EnvelopeParts.CombineWarnings(InputWarnings(loaded), warnings),
         };
     }
 

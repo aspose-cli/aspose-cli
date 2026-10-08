@@ -22,20 +22,17 @@ internal sealed class WordsProductionService
     private const int EvidenceDpi = 150;
     private const int DisplayDpi = 192;
     private const string RenderHint = "Render fewer or smaller pages, or lower --dpi.";
-    private readonly ILicenseGate _licenseGate;
-    private readonly SafeFileWriter _writer;
+    private readonly OutputPipeline<Document> _outputs;
     private readonly WordsDocumentLoader _loader;
     private readonly ResourceBudgetLedger _resourceBudgets;
     private readonly InputSource _inputs;
 
     internal WordsProductionService(
-        ILicenseGate licenseGate,
-        SafeFileWriter writer,
+        OutputPipeline<Document> outputs,
         WordsDocumentLoader loader,
         ResourceBudgetLedger resourceBudgets)
     {
-        _licenseGate = licenseGate ?? throw new ArgumentNullException(nameof(licenseGate));
-        _writer = writer ?? throw new ArgumentNullException(nameof(writer));
+        _outputs = outputs ?? throw new ArgumentNullException(nameof(outputs));
         _loader = loader ?? throw new ArgumentNullException(nameof(loader));
         _resourceBudgets = resourceBudgets ?? throw new ArgumentNullException(nameof(resourceBudgets));
         _inputs = resourceBudgets.Inputs;
@@ -44,17 +41,17 @@ internal sealed class WordsProductionService
     /// <summary>Converts a document using the selected save pipeline.</summary>
     internal WordsConvertResult Convert(string filePath, WordsConvertRequest request)
     {
-        LicenseState state = _licenseGate.EnsureApplied();
+        LicenseState state = _outputs.License;
         using LoadedDocument loaded = _loader.Open(filePath, request.Password);
         IReadOnlyList<int>? pages = request.Pages?.Resolve(loaded.Document.PageCount);
         SaveOptions options = WordsSavePipeline.Options(request.Output.Format.Id, request.EncryptPassword, pages);
         WordsSavePipeline.RemoveMacrosUnlessKept(loaded.Document, request.Output.Format.Id);
-        long size = _writer.Write(request.Output.Path, request.Output.Overwrite, temp =>
+        long size = _outputs.Write(request.Output.Path, request.Output.Overwrite, loaded.Document, temp =>
         {
             try { loaded.Document.Save(temp, options); }
             finally { loaded.Resources.ThrowIfFailed(); }
         });
-        var warnings = OutputWarnings(state, loaded, request.Output.Format.Id);
+        var warnings = WrittenWarnings(loaded, request.Output.Format.Id);
         return new WordsConvertResult
         {
             Input = InfoProjection.Source(filePath, loaded),
@@ -68,12 +65,12 @@ internal sealed class WordsProductionService
     /// <summary>Renders selected pages within the pixel budget.</summary>
     internal WordsRenderResult Render(string filePath, WordsRenderRequest request)
     {
-        LicenseState state = _licenseGate.EnsureApplied();
+        LicenseState state = _outputs.License;
         using LoadedDocument loaded = _loader.Open(filePath, request.Password);
         IReadOnlyList<int> pages = request.AllPages
             ? Enumerable.Range(1, loaded.Document.PageCount).ToArray()
             : request.Pages?.Resolve(loaded.Document.PageCount) ?? [1];
-        using var transaction = new AtomicOutputSetWriter(_writer, request.Output.Directory, "words-render");
+        using OutputSet<Document> transaction = _outputs.BeginSet([request.Output.Directory], "words-render");
         var outputs = new List<PageOutput>(pages.Count);
         foreach (int page in pages)
         {
@@ -83,7 +80,7 @@ internal sealed class WordsProductionService
             RenderPixelGuard.EnsureFits(_resourceBudgets, width, height, request.Dpi, RenderHint);
             string path = request.Output.Part(PagePart, page, pages.Count);
             SaveOptions options = WordsSavePipeline.Options(request.Output.Format.Id, pages: [page], dpi: request.Dpi);
-            long size = transaction.Stage(path, request.Output.Overwrite, temp => loaded.Document.Save(temp, options)).SizeBytes;
+            long size = transaction.Stage(path, request.Output.Overwrite, loaded.Document, temp => loaded.Document.Save(temp, options), rendering: true, pages: [page]).SizeBytes;
             outputs.Add(new PageOutput { Page = page, Output = BuildOutput(path, request.Output.Format.Id, size) });
         }
 
@@ -95,7 +92,7 @@ internal sealed class WordsProductionService
             Outputs = outputs,
             Dpi = request.Output.Format.Id == "svg" ? null : request.Dpi,
             License = EnvelopeParts.License(state),
-            Warnings = OutputWarnings(state, loaded, request.Output.Format.Id, rendered: true),
+            Warnings = WrittenWarnings(loaded, request.Output.Format.Id, rendered: true),
         };
     }
 
@@ -106,7 +103,7 @@ internal sealed class WordsProductionService
         IViewArtifactSink artifacts)
     {
         ArgumentNullException.ThrowIfNull(artifacts);
-        _ = _licenseGate.EnsureApplied();
+        _ = _outputs.License;
         using LoadedDocument loaded = _loader.Open(filePath, request.Password);
         Document document = loaded.Document;
         int dpi = request.Purpose == ViewPurpose.Display ? DisplayDpi : EvidenceDpi;
@@ -161,18 +158,18 @@ internal sealed class WordsProductionService
     /// <summary>Creates a document from a bounded source or blank template.</summary>
     internal WordsCreateResult Create(NewDocumentRequest request)
     {
-        LicenseState state = _licenseGate.EnsureApplied();
+        LicenseState state = _outputs.License;
         using CreatedDocument created = Build(request);
         string formatId = request.Output.Format.Id;
         SaveOptions options = WordsSavePipeline.Options(formatId, request.EncryptPassword);
         WordsSavePipeline.RemoveMacrosUnlessKept(created.Document, formatId);
-        long size = _writer.Write(request.Output.Path, request.Output.Overwrite, temp => created.Save(temp, options));
+        long size = _outputs.Write(request.Output.Path, request.Output.Overwrite, created.Document, temp => created.Save(temp, options));
 
         return new WordsCreateResult
         {
             Output = BuildOutput(request.Output.Path, formatId, size),
             License = EnvelopeParts.License(state),
-            Warnings = CreationWarnings(state, created, formatId),
+            Warnings = CreationWarnings(created, formatId),
         };
     }
 
@@ -248,7 +245,6 @@ internal sealed class WordsProductionService
     }
 
     private static IReadOnlyList<Warning>? CreationWarnings(
-        LicenseState state,
         CreatedDocument created,
         string format)
     {
@@ -273,9 +269,8 @@ internal sealed class WordsProductionService
             extra.Add(new Warning { Code = WarningCodes.SignatureInvalidated, Message = "Creating from the signed source invalidates its digital signature.", Hint = "Sign the produced document after review." });
         }
 
-        return EnvelopeParts.CombineWarnings(EnvelopeParts.OutputWarnings(state), extra);
+        return EnvelopeParts.CombineWarnings(extra);
     }
-
 
     private sealed record CreatedDocument(
         Document Document,

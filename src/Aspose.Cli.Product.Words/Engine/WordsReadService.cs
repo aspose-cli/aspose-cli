@@ -8,21 +8,21 @@ namespace Aspose.Cli.Product.Words.Engine;
 /// <summary>Owns document metadata and bounded structural reading.</summary>
 internal sealed class WordsReadService
 {
-    private readonly ILicenseGate _licenseGate;
+    private readonly ILicenseState _license;
     private readonly WordsDocumentLoader _loader;
 
     internal WordsReadService(
-        ILicenseGate licenseGate,
+        ILicenseState license,
         WordsDocumentLoader loader)
     {
-        _licenseGate = licenseGate ?? throw new ArgumentNullException(nameof(licenseGate));
+        _license = license ?? throw new ArgumentNullException(nameof(license));
         _loader = loader ?? throw new ArgumentNullException(nameof(loader));
     }
 
     /// <summary>Returns structural metadata for a document.</summary>
     internal DocumentInfoResult GetInfo(string filePath, DocumentInfoRequest request)
     {
-        LicenseState state = _licenseGate.EnsureApplied();
+        LicenseState state = _license.License;
         using LoadedDocument loaded = _loader.Open(filePath, request.Password);
         DocumentInfoResult result = InfoProjection.Project(loaded, filePath, request);
         return result with
@@ -35,7 +35,7 @@ internal sealed class WordsReadService
     /// <summary>Reads a bounded structural projection of a document.</summary>
     internal DocumentReadResult Read(string filePath, DocumentReadRequest request)
     {
-        LicenseState state = _licenseGate.EnsureApplied();
+        LicenseState state = _license.License;
         using LoadedDocument loaded = _loader.Open(filePath, request.Password);
         return ReadProjection.Project(loaded, filePath, request) with
         {
