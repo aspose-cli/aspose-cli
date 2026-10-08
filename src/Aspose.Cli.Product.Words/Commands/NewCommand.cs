@@ -43,7 +43,7 @@ internal static class NewCommand
                 string? textPath = standard.InputFile(text);
                 string? templatePath = standard.InputFile(template);
                 ResolvedOutput output = standard.Output;
-                string? encryptPassword = standard.EncryptPassword();
+                Secret? encryptPassword = standard.EncryptPassword();
                 return standard.OpenEngine().Create(new NewDocumentRequest
                 {
                     Output = output,

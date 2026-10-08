@@ -23,7 +23,7 @@ internal sealed class WordsReadService
     internal DocumentInfoResult GetInfo(string filePath, DocumentInfoRequest request)
     {
         LicenseState state = _licenseGate.EnsureApplied();
-        using LoadedDocument loaded = _loader.Open(filePath, request.Password);
+        using LoadedDocument loaded = _loader.Open(filePath, request.Password?.Reveal());
         DocumentInfoResult result = InfoProjection.Project(loaded, filePath, request);
         return result with
         {
@@ -36,7 +36,7 @@ internal sealed class WordsReadService
     internal DocumentReadResult Read(string filePath, DocumentReadRequest request)
     {
         LicenseState state = _licenseGate.EnsureApplied();
-        using LoadedDocument loaded = _loader.Open(filePath, request.Password);
+        using LoadedDocument loaded = _loader.Open(filePath, request.Password?.Reveal());
         return ReadProjection.Project(loaded, filePath, request) with
         {
             License = EnvelopeParts.License(state),

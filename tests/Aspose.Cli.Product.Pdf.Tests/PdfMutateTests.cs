@@ -376,10 +376,10 @@ public sealed class PdfMutateTests
         using var fixture = new PdfEngineFixture();
         string input = fixture.CreateDocument("plain.pdf", pages: 1);
         string encrypted = fixture.File("encrypted.pdf");
-        var secrets = new Dictionary<string, string>
+        var secrets = new Dictionary<string, Secret>
         {
-            ["PDF_USER"] = "reader",
-            ["PDF_OWNER"] = "owner",
+            ["PDF_USER"] = new("reader"),
+            ["PDF_OWNER"] = new("owner"),
         };
 
         fixture.Engine.ApplyOps(input, new PdfOpsBatch
@@ -402,7 +402,7 @@ public sealed class PdfMutateTests
         }
         PdfInfoResult encryptedInfo = fixture.Engine.GetInfo(encrypted, new PdfInfoRequest
         {
-            Password = "reader",
+            Password = new Secret("reader"),
             Details = ["permissions"],
         });
         Assert.True(encryptedInfo.Permissions?.Print);
@@ -412,7 +412,7 @@ public sealed class PdfMutateTests
         fixture.Engine.ApplyOps(encrypted, new PdfOpsBatch { Ops = [new DecryptPdfOp()] }, new PdfEditRequest
         {
             Output = TestOutput.At(plain),
-            Password = "owner",
+            Password = new Secret("owner"),
         });
         using var decrypted = new Document(plain);
         Assert.False(decrypted.IsEncrypted);
@@ -441,7 +441,7 @@ public sealed class PdfMutateTests
             Output = TestOutput.At(output),
             Verify = true,
             OpSecrets = new Dictionary<string,
-            string> { ["PDF_OWNER"] = "owner" },
+            Secret> { ["PDF_OWNER"] = new("owner") },
         });
 
         Assert.True(result.Verification!.Ok);
@@ -467,13 +467,13 @@ public sealed class PdfMutateTests
     {
         using var fixture = new PdfEngineFixture();
         string input = fixture.CreateEncryptedDocument(string.Empty, "owner", "secured.pdf");
-        var secrets = new Dictionary<string, string> { ["PDF_OWNER"] = "owner" };
+        var secrets = new Dictionary<string, Secret> { ["PDF_OWNER"] = new("owner") };
         string output = fixture.File("secured.out.pdf");
 
         CliException error = Assert.Throws<CliException>(() => fixture.Engine.ApplyOps(
             input,
             new PdfOpsBatch { Ops = [new SetMetadataOp { Subject = "采购申请" }, new RotatePagesOp { Pages = "1", Angle = 90 }] },
-            new PdfEditRequest { Output = TestOutput.At(output), Password = "owner" }));
+            new PdfEditRequest { Output = TestOutput.At(output), Password = new Secret("owner") }));
         fixture.Engine.ApplyOps(
             input,
             new PdfOpsBatch
@@ -485,7 +485,7 @@ public sealed class PdfMutateTests
                     new EncryptPdfOp { OwnerPasswordEnv = "PDF_OWNER" },
                 ],
             },
-            new PdfEditRequest { Output = TestOutput.At(output), Password = "owner", OpSecrets = secrets });
+            new PdfEditRequest { Output = TestOutput.At(output), Password = new Secret("owner"), OpSecrets = secrets });
 
         Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
         Assert.Contains("encrypt", error.Hint, StringComparison.Ordinal);
@@ -543,9 +543,9 @@ public sealed class PdfMutateTests
         }, new PdfEditRequest
         {
             Output = TestOutput.At(output),
-            Password = password,
+            Password = new Secret(password),
             OpSecrets = new Dictionary<string,
-            string> { ["PDF_USER"] = "new-reader", ["PDF_OWNER"] = "new-owner" },
+            Secret> { ["PDF_USER"] = new("new-reader"), ["PDF_OWNER"] = new("new-owner") },
         });
 
         Warning? warning = result.Warnings?.SingleOrDefault(static item => item.Code == WarningCodes.ProtectionNotEnforced);
@@ -595,7 +595,7 @@ public sealed class PdfMutateTests
         }, new PdfEditRequest
         {
             Output = TestOutput.At(output),
-            Password = "reader",
+            Password = new Secret("reader"),
             Options = new EditCommandOptions { DryRun = true },
         });
 

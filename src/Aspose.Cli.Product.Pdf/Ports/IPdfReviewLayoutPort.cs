@@ -5,6 +5,6 @@ internal interface IPdfReviewLayoutPort
 {
     PdfReviewLayout InspectReviewLayout(
         string filePath,
-        string? password,
+        Secret? password,
         int maxPages);
 }

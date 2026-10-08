@@ -20,7 +20,7 @@ public sealed class PdfSignTests
         {
             Output = TestOutput.At(output),
             CertificatePath = certificate,
-            CertificatePassword = certificatePassword,
+            CertificatePassword = new Secret(certificatePassword),
             Visible = visible,
             Page = 2,
             Rect = visible ? new PdfSignatureRect(36, 48, 180, 60) : null,
@@ -58,7 +58,7 @@ public sealed class PdfSignTests
         {
             Output = TestOutput.At(output),
             CertificatePath = certificate,
-            CertificatePassword = "wrong-password",
+            CertificatePassword = new Secret("wrong-password"),
         }));
         Assert.Equal("SIGN_CERT_INVALID", exception.Code.Name);
         Assert.False(File.Exists(output));

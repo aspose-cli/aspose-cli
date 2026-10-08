@@ -8,7 +8,7 @@ public sealed record PdfInfoRequest
 {
     public bool IncludePreview { get; init; }
     public IReadOnlyList<string>? Details { get; init; }
-    public string? Password { get; init; }
+    public Secret? Password { get; init; }
 }
 
 /// <summary>Options for a budgeted page-text read.</summary>
@@ -17,7 +17,7 @@ public sealed record PdfReadRequest
     public PageRange? Pages { get; init; }
     public string Mode { get; init; } = PdfReadModes.Plain;
     public int MaxCharacters { get; init; } = 20_000;
-    public string? Password { get; init; }
+    public Secret? Password { get; init; }
 }
 
 /// <summary>Options for PDF conversion.</summary>
@@ -26,7 +26,7 @@ public sealed record PdfConvertRequest
     /// <summary>The resolved output: its format, path and overwrite permission.</summary>
     public required ResolvedOutput Output { get; init; }
     public PageRange? Pages { get; init; }
-    public string? Password { get; init; }
+    public Secret? Password { get; init; }
 }
 
 /// <summary>Options for page rendering.</summary>
@@ -40,7 +40,7 @@ public sealed record PdfRenderRequest
 
     /// <summary>Spacing in points of a coordinate grid drawn on raster output, or null for none.</summary>
     public int? Grid { get; init; }
-    public string? Password { get; init; }
+    public Secret? Password { get; init; }
 }
 
 /// <summary>Options for creating one PDF from exactly one source family.</summary>
@@ -73,7 +73,7 @@ public sealed record PdfMergeRequest
     /// <summary>The resolved output: its format, path and overwrite permission.</summary>
     public required ResolvedOutput Output { get; init; }
     public bool PreserveBookmarks { get; init; } = true;
-    public string? Password { get; init; }
+    public Secret? Password { get; init; }
 }
 
 /// <summary>Options for transactional PDF splitting.</summary>
@@ -85,7 +85,7 @@ public sealed record PdfSplitRequest
     /// <summary>The resolved directory that receives the files.</summary>
     public required ResolvedDirectory Output { get; init; }
     public string NameTemplate { get; init; } = "{stem}.{n}.pdf";
-    public string? Password { get; init; }
+    public Secret? Password { get; init; }
 }
 
 /// <summary>Options for bounded PDF extraction.</summary>
@@ -95,7 +95,7 @@ public sealed record PdfExtractRequest
     /// <summary>The resolved directory that receives the files.</summary>
     public required ResolvedDirectory Output { get; init; }
     public PageRange? Pages { get; init; }
-    public string? Password { get; init; }
+    public Secret? Password { get; init; }
 
     /// <summary>Whether each table's UTF-8 CSV starts with a byte order mark.</summary>
     public bool ByteOrderMark { get; init; }
@@ -120,42 +120,42 @@ public sealed record PdfEditRequest
     /// <summary>The resolved output: its path, overwrite permission and in-place backup.</summary>
     public required ResolvedOutput Output { get; init; }
     public EditCommandOptions Options { get; init; } = new();
-    public string? Password { get; init; }
+    public Secret? Password { get; init; }
 
     /// <summary>Whether to read the staged output back against the effect of each operation.</summary>
     public bool Verify { get; init; }
 
     /// <summary>The operations' secrets by the environment variable their <c>*Env</c> fields name.</summary>
-    public IReadOnlyDictionary<string, string>? OpSecrets { get; init; }
+    public IReadOnlyDictionary<string, Secret>? OpSecrets { get; init; }
 }
 
-public sealed record PdfFormReadRequest { public string? Password { get; init; } }
+public sealed record PdfFormReadRequest { public Secret? Password { get; init; } }
 public sealed record PdfFormExportRequest
 {
     /// <summary>The resolved output: its format, path and overwrite permission.</summary>
     public required ResolvedOutput Output { get; init; }
-    public string? Password { get; init; }
+    public Secret? Password { get; init; }
 }
 public sealed record PdfSearchRequest
 {
     public required SearchQuery Query { get; init; }
     public PageRange? Pages { get; init; }
-    public string? Password { get; init; }
+    public Secret? Password { get; init; }
 }
 public sealed record PdfValidateRequest
 {
     public required string Profile { get; init; }
-    public string? Password { get; init; }
+    public Secret? Password { get; init; }
 }
 
 /// <summary>Options for applying one PKCS#7 PDF signature.</summary>
 public sealed record PdfSignRequest
 {
     public required string CertificatePath { get; init; }
-    public required string CertificatePassword { get; init; }
+    public required Secret CertificatePassword { get; init; }
     /// <summary>The resolved output: its format, path and overwrite permission.</summary>
     public required ResolvedOutput Output { get; init; }
-    public string? Password { get; init; }
+    public Secret? Password { get; init; }
     public int Page { get; init; } = 1;
     public bool Visible { get; init; }
     public PdfSignatureRect? Rect { get; init; }

@@ -1,5 +1,6 @@
 using System.CommandLine.Parsing;
 using System.Text.Json.Nodes;
+using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
 
@@ -30,7 +31,7 @@ public partial class StandardInvocation
     /// secret is read.
     /// </summary>
     /// <exception cref="CliException"><c>OPTION_INVALID</c> for an unprotectable format or a bad source.</exception>
-    public string? EncryptPassword()
+    public Secret? EncryptPassword()
     {
         PasswordOptions encrypt = Declared(_options.Encrypt, "output password");
         FormatDescriptor format = Output.Format;

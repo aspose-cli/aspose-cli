@@ -59,10 +59,10 @@ public sealed class SlidesMutationAndSecurityTests
         CliException wrong = Assert.Throws<CliException>(() =>
             fixture.Engine.GetInfo(
                 input,
-                new PresentationInfoRequest { Password = "wrong" }));
+                new PresentationInfoRequest { Password = new Secret("wrong") }));
         PresentationInfoResult opened = fixture.Engine.GetInfo(
             input,
-            new PresentationInfoRequest { Password = "correct" });
+            new PresentationInfoRequest { Password = new Secret("correct") });
 
         Assert.Equal(ErrorCodes.PasswordRequired, missing.Code);
         Assert.Equal(ErrorCodes.PasswordInvalid, wrong.Code);
@@ -158,19 +158,19 @@ public sealed class SlidesMutationAndSecurityTests
             new PresentationEditRequest
             {
                 Output = TestOutput.At(output),
-                EncryptPassword = "correct",
+                EncryptPassword = new Secret("correct"),
             });
 
         Assert.Equal(ErrorCodes.PasswordRequired, Assert.Throws<CliException>(() =>
             fixture.Engine.GetInfo(output, new PresentationInfoRequest())).Code);
         Assert.Equal(3, fixture.Engine.GetInfo(
             output,
-            new PresentationInfoRequest { Password = "correct" }).Presentation.SlideCount);
+            new PresentationInfoRequest { Password = new Secret("correct") }).Presentation.SlideCount);
         PresentationReadResult read = fixture.Engine.Read(
             output,
             new PresentationReadRequest
             {
-                Password = "correct",
+                Password = new Secret("correct"),
                 Slides = PageRange.Parse("1"),
                 Scope = PresentationReadScopes.Full,
                 IncludeNotes = true,

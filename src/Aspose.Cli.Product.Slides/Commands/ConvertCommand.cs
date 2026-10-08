@@ -27,7 +27,7 @@ internal static class ConvertCommand
             {
                 ResolvedOutput output = standard.Output;
                 string? range = parse.GetValue(slides);
-                string? encryptPassword = standard.EncryptPassword();
+                Secret? encryptPassword = standard.EncryptPassword();
                 return standard.OpenEngine().Convert(standard.Input, new PresentationConvertRequest
                 {
                     Output = output,

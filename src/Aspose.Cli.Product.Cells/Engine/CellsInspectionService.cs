@@ -35,8 +35,8 @@ internal sealed class CellsInspectionService
         ArgumentNullException.ThrowIfNull(request);
 
         LicenseState licenseState = _licenseGate.EnsureApplied();
-        using LoadedWorkbook loaded = _loader.Open(leftPath, request.LeftPassword);
-        using LoadedWorkbook other = _loader.Open(rightPath, request.RightPassword);
+        using LoadedWorkbook loaded = _loader.Open(leftPath, request.LeftPassword?.Reveal());
+        using LoadedWorkbook other = _loader.Open(rightPath, request.RightPassword?.Reveal());
         Workbook left = loaded.Workbook;
         Workbook right = other.Workbook;
 
@@ -71,7 +71,7 @@ internal sealed class CellsInspectionService
         ArgumentNullException.ThrowIfNull(request);
 
         LicenseState licenseState = _licenseGate.EnsureApplied();
-        using LoadedWorkbook loaded = _loader.Open(filePath, request.Password);
+        using LoadedWorkbook loaded = _loader.Open(filePath, request.Password?.Reveal());
         Workbook workbook = loaded.Workbook;
         SourceInfo source = BuildSource(filePath, workbook);
 

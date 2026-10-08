@@ -36,7 +36,7 @@ internal sealed class WordsExtractionService
     internal WordsSplitResult Split(string filePath, WordsSplitRequest request)
     {
         LicenseState state = _licenseGate.EnsureApplied();
-        using LoadedDocument loaded = _loader.Open(filePath, request.Password);
+        using LoadedDocument loaded = _loader.Open(filePath, request.Password?.Reveal());
         using var writer = new WordsSplitWriter(_writer, request.Output.Path, request.Output.Overwrite);
         if (request.By == "section")
         {
@@ -90,7 +90,7 @@ internal sealed class WordsExtractionService
     internal WordsExtractResult Extract(string filePath, WordsExtractRequest request)
     {
         LicenseState state = _licenseGate.EnsureApplied();
-        using LoadedDocument loaded = _loader.Open(filePath, request.Password);
+        using LoadedDocument loaded = _loader.Open(filePath, request.Password?.Reveal());
         using var guard = new ExtractionGuard(_resourceBudgets, request.Output.Path, request.Output.Overwrite);
         var index = new DocumentBlockIndex(loaded.Document, loaded.Evaluation);
         var items = new List<ExtractedItem>();

@@ -587,7 +587,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
                 View = WordsViews.Pages,
                 MaxPartCount = 8,
                 Purpose = ViewPurpose.Display,
-                Password = password,
+                Password = new Secret(password),
             },
             artifacts);
 
@@ -615,16 +615,16 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
         CliException missing = Assert.Throws<CliException>(() =>
             _fixture.Engine.GetInfo(input, new DocumentInfoRequest()));
         CliException wrong = Assert.Throws<CliException>(() =>
-            _fixture.Engine.GetInfo(input, new DocumentInfoRequest { Password = "wrong" }));
+            _fixture.Engine.GetInfo(input, new DocumentInfoRequest { Password = new Secret("wrong") }));
         DocumentInfoResult opened = _fixture.Engine.GetInfo(
             input,
-            new DocumentInfoRequest { Password = inputPassword });
+            new DocumentInfoRequest { Password = new Secret(inputPassword) });
 
         _fixture.Engine.Convert(input, new WordsConvertRequest
         {
             Output = TestOutput.At(output, format: "docx"),
-            Password = inputPassword,
-            EncryptPassword = outputPassword,
+            Password = new Secret(inputPassword),
+            EncryptPassword = new Secret(outputPassword),
         });
 
         Assert.Equal(ErrorCodes.PasswordRequired, missing.Code);

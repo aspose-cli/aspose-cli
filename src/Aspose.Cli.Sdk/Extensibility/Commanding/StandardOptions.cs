@@ -1,6 +1,7 @@
 using System.CommandLine;
 using System.CommandLine.Parsing;
 using System.Runtime.CompilerServices;
+using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Rendering;
@@ -528,8 +529,8 @@ public partial class StandardInvocation
 {
     private readonly StandardOptions _options;
     private readonly ParseResult _parse;
-    private readonly Lazy<string?> _inputPassword;
-    private readonly Lazy<string?> _otherPassword;
+    private readonly Lazy<Secret?> _inputPassword;
+    private readonly Lazy<Secret?> _otherPassword;
     private string? _input;
     private string? _other;
 
@@ -606,7 +607,7 @@ public partial class StandardInvocation
     /// <see cref="CommandTraits.PasswordSubject"/>; null when none was given.
     /// </summary>
     /// <exception cref="CliException"><c>OPTION_INVALID</c> for a conflicting, empty or unavailable source.</exception>
-    public string? InputPassword => _inputPassword.Value;
+    public Secret? InputPassword => _inputPassword.Value;
 
     /// <summary>
     /// Starts the command that continues this invocation for a result's <c>window.next</c>: the
@@ -627,7 +628,7 @@ public partial class StandardInvocation
 
     /// <summary>The password for <see cref="Other"/>, or null when none was given.</summary>
     /// <exception cref="CliException"><c>OPTION_INVALID</c> for a conflicting, empty or missing source.</exception>
-    public string? OtherPassword => _otherPassword.Value;
+    public Secret? OtherPassword => _otherPassword.Value;
 
     /// <summary>
     /// The resolved file named by one of the command's own <see cref="InputKind.File"/> options,

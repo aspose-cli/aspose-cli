@@ -74,7 +74,7 @@ internal static class SignCommand
                 return standard.OpenEngine().Sign(input, new PdfSignRequest
                 {
                     CertificatePath = certificatePath,
-                    CertificatePassword = certificatePassword,
+                    CertificatePassword = new Secret(certificatePassword),
                     Output = output,
                     Password = standard.InputPassword,
                     Page = pageNumber,

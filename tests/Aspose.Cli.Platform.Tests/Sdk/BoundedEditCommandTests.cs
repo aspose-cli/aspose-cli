@@ -254,25 +254,25 @@ public sealed class BoundedEditCommandTests : IDisposable
         const string document = """{"ops":[{"op":"secret","passwordEnv":"OWNER"},{"op":"secret","passwordEnv":"OWNER"},{"op":"secret"},{"op":"secret","passwordEnv":"ABSENT"},{"op":"secret","passwordEnv":"ABSENT"}]}""";
         var reads = new List<string>();
 
-        IReadOnlyDictionary<string, string> secrets = ReadWithEnvironment(Plain(), name =>
+        IReadOnlyDictionary<string, Secret> secrets = ReadWithEnvironment(Plain(), name =>
         {
             reads.Add(name);
             return name == "OWNER" ? "owner-secret" : null;
         }, "--ops", document).Secrets;
 
-        Assert.Equal("owner-secret", Assert.Single(secrets).Value);
+        Assert.Equal("owner-secret", Assert.Single(secrets).Value.Reveal());
         Assert.Equal(["OWNER", "ABSENT"], reads);
     }
 
     [Fact]
     public void OperationSecrets_FailOnlyTheOperationThatNamesAMissingVariable()
     {
-        var secrets = new Dictionary<string, string> { ["OWNER"] = "owner-secret" };
+        var secrets = new Dictionary<string, Secret> { ["OWNER"] = new("owner-secret") };
 
         OperationInvalidException missing = Assert.Throws<OperationInvalidException>(
             () => OperationSecrets.Resolve(secrets, "ABSENT"));
 
-        Assert.Equal("owner-secret", OperationSecrets.Resolve(secrets, "OWNER"));
+        Assert.Equal("owner-secret", OperationSecrets.Resolve(secrets, "OWNER")?.Reveal());
         Assert.Null(OperationSecrets.Resolve(secrets, null));
         Assert.Contains("'ABSENT'", missing.Message, StringComparison.Ordinal);
         Assert.Throws<OperationInvalidException>(() => OperationSecrets.Resolve(null, "OWNER"));

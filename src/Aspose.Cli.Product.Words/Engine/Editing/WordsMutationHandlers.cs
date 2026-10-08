@@ -18,7 +18,7 @@ internal sealed partial class WordsMutationHandlers : IWordsOpHandler<long>
     private readonly WordsDocumentLoader _loader;
     private readonly InputSource _inputs;
     private readonly InputResourceScope _operationInputs;
-    private readonly IReadOnlyDictionary<string, string>? _secrets;
+    private readonly IReadOnlyDictionary<string, Secret>? _secrets;
     private readonly WordsRevisionTracking? _tracking;
     private readonly ICollection<Warning> _warnings;
     private readonly ICollection<Node> _changed;
@@ -41,7 +41,7 @@ internal sealed partial class WordsMutationHandlers : IWordsOpHandler<long>
         WordsDocumentLoader loader,
         InputSource inputs,
         InputResourceScope operationInputs,
-        IReadOnlyDictionary<string, string>? secrets,
+        IReadOnlyDictionary<string, Secret>? secrets,
         WordsRevisionTracking? tracking,
         ICollection<Warning> warnings,
         ICollection<Node> changed,

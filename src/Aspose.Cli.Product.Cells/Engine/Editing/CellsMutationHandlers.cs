@@ -14,13 +14,13 @@ namespace Aspose.Cli.Product.Cells.Engine.Editing;
 internal sealed class CellsMutationHandlers : ICellsOpHandler<long?>
 {
     private readonly Workbook _workbook;
-    private readonly IReadOnlyDictionary<string, string>? _secrets;
+    private readonly IReadOnlyDictionary<string, Secret>? _secrets;
     private readonly InputResourceScope _inputs;
     private readonly CellsImportSources _sources;
 
     internal CellsMutationHandlers(
         Workbook workbook,
-        IReadOnlyDictionary<string, string>? secrets,
+        IReadOnlyDictionary<string, Secret>? secrets,
         InputResourceScope inputs,
         CellsImportSources sources)
     {

@@ -38,7 +38,7 @@ internal sealed class PdfMutationService
         LicenseState state = _licenseGate.EnsureApplied();
         FileWritePrecondition precondition = FileWritePrecondition.Capture(filePath);
         using InputResourceScope operationInputs = _inputs.CreateScope();
-        using LoadedPdf loaded = _loader.Open(filePath, request.Password);
+        using LoadedPdf loaded = _loader.Open(filePath, request.Password?.Reveal());
         SourceInfo input = PdfInfoProjection.Source(filePath, includeFingerprint: true);
         FileFingerprints.EnsureUnchanged(filePath, precondition.Fingerprint, input.Fingerprint!);
         FileFingerprints.EnsureMatch(filePath, request.Options.IfMatch, input.Fingerprint!);
@@ -100,7 +100,7 @@ internal sealed class PdfMutationService
         InputResourceScope operationInputs,
         PdfEditVerifier? verifier)
     {
-        string? outputPassword = request.Password;
+        string? outputPassword = request.Password?.Reveal();
         EncryptPdfOp? encryption = null;
         IReadOnlyList<BoundedOperationOutcome> outcomes = BoundedOperationRunner.Run(
             PdfOp.Catalog,
@@ -127,7 +127,7 @@ internal sealed class PdfMutationService
                 }
                 if (op is EncryptPdfOp encrypt)
                 {
-                    outputPassword = OperationSecrets.Resolve(request.OpSecrets, encrypt.UserPasswordEnv);
+                    outputPassword = OperationSecrets.Resolve(request.OpSecrets, encrypt.UserPasswordEnv)?.Reveal();
                     encryption = encrypt;
                 }
                 else if (op is DecryptPdfOp)
@@ -255,7 +255,7 @@ internal sealed class PdfMutationService
     /// copy, the document is saved without encryption, reopened and encrypted, so the document
     /// information the batch set is written as read from a file.
     /// </summary>
-    private static void Save(Document document, string path, EncryptPdfOp? encryptCopy, IReadOnlyDictionary<string, string>? secrets)
+    private static void Save(Document document, string path, EncryptPdfOp? encryptCopy, IReadOnlyDictionary<string, Secret>? secrets)
     {
         if (encryptCopy is null)
         {

@@ -43,7 +43,7 @@ internal sealed class SlidesProductionService
         const int cssWidth = 960;
         ArgumentNullException.ThrowIfNull(artifacts);
         LicenseState state = _licenseGate.EnsureApplied();
-        using LoadedPresentation loaded = _loader.Open(filePath, request.Password);
+        using LoadedPresentation loaded = _loader.Open(filePath, request.Password?.Reveal());
         Presentation presentation = loaded.Presentation;
         int pixelWidth = request.Purpose == ViewPurpose.Display ? displayWidth : evidenceWidth;
         float scale = (float)(pixelWidth / presentation.SlideSize.Size.Width);
@@ -100,7 +100,7 @@ internal sealed class SlidesProductionService
     internal SlidesConvertResult Convert(string filePath, PresentationConvertRequest request)
     {
         LicenseState state = _licenseGate.EnsureApplied();
-        using LoadedPresentation loaded = _loader.Open(filePath, request.Password);
+        using LoadedPresentation loaded = _loader.Open(filePath, request.Password?.Reveal());
         IReadOnlyList<int>? slides = request.Slides is null
             ? null
             : ResolveSlideRange(request.Slides, loaded.Presentation.Slides.Count);
@@ -141,7 +141,7 @@ internal sealed class SlidesProductionService
             {
                 if (slides is null)
                 {
-                    Encrypt(presentation, request.EncryptPassword);
+                    Encrypt(presentation, request.EncryptPassword?.Reveal());
                     presentation.Save(temp, format);
                     return;
                 }
@@ -156,7 +156,7 @@ internal sealed class SlidesProductionService
                 // Editable formats keep the source's size, properties, masters and protection:
                 // the unselected slides leave this private loaded copy instead of cloning into a new deck.
                 RemoveUnselectedSlides(presentation, slides);
-                Encrypt(presentation, request.EncryptPassword);
+                Encrypt(presentation, request.EncryptPassword?.Reveal());
                 presentation.Save(temp, format);
             }
         }
@@ -184,7 +184,7 @@ internal sealed class SlidesProductionService
     internal SlidesRenderResult Render(string filePath, PresentationRenderRequest request)
     {
         LicenseState state = _licenseGate.EnsureApplied();
-        using LoadedPresentation loaded = _loader.Open(filePath, request.Password);
+        using LoadedPresentation loaded = _loader.Open(filePath, request.Password?.Reveal());
         IReadOnlyList<int> slides = request.AllSlides
             ? AllSlides(loaded.Presentation.Slides.Count)
             : ResolveSlideRange(request.Slides ?? PageRange.Parse("1"), loaded.Presentation.Slides.Count);
@@ -285,7 +285,7 @@ internal sealed class SlidesProductionService
             presentation.Slides.AddEmptySlide(SlidesPlaceholders.Layout(presentation, SlideLayoutType.Title));
         }
 
-        Encrypt(presentation, request.EncryptPassword);
+        Encrypt(presentation, request.EncryptPassword?.Reveal());
         long size = _writer.Write(
             request.Output.Path,
             request.Output.Overwrite,

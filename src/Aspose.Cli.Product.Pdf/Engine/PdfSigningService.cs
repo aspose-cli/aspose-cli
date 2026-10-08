@@ -35,9 +35,9 @@ internal sealed class PdfSigningService
     public PdfSignResult Sign(string filePath, PdfSignRequest request)
     {
         EnsureCertificate(_resourceBudgets, request.CertificatePath);
-        ValidateCertificate(request.CertificatePath, request.CertificatePassword);
+        ValidateCertificate(request.CertificatePath, request.CertificatePassword.Reveal());
         LicenseState state = _licenseGate.EnsureApplied();
-        using LoadedPdf loaded = _loader.Open(filePath, request.Password);
+        using LoadedPdf loaded = _loader.Open(filePath, request.Password?.Reveal());
         _ = PageAt(loaded.Document, request.Page);
         // The signature to verify is the one this command adds: a document may already
         // carry signed fields, and the first of them says nothing about the new one.
@@ -68,7 +68,7 @@ internal sealed class PdfSigningService
         StagedOutput write = transaction.Stage(request.Output.Path, request.Output.Overwrite, temp =>
         {
             using var facade = new PdfFileSignature(loaded.Document);
-            var signature = new PKCS7(request.CertificatePath, request.CertificatePassword)
+            var signature = new PKCS7(request.CertificatePath, request.CertificatePassword.Reveal())
             {
                 Reason = request.Reason,
                 Location = request.Location,
@@ -81,7 +81,7 @@ internal sealed class PdfSigningService
         // The staged candidate is the only readable copy before publication: a supervised
         // worker leaves the target to its parent, so reading it here would find nothing.
         PdfSignatureInfo signed = write.Read(
-            candidate => VerifySignedOutput(candidate, request.Password, alreadySigned));
+            candidate => VerifySignedOutput(candidate, request.Password?.Reveal(), alreadySigned));
         transaction.Commit();
         return new PdfSignResult
         {

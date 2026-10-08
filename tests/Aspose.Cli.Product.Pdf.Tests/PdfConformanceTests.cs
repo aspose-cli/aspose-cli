@@ -253,7 +253,7 @@ public sealed class PdfConformanceTests
         PdfConvertResult result = fixture.Engine.Convert(input, new PdfConvertRequest
         {
             Output = TestOutput.At(fixture.File("encrypted.pdfa.pdf"), format: "pdfa-2b"),
-            Password = "user-secret",
+            Password = new Secret("user-secret"),
         });
 
         string output = Assert.Single(result.Outputs).Path;
@@ -369,7 +369,7 @@ public sealed class PdfConformanceTests
         {
             Output = TestOutput.At(fixture.File(output)),
             CertificatePath = certificate,
-            CertificatePassword = password,
+            CertificatePassword = new Secret(password),
             Page = 1,
         });
 }

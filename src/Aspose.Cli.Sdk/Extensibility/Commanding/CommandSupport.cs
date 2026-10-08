@@ -1,4 +1,5 @@
 using System.CommandLine;
+using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
 
@@ -285,7 +286,7 @@ internal sealed class PasswordOptions
     }
 
     /// <summary>Resolves the selected secret without serializing it.</summary>
-    public string? Resolve(
+    public Secret? Resolve(
         ParseResult parseResult,
         InputSource inputs,
         Func<string, string?> readEnvironment,
@@ -312,7 +313,7 @@ internal sealed class PasswordOptions
         if (literal is not null)
         {
             return literal.Length > 0
-                ? literal
+                ? new Secret(literal)
                 : throw CliErrors.OptionInvalid(
                     _prefix,
                     "the password is empty",
@@ -323,7 +324,7 @@ internal sealed class PasswordOptions
         {
             string? value = readEnvironment(environmentName);
             return !string.IsNullOrEmpty(value)
-                ? value
+                ? new Secret(value)
                 : throw CliErrors.SecretMissing($"{_prefix}-env", environmentName);
         }
 
@@ -342,7 +343,7 @@ internal sealed class PasswordOptions
 
         string line = inputs.ReadSecretLine(Console.In);
         return !string.IsNullOrEmpty(line)
-            ? line
+            ? new Secret(line)
             : throw CliErrors.OptionInvalid(
                 $"{_prefix}-stdin",
                 "no password was provided on stdin",

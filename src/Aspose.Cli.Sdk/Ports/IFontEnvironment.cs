@@ -31,5 +31,5 @@ public interface IFontEnvironment
 public sealed record FontCheckRequest
 {
     /// <summary>Password for an encrypted document.</summary>
-    public string? Password { get; init; }
+    public Secret? Password { get; init; }
 }

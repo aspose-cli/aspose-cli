@@ -51,7 +51,7 @@ internal sealed class PdfProductionService
         const double cssDpi = 96;
         ArgumentNullException.ThrowIfNull(artifacts);
         _ = _licenseGate.EnsureApplied();
-        using LoadedPdf loaded = _loader.Open(filePath, request.Password);
+        using LoadedPdf loaded = _loader.Open(filePath, request.Password?.Reveal());
         bool evidence = request.Purpose != ViewPurpose.Display;
         int dpi = evidence ? evidenceDpi : displayDpi;
         int total = loaded.Document.Pages.Count;
@@ -107,7 +107,7 @@ internal sealed class PdfProductionService
     {
         PdfRenderGrid? grid = RenderGrid(request);
         LicenseState state = _licenseGate.EnsureApplied();
-        using LoadedPdf loaded = _loader.Open(filePath, request.Password);
+        using LoadedPdf loaded = _loader.Open(filePath, request.Password?.Reveal());
         IReadOnlyList<int> pages = request.AllPages
             ? Enumerable.Range(1, loaded.Document.Pages.Count).ToArray()
             : request.Pages?.Resolve(loaded.Document.Pages.Count) ?? [1];
@@ -579,7 +579,7 @@ internal sealed class PdfProductionService
         int namedDestinations = 0;
         foreach (string path in request.InputPaths)
         {
-            using LoadedPdf loaded = _loader.Open(path, request.Password);
+            using LoadedPdf loaded = _loader.Open(path, request.Password?.Reveal());
             Document source = loaded.Document;
             brokenInputLinks += PdfNavigationCensus.Unresolved(source).Links;
             // The merged document carries no named destinations, so every working one is lost.
@@ -626,7 +626,7 @@ internal sealed class PdfProductionService
     internal PdfConvertResult Convert(string filePath, PdfConvertRequest request)
     {
         LicenseState state = _licenseGate.EnsureApplied();
-        using LoadedPdf loaded = _loader.Open(filePath, request.Password);
+        using LoadedPdf loaded = _loader.Open(filePath, request.Password?.Reveal());
         IReadOnlyList<int> pages = request.Pages?.Resolve(loaded.Document.Pages.Count)
             ?? Enumerable.Range(1, loaded.Document.Pages.Count).ToArray();
         List<Warning> warnings = [.. EnvelopeParts.OutputWarnings(state) ?? []];

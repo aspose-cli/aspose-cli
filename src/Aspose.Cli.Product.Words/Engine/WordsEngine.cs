@@ -54,8 +54,8 @@ internal sealed class WordsEngine : IWordsEngine, IWordsReviewLayoutPort
 
     WordsReviewLayout IWordsReviewLayoutPort.InspectReviewLayout(
         string filePath,
-        string? password,
-        int maxPages) => _reviewLayout.Inspect(filePath, password, maxPages);
+        Secret? password,
+        int maxPages) => _reviewLayout.Inspect(filePath, password?.Reveal(), maxPages);
 
     /// <inheritdoc />
     public WordsConvertResult Convert(string filePath, WordsConvertRequest request) =>

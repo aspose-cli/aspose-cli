@@ -17,7 +17,7 @@ namespace Aspose.Cli.Product.Cells.Engine.Editing;
 internal sealed class CellsImportSources(
     CellsWorkbookLoader loader,
     ResourceBudgetLedger budgets,
-    IReadOnlyDictionary<string, string>? secrets) : IDisposable
+    IReadOnlyDictionary<string, Secret>? secrets) : IDisposable
 {
     private readonly Dictionary<string, LoadedWorkbook> _opened = new(StringComparer.OrdinalIgnoreCase);
     private readonly List<Warning> _imports = [];
@@ -39,7 +39,7 @@ internal sealed class CellsImportSources(
         {
             try
             {
-                loaded = loader.Open(path, OperationSecrets.Resolve(secrets, passwordEnv));
+                loaded = loader.Open(path, OperationSecrets.Resolve(secrets, passwordEnv)?.Reveal());
             }
             catch (CliException error) when (CliErrors.IsPasswordError(error))
             {

@@ -11,9 +11,9 @@ namespace Aspose.Cli.Product.Cells.Engine.Editing;
 /// </summary>
 internal static class ProtectOps
 {
-    public static long? ProtectSheet(Worksheet sheet, ProtectSheetOp op, IReadOnlyDictionary<string, string>? secrets)
+    public static long? ProtectSheet(Worksheet sheet, ProtectSheetOp op, IReadOnlyDictionary<string, Secret>? secrets)
     {
-        string? password = OperationSecrets.Resolve(secrets, op.PasswordEnv);
+        string? password = OperationSecrets.Resolve(secrets, op.PasswordEnv)?.Reveal();
         if (password is null)
         {
             sheet.Protect(ProtectionType.All);
@@ -32,9 +32,9 @@ internal static class ProtectOps
         return null;
     }
 
-    public static long? UnprotectSheet(Worksheet sheet, UnprotectSheetOp op, IReadOnlyDictionary<string, string>? secrets)
+    public static long? UnprotectSheet(Worksheet sheet, UnprotectSheetOp op, IReadOnlyDictionary<string, Secret>? secrets)
     {
-        string? password = OperationSecrets.Resolve(secrets, op.PasswordEnv);
+        string? password = OperationSecrets.Resolve(secrets, op.PasswordEnv)?.Reveal();
         Unprotect(() =>
         {
             if (password is null)
@@ -49,19 +49,19 @@ internal static class ProtectOps
         return null;
     }
 
-    public static long? ProtectWorkbook(Workbook workbook, ProtectWorkbookOp op, IReadOnlyDictionary<string, string>? secrets)
+    public static long? ProtectWorkbook(Workbook workbook, ProtectWorkbookOp op, IReadOnlyDictionary<string, Secret>? secrets)
     {
         OperationInvalidException.Require(
             !Sheets.StructurePasswordProtected(workbook),
             "the workbook structure is already protected with a password",
             "Run unprotect_workbook with that password's passwordEnv first, then protect_workbook.");
-        workbook.Protect(ProtectionType.Structure, OperationSecrets.Resolve(secrets, op.PasswordEnv));
+        workbook.Protect(ProtectionType.Structure, OperationSecrets.Resolve(secrets, op.PasswordEnv)?.Reveal());
         return null;
     }
 
-    public static long? UnprotectWorkbook(Workbook workbook, UnprotectWorkbookOp op, IReadOnlyDictionary<string, string>? secrets)
+    public static long? UnprotectWorkbook(Workbook workbook, UnprotectWorkbookOp op, IReadOnlyDictionary<string, Secret>? secrets)
     {
-        string? password = OperationSecrets.Resolve(secrets, op.PasswordEnv);
+        string? password = OperationSecrets.Resolve(secrets, op.PasswordEnv)?.Reveal();
         Unprotect(() => workbook.Unprotect(password ?? string.Empty), "the workbook structure", password);
         return null;
     }

@@ -13,7 +13,7 @@ internal sealed partial class PdfMutationHandlers : IPdfOpHandler<long>
     private readonly PdfDocumentLoader _loader;
     private readonly InputResourceScope _inputs;
     private readonly Document _document;
-    private readonly IReadOnlyDictionary<string, string>? _secrets;
+    private readonly IReadOnlyDictionary<string, Secret>? _secrets;
     private readonly ISet<int> _touched;
     private readonly ISet<int> _textMoved;
 
@@ -28,7 +28,7 @@ internal sealed partial class PdfMutationHandlers : IPdfOpHandler<long>
         PdfDocumentLoader loader,
         InputResourceScope inputs,
         Document document,
-        IReadOnlyDictionary<string, string>? secrets,
+        IReadOnlyDictionary<string, Secret>? secrets,
         ISet<int> touched,
         ISet<int> textMoved)
     {

@@ -198,10 +198,10 @@ internal sealed partial class PdfMutationHandlers
     }
 
     /// <summary>Encrypts a document with AES-256 and the passwords and permissions an operation names.</summary>
-    internal static void Encrypt(Document document, EncryptPdfOp operation, IReadOnlyDictionary<string, string>? secrets)
+    internal static void Encrypt(Document document, EncryptPdfOp operation, IReadOnlyDictionary<string, Secret>? secrets)
     {
-        string owner = OperationSecrets.Resolve(secrets, operation.OwnerPasswordEnv)!;
-        string user = OperationSecrets.Resolve(secrets, operation.UserPasswordEnv) ?? string.Empty;
+        string owner = OperationSecrets.Resolve(secrets, operation.OwnerPasswordEnv)?.Reveal()!;
+        string user = OperationSecrets.Resolve(secrets, operation.UserPasswordEnv)?.Reveal() ?? string.Empty;
         Permissions permissions = (Permissions)0;
         if (operation.Permissions.Print)
         {

@@ -29,7 +29,7 @@ internal static class NewCommand
                 string? markdownPath = standard.InputFile(markdown);
                 string? templatePath = standard.InputFile(template);
                 ResolvedOutput output = standard.Output;
-                string? encryptPassword = standard.EncryptPassword();
+                Secret? encryptPassword = standard.EncryptPassword();
                 return standard.OpenEngine().Create(new NewPresentationRequest
                 {
                     Output = output,

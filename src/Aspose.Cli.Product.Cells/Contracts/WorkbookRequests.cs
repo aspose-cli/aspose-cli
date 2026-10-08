@@ -16,7 +16,7 @@ public sealed record InfoRequest
     public IReadOnlyList<string>? Details { get; init; }
 
     /// <summary>Password for encrypted files.</summary>
-    public string? Password { get; init; }
+    public Secret? Password { get; init; }
 }
 
 /// <summary>Options of <c>cells query range</c>.</summary>
@@ -46,7 +46,7 @@ public sealed record ReadRequest
     public int MaxCells { get; init; } = 10_000;
 
     /// <summary>Password for encrypted files.</summary>
-    public string? Password { get; init; }
+    public Secret? Password { get; init; }
 }
 
 /// <summary>Options of <c>cells convert</c>.</summary>
@@ -59,10 +59,10 @@ public sealed record ConvertRequest
     public string? SheetName { get; init; }
 
     /// <summary>Password for encrypted files.</summary>
-    public string? Password { get; init; }
+    public Secret? Password { get; init; }
 
     /// <summary>New output password; null preserves source encryption where the target format supports it.</summary>
-    public string? EncryptPassword { get; init; }
+    public Secret? EncryptPassword { get; init; }
 
     /// <summary>How a delimited text input is decoded and its numbers and dates parsed.</summary>
     public TextImportOptions? TextImport { get; init; }
@@ -108,14 +108,14 @@ public sealed record RenderRequest
     public int Dpi { get; init; } = 192;
 
     /// <summary>Password for encrypted files.</summary>
-    public string? Password { get; init; }
+    public Secret? Password { get; init; }
 }
 
 /// <summary>Options of <c>cells edit</c>.</summary>
 public sealed record EditRequest
 {
     /// <summary>Transient environment secret values; never part of ops JSON or result envelopes.</summary>
-    public IReadOnlyDictionary<string, string>? OpSecrets { get; init; }
+    public IReadOnlyDictionary<string, Secret>? OpSecrets { get; init; }
 
     /// <summary>The resolved output: its format, path, overwrite permission and in-place backup.</summary>
     public required ResolvedOutput Output { get; init; }
@@ -133,10 +133,10 @@ public sealed record EditRequest
     public bool Recalculate { get; init; } = true;
 
     /// <summary>Password for opening an encrypted input file.</summary>
-    public string? Password { get; init; }
+    public Secret? Password { get; init; }
 
     /// <summary>New output password; null preserves source encryption where the target format supports it.</summary>
-    public string? EncryptPassword { get; init; }
+    public Secret? EncryptPassword { get; init; }
 }
 
 /// <summary>Options of <c>cells create</c>.</summary>
@@ -149,7 +149,7 @@ public sealed record NewWorkbookRequest
     public required IReadOnlyList<string> SheetNames { get; init; }
 
     /// <summary>Resolved password to protect the output file; null leaves it unencrypted.</summary>
-    public string? EncryptPassword { get; init; }
+    public Secret? EncryptPassword { get; init; }
 }
 
 /// <summary>Options of <c>cells query search</c>.</summary>
@@ -165,7 +165,7 @@ public sealed record SearchRequest
     public string? SheetName { get; init; }
 
     /// <summary>Password for encrypted files.</summary>
-    public string? Password { get; init; }
+    public Secret? Password { get; init; }
 }
 
 /// <summary>Where <c>cells query search</c> looks for matches.</summary>
@@ -191,10 +191,10 @@ public sealed record DiffRequest
     public int MaxDiffs { get; init; } = 1000;
 
     /// <summary>Password for the left (baseline) file.</summary>
-    public string? LeftPassword { get; init; }
+    public Secret? LeftPassword { get; init; }
 
     /// <summary>Password for the right (candidate) file.</summary>
-    public string? RightPassword { get; init; }
+    public Secret? RightPassword { get; init; }
 }
 
 /// <summary>What <c>cells compare</c> compares.</summary>
