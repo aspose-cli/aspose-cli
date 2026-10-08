@@ -92,6 +92,16 @@ retry unchanged input.
   images instead, and do not report the file as damaged. Whether a saved
   output carries the replacement depends on the product; its Skill says which
   outputs do.
+- When evaluation mode hides content an operation must read, the operation
+  fails with `EVALUATION_LIMIT` and writes nothing rather than report that
+  nothing matched: Slides `replace_text` on text in its scope that evaluation
+  mode reads cut short, and PDF commands that need a page after the fourth. A
+  Words document that ends with the evaluation truncation notice is edited as
+  it loaded, with `EVAL_INPUT_TRUNCATED`: Aspose.Words does not say whether
+  this open cut it short or an earlier save without a license left the notice,
+  so treat the result as incomplete. The marks evaluation mode adds when it
+  opens a document never act as content: a Words document appended to another,
+  or a mail-merge letter, loses its evaluation banner first.
 - Reads (`inspect`, `query`) add no marks and carry no `EVAL_MODE` warning;
   input, resource and engine limits still apply. A dry run publishes nothing
   and carries none either.

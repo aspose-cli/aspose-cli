@@ -42,6 +42,32 @@ public sealed class WordsDisclosureTests
         Assert.True(evaluation ? index.Count <= blocks : index.Count == blocks);
     }
 
+    /// <summary>
+    /// A document that ends with the evaluation truncation notice an earlier save left is edited
+    /// in evaluation mode, not refused: nothing tells whether this open cut it short.
+    /// </summary>
+    [Fact]
+    public void ReplaceText_InADocumentCarryingAnOldTruncationNotice_IsAppliedInEvaluationMode()
+    {
+        using var fixture = new WordsFixture();
+        var source = new Document();
+        var builder = new DocumentBuilder(source);
+        builder.Writeln("Clause one.");
+        builder.Write("This document was truncated here because it was created in the Evaluation Mode.");
+        string input = fixture.Temp.File("old-notice.docx");
+        source.Save(input, SaveFormat.Docx);
+        ResourceBudgetLedger budgets = ProductTestBudgets.Create<WordsModule>();
+        var outputs = new OutputPipeline<Document>(new FixedGate(LicenseState.Evaluation), new WordsEvaluationProfile(), new SafeFileWriter(budgets));
+        var engine = new WordsEngine(outputs, budgets);
+
+        var edited = (WordsEditResult)outputs.Disclose(engine.ApplyOps(input,
+            new WordsOpsBatch { Ops = [new ReplaceTextOp { Find = "one", Replace = "two" }] },
+            new WordsEditRequest { Output = TestOutput.At(fixture.Temp.File("old-notice-edited.docx")) }));
+
+        Assert.Equal(1, edited.Applied[0].ItemsAffected);
+        Assert.Contains(edited.Warnings!, static warning => warning.Code == WarningCodes.EvalMode);
+    }
+
     [Fact]
     public void EditingARestrictedDocument_DisclosesThatTheRestrictionWasNotEnforced()
     {
@@ -525,7 +551,7 @@ public sealed class WordsDisclosureTests
     private sealed class FixedGate(LicenseState state) : ILicenseGate
     {
         public bool IsApplicable => true;
-        public LicenseResolution Resolution => throw new NotSupportedException();
+        public LicenseResolution Resolution => LicenseResolution.None;
         public string Identity => "fixed";
         public LicenseState EnsureApplied() => state;
     }
