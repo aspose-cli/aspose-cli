@@ -80,8 +80,6 @@ internal sealed partial class AppHost : IDisposable
     /// </summary>
     private CommandContext CreateCommandContext() => CompositionRoot.Create(_catalog, _globals);
 
-    public int Port => _port;
-
     public string Url => $"http://127.0.0.1:{_port}/";
 
     internal bool LicenseManagementApplicable => _catalog.Products.Any(

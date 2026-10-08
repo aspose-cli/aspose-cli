@@ -62,10 +62,6 @@ internal sealed class SkillCatalog
     }
 
     public IReadOnlyList<BundledSkill> All => _packages;
-
-    public BundledSkill Get(string name) =>
-        _packages.FirstOrDefault(package => package.Name == name)
-        ?? throw new ArgumentException($"Unknown bundled skill '{name}'.", nameof(name));
 }
 
 /// <summary>

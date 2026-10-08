@@ -49,7 +49,6 @@ internal sealed record LiveRevision(
     string Product,
     string View,
     string License,
-    int TotalPartCount,
     IReadOnlyDictionary<string, string> Digests,
     IReadOnlyDictionary<string, string> Addressed,
     ViewBundleManifest Files);
@@ -381,7 +380,6 @@ internal sealed class LiveDocument : IDisposable
             response.Product ?? previous?.Product ?? string.Empty,
             response.View ?? previous?.View ?? string.Empty,
             response.License ?? previous?.License ?? string.Empty,
-            response.TotalPartCount,
             digests,
             addressed,
             ViewBundleManifest.Validate(directory, RenderWorkerProtocol.ManifestFileName, _limits));
