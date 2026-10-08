@@ -11,7 +11,7 @@ internal static class PdfFormatRecognition
         StringComparer.Ordinal)
     {
         ["pdf"] = FileFormatRecognition.Match(
-            FileProbePattern.AsciiBytesAt(0, "%PDF-"),
+            FileProbePattern.PdfHeader(),
             "PDF header"),
     };
 }

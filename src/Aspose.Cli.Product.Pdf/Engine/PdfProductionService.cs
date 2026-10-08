@@ -916,14 +916,7 @@ internal sealed class PdfProductionService
             contents.Position = 0;
         }
 
-        Span<byte> head = stackalloc byte[1024];
-        int read = contents.ReadAtLeast(head, head.Length, throwOnEndOfStream: false);
-        if (contents.CanSeek)
-        {
-            contents.Position = 0;
-        }
-
-        return head[..read].IndexOf("%PDF-"u8) >= 0;
+        return ContainerSignatures.HasPdfHeader(ContainerSignatures.ReadPrefix(contents));
     }
 
     private static string[] AttachmentNames(Document document) =>
