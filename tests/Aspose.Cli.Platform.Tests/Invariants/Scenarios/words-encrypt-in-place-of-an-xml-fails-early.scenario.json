@@ -1,0 +1,25 @@
+{
+  "name": "words edit --in-place --encrypt-env of a WordML .xml document fails early with OPTION_INVALID and writes nothing",
+  "files": {
+    "wordml.xml": { "fixture": "words.wordml" },
+    "damaged.xml": { "text": "<?xml version=\"1.0\"?><?mso-application progid=\"Word.Document\"?><w:wordDocument xmlns:w=\"http://schemas.microsoft.com/office/word/2003/wordml\"><w:body><w:p>" },
+    "ops.json": { "fixture": "words.ops" }
+  },
+  "steps": [
+    {
+      "args": ["words", "edit", "wordml.xml", "--ops", "ops.json", "--in-place", "--encrypt-env", "NEW_PASSWORD"],
+      "env": { "NEW_PASSWORD": "Scenario-New-Secret-7d2a" },
+      "expect": { "exitCode": 2, "error": "OPTION_INVALID", "files": { "nothingWritten": true }, "hidden": ["Scenario-New-Secret-7d2a"] }
+    },
+    {
+      "args": ["words", "edit", "wordml.xml", "--ops", "ops.json", "--in-place", "--encrypt-env", "NEW_PASSWORD", "--dry-run"],
+      "env": { "NEW_PASSWORD": "Scenario-New-Secret-7d2a" },
+      "expect": { "exitCode": 2, "error": "OPTION_INVALID", "files": { "nothingWritten": true } }
+    },
+    {
+      "args": ["words", "edit", "damaged.xml", "--ops", "ops.json", "--in-place", "--encrypt-env", "NEW_PASSWORD"],
+      "env": { "NEW_PASSWORD": "Scenario-New-Secret-7d2a" },
+      "expect": { "exitCode": 2, "error": "OPTION_INVALID", "files": { "nothingWritten": true } }
+    }
+  ]
+}
