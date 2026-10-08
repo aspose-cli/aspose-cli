@@ -1,5 +1,6 @@
 using Aspose.Cells;
 using Aspose.Cli.Product.Cells.Engine.Mapping;
+using Aspose.Cli.Sdk.Diagnostics;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Results;
 
@@ -46,7 +47,7 @@ internal sealed class CellsEditVerifier(CellsWorkbookLoader loader, ResourceBudg
         if (errorTotal > 0)
         {
             int preexisting = errors.Count(static error => error.Preexisting == true);
-            issues.Add(VerificationIssue.Of(CellsDiagnostics.FormulaErrors,
+            issues.Add(VerificationIssues.Of(CellsDiagnostics.FormulaErrors,
                 (errorsCapped
                     ? $"The edited workbook contains {errorTotal} formula error(s); formulaErrors lists the first {errors.Count}."
                     : $"The edited workbook contains {errorTotal} formula error(s).")

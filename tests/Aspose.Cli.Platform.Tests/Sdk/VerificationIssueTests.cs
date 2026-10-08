@@ -25,7 +25,7 @@ public sealed class VerificationIssueTests
     [Fact]
     public void Of_TakesTheCodeFromTheDescriptor()
     {
-        VerificationIssue issue = VerificationIssue.Of(
+        VerificationIssue issue = VerificationIssues.Of(
             CountChanged, "The count changed.", "sheet:Data", "Inspect the sheet.");
 
         Assert.Equal("TEST_COUNT_CHANGED", issue.Code);
@@ -39,7 +39,7 @@ public sealed class VerificationIssueTests
     {
         DiagnosticDescriptor warning = DiagnosticDescriptor.Warning("TEST_WARNING", "test", "warning");
 
-        Assert.Throws<ArgumentException>(() => VerificationIssue.Of(warning, "Not a verification code."));
+        Assert.Throws<ArgumentException>(() => VerificationIssues.Of(warning, "Not a verification code."));
     }
 
     [Fact]
@@ -72,7 +72,7 @@ public sealed class VerificationIssueTests
     public void OptionalFields_AreOmittedWhenAbsent()
     {
         JsonObject json = JsonSerializer.SerializeToNode(
-            VerificationIssue.Of(CountChanged, "The count changed."),
+            VerificationIssues.Of(CountChanged, "The count changed."),
             SdkJsonContext.Default.VerificationIssue)!.AsObject();
 
         Assert.Equal(["code", "message"], json.Select(static item => item.Key));

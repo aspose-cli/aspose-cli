@@ -1,5 +1,6 @@
 using Aspose.Cli.Product.Words.Engine.Editing;
 using Aspose.Cli.Product.Words.Engine.Mapping;
+using Aspose.Cli.Sdk.Diagnostics;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.IO;
@@ -353,7 +354,7 @@ internal sealed class WordsMutationService
         var issues = new List<VerificationIssue>();
         if (truncation is not null)
         {
-            issues.Add(VerificationIssue.Of(
+            issues.Add(VerificationIssues.Of(
                 WordsDiagnostics.OutputTruncated,
                 $"Evaluation mode cut the edited document short: {truncation}",
                 hint: "Apply a license and run the edit again; the output does not hold the whole result."));
@@ -367,7 +368,7 @@ internal sealed class WordsMutationService
         string protection = WordsProtection.ToMode(reopened.Document.ProtectionType);
         if (fieldCount != expected.FieldCount)
         {
-            issues.Add(VerificationIssue.Of(
+            issues.Add(VerificationIssues.Of(
                 WordsDiagnostics.FieldCountChanged,
                 $"Field count changed during save/reopen: expected {expected.FieldCount}, found {fieldCount}.",
                 hint: KeepStateHint("fields", format, WordsFormats.WordIds)));
@@ -375,7 +376,7 @@ internal sealed class WordsMutationService
 
         if (revisionCount != expected.RevisionCount)
         {
-            issues.Add(VerificationIssue.Of(
+            issues.Add(VerificationIssues.Of(
                 WordsDiagnostics.RevisionCountChanged,
                 $"Revision count changed during save/reopen: expected {expected.RevisionCount}, found {revisionCount}.",
                 hint: KeepStateHint("tracked revisions", format, WordsFormats.RevisionIds)));
@@ -383,7 +384,7 @@ internal sealed class WordsMutationService
 
         if (!string.Equals(protection, expected.Protection, StringComparison.Ordinal))
         {
-            issues.Add(VerificationIssue.Of(
+            issues.Add(VerificationIssues.Of(
                 WordsDiagnostics.ProtectionChanged,
                 $"Protection changed during save/reopen: expected {expected.Protection}, found {protection}.",
                 hint: KeepStateHint("protection", format, WordsFormats.WordIds)));
