@@ -4,8 +4,9 @@ using Xunit;
 namespace Aspose.Cli.Platform.Tests.Sdk;
 
 /// <summary>
-/// A shared code of <see cref="ErrorCodes"/> is built only by a <see cref="CliErrors"/> factory, so
-/// each situation has one message, hint and details shape; a product builds its own codes.
+/// A shared code of <see cref="ErrorCodes"/> is built only by an SDK error factory, such as
+/// <see cref="CliErrors"/>, so each situation has one message, hint and details shape; a product
+/// builds its own codes.
 /// </summary>
 public sealed class SharedErrorCodeTests
 {

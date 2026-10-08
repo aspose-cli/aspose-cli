@@ -1,4 +1,3 @@
-using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
 
 namespace Aspose.Cli.Sdk.Execution;
@@ -46,7 +45,7 @@ internal static class WorkerOutputPublisher
                     if (entry.TargetParentIdentity is not null) { OutputPathValidator.EnsureParentUnchanged(entry.Target, entry.TargetParentIdentity); }
                     if (entry.BackupPath is { } backup && entry.BackupOriginal is { } expected)
                     {
-                        if (!expected.VersionEquals(FilePublicationSnapshot.Capture(backup))) { throw CliErrors.OutputConflict(backup, expected, FilePublicationSnapshot.Capture(backup)); }
+                        if (!expected.VersionEquals(FilePublicationSnapshot.Capture(backup))) { throw PublicationErrors.OutputConflict(backup, expected, FilePublicationSnapshot.Capture(backup)); }
                         if (entry.BackupParentIdentity is not null) { OutputPathValidator.EnsureParentUnchanged(backup, entry.BackupParentIdentity); }
                     }
                     if (entry.DeleteTarget) { transaction.StageDeletionPrepared(entry.Target, entry.Original); }

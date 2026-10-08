@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using Aspose.Cli.Sdk.Errors;
+using Aspose.Cli.Sdk.Operations;
 
 namespace Aspose.Cli.Host.Invocation;
 
@@ -9,7 +10,7 @@ namespace Aspose.Cli.Host.Invocation;
 /// The one boundary for failures that escape a product without a <see cref="CliException"/>.
 /// The stack says who failed: when the first frame owned by neither .NET nor this CLI
 /// belongs to a third-party library (a document engine, its imaging stack), the engine failed,
-/// reported with the shared <see cref="CliErrors.EngineFailed"/> wording. A failure first raised
+/// reported with the shared <see cref="EngineErrors.EngineFailed"/> wording. A failure first raised
 /// by CLI code stays an internal error, so our own defects are never reported as document problems.
 /// </summary>
 internal sealed class EngineFailureTranslator
@@ -69,7 +70,7 @@ internal sealed class EngineFailureTranslator
         Assembly? owner = frames.FirstOrDefault(assembly => !IsRuntime(assembly));
         if (exception is EngineOpException || owner is not null && !_own.Contains(owner))
         {
-            return CliErrors.EngineFailed($"{product} failed inside its document engine: {exception.Message}", exception);
+            return EngineErrors.EngineFailed($"{product} failed inside its document engine: {exception.Message}", exception);
         }
 
         if (exception is UnauthorizedAccessException

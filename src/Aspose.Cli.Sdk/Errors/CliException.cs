@@ -8,8 +8,8 @@ namespace Aspose.Cli.Sdk.Errors;
 /// translate every SDK exception into a <see cref="CliException"/>; the
 /// command executor turns it into the error envelope and the exit code.
 /// A product builds its own codes with the constructor; a shared code of
-/// <see cref="ErrorCodes"/> is built only by a <see cref="CliErrors"/> factory,
-/// so each situation has one message, hint and details shape.
+/// <see cref="ErrorCodes"/> is built only by an SDK error factory, such as
+/// <see cref="CliErrors"/>, so each situation has one message, hint and details shape.
 /// </summary>
 public sealed class CliException : Exception
 {

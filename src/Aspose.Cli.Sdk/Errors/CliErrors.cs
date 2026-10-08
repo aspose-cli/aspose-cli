@@ -2,7 +2,6 @@ using System.Globalization;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using Aspose.Cli.Sdk.Contracts;
-using Aspose.Cli.Sdk.IO;
 
 namespace Aspose.Cli.Sdk.Errors;
 
@@ -385,33 +384,6 @@ public static partial class CliErrors
             ["quiescenceConfirmed"] = false,
         });
 
-    /// <summary>
-    /// The one wording of a failure inside a product's document engine. The engine usually
-    /// rejects a feature of this document, but when every document fails the same way the
-    /// local environment it reads (fonts, imaging libraries) is the cause, so the hint names both.
-    /// </summary>
-    /// <param name="message">What failed, naming the product or the operation.</param>
-    /// <param name="innerException">The engine failure.</param>
-    /// <param name="details">Position details, such as the failing operation.</param>
-    public static CliException EngineFailed(string message, Exception innerException, JsonObject? details = null) => CliException.Create(
-        ErrorCodes.FeatureUnsupported,
-        message,
-        // A file the engine could not open says nothing about the document's features; truncated
-        // or malformed data (EndOfStreamException, other IOExceptions) does.
-        hint: IsFileAccessFailure(innerException) || IsFileAccessFailure(innerException.InnerException)
-            ? "The engine could not open a file the message names: close any program that holds it, check that it "
-                + "can be read, and run the command again."
-            : "The engine may not support a feature this document uses: simplify or remove that content or operation, "
-                + "or retry with a standard copy of the document or another output format. If other documents fail the "
-                + "same way, the local environment (for example its installed fonts) is the cause, not the document.",
-        details: details,
-        innerException: innerException);
-
-    private static bool IsFileAccessFailure(Exception? exception) => exception is UnauthorizedAccessException
-        or FileNotFoundException
-        or DirectoryNotFoundException
-        || exception is IOException io && FileAccessProbe.IsSharingViolation(io);
-
     public static CliException OutputExists(string path) => CliException.Create(
         ErrorCodes.OutputExists,
         $"Output file already exists: {path}",
@@ -541,91 +513,6 @@ public static partial class CliErrors
             ["phase"] = phase,
         },
         innerException: inner);
-
-    internal static CliException OutputConflict(
-        string path,
-        FilePublicationSnapshot expected,
-        FilePublicationSnapshot? actual,
-        Exception? inner = null) => CliException.Create(
-        ErrorCodes.OutputConflict,
-        $"Output changed while the operation was preparing to publish it: {path}",
-        hint: "Inspect the newer file, then retry from that version or choose a different output path.",
-        details: new JsonObject
-        {
-            ["path"] = path,
-            ["expectedExists"] = expected.Exists,
-            ["expectedSizeBytes"] = expected.Exists ? expected.Length : null,
-            ["expectedSha256"] = expected.Sha256,
-            ["actualExists"] = actual?.Exists,
-            ["actualSizeBytes"] = actual is { Exists: true } ? actual.Length : null,
-            ["actualSha256"] = actual?.Sha256,
-        },
-        innerException: inner);
-
-    internal static CliException OutputPublicationFailure(
-        Exception commitFailure,
-        PublicationRecoveryReport recovery)
-    {
-        ArgumentNullException.ThrowIfNull(commitFailure);
-        ArgumentNullException.ThrowIfNull(recovery);
-        var items = new JsonArray();
-        foreach (PublicationRecoveryItem item in recovery.Items)
-        {
-            items.Add(new JsonObject
-            {
-                ["target"] = item.Target,
-                ["originalExisted"] = item.OriginalExisted,
-                ["published"] = item.Published,
-                ["status"] = item.Status,
-                ["contentVerified"] = item.ContentVerified,
-                ["metadataVerified"] = item.MetadataVerified,
-                ["failure"] = item.Failure,
-            });
-        }
-
-        string originalCode = commitFailure is CliException cli
-            ? cli.Code.Name
-            : ErrorCodes.OutputUnwritable.Name;
-        var details = new JsonObject
-        {
-            ["originalError"] = new JsonObject
-            {
-                ["code"] = originalCode,
-                ["details"] = commitFailure is CliException source && source.Details is not null
-                    ? source.Details.DeepClone()
-                    : null,
-            },
-            ["recoveryComplete"] = recovery.RecoveryComplete,
-            ["targets"] = items,
-        };
-        if (recovery.RecoveryComplete
-            && commitFailure is CliException original)
-        {
-            JsonObject originalDetails = original.Details?.DeepClone().AsObject() ?? [];
-            originalDetails["recoveryComplete"] = true;
-            originalDetails["targets"] = items.DeepClone();
-            return CliException.Create(
-                original.Code,
-                original.Message,
-                hint: original.Hint,
-                details: originalDetails,
-                docs: original.Docs,
-                innerException: original);
-        }
-
-        return CliException.Create(
-            recovery.RecoveryComplete
-                ? ErrorCodes.OutputPublicationFailed
-                : ErrorCodes.OutputPublicationPartial,
-            recovery.RecoveryComplete
-                ? "The output set could not be published; every target was restored and verified."
-                : "The output set could not be published and recovery left one or more targets in an unknown or mixed state.",
-            hint: recovery.RecoveryComplete
-                ? "Correct the original output error and retry."
-                : "Stop modifying the listed targets, inspect details.targets, and restore unknown targets from a trusted backup before retrying.",
-            details: details,
-            innerException: commitFailure);
-    }
 
     public static CliException LoopbackPortInUse(int port) => CliException.Create(
         ErrorCodes.LoopbackPortInUse,

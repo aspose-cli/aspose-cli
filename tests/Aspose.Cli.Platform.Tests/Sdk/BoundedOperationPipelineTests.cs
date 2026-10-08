@@ -239,7 +239,7 @@ public sealed class BoundedOperationPipelineTests
         Assert.Equal(1, error.Details!["index"]!.GetValue<int>());
         Assert.Equal(2, applied);
         Assert.Contains("the batch stopped and nothing was written", error.Message, StringComparison.Ordinal);
-        Assert.Equal(CliErrors.EngineFailed("any", new InvalidOperationException()).Hint, error.Hint);
+        Assert.Equal(EngineErrors.EngineFailed("any", new InvalidOperationException()).Hint, error.Hint);
     }
 
     public static TheoryData<Exception> FileAccessFailures() => new()
@@ -273,7 +273,7 @@ public sealed class BoundedOperationPipelineTests
         CliException error = Assert.Throws<CliException>(() => Run(batch, bestEffort: false, (_, _) =>
             throw new EngineOpException("truncated", new EndOfStreamException("Unable to read beyond the end."))));
 
-        Assert.Equal(CliErrors.EngineFailed("any", new InvalidOperationException()).Hint, error.Hint);
+        Assert.Equal(EngineErrors.EngineFailed("any", new InvalidOperationException()).Hint, error.Hint);
     }
 
     private static IReadOnlyList<BoundedOperationOutcome> Run(
