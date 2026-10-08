@@ -45,6 +45,27 @@ public sealed class WordsOutputFormatTests
     }
 
     [Fact]
+    public void ConvertToMarkdown_AcceptsTheMarkdownExtension()
+    {
+        using var workspace = new TempWorkspace();
+        var document = new Document();
+        var builder = new DocumentBuilder(document);
+        builder.ParagraphFormat.StyleIdentifier = StyleIdentifier.Heading1;
+        builder.Writeln("Quarterly review");
+        builder.ParagraphFormat.StyleIdentifier = StyleIdentifier.Normal;
+        builder.Write("Clause one.");
+        document.Save(workspace.File("source.docx"));
+
+        CliResult converted = workspace.Run("words", "convert", "source.docx", "--to", "md", "--out", "notes.markdown", "--output", "json");
+
+        Assert.True(converted.ExitCode == 0, converted.StdErr);
+        Assert.Equal("md", System.Text.Json.Nodes.JsonNode.Parse(converted.StdOut)!["output"]!["format"]!.GetValue<string>());
+        string[] lines = File.ReadAllLines(workspace.File("notes.markdown"));
+        Assert.Contains(lines, static line => line.StartsWith("# ", StringComparison.Ordinal) && line.Contains("Quarterly review", StringComparison.Ordinal));
+        Assert.Contains("Clause one.", lines);
+    }
+
+    [Fact]
     public void ConvertToRtf_StoresImagesOnceInTheirOwnFormat()
     {
         // The SDK would also store each image as an uncompressed metafile for old RTF readers,

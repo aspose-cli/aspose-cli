@@ -611,6 +611,54 @@ public sealed class ProductFileRouterTests
     }
 
     /// <summary>
+    /// A format may read and write an extension another product owns, as delimited text may be
+    /// named <c>data.txt</c>: the unrouted extension claims no generic route and its content is
+    /// no evidence against the owner, but the product's explicit selection still reads it.
+    /// </summary>
+    [Fact]
+    public async Task UnroutedExtension_LeavesTheRouteToItsOwnerAndStillReadsExplicitly()
+    {
+        IReadOnlyList<FormatDescriptor> formats = FileFormatRecognition.AttachTo(
+        [
+            new FormatDescriptor("rows", FormatUse.Input, ".rows", ".txt")
+            {
+                Ownership = RouteOwnership.Default,
+                UnroutedExtensions = [".txt"],
+            },
+        ],
+        new Dictionary<string, FileFormatRecognition>(StringComparer.Ordinal)
+        {
+            ["rows"] = FileFormatRecognition.Match(FileProbePattern.TextContains(","), "delimited text", 70),
+        });
+        ProductDefinitionBuilder<ITestPort> rows = ExtProduct.Define<ITestPort>(Manifest("two")).Formats(formats);
+        Complete(rows, "two");
+        ProductCatalog catalog = ProductCatalog.Build(
+        [
+            Module("one", ".txt", new StaticRecognizer((_, _) => ValueTask.FromResult(
+                new FileRecognition { Kind = FileRecognitionKind.Match, FormatId = "one", Confidence = 70 }))),
+            new StaticModule(rows.Build()),
+        ]);
+        string path = CreateFile(".txt", "a,b"u8.ToArray());
+        try
+        {
+            Assert.True(catalog.TryGetDefaultOwner(".txt", out ProductDefinition? owner));
+            Assert.Equal("one", owner!.Manifest.Id);
+            Assert.Equal("two", Assert.Single(catalog.GetRoutingCapabilities().Routes, static route => route.Extension == ".rows").Product);
+
+            ProductDefinition routed = await new ProductFileRouter(catalog).RouteAsync(path);
+            Assert.Equal("one", routed.Manifest.Id);
+
+            FileRouteResult selected = await new ProductFileRouter(catalog).ResolveAsync(
+                new FileRouteRequest(path) { ExplicitProductId = "two" });
+            Assert.Equal("rows", selected.FormatId);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    /// <summary>
     /// A product whose two default formats share one signature, plus an input format without
     /// recognition rules that only an explicit selection reaches.
     /// </summary>

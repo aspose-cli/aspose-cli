@@ -312,7 +312,7 @@ public sealed class StandardCommandTests : IDisposable
         FormatDescriptor[] formats =
         [
             FormatDescriptor.Declare("docx", FormatUse.Convert, null, 0, null, false, ".docx"),
-            FormatDescriptor.Declare("md", FormatUse.Convert, null, 1, null, false, ".md") with { Aliases = ["markdown"] },
+            FormatDescriptor.Declare("md", FormatUse.Convert, null, 1, null, false, ".md", ".markdown") with { Aliases = ["markdown"] },
             FormatDescriptor.Declare("csv", FormatUse.Convert, null, 2, null, false, ".csv", ".txt"),
             FormatDescriptor.Declare("png", FormatUse.Render, null, null, 0, false, ".png"),
         ];
@@ -327,15 +327,16 @@ public sealed class StandardCommandTests : IDisposable
 
         Assert.Equal("md|page.MD", Run(command, "report.test", "--to", "Markdown", "--out", "page.MD"));
         Assert.Equal("docx|report.docx", Run(command, "report.test", "--to", "DOCX"));
+        Assert.Equal("md|page.markdown", Run(command, "report.test", "--to", "md", "--out", "page.markdown"));
         Assert.Equal("csv|rows.txt", Run(command, "report.test", "--to", "csv", "--out", "rows.txt"));
         Assert.NotEmpty(command.Parse(["report.test"]).Errors);
         Assert.NotEmpty(command.Parse(["report.test", "--to", "png"]).Errors);
-        foreach (string output in new[] { "page.docx", "page.png", "page.markdown", "page" })
+        foreach (string output in new[] { "page.docx", "page.png", "page.mdown", "page" })
         {
             CliException conflict = RunFailing(command, "report.test", "--to", "md", "--out", output);
             Assert.Equal(ErrorCodes.UsageError, conflict.Code);
             Assert.StartsWith($"--to md contradicts --out '{output}': ", conflict.Message, StringComparison.Ordinal);
-            Assert.EndsWith("; use .md.", conflict.Message, StringComparison.Ordinal);
+            Assert.EndsWith("; use .md, .markdown.", conflict.Message, StringComparison.Ordinal);
             Assert.Equal("md", conflict.Details!["format"]!.GetValue<string>());
         }
     }

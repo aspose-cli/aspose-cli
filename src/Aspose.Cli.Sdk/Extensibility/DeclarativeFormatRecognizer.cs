@@ -38,7 +38,7 @@ internal sealed class DeclarativeFormatRecognizer(
         cancellationToken.ThrowIfCancellationRequested();
         string extension = Normalize(file.Extension);
         FormatDescriptor[] extensionFormats = _formats
-            .Where(format => format.Extensions.Any(candidate =>
+            .Where(format => format.RoutedExtensions.Any(candidate =>
                 string.Equals(
                     Normalize(candidate),
                     extension,

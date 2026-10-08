@@ -90,7 +90,7 @@ public sealed class MistakeRecoveryCliTests : IDisposable
         Assert.Equal(
             ["xlsx", "xltx", "xlsm", "xltm", "xlsb", "xls", "ods", "csv", "tsv", "html", "mhtml"],
             error["details"]!["supported"]!.AsArray().Select(static id => id!.GetValue<string>()));
-        Assert.EndsWith("use .xlsx, .xltx, .xlsm, .xltm, .xlsb, .xls, .ods, .csv, .tsv, .html, .htm, .mhtml.", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.EndsWith("use .xlsx, .xltx, .xlsm, .xltm, .xlsb, .xls, .ods, .csv, .txt, .tsv, .html, .htm, .mhtml.",error["message"]!.GetValue<string>(), StringComparison.Ordinal);
         Assert.DoesNotContain(".pdf", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
         Assert.Contains("then run 'aspose-cli cells render <that file> --to png'", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
     }
