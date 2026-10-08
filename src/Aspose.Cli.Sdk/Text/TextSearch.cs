@@ -156,11 +156,7 @@ public sealed class TextSearch
         }
         catch (RegexMatchTimeoutException exception)
         {
-            throw new CliException(
-                ErrorCodes.OperationTimeout,
-                "The regular expression exceeded its one-second execution budget.",
-                hint: "Simplify the expression or narrow the search.",
-                innerException: exception);
+            throw CliErrors.RegexTimeout(exception);
         }
     }
 }

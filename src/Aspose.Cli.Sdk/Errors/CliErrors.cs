@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text.Json.Nodes;
+using System.Text.RegularExpressions;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.IO;
 
@@ -310,6 +311,23 @@ public static partial class CliErrors
             ["timeoutSeconds"] = seconds,
             ["phase"] = phase,
         });
+
+    /// <summary>
+    /// A regular expression the caller supplied ran past its execution budget, which bounds
+    /// the time any one match may take whatever <c>--timeout</c> allows.
+    /// </summary>
+    /// <param name="exception">The timeout, which states the budget.</param>
+    public static CliException RegexTimeout(RegexMatchTimeoutException exception)
+    {
+        ArgumentNullException.ThrowIfNull(exception);
+        string seconds = exception.MatchTimeout.TotalSeconds.ToString("0.###", CultureInfo.InvariantCulture);
+        return new CliException(
+            ErrorCodes.OperationTimeout,
+            $"The regular expression exceeded its {seconds}-second execution budget.",
+            hint: "Simplify the expression or search a narrower part of the document.",
+            details: new JsonObject { ["phase"] = "regex" },
+            innerException: exception);
+    }
 
     public static CliException WorkerTerminationFailed(int processId) => new(
         ErrorCodes.WorkerTerminationFailed,
