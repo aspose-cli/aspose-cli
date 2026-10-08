@@ -112,7 +112,10 @@ aspose-cli capabilities --output json
 **Usage and validation (exit 2 and 4)**
 
 - `OPTION_INVALID`: an option value is invalid here; `details.option` names
-  it. An `--out` that resolves to the input is refused: use `--in-place`.
+  it. An `--out` that resolves to the input is refused: use `--in-place`. A
+  `*-env` option, such as `--password-env`, whose variable is not set or is
+  empty names that variable in `details.variable`; an operation's `*Env` field
+  reports it with the same words as `OPS_INVALID`.
 - `OPS_INVALID`: `details.index`, `details.op` and `details.reason` locate the
   failing operation (`aspose-cli docs editing`).
 - `*_NOT_FOUND`: `details.available` and `details.suggestions` list what
