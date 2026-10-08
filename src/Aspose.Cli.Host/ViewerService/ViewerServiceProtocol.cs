@@ -32,9 +32,6 @@ internal static class ViewerServiceCommands
     /// <summary>Closes one document.</summary>
     public const string Close = "close";
 
-    /// <summary>Renders open documents again, for example after a license change.</summary>
-    public const string Refresh = "refresh";
-
     /// <summary>Closes every document and ends the service.</summary>
     public const string Stop = "stop";
 
