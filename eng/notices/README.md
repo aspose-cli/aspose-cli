@@ -11,7 +11,7 @@ Packages declaring only an SPDX expression use the corresponding full text here:
 - `MIT.txt`: standard MIT permission and disclaimer text. Publication prepends
   the individual package copyright from its original NuGet metadata; packages
   without that attribution require explicit review.
-- `Apache-2.0.txt`: the Apache License 2.0 text, identical to the repository LICENSE.
+- `Apache-2.0.txt`: the Apache License 2.0 text.
 
 The original package metadata accompanies each fallback text.
 These are license texts, not a second dependency roster. New license expressions

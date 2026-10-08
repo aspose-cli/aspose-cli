@@ -1,7 +1,7 @@
 ---
 name: aspose-cli-cells
 description: High-fidelity Excel/spreadsheet processing via the local Aspose CLI without Python or Microsoft Office; use for real workbooks, formula recalculation, native charts and pivots, format-preserving edits, protected files, exact-layout conversion, and file fidelity.
-license: Apache-2.0
+license: MIT
 ---
 
 # Aspose Cells CLI

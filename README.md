@@ -4,7 +4,7 @@ Local-first automation of spreadsheets, PDFs, presentations and Word documents f
 AI agents. `aspose-cli` provides a CLI, a loopback browser workspace and a local MCP endpoint;
 documents are processed on your machine. Windows x64 is the supported platform.
 
-The CLI source is Apache-2.0 and grants no rights to the commercial Aspose SDKs it runs on, which
+The CLI source is MIT-licensed and grants no rights to the commercial Aspose SDKs it runs on, which
 have their own [license terms](https://about.aspose.com/legal/eula/); without a license they run
 in evaluation mode, and the CLI discloses every evaluation effect on its output.
 
