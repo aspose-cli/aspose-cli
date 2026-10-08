@@ -1,3 +1,5 @@
+using System.Reflection;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using Aspose.Cli.Sdk.Extensibility;
@@ -14,11 +16,20 @@ namespace Aspose.Cli.Architecture.Tests;
 /// Each decision a command makes has one owner, and nothing else can make it. These rules read
 /// the source and the live capabilities, not the owner's implementation: D1 outputs (the SDK
 /// resolves the output path, its format, encryption and part names), D2 format capabilities
-/// (a product declares no input it cannot read) and D3 mistakes (one SDK type writes every
-/// suggestion).
+/// (a product declares no input it cannot read), D3 mistakes (one SDK type writes every
+/// suggestion), D4 errors (shared codes come only from SDK factories) and D5 secrets (an SDK
+/// secret type that only an engine adapter reveals).
 /// </summary>
 public sealed partial class DecisionOwnershipTests
 {
+    /// <summary>
+    /// The SDK type that carries a secret value: its text form is redacted, it does not serialize
+    /// to JSON, and only an engine adapter reveals the value. The decision names it <c>Secret</c>.
+    /// </summary>
+    private const string ExpectedSecretTypeName = "Secret";
+
+    private const string SecretSentinel = "Decision-Secret-5c2e";
+
     private static readonly string SourceRoot = Path.Combine(RepositoryPaths.Root, "src");
     private static readonly string SdkRoot = Path.Combine(SourceRoot, "Aspose.Cli.Sdk");
     private static readonly string HostRoot = Path.Combine(SourceRoot, "Aspose.Cli.Host");
@@ -192,7 +203,102 @@ public sealed partial class DecisionOwnershipTests
         Assert.DoesNotContain("--scan-range", result.StdErr, StringComparison.Ordinal);
     }
 
+    // -- D4 Errors ---------------------------------------------------------------------------
+
+    [Fact]
+    public void D4_SharedErrorCodes_AreBuiltOnlyBySdkFactories()
+    {
+        string[] violations = [.. Sources.Value
+            .Where(static file => file.Product is not null || IsUnder(file.Path, HostRoot))
+            .SelectMany(file => file.Root.DescendantNodes()
+                .Where(static node => node switch
+                {
+                    ObjectCreationExpressionSyntax creation =>
+                        LastIdentifier(creation.Type)?.EndsWith("Exception", StringComparison.Ordinal) == true
+                        && PassesASharedCode(creation.ArgumentList),
+                    ImplicitObjectCreationExpressionSyntax creation => PassesASharedCode(creation.ArgumentList),
+                    _ => false,
+                })
+                .Select(node => file.At(node, node.ToString().Split('\n')[0].Trim())))];
+
+        AssertNone(violations,
+            "The Host and the products build a shared error code (Aspose.Cli.Sdk.Errors.ErrorCodes) only through an SDK factory:");
+    }
+
+    // -- D5 Secrets --------------------------------------------------------------------------
+
+    [Fact]
+    public void D5_Products_ReadNoEnvironmentVariable()
+    {
+        string[] violations = [.. ProductFiles().SelectMany(file => file.Root.DescendantNodes()
+            .OfType<InvocationExpressionSyntax>()
+            .Where(static invocation => InvokedName(invocation)
+                is "GetEnvironmentVariable" or "GetEnvironmentVariables" or "ExpandEnvironmentVariables" or "ReadEnvironment")
+            .Select(invocation => file.At(invocation, invocation.ToString())))];
+
+        AssertNone(violations,
+            "A product never reads the environment; the SDK resolves *-env options and *Env operation fields to secrets:");
+    }
+
+    [Fact]
+    public void D5_PasswordsOutsideTheEngine_AreSecrets()
+    {
+        string[] violations = [.. ProductFiles().Where(static file => file.Area != "Engine").SelectMany(file => file.Root.DescendantNodes()
+            .SelectMany(static node => node switch
+            {
+                PropertyDeclarationSyntax property => [(node, property.Type, property.Identifier.ValueText)],
+                FieldDeclarationSyntax field => field.Declaration.Variables
+                    .Select(variable => ((SyntaxNode)variable, field.Declaration.Type, variable.Identifier.ValueText)),
+                LocalDeclarationStatementSyntax local => local.Declaration.Variables
+                    .Select(variable => ((SyntaxNode)variable, local.Declaration.Type, variable.Identifier.ValueText)),
+                ParameterSyntax { Type: { } type } parameter => [(node, type, parameter.Identifier.ValueText)],
+                _ => Array.Empty<(SyntaxNode, TypeSyntax, string)>(),
+            })
+            .Where(static member => IsString(member.Item2) && member.Item3.EndsWith("Password", StringComparison.OrdinalIgnoreCase))
+            .Select(member => file.At(member.Item1, $"string {member.Item3}")))];
+
+        AssertNone(violations,
+            $"Outside its engine adapter a product holds a password only as the SDK {ExpectedSecretTypeName} type, never as a string:");
+    }
+
+    [Fact]
+    public void D5_SecretType_RedactsItsTextAndJson()
+    {
+        Type? secret = typeof(IProductModule).Assembly.GetTypes()
+            .SingleOrDefault(static type => type.Name == ExpectedSecretTypeName);
+        Assert.True(secret is not null, $"The SDK declares no {ExpectedSecretTypeName} type.");
+
+        object value = CreateSecret(secret!, SecretSentinel);
+
+        Assert.DoesNotContain(SecretSentinel, value.ToString() ?? string.Empty, StringComparison.Ordinal);
+        string? json = null;
+        try
+        {
+            json = JsonSerializer.Serialize(value, secret!);
+        }
+        catch (Exception exception) when (exception is NotSupportedException or InvalidOperationException or JsonException)
+        {
+        }
+        Assert.DoesNotContain(SecretSentinel, json ?? string.Empty, StringComparison.Ordinal);
+    }
+
     // -- Support -----------------------------------------------------------------------------
+
+    private static object CreateSecret(Type secret, string text)
+    {
+        const BindingFlags Any = BindingFlags.Public | BindingFlags.NonPublic;
+        if (secret.GetConstructors(Any | BindingFlags.Instance)
+                .FirstOrDefault(static constructor => constructor.GetParameters() is [{ ParameterType: var type }] && type == typeof(string))
+            is { } fromConstructor)
+        {
+            return fromConstructor.Invoke([text]);
+        }
+        MethodInfo factory = secret.GetMethods(Any | BindingFlags.Static)
+            .FirstOrDefault(method => method.ReturnType == secret
+                && method.GetParameters() is [{ ParameterType: var type }] && type == typeof(string))
+            ?? throw new InvalidOperationException($"{secret.FullName} has no constructor or static factory that takes the secret text.");
+        return factory.Invoke(null, [text])!;
+    }
 
     private static IEnumerable<JsonObject> CommandOptions(string words) =>
         CliCatalog.Current.Document["commands"]!.AsArray()
@@ -244,6 +350,10 @@ public sealed partial class DecisionOwnershipTests
 
     private static bool IsKey(SeparatedSyntaxList<ArgumentSyntax> arguments, string key) =>
         arguments is [{ Expression: LiteralExpressionSyntax literal }] && literal.Token.ValueText == key;
+
+    private static bool PassesASharedCode(ArgumentListSyntax? arguments) =>
+        arguments?.Arguments.Any(static argument => argument.Expression is MemberAccessExpressionSyntax access
+            && LastIdentifier(access.Expression) == "ErrorCodes") == true;
 
     private static bool IsString(TypeSyntax type) => type switch
     {
