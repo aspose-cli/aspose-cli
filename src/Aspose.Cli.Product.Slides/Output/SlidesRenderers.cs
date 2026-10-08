@@ -9,9 +9,9 @@ internal static class SlidesRenderers
     public static void Render(PresentationInfoResult result, TableSurface surface)
     {
         PresentationSummary presentation = result.Presentation;
-        surface.Out.WriteLine($"{result.Source.Path} ({result.Source.Format}, {TableText.Bytes(result.Source.SizeBytes)})");
+        ResultText.Source(surface, result.Source);
         surface.Out.WriteLine(
-            $"slides: {presentation.SlideCount}   size: {Points(presentation.WidthPoints)} x {Points(presentation.HeightPoints)} pt   "
+            $"slides: {presentation.SlideCount}   size: {TableText.Points(presentation.WidthPoints)} x {TableText.Points(presentation.HeightPoints)} pt   "
             + $"orientation: {presentation.Orientation}");
         surface.Out.WriteLine(
             $"masters: {presentation.MasterCount}   layouts: {presentation.LayoutCount}   sections: {presentation.SectionCount}   "
@@ -141,7 +141,4 @@ internal static class SlidesRenderers
 
         table.WriteTo(surface.Out, surface.Format);
     }
-
-    private static string Points(double value) =>
-        value.ToString("0.##", CultureInfo.InvariantCulture);
 }

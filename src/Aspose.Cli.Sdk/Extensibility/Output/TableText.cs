@@ -14,6 +14,9 @@ public static class TableText
     /// <summary>Formats an integer using invariant culture.</summary>
     public static string Int(int value) => value.ToString(CultureInfo.InvariantCulture);
 
+    /// <summary>Formats a length in points with at most two decimals, such as <c>595.28</c>.</summary>
+    public static string Points(double value) => value.ToString("0.##", CultureInfo.InvariantCulture);
+
     /// <summary>Formats a Boolean as stable human-readable text.</summary>
     public static string YesNo(bool value) => value ? "yes" : "no";
 }

@@ -1,4 +1,3 @@
-using System.Globalization;
 using Aspose.Cli.Sdk.Extensibility.Output;
 
 namespace Aspose.Cli.Product.Words.Output;
@@ -9,7 +8,7 @@ internal static class WordsRenderers
     public static void Render(DocumentInfoResult result, TableSurface surface)
     {
         DocumentSummary document = result.Document;
-        surface.Out.WriteLine($"{result.Source.Path} ({result.Source.Format}, {TableText.Bytes(result.Source.SizeBytes)})");
+        ResultText.Source(surface, result.Source);
         surface.Out.WriteLine(
             $"sections: {document.SectionCount}   blocks: {document.BlockCount} "
             + $"({document.ParagraphCount} paragraphs, {document.TableCount} tables)   "
@@ -144,7 +143,7 @@ internal static class WordsRenderers
                 revision.Text ?? "-",
             ]);
         ResultText.Table(surface, "images", result.Images, ["block", "name", "size"],
-            static image => [Block(image.Block), image.Name ?? "-", $"{Points(image.Width)} x {Points(image.Height)} pt"]);
+            static image => [Block(image.Block), image.Name ?? "-", $"{TableText.Points(image.Width)} x {TableText.Points(image.Height)} pt"]);
         ResultText.Table(surface, "tables", result.Tables, ["block", "rows", "columns", "style"],
             static item => [TableText.Int(item.Block), TableText.Int(item.RowCount), TableText.Int(item.ColumnCount), item.Style ?? "-"]);
         ResultText.Properties(surface, "properties", result.Properties, missing: "-", sortByName: true);
@@ -164,9 +163,9 @@ internal static class WordsRenderers
             table.AddRow(
                 TableText.Int(section.Section),
                 section.Orientation,
-                $"{Points(section.WidthPoints)} x {Points(section.HeightPoints)} pt",
-                $"{Points(section.Margins.Top)}/{Points(section.Margins.Right)}/"
-                + $"{Points(section.Margins.Bottom)}/{Points(section.Margins.Left)} pt");
+                $"{TableText.Points(section.WidthPoints)} x {TableText.Points(section.HeightPoints)} pt",
+                $"{TableText.Points(section.Margins.Top)}/{TableText.Points(section.Margins.Right)}/"
+                + $"{TableText.Points(section.Margins.Bottom)}/{TableText.Points(section.Margins.Left)} pt");
         }
 
         table.WriteTo(surface.Out, surface.Format);
@@ -187,7 +186,4 @@ internal static class WordsRenderers
 
     // An item without a body block, such as one in a header, shows a dash.
     private static string Block(int? block) => block is { } value ? TableText.Int(value) : "-";
-
-    private static string Points(double value) =>
-        value.ToString("0.##", CultureInfo.InvariantCulture);
 }

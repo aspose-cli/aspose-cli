@@ -4,12 +4,19 @@ using Aspose.Cli.Sdk.Contracts;
 namespace Aspose.Cli.Sdk.Extensibility.Output;
 
 /// <summary>
-/// Human-readable lines for the result parts every product shares: produced files,
-/// detail sections, safety backups and bounded-edit outcomes. Products add only their own
+/// Human-readable lines for the result parts every product shares: source titles, produced
+/// files, detail sections, safety backups and bounded-edit outcomes. Products add only their own
 /// evidence.
 /// </summary>
 public static class ResultText
 {
+    /// <summary>Writes the title line of an info result: <c>PATH (FORMAT, N bytes)</c>.</summary>
+    public static void Source(TableSurface surface, SourceInfo source)
+    {
+        ArgumentNullException.ThrowIfNull(source);
+        surface.Out.WriteLine($"{source.Path} ({source.Format}, {TableText.Bytes(source.SizeBytes)})");
+    }
+
     /// <summary>
     /// Writes <c>wrote PATH (FORMAT, N bytes[, detail])</c>; a companion file without a format
     /// reads <c>(companion, N bytes)</c>.
