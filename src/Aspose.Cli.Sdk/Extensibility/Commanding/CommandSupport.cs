@@ -221,32 +221,46 @@ internal sealed class OutputFileOption
     }
 }
 
-/// <summary>Mutually exclusive literal, environment, and stdin password options.</summary>
-internal sealed class PasswordOptions
+/// <summary>
+/// The one reader of a password the caller passes on the command line: mutually exclusive
+/// literal, environment and stdin options, or a required environment option alone. It resolves
+/// the password to a <see cref="Secret"/> and never serializes it.
+/// </summary>
+public sealed class PasswordOptions
 {
     private readonly string _prefix;
-    private readonly Option<string?> _literal;
+    private readonly Option<string?>? _literal;
     private readonly Option<string?> _fromEnvironment;
     private readonly Option<bool>? _fromStandardInput;
 
     /// <summary>Creates a password source for one protected input or output.</summary>
-    public PasswordOptions(
+    internal PasswordOptions(
         string prefix,
         string subject,
         bool allowStdin = true)
+        : this(prefix, subject, allowStdin ? Sources.All : Sources.LiteralOrEnvironment)
     {
+    }
+
+    private PasswordOptions(string prefix, string subject, Sources sources)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(prefix);
+        ArgumentException.ThrowIfNullOrWhiteSpace(subject);
         _prefix = prefix;
-        _literal = new Option<string?>(prefix)
-        {
-            Description =
-                $"Password for {subject}. Discouraged: visible in the process list; prefer {prefix}-env.",
-        }.WithInput(InputKind.None, secret: true);
+        _literal = sources == Sources.Environment
+            ? null
+            : new Option<string?>(prefix)
+            {
+                Description =
+                    $"Password for {subject}. Discouraged: visible in the process list; prefer {prefix}-env.",
+            }.WithInput(InputKind.None, secret: true);
         _fromEnvironment = new Option<string?>(prefix + StandardOptionNames.EnvironmentSuffix)
         {
             Description =
                 $"Name of an environment variable holding the password for {subject}.",
+            Required = sources == Sources.Environment,
         }.WithInput(InputKind.None, ParameterValueSource.EnvironmentVariableName, secret: true);
-        _fromStandardInput = allowStdin
+        _fromStandardInput = sources == Sources.All
             ? new Option<bool>(prefix + StandardOptionNames.StandardInputSuffix)
             {
                 Description =
@@ -255,14 +269,33 @@ internal sealed class PasswordOptions
             : null;
     }
 
+    private enum Sources { All, LiteralOrEnvironment, Environment }
+
+    /// <summary>
+    /// A password the caller must name by environment variable, with the required option
+    /// <c><paramref name="prefix"/>-env</c> alone, such as a signing certificate's password.
+    /// Declare <see cref="Options"/> among the command's parameters and read the password with
+    /// <see cref="StandardInvocation.Password"/>.
+    /// </summary>
+    /// <param name="prefix">The option prefix, such as <c>--certificate-password</c>.</param>
+    /// <param name="subject">What the password protects, as its help names it.</param>
+    public static PasswordOptions RequiredEnvironment(string prefix, string subject) =>
+        new(prefix, subject, Sources.Environment);
+
+    /// <summary>The options that supply the password, in help order.</summary>
+    public IReadOnlyList<Option> Options =>
+    [
+        .. _literal is null ? [] : new Option[] { _literal },
+        _fromEnvironment,
+        .. _fromStandardInput is null ? [] : new Option[] { _fromStandardInput },
+    ];
+
     /// <summary>Adds the supported secret sources to a command.</summary>
-    public void AddTo(Command command)
+    internal void AddTo(Command command)
     {
-        command.Options.Add(_literal);
-        command.Options.Add(_fromEnvironment);
-        if (_fromStandardInput is not null)
+        foreach (Option option in Options)
         {
-            command.Options.Add(_fromStandardInput);
+            command.Options.Add(option);
         }
     }
 
@@ -279,14 +312,14 @@ internal sealed class PasswordOptions
     internal string? SelectedOption(ParseResult parseResult)
     {
         ArgumentNullException.ThrowIfNull(parseResult);
-        return parseResult.GetValue(_literal) is not null ? _prefix
+        return _literal is not null && parseResult.GetValue(_literal) is not null ? _prefix
             : parseResult.GetValue(_fromEnvironment) is not null ? $"{_prefix}-env"
             : _fromStandardInput is not null && parseResult.GetValue(_fromStandardInput) ? $"{_prefix}-stdin"
             : null;
     }
 
     /// <summary>Resolves the selected secret without serializing it.</summary>
-    public Secret? Resolve(
+    internal Secret? Resolve(
         ParseResult parseResult,
         InputSource inputs,
         Func<string, string?> readEnvironment,
@@ -295,7 +328,7 @@ internal sealed class PasswordOptions
         ArgumentNullException.ThrowIfNull(parseResult);
         ArgumentNullException.ThrowIfNull(inputs);
         ArgumentNullException.ThrowIfNull(readEnvironment);
-        string? literal = parseResult.GetValue(_literal);
+        string? literal = _literal is null ? null : parseResult.GetValue(_literal);
         string? environmentName = parseResult.GetValue(_fromEnvironment);
         bool fromStandardInput = _fromStandardInput is not null
             && parseResult.GetValue(_fromStandardInput);

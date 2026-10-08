@@ -376,7 +376,7 @@ Arguments:
 
 Options:
   --certificate <certificate> (REQUIRED)                            PKCS#12 certificate path (.pfx or .p12).
-  --certificate-password-env <certificate-password-env> (REQUIRED)  Environment variable containing the certificate password.
+  --certificate-password-env <certificate-password-env> (REQUIRED)  Name of an environment variable holding the password for the PKCS#12 certificate.
   --visible                                                         Place a visible signature appearance on the selected page.
   --page <page>                                                     1-based page for the signature field. [default: 1]
   --rect <rect>                                                     Visible rectangle x,y,width,height in PDF points; default 36,36,180,60.
