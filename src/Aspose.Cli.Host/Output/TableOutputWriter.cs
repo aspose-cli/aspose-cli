@@ -9,10 +9,10 @@ namespace Aspose.Cli.Host.Output;
 /// Human-readable rendering of results. This class dispatches to a renderer per
 /// result family. Product-owned results are dispatched through the frozen
 /// build-time catalog before the remaining common Host cases. Anything unmapped
-/// falls back to JSON rather than hiding
-/// data—which the compiler cannot catch, so the <c>TableRendererCoverageTests</c>
-/// drift test (in the architecture tests) fails the build if any
-/// <see cref="ResultEnvelope"/> subtype has no real renderer case.
+/// falls back to JSON rather than hiding data, which the compiler cannot catch:
+/// <c>TableRendererCoverageTests</c> fails when an SDK or Host result has no case
+/// here, and <c>ProductRendererCoverageTests</c> when a product registers no
+/// renderer for one of its results.
 /// </summary>
 internal sealed class TableOutputWriter : IOutputWriter
 {
@@ -67,6 +67,7 @@ internal sealed class TableOutputWriter : IOutputWriter
                 case FontCheckResult fonts: CommonRenderers.Render(fonts, surface); break;
                 case SkillInstallResult skill: CommonRenderers.Render(skill, surface); break;
                 case SkillListResult skills: CommonRenderers.Render(skills, surface); break;
+                case UpdateResult update: CommonRenderers.Render(update, surface); break;
                 default:
                     // Never hide data: unknown result families render as JSON.
                     output.WriteLine(_serializer.Serialize(result));
