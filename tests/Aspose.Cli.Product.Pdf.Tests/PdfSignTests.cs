@@ -63,4 +63,32 @@ public sealed class PdfSignTests
         Assert.Equal("SIGN_CERT_INVALID", exception.Code.Name);
         Assert.False(File.Exists(output));
     }
+
+    /// <summary>
+    /// A certificate another program holds is reported as the locked file it is, read once through
+    /// the SDK, not as an invalid certificate.
+    /// </summary>
+    [Fact]
+    public void Sign_LockedCertificateIsTheFileLockedError()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.CreateDocument("unsigned.pdf", pages: 1);
+        string certificate = fixture.CreateCertificate("correct-password");
+        string output = fixture.File("locked-certificate.pdf");
+
+        Sdk.Errors.CliException exception;
+        using (new FileStream(certificate, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+        {
+            exception = Assert.Throws<Sdk.Errors.CliException>(() => fixture.Engine.Sign(input, new PdfSignRequest
+            {
+                Output = TestOutput.At(output),
+                CertificatePath = certificate,
+                CertificatePassword = new Secret("correct-password"),
+            }));
+        }
+
+        Assert.Equal(Sdk.Errors.ErrorCodes.FileLocked, exception.Code);
+        Assert.Equal(Path.GetFullPath(certificate), exception.Details!["path"]!.GetValue<string>());
+        Assert.False(File.Exists(output));
+    }
 }

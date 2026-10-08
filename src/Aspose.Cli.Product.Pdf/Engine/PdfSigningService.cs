@@ -35,7 +35,10 @@ internal sealed class PdfSigningService
     public PdfSignResult Sign(string filePath, PdfSignRequest request)
     {
         EnsureCertificate(_resourceBudgets, request.CertificatePath);
-        ValidateCertificate(request.CertificatePath, request.CertificatePassword);
+        // The certificate is read once, through the SDK, which reports a file it cannot open; the
+        // signer gets the same bytes that were validated.
+        byte[] certificate = _resourceBudgets.Inputs.ReadAllBytes(request.CertificatePath);
+        ValidateCertificate(certificate, request.CertificatePassword);
         LicenseState state = _licenseGate.EnsureApplied();
         using LoadedPdf loaded = _loader.Open(filePath, request.Password);
         _ = PageAt(loaded.Document, request.Page);
@@ -68,7 +71,8 @@ internal sealed class PdfSigningService
         StagedOutput write = transaction.Stage(request.Output.Path, request.Output.Overwrite, temp =>
         {
             using var facade = new PdfFileSignature(loaded.Document);
-            var signature = new PKCS7(request.CertificatePath, request.CertificatePassword.Reveal())
+            using var pkcs12 = new MemoryStream(certificate, writable: false);
+            var signature = new PKCS7(pkcs12, request.CertificatePassword.Reveal())
             {
                 Reason = request.Reason,
                 Location = request.Location,
@@ -159,12 +163,12 @@ internal sealed class PdfSigningService
         InputSizeGuard.Ensure(resourceBudgets, path);
     }
 
-    private static void ValidateCertificate(string path, Secret password)
+    private static void ValidateCertificate(byte[] pkcs12, Secret password)
     {
         try
         {
-            using X509Certificate2 certificate = X509CertificateLoader.LoadPkcs12FromFile(
-                path,
+            using X509Certificate2 certificate = X509CertificateLoader.LoadPkcs12(
+                pkcs12,
                 password.Reveal(),
                 X509KeyStorageFlags.EphemeralKeySet);
             DateTimeOffset now = DateTimeOffset.UtcNow;
@@ -175,14 +179,7 @@ internal sealed class PdfSigningService
                 throw SignCertificateInvalid();
             }
         }
-        catch (CliException)
-        {
-            throw;
-        }
-        catch (Exception exception) when (
-            exception is CryptographicException
-            or IOException
-            or UnauthorizedAccessException)
+        catch (CryptographicException exception)
         {
             throw SignCertificateInvalid(exception);
         }
