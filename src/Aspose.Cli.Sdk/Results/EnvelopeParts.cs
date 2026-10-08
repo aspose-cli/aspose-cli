@@ -5,9 +5,8 @@ using Aspose.Cli.Sdk.Licensing;
 namespace Aspose.Cli.Sdk.Results;
 
 /// <summary>
-/// Builders for the envelope fields shared by every result. Engine adapters
-/// use these so license reporting and evaluation warnings stay identical
-/// across all commands and products.
+/// Builders for the envelope fields shared by every result, so license reporting and
+/// evaluation warnings stay identical across all commands and products.
 /// </summary>
 public static class EnvelopeParts
 {
@@ -57,8 +56,9 @@ public static class EnvelopeParts
     };
 
     /// <summary>
-    /// Warnings for an operation that produced a file: the evaluation warning
-    /// in evaluation mode, otherwise none.
+    /// Warnings for files the host itself wrote from a product's renders, such as review
+    /// evidence: the evaluation warning in evaluation mode, otherwise none. A product's own
+    /// outputs are disclosed by its write pipeline (<see cref="OutputPipeline"/>).
     /// </summary>
     public static IReadOnlyList<Warning>? OutputWarnings(LicenseState state) =>
         state == LicenseState.Evaluation ? [EvaluationWatermark] : null;

@@ -32,7 +32,7 @@ public sealed class ProductActivationContext
     /// <summary>Environment lookup supplied explicitly for deterministic tests.</summary>
     public required Func<string, string?> EnvironmentVariable { get; init; }
 
-    /// <summary>Safe atomic writer shared by mutating product workflows.</summary>
+    /// <summary>The invocation's atomic writer, through which the product's write pipeline publishes.</summary>
     public required SafeFileWriter SafeFileWriter { get; init; }
 
     /// <summary>Invocation-scoped resource ledger shared by every product phase.</summary>
@@ -165,52 +165,6 @@ public abstract class ProductBinding
             license,
             new Lazy<IFontEnvironment>(() => createFontEnvironment(outputs)),
             outputs);
-    }
-
-    /// <summary>
-    /// Creates a binding with independently deferred product and font ports.
-    /// </summary>
-    public static ProductBinding<TPort> Create<TPort>(
-        ProductActivationContext context,
-        string productId,
-        Func<LicenseResolution, ILicenseGate> createLicenseGate,
-        Func<ILicenseGate, TPort> createPort,
-        Func<ILicenseGate, IFontEnvironment> createFontEnvironment)
-        where TPort : class
-    {
-        ArgumentNullException.ThrowIfNull(createPort);
-        ArgumentNullException.ThrowIfNull(createFontEnvironment);
-        ILicenseGate license = ProductLicenseGateFactory.Create(
-            context,
-            productId,
-            createLicenseGate);
-        return new ProductBinding<TPort>(
-            productId,
-            new Lazy<TPort>(() => createPort(license)),
-            license,
-            new Lazy<IFontEnvironment>(() => createFontEnvironment(license)),
-            outputs: null);
-    }
-
-    /// <summary>Creates a licensed-engine binding without font diagnostics.</summary>
-    public static ProductBinding<TPort> Create<TPort>(
-        ProductActivationContext context,
-        string productId,
-        Func<LicenseResolution, ILicenseGate> createLicenseGate,
-        Func<ILicenseGate, TPort> createPort)
-        where TPort : class
-    {
-        ArgumentNullException.ThrowIfNull(createPort);
-        ILicenseGate license = ProductLicenseGateFactory.Create(
-            context,
-            productId,
-            createLicenseGate);
-        return new ProductBinding<TPort>(
-            productId,
-            new Lazy<TPort>(() => createPort(license)),
-            license,
-            fontEnvironment: null,
-            outputs: null);
     }
 
     /// <summary>
