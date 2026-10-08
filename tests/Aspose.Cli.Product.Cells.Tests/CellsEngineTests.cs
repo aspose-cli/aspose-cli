@@ -971,6 +971,33 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
         Assert.True(result.Workbook.SheetCount >= 1);
     }
 
+    public static TheoryData<string, Aspose.Cells.SaveFormat> EncryptedFormats() => new()
+    {
+        { "xls", Aspose.Cells.SaveFormat.Excel97To2003 },
+        { "xlsb", Aspose.Cells.SaveFormat.Xlsb },
+        { "ods", Aspose.Cells.SaveFormat.Ods },
+    };
+
+    /// <summary>
+    /// Every encrypted workbook format is refused the same way: without a password before the
+    /// engine opens it, with a wrong one by the engine's typed failure, and opened with the right one.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(EncryptedFormats))]
+    public void Open_EncryptedWorkbook_IsRefusedAlikeInEveryFormat(string extension, Aspose.Cells.SaveFormat format)
+    {
+        string path = _fixture.CreateEncryptedWorkbook("secret", $"locked-format.{extension}", format);
+
+        CliException missing = Assert.Throws<CliException>(() => _fixture.Engine.GetInfo(path, new InfoRequest()));
+        CliException wrong = Assert.Throws<CliException>(
+            () => _fixture.Engine.GetInfo(path, new InfoRequest { Password = new Secret("wrong") }));
+        WorkbookInfoResult opened = _fixture.Engine.GetInfo(path, new InfoRequest { Password = new Secret("secret") });
+
+        Assert.Equal(ErrorCodes.PasswordRequired, missing.Code);
+        Assert.Equal(ErrorCodes.PasswordInvalid, wrong.Code);
+        Assert.True(opened.Workbook.SheetCount >= 1);
+    }
+
     [Fact]
     public void Open_GarbageBytes_ReportsFileCorrupt()
     {

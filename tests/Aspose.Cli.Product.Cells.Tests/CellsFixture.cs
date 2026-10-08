@@ -103,14 +103,14 @@ public sealed class CellsFixture : IDisposable
         return path;
     }
 
-    public string CreateEncryptedWorkbook(string password, string fileName = "secret.xlsx")
+    public string CreateEncryptedWorkbook(string password, string fileName = "secret.xlsx", SaveFormat format = SaveFormat.Xlsx)
     {
         using var workbook = new Workbook();
         workbook.Worksheets[0].Cells["A1"].PutValue("classified");
         workbook.Settings.Password = password;
 
         string path = Temp.File(fileName);
-        workbook.Save(path, SaveFormat.Xlsx);
+        workbook.Save(path, format);
         return path;
     }
 

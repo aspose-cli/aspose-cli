@@ -78,10 +78,4 @@ public static class CellsErrors
         line,
         $"Import it with its culture: aspose-cli cells convert \"{path}\" --to xlsx --culture de-DE "
             + "(or another culture that writes a decimal comma). The culture also reads its dates.");
-
-    internal static CliException FileCorrupt(string path, string reason) => CliErrors.InputUnreadable(
-        path,
-        "spreadsheet",
-        reason,
-        "Verify the file opens in a spreadsheet application and is one of the supported input formats.");
 }
