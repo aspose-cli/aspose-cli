@@ -48,6 +48,14 @@ public sealed class ResultTextTests
     }
 
     [Fact]
+    public void Produced_NamesACompanionFileWithoutAFormat()
+    {
+        string text = Render(surface => ResultText.Produced(surface, new OutputInfo { Path = "pres.css", Format = null, SizeBytes = 10 }));
+
+        Assert.Equal("wrote pres.css (companion, 10 bytes)", Lines(text)[0]);
+    }
+
+    [Fact]
     public void Backup_SaysAKeptBackupHoldsAnEarlierVersion()
     {
         string text = Render(surface => ResultText.Backup(surface, new BackupInfo

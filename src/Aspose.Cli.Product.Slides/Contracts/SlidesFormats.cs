@@ -24,7 +24,7 @@ public static class SlidesFormats
         FormatDescriptor.Routed("pdf", FormatUse.Convert, null, 4, null, ".pdf"),
         FormatDescriptor.Routed("xps", FormatUse.Convert, null, 5, null, ".xps"),
         FormatDescriptor.Routed("html", FormatUse.Convert, null, 6, null, ".html"),
-        FormatDescriptor.Routed("html5", FormatUse.Convert, null, 7, null, ".html"),
+        FormatDescriptor.Routed("html5", FormatUse.Convert, null, 7, null, ".html") with { CompanionFiles = true },
         FormatDescriptor.Routed("png", FormatUse.Convert | FormatUse.Render, null, 8, 0, ".png"),
         FormatDescriptor.Routed("jpeg", FormatUse.Convert | FormatUse.Render, null, 9, 1, ".jpg", ".jpeg")
             with { Aliases = ["jpg"] },

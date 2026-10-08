@@ -18,7 +18,8 @@ public sealed class SafeFileWriter
 
     /// <summary>
     /// Publishes a resolved output atomically and describes every file published, the output
-    /// first. A format with companion files publishes them beside the output as one set.
+    /// first. A format with companion files publishes them beside the output as one set; a
+    /// companion is described without a format.
     /// </summary>
     /// <exception cref="CliException">
     /// <c>OUTPUT_PUBLICATION_FAILED</c> when the engine writes a directory beside the output,
@@ -29,7 +30,7 @@ public sealed class SafeFileWriter
         ArgumentNullException.ThrowIfNull(output);
         if (!output.Format.CompanionFiles)
         {
-            return [Describe(output, output.Path, Write(output.Path, output.Overwrite, output.BackupPath, writeToTemp).SizeBytes)];
+            return [Describe(output.Path, output.Format.Id, Write(output.Path, output.Overwrite, output.BackupPath, writeToTemp).SizeBytes)];
         }
 
         using var transaction = new AtomicOutputSetWriter(this, output.Directory, "write");
@@ -44,11 +45,12 @@ public sealed class SafeFileWriter
         }
 
         IReadOnlyList<long> sizes = transaction.Commit();
-        return [.. staged.Select((file, index) => Describe(output, file.TargetPath, sizes[index]))];
+        // A companion, such as a script of an HTML5 deck, is no document of the output's format.
+        return [.. staged.Select((file, index) => Describe(file.TargetPath, index == 0 ? output.Format.Id : null, sizes[index]))];
     }
 
-    private static OutputInfo Describe(ResolvedOutput output, string path, long size) =>
-        new() { Path = path, Format = output.Format.Id, SizeBytes = size };
+    private static OutputInfo Describe(string path, string? format, long size) =>
+        new() { Path = path, Format = format, SizeBytes = size };
 
     public SafeWriteResult Write(string targetPath, bool overwrite, string? backupPath, Action<string> writeToTemp) =>
         Write(targetPath, overwrite, backupPath, inputPrecondition: null, writeToTemp);

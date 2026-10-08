@@ -21,7 +21,8 @@ public sealed class ResolvedOutputWriteTests
         IReadOnlyList<OutputInfo> published = writer.Write(output, WriteDeck);
 
         Assert.Equal([temp.File("deck.html"), temp.File("app.js"), temp.File("style.css")], published.Select(static file => file.Path));
-        Assert.All(published, static file => Assert.Equal("page", file.Format));
+        // A companion file is no document of the format: it carries no format of its own.
+        Assert.Equal(["page", null, null], published.Select(static file => file.Format));
         Assert.Equal("<html>", File.ReadAllText(temp.File("deck.html")));
         Assert.Equal("script", File.ReadAllText(temp.File("app.js")));
         Assert.Equal(["app.js", "deck.html", "style.css"], Directory.GetFileSystemEntries(temp.Path).Select(Path.GetFileName).Order(StringComparer.Ordinal));
