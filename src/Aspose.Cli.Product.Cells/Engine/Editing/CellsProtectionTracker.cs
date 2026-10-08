@@ -1,7 +1,7 @@
 using Aspose.Cells;
 using Aspose.Cli.Product.Cells.Engine.Mapping;
 using Aspose.Cli.Sdk.Errors;
-using Aspose.Cli.Sdk.Extensibility;
+using Aspose.Cli.Sdk.IO;
 
 namespace Aspose.Cli.Product.Cells.Engine.Editing;
 

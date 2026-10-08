@@ -1,4 +1,4 @@
-namespace Aspose.Cli.Sdk.Extensibility;
+namespace Aspose.Cli.Sdk.IO;
 
 /// <summary>
 /// Immutable file metadata plus a cached, bounded prefix exposed to recognizers.

@@ -1,6 +1,7 @@
 using System.CommandLine;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Extensibility;
+using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Serialization;
 using Xunit;
 using ExtProduct = Aspose.Cli.Sdk.Extensibility.Product;
