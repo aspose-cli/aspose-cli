@@ -52,20 +52,20 @@ internal static class CellsRenderers
     /// <summary>Each list --detail requested, as a table under its own heading.</summary>
     private static void RenderInfoDetails(WorkbookSummary workbook, TableSurface surface)
     {
-        WriteDetail(surface, "names", workbook.DefinedNames, ["name", "refers to"],
+        ResultText.Table(surface, "names", workbook.DefinedNames, ["name", "refers to"],
             static name => [name.Name, name.RefersTo]);
-        WriteDetail(surface, "formula errors", workbook.FormulaErrors, ["sheet", "cell", "error"],
+        ResultText.Table(surface, "formula errors", workbook.FormulaErrors, ["sheet", "cell", "error"],
             static error => [error.Sheet, error.Cell, error.Error]);
-        WriteDetail(surface, "validations", workbook.Validations, ["sheet", "range", "type"],
+        ResultText.Table(surface, "validations", workbook.Validations, ["sheet", "range", "type"],
             static validation => [validation.Sheet, validation.Range, validation.Type]);
-        WriteDetail(surface, "fonts", workbook.Fonts, ["font"], static font => [font]);
-        WriteDetail(surface, "tables", workbook.Tables, ["sheet", "name", "range"],
+        ResultText.Table(surface, "fonts", workbook.Fonts, ["font"], static font => [font]);
+        ResultText.Table(surface, "tables", workbook.Tables, ["sheet", "name", "range"],
             static item => [item.Sheet, item.Name, item.Range]);
-        WriteDetail(surface, "charts", workbook.Charts, ["sheet", "index", "name", "type"],
+        ResultText.Table(surface, "charts", workbook.Charts, ["sheet", "index", "name", "type"],
             static chart => [chart.Sheet, TableText.Int(chart.Index), chart.Name, chart.Type]);
-        WriteDetail(surface, "pivots", workbook.Pivots, ["sheet", "name", "range"],
+        ResultText.Table(surface, "pivots", workbook.Pivots, ["sheet", "name", "range"],
             static pivot => [pivot.Sheet, pivot.Name, pivot.Range]);
-        WriteDetail(surface, "layouts", workbook.Layouts,
+        ResultText.Table(surface, "layouts", workbook.Layouts,
             ["sheet", "freeze", "row groups", "column groups", "filter", "print area", "titles", "page", "header", "footer"],
             static layout =>
             [
@@ -90,28 +90,6 @@ internal static class CellsRenderers
             ? "-"
             : string.Join(", ", groups.Select(describe).Select(static group =>
                 $"{group.Span} L{group.Level}{(group.Collapsed ? " collapsed" : string.Empty)}"));
-
-    // A requested list that came back empty still prints its heading, so "none" is visible.
-    private static void WriteDetail<T>(
-        TableSurface surface,
-        string heading,
-        IReadOnlyList<T>? items,
-        string[] columns,
-        Func<T, string[]> row)
-    {
-        if (items is null || !ResultText.Section(surface, heading, items.Count == 0))
-        {
-            return;
-        }
-
-        var table = new TextTable(columns);
-        foreach (T item in items)
-        {
-            table.AddRow(row(item));
-        }
-
-        table.WriteTo(surface.Out, surface.Format);
-    }
 
     public static void Render(WorkbookReadResult read, TableSurface surface)
     {

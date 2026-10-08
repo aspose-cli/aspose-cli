@@ -96,6 +96,33 @@ public sealed class ResultTextTests
         Assert.Equal(!empty, writeContent);
     }
 
+    [Fact]
+    public void Table_WritesNothingForAnUnrequestedList()
+    {
+        string text = Render(surface => ResultText.Table<string>(surface, "fonts", null, ["font"], static font => [font]));
+
+        Assert.Empty(text);
+    }
+
+    [Fact]
+    public void Table_WritesOneRowPerItemUnderTheHeadingAndNoneWhenEmpty()
+    {
+        string rows = Render(surface => ResultText.Table(
+            surface, "names", new[] { ("Total", "=B9"), ("Rate", "=0.2") }, ["name", "refers to"], static name => [name.Item1, name.Item2]));
+        string empty = Render(surface => ResultText.Table(
+            surface, "names", Array.Empty<(string, string)>(), ["name", "refers to"], static name => [name.Item1, name.Item2]));
+
+        Assert.Equal(["names:", "name   refers to", "Total  =B9", "Rate   =0.2"], Lines(rows));
+        Assert.Equal(["names:", "none"], Lines(empty));
+    }
+
+    [Fact]
+    public void List_JoinsTheValuesOnOneLineAndSkipsAnUnrequestedList()
+    {
+        Assert.Equal(["fonts:", "Arial, Calibri"], Lines(Render(surface => ResultText.List(surface, "fonts", ["Arial", "Calibri"]))));
+        Assert.Empty(Render(surface => ResultText.List(surface, "fonts", null)));
+    }
+
     private static string Render(Action<TableSurface> render, TableFormat format = TableFormat.Plain)
     {
         using var writer = new StringWriter();

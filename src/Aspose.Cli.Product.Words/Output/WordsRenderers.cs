@@ -118,149 +118,70 @@ internal static class WordsRenderers
         }
     }
 
+    /// <summary>Each section --detail asked for, under its own heading.</summary>
     private static void RenderInfoDetails(
         DocumentInfoResult result,
         TableSurface surface)
     {
-        RenderSectionsAndOutline(result, surface);
-        WriteList("styles", result.Styles, surface);
-        WriteList("bookmarks", result.Bookmarks, surface);
-        WriteList("fonts", result.Fonts, surface);
-        RenderFieldsAndComments(result, surface);
-        RenderImagesAndTables(result, surface);
+        RenderSections(result.Sections, surface);
+        ResultText.Table(surface, "outline", result.Outline, ["block", "level", "heading"],
+            static item => [TableText.Int(item.Block), TableText.Int(item.HeadingLevel), item.Text]);
+        ResultText.List(surface, "styles", result.Styles);
+        ResultText.List(surface, "bookmarks", result.Bookmarks);
+        ResultText.List(surface, "fonts", result.Fonts);
+        ResultText.Table(surface, "fields", result.Fields, ["block", "type", "code", "result"],
+            static field => [Block(field.Block), field.Type, field.Code ?? "-", field.Result ?? "-"]);
+        ResultText.Table(surface, "comments", result.Comments, ["block", "author", "text"],
+            static comment => [Block(comment.Block), comment.Author, comment.Text]);
+        ResultText.Table(surface, "revisions", result.Revisions, ["revision", "block", "type", "author", "date", "text"],
+            static revision =>
+            [
+                TableText.Int(revision.Revision),
+                Block(revision.Block),
+                revision.Type,
+                revision.Author,
+                revision.Date ?? "-",
+                revision.Text ?? "-",
+            ]);
+        ResultText.Table(surface, "images", result.Images, ["block", "name", "size"],
+            static image => [Block(image.Block), image.Name ?? "-", $"{Points(image.Width)} x {Points(image.Height)} pt"]);
+        ResultText.Table(surface, "tables", result.Tables, ["block", "rows", "columns", "style"],
+            static item => [TableText.Int(item.Block), TableText.Int(item.RowCount), TableText.Int(item.ColumnCount), item.Style ?? "-"]);
         RenderProperties(result, surface);
     }
 
-    private static void RenderSectionsAndOutline(
-        DocumentInfoResult result,
-        TableSurface surface)
+    // Page setup, then the header and footer paragraphs of every section that has any.
+    private static void RenderSections(IReadOnlyList<SectionData>? sections, TableSurface surface)
     {
-        if (result.Sections is { } sections && ResultText.Section(surface, "sections", sections.Count == 0))
+        if (sections is null || !ResultText.Section(surface, "sections", sections.Count == 0))
         {
-            var table = new TextTable("section", "orientation", "page size", "margins (t/r/b/l)");
-            foreach (SectionData section in sections)
-            {
-                table.AddRow(
-                    TableText.Int(section.Section),
-                    section.Orientation,
-                    $"{Points(section.WidthPoints)} x {Points(section.HeightPoints)} pt",
-                    $"{Points(section.Margins.Top)}/{Points(section.Margins.Right)}/"
-                    + $"{Points(section.Margins.Bottom)}/{Points(section.Margins.Left)} pt");
-            }
+            return;
+        }
 
-            table.WriteTo(surface.Out, surface.Format);
-            var headersFooters = new TextTable("section", "location", "kind", "paragraphs");
-            foreach (SectionData section in sections)
-            {
-                foreach (HeaderFooterData item in section.HeadersFooters)
-                {
-                    headersFooters.AddRow(TableText.Int(section.Section), item.Location, item.Kind, string.Join(" | ", item.Paragraphs));
-                }
-            }
+        var table = new TextTable("section", "orientation", "page size", "margins (t/r/b/l)");
+        foreach (SectionData section in sections)
+        {
+            table.AddRow(
+                TableText.Int(section.Section),
+                section.Orientation,
+                $"{Points(section.WidthPoints)} x {Points(section.HeightPoints)} pt",
+                $"{Points(section.Margins.Top)}/{Points(section.Margins.Right)}/"
+                + $"{Points(section.Margins.Bottom)}/{Points(section.Margins.Left)} pt");
+        }
 
-            if (sections.Any(static section => section.HeadersFooters.Count > 0))
+        table.WriteTo(surface.Out, surface.Format);
+        var headersFooters = new TextTable("section", "location", "kind", "paragraphs");
+        foreach (SectionData section in sections)
+        {
+            foreach (HeaderFooterData item in section.HeadersFooters)
             {
-                headersFooters.WriteTo(surface.Out, surface.Format);
+                headersFooters.AddRow(TableText.Int(section.Section), item.Location, item.Kind, string.Join(" | ", item.Paragraphs));
             }
         }
 
-        if (result.Outline is { } outline && ResultText.Section(surface, "outline", outline.Count == 0))
+        if (sections.Any(static section => section.HeadersFooters.Count > 0))
         {
-            var table = new TextTable("block", "level", "heading");
-            foreach (OutlineItem item in outline)
-            {
-                table.AddRow(
-                    TableText.Int(item.Block),
-                    TableText.Int(item.HeadingLevel),
-                    item.Text);
-            }
-
-            table.WriteTo(surface.Out, surface.Format);
-        }
-    }
-
-    private static void RenderFieldsAndComments(
-        DocumentInfoResult result,
-        TableSurface surface)
-    {
-        if (result.Fields is { } fields && ResultText.Section(surface, "fields", fields.Count == 0))
-        {
-            var table = new TextTable("block", "type", "code", "result");
-            foreach (FieldData field in fields)
-            {
-                table.AddRow(
-                    Block(field.Block),
-                    field.Type,
-                    field.Code ?? "-",
-                    field.Result ?? "-");
-            }
-
-            table.WriteTo(surface.Out, surface.Format);
-        }
-
-        if (result.Comments is { } comments && ResultText.Section(surface, "comments", comments.Count == 0))
-        {
-            var table = new TextTable("block", "author", "text");
-            foreach (CommentData comment in comments)
-            {
-                table.AddRow(
-                    Block(comment.Block),
-                    comment.Author,
-                    comment.Text);
-            }
-
-            table.WriteTo(surface.Out, surface.Format);
-        }
-
-        if (result.Revisions is { } revisions && ResultText.Section(surface, "revisions", revisions.Count == 0))
-        {
-            var table = new TextTable("revision", "block", "type", "author", "date", "text");
-            foreach (RevisionData revision in revisions)
-            {
-                table.AddRow(
-                    TableText.Int(revision.Revision),
-                    Block(revision.Block),
-                    revision.Type,
-                    revision.Author,
-                    revision.Date ?? "-",
-                    revision.Text ?? "-");
-            }
-
-            table.WriteTo(surface.Out, surface.Format);
-        }
-    }
-
-    private static void RenderImagesAndTables(
-        DocumentInfoResult result,
-        TableSurface surface)
-    {
-        if (result.Images is { } images && ResultText.Section(surface, "images", images.Count == 0))
-        {
-            var table = new TextTable("block", "name", "size");
-            foreach (ImageData image in images)
-            {
-                table.AddRow(
-                    Block(image.Block),
-                    image.Name ?? "-",
-                    $"{Points(image.Width)} x {Points(image.Height)} pt");
-            }
-
-            table.WriteTo(surface.Out, surface.Format);
-        }
-
-        if (result.Tables is { } tables && ResultText.Section(surface, "tables", tables.Count == 0))
-        {
-            var table = new TextTable("block", "rows", "columns", "style");
-            foreach (TableData item in tables)
-            {
-                table.AddRow(
-                    TableText.Int(item.Block),
-                    TableText.Int(item.RowCount),
-                    TableText.Int(item.ColumnCount),
-                    item.Style ?? "-");
-            }
-
-            table.WriteTo(surface.Out, surface.Format);
+            headersFooters.WriteTo(surface.Out, surface.Format);
         }
     }
 
@@ -279,17 +200,6 @@ internal static class WordsRenderers
             }
 
             table.WriteTo(surface.Out, surface.Format);
-        }
-    }
-
-    private static void WriteList(
-        string label,
-        IReadOnlyList<string>? values,
-        TableSurface surface)
-    {
-        if (values is not null && ResultText.Section(surface, label, values.Count == 0))
-        {
-            surface.Out.WriteLine(string.Join(", ", values));
         }
     }
 
