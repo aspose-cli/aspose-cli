@@ -13,7 +13,18 @@ using Xunit;
 
 namespace Aspose.Cli.Host.Tests;
 
-[Collection("Local service lifecycle")]
+/// <summary>
+/// The local service runtime and its control protocol, whose frame, flush and deadline checks
+/// time real pipe traffic. They run alone, after the parallel tests: on a busy runner the CLI
+/// processes of the invariant tests starved them past their windows.
+/// </summary>
+[CollectionDefinition(Name, DisableParallelization = true)]
+public sealed class LocalServiceRuntimeCollection
+{
+    public const string Name = "Local service runtime";
+}
+
+[Collection(LocalServiceRuntimeCollection.Name)]
 public sealed class LocalServiceRuntimeTests
 {
     [Fact]
