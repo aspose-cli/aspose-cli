@@ -20,14 +20,16 @@ public static class CellsFormats
         FormatDescriptor.Declare("xlsb", FormatUse.Input | FormatUse.Convert, 4, 4, null, true, ".xlsb") with { Protectable = true },
         FormatDescriptor.Declare("xls", FormatUse.Input | FormatUse.Convert, 5, 5, null, true, ".xls") with { Protectable = true },
         FormatDescriptor.Declare("ods", FormatUse.Input | FormatUse.Convert, 6, 6, null, true, ".ods") with { Protectable = true },
-        FormatDescriptor.Declare("csv", FormatUse.Input | FormatUse.Convert, 7, 7, null, true, ".csv"),
-        FormatDescriptor.Declare("tsv", FormatUse.Input | FormatUse.Convert, 8, 8, null, true, ".tsv"),
+        FormatDescriptor.Declare("csv", FormatUse.Input | FormatUse.Convert, 7, 7, null, true, ".csv", ".txt")
+            with { UnroutedExtensions = [".txt"] },
+        FormatDescriptor.Declare("tsv", FormatUse.Input | FormatUse.Convert, 8, 8, null, true, ".tsv", ".txt")
+            with { UnroutedExtensions = [".txt"] },
         FormatDescriptor.Declare("html", FormatUse.Input | FormatUse.Convert, 9, 9, null, false, ".html", ".htm"),
         FormatDescriptor.Declare("mhtml", FormatUse.Input | FormatUse.Convert, 10, 10, null, false, ".mhtml"),
         FormatDescriptor.Declare("pdf", FormatUse.Convert, null, 11, null, false, ".pdf"),
         FormatDescriptor.Declare("xps", FormatUse.Convert, null, 12, null, false, ".xps"),
         FormatDescriptor.Declare("json", FormatUse.Convert, null, 13, null, false, ".json"),
-        FormatDescriptor.Declare("md", FormatUse.Convert, null, 14, null, false, ".md")
+        FormatDescriptor.Declare("md", FormatUse.Convert, null, 14, null, false, ".md", ".markdown")
             with { Aliases = ["markdown"] },
         FormatDescriptor.Declare("png", FormatUse.Render, null, null, 0, false, ".png"),
         FormatDescriptor.Declare("jpeg", FormatUse.Render, null, null, 1, false, ".jpg", ".jpeg")

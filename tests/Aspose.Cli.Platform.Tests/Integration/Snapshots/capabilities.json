@@ -309,7 +309,8 @@
         {
           "id": "csv",
           "extensions": [
-            ".csv"
+            ".csv",
+            ".txt"
           ],
           "aliases": [],
           "uses": [
@@ -386,6 +387,7 @@
         {
           "id": "md",
           "extensions": [
+            ".markdown",
             ".md"
           ],
           "aliases": [
@@ -491,7 +493,8 @@
         {
           "id": "tsv",
           "extensions": [
-            ".tsv"
+            ".tsv",
+            ".txt"
           ],
           "aliases": [],
           "uses": [
@@ -2459,6 +2462,7 @@
         {
           "id": "html",
           "extensions": [
+            ".htm",
             ".html"
           ],
           "aliases": [],
@@ -2491,6 +2495,7 @@
         {
           "id": "md",
           "extensions": [
+            ".markdown",
             ".md"
           ],
           "aliases": [],
@@ -5151,6 +5156,7 @@
         {
           "id": "html",
           "extensions": [
+            ".htm",
             ".html"
           ],
           "aliases": [],
@@ -5165,6 +5171,7 @@
         {
           "id": "html5",
           "extensions": [
+            ".htm",
             ".html"
           ],
           "aliases": [],
@@ -5197,6 +5204,7 @@
         {
           "id": "md",
           "extensions": [
+            ".markdown",
             ".md"
           ],
           "aliases": [],
@@ -7526,6 +7534,7 @@
         {
           "id": "md",
           "extensions": [
+            ".markdown",
             ".md"
           ],
           "aliases": [],
@@ -10012,6 +10021,20 @@
       {
         "extension": ".fodp",
         "product": "slides",
+        "operations": [
+          "app",
+          "fonts",
+          "open",
+          "preview",
+          "review"
+        ],
+        "requiresContentProbe": true,
+        "recognizerStrategy": "standard-signature-v1",
+        "maxProbeBytes": 65536
+      },
+      {
+        "extension": ".markdown",
+        "product": "words",
         "operations": [
           "app",
           "fonts",

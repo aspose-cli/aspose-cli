@@ -339,7 +339,7 @@ public sealed class ProductDefinitionBuilder<TPort>
             .Where(static format =>
                 format.Ownership == RouteOwnership.Default
                 && format.Uses.HasFlag(FormatUse.Input))
-            .SelectMany(static format => format.Extensions)
+            .SelectMany(static format => format.RoutedExtensions)
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToArray();
         return new FileRouteDefinition

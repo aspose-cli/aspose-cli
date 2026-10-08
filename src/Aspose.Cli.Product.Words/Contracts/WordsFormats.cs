@@ -23,7 +23,7 @@ public static class WordsFormats
         FormatDescriptor.Declare("odt", FormatUse.Input | FormatUse.Convert, 11, 21, null, true, ".odt") with { Protectable = true },
         FormatDescriptor.Declare("ott", FormatUse.Input | FormatUse.Convert, 12, 22, null, true, ".ott") with { Protectable = true },
         FormatDescriptor.Declare("txt", FormatUse.Input | FormatUse.Convert, 13, 23, null, true, ".txt"),
-        FormatDescriptor.Declare("md", FormatUse.Input | FormatUse.Convert, 14, 24, null, true, ".md"),
+        FormatDescriptor.Declare("md", FormatUse.Input | FormatUse.Convert, 14, 24, null, true, ".md", ".markdown"),
         FormatDescriptor.Declare("pdf", FormatUse.Input | FormatUse.Convert, 15, 9, null, false, ".pdf"),
         FormatDescriptor.Declare("epub", FormatUse.Input | FormatUse.Convert, 16, 18, null, true, ".epub"),
         FormatDescriptor.Declare("mobi", FormatUse.Input | FormatUse.Convert, 17, 19, null, true, ".mobi"),

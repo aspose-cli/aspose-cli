@@ -1,0 +1,45 @@
+{
+  "name": "an output may use the common alternative extension its format declares, and a .txt input still routes to words",
+  "files": {
+    "book.xlsx": { "fixture": "cells.xlsx" },
+    "doc.docx": { "fixture": "words.docx" },
+    "notes.txt": { "text": "name,qty\nalpha,3\n" }
+  },
+  "steps": [
+    {
+      "args": ["cells", "convert", "book.xlsx", "--to", "csv", "--out", "data.txt"],
+      "expect": {
+        "exitCode": 0,
+        "json": [{ "path": "output.format", "equals": "csv" }],
+        "files": { "present": ["data.txt"], "unchanged": ["book.xlsx"] },
+        "reopens": ["cells:data.txt"]
+      }
+    },
+    {
+      "args": ["cells", "convert", "book.xlsx", "--to", "tsv", "--out", "tabs.txt"],
+      "expect": {
+        "exitCode": 0,
+        "json": [{ "path": "output.format", "equals": "tsv" }],
+        "files": { "present": ["tabs.txt"], "unchanged": ["book.xlsx"] },
+        "reopens": ["cells:tabs.txt"]
+      }
+    },
+    {
+      "args": ["words", "convert", "doc.docx", "--to", "md", "--out", "notes.markdown"],
+      "expect": {
+        "exitCode": 0,
+        "json": [{ "path": "output.format", "equals": "md" }],
+        "files": { "present": ["notes.markdown"], "unchanged": ["doc.docx"] },
+        "reopens": ["notes.markdown"]
+      }
+    },
+    {
+      "args": ["fonts", "check", "notes.txt"],
+      "expect": {
+        "exitCode": 0,
+        "json": [{ "path": "source.format", "equals": "txt" }],
+        "files": { "unchanged": ["notes.txt"] }
+      }
+    }
+  ]
+}

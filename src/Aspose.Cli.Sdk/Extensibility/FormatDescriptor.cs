@@ -149,8 +149,22 @@ public sealed record FormatDescriptor
     /// <summary>Input, convert, and render uses supported by the product.</summary>
     public FormatUse Uses { get; init; }
 
-    /// <summary>File extensions associated with this format.</summary>
+    /// <summary>
+    /// File extensions associated with this format: an output may carry any of them, and an
+    /// input format is read under any of them.
+    /// </summary>
     public IReadOnlyList<string> Extensions { get; init; }
+
+    /// <summary>
+    /// Extensions among <see cref="Extensions"/> that never claim a generic route, because
+    /// another product's format owns them, as plain text owns <c>.txt</c> while delimited text
+    /// may be named <c>data.txt</c>. The product's own commands still read and write them.
+    /// </summary>
+    public IReadOnlyList<string> UnroutedExtensions { get; init; } = [];
+
+    /// <summary>The extensions this format claims for generic routing.</summary>
+    internal IEnumerable<string> RoutedExtensions =>
+        Extensions.Except(UnroutedExtensions, StringComparer.OrdinalIgnoreCase);
 
     /// <summary>Accepted command-line aliases in addition to the stable id.</summary>
     public IReadOnlyList<string> Aliases { get; init; } = [];

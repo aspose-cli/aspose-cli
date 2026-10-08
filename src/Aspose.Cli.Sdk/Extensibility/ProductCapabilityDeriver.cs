@@ -73,7 +73,7 @@ internal static class ProductCapabilityDeriver
         FormatDescriptor format,
         IReadOnlyDictionary<string, string> resolvedOwners)
     {
-        string[] finalOwners = format.Extensions
+        string[] finalOwners = format.RoutedExtensions
             .Select(ProductCatalog.NormalizeExtension)
             .Where(resolvedOwners.ContainsKey)
             .Select(extension => resolvedOwners[extension])
