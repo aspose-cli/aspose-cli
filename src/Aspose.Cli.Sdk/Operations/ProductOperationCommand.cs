@@ -1,7 +1,6 @@
 using Aspose.Cli.Sdk.Contracts;
-using Aspose.Cli.Sdk.Operations;
 
-namespace Aspose.Cli.Sdk.Extensibility;
+namespace Aspose.Cli.Sdk.Operations;
 
 /// <summary>
 /// One command of a product manifest that applies operation documents: its published
