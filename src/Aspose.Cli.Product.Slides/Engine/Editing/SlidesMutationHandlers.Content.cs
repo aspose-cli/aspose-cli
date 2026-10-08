@@ -36,11 +36,10 @@ internal sealed partial class SlidesMutationHandlers
         Regex? regex = operation.Regex ? SafeRegex.Create(operation.Find, operation.MatchCase) : null;
         if (_evaluation && _presentation.Slides.SelectMany(slide => Frames(slide, operation.Scope)).Any(static frame => CutByEvaluation(frame.Text)))
         {
-            throw new CliException(
-                ErrorCodes.EvaluationLimit,
+            throw CliErrors.EvaluationLimit(
                 "Evaluation mode lets replace_text see only the first characters of longer text, so it cannot find or replace the presentation's text.",
-                hint: "Apply an Aspose.Slides license and retry; set_text, set_title and set_body replace a shape's whole text without matching it.",
-                docs: "licensing");
+                "Aspose.Slides",
+                "use set_text, set_title or set_body, which replace a shape's whole text without matching it");
         }
 
         long count = 0;

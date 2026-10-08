@@ -714,6 +714,28 @@ public static partial class CliErrors
         docs: "licensing",
         innerException: inner);
 
+    /// <summary>
+    /// A document engine's evaluation mode refused what the command needs, such as a page past
+    /// the ones it shows. The hint leads with the license that lifts the limit.
+    /// </summary>
+    /// <param name="message">What evaluation mode allows and what it stopped.</param>
+    /// <param name="license">The license that lifts the limit, such as <c>Aspose.PDF</c>.</param>
+    /// <param name="alternative">What the caller can do without one, completing "or ...", if anything.</param>
+    /// <param name="details">The facts of the limit, if any.</param>
+    /// <param name="innerException">The engine's refusal, if any.</param>
+    public static CliException EvaluationLimit(
+        string message,
+        string license,
+        string? alternative = null,
+        JsonObject? details = null,
+        Exception? innerException = null) => new(
+        ErrorCodes.EvaluationLimit,
+        message,
+        hint: alternative is null ? $"Apply an {license} license." : $"Apply an {license} license, or {alternative}.",
+        details: details,
+        docs: "licensing",
+        innerException: innerException);
+
     /// <summary>Creates an error for a license operation with no applicable product.</summary>
     public static CliException LicenseNotApplicable(
         string operation,
