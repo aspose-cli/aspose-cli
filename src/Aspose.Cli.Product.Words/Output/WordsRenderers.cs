@@ -53,12 +53,7 @@ internal static class WordsRenderers
 
         if (result.Verification is { } verification)
         {
-            surface.Out.WriteLine(
-                $"verification: {(verification.Ok ? "ok" : "needs attention")}");
-            foreach (VerificationIssue issue in verification.Issues)
-            {
-                surface.Out.WriteLine($"  {issue.Code}: {issue.Message}");
-            }
+            ResultText.Verification(surface, verification.Ok, verification.Issues, locations: false);
         }
     }
 
