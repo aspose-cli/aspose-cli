@@ -62,11 +62,11 @@ internal static class SelfProcessLauncher
         }
         foreach (string name in new[]
         {
-            Aspose.Cli.Sdk.Execution.WorkerOutputSession.WorkerEnvironmentVariable,
-            Aspose.Cli.Sdk.Execution.WorkerOutputSession.RootEnvironmentVariable,
-            Aspose.Cli.Sdk.Execution.WorkerOutputSession.ManifestEnvironmentVariable,
-            Aspose.Cli.Sdk.Execution.WorkerOutputSession.DeadlineEnvironmentVariable,
-            Aspose.Cli.Sdk.Execution.WorkerOutputSession.BudgetEnvironmentVariable,
+            Aspose.Cli.Sdk.IO.WorkerOutputSession.WorkerEnvironmentVariable,
+            Aspose.Cli.Sdk.IO.WorkerOutputSession.RootEnvironmentVariable,
+            Aspose.Cli.Sdk.IO.WorkerOutputSession.ManifestEnvironmentVariable,
+            Aspose.Cli.Sdk.IO.WorkerOutputSession.DeadlineEnvironmentVariable,
+            Aspose.Cli.Sdk.IO.WorkerOutputSession.BudgetEnvironmentVariable,
         }) { start.Environment.Remove(name); }
         if (OperatingSystem.IsWindows())
         {

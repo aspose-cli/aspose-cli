@@ -1,5 +1,4 @@
 using Aspose.Cli.Sdk.IO;
-using Aspose.Cli.Sdk.Execution;
 using Xunit;
 
 namespace Aspose.Cli.Platform.Tests.IO;

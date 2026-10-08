@@ -1,6 +1,4 @@
-using Aspose.Cli.Sdk.IO;
-
-namespace Aspose.Cli.Sdk.Execution;
+namespace Aspose.Cli.Sdk.IO;
 
 /// <summary>Explicit invocation-owned collection of files awaiting parent publication.</summary>
 public sealed class WorkerOutputSession
@@ -168,16 +166,6 @@ public sealed class WorkerOutputSession
     private void EnsureMutable()
     {
         if (_sealed) { throw new InvalidOperationException("The worker output set is sealed."); }
-    }
-
-    public static IReadOnlyList<long> Publish(string manifestPath, ResourceBudgetLedger budgets)
-    {
-        try { return WorkerOutputPublisher.Publish(WorkerManifestStore.ReadAndValidate(manifestPath), budgets); }
-        catch (Exception error) when (error is IOException or InvalidDataException or UnauthorizedAccessException)
-        {
-            throw Aspose.Cli.Sdk.Errors.CliErrors.OutputUnwritable(manifestPath,
-                "the worker output could not be published", error, "worker-publication");
-        }
     }
 }
 

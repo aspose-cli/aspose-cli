@@ -134,7 +134,7 @@ public sealed class UpdateClientSecurityTests
         Requires.Windows();
         string root = Aspose.Cli.Sdk.IO.UserStorage.CreateTemporaryDirectory("update-test");
         File.WriteAllText(Path.Combine(root, "install.ps1"), "throw 'This installer must never start.'");
-        using var deadline = Aspose.Cli.Sdk.Execution.OperationDeadline.FromAbsoluteTick(
+        using var deadline = Aspose.Cli.Sdk.IO.OperationDeadline.FromAbsoluteTick(
             TimeSpan.FromSeconds(1), Environment.TickCount64 - 1);
         CliException error = Assert.Throws<CliException>(() => UpdateClient.HandoffToInstaller(
             WindowsPowerShell.TryResolve()!, root, Path.Combine(root, "install"), Path.Combine(root, "status.json"), deadline));
