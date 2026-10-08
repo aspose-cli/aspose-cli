@@ -242,6 +242,17 @@ public sealed class BoundedOperationPipelineTests
         Assert.Equal(EngineErrors.EngineFailed("any", new InvalidOperationException()).Hint, error.Hint);
     }
 
+    [Fact]
+    public void ExceptionOrigin_TellsAThirdPartyRaiserFromTheCli()
+    {
+        Exception raised;
+        try { throw new IOException("raised here"); }
+        catch (IOException exception) { raised = exception; }
+
+        Assert.True(ExceptionOrigin.IsThirdParty(raised, new HashSet<System.Reflection.Assembly> { typeof(CliException).Assembly }));
+        Assert.False(ExceptionOrigin.IsThirdParty(raised, new HashSet<System.Reflection.Assembly> { typeof(BoundedOperationPipelineTests).Assembly }));
+    }
+
     public static TheoryData<Exception> FileAccessFailures() => new()
     {
         // HRESULT_FROM_WIN32(ERROR_SHARING_VIOLATION): another program holds the file.
