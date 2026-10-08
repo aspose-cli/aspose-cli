@@ -54,8 +54,9 @@ subject.
   produced.
 - **Conflicts and updates:** rebase on `master`, never merge it in; take lock files and
   `eng/generated` from `master` and rerun `scripts/sync.ps1` rather than merging them by hand.
-- **Merge** by rebase, so each commit lands on `master` as written. The branch must be up to date
-  with `master`, so `verify` checks what will land.
+- **Merge** by rebase, so each commit lands on `master` as written. Rebase on the latest `master`
+  before pushing; the branch need not stay up to date after that, so parallel pull requests
+  merge in the order they finish.
 - **A red `master` comes first.** Find the pull request that broke it and fix or revert it
   before merging anything else, unless the failure is flaky.
 - **A failure the change cannot reach may be flaky,** on a pull request or on `master`. Rerun the
@@ -253,5 +254,5 @@ The workflows rely on these repository settings:
 - **Pull requests** allow only rebase merging, without auto-merge, and delete head branches
   after merging.
 - **A branch ruleset** on `master`, with no bypass, requires a pull request merged by rebase and
-  the `verify` and `conventions` checks on a branch that is up to date, requires linear history
-  and blocks force pushes and deletion.
+  the `verify` and `conventions` checks without requiring an up-to-date branch, requires linear
+  history and blocks force pushes and deletion.
