@@ -998,6 +998,33 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
         Assert.True(opened.Workbook.SheetCount >= 1);
     }
 
+    [Theory]
+    [InlineData("records.json")]
+    [InlineData("records.dat")]
+    [InlineData("records")]
+    public void Open_DelimitedTextUnderAnUndeclaredExtension_IsRefused(string fileName)
+    {
+        string path = _fixture.Temp.File(fileName);
+        File.WriteAllText(path, "Item\tAmount\nFirst\t1\nSecond\t2\n");
+
+        CliException error = Assert.Throws<CliException>(() => _fixture.Engine.GetInfo(path, new InfoRequest()));
+
+        Assert.Equal(ErrorCodes.FileCorrupt, error.Code);
+        Assert.Contains("delimited text", error.Details!["reason"]!.GetValue<string>(), StringComparison.Ordinal);
+    }
+
+    /// <summary>Many systems "export to Excel" as tab-separated text named .xls; it imports as before.</summary>
+    [Fact]
+    public void Open_TabSeparatedTextNamedAsXls_Imports()
+    {
+        string path = _fixture.Temp.File("export.xls");
+        File.WriteAllText(path, "Item\tAmount\nFirst\t1\nSecond\t2\n");
+
+        WorkbookInfoResult result = _fixture.Engine.GetInfo(path, new InfoRequest());
+
+        Assert.Equal(1, result.Workbook.SheetCount);
+    }
+
     [Fact]
     public void Open_GarbageBytes_ReportsFileCorrupt()
     {
