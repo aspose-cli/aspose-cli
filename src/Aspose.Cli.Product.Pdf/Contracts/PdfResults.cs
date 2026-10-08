@@ -370,9 +370,6 @@ public static class PdfFormFieldTypes
 
     /// <summary>A field kind the vocabulary does not name.</summary>
     public const string Other = "other";
-
-    public static IReadOnlyList<string> All { get; } =
-        [Text, Checkbox, Radio, RadioOption, ComboBox, ListBox, Button, Signature, Other];
 }
 
 /// <summary>Result of exporting PDF form data.</summary>
