@@ -12,7 +12,8 @@ internal sealed class WordsDocumentLoader
     /// <summary>
     /// How a word-processing input that does not load is reported: Aspose.Words raises
     /// <see cref="IncorrectPasswordException"/> for a missing or wrong password,
-    /// <see cref="FileCorruptedException"/> for damaged bytes and
+    /// <see cref="FileCorruptedException"/> for damaged bytes, the parser's
+    /// <see cref="System.Xml.XmlException"/> for damaged WordML or Flat OPC XML and
     /// <see cref="UnsupportedFileFormatException"/> for a format it cannot load.
     /// </summary>
     internal static readonly InputLoading Loading = new(
@@ -207,7 +208,7 @@ internal sealed class WordsDocumentLoader
     private static LoadFailureKind Classify(Exception exception) => exception switch
     {
         IncorrectPasswordException => LoadFailureKind.Password,
-        FileCorruptedException or UnsupportedFileFormatException => LoadFailureKind.Corrupt,
+        FileCorruptedException or System.Xml.XmlException or UnsupportedFileFormatException => LoadFailureKind.Corrupt,
         _ => LoadFailureKind.Other,
     };
 
