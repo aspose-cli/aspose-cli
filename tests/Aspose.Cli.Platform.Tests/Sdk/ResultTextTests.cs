@@ -136,6 +136,21 @@ public sealed class ResultTextTests
         Assert.Empty(Render(surface => ResultText.Properties(surface, "properties", null)));
     }
 
+    [Fact]
+    public void Source_WritesThePathFormatAndSize()
+    {
+        string text = Render(surface => ResultText.Source(surface, new SourceInfo { Path = "in.pdf", Format = "pdf", SizeBytes = 20_000 }));
+
+        Assert.Equal(["in.pdf (pdf, 20,000 bytes)"], Lines(text));
+    }
+
+    [Theory]
+    [InlineData(612.0, "612")]
+    [InlineData(595.2756, "595.28")]
+    [InlineData(0.5, "0.5")]
+    public void Points_KeepsAtMostTwoDecimals(double value, string expected) =>
+        Assert.Equal(expected, TableText.Points(value));
+
     private static string Render(Action<TableSurface> render, TableFormat format = TableFormat.Plain)
     {
         using var writer = new StringWriter();

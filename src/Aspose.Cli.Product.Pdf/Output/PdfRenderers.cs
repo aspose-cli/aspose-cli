@@ -9,7 +9,7 @@ internal static class PdfRenderers
     public static void Render(PdfInfoResult result, TableSurface surface)
     {
         PdfSummary pdf = result.Pdf;
-        surface.Out.WriteLine($"{result.Source.Path} ({result.Source.Format}, {TableText.Bytes(result.Source.SizeBytes)})");
+        ResultText.Source(surface, result.Source);
         surface.Out.WriteLine(
             $"pages: {pdf.PageCount}   version: {pdf.Version}   encrypted: {TableText.YesNo(pdf.Encrypted)}   "
             + $"tagged: {TableText.YesNo(pdf.Tagged)}   PDF/A declared: {pdf.PdfaProfile ?? "no"}");
@@ -23,7 +23,7 @@ internal static class PdfRenderers
                 + string.Join(
                     ", ",
                     pdf.DistinctPageSizes.Select(static size =>
-                        $"{Points(size.WidthPoints)} x {Points(size.HeightPoints)} pt ({size.PageCount})")));
+                        $"{TableText.Points(size.WidthPoints)} x {TableText.Points(size.HeightPoints)} pt ({size.PageCount})")));
         }
 
         if (result.PageLabels is { Count: > 0 } labels)
@@ -43,7 +43,7 @@ internal static class PdfRenderers
             {
                 table.AddRow(
                     TableText.Int(page.Page),
-                    $"{Points(page.WidthPoints)} x {Points(page.HeightPoints)}",
+                    $"{TableText.Points(page.WidthPoints)} x {TableText.Points(page.HeightPoints)}",
                     TableText.Int(page.Rotation));
             }
 
@@ -251,10 +251,7 @@ internal static class PdfRenderers
         surface.Out.WriteLine($"  appearance: {(result.Visible ? $"visible on page {result.Page}" : "invisible")}");
     }
 
-    private static string Points(double value) =>
-        value.ToString("0.##", CultureInfo.InvariantCulture);
-
     /// <summary>A rectangle as its top-left corner and size, such as <c>72,202 20x20</c>.</summary>
     private static string Rectangle(PdfRect rect) =>
-        $"{Points(rect.X)},{Points(rect.Y)} {Points(rect.Width)}x{Points(rect.Height)}";
+        $"{TableText.Points(rect.X)},{TableText.Points(rect.Y)} {TableText.Points(rect.Width)}x{TableText.Points(rect.Height)}";
 }
