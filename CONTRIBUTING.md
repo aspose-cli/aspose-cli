@@ -139,8 +139,10 @@ the boundaries the code keeps. Fix the product or the code to pass them, never t
   cases from the live `capabilities` output and each product's ops schema and check what every
   command must keep: no internal error, one valid error envelope, suggestions for mistakes that
   write nothing, refused unwritable outputs, read-only commands that succeed and write nothing,
-  dry runs that write nothing, outputs that reopen, and secrets (options and `*Env` operation
-  fields) that stay hidden whether the password is right or wrong. The product defects they find
+  dry runs that write nothing, outputs that reopen, secrets (options and `*Env` operation
+  fields) that stay hidden whether the password is right or wrong, and writes that disclose
+  evaluation mode (`evaluation-disclosed`: without a license every command that writes a
+  document warns `EVAL_MODE`; with one it does not). The product defects they find
   today are listed in `Invariants/known-violations.json`, grouped by root cause in `cause`. A case
   passes only when its violations, and their text, match its entries for the run's license mode:
   a new or changed violation fails, and so does a listed one that now holds: fix the product and
