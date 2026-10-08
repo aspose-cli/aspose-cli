@@ -151,6 +151,22 @@ public sealed class ResultTextTests
     public void Points_KeepsAtMostTwoDecimals(double value, string expected) =>
         Assert.Equal(expected, TableText.Points(value));
 
+    [Theory]
+    [InlineData(true, false, "  FIELD_STALE [block 4]: 1 field needs an update")]
+    [InlineData(false, false, "  FIELD_STALE: 1 field needs an update")]
+    [InlineData(true, true, "  FIELD_STALE [block 4]: 1 field needs an update|    hint: Update the fields.")]
+    public void Verification_WritesTheOutcomeEvidenceAndTheRequestedIssueParts(bool locations, bool hints, string expected)
+    {
+        VerificationIssue[] issues =
+        [
+            new() { Code = "FIELD_STALE", Message = "1 field needs an update", Location = "block 4", Hint = "Update the fields." },
+        ];
+
+        string text = Render(surface => ResultText.Verification(surface, ok: false, issues, "; 1 direct", locations, hints));
+
+        Assert.Equal(["verification: needs attention; 1 direct", .. expected.Split('|')], Lines(text));
+    }
+
     private static string Render(Action<TableSurface> render, TableFormat format = TableFormat.Plain)
     {
         using var writer = new StringWriter();

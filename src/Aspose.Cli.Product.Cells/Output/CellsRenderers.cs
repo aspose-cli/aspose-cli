@@ -166,16 +166,13 @@ internal static class CellsRenderers
         ResultText.Edit(surface, edit.DryRun, edit.Output, edit.Applied, edit.Backup);
         if (edit.Verification is { } verification)
         {
-            surface.Out.WriteLine(
-                $"verification: {(verification.Ok ? "ok" : "needs attention")}; " +
-                $"{verification.DirectChanges.Count} direct, " +
-                $"{verification.FormulaResultChanges.Count} formula-result, " +
-                $"{verification.FormulaErrors.Count} formula error(s)");
-            foreach (VerificationIssue issue in verification.Issues)
-            {
-                string at = issue.Location is null ? string.Empty : $" [{issue.Location}]";
-                surface.Out.WriteLine($"  {issue.Code}{at}: {issue.Message}");
-            }
+            ResultText.Verification(
+                surface,
+                verification.Ok,
+                verification.Issues,
+                $"; {verification.DirectChanges.Count} direct, "
+                + $"{verification.FormulaResultChanges.Count} formula-result, "
+                + $"{verification.FormulaErrors.Count} formula error(s)");
         }
     }
 

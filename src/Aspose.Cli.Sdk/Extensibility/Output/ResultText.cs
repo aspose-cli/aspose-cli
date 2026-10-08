@@ -5,7 +5,7 @@ namespace Aspose.Cli.Sdk.Extensibility.Output;
 
 /// <summary>
 /// Human-readable lines for the result parts every product shares: source titles, produced
-/// files, detail sections, safety backups and bounded-edit outcomes. Products add only their own
+/// files, detail sections, safety backups, bounded-edit outcomes and their verification. Products add only their own
 /// evidence.
 /// </summary>
 public static class ResultText
@@ -131,6 +131,41 @@ public static class ResultText
                 : backup.HoldsReplacedVersion ? "kept existing"
                 : $"kept existing, an earlier version last written {backup.LastWriteUtc.UtcDateTime.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)} UTC";
             surface.Out.WriteLine($"backup: {backup.Path} ({state})");
+        }
+    }
+
+    /// <summary>
+    /// Writes the read-back verification of an edit: <c>verification: ok</c> or
+    /// <c>verification: needs attention</c> followed by <paramref name="evidence"/>, then one
+    /// <c>  CODE [LOCATION]: MESSAGE</c> line per issue.
+    /// </summary>
+    /// <param name="surface">The surface to write to.</param>
+    /// <param name="ok">Whether the verification found no issue.</param>
+    /// <param name="issues">The issues found.</param>
+    /// <param name="evidence">
+    /// Product evidence written right after the outcome, with its own leading separator, such as
+    /// <c>; 2 direct</c>.
+    /// </param>
+    /// <param name="locations">Whether an issue line names the issue's location.</param>
+    /// <param name="hints">Whether an issue with a hint adds a <c>    hint: HINT</c> line.</param>
+    public static void Verification(
+        TableSurface surface,
+        bool ok,
+        IReadOnlyList<VerificationIssue> issues,
+        string? evidence = null,
+        bool locations = true,
+        bool hints = false)
+    {
+        ArgumentNullException.ThrowIfNull(issues);
+        surface.Out.WriteLine($"verification: {(ok ? "ok" : "needs attention")}{evidence}");
+        foreach (VerificationIssue issue in issues)
+        {
+            string at = locations && issue.Location is not null ? $" [{issue.Location}]" : string.Empty;
+            surface.Out.WriteLine($"  {issue.Code}{at}: {issue.Message}");
+            if (hints && issue.Hint is { } hint)
+            {
+                surface.Out.WriteLine($"    hint: {hint}");
+            }
         }
     }
 
