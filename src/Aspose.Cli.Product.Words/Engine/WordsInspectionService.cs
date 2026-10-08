@@ -54,9 +54,10 @@ internal sealed class WordsInspectionService
         });
         Revision[] revisions = compared.Revisions.Cast<Revision>().ToArray();
         OutputInfo? output = null;
+        string? format = null;
         if (request.Output is { } redline)
         {
-            string format = redline.Keeping(leftLoaded.FormatId).Id;
+            format = redline.Keeping(leftLoaded.FormatId).Id;
             SaveOptions options = WordsSavePipeline.Options(format);
             WordsSavePipeline.RemoveMacrosUnlessKept(compared, format);
             long size = _writer.Write(redline.Path, redline.Overwrite, temp => compared.Save(temp, options));
@@ -86,7 +87,7 @@ internal sealed class WordsInspectionService
             License = EnvelopeParts.License(state),
             Warnings = EnvelopeParts.CombineWarnings(
                 CompareWarnings(state, leftLoaded, rightLoaded, output is not null),
-                output is not null && MacrosDropped(leftLoaded, output.Format) is { } macros ? [macros] : null,
+                format is not null && MacrosDropped(leftLoaded, format) is { } macros ? [macros] : null,
                 revisions.Length > SampleLimit
                     ? [EnvelopeParts.ListTruncated("samples", SampleLimit, revisions.Length, "Write the redline with --out to review every revision.")]
                     : null),

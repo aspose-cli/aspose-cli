@@ -6,8 +6,11 @@ public sealed record OutputInfo
     /// <summary>Absolute path of the produced file.</summary>
     public required string Path { get; init; }
 
-    /// <summary>Format id of the produced file, e.g. <c>pdf</c>.</summary>
-    public required string Format { get; init; }
+    /// <summary>
+    /// Format id of the produced file, e.g. <c>pdf</c>; null for a companion file the engine
+    /// writes beside it, such as a script of an HTML5 deck.
+    /// </summary>
+    public required string? Format { get; init; }
 
     /// <summary>File size in bytes.</summary>
     public required long SizeBytes { get; init; }

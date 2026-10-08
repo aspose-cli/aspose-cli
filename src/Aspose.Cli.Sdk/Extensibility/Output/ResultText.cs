@@ -9,12 +9,15 @@ namespace Aspose.Cli.Sdk.Extensibility.Output;
 /// </summary>
 public static class ResultText
 {
-    /// <summary>Writes <c>wrote PATH (FORMAT, N bytes[, detail])</c>.</summary>
+    /// <summary>
+    /// Writes <c>wrote PATH (FORMAT, N bytes[, detail])</c>; a companion file without a format
+    /// reads <c>(companion, N bytes)</c>.
+    /// </summary>
     public static void Produced(TableSurface surface, OutputInfo output, string? detail = null)
     {
         ArgumentNullException.ThrowIfNull(output);
         string suffix = detail is null ? string.Empty : $", {detail}";
-        surface.Out.WriteLine($"wrote {output.Path} ({output.Format}, {TableText.Bytes(output.SizeBytes)}{suffix})");
+        surface.Out.WriteLine($"wrote {output.Path} ({output.Format ?? "companion"}, {TableText.Bytes(output.SizeBytes)}{suffix})");
     }
 
     /// <summary>
