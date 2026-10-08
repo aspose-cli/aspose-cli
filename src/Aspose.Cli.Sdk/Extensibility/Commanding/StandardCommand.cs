@@ -52,7 +52,9 @@ public static class StandardCommand
                 standard, parse, context, standardInputTaken?.Invoke(parse) != true);
             try
             {
-                return handler(parse, invocation);
+                // The write pipeline discloses evaluation output for every product command alike.
+                ResultEnvelope result = handler(parse, invocation);
+                return context.Binding.Publishing?.Disclose(result) ?? result;
             }
             catch (CliException error) when (invocation.ForPairedInput(error) is var restated && restated != error)
             {

@@ -81,11 +81,15 @@ public sealed class ExtractionGuard : IDisposable
         catch { Dispose(); throw; }
     }
 
+    /// <summary>Runs after the extraction is published; the write pipeline records the publication.</summary>
+    internal Action? Committed { get; init; }
+
     public void Commit()
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         foreach (string directory in _plan.Directories) { _transaction.EnsureDirectory(directory); }
         _transaction.Commit();
+        Committed?.Invoke();
     }
 
     public void Dispose()
