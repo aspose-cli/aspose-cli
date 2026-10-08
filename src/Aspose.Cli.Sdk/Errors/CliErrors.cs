@@ -59,6 +59,32 @@ public static partial class CliErrors
         details: new JsonObject { ["path"] = path });
 
     /// <summary>
+    /// A protection inside a document, such as a workbook's structure or a document's editing
+    /// restriction, that has a password the operation did not supply or supplied wrongly. It is
+    /// the same mistake as a file's open password, so it has the same codes and hint.
+    /// </summary>
+    /// <param name="passwordGiven">Whether the operation supplied a password.</param>
+    /// <param name="target">What is protected, such as <c>the workbook structure</c>.</param>
+    /// <param name="operationField">The operation field that supplies the password.</param>
+    /// <param name="innerException">The engine's refusal, if any.</param>
+    public static CliException ProtectionPassword(
+        bool passwordGiven,
+        string target,
+        string operationField,
+        Exception? innerException = null)
+    {
+        ErrorCode code = passwordGiven ? ErrorCodes.PasswordInvalid : ErrorCodes.PasswordRequired;
+        return new CliException(
+            code,
+            passwordGiven
+                ? $"The provided password does not unprotect {target}."
+                : $"The protection of {target} has a password.",
+            hint: PasswordHint(code, operationField),
+            details: new JsonObject { ["target"] = target, ["field"] = operationField },
+            innerException: innerException);
+    }
+
+    /// <summary>
     /// Restates a password error raised while opening a file an operation reads, whose loader
     /// cannot know where the password came from, for the operation's own password field.
     /// </summary>

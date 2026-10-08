@@ -19,7 +19,7 @@ are in `aspose-cli docs editing`.
 - `REVISION_NOT_FOUND`: a `revisions` number of `accept_revisions` or
   `reject_revisions` goes past the changes `words inspect --detail revisions`
   lists.
-- `DOCUMENT_PROTECTED`: the `unprotect` password was wrong
+- `PASSWORD_INVALID` from `unprotect`: its `passwordEnv` password was wrong
   ([editing](editing.md#protection-and-encryption)).
 - `DOCUMENT_HAS_REVISIONS`: `words compare` inputs must be revision-free; list
   the revisions with `words inspect --detail revisions` ([revisions](revisions.md)).

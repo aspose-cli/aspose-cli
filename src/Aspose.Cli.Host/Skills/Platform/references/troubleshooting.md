@@ -104,7 +104,10 @@ aspose-cli capabilities --output json
   failed. Ask the user; never guess. Pass it with `--password-env <VAR>` or
   `--password-stdin`. A command that reads two documents, such as `compare`,
   names the one in `details.input` and its own option in the hint, for example
-  `--right-password-env`.
+  `--right-password-env`. A protect or unprotect operation, such as
+  `unprotect_sheet`, reads its password from the variable its `passwordEnv`
+  field names; its error names the protected part in `details.target` and that
+  field in `details.field`.
 
 **Usage and validation (exit 2 and 4)**
 

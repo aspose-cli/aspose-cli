@@ -226,7 +226,7 @@ one should restart.
   interface and do not bind the CLI. Editing a restricted document succeeds,
   reports `PROTECTION_NOT_ENFORCED` and keeps the restrictions in a Word
   format output. `unprotect`
-  with `passwordEnv` checks the password and fails with `DOCUMENT_PROTECTED`
+  with `passwordEnv` checks the password and fails with `PASSWORD_INVALID`
   when it is wrong; without `passwordEnv` it removes the restrictions whatever
   their password, so use it only when the user owns that decision.
 - An encrypted input needs `--password-env` to open, and `inspect` reports

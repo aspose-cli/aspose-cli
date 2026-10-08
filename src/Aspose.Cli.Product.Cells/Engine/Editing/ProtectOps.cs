@@ -75,13 +75,7 @@ internal static class ProtectOps
         }
         catch (CellsException exception) when (exception.Code == ExceptionType.IncorrectPassword)
         {
-            throw password is null
-                ? new CliException(ErrorCodes.PasswordRequired, $"The protection of {target} has a password.",
-                    hint: CliErrors.PasswordHint(ErrorCodes.PasswordRequired, "passwordEnv"),
-                    innerException: exception)
-                : new CliException(ErrorCodes.PasswordInvalid, $"The provided password does not unprotect {target}.",
-                    hint: CliErrors.PasswordHint(ErrorCodes.PasswordInvalid, "passwordEnv"),
-                    innerException: exception);
+            throw CliErrors.ProtectionPassword(password is not null, target, "passwordEnv", exception);
         }
     }
 
