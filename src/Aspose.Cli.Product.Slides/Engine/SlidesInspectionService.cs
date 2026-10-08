@@ -9,14 +9,14 @@ namespace Aspose.Cli.Product.Slides.Engine;
 /// <summary>Owns bounded shape and speaker-notes text search.</summary>
 internal sealed class SlidesInspectionService
 {
-    private readonly ILicenseGate _licenseGate;
+    private readonly ILicenseState _license;
     private readonly SlidesPresentationLoader _loader;
 
     internal SlidesInspectionService(
-        ILicenseGate licenseGate,
+        ILicenseState license,
         SlidesPresentationLoader loader)
     {
-        _licenseGate = licenseGate ?? throw new ArgumentNullException(nameof(licenseGate));
+        _license = license ?? throw new ArgumentNullException(nameof(license));
         _loader = loader;
     }
 
@@ -25,7 +25,7 @@ internal sealed class SlidesInspectionService
         TextSearch text = request.Query.Text;
         string scope = request.Query.Scope ?? PresentationSearchScopes.All;
 
-        LicenseState state = _licenseGate.EnsureApplied();
+        LicenseState state = _license.License;
         using LoadedPresentation loaded = _loader.Open(filePath, request.Password);
         SearchHits<SlidesSearchHit> hits = request.Query.Collect<SlidesSearchHit>();
         foreach ((ISlide slide, int index) in loaded.Presentation.Slides.Select((slide, index) => (slide, index)))

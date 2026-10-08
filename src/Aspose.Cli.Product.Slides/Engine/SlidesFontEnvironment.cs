@@ -13,14 +13,14 @@ namespace Aspose.Cli.Product.Slides.Engine;
 /// <summary>Aspose.Slides font diagnostics behind the product-neutral font port.</summary>
 internal sealed class SlidesFontEnvironment : IFontEnvironment
 {
-    private readonly ILicenseGate _licenseGate;
+    private readonly ILicenseState _license;
     private readonly SlidesPresentationLoader _loader;
 
     public SlidesFontEnvironment(
-        ILicenseGate licenseGate,
+        ILicenseState license,
         ResourceBudgetLedger resourceBudgets)
     {
-        _licenseGate = licenseGate ?? throw new ArgumentNullException(nameof(licenseGate));
+        _license = license ?? throw new ArgumentNullException(nameof(license));
         _loader = new SlidesPresentationLoader(resourceBudgets);
     }
 
@@ -88,7 +88,7 @@ internal sealed class SlidesFontEnvironment : IFontEnvironment
 
     private FontCheckResult CheckFontsCore(string filePath, FontCheckRequest request)
     {
-        LicenseState state = _licenseGate.EnsureApplied();
+        LicenseState state = _license.License;
         using LoadedPresentation loaded = _loader.Open(filePath, request.Password);
         Dictionary<string, string> substitutions = loaded.Presentation.FontsManager.GetSubstitutions()
             .ToDictionary(static item => item.OriginalFontName, static item => item.SubstitutedFontName, StringComparer.Ordinal);

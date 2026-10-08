@@ -2,7 +2,6 @@ using System.Globalization;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Rendering;
-using Aspose.Cli.Sdk.Results;
 using Aspose.Slides;
 using Aspose.Slides.Charts;
 using Aspose.Slides.Export;
@@ -229,17 +228,35 @@ internal static class SlidesEngineSupport
 
     /// <summary>
     /// Whether a shape is the watermark text box an evaluation save adds to every slide: a
-    /// select- and position-locked shape, not a placeholder, whose text starts with the
-    /// evaluation notice, which evaluation mode itself reads cut short.
+    /// select- and position-locked shape, not a placeholder, whose text is the evaluation notice
+    /// "Evaluation only." followed by "Created with Aspose.Slides ...". Evaluation mode reads each
+    /// run of it cut to its first characters, so there the runs must start "Evalu" and "Creat";
+    /// a box of the user's that only starts "Evaluation" is never taken for the watermark.
     /// </summary>
-    internal static bool IsEvaluationWatermark(IShape shape) =>
-        shape is IAutoShape { Placeholder: null, TextFrame: { } frame } box
-        && box.ShapeLock is { SelectLocked: true, PositionLocked: true }
-        && frame.Text?.StartsWith("Evalu", StringComparison.Ordinal) == true;
+    internal static bool IsEvaluationWatermark(IShape shape)
+    {
+        if (shape is not IAutoShape { Placeholder: null, TextFrame: { } frame } box
+            || box.ShapeLock is not { SelectLocked: true, PositionLocked: true })
+        {
+            return false;
+        }
 
+        string[] runs = [.. frame.Paragraphs.SelectMany(static paragraph => paragraph.Portions)
+            .Select(static portion => portion.Text)
+            .Where(static text => !string.IsNullOrWhiteSpace(text))];
+        return runs.Any(CutByEvaluation)
+            ? runs is [{ } evaluation, { } created, ..]
+                && evaluation.StartsWith("Evalu", StringComparison.Ordinal)
+                && created.StartsWith("Creat", StringComparison.Ordinal)
+            : frame.Text is { } text
+                && text.StartsWith("Evaluation only.", StringComparison.Ordinal)
+                && text.Contains("Created with Aspose.Slides", StringComparison.Ordinal);
+    }
+
+    /// <summary>Whether evaluation mode cut short text it read from the presentation, other than its own watermark.</summary>
     internal static bool EvaluationInputTruncated(Presentation presentation) =>
         presentation.Slides.Any(static slide =>
-            slide.Shapes.Any(static shape => CutByEvaluation(ShapeText(shape)))
+            slide.Shapes.Any(static shape => !IsEvaluationWatermark(shape) && CutByEvaluation(ShapeText(shape)))
             || CutByEvaluation(Notes(slide)));
 
     /// <summary>Whether evaluation mode replaced the read text with its truncation notice.</summary>
@@ -451,22 +468,17 @@ internal static class SlidesEngineSupport
     }
 
     /// <summary>
-    /// The warnings of an output produced from the presentation, with its evaluation watermark.
-    /// Evaluation mode cuts text short only where it is read, so the output warns of it only
-    /// when the output holds text the CLI read, as extracted text and Markdown do; saved
-    /// presentations, PDFs and images keep the full text.
+    /// The warnings of an output produced from the presentation; the write pipeline adds the
+    /// evaluation disclosure. Evaluation mode cuts text short only where it is read, so the
+    /// output warns of it only when the output holds text the CLI read, as extracted text and
+    /// Markdown do; saved presentations, PDFs and images keep the full text.
     /// </summary>
-    internal static IReadOnlyList<Warning>? OutputWarnings(LicenseState state, LoadedPresentation loaded, bool textRead) =>
+    internal static IReadOnlyList<Warning>? WrittenWarnings(LicenseState state, LoadedPresentation loaded, bool textRead) =>
         Warnings(state, loaded, output: true, textRead);
 
     private static IReadOnlyList<Warning>? Warnings(LicenseState state, LoadedPresentation loaded, bool output, bool textRead)
     {
         var warnings = new List<Warning>();
-        if (output && state == LicenseState.Evaluation)
-        {
-            warnings.Add(EnvelopeParts.EvaluationWatermark);
-        }
-
         if (textRead && state == LicenseState.Evaluation && EvaluationInputTruncated(loaded.Presentation))
         {
             warnings.Add(EvaluationInputWarning);

@@ -1,6 +1,8 @@
 using Aspose.Cli.Product.Slides.Contracts;
 using Aspose.Cli.TestKit;
+using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Licensing;
+using Aspose.Cli.Sdk.Results;
 using Aspose.Slides;
 using Aspose.Slides.Export;
 
@@ -16,7 +18,23 @@ public sealed class SlidesEngineFixture : IDisposable
         static (resolution, environment) => new SlidesLicenseGate(resolution, environment));
     internal SlidesEngine Engine =>
         ProductTestBudgets.StartEngine<SlidesModule, SlidesEngine>(
-            (budgets, writer) => new SlidesEngine(Gate, budgets, writer));
+            (budgets, writer) => new SlidesEngine(Outputs(writer), budgets));
+
+    /// <summary>The write pipeline of one invocation, as the product binding creates it.</summary>
+    internal OutputPipeline<Presentation> Outputs(SafeFileWriter writer) => new(Gate, new SlidesEvaluationProfile(), writer);
+
+    /// <summary>
+    /// Runs one engine call as a command does: on its own engine and write pipeline, whose
+    /// evaluation disclosure the command template adds to the result.
+    /// </summary>
+    internal TResult Disclosed<TResult>(Func<SlidesEngine, TResult> call)
+        where TResult : ResultEnvelope
+    {
+        OutputPipeline<Presentation>? outputs = null;
+        SlidesEngine engine = ProductTestBudgets.StartEngine<SlidesModule, SlidesEngine>(
+            (budgets, writer) => new SlidesEngine(outputs = Outputs(writer), budgets));
+        return (TResult)outputs!.Disclose(call(engine));
+    }
     public LicenseState LicenseState => Gate.EnsureApplied();
 
     /// <summary>
