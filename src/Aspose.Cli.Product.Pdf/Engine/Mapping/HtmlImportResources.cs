@@ -62,10 +62,9 @@ internal sealed class HtmlImportResources(string htmlPath, ResourceBudgetLedger 
 
             if (!allowNetwork && _network.Count > 0)
             {
-                throw new CliException(
-                    ErrorCodes.FeatureUnsupported,
+                throw CliErrors.ResourceRefused(
                     $"The PDF importer resolved {_network.Count} network resource(s), starting with '{_network[0]}', and may already have requested them; no PDF was written.",
-                    hint: "Remove every network address from the HTML, or save the resources beside it and reference them by relative path.");
+                    "Remove every network address from the HTML, or save the resources beside it and reference them by relative path.");
             }
         }
     }

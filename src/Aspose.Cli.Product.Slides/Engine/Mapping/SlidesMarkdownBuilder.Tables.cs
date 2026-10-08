@@ -45,12 +45,11 @@ internal static partial class SlidesMarkdownBuilder
 
         if (header.Count > SlidesInsertTableOp.MaxCols || rows.Count > SlidesInsertTableOp.MaxRows)
         {
-            throw new CliException(
-                ErrorCodes.FeatureUnsupported,
+            throw CliErrors.ContentUnsupported(
                 string.Create(
                     CultureInfo.InvariantCulture,
                     $"The Markdown table under '{title}' has {rows.Count} rows and {header.Count} columns; a slide table holds at most {SlidesInsertTableOp.MaxRows} rows and {SlidesInsertTableOp.MaxCols} columns."),
-                hint: "Split the table into several tables under their own headings.");
+                "Split the table into several tables under their own headings.");
         }
 
         index = next - 1;

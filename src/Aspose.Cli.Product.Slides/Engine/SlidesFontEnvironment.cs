@@ -75,8 +75,7 @@ internal sealed class SlidesFontEnvironment : IFontEnvironment
         if (unreadable.Length > 0)
         {
             string names = string.Join(", ", unreadable.Select(static name => $"'{name}'"));
-            throw new CliException(
-                ErrorCodes.FeatureUnsupported,
+            throw CliErrors.EnvironmentUnsupported(
                 $@"The per-user font registry key HKCU\{FontsKey} holds {unreadable.Length} value(s) that are not strings, {names}, which the Slides engine cannot read.",
                 $@"Remove {names} from HKCU\{FontsKey}; Windows writes only string values there.");
         }

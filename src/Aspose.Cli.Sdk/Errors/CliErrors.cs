@@ -692,6 +692,40 @@ public static partial class CliErrors
             });
     }
 
+    /// <summary>
+    /// Input content names a resource the CLI does not let the document engine read: a network
+    /// address, script, a compressed resource it cannot check, or a file outside the input's
+    /// directory. Nothing was written.
+    /// </summary>
+    /// <param name="message">What the input names and why it is refused.</param>
+    /// <param name="hint">How to make the resource local and safe.</param>
+    public static CliException ResourceRefused(string message, string hint) => new(
+        ErrorCodes.FeatureUnsupported,
+        message,
+        hint: hint);
+
+    /// <summary>
+    /// Input content that the output cannot hold, such as a table larger than a slide table
+    /// may be. The caller has to restructure the content.
+    /// </summary>
+    /// <param name="message">What the content is and the limit it exceeds.</param>
+    /// <param name="hint">How to restructure the content.</param>
+    public static CliException ContentUnsupported(string message, string hint) => new(
+        ErrorCodes.FeatureUnsupported,
+        message,
+        hint: hint);
+
+    /// <summary>
+    /// The local environment a document engine reads, such as the font registry, holds
+    /// something the engine cannot read, so every document would fail the same way.
+    /// </summary>
+    /// <param name="message">What in the environment the engine cannot read.</param>
+    /// <param name="hint">How to repair the environment.</param>
+    public static CliException EnvironmentUnsupported(string message, string hint) => new(
+        ErrorCodes.FeatureUnsupported,
+        message,
+        hint: hint);
+
     public static CliException LicenseFileNotFound(string path, string source) => new(
         ErrorCodes.LicenseFileNotFound,
         $"License file configured via {source} does not exist: {path}",

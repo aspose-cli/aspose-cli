@@ -313,10 +313,9 @@ internal static partial class SlidesMarkdownBuilder
         if (Uri.TryCreate(value, UriKind.Absolute, out Uri? uri)
             && !uri.IsFile)
         {
-            throw new CliException(
-                ErrorCodes.FeatureUnsupported,
+            throw CliErrors.ResourceRefused(
                 $"Remote Markdown image is blocked: {value}.",
-                hint: "Download the image beside the Markdown file and reference it with a relative path.");
+                "Download the image beside the Markdown file and reference it with a relative path.");
         }
 
         string path = Path.GetFullPath(Path.Combine(root, value));
