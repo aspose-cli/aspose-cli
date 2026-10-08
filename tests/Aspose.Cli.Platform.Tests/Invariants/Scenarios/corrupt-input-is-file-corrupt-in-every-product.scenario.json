@@ -1,0 +1,33 @@
+{
+  "name": "a damaged input of the product's own extension is FILE_CORRUPT in every product, whatever its container signature",
+  "files": {
+    "text.xlsx": { "text": "This is not a document.\n" },
+    "text.pdf": { "text": "This is not a document.\n" },
+    "text.pptx": { "text": "This is not a document.\n" },
+    "text.docx": { "text": "This is not a document.\n" },
+    "zip.xlsx": { "base64": "UEsDBAECAwQFBgcICQo=" },
+    "zip.pdf": { "base64": "UEsDBAECAwQFBgcICQo=" },
+    "zip.pptx": { "base64": "UEsDBAECAwQFBgcICQo=" },
+    "zip.docx": { "base64": "UEsDBAECAwQFBgcICQo=" },
+    "ole.xlsx": { "base64": "0M8R4KGxGuEAAAAAAAAAAA==" },
+    "ole.pdf": { "base64": "0M8R4KGxGuEAAAAAAAAAAA==" },
+    "ole.pptx": { "base64": "0M8R4KGxGuEAAAAAAAAAAA==" },
+    "ole.docx": { "base64": "0M8R4KGxGuEAAAAAAAAAAA==" },
+    "header.pdf": { "base64": "JVBERi0xLjcKMSAwIG9iago8PCAvVHlwZSAvQ2F0YWxvZw==" }
+  },
+  "steps": [
+    { "args": ["cells", "inspect", "text.xlsx"], "expect": { "exitCode": 3, "error": "FILE_CORRUPT", "files": { "nothingWritten": true } } },
+    { "args": ["pdf", "inspect", "text.pdf"], "expect": { "exitCode": 3, "error": "FILE_CORRUPT", "files": { "nothingWritten": true } } },
+    { "args": ["slides", "inspect", "text.pptx"], "expect": { "exitCode": 3, "error": "FILE_CORRUPT", "files": { "nothingWritten": true } } },
+    { "args": ["words", "inspect", "text.docx"], "expect": { "exitCode": 3, "error": "FILE_CORRUPT", "files": { "nothingWritten": true } } },
+    { "args": ["cells", "inspect", "zip.xlsx"], "expect": { "exitCode": 3, "error": "FILE_CORRUPT", "files": { "nothingWritten": true } } },
+    { "args": ["pdf", "inspect", "zip.pdf"], "expect": { "exitCode": 3, "error": "FILE_CORRUPT", "files": { "nothingWritten": true } } },
+    { "args": ["slides", "inspect", "zip.pptx"], "expect": { "exitCode": 3, "error": "FILE_CORRUPT", "files": { "nothingWritten": true } } },
+    { "args": ["words", "inspect", "zip.docx"], "expect": { "exitCode": 3, "error": "FILE_CORRUPT", "files": { "nothingWritten": true } } },
+    { "args": ["cells", "inspect", "ole.xlsx"], "expect": { "exitCode": 3, "error": "FILE_CORRUPT", "files": { "nothingWritten": true } } },
+    { "args": ["pdf", "inspect", "ole.pdf"], "expect": { "exitCode": 3, "error": "FILE_CORRUPT", "files": { "nothingWritten": true } } },
+    { "args": ["slides", "inspect", "ole.pptx"], "expect": { "exitCode": 3, "error": "FILE_CORRUPT", "files": { "nothingWritten": true } } },
+    { "args": ["words", "inspect", "ole.docx"], "expect": { "exitCode": 3, "error": "FILE_CORRUPT", "files": { "nothingWritten": true } } },
+    { "args": ["pdf", "inspect", "header.pdf"], "expect": { "exitCode": 3, "error": "FILE_CORRUPT", "files": { "nothingWritten": true } } }
+  ]
+}

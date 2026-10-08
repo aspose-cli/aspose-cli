@@ -1,0 +1,14 @@
+{
+  "name": "a damaged WordML or Flat OPC document is FILE_CORRUPT, as every other damaged input is, never an engine failure",
+  "files": {
+    "wordml.xml": { "text": "<?xml version=\"1.0\"?><?mso-application progid=\"Word.Document\"?><w:wordDocument xmlns:w=\"http://schemas.microsoft.com/office/word/2003/wordml\"><w:body><w:p>" },
+    "flat.xml": { "text": "<?xml version=\"1.0\" standalone=\"yes\"?><?mso-application progid=\"Word.Document\"?><pkg:package xmlns:pkg=\"http://schemas.microsoft.com/office/2006/xmlPackage\"><pkg:part pkg:name=\"/_rels/.rels\"" },
+    "wordml.docx": { "text": "<?xml version=\"1.0\"?><?mso-application progid=\"Word.Document\"?><w:wordDocument xmlns:w=\"http://schemas.microsoft.com/office/word/2003/wordml\"><w:body><w:p>" }
+  },
+  "steps": [
+    { "args": ["words", "inspect", "wordml.xml"], "expect": { "exitCode": 3, "error": "FILE_CORRUPT", "files": { "nothingWritten": true } } },
+    { "args": ["words", "inspect", "flat.xml"], "expect": { "exitCode": 3, "error": "FILE_CORRUPT", "files": { "nothingWritten": true } } },
+    { "args": ["words", "inspect", "wordml.docx"], "expect": { "exitCode": 3, "error": "FILE_CORRUPT", "files": { "nothingWritten": true } } },
+    { "args": ["words", "convert", "wordml.xml", "--to", "docx", "--out", "out.docx"], "expect": { "exitCode": 3, "error": "FILE_CORRUPT", "files": { "nothingWritten": true } } }
+  ]
+}

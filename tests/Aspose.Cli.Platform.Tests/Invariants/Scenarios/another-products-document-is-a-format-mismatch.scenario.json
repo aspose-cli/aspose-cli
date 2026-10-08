@@ -1,0 +1,29 @@
+{
+  "name": "another product's document under a product's own extension is FORMAT_MISMATCH naming that product, in every product that does not read it",
+  "files": {
+    "pdf.xlsx": { "fixture": "pdf.pdf" },
+    "slides.xlsx": { "fixture": "slides.pptx" },
+    "words.xlsx": { "fixture": "words.docx" },
+    "cells.pdf": { "fixture": "cells.xlsx" },
+    "slides.pdf": { "fixture": "slides.pptx" },
+    "words.pdf": { "fixture": "words.docx" },
+    "cells.pptx": { "fixture": "cells.xlsx" },
+    "pdf.pptx": { "fixture": "pdf.pdf" },
+    "words.pptx": { "fixture": "words.docx" },
+    "cells.docx": { "fixture": "cells.xlsx" },
+    "slides.docx": { "fixture": "slides.pptx" }
+  },
+  "steps": [
+    { "args": ["cells", "inspect", "pdf.xlsx"], "expect": { "exitCode": 6, "error": "FORMAT_MISMATCH", "json": [{ "path": "error.details.detected", "contains": "pdf" }], "files": { "nothingWritten": true } } },
+    { "args": ["cells", "inspect", "slides.xlsx"], "expect": { "exitCode": 6, "error": "FORMAT_MISMATCH", "json": [{ "path": "error.details.detected", "contains": "slides" }], "files": { "nothingWritten": true } } },
+    { "args": ["cells", "inspect", "words.xlsx"], "expect": { "exitCode": 6, "error": "FORMAT_MISMATCH", "json": [{ "path": "error.details.detected", "contains": "words" }], "files": { "nothingWritten": true } } },
+    { "args": ["pdf", "inspect", "cells.pdf"], "expect": { "exitCode": 6, "error": "FORMAT_MISMATCH", "json": [{ "path": "error.details.detected", "contains": "cells" }], "files": { "nothingWritten": true } } },
+    { "args": ["pdf", "inspect", "slides.pdf"], "expect": { "exitCode": 6, "error": "FORMAT_MISMATCH", "json": [{ "path": "error.details.detected", "contains": "slides" }], "files": { "nothingWritten": true } } },
+    { "args": ["pdf", "inspect", "words.pdf"], "expect": { "exitCode": 6, "error": "FORMAT_MISMATCH", "json": [{ "path": "error.details.detected", "contains": "words" }], "files": { "nothingWritten": true } } },
+    { "args": ["slides", "inspect", "cells.pptx"], "expect": { "exitCode": 6, "error": "FORMAT_MISMATCH", "json": [{ "path": "error.details.detected", "contains": "cells" }], "files": { "nothingWritten": true } } },
+    { "args": ["slides", "inspect", "pdf.pptx"], "expect": { "exitCode": 6, "error": "FORMAT_MISMATCH", "json": [{ "path": "error.details.detected", "contains": "pdf" }], "files": { "nothingWritten": true } } },
+    { "args": ["slides", "inspect", "words.pptx"], "expect": { "exitCode": 6, "error": "FORMAT_MISMATCH", "json": [{ "path": "error.details.detected", "contains": "words" }], "files": { "nothingWritten": true } } },
+    { "args": ["words", "inspect", "cells.docx"], "expect": { "exitCode": 6, "error": "FORMAT_MISMATCH", "json": [{ "path": "error.details.detected", "contains": "cells" }], "files": { "nothingWritten": true } } },
+    { "args": ["words", "inspect", "slides.docx"], "expect": { "exitCode": 6, "error": "FORMAT_MISMATCH", "json": [{ "path": "error.details.detected", "contains": "slides" }], "files": { "nothingWritten": true } } }
+  ]
+}
