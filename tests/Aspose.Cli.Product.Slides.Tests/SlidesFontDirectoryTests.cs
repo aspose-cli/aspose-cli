@@ -17,7 +17,7 @@ public sealed class SlidesFontDirectoryTests
         string fonts = fixture.File("fonts");
         FontFixtures.WriteUniqueFont(fonts);
         string input = CreatePresentation(fixture, fixture.File("fixture.pptx"));
-        var environment = new SlidesFontEnvironment(fixture.Gate, ProductTestBudgets.Create<SlidesModule>());
+        var environment = new SlidesFontEnvironment(fixture.Outputs(ProductTestBudgets.Start<SlidesModule>().Writer), ProductTestBudgets.Create<SlidesModule>());
 
         Assert.False(FixtureAvailable(environment, input));
         using (environment.UseFonts(FontSearchProfile.Explicit([fonts])))

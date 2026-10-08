@@ -10,20 +10,17 @@ namespace Aspose.Cli.Product.Slides.Engine;
 /// <summary>Owns validated presentation mutation and verification.</summary>
 internal sealed class SlidesMutationService
 {
-    private readonly ILicenseGate _licenseGate;
+    private readonly OutputPipeline<Presentation> _outputs;
     private readonly ResourceBudgetLedger _resourceBudgets;
-    private readonly SafeFileWriter _writer;
     private readonly SlidesPresentationLoader _loader;
 
     internal SlidesMutationService(
-        ILicenseGate licenseGate,
+        OutputPipeline<Presentation> outputs,
         ResourceBudgetLedger resourceBudgets,
-        SafeFileWriter writer,
         SlidesPresentationLoader loader)
     {
-        _licenseGate = licenseGate ?? throw new ArgumentNullException(nameof(licenseGate));
+        _outputs = outputs ?? throw new ArgumentNullException(nameof(outputs));
         _resourceBudgets = resourceBudgets;
-        _writer = writer ?? throw new ArgumentNullException(nameof(writer));
         _loader = loader;
     }
 
@@ -35,7 +32,7 @@ internal sealed class SlidesMutationService
         batch = SlidesOp.Catalog.Prepare(batch);
         string format = request.Output.Format.Id;
 
-        LicenseState state = _licenseGate.EnsureApplied();
+        LicenseState state = _outputs.License;
         FileWritePrecondition precondition = FileWritePrecondition.Capture(filePath);
         using LoadedPresentation loaded = _loader.Open(filePath, request.Password);
         SourceInfo input = Source(filePath, loaded.FormatId);
@@ -59,7 +56,7 @@ internal sealed class SlidesMutationService
             License = EnvelopeParts.License(state),
             Warnings = request.Options.DryRun
                 ? EnvelopeParts.CombineWarnings(InputWarnings(state, loaded, textRead: false), warnings)
-                : EnvelopeParts.CombineWarnings(OutputWarnings(state, loaded, textRead: false), warnings, EnvelopeParts.BackupWarnings(publication.Backup)),
+                : EnvelopeParts.CombineWarnings(WrittenWarnings(state, loaded, textRead: false), warnings, EnvelopeParts.BackupWarnings(publication.Backup)),
         };
     }
 
@@ -124,12 +121,11 @@ internal sealed class SlidesMutationService
         {
             Presentation presentation = loaded.Presentation;
             Encrypt(presentation, request.EncryptPassword);
-            using var transaction = new AtomicOutputSetWriter(_writer, request.Output.Directory, "slides-edit");
+            using OutputSet<Presentation> transaction = _outputs.BeginSet([request.Output.Directory], "slides-edit");
             StagedOutput write = transaction.Stage(
                 request.Output.Path,
                 request.Output.Overwrite,
-                request.Output.BackupPath,
-                precondition,
+                presentation,
                 temp =>
                 {
                     presentation.Save(temp, SaveFormatFor(format));
@@ -137,7 +133,9 @@ internal sealed class SlidesMutationService
                     using LoadedPresentation reopened = _loader.OpenPublishedCandidate(
                         temp,
                         request.EncryptPassword ?? request.Password);
-                });
+                },
+                backupPath: request.Output.BackupPath,
+                inputPrecondition: precondition);
             output = new OutputInfo
             {
                 Path = request.Output.Path,

@@ -11,20 +11,20 @@ internal sealed class SlidesReadService
     /// <summary>The most entries the <c>media</c> detail lists; <c>extract --what media</c> exports them all.</summary>
     internal const int MediaListLimit = 100;
 
-    private readonly ILicenseGate _licenseGate;
+    private readonly ILicenseState _license;
     private readonly SlidesPresentationLoader _loader;
 
     internal SlidesReadService(
-        ILicenseGate licenseGate,
+        ILicenseState license,
         SlidesPresentationLoader loader)
     {
-        _licenseGate = licenseGate ?? throw new ArgumentNullException(nameof(licenseGate));
+        _license = license ?? throw new ArgumentNullException(nameof(license));
         _loader = loader;
     }
 
     internal PresentationInfoResult GetInfo(string filePath, PresentationInfoRequest request)
     {
-        LicenseState state = _licenseGate.EnsureApplied();
+        LicenseState state = _license.License;
         using LoadedPresentation loaded = _loader.Open(filePath, request.Password);
         Presentation presentation = loaded.Presentation;
         bool Details(string name) => request.Details?.Contains(name, StringComparer.Ordinal) == true;
@@ -120,7 +120,7 @@ internal sealed class SlidesReadService
 
     internal PresentationReadResult Read(string filePath, PresentationReadRequest request)
     {
-        LicenseState state = _licenseGate.EnsureApplied();
+        LicenseState state = _license.License;
         using LoadedPresentation loaded = _loader.Open(filePath, request.Password);
         Presentation presentation = loaded.Presentation;
         IReadOnlyList<int> requested = request.Slides is null

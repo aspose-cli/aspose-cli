@@ -15,20 +15,17 @@ internal sealed class SlidesProductionService
     /// <summary>Marks the slide number in a multi-slide output name: <c>deck.s3.png</c>.</summary>
     private const string SlidePartMarker = "s";
 
-    private readonly ILicenseGate _licenseGate;
+    private readonly OutputPipeline<Presentation> _outputs;
     private readonly ResourceBudgetLedger _resourceBudgets;
-    private readonly SafeFileWriter _writer;
     private readonly SlidesPresentationLoader _loader;
 
     internal SlidesProductionService(
-        ILicenseGate licenseGate,
+        OutputPipeline<Presentation> outputs,
         ResourceBudgetLedger resourceBudgets,
-        SafeFileWriter writer,
         SlidesPresentationLoader loader)
     {
-        _licenseGate = licenseGate ?? throw new ArgumentNullException(nameof(licenseGate));
+        _outputs = outputs ?? throw new ArgumentNullException(nameof(outputs));
         _resourceBudgets = resourceBudgets;
-        _writer = writer ?? throw new ArgumentNullException(nameof(writer));
         _loader = loader;
     }
 
@@ -42,7 +39,7 @@ internal sealed class SlidesProductionService
         const int displayWidth = 1920;
         const int cssWidth = 960;
         ArgumentNullException.ThrowIfNull(artifacts);
-        LicenseState state = _licenseGate.EnsureApplied();
+        LicenseState state = _outputs.License;
         using LoadedPresentation loaded = _loader.Open(filePath, request.Password);
         Presentation presentation = loaded.Presentation;
         int pixelWidth = request.Purpose == ViewPurpose.Display ? displayWidth : evidenceWidth;
@@ -99,7 +96,7 @@ internal sealed class SlidesProductionService
 
     internal SlidesConvertResult Convert(string filePath, PresentationConvertRequest request)
     {
-        LicenseState state = _licenseGate.EnsureApplied();
+        LicenseState state = _outputs.License;
         using LoadedPresentation loaded = _loader.Open(filePath, request.Password);
         IReadOnlyList<int>? slides = request.Slides is null
             ? null
@@ -131,7 +128,7 @@ internal sealed class SlidesProductionService
         else
         {
             SaveFormat format = SaveFormatFor(request.Output.Format.Id);
-            return _writer.Write(request.Output, temp =>
+            return _outputs.Write(request.Output, presentation, temp =>
             {
                 Save(temp);
                 loaded.Resources.ThrowIfFailed();
@@ -167,7 +164,7 @@ internal sealed class SlidesProductionService
         LoadedPresentation loaded,
         string targetFormatId)
     {
-        var warnings = OutputWarnings(state, loaded, textRead: targetFormatId == "md")?.ToList() ?? [];
+        var warnings = WrittenWarnings(state, loaded, textRead: targetFormatId == "md")?.ToList() ?? [];
         if (targetFormatId is "html" or "html5" or "md")
         {
             warnings.Add(new Warning
@@ -183,7 +180,7 @@ internal sealed class SlidesProductionService
 
     internal SlidesRenderResult Render(string filePath, PresentationRenderRequest request)
     {
-        LicenseState state = _licenseGate.EnsureApplied();
+        LicenseState state = _outputs.License;
         using LoadedPresentation loaded = _loader.Open(filePath, request.Password);
         IReadOnlyList<int> slides = request.AllSlides
             ? AllSlides(loaded.Presentation.Slides.Count)
@@ -198,7 +195,7 @@ internal sealed class SlidesProductionService
                 : request.Dpi ?? DefaultRasterDpi,
             Width = request.Output.Format.Id == "svg" ? null : request.Width,
             License = EnvelopeParts.License(state),
-            Warnings = OutputWarnings(state, loaded, textRead: false),
+            Warnings = WrittenWarnings(state, loaded, textRead: false),
         };
     }
 
@@ -222,14 +219,14 @@ internal sealed class SlidesProductionService
         }
 
         string directory = request.Output.Directory;
-        using var transaction = new AtomicOutputSetWriter(_writer, directory, transactionName);
+        using OutputSet<Presentation> transaction = _outputs.BeginSet([directory], transactionName);
         var targets = new List<(int Number, uint SlideId, string Path)>(slides.Count);
         foreach (int number in slides)
         {
             ISlide slide = presentation.Slides[number - 1];
             string path = request.Output.Part(SlidePartMarker, number, slides.Count);
             targets.Add((number, slide.SlideId, path));
-            transaction.Stage(path, request.Output.Overwrite, temp =>
+            transaction.Stage(path, request.Output.Overwrite, presentation, temp =>
             {
                 if (request.Output.Format.Id == "svg")
                 {
@@ -244,7 +241,7 @@ internal sealed class SlidesProductionService
                     outputStream,
                     request.Output.Format.Id == "png" ? ImageFormat.Png : ImageFormat.Jpeg,
                     quality: 92);
-            });
+            }, rendering: true, pages: [number]);
         }
 
         loaded.Resources.ThrowIfFailed();
@@ -263,7 +260,7 @@ internal sealed class SlidesProductionService
     }
     internal SlidesCreateResult Create(NewPresentationRequest request)
     {
-        LicenseState state = _licenseGate.EnsureApplied();
+        LicenseState state = _outputs.License;
         string format = request.Output.Format.Id;
 
         using LoadedPresentation template = request.TemplatePath is null
@@ -286,9 +283,10 @@ internal sealed class SlidesProductionService
         }
 
         Encrypt(presentation, request.EncryptPassword);
-        long size = _writer.Write(
+        long size = _outputs.Write(
             request.Output.Path,
             request.Output.Overwrite,
+            presentation,
             temp =>
             {
                 presentation.Save(temp, SaveFormatFor(format));
@@ -316,8 +314,8 @@ internal sealed class SlidesProductionService
                 },
             License = EnvelopeParts.License(state),
             Warnings = authoring.Count == 0
-                ? OutputWarnings(state, template, textRead: false)
-                : [.. OutputWarnings(state, template, textRead: false) ?? [], .. authoring],
+                ? WrittenWarnings(state, template, textRead: false)
+                : [.. WrittenWarnings(state, template, textRead: false) ?? [], .. authoring],
         };
     }
 }

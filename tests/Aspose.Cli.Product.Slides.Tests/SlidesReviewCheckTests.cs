@@ -376,7 +376,9 @@ public sealed class SlidesReviewCheckTests
             ISlide slide = presentation.Slides[0];
             IAutoShape box = slide.Shapes.AddAutoShape(ShapeType.Rectangle, 100, 100, 400, 80);
             box.FillFormat.FillType = FillType.NoFill;
-            box.TextFrame.Text = "Evaluation only.\nCreated with Aspose.Slides.";
+            // The watermark's notice is two paragraphs, which evaluation mode reads cut short each.
+            box.TextFrame.Text = "Evaluation only.";
+            box.TextFrame.Paragraphs.Add(new Paragraph { Text = "Created with Aspose.Slides." });
             box.ShapeLock.SelectLocked = true;
             box.ShapeLock.PositionLocked = true;
             slide.Shapes.AddTable(100, 100, [200, 200], [100, 100]);
@@ -394,6 +396,28 @@ public sealed class SlidesReviewCheckTests
 
         Assert.Equal(2, analysis.ExcludedEvaluationWatermarks);
         Assert.Empty(analysis.Findings);
+    }
+
+    [Fact]
+    public void LockedBoxThatOnlyStartsWithEvaluation_IsNeverTakenForTheWatermark()
+    {
+        // Evaluation mode reads every run as its first characters, so only the watermark's two
+        // runs, "Evaluation only." and "Created with Aspose.Slides", identify it there.
+        using var fixture = new SlidesEngineFixture();
+        string deck = fixture.File("criteria.pptx");
+        using (var presentation = new Presentation())
+        {
+            IAutoShape box = presentation.Slides[0].Shapes.AddAutoShape(ShapeType.Rectangle, 100, 100, 400, 80);
+            box.TextFrame.Text = "Evaluation criteria for the review";
+            box.ShapeLock.SelectLocked = true;
+            box.ShapeLock.PositionLocked = true;
+            presentation.Save(deck, SaveFormat.Pptx);
+        }
+
+        SlidesReviewAnalysis analysis = Review(fixture, deck);
+
+        // An evaluation save of the test deck adds the one real watermark.
+        Assert.Equal(fixture.LicenseState == Sdk.Licensing.LicenseState.Licensed ? 0 : 1, analysis.ExcludedEvaluationWatermarks);
     }
 
     private static SlidesReviewAnalysis Review(SlidesEngineFixture fixture, string path)

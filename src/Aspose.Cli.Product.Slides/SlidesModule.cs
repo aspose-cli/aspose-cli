@@ -42,23 +42,7 @@ public sealed class SlidesModule : IProductModule
             .Output<SlidesEditResult>(SlidesRenderers.Render)
             .Output<SlidesSearchResult>(SlidesRenderers.Render)
             .Commands(SlidesCommands.Create)
-            .Activator(Activate)
+            .Activator(static context => SlidesActivation.Activate(context, Manifest.Id))
             .Build();
-
-    private static ProductBinding<ISlidesEngine> Activate(
-        ProductActivationContext context) =>
-        ProductBinding.Create<ISlidesEngine>(
-            context,
-            Manifest.Id,
-            resolution => new SlidesLicenseGate(
-                resolution,
-                context.EnvironmentVariable),
-            license => new SlidesEngine(
-                license,
-                context.ResourceBudgets,
-                context.SafeFileWriter),
-            license => new SlidesFontEnvironment(
-                license,
-                context.ResourceBudgets));
 
 }

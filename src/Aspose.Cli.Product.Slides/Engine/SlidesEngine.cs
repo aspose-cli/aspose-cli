@@ -1,6 +1,7 @@
 using Aspose.Cli.Sdk.IO;
-using Aspose.Cli.Sdk.Licensing;
+using Aspose.Cli.Sdk.Results;
 using Aspose.Cli.Sdk.Views;
+using Aspose.Slides;
 
 namespace Aspose.Cli.Product.Slides.Engine;
 
@@ -17,27 +18,23 @@ internal sealed class SlidesEngine : ISlidesEngine
     private readonly SlidesMutationService _mutations;
 
     public SlidesEngine(
-        ILicenseGate licenseGate,
-        ResourceBudgetLedger resourceBudgets,
-        SafeFileWriter writer)
+        OutputPipeline<Presentation> outputs,
+        ResourceBudgetLedger resourceBudgets)
     {
-        ArgumentNullException.ThrowIfNull(licenseGate);
+        ArgumentNullException.ThrowIfNull(outputs);
         ArgumentNullException.ThrowIfNull(resourceBudgets);
-        ArgumentNullException.ThrowIfNull(writer);
 
         var loader = new SlidesPresentationLoader(resourceBudgets);
-        _reads = new SlidesReadService(licenseGate, loader);
-        _inspection = new SlidesInspectionService(licenseGate, loader);
+        _reads = new SlidesReadService(outputs, loader);
+        _inspection = new SlidesInspectionService(outputs, loader);
         _production = new SlidesProductionService(
-            licenseGate,
+            outputs,
             resourceBudgets,
-            writer,
             loader);
-        _extraction = new SlidesExtractionService(licenseGate, resourceBudgets, loader);
+        _extraction = new SlidesExtractionService(outputs, loader);
         _mutations = new SlidesMutationService(
-            licenseGate,
+            outputs,
             resourceBudgets,
-            writer,
             loader);
     }
 

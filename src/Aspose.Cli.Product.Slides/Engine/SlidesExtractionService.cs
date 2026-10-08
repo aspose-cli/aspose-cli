@@ -10,28 +10,25 @@ namespace Aspose.Cli.Product.Slides.Engine;
 /// <summary>Owns bounded extraction of embedded media, speaker notes and slide text.</summary>
 internal sealed class SlidesExtractionService
 {
-    private readonly ILicenseGate _licenseGate;
-    private readonly ResourceBudgetLedger _resourceBudgets;
+    private readonly OutputPipeline<Presentation> _outputs;
     private readonly SlidesPresentationLoader _loader;
 
     internal SlidesExtractionService(
-        ILicenseGate licenseGate,
-        ResourceBudgetLedger resourceBudgets,
+        OutputPipeline<Presentation> outputs,
         SlidesPresentationLoader loader)
     {
-        _licenseGate = licenseGate ?? throw new ArgumentNullException(nameof(licenseGate));
-        _resourceBudgets = resourceBudgets;
+        _outputs = outputs ?? throw new ArgumentNullException(nameof(outputs));
         _loader = loader;
     }
 
     internal SlidesExtractResult Extract(string filePath, PresentationExtractRequest request)
     {
-        LicenseState state = _licenseGate.EnsureApplied();
+        LicenseState state = _outputs.License;
         using LoadedPresentation loaded = _loader.Open(filePath, request.Password);
         IReadOnlyList<int> slides = request.Slides is null
             ? Enumerable.Range(1, loaded.Presentation.Slides.Count).ToArray()
             : ResolveSlideRange(request.Slides, loaded.Presentation.Slides.Count);
-        using var guard = new ExtractionGuard(_resourceBudgets, request.Output.Path, request.Output.Overwrite);
+        using ExtractionGuard guard = _outputs.BeginExtraction(request.Output.Path, request.Output.Overwrite);
         var items = new List<SlidesExtractedItem>();
 
         if (request.What == PresentationExtractKinds.Media)
@@ -76,7 +73,7 @@ internal sealed class SlidesExtractionService
             What = request.What,
             Items = items,
             License = EnvelopeParts.License(state),
-            Warnings = OutputWarnings(state, loaded, textRead: request.What != PresentationExtractKinds.Media),
+            Warnings = WrittenWarnings(state, loaded, textRead: request.What != PresentationExtractKinds.Media),
         };
     }
 

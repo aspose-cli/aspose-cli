@@ -118,13 +118,13 @@ public sealed class SlidesCoreWorkflowTests
         string input = fixture.CreatePresentation("convert.pptx", slides: 2);
         string output = fixture.File("converted" + SlidesFormats.Definitions.ExtensionFor(format));
 
-        SlidesConvertResult result = fixture.Engine.Convert(
+        SlidesConvertResult result = fixture.Disclosed(engine => engine.Convert(
             input,
             new PresentationConvertRequest
             {
                 Output = TestOutput.At(output, format: format),
                 Slides = PageRange.Parse("1"),
-            });
+            }));
 
         OutputInfo artifact = Assert.Single(result.Outputs);
         Assert.Equal(format, artifact.Format);

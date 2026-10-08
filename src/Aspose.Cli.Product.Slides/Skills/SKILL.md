@@ -62,7 +62,8 @@ Details: [design system](references/design-system.md).
   keep the full text. Each evaluation save adds another watermark text box to every slide, which
   reads list as content. A review in evaluation mode leaves those boxes out and counts them in its
   `excludedEvaluationWatermarks` coverage metric; a licensed review judges them like any shape
-  (for example `SLIDES_TEXT_OVERLAPS_OBJECT` over a table), so rebuild the deck with a license.
+  (for example `SLIDES_TEXT_OVERLAPS_OBJECT` over a table), and a licensed command whose output
+  keeps them warns `EVAL_INPUT_MARKED`, so rebuild the deck with a license.
 - Only PPTX and PPTM outputs can carry a password; `--encrypt-env` with any other `create`,
   `edit` or `convert` output is `OPTION_INVALID`.
 - `query` does not see chart content or separate table cells; read them back from a Markdown
