@@ -43,7 +43,7 @@ internal sealed class WordsMutationService
         batch = WordsOp.Catalog.Prepare(batch);
         LicenseState state = _licenseGate.EnsureApplied();
         FileWritePrecondition precondition = FileWritePrecondition.Capture(filePath);
-        using LoadedDocument loaded = _loader.Open(filePath, request.Password?.Reveal());
+        using LoadedDocument loaded = _loader.Open(filePath, request.Password);
         bool inputHadRevisions = loaded.Document.Revisions.Count > 0;
         bool inputWasSigned = loaded.Format.HasDigitalSignature;
         ProtectionType inputProtection = loaded.Document.ProtectionType;
@@ -51,8 +51,8 @@ internal sealed class WordsMutationService
         ValidateRequest(request, batch);
         FormatDescriptor written = request.Output.Keeping(loaded.FormatId);
         string format = written.Id;
-        string? outputPassword = request.EncryptPassword?.Reveal()
-            ?? (loaded.Format.IsEncrypted && written.Protectable ? request.Password?.Reveal() : null);
+        Secret? outputPassword = request.EncryptPassword
+            ?? (loaded.Format.IsEncrypted && written.Protectable ? request.Password : null);
         SaveOptions saveOptions = WordsSavePipeline.Options(format, outputPassword);
         if (request.Verify && !WordsFormats.IsLoad(format))
         {
@@ -221,7 +221,7 @@ internal sealed class WordsMutationService
         LocalDocumentResourceLoader resources,
         string format,
         SaveOptions saveOptions,
-        string? outputPassword,
+        Secret? outputPassword,
         bool detectTruncation)
     {
         OutputInfo? output = null;
@@ -345,7 +345,7 @@ internal sealed class WordsMutationService
     private WordsVerification Verify(
         string candidatePath,
         string format,
-        string? outputPassword,
+        Secret? outputPassword,
         Document baseline,
         ExpectedDocumentState expected,
         string? truncation)

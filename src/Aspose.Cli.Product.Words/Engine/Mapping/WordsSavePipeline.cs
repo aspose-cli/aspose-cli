@@ -20,7 +20,7 @@ internal static class WordsSavePipeline
         }
     }
 
-    public static SaveOptions Options(string formatId, string? password = null, IReadOnlyList<int>? pages = null, int? dpi = null)
+    public static SaveOptions Options(string formatId, Secret? password = null, IReadOnlyList<int>? pages = null, int? dpi = null)
     {
         SaveFormat format = WordsFormatMapper.ToSaveFormat(formatId);
         SaveOptions options = SaveOptions.CreateSaveOptions(format);
@@ -73,13 +73,13 @@ internal static class WordsSavePipeline
             image.Resolution = dpi.Value;
         }
 
-        if (password is not null)
+        if (password?.Reveal() is { } value)
         {
             switch (options)
             {
-                case OoxmlSaveOptions ooxml: ooxml.Password = password; break;
-                case DocSaveOptions doc: doc.Password = password; break;
-                case OdtSaveOptions odt: odt.Password = password; break;
+                case OoxmlSaveOptions ooxml: ooxml.Password = value; break;
+                case DocSaveOptions doc: doc.Password = value; break;
+                case OdtSaveOptions odt: odt.Password = value; break;
                 default: throw CliErrors.OptionInvalid(
                     "--encrypt",
                     $"the '{formatId}' format cannot be password-protected",

@@ -21,7 +21,7 @@ internal sealed class CellsReviewLayoutService
 
     internal CellsReviewLayout Inspect(
         string filePath,
-        string? password)
+        Secret? password)
     {
         ArgumentException.ThrowIfNullOrEmpty(filePath);
         _ = _licenseGate.EnsureApplied();

@@ -49,7 +49,7 @@ internal sealed class CellsProductionService
         ArgumentNullException.ThrowIfNull(request);
 
         LicenseState licenseState = _licenseGate.EnsureApplied();
-        using LoadedWorkbook loaded = _loader.Open(filePath, request.Password?.Reveal(), request.TextImport);
+        using LoadedWorkbook loaded = _loader.Open(filePath, request.Password, request.TextImport);
         Workbook workbook = loaded.Workbook;
 
         // Capture before saving: Workbook.FileFormat mutates to the target
@@ -106,7 +106,7 @@ internal sealed class CellsProductionService
         Warning? chartsSplit = request.Output.Format.Id is "pdf" ? PrintedPages.SplitChartsWarning(workbook, selectedSheet) : null;
         int refsBefore = _saver.CountRefFormulas(workbook);
         WorkbookSavePlan savePlan = WorkbookSavePlan.Create(request.Output.Format, licenseState,
-            request.EncryptPassword?.Reveal(), loaded.IsEncrypted ? request.Password?.Reveal() : null, selectedSheet, request.ByteOrderMark);
+            request.EncryptPassword, loaded.IsEncrypted ? request.Password : null, selectedSheet, request.ByteOrderMark);
         loaded.RestoreActiveSheet(savePlan);
         Warning? sheetsDropped = savePlan.DetectSheetLoss(workbook);
         // Read before the save, which may add a warning sheet of its own (EVALUATION_SHEET_ADDED).
@@ -156,7 +156,7 @@ internal sealed class CellsProductionService
             workbook,
             request.Output,
             licenseState,
-            request.EncryptPassword?.Reveal());
+            request.EncryptPassword);
 
         return new CreateResult
         {
@@ -175,7 +175,7 @@ internal sealed class CellsProductionService
         ArgumentNullException.ThrowIfNull(request);
 
         LicenseState licenseState = _licenseGate.EnsureApplied();
-        using LoadedWorkbook loaded = _loader.Open(filePath, request.Password?.Reveal());
+        using LoadedWorkbook loaded = _loader.Open(filePath, request.Password);
         Workbook workbook = loaded.Workbook;
         SourceInfo input = BuildSource(filePath, workbook);
 
@@ -465,7 +465,7 @@ internal sealed class CellsProductionService
         ArgumentNullException.ThrowIfNull(artifacts);
 
         _licenseGate.EnsureApplied();
-        using LoadedWorkbook loaded = _loader.Open(filePath, request.Password?.Reveal());
+        using LoadedWorkbook loaded = _loader.Open(filePath, request.Password);
         Workbook workbook = loaded.Workbook;
         SourceInfo source = BuildSource(filePath, workbook);
         if (request.View == CellsViews.Workbook)

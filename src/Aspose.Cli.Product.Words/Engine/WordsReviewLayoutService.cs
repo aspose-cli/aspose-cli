@@ -24,7 +24,7 @@ internal sealed class WordsReviewLayoutService
 
     internal WordsReviewLayout Inspect(
         string filePath,
-        string? password,
+        Secret? password,
         int maxPages)
     {
         _ = _licenseGate.EnsureApplied();

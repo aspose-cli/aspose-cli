@@ -8,16 +8,16 @@ namespace Aspose.Cli.Product.Pdf.Engine.Mapping;
 internal sealed class PdfDocumentLoader(
     ResourceBudgetLedger resourceBudgets)
 {
-    public LoadedPdf Open(string path, string? password)
+    public LoadedPdf Open(string path, Secret? password)
     {
         InputSizeGuard.Ensure(resourceBudgets, path);
         return OpenCore(path, password);
     }
 
     // Generated candidates are bounded by publication, not a second user-input admission.
-    internal LoadedPdf OpenPublishedCandidate(string path, string? password) => OpenCore(path, password);
+    internal LoadedPdf OpenPublishedCandidate(string path, Secret? password) => OpenCore(path, password);
 
-    private LoadedPdf OpenCore(string path, string? password)
+    private LoadedPdf OpenCore(string path, Secret? password)
     {
         EnsurePdfHeader(path);
 
@@ -27,9 +27,9 @@ internal sealed class PdfDocumentLoader(
             // The engine reads the document from the stream as it needs it, so the stream
             // stays open for the document's lifetime.
             stream = InputFiles.OpenRead(path);
-            var document = string.IsNullOrEmpty(password)
+            var document = password is null
                 ? new Document(stream)
-                : new Document(stream, password);
+                : new Document(stream, password.Reveal());
             try
             {
                 resourceBudgets.EnsureWithin(
@@ -59,7 +59,7 @@ internal sealed class PdfDocumentLoader(
         }
         catch (InvalidPasswordException)
         {
-            throw string.IsNullOrEmpty(password)
+            throw password is null
                 ? CliErrors.PasswordRequired(path)
                 : CliErrors.PasswordInvalid(path);
         }

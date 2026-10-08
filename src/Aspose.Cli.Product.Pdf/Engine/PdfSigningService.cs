@@ -35,9 +35,9 @@ internal sealed class PdfSigningService
     public PdfSignResult Sign(string filePath, PdfSignRequest request)
     {
         EnsureCertificate(_resourceBudgets, request.CertificatePath);
-        ValidateCertificate(request.CertificatePath, request.CertificatePassword.Reveal());
+        ValidateCertificate(request.CertificatePath, request.CertificatePassword);
         LicenseState state = _licenseGate.EnsureApplied();
-        using LoadedPdf loaded = _loader.Open(filePath, request.Password?.Reveal());
+        using LoadedPdf loaded = _loader.Open(filePath, request.Password);
         _ = PageAt(loaded.Document, request.Page);
         // The signature to verify is the one this command adds: a document may already
         // carry signed fields, and the first of them says nothing about the new one.
@@ -81,7 +81,7 @@ internal sealed class PdfSigningService
         // The staged candidate is the only readable copy before publication: a supervised
         // worker leaves the target to its parent, so reading it here would find nothing.
         PdfSignatureInfo signed = write.Read(
-            candidate => VerifySignedOutput(candidate, request.Password?.Reveal(), alreadySigned));
+            candidate => VerifySignedOutput(candidate, request.Password, alreadySigned));
         transaction.Commit();
         return new PdfSignResult
         {
@@ -109,7 +109,7 @@ internal sealed class PdfSigningService
         };
     }
 
-    private PdfSignatureInfo VerifySignedOutput(string path, string? password, IReadOnlySet<string> alreadySigned)
+    private PdfSignatureInfo VerifySignedOutput(string path, Secret? password, IReadOnlySet<string> alreadySigned)
     {
         using LoadedPdf reopened = _loader.OpenPublishedCandidate(path, password);
         SignatureField? field = SignedFields(reopened.Document)
@@ -159,13 +159,13 @@ internal sealed class PdfSigningService
         InputSizeGuard.Ensure(resourceBudgets, path);
     }
 
-    private static void ValidateCertificate(string path, string password)
+    private static void ValidateCertificate(string path, Secret password)
     {
         try
         {
             using X509Certificate2 certificate = X509CertificateLoader.LoadPkcs12FromFile(
                 path,
-                password,
+                password.Reveal(),
                 X509KeyStorageFlags.EphemeralKeySet);
             DateTimeOffset now = DateTimeOffset.UtcNow;
             if (!certificate.HasPrivateKey

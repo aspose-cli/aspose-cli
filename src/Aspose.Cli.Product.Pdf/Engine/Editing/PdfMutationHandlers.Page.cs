@@ -75,7 +75,7 @@ internal sealed partial class PdfMutationHandlers
     {
         EnsureInsertionPosition(_document, operation.At);
 
-        string? password = OperationSecrets.Resolve(_secrets, operation.PasswordEnv)?.Reveal();
+        Secret? password = OperationSecrets.Resolve(_secrets, operation.PasswordEnv);
         using LoadedPdf source = OpenSource(operation.Path, password);
         IReadOnlyList<int> pages = operation.Pages is null
             ? Enumerable.Range(1, source.Document.Pages.Count).ToArray()
@@ -91,7 +91,7 @@ internal sealed partial class PdfMutationHandlers
     }
 
     // The source's password comes from the operation's passwordEnv, not a command option.
-    private LoadedPdf OpenSource(string path, string? password)
+    private LoadedPdf OpenSource(string path, Secret? password)
     {
         try
         {

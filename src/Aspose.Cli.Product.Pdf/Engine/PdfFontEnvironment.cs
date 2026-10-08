@@ -55,7 +55,7 @@ internal sealed class PdfFontEnvironment : IFontEnvironment
         ArgumentNullException.ThrowIfNull(request);
 
         LicenseState state = _licenseGate.EnsureApplied();
-        using LoadedPdf loaded = _loader.Open(filePath, request.Password?.Reveal());
+        using LoadedPdf loaded = _loader.Open(filePath, request.Password);
         IReadOnlyList<FontAvailability> fonts = UsedFonts(loaded.Document)
             .Select(static font => new FontAvailability
             {

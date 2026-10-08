@@ -29,7 +29,7 @@ internal sealed class PdfFormService
     public PdfFormResult ReadForm(string filePath, PdfFormReadRequest request)
     {
         LicenseState state = _licenseGate.EnsureApplied();
-        using LoadedPdf loaded = _loader.Open(filePath, request.Password?.Reveal());
+        using LoadedPdf loaded = _loader.Open(filePath, request.Password);
         Form form = loaded.Document.Form;
         var unpaged = new List<string>();
         var fields = form.Fields.OrderBy(static field => field.FullName, StringComparer.Ordinal)
@@ -145,7 +145,7 @@ internal sealed class PdfFormService
     public PdfFormExportResult ExportForm(string filePath, PdfFormExportRequest request)
     {
         LicenseState state = _licenseGate.EnsureApplied();
-        using LoadedPdf loaded = _loader.Open(filePath, request.Password?.Reveal());
+        using LoadedPdf loaded = _loader.Open(filePath, request.Password);
         EnsureAcroForm(loaded.Document);
         long size = _writer.Write(request.Output.Path, request.Output.Overwrite, temp =>
         {

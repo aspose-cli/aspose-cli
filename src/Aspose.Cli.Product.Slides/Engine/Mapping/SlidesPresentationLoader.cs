@@ -7,14 +7,14 @@ namespace Aspose.Cli.Product.Slides.Engine.Mapping;
 internal sealed class SlidesPresentationLoader(
     ResourceBudgetLedger resourceBudgets)
 {
-    public LoadedPresentation Open(string path, string? password)
+    public LoadedPresentation Open(string path, Secret? password)
     {
         InputSizeGuard.Ensure(resourceBudgets, path);
         return OpenCore(path, password);
     }
 
     // Generated candidates are bounded by publication, not a second user-input admission.
-    internal LoadedPresentation OpenPublishedCandidate(string path, string? password) => OpenCore(path, password);
+    internal LoadedPresentation OpenPublishedCandidate(string path, Secret? password) => OpenCore(path, password);
 
     /// <summary>
     /// Opens the built-in 16:9 design that new presentations use without a template. It has no
@@ -32,8 +32,9 @@ internal sealed class SlidesPresentationLoader(
 
     private const string DefaultTemplateResource = "Templates/default-16x9.pptx";
 
-    private LoadedPresentation OpenCore(string path, string? password)
+    private LoadedPresentation OpenCore(string path, Secret? secret)
     {
+        string? password = secret?.Reveal();
         FileStream? source = null;
         try
         {

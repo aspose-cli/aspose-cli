@@ -7,14 +7,14 @@ using Aspose.Cells.Rendering;
 namespace Aspose.Cli.Product.Cells.Engine.Mapping;
 
 /// <summary>Product-owned format and encryption decisions for one workbook output.</summary>
-internal sealed record WorkbookSavePlan(string FormatId, SaveFormat Format, SaveOptions? Options, string? OutputPassword, Warning? EncryptionWarning, bool IsEvaluation)
+internal sealed record WorkbookSavePlan(string FormatId, SaveFormat Format, SaveOptions? Options, Secret? OutputPassword, Warning? EncryptionWarning, bool IsEvaluation)
 {
     /// <remarks>
     /// The commands reject an output password for a format that cannot carry one, naming the
     /// option the caller passed (<see cref="Sdk.Extensibility.Commanding.StandardInvocation.EncryptPassword()"/>).
     /// </remarks>
     internal static WorkbookSavePlan Create(FormatDescriptor output, LicenseState licenseState,
-        string? encryptPassword = null, string? inputPassword = null, int? selectedSheet = null, bool byteOrderMark = false)
+        Secret? encryptPassword = null, Secret? inputPassword = null, int? selectedSheet = null, bool byteOrderMark = false)
     {
         string formatId = output.Id;
         bool encryptable = output.Protectable;
@@ -36,7 +36,7 @@ internal sealed record WorkbookSavePlan(string FormatId, SaveFormat Format, Save
             "pdf" when selectedSheet is { } sheet => new PdfSaveOptions { SheetSet = new SheetSet([sheet]) },
             _ => null,
         };
-        string? password = encryptPassword ?? (encryptable ? inputPassword : null);
+        Secret? password = encryptPassword ?? (encryptable ? inputPassword : null);
         Warning? warning = inputPassword is not null && password is null ? new Warning
         {
             Code = CellsDiagnostics.EncryptionRemoved,
@@ -69,7 +69,7 @@ internal sealed record WorkbookSavePlan(string FormatId, SaveFormat Format, Save
 
     internal void Save(Workbook workbook, string path)
     {
-        workbook.Settings.Password = OutputPassword ?? string.Empty;
+        workbook.Settings.Password = OutputPassword?.Reveal() ?? string.Empty;
         if (Options is not null) { workbook.Save(path, Options); }
         else { workbook.Save(path, Format); }
     }

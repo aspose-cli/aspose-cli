@@ -25,7 +25,7 @@ internal sealed class SlidesReadService
     internal PresentationInfoResult GetInfo(string filePath, PresentationInfoRequest request)
     {
         LicenseState state = _licenseGate.EnsureApplied();
-        using LoadedPresentation loaded = _loader.Open(filePath, request.Password?.Reveal());
+        using LoadedPresentation loaded = _loader.Open(filePath, request.Password);
         Presentation presentation = loaded.Presentation;
         bool Details(string name) => request.Details?.Contains(name, StringComparer.Ordinal) == true;
         IComment[] comments = Comments(presentation);
@@ -121,7 +121,7 @@ internal sealed class SlidesReadService
     internal PresentationReadResult Read(string filePath, PresentationReadRequest request)
     {
         LicenseState state = _licenseGate.EnsureApplied();
-        using LoadedPresentation loaded = _loader.Open(filePath, request.Password?.Reveal());
+        using LoadedPresentation loaded = _loader.Open(filePath, request.Password);
         Presentation presentation = loaded.Presentation;
         IReadOnlyList<int> requested = request.Slides is null
             ? Enumerable.Range(1, Math.Min(10, presentation.Slides.Count)).ToArray()

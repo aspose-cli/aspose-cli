@@ -110,5 +110,5 @@ internal sealed class PdfEngine : IPdfEngine, IPdfReviewLayoutPort
         string filePath,
         Secret? password,
         int maxPages) =>
-        PdfEvaluation.Run(_licenseGate, () => _reviewLayout.Inspect(filePath, password?.Reveal(), maxPages));
+        PdfEvaluation.Run(_licenseGate, () => _reviewLayout.Inspect(filePath, password, maxPages));
 }

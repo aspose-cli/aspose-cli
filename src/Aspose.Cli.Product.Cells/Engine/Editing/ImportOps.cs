@@ -39,7 +39,7 @@ internal sealed class CellsImportSources(
         {
             try
             {
-                loaded = loader.Open(path, OperationSecrets.Resolve(secrets, passwordEnv)?.Reveal());
+                loaded = loader.Open(path, OperationSecrets.Resolve(secrets, passwordEnv));
             }
             catch (CliException error) when (CliErrors.IsPasswordError(error))
             {

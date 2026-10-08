@@ -442,11 +442,11 @@ internal static class SlidesEngineSupport
     }
 
 
-    internal static void Encrypt(Presentation presentation, string? password)
+    internal static void Encrypt(Presentation presentation, Secret? password)
     {
         if (password is not null)
         {
-            presentation.ProtectionManager.Encrypt(password);
+            presentation.ProtectionManager.Encrypt(password.Reveal());
         }
     }
 

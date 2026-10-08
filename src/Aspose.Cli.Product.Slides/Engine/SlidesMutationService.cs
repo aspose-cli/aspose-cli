@@ -37,7 +37,7 @@ internal sealed class SlidesMutationService
 
         LicenseState state = _licenseGate.EnsureApplied();
         FileWritePrecondition precondition = FileWritePrecondition.Capture(filePath);
-        using LoadedPresentation loaded = _loader.Open(filePath, request.Password?.Reveal());
+        using LoadedPresentation loaded = _loader.Open(filePath, request.Password);
         SourceInfo input = Source(filePath, loaded.FormatId);
         FileFingerprints.EnsureUnchanged(filePath, precondition.Fingerprint, input.Fingerprint!);
         FileFingerprints.EnsureMatch(filePath, request.Options.IfMatch, input.Fingerprint!);
@@ -123,7 +123,7 @@ internal sealed class SlidesMutationService
         if (!request.Options.DryRun)
         {
             Presentation presentation = loaded.Presentation;
-            Encrypt(presentation, request.EncryptPassword?.Reveal());
+            Encrypt(presentation, request.EncryptPassword);
             using var transaction = new AtomicOutputSetWriter(_writer, request.Output.Directory, "slides-edit");
             StagedOutput write = transaction.Stage(
                 request.Output.Path,
@@ -136,7 +136,7 @@ internal sealed class SlidesMutationService
                     loaded.Resources.ThrowIfFailed();
                     using LoadedPresentation reopened = _loader.OpenPublishedCandidate(
                         temp,
-                        request.EncryptPassword?.Reveal() ?? request.Password?.Reveal());
+                        request.EncryptPassword ?? request.Password);
                 });
             output = new OutputInfo
             {

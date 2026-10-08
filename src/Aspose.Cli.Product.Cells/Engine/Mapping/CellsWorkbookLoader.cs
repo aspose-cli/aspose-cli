@@ -54,7 +54,7 @@ internal sealed class CellsWorkbookLoader(ResourceBudgetLedger resourceBudgets)
     /// </summary>
     internal LoadedWorkbook Open(
         string path,
-        string? password,
+        Secret? password,
         TextImportOptions? textImport = null,
         bool calculateOnOpen = true)
     {
@@ -65,12 +65,12 @@ internal sealed class CellsWorkbookLoader(ResourceBudgetLedger resourceBudgets)
     // Derived output is already bounded by publication; it is not a new user input, and its
     // text was written with invariant formats, so its quoted text fields are not re-judged.
     // It is read as stored, since verification compares what was written.
-    internal LoadedWorkbook OpenPublishedCandidate(string path, string? password, string? resourceSource = null) =>
+    internal LoadedWorkbook OpenPublishedCandidate(string path, Secret? password, string? resourceSource = null) =>
         OpenCore(path, password, textImport: null, published: true, calculateOnOpen: false, resourceSource);
 
     private LoadedWorkbook OpenCore(
         string path,
-        string? password,
+        Secret? password,
         TextImportOptions? textImport,
         bool published,
         bool calculateOnOpen,
@@ -83,7 +83,7 @@ internal sealed class CellsWorkbookLoader(ResourceBudgetLedger resourceBudgets)
         try
         {
             LoadOptions options = plan.ToLoadOptions(resources);
-            options.Password = password;
+            options.Password = password?.Reveal();
             using (FileStream input = InputFiles.OpenRead(path))
             {
                 workbook = new Workbook(input, options);

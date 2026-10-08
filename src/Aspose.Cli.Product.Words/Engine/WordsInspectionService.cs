@@ -35,8 +35,8 @@ internal sealed class WordsInspectionService
     internal WordsCompareResult Compare(string leftPath, string rightPath, WordsCompareRequest request)
     {
         LicenseState state = _licenseGate.EnsureApplied();
-        using LoadedDocument leftLoaded = _loader.Open(leftPath, request.LeftPassword?.Reveal());
-        using LoadedDocument rightLoaded = _loader.Open(rightPath, request.RightPassword?.Reveal());
+        using LoadedDocument leftLoaded = _loader.Open(leftPath, request.LeftPassword);
+        using LoadedDocument rightLoaded = _loader.Open(rightPath, request.RightPassword);
         if (leftLoaded.Document.Revisions.Count > 0 || rightLoaded.Document.Revisions.Count > 0)
         {
             throw new CliException(
@@ -98,7 +98,7 @@ internal sealed class WordsInspectionService
     internal WordsSearchResult Search(string filePath, WordsSearchRequest request)
     {
         LicenseState state = _licenseGate.EnsureApplied();
-        using LoadedDocument loaded = _loader.Open(filePath, request.Password?.Reveal());
+        using LoadedDocument loaded = _loader.Open(filePath, request.Password);
         var index = new DocumentBlockIndex(loaded.Document, loaded.Evaluation);
         SearchQuery query = request.Query;
         SearchHits<WordsSearchHit> hits = query.Collect<WordsSearchHit>();

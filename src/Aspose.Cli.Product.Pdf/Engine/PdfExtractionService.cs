@@ -44,7 +44,7 @@ internal sealed class PdfExtractionService
         }
 
         LicenseState state = _licenseGate.EnsureApplied();
-        using LoadedPdf loaded = _loader.Open(filePath, request.Password?.Reveal());
+        using LoadedPdf loaded = _loader.Open(filePath, request.Password);
         IReadOnlyList<SplitPart> parts = SplitParts(loaded.Document, request);
         string root = request.Output.Path;
         using var writer = new AtomicOutputSetWriter(_writer, root, "pdf-split");
@@ -119,7 +119,7 @@ internal sealed class PdfExtractionService
         }
 
         LicenseState state = _licenseGate.EnsureApplied();
-        using LoadedPdf loaded = _loader.Open(filePath, request.Password?.Reveal());
+        using LoadedPdf loaded = _loader.Open(filePath, request.Password);
         IReadOnlyList<int> pages = request.Pages?.Resolve(loaded.Document.Pages.Count)
             ?? Enumerable.Range(1, loaded.Document.Pages.Count).ToArray();
         using var guard = new ExtractionGuard(

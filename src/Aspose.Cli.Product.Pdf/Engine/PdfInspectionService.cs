@@ -33,7 +33,7 @@ internal sealed class PdfInspectionService
     {
         TextSearch text = request.Query.Text;
         LicenseState state = _licenseGate.EnsureApplied();
-        using LoadedPdf loaded = _loader.Open(filePath, request.Password?.Reveal());
+        using LoadedPdf loaded = _loader.Open(filePath, request.Password);
         IReadOnlyList<int> pages = request.Pages?.Resolve(loaded.Document.Pages.Count)
             ?? Enumerable.Range(1, loaded.Document.Pages.Count).ToArray();
         SearchHits<PdfSearchHit> hits = request.Query.Collect<PdfSearchHit>();
@@ -111,7 +111,7 @@ internal sealed class PdfInspectionService
             _ => throw CliErrors.OptionInvalid("--profile", $"unknown profile '{request.Profile}'", "Use pdfa-1b, pdfa-2b or pdfa-3b."),
         };
         LicenseState state = _licenseGate.EnsureApplied();
-        using LoadedPdf loaded = _loader.Open(filePath, request.Password?.Reveal());
+        using LoadedPdf loaded = _loader.Open(filePath, request.Password);
         using var log = new MemoryStream();
         bool valid = loaded.Document.Validate(log, format);
         IReadOnlyList<PdfComplianceProblem> problems = PdfComplianceLog.Parse(log);
