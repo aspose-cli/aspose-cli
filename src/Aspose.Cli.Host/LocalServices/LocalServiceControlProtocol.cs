@@ -61,11 +61,6 @@ internal sealed record LocalServiceControlEndpoint(
 /// </summary>
 internal sealed class LocalServiceControlServer : IDisposable
 {
-    internal const int ProtocolVersion =
-        LocalServiceControlCodec.ProtocolVersion;
-    internal const int MaximumPayloadBytes =
-        LocalServiceControlCodec.MaximumPayloadBytes;
-
     private readonly LocalServiceControlEndpoint _endpoint;
     private readonly LocalServiceControlIdentity _identity;
     private readonly Func<
