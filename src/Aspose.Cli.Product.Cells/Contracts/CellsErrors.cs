@@ -58,31 +58,26 @@ public static class CellsErrors
 
     internal static CliException RenderFailed(
         string sheetName,
-        string engineMessage) => new(
-        ErrorCodes.RenderFailed,
-        $"Sheet '{sheetName}' could not be rendered: the engine failed while rasterizing its content ({engineMessage}).",
-        hint: "An embedded chart or picture on this sheet defeats the renderer. Render another sheet, or deliver the sheet's data with 'aspose-cli cells query range' or 'aspose-cli cells convert'.",
-        details: new JsonObject
-        {
-            ["sheet"] = sheetName,
-            ["engineMessage"] = engineMessage,
-        });
+        string engineMessage) => CliErrors.RenderFailed(
+        $"Sheet '{sheetName}'",
+        engineMessage,
+        "An embedded chart or picture on this sheet defeats the renderer. Render another sheet, or deliver the sheet's data with 'aspose-cli cells query range' or 'aspose-cli cells convert'.",
+        new JsonObject { ["sheet"] = sheetName });
 
     /// <summary>A delimited text input is not UTF-8 and names no encoding.</summary>
-    internal static CliException TextEncodingInvalid(string path, long offset) => new(
-        ErrorCodes.InputEncodingInvalid,
-        $"'{Path.GetFileName(path)}' is not UTF-8 text (invalid byte at offset {offset}); read as UTF-8, its text would be replaced.",
-        hint: $"Import it with its encoding: aspose-cli cells convert \"{path}\" --to xlsx --encoding gb18030 "
-            + "(Chinese Windows and ERP exports; use big5, shift_jis, windows-1252 or another name for other sources).",
-        details: new JsonObject { ["path"] = path, ["offset"] = offset });
+    internal static CliException TextEncodingInvalid(string path, long offset) => CliErrors.InputEncodingInvalid(
+        path,
+        offset,
+        $"Import it with its encoding: aspose-cli cells convert \"{path}\" --to xlsx --encoding gb18030 "
+            + "(Chinese Windows and ERP exports; use big5, shift_jis, windows-1252 or another name for other sources).");
 
     /// <summary>A delimited text input writes numbers in a form invariant parsing would change.</summary>
-    internal static CliException TextNumbersAmbiguous(string path, string sample, int line) => new(
-        ErrorCodes.FormatAmbiguous,
-        $"'{Path.GetFileName(path)}' writes numbers such as '{sample}' (line {line}) with a decimal comma; read with invariant formats they would become different numbers.",
-        hint: $"Import it with its culture: aspose-cli cells convert \"{path}\" --to xlsx --culture de-DE "
-            + "(or another culture that writes a decimal comma). The culture also reads its dates.",
-        details: new JsonObject { ["path"] = path, ["sample"] = sample, ["line"] = line });
+    internal static CliException TextNumbersAmbiguous(string path, string sample, int line) => CliErrors.NumberFormatAmbiguous(
+        path,
+        sample,
+        line,
+        $"Import it with its culture: aspose-cli cells convert \"{path}\" --to xlsx --culture de-DE "
+            + "(or another culture that writes a decimal comma). The culture also reads its dates.");
 
     internal static CliException FileCorrupt(string path, string reason) => CliErrors.InputUnreadable(
         path,
