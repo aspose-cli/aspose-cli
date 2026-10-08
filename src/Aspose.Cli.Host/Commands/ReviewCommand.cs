@@ -2,6 +2,7 @@ using System.CommandLine;
 using Aspose.Cli.Host.Catalog;
 using Aspose.Cli.Host.Invocation;
 using Aspose.Cli.Host.Review;
+using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Views;
@@ -128,7 +129,10 @@ internal static class ReviewCommand
                 license,
                 serializer,
                 context.ResourceBudgets,
-                selectedCodes);
+                selectedCodes,
+                // The evidence shows what the engine draws, so the product's write pipeline
+                // discloses it in review.json and index.html as in the command's output.
+                result => binding.Publishing is { } publishing ? (ReviewResult)publishing.DiscloseRendered(result) : result);
         }));
         return command;
     }

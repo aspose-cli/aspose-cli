@@ -114,8 +114,8 @@ public sealed class LicenseFreePlatformContractTests
             LicenseModes.NotApplicable,
             EnvelopeParts.License(
                 binding.LicenseGate.EnsureApplied()).Mode);
-        Assert.Null(EnvelopeParts.OutputWarnings(
-            binding.LicenseGate.EnsureApplied()));
+        // Without a write pipeline nothing discloses evaluation output.
+        Assert.Null(binding.Publishing);
         Assert.False(binding.HasFontEnvironment);
         Assert.Null(binding.FontEnvironment);
         Assert.Same(binding.LicenseGate, binding.Port.LicenseGate);

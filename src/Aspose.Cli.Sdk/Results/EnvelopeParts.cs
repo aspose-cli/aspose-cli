@@ -38,30 +38,11 @@ public static class EnvelopeParts
         Docs = "licensing",
     };
 
-    /// <summary>
-    /// The warnings of a command that asked for evaluation mode: each <see cref="EvaluationWatermark"/>
-    /// becomes <see cref="RequestedEvaluationWatermark"/>; every other warning is kept, including
-    /// the disclosure of the write pipeline, which names the request itself.
-    /// </summary>
-    public static IReadOnlyList<Warning>? ForRequestedEvaluation(IReadOnlyList<Warning>? warnings) =>
-        warnings?.Contains(EvaluationWatermark) == true
-            ? [.. warnings.Select(static warning =>
-                warning == EvaluationWatermark ? RequestedEvaluationWatermark : warning)]
-            : warnings;
-
     /// <summary>Maps the license state to the contract representation.</summary>
     public static LicenseInfo License(LicenseState state) => new()
     {
         Mode = state.ToContractName(),
     };
-
-    /// <summary>
-    /// Warnings for files the host itself wrote from a product's renders, such as review
-    /// evidence: the evaluation warning in evaluation mode, otherwise none. A product's own
-    /// outputs are disclosed by its write pipeline (<see cref="OutputPipeline"/>).
-    /// </summary>
-    public static IReadOnlyList<Warning>? OutputWarnings(LicenseState state) =>
-        state == LicenseState.Evaluation ? [EvaluationWatermark] : null;
 
     /// <summary>
     /// Discloses a list inside a result that holds only its first <paramref name="returned"/>
