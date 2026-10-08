@@ -39,8 +39,9 @@ internal static class LocalServiceChildError
                 return null;
             }
 
-            return new CliException(
-                new ErrorCode(error.Code, (ExitCode)exitCode),
+            return CliErrors.FromRemote(
+                error.Code,
+                (ExitCode)exitCode,
                 error.Message,
                 error.Hint,
                 error.Details,

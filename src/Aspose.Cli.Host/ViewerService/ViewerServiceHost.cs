@@ -68,7 +68,7 @@ internal sealed class ViewerServiceHost : IDisposable
         }
         catch (TimeoutException)
         {
-            throw ViewerErrors.ServiceBusy();
+            throw CliErrors.ServiceBusy();
         }
         try
         {
@@ -222,7 +222,7 @@ internal sealed class ViewerServiceHost : IDisposable
         catch (Exception exception) when (
             exception is IOException or UnauthorizedAccessException or JsonException or InvalidDataException)
         {
-            return Failure(new CliException(ErrorCodes.Internal, exception.Message));
+            return Failure(CliErrors.Internal(exception.Message));
         }
     }
 

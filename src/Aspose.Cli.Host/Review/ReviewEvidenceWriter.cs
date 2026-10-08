@@ -1,7 +1,6 @@
 using System.Net;
 using System.Text;
 using System.Text.Json;
-using System.Text.Json.Nodes;
 using Aspose.Cli.Host.LocalServices;
 using Aspose.Cli.Host.Viewer;
 using Aspose.Cli.Sdk.Contracts;
@@ -331,16 +330,9 @@ internal static class ReviewEvidenceWriter
     {
         if (Directory.Exists(target) || File.Exists(target))
         {
-            throw ReviewOutputExists(target);
+            throw CliErrors.OutputDirectoryExists(target);
         }
     }
 
-    private static CliException ReviewOutputExists(string target) =>
-        new(
-            ErrorCodes.OutputExists,
-            $"Review output directory already exists: {target}",
-            hint: "Pass --out a path that does not exist yet, not even as an empty directory: review publishes its evidence "
-                + "as one new directory and never overwrites.",
-            details: new JsonObject { ["path"] = target });
 
 }

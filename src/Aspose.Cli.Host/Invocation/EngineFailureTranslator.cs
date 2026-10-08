@@ -75,11 +75,7 @@ internal sealed class EngineFailureTranslator
         if (exception is UnauthorizedAccessException
             || exception is IOException and not (FileNotFoundException or FileLoadException))
         {
-            return new CliException(
-                ErrorCodes.OutputUnwritable,
-                $"{product} could not complete a file operation: {exception.Message}",
-                hint: "Check file permissions, locks and free disk space, then retry.",
-                innerException: exception);
+            return CliErrors.FileOperationFailed(product, exception);
         }
 
         return null;

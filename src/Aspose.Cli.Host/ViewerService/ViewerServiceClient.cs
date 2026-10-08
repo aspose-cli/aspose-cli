@@ -101,7 +101,7 @@ internal sealed class ViewerServiceClient
         catch (TimeoutException)
         {
             deadline.ThrowIfExpired("service-start-lock");
-            throw ViewerErrors.ServiceBusy();
+            throw CliErrors.ServiceBusy();
         }
         using (starting)
         {
@@ -230,9 +230,7 @@ internal sealed class ViewerServiceClient
             // The message below still says what happened.
         }
         return failure is null
-            ? new CliException(
-                ErrorCodes.Internal,
-                response.Message ?? "The viewer service refused the request.")
-            : new CliException(new ErrorCode(failure.Code, (ExitCode)failure.Exit), failure.Message);
+            ? CliErrors.Internal(response.Message ?? "The viewer service refused the request.")
+            : CliErrors.FromRemote(failure.Code, (ExitCode)failure.Exit, failure.Message);
     }
 }

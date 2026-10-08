@@ -1,5 +1,4 @@
 using System.Text.Json;
-using System.Text.Json.Nodes;
 using Aspose.Cli.Sdk;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
@@ -67,7 +66,7 @@ internal static class ReleaseManifest
             exception is JsonException or InvalidDataException or FormatException or KeyNotFoundException
                 or InvalidOperationException or IOException or UnauthorizedAccessException)
         {
-            throw ReleaseErrors.VerificationFailed($"the release manifest is invalid: {exception.Message}");
+            throw CliErrors.ReleaseVerificationFailed($"the release manifest is invalid: {exception.Message}");
         }
     }
 
@@ -107,25 +106,3 @@ internal sealed record ReleaseManifestInfo(
     string ArchivePath,
     long ArchiveSize,
     string ArchiveSha256);
-
-/// <summary>Errors raised while reading or checking a release for an update.</summary>
-internal static class ReleaseErrors
-{
-    public static CliException VerificationFailed(string reason) => new(
-        ErrorCodes.ReleaseVerificationFailed,
-        $"The release could not be verified: {reason}",
-        hint: "Retry from the official release. Do not bypass the archive check.",
-        details: new JsonObject { ["reason"] = reason });
-
-    /// <summary>The feed could not be read; nothing was verified or installed.</summary>
-    public static CliException FeedUnavailable(Uri feed, string reason) => new(
-        ErrorCodes.ReleaseFeedUnavailable,
-        $"The release feed could not be reached: {reason}",
-        hint: "Check the network connection, proxy settings (HTTPS_PROXY) and the feed URL, then retry. A downloaded release directory also works as a local feed path.",
-        details: new JsonObject
-        {
-            ["reason"] = reason,
-            // Feed URLs are validated to carry no credentials, query or fragment.
-            ["feed"] = feed.AbsoluteUri,
-        });
-}

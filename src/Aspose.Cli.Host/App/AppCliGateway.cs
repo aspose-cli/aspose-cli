@@ -213,10 +213,9 @@ internal sealed class AppCliGateway
         }
         catch (Exception exception) when (exception is JsonException or InvalidDataException)
         {
-            throw new CliException(
-                ErrorCodes.Internal,
+            throw CliErrors.Internal(
                 $"The CLI could not report {arguments[0]} state.",
-                hint: $"Run 'aspose-cli {string.Join(' ', arguments)}' to see why.");
+                $"Run 'aspose-cli {string.Join(' ', arguments)}' to see why.");
         }
     }
 
@@ -263,9 +262,7 @@ internal sealed class AppCliGateway
         catch (Exception exception) when (
             exception is IOException or Win32Exception or InvalidOperationException or ChildOutputLimitException)
         {
-            throw new CliException(
-                ErrorCodes.Internal,
-                $"The CLI could not complete '{arguments[0]}'.");
+            throw CliErrors.Internal($"The CLI could not complete '{arguments[0]}'.");
         }
     }
 
@@ -285,8 +282,9 @@ internal sealed class AppCliGateway
                 && failure.TryGetProperty("message", out JsonElement message)
                 && message.GetString() is { Length: > 0 } text)
             {
-                return new CliException(
-                    new ErrorCode(name, (ExitCode)exitCode),
+                return CliErrors.FromRemote(
+                    name,
+                    (ExitCode)exitCode,
                     text,
                     hint: failure.TryGetProperty("hint", out JsonElement hint) ? hint.GetString() : null);
             }
@@ -295,8 +293,6 @@ internal sealed class AppCliGateway
         {
             // The child did not answer in the envelope; report it as our own.
         }
-        return new CliException(
-            ErrorCodes.Internal,
-            $"The CLI could not complete '{string.Join(' ', arguments)}'.");
+        return CliErrors.Internal($"The CLI could not complete '{string.Join(' ', arguments)}'.");
     }
 }
