@@ -26,16 +26,16 @@ public static partial class CliErrors
         var details = new JsonObject { ["errors"] = Strings(problems) };
         mistake?.WriteTo(details);
         string next = $"Run the command again with --help for usage; '{DistributionInfo.CommandName} --help' lists the commands and '{DistributionInfo.CommandName} docs' the documentation topics.";
-        return new CliException(ErrorCodes.UsageError, string.Join("; ", problems), mistake?.Hint(next) ?? next, details);
+        return CliException.Create(ErrorCodes.UsageError, string.Join("; ", problems), mistake?.Hint(next) ?? next, details);
     }
 
-    public static CliException FileNotFound(string path) => new(
+    public static CliException FileNotFound(string path) => CliException.Create(
         ErrorCodes.FileNotFound,
         $"Input file not found: {path}",
         hint: "Check the path. Relative paths resolve against --workdir (or the current directory).",
         details: new JsonObject { ["path"] = path });
 
-    public static CliException FileLocked(string path) => new(
+    public static CliException FileLocked(string path) => CliException.Create(
         ErrorCodes.FileLocked,
         $"File is in use by another process: {path}",
         hint: "Close the application holding this file, then retry.",
@@ -46,14 +46,14 @@ public static partial class CliErrors
     /// operation field that supplies the password of a file an operation reads; without it the
     /// hint names the command's password option.
     /// </summary>
-    public static CliException PasswordRequired(string path, string? operationField = null) => new(
+    public static CliException PasswordRequired(string path, string? operationField = null) => CliException.Create(
         ErrorCodes.PasswordRequired,
         $"File is encrypted and requires a password: {path}",
         hint: PasswordHint(ErrorCodes.PasswordRequired, operationField),
         details: new JsonObject { ["path"] = path });
 
     /// <summary>A password that does not open the file; <paramref name="operationField"/> as for <see cref="PasswordRequired"/>.</summary>
-    public static CliException PasswordInvalid(string path, string? operationField = null) => new(
+    public static CliException PasswordInvalid(string path, string? operationField = null) => CliException.Create(
         ErrorCodes.PasswordInvalid,
         $"The provided password does not open the file: {path}",
         hint: PasswordHint(ErrorCodes.PasswordInvalid, operationField),
@@ -75,7 +75,7 @@ public static partial class CliErrors
         Exception? innerException = null)
     {
         ErrorCode code = passwordGiven ? ErrorCodes.PasswordInvalid : ErrorCodes.PasswordRequired;
-        return new CliException(
+        return CliException.Create(
             code,
             passwordGiven
                 ? $"The provided password does not unprotect {target}."
@@ -109,7 +109,7 @@ public static partial class CliErrors
     internal static CliException ForInput(CliException error, string input, string passwordEnvironmentOption)
     {
         string path = error.Details!["path"]!.GetValue<string>();
-        return new CliException(
+        return CliException.Create(
             error.Code,
             $"{error.Message} (the {input} input)",
             hint: PasswordHint(error.Code, operationField: null, passwordEnvironmentOption),
@@ -139,7 +139,7 @@ public static partial class CliErrors
                     + "per input, such as --left-password-env.";
     }
 
-    public static CliException FileAccessDenied(string path) => new(
+    public static CliException FileAccessDenied(string path) => CliException.Create(
         ErrorCodes.FileAccessDenied,
         $"Access to the input file was denied: {path}",
         hint: "Check the file permissions and that no security policy prevents the process from reading it.",
@@ -160,14 +160,14 @@ public static partial class CliErrors
         string document,
         string reason,
         string hint,
-        Exception? innerException = null) => new(
+        Exception? innerException = null) => CliException.Create(
         ErrorCodes.FileCorrupt,
         $"Input is not a valid {document}: {path} ({reason}).",
         hint: hint,
         details: new JsonObject { ["path"] = Path.GetFullPath(path), ["reason"] = reason },
         innerException: innerException);
 
-    public static CliException FileTooLarge(long sizeBytes, long limitBytes) => new(
+    public static CliException FileTooLarge(long sizeBytes, long limitBytes) => CliException.Create(
         ErrorCodes.FileTooLarge,
         $"Input file is {sizeBytes} bytes, exceeding the {limitBytes}-byte budget.",
         hint: "Raise --max-input-bytes within its advertised safety maximum, or split the input into smaller files.",
@@ -187,7 +187,7 @@ public static partial class CliErrors
         long observed,
         long limit,
         string unit,
-        string phase) => new(
+        string phase) => CliException.Create(
         ErrorCodes.InputBudgetExceeded,
         $"Resource '{resource}' reached {observed} {unit}, exceeding the {limit}-{unit} budget.",
         hint: resource == ResourceBudgetKinds.InputBytes
@@ -207,7 +207,7 @@ public static partial class CliErrors
     public static CliException InputChanged(
         string path,
         long expectedBytes,
-        long observedBytes) => new(
+        long observedBytes) => CliException.Create(
         ErrorCodes.InputChanged,
         $"Input changed after admission: {path}",
         hint: "Stop the process modifying the input, then retry against a stable file or a private copy.",
@@ -222,7 +222,7 @@ public static partial class CliErrors
     public static CliException InputChanged(
         string path,
         string expectedSha256,
-        string observedSha256) => new(
+        string observedSha256) => CliException.Create(
         ErrorCodes.InputChanged,
         $"Input no longer matches the requested fingerprint: {path}",
         hint: "Inspect the current file, review intervening changes, and retry with its new source.fingerprint.sha256 value.",
@@ -235,7 +235,7 @@ public static partial class CliErrors
 
     public static CliException InputEncodingInvalid(
         string phase,
-        Exception? inner = null) => new(
+        Exception? inner = null) => CliException.Create(
         ErrorCodes.InputEncodingInvalid,
         "Text input is not valid UTF-8.",
         hint: "Save or pipe the text as UTF-8 (a UTF-8 BOM is accepted), then retry.",
@@ -253,7 +253,7 @@ public static partial class CliErrors
     /// <param name="path">The text file.</param>
     /// <param name="offset">The offset of the first invalid byte.</param>
     /// <param name="hint">How to name the file's encoding to the command that reads it.</param>
-    public static CliException InputEncodingInvalid(string path, long offset, string hint) => new(
+    public static CliException InputEncodingInvalid(string path, long offset, string hint) => CliException.Create(
         ErrorCodes.InputEncodingInvalid,
         $"'{Path.GetFileName(path)}' is not UTF-8 text (invalid byte at offset {offset}); read as UTF-8, its text would be replaced.",
         hint: hint,
@@ -267,7 +267,7 @@ public static partial class CliErrors
     /// <param name="sample">A number from the file that the invariant culture would change.</param>
     /// <param name="line">The 1-based line of <paramref name="sample"/>.</param>
     /// <param name="hint">How to name the file's culture to the command that reads it.</param>
-    public static CliException NumberFormatAmbiguous(string path, string sample, int line, string hint) => new(
+    public static CliException NumberFormatAmbiguous(string path, string sample, int line, string hint) => CliException.Create(
         ErrorCodes.FormatAmbiguous,
         $"'{Path.GetFileName(path)}' writes numbers such as '{sample}' (line {line}) with a decimal comma; read with invariant formats they would become different numbers.",
         hint: hint,
@@ -276,7 +276,7 @@ public static partial class CliErrors
     public static CliException PreviewBudgetExceeded(
         string resource,
         long actual,
-        long limit) => new(
+        long limit) => CliException.Create(
         ErrorCodes.PreviewBudgetExceeded,
         $"The preview {resource} exceeds its resource budget.",
         hint:
@@ -291,7 +291,7 @@ public static partial class CliErrors
     public static CliException UploadBudgetExceeded(
         string resource,
         long actual,
-        long limit) => new(
+        long limit) => CliException.Create(
         ErrorCodes.UploadBudgetExceeded,
         $"The App upload {resource} exceeds its session budget.",
         hint:
@@ -310,7 +310,7 @@ public static partial class CliErrors
         string resolution = dpi is { } value
             ? string.Create(CultureInfo.InvariantCulture, $" at {value} DPI")
             : string.Empty;
-        return new CliException(
+        return CliException.Create(
             ErrorCodes.RenderTooLarge,
             $"Rendering{resolution} needs a {width}x{height} pixel image ({megabytes} MB), which exceeds the limit of {maxPixels} pixels per image.",
             hint: hint,
@@ -335,20 +335,20 @@ public static partial class CliErrors
     {
         JsonObject details = facts ?? [];
         details["engineMessage"] = engineMessage;
-        return new CliException(
+        return CliException.Create(
             ErrorCodes.RenderFailed,
             $"{target} could not be rendered: the engine failed while rasterizing its content ({engineMessage}).",
             hint: hint,
             details: details);
     }
 
-    public static CliException OperationTimeout(int seconds) => new(
+    public static CliException OperationTimeout(int seconds) => CliException.Create(
         ErrorCodes.OperationTimeout,
         $"The operation did not finish within the {seconds}s timeout.",
         hint: "Raise --timeout, narrow the work (a smaller range or fewer ops), or split it into steps.",
         details: new JsonObject { ["timeoutSeconds"] = seconds });
 
-    public static CliException OperationTimeout(int seconds, string phase) => new(
+    public static CliException OperationTimeout(int seconds, string phase) => CliException.Create(
         ErrorCodes.OperationTimeout,
         $"The operation did not finish within the {seconds}s timeout.",
         hint: "Raise --timeout, narrow the work (a smaller range or fewer ops), or split it into steps.",
@@ -367,7 +367,7 @@ public static partial class CliErrors
     {
         ArgumentNullException.ThrowIfNull(exception);
         string seconds = exception.MatchTimeout.TotalSeconds.ToString("0.###", CultureInfo.InvariantCulture);
-        return new CliException(
+        return CliException.Create(
             ErrorCodes.OperationTimeout,
             $"The regular expression exceeded its {seconds}-second execution budget.",
             hint: "Simplify the expression or search a narrower part of the document.",
@@ -375,7 +375,7 @@ public static partial class CliErrors
             innerException: exception);
     }
 
-    public static CliException WorkerTerminationFailed(int processId) => new(
+    public static CliException WorkerTerminationFailed(int processId) => CliException.Create(
         ErrorCodes.WorkerTerminationFailed,
         "The operation deadline expired, but the worker process tree could not be confirmed stopped.",
         hint: "Stop the reported process before retrying or accessing the same output files.",
@@ -393,7 +393,7 @@ public static partial class CliErrors
     /// <param name="message">What failed, naming the product or the operation.</param>
     /// <param name="innerException">The engine failure.</param>
     /// <param name="details">Position details, such as the failing operation.</param>
-    public static CliException EngineFailed(string message, Exception innerException, JsonObject? details = null) => new(
+    public static CliException EngineFailed(string message, Exception innerException, JsonObject? details = null) => CliException.Create(
         ErrorCodes.FeatureUnsupported,
         message,
         // A file the engine could not open says nothing about the document's features; truncated
@@ -412,7 +412,7 @@ public static partial class CliErrors
         or DirectoryNotFoundException
         || exception is IOException io && FileAccessProbe.IsSharingViolation(io);
 
-    public static CliException OutputExists(string path) => new(
+    public static CliException OutputExists(string path) => CliException.Create(
         ErrorCodes.OutputExists,
         $"Output file already exists: {path}",
         hint: "Pass --overwrite to replace it, or choose a different path with --out.",
@@ -422,7 +422,7 @@ public static partial class CliErrors
     /// An output published as one new directory, which never replaces anything, names a
     /// directory or file that already exists.
     /// </summary>
-    public static CliException OutputDirectoryExists(string path) => new(
+    public static CliException OutputDirectoryExists(string path) => CliException.Create(
         ErrorCodes.OutputExists,
         $"Output directory already exists: {path}",
         hint: "Pass --out a path that does not exist yet, not even as an empty directory: the command publishes its "
@@ -443,7 +443,7 @@ public static partial class CliErrors
         string path,
         string reason,
         string hint,
-        Exception? innerException = null) => new(
+        Exception? innerException = null) => CliException.Create(
         ErrorCodes.OutputExists,
         $"{subject} cannot be updated safely: {path} ({reason}).",
         hint: hint,
@@ -459,7 +459,7 @@ public static partial class CliErrors
     public static CliException FileOperationFailed(string product, Exception exception)
     {
         ArgumentNullException.ThrowIfNull(exception);
-        return new CliException(
+        return CliException.Create(
             ErrorCodes.OutputUnwritable,
             $"{product} could not complete a file operation: {exception.Message}",
             hint: "Check file permissions, locks and free disk space, then retry.",
@@ -467,7 +467,7 @@ public static partial class CliErrors
     }
 
     /// <summary>A release could not be verified, so nothing was installed.</summary>
-    public static CliException ReleaseVerificationFailed(string reason) => new(
+    public static CliException ReleaseVerificationFailed(string reason) => CliException.Create(
         ErrorCodes.ReleaseVerificationFailed,
         $"The release could not be verified: {reason}",
         hint: "Retry from the official release. Do not bypass the archive check.",
@@ -479,7 +479,7 @@ public static partial class CliErrors
     public static CliException ReleaseFeedUnavailable(Uri feed, string reason)
     {
         ArgumentNullException.ThrowIfNull(feed);
-        return new CliException(
+        return CliException.Create(
             ErrorCodes.ReleaseFeedUnavailable,
             $"The release feed could not be reached: {reason}",
             hint: "Check the network connection, proxy settings (HTTPS_PROXY) and the feed URL, then retry. A downloaded release directory also works as a local feed path.",
@@ -494,7 +494,7 @@ public static partial class CliErrors
     /// An explicit output resolves to an input document. Replacing the input is the in-place
     /// mode's job, which alone carries its backup and fingerprint precondition.
     /// </summary>
-    internal static CliException OutputIsInput(string parameter, string path, bool inPlaceAvailable) => new(
+    internal static CliException OutputIsInput(string parameter, string path, bool inPlaceAvailable) => CliException.Create(
         ErrorCodes.OptionInvalid,
         $"Invalid use of {parameter}: the output resolves to an input file: {path}",
         hint: inPlaceAvailable
@@ -503,7 +503,7 @@ public static partial class CliErrors
         details: new JsonObject { ["option"] = parameter, ["path"] = path });
 
     /// <summary>Two outputs of one operation, including a backup, resolve to the same path.</summary>
-    internal static CliException DuplicateOutput(string path) => new(
+    internal static CliException DuplicateOutput(string path) => CliException.Create(
         ErrorCodes.UsageError,
         $"Two outputs of this operation resolve to the same path: {path}",
         hint: "Give every output, including a backup, its own path.",
@@ -513,7 +513,7 @@ public static partial class CliErrors
     /// The engine wrote a directory beside an output published with its companion files. Only
     /// files are published with an output, so the set is refused and nothing is published.
     /// </summary>
-    internal static CliException CompanionDirectoryUnpublished(string path, string directory) => new(
+    internal static CliException CompanionDirectoryUnpublished(string path, string directory) => CliException.Create(
         ErrorCodes.OutputPublicationFailed,
         $"The output set could not be published: the engine wrote the directory '{directory}' beside {path}, and only companion files are published with an output.",
         hint: "Nothing was written. Convert to another format that keeps its content in one file, and report the format that wrote a directory.",
@@ -523,7 +523,7 @@ public static partial class CliErrors
         string path,
         string reason,
         Exception? inner = null,
-        string phase = "prepare") => new(
+        string phase = "prepare") => CliException.Create(
         ErrorCodes.OutputUnwritable,
         $"Output file could not be written: {path} ({reason})",
         hint: phase switch
@@ -546,7 +546,7 @@ public static partial class CliErrors
         string path,
         FilePublicationSnapshot expected,
         FilePublicationSnapshot? actual,
-        Exception? inner = null) => new(
+        Exception? inner = null) => CliException.Create(
         ErrorCodes.OutputConflict,
         $"Output changed while the operation was preparing to publish it: {path}",
         hint: "Inspect the newer file, then retry from that version or choose a different output path.",
@@ -604,7 +604,7 @@ public static partial class CliErrors
             JsonObject originalDetails = original.Details?.DeepClone().AsObject() ?? [];
             originalDetails["recoveryComplete"] = true;
             originalDetails["targets"] = items.DeepClone();
-            return new CliException(
+            return CliException.Create(
                 original.Code,
                 original.Message,
                 hint: original.Hint,
@@ -613,7 +613,7 @@ public static partial class CliErrors
                 innerException: original);
         }
 
-        return new CliException(
+        return CliException.Create(
             recovery.RecoveryComplete
                 ? ErrorCodes.OutputPublicationFailed
                 : ErrorCodes.OutputPublicationPartial,
@@ -627,7 +627,7 @@ public static partial class CliErrors
             innerException: commitFailure);
     }
 
-    public static CliException LoopbackPortInUse(int port) => new(
+    public static CliException LoopbackPortInUse(int port) => CliException.Create(
         ErrorCodes.LoopbackPortInUse,
         port == 0
             ? "No available ephemeral loopback HTTP port could be bound."
@@ -639,7 +639,7 @@ public static partial class CliErrors
 
     public static CliException LoopbackListenerUnavailable(
         bool permissionDenied,
-        Exception innerException) => new(
+        Exception innerException) => CliException.Create(
         ErrorCodes.LoopbackListenerUnavailable,
         permissionDenied
             ? "The current user is not permitted to create the loopback HTTP listener."
@@ -660,7 +660,7 @@ public static partial class CliErrors
     {
         JsonArray ids = Strings(supported);
 
-        return new CliException(
+        return CliException.Create(
             ErrorCodes.FormatUnsupported,
             $"Unsupported format '{requested}'. Supported formats: {string.Join(", ", supported)}",
             hint: $"Use one of the supported format ids, or run '{DistributionInfo.CommandName} capabilities' to list everything this build supports.",
@@ -691,7 +691,7 @@ public static partial class CliErrors
         facts["option"] = parameter;
         facts["extension"] = Path.GetExtension(output);
         facts["extensions"] = Strings(extensions);
-        return new CliException(
+        return CliException.Create(
             ErrorCodes.UsageError,
             $"{subject} {problem}; use {string.Join(", ", extensions)}.",
             hint,
@@ -706,7 +706,7 @@ public static partial class CliErrors
     {
         JsonArray detected = Strings(detectedProducts);
 
-        return new CliException(
+        return CliException.Create(
             ErrorCodes.FormatMismatch,
             $"'{Path.GetFileName(path)}' has the {Path.GetExtension(path)} extension of a {declaredProduct} document, "
                 + $"but its content looks like {LooksLike(detectedProducts)}.",
@@ -746,7 +746,7 @@ public static partial class CliErrors
         details["path"] ??= path;
         details["declared"] = declaredProduct;
         details["detected"] = Strings(detectedProducts);
-        return new CliException(
+        return CliException.Create(
             ErrorCodes.FormatMismatch,
             corrupt.Message,
             hint: hint,
@@ -778,7 +778,7 @@ public static partial class CliErrors
             ? "Check what the file really is, or run the intended product's command on it explicitly. "
                 + "The product is never chosen from the extension alone."
             : $"The content looks like {LooksLike(detectedProducts)}. " + ProductChoiceHint(detectedProducts);
-        return new CliException(
+        return CliException.Create(
             ErrorCodes.FormatMismatch,
             message,
             hint: hint,
@@ -808,7 +808,7 @@ public static partial class CliErrors
     {
         JsonArray available = Strings(candidates);
 
-        return new CliException(
+        return CliException.Create(
             ErrorCodes.FormatAmbiguous,
             $"The content of '{Path.GetFileName(path)}' looks like a document of more than one product: "
                 + $"{string.Join(", ", candidates)}.",
@@ -821,7 +821,7 @@ public static partial class CliErrors
             });
     }
 
-    public static CliException OptionInvalid(string option, string reason, string hint) => new(
+    public static CliException OptionInvalid(string option, string reason, string hint) => CliException.Create(
         ErrorCodes.OptionInvalid,
         $"Invalid use of {option}: {reason}",
         hint: hint,
@@ -833,7 +833,7 @@ public static partial class CliErrors
     /// </summary>
     /// <param name="option">The option, such as <c>--password-env</c>.</param>
     /// <param name="variable">The variable it names.</param>
-    public static CliException SecretMissing(string option, string variable) => new(
+    public static CliException SecretMissing(string option, string variable) => CliException.Create(
         ErrorCodes.OptionInvalid,
         $"Invalid use of {option}: {SecretMissingReason(variable)}",
         hint: SecretMissingHint(variable),
@@ -856,7 +856,7 @@ public static partial class CliErrors
         ArgumentNullException.ThrowIfNull(mistake);
         var details = new JsonObject { ["option"] = option };
         mistake.WriteTo(details);
-        return new CliException(ErrorCodes.OptionInvalid, $"Invalid use of {option}: {reason}", mistake.Hint(hint), details);
+        return CliException.Create(ErrorCodes.OptionInvalid, $"Invalid use of {option}: {reason}", mistake.Hint(hint), details);
     }
 
     /// <summary>Creates an error for an unavailable product capability.</summary>
@@ -870,7 +870,7 @@ public static partial class CliErrors
         ArgumentNullException.ThrowIfNull(available);
         JsonArray values = Strings(available);
 
-        return new CliException(
+        return CliException.Create(
             ErrorCodes.FeatureUnsupported,
             $"Product '{product}' does not support {feature}.",
             available.Count == 0
@@ -891,7 +891,7 @@ public static partial class CliErrors
     /// </summary>
     /// <param name="message">What the input names and why it is refused.</param>
     /// <param name="hint">How to make the resource local and safe.</param>
-    public static CliException ResourceRefused(string message, string hint) => new(
+    public static CliException ResourceRefused(string message, string hint) => CliException.Create(
         ErrorCodes.FeatureUnsupported,
         message,
         hint: hint);
@@ -902,7 +902,7 @@ public static partial class CliErrors
     /// </summary>
     /// <param name="message">What the content is and the limit it exceeds.</param>
     /// <param name="hint">How to restructure the content.</param>
-    public static CliException ContentUnsupported(string message, string hint) => new(
+    public static CliException ContentUnsupported(string message, string hint) => CliException.Create(
         ErrorCodes.FeatureUnsupported,
         message,
         hint: hint);
@@ -913,26 +913,26 @@ public static partial class CliErrors
     /// </summary>
     /// <param name="message">What in the environment the engine cannot read.</param>
     /// <param name="hint">How to repair the environment.</param>
-    public static CliException EnvironmentUnsupported(string message, string hint) => new(
+    public static CliException EnvironmentUnsupported(string message, string hint) => CliException.Create(
         ErrorCodes.FeatureUnsupported,
         message,
         hint: hint);
 
-    public static CliException LicenseFileNotFound(string path, string source) => new(
+    public static CliException LicenseFileNotFound(string path, string source) => CliException.Create(
         ErrorCodes.LicenseFileNotFound,
         $"License file configured via {source} does not exist: {path}",
         hint: "Fix the license path, or remove the setting to run in evaluation mode.",
         details: new JsonObject { ["path"] = path, ["source"] = source },
         docs: "licensing");
 
-    public static CliException LicensePathIsDirectory(string path, string source) => new(
+    public static CliException LicensePathIsDirectory(string path, string source) => CliException.Create(
         ErrorCodes.LicenseFileNotFound,
         $"License path configured via {source} is a directory, not a license file: {path}",
         hint: "Name the license file itself, such as Aspose.Total.lic, or remove the setting to run in evaluation mode.",
         details: new JsonObject { ["path"] = path, ["source"] = source },
         docs: "licensing");
 
-    public static CliException LicenseInvalid(string source, string reason, Exception? inner = null) => new(
+    public static CliException LicenseInvalid(string source, string reason, Exception? inner = null) => CliException.Create(
         ErrorCodes.LicenseInvalid,
         $"The license configured via {source} was rejected: {reason}",
         hint: "Verify the file is a valid Aspose license, or remove the setting to run in evaluation mode.",
@@ -954,7 +954,7 @@ public static partial class CliErrors
         string license,
         string? alternative = null,
         JsonObject? details = null,
-        Exception? innerException = null) => new(
+        Exception? innerException = null) => CliException.Create(
         ErrorCodes.EvaluationLimit,
         message,
         hint: alternative is null ? $"Apply an {license} license." : $"Apply an {license} license, or {alternative}.",
@@ -978,7 +978,7 @@ public static partial class CliErrors
         string hint = available.Count == 0
             ? "Install Aspose CLI to configure an Aspose license."
             : $"Choose a product that uses Aspose licensing: {string.Join(", ", available)}.";
-        return new CliException(
+        return CliException.Create(
             ErrorCodes.LicenseNotApplicable,
             $"License {operation} is not applicable to {subject}.",
             hint,
@@ -1024,7 +1024,7 @@ public static partial class CliErrors
         hint = hint is not null ? mistake.Hint(hint)
             : mistake.Question
                 ?? (available.Count == 0 ? $"The document has no {subject} to select." : "Use one of the names in details.available.");
-        return new CliException(code, $"No {subject} '{requested}' was found.", hint, details);
+        return CliException.Create(code, $"No {subject} '{requested}' was found.", hint, details);
     }
 
     /// <summary>
@@ -1048,7 +1048,7 @@ public static partial class CliErrors
         ArgumentException.ThrowIfNullOrWhiteSpace(requested);
         ArgumentOutOfRangeException.ThrowIfNegative(count);
 
-        return new CliException(
+        return CliException.Create(
             code,
             $"No {subject} '{requested}' was found; {count} exist.",
             hint ?? (count == 0 ? $"The document has no {subject} to select." : $"Use a {subject} from 1 through {count}."),
@@ -1087,7 +1087,7 @@ public static partial class CliErrors
     {
         ArgumentNullException.ThrowIfNull(exception);
         ArgumentException.ThrowIfNullOrWhiteSpace(diagnosticId);
-        return new CliException(
+        return CliException.Create(
             ErrorCodes.Internal,
             "Unexpected internal error.",
             hint: "This is a bug in the CLI. Please report it with the command you ran.",

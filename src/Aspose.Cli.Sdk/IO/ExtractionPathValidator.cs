@@ -52,7 +52,7 @@ internal static class ExtractionPathValidator
         }
     }
 
-    internal static CliException Refused(string reason) => new(
+    internal static CliException Refused(string reason) => CliException.Create(
         ErrorCodes.ExtractBudgetExceeded,
         $"Extraction was refused: {reason}.",
         hint: "Narrow the extraction or raise the documented item/byte budget only for trusted content.");

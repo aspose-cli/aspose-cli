@@ -19,7 +19,7 @@ internal static class OperationErrors
     {
         var details = new JsonObject { ["reason"] = reason };
         AddAllowedFields(details, field);
-        return new CliException(ErrorCodes.OpsInvalid, $"The operation document is invalid: {reason}",
+        return CliException.Create(ErrorCodes.OpsInvalid, $"The operation document is invalid: {reason}",
             hint: field?.Mistake?.Hint(hint) ?? hint, details: details);
     }
 
@@ -47,7 +47,7 @@ internal static class OperationErrors
         value?.WriteTo(details);
         Mistake? mistake = value ?? field?.Mistake;
         string subject = name is null ? $"Operation {index}" : $"Operation {index} ({name})";
-        return new CliException(ErrorCodes.OpsInvalid, $"{subject} is invalid: {reason}",
+        return CliException.Create(ErrorCodes.OpsInvalid, $"{subject} is invalid: {reason}",
             hint: mistake?.Hint(hint) ?? hint, details: details);
     }
 
@@ -67,7 +67,7 @@ internal static class OperationErrors
         details["errors"] = new JsonArray([.. failures.Select(static failure => failure.Details!.DeepClone())]);
         int more = failures.Count - 1;
         string others = more == 1 ? "1 more operation is invalid" : $"{more} more operations are invalid";
-        return new CliException(ErrorCodes.OpsInvalid, $"{first.Message}; {others}, listed in details.errors",
+        return CliException.Create(ErrorCodes.OpsInvalid, $"{first.Message}; {others}, listed in details.errors",
             hint: first.Hint, details: details);
     }
 
@@ -83,7 +83,7 @@ internal static class OperationErrors
             ["reason"] = reason,
         };
         operation.WriteTo(details);
-        return new CliException(ErrorCodes.OpsInvalid, $"Operation {index} is invalid: {reason}",
+        return CliException.Create(ErrorCodes.OpsInvalid, $"Operation {index} is invalid: {reason}",
             hint: operation.Hint(hint), details: details);
     }
 
@@ -104,7 +104,7 @@ internal static class OperationErrors
         JsonObject details = cause.Details?.DeepClone().AsObject() ?? [];
         details["index"] = index;
         details["op"] = name;
-        return new CliException(cause.Code, $"Operation {index} ({name}) failed: {cause.Message}",
+        return CliException.Create(cause.Code, $"Operation {index} ({name}) failed: {cause.Message}",
             hint: cause.Hint, details: details, innerException: cause);
     }
 

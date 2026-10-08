@@ -145,7 +145,7 @@ public sealed class PageRange
         return parsed;
     }
 
-    private static CliException Invalid(string text, string reason) => new(
+    private static CliException Invalid(string text, string reason) => CliException.Create(
         ErrorCodes.PageRangeInvalid,
         $"Invalid item range '{text}': {reason}.",
         hint: "Use 1-based ranges such as '1-3,7,9-'.",

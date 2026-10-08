@@ -25,7 +25,7 @@ public static partial class CliErrors
         string? docs = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(code);
-        return new CliException(new ErrorCode(code, exitCode), message, hint, details, docs);
+        return CliException.Create(new ErrorCode(code, exitCode), message, hint, details, docs);
     }
 
     /// <summary>
@@ -34,19 +34,19 @@ public static partial class CliErrors
     /// </summary>
     /// <param name="message">What could not be done.</param>
     /// <param name="hint">How to see why, if the caller knows.</param>
-    public static CliException Internal(string message, string? hint = null) => new(
+    public static CliException Internal(string message, string? hint = null) => CliException.Create(
         ErrorCodes.Internal,
         message,
         hint: hint);
 
     /// <summary>Another App or preview service holds the per-user service lock.</summary>
-    public static CliException ServiceBusy() => new(
+    public static CliException ServiceBusy() => CliException.Create(
         ErrorCodes.AppBusy,
         "Another App or preview service is starting, running or stopping for this user.",
         hint: $"Retry in a moment. If it persists, run '{DistributionInfo.CommandName} app stop' and start again.");
 
     /// <summary>The App is stopping, so it takes no further change.</summary>
-    public static CliException AppStopping() => new(
+    public static CliException AppStopping() => CliException.Create(
         ErrorCodes.AppBusy,
         "The App is stopping and cannot accept changes.",
         hint: "Start the App again to continue.");
@@ -60,7 +60,7 @@ public static partial class CliErrors
         var mistake = Mistake.Of(view, available);
         var details = new JsonObject();
         mistake.WriteTo(details);
-        return new CliException(
+        return CliException.Create(
             ErrorCodes.FeatureUnsupported,
             $"View '{view}' is not supported by the {product} product.",
             hint: mistake.Hint($"Use one of: {string.Join(", ", available)}."),

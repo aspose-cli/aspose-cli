@@ -1,3 +1,5 @@
+using System.Collections.Frozen;
+
 namespace Aspose.Cli.Sdk.Errors;
 
 /// <summary>
@@ -213,4 +215,13 @@ public static partial class ErrorCodes
         WorkerTerminationFailed,
         Internal,
     ];
+
+    private static readonly FrozenSet<string> SharedNames =
+        All.Select(static code => code.Name).ToFrozenSet(StringComparer.Ordinal);
+
+    /// <summary>
+    /// Whether <paramref name="code"/> is one of these shared codes, which only the SDK's
+    /// factories build.
+    /// </summary>
+    internal static bool IsShared(ErrorCode code) => SharedNames.Contains(code.Name);
 }

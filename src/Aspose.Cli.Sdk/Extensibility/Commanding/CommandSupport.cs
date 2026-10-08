@@ -75,7 +75,7 @@ public static class JsonInputSource
         catch (CliException exception)
             when (exception.Code == ErrorCodes.FileNotFound)
         {
-            throw new CliException(
+            throw CliException.Create(
                 exception.Code,
                 exception.Message,
                 hint: $"{exception.Hint} To pass the JSON itself, start the value with {{ or [ (inline) or use '-' for stdin.",

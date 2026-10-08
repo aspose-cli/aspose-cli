@@ -204,6 +204,12 @@ issue headings.
   other constraint also reaches the items of lists and maps. The operation generator builds
   the catalog and the handler dispatch, the catalog enforces the constraints and writes the ops
   schema, and analyzer `APCLI012` rejects an incomplete contract.
+- **Error codes.** A code shared by products or the Host is declared once in the SDK's
+  `ErrorCodes`, and its errors are built only by `CliErrors` factories, one per situation, so
+  each situation has one message, hint and details shape; `CliException` refuses a shared code
+  in its constructor, and `CliErrors.FromRemote` restates one that another process of the CLI
+  reported. A product declares its own codes in its `*Diagnostics` class and builds them with
+  the constructor.
 - **Missing targets.** A code for a sheet, slide, bookmark or other target the document does
   not contain is declared with `ErrorCode.NotFound`, and its errors are built only with
   `CliErrors.NotFound` (named targets, listing the available names and the closest ones) or
