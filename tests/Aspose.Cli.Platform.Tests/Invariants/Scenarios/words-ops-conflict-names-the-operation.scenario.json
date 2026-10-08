@@ -1,0 +1,21 @@
+{
+  "name": "words edit refuses an operation on a block an earlier operation deletes, naming that operation",
+  "files": {
+    "doc.docx": { "fixture": "words.docx" },
+    "conflict.json": { "text": "{\"ops\":[{\"op\":\"delete_blocks\",\"target\":{\"block\":1}},{\"op\":\"format_text\",\"target\":{\"block\":1},\"bold\":true}]}" }
+  },
+  "steps": [
+    {
+      "args": ["words", "edit", "doc.docx", "--ops", "conflict.json", "--out", "out.docx"],
+      "expect": {
+        "error": "OPS_INVALID",
+        "json": [
+          { "path": "error.details.index", "equals": 1 },
+          { "path": "error.details.op", "equals": "format_text" },
+          { "path": "error.details.reason", "contains": "deleted by an earlier operation" }
+        ],
+        "files": { "absent": ["out.docx"], "unchanged": ["doc.docx"] }
+      }
+    }
+  ]
+}

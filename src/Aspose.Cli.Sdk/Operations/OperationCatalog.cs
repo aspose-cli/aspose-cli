@@ -127,6 +127,21 @@ public sealed class OperationCatalog<TOp>
         return DescriptorOf(operation).Record.Name;
     }
 
+    /// <summary>
+    /// The <c>OPS_INVALID</c> failure of the operation at <paramref name="index"/> for a rule a
+    /// product checks against the document before the batch runs, such as two operations that
+    /// change the same object. Its details name the operation as the catalog's own checks do.
+    /// </summary>
+    /// <param name="index">The operation's zero-based position in the batch.</param>
+    /// <param name="operation">The operation at fault.</param>
+    /// <param name="rejection">The rule it breaks, with its own hint, if any.</param>
+    public CliException Invalid(int index, TOp operation, OperationInvalidException rejection)
+    {
+        ArgumentNullException.ThrowIfNull(rejection);
+        return OperationErrors.InvalidAt(
+            index, NameOf(operation), rejection.Message, rejection.Hint ?? DefaultHint, value: rejection.Mistake);
+    }
+
     /// <summary>Parses, validates and identifies an operation document.</summary>
     /// <exception cref="CliException"><c>OPS_INVALID</c>, with the index of the first failing operation and, when several fail, each in <c>details.errors</c>.</exception>
     public TBatch Parse<TBatch>(string json, ProductJsonDefinition contracts)
