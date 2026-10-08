@@ -1,5 +1,6 @@
 using Aspose.Cli.Product.Words.Contracts;
 using Aspose.Cli.Sdk.Contracts;
+using Aspose.Cli.Sdk.Diagnostics;
 
 namespace Aspose.Cli.Product.Words.Tests;
 
@@ -157,7 +158,7 @@ internal static class WordsContractSamples
             Ok = false,
             Issues =
             [
-                VerificationIssue.Of(
+                VerificationIssues.Of(
                     WordsDiagnostics.FieldCountChanged,
                     "Field count changed during save/reopen: expected 2, found 0.",
                     hint: "The output format may not keep fields; save to docx (or the input's Word format) and verify again."),

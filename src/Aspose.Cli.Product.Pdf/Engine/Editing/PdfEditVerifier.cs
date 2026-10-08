@@ -436,7 +436,7 @@ internal sealed class PdfEditVerifier
     {
         string operations = string.Join(", ", ids.Select(id => $"'{id}' ({_recorded.First(item => item.Id == id).Op})"));
         string subject = ids.Count == 1 ? $"Operation {operations}" : $"Operations {operations}";
-        return VerificationIssue.Of(code, $"{subject}: {problem}.", location, hint);
+        return VerificationIssues.Of(code, $"{subject}: {problem}.", location, hint);
     }
 
     private void Replace<T>(Dictionary<string, Expected<T>> expectations, string key, Expected<T> expected)
