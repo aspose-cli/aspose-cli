@@ -36,6 +36,9 @@ internal sealed class GeneratedOperationSchema
 
     /// <summary><c>sha256:</c> and the lowercase hex SHA-256 of the UTF-8 schema text.</summary>
     public string Fingerprint => _fingerprint.Value;
+
+    /// <summary>The fingerprint, computed when first read.</summary>
+    internal Lazy<string> LazyFingerprint => _fingerprint;
 }
 
 /// <summary>

@@ -115,8 +115,8 @@ public sealed class OperationCatalog<TOp>
                 OperationSchema = $"{DistributionInfo.CommandName} schema {SchemaCommandId} --operation <op>",
                 MaximumOperationCount = MaximumOperationCount,
                 Ops = Names,
-                Schema = _schema,
-            });
+            },
+            _schema);
     }
 
     /// <summary>Returns the wire name of an operation of this vocabulary.</summary>

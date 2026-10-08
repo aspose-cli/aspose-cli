@@ -125,7 +125,7 @@ public sealed record ProductOperationDescriptor
     /// line endings); it changes whenever the published schema text changes, descriptions
     /// included. It is computed once, when first read.
     /// </summary>
-    public string ContractFingerprint => Schema.Fingerprint;
+    public string ContractFingerprint => Fingerprint.Value;
 
     /// <summary>Largest accepted number of operations in one document.</summary>
     public required int MaximumOperationCount { get; init; }
@@ -133,8 +133,8 @@ public sealed record ProductOperationDescriptor
     /// <summary>Operation names in published order.</summary>
     public required IReadOnlyList<string> Ops { get; init; }
 
-    /// <summary>The vocabulary's schema, which the command serves and the fingerprint hashes.</summary>
-    internal Operations.GeneratedOperationSchema Schema { get; init; } = null!;
+    /// <summary>The fingerprint of the vocabulary's schema, computed once and shared with the schema.</summary>
+    internal Lazy<string> Fingerprint { get; init; } = null!;
 }
 
 /// <summary>One discoverable default and hard maximum for a resource.</summary>
