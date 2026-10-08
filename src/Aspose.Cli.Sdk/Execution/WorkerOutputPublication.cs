@@ -3,8 +3,19 @@ using Aspose.Cli.Sdk.IO;
 namespace Aspose.Cli.Sdk.Execution;
 
 /// <summary>Hands a validated worker plan to the same durable publisher used in-process.</summary>
-internal static class WorkerOutputPublisher
+public static class WorkerOutputPublisher
 {
+    /// <summary>Publishes a sealed worker output manifest through the in-process publisher.</summary>
+    public static IReadOnlyList<long> Publish(string manifestPath, ResourceBudgetLedger budgets)
+    {
+        try { return WorkerOutputPublisher.Publish(WorkerManifestStore.ReadAndValidate(manifestPath), budgets); }
+        catch (Exception error) when (error is IOException or InvalidDataException or UnauthorizedAccessException)
+        {
+            throw Aspose.Cli.Sdk.Errors.CliErrors.OutputUnwritable(manifestPath,
+                "the worker output could not be published", error, "worker-publication");
+        }
+    }
+
     internal static IReadOnlyList<long> Publish(WorkerOutputManifest manifest, ResourceBudgetLedger budgets, IPublicationFaultInjector? faults = null)
     {
         budgets.Deadline.ThrowIfExpired("worker-publication");

@@ -34,7 +34,7 @@ public sealed class WorkerOutputPublicationTests : IDisposable
         Assert.Equal("original", File.ReadAllText(target));
         Assert.False(File.Exists(backup));
 
-        WorkerOutputSession.Publish(ManifestPath, TestBudgets.Create());
+        WorkerOutputPublisher.Publish(ManifestPath, TestBudgets.Create());
 
         Assert.Equal("published", File.ReadAllText(target));
         Assert.Equal("original", File.ReadAllText(backup));
@@ -55,7 +55,7 @@ public sealed class WorkerOutputPublicationTests : IDisposable
             Entry(replaced, "published"));
         WorkerManifestStore.Write(ManifestPath, manifest);
 
-        WorkerOutputSession.Publish(ManifestPath, TestBudgets.Create());
+        WorkerOutputPublisher.Publish(ManifestPath, TestBudgets.Create());
 
         Assert.False(File.Exists(deleted));
         Assert.Equal("published", File.ReadAllText(replaced));
@@ -79,7 +79,7 @@ public sealed class WorkerOutputPublicationTests : IDisposable
         File.WriteAllText(second, "external-change");
 
         CliException error = Assert.Throws<CliException>(
-            () => WorkerOutputSession.Publish(ManifestPath, TestBudgets.Create()));
+            () => WorkerOutputPublisher.Publish(ManifestPath, TestBudgets.Create()));
 
         Assert.Equal(ErrorCodes.OutputConflict, error.Code);
         Assert.Equal("first-original", File.ReadAllText(first));
@@ -104,7 +104,7 @@ public sealed class WorkerOutputPublicationTests : IDisposable
         File.Replace(replacement, staged, displaced);
 
         CliException error = Assert.Throws<CliException>(
-            () => WorkerOutputSession.Publish(ManifestPath, TestBudgets.Create()));
+            () => WorkerOutputPublisher.Publish(ManifestPath, TestBudgets.Create()));
 
         Assert.Equal(ErrorCodes.OutputUnwritable, error.Code);
         Assert.Equal("original", File.ReadAllText(target));
@@ -120,7 +120,7 @@ public sealed class WorkerOutputPublicationTests : IDisposable
             Manifest(Entry(target, "published")));
 
         CliException error = Assert.Throws<CliException>(
-            () => WorkerOutputSession.Publish(ManifestPath, TestBudgets.Create()));
+            () => WorkerOutputPublisher.Publish(ManifestPath, TestBudgets.Create()));
 
         Assert.Equal(ErrorCodes.OutputUnwritable, error.Code);
         Assert.False(Directory.Exists(parent));
@@ -140,7 +140,7 @@ public sealed class WorkerOutputPublicationTests : IDisposable
         File.WriteAllText(second, "external-change");
 
         Assert.Throws<CliException>(() =>
-            WorkerOutputSession.Publish(ManifestPath, TestBudgets.Create()));
+            WorkerOutputPublisher.Publish(ManifestPath, TestBudgets.Create()));
 
         Assert.False(Directory.Exists(createdParent));
         Assert.Equal("external-change", File.ReadAllText(second));
@@ -156,7 +156,7 @@ public sealed class WorkerOutputPublicationTests : IDisposable
         string external = _temp.File("external.txt");
         File.WriteAllText(external, "original");
         File.Replace(external, target, _temp.File("displaced.txt"));
-        Assert.Throws<CliException>(() => WorkerOutputSession.Publish(ManifestPath, TestBudgets.Create()));
+        Assert.Throws<CliException>(() => WorkerOutputPublisher.Publish(ManifestPath, TestBudgets.Create()));
         Assert.Equal("original", File.ReadAllText(target));
     }
 
@@ -170,7 +170,7 @@ public sealed class WorkerOutputPublicationTests : IDisposable
         { InputPath = input, InputSnapshot = FilePublicationSnapshot.Capture(input) };
         WorkerManifestStore.Write(ManifestPath, Manifest(entry));
         File.WriteAllText(input, "external");
-        CliException error = Assert.Throws<CliException>(() => WorkerOutputSession.Publish(ManifestPath, TestBudgets.Create()));
+        CliException error = Assert.Throws<CliException>(() => WorkerOutputPublisher.Publish(ManifestPath, TestBudgets.Create()));
         Assert.Equal(ErrorCodes.InputChanged, error.Code);
         Assert.False(File.Exists(target));
     }
@@ -187,7 +187,7 @@ public sealed class WorkerOutputPublicationTests : IDisposable
             ? OperationDeadline.FromAbsoluteTick(TimeSpan.FromSeconds(1), Environment.TickCount64 - 1)
             : OperationDeadline.Start(null, cancelled.Token);
         if (!expire) { cancelled.Cancel(); }
-        Exception? error = Record.Exception(() => WorkerOutputSession.Publish(ManifestPath, new ResourceBudgetLedger(deadline)));
+        Exception? error = Record.Exception(() => WorkerOutputPublisher.Publish(ManifestPath, new ResourceBudgetLedger(deadline)));
         if (expire) { Assert.Equal(ErrorCodes.OperationTimeout, Assert.IsType<CliException>(error).Code); }
         else { Assert.IsAssignableFrom<OperationCanceledException>(error); }
         Assert.False(File.Exists(target));
@@ -213,7 +213,7 @@ public sealed class WorkerOutputPublicationTests : IDisposable
         File.WriteAllText(ManifestPath, json);
 
         CliException error = Assert.Throws<CliException>(
-            () => WorkerOutputSession.Publish(ManifestPath, TestBudgets.Create()));
+            () => WorkerOutputPublisher.Publish(ManifestPath, TestBudgets.Create()));
 
         Assert.Equal(ErrorCodes.OutputUnwritable, error.Code);
         Assert.Equal(

@@ -4,6 +4,7 @@ using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using Aspose.Cli.Host.Review;
 using Aspose.Cli.Sdk.Contracts;
+using Aspose.Cli.Sdk.Execution;
 using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Serialization;
@@ -299,9 +300,9 @@ public sealed class ReviewEvidenceWriterTests
         string workerRoot = Aspose.Cli.Sdk.IO.UserStorage.CreateTemporaryDirectory("worker");
         try
         {
-            string manifest = Path.Combine(workerRoot, Aspose.Cli.Sdk.Execution.WorkerOutputSession.ManifestName);
-            var worker = new Aspose.Cli.Sdk.Execution.WorkerOutputSession(workerRoot, manifest);
-            using var deadline = Aspose.Cli.Sdk.Execution.OperationDeadline.Start(null);
+            string manifest = Path.Combine(workerRoot, Aspose.Cli.Sdk.IO.WorkerOutputSession.ManifestName);
+            var worker = new Aspose.Cli.Sdk.IO.WorkerOutputSession(workerRoot, manifest);
+            using var deadline = Aspose.Cli.Sdk.IO.OperationDeadline.Start(null);
             var budgets = new Aspose.Cli.Sdk.IO.ResourceBudgetLedger(deadline, outputSession: worker);
             string target = temp.File("review");
             ReviewEvidenceWriter.Write(temp.File("source.test"), "test", target, 1, true, Presentation,
@@ -309,7 +310,7 @@ public sealed class ReviewEvidenceWriterTests
                 _ => new ProductReviewAssessment(), LicenseState.NotApplicable, new ContractJsonSerializer([]), budgets);
             Assert.Empty(Directory.EnumerateFileSystemEntries(temp.Path));
             worker.SealForPublication();
-            Aspose.Cli.Sdk.Execution.WorkerOutputSession.Publish(manifest, Aspose.Cli.Sdk.Tests.TestBudgets.Create());
+            WorkerOutputPublisher.Publish(manifest, Aspose.Cli.Sdk.Tests.TestBudgets.Create());
             Assert.True(File.Exists(Path.Combine(target, "index.html")));
             Assert.True(File.Exists(Path.Combine(target, "review.json")));
             Assert.True(File.Exists(Path.Combine(target, "artifacts", "page.png")));
@@ -322,7 +323,7 @@ public sealed class ReviewEvidenceWriterTests
     {
         using var temp = new TempDirectory();
         using var cancellation = new CancellationTokenSource();
-        using var deadline = Aspose.Cli.Sdk.Execution.OperationDeadline.Start(null, cancellation.Token);
+        using var deadline = Aspose.Cli.Sdk.IO.OperationDeadline.Start(null, cancellation.Token);
         Assert.Throws<OperationCanceledException>(() => ReviewEvidenceWriter.Write(
             temp.File("source.test"), "test", temp.File("review"), 1, true, Presentation,
             artifacts => { artifacts.Write("page.png", stream => stream.Write(PngHeader)); return Manifest(1, ["page.png"]); },

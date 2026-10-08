@@ -315,7 +315,7 @@ public sealed class LicenseInstallerTests
             Assert.Equal(2, manifest.Entries.Count);
             Assert.Equal("new license", File.ReadAllText(Assert.Single(manifest.Entries, entry => entry.Target == installed).Staged));
             Assert.True(Assert.Single(manifest.Entries, entry => entry.Target == deleted).DeleteTarget);
-            WorkerOutputSession.Publish(manifestPath, TestBudgets.Create());
+            WorkerOutputPublisher.Publish(manifestPath, TestBudgets.Create());
             Assert.Equal("new license", File.ReadAllText(installed));
             Assert.False(File.Exists(deleted));
         }

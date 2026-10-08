@@ -2,9 +2,8 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Aspose.Cli.Sdk.Errors;
-using Aspose.Cli.Sdk.IO;
 
-namespace Aspose.Cli.Sdk.Execution;
+namespace Aspose.Cli.Sdk.IO;
 
 /// <summary>Validates immutable worker plans before their data reaches the publisher.</summary>
 internal static class WorkerManifestStore

@@ -100,7 +100,7 @@ public sealed class PublicationBoundaryTests
             using var deadline = OperationDeadline.Start(null);
             var writer = new SafeFileWriter(new ResourceBudgetLedger(deadline, outputSession: worker));
             writer.Write(temp.File("output.txt"), false, file => File.WriteAllText(file, "candidate"));
-            Assert.Throws<CliException>(() => WorkerOutputSession.Publish(manifest, TestBudgets.Create()));
+            Assert.Throws<CliException>(() => WorkerOutputPublisher.Publish(manifest, TestBudgets.Create()));
             Assert.False(File.Exists(temp.File("output.txt")));
         }
         finally { UserStorage.TryDeleteTree(root); }
@@ -123,7 +123,7 @@ public sealed class PublicationBoundaryTests
             File.WriteAllText(changed.Path, "external replacement");
             Assert.Throws<CliException>(() => outputs.Commit());
             worker.SealForPublication();
-            Assert.Empty(WorkerOutputSession.Publish(manifest, TestBudgets.Create()));
+            Assert.Empty(WorkerOutputPublisher.Publish(manifest, TestBudgets.Create()));
             Assert.False(File.Exists(temp.File("first.txt")));
             Assert.False(File.Exists(temp.File("second.txt")));
         }

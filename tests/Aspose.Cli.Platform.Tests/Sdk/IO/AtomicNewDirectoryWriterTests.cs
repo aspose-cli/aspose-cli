@@ -128,7 +128,7 @@ public sealed class AtomicNewDirectoryWriterTests
             }
             worker.SealForPublication();
             Assert.Empty(Directory.EnumerateFileSystemEntries(temp.Path));
-            WorkerOutputSession.Publish(manifest, TestBudgets.Create());
+            WorkerOutputPublisher.Publish(manifest, TestBudgets.Create());
             Assert.Equal("complete", File.ReadAllText(Path.Combine(target, "parts", "data.txt")));
             Assert.True(UserStorage.TryDeleteTree(workerRoot));
         }
@@ -153,7 +153,7 @@ public sealed class AtomicNewDirectoryWriterTests
             output.Commit();
             worker.SealForPublication();
             Write(output, extra ? "unknown.txt" : "data.txt", "changed");
-            Assert.Throws<CliException>(() => WorkerOutputSession.Publish(manifest, TestBudgets.Create()));
+            Assert.Throws<CliException>(() => WorkerOutputPublisher.Publish(manifest, TestBudgets.Create()));
             Assert.False(Directory.Exists(target));
         }
         finally { UserStorage.TryDeleteTree(workerRoot); }
@@ -240,7 +240,7 @@ public sealed class AtomicNewDirectoryWriterTests
             File.WriteAllText(Path.Combine(parent, "owner.txt"), "preserve");
             if (OperatingSystem.IsWindows())
             {
-                Assert.Throws<CliException>(() => WorkerOutputSession.Publish(manifest, TestBudgets.Create()));
+                Assert.Throws<CliException>(() => WorkerOutputPublisher.Publish(manifest, TestBudgets.Create()));
                 Assert.False(Directory.Exists(Path.Combine(parent, "result")));
             }
             Assert.Equal("preserve", File.ReadAllText(Path.Combine(parent, "owner.txt")));

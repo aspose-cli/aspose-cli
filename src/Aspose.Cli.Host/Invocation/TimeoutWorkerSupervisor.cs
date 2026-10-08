@@ -120,7 +120,7 @@ internal static class TimeoutWorkerSupervisor
             if (exitCode is (int)ExitCode.Success or (int)ExitCode.PartialFailure && File.Exists(manifest))
             {
                 // This is the only final publisher. Recovery runs here even when the deadline expires.
-                WorkerOutputSession.Publish(manifest, CompositionRoot.CreateBudgets(host.Catalog,
+                WorkerOutputPublisher.Publish(manifest, CompositionRoot.CreateBudgets(host.Catalog,
                     invocation.GlobalValues ?? inherited ?? throw new InvalidDataException("The publishing invocation has no global values."), deadline,
                     outputBytesLimit: invocation.Command.Policy().OutputBytesLimit));
             }
