@@ -51,16 +51,16 @@ internal sealed class WordsDocumentLoader
     /// Opens an admitted input. <paramref name="warnings"/> receives what the SDK reports while
     /// it loads the document; font substitutions arrive only when the document is laid out.
     /// </summary>
-    public LoadedDocument Open(string path, string? password, IWarningCallback? warnings = null)
+    public LoadedDocument Open(string path, Secret? password, IWarningCallback? warnings = null)
     {
         InputSizeGuard.Ensure(_resourceBudgets, path);
         return OpenCore(path, password, warnings);
     }
 
     // Generated candidates are bounded by publication, not a second user-input admission.
-    internal LoadedDocument OpenPublishedCandidate(string path, string? password) => OpenCore(path, password, warnings: null);
+    internal LoadedDocument OpenPublishedCandidate(string path, Secret? password) => OpenCore(path, password, warnings: null);
 
-    private LoadedDocument OpenCore(string path, string? password, IWarningCallback? warnings)
+    private LoadedDocument OpenCore(string path, Secret? password, IWarningCallback? warnings)
     {
         FileStream input;
         try
@@ -74,7 +74,7 @@ internal sealed class WordsDocumentLoader
 
         using (input)
         {
-            return OpenCore(input, path, password, warnings);
+            return OpenCore(input, path, password?.Reveal(), warnings);
         }
     }
 

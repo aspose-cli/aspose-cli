@@ -33,7 +33,7 @@ internal sealed class CellsReadService
         ArgumentNullException.ThrowIfNull(request);
 
         LicenseState licenseState = _licenseGate.EnsureApplied();
-        using LoadedWorkbook loaded = _loader.Open(filePath, request.Password?.Reveal());
+        using LoadedWorkbook loaded = _loader.Open(filePath, request.Password);
         Workbook workbook = loaded.Workbook;
 
         (WorkbookSummary summary, Warning? errorsTruncated) =
@@ -56,7 +56,7 @@ internal sealed class CellsReadService
         ArgumentNullException.ThrowIfNull(request);
 
         LicenseState licenseState = _licenseGate.EnsureApplied();
-        using LoadedWorkbook loaded = _loader.Open(filePath, request.Password?.Reveal());
+        using LoadedWorkbook loaded = _loader.Open(filePath, request.Password);
         Workbook workbook = loaded.Workbook;
         (SheetProjection sheet, IReadOnlyDictionary<string, StyleData>? styles, ResultWindow window) =
             ReadProjection.Project(_resourceBudgets, workbook, request);

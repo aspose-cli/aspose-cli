@@ -27,7 +27,7 @@ internal sealed class SlidesExtractionService
     internal SlidesExtractResult Extract(string filePath, PresentationExtractRequest request)
     {
         LicenseState state = _licenseGate.EnsureApplied();
-        using LoadedPresentation loaded = _loader.Open(filePath, request.Password?.Reveal());
+        using LoadedPresentation loaded = _loader.Open(filePath, request.Password);
         IReadOnlyList<int> slides = request.Slides is null
             ? Enumerable.Range(1, loaded.Presentation.Slides.Count).ToArray()
             : ResolveSlideRange(request.Slides, loaded.Presentation.Slides.Count);

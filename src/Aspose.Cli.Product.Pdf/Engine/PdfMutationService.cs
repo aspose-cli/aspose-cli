@@ -38,7 +38,7 @@ internal sealed class PdfMutationService
         LicenseState state = _licenseGate.EnsureApplied();
         FileWritePrecondition precondition = FileWritePrecondition.Capture(filePath);
         using InputResourceScope operationInputs = _inputs.CreateScope();
-        using LoadedPdf loaded = _loader.Open(filePath, request.Password?.Reveal());
+        using LoadedPdf loaded = _loader.Open(filePath, request.Password);
         SourceInfo input = PdfInfoProjection.Source(filePath, includeFingerprint: true);
         FileFingerprints.EnsureUnchanged(filePath, precondition.Fingerprint, input.Fingerprint!);
         FileFingerprints.EnsureMatch(filePath, request.Options.IfMatch, input.Fingerprint!);
@@ -51,7 +51,7 @@ internal sealed class PdfMutationService
         var textMoved = new List<string>();
         PdfNavigationCensus navigationBefore = PdfNavigationCensus.Unresolved(loaded.Document);
         PdfEditVerifier? verifier = request.Verify ? new PdfEditVerifier(loaded.Document) : null;
-        (IReadOnlyList<BoundedOperationOutcome> outcomes, string? outputPassword, EncryptPdfOp? encryption) =
+        (IReadOnlyList<BoundedOperationOutcome> outcomes, Secret? outputPassword, EncryptPdfOp? encryption) =
             ApplyOperations(loaded.Document, batch, request, touched, textMoved, operationInputs, verifier);
         // PDF-ENCRYPTED-INFO-TEXT: document information set in this batch survives only an
         // encryption applied to a reopened copy.
@@ -91,7 +91,7 @@ internal sealed class PdfMutationService
         };
     }
 
-    private (IReadOnlyList<BoundedOperationOutcome> Outcomes, string? OutputPassword, EncryptPdfOp? Encryption) ApplyOperations(
+    private (IReadOnlyList<BoundedOperationOutcome> Outcomes, Secret? OutputPassword, EncryptPdfOp? Encryption) ApplyOperations(
         Document document,
         PdfOpsBatch batch,
         PdfEditRequest request,
@@ -100,7 +100,7 @@ internal sealed class PdfMutationService
         InputResourceScope operationInputs,
         PdfEditVerifier? verifier)
     {
-        string? outputPassword = request.Password?.Reveal();
+        Secret? outputPassword = request.Password;
         EncryptPdfOp? encryption = null;
         IReadOnlyList<BoundedOperationOutcome> outcomes = BoundedOperationRunner.Run(
             PdfOp.Catalog,
@@ -127,7 +127,7 @@ internal sealed class PdfMutationService
                 }
                 if (op is EncryptPdfOp encrypt)
                 {
-                    outputPassword = OperationSecrets.Resolve(request.OpSecrets, encrypt.UserPasswordEnv)?.Reveal();
+                    outputPassword = OperationSecrets.Resolve(request.OpSecrets, encrypt.UserPasswordEnv);
                     encryption = encrypt;
                 }
                 else if (op is DecryptPdfOp)
@@ -207,7 +207,7 @@ internal sealed class PdfMutationService
     private Publication Publish(
         Document document,
         PdfEditRequest request,
-        string? outputPassword,
+        Secret? outputPassword,
         EncryptPdfOp? encryptCopy,
         FileWritePrecondition precondition,
         PdfEditVerifier? verifier,

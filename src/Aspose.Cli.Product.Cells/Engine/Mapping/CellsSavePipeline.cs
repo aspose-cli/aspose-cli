@@ -17,8 +17,8 @@ internal sealed class CellsSavePipeline(SafeFileWriter writer, CellsWorkbookLoad
         new(_writer, backupPath is null ? directories : directories.Append(Path.GetDirectoryName(backupPath)!), operation);
 
     internal WorkbookStagedSave Save(
-        Workbook workbook, ResolvedOutput output, LicenseState licenseState, string? encryptPassword = null,
-        FileWritePrecondition? inputPrecondition = null, bool verifyReopen = false, string? inputPassword = null)
+        Workbook workbook, ResolvedOutput output, LicenseState licenseState, Secret? encryptPassword = null,
+        FileWritePrecondition? inputPrecondition = null, bool verifyReopen = false, Secret? inputPassword = null)
     {
         WorkbookSavePlan plan = WorkbookSavePlan.Create(output.Format, licenseState, encryptPassword, inputPassword);
         using AtomicOutputSetWriter transaction = CreateOutputSet([output.Directory], "cells-save", output.BackupPath);

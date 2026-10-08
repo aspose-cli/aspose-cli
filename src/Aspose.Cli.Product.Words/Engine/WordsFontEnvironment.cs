@@ -62,7 +62,7 @@ internal sealed partial class WordsFontEnvironment : IFontEnvironment
 
         LicenseState state = _licenseGate.EnsureApplied();
         var substitutions = new FontSubstitutions();
-        using LoadedDocument loaded = _loader.Open(filePath, request.Password?.Reveal(), substitutions);
+        using LoadedDocument loaded = _loader.Open(filePath, request.Password, substitutions);
 
         // Only layout resolves fonts, and it resolves them by every name a font file carries:
         // a document's "宋体" is the installed SimSun, whose font sources list only "SimSun".

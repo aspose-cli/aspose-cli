@@ -11,14 +11,14 @@ internal sealed class CellsEditVerifier(CellsWorkbookLoader loader, ResourceBudg
     private const int MaxDiffs = 1000;
 
     internal EditVerification Verify(StagedOutput staged,
-        string baselinePath, string originalPath, string? inputPassword, string? outputPassword,
+        string baselinePath, string originalPath, Secret? inputPassword, Secret? outputPassword,
         CellsOpsBatch batch, IReadOnlyList<Warning>? sourceWarnings) =>
         staged.Read(candidate => VerifyCandidate(candidate, baselinePath,
             originalPath, inputPassword, outputPassword, batch, sourceWarnings));
 
     private EditVerification VerifyCandidate(string candidatePath,
-        string baselinePath, string originalPath, string? inputPassword,
-        string? outputPassword, CellsOpsBatch batch, IReadOnlyList<Warning>? sourceWarnings)
+        string baselinePath, string originalPath, Secret? inputPassword,
+        Secret? outputPassword, CellsOpsBatch batch, IReadOnlyList<Warning>? sourceWarnings)
     {
         using LoadedWorkbook baseline = loader.OpenPublishedCandidate(baselinePath, inputPassword, originalPath);
         using LoadedWorkbook candidate = loader.OpenPublishedCandidate(candidatePath, outputPassword);

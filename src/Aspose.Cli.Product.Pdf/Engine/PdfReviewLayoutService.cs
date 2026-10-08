@@ -23,7 +23,7 @@ internal sealed class PdfReviewLayoutService
 
     internal PdfReviewLayout Inspect(
         string filePath,
-        string? password,
+        Secret? password,
         int maxPages)
     {
         _ = _licenseGate.EnsureApplied();
