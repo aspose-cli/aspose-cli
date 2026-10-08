@@ -582,7 +582,7 @@ public sealed class ProductFileRouterTests
             .Formats(
             [
                 .. formats,
-                FormatDescriptor.Input("delta", 1, ".delta") with
+                FormatDescriptor.Input("delta", 1, RouteOwnership.Explicit, ".delta") with
                 {
                     Recognition = FileFormatRecognition.Match(
                         FileProbePattern.AsciiBytesAt(0, "delta"), "delta signature"),
@@ -669,7 +669,7 @@ public sealed class ProductFileRouterTests
         [
             new FormatDescriptor("alpha", FormatUse.Input, ".alpha") { Ownership = RouteOwnership.Default },
             new FormatDescriptor("beta", FormatUse.Input, ".beta") { Ownership = RouteOwnership.Default },
-            FormatDescriptor.Input("gamma", 2, ".gamma"),
+            FormatDescriptor.Input("gamma", 2, RouteOwnership.Explicit, ".gamma"),
         ],
         new Dictionary<string, FileFormatRecognition>(StringComparer.Ordinal)
         {
@@ -774,12 +774,7 @@ public sealed class ProductFileRouterTests
             ["sample"] = FileFormatRecognition.FirstOf(
                 FileFormatRecognition.Match(
                     FileProbePattern.BytesAt(int.MaxValue, 0x43),
-                    "far byte"),
-                FileFormatRecognition.Match(
-                    FileProbePattern.UInt32LittleEndianGreaterThan(
-                        int.MaxValue,
-                        0),
-                    "far integer")),
+                    "far byte")),
         });
         ProductDefinitionBuilder<ITestPort> builder = ExtProduct.Define<ITestPort>(
                 Manifest("bounded-offset"))

@@ -1,4 +1,3 @@
-using System.Buffers.Binary;
 using System.Text;
 
 namespace Aspose.Cli.Sdk.Extensibility;
@@ -15,22 +14,19 @@ public sealed class FileProbePattern
     private readonly byte[] _bytes;
     private readonly string[] _texts;
     private readonly IReadOnlyList<FileProbePattern> _children;
-    private readonly uint _threshold;
 
     private FileProbePattern(
         PatternKind kind,
         int offset = 0,
         IEnumerable<byte>? bytes = null,
         IEnumerable<string>? texts = null,
-        IEnumerable<FileProbePattern>? children = null,
-        uint threshold = 0)
+        IEnumerable<FileProbePattern>? children = null)
     {
         _kind = kind;
         _offset = offset;
         _bytes = bytes?.ToArray() ?? [];
         _texts = texts?.ToArray() ?? [];
         _children = Array.AsReadOnly(children?.ToArray() ?? []);
-        _threshold = threshold;
     }
 
     /// <summary>Matches an exact byte sequence at a bounded offset.</summary>
@@ -60,53 +56,6 @@ public sealed class FileProbePattern
         ArgumentOutOfRangeException.ThrowIfNegative(offset);
         ArgumentException.ThrowIfNullOrEmpty(value);
         return BytesAt(offset, Encoding.ASCII.GetBytes(value));
-    }
-
-    /// <summary>Matches when one byte at an offset belongs to a fixed set.</summary>
-    public static FileProbePattern ByteAtAny(
-        int offset,
-        params byte[] values)
-    {
-        ArgumentOutOfRangeException.ThrowIfNegative(offset);
-        ArgumentNullException.ThrowIfNull(values);
-        if (values.Length == 0)
-        {
-            throw new ArgumentException(
-                "At least one byte value is required.",
-                nameof(values));
-        }
-        return new FileProbePattern(
-            PatternKind.ByteAtAny,
-            offset,
-            values.Distinct());
-    }
-
-    /// <summary>
-    /// Matches an unsigned little-endian 16-bit value greater than a threshold.
-    /// </summary>
-    public static FileProbePattern UInt16LittleEndianGreaterThan(
-        int offset,
-        ushort threshold)
-    {
-        ArgumentOutOfRangeException.ThrowIfNegative(offset);
-        return new FileProbePattern(
-            PatternKind.UInt16LittleEndianGreaterThan,
-            offset,
-            threshold: threshold);
-    }
-
-    /// <summary>
-    /// Matches an unsigned little-endian 32-bit value greater than a threshold.
-    /// </summary>
-    public static FileProbePattern UInt32LittleEndianGreaterThan(
-        int offset,
-        uint threshold)
-    {
-        ArgumentOutOfRangeException.ThrowIfNegative(offset);
-        return new FileProbePattern(
-            PatternKind.UInt32LittleEndianGreaterThan,
-            offset,
-            threshold: threshold);
     }
 
     /// <summary>
@@ -176,17 +125,6 @@ public sealed class FileProbePattern
                 HasSlice(bytes, _offset, _bytes.Length)
                 && bytes.Slice(_offset, _bytes.Length)
                     .SequenceEqual(_bytes)),
-            PatternKind.ByteAtAny => Match(
-                bytes.Length > _offset
-                && _bytes.Contains(bytes[_offset])),
-            PatternKind.UInt16LittleEndianGreaterThan => Match(
-                HasSlice(bytes, _offset, sizeof(ushort))
-                && BinaryPrimitives.ReadUInt16LittleEndian(
-                    bytes.Slice(_offset, sizeof(ushort))) > _threshold),
-            PatternKind.UInt32LittleEndianGreaterThan => Match(
-                HasSlice(bytes, _offset, sizeof(uint))
-                && BinaryPrimitives.ReadUInt32LittleEndian(
-                    bytes.Slice(_offset, sizeof(uint))) > _threshold),
             PatternKind.TextStartsIgnoringBomAndWhitespace => Match(
                 Decode(bytes)
                     .TrimStart('\uFEFF', ' ', '\t', '\r', '\n')
@@ -211,8 +149,7 @@ public sealed class FileProbePattern
             _offset,
             _bytes,
             _texts,
-            _children.Select(static child => child.Snapshot()),
-            _threshold);
+            _children.Select(static child => child.Snapshot()));
 
     private static FileProbePattern Composite(
         PatternKind kind,
@@ -334,9 +271,6 @@ public sealed class FileProbePattern
     private enum PatternKind
     {
         BytesAt,
-        ByteAtAny,
-        UInt16LittleEndianGreaterThan,
-        UInt32LittleEndianGreaterThan,
         TextStartsIgnoringBomAndWhitespace,
         TextContains,
         ValidText,

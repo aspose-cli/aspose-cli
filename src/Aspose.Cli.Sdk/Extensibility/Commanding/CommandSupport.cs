@@ -24,23 +24,6 @@ public static class OptionGuards
                 hint);
         }
     }
-
-    /// <summary>Rejects a 64-bit integer outside the inclusive range.</summary>
-    public static void EnsureInRange(
-        string option,
-        long value,
-        long min,
-        long max,
-        string hint)
-    {
-        if (value < min || value > max)
-        {
-            throw CliErrors.OptionInvalid(
-                option,
-                $"value must be between {min} and {max}",
-                hint);
-        }
-    }
 }
 
 /// <summary>The transport selected by a JSON source value.</summary>
