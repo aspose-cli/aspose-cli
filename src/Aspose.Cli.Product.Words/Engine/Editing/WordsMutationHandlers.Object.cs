@@ -190,14 +190,14 @@ internal sealed partial class WordsMutationHandlers
 
     public long Apply(ProtectOp operation)
     {
-        string? password = OperationSecrets.Resolve(_secrets, operation.PasswordEnv);
+        string? password = OperationSecrets.Resolve(_secrets, operation.PasswordEnv)?.Reveal();
         _document.Protect(WordsProtection.FromMode(operation.Mode), password ?? string.Empty);
         return 1;
     }
 
     public long Apply(UnprotectOp operation)
     {
-        string? password = OperationSecrets.Resolve(_secrets, operation.PasswordEnv);
+        string? password = OperationSecrets.Resolve(_secrets, operation.PasswordEnv)?.Reveal();
         if (password is null)
         {
             _document.Unprotect();

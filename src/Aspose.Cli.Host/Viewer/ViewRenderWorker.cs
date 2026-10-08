@@ -5,6 +5,7 @@ using Aspose.Cli.Host.Invocation;
 using Aspose.Cli.Host.Licensing;
 using Aspose.Cli.Host.LocalServices;
 using Aspose.Cli.Host.ViewerService;
+using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Execution;
 using Aspose.Cli.Sdk.Licensing;
@@ -107,7 +108,7 @@ internal static class ViewRenderWorker
                 View = request.View ?? views.LiveView,
                 MaxPartCount = request.MaxPartCount,
                 Purpose = ViewPurpose.Display,
-                Password = request.Password,
+                Password = request.Password is { Length: > 0 } password ? new Secret(password) : null,
             };
             LicenseState state = binding.LicenseGate.EnsureApplied();
             licenses[product] = license;

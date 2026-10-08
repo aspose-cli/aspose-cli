@@ -51,7 +51,7 @@ public sealed class SlidesConvertSelectionTests
         {
             Output = TestOutput.At(output, format: "pptx"),
             Slides = PageRange.Parse("1"),
-            Password = "secret",
+            Password = new Secret("secret"),
         });
 
         IPresentationInfo info = PresentationFactory.Instance.GetPresentationInfo(output);

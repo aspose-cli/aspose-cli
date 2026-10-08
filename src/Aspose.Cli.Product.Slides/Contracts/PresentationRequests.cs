@@ -8,7 +8,7 @@ public sealed record PresentationInfoRequest
 {
     public bool IncludePreview { get; init; }
     public IReadOnlyList<string>? Details { get; init; }
-    public string? Password { get; init; }
+    public Secret? Password { get; init; }
 }
 
 /// <summary>Options for a bounded presentation read.</summary>
@@ -19,7 +19,7 @@ public sealed record PresentationReadRequest
     public bool IncludeNotes { get; init; }
     /// <summary>Returned document-content character budget, including repeated projections.</summary>
     public int MaxCharacters { get; init; } = 20_000;
-    public string? Password { get; init; }
+    public Secret? Password { get; init; }
 }
 
 /// <summary>Options for presentation conversion.</summary>
@@ -28,8 +28,8 @@ public sealed record PresentationConvertRequest
     /// <summary>The resolved output: its format, path and overwrite permission.</summary>
     public required ResolvedOutput Output { get; init; }
     public PageRange? Slides { get; init; }
-    public string? Password { get; init; }
-    public string? EncryptPassword { get; init; }
+    public Secret? Password { get; init; }
+    public Secret? EncryptPassword { get; init; }
 }
 
 /// <summary>Options for rendering one or more slides.</summary>
@@ -41,7 +41,7 @@ public sealed record PresentationRenderRequest
     public bool AllSlides { get; init; }
     public int? Dpi { get; init; }
     public int? Width { get; init; }
-    public string? Password { get; init; }
+    public Secret? Password { get; init; }
 }
 
 /// <summary>Options for creating a presentation from a bounded source.</summary>
@@ -52,7 +52,7 @@ public sealed record NewPresentationRequest
     public string? MarkdownPath { get; init; }
     public string? TemplatePath { get; init; }
     public string? Size { get; init; }
-    public string? EncryptPassword { get; init; }
+    public Secret? EncryptPassword { get; init; }
 }
 
 /// <summary>Options for extracting bounded presentation content.</summary>
@@ -62,7 +62,7 @@ public sealed record PresentationExtractRequest
     /// <summary>The resolved directory that receives the files.</summary>
     public required ResolvedDirectory Output { get; init; }
     public PageRange? Slides { get; init; }
-    public string? Password { get; init; }
+    public Secret? Password { get; init; }
 }
 
 /// <summary>Options for one atomic presentation edit batch.</summary>
@@ -71,8 +71,8 @@ public sealed record PresentationEditRequest
     /// <summary>The resolved output: its format, path, overwrite permission and in-place backup.</summary>
     public required ResolvedOutput Output { get; init; }
     public EditCommandOptions Options { get; init; } = new();
-    public string? Password { get; init; }
-    public string? EncryptPassword { get; init; }
+    public Secret? Password { get; init; }
+    public Secret? EncryptPassword { get; init; }
 }
 
 /// <summary>Options for bounded shape and notes search.</summary>
@@ -80,7 +80,7 @@ public sealed record PresentationSearchRequest
 {
     /// <summary>The pattern, hit window and scope (one of <see cref="PresentationSearchScopes.Values"/>).</summary>
     public required SearchQuery Query { get; init; }
-    public string? Password { get; init; }
+    public Secret? Password { get; init; }
 }
 
 /// <summary>Stable projection scopes of <c>slides query slides</c>.</summary>

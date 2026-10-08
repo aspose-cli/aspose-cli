@@ -71,7 +71,7 @@ public sealed class StandardCommandTests : IDisposable
             Paired,
             (_, standard) =>
             {
-                passwords = (standard.InputPassword, standard.OtherPassword);
+                passwords = (standard.InputPassword?.Reveal(), standard.OtherPassword?.Reveal());
                 return Result(standard.Input + "|" + standard.Other);
             });
 
@@ -200,7 +200,7 @@ public sealed class StandardCommandTests : IDisposable
             "Merges.",
             new CommandTraits { PasswordSubject = "all inputs", Output = OutputTarget.File("Merged file.", Out, required: true) },
             [Mode(), files],
-            (_, standard) => Result(standard.RequestedOutputPath() + "|" + standard.InputPassword));
+            (_, standard) => Result(standard.RequestedOutputPath() + "|" + standard.InputPassword?.Reveal()));
 
         Assert.Equal(["files"], command.Arguments.Select(static argument => argument.Name));
         Assert.Equal(["--mode", "--out", "--overwrite", "--password", "--password-env", "--password-stdin"],
@@ -354,7 +354,7 @@ public sealed class StandardCommandTests : IDisposable
             _host, "create", "Creates.",
             new CommandTraits { Output = OutputTarget.CreatedFile("File to create.", writes), Encrypt = new EncryptedOutput("the file") },
             [],
-            (_, standard) => Result(standard.Output.Format.Id + "|" + standard.EncryptPassword()));
+            (_, standard) => Result(standard.Output.Format.Id + "|" + standard.EncryptPassword()?.Reveal()));
         Command convert = StandardCommand.Create(
             _host, "convert", "Converts.",
             new CommandTraits { Input = Report, Output = OutputTarget.File("Output path."), Target = TargetFormat.Convert("Target format.", [.. writes, pdf]) },
@@ -449,7 +449,7 @@ public sealed class StandardCommandTests : IDisposable
         ];
         Command command = Create(
             new CommandTraits { Input = Report, Output = OutputTarget.File("Output path.", writes), Encrypt = Encrypted },
-            (_, standard) => Result(standard.EncryptPassword()));
+            (_, standard) => Result(standard.EncryptPassword()?.Reveal()));
 
         CliException refused = RunFailing(command, "report.test", "--out", "out.plain", option, value);
 
@@ -471,7 +471,7 @@ public sealed class StandardCommandTests : IDisposable
             new CommandTraits { Input = Report },
             [],
             standardInputTaken: static _ => true,
-            (_, standard) => Result(standard.InputPassword));
+            (_, standard) => Result(standard.InputPassword?.Reveal()));
 
         CliException error = RunFailing(command, "report.test", "--password-stdin");
 
@@ -566,7 +566,7 @@ public sealed class StandardCommandTests : IDisposable
         Assert.Equal(["--mode", "--password", "--password-env", "--password-stdin", "--font-dir"],
             command.Options.Select(static option => option.Name));
         Assert.Equal(_temp.File("report.test"), invocation.Input);
-        Assert.Equal("a", invocation.InputPassword);
+        Assert.Equal("a", invocation.InputPassword?.Reveal());
         Assert.Equal(fonts, Assert.Single(invocation.FontDirectories.Directories));
     }
 

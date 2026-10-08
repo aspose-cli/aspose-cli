@@ -69,6 +69,6 @@ internal sealed class CellsEngine : ICellsEngine, ICellsReviewLayoutPort
 
     public CellsReviewLayout Inspect(
         string filePath,
-        string? password) =>
-        _reviewLayout.Inspect(filePath, password);
+        Secret? password) =>
+        _reviewLayout.Inspect(filePath, password?.Reveal());
 }

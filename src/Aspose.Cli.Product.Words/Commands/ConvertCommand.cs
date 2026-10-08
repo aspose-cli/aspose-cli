@@ -33,7 +33,7 @@ internal static class ConvertCommand
                     throw CliErrors.OptionInvalid("--pages", $"'{format}' is a flow format", "Use --pages only with PDF, XPS, OpenXPS, PS or PCL.");
                 }
 
-                string? encryptPassword = standard.EncryptPassword();
+                Secret? encryptPassword = standard.EncryptPassword();
                 return standard.OpenEngine().Convert(standard.Input, new WordsConvertRequest
                 {
                     Output = output,

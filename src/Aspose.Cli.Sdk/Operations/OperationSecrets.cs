@@ -1,3 +1,5 @@
+using Aspose.Cli.Sdk.Contracts;
+
 namespace Aspose.Cli.Sdk.Operations;
 
 /// <summary>
@@ -12,14 +14,14 @@ public static class OperationSecrets
     /// <param name="secrets">The secrets the edit command resolved, by variable name.</param>
     /// <param name="variable">The variable an operation field names, or null when the field was omitted.</param>
     /// <exception cref="OperationInvalidException">The variable is missing or empty.</exception>
-    public static string? Resolve(IReadOnlyDictionary<string, string>? secrets, string? variable)
+    public static Secret? Resolve(IReadOnlyDictionary<string, Secret>? secrets, string? variable)
     {
         if (variable is null)
         {
             return null;
         }
 
-        return secrets is not null && secrets.TryGetValue(variable, out string? value) && !string.IsNullOrEmpty(value)
+        return secrets is not null && secrets.TryGetValue(variable, out Secret? value)
             ? value
             : throw new OperationInvalidException(
                 Errors.CliErrors.SecretMissingReason(variable), Errors.CliErrors.SecretMissingHint(variable));

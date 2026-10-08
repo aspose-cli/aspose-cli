@@ -45,7 +45,7 @@ public sealed record ViewRenderRequest
     public required ViewPurpose Purpose { get; init; }
 
     /// <summary>Password of the source document, when encrypted.</summary>
-    public string? Password { get; init; }
+    public Secret? Password { get; init; }
 }
 
 /// <summary>

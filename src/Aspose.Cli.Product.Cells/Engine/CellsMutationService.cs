@@ -52,7 +52,7 @@ internal sealed class CellsMutationService
         FileWritePrecondition precondition = FileWritePrecondition.Capture(filePath);
         using InputResourceScope operationInputs = _budgets.Inputs.CreateScope();
         // The edit recalculates after its operations, or was told not to calculate at all.
-        using LoadedWorkbook loaded = _loader.Open(filePath, options.Password, calculateOnOpen: false);
+        using LoadedWorkbook loaded = _loader.Open(filePath, options.Password?.Reveal(), calculateOnOpen: false);
         Workbook workbook = loaded.Workbook;
         SourceInfo input = BuildSource(filePath, workbook);
         FileFingerprints.EnsureUnchanged(filePath, precondition.Fingerprint, input.Fingerprint!);
@@ -63,8 +63,8 @@ internal sealed class CellsMutationService
 
         using CellsEditBaseline? baseline = options.Verify
             ? CellsEditBaseline.Capture(filePath, precondition, _budgets) : null;
-        WorkbookSavePlan savePlan = WorkbookSavePlan.Create(output.Format, licenseState, options.EncryptPassword,
-            loaded.IsEncrypted ? options.Password : null);
+        WorkbookSavePlan savePlan = WorkbookSavePlan.Create(output.Format, licenseState, options.EncryptPassword?.Reveal(),
+            loaded.IsEncrypted ? options.Password?.Reveal() : null);
         using var importSources = new CellsImportSources(_loader, _budgets, options.OpSecrets);
         var protection = new CellsProtectionTracker();
         string[] linksBefore = LinkSources(workbook);
@@ -106,7 +106,7 @@ internal sealed class CellsMutationService
             {
                 // Verification reports the warnings that make the output incomplete as issues.
                 verification = _verifier.Verify(saved!.Candidate, baseline!.Path, filePath,
-                    options.Password, savePlan.OutputPassword, batch, warnings);
+                    options.Password?.Reveal(), savePlan.OutputPassword, batch, warnings);
             }
             transaction.Commit();
         }
@@ -135,7 +135,7 @@ internal sealed class CellsMutationService
         Workbook workbook,
         CellsOpsBatch batch,
         bool bestEffort,
-        IReadOnlyDictionary<string, string>? secrets,
+        IReadOnlyDictionary<string, Secret>? secrets,
         InputResourceScope inputs,
         CellsImportSources sources,
         CellsProtectionTracker protection)

@@ -5,6 +5,6 @@ internal interface IWordsReviewLayoutPort
 {
     WordsReviewLayout InspectReviewLayout(
         string filePath,
-        string? password,
+        Secret? password,
         int maxPages);
 }

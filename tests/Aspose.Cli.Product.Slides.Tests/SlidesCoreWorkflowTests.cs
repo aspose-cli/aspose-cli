@@ -36,7 +36,7 @@ public sealed class SlidesCoreWorkflowTests
                 View = SlidesViews.Slides,
                 MaxPartCount = 8,
                 Purpose = ViewPurpose.Display,
-                Password = password,
+                Password = new Secret(password),
             },
             artifacts);
 

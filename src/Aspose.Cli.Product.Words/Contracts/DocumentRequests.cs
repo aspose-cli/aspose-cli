@@ -8,7 +8,7 @@ public sealed record DocumentInfoRequest
 {
     public bool IncludePreview { get; init; }
     public IReadOnlyList<string>? Details { get; init; }
-    public string? Password { get; init; }
+    public Secret? Password { get; init; }
 }
 
 /// <summary>Options for a budgeted canonical block read.</summary>
@@ -20,7 +20,7 @@ public sealed record DocumentReadRequest
     /// <summary>Returned document-content character budget, including repeated projections.</summary>
     public int MaxCharacters { get; init; } = 20_000;
     public int MaxBlocks { get; init; } = 200;
-    public string? Password { get; init; }
+    public Secret? Password { get; init; }
 }
 
 /// <summary>Options for document conversion.</summary>
@@ -29,8 +29,8 @@ public sealed record WordsConvertRequest
     /// <summary>The resolved output: its format, path and overwrite permission.</summary>
     public required ResolvedOutput Output { get; init; }
     public PageRange? Pages { get; init; }
-    public string? Password { get; init; }
-    public string? EncryptPassword { get; init; }
+    public Secret? Password { get; init; }
+    public Secret? EncryptPassword { get; init; }
 }
 
 /// <summary>Options for page rendering.</summary>
@@ -41,7 +41,7 @@ public sealed record WordsRenderRequest
     public PageRange? Pages { get; init; }
     public bool AllPages { get; init; }
     public int Dpi { get; init; } = 192;
-    public string? Password { get; init; }
+    public Secret? Password { get; init; }
 }
 
 /// <summary>Options for creating one document.</summary>
@@ -53,7 +53,7 @@ public sealed record NewDocumentRequest
     public string? TextPath { get; init; }
     public string? TemplatePath { get; init; }
     public string? Title { get; init; }
-    public string? EncryptPassword { get; init; }
+    public Secret? EncryptPassword { get; init; }
 }
 
 /// <summary>Options for an atomic Words edit batch.</summary>
@@ -65,9 +65,9 @@ public sealed record WordsEditRequest
     public bool Verify { get; init; }
     public bool TrackChanges { get; init; }
     public string? Author { get; init; }
-    public string? Password { get; init; }
-    public string? EncryptPassword { get; init; }
-    public IReadOnlyDictionary<string, string>? OpSecrets { get; init; }
+    public Secret? Password { get; init; }
+    public Secret? EncryptPassword { get; init; }
+    public IReadOnlyDictionary<string, Secret>? OpSecrets { get; init; }
 }
 
 /// <summary>Options for semantic document comparison.</summary>
@@ -83,15 +83,15 @@ public sealed record WordsCompareRequest
     public string? Author { get; init; }
     /// <summary>The resolved redline output, or null when the comparison writes none.</summary>
     public ResolvedOutput? Output { get; init; }
-    public string? LeftPassword { get; init; }
-    public string? RightPassword { get; init; }
+    public Secret? LeftPassword { get; init; }
+    public Secret? RightPassword { get; init; }
 }
 
 /// <summary>Options for bounded document search; the query's scope is one of <see cref="WordsTextScopes"/>.</summary>
 public sealed record WordsSearchRequest
 {
     public required SearchQuery Query { get; init; }
-    public string? Password { get; init; }
+    public Secret? Password { get; init; }
 }
 
 /// <summary>Options for transactional document splitting.</summary>
@@ -101,7 +101,7 @@ public sealed record WordsSplitRequest
     public PageRange? Pages { get; init; }
     /// <summary>The resolved directory that receives the files.</summary>
     public required ResolvedDirectory Output { get; init; }
-    public string? Password { get; init; }
+    public Secret? Password { get; init; }
 }
 
 /// <summary>Options for bounded asset extraction.</summary>
@@ -110,7 +110,7 @@ public sealed record WordsExtractRequest
     public required string What { get; init; }
     /// <summary>The resolved directory that receives the files.</summary>
     public required ResolvedDirectory Output { get; init; }
-    public string? Password { get; init; }
+    public Secret? Password { get; init; }
 }
 
 /// <summary>Words read scopes.</summary>

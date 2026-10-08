@@ -42,7 +42,7 @@ internal sealed class CellsFontEnvironment : IFontEnvironment
         ArgumentNullException.ThrowIfNull(request);
 
         LicenseState licenseState = _licenseGate.EnsureApplied();
-        using LoadedWorkbook loaded = _loader.Open(filePath, request.Password);
+        using LoadedWorkbook loaded = _loader.Open(filePath, request.Password?.Reveal());
         Workbook workbook = loaded.Workbook;
 
         IReadOnlyList<FontAvailability> fonts = FontOps.CheckAvailability(FontOps.UsedFonts(workbook));

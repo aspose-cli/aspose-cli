@@ -57,7 +57,7 @@ public sealed record BoundedEditInvocation<TBatch>(
     ResolvedOutput Output,
     EditCommandOptions Options,
     bool Verify,
-    IReadOnlyDictionary<string, string> Secrets);
+    IReadOnlyDictionary<string, Secret> Secrets);
 
 /// <summary>
 /// The one command skeleton of every bounded, atomic product edit. It owns the operation
@@ -265,16 +265,16 @@ public sealed class BoundedEditCommand<TOp, TBatch>
             ResolveSecrets(batch, standard.ReadEnvironment));
     }
 
-    private static IReadOnlyDictionary<string, string> ResolveSecrets(TBatch batch, Func<string, string?> readEnvironment)
+    private static IReadOnlyDictionary<string, Secret> ResolveSecrets(TBatch batch, Func<string, string?> readEnvironment)
     {
-        var secrets = new Dictionary<string, string>(StringComparer.Ordinal);
+        var secrets = new Dictionary<string, Secret>(StringComparer.Ordinal);
         // Each [SecretEnv] variable is read once. A missing or empty variable is left out: it
         // fails only the operation that names it, through OperationSecrets.Resolve.
         foreach (string variable in batch.Ops.SelectMany(TOp.Catalog.SecretVariables).OfType<string>().Distinct(StringComparer.Ordinal))
         {
             if (readEnvironment(variable) is { Length: > 0 } secret)
             {
-                secrets[variable] = secret;
+                secrets[variable] = new Secret(secret);
             }
         }
 

@@ -89,7 +89,7 @@ internal sealed class SlidesFontEnvironment : IFontEnvironment
     private FontCheckResult CheckFontsCore(string filePath, FontCheckRequest request)
     {
         LicenseState state = _licenseGate.EnsureApplied();
-        using LoadedPresentation loaded = _loader.Open(filePath, request.Password);
+        using LoadedPresentation loaded = _loader.Open(filePath, request.Password?.Reveal());
         Dictionary<string, string> substitutions = loaded.Presentation.FontsManager.GetSubstitutions()
             .ToDictionary(static item => item.OriginalFontName, static item => item.SubstitutedFontName, StringComparer.Ordinal);
         FontAvailability[] fonts = loaded.Presentation.FontsManager.GetFonts()

@@ -28,7 +28,7 @@ internal static class NewCommand
             {
                 IReadOnlyList<string> sheetNames = ParseSheetNames(parse.GetValue(sheets));
                 ResolvedOutput output = standard.Output;
-                string? encryptPassword = standard.EncryptPassword();
+                Secret? encryptPassword = standard.EncryptPassword();
                 return standard.OpenEngine().Create(new NewWorkbookRequest
                 {
                     Output = output,

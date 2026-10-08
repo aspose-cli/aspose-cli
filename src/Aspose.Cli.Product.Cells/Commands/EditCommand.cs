@@ -41,7 +41,7 @@ internal static class EditCommand
             [noRecalc],
             (parse, edit, standard) =>
             {
-                string? encryptPassword = standard.EncryptPassword();
+                Secret? encryptPassword = standard.EncryptPassword();
                 return standard.OpenEngine().ApplyOps(standard.Input, edit.Batch, new EditRequest
                 {
                     Output = standard.Output,

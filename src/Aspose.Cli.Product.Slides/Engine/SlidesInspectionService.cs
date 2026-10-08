@@ -26,7 +26,7 @@ internal sealed class SlidesInspectionService
         string scope = request.Query.Scope ?? PresentationSearchScopes.All;
 
         LicenseState state = _licenseGate.EnsureApplied();
-        using LoadedPresentation loaded = _loader.Open(filePath, request.Password);
+        using LoadedPresentation loaded = _loader.Open(filePath, request.Password?.Reveal());
         SearchHits<SlidesSearchHit> hits = request.Query.Collect<SlidesSearchHit>();
         foreach ((ISlide slide, int index) in loaded.Presentation.Slides.Select((slide, index) => (slide, index)))
         {

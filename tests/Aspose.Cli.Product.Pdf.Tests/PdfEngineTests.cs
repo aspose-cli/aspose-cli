@@ -509,12 +509,12 @@ public sealed class PdfEngineTests
             () => fixture.Engine.GetInfo(path, new PdfInfoRequest()));
         Assert.Equal(ErrorCodes.PasswordRequired, required.Code);
         CliException invalid = Assert.Throws<CliException>(
-            () => fixture.Engine.GetInfo(path, new PdfInfoRequest { Password = "wrong" }));
+            () => fixture.Engine.GetInfo(path, new PdfInfoRequest { Password = new Secret("wrong") }));
         Assert.Equal(ErrorCodes.PasswordInvalid, invalid.Code);
 
         var user = fixture.Engine.GetInfo(path, new PdfInfoRequest
         {
-            Password = "reader-secret",
+            Password = new Secret("reader-secret"),
             Details = ["permissions"],
         });
         Assert.Equal("user", user.Pdf.PasswordType);
@@ -523,7 +523,7 @@ public sealed class PdfEngineTests
 
         var owner = fixture.Engine.GetInfo(path, new PdfInfoRequest
         {
-            Password = "owner-secret",
+            Password = new Secret("owner-secret"),
             Details = ["permissions"],
         });
         Assert.Equal("owner", owner.Pdf.PasswordType);
@@ -546,7 +546,7 @@ public sealed class PdfEngineTests
             new PdfInfoRequest { Details = ["permissions"] });
         var owner = fixture.Engine.GetInfo(
             path,
-            new PdfInfoRequest { Password = "owner-secret", Details = ["permissions"] });
+            new PdfInfoRequest { Password = new Secret("owner-secret"), Details = ["permissions"] });
 
         Assert.True(normal.Pdf.Encrypted);
         // The file has only an owner password, so it opened without one.

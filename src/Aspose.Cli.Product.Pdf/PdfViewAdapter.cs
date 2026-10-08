@@ -276,7 +276,7 @@ internal sealed class PdfViewAdapter : IProductViewAdapter<IPdfEngine>
     private static FormAnalysis AnalyzeForms(
         IPdfEngine port,
         string filePath,
-        string? password,
+        Secret? password,
         int pages,
         int formFields,
         ICollection<ReviewFinding> findings)
@@ -311,7 +311,7 @@ internal sealed class PdfViewAdapter : IProductViewAdapter<IPdfEngine>
     private static int AnalyzeFonts(
         IPdfEngine port,
         string filePath,
-        string? password,
+        Secret? password,
         IReadOnlyList<PdfPageText> pages,
         ICollection<ReviewFinding> findings)
     {

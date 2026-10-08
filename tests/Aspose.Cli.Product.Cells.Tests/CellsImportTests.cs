@@ -379,7 +379,7 @@ public sealed class CellsImportTests : IClassFixture<CellsFixture>
             {
                 Output = TestOutput.At(_fixture.Temp.File($"encrypted-{code}.out.xlsx"), overwrite: true),
                 OpSecrets = password is null ? null : new Dictionary<string,
-                string> { ["SOURCE_PWD"] = password },
+                Secret> { ["SOURCE_PWD"] = new(password) },
             }));
 
         Assert.Equal(code, error.Code.Name);

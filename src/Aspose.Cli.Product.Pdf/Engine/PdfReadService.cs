@@ -22,7 +22,7 @@ internal sealed class PdfReadService
     internal PdfInfoResult GetInfo(string filePath, PdfInfoRequest request)
     {
         LicenseState state = _licenseGate.EnsureApplied();
-        using LoadedPdf loaded = _loader.Open(filePath, request.Password);
+        using LoadedPdf loaded = _loader.Open(filePath, request.Password?.Reveal());
         PdfInfoResult info = PdfInfoProjection.Project(loaded, filePath, request);
         return info with
         {
@@ -36,7 +36,7 @@ internal sealed class PdfReadService
     internal PdfReadResult Read(string filePath, PdfReadRequest request)
     {
         LicenseState state = _licenseGate.EnsureApplied();
-        using LoadedPdf loaded = _loader.Open(filePath, request.Password);
+        using LoadedPdf loaded = _loader.Open(filePath, request.Password?.Reveal());
         IReadOnlyList<int> requested = request.Pages?.Resolve(loaded.Document.Pages.Count)
             ?? Enumerable.Range(1, loaded.Document.Pages.Count).ToArray();
         var pages = new List<PdfPageText>();

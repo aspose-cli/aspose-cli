@@ -86,7 +86,7 @@ public sealed class PdfHardeningTests
             {
                 Output = TestOutput.At(output),
                 OpSecrets = password is null ? null : new Dictionary<string,
-                string> { ["SOURCE_PWD"] = password },
+                Secret> { ["SOURCE_PWD"] = new(password) },
             }));
 
         Assert.Equal(code, error.Code.Name);

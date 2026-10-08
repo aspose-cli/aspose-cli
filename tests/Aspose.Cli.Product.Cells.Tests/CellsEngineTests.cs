@@ -956,7 +956,7 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
         string path = _fixture.CreateEncryptedWorkbook("secret", "locked2.xlsx");
 
         CliException exception = Assert.Throws<CliException>(
-            () => _fixture.Engine.GetInfo(path, new InfoRequest { Password = "wrong" }));
+            () => _fixture.Engine.GetInfo(path, new InfoRequest { Password = new Secret("wrong") }));
 
         Assert.Equal(ErrorCodes.PasswordInvalid, exception.Code);
     }
@@ -966,7 +966,7 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
     {
         string path = _fixture.CreateEncryptedWorkbook("secret", "locked3.xlsx");
 
-        WorkbookInfoResult result = _fixture.Engine.GetInfo(path, new InfoRequest { Password = "secret" });
+        WorkbookInfoResult result = _fixture.Engine.GetInfo(path, new InfoRequest { Password = new Secret("secret") });
 
         Assert.True(result.Workbook.SheetCount >= 1);
     }

@@ -66,7 +66,7 @@ internal static class ConvertCommand
                     throw CliErrors.OptionInvalid("--bom", $"a '{format}' output is not CSV or TSV text", "Drop --bom.");
                 }
 
-                string? encryptPassword = standard.EncryptPassword();
+                Secret? encryptPassword = standard.EncryptPassword();
                 return standard.OpenEngine().Convert(standard.Input, new ConvertRequest
                 {
                     Output = output,

@@ -43,7 +43,7 @@ internal sealed class WordsMutationService
         batch = WordsOp.Catalog.Prepare(batch);
         LicenseState state = _licenseGate.EnsureApplied();
         FileWritePrecondition precondition = FileWritePrecondition.Capture(filePath);
-        using LoadedDocument loaded = _loader.Open(filePath, request.Password);
+        using LoadedDocument loaded = _loader.Open(filePath, request.Password?.Reveal());
         bool inputHadRevisions = loaded.Document.Revisions.Count > 0;
         bool inputWasSigned = loaded.Format.HasDigitalSignature;
         ProtectionType inputProtection = loaded.Document.ProtectionType;
@@ -51,8 +51,8 @@ internal sealed class WordsMutationService
         ValidateRequest(request, batch);
         FormatDescriptor written = request.Output.Keeping(loaded.FormatId);
         string format = written.Id;
-        string? outputPassword = request.EncryptPassword
-            ?? (loaded.Format.IsEncrypted && written.Protectable ? request.Password : null);
+        string? outputPassword = request.EncryptPassword?.Reveal()
+            ?? (loaded.Format.IsEncrypted && written.Protectable ? request.Password?.Reveal() : null);
         SaveOptions saveOptions = WordsSavePipeline.Options(format, outputPassword);
         if (request.Verify && !WordsFormats.IsLoad(format))
         {

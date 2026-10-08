@@ -45,9 +45,9 @@ internal sealed class WordsProductionService
     internal WordsConvertResult Convert(string filePath, WordsConvertRequest request)
     {
         LicenseState state = _licenseGate.EnsureApplied();
-        using LoadedDocument loaded = _loader.Open(filePath, request.Password);
+        using LoadedDocument loaded = _loader.Open(filePath, request.Password?.Reveal());
         IReadOnlyList<int>? pages = request.Pages?.Resolve(loaded.Document.PageCount);
-        SaveOptions options = WordsSavePipeline.Options(request.Output.Format.Id, request.EncryptPassword, pages);
+        SaveOptions options = WordsSavePipeline.Options(request.Output.Format.Id, request.EncryptPassword?.Reveal(), pages);
         WordsSavePipeline.RemoveMacrosUnlessKept(loaded.Document, request.Output.Format.Id);
         long size = _writer.Write(request.Output.Path, request.Output.Overwrite, temp =>
         {
@@ -69,7 +69,7 @@ internal sealed class WordsProductionService
     internal WordsRenderResult Render(string filePath, WordsRenderRequest request)
     {
         LicenseState state = _licenseGate.EnsureApplied();
-        using LoadedDocument loaded = _loader.Open(filePath, request.Password);
+        using LoadedDocument loaded = _loader.Open(filePath, request.Password?.Reveal());
         IReadOnlyList<int> pages = request.AllPages
             ? Enumerable.Range(1, loaded.Document.PageCount).ToArray()
             : request.Pages?.Resolve(loaded.Document.PageCount) ?? [1];
@@ -107,7 +107,7 @@ internal sealed class WordsProductionService
     {
         ArgumentNullException.ThrowIfNull(artifacts);
         _ = _licenseGate.EnsureApplied();
-        using LoadedDocument loaded = _loader.Open(filePath, request.Password);
+        using LoadedDocument loaded = _loader.Open(filePath, request.Password?.Reveal());
         Document document = loaded.Document;
         int dpi = request.Purpose == ViewPurpose.Display ? DisplayDpi : EvidenceDpi;
         int total = document.PageCount;
@@ -164,7 +164,7 @@ internal sealed class WordsProductionService
         LicenseState state = _licenseGate.EnsureApplied();
         using CreatedDocument created = Build(request);
         string formatId = request.Output.Format.Id;
-        SaveOptions options = WordsSavePipeline.Options(formatId, request.EncryptPassword);
+        SaveOptions options = WordsSavePipeline.Options(formatId, request.EncryptPassword?.Reveal());
         WordsSavePipeline.RemoveMacrosUnlessKept(created.Document, formatId);
         long size = _writer.Write(request.Output.Path, request.Output.Overwrite, temp => created.Save(temp, options));
 

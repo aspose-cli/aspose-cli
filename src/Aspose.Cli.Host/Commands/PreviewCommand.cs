@@ -79,7 +79,8 @@ internal static class PreviewCommand
                 Product = parse.GetValue(symbols.Product),
                 View = view == AutoView ? null : view,
                 Effect = parse.GetValue(symbols.Effect),
-                Password = standard.InputPassword,
+                // The viewer service carries the password to its render worker, which wraps it again.
+                Password = standard.InputPassword?.Reveal(),
                 License = context.Globals.LicensePath is { } license
                     ? Path.GetFullPath(license, context.Paths.BaseDirectory)
                     : null,
