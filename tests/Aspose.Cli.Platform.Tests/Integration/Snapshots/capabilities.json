@@ -5064,6 +5064,11 @@
             "summary": "Several content objects with little text occupy only a small part of a slide."
           },
           {
+            "code": "SLIDES_EVALUATION_WATERMARK",
+            "severity": "warning",
+            "summary": "A slide carries the watermark text box that an Aspose.Slides save without a license added; a licensed re-save keeps it."
+          },
+          {
             "code": "SLIDES_PLACEHOLDER_EMPTY",
             "severity": "info",
             "summary": "An empty placeholder is invisible in a slide show but shows its prompt text when the deck is edited."
@@ -15305,6 +15310,7 @@
             "SLIDES_CHART_COVERED",
             "SLIDES_CONTENT_DENSITY_HIGH",
             "SLIDES_CONTENT_DENSITY_LOW",
+            "SLIDES_EVALUATION_WATERMARK",
             "SLIDES_PLACEHOLDER_EMPTY",
             "SLIDES_SHAPES_OVERLAP",
             "SLIDES_SHAPE_OUTSIDE_SLIDE",

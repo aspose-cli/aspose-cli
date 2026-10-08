@@ -20,8 +20,8 @@ internal static class SlidesReviewAnalyzer
     private const string Hint = "Inspect the rendered evidence, adjust only confirmed layout defects, save, and review again.";
 
     /// <summary>
-    /// Analyzes the slides. The watermark text boxes that evaluation saves add, which only an
-    /// evaluation-mode read marks, are left out and counted.
+    /// Analyzes the slides. The watermark text boxes that evaluation saves add are reported once
+    /// per slide, in any license mode, and left out of the other checks and counted.
     /// </summary>
     public static SlidesReviewAnalysis Analyze(
         IReadOnlyList<SlideData> slides,
@@ -32,6 +32,12 @@ internal static class SlidesReviewAnalyzer
         {
             ExcludedEvaluationWatermarks = slides.Sum(static slide => slide.Shapes.Count(static shape => shape.EvaluationWatermark)),
         };
+        foreach (SlideData slide in slides.Where(static slide => slide.Shapes.Any(static shape => shape.EvaluationWatermark)))
+        {
+            result.Findings.Add(Finding(SlidesReviewChecks.EvaluationWatermark, slide,
+                $"Slide {slide.Slide} carries the evaluation watermark text box an Aspose.Slides save without a license added; a license does not remove it, so rebuild the deck with a license."));
+        }
+
         slides = slides
             .Select(static slide => slide with { Shapes = slide.Shapes.Where(static shape => !shape.EvaluationWatermark).ToArray() })
             .ToArray();

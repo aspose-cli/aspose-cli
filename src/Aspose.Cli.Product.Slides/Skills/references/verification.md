@@ -50,7 +50,9 @@ slide; a chart is judged by the text color it states, and text over a picture, a
 a filled shape covering less than half of it is not judged), empty
 placeholders that PowerPoint shows as prompts while editing (`SLIDES_PLACEHOLDER_EMPTY`), blank or
 duplicate slides and content density (judged by object count alone on a slide whose text
-evaluation mode replaced). Text in rotated shapes and vertical text is not measured. A
+evaluation mode replaced), and a slide that carries the watermark text box of a save without a
+license (`SLIDES_EVALUATION_WATERMARK`, in any license mode; the box is left out of the other
+checks). Text in rotated shapes and vertical text is not measured. A
 finding names each shape with its `shapeId`, which edit operations address together with the
 slide in its `location`.
 After fixing one kind of finding, a later round can focus on it while you still open every image:
