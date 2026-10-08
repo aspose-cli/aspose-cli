@@ -4,7 +4,7 @@ namespace Aspose.Cli.Host.Output.Rendering;
 
 /// <summary>
 /// Human renderers for the product-neutral result families (license, doctor,
-/// fonts, skill install). A second product reuses these unchanged.
+/// fonts, skill install, update). A second product reuses these unchanged.
 /// </summary>
 internal static class CommonRenderers
 {
@@ -236,6 +236,28 @@ internal static class CommonRenderers
         }
 
         table.WriteTo(surface.Out, surface.Format);
+    }
+
+    public static void Render(UpdateResult update, TableSurface surface)
+    {
+        surface.Out.WriteLine($"status:    {update.Status}");
+        surface.Out.WriteLine($"current:   {update.CurrentVersion}");
+        WriteIfPresent(surface, "available: ", update.AvailableVersion);
+        WriteIfPresent(surface, "source:    ", update.SourceRevision);
+        WriteIfPresent(surface, "feed:      ", update.Feed);
+        WriteIfPresent(surface, "sha256:    ", update.ArchiveSha256);
+        if (update.ProcessId is { } pid)
+        {
+            surface.Out.WriteLine($"installer: pid {TableText.Int(pid)}");
+        }
+    }
+
+    private static void WriteIfPresent(TableSurface surface, string label, string? value)
+    {
+        if (value is not null)
+        {
+            surface.Out.WriteLine(label + value);
+        }
     }
 
     public static void Render(SkillInstallResult skill, TableSurface surface) =>
