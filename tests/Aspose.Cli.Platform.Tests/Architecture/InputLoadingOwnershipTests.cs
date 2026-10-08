@@ -26,6 +26,7 @@ public sealed class InputLoadingOwnershipTests
 
     private static readonly byte[] OleSignature = [0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1];
     private static readonly byte[] PdfHeader = "%PDF"u8.ToArray();
+    private static readonly byte[] ZipSignature = [0x50, 0x4B, 0x03, 0x04];
 
     [Fact]
     public void D8_Products_NeverChooseBetweenARequiredAndAnInvalidPassword()
@@ -102,6 +103,10 @@ public sealed class InputLoadingOwnershipTests
     [Fact]
     public void D8_ThePdfHeader_IsCheckedOnlyInTheSdk() =>
         AssertOneSdkOwner("The PDF header (%PDF)", PdfHeader, [0x46445025]);
+
+    [Fact]
+    public void D8_TheZipSignature_IsCheckedOnlyInTheSdk() =>
+        AssertOneSdkOwner("The ZIP local file header signature (PK 03 04)", ZipSignature, [0x04034B50]);
 
     // -- Support ------------------------------------------------------------------------------
 
