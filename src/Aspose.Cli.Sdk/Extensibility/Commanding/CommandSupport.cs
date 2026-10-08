@@ -220,13 +220,6 @@ internal sealed class OutputFileOption
     }
 }
 
-/// <summary>The resolved target of an atomic mutation.</summary>
-public sealed record MutationTarget(
-    string OutputPath,
-    bool Overwrite,
-    bool InPlace,
-    string? BackupPath);
-
 /// <summary>Mutually exclusive literal, environment, and stdin password options.</summary>
 internal sealed class PasswordOptions
 {
@@ -289,28 +282,6 @@ internal sealed class PasswordOptions
             : parseResult.GetValue(_fromEnvironment) is not null ? $"{_prefix}-env"
             : _fromStandardInput is not null && parseResult.GetValue(_fromStandardInput) ? $"{_prefix}-stdin"
             : null;
-    }
-
-    /// <summary>
-    /// Rejects a password given for an output format that cannot carry one, naming the option
-    /// the caller actually passed. Nothing is checked when no password was given.
-    /// </summary>
-    /// <param name="parseResult">The parsed command line.</param>
-    /// <param name="format">The output format id.</param>
-    /// <param name="protectableFormats">The output format ids that can carry a password.</param>
-    /// <exception cref="CliException"><c>OPTION_INVALID</c> for a format outside <paramref name="protectableFormats"/>.</exception>
-    internal void EnsureProtectable(ParseResult parseResult, string format, IReadOnlyList<string> protectableFormats)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(format);
-        ArgumentNullException.ThrowIfNull(protectableFormats);
-        if (SelectedOption(parseResult) is { } option
-            && !protectableFormats.Contains(format, StringComparer.Ordinal))
-        {
-            throw CliErrors.OptionInvalid(
-                option,
-                $"the '{format}' format cannot be password-protected",
-                $"Protect only {string.Join(", ", protectableFormats)} outputs, or drop {option}.");
-        }
     }
 
     /// <summary>Resolves the selected secret without serializing it.</summary>

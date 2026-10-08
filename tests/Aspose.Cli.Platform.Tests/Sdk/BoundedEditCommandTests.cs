@@ -69,8 +69,8 @@ public sealed class BoundedEditCommandTests : IDisposable
     [Fact]
     public void Read_MakesABackupOnlyWhenRequested()
     {
-        MutationTarget inPlace = Read(Plain(), "--ops", Document, "--in-place").Target;
-        MutationTarget backedUp = Read(Plain(), "--ops", Document, "--in-place", "--backup").Target;
+        ResolvedOutput inPlace = Read(Plain(), "--ops", Document, "--in-place").Output;
+        ResolvedOutput backedUp = Read(Plain(), "--ops", Document, "--in-place", "--backup").Output;
 
         Assert.True(inPlace.InPlace);
         Assert.Null(inPlace.BackupPath);
@@ -130,7 +130,7 @@ public sealed class BoundedEditCommandTests : IDisposable
         Assert.Equal(ErrorCodes.OptionInvalid, error.Code);
         Assert.Equal("--out", error.Details!["option"]!.GetValue<string>());
         Assert.Contains("--in-place", error.Hint, StringComparison.Ordinal);
-        Assert.Equal(_input, Read(Plain(), "--ops", Document, "--in-place").Target.OutputPath);
+        Assert.Equal(_input, Read(Plain(), "--ops", Document, "--in-place").Output.Path);
     }
 
     [Fact]
@@ -244,8 +244,8 @@ public sealed class BoundedEditCommandTests : IDisposable
             Assert.Equal("--out", error.Details!["option"]!.GetValue<string>());
             Assert.Contains("--in-place", error.Hint, StringComparison.Ordinal);
         });
-        Assert.Equal(_input, Read(linking, "--ops", image, "--in-place").Target.OutputPath);
-        Assert.Equal(_temp.File("copy.test"), Read(linking, "--ops", image, "--out", "copy.test").Target.OutputPath);
+        Assert.Equal(_input, Read(linking, "--ops", image, "--in-place").Output.Path);
+        Assert.Equal(_temp.File("copy.test"), Read(linking, "--ops", image, "--out", "copy.test").Output.Path);
     }
 
     [Fact]
@@ -332,7 +332,7 @@ public sealed class BoundedEditCommandTests : IDisposable
         var traits = new CommandTraits
         {
             Input = Book,
-            Encrypt = new EncryptedOutput("the output book", ["test"]),
+            Encrypt = new EncryptedOutput("the output book"),
             UsesFonts = true,
         };
 
@@ -362,11 +362,11 @@ public sealed class BoundedEditCommandTests : IDisposable
         });
         Command edited = edit.Create<object>(
             host, "edit", "Edits.",
-            new CommandTraits { Input = Book, Encrypt = new EncryptedOutput("the output book", ["test"]), UsesFonts = true },
+            new CommandTraits { Input = Book, Encrypt = new EncryptedOutput("the output book"), UsesFonts = true },
             [], static (_, _, _) => throw new InvalidOperationException());
         Command published = StandardCommand.Create<object>(
             host, "split", "Splits.",
-            new CommandTraits { Input = Book, Output = OutputTarget.FileOrDirectory("Form file.", "Parts.") },
+            new CommandTraits { Input = Book, Output = OutputTarget.Directory("Parts.") },
             [], static (_, _) => throw new InvalidOperationException());
 
         string[] declared = edited.Options.Concat(published.Options)
@@ -398,6 +398,13 @@ public sealed class BoundedEditCommandTests : IDisposable
     private static BoundedEditDefinition<TestOp, TestBatch> Definition() => new()
     {
         Contracts = TestContracts.Json,
+        // The extensions of the files the tests name as outputs.
+        Writes =
+        [
+            FormatDescriptor.Declare("tst", FormatUse.Input | FormatUse.Convert, 0, 0, null, false, ".test"),
+            FormatDescriptor.Declare("json", FormatUse.Convert, null, 1, null, false, ".json"),
+            FormatDescriptor.Declare("png", FormatUse.Convert, null, 2, null, false, ".png"),
+        ],
     };
 
     private static BoundedEditCommand<TestOp, TestBatch> Plain() => new(Definition());

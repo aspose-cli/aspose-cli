@@ -34,7 +34,7 @@ public sealed record BoundedEditDefinition<TOp, TBatch>
     /// The formats the edit writes; the output's extension, or the input's when no
     /// <c>--out</c> is named, chooses among them.
     /// </summary>
-    public IReadOnlyList<FormatDescriptor>? Writes { get; init; }
+    public required IReadOnlyList<FormatDescriptor> Writes { get; init; }
 
     /// <summary>The <c>--set</c> shorthand, or null when the product has none.</summary>
     public SetDirectiveGrammar<TOp, TBatch>? SetDirectives { get; init; }
@@ -45,7 +45,7 @@ public sealed record BoundedEditDefinition<TOp, TBatch>
 
 /// <summary>One fully resolved bounded-edit invocation, ready for the product port.</summary>
 /// <param name="Batch">The validated, identified and path-normalized operation document.</param>
-/// <param name="Target">Where and how the result is published.</param>
+/// <param name="Output">Where, how and in which format the result is published.</param>
 /// <param name="Options">Precondition, dry-run and best-effort semantics.</param>
 /// <param name="Verify">Whether staged verification was requested.</param>
 /// <param name="Secrets">
@@ -54,14 +54,10 @@ public sealed record BoundedEditDefinition<TOp, TBatch>
 /// </param>
 public sealed record BoundedEditInvocation<TBatch>(
     TBatch Batch,
-    MutationTarget Target,
+    ResolvedOutput Output,
     EditCommandOptions Options,
     bool Verify,
-    IReadOnlyDictionary<string, string> Secrets)
-{
-    /// <summary>The resolved output, when the edit declares the formats it writes.</summary>
-    public ResolvedOutput? Output { get; init; }
-}
+    IReadOnlyDictionary<string, string> Secrets);
 
 /// <summary>
 /// The one command skeleton of every bounded, atomic product edit. It owns the operation
@@ -92,6 +88,7 @@ public sealed class BoundedEditCommand<TOp, TBatch>
     {
         ArgumentNullException.ThrowIfNull(definition);
         ArgumentNullException.ThrowIfNull(definition.Contracts);
+        ArgumentNullException.ThrowIfNull(definition.Writes);
         _definition = definition;
         string schema = TOp.Catalog.SchemaCommandId;
         _ops = new Option<string?>(OpsOption)
@@ -228,10 +225,7 @@ public sealed class BoundedEditCommand<TOp, TBatch>
                 "Run the dry run first, then edit with --verify.");
         }
 
-        ResolvedOutput? output = _definition.Writes is null ? null : standard.Output;
-        MutationTarget target = output is null
-            ? standard.MutationTarget()
-            : new MutationTarget(output.Path, output.Overwrite, output.InPlace, output.BackupPath);
+        ResolvedOutput output = standard.Output;
         PathResolver paths = standard.Paths;
         TOp[] compiled = _definition.SetDirectives is { } grammar
             ? directives.Select(grammar.Parse).ToArray()
@@ -251,16 +245,16 @@ public sealed class BoundedEditCommand<TOp, TBatch>
         {
             Ops = batch.Ops.Select(op => TOp.Catalog.ResolveInputPaths(op, ResolveInput)).ToArray(),
         });
-        if (!target.InPlace)
+        if (!output.InPlace)
         {
-            // The target was resolved before the operations were read; it must not name
+            // The output was resolved before the operations were read; it must not name
             // a file they read either.
-            OutputFileOption.EnsureNotInput(target.OutputPath, StandardOptionNames.Out, inPlaceAvailable: true, read);
+            OutputFileOption.EnsureNotInput(output.Path, StandardOptionNames.Out, inPlaceAvailable: true, read);
         }
 
         return new BoundedEditInvocation<TBatch>(
             batch,
-            target,
+            output,
             new EditCommandOptions
             {
                 IfMatch = ReconcileIfMatch(parse.GetValue(_ifMatch), batch.IfMatch),
@@ -268,10 +262,7 @@ public sealed class BoundedEditCommand<TOp, TBatch>
                 BestEffort = parse.GetValue(_bestEffort),
             },
             verify,
-            ResolveSecrets(batch, standard.ReadEnvironment))
-        {
-            Output = output,
-        };
+            ResolveSecrets(batch, standard.ReadEnvironment));
     }
 
     private static IReadOnlyDictionary<string, string> ResolveSecrets(TBatch batch, Func<string, string?> readEnvironment)

@@ -89,40 +89,6 @@ public sealed class RenderPixelGuardTests
         Assert.Equal(ErrorCodes.OptionInvalid, error.Code);
     }
 
-    [Theory]
-    [InlineData("p", "report.p3.png")]
-    [InlineData("s", "report.s3.png")]
-    public void PartOutputPath_InsertsTheNumberedMarkerBeforeTheExtension(string marker, string expected)
-    {
-        string output = Path.Combine(Path.GetTempPath(), "report.png");
-
-        Assert.Equal(Path.Combine(Path.GetTempPath(), expected), PartOutputPath.For(output, marker, 3, parts: 3, "png"));
-    }
-
-    // The hint suggests a folder of numbered files for several parts, one named file for one.
-    [Theory]
-    [InlineData("png", 2, "jpeg", @"png\page.jpeg")]
-    [InlineData("pages", 1, "png", "pages.png")]
-    public void PartOutputPath_RefusesAnOutputWithoutAnExtension(string name, int parts, string format, string suggested)
-    {
-        string output = Path.Combine(Path.GetTempPath(), name);
-
-        CliException error = Assert.Throws<CliException>(() => PartOutputPath.For(output, "p", 1, parts, format));
-
-        Assert.Equal(ErrorCodes.OptionInvalid, error.Code);
-        Assert.Equal("--out", error.Details!["option"]!.GetValue<string>());
-        Assert.Contains(Path.Combine(Path.GetTempPath(), suggested), error.Hint);
-    }
-
-    [Fact]
-    public void PartOutputPath_KeepsTheOutputOfASinglePart()
-    {
-        string output = Path.Combine(Path.GetTempPath(), "report.png");
-
-        Assert.Equal(output, PartOutputPath.For(output, "p", 3, parts: 1, "png"));
-        Assert.Equal(Path.Combine(Path.GetTempPath(), "report.p3.png"), PartOutputPath.For(output, "p", 3, parts: 2, "png"));
-    }
-
     private static (DpiOption Dpi, ParseResult Parse) ParseDpi(params string[] arguments)
     {
         var dpi = new DpiOption();
