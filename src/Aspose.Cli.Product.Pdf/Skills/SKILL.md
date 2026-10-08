@@ -68,7 +68,9 @@ both a width and a height takes the proportions of its viewBox.
 the size of the page in view, zoom and a mark on what a change touched
 (`aspose-cli docs preview`). Without a PDF license, output is watermarked and
 results carry `EVAL_MODE`; `review` reports such pages as
-`PDF_EVALUATION_WATERMARK` ([verification](references/verification.md)).
+`PDF_EVALUATION_WATERMARK` ([verification](references/verification.md)), and a
+licensed command whose output keeps such a notice on one of its first 4 pages
+warns `EVAL_INPUT_MARKED`.
 Evaluation mode also reads only the first 4 pages of a document. `inspect` of a
 longer PDF warns `EVAL_INPUT_TRUNCATED` and still lists every bookmark and
 attachment and counts every form field; `query forms` lists every field but

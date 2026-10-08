@@ -10,21 +10,18 @@ namespace Aspose.Cli.Product.Pdf.Engine;
 /// <summary>Owns validated batch execution, atomic persistence and edit verification.</summary>
 internal sealed class PdfMutationService
 {
-    private readonly ILicenseGate _licenseGate;
-    private readonly SafeFileWriter _writer;
+    private readonly OutputPipeline<Document> _outputs;
     private readonly PdfDocumentLoader _loader;
     private readonly InputSource _inputs;
     private readonly OperationDeadline _deadline;
 
     internal PdfMutationService(
-        ILicenseGate licenseGate,
-        SafeFileWriter writer,
+        OutputPipeline<Document> outputs,
         PdfDocumentLoader loader,
         InputSource inputs,
         OperationDeadline deadline)
     {
-        _licenseGate = licenseGate ?? throw new ArgumentNullException(nameof(licenseGate));
-        _writer = writer ?? throw new ArgumentNullException(nameof(writer));
+        _outputs = outputs ?? throw new ArgumentNullException(nameof(outputs));
         _loader = loader;
         _inputs = inputs;
         _deadline = deadline;
@@ -34,7 +31,7 @@ internal sealed class PdfMutationService
     public PdfEditResult ApplyOps(string filePath, PdfOpsBatch batch, PdfEditRequest request)
     {
         batch = PdfOp.Catalog.Prepare(batch);
-        LicenseState state = _licenseGate.EnsureApplied();
+        LicenseState state = _outputs.License;
         FileWritePrecondition precondition = FileWritePrecondition.Capture(filePath);
         using InputResourceScope operationInputs = _inputs.CreateScope();
         using LoadedPdf loaded = _loader.Open(filePath, request.Password);
@@ -60,7 +57,7 @@ internal sealed class PdfMutationService
         Publication publication;
         try { publication = Publish(loaded.Document, request, outputPassword, encryptCopy, precondition, verifier, state); }
         finally { operationInputs.ThrowIfFailed(); }
-        List<Warning> warnings = BuildWarnings(state, request.Options.DryRun, signatures, outcomes, textMoved);
+        List<Warning> warnings = BuildWarnings(signatures, outcomes, textMoved);
         if (UnpermittedChange(userPermissions, openPassword, outcomes, request.Options.DryRun) is { } protection)
         {
             warnings.Add(protection);
@@ -217,17 +214,18 @@ internal sealed class PdfMutationService
         PdfEditVerification? verification = null;
         if (!request.Options.DryRun)
         {
-            using var transaction = new AtomicOutputSetWriter(_writer, request.Output.Directory, "pdf-edit");
+            using OutputSet<Document> transaction = _outputs.BeginSet([request.Output.Directory], "pdf-edit");
             StagedOutput write = transaction.Stage(
                 request.Output.Path,
                 request.Output.Overwrite,
-                request.Output.BackupPath,
-                precondition,
+                document,
                 temp =>
                 {
                     Save(document, temp, encryptCopy, request.OpSecrets);
                     using LoadedPdf reopened = _loader.OpenPublishedCandidate(temp, outputPassword);
-                });
+                },
+                backupPath: request.Output.BackupPath,
+                inputPrecondition: precondition);
             output = BuildOutput(request.Output.Path, "pdf", write.SizeBytes) with
             {
                 Fingerprint = write.Fingerprint,
@@ -271,18 +269,11 @@ internal sealed class PdfMutationService
     }
 
     private static List<Warning> BuildWarnings(
-        LicenseState state,
-        bool dryRun,
         bool signatures,
         IReadOnlyCollection<BoundedOperationOutcome> outcomes,
         IReadOnlyList<string> textMoved)
     {
         var warnings = new List<Warning>();
-        if (state == LicenseState.Evaluation && !dryRun)
-        {
-            warnings.Add(EnvelopeParts.EvaluationWatermark);
-        }
-
         if (signatures && outcomes.Any(static item => item.Status == OpStatuses.Ok && item.ItemsAffected > 0))
         {
             warnings.Add(new Warning

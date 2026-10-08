@@ -16,20 +16,17 @@ namespace Aspose.Cli.Product.Pdf.Engine;
 /// <summary>Owns transactional PDF splitting and bounded artifact extraction.</summary>
 internal sealed class PdfExtractionService
 {
-    private readonly ILicenseGate _licenseGate;
+    private readonly OutputPipeline<Document> _outputs;
     private readonly ResourceBudgetLedger _resourceBudgets;
-    private readonly SafeFileWriter _writer;
     private readonly PdfDocumentLoader _loader;
 
     internal PdfExtractionService(
-        ILicenseGate licenseGate,
+        OutputPipeline<Document> outputs,
         ResourceBudgetLedger resourceBudgets,
-        SafeFileWriter writer,
         PdfDocumentLoader loader)
     {
-        _licenseGate = licenseGate ?? throw new ArgumentNullException(nameof(licenseGate));
+        _outputs = outputs ?? throw new ArgumentNullException(nameof(outputs));
         _resourceBudgets = resourceBudgets;
-        _writer = writer ?? throw new ArgumentNullException(nameof(writer));
         _loader = loader;
     }
 
@@ -43,11 +40,11 @@ internal sealed class PdfExtractionService
             throw CliErrors.Usage(["Choose exactly one of --pages, --every or --by-bookmarks."]);
         }
 
-        LicenseState state = _licenseGate.EnsureApplied();
+        LicenseState state = _outputs.License;
         using LoadedPdf loaded = _loader.Open(filePath, request.Password);
         IReadOnlyList<SplitPart> parts = SplitParts(loaded.Document, request);
         string root = request.Output.Path;
-        using var writer = new AtomicOutputSetWriter(_writer, root, "pdf-split");
+        using OutputSet<Document> writer = _outputs.BeginSet([root], "pdf-split");
         string stem = Path.GetFileNameWithoutExtension(filePath);
         var targets = new List<(SplitPart Part, string Path)>();
         var names = new HashSet<string>(OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal);
@@ -65,11 +62,12 @@ internal sealed class PdfExtractionService
                     "Include {n}, {pages} or {bookmark} so every output name is unique.");
             }
             string target = Path.Combine(root, name);
-            writer.Stage(target, request.Output.Overwrite, staged =>
+            Document source = loaded.Document;
+            int[] pages = [.. part.Pages];
+            // The part is the document the write pipeline inspects, so it lives until it is staged.
+            using Document selected = Select(source, pages);
+            writer.Stage(target, request.Output.Overwrite, selected, staged =>
             {
-                Document source = loaded.Document;
-                int[] pages = [.. part.Pages];
-                using Document selected = Select(source, pages);
                 CopyPageLabels(source, selected, pages);
                 // A part keeps the bookmarks of its pages; what leads elsewhere is counted.
                 bookmarks += CopyOutline(source, source.Outlines, selected.Outlines, selected,
@@ -85,7 +83,7 @@ internal sealed class PdfExtractionService
         }
 
         IReadOnlyList<long> sizes = writer.Commit();
-        List<Warning> warnings = [.. EnvelopeParts.OutputWarnings(state) ?? []];
+        List<Warning> warnings = [];
         if (new PdfNavigationCensus(bookmarks, links, namedDestinations).ToWarning(
                 "lost their exact target in the parts: bookmarks open their page at Fit zoom, links to a page of another part lead nowhere, and named destinations are not carried into the parts",
                 "Re-create location-sensitive bookmarks (add_bookmark) and links (add_link) on the parts that need them.")
@@ -118,14 +116,11 @@ internal sealed class PdfExtractionService
                 "Use images, attachments, text or tables.");
         }
 
-        LicenseState state = _licenseGate.EnsureApplied();
+        LicenseState state = _outputs.License;
         using LoadedPdf loaded = _loader.Open(filePath, request.Password);
         IReadOnlyList<int> pages = request.Pages?.Resolve(loaded.Document.Pages.Count)
             ?? Enumerable.Range(1, loaded.Document.Pages.Count).ToArray();
-        using var guard = new ExtractionGuard(
-            _resourceBudgets,
-            request.Output.Path,
-            request.Output.Overwrite);
+        using ExtractionGuard guard = _outputs.BeginExtraction(request.Output.Path, request.Output.Overwrite);
         IReadOnlyList<PdfExtractedItem> items = request.What switch
         {
             "images" => ExtractImages(loaded.Document, pages, guard, _resourceBudgets),
@@ -141,7 +136,6 @@ internal sealed class PdfExtractionService
             What = request.What,
             Items = items,
             License = EnvelopeParts.License(state),
-            Warnings = EnvelopeParts.OutputWarnings(state),
         };
     }
 

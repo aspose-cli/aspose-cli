@@ -3,7 +3,9 @@ using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using Aspose.Cli.Product.Pdf.Contracts;
 using Aspose.Cli.TestKit;
+using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Licensing;
+using Aspose.Cli.Sdk.Results;
 using Aspose.Pdf;
 using Aspose.Pdf.Facades;
 using Aspose.Pdf.Text;
@@ -20,7 +22,23 @@ public sealed class PdfEngineFixture : IDisposable
         static (resolution, environment) => new PdfLicenseGate(resolution, environment));
     internal PdfEngine Engine =>
         ProductTestBudgets.StartEngine<PdfModule, PdfEngine>(
-            (budgets, writer) => new PdfEngine(Gate, budgets, writer));
+            (budgets, writer) => new PdfEngine(Outputs(writer), budgets));
+
+    /// <summary>The write pipeline of one invocation, as the product binding creates it.</summary>
+    internal OutputPipeline<Document> Outputs(SafeFileWriter writer) => new(Gate, new PdfEvaluationProfile(), writer);
+
+    /// <summary>
+    /// Runs one engine call as a command does: on its own engine and write pipeline, whose
+    /// evaluation disclosure the command template adds to the result.
+    /// </summary>
+    internal TResult Disclosed<TResult>(Func<PdfEngine, TResult> call)
+        where TResult : ResultEnvelope
+    {
+        OutputPipeline<Document>? outputs = null;
+        PdfEngine engine = ProductTestBudgets.StartEngine<PdfModule, PdfEngine>(
+            (budgets, writer) => new PdfEngine(outputs = Outputs(writer), budgets));
+        return (TResult)outputs!.Disclose(call(engine));
+    }
 
     public LicenseState LicenseState => Gate.EnsureApplied();
 

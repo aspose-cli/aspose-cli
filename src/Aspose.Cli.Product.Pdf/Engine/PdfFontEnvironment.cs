@@ -11,14 +11,14 @@ namespace Aspose.Cli.Product.Pdf.Engine;
 /// <summary>Aspose.PDF font diagnostics behind the product-neutral font port.</summary>
 internal sealed class PdfFontEnvironment : IFontEnvironment
 {
-    private readonly ILicenseGate _licenseGate;
+    private readonly ILicenseState _license;
     private readonly PdfDocumentLoader _loader;
 
     public PdfFontEnvironment(
-        ILicenseGate licenseGate,
+        ILicenseState license,
         ResourceBudgetLedger resourceBudgets)
     {
-        _licenseGate = licenseGate ?? throw new ArgumentNullException(nameof(licenseGate));
+        _license = license ?? throw new ArgumentNullException(nameof(license));
         _loader = new PdfDocumentLoader(resourceBudgets);
     }
 
@@ -54,7 +54,7 @@ internal sealed class PdfFontEnvironment : IFontEnvironment
         ArgumentException.ThrowIfNullOrEmpty(filePath);
         ArgumentNullException.ThrowIfNull(request);
 
-        LicenseState state = _licenseGate.EnsureApplied();
+        LicenseState state = _license.License;
         using LoadedPdf loaded = _loader.Open(filePath, request.Password);
         IReadOnlyList<FontAvailability> fonts = UsedFonts(loaded.Document)
             .Select(static font => new FontAvailability

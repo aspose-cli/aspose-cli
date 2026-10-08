@@ -18,21 +18,21 @@ internal sealed class PdfInspectionService
     /// <summary>The most characters a search hit's context shows on each side of the match.</summary>
     private const int ContextRadius = 40;
 
-    private readonly ILicenseGate _licenseGate;
+    private readonly ILicenseState _license;
     private readonly PdfDocumentLoader _loader;
 
     internal PdfInspectionService(
-        ILicenseGate licenseGate,
+        ILicenseState license,
         PdfDocumentLoader loader)
     {
-        _licenseGate = licenseGate ?? throw new ArgumentNullException(nameof(licenseGate));
+        _license = license ?? throw new ArgumentNullException(nameof(license));
         _loader = loader;
     }
 
     public PdfSearchResult Search(string filePath, PdfSearchRequest request)
     {
         TextSearch text = request.Query.Text;
-        LicenseState state = _licenseGate.EnsureApplied();
+        LicenseState state = _license.License;
         using LoadedPdf loaded = _loader.Open(filePath, request.Password);
         IReadOnlyList<int> pages = request.Pages?.Resolve(loaded.Document.Pages.Count)
             ?? Enumerable.Range(1, loaded.Document.Pages.Count).ToArray();
@@ -110,7 +110,7 @@ internal sealed class PdfInspectionService
             "pdfa-3b" => PdfFormat.PDF_A_3B,
             _ => throw CliErrors.OptionInvalid("--profile", $"unknown profile '{request.Profile}'", "Use pdfa-1b, pdfa-2b or pdfa-3b."),
         };
-        LicenseState state = _licenseGate.EnsureApplied();
+        LicenseState state = _license.License;
         using LoadedPdf loaded = _loader.Open(filePath, request.Password);
         using var log = new MemoryStream();
         bool valid = loaded.Document.Validate(log, format);

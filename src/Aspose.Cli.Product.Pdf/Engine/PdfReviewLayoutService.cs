@@ -10,14 +10,14 @@ namespace Aspose.Cli.Product.Pdf.Engine;
 internal sealed class PdfReviewLayoutService
 {
     private const double PageBoundaryTolerance = 0.5;
-    private readonly ILicenseGate _licenseGate;
+    private readonly ILicenseState _license;
     private readonly PdfDocumentLoader _loader;
 
     internal PdfReviewLayoutService(
-        ILicenseGate licenseGate,
+        ILicenseState license,
         PdfDocumentLoader loader)
     {
-        _licenseGate = licenseGate ?? throw new ArgumentNullException(nameof(licenseGate));
+        _license = license ?? throw new ArgumentNullException(nameof(license));
         _loader = loader ?? throw new ArgumentNullException(nameof(loader));
     }
 
@@ -26,7 +26,7 @@ internal sealed class PdfReviewLayoutService
         Secret? password,
         int maxPages)
     {
-        _ = _licenseGate.EnsureApplied();
+        _ = _license.License;
         using LoadedPdf loaded = _loader.Open(filePath, password);
         int inspectedPages = Math.Min(loaded.Document.Pages.Count, maxPages);
         var pages = new List<PdfReviewPageLayout>(inspectedPages);

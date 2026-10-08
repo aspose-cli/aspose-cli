@@ -312,7 +312,7 @@ public sealed class PdfArtifactWorkflowTests
         ResourceBudgetLedger budgets = ProductTestBudgets.Create<PdfModule>();
         budgets.Consume(ResourceBudgetKinds.OutputBytes,
             budgets.Remaining(ResourceBudgetKinds.OutputBytes) - 2, "bytes", "test-reservation");
-        var engine = new PdfEngine(fixture.Gate, budgets, new SafeFileWriter(budgets));
+        var engine = new PdfEngine(fixture.Outputs(new SafeFileWriter(budgets)), budgets);
         string output = fixture.File("extracted");
         Directory.CreateDirectory(output);
         string unrelated = Path.Combine(output, "keep.txt");

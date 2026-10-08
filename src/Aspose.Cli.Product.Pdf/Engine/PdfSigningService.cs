@@ -15,20 +15,17 @@ namespace Aspose.Cli.Product.Pdf.Engine;
 // Signing implementation.
 internal sealed class PdfSigningService
 {
-    private readonly ILicenseGate _licenseGate;
+    private readonly OutputPipeline<Document> _outputs;
     private readonly ResourceBudgetLedger _resourceBudgets;
-    private readonly SafeFileWriter _writer;
     private readonly PdfDocumentLoader _loader;
 
     internal PdfSigningService(
-        ILicenseGate licenseGate,
+        OutputPipeline<Document> outputs,
         ResourceBudgetLedger resourceBudgets,
-        SafeFileWriter writer,
         PdfDocumentLoader loader)
     {
-        _licenseGate = licenseGate ?? throw new ArgumentNullException(nameof(licenseGate));
+        _outputs = outputs ?? throw new ArgumentNullException(nameof(outputs));
         _resourceBudgets = resourceBudgets;
-        _writer = writer ?? throw new ArgumentNullException(nameof(writer));
         _loader = loader;
     }
 
@@ -39,7 +36,7 @@ internal sealed class PdfSigningService
         // signer gets the same bytes that were validated.
         byte[] certificate = _resourceBudgets.Inputs.ReadAllBytes(request.CertificatePath);
         ValidateCertificate(certificate, request.CertificatePassword);
-        LicenseState state = _licenseGate.EnsureApplied();
+        LicenseState state = _outputs.License;
         using LoadedPdf loaded = _loader.Open(filePath, request.Password);
         _ = PageAt(loaded.Document, request.Page);
         // The signature to verify is the one this command adds: a document may already
@@ -66,11 +63,12 @@ internal sealed class PdfSigningService
                 checked((int)Math.Round(visibleRect.Y)),
                 checked((int)Math.Round(visibleRect.Width)),
                 checked((int)Math.Round(visibleRect.Height)));
-        using var transaction = new AtomicOutputSetWriter(
-            _writer, request.Output.Directory, "pdf-sign");
-        StagedOutput write = transaction.Stage(request.Output.Path, request.Output.Overwrite, temp =>
+        // The facade closes the document when it is disposed, so it outlives the publication,
+        // whose pipeline inspects the signed document after the save.
+        using var facade = new PdfFileSignature(loaded.Document);
+        using OutputSet<Document> transaction = _outputs.BeginSet([request.Output.Directory], "pdf-sign");
+        StagedOutput write = transaction.Stage(request.Output.Path, request.Output.Overwrite, loaded.Document, temp =>
         {
-            using var facade = new PdfFileSignature(loaded.Document);
             using var pkcs12 = new MemoryStream(certificate, writable: false);
             var signature = new PKCS7(pkcs12, request.CertificatePassword.Reveal())
             {
@@ -109,7 +107,6 @@ internal sealed class PdfSigningService
                     Height = visibleRect.Height,
                 },
             License = EnvelopeParts.License(state),
-            Warnings = EnvelopeParts.OutputWarnings(state),
         };
     }
 
