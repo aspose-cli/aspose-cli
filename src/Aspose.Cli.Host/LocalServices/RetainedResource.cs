@@ -18,7 +18,7 @@ internal sealed class RetainedResource<T>(T resource) : IDisposable where T : cl
         {
             if (_retired) { lease = null; return false; }
             _references++;
-            lease = new Lease(this, _resource!);
+            lease = new Lease(this);
             return true;
         }
     }
@@ -50,14 +50,11 @@ internal sealed class RetainedResource<T>(T resource) : IDisposable where T : cl
         }
     }
 
-    internal sealed class Lease(RetainedResource<T> owner, T resource) : IDisposable
+    internal sealed class Lease(RetainedResource<T> owner) : IDisposable
     {
         private RetainedResource<T>? _owner = owner;
-        private T? _value = resource;
-        internal T Value => _value ?? throw new ObjectDisposedException(nameof(Lease));
         public void Dispose()
         {
-            _value = null;
             Interlocked.Exchange(ref _owner, null)?.Release();
         }
     }

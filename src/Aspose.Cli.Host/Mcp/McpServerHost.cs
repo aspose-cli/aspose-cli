@@ -10,8 +10,6 @@ internal static class McpServerHost
 {
     internal const string CapabilitiesToolName = "capabilities";
     internal const string ExecuteToolName = "execute";
-    internal static IReadOnlyList<string> ToolNames { get; } =
-        [CapabilitiesToolName, ExecuteToolName];
 
     public static int Run(HostContext host, GlobalValues globals)
         => RunAsync(host, globals).GetAwaiter().GetResult();

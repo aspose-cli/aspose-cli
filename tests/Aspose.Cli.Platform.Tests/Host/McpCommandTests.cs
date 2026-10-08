@@ -14,7 +14,8 @@ public sealed class McpCommandTests
     [Fact]
     public void Server_ExposesExactlyTwoTools()
     {
-        Assert.Equal(["capabilities", "execute"], McpServerHost.ToolNames);
+        var tools = McpServerHost.CreateTools(new McpTools(new McpCommandRunner(ActualCommandTree.Host)));
+        Assert.Equal(["capabilities", "execute"], tools.Select(static tool => tool.ProtocolTool.Name).Order());
     }
 
     [Fact]
@@ -243,7 +244,7 @@ public sealed class McpCommandTests
             await Assert.ThrowsAnyAsync<OperationCanceledException>(() => execution);
             stopwatch.Stop();
             Assert.True(
-                stopwatch.Elapsed < McpCommandRunner.ShutdownGracePeriod + TimeSpan.FromSeconds(1),
+                stopwatch.Elapsed < ChildProcess.TerminationGrace + TimeSpan.FromSeconds(1),
                 $"MCP process cleanup took {stopwatch.Elapsed}.");
             Assert.True(
                 await WaitForExitAsync(child, TimeSpan.FromSeconds(3)),
@@ -281,7 +282,7 @@ public sealed class McpCommandTests
             // Far below the minute an unbounded wait would take; the slack covers starting and
             // killing the interpreter while other test projects load the machine.
             Assert.True(stopwatch.Elapsed < TimeSpan.FromSeconds(1)
-                + McpCommandRunner.ShutdownGracePeriod + TimeSpan.FromSeconds(5), stopwatch.Elapsed.ToString());
+                + ChildProcess.TerminationGrace + TimeSpan.FromSeconds(5), stopwatch.Elapsed.ToString());
         }
         finally
         {
@@ -351,7 +352,7 @@ public sealed class McpCommandTests
     private static async Task ObserveCanceledExecutionAsync(Task? execution)
     {
         if (execution is null) { return; }
-        try { await execution.WaitAsync(McpCommandRunner.ShutdownGracePeriod + TimeSpan.FromSeconds(3)); }
+        try { await execution.WaitAsync(ChildProcess.TerminationGrace + TimeSpan.FromSeconds(3)); }
         catch (OperationCanceledException) { }
         catch (McpCommandException) { }
     }

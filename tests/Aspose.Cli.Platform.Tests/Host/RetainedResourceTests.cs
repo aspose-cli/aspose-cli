@@ -28,6 +28,5 @@ public sealed class RetainedResourceTests
         second!.Dispose();
         await owner.Completion.WaitAsync(TimeSpan.FromSeconds(5));
         Assert.False(File.Exists(path));
-        Assert.Throws<ObjectDisposedException>(() => first.Value);
     }
 }

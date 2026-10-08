@@ -184,7 +184,7 @@ public sealed class LocalServiceRuntimeTests
         using (Stream connection = await ConnectRaw(endpoint))
         {
             byte[] request = LocalServiceControlCodec.Serialize(new LocalServiceControlRequest(
-                LocalServiceControlServer.ProtocolVersion, Guid.NewGuid().ToString("N"), endpoint.Service,
+                LocalServiceControlCodec.ProtocolVersion, Guid.NewGuid().ToString("N"), endpoint.Service,
                 endpoint.InstanceId, nonce, token, "cancel"));
             await LocalServiceControlCodec.WriteFrameAsync(connection, request, CancellationToken.None);
             Assert.True(entered.Wait(TimeSpan.FromSeconds(5)));
@@ -223,7 +223,7 @@ public sealed class LocalServiceRuntimeTests
 
         Assert.True(response.Ok);
         Assert.Equal(
-            LocalServiceControlServer.ProtocolVersion,
+            LocalServiceControlCodec.ProtocolVersion,
             response.Version);
         Assert.Equal(endpoint.Service, response.Service);
         Assert.Equal(endpoint.InstanceId, response.InstanceId);
@@ -342,7 +342,7 @@ public sealed class LocalServiceRuntimeTests
             byte[] header = new byte[sizeof(int)];
             BinaryPrimitives.WriteInt32LittleEndian(
                 header,
-                LocalServiceControlServer.MaximumPayloadBytes + 1);
+                LocalServiceControlCodec.MaximumPayloadBytes + 1);
             await oversized.WriteAsync(header);
             await oversized.FlushAsync();
         }
