@@ -40,16 +40,17 @@ internal sealed partial class PdfMutationHandlers : IPdfOpHandler<long>
         _textMoved = textMoved;
     }
 
-    /// <summary>Applies one operation; an Aspose.PDF or I/O failure becomes an engine failure.</summary>
+    /// <summary>
+    /// Applies one operation; an Aspose.PDF failure becomes an engine failure. A file the
+    /// operation reads is opened through the SDK, which reports a file it cannot open.
+    /// </summary>
     internal long Run(PdfOp operation)
     {
         try
         {
             return operation.Accept(this);
         }
-        catch (Exception exception) when (
-            exception.GetType().Assembly.GetName().Name == "Aspose.PDF"
-            || exception is IOException or UnauthorizedAccessException)
+        catch (Exception exception) when (exception.GetType().Assembly.GetName().Name == "Aspose.PDF")
         {
             throw new EngineOpException(exception.Message, exception);
         }

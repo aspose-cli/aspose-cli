@@ -118,7 +118,8 @@ internal sealed partial class SlidesMutationHandlers : ISlidesOpHandler<long>
 
     /// <summary>
     /// Applies the operation once its targets are still part of the presentation; an
-    /// Aspose.Slides or I/O failure becomes an engine failure.
+    /// Aspose.Slides failure becomes an engine failure. A file the operation reads is opened
+    /// through the SDK, which reports a file it cannot open.
     /// </summary>
     internal long Run()
     {
@@ -142,8 +143,7 @@ internal sealed partial class SlidesMutationHandlers : ISlidesOpHandler<long>
             return _target.Op.Accept(this);
         }
         catch (Exception exception) when (
-            exception.GetType().Assembly.GetName().Name?.StartsWith("Aspose.Slides", StringComparison.Ordinal) == true
-            || exception is IOException or UnauthorizedAccessException)
+            exception.GetType().Assembly.GetName().Name?.StartsWith("Aspose.Slides", StringComparison.Ordinal) == true)
         {
             throw new EngineOpException(exception.Message, exception);
         }
