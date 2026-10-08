@@ -69,6 +69,9 @@ public sealed record ResolvedOutput
     public FormatDescriptor Keeping(string? sourceFormatId) =>
         _alternatives.FirstOrDefault(format => string.Equals(format.Id, sourceFormatId, StringComparison.Ordinal)) ?? Format;
 
+    /// <summary>The formats the output's extension names, in declared order; empty when only one does.</summary>
+    internal IReadOnlyList<FormatDescriptor> Alternatives => _alternatives;
+
     /// <summary>
     /// The path of the part numbered <paramref name="number"/> of an output written in
     /// <paramref name="parts"/> parts: the output itself for a single part, and otherwise a file

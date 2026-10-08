@@ -1,0 +1,18 @@
+{
+  "name": "words convert --to flatopc --encrypt-env is refused with OPTION_INVALID, since Flat OPC XML carries no password",
+  "files": {
+    "source.docx": { "fixture": "words.docx" }
+  },
+  "steps": [
+    {
+      "args": ["words", "convert", "source.docx", "--to", "flatopc", "--out", "flat.xml", "--encrypt-env", "NEW_PASSWORD"],
+      "env": { "NEW_PASSWORD": "Scenario-New-Secret-7d2a" },
+      "expect": { "exitCode": 2, "error": "OPTION_INVALID", "files": { "nothingWritten": true }, "hidden": ["Scenario-New-Secret-7d2a"] }
+    },
+    {
+      "args": ["words", "convert", "source.docx", "--to", "docx", "--out", "locked.docx", "--encrypt-env", "NEW_PASSWORD"],
+      "env": { "NEW_PASSWORD": "Scenario-New-Secret-7d2a" },
+      "expect": { "exitCode": 0, "files": { "present": ["locked.docx"] } }
+    }
+  ]
+}

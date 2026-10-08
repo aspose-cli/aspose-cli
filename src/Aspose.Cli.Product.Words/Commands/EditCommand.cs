@@ -37,8 +37,9 @@ internal static class EditCommand
             [trackChanges, author],
             (parse, edit, standard) =>
             {
-                Secret? encryptPassword = standard.EncryptPassword();
-                return standard.OpenEngine().ApplyOps(standard.Input, edit.Batch, new WordsEditRequest
+                IWordsEngine engine = standard.OpenEngine();
+                Secret? encryptPassword = standard.EncryptPassword(() => engine.DetectFormat(standard.Input));
+                return engine.ApplyOps(standard.Input, edit.Batch, new WordsEditRequest
                 {
                     Output = standard.Output,
                     Options = edit.Options,

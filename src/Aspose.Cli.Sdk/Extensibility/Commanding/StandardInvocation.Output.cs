@@ -28,25 +28,60 @@ public partial class StandardInvocation
     /// <summary>
     /// The password for <see cref="Output"/>, or null when none was given. A password for a
     /// format that cannot carry one is refused, naming the option the caller passed, before the
-    /// secret is read.
+    /// secret is read and before any input is loaded. When the output's extension names several
+    /// formats, as <c>.xml</c> names WordML and Flat OPC, the edited input keeps its own: the
+    /// overload that takes a detector of the input's format refuses that format, and while it is
+    /// unknown every such format must be protectable; this overload judges <see cref="ResolvedOutput.Format"/>.
     /// </summary>
     /// <exception cref="CliException"><c>OPTION_INVALID</c> for an unprotectable format or a bad source.</exception>
-    public Secret? EncryptPassword()
+    public Secret? EncryptPassword() => EncryptPassword(sourceFormat: null);
+
+    /// <inheritdoc cref="EncryptPassword()"/>
+    /// <param name="sourceFormat">
+    /// Detects the format id of the edited input from its content without loading it, or returns
+    /// null; called only for a password and an output whose extension names several formats.
+    /// </param>
+    public Secret? EncryptPassword(Func<string?>? sourceFormat)
     {
         PasswordOptions encrypt = Declared(_options.Encrypt, "output password");
-        FormatDescriptor format = Output.Format;
-        if (!format.Protectable && encrypt.SelectedOption(_parse) is { } option)
+        if (encrypt.SelectedOption(_parse) is { } option)
         {
-            IEnumerable<string> protectable = Writes(Declared(_options.OutputTarget, "output"))
-                .Where(static candidate => candidate.Protectable)
-                .Select(static candidate => candidate.Id);
-            throw CliErrors.OptionInvalid(
-                option,
-                $"the '{format.Id}' format cannot be password-protected",
-                $"Protect only {string.Join(", ", protectable)} outputs, or drop {option}.");
+            FormatDescriptor[] written = WrittenFormats(sourceFormat);
+            if (written.Any(static format => !format.Protectable))
+            {
+                throw Unprotectable(option, written);
+            }
         }
 
         return encrypt.Resolve(_parse, Inputs, ReadEnvironment);
+    }
+
+    // The format an output is written in: the edited input's own among those its extension names.
+    private FormatDescriptor[] WrittenFormats(Func<string?>? sourceFormat)
+    {
+        ResolvedOutput output = Output;
+        if (output.Alternatives.Count < 2 || sourceFormat is null)
+        {
+            return [output.Format];
+        }
+
+        return sourceFormat() is { } id ? [output.Keeping(id)] : [.. output.Alternatives];
+    }
+
+    private CliException Unprotectable(string option, IReadOnlyList<FormatDescriptor> written)
+    {
+        FormatDescriptor[] protectable = [.. Writes(Declared(_options.OutputTarget, "output"))
+            .Where(static candidate => candidate.Protectable)];
+        string formats = string.Join(" or ", written.Select(static format => $"'{format.Id}'"));
+        string reason = written.Count == 1
+            ? $"the {formats} format cannot be password-protected"
+            : $"the {formats} format of the edited file cannot be password-protected";
+        string hint = Output.InPlace && protectable.Length > 0
+            ? $"An in-place edit keeps the file's format; write a protectable copy with {StandardOptionNames.Out} instead, "
+                + $"naming a file with one of {string.Join(", ", protectable.Select(static format => format.PreferredExtension).Distinct())}, "
+                + $"or drop {option}."
+            : $"Protect only {string.Join(", ", protectable.Select(static format => format.Id))} outputs, or drop {option}.";
+        return CliErrors.OptionInvalid(option, reason, hint);
     }
 
     /// <summary>

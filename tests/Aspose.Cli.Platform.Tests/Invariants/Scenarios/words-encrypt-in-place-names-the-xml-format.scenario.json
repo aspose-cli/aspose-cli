@@ -1,0 +1,37 @@
+{
+  "name": "words edit --in-place --encrypt-env of an .xml document names its own format, WordML or Flat OPC, and points to a protectable --out",
+  "files": {
+    "wordml.xml": { "fixture": "words.wordml" },
+    "flat.xml": { "fixture": "words.flatopc" },
+    "ops.json": { "fixture": "words.ops" }
+  },
+  "steps": [
+    {
+      "args": ["words", "edit", "wordml.xml", "--ops", "ops.json", "--in-place", "--encrypt-env", "NEW_PASSWORD"],
+      "env": { "NEW_PASSWORD": "Scenario-New-Secret-7d2a" },
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "json": [
+          { "path": "error.message", "contains": "'wordml' format cannot be password-protected" },
+          { "path": "error.hint", "contains": "--out" },
+          { "path": "error.hint", "contains": ".docx" }
+        ],
+        "files": { "nothingWritten": true }
+      }
+    },
+    {
+      "args": ["words", "edit", "flat.xml", "--ops", "ops.json", "--in-place", "--encrypt-env", "NEW_PASSWORD"],
+      "env": { "NEW_PASSWORD": "Scenario-New-Secret-7d2a" },
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "json": [
+          { "path": "error.message", "contains": "'flatopc' format cannot be password-protected" },
+          { "path": "error.hint", "contains": "--out" }
+        ],
+        "files": { "nothingWritten": true }
+      }
+    }
+  ]
+}

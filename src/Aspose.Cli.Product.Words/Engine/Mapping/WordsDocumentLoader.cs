@@ -131,6 +131,24 @@ internal sealed class WordsDocumentLoader
         }
     }
 
+    /// <summary>
+    /// The format id <paramref name="path"/>'s content has, detected without loading it; null when
+    /// detection fails, since the load that follows reports why.
+    /// </summary>
+    internal static string? DetectFormatId(string path)
+    {
+        try
+        {
+            using FileStream input = InputFiles.OpenRead(path);
+            string id = WordsFormatMapper.ToId(FileFormatUtil.DetectFileFormat(input).LoadFormat);
+            return id == "unknown" ? null : id;
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            return null;
+        }
+    }
+
     /// <summary>Imports inline Markdown using the owning document's resource boundary and lifetime.</summary>
     internal Document OpenMarkdown(string markdown, LoadedDocument owner)
     {
