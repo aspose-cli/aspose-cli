@@ -1,7 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Aspose.Cli.Sdk.Serialization;
+namespace Aspose.Cli.Sdk.Contracts;
 
 /// <summary>
 /// Writes a timestamp as UTC with the <c>Z</c> designator, whatever offset the value carries,
