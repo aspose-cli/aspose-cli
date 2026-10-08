@@ -46,23 +46,7 @@ public sealed class PdfModule : IProductModule
             .Output<PdfValidateResult>(PdfRenderers.Render)
             .Output<PdfSignResult>(PdfRenderers.Render)
             .Commands(PdfCommands.Create)
-            .Activator(Activate)
+            .Activator(static context => PdfActivation.Activate(context, Manifest.Id))
             .Build();
-
-    private static ProductBinding<IPdfEngine> Activate(
-        ProductActivationContext context) =>
-        ProductBinding.Create<IPdfEngine>(
-            context,
-            Manifest.Id,
-            resolution => new PdfLicenseGate(
-                resolution,
-                context.EnvironmentVariable),
-            license => new PdfEngine(
-                license,
-                context.ResourceBudgets,
-                context.SafeFileWriter),
-            license => new PdfFontEnvironment(
-                license,
-                context.ResourceBudgets));
 
 }

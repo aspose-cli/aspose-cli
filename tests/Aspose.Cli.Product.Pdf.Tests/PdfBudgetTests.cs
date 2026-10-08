@@ -91,7 +91,7 @@ public sealed class PdfBudgetTests
         {
             ProductTestInvocation invocation = ProductTestBudgets.Start<PdfModule>();
             long before = invocation.ResourceBudgets.Remaining(ResourceBudgetKinds.InputBytes);
-            new PdfEngine(owner.Gate, invocation.ResourceBudgets, invocation.Writer).ApplyOps(path,
+            new PdfEngine(owner.Outputs(invocation.Writer), invocation.ResourceBudgets).ApplyOps(path,
                 new PdfOpsBatch { Ops = [new AddWatermarkImageOp { Path = image, Pages = pages }] },
                 new PdfEditRequest { Output = TestOutput.At(owner.File(output)) });
             return before - invocation.ResourceBudgets.Remaining(ResourceBudgetKinds.InputBytes);

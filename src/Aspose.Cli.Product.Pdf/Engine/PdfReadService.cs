@@ -8,20 +8,20 @@ namespace Aspose.Cli.Product.Pdf.Engine;
 /// <summary>Owns PDF structure and bounded content reading.</summary>
 internal sealed class PdfReadService
 {
-    private readonly ILicenseGate _licenseGate;
+    private readonly ILicenseState _license;
     private readonly PdfDocumentLoader _loader;
 
     internal PdfReadService(
-        ILicenseGate licenseGate,
+        ILicenseState license,
         PdfDocumentLoader loader)
     {
-        _licenseGate = licenseGate ?? throw new ArgumentNullException(nameof(licenseGate));
+        _license = license ?? throw new ArgumentNullException(nameof(license));
         _loader = loader;
     }
 
     internal PdfInfoResult GetInfo(string filePath, PdfInfoRequest request)
     {
-        LicenseState state = _licenseGate.EnsureApplied();
+        LicenseState state = _license.License;
         using LoadedPdf loaded = _loader.Open(filePath, request.Password);
         PdfInfoResult info = PdfInfoProjection.Project(loaded, filePath, request);
         return info with
@@ -35,7 +35,7 @@ internal sealed class PdfReadService
 
     internal PdfReadResult Read(string filePath, PdfReadRequest request)
     {
-        LicenseState state = _licenseGate.EnsureApplied();
+        LicenseState state = _license.License;
         using LoadedPdf loaded = _loader.Open(filePath, request.Password);
         IReadOnlyList<int> requested = request.Pages?.Resolve(loaded.Document.Pages.Count)
             ?? Enumerable.Range(1, loaded.Document.Pages.Count).ToArray();

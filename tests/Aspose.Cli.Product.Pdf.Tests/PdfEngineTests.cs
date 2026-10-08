@@ -757,10 +757,10 @@ public sealed class PdfEngineTests
         string input = fixture.CreateDocument(pages: 1);
         string output = fixture.File("output" + PdfFormats.Definitions.ExtensionFor(format));
 
-        var result = fixture.Engine.Convert(input, new PdfConvertRequest
+        var result = fixture.Disclosed(engine => engine.Convert(input, new PdfConvertRequest
         {
             Output = TestOutput.At(output, format: format),
-        });
+        }));
 
         Assert.NotEmpty(result.Outputs);
         Assert.All(result.Outputs, item =>

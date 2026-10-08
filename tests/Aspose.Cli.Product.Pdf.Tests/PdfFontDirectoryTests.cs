@@ -17,7 +17,7 @@ public sealed class PdfFontDirectoryTests
         string fonts = fixture.File("fonts");
         string font = FontFixtures.WriteUniqueFont(fonts);
         string input = CreateDocument(fixture, fixture.File("fixture.pdf"), font);
-        var environment = new PdfFontEnvironment(fixture.Gate, ProductTestBudgets.Create<PdfModule>());
+        var environment = new PdfFontEnvironment(fixture.Outputs(ProductTestBudgets.Start<PdfModule>().Writer), ProductTestBudgets.Create<PdfModule>());
 
         Assert.False(FixtureAvailable(environment, input));
         using (environment.UseFonts(FontSearchProfile.Explicit([fonts])))

@@ -43,13 +43,13 @@ internal static class PdfEvaluation
     /// command that has no <c>--pages</c> states why it needs a later page and what the user
     /// can do instead.
     /// </summary>
-    internal static T Run<T>(ILicenseGate licenseGate, Func<T> command, string? cause = null, string? remedy = null)
+    internal static T Run<T>(ILicenseState license, Func<T> command, string? cause = null, string? remedy = null)
     {
         try
         {
             return command();
         }
-        catch (Exception exception) when (IsCollectionLimit(exception) && licenseGate.EnsureApplied() == LicenseState.Evaluation)
+        catch (Exception exception) when (IsCollectionLimit(exception) && license.IsEvaluation)
         {
             throw CliErrors.EvaluationLimit(
                 $"Evaluation mode lets the PDF engine read only the first {VisiblePages} pages of a document; {cause ?? "this command needs a later page"}, so no output was written.",

@@ -25,7 +25,7 @@ public sealed class PdfFontDiagnosticsTests
         }
 
         PdfInfoResult info = fixture.Engine.GetInfo(input, new PdfInfoRequest { Details = ["fonts"] });
-        var environment = new PdfFontEnvironment(fixture.Gate, ProductTestBudgets.Create<PdfModule>());
+        var environment = new PdfFontEnvironment(fixture.Outputs(ProductTestBudgets.Start<PdfModule>().Writer), ProductTestBudgets.Create<PdfModule>());
         FontCheckResult result = environment.CheckFonts(input, new FontCheckRequest());
 
         Assert.Empty(info.Fonts!);
@@ -41,7 +41,7 @@ public sealed class PdfFontDiagnosticsTests
         string input = fixture.CreateRawDocument("mixed.pdf", pages: 3,
             textPages: new HashSet<int> { 3 }, imagePages: new HashSet<int> { 2 });
         PdfInfoResult info = fixture.Engine.GetInfo(input, new PdfInfoRequest { Details = ["fonts"] });
-        var environment = new PdfFontEnvironment(fixture.Gate, ProductTestBudgets.Create<PdfModule>());
+        var environment = new PdfFontEnvironment(fixture.Outputs(ProductTestBudgets.Start<PdfModule>().Writer), ProductTestBudgets.Create<PdfModule>());
         FontCheckResult result = environment.CheckFonts(input, new FontCheckRequest());
 
         Assert.Equal("Helvetica", Assert.Single(info.Fonts!).Name);

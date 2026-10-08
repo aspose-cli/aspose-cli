@@ -101,7 +101,10 @@ retry unchanged input.
   source that carries them; its message lists them. A licensed
   save adds none, so every mark a licensed output carries came from its input.
   The license does not remove them, so tell the user and regenerate the
-  deliverable from the original, unmarked inputs.
+  deliverable from the original, unmarked inputs. A PDF is checked on its first
+  four pages, which every evaluation save of Aspose.PDF stamps; a notice only
+  on a later page, as in a PDF merged from a clean and a marked one, is not
+  reported, so `review` the whole file.
 - Detect evaluation from the JSON `warnings` array. With `--output table`,
   `--quiet` hides the `EVAL_MODE` line together with the stderr license status
   line.

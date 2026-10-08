@@ -1,4 +1,3 @@
-using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Results;
 using Aspose.Pdf;
@@ -10,17 +9,14 @@ namespace Aspose.Cli.Product.Pdf.Engine;
 /// <summary>Owns AcroForm and XFA read, fill and export behavior.</summary>
 internal sealed class PdfFormService
 {
-    private readonly ILicenseGate _licenseGate;
-    private readonly SafeFileWriter _writer;
+    private readonly OutputPipeline<Document> _outputs;
     private readonly PdfDocumentLoader _loader;
 
     internal PdfFormService(
-        ILicenseGate licenseGate,
-        SafeFileWriter writer,
+        OutputPipeline<Document> outputs,
         PdfDocumentLoader loader)
     {
-        _licenseGate = licenseGate ?? throw new ArgumentNullException(nameof(licenseGate));
-        _writer = writer ?? throw new ArgumentNullException(nameof(writer));
+        _outputs = outputs ?? throw new ArgumentNullException(nameof(outputs));
         _loader = loader;
     }
 
@@ -28,7 +24,7 @@ internal sealed class PdfFormService
 
     public PdfFormResult ReadForm(string filePath, PdfFormReadRequest request)
     {
-        LicenseState state = _licenseGate.EnsureApplied();
+        LicenseState state = _outputs.License;
         using LoadedPdf loaded = _loader.Open(filePath, request.Password);
         Form form = loaded.Document.Form;
         var unpaged = new List<string>();
@@ -144,10 +140,10 @@ internal sealed class PdfFormService
 
     public PdfFormExportResult ExportForm(string filePath, PdfFormExportRequest request)
     {
-        LicenseState state = _licenseGate.EnsureApplied();
+        LicenseState state = _outputs.License;
         using LoadedPdf loaded = _loader.Open(filePath, request.Password);
         EnsureAcroForm(loaded.Document);
-        long size = _writer.Write(request.Output.Path, request.Output.Overwrite, temp =>
+        long size = _outputs.Write(request.Output.Path, request.Output.Overwrite, null, temp =>
         {
             var facade = new Aspose.Pdf.Facades.Form(loaded.Document);
             using FileStream stream = File.Create(temp);
@@ -164,7 +160,6 @@ internal sealed class PdfFormService
             Input = PdfInfoProjection.Source(filePath),
             Output = BuildOutput(request.Output.Path, request.Output.Format.Id, size),
             License = EnvelopeParts.License(state),
-            Warnings = EnvelopeParts.OutputWarnings(state),
         };
     }
 }
