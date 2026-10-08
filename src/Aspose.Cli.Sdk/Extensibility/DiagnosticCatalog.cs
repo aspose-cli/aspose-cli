@@ -1,9 +1,9 @@
 using System.Text.Json;
 using System.Text.RegularExpressions;
-using Aspose.Cli.Sdk.Extensibility;
+using Aspose.Cli.Sdk.Diagnostics;
 using Aspose.Cli.Sdk.Resources;
 
-namespace Aspose.Cli.Sdk.Diagnostics;
+namespace Aspose.Cli.Sdk.Extensibility;
 
 /// <summary>Validated immutable aggregate of common and compiled-product diagnostics.</summary>
 public sealed class DiagnosticCatalog
