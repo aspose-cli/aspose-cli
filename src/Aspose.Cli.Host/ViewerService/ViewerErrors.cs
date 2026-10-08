@@ -1,4 +1,3 @@
-using System.Text.Json.Nodes;
 using Aspose.Cli.Sdk.Errors;
 
 namespace Aspose.Cli.Host.ViewerService;
@@ -6,18 +5,13 @@ namespace Aspose.Cli.Host.ViewerService;
 /// <summary>Restores the product's own error from a worker response.</summary>
 internal static class ViewerErrors
 {
-    /// <summary>Another App or preview service holds the per-user service lock.</summary>
-    public static CliException ServiceBusy() => new(
-        ErrorCodes.AppBusy,
-        "Another App or preview service is starting, running or stopping for this user.",
-        hint: "Retry in a moment. If it persists, run 'aspose-cli app stop' and start again.");
-
     public static CliException FromWorker(RenderWorkerResponse response, string source)
     {
         ArgumentNullException.ThrowIfNull(response);
         int exit = response.Exit > 0 ? response.Exit : (int)ExitCode.Internal;
-        return new CliException(
-            new ErrorCode(response.Code ?? ErrorCodes.Internal.Name, (ExitCode)exit),
+        return CliErrors.FromRemote(
+            response.Code ?? ErrorCodes.Internal.Name,
+            (ExitCode)exit,
             response.Message ?? $"The viewer could not render {Path.GetFileName(source)}.");
     }
 
@@ -32,13 +26,6 @@ internal static class ViewerErrors
             return;
         }
 
-        var mistake = Mistake.Of(view, available);
-        var details = new JsonObject();
-        mistake.WriteTo(details);
-        throw new CliException(
-            ErrorCodes.FeatureUnsupported,
-            $"View '{view}' is not supported by the {product} product.",
-            hint: mistake.Hint($"Use one of: {string.Join(", ", available)}."),
-            details: details);
+        throw CliErrors.ViewUnsupported(product, view, available);
     }
 }

@@ -2,7 +2,6 @@ using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
-using System.Text.Json.Nodes;
 using Aspose.Cli.Sdk;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
@@ -681,16 +680,12 @@ internal sealed record BundledSkill(
     private static CliException ManagedSkillConflict(
         string target,
         string reason,
-        Exception? inner = null) => new(
-            ErrorCodes.OutputExists,
-            $"The Skill target cannot be updated safely: {target} ({reason}).",
-            hint: $"Preserve custom files and choose a different --target, or restore the managed contents before retrying.",
-            details: new JsonObject
-            {
-                ["path"] = target,
-                ["reason"] = reason,
-            },
-            innerException: inner);
+        Exception? inner = null) => CliErrors.OutputNotManaged(
+            "The Skill target",
+            target,
+            reason,
+            "Preserve custom files and choose a different --target, or restore the managed contents before retrying.",
+            inner);
 
     private sealed record SkillFileEntry(string Path, long Size, string Sha256);
 

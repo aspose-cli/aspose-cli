@@ -419,6 +419,78 @@ public static partial class CliErrors
         details: new JsonObject { ["path"] = path });
 
     /// <summary>
+    /// An output published as one new directory, which never replaces anything, names a
+    /// directory or file that already exists.
+    /// </summary>
+    public static CliException OutputDirectoryExists(string path) => new(
+        ErrorCodes.OutputExists,
+        $"Output directory already exists: {path}",
+        hint: "Pass --out a path that does not exist yet, not even as an empty directory: the command publishes its "
+            + "output as one new directory and never overwrites.",
+        details: new JsonObject { ["path"] = path });
+
+    /// <summary>
+    /// An output that the CLI manages, such as an installed Skill, holds content it did not
+    /// write, so updating it could destroy that content.
+    /// </summary>
+    /// <param name="subject">What the output is, starting the message, such as <c>The Skill target</c>.</param>
+    /// <param name="path">The output.</param>
+    /// <param name="reason">What in it the CLI does not manage.</param>
+    /// <param name="hint">How to keep the content and still update.</param>
+    /// <param name="innerException">The failure that showed it, if any.</param>
+    public static CliException OutputNotManaged(
+        string subject,
+        string path,
+        string reason,
+        string hint,
+        Exception? innerException = null) => new(
+        ErrorCodes.OutputExists,
+        $"{subject} cannot be updated safely: {path} ({reason}).",
+        hint: hint,
+        details: new JsonObject { ["path"] = path, ["reason"] = reason },
+        innerException: innerException);
+
+    /// <summary>
+    /// A product's own file operation failed for a reason of the file system, such as a lock,
+    /// a permission or a full disk, rather than of the document.
+    /// </summary>
+    /// <param name="product">The product whose operation failed.</param>
+    /// <param name="exception">The file system failure.</param>
+    public static CliException FileOperationFailed(string product, Exception exception)
+    {
+        ArgumentNullException.ThrowIfNull(exception);
+        return new CliException(
+            ErrorCodes.OutputUnwritable,
+            $"{product} could not complete a file operation: {exception.Message}",
+            hint: "Check file permissions, locks and free disk space, then retry.",
+            innerException: exception);
+    }
+
+    /// <summary>A release could not be verified, so nothing was installed.</summary>
+    public static CliException ReleaseVerificationFailed(string reason) => new(
+        ErrorCodes.ReleaseVerificationFailed,
+        $"The release could not be verified: {reason}",
+        hint: "Retry from the official release. Do not bypass the archive check.",
+        details: new JsonObject { ["reason"] = reason });
+
+    /// <summary>The release feed could not be read; nothing was verified or installed.</summary>
+    /// <param name="feed">The feed, which carries no credentials, query or fragment.</param>
+    /// <param name="reason">Why it could not be read.</param>
+    public static CliException ReleaseFeedUnavailable(Uri feed, string reason)
+    {
+        ArgumentNullException.ThrowIfNull(feed);
+        return new CliException(
+            ErrorCodes.ReleaseFeedUnavailable,
+            $"The release feed could not be reached: {reason}",
+            hint: "Check the network connection, proxy settings (HTTPS_PROXY) and the feed URL, then retry. A downloaded release directory also works as a local feed path.",
+            details: new JsonObject
+            {
+                ["reason"] = reason,
+                ["feed"] = feed.AbsoluteUri,
+            });
+    }
+
+    /// <summary>
     /// An explicit output resolves to an input document. Replacing the input is the in-place
     /// mode's job, which alone carries its backup and fingerprint precondition.
     /// </summary>
@@ -645,6 +717,42 @@ public static partial class CliErrors
                 ["declared"] = declaredProduct,
                 ["detected"] = detected,
             });
+    }
+
+    /// <summary>
+    /// Restates a product's <c>FILE_CORRUPT</c> about a file whose content has the format of
+    /// other products, such as a Word document renamed to <c>.pdf</c>, as the mismatch generic
+    /// routing reports for the same file. The product's message and details stay.
+    /// </summary>
+    /// <param name="corrupt">The product's <c>FILE_CORRUPT</c>.</param>
+    /// <param name="path">The file, when the details do not name it already.</param>
+    /// <param name="declaredProduct">The product that could not read the file.</param>
+    /// <param name="detectedProducts">The products whose format the content has.</param>
+    /// <param name="hint">The command that reads the file.</param>
+    public static CliException FormatMismatch(
+        CliException corrupt,
+        string path,
+        string declaredProduct,
+        IReadOnlyList<string> detectedProducts,
+        string hint)
+    {
+        ArgumentNullException.ThrowIfNull(corrupt);
+        if (corrupt.Code != ErrorCodes.FileCorrupt)
+        {
+            throw new ArgumentException($"{corrupt.Code.Name} is not a corrupt input.", nameof(corrupt));
+        }
+
+        JsonObject details = corrupt.Details?.DeepClone().AsObject() ?? [];
+        details["path"] ??= path;
+        details["declared"] = declaredProduct;
+        details["detected"] = Strings(detectedProducts);
+        return new CliException(
+            ErrorCodes.FormatMismatch,
+            corrupt.Message,
+            hint: hint,
+            details: details,
+            docs: corrupt.Docs,
+            innerException: corrupt.InnerException);
     }
 
     /// <summary>

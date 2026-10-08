@@ -48,17 +48,12 @@ internal static class CorruptInputDetection
             return exception;
         }
 
-        JsonObject details = error.Details?.DeepClone().AsObject() ?? [];
-        details["path"] ??= path;
-        details["declared"] = productId;
-        details["detected"] = new JsonArray(detected.Select(static item => JsonValue.Create(item.ProductId)).ToArray());
-        return new CliException(
-            ErrorCodes.FormatMismatch,
-            error.Message,
-            hint: Hint(detected, productCommand!, parseResult.CommandResult, path),
-            details: details,
-            docs: error.Docs,
-            innerException: error.InnerException);
+        return CliErrors.FormatMismatch(
+            error,
+            path,
+            productId,
+            [.. detected.Select(static item => item.ProductId)],
+            Hint(detected, productCommand!, parseResult.CommandResult, path));
     }
 
     private static string Hint(

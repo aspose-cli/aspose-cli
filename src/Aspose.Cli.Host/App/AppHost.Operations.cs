@@ -115,8 +115,7 @@ internal sealed partial class AppHost
     {
         if (_disposed || _mutationState != MutationState.Accepting)
         {
-            throw new CliException(ErrorCodes.AppBusy, "The App is stopping and cannot accept changes.",
-                hint: "Start the App again to continue.");
+            throw CliErrors.AppStopping();
         }
     }
 }
