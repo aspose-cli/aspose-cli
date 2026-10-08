@@ -77,6 +77,9 @@ internal sealed class WordsEngine : IWordsEngine, IWordsReviewLayoutPort
         _production.Create(request);
 
     /// <inheritdoc />
+    public string? DetectFormat(string filePath) => WordsDocumentLoader.DetectFormatId(filePath);
+
+    /// <inheritdoc />
     public WordsEditResult ApplyOps(string filePath, WordsOpsBatch batch, WordsEditRequest request) =>
         _mutation.ApplyOps(filePath, batch, request);
 

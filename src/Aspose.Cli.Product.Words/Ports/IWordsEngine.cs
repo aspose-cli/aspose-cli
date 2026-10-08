@@ -26,6 +26,12 @@ public interface IWordsEngine
     /// <summary>Creates a new document.</summary>
     WordsCreateResult Create(NewDocumentRequest request);
 
+    /// <summary>
+    /// The format id a document's content has, detected without loading it, or null when it
+    /// cannot be detected.
+    /// </summary>
+    string? DetectFormat(string filePath);
+
     /// <summary>Applies one validated atomic operation batch.</summary>
     WordsEditResult ApplyOps(string filePath, WordsOpsBatch batch, WordsEditRequest request);
 
