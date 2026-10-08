@@ -246,6 +246,33 @@ public static partial class CliErrors
         },
         innerException: inner);
 
+    /// <summary>
+    /// A text file that is not UTF-8 and names no encoding: read as UTF-8, its invalid bytes
+    /// would be replaced, so it is refused rather than imported with altered text.
+    /// </summary>
+    /// <param name="path">The text file.</param>
+    /// <param name="offset">The offset of the first invalid byte.</param>
+    /// <param name="hint">How to name the file's encoding to the command that reads it.</param>
+    public static CliException InputEncodingInvalid(string path, long offset, string hint) => new(
+        ErrorCodes.InputEncodingInvalid,
+        $"'{Path.GetFileName(path)}' is not UTF-8 text (invalid byte at offset {offset}); read as UTF-8, its text would be replaced.",
+        hint: hint,
+        details: new JsonObject { ["path"] = path, ["offset"] = offset });
+
+    /// <summary>
+    /// A text file whose numbers read differently in different cultures, such as a decimal
+    /// comma, so the caller must name its culture rather than have the CLI guess.
+    /// </summary>
+    /// <param name="path">The text file.</param>
+    /// <param name="sample">A number from the file that the invariant culture would change.</param>
+    /// <param name="line">The 1-based line of <paramref name="sample"/>.</param>
+    /// <param name="hint">How to name the file's culture to the command that reads it.</param>
+    public static CliException NumberFormatAmbiguous(string path, string sample, int line, string hint) => new(
+        ErrorCodes.FormatAmbiguous,
+        $"'{Path.GetFileName(path)}' writes numbers such as '{sample}' (line {line}) with a decimal comma; read with invariant formats they would become different numbers.",
+        hint: hint,
+        details: new JsonObject { ["path"] = path, ["sample"] = sample, ["line"] = line });
+
     public static CliException PreviewBudgetExceeded(
         string resource,
         long actual,
@@ -294,6 +321,25 @@ public static partial class CliErrors
                 ["dpi"] = dpi,
                 ["maxPixels"] = maxPixels,
             });
+    }
+
+    /// <summary>
+    /// The engine failed while rasterizing content it could otherwise read. This is not a
+    /// defect of the CLI, so the hint offers another way to deliver the content.
+    /// </summary>
+    /// <param name="target">What could not be rendered, starting the message, such as <c>Sheet 'Q1'</c>.</param>
+    /// <param name="engineMessage">The engine's own message.</param>
+    /// <param name="hint">Another way to deliver the content.</param>
+    /// <param name="facts">The product's facts that identify the target, if any.</param>
+    public static CliException RenderFailed(string target, string engineMessage, string hint, JsonObject? facts = null)
+    {
+        JsonObject details = facts ?? [];
+        details["engineMessage"] = engineMessage;
+        return new CliException(
+            ErrorCodes.RenderFailed,
+            $"{target} could not be rendered: the engine failed while rasterizing its content ({engineMessage}).",
+            hint: hint,
+            details: details);
     }
 
     public static CliException OperationTimeout(int seconds) => new(
