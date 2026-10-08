@@ -33,4 +33,16 @@ public sealed class InputResourceScopeTests
         scope.Dispose();
         Assert.Throws<ObjectDisposedException>(() => scope.OpenFile(temp.File("first.bin")));
     }
+
+    [Theory]
+    [InlineData("images/a.png", true)]
+    [InlineData("bad\0name.png", false)]
+    public void ARelativeReference_ResolvesOnlyWhenItIsAPath(string reference, bool valid)
+    {
+        using var temp = new TempDirectory();
+
+        string? full = PathResolver.TryResolve(temp.Path, reference);
+
+        Assert.Equal(valid, full is not null);
+    }
 }

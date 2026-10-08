@@ -27,6 +27,24 @@ public sealed class PathResolver
     }
 
     /// <summary>
+    /// The absolute path <paramref name="path"/> names relative to <paramref name="baseDirectory"/>,
+    /// or null when it is not a valid path.
+    /// </summary>
+    public static string? TryResolve(string baseDirectory, string path)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(baseDirectory);
+        ArgumentNullException.ThrowIfNull(path);
+        try
+        {
+            return Path.GetFullPath(Path.Combine(baseDirectory, path));
+        }
+        catch (Exception exception) when (exception is ArgumentException or NotSupportedException or PathTooLongException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
     /// Resolves an output path. Existence is checked later by
     /// <see cref="SafeFileWriter"/> under the overwrite policy.
     /// </summary>
