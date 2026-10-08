@@ -269,6 +269,18 @@ public sealed class OperationCatalog<TOp>
             ? (TOp)resolveInputs(operation, resolve)
             : operation;
 
+    /// <summary>The files an operation reads, as its <see cref="InputPathAttribute"/> members state them.</summary>
+    internal IReadOnlyList<string> InputPaths(TOp operation)
+    {
+        var paths = new List<string>();
+        _ = ResolveInputPaths(operation, path =>
+        {
+            paths.Add(path);
+            return path;
+        });
+        return paths;
+    }
+
     /// <summary>The environment variables whose secrets an operation reads; null entries are omitted fields.</summary>
     internal IEnumerable<string?> SecretVariables(TOp operation) =>
         DescriptorOf(operation).SecretVariables?.Invoke(operation) ?? [];

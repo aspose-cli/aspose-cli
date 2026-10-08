@@ -1,3 +1,4 @@
+using System.Reflection;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
@@ -16,8 +17,9 @@ public readonly record struct AppliedOperation(long ItemsAffected, IReadOnlyList
 /// Handlers resolve and check their targets before they change the document, so an
 /// <see cref="OperationInvalidException"/> or a domain <see cref="CliException"/> means the
 /// operation changed nothing: an atomic batch stops, and a best-effort batch records the
-/// failure and continues. An <see cref="EngineOpException"/> can occur mid-change, so it
-/// stops the batch in both modes and nothing is published.
+/// failure and continues, as does a missing file the operation declares. An
+/// <see cref="EngineOpException"/>, or another I/O exception the engine raised, can occur
+/// mid-change, so it stops the batch in both modes and nothing is published.
 /// </remarks>
 public static class BoundedOperationRunner
 {
@@ -44,6 +46,8 @@ public static class BoundedOperationRunner
         ArgumentNullException.ThrowIfNull(apply);
         ArgumentNullException.ThrowIfNull(attemptedTargets);
 
+        // The CLI code an operation runs: this SDK and the product that applies it.
+        var own = new HashSet<Assembly> { typeof(BoundedOperationRunner).Assembly, apply.Method.Module.Assembly };
         var outcomes = new List<BoundedOperationOutcome>(operations.Count);
         for (int index = 0; index < operations.Count; index++)
         {
@@ -77,6 +81,25 @@ public static class BoundedOperationRunner
             {
                 throw OperationErrors.EngineFailedAt(index, name, failure);
             }
+            catch (Exception failure) when (failure is IOException or UnauthorizedAccessException)
+            {
+                // A file the operation declares that does not exist is that file's error, and the
+                // operation changed nothing; any other I/O failure the engine raised can occur
+                // mid-change. One the CLI raised propagates.
+                if (failure is FileNotFoundException { FileName: { Length: > 0 } file }
+                    && Declares(catalog.InputPaths(operation), file))
+                {
+                    rejection = OperationErrors.FailedAt(index, name, CliErrors.FileNotFound(file));
+                }
+                else if (ExceptionOrigin.IsThirdParty(failure, own))
+                {
+                    throw OperationErrors.EngineFailedAt(index, name, new EngineOpException(failure.Message, failure));
+                }
+                else
+                {
+                    throw;
+                }
+            }
 
             if (!bestEffort)
             {
@@ -101,5 +124,12 @@ public static class BoundedOperationRunner
         }
 
         return outcomes;
+    }
+
+    private static bool Declares(IReadOnlyList<string> inputs, string file)
+    {
+        string? missing = PathResolver.TryResolve(Environment.CurrentDirectory, file);
+        return missing is not null && inputs.Any(input =>
+            string.Equals(PathResolver.TryResolve(Environment.CurrentDirectory, input), missing, StringComparison.OrdinalIgnoreCase));
     }
 }

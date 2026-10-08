@@ -362,4 +362,36 @@ public sealed class SlidesMutationAndSecurityTests
         Assert.True(shape.X + shape.Width <= slideWidth + 0.5f);
         Assert.True(shape.Y + shape.Height <= slideHeight + 0.5f);
     }
+
+    /// <summary>
+    /// An I/O exception the engine raises inside an operation, such as Aspose.Slides reading past
+    /// the end of a picture cut after its PNG signature, is an engine failure of that operation:
+    /// the error names its index as every other engine failure does.
+    /// </summary>
+    [Fact]
+    public void AnEngineIoFailureInsideAnOperation_NamesTheOperation()
+    {
+        using var fixture = new SlidesEngineFixture();
+        string input = fixture.CreatePresentation("cut-image.pptx", slides: 1);
+        string picture = fixture.File("cut.png");
+        File.WriteAllBytes(picture, SlidesEngineFixture.Png(8)[..8]);
+        string output = fixture.File("cut-image.out.pptx");
+
+        CliException error = Assert.Throws<CliException>(() => fixture.Engine.ApplyOps(
+            input,
+            new SlidesOpsBatch
+            {
+                Ops =
+                [
+                    new SetNotesOp { Slide = 1, Text = "First." },
+                    new SlidesInsertImageOp { Slide = 1, Path = picture },
+                ],
+            },
+            new PresentationEditRequest { Output = TestOutput.At(output) }));
+
+        Assert.Equal(ErrorCodes.FeatureUnsupported, error.Code);
+        Assert.Equal(1, error.Details!["index"]!.GetValue<int>());
+        Assert.Equal("insert_image", error.Details["op"]!.GetValue<string>());
+        Assert.False(File.Exists(output));
+    }
 }

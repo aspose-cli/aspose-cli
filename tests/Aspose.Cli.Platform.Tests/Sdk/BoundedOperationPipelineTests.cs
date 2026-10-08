@@ -242,6 +242,76 @@ public sealed class BoundedOperationPipelineTests
         Assert.Equal(EngineErrors.EngineFailed("any", new InvalidOperationException()).Hint, error.Hint);
     }
 
+    public static TheoryData<Exception> CliIoFailures() => new()
+    {
+        new EndOfStreamException("Unable to read beyond the end of the stream."),
+        new IOException("The process cannot access the file 'a.csv'.", unchecked((int)0x80070020)),
+        new UnauthorizedAccessException("Access to the path 'a.csv' is denied."),
+    };
+
+    /// <summary>
+    /// An I/O exception the CLI itself raised inside an operation is not an engine failure: it
+    /// propagates unchanged, as it did before, to the Host's boundary. The engine's own I/O
+    /// failures, which name the operation, are covered by the products' tests.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(CliIoFailures))]
+    public void Run_LetsAnIoFailureOfTheCliPropagate(Exception cause)
+    {
+        TestBatch batch = Catalog.Prepare(new TestBatch { Ops = [Note()] });
+
+        Exception thrown = Assert.ThrowsAny<Exception>(() => Run(batch, bestEffort: true, (_, _) => throw cause));
+
+        Assert.Same(cause, thrown);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Run_ReportsAMissingFileTheOperationDeclaresAsThatFile(bool bestEffort)
+    {
+        string missing = Path.Combine(Path.GetTempPath(), "missing-picture.png");
+        TestBatch batch = Catalog.Prepare(new TestBatch { Ops = [Set(1), new LinkOp { Path = missing }] });
+        AppliedOperation Apply(TestOp op, int index) => op is LinkOp
+            ? throw new FileNotFoundException("Could not find file.", missing)
+            : new AppliedOperation(1, []);
+
+        if (bestEffort)
+        {
+            OpError recorded = Run(batch, bestEffort: true, Apply)[1].Error!;
+            Assert.Equal(ErrorCodes.FileNotFound.Name, recorded.Code);
+            Assert.Equal(missing, recorded.Details!["path"]!.GetValue<string>());
+            return;
+        }
+
+        CliException error = Assert.Throws<CliException>(() => Run(batch, bestEffort: false, Apply));
+        Assert.Equal(ErrorCodes.FileNotFound, error.Code);
+        Assert.Equal(1, error.Details!["index"]!.GetValue<int>());
+        Assert.Equal(missing, error.Details["path"]!.GetValue<string>());
+    }
+
+    /// <summary>
+    /// A missing file the operation does not declare, such as an assembly the runtime could not
+    /// load, is no rejection a best-effort batch could continue past.
+    /// </summary>
+    [Fact]
+    public void Run_NeverContinuesPastAMissingFileTheOperationDoesNotDeclare()
+    {
+        string declared = Path.Combine(Path.GetTempPath(), "picture.png");
+        TestBatch batch = Catalog.Prepare(new TestBatch { Ops = [new LinkOp { Path = declared }, Set(1)] });
+        var missing = new FileNotFoundException("Could not load file or assembly 'Imaging'.", "Imaging, Version=1.0.0.0");
+        int applied = 0;
+
+        Exception thrown = Assert.ThrowsAny<Exception>(() => Run(batch, bestEffort: true, (op, _) =>
+        {
+            applied++;
+            return op is LinkOp ? throw missing : new AppliedOperation(1, []);
+        }));
+
+        Assert.Same(missing, thrown);
+        Assert.Equal(1, applied);
+    }
+
     [Fact]
     public void ExceptionOrigin_TellsAThirdPartyRaiserFromTheCli()
     {
