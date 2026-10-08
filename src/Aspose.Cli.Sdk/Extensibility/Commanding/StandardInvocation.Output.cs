@@ -53,7 +53,8 @@ public partial class StandardInvocation
     /// <c>--overwrite</c>.
     /// </summary>
     /// <exception cref="CliException"><c>OPTION_INVALID</c> when it is missing or a file occupies the path.</exception>
-    public ResolvedDirectory DirectoryOutput => new(OutputDirectory, Overwrite);
+    public ResolvedDirectory DirectoryOutput =>
+        new(Declared(_options.OutputDirectory, "output directory").ResolveRequired(_parse, Paths), Overwrite);
 
     /// <summary>Whether the caller named the format with <c>--to</c>.</summary>
     public bool TargetRequested => _options.To is { } to && _parse.GetResult(to) is { Implicit: false };
@@ -70,24 +71,21 @@ public partial class StandardInvocation
         (FormatDescriptor format, IReadOnlyList<FormatDescriptor> alternatives) = ResolveFormat(target, writes);
         if (target.Kind == OutputKind.Mutation)
         {
-            MutationTarget mutation = MutationTarget();
-            return new ResolvedOutput(format, mutation.OutputPath, mutation.Overwrite, mutation.InPlace, mutation.BackupPath, alternatives);
+            return Mutated(format, alternatives);
         }
 
         string path = target.Kind == OutputKind.CreatedFile
             ? CreatedPath
             : _options.OutputFile!.Required
-                ? OutputPath()
+                ? _options.OutputFile.ResolveRequired(_parse, Paths, DeclaredInputs())
                 : RequestedOutputPath() ?? Derived(
                     OutputFileOption.DerivePath(Input, target.DerivedMarker + format.PreferredExtension),
                     inPlaceAvailable: false);
         return new ResolvedOutput(format, path, Overwrite, inPlace: false, backupPath: null, alternatives);
     }
 
-    private IReadOnlyList<FormatDescriptor> Writes(OutputTarget target) =>
-        _options.Target?.Offered
-            ?? target.Writes
-            ?? throw new InvalidOperationException("The command declares no format its output is written in.");
+    // The command template refuses an output file that has neither --to nor declared formats.
+    private IReadOnlyList<FormatDescriptor> Writes(OutputTarget target) => _options.Target?.Offered ?? target.Writes!;
 
     private (FormatDescriptor Format, IReadOnlyList<FormatDescriptor> Alternatives) ResolveFormat(
         OutputTarget target,

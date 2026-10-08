@@ -1,7 +1,6 @@
 using System.CommandLine;
 using System.CommandLine.Parsing;
 using System.Runtime.CompilerServices;
-using System.Text.Json.Nodes;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Rendering;
@@ -195,21 +194,17 @@ public sealed class OutputTarget
     public static OutputTarget CreatedFile(string description, IReadOnlyList<FormatDescriptor> writes) =>
         new(OutputKind.CreatedFile, Help(description), null, required: true, Declared(writes));
 
-    /// <summary>A new file named by the required <c>file</c> argument, beside <c>--overwrite</c>.</summary>
-    public static OutputTarget CreatedFile(string description) =>
-        new(OutputKind.CreatedFile, Help(description), null, required: true);
-
     /// <summary>
     /// The edited input document, published to <c>--out</c> (by default beside the input) or
     /// atomically in place with <c>--in-place</c> and an optional <c>--backup</c>, in the format
     /// among <paramref name="writes"/> the output's extension declares.
     /// </summary>
-    internal static OutputTarget Mutation(IReadOnlyList<FormatDescriptor>? writes) => new(
+    internal static OutputTarget Mutation(IReadOnlyList<FormatDescriptor> writes) => new(
         OutputKind.Mutation,
         "Output path. Default: the input path with '.out' inserted before the extension.",
         null,
         required: false,
-        writes);
+        Declared(writes));
 
     private static string Help(string description)
     {
@@ -227,19 +222,12 @@ public sealed class OutputTarget
 internal enum OutputKind { File, Directory, FileOrDirectory, CreatedFile, Mutation }
 
 /// <summary>The password a command can put on its output.</summary>
+/// <remarks>
+/// The resolved output's format decides whether it can carry one
+/// (<see cref="FormatDescriptor.Protectable"/>).
+/// </remarks>
 /// <param name="Subject">The output as the password help names it, such as "the output report".</param>
-/// <param name="ProtectableFormats">The output format ids that can carry a password.</param>
-public sealed record EncryptedOutput(
-    string Subject,
-    IReadOnlyList<string> ProtectableFormats)
-{
-    /// <summary>A password on an output whose resolved format decides whether it can carry one.</summary>
-    /// <param name="subject">The output as the password help names it.</param>
-    public EncryptedOutput(string subject)
-        : this(subject, [])
-    {
-    }
-}
+public sealed record EncryptedOutput(string Subject);
 
 /// <summary>
 /// The one mapping from <see cref="CommandTraits"/> to the common arguments and options. It
@@ -345,9 +333,7 @@ public sealed class StandardOptions
 
         if (traits.Encrypt is { } encrypt)
         {
-            ArgumentNullException.ThrowIfNull(encrypt.ProtectableFormats);
             Encrypt = new PasswordOptions(StandardOptionNames.Encrypt, encrypt.Subject, allowStdin: false);
-            ProtectableFormats = encrypt.ProtectableFormats;
         }
 
         OutputTarget = traits.Output;
@@ -361,6 +347,10 @@ public sealed class StandardOptions
 
             To = TargetOption(target);
             Target = target;
+        }
+        else if (traits.Output is { Kind: not OutputKind.Directory, Writes: null })
+        {
+            throw new ArgumentException("An output file without --to declares the formats it is written in.", nameof(traits));
         }
     }
 
@@ -385,8 +375,6 @@ public sealed class StandardOptions
     internal PasswordOptions? OtherPassword { get; }
 
     internal PasswordOptions? Encrypt { get; }
-
-    internal IReadOnlyList<string> ProtectableFormats { get; } = [];
 
     internal FontDirectoryOptions? Fonts { get; }
 
@@ -586,72 +574,6 @@ public partial class StandardInvocation
             : CliErrors.ForInput(error, argument.Name, password.EnvironmentOption);
     }
 
-    /// <summary>
-    /// Restates <c>FORMAT_UNSUPPORTED</c> about the format that a named output's extension asks
-    /// for, from a command that writes its output in that format rather than one chosen by
-    /// <c>--to</c>, such as an edit: the error names the option or argument and what the command
-    /// writes, and the hint the product's command that writes the format, found through the
-    /// <c>--to</c> formats of the commands beside it. An extension that names no format of the
-    /// product or that the input document shares, a format the command writes, and every other
-    /// error, are returned unchanged.
-    /// </summary>
-    internal CliException ForOutputFormat(CliException error)
-    {
-        if (error.Code != ErrorCodes.FormatUnsupported || _options.Target is not null
-            || error.Details?["requested"]?.GetValue<string>() is not { } requested
-            || error.Details["supported"] is not JsonArray supportedIds
-            || NamedOutput() is not var (parameter, output)
-            || Path.GetExtension(output) is not { Length: > 1 } extension
-            // An input of the same extension could be the file the error is about.
-            || (_options.Input is { } input
-                && string.Equals(Path.GetExtension(_parse.GetValue(input)), extension, StringComparison.OrdinalIgnoreCase))
-            || _parse.CommandResult.Parent is not CommandResult parent)
-        {
-            return error;
-        }
-
-        (string Command, TargetFormat Target)[] siblings =
-        [
-            .. parent.Command.Subcommands
-                .Where(command => !command.Hidden && command != _parse.CommandResult.Command)
-                .SelectMany(static command => command.Options
-                    .Select(StandardOptions.TargetOf)
-                    .OfType<TargetFormat>()
-                    .Select(target => (command.Name, target))),
-        ];
-        FormatDescriptor[] formats = [.. siblings.SelectMany(static sibling => sibling.Target.Offered).Distinct()];
-        IReadOnlyList<FormatDescriptor> named = formats.DeclaringExtension(extension);
-        string extensionId = extension[1..];
-        bool namesRequested = string.Equals(extensionId, requested, StringComparison.OrdinalIgnoreCase)
-            || named.Any(format => string.Equals(format.Id, requested, StringComparison.OrdinalIgnoreCase));
-        string[] supported = [.. supportedIds.Select(static id => id!.GetValue<string>())];
-        // A command that writes the requested format, or the one the extension names, raised the
-        // error about another file, such as one an operation reads.
-        bool writesIt = supported.Any(id => string.Equals(id, requested, StringComparison.OrdinalIgnoreCase)
-            || string.Equals(id, extensionId, StringComparison.OrdinalIgnoreCase)
-            || named.Any(format => string.Equals(format.Id, id, StringComparison.OrdinalIgnoreCase)));
-        if (named.Count == 0 || !namesRequested || writesIt)
-        {
-            return error;
-        }
-
-        string[] path = CommandPath();
-        string? producer = siblings
-            .Select(sibling => sibling.Target.Offered.DeclaringExtension(extension) is [var format, ..]
-                ? string.Join(' ', [DistributionInfo.CommandName, .. path[..^1], sibling.Command, "<that file>", "--to", format.Id])
-                : null)
-            .FirstOrDefault(static line => line is not null);
-        return CliErrors.OutputFormatUnsupported(
-            parameter, output, string.Join(' ', path), requested, supported,
-            [
-                .. supported
-                    .Select(id => formats.FirstOrDefault(format => string.Equals(format.Id, id, StringComparison.OrdinalIgnoreCase))
-                        ?.PreferredExtension ?? "." + id)
-                    .Distinct(StringComparer.OrdinalIgnoreCase),
-            ],
-            producer);
-    }
-
     /// <summary>The parameter naming the output file and the value the caller gave it, or null when none was named.</summary>
     private (string Parameter, string Output)? NamedOutput() =>
         _options.CreatedFile is { } created && _parse.GetValue(created) is { Length: > 0 } file ? (created.Name, file)
@@ -735,35 +657,10 @@ public partial class StandardInvocation
     /// <summary>Whether an existing output may be replaced.</summary>
     public bool Overwrite => _parse.GetValue(Declared(_options.Overwrite, "output"));
 
-    /// <summary>
-    /// The output file named by <c>--out</c>, or the sibling of <see cref="Input"/> with
-    /// <paramref name="targetExtension"/> when it was omitted.
-    /// </summary>
-    /// <exception cref="CliException"><c>OPTION_INVALID</c> when the output names an input.</exception>
-    public string OutputPath(string targetExtension)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(targetExtension);
-        return RequestedOutputPath() ?? Derived(OutputFileOption.DerivePath(Input, targetExtension), inPlaceAvailable: false);
-    }
-
-    /// <summary>The output file named by a required <c>--out</c>.</summary>
-    /// <exception cref="CliException"><c>OPTION_INVALID</c> when <c>--out</c> names an input.</exception>
-    public string OutputPath()
-    {
-        OutputFileOption output = Declared(_options.OutputFile, "output file");
-        return output.Required
-            ? output.ResolveRequired(_parse, Paths, DeclaredInputs())
-            : throw new InvalidOperationException("The command's --out is optional; derive the output with OutputPath(targetExtension).");
-    }
-
     /// <summary>The output file named by <c>--out</c>, or null when it was omitted.</summary>
     /// <exception cref="CliException"><c>OPTION_INVALID</c> when <c>--out</c> names an input.</exception>
     public string? RequestedOutputPath() =>
         Declared(_options.OutputFile, "output file").Resolve(_parse, Paths, DeclaredInputs());
-
-    /// <summary>The id of the format the resolved <see cref="Output"/> is written in.</summary>
-    /// <exception cref="CliException"><c>USAGE_ERROR</c> for an output extension that is not the format's.</exception>
-    public string TargetFormat() => Output.Format.Id;
 
     /// <summary>The file a creating command writes, named by its <c>file</c> argument.</summary>
     /// <exception cref="CliException"><c>OPTION_INVALID</c> when the file is one of the inputs.</exception>
@@ -777,31 +674,10 @@ public partial class StandardInvocation
         }
     }
 
-    /// <summary>
-    /// The resolved <c>--out-dir</c>, which may not exist yet; a directory can never be an
-    /// input file, since a file at the path is refused.
-    /// </summary>
-    /// <exception cref="CliException"><c>OPTION_INVALID</c> when it is missing or a file occupies the path.</exception>
-    public string OutputDirectory =>
-        Declared(_options.OutputDirectory, "output directory").ResolveRequired(_parse, Paths);
-
     /// <summary>The resolved <c>--out-dir</c>, or null when it was omitted.</summary>
     /// <exception cref="CliException"><c>OPTION_INVALID</c> when a file occupies the path.</exception>
     public string? RequestedOutputDirectory =>
         Declared(_options.OutputDirectory, "output directory").Resolve(_parse, Paths);
-
-    /// <summary>
-    /// The password for the output, or null when none was given. A password for a format that
-    /// cannot carry one is refused, naming the option the caller passed, before the secret is read.
-    /// </summary>
-    /// <param name="format">The output format id.</param>
-    /// <exception cref="CliException"><c>OPTION_INVALID</c> for an unprotectable format or a bad source.</exception>
-    public string? EncryptPassword(string format)
-    {
-        PasswordOptions encrypt = Declared(_options.Encrypt, "output password");
-        encrypt.EnsureProtectable(_parse, format, _options.ProtectableFormats);
-        return encrypt.Resolve(_parse, Inputs, ReadEnvironment);
-    }
 
     /// <summary>The font directories named by <c>--font-dir</c>; ambient when none was given.</summary>
     /// <exception cref="CliException"><c>OPTION_INVALID</c> for a directory that is not a local, existing one.</exception>
@@ -831,12 +707,12 @@ public partial class StandardInvocation
     }
 
     /// <summary>
-    /// The publication target of a mutation: <c>--in-place</c> replaces <see cref="Input"/>,
-    /// with a backup only when <c>--backup</c> is given; otherwise the output is <c>--out</c>
-    /// or the input path with '.out' inserted before its extension.
+    /// The output of a mutation in <paramref name="format"/>: <c>--in-place</c> replaces
+    /// <see cref="Input"/>, with a backup only when <c>--backup</c> is given; otherwise the output
+    /// is <c>--out</c> or the input path with '.out' inserted before its extension.
     /// </summary>
     /// <exception cref="CliException"><c>OPTION_INVALID</c> for a contradictory combination or an output that names an input.</exception>
-    internal MutationTarget MutationTarget()
+    private ResolvedOutput Mutated(FormatDescriptor format, IReadOnlyList<FormatDescriptor> alternatives)
     {
         Option<bool> inPlaceOption = Declared(_options.InPlace, "mutation output");
         string? requested = _parse.GetValue(_options.OutputFile!.Option);
@@ -860,14 +736,14 @@ public partial class StandardInvocation
 
         if (inPlace)
         {
-            return new MutationTarget(Input, Overwrite: true, InPlace: true, backup ? BackupPath(Input) : null);
+            return new ResolvedOutput(format, Input, overwrite: true, inPlace: true, backup ? BackupPath(Input) : null, alternatives);
         }
 
         string output = requested is null
             ? Derived(OutputFileOption.DerivePath(Input, Path.GetExtension(Input)), inPlaceAvailable: true)
             : OutputFileOption.ResolveExplicit(
                 Paths, requested, StandardOptionNames.Out, inPlaceAvailable: true, DeclaredInputs());
-        return new MutationTarget(output, Overwrite, InPlace: false, BackupPath: null);
+        return new ResolvedOutput(format, output, Overwrite, inPlace: false, backupPath: null, alternatives);
     }
 
     // A derived output is refused like a named one: the caller moves it with --out.

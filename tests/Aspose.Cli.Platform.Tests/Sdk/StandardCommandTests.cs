@@ -15,7 +15,10 @@ namespace Aspose.Cli.Platform.Tests.Sdk;
 public sealed class StandardCommandTests : IDisposable
 {
     private static readonly InputDocument Report = new("Report to open.", "the report");
-    private static readonly EncryptedOutput Encrypted = new("the output report", ["secure"]);
+    private static readonly EncryptedOutput Encrypted = new("the output report");
+
+    // The one format the commands below write without a --to.
+    private static readonly FormatDescriptor[] Out = [FormatDescriptor.Declare("out", FormatUse.Convert, null, 0, null, false, ".out", ".test")];
 
     private static CommandTraits Paired => new()
     {
@@ -42,7 +45,7 @@ public sealed class StandardCommandTests : IDisposable
             new CommandTraits
             {
                 Input = Report,
-                Output = OutputTarget.File("Output path."),
+                Output = OutputTarget.File("Output path.", Out),
                 Encrypt = Encrypted,
                 UsesFonts = true,
             },
@@ -127,9 +130,9 @@ public sealed class StandardCommandTests : IDisposable
     {
         Command directory = Create(
             new CommandTraits { Input = Report, Output = OutputTarget.Directory("Parts.") },
-            (_, standard) => Result(standard.OutputDirectory + "|" + standard.Overwrite));
+            (_, standard) => Result(standard.DirectoryOutput.Path + "|" + standard.DirectoryOutput.Overwrite));
         Command created = Create(
-            new CommandTraits { Output = OutputTarget.CreatedFile("File to create.") },
+            new CommandTraits { Output = OutputTarget.CreatedFile("File to create.", Out) },
             (_, standard) => Result(standard.CreatedPath + "|" + standard.Overwrite));
 
         Assert.Equal(["--mode", "--out-dir", "--overwrite", "--password", "--password-env", "--password-stdin"],
@@ -147,17 +150,19 @@ public sealed class StandardCommandTests : IDisposable
     {
         Assert.Throws<ArgumentException>(() => Create(new CommandTraits { Other = Report }, (_, _) => Result()));
         Assert.Throws<ArgumentException>(() => Create(
-            new CommandTraits { Input = Report, Output = OutputTarget.CreatedFile("New.") }, (_, _) => Result()));
+            new CommandTraits { Input = Report, Output = OutputTarget.CreatedFile("New.", Out) }, (_, _) => Result()));
         Assert.Throws<ArgumentException>(() => Create(
             new CommandTraits { Input = Report, Other = Report }, (_, _) => Result()));
+        Assert.Throws<ArgumentException>(() => Create(
+            new CommandTraits { Input = Report, Output = OutputTarget.FileOrDirectory("Form file.", "Parts.") }, (_, _) => Result()));
     }
 
     [Fact]
-    public void OutputPath_DerivesASiblingAndNeverNamesAnInput()
+    public void Output_DerivesASiblingAndNeverNamesAnInput()
     {
         Command command = Create(
-            new CommandTraits { Input = Report, Output = OutputTarget.File("Output path.") },
-            (_, standard) => Result(standard.OutputPath(".out")));
+            new CommandTraits { Input = Report, Output = OutputTarget.File("Output path.", Out) },
+            (_, standard) => Result(standard.Output.Path));
 
         Assert.Equal(_temp.File("report.out"), Run(command, "report.test"));
         Assert.Equal(_temp.File("copy.out"), Run(command, "report.test", "--out", "copy.out"));
@@ -174,7 +179,7 @@ public sealed class StandardCommandTests : IDisposable
             _host,
             "create",
             "Creates.",
-            new CommandTraits { Output = OutputTarget.CreatedFile("File to create.") },
+            new CommandTraits { Output = OutputTarget.CreatedFile("File to create.", Out) },
             [template],
             (_, standard) => Result(standard.CreatedPath));
 
@@ -193,7 +198,7 @@ public sealed class StandardCommandTests : IDisposable
             _host,
             "merge",
             "Merges.",
-            new CommandTraits { PasswordSubject = "all inputs", Output = OutputTarget.File("Merged file.", required: true) },
+            new CommandTraits { PasswordSubject = "all inputs", Output = OutputTarget.File("Merged file.", Out, required: true) },
             [Mode(), files],
             (_, standard) => Result(standard.RequestedOutputPath() + "|" + standard.InputPassword));
 
@@ -217,12 +222,13 @@ public sealed class StandardCommandTests : IDisposable
             {
                 Input = Report,
                 Output = OutputTarget.FileOrDirectory("Form file.", "Parts."),
+                Target = TargetFormat.Among("Form format.", [FormatDescriptor.Declare("form", FormatUse.Convert, null, 0, null, false, ".form", ".xfdf")]),
             },
             (_, standard) => Result(standard.RequestedOutputDirectory is { } directory
                 ? directory
-                : standard.OutputPath(".form") + "|" + standard.Overwrite));
+                : standard.Output.Path + "|" + standard.Output.Overwrite));
 
-        Assert.Equal(["--mode", "--out-dir", "--out", "--overwrite", "--password", "--password-env", "--password-stdin"],
+        Assert.Equal(["--to", "--mode", "--out-dir", "--out", "--overwrite", "--password", "--password-env", "--password-stdin"],
             command.Options.Select(static option => option.Name));
         Assert.Equal(_temp.File("parts"), Run(command, "report.test", "--out-dir", "parts"));
         Assert.Equal(_temp.File("report.form") + "|False", Run(command, "report.test"));
@@ -230,7 +236,7 @@ public sealed class StandardCommandTests : IDisposable
     }
 
     [Fact]
-    public void OutputPath_RefusesADerivedSiblingThatAProductOptionReads()
+    public void Output_RefusesADerivedSiblingThatAProductOptionReads()
     {
         var template = new Option<string?>("--template").WithInput(InputKind.File);
         File.WriteAllText(_temp.File("report.out"), "template");
@@ -238,9 +244,9 @@ public sealed class StandardCommandTests : IDisposable
             _host,
             "convert",
             "Converts.",
-            new CommandTraits { Input = Report, Output = OutputTarget.File("Output path.") },
+            new CommandTraits { Input = Report, Output = OutputTarget.File("Output path.", Out) },
             [template],
-            (_, standard) => Result(standard.OutputPath(".out")));
+            (_, standard) => Result(standard.Output.Path));
 
         CliException error = RunFailing(command, "report.test", "--template", "report.out");
 
@@ -430,64 +436,28 @@ public sealed class StandardCommandTests : IDisposable
         Assert.Equal(_temp.File("deck.Summary.png"), output.Part("Summary"));
     }
 
-    /// <summary>
-    /// A command that writes the format its output's extension names, and cannot write that one,
-    /// says so for the parameter that named it and points to the product command that can.
-    /// </summary>
-    [Theory]
-    [InlineData("new.pdf", "file 'new.pdf' asks for pdf, which aspose-cli test create does not write; it writes tst, tsx.",
-        "Give file the .tst or .tsx extension, then run 'aspose-cli test convert <that file> --to pdf' for pdf.")]
-    [InlineData("new.foo", "Unsupported format 'foo'. Supported formats: tst, tsx", null)]
-    // The command writes tst, so an error about tst concerns another file, such as one an operation reads.
-    [InlineData("new.tst", "Unsupported format 'tst'. Supported formats: tst, tsx", null)]
-    public void UnsupportedOutputFormat_NamesTheParameterAndTheCommandThatWritesIt(string file, string message, string? hint)
-    {
-        FormatDescriptor[] formats =
-        [
-            FormatDescriptor.Declare("tst", FormatUse.Input | FormatUse.Convert, 0, 0, null, false, ".tst"),
-            FormatDescriptor.Declare("tsx", FormatUse.Input, 1, null, null, false, ".tsx"),
-            FormatDescriptor.Declare("pdf", FormatUse.Convert, null, 1, null, false, ".pdf"),
-            FormatDescriptor.Declare("png", FormatUse.Render, null, null, 0, false, ".png"),
-        ];
-        Command create = StandardCommand.Create(
-            _host, "create", "Creates.", new CommandTraits { Output = OutputTarget.CreatedFile("File to create.") }, [],
-            (_, standard) => throw CliErrors.FormatUnsupported(Path.GetExtension(standard.CreatedPath)[1..], ["tst", "tsx"]));
-        Command convert = StandardCommand.Create(
-            _host, "convert", "Converts.",
-            new CommandTraits { Input = Report, Output = OutputTarget.File("Output path."), Target = TargetFormat.Convert("Target format.", formats) },
-            [], (_, _) => Result());
-        var root = new RootCommand { new Command("test") { create, convert } };
-
-        _host.Error = null;
-        root.Parse(["test", "create", file]).Invoke();
-        CliException error = Assert.IsType<CliException>(_host.Error);
-
-        Assert.Equal(ErrorCodes.FormatUnsupported, error.Code);
-        Assert.Equal(message, error.Message);
-        if (hint is not null)
-        {
-            Assert.Equal(hint, error.Hint);
-            Assert.Equal("file", error.Details!["option"]!.GetValue<string>());
-        }
-    }
-
     [Theory]
     [InlineData("--encrypt", "secret")]
     [InlineData("--encrypt-env", "MISSING")]
     public void EncryptPassword_RefusesAnUnprotectableFormatBeforeReadingTheSecret(string option, string value)
     {
+        FormatDescriptor[] writes =
+        [
+            FormatDescriptor.Declare("secure", FormatUse.Convert, null, 0, null, false, ".secure") with { Protectable = true },
+            FormatDescriptor.Declare("plain", FormatUse.Convert, null, 1, null, false, ".plain"),
+        ];
         Command command = Create(
-            new CommandTraits { Input = Report, Output = OutputTarget.File("Output path."), Encrypt = Encrypted },
-            (parse, standard) => Result(standard.EncryptPassword(parse.GetRequiredValue(ModeOption(parse)))));
+            new CommandTraits { Input = Report, Output = OutputTarget.File("Output path.", writes), Encrypt = Encrypted },
+            (_, standard) => Result(standard.EncryptPassword()));
 
-        CliException refused = RunFailing(command, "report.test", "--mode", "plain", option, value);
+        CliException refused = RunFailing(command, "report.test", "--out", "out.plain", option, value);
 
         Assert.Equal(ErrorCodes.OptionInvalid, refused.Code);
         Assert.Equal(option, refused.Details!["option"]!.GetValue<string>());
         Assert.Contains("'plain' format cannot be password-protected", refused.Message, StringComparison.Ordinal);
-        Assert.Equal("secret", Run(command, "report.test", "--mode", "secure", "--encrypt", "secret"));
-        Assert.Equal("b", Run(command, "report.test", "--mode", "secure", "--encrypt-env", "RIGHT"));
-        Assert.Null(Run(command, "report.test", "--mode", "plain"));
+        Assert.Equal("secret", Run(command, "report.test", "--out", "out.secure", "--encrypt", "secret"));
+        Assert.Equal("b", Run(command, "report.test", "--out", "out.secure", "--encrypt-env", "RIGHT"));
+        Assert.Null(Run(command, "report.test", "--out", "out.plain"));
     }
 
     [Fact]
@@ -557,11 +527,11 @@ public sealed class StandardCommandTests : IDisposable
             _host,
             "create",
             "Creates.",
-            new CommandTraits { Output = OutputTarget.CreatedFile("File to create.") },
+            new CommandTraits { Output = OutputTarget.CreatedFile("File to create.", Out) },
             [template, images, title],
             (_, standard) => Result(standard.InputFile(template) + "|" + string.Join(';', standard.InputFiles(images))));
         Command undeclared = StandardCommand.Create(
-            _host, "create", "Creates.", new CommandTraits { Output = OutputTarget.CreatedFile("File to create.") }, [title],
+            _host, "create", "Creates.", new CommandTraits { Output = OutputTarget.CreatedFile("File to create.", Out) }, [title],
             (_, standard) => Result(standard.InputFile(title)));
 
         Assert.Equal(
@@ -619,9 +589,6 @@ public sealed class StandardCommandTests : IDisposable
 
     private static Option<string> Mode() =>
         new Option<string>("--mode") { DefaultValueFactory = _ => "plain" }.WithInput(InputKind.None);
-
-    private static Option<string> ModeOption(ParseResult parse) =>
-        (Option<string>)parse.CommandResult.Command.Options.Single(static option => option.Name == "--mode");
 
     private string? Run(Command command, params string[] arguments)
     {
