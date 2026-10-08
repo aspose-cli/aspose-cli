@@ -206,7 +206,7 @@ issue headings.
   the catalog and the handler dispatch, the catalog enforces the constraints and writes the ops
   schema, and analyzer `APCLI012` rejects an incomplete contract.
 - **Error codes.** A code shared by products or the Host is declared once in the SDK's
-  `ErrorCodes`, and its errors are built only by `CliErrors` factories, one per situation, so
+  `ErrorCodes`, and its errors are built only by SDK error factories, one per situation, so
   each situation has one message, hint and details shape; `CliException` refuses a shared code
   in its constructor, and `CliErrors.FromRemote` restates one that another process of the CLI
   reported. A product declares its own codes in its `*Diagnostics` class and builds them with

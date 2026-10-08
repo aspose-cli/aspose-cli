@@ -136,7 +136,7 @@ internal static class FilePublicationAtomicSwap
                 $"Target '{target}' changed during publication. Conflicting content was preserved at '{publishedPath}'.");
         }
 
-        throw CliErrors.OutputConflict(target, expectedTarget, displaced);
+        throw PublicationErrors.OutputConflict(target, expectedTarget, displaced);
     }
 
     private static FilePublicationSnapshot PublishPortable(
@@ -153,7 +153,7 @@ internal static class FilePublicationAtomicSwap
         if (!expectedTarget.VersionEquals(displaced))
         {
             RestorePortable(displacedPath, target);
-            throw CliErrors.OutputConflict(target, expectedTarget, displaced);
+            throw PublicationErrors.OutputConflict(target, expectedTarget, displaced);
         }
 
         try

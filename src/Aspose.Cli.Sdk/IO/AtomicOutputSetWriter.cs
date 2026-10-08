@@ -144,7 +144,7 @@ public sealed class AtomicOutputSetWriter : IDisposable
         FilePublicationSnapshot current = FilePublicationSnapshot.Capture(target);
         if (!expectedTarget.VersionEquals(current))
         {
-            throw CliErrors.OutputConflict(target, expectedTarget, current);
+            throw PublicationErrors.OutputConflict(target, expectedTarget, current);
         }
         return _staging.StagePrepared(target, overwrite, requestedBackup, expectedTarget, write, inputPrecondition);
     }
@@ -158,7 +158,7 @@ public sealed class AtomicOutputSetWriter : IDisposable
         if (!expectedTarget.Exists
             || !expectedTarget.VersionEquals(current))
         {
-            throw CliErrors.OutputConflict(target, expectedTarget, current);
+            throw PublicationErrors.OutputConflict(target, expectedTarget, current);
         }
 
         _staging.StageDeletionPrepared(target, expectedTarget);
@@ -185,7 +185,7 @@ public sealed class AtomicOutputSetWriter : IDisposable
             (PublicationRecoveryReport recovery, Exception? recoveryFailure) =
                 RollBackSafely();
             if (recovery.RecoveryComplete && commitFailure is OperationCanceledException) { throw; }
-            throw CliErrors.OutputPublicationFailure(
+            throw PublicationErrors.OutputPublicationFailure(
                 recoveryFailure is null
                     ? commitFailure
                     : new AggregateException(commitFailure, recoveryFailure),
@@ -240,7 +240,7 @@ public sealed class AtomicOutputSetWriter : IDisposable
                     RollBackSafely();
                 if (!recovery.RecoveryComplete)
                 {
-                    throw CliErrors.OutputPublicationFailure(
+                    throw PublicationErrors.OutputPublicationFailure(
                         failure is null
                             ? new IOException(
                                 "The output transaction was disposed before commit.")

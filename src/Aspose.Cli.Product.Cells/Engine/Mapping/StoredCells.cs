@@ -1,4 +1,5 @@
 using Aspose.Cells;
+using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
 
 namespace Aspose.Cli.Product.Cells.Engine.Mapping;

@@ -411,7 +411,7 @@ internal sealed class AtomicPublicationRecovery(AtomicPublicationPlan plan)
         ValidateJournal(root, recoveryPlan);
         if (journal.State == PublicationTransactionState.Partial)
         {
-            throw CliErrors.OutputPublicationFailure(
+            throw PublicationErrors.OutputPublicationFailure(
                 new IOException(
                     $"Abandoned publication '{directory}' has an incomplete prior recovery."),
                 new PublicationRecoveryReport(
@@ -462,7 +462,7 @@ internal sealed class AtomicPublicationRecovery(AtomicPublicationPlan plan)
         PublicationRecoveryReport report = recovery.RollBack();
         if (!report.RecoveryComplete)
         {
-            throw CliErrors.OutputPublicationFailure(
+            throw PublicationErrors.OutputPublicationFailure(
                 new IOException(
                     $"Abandoned publication '{directory}' requires recovery."),
                 report);

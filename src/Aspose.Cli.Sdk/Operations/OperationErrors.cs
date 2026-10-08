@@ -112,7 +112,7 @@ internal static class OperationErrors
     /// An engine failure can leave the document half changed, so the batch stops in every mode
     /// and publishes nothing; the message says so because best-effort otherwise continues.
     /// </summary>
-    internal static CliException EngineFailedAt(int index, string name, EngineOpException failure) => CliErrors.EngineFailed(
+    internal static CliException EngineFailedAt(int index, string name, EngineOpException failure) => EngineErrors.EngineFailed(
         $"Operation {index} ({name}) failed inside the document engine, so the batch stopped and nothing was written: {failure.Message}",
         failure,
         new JsonObject { ["index"] = index, ["op"] = name });

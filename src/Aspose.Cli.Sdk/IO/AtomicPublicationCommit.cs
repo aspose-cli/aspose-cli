@@ -1,4 +1,3 @@
-using Aspose.Cli.Sdk.Errors;
 
 namespace Aspose.Cli.Sdk.IO;
 
@@ -76,7 +75,7 @@ internal sealed class AtomicPublicationCommit(AtomicPublicationPlan plan)
             if (entry.RequestedBackup is { } backup && entry.RequestedBackupOriginal is { } expectedBackup)
             {
                 FilePublicationSnapshot current = FilePublicationSnapshot.Capture(backup);
-                if (!expectedBackup.VersionEquals(current)) { throw CliErrors.OutputConflict(backup, expectedBackup, current); }
+                if (!expectedBackup.VersionEquals(current)) { throw PublicationErrors.OutputConflict(backup, expectedBackup, current); }
             }
             if (entry.Original.Exists)
             {
@@ -204,7 +203,7 @@ internal sealed class AtomicPublicationCommit(AtomicPublicationPlan plan)
             FilePublicationSnapshot.Capture(entry.Target);
         if (!entry.Original.VersionEquals(current))
         {
-            throw CliErrors.OutputConflict(
+            throw PublicationErrors.OutputConflict(
                 entry.Target,
                 entry.Original,
                 current);
@@ -219,7 +218,7 @@ internal sealed class AtomicPublicationCommit(AtomicPublicationPlan plan)
             {
                 File.Move(entry.Displaced, entry.Target, overwrite: false);
             }
-            throw CliErrors.OutputConflict(
+            throw PublicationErrors.OutputConflict(
                 entry.Target,
                 entry.Original,
                 FilePublicationSnapshot.Capture(entry.Target));
@@ -255,7 +254,7 @@ internal sealed class AtomicPublicationCommit(AtomicPublicationPlan plan)
             FilePublicationSnapshot.Capture(entry.Target);
         if (!entry.Original.VersionEquals(actual))
         {
-            throw CliErrors.OutputConflict(
+            throw PublicationErrors.OutputConflict(
                 entry.Target,
                 entry.Original,
                 actual);

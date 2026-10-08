@@ -3,6 +3,7 @@ using System.Runtime.InteropServices;
 using Aspose.Cli.Host.Invocation;
 using Aspose.Cli.Host.Licensing;
 using Aspose.Cli.Sdk.Contracts;
+using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Licensing;
 

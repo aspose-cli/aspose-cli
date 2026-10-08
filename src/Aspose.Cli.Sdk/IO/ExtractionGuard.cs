@@ -74,7 +74,7 @@ public sealed class ExtractionGuard : IDisposable
                 bounded.Flush();
                 _budget.Reconcile(reserved, bounded.Length);
                 FilePublicationSnapshot current = FilePublicationSnapshot.Capture(target);
-                if (!original.VersionEquals(current)) { throw CliErrors.OutputConflict(target, original, current); }
+                if (!original.VersionEquals(current)) { throw PublicationErrors.OutputConflict(target, original, current); }
             });
             return target;
         }
