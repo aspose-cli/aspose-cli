@@ -9,15 +9,17 @@ namespace Aspose.Cli.Sdk.Operations;
 /// </summary>
 public sealed class ProductOperationCommand
 {
-    internal ProductOperationCommand(ProductOperationDescriptor descriptor)
+    internal ProductOperationCommand(ProductOperationDescriptor descriptor, GeneratedOperationSchema schema)
     {
         ArgumentNullException.ThrowIfNull(descriptor);
-        Descriptor = descriptor;
+        ArgumentNullException.ThrowIfNull(schema);
+        Descriptor = descriptor with { Fingerprint = schema.LazyFingerprint };
+        Schema = schema;
     }
 
     /// <summary>The command's published description.</summary>
     public ProductOperationDescriptor Descriptor { get; }
 
     /// <summary>The vocabulary's schema and its per-operation views.</summary>
-    internal GeneratedOperationSchema Schema => Descriptor.Schema;
+    internal GeneratedOperationSchema Schema { get; }
 }

@@ -71,7 +71,7 @@ internal static class CommonSchemaSamples
                         OperationSchema = "aspose-cli schema v2/test/ops --operation <op>",
                         MaximumOperationCount = 16,
                         Ops = ["replace_text"],
-                        Schema = new GeneratedOperationSchema(static () => "{}", ["replace_text"]),
+                        Fingerprint = new GeneratedOperationSchema(static () => "{}", ["replace_text"]).LazyFingerprint,
                     },
                 ],
                 Engine = new ProductEngineCapabilities
