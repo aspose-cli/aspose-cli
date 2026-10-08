@@ -11,19 +11,19 @@ namespace Aspose.Cli.Product.Cells.Engine;
 /// <summary>Owns workbook comparison and budgeted cell search.</summary>
 internal sealed class CellsInspectionService
 {
-    private readonly ILicenseGate _licenseGate;
+    private readonly ILicenseState _license;
     private readonly ResourceBudgetLedger _resourceBudgets;
     private readonly CellsWorkbookLoader _loader;
 
     internal CellsInspectionService(
-        ILicenseGate licenseGate,
+        ILicenseState license,
         ResourceBudgetLedger resourceBudgets,
         CellsWorkbookLoader loader)
     {
-        ArgumentNullException.ThrowIfNull(licenseGate);
+        ArgumentNullException.ThrowIfNull(license);
         ArgumentNullException.ThrowIfNull(resourceBudgets);
         ArgumentNullException.ThrowIfNull(loader);
-        _licenseGate = licenseGate;
+        _license = license;
         _resourceBudgets = resourceBudgets;
         _loader = loader;
     }
@@ -34,7 +34,7 @@ internal sealed class CellsInspectionService
         ArgumentException.ThrowIfNullOrEmpty(rightPath);
         ArgumentNullException.ThrowIfNull(request);
 
-        LicenseState licenseState = _licenseGate.EnsureApplied();
+        LicenseState licenseState = _license.License;
         using LoadedWorkbook loaded = _loader.Open(leftPath, request.LeftPassword);
         using LoadedWorkbook other = _loader.Open(rightPath, request.RightPassword);
         Workbook left = loaded.Workbook;
@@ -70,7 +70,7 @@ internal sealed class CellsInspectionService
         ArgumentException.ThrowIfNullOrEmpty(filePath);
         ArgumentNullException.ThrowIfNull(request);
 
-        LicenseState licenseState = _licenseGate.EnsureApplied();
+        LicenseState licenseState = _license.License;
         using LoadedWorkbook loaded = _loader.Open(filePath, request.Password);
         Workbook workbook = loaded.Workbook;
         SourceInfo source = BuildSource(filePath, workbook);

@@ -44,23 +44,7 @@ public sealed class CellsModule : IProductModule
             .Output<DiffResult>(CellsRenderers.Render)
             .Output<SearchResult>(CellsRenderers.Render)
             .Commands(CellsCommands.Create)
-            .Activator(Activate)
+            .Activator(static context => CellsActivation.Activate(context, Manifest.Id))
             .Build();
-
-    private static ProductBinding<ICellsEngine> Activate(
-        ProductActivationContext context) =>
-        ProductBinding.Create<ICellsEngine>(
-            context,
-            Manifest.Id,
-            resolution => new CellsLicenseGate(
-                resolution,
-                context.EnvironmentVariable),
-            license => new CellsEngine(
-                license,
-                context.ResourceBudgets,
-                context.SafeFileWriter),
-            license => new CellsFontEnvironment(
-                license,
-                context.ResourceBudgets));
 
 }

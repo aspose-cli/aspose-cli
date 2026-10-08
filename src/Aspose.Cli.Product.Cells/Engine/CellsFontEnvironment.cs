@@ -12,16 +12,16 @@ namespace Aspose.Cli.Product.Cells.Engine;
 /// <summary>Aspose.Cells font diagnostics behind the product-neutral font port.</summary>
 internal sealed class CellsFontEnvironment : IFontEnvironment
 {
-    private readonly ILicenseGate _licenseGate;
+    private readonly ILicenseState _license;
     private readonly CellsWorkbookLoader _loader;
 
     public CellsFontEnvironment(
-        ILicenseGate licenseGate,
+        ILicenseState license,
         ResourceBudgetLedger resourceBudgets)
     {
-        ArgumentNullException.ThrowIfNull(licenseGate);
+        ArgumentNullException.ThrowIfNull(license);
         ArgumentNullException.ThrowIfNull(resourceBudgets);
-        _licenseGate = licenseGate;
+        _license = license;
         _loader = new CellsWorkbookLoader(resourceBudgets);
     }
 
@@ -41,7 +41,7 @@ internal sealed class CellsFontEnvironment : IFontEnvironment
         ArgumentException.ThrowIfNullOrEmpty(filePath);
         ArgumentNullException.ThrowIfNull(request);
 
-        LicenseState licenseState = _licenseGate.EnsureApplied();
+        LicenseState licenseState = _license.License;
         using LoadedWorkbook loaded = _loader.Open(filePath, request.Password);
         Workbook workbook = loaded.Workbook;
 

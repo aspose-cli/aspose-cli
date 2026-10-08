@@ -1,6 +1,8 @@
 using Aspose.Cells;
 using Aspose.Cli.Sdk.Extensibility.Commanding;
+using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Licensing;
+using Aspose.Cli.Sdk.Results;
 using Aspose.Cli.Sdk.Text;
 
 namespace Aspose.Cli.Product.Cells.Tests;
@@ -32,8 +34,25 @@ public sealed class CellsFixture : IDisposable
         {
             TestLicense.Require(EvaluationLimit);
             return ProductTestBudgets.StartEngine<CellsModule, CellsEngine>(
-                (budgets, writer) => new CellsEngine(Gate, budgets, writer));
+                (budgets, writer) => new CellsEngine(Outputs(writer), budgets));
         }
+    }
+
+    /// <summary>The write pipeline of one invocation, as the product binding creates it.</summary>
+    internal OutputPipeline<Workbook> Outputs(SafeFileWriter writer) => new(Gate, new CellsEvaluationProfile(), writer);
+
+    /// <summary>
+    /// Runs one engine call as a command does: on its own engine and write pipeline, whose
+    /// evaluation disclosure the command template adds to the result.
+    /// </summary>
+    internal TResult Disclosed<TResult>(Func<CellsEngine, TResult> call)
+        where TResult : ResultEnvelope
+    {
+        TestLicense.Require(EvaluationLimit);
+        OutputPipeline<Workbook>? outputs = null;
+        CellsEngine engine = ProductTestBudgets.StartEngine<CellsModule, CellsEngine>(
+            (budgets, writer) => new CellsEngine(outputs = Outputs(writer), budgets));
+        return (TResult)outputs!.Disclose(call(engine));
     }
 
     internal CellsFontEnvironment Fonts
@@ -42,7 +61,7 @@ public sealed class CellsFixture : IDisposable
         {
             TestLicense.Require(EvaluationLimit);
             return ProductTestBudgets.StartEngine<CellsModule, CellsFontEnvironment>(
-                (budgets, _) => new CellsFontEnvironment(Gate, budgets));
+                (budgets, writer) => new CellsFontEnvironment(Outputs(writer), budgets));
         }
     }
 

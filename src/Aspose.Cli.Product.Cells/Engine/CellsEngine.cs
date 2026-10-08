@@ -1,7 +1,8 @@
+using Aspose.Cells;
 using Aspose.Cli.Product.Cells.Engine.Editing;
 using Aspose.Cli.Product.Cells.Engine.Mapping;
 using Aspose.Cli.Sdk.IO;
-using Aspose.Cli.Sdk.Licensing;
+using Aspose.Cli.Sdk.Results;
 using Aspose.Cli.Sdk.Views;
 
 namespace Aspose.Cli.Product.Cells.Engine;
@@ -19,22 +20,20 @@ internal sealed class CellsEngine : ICellsEngine, ICellsReviewLayoutPort
     private readonly CellsReviewLayoutService _reviewLayout;
 
     public CellsEngine(
-        ILicenseGate licenseGate,
-        ResourceBudgetLedger resourceBudgets,
-        SafeFileWriter fileWriter)
+        OutputPipeline<Workbook> outputs,
+        ResourceBudgetLedger resourceBudgets)
     {
-        ArgumentNullException.ThrowIfNull(licenseGate);
+        ArgumentNullException.ThrowIfNull(outputs);
         ArgumentNullException.ThrowIfNull(resourceBudgets);
-        ArgumentNullException.ThrowIfNull(fileWriter);
 
         var loader = new CellsWorkbookLoader(resourceBudgets);
-        var saver = new CellsSavePipeline(fileWriter, loader);
-        _reading = new CellsReadService(licenseGate, resourceBudgets, loader);
-        _inspection = new CellsInspectionService(licenseGate, resourceBudgets, loader);
-        _production = new CellsProductionService(licenseGate, fileWriter, loader, saver, resourceBudgets);
-        _mutations = new CellsMutationService(licenseGate, loader, saver, resourceBudgets,
+        var saver = new CellsSavePipeline(outputs, loader);
+        _reading = new CellsReadService(outputs, resourceBudgets, loader);
+        _inspection = new CellsInspectionService(outputs, resourceBudgets, loader);
+        _production = new CellsProductionService(outputs, loader, saver, resourceBudgets);
+        _mutations = new CellsMutationService(outputs, loader, saver, resourceBudgets,
             new CellsEditVerifier(loader, resourceBudgets));
-        _reviewLayout = new CellsReviewLayoutService(licenseGate, loader);
+        _reviewLayout = new CellsReviewLayoutService(outputs, loader);
     }
 
     public WorkbookInfoResult GetInfo(string filePath, InfoRequest request) =>

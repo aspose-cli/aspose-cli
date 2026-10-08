@@ -17,26 +17,22 @@ namespace Aspose.Cli.Product.Cells.Engine;
 /// </summary>
 internal sealed class CellsProductionService
 {
-    private readonly ILicenseGate _licenseGate;
-    private readonly SafeFileWriter _fileWriter;
+    private readonly OutputPipeline<Workbook> _outputs;
     private readonly CellsWorkbookLoader _loader;
     private readonly CellsSavePipeline _saver;
     private readonly ResourceBudgetLedger _resourceBudgets;
 
     internal CellsProductionService(
-        ILicenseGate licenseGate,
-        SafeFileWriter fileWriter,
+        OutputPipeline<Workbook> outputs,
         CellsWorkbookLoader loader,
         CellsSavePipeline saver,
         ResourceBudgetLedger resourceBudgets)
     {
-        ArgumentNullException.ThrowIfNull(licenseGate);
-        ArgumentNullException.ThrowIfNull(fileWriter);
+        ArgumentNullException.ThrowIfNull(outputs);
         ArgumentNullException.ThrowIfNull(loader);
         ArgumentNullException.ThrowIfNull(saver);
         ArgumentNullException.ThrowIfNull(resourceBudgets);
-        _licenseGate = licenseGate;
-        _fileWriter = fileWriter;
+        _outputs = outputs;
         _loader = loader;
         _saver = saver;
         _resourceBudgets = resourceBudgets;
@@ -48,7 +44,7 @@ internal sealed class CellsProductionService
         ArgumentException.ThrowIfNullOrEmpty(filePath);
         ArgumentNullException.ThrowIfNull(request);
 
-        LicenseState licenseState = _licenseGate.EnsureApplied();
+        LicenseState licenseState = _outputs.License;
         using LoadedWorkbook loaded = _loader.Open(filePath, request.Password, request.TextImport);
         Workbook workbook = loaded.Workbook;
 
@@ -109,11 +105,8 @@ internal sealed class CellsProductionService
             request.EncryptPassword, loaded.IsEncrypted ? request.Password : null, selectedSheet, request.ByteOrderMark);
         loaded.RestoreActiveSheet(savePlan);
         Warning? sheetsDropped = savePlan.DetectSheetLoss(workbook);
-        // Read before the save, which may add a warning sheet of its own (EVALUATION_SHEET_ADDED).
-        Warning? exportedWarningSheets = CellsEvaluation.DescribeExportedWarningSheets(workbook, request.Output.Format.Id, selectedSheet);
-        Warning? evaluationSheetAdded = null;
-        long sizeBytes = _saver.Write(request.Output.Path, request.Output.Overwrite,
-            path => evaluationSheetAdded = _saver.Produce(workbook, savePlan, path));
+        long sizeBytes = _saver.Write(request.Output.Path, request.Output.Overwrite, workbook, singleSheet: selectedSheet is not null,
+            path => _saver.Produce(workbook, savePlan, path));
         Warning? formulasBroken = _saver.BuildBrokenFormulaWarning(
             refsBefore,
             _saver.CountRefFormulas(workbook),
@@ -133,9 +126,9 @@ internal sealed class CellsProductionService
             License = EnvelopeParts.License(licenseState),
             // Only a text export without --sheet writes one sheet chosen by default; the other
             // formats write every sheet.
-            Warnings = CombineWarnings(licenseState, [loaded.Resources.CoverageWarning, loaded.CalculatedOnOpen,
-                loaded.SkippedSheetWarning(request.SheetName is null && savePlan.WritesActiveSheetOnly), sheetsDropped, dataTruncated, formulasBroken, savePlan.EncryptionWarning, evaluationSheetAdded, chartsSplit,
-                CellsEvaluation.DescribeAddedNotice(licenseState, request.Output.Format.Id), exportedWarningSheets, .. textLayout]),
+            Warnings = CombineWarnings([loaded.Resources.CoverageWarning, loaded.CalculatedOnOpen,
+                loaded.SkippedSheetWarning(request.SheetName is null && savePlan.WritesActiveSheetOnly), sheetsDropped, dataTruncated, formulasBroken, savePlan.EncryptionWarning, chartsSplit,
+                .. textLayout]),
         };
     }
 
@@ -143,7 +136,7 @@ internal sealed class CellsProductionService
     {
         ArgumentNullException.ThrowIfNull(request);
 
-        LicenseState licenseState = _licenseGate.EnsureApplied();
+        LicenseState licenseState = _outputs.License;
         using var workbook = new Workbook();
 
         workbook.Worksheets[0].Name = request.SheetNames[0];
@@ -163,8 +156,7 @@ internal sealed class CellsProductionService
             Output = saved.Output,
             Sheets = request.SheetNames,
             License = EnvelopeParts.License(licenseState),
-            Warnings = CombineWarnings(licenseState, saved.Truncated, saved.FormulasBroken, saved.SheetsDropped, saved.EvaluationSheetAdded,
-                CellsEvaluation.DescribeAddedNotice(licenseState, saved.Format)),
+            Warnings = CombineWarnings(saved.Truncated, saved.FormulasBroken, saved.SheetsDropped),
         };
     }
 
@@ -174,7 +166,7 @@ internal sealed class CellsProductionService
         ArgumentException.ThrowIfNullOrEmpty(filePath);
         ArgumentNullException.ThrowIfNull(request);
 
-        LicenseState licenseState = _licenseGate.EnsureApplied();
+        LicenseState licenseState = _outputs.License;
         using LoadedWorkbook loaded = _loader.Open(filePath, request.Password);
         Workbook workbook = loaded.Workbook;
         SourceInfo input = BuildSource(filePath, workbook);
@@ -204,7 +196,7 @@ internal sealed class CellsProductionService
             renderedRange = A1.FormatRange(range);
         }
 
-        using var transaction = new AtomicOutputSetWriter(_fileWriter, request.Output.Directory, "cells-render");
+        using OutputSet<Workbook> transaction = _outputs.BeginSet([request.Output.Directory], "cells-render");
         long sizeBytes = StageSheet(transaction, sheet, request, renderedRange, request.Output.Path).SizeBytes;
         transaction.Commit();
 
@@ -221,7 +213,7 @@ internal sealed class CellsProductionService
             Range = renderedRange,
             Dpi = isRaster ? request.Dpi : null,
             License = EnvelopeParts.License(licenseState),
-            Warnings = CombineWarnings(licenseState, loaded.Resources.CoverageWarning, loaded.CalculatedOnOpen,
+            Warnings = CombineWarnings(loaded.Resources.CoverageWarning, loaded.CalculatedOnOpen,
                 loaded.SkippedSheetWarning(request.SheetName is null)),
         };
     }
@@ -233,7 +225,7 @@ internal sealed class CellsProductionService
     /// an engine rasterization crash into <c>RENDER_FAILED</c>. Both the
     /// single-sheet path and <c>--all-sheets</c> run through it.
     /// </summary>
-    private StagedOutput StageSheet(AtomicOutputSetWriter transaction, Worksheet sheet, RenderRequest request, string? printArea, string outputPath)
+    private StagedOutput StageSheet(OutputSet<Workbook> transaction, Worksheet sheet, RenderRequest request, string? printArea, string outputPath)
     {
         bool isRaster = FormatMapper.IsRaster(request.Output.Format.Id);
 
@@ -275,10 +267,11 @@ internal sealed class CellsProductionService
                 EnsureRenderable(render, request.Dpi);
             }
 
-            return transaction.Stage(
-                outputPath,
-                request.Output.Overwrite,
-                tempPath => render.ToImage(0, tempPath));
+            // The image shows the one sheet, which carries evaluation marks only when it is a
+            // warning sheet; it then renders the workbook's marks (CellsEvaluationProfile).
+            return transaction.Stage(outputPath, request.Output.Overwrite,
+                CellsEvaluation.IsWarningSheet(sheet) ? sheet.Workbook : null,
+                tempPath => render.ToImage(0, tempPath), rendering: true);
         }
         catch (CellsException ex)
         {
@@ -317,7 +310,7 @@ internal sealed class CellsProductionService
 
         IReadOnlyList<string> outputPaths = DerivePerSheetPaths(request.Output, candidates);
 
-        using var transaction = new AtomicOutputSetWriter(_fileWriter, request.Output.Directory, "cells-render");
+        using OutputSet<Workbook> transaction = _outputs.BeginSet([request.Output.Directory], "cells-render");
         var rendered = new List<SheetRenderOutput>();
         var skipped = new List<string>();
         CliException? firstSkip = null;
@@ -372,7 +365,7 @@ internal sealed class CellsProductionService
             Dpi = FormatMapper.IsRaster(request.Output.Format.Id) ? request.Dpi : null,
             Outputs = rendered,
             License = EnvelopeParts.License(licenseState),
-            Warnings = CombineWarnings(licenseState, [.. loaded.Warnings() ?? [], sheetsSkipped]),
+            Warnings = CombineWarnings([.. loaded.Warnings() ?? [], sheetsSkipped]),
         };
     }
 
@@ -464,7 +457,7 @@ internal sealed class CellsProductionService
         ArgumentNullException.ThrowIfNull(request);
         ArgumentNullException.ThrowIfNull(artifacts);
 
-        _licenseGate.EnsureApplied();
+        _ = _outputs.License;
         using LoadedWorkbook loaded = _loader.Open(filePath, request.Password);
         Workbook workbook = loaded.Workbook;
         SourceInfo source = BuildSource(filePath, workbook);

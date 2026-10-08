@@ -1,7 +1,5 @@
 using Aspose.Cells;
 using Aspose.Cli.Product.Cells.Engine.Mapping;
-using Aspose.Cli.Sdk.Licensing;
-using Aspose.Cli.Sdk.Results;
 using Aspose.Cli.Sdk.IO;
 
 namespace Aspose.Cli.Product.Cells.Engine;
@@ -10,18 +8,13 @@ namespace Aspose.Cli.Product.Cells.Engine;
 internal static class CellsEngineSupport
 {
     /// <summary>
-    /// The output warnings for a write path: the evaluation watermark (unlicensed
-    /// only) plus any additional non-null warnings the caller produced. Returns
-    /// <c>null</c> when there are none, matching the envelope's omit-when-empty rule.
+    /// The non-null warnings the caller produced; the write pipeline adds the evaluation
+    /// disclosure. Returns <c>null</c> when there are none, matching the envelope's
+    /// omit-when-empty rule.
     /// </summary>
-    internal static IReadOnlyList<Warning>? CombineWarnings(LicenseState licenseState, params Warning?[] extra)
+    internal static IReadOnlyList<Warning>? CombineWarnings(params Warning?[] extra)
     {
         List<Warning>? warnings = null;
-        if (EnvelopeParts.OutputWarnings(licenseState) is { } eval)
-        {
-            warnings = [.. eval];
-        }
-
         foreach (Warning? warning in extra)
         {
             if (warning is not null)

@@ -19237,6 +19237,15 @@
   "resourceBudgetContractVersion": 2,
   "diagnostics": [
     {
+      "code": "ACTIVE_SHEET_SKIPPED",
+      "owner": "cells",
+      "severity": "warning",
+      "category": "warning",
+      "messageTemplateId": "cells.active-sheet-skipped.message.v1",
+      "hintTemplateId": "cells.active-sheet-skipped.hint.v1",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
       "code": "ANCHOR_NOT_FOUND",
       "owner": "words",
       "severity": "error",
@@ -19397,33 +19406,6 @@
       "category": "license",
       "messageTemplateId": "common.evaluation-limit.message.v1",
       "hintTemplateId": "common.evaluation-limit.hint.v1",
-      "detailsSchemaId": "v2/common/diagnostic-details"
-    },
-    {
-      "code": "EVALUATION_NOTICE_ADDED",
-      "owner": "cells",
-      "severity": "warning",
-      "category": "warning",
-      "messageTemplateId": "cells.evaluation-notice-added.message.v1",
-      "hintTemplateId": "cells.evaluation-notice-added.hint.v1",
-      "detailsSchemaId": "v2/common/diagnostic-details"
-    },
-    {
-      "code": "EVALUATION_SHEET_ADDED",
-      "owner": "cells",
-      "severity": "warning",
-      "category": "warning",
-      "messageTemplateId": "cells.evaluation-sheet-added.message.v1",
-      "hintTemplateId": "cells.evaluation-sheet-added.hint.v1",
-      "detailsSchemaId": "v2/common/diagnostic-details"
-    },
-    {
-      "code": "EVALUATION_SHEET_SKIPPED",
-      "owner": "cells",
-      "severity": "warning",
-      "category": "warning",
-      "messageTemplateId": "cells.evaluation-sheet-skipped.message.v1",
-      "hintTemplateId": "cells.evaluation-sheet-skipped.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
