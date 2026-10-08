@@ -17,33 +17,41 @@ internal static class WordsAnchorResolver
         var resolved = new List<ResolvedWordsOp>(batch.Ops.Count);
         IReadOnlyList<RevisionChange>? changes = null;
         bool edited = false;
-        foreach (WordsOp op in batch.Ops)
+        for (int position = 0; position < batch.Ops.Count; position++)
         {
-            if (op is RevisionDecisionOp { Revisions: { } numbers })
+            WordsOp op = batch.Ops[position];
+            try
             {
-                // An edit can split or rebuild the runs a change consists of, leaving part of
-                // the change undecided, so numbered decisions come first.
-                if (edited)
+                if (op is RevisionDecisionOp { Revisions: { } numbers })
                 {
-                    throw RevisionsInvalid(
-                        $"{WordsOp.Catalog.NameOf(op)} with revisions must come before every operation other than a revision decision",
-                        "Put the revision decisions first in the batch, or run them in a batch of their own; their numbers always name the changes the input lists.");
+                    // An edit can split or rebuild the runs a change consists of, leaving part of
+                    // the change undecided, so numbered decisions come first.
+                    if (edited)
+                    {
+                        throw new OperationInvalidException(
+                            "with revisions it must come before every operation other than a revision decision",
+                            "Put the revision decisions first in the batch, or run them in a batch of their own; their numbers always name the changes the input lists.");
+                    }
+
+                    changes ??= InfoProjection.RevisionChanges(document);
+                    RevisionChange[] selected = SelectRevisions(changes, numbers);
+                    Node[] changed = [.. selected.SelectMany(static change => change.Members)
+                        .Select(static revision => revision.ParentNode).OfType<Node>().Distinct()];
+                    resolved.Add(new ResolvedWordsOp(op, [], [], Targets(index, changed, target: null)) { Revisions = selected });
+                    continue;
                 }
 
-                changes ??= InfoProjection.RevisionChanges(document);
-                RevisionChange[] selected = SelectRevisions(changes, numbers);
-                Node[] changed = [.. selected.SelectMany(static change => change.Members)
-                    .Select(static revision => revision.ParentNode).OfType<Node>().Distinct()];
-                resolved.Add(new ResolvedWordsOp(op, [], [], Targets(index, changed, target: null)) { Revisions = selected });
-                continue;
+                edited |= op is not RevisionDecisionOp;
+                WordsTarget? target = TargetOf(op);
+                IReadOnlyList<Node> nodes = target is null
+                    ? []
+                    : ResolveTarget(document, index, target);
+                resolved.Add(new ResolvedWordsOp(op, nodes, ResolveSections(document, op), Targets(index, nodes, target)));
             }
-
-            edited |= op is not RevisionDecisionOp;
-            WordsTarget? target = TargetOf(op);
-            IReadOnlyList<Node> nodes = target is null
-                ? []
-                : ResolveTarget(document, index, target);
-            resolved.Add(new ResolvedWordsOp(op, nodes, ResolveSections(document, op), Targets(index, nodes, target)));
+            catch (OperationInvalidException rejection)
+            {
+                throw WordsOp.Catalog.Invalid(position, op, rejection);
+            }
         }
 
         ValidateDeleteConflicts(resolved);
@@ -84,7 +92,7 @@ internal static class WordsAnchorResolver
             int[] together = [.. changes[number - 1].Members.Select(RevisionKey.Of).SelectMany(key => owners[key]).Distinct().Order()];
             if (together.Except(wanted).Any())
             {
-                throw RevisionsInvalid(
+                throw new OperationInvalidException(
                     $"revisions {string.Join(" and ", together)} change the same node in the same way and can only be decided together",
                     "List all of them in revisions, or none.");
             }
@@ -92,9 +100,6 @@ internal static class WordsAnchorResolver
 
         return [.. wanted.Select(number => changes[number - 1])];
     }
-
-    private static CliException RevisionsInvalid(string reason, string hint) =>
-        new(ErrorCodes.OpsInvalid, $"Invalid Words ops batch: {reason}.", hint: hint);
 
     private static IReadOnlyList<Section> ResolveSections(Document document, WordsOp op) => op switch
     {
@@ -115,7 +120,8 @@ internal static class WordsAnchorResolver
         if (operation.Nodes.Any(node => !ReferenceEquals(node.GetAncestor(NodeType.Document), document))
             || operation.Sections.Any(section => !ReferenceEquals(section.ParentNode, document)))
         {
-            throw Invalid($"operation '{WordsOp.Catalog.NameOf(operation.Op)}' references an original object removed by an earlier operation");
+            throw new OperationInvalidException(
+                "it references an original object removed by an earlier operation", DeleteConflictHint);
         }
     }
 
@@ -151,10 +157,9 @@ internal static class WordsAnchorResolver
             BlockEntry? entry = index.Find(bookmark.BookmarkStart);
             if (entry is null)
             {
-                throw new CliException(
-                    ErrorCodes.OpsInvalid,
-                    $"Bookmark '{target.Bookmark}' is not inside a body block, so it cannot address one.",
-                    hint: "Target a bookmark in the document body, or address the block by number, heading or text.");
+                throw new OperationInvalidException(
+                    $"bookmark '{target.Bookmark}' is not inside a body block, so it cannot address one",
+                    "Target a bookmark in the document body, or address the block by number, heading or text.");
             }
 
             return [entry.Node];
@@ -306,7 +311,7 @@ internal static class WordsAnchorResolver
                 {
                     if (deleted.Contains(ancestor))
                     {
-                        throw Invalid($"op {index} ({WordsOp.Catalog.NameOf(item.Op)}) references an object deleted by an earlier op");
+                        throw Conflict(index, item, "it references an object deleted by an earlier operation");
                     }
                 }
             }
@@ -316,7 +321,7 @@ internal static class WordsAnchorResolver
                 Section section = item.Sections[0];
                 if (deleted.Any(node => ReferenceEquals(node.GetAncestor(NodeType.Section), section)))
                 {
-                    throw Invalid($"op {index} (delete_section) overlaps an earlier block deletion");
+                    throw Conflict(index, item, "it overlaps an earlier block deletion");
                 }
                 deleted.Add(section);
             }
@@ -327,10 +332,10 @@ internal static class WordsAnchorResolver
         }
     }
 
-    private static CliException Invalid(string reason) => new(
-        ErrorCodes.OpsInvalid,
-        $"Invalid Words ops batch: {reason}.",
-        hint: "Split conflicting deletes and dependent edits into separate batches.");
+    private const string DeleteConflictHint = "Split conflicting deletes and dependent edits into separate batches.";
+
+    private static CliException Conflict(int index, ResolvedWordsOp item, string reason) =>
+        WordsOp.Catalog.Invalid(index, item.Op, new OperationInvalidException(reason, DeleteConflictHint));
 }
 
 internal sealed record ResolvedWordsOp(

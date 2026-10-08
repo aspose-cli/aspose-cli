@@ -231,10 +231,9 @@ internal sealed partial class WordsMutationHandlers
             int expected = changes.Sum(static change => change.Members.Count);
             if (_document.Revisions.Count(listed.IsMatch) != expected)
             {
-                throw new CliException(
-                    ErrorCodes.OpsInvalid,
-                    $"Invalid Words ops batch: {WordsOp.Catalog.NameOf(_resolved.Op)} lists revisions an earlier operation in the batch already decided.",
-                    hint: "Decide each revision once: list it in only one accept_revisions or reject_revisions, after no decision by author or of every revision.");
+                throw new OperationInvalidException(
+                    "it lists revisions an earlier operation in the batch already decided",
+                    "Decide each revision once: list it in only one accept_revisions or reject_revisions, after no decision by author or of every revision.");
             }
 
             int decided = accept ? _document.Revisions.Accept(listed) : _document.Revisions.Reject(listed);
