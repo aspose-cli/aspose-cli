@@ -69,10 +69,9 @@ public static class NetworkReferenceGuard
         ArgumentNullException.ThrowIfNull(content);
         if (IsCompressed(content))
         {
-            throw new CliException(
-                ErrorCodes.FeatureUnsupported,
+            throw CliErrors.ResourceRefused(
                 $"The {kind} is compressed and cannot be checked for network addresses: {path}.",
-                hint: $"Decompress the {kind}.");
+                $"Decompress the {kind}.");
         }
 
         string text = Decode(content);
@@ -87,10 +86,9 @@ public static class NetworkReferenceGuard
                 Match script = Script.Match(scripted);
                 if (script.Success)
                 {
-                    throw new CliException(
-                        ErrorCodes.FeatureUnsupported,
+                    throw CliErrors.ResourceRefused(
                         $"The {kind} contains script ('{Excerpt(scripted, script.Index)}'), which the document engine runs and which can request network addresses the CLI cannot check: {path}.",
-                        hint: $"Remove script elements, event-handler attributes and script URLs from the {kind}.");
+                        $"Remove script elements, event-handler attributes and script URLs from the {kind}.");
                 }
             }
 
@@ -98,10 +96,9 @@ public static class NetworkReferenceGuard
             Match match = NetworkReference.Match(scanned);
             if (match.Success)
             {
-                throw new CliException(
-                    ErrorCodes.FeatureUnsupported,
+                throw CliErrors.ResourceRefused(
                     $"The {kind} names a network address ('{Address(scanned, match.Index)}'), which the document engine would request before the CLI's resource policy applies: {path}.",
-                    hint: $"Remove every network address from the {kind}, including hyperlinks and addresses in text, or save the resources beside it and reference them by relative path."
+                    $"Remove every network address from the {kind}, including hyperlinks and addresses in text, or save the resources beside it and reference them by relative path."
                         + (optIn is null ? string.Empty : $" If you trust the {kind}, {optIn} lets the engine fetch its addresses and lists every one."));
             }
         }
@@ -118,10 +115,9 @@ public static class NetworkReferenceGuard
         int length = content.ReadAtLeast(head, head.Length, throwOnEndOfStream: false);
         if (IsCompressed(head.AsSpan(0, length)))
         {
-            throw new CliException(
-                ErrorCodes.FeatureUnsupported,
+            throw CliErrors.ResourceRefused(
                 $"The image is compressed (SVGZ) and cannot be checked for network addresses: {path}.",
-                hint: "Decompress it to an .svg file, or supply a raster image.");
+                "Decompress it to an .svg file, or supply a raster image.");
         }
 
         if (!IsMarkup(head.AsSpan(0, length)))
