@@ -37,7 +37,8 @@ internal static class ReviewEvidenceWriter
         LicenseState license,
         ContractJsonSerializer serializer,
         ResourceBudgetLedger budgets,
-        IReadOnlyList<string>? codes = null)
+        IReadOnlyList<string>? codes = null,
+        Func<ReviewResult, ReviewResult>? disclose = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(sourcePath);
         ArgumentException.ThrowIfNullOrWhiteSpace(productId);
@@ -69,7 +70,9 @@ internal static class ReviewEvidenceWriter
                 evidenceDirectory,
                 ViewManifestFile,
                 limits);
-            ReviewResult result = BuildResult(
+            // The evaluation disclosure is part of the result the evidence files carry.
+            disclose ??= static result => result;
+            ReviewResult result = disclose(BuildResult(
                 source,
                 productId,
                 target,
@@ -80,7 +83,7 @@ internal static class ReviewEvidenceWriter
                 manifest,
                 assessment,
                 license,
-                codes);
+                codes));
 
             string reviewJson = serializer.Serialize(result);
             File.WriteAllText(
@@ -158,8 +161,7 @@ internal static class ReviewEvidenceWriter
                 index + 3)),
         ];
         IReadOnlyList<Warning>? warnings = EnvelopeParts.CombineWarnings(
-            EnvelopeParts.OutputWarnings(license),
-            EnvelopeParts.CombineWarnings(manifest.Warnings, assessment.Warnings));
+            manifest.Warnings, assessment.Warnings);
         IReadOnlyList<ReviewFinding> findings = AssociateEvidence(assessment.Findings ?? [], artifacts, manifest.Parts);
         IReadOnlyList<ReviewFinding> reported = codes is null
             ? findings

@@ -5,7 +5,6 @@ using Aspose.Cli.Host.Output;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
-using Aspose.Cli.Sdk.Results;
 
 namespace Aspose.Cli.Host.Invocation;
 
@@ -449,11 +448,6 @@ internal sealed class CommandExecutor
             ResultEnvelope result,
             bool detectPartial)
         {
-            if (Globals.EvaluationRequested)
-            {
-                // Products disclose evaluation mode; only the host knows it was asked for.
-                result = result with { Warnings = EnvelopeParts.ForRequestedEvaluation(result.Warnings) };
-            }
             int exitCode = Complete(() => _writer.WriteResult(result));
             return detectPartial
                 && result is IPartialOutcome { HasFailures: true }
