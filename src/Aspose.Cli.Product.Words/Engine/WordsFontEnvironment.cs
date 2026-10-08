@@ -16,15 +16,15 @@ namespace Aspose.Cli.Product.Words.Engine;
 /// </summary>
 internal sealed partial class WordsFontEnvironment : IFontEnvironment
 {
-    private readonly ILicenseGate _licenseGate;
+    private readonly ILicenseState _license;
     private readonly WordsDocumentLoader _loader;
 
     /// <summary>Creates a Words font diagnostic adapter.</summary>
     public WordsFontEnvironment(
-        ILicenseGate licenseGate,
+        ILicenseState license,
         ResourceBudgetLedger resourceBudgets)
     {
-        _licenseGate = licenseGate ?? throw new ArgumentNullException(nameof(licenseGate));
+        _license = license ?? throw new ArgumentNullException(nameof(license));
         _loader = new WordsDocumentLoader(resourceBudgets);
     }
 
@@ -60,7 +60,7 @@ internal sealed partial class WordsFontEnvironment : IFontEnvironment
         ArgumentException.ThrowIfNullOrEmpty(filePath);
         ArgumentNullException.ThrowIfNull(request);
 
-        LicenseState state = _licenseGate.EnsureApplied();
+        LicenseState state = _license.License;
         var substitutions = new FontSubstitutions();
         using LoadedDocument loaded = _loader.Open(filePath, request.Password, substitutions);
 

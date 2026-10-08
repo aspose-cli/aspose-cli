@@ -254,10 +254,7 @@ internal sealed partial class WordsMutationHandlers
     {
         using LoadedDocument loaded = _loader.Open(operation.Path, null);
         _loaded.Imported(loaded);
-        if (loaded.Evaluation)
-        {
-            WordsEvaluation.RemoveLeadingBanners(loaded.Document);
-        }
+        _outputs.Neutralize(loaded.Document);
 
         ImportFormatMode mode = operation.ImportFormatMode == "useDestination"
             ? ImportFormatMode.UseDestinationStyles

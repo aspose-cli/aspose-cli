@@ -1,6 +1,8 @@
 using Aspose.Cli.Product.Words.Engine.Mapping;
 using Aspose.Cli.Sdk.Extensibility.Commanding;
+using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Licensing;
+using Aspose.Cli.Sdk.Results;
 using Aspose.Cli.Sdk.Text;
 using Aspose.Words;
 using Aspose.Words.Saving;
@@ -21,11 +23,27 @@ public sealed class WordsFixture : IDisposable
 
     internal WordsEngine Engine =>
         ProductTestBudgets.StartEngine<WordsModule, WordsEngine>(
-            (budgets, writer) => new WordsEngine(Gate, budgets, writer));
+            (budgets, writer) => new WordsEngine(Outputs(writer), budgets));
 
     internal WordsFontEnvironment Fonts =>
         ProductTestBudgets.StartEngine<WordsModule, WordsFontEnvironment>(
-            (budgets, _) => new WordsFontEnvironment(Gate, budgets));
+            (budgets, writer) => new WordsFontEnvironment(Outputs(writer), budgets));
+
+    /// <summary>The write pipeline of one invocation, as the product binding creates it.</summary>
+    internal OutputPipeline<Document> Outputs(SafeFileWriter writer) => new(Gate, new WordsEvaluationProfile(), writer);
+
+    /// <summary>
+    /// Runs one engine call as a command does: on its own engine and write pipeline, whose
+    /// evaluation disclosure the command template adds to the result.
+    /// </summary>
+    internal TResult Disclosed<TResult>(Func<WordsEngine, TResult> call)
+        where TResult : ResultEnvelope
+    {
+        OutputPipeline<Document>? outputs = null;
+        WordsEngine engine = ProductTestBudgets.StartEngine<WordsModule, WordsEngine>(
+            (budgets, writer) => new WordsEngine(outputs = Outputs(writer), budgets));
+        return (TResult)outputs!.Disclose(call(engine));
+    }
 
     /// <summary>The banner paragraph an unlicensed save writes at the start of a document.</summary>
     internal const string BannerText =

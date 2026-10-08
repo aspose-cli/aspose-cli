@@ -43,23 +43,7 @@ public sealed class WordsModule : IProductModule
             .Output<WordsSplitResult>(WordsRenderers.Render)
             .Output<WordsExtractResult>(WordsRenderers.Render)
             .Commands(WordsCommands.Create)
-            .Activator(Activate)
+            .Activator(static context => WordsActivation.Activate(context, Manifest.Id))
             .Build();
-
-    private static ProductBinding<IWordsEngine> Activate(
-        ProductActivationContext context) =>
-        ProductBinding.Create<IWordsEngine>(
-            context,
-            Manifest.Id,
-            resolution => new WordsLicenseGate(
-                resolution,
-                context.EnvironmentVariable),
-            license => new WordsEngine(
-                license,
-                context.ResourceBudgets,
-                context.SafeFileWriter),
-            license => new WordsFontEnvironment(
-                license,
-                context.ResourceBudgets));
 
 }

@@ -11,14 +11,14 @@ namespace Aspose.Cli.Product.Words.Engine;
 internal sealed class WordsReviewLayoutService
 {
     private const double PageBoundaryTolerance = 0.5;
-    private readonly ILicenseGate _licenseGate;
+    private readonly ILicenseState _license;
     private readonly WordsDocumentLoader _loader;
 
     internal WordsReviewLayoutService(
-        ILicenseGate licenseGate,
+        ILicenseState license,
         WordsDocumentLoader loader)
     {
-        _licenseGate = licenseGate ?? throw new ArgumentNullException(nameof(licenseGate));
+        _license = license ?? throw new ArgumentNullException(nameof(license));
         _loader = loader ?? throw new ArgumentNullException(nameof(loader));
     }
 
@@ -27,7 +27,7 @@ internal sealed class WordsReviewLayoutService
         Secret? password,
         int maxPages)
     {
-        _ = _licenseGate.EnsureApplied();
+        _ = _license.License;
         using LoadedDocument loaded = _loader.Open(filePath, password);
         Document document = loaded.Document;
         document.UpdatePageLayout();

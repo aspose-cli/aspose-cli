@@ -79,8 +79,11 @@ retry unchanged input.
 
 - Output-producing commands (`create`, `edit`, `convert`, `render` and the
   like) return an `EVAL_MODE` warning, and the produced file carries evaluation
-  watermarks or added evaluation content. The mark is in the file you deliver,
-  so tell the user.
+  watermarks or added evaluation content. Its message names the evaluation
+  marks the CLI recognizes in the output, whether this save or an earlier one
+  wrote them, such as a warning sheet or a notice row, and, for page images and
+  page text, those of the source they show. The mark is in the file
+  you deliver, so tell the user.
 - `EVAL_INPUT_TRUNCATED` means evaluation mode kept only part of the content,
   so the result is incomplete: usually an input it loaded, and for some
   products (its Skill says which) an edited output it saved. On a read, the text you get back is the
@@ -90,7 +93,15 @@ retry unchanged input.
   output carries the replacement depends on the product; its Skill says which
   outputs do.
 - Reads (`inspect`, `query`) add no marks and carry no `EVAL_MODE` warning;
-  input, resource and engine limits still apply.
+  input, resource and engine limits still apply. A dry run publishes nothing
+  and carries none either.
+- With a license, `EVAL_INPUT_MARKED` means the output keeps evaluation marks
+  that an earlier save without a license wrote into its input (a watermark, a
+  banner, a warning sheet or slide box), or a page image or page text shows a
+  source that carries them; its message lists them. A licensed
+  save adds none, so every mark a licensed output carries came from its input.
+  The license does not remove them, so tell the user and regenerate the
+  deliverable from the original, unmarked inputs.
 - Detect evaluation from the JSON `warnings` array. With `--output table`,
   `--quiet` hides the `EVAL_MODE` line together with the stderr license status
   line.

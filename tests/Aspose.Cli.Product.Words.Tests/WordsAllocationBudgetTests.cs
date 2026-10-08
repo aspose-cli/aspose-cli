@@ -145,6 +145,6 @@ public sealed class WordsAllocationBudgetTests
         }
 
         var budgets = new ResourceBudgetLedger(OperationDeadline.Start(null), limits);
-        return new WordsEngine(fixture.Gate, budgets, new SafeFileWriter(budgets));
+        return new WordsEngine(fixture.Outputs(new SafeFileWriter(budgets)), budgets);
     }
 }

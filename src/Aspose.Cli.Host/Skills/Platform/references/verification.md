@@ -15,7 +15,7 @@ overview adds the checks specific to its documents.
     opened; coverage.complete is true, or the gap is reported
 [ ] Fonts: fonts check shows no missing font, or the substitution is reported
 [ ] Session diff: against the backup, only intended changes remain
-[ ] Evaluation: any EVAL_MODE warning disclosed with the delivered file
+[ ] Evaluation: any EVAL_MODE or EVAL_INPUT_MARKED warning disclosed with the delivered file
 ```
 
 ## The review protocol

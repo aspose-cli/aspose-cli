@@ -21,8 +21,6 @@ internal static class WordsDiagnostics
     internal const string MergeValueMissing = "MERGE_VALUE_MISSING";
     /// <summary>A review operation named an author whose revisions or comments the document does not hold, so it changed nothing.</summary>
     internal const string AuthorNoMatch = "AUTHOR_NO_MATCH";
-    /// <summary>A licensed output keeps the evaluation marks an unlicensed save wrote into its input.</summary>
-    internal const string EvaluationMarksPresent = "EVALUATION_MARKS_PRESENT";
 
     internal static readonly DiagnosticDescriptor FieldCountChanged = Verification("FIELD_COUNT_CHANGED");
     internal static readonly DiagnosticDescriptor RevisionCountChanged = Verification("REVISION_COUNT_CHANGED");
@@ -44,7 +42,6 @@ internal static class WordsDiagnostics
         Warning(LinkedImagesSkipped),
         Warning(MergeValueMissing),
         Warning(AuthorNoMatch),
-        Warning(EvaluationMarksPresent),
         FieldCountChanged,
         RevisionCountChanged,
         ProtectionChanged,

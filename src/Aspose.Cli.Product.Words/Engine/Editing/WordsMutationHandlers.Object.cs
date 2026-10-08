@@ -398,10 +398,7 @@ internal sealed partial class WordsMutationHandlers
             ExecuteMergeRow(letter, rows[index]);
             // Under evaluation a letter starts with a banner: the template's own, or the one
             // the evaluation merge writes into it.
-            if (_loaded.Evaluation)
-            {
-                WordsEvaluation.RemoveLeadingBanners(letter);
-            }
+            _outputs.Neutralize(letter);
 
             _document.AppendDocument(letter, ImportFormatMode.KeepSourceFormatting);
         }

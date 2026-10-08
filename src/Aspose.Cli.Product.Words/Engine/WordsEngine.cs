@@ -1,7 +1,8 @@
 using Aspose.Cli.Product.Words.Engine.Mapping;
 using Aspose.Cli.Sdk.IO;
-using Aspose.Cli.Sdk.Licensing;
+using Aspose.Cli.Sdk.Results;
 using Aspose.Cli.Sdk.Views;
+using Aspose.Words;
 
 namespace Aspose.Cli.Product.Words.Engine;
 
@@ -16,30 +17,24 @@ internal sealed class WordsEngine : IWordsEngine, IWordsReviewLayoutPort
     private readonly WordsReviewLayoutService _reviewLayout;
 
     public WordsEngine(
-        ILicenseGate licenseGate,
-        ResourceBudgetLedger resourceBudgets,
-        SafeFileWriter writer)
+        OutputPipeline<Document> outputs,
+        ResourceBudgetLedger resourceBudgets)
     {
-        ArgumentNullException.ThrowIfNull(licenseGate);
+        ArgumentNullException.ThrowIfNull(outputs);
         ArgumentNullException.ThrowIfNull(resourceBudgets);
-        ArgumentNullException.ThrowIfNull(writer);
-        var loader = new WordsDocumentLoader(resourceBudgets, licenseGate);
-        _reading = new WordsReadService(licenseGate, loader);
-        _reviewLayout = new WordsReviewLayoutService(licenseGate, loader);
-        _inspection = new WordsInspectionService(licenseGate, writer, loader);
+        var loader = new WordsDocumentLoader(resourceBudgets, outputs);
+        _reading = new WordsReadService(outputs, loader);
+        _reviewLayout = new WordsReviewLayoutService(outputs, loader);
+        _inspection = new WordsInspectionService(outputs, loader);
         _production = new WordsProductionService(
-            licenseGate,
-            writer,
+            outputs,
             loader,
             resourceBudgets);
         _extraction = new WordsExtractionService(
-            licenseGate,
-            writer,
-            loader,
-            resourceBudgets);
+            outputs,
+            loader);
         _mutation = new WordsMutationService(
-            licenseGate,
-            writer,
+            outputs,
             loader,
             resourceBudgets.Inputs);
     }

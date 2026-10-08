@@ -45,10 +45,10 @@ are in `aspose-cli docs editing`.
 - `MACROS_DROPPED`: the source has macros and the output of `convert`, `edit`,
   `create`, `split` or `compare` was written without them. Only `doc`, `dot`,
   `docm`, `dotm` and `wordml` keep macros; save to `docm` or `dotm` to keep them.
-- `EVALUATION_MARKS_PRESENT`: with a license, the input holds the evaluation
-  banner, footer text or truncation notice a save without a license wrote into
-  it, and the output keeps them; regenerate the document from its original
-  inputs with a license.
+- `EVAL_INPUT_MARKED`: with a license, the input holds the evaluation
+  banner, footer sentence or truncation notice a save without a license wrote
+  into it, and the output keeps them; the message lists them. Regenerate the
+  document from its original inputs with a license.
 - `LAYOUT_MAY_DIFFER`: `words split --by pages` can reflow complex layouts
   slightly; review the split pages.
 - `LINKED_IMAGES_SKIPPED`: linked images store no bytes in the document, so
