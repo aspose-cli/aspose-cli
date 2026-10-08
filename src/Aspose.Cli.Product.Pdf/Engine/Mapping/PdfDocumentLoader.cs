@@ -8,6 +8,21 @@ namespace Aspose.Cli.Product.Pdf.Engine.Mapping;
 internal sealed class PdfDocumentLoader(
     ResourceBudgetLedger resourceBudgets)
 {
+    /// <summary>
+    /// How a PDF input that does not load is reported: Aspose.PDF raises
+    /// <see cref="InvalidPasswordException"/> for a missing or wrong password, and any other
+    /// exception of its own for bytes it cannot read.
+    /// </summary>
+    internal static readonly InputLoading Loading = new(
+        "PDF document",
+        "Verify the file opens in a PDF reader and that its bytes are a PDF rather than a renamed file.",
+        static exception => exception switch
+        {
+            InvalidPasswordException => LoadFailureKind.Password,
+            _ when exception.GetType().Assembly.GetName().Name == "Aspose.PDF" => LoadFailureKind.Corrupt,
+            _ => LoadFailureKind.Other,
+        });
+
     public LoadedPdf Open(string path, Secret? password)
     {
         InputSizeGuard.Ensure(resourceBudgets, path);
@@ -57,21 +72,9 @@ internal sealed class PdfDocumentLoader(
             stream = null;
             return loaded;
         }
-        catch (InvalidPasswordException)
+        catch (Exception exception) when (exception is not CliException and not OperationCanceledException)
         {
-            throw password is null
-                ? CliErrors.PasswordRequired(path)
-                : CliErrors.PasswordInvalid(path);
-        }
-        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
-        {
-            throw exception is UnauthorizedAccessException
-                ? CliErrors.FileAccessDenied(path)
-                : File.Exists(path) ? CliErrors.FileLocked(path) : CliErrors.FileNotFound(path);
-        }
-        catch (Exception exception) when (exception.GetType().Assembly.GetName().Name == "Aspose.PDF")
-        {
-            throw InvalidPdf(path, exception.Message, exception);
+            throw Loading.Failure(exception, path, password);
         }
         finally
         {
@@ -81,35 +84,19 @@ internal sealed class PdfDocumentLoader(
 
     private static void EnsurePdfHeader(string path)
     {
-        try
+        bool found = Loading.Load(path, password: null, () =>
         {
             using FileStream stream = InputFiles.OpenRead(path);
             int length = (int)Math.Min(1024, stream.Length);
             Span<byte> bytes = stackalloc byte[length];
             _ = stream.Read(bytes);
-            if (bytes.IndexOf("%PDF-"u8) < 0)
-            {
-                throw InvalidPdf(path, "the PDF header was not found in the first 1024 bytes");
-            }
-        }
-        catch (CliException)
+            return bytes.IndexOf("%PDF-"u8) >= 0;
+        });
+        if (!found)
         {
-            throw;
-        }
-        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
-        {
-            throw exception is UnauthorizedAccessException
-                ? CliErrors.FileAccessDenied(path)
-                : File.Exists(path) ? CliErrors.FileLocked(path) : CliErrors.FileNotFound(path);
+            throw Loading.Unreadable(path, "the PDF header was not found in the first 1024 bytes");
         }
     }
-
-    private static CliException InvalidPdf(string path, string reason, Exception? inner = null) => CliErrors.InputUnreadable(
-        path,
-        "PDF document",
-        reason,
-        "Verify the file opens in a PDF reader and that its bytes are a PDF rather than a renamed file.",
-        inner);
 }
 
 /// <summary>A loaded document and the input stream it reads from, disposed together.</summary>
