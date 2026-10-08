@@ -3,9 +3,9 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 using Aspose.Cli.Sdk.Contracts;
-using Aspose.Cli.Sdk.Operations;
+using Aspose.Cli.Sdk.Serialization;
 
-namespace Aspose.Cli.Sdk.Serialization;
+namespace Aspose.Cli.Sdk.Operations;
 
 /// <summary>
 /// The wire protocol of an operation vocabulary; declare it on the vocabulary's base record
