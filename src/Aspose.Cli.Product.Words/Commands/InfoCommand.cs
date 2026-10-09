@@ -12,7 +12,6 @@ internal static class InfoCommand
         ["outline"] = "headings",
         ["sections"] = "page setup, headers and footers",
         ["properties"] = "title, author, subject and keywords",
-        ["fonts"] = "fonts used",
     };
 
     public static CommandDefinition<DocumentInfoRequest, DocumentInfoResult> Create()

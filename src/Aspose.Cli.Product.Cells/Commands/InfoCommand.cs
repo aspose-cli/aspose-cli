@@ -23,7 +23,6 @@ internal static class InfoCommand
         {
             [InfoDetails.Names] = "defined names",
             [InfoDetails.Errors] = "formula-error scan",
-            [InfoDetails.Fonts] = "fonts used",
             [InfoDetails.Layout] = "frozen panes, outline groups, filter, print area and page setup of each sheet",
         });
         return new(
