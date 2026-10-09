@@ -212,6 +212,19 @@ issue headings.
   other constraint also reaches the items of lists and maps. The operation generator builds
   the catalog and the handler dispatch, the catalog enforces the constraints and writes the ops
   schema, and analyzer `APCLI012` rejects an incomplete contract.
+- **Result contracts.** A result is declared once, as a record that passes its relative schema
+  id and version to its envelope base: `ResultEnvelope("render-result", 2)`, or
+  `EngineResultEnvelope` when its command runs an engine (it adds `license`) and
+  `WindowedResultEnvelope` for a bounded read or search (it adds a required `window`). A shared
+  block that is no result publishes itself with `[SchemaId("backup")]`; ids are relative to the
+  owner, `v2/common/` for the SDK and the Host and `v2/<product>/` for a product. Summaries,
+  `<param>` for positional members, are the schema's descriptions; `required` and nullability
+  state which members every result has, constraint attributes their values. `[AlwaysPresent]`
+  on a member that holds a shared record, or an array of them, requires that record's optional
+  members it always fills; `[OneOfBy]` types a member by a discriminator and `[OpenEnum]` admits
+  engine values outside `[AllowedValues]`. List the result in the assembly's JSON context: the
+  contract generator writes the schemas from the records, so they are not committed, and
+  `APCLI013` rejects a record it cannot describe completely.
 - **Error codes.** A code shared by products or the Host is declared once in the SDK's
   `ErrorCodes`, and its errors are built only by SDK error factories, one per situation, so
   each situation has one message, hint and details shape; `CliException` refuses a shared code
