@@ -23,7 +23,7 @@ internal static class RenderCommand
                 Input = PdfInputs.Document,
                 Output = OutputTarget.File("Output path; multi-page output adds .pN before the extension."),
                 UsesFonts = true,
-                Target = TargetFormat.Render("png, jpeg or svg.", PdfFormats.Definitions),
+                Target = TargetFormat.Render(PdfFormats.Definitions),
             },
             [.. pages.Options, .. dpi.Options, grid],
             (parse, standard) =>

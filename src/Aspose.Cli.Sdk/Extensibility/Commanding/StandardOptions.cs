@@ -84,12 +84,17 @@ public sealed class TargetFormat
     /// <summary>
     /// An optional <c>--to</c> among the product's render formats; when it is omitted, the
     /// <c>--out</c> extension names the format, and otherwise <paramref name="defaultFormat"/>.
+    /// Its help is the standard wording, such as <c>Image format: png, jpeg or svg. Default: png.</c>
     /// </summary>
-    /// <param name="description">Help for <c>--to</c>.</param>
     /// <param name="formats">The product's format declarations; those with the render use are offered.</param>
     /// <param name="defaultFormat">The render format id used when nothing else names one.</param>
-    public static TargetFormat Render(string description, IReadOnlyList<FormatDescriptor> formats, string defaultFormat = "png") =>
-        new(FormatUse.Render, description, formats, defaultFormat, required: false);
+    public static TargetFormat Render(IReadOnlyList<FormatDescriptor> formats, string defaultFormat = "png")
+    {
+        ArgumentNullException.ThrowIfNull(formats);
+        IReadOnlyList<string> ids = [.. formats.IdsFor(FormatUse.Render)];
+        string listed = ids.Count < 2 ? string.Concat(ids) : $"{string.Join(", ", ids.Take(ids.Count - 1))} or {ids[^1]}";
+        return new(FormatUse.Render, $"Image format: {listed}. Default: {defaultFormat}.", formats, defaultFormat, required: false);
+    }
 
     /// <summary>
     /// An optional <c>--to</c> among <paramref name="formats"/>, such as the formats a command

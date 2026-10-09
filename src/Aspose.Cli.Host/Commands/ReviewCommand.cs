@@ -39,7 +39,7 @@ internal static class ReviewCommand
                 .ToArray());
         var view = new Option<string>("--view")
         {
-            Description = "Review view; auto uses the product default.",
+            Description = "Product view; auto uses the product's default view.",
             DefaultValueFactory = _ => AutoView,
         }.WithInput(InputKind.None);
         view.AcceptOnlyFromAmong(

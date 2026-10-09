@@ -21,7 +21,7 @@ internal static class RenderCommand
                 Input = SlidesInputs.Presentation,
                 Output = OutputTarget.File("Output path; multi-slide output adds .sN before the extension."),
                 UsesFonts = true,
-                Target = TargetFormat.Render("png, jpeg or svg.", SlidesFormats.Definitions),
+                Target = TargetFormat.Render(SlidesFormats.Definitions),
             },
             [.. slides.Options, .. dpi.Options, width],
             (parse, standard) =>

@@ -272,7 +272,7 @@ public sealed class StandardCommandTests : IDisposable
         {
             Input = Report,
             Output = OutputTarget.File("Output path."),
-            Target = TargetFormat.Render("Image format.", formats),
+            Target = TargetFormat.Render(formats),
         };
         Command command = Create(traits, (_, standard) => Result(standard.Output.Format.Id + "|" + Path.GetFileName(standard.Output.Path)));
 
@@ -306,7 +306,7 @@ public sealed class StandardCommandTests : IDisposable
             folder.Hint);
         Assert.Throws<ArgumentException>(() => Create(traits with { Output = null }, (_, _) => Result()));
         Assert.Throws<ArgumentException>(() => Create(
-            traits with { Target = TargetFormat.Render("Image format.", formats, "doc") }, (_, _) => Result()));
+            traits with { Target = TargetFormat.Render(formats, "doc") }, (_, _) => Result()));
     }
 
     [Fact]

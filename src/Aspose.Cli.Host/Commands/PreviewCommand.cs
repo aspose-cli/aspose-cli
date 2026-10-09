@@ -183,7 +183,7 @@ internal static class PreviewCommand
         {
             var port = new Option<int>("--port")
             {
-                Description = "Loopback port of the viewer service when it starts; 0 chooses a free port.",
+                Description = "Loopback port; 0 chooses a free port.",
                 DefaultValueFactory = _ => 0,
             };
             var product = new Option<string?>("--product")
@@ -194,7 +194,7 @@ internal static class PreviewCommand
                 catalog.Products.Select(static item => item.Manifest.Id).ToArray());
             var view = new Option<string>("--view")
             {
-                Description = "Product view; auto uses the product's live view.",
+                Description = "Product view; auto uses the product's default view.",
                 DefaultValueFactory = _ => AutoView,
             }.WithInput(InputKind.None);
             view.AcceptOnlyFromAmong(

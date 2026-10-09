@@ -16,7 +16,7 @@ internal static class RenderCommand
                 Input = WordsInputs.Document,
                 Output = OutputTarget.File("Output path; multi-page output adds .pN before the extension."),
                 UsesFonts = true,
-                Target = TargetFormat.Render("png, jpeg or svg.", WordsFormats.Definitions),
+                Target = TargetFormat.Render(WordsFormats.Definitions),
             },
             [.. pages.Options, .. dpi.Options],
             (parse, standard) =>
