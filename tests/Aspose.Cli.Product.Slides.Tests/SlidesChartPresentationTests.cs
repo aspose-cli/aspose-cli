@@ -22,9 +22,10 @@ public sealed class SlidesChartPresentationTests
         SlidesEngineFixture fixture, string name, string kind, params double[] values)
     {
         string output = fixture.File(name);
-        fixture.Engine.ApplyOps(
-            fixture.CreatePresentation($"seed-{name}"),
-            new SlidesOpsBatch
+        SlidesEdit.Run(fixture.Session, new PresentationEditRequest
+        {
+            Input = fixture.CreatePresentation($"seed-{name}"),
+            Batch = new SlidesOpsBatch
             {
                 Ops =
                 [
@@ -38,7 +39,8 @@ public sealed class SlidesChartPresentationTests
                     },
                 ],
             },
-            new PresentationEditRequest { Output = TestOutput.At(output) });
+            Output = TestOutput.At(output),
+        });
         return output;
     }
 
@@ -85,15 +87,20 @@ public sealed class SlidesChartPresentationTests
         Assert.Null(ReadAxisScale(seeded, "valAx", "min"));
         string output = fixture.File("updated-baseline.pptx");
 
-        fixture.Engine.ApplyOps(seeded, new SlidesOpsBatch
+        SlidesEdit.Run(fixture.Session, new PresentationEditRequest
         {
-            Ops = [new UpdateChartDataOp
+            Input = seeded,
+            Batch = new SlidesOpsBatch
             {
-                Slide = 1,
-                ShapeId = FindChartShapeId(seeded),
-                Series = [new SlidesChartSeriesInput { Name = "Amount", Values = [first, second, third] }],
-            }],
-        }, new PresentationEditRequest { Output = TestOutput.At(output) });
+                Ops = [new UpdateChartDataOp
+                {
+                    Slide = 1,
+                    ShapeId = FindChartShapeId(seeded),
+                    Series = [new SlidesChartSeriesInput { Name = "Amount", Values = [first, second, third] }],
+                }],
+            },
+            Output = TestOutput.At(output),
+        });
 
         Assert.Equal("0", ReadAxisScale(output, "valAx", "min"));
         Assert.Null(ReadAxisScale(output, "catAx", "min"));
@@ -109,15 +116,20 @@ public sealed class SlidesChartPresentationTests
         Assert.Equal("0", ReadAxisScale(seeded, "valAx", "min"));
         string output = fixture.File("fixed-zero-updated.pptx");
 
-        fixture.Engine.ApplyOps(seeded, new SlidesOpsBatch
+        SlidesEdit.Run(fixture.Session, new PresentationEditRequest
         {
-            Ops = [new UpdateChartDataOp
+            Input = seeded,
+            Batch = new SlidesOpsBatch
             {
-                Slide = 1,
-                ShapeId = FindChartShapeId(seeded),
-                Series = [new SlidesChartSeriesInput { Name = "Amount", Values = [95, -100, 105] }],
-            }],
-        }, new PresentationEditRequest { Output = TestOutput.At(output) });
+                Ops = [new UpdateChartDataOp
+                {
+                    Slide = 1,
+                    ShapeId = FindChartShapeId(seeded),
+                    Series = [new SlidesChartSeriesInput { Name = "Amount", Values = [95, -100, 105] }],
+                }],
+            },
+            Output = TestOutput.At(output),
+        });
 
         // This verifies stored data and range preservation, not rendered visibility.
         // The fixed range must be reviewed separately when the new data falls outside it.
@@ -149,9 +161,10 @@ public sealed class SlidesChartPresentationTests
         SetValueAxisRange(seeded, 50, 200);
         string output = fixture.File("explicit.pptx");
 
-        fixture.Engine.ApplyOps(
-            seeded,
-            new SlidesOpsBatch
+        SlidesEdit.Run(fixture.Session, new PresentationEditRequest
+        {
+            Input = seeded,
+            Batch = new SlidesOpsBatch
             {
                 Ops =
                 [
@@ -163,7 +176,8 @@ public sealed class SlidesChartPresentationTests
                     },
                 ],
             },
-            new PresentationEditRequest { Output = TestOutput.At(output) });
+            Output = TestOutput.At(output),
+        });
 
         Assert.Equal("50", ReadAxisScale(output, "valAx", "min"));
         Assert.Equal("200", ReadAxisScale(output, "valAx", "max"));
@@ -177,9 +191,10 @@ public sealed class SlidesChartPresentationTests
         Assert.False(HasLegend(seeded));
         string output = fixture.File("legend.pptx");
 
-        fixture.Engine.ApplyOps(
-            seeded,
-            new SlidesOpsBatch
+        SlidesEdit.Run(fixture.Session, new PresentationEditRequest
+        {
+            Input = seeded,
+            Batch = new SlidesOpsBatch
             {
                 Ops =
                 [
@@ -195,7 +210,8 @@ public sealed class SlidesChartPresentationTests
                     },
                 ],
             },
-            new PresentationEditRequest { Output = TestOutput.At(output) });
+            Output = TestOutput.At(output),
+        });
 
         // Two series that cannot be told apart are unreadable.
         Assert.True(HasLegend(output));
@@ -215,17 +231,22 @@ public sealed class SlidesChartPresentationTests
         // The renderer draws labels that just fit edge to edge, as one run of text.
         using var fixture = new SlidesEngineFixture();
         string output = fixture.File($"{kind}-{width}.pptx");
-        fixture.Engine.ApplyOps(fixture.CreatePresentation($"seed-{kind}-{width}.pptx"), new SlidesOpsBatch
+        SlidesEdit.Run(fixture.Session, new PresentationEditRequest
         {
-            Ops = [new InsertChartOp
+            Input = fixture.CreatePresentation($"seed-{kind}-{width}.pptx"),
+            Batch = new SlidesOpsBatch
             {
-                Slide = 1,
-                Kind = kind,
-                Rect = new SlidesRectInput { X = 40, Y = 95, Width = width, Height = 270 },
-                Categories = ["Q4 2025", "Q1 2026", "Q2 2026", "Q3 2026"],
-                Series = [new SlidesChartSeriesInput { Name = "Revenue", Values = [10850, 11200, 11960, 12800] }],
-            }],
-        }, new PresentationEditRequest { Output = TestOutput.At(output) });
+                Ops = [new InsertChartOp
+                {
+                    Slide = 1,
+                    Kind = kind,
+                    Rect = new SlidesRectInput { X = 40, Y = 95, Width = width, Height = 270 },
+                    Categories = ["Q4 2025", "Q1 2026", "Q2 2026", "Q3 2026"],
+                    Series = [new SlidesChartSeriesInput { Name = "Revenue", Values = [10850, 11200, 11960, 12800] }],
+                }],
+            },
+            Output = TestOutput.At(output),
+        });
 
         using var reopened = new Presentation(output);
         float angle = Chart(reopened).Axes.HorizontalAxis.TextFormat.TextBlockFormat.RotationAngle;
@@ -288,19 +309,24 @@ public sealed class SlidesChartPresentationTests
         }
         string output = fixture.File("preserved-layout.pptx");
 
-        fixture.Engine.ApplyOps(seeded, new SlidesOpsBatch
+        SlidesEdit.Run(fixture.Session, new PresentationEditRequest
         {
-            Ops = [new UpdateChartDataOp
+            Input = seeded,
+            Batch = new SlidesOpsBatch
             {
-                Slide = 1,
-                ShapeId = FindChartShapeId(seeded),
-                Series =
-                [
-                    new SlidesChartSeriesInput { Name = "Actual", Values = [40] },
-                    new SlidesChartSeriesInput { Name = "Target", Values = [45] },
-                ],
-            }],
-        }, new PresentationEditRequest { Output = TestOutput.At(output) });
+                Ops = [new UpdateChartDataOp
+                {
+                    Slide = 1,
+                    ShapeId = FindChartShapeId(seeded),
+                    Series =
+                    [
+                        new SlidesChartSeriesInput { Name = "Actual", Values = [40] },
+                        new SlidesChartSeriesInput { Name = "Target", Values = [45] },
+                    ],
+                }],
+            },
+            Output = TestOutput.At(output),
+        });
 
         using var reopened = new Presentation(output);
         IChart result = Chart(reopened);
@@ -316,32 +342,42 @@ public sealed class SlidesChartPresentationTests
         // The built-in design's title slide is dark; a content slide is light, and a slide
         // given its own dark background is dark whatever its layout.
         string seed = fixture.File("contrast-seed.pptx");
-        fixture.Engine.Create(new NewPresentationRequest { Output = TestOutput.At(seed) });
-        fixture.Engine.ApplyOps(seed, new SlidesOpsBatch
+        SlidesCreate.Run(fixture.Session, new NewPresentationRequest { Output = TestOutput.At(seed) });
+        SlidesEdit.Run(fixture.Session, new PresentationEditRequest
         {
-            Ops =
-            [
-                new AddSlideOp { Layout = "Title and Content" },
-                new AddSlideOp { Layout = "Title and Content" },
-            ],
-        }, new PresentationEditRequest { Output = TestOutput.At(seed, overwrite: true) });
+            Input = seed,
+            Batch = new SlidesOpsBatch
+            {
+                Ops =
+                [
+                    new AddSlideOp { Layout = "Title and Content" },
+                    new AddSlideOp { Layout = "Title and Content" },
+                ],
+            },
+            Output = TestOutput.At(seed, overwrite: true),
+        });
         string output = fixture.File("contrast.pptx");
 
-        fixture.Engine.ApplyOps(seed, new SlidesOpsBatch
+        SlidesEdit.Run(fixture.Session, new PresentationEditRequest
         {
-            Ops =
-            [
-                new SetBackgroundOp { Slides = "3", Color = "#1F2A44" },
-                .. Enumerable.Range(1, 3).Select(static slide => new InsertChartOp
-                {
-                    Slide = slide,
-                    Kind = "bar",
-                    Rect = Frame,
-                    Categories = ["Target", "Actual"],
-                    Series = [new SlidesChartSeriesInput { Name = "Revenue", Values = [2.4, 1.82] }],
-                }),
-            ],
-        }, new PresentationEditRequest { Output = TestOutput.At(output) });
+            Input = seed,
+            Batch = new SlidesOpsBatch
+            {
+                Ops =
+                [
+                    new SetBackgroundOp { Slides = "3", Color = "#1F2A44" },
+                    .. Enumerable.Range(1, 3).Select(static slide => new InsertChartOp
+                    {
+                        Slide = slide,
+                        Kind = "bar",
+                        Rect = Frame,
+                        Categories = ["Target", "Actual"],
+                        Series = [new SlidesChartSeriesInput { Name = "Revenue", Values = [2.4, 1.82] }],
+                    }),
+                ],
+            },
+            Output = TestOutput.At(output),
+        });
 
         // On the light slide the chart keeps its style's own text color.
         using var deck = new Presentation(output);
@@ -387,22 +423,27 @@ public sealed class SlidesChartPresentationTests
     private static string InsertTitledChart(SlidesEngineFixture fixture, string name, string kind)
     {
         string output = fixture.File(name);
-        fixture.Engine.ApplyOps(fixture.CreatePresentation("seed-" + name), new SlidesOpsBatch
+        SlidesEdit.Run(fixture.Session, new PresentationEditRequest
         {
-            Ops = [new InsertChartOp
+            Input = fixture.CreatePresentation("seed-" + name),
+            Batch = new SlidesOpsBatch
             {
-                Slide = 1,
-                Kind = kind,
-                Rect = new SlidesRectInput { X = 40, Y = 106, Width = 305, Height = 238 },
-                Categories = ["Service"],
-                Series =
-                [
-                    new SlidesChartSeriesInput { Name = "Actual", Values = [36] },
-                    new SlidesChartSeriesInput { Name = "Target", Values = [40] },
-                ],
-                Title = "Efficiency improvement (%)",
-            }],
-        }, new PresentationEditRequest { Output = TestOutput.At(output) });
+                Ops = [new InsertChartOp
+                {
+                    Slide = 1,
+                    Kind = kind,
+                    Rect = new SlidesRectInput { X = 40, Y = 106, Width = 305, Height = 238 },
+                    Categories = ["Service"],
+                    Series =
+                    [
+                        new SlidesChartSeriesInput { Name = "Actual", Values = [36] },
+                        new SlidesChartSeriesInput { Name = "Target", Values = [40] },
+                    ],
+                    Title = "Efficiency improvement (%)",
+                }],
+            },
+            Output = TestOutput.At(output),
+        });
         return output;
     }
 

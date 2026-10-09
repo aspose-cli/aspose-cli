@@ -17,10 +17,15 @@ public sealed class SlidesPartialChartTests
         string seed = CreateChart(fixture, kind);
         long id = ChartId(seed);
         string output = fixture.File("categories.pptx");
-        fixture.Engine.ApplyOps(seed, new SlidesOpsBatch
+        SlidesEdit.Run(fixture.Session, new PresentationEditRequest
         {
-            Ops = [new UpdateChartDataOp { Slide = 1, ShapeId = id, Categories = ["C", "D"] }],
-        }, new PresentationEditRequest { Output = TestOutput.At(output) });
+            Input = seed,
+            Batch = new SlidesOpsBatch
+            {
+                Ops = [new UpdateChartDataOp { Slide = 1, ShapeId = id, Categories = ["C", "D"] }],
+            },
+            Output = TestOutput.At(output),
+        });
         using var reopened = new Presentation(output);
         IChart chart = Chart(reopened);
         Assert.Equal(["C", "D"], chart.ChartData.Categories.Select(category => category.AsCell.Value.ToString()!));
@@ -36,10 +41,15 @@ public sealed class SlidesPartialChartTests
         string seed = CreateChart(fixture, "scatter");
         string output = fixture.File("scatter-categories.pptx");
 
-        CliException error = Assert.Throws<CliException>(() => fixture.Engine.ApplyOps(seed, new SlidesOpsBatch
+        CliException error = Assert.Throws<CliException>(() => SlidesEdit.Run(fixture.Session, new PresentationEditRequest
         {
-            Ops = [new UpdateChartDataOp { Slide = 1, ShapeId = ChartId(seed), Categories = ["C", "D"] }],
-        }, new PresentationEditRequest { Output = TestOutput.At(output) }));
+            Input = seed,
+            Batch = new SlidesOpsBatch
+            {
+                Ops = [new UpdateChartDataOp { Slide = 1, ShapeId = ChartId(seed), Categories = ["C", "D"] }],
+            },
+            Output = TestOutput.At(output),
+        }));
 
         Assert.Equal(SlidesDiagnostics.ChartDataInvalid, error.Code);
         Assert.False(File.Exists(output));
@@ -51,17 +61,22 @@ public sealed class SlidesPartialChartTests
         using var fixture = new SlidesEngineFixture();
         string seed = CreateChart(fixture, "scatter");
         string output = fixture.File("series.pptx");
-        fixture.Engine.ApplyOps(seed, new SlidesOpsBatch
+        SlidesEdit.Run(fixture.Session, new PresentationEditRequest
         {
-            Ops =
-            [
-                new UpdateChartDataOp
-                {
-                    Slide = 1, ShapeId = ChartId(seed),
-                    Series = [new SlidesChartSeriesInput { Name = "New", Values = [50, 60], XValues = [5, 6] }],
-                },
-            ],
-        }, new PresentationEditRequest { Output = TestOutput.At(output) });
+            Input = seed,
+            Batch = new SlidesOpsBatch
+            {
+                Ops =
+                [
+                    new UpdateChartDataOp
+                    {
+                        Slide = 1, ShapeId = ChartId(seed),
+                        Series = [new SlidesChartSeriesInput { Name = "New", Values = [50, 60], XValues = [5, 6] }],
+                    },
+                ],
+            },
+            Output = TestOutput.At(output),
+        });
         using var reopened = new Presentation(output);
         IChart chart = Chart(reopened);
         Assert.Equal(["A", "B"], RowLabels(chart));
@@ -90,10 +105,10 @@ public sealed class SlidesPartialChartTests
                 },
             ],
         };
-        var request = new PresentationEditRequest { Output = TestOutput.At(output), Options = new EditCommandOptions { BestEffort = bestEffort } };
+        var request = new PresentationEditRequest { Input = seed, Batch = batch, Output = TestOutput.At(output), Options = new EditCommandOptions { BestEffort = bestEffort } };
         if (bestEffort)
         {
-            SlidesEditResult result = fixture.Engine.ApplyOps(seed, batch, request);
+            SlidesEditResult result = SlidesEdit.Run(fixture.Session, request);
             Assert.Equal("failed", Assert.Single(result.Applied).Status);
             using var reopened = new Presentation(output);
             Assert.Equal([10d, 20d], Values(Chart(reopened).ChartData.Series[0], scatter: true));
@@ -101,7 +116,7 @@ public sealed class SlidesPartialChartTests
         }
         else
         {
-            Assert.Throws<CliException>(() => fixture.Engine.ApplyOps(seed, batch, request));
+            Assert.Throws<CliException>(() => SlidesEdit.Run(fixture.Session, request));
             Assert.False(File.Exists(output));
         }
         Assert.Equal(original, File.ReadAllBytes(seed));
@@ -111,23 +126,28 @@ public sealed class SlidesPartialChartTests
     {
         string input = fixture.CreatePresentation(slides: 1);
         string output = fixture.File("chart.pptx");
-        fixture.Engine.ApplyOps(input, new SlidesOpsBatch
+        SlidesEdit.Run(fixture.Session, new PresentationEditRequest
         {
-            Ops =
-            [
-                new InsertChartOp
-                {
-                    Slide = 1, Kind = kind,
-                    Rect = new SlidesRectInput { X = 50, Y = 120, Width = 500, Height = 250 },
-                    Categories = ["A", "B"],
-                    Series =
-                    [
-                        new SlidesChartSeriesInput { Name = "One", Values = [10, 20], XValues = kind == "scatter" ? [1, 2] : null },
-                        new SlidesChartSeriesInput { Name = "Two", Values = [30, 40], XValues = kind == "scatter" ? [3, 4] : null },
-                    ],
-                },
-            ],
-        }, new PresentationEditRequest { Output = TestOutput.At(output) });
+            Input = input,
+            Batch = new SlidesOpsBatch
+            {
+                Ops =
+                [
+                    new InsertChartOp
+                    {
+                        Slide = 1, Kind = kind,
+                        Rect = new SlidesRectInput { X = 50, Y = 120, Width = 500, Height = 250 },
+                        Categories = ["A", "B"],
+                        Series =
+                        [
+                            new SlidesChartSeriesInput { Name = "One", Values = [10, 20], XValues = kind == "scatter" ? [1, 2] : null },
+                            new SlidesChartSeriesInput { Name = "Two", Values = [30, 40], XValues = kind == "scatter" ? [3, 4] : null },
+                        ],
+                    },
+                ],
+            },
+            Output = TestOutput.At(output),
+        });
         return output;
     }
 

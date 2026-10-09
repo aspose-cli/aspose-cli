@@ -7,28 +7,17 @@ using static Aspose.Cli.Product.Slides.Engine.SlidesEngineSupport;
 
 namespace Aspose.Cli.Product.Slides.Engine;
 
-/// <summary>Owns bounded extraction of embedded media, speaker notes and slide text.</summary>
-internal sealed class SlidesExtractionService
+/// <summary>Bounded extraction of embedded media, speaker notes and slide text.</summary>
+internal static class SlidesExtract
 {
-    private readonly OutputPipeline<Presentation> _outputs;
-    private readonly SlidesPresentationLoader _loader;
-
-    internal SlidesExtractionService(
-        OutputPipeline<Presentation> outputs,
-        SlidesPresentationLoader loader)
+    internal static SlidesExtractResult Run(SlidesSession session, PresentationExtractRequest request)
     {
-        _outputs = outputs ?? throw new ArgumentNullException(nameof(outputs));
-        _loader = loader;
-    }
-
-    internal SlidesExtractResult Extract(string filePath, PresentationExtractRequest request)
-    {
-        LicenseState state = _outputs.License;
-        using LoadedPresentation loaded = _loader.Open(filePath, request.Password);
+        LicenseState state = session.Outputs.License;
+        using LoadedPresentation loaded = session.Loader.Open(request.Input, request.Password);
         IReadOnlyList<int> slides = request.Slides is null
             ? Enumerable.Range(1, loaded.Presentation.Slides.Count).ToArray()
             : ResolveSlideRange(request.Slides, loaded.Presentation.Slides.Count);
-        using ExtractionGuard guard = _outputs.BeginExtraction(request.Output.Path, request.Output.Overwrite);
+        using ExtractionGuard guard = session.Outputs.BeginExtraction(request.Output.Path, request.Output.Overwrite);
         var items = new List<SlidesExtractedItem>();
 
         if (request.What == PresentationExtractKinds.Media)
@@ -69,7 +58,7 @@ internal sealed class SlidesExtractionService
         guard.Commit();
         return new SlidesExtractResult
         {
-            Input = Source(filePath, loaded.FormatId),
+            Input = Source(request.Input, loaded.FormatId),
             What = request.What,
             Items = items,
             License = EnvelopeParts.License(state),

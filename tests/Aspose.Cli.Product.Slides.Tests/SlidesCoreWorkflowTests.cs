@@ -29,7 +29,8 @@ public sealed class SlidesCoreWorkflowTests
         string input = fixture.CreatePresentation("view.pptx", slides: 2, password);
         var artifacts = new MemoryArtifactSink();
 
-        ViewManifest manifest = fixture.Engine.RenderView(
+        ViewManifest manifest = SlidesView.Render(
+            fixture.Session,
             input,
             new ViewRenderRequest
             {
@@ -69,7 +70,7 @@ public sealed class SlidesCoreWorkflowTests
             "# Revenue briefing\n\nRevenue grew in the current quarter.");
         string presentation = fixture.File("briefing.pptx");
 
-        SlidesCreateResult created = fixture.Engine.Create(new NewPresentationRequest
+        SlidesCreateResult created = SlidesCreate.Run(fixture.Session, new NewPresentationRequest
         {
             Output = TestOutput.At(presentation),
             MarkdownPath = markdown,
@@ -80,19 +81,21 @@ public sealed class SlidesCoreWorkflowTests
 
         string searchable = fixture.CreatePresentation("searchable.pptx", slides: 1);
 
-        SlidesSearchResult search = fixture.Engine.Search(
-            searchable,
+        SlidesSearchResult search = SlidesSearch.Run(
+            fixture.Session,
             new PresentationSearchRequest
             {
+                Input = searchable,
                 Query = new SearchQuery(TextSearch.Create("Slide", regex: false, caseSensitive: false), 1, Scope: null),
             });
         SlidesSearchHit hit = Assert.Single(search.Hits);
         Assert.Contains("Slide", hit.Text, StringComparison.Ordinal);
 
-        SlidesExtractResult extracted = fixture.Engine.Extract(
-            searchable,
+        SlidesExtractResult extracted = SlidesExtract.Run(
+            fixture.Session,
             new PresentationExtractRequest
             {
+                Input = searchable,
                 Output = new ResolvedDirectory(fixture.File("text")),
                 What = PresentationExtractKinds.Text,
             });
@@ -118,10 +121,11 @@ public sealed class SlidesCoreWorkflowTests
         string input = fixture.CreatePresentation("convert.pptx", slides: 2);
         string output = fixture.File("converted" + SlidesFormats.Definitions.ExtensionFor(format));
 
-        SlidesConvertResult result = fixture.Disclosed(engine => engine.Convert(
-            input,
+        SlidesConvertResult result = fixture.Disclosed(session => SlidesExport.Convert(
+            session,
             new PresentationConvertRequest
             {
+                Input = input,
                 Output = TestOutput.At(output, format: format),
                 Slides = PageRange.Parse("1"),
             }));

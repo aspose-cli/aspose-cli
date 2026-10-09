@@ -4,7 +4,7 @@ using Aspose.Cli.Sdk.Views;
 namespace Aspose.Cli.Product.Slides;
 
 /// <summary>Slide views and the conservative layout findings of their review.</summary>
-internal sealed class SlidesViewAdapter : IProductViewAdapter<ISlidesEngine>
+internal sealed class SlidesViewAdapter : IProductViewAdapter<SlidesSession>
 {
     public IReadOnlyList<ProductView> Views { get; } =
         [new(SlidesViews.Slides, "Slides", ViewPartKinds.Image)];
@@ -18,25 +18,27 @@ internal sealed class SlidesViewAdapter : IProductViewAdapter<ISlidesEngine>
     public IReadOnlyList<ReviewCheck> Checks => SlidesReviewChecks.All;
 
     public ViewManifest Render(
-        ISlidesEngine port,
+        SlidesSession session,
         string filePath,
         ViewRenderRequest request,
         IViewArtifactSink artifacts) =>
-        port.RenderView(filePath, request, artifacts);
+        SlidesView.Render(session, filePath, request, artifacts);
 
     public ProductReviewAssessment Assess(
-        ISlidesEngine port,
+        SlidesSession session,
         string filePath,
         ViewRenderRequest request,
         ViewManifest rendered)
     {
-        PresentationInfoResult info = port.GetInfo(filePath, new PresentationInfoRequest
+        PresentationInfoResult info = SlidesInfo.Run(session, new PresentationInfoRequest
         {
+            Input = filePath,
             Password = request.Password,
         });
         int inspected = rendered.Parts.Count;
-        PresentationReadResult read = port.Read(filePath, new PresentationReadRequest
+        PresentationReadResult read = SlidesRead.Run(session, new PresentationReadRequest
         {
+            Input = filePath,
             Slides = inspected == 0 ? null : PageRange.Parse($"1-{inspected}"),
             Scope = PresentationReadScopes.Full,
             MaxCharacters = 1_000_000,

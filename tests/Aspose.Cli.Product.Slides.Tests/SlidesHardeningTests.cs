@@ -49,8 +49,9 @@ public sealed class SlidesHardeningTests
                 "Reply", slide, new System.Drawing.PointF(10, 10), DateTime.UtcNow);
             presentation.Save(input, Aspose.Slides.Export.SaveFormat.Pptx);
         }
-        PresentationReadResult read = fixture.Engine.Read(input, new PresentationReadRequest
+        PresentationReadResult read = SlidesRead.Run(fixture.Session, new PresentationReadRequest
         {
+            Input = input,
             Slides = PageRange.Parse("1"), Scope = scope, IncludeNotes = true, MaxCharacters = budget,
         });
         SlideData result = Assert.Single(read.Slides);
@@ -68,16 +69,17 @@ public sealed class SlidesHardeningTests
         using var fixture = new SlidesEngineFixture();
         string input = fixture.CreatePresentation("windowed.pptx", slides: 12);
 
-        PresentationInfoResult info = fixture.Engine.GetInfo(
-            input,
-            new PresentationInfoRequest());
-        PresentationReadResult window = fixture.Engine.Read(
-            input,
-            new PresentationReadRequest { Scope = PresentationReadScopes.Text });
-        SlidesRenderResult rendered = fixture.Engine.Render(
-            input,
+        PresentationInfoResult info = SlidesInfo.Run(
+            fixture.Session,
+            new PresentationInfoRequest { Input = input });
+        PresentationReadResult window = SlidesRead.Run(
+            fixture.Session,
+            new PresentationReadRequest { Input = input, Scope = PresentationReadScopes.Text });
+        SlidesRenderResult rendered = SlidesExport.Render(
+            fixture.Session,
             new PresentationRenderRequest
             {
+                Input = input,
                 Output = TestOutput.At(fixture.File("bounded.png"), format: "png"),
                 Slides = PageRange.Parse("1,12"),
                 Width = 320,
@@ -107,15 +109,17 @@ public sealed class SlidesHardeningTests
         File.WriteAllText(markdown, "# A title longer than five characters\n\n- A bullet longer than five characters\n");
         bool evaluation = fixture.LicenseState == Sdk.Licensing.LicenseState.Evaluation;
 
-        Assert.Equal(evaluation, CutShort(fixture.Engine.Read(input, new PresentationReadRequest { Scope = PresentationReadScopes.Text }).Warnings));
-        Assert.Equal(evaluation, CutShort(fixture.Engine.Extract(input, new PresentationExtractRequest { Output = new ResolvedDirectory(fixture.File("text")), What = PresentationExtractKinds.Text }).Warnings));
-        Assert.Equal(evaluation, CutShort(fixture.Engine.Convert(input, new PresentationConvertRequest { Output = TestOutput.At(fixture.File("cut-short.out.md"), format: "md") }).Warnings));
-        Assert.False(CutShort(fixture.Engine.Convert(input, new PresentationConvertRequest { Output = TestOutput.At(fixture.File("cut-short.pdf"), format: "pdf") }).Warnings));
-        Assert.False(CutShort(fixture.Engine.Create(new NewPresentationRequest { Output = TestOutput.At(fixture.File("created.pptx")), MarkdownPath = markdown }).Warnings));
-        Assert.False(CutShort(fixture.Engine.ApplyOps(
-            input,
-            new SlidesOpsBatch { Ops = [new SlidesSetPropertiesOp { Title = "Briefing" }] },
-            new PresentationEditRequest { Output = TestOutput.At(fixture.File("edited.pptx")) }).Warnings));
+        Assert.Equal(evaluation, CutShort(SlidesRead.Run(fixture.Session, new PresentationReadRequest { Input = input, Scope = PresentationReadScopes.Text }).Warnings));
+        Assert.Equal(evaluation, CutShort(SlidesExtract.Run(fixture.Session, new PresentationExtractRequest { Input = input, Output = new ResolvedDirectory(fixture.File("text")), What = PresentationExtractKinds.Text }).Warnings));
+        Assert.Equal(evaluation, CutShort(SlidesExport.Convert(fixture.Session, new PresentationConvertRequest { Input = input, Output = TestOutput.At(fixture.File("cut-short.out.md"), format: "md") }).Warnings));
+        Assert.False(CutShort(SlidesExport.Convert(fixture.Session, new PresentationConvertRequest { Input = input, Output = TestOutput.At(fixture.File("cut-short.pdf"), format: "pdf") }).Warnings));
+        Assert.False(CutShort(SlidesCreate.Run(fixture.Session, new NewPresentationRequest { Output = TestOutput.At(fixture.File("created.pptx")), MarkdownPath = markdown }).Warnings));
+        Assert.False(CutShort(SlidesEdit.Run(fixture.Session, new PresentationEditRequest
+        {
+            Input = input,
+            Batch = new SlidesOpsBatch { Ops = [new SlidesSetPropertiesOp { Title = "Briefing" }] },
+            Output = TestOutput.At(fixture.File("edited.pptx")),
+        }).Warnings));
 
         static bool CutShort(IReadOnlyList<Warning>? warnings) =>
             warnings?.Any(static warning => warning.Code == WarningCodes.EvalInputTruncated) == true;
@@ -138,10 +142,11 @@ public sealed class SlidesHardeningTests
         string output = fixture.File("too-large.png");
 
         CliException error = Assert.Throws<CliException>(() =>
-            fixture.Engine.Render(
-                input,
+            SlidesExport.Render(
+                fixture.Session,
                 new PresentationRenderRequest
                 {
+                    Input = input,
                     Output = TestOutput.At(output, format: "png"),
                     AllSlides = true,
                     Dpi = 1200,
@@ -160,13 +165,15 @@ public sealed class SlidesHardeningTests
         string widthOutput = fixture.File("width.png");
         string dpiOutput = fixture.File("dpi.png");
 
-        fixture.Engine.Render(input, new PresentationRenderRequest
+        SlidesExport.Render(fixture.Session, new PresentationRenderRequest
         {
+            Input = input,
             Output = TestOutput.At(widthOutput, format: "png"),
             Width = 640,
         });
-        fixture.Engine.Render(input, new PresentationRenderRequest
+        SlidesExport.Render(fixture.Session, new PresentationRenderRequest
         {
+            Input = input,
             Output = TestOutput.At(dpiOutput, format: "png"),
             Dpi = 150,
         });
@@ -185,7 +192,7 @@ public sealed class SlidesHardeningTests
         string input = fixture.File("malformed" + extension);
         File.WriteAllBytes(input, content);
         CliException infoError = Assert.Throws<CliException>(() =>
-            fixture.Engine.GetInfo(input, new PresentationInfoRequest()));
+            SlidesInfo.Run(fixture.Session, new PresentationInfoRequest { Input = input }));
 
         Assert.Equal(ErrorCodes.FileCorrupt, infoError.Code);
     }
@@ -199,10 +206,11 @@ public sealed class SlidesHardeningTests
         string output = fixture.File("malformed.pdf");
 
         CliException error = Assert.Throws<CliException>(() =>
-            fixture.Engine.Convert(
-                input,
+            SlidesExport.Convert(
+                fixture.Session,
                 new PresentationConvertRequest
                 {
+                    Input = input,
                     Output = TestOutput.At(output, format: "pdf"),
                 }));
 

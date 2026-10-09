@@ -46,7 +46,8 @@ public sealed class SlidesViewLayoutTests
     }
 
     private static ViewManifest Render(SlidesEngineFixture fixture, string path) =>
-        fixture.Engine.RenderView(
+        SlidesView.Render(
+            fixture.Session,
             path,
             new ViewRenderRequest
             {
