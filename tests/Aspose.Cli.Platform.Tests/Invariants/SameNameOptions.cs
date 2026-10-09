@@ -104,8 +104,8 @@ internal static class SameNameOptions
             "The ops JSON: a path to the document, '-' to read it from stdin, or the document itself when the value starts "
             + "with { or [ (inline). To name a file whose name starts with '[', prefix it with ./ . Vocabulary: aspose-cli "
             + "schema v2/") + "[a-z]+" + Regex.Escape("/ops.") + "$"),
-        new("--max-chars", @"^Maximum characters returned, counting .+\. Range 1-10000000, default 20000\.$"),
-        new("--to", @"^Image format: png, jpeg or svg\. Default: png\.$", static command => command.EndsWith(" render", StringComparison.Ordinal)),
+        new("--max-chars", @"^Maximum characters returned, counting .+\. Range 1-10000000\.$"),
+        new("--to", @"^Image format: png, jpeg or svg\.$", static command => command.EndsWith(" render", StringComparison.Ordinal)),
         new("--password", PasswordTemplate("--password")),
         new("--password-env", PasswordEnvTemplate),
         new("--password-stdin", @"^Read the password for .+ from the first line of stdin\.$"),
