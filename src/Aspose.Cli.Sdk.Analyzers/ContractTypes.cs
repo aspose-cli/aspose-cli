@@ -51,6 +51,7 @@ internal static class ContractTypes
     {
         ["MinItemsAttribute"] = ["Array"],
         ["MaxItemsAttribute"] = ["Array"],
+        ["UniqueItemsAttribute"] = ["Array"],
         ["MinimumAttribute"] = ["Integer", "Number"],
         ["MaximumAttribute"] = ["Integer", "Number"],
         ["ExclusiveMinimumAttribute"] = ["Integer", "Number"],

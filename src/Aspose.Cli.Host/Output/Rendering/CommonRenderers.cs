@@ -283,14 +283,15 @@ internal static class CommonRenderers
         surface.Out.WriteLine($"  pid:      {TableText.Int(preview.Pid)}");
     }
 
-    public static void Render(ProductPreviewStatusResult preview, TableSurface surface) =>
-        RenderPreviewSessions(preview.Sessions, surface);
-
-    public static void Render(ProductPreviewStopResult preview, TableSurface surface)
+    public static void Render(ProductPreviewStatusResult preview, TableSurface surface)
     {
-        surface.Out.WriteLine(preview.Stopped.Count == 0
-            ? "no matching preview session was running"
-            : $"stopped: {string.Join(", ", preview.Stopped)}");
+        if (preview.Stopped is { } stopped)
+        {
+            surface.Out.WriteLine(stopped.Count == 0
+                ? "no matching preview session was running"
+                : $"stopped: {string.Join(", ", stopped)}");
+        }
+
         RenderPreviewSessions(preview.Sessions, surface);
     }
 

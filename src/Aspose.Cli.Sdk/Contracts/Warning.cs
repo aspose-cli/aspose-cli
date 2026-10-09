@@ -6,21 +6,27 @@ namespace Aspose.Cli.Sdk.Contracts;
 /// A non-fatal condition the caller should act on. Warnings are part of the
 /// public contract, and <see cref="Hint"/> tells an agent what to do next.
 /// </summary>
+[SchemaId("warning")]
 public sealed record Warning
 {
     /// <summary>Stable SCREAMING_SNAKE_CASE identifier, e.g. <c>EVAL_MODE</c>.</summary>
+    [Pattern("^[A-Z][A-Z0-9_]*$")]
     public required string Code { get; init; }
 
     /// <summary>Human-readable statement of the condition.</summary>
+    [MinLength(1)]
     public required string Message { get; init; }
 
     /// <summary>Recommended next action for the caller.</summary>
+    [MinLength(1)]
     public string? Hint { get; init; }
 
     /// <summary>Topic name for <c>aspose-cli docs &lt;topic&gt;</c> with background details.</summary>
+    [MinLength(1)]
     public string? Docs { get; init; }
 
     /// <summary>Stable product-owned address of the affected item, when known.</summary>
+    [MinLength(1)]
     public string? Location { get; init; }
 
     /// <summary>

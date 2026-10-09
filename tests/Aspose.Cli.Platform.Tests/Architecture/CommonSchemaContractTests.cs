@@ -8,7 +8,6 @@ using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Operations;
 using Aspose.Cli.Sdk.Serialization;
-using Aspose.Cli.Sdk.Resources;
 using Aspose.Cli.Host.Serialization;
 using Aspose.Cli.Platform.Tests.Sdk;
 using Json.Schema;
@@ -21,8 +20,9 @@ namespace Aspose.Cli.Architecture.Tests;
 /// <summary>Real JSON Schema validation for Host/SDK result envelopes.</summary>
 public sealed class CommonSchemaContractTests
 {
-    private static readonly string RepositoryRoot = RepositoryPaths.Root;
+    private const string UriPrefix = "https://schemas.aspose.com/aspose-cli/";
     private static readonly ProductCatalog CommonCatalog = CreateCatalog();
+    private static readonly BuildOptions CommonSchemas = SchemaTestRegistry.CreateOptions();
 
     [Fact]
     public void EveryCommonCanonicalResult_ConformsToItsDeclaredSchema()
@@ -32,8 +32,7 @@ public sealed class CommonSchemaContractTests
 
         foreach (CommonSchemaSample sample in samples)
         {
-            string schemaPath = SchemaPath(sample.Schema);
-            JsonSchema schema = ParseSchema(File.ReadAllText(schemaPath));
+            JsonSchema schema = CommonSchema(sample.Schema);
             string json = new HostContractJson(CommonCatalog)
                 .Serializer.Serialize(sample.Value);
             using JsonDocument instance = JsonDocument.Parse(json);
@@ -61,39 +60,18 @@ public sealed class CommonSchemaContractTests
     [Fact]
     public void EveryCommonSchema_ParsesAndHasCanonicalIdentity()
     {
-        string directory = Path.Combine(
-            RepositoryRoot,
-            "src",
-            "Aspose.Cli.Sdk",
-            "Schemas");
-        string[] schemas = Directory.GetFiles(
-            directory,
-            "*.schema.json",
-            SearchOption.AllDirectories)
-            .Where(path => string.Equals(
-                new FileInfo(path).Directory?.Name,
-                "common",
-                StringComparison.Ordinal))
-            .ToArray();
-        Assert.NotEmpty(schemas);
-        foreach (string path in schemas)
+        Assert.Contains("v2/common/error", SdkSchemaCatalog.Ids);
+        foreach (string id in SdkSchemaCatalog.Ids)
         {
-            string text = File.ReadAllText(path);
-            _ = ParseSchema(text);
+            Assert.StartsWith("v2/common/", id, StringComparison.Ordinal);
+            string text = SdkSchemaCatalog.Read(id);
+            Assert.NotNull(CommonSchema(UriPrefix + id + ".schema.json"));
             JsonObject document = JsonNode.Parse(text)!.AsObject();
             Assert.Equal(
                 "https://json-schema.org/draft/2020-12/schema",
                 document["$schema"]?.GetValue<string>());
-            string relative = Path.GetRelativePath(
-                    Path.Combine(
-                        RepositoryRoot,
-                        "src",
-                        "Aspose.Cli.Sdk",
-                        "Schemas"),
-                    path)
-                .Replace(Path.DirectorySeparatorChar, '/');
             Assert.Equal(
-                "https://schemas.aspose.com/aspose-cli/" + relative,
+                UriPrefix + id + ".schema.json",
                 document["$id"]?.GetValue<string>());
         }
     }
@@ -110,7 +88,7 @@ public sealed class CommonSchemaContractTests
         ProductPreviewStartResult sample = CommonSchemaSamples.ProductPreviewStart with { Url = url };
         string json = new HostContractJson(CommonCatalog).Serializer.Serialize(sample);
         using JsonDocument instance = JsonDocument.Parse(json);
-        JsonSchema schema = ParseSchema(SdkSchemaCatalog.Read("v2/common/preview-session"));
+        JsonSchema schema = CommonSchema(CommonSchemaIds.PreviewSession);
         Assert.Equal(valid, schema.Evaluate(instance.RootElement).IsValid);
     }
 
@@ -128,7 +106,7 @@ public sealed class CommonSchemaContractTests
         };
         string json = new HostContractJson(CommonCatalog).Serializer.Serialize(sample);
         JsonObject instance = JsonNode.Parse(json)!.AsObject();
-        JsonSchema schema = ParseSchema(SdkSchemaCatalog.Read("v2/common/doctor"));
+        JsonSchema schema = CommonSchema(CommonSchemaIds.Doctor);
         using JsonDocument complete = JsonDocument.Parse(json);
         Assert.Equal(valid, schema.Evaluate(complete.RootElement).IsValid);
         instance["products"]![0]!.AsObject().Remove("engine");
@@ -175,7 +153,7 @@ public sealed class CommonSchemaContractTests
         foreach ((string id, string json) in contracts)
         {
             Assert.Contains(id, SdkSchemaCatalog.Ids);
-            JsonSchema schema = JsonSchema.FromText(SdkSchemaCatalog.Read(id));
+            JsonSchema schema = CommonSchema(UriPrefix + id + ".schema.json");
             using JsonDocument instance = JsonDocument.Parse(json);
             Assert.True(schema.Evaluate(instance.RootElement).IsValid, id);
         }
@@ -209,58 +187,48 @@ public sealed class CommonSchemaContractTests
     [Fact]
     public void CommonWarningShapes_AllowStructuredVisualEvidence()
     {
-        string directory = Path.Combine(
-            RepositoryRoot,
-            "src",
-            "Aspose.Cli.Sdk",
-            "Schemas",
-            "v2",
-            "common");
-        string[] files =
+        string[] results =
         [
-            "app-result.schema.json",
-            "capabilities-summary.schema.json",
-            "doctor.schema.json",
-            "font-check.schema.json",
-            "font-list.schema.json",
-            "license-status.schema.json",
-            "preview-session.schema.json",
-            "preview-status.schema.json",
-            "review.schema.json",
-            "schema-list.schema.json",
-            "skill-install.schema.json",
-            "skill-list.schema.json",
-            "version.schema.json",
+            "app-result",
+            "capabilities-summary",
+            "doctor",
+            "font-check",
+            "font-list",
+            "license-status",
+            "preview-session",
+            "preview-status",
+            "review",
+            "schema-list",
+            "skill-install",
+            "skill-list",
+            "version",
         ];
+        const string WarningUri = UriPrefix + "v2/common/warning.schema.json";
 
-        foreach (string file in files)
+        foreach (string id in results)
         {
-            JsonObject document = JsonNode.Parse(
-                File.ReadAllText(Path.Combine(directory, file)))!.AsObject();
-            JsonObject warning = Assert.Single(
-                DescendantObjects(document),
-                static item => item["required"] is JsonArray required
-                    && required.Any(static value => value?.GetValue<string>() == "code")
-                    && required.Any(static value => value?.GetValue<string>() == "message")
-                    && item["properties"]?["docs"] is not null);
-            JsonObject properties = warning["properties"]!.AsObject();
-            Assert.False(warning["additionalProperties"]!.GetValue<bool>());
-            Assert.Equal(1, properties["location"]!["minLength"]!.GetValue<int>());
-            Assert.Equal(
-                "boolean",
-                properties["affectsCompleteness"]!["type"]!.GetValue<string>());
-
-            JsonSchema schema = JsonSchema.FromText(warning.ToJsonString());
-            using JsonDocument valid = JsonDocument.Parse(
-                """{"code":"VISUAL_LIMITED","message":"Evidence is incomplete.","location":"page:2","affectsCompleteness":true}""");
-            using JsonDocument invalid = JsonDocument.Parse(
-                """{"code":"VISUAL_LIMITED","message":"Evidence is incomplete.","location":""}""");
-            using JsonDocument unknown = JsonDocument.Parse(
-                """{"code":"VISUAL_LIMITED","message":"Evidence is incomplete.","unexpected":true}""");
-            Assert.True(schema.Evaluate(valid.RootElement).IsValid, file);
-            Assert.False(schema.Evaluate(invalid.RootElement).IsValid, file);
-            Assert.False(schema.Evaluate(unknown.RootElement).IsValid, file);
+            JsonObject document = JsonNode.Parse(SdkSchemaCatalog.Read("v2/common/" + id))!.AsObject();
+            Assert.Equal(WarningUri, document["properties"]!["warnings"]!["items"]!["$ref"]!.GetValue<string>());
         }
+
+        JsonObject warning = JsonNode.Parse(SdkSchemaCatalog.Read("v2/common/warning"))!.AsObject();
+        JsonObject properties = warning["properties"]!.AsObject();
+        Assert.False(warning["additionalProperties"]!.GetValue<bool>());
+        Assert.Equal(1, properties["location"]!["minLength"]!.GetValue<int>());
+        Assert.Equal(
+            "boolean",
+            properties["affectsCompleteness"]!["type"]!.GetValue<string>());
+
+        JsonSchema schema = CommonSchema(WarningUri);
+        using JsonDocument valid = JsonDocument.Parse(
+            """{"code":"VISUAL_LIMITED","message":"Evidence is incomplete.","location":"page:2","affectsCompleteness":true}""");
+        using JsonDocument invalid = JsonDocument.Parse(
+            """{"code":"VISUAL_LIMITED","message":"Evidence is incomplete.","location":""}""");
+        using JsonDocument unknown = JsonDocument.Parse(
+            """{"code":"VISUAL_LIMITED","message":"Evidence is incomplete.","unexpected":true}""");
+        Assert.True(schema.Evaluate(valid.RootElement).IsValid);
+        Assert.False(schema.Evaluate(invalid.RootElement).IsValid);
+        Assert.False(schema.Evaluate(unknown.RootElement).IsValid);
     }
 
     /// <summary>Names every integer count of the SDK and Host contracts <c>&lt;noun&gt;Count</c>.</summary>
@@ -281,55 +249,11 @@ public sealed class CommonSchemaContractTests
         Assert.Contains("references unowned schema 'v2/test/ops'", error.Message, StringComparison.Ordinal);
     }
 
-    private static string SchemaPath(string schema)
+    /// <summary>A common schema by its canonical URI, with every common schema registered for its references.</summary>
+    private static JsonSchema CommonSchema(string uri)
     {
-        const string prefix = "https://schemas.aspose.com/aspose-cli/";
-        Assert.StartsWith(prefix, schema, StringComparison.Ordinal);
-        string relative = schema[prefix.Length..]
-            .Replace('/', Path.DirectorySeparatorChar);
-        string path = Path.Combine(
-            RepositoryRoot,
-            "src",
-            "Aspose.Cli.Sdk",
-            "Schemas",
-            relative);
-        Assert.True(File.Exists(path), $"Schema does not exist: {path}");
-        return path;
-    }
-
-    private static JsonSchema ParseSchema(string document) =>
-        JsonSchema.FromText(
-            document,
-            new BuildOptions
-            {
-                SchemaRegistry = new SchemaRegistry(),
-            });
-
-    private static IEnumerable<JsonObject> DescendantObjects(JsonNode node)
-    {
-        if (node is JsonObject item)
-        {
-            yield return item;
-            foreach (JsonNode child in item.Select(static pair => pair.Value)
-                         .Where(static child => child is not null).Cast<JsonNode>())
-            {
-                foreach (JsonObject descendant in DescendantObjects(child))
-                {
-                    yield return descendant;
-                }
-            }
-        }
-        else if (node is JsonArray items)
-        {
-            foreach (JsonNode child in items.Where(static child => child is not null)
-                         .Cast<JsonNode>())
-            {
-                foreach (JsonObject descendant in DescendantObjects(child))
-                {
-                    yield return descendant;
-                }
-            }
-        }
+        Assert.StartsWith(UriPrefix, uri, StringComparison.Ordinal);
+        return Assert.IsType<JsonSchema>(CommonSchemas.SchemaRegistry.Get(new Uri(uri)));
     }
 
     private static ProductCatalog CreateCatalog(

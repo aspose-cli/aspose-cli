@@ -8,11 +8,14 @@ namespace Aspose.Cli.Sdk.Contracts;
 /// Exit codes are coarse and frozen; <see cref="ErrorPayload.Code"/> carries
 /// the precise, machine-readable meaning.
 /// </summary>
+[SchemaId("error")]
 public sealed record ErrorEnvelope
 {
+    /// <summary>URI of the JSON schema this error conforms to.</summary>
     [JsonPropertyOrder(-100)]
     public string Schema { get; } = CommonSchemaIds.Error;
 
+    /// <summary>Version of the error contract.</summary>
     [JsonPropertyOrder(-99)]
     public int SchemaVersion { get; } = 2;
 
@@ -29,6 +32,7 @@ public sealed record ErrorEnvelope
 public sealed record ErrorPayload
 {
     /// <summary>Stable SCREAMING_SNAKE_CASE error code, e.g. <c>SHEET_NOT_FOUND</c>.</summary>
+    [Pattern("^[A-Z][A-Z0-9_]*$")]
     public required string Code { get; init; }
 
     /// <summary>Human-readable description of what went wrong.</summary>

@@ -1,13 +1,17 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Collections.Frozen;
+using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Operations;
+using Aspose.Cli.Sdk.Serialization;
 
 namespace Aspose.Cli.Sdk.Extensibility;
 
 /// <summary>
 /// Immutable aggregate of schemas and other product-owned embedded resources. An operation
 /// vocabulary owns its schema id here: its schema and per-operation views are served from the
-/// vocabulary's records, not from an embedded file.
+/// vocabulary's records, not from an embedded file. A product's result schemas are written from
+/// the result records its contract generator described; a product that has not moved to them
+/// yet still serves its embedded schema files.
 /// </summary>
 public sealed class ProductResourceCatalog
 {
@@ -44,10 +48,10 @@ public sealed class ProductResourceCatalog
     public IReadOnlyList<ProductPackageResources> Products { get; }
 
     internal static ProductResourceCatalog Build(
-        IEnumerable<(ProductPackageResources Package, ProductManifest Manifest)> products)
+        IEnumerable<(ProductPackageResources Package, ProductManifest Manifest, IReadOnlyList<ResultRecord> Results)> products)
     {
         ArgumentNullException.ThrowIfNull(products);
-        (ProductPackageResources Package, ProductManifest Manifest)[] entries = products.ToArray();
+        (ProductPackageResources Package, ProductManifest Manifest, IReadOnlyList<ResultRecord> Results)[] entries = products.ToArray();
         ProductPackageResources[] packages = entries.Select(static entry => entry.Package).ToArray();
         var schemas = new Dictionary<string, ResourceEntry>(StringComparer.Ordinal);
         foreach (ProductPackageResources package in packages)
@@ -64,15 +68,24 @@ public sealed class ProductResourceCatalog
         }
         // Schemas and their views are written on first use: most invocations never read one.
         var operationSchemas = new Dictionary<string, GeneratedOperationSchema>(StringComparer.Ordinal);
-        foreach ((ProductPackageResources package, ProductManifest manifest) in entries)
+        foreach ((ProductPackageResources package, ProductManifest manifest, IReadOnlyList<ResultRecord> results) in entries)
         {
             foreach (ProductOperationCommand command in manifest.Operations)
             {
                 string id = command.Descriptor.InputSchema;
                 if (operationSchemas.TryAdd(id, command.Schema))
                 {
-                    AddSchema(schemas, id, new ResourceEntry(package, null, command.Schema));
+                    GeneratedOperationSchema schema = command.Schema;
+                    AddSchema(schemas, id, new ResourceEntry(package, null, () => schema.Document));
                 }
+            }
+
+            var resultSchemas = new ResultSchemaSet(package.ProductId, results, SdkSchemaCatalog.Schemas);
+            foreach (string id in resultSchemas.Ids)
+            {
+                AddSchema(schemas, id, new ResourceEntry(package, null, () => resultSchemas.TryRead(id, out string? document)
+                    ? document
+                    : throw new InvalidOperationException($"Result schema '{id}' is unavailable.")));
             }
         }
         return new ProductResourceCatalog(
@@ -155,17 +168,17 @@ public sealed class ProductResourceCatalog
         }
     }
 
-    /// <summary>A schema served from an embedded resource or from an operation vocabulary.</summary>
+    /// <summary>A schema served from an embedded resource, or written from an operation vocabulary or result records.</summary>
     private sealed record ResourceEntry(
         ProductPackageResources Package,
         string? Name,
-        GeneratedOperationSchema? Generated)
+        Func<string>? Generated)
     {
         public string Read()
         {
             if (Generated is not null)
             {
-                return Generated.Document;
+                return Generated();
             }
 
             using Stream stream = Package.ResourceAssembly.GetManifestResourceStream(Name!)

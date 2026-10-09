@@ -13,6 +13,12 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Aspose.Cli.Sdk\Aspose.Cli.Sdk.csproj" />
+    <!-- The contract generator describes the host's App status, which the host publishes under v2/common. -->
+    <ProjectReference Include="..\Aspose.Cli.Sdk.Analyzers\Aspose.Cli.Sdk.Analyzers.csproj"
+                      OutputItemType="Analyzer"
+                      ReferenceOutputAssembly="false"
+                      GlobalPropertiesToRemove="$(AsposeCliAnalyzerGlobalPropertiesToRemove)"
+                      PrivateAssets="all" />
   </ItemGroup>
 
   <ItemGroup>

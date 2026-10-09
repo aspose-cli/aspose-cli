@@ -1,7 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Aspose.Cli.Sdk.Contracts;
-using Aspose.Cli.Sdk.Resources;
 using Aspose.Cli.Sdk.Serialization;
 using Json.Schema;
 using Xunit;

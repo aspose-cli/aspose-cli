@@ -105,6 +105,15 @@ public sealed class ProductCatalogGeneratorTests
     }
 
     [Fact]
+    public void CompilationWithoutProducts_GetsNoCatalog()
+    {
+        GeneratorDriverRunResult result = RunGenerator();
+
+        Assert.Empty(result.Diagnostics);
+        Assert.Empty(Assert.Single(result.Results).GeneratedSources);
+    }
+
+    [Fact]
     public void AbstractModule_IsACompileTimeError()
     {
         MetadataReference invalid = CompileModule(

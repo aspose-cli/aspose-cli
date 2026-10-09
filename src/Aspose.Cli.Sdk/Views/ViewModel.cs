@@ -74,6 +74,7 @@ public interface IViewArtifactSink
 /// What one view render produced: the ordered parts of the document and the
 /// semantic layout of each part. Serialized as <c>view.json</c> beside the parts.
 /// </summary>
+[SchemaId("view")]
 public sealed record ViewManifest
 {
     /// <summary>Canonical schema of the manifest document.</summary>
@@ -85,18 +86,22 @@ public sealed record ViewManifest
     public int SchemaVersion { get; } = 2;
 
     /// <summary>View id that produced the parts.</summary>
+    [Pattern("^[a-z][a-z0-9-]{0,31}$")]
     public required string View { get; init; }
 
     /// <summary>Detected format id of the source document.</summary>
+    [MinLength(1)]
     public required string SourceFormat { get; init; }
 
     /// <summary>Size of the source document in bytes.</summary>
+    [Minimum(0)]
     public required long SourceSizeBytes { get; init; }
 
     /// <summary>Whether the source document is encrypted.</summary>
     public required bool SourceEncrypted { get; init; }
 
     /// <summary>Parts the document contains, including parts beyond the render bound.</summary>
+    [Minimum(0)]
     public required int TotalPartCount { get; init; }
 
     /// <summary>Rendered parts in document order.</summary>
@@ -113,21 +118,26 @@ public sealed record ViewPart
     /// Identity of the part that survives unrelated edits where the document
     /// model allows it, for example a slide id or a sheet name.
     /// </summary>
+    [MinLength(1)]
     public required string Id { get; init; }
 
     /// <summary>Label people see, for example <c>Page 3</c> or a slide title.</summary>
     public required string Label { get; init; }
 
     /// <summary>Sink-relative path of the rendered file.</summary>
+    [Pattern("^[A-Za-z0-9][A-Za-z0-9._-]*(/[A-Za-z0-9][A-Za-z0-9._-]*)*$")]
     public required string File { get; init; }
 
     /// <summary>Kind of the rendered file; see <see cref="ViewPartKinds"/>.</summary>
+    [AllowedValues(typeof(ViewPartKinds))]
     public required string Kind { get; init; }
 
     /// <summary>Layout width in CSS pixels; required for image parts.</summary>
+    [Minimum(1)]
     public int? Width { get; init; }
 
     /// <summary>Layout height in CSS pixels; required for image parts.</summary>
+    [Minimum(1)]
     public int? Height { get; init; }
 
     /// <summary>Whether the document hides the part, for example a hidden slide.</summary>
@@ -137,6 +147,7 @@ public sealed record ViewPart
     /// SHA-256 of the rendered file, assigned by the host after rendering so
     /// viewers can tell exactly which parts changed between two renders.
     /// </summary>
+    [Pattern("^sha256:[0-9a-f]{64}$")]
     public string? Digest { get; init; }
 
     /// <summary>Product-owned presentation facts, such as slide notes.</summary>
@@ -150,23 +161,31 @@ public sealed record ViewPart
 public sealed record ViewElement
 {
     /// <summary>Identity that survives edits where the document model provides one.</summary>
+    [MinLength(1)]
     public string? Id { get; init; }
 
     /// <summary>Element kind, for example <c>paragraph</c>, <c>heading</c> or <c>shape</c>.</summary>
+    [Pattern("^[a-z][a-z0-9-]*$")]
     public required string Kind { get; init; }
 
     /// <summary>Bounds in the part's CSS pixel space.</summary>
     public required ViewBox Box { get; init; }
 
     /// <summary>Digest of the element's content and formatting, used to detect changes.</summary>
+    [MinLength(1)]
     public required string Digest { get; init; }
 
     /// <summary>Short text people can recognize the element by.</summary>
     public string? Label { get; init; }
 
     /// <summary>Outline level of a heading.</summary>
+    [Minimum(1)]
     public int? Level { get; init; }
 }
 
 /// <summary>A rectangle in a part's CSS pixel space.</summary>
-public sealed record ViewBox(double X, double Y, double Width, double Height);
+/// <param name="X">Left edge.</param>
+/// <param name="Y">Top edge.</param>
+/// <param name="Width">Width, never negative.</param>
+/// <param name="Height">Height, never negative.</param>
+public sealed record ViewBox(double X, double Y, [property: Minimum(0)] double Width, [property: Minimum(0)] double Height);

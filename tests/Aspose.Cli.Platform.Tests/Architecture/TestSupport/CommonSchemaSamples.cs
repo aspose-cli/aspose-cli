@@ -259,7 +259,7 @@ internal static class CommonSchemaSamples
         ],
     };
 
-    public static ProductPreviewStopResult ProductPreviewStop { get; } = new()
+    public static ProductPreviewStatusResult ProductPreviewStop { get; } = new()
     {
         Stopped = ["fedcba9876543210fedcba9876543210"],
         Sessions = [],

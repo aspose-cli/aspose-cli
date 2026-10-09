@@ -49,7 +49,21 @@ public sealed class RepositoryProjectGraphTests
         foreach (string name in new[] { "Aspose.Cli.Host", "Aspose.Cli.Sdk", "Aspose.Cli.Sdk.Analyzers" })
         {
             string project = Path.Combine(Root, "src", name, name + ".csproj");
-            Assert.All(ProjectReferences(project), target => Assert.Equal("Aspose.Cli.Sdk.csproj", Path.GetFileName(target)));
+            foreach ((XElement item, string target) in ProjectReferenceItems(project))
+            {
+                if (Path.GetFileName(target) == "Aspose.Cli.Sdk.Analyzers.csproj")
+                {
+                    // The SDK and the host run the contract generator on their own result records,
+                    // as an analyzer whose assembly they never reference.
+                    Assert.Contains(name, new[] { "Aspose.Cli.Sdk", "Aspose.Cli.Host" });
+                    Assert.Equal("Analyzer", (string?)item.Attribute("OutputItemType"));
+                    Assert.Equal("false", (string?)item.Attribute("ReferenceOutputAssembly"));
+                }
+                else
+                {
+                    Assert.Equal("Aspose.Cli.Sdk.csproj", Path.GetFileName(target));
+                }
+            }
         }
     }
 
@@ -60,10 +74,13 @@ public sealed class RepositoryProjectGraphTests
                 .Any(segment => segment is "bin" or "obj"));
 
     private static IEnumerable<string> ProjectReferences(string project) =>
+        ProjectReferenceItems(project).Select(static reference => reference.Target);
+
+    private static IEnumerable<(XElement Item, string Target)> ProjectReferenceItems(string project) =>
         XDocument.Load(project).Descendants("ProjectReference")
-            .Select(item => (string?)item.Attribute("Include"))
-            .Where(value => value is not null && !value.Contains("$(", StringComparison.Ordinal) && !value.StartsWith("@(", StringComparison.Ordinal))
-            .Select(value => Path.GetFullPath(Path.Combine(Path.GetDirectoryName(project)!, value!.Replace('\\', Path.DirectorySeparatorChar))));
+            .Select(item => (Item: item, Include: (string?)item.Attribute("Include")))
+            .Where(reference => reference.Include is { } value && !value.Contains("$(", StringComparison.Ordinal) && !value.StartsWith("@(", StringComparison.Ordinal))
+            .Select(reference => (reference.Item, Path.GetFullPath(Path.Combine(Path.GetDirectoryName(project)!, reference.Include!.Replace('\\', Path.DirectorySeparatorChar)))));
 
     private static bool IsUnder(string path, string root) =>
         Path.GetFullPath(path).StartsWith(Path.GetFullPath(root).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar,

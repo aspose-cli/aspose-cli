@@ -18,9 +18,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="Schemas\v2\common\*.schema.json">
-      <LogicalName>schemas/v2/common/%(Filename)%(Extension)</LogicalName>
-    </EmbeddedResource>
+    <!-- The contract generator describes the SDK's own result records, whose schemas the SDK publishes under v2/common. -->
+    <ProjectReference Include="..\Aspose.Cli.Sdk.Analyzers\Aspose.Cli.Sdk.Analyzers.csproj"
+                      OutputItemType="Analyzer"
+                      ReferenceOutputAssembly="false"
+                      GlobalPropertiesToRemove="$(AsposeCliAnalyzerGlobalPropertiesToRemove)"
+                      PrivateAssets="all" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="..\..\eng\generated\DistributionInfo.g.cs" Link="DistributionInfo.g.cs" />

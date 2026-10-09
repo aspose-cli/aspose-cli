@@ -7,7 +7,7 @@ namespace Aspose.Cli.Sdk.Contracts;
 /// user) can tell whether the CLI is ready — licensed, on a supported runtime,
 /// able to write output — before a task fails midway.
 /// </summary>
-public sealed record DoctorResult() : ResultEnvelope(CommonSchemaIds.Doctor, 2)
+public sealed record DoctorResult() : ResultEnvelope("doctor", 2)
 {
     /// <summary><c>true</c> when no check failed; warnings still allow readiness.</summary>
     [JsonPropertyOrder(-50)]
@@ -16,15 +16,21 @@ public sealed record DoctorResult() : ResultEnvelope(CommonSchemaIds.Doctor, 2)
     /// <summary>The diagnostic checks, in run order.</summary>
     public required IReadOnlyList<DoctorCheck> Checks { get; init; }
 
-    /// <summary>Per-product readiness checks.</summary>
+    /// <summary>License readiness for each compiled product.</summary>
     public IReadOnlyList<DoctorProductStatus>? Products { get; init; }
 }
 
 /// <summary>Readiness of one compiled-in product.</summary>
 public sealed record DoctorProductStatus
 {
+    /// <summary>Product id, e.g. <c>cells</c>.</summary>
     public required string Product { get; init; }
+
+    /// <summary>The license mode the product runs under.</summary>
+    [AllowedValues(LicenseModes.Evaluation, LicenseModes.Licensed, LicenseModes.Invalid, LicenseModes.NotApplicable)]
     public required string LicenseMode { get; init; }
+
+    /// <summary>Engine id the product runs.</summary>
     public required string Engine { get; init; }
 }
 
@@ -35,6 +41,7 @@ public sealed record DoctorCheck
     public required string Name { get; init; }
 
     /// <summary>One of the <see cref="DoctorStatuses"/> values.</summary>
+    [AllowedValues(typeof(DoctorStatuses))]
     public required string Status { get; init; }
 
     /// <summary>What was found.</summary>

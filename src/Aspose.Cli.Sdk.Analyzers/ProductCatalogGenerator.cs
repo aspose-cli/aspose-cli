@@ -117,6 +117,13 @@ public sealed class ProductCatalogGenerator : IIncrementalGenerator
             ImmutableArray<ModuleExport> Modules,
             string HostSdkVersion) catalog)
     {
+        // Only the compilation that composes products, the launcher, gets a catalog; the SDK
+        // and the host reference this generator for their result contracts alone.
+        if (catalog.Modules.IsEmpty)
+        {
+            return;
+        }
+
         ModuleExport[] ordered = catalog.Modules
             .OrderBy(static module => module.ProductId, StringComparer.Ordinal)
             .ThenBy(

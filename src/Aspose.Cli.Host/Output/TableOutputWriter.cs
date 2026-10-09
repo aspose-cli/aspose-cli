@@ -55,7 +55,6 @@ internal sealed class TableOutputWriter : IOutputWriter
                 case AppResult app: CommonRenderers.Render(app, surface); break;
                 case ProductPreviewStartResult preview: CommonRenderers.Render(preview, surface); break;
                 case ProductPreviewStatusResult preview: CommonRenderers.Render(preview, surface); break;
-                case ProductPreviewStopResult preview: CommonRenderers.Render(preview, surface); break;
                 case ReviewResult review: CommonRenderers.Render(review, surface); break;
                 case LicenseStatusResult status: CommonRenderers.Render(status, surface); break;
                 case CapabilitiesResult capabilities: CommonRenderers.Render(capabilities, surface); break;
