@@ -351,6 +351,8 @@ function Read-Trx {
 
 # App tests share the per-user App endpoint, so this account's test runs, from any worktree, run
 # one at a time; the build above is not serialized. Windows releases the mutex if a run dies.
+# The test processes this run starts are told it holds the mutex; one started any other way
+# takes it itself (TestKit TestRunLock, which uses the same name).
 $runLock = [Threading.Mutex]::new($false, "Global\$($layout.Identity.id)-test-run-$([Environment]::UserName)")
 try {
     if (-not $runLock.WaitOne(0)) {
@@ -365,7 +367,7 @@ try {
     $runId = [DateTime]::UtcNow.ToString('yyyyMMddTHHmmssfffZ') + '-' + [Guid]::NewGuid().ToString('N')
     $resultsRoot = Join-Path $repoRoot "artifacts/TestResults/$runId"
     $markedFilter = ($categories | ForEach-Object { "Category=$_" }) -join '|'
-    $testEnvironment = @{}
+    $testEnvironment = @{ ASPOSE_CLI_TEST_RUN_LOCK_HELD = '1' }
     $ciArguments = @()
     if ($CiLike) {
         # The startup hook gives every .NET process of the run the runner's culture; the Windows
@@ -416,7 +418,7 @@ internal static class StartupHook
         # A project that runs marked tests lists them, so the slow-test report can leave them out.
         $listing = if ($included[$project].Count -eq 0) { $null } else {
             Start-Dotnet @('test', $project, '--configuration', $Configuration, '--no-build', '--no-restore', '--nologo',
-                '--list-tests', '--filter', $markedFilter) (Join-Path $resultsDirectory 'marked.log')
+                '--list-tests', '--filter', $markedFilter) (Join-Path $resultsDirectory 'marked.log') $testEnvironment
         }
         [pscustomobject]@{
             Name = $projectName

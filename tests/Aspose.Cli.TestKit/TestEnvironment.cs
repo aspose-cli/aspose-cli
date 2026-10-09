@@ -11,7 +11,8 @@ namespace Aspose.Cli.TestKit;
 /// The assembly fixture of every test project. Tests never see the developer's
 /// configuration, installed licenses or <c>ASPOSE_*</c> settings: the process gets a
 /// private configuration directory, and only the <c>ASPOSE_CLI_TEST_*</c> inputs of the
-/// run survive. On teardown it stops the CLI processes this test process left behind, such
+/// run survive. It holds the account's <see cref="TestRunLock"/> unless the runner that started
+/// it does. On teardown it stops the CLI processes this test process left behind, such
 /// as warm viewer services and render workers, so they cannot lock the build output.
 /// </summary>
 /// <remarks>
@@ -22,6 +23,8 @@ namespace Aspose.Cli.TestKit;
 public sealed class TestEnvironment : IDisposable
 {
     private const string TestVariablePrefix = DistributionInfo.EnvironmentVariablePrefix + "TEST_";
+    // First, so a run waits for the account's other test run before it changes anything.
+    private readonly TestRunLock? _runLock = TestRunLock.AcquireUnlessHeld();
     private readonly TempDirectory _configuration = new();
     private readonly SafeFileHandle? _job = JoinOwnJob();
 
@@ -54,6 +57,7 @@ public sealed class TestEnvironment : IDisposable
         {
             _job?.Dispose();
             _configuration.Dispose();
+            _runLock?.Dispose();
         }
     }
 

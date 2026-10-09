@@ -98,8 +98,12 @@ Snapshots pin the help and capabilities output (`CliContractTests`, in
 
 Runs are isolated from the developer's machine: they never read `%APPDATA%\aspose-cli`, project
 `.aspose` files or `ASPOSE_*` settings; only `ASPOSE_CLI_TEST_*` variables pass through. App
-tests share the per-user App endpoint, so a Windows account's test runs, from any checkout, run
-one at a time: a second run builds, then waits for the first to finish before its tests start.
+tests share the per-user App endpoint, so a Windows account's test runs, from any checkout and
+any runner, run one at a time: a second run builds, then waits for the first to finish before its
+tests start. `scripts/test.ps1` holds the lock for its whole run; a test process started any other
+way, such as by `dotnet test`, takes it in its assembly fixture, so `dotnet test` of several
+projects runs them one after another. A test process that waits for another run says so on
+standard error, which `dotnet test` shows with `--logger "console;verbosity=detailed"`.
 
 A run is licensed only when `ASPOSE_CLI_TEST_LICENSE_PATH` names a license file. Without it,
 the cases that need a license are skipped and listed; the `Full` scope requires the license and
