@@ -56,6 +56,26 @@ public sealed partial class ExitCodeDeclarationTests
             + $"missing: [{string.Join(", ", missing)}], not a member: [{string.Join(", ", unknown)}].");
     }
 
+    /// <summary>
+    /// Ctrl+C ends a command with 130 only under <c>--timeout</c>, where a supervisor runs it in a
+    /// worker; otherwise the process ends as the operating system ends it. The table says so.
+    /// </summary>
+    [Fact]
+    public void PlatformSkill_SaysWhenCancellationReturns130()
+    {
+        string path = Path.Combine(RepositoryPaths.Root, "src", "Aspose.Cli.Host", "Skills", "Platform", "references", "troubleshooting.md");
+        string[] rows =
+        [
+            .. File.ReadAllText(path).ReplaceLineEndings("\n").Split('\n')
+                .Where(static line => TableRow().Match(line) is { Success: true } row && row.Groups["exit"].Value == $"{Cancelled}"),
+        ];
+
+        string row = Assert.Single(rows);
+        Assert.True(row.Contains("--timeout", StringComparison.Ordinal),
+            $"The {Cancelled} row of the platform Skill's exit-code table ({Path.GetRelativePath(RepositoryPaths.Root, path)}) "
+            + $"says that cancellation returns {Cancelled} only when the command runs under --timeout: {row}");
+    }
+
     [GeneratedRegex(@"(?m)^\|\s*(?<exit>[0-9]+)\s*\|")]
     private static partial Regex TableRow();
 }
