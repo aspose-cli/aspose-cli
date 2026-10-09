@@ -334,20 +334,20 @@ public sealed class WordsRendererGoldenTests
         Styles = ["Normal", "Heading 1"],
         Fields =
         [
-            new FieldData { Type = "PAGE", Scope = "footer", Code = " PAGE ", Result = "1" },
-            new FieldData { Type = "TOC", Block = 1 },
+            new FieldData { Type = "PAGE", Scope = "headersFooters", Code = " PAGE ", Result = "1" },
+            new FieldData { Type = "TOC", Scope = "body", Block = 1 },
         ],
         Bookmarks = [],
         Comments = [new CommentData { Author = "Ann", Text = "Check the totals", Block = 3 }],
         Revisions =
         [
             new RevisionData { Revision = 0, Type = "insertion", Author = "Ann", Date = "2026-09-28T08:30:00Z", Block = 2, Text = "new text" },
-            new RevisionData { Revision = 1, Type = "formatChange", Author = "Bob", Scope = "header" },
+            new RevisionData { Revision = 1, Type = "formatChange", Author = "Bob", Scope = "headersFooters" },
         ],
         Images =
         [
-            new ImageData { Block = 4, Name = "Logo", Width = 120.5, Height = 60 },
-            new ImageData { Scope = "header", Width = 10, Height = 10.333 },
+            new ImageData { Scope = "body", Block = 4, Name = "Logo", Width = 120.5, Height = 60 },
+            new ImageData { Scope = "headersFooters", Width = 10, Height = 10.333 },
         ],
         Tables =
         [
