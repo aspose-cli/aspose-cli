@@ -42,7 +42,7 @@ internal static class TimeoutWorkerSupervisor
                     () => SelfProcessLauncher.CreateBackground("--timeout", "Run from the installed aspose-cli executable."),
                     InvocationInputs.Current?.Inherited).GetAwaiter().GetResult();
             }
-            catch (OperationCanceledException) when (cancellation.IsCancellationRequested) { return 130; }
+            catch (OperationCanceledException) when (cancellation.IsCancellationRequested) { return (int)ExitCode.Cancelled; }
             catch (Exception error) { result = RenderError(host, args, error); }
             Console.Out.Write(result.Stdout);
             Console.Error.Write(result.Stderr);
