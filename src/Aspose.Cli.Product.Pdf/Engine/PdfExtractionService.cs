@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
@@ -45,23 +46,16 @@ internal sealed class PdfExtractionService
         IReadOnlyList<SplitPart> parts = SplitParts(loaded.Document, request);
         string root = request.Output.Path;
         using OutputSet<Document> writer = _outputs.BeginSet([root], "pdf-split");
-        string stem = Path.GetFileNameWithoutExtension(filePath);
+        string stem = SafeName(Path.GetFileNameWithoutExtension(filePath));
         var targets = new List<(SplitPart Part, string Path)>();
-        var names = new HashSet<string>(OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal);
         int bookmarks = 0;
         int links = 0;
         int namedDestinations = 0;
         foreach (SplitPart part in parts)
         {
-            string name = SplitName(request.NameTemplate, stem, part);
-            if (!names.Add(name))
-            {
-                throw CliErrors.OptionInvalid(
-                    "--name-template",
-                    $"produces duplicate output '{name}'",
-                    "Include {n}, {pages} or {bookmark} so every output name is unique.");
-            }
-            string target = Path.Combine(root, name);
+            string target = Path.Combine(
+                root,
+                string.Create(CultureInfo.InvariantCulture, $"{stem}.{part.Index:000}.pdf"));
             Document source = loaded.Document;
             int[] pages = [.. part.Pages];
             // The part is the document the write pipeline inspects, so it lives until it is staged.
@@ -372,27 +366,6 @@ internal sealed class PdfExtractionService
             previous = page;
             previousStart = start;
         }
-    }
-
-    private static string SplitName(string template, string stem, SplitPart part)
-    {
-        string bookmark = SafeName(part.Bookmark ?? string.Empty);
-        string expanded = template
-            .Replace("{stem}", SafeName(stem), StringComparison.Ordinal)
-            .Replace("{n}", part.Index.ToString("000", System.Globalization.CultureInfo.InvariantCulture), StringComparison.Ordinal)
-            .Replace("{pages}", PageRangeText(part.Pages).Replace(',', '_'), StringComparison.Ordinal)
-            .Replace("{bookmark}", bookmark, StringComparison.Ordinal);
-        if (expanded.Contains('{', StringComparison.Ordinal) || expanded.Contains('}', StringComparison.Ordinal)
-            || !string.Equals(expanded, Path.GetFileName(expanded), StringComparison.Ordinal)
-            || !string.Equals(Path.GetExtension(expanded), ".pdf", StringComparison.OrdinalIgnoreCase))
-        {
-            throw CliErrors.OptionInvalid(
-                "--name-template",
-                $"produces unsafe PDF name '{expanded}'",
-                "Use a simple .pdf file name with {stem}, {n}, {pages} or {bookmark}.");
-        }
-
-        return expanded;
     }
 
     private static string SafeName(string value)

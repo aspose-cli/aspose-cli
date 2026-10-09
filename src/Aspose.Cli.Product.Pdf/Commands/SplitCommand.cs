@@ -14,11 +14,6 @@ internal static class SplitCommand
         }.WithInput(InputKind.None);
         var every = new Option<int?>("--every") { Description = "Pages per output part." };
         var bookmarks = new Option<bool>("--by-bookmarks") { Description = "Split at top-level bookmark destinations." };
-        var name = new Option<string>("--name-template")
-        {
-            DefaultValueFactory = _ => "{stem}.{n}.pdf",
-            Description = "File name using {stem}, {n} (001), {pages} (1-3, separate spans joined by _ as in 1-3_7) or {bookmark}.",
-        }.WithInput(InputKind.None);
         return StandardCommand.Create(
             host,
             "split",
@@ -28,7 +23,7 @@ internal static class SplitCommand
                 Input = PdfCommands.Document,
                 Output = OutputTarget.Directory("Directory that receives the parts."),
             },
-            [pages, every, bookmarks, name],
+            [pages, every, bookmarks],
             (parse, standard) =>
             {
                 string[] groupTexts = parse.GetValue(pages) ?? [];
@@ -38,7 +33,6 @@ internal static class SplitCommand
                     Every = parse.GetValue(every),
                     ByBookmarks = parse.GetValue(bookmarks),
                     Output = standard.DirectoryOutput,
-                    NameTemplate = parse.GetValue(name) ?? "{stem}.{n}.pdf",
                     Password = standard.InputPassword,
                 });
             });

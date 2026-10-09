@@ -84,7 +84,6 @@ public sealed record PdfSplitRequest
     public bool ByBookmarks { get; init; }
     /// <summary>The resolved directory that receives the files.</summary>
     public required ResolvedDirectory Output { get; init; }
-    public string NameTemplate { get; init; } = "{stem}.{n}.pdf";
     public Secret? Password { get; init; }
 }
 

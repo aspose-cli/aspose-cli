@@ -136,7 +136,7 @@ public sealed class PdfArtifactWorkflowTests
     }
 
     [Fact]
-    public void Split_SpellsPagesAsRangesInNamesAndResults()
+    public void Split_SpellsPagesAsRangesAndNumbersTheParts()
     {
         using var fixture = new PdfEngineFixture();
         string input = fixture.CreateDocument("region.pdf", pages: 4);
@@ -145,12 +145,11 @@ public sealed class PdfArtifactWorkflowTests
         {
             Output = new ResolvedDirectory(fixture.File("parts")),
             PageGroups = [Sdk.Addressing.PageRange.Parse("1-3"), Sdk.Addressing.PageRange.Parse("1,3-4"), Sdk.Addressing.PageRange.Parse("2")],
-            NameTemplate = "{stem}-p{pages}.pdf",
         });
 
         Assert.Equal(["1-3", "1,3-4", "2"], split.Outputs.Select(static part => part.Pages));
         Assert.Equal(
-            ["region-p1-3.pdf", "region-p1_3-4.pdf", "region-p2.pdf"],
+            ["region.001.pdf", "region.002.pdf", "region.003.pdf"],
             split.Outputs.Select(static part => Path.GetFileName(part.Output.Path)));
     }
 
@@ -242,25 +241,6 @@ public sealed class PdfArtifactWorkflowTests
             items.SelectMany(item => Items(item, $"{prefix}{item.Title}({((ExplicitDestination)item.Destination).PageNumber}) > ")
                 .DefaultIfEmpty($"{prefix}{item.Title}({((ExplicitDestination)item.Destination).PageNumber})"));
         return string.Join(" | ", Items(document.Outlines, string.Empty));
-    }
-
-    [Fact]
-    public void Split_RejectsANameTemplateThatRepeatsANameBeforeWriting()
-    {
-        using var fixture = new PdfEngineFixture();
-        string input = fixture.CreateDocument("pages.pdf", pages: 2);
-        string parts = fixture.File("parts");
-
-        CliException error = Assert.Throws<CliException>(() => fixture.Engine.Split(input, new PdfSplitRequest
-        {
-            Output = new ResolvedDirectory(parts),
-            Every = 1,
-            NameTemplate = "{stem}.pdf",
-        }));
-
-        Assert.Equal(ErrorCodes.OptionInvalid, error.Code);
-        Assert.Contains("--name-template", error.Message, StringComparison.Ordinal);
-        Assert.False(Directory.Exists(parts) && Directory.EnumerateFiles(parts).Any());
     }
 
     [Fact]
