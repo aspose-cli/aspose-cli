@@ -35,7 +35,7 @@ public sealed class ReviewViewManifestTests
         string manifestPath = workspace.File(Path.Combine("evidence", "artifacts", "view.json"));
         using JsonDocument manifest = JsonDocument.Parse(File.ReadAllText(manifestPath));
         JsonSchema schema = SchemaTestRegistry.CreateOptions().SchemaRegistry
-            .Get(new Uri(CommonSchemaIds.View)) as JsonSchema
+            .Get(new Uri(ResultEnvelope.SchemaUri("common", Aspose.Cli.Sdk.Views.ViewManifest.Id))) as JsonSchema
             ?? throw new InvalidOperationException("The view schema is not registered.");
         EvaluationResults evaluation = schema.Evaluate(manifest.RootElement);
         Assert.True(evaluation.IsValid, JsonSerializer.Serialize(evaluation));

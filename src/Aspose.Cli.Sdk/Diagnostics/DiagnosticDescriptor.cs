@@ -45,7 +45,7 @@ public sealed record DiagnosticDescriptor
     public required string HintTemplateId { get; init; }
 
     /// <summary>Schema governing the dynamic details object.</summary>
-    public string DetailsSchemaId { get; init; } = CommonSchemaIds.DiagnosticDetails;
+    public string DetailsSchemaId { get; init; } = DiagnosticDetails.CatalogId;
 
     /// <summary>Declares an immutable error descriptor; the details schema is the code's own.</summary>
     public static DiagnosticDescriptor Error(ErrorCode code, string owner, string category)
@@ -68,7 +68,7 @@ public sealed record DiagnosticDescriptor
             DiagnosticSeverity.Warning,
             null,
             category,
-            CommonSchemaIds.DiagnosticDetails);
+            DiagnosticDetails.CatalogId);
 
     /// <summary>Category of codes reported as <see cref="VerificationIssue"/> entries.</summary>
     public const string VerificationCategory = "verification";

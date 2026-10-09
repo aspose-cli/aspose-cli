@@ -83,7 +83,7 @@ public sealed class ResultSchemaSet
     public IReadOnlyList<string> Ids { get; }
 
     /// <summary>The schema id of a relative id of <paramref name="owner"/>, such as <c>v2/common/backup</c>.</summary>
-    public static string Id(string owner, string relativeId) => $"v2/{owner}/{relativeId}";
+    public static string Id(string owner, string relativeId) => ResultEnvelope.CatalogId(owner, relativeId);
 
     /// <summary>Reads a published schema.</summary>
     public bool TryRead(string id, [NotNullWhen(true)] out string? document)

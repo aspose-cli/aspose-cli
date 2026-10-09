@@ -62,7 +62,7 @@ public sealed class NotFoundErrorTests
         Assert.Equal(61, error.Details!["availableCount"]!.GetValue<int>());
         Assert.Equal(CliErrors.MaximumAvailableNames, error.Details["available"]!.AsArray().Count);
         Assert.Equal("Sales", error.Details["suggestions"]![0]!.GetValue<string>());
-        JsonSchema schema = JsonSchema.FromText(SdkSchemaCatalog.Read(CommonSchemaIds.NotFoundDetails));
+        JsonSchema schema = JsonSchema.FromText(SdkSchemaCatalog.Read(NotFoundDetails.CatalogId));
         using JsonDocument details = JsonDocument.Parse(error.Details.ToJsonString());
         Assert.True(schema.Evaluate(details.RootElement).IsValid);
     }
@@ -73,7 +73,7 @@ public sealed class NotFoundErrorTests
         Assert.Throws<ArgumentException>(() => CliErrors.NotFound(ErrorCodes.OpsInvalid, "sheet", "x", []));
         Assert.Throws<ArgumentException>(() => CliErrors.NotFoundAt(ErrorCodes.OpsInvalid, "page", "4", 3));
         Assert.Equal(
-            CommonSchemaIds.NotFoundDetails,
+            NotFoundDetails.CatalogId,
             DiagnosticDescriptor.Error(SheetNotFound, "cells", "validation").DetailsSchemaId);
     }
 }

@@ -8,12 +8,21 @@ namespace Aspose.Cli.Sdk.Contracts;
 /// Exit codes are coarse and frozen; <see cref="ErrorPayload.Code"/> carries
 /// the precise, machine-readable meaning.
 /// </summary>
-[SchemaId("error")]
+[SchemaId(Id)]
 public sealed record ErrorEnvelope
 {
+    /// <summary>The relative id the error schema is published under.</summary>
+    public const string Id = "error";
+
+    /// <summary>
+    /// The URI of the error schema, a constant so a startup failure can state it before anything
+    /// runs; the schema catalog refuses to publish the error schema when it differs.
+    /// </summary>
+    public const string SchemaUri = DistributionInfo.SchemaBaseUri + "common/" + Id + ".schema.json";
+
     /// <summary>URI of the JSON schema this error conforms to.</summary>
     [JsonPropertyOrder(-100)]
-    public string Schema { get; } = CommonSchemaIds.Error;
+    public string Schema { get; } = SchemaUri;
 
     /// <summary>Version of the error contract.</summary>
     [JsonPropertyOrder(-99)]

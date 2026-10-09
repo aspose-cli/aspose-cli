@@ -36,7 +36,7 @@ public sealed class CliException : Exception
         : base(message, innerException)
     {
         ArgumentNullException.ThrowIfNull(code);
-        if (code.DetailsSchemaId == CommonSchemaIds.NotFoundDetails
+        if (code.DetailsSchemaId == NotFoundDetails.CatalogId
             && (details?["subject"] is null || details["requested"] is null || details["availableCount"] is null))
         {
             throw new ArgumentException(
