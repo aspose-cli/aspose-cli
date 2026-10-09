@@ -44,7 +44,7 @@ internal static class UpdateInstaller
                 .GetAwaiter().GetResult();
             if (process.ExitCode != 0)
             {
-                if (process.ExitCode == 130) { throw new OperationCanceledException(); }
+                if (process.ExitCode == (int)ExitCode.Cancelled) { throw new OperationCanceledException(); }
                 throw LocalServiceChildError.TryRead(process.Stderr, process.ExitCode)
                     ?? CliErrors.ReleaseVerificationFailed("the update preparation worker failed");
             }

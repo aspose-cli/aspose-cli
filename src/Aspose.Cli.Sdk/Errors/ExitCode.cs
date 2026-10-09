@@ -35,4 +35,10 @@ public enum ExitCode
 
     /// <summary>The operation exceeded the --timeout budget.</summary>
     OperationTimeout = 9,
+
+    /// <summary>
+    /// The caller cancelled the command, as with Ctrl+C; the conventional exit code of a process
+    /// ended by an interrupt. No error envelope is written.
+    /// </summary>
+    Cancelled = 130,
 }

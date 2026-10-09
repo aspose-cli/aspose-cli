@@ -267,7 +267,7 @@ internal sealed class CommandExecutor
             else if (deadline?.Token.IsCancellationRequested == true)
             {
                 // The caller cancelled through the invocation's own token.
-                return UserCancelledExitCode;
+                return (int)ExitCode.Cancelled;
             }
         }
 
@@ -296,9 +296,6 @@ internal sealed class CommandExecutor
             error);
         return (int)error.ExitCode;
     }
-
-    /// <summary>The conventional exit code of a process ended by Ctrl+C.</summary>
-    private const int UserCancelledExitCode = 130;
 
     private static OperationDeadline CreateDeadline(
         GlobalValues globals,
