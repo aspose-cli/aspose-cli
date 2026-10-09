@@ -122,6 +122,56 @@ public sealed class LicenseFreePlatformContractTests
         Assert.Same(binding.LicenseGate, binding.Session.LicenseGate);
     }
 
+    /// <summary>
+    /// The diagnostics only licensing can produce: the license errors, the license commands'
+    /// refusal and the evaluation warnings. Whether a diagnostic belongs here is declared, not
+    /// guessed from how its code is spelled, so EVAL_INPUT_TRUNCATED is left out too.
+    /// </summary>
+    private static readonly string[] LicenseDiagnostics =
+    [
+        "EVALUATION_LIMIT", "EVAL_INPUT_MARKED", "EVAL_INPUT_TRUNCATED", "EVAL_MODE",
+        "LICENSE_FILE_NOT_FOUND", "LICENSE_INVALID", "LICENSE_NOT_APPLICABLE",
+    ];
+
+    [Fact]
+    public void LicenseFreeCapabilities_LeaveOutExactlyTheLicenseDiagnostics()
+    {
+        string[] licensed = DiagnosticCodes(Catalog(licensingApplicable: true));
+        string[] free = DiagnosticCodes(Catalog());
+
+        Assert.True(LicenseDiagnostics.All(licensed.Contains),
+            "A licensed build lists every license diagnostic; missing: "
+            + string.Join(", ", LicenseDiagnostics.Where(code => !licensed.Contains(code))));
+        // The live build's license errors are all in the list, so it stays complete.
+        string[] liveLicenseErrors =
+        [
+            .. Aspose.Cli.TestKit.Scenarios.CliCatalog.Current.Document["diagnostics"]!.AsArray()
+                .Where(static diagnostic => diagnostic!["category"]!.GetValue<string>() == "license")
+                .Select(static diagnostic => diagnostic!["code"]!.GetValue<string>()),
+        ];
+        Assert.True(liveLicenseErrors.All(LicenseDiagnostics.Contains),
+            "Add the new license errors to this test's list: " + string.Join(", ", liveLicenseErrors.Except(LicenseDiagnostics)));
+
+        string[] expected = [.. licensed.Except(LicenseDiagnostics, StringComparer.Ordinal)];
+        Assert.True(expected.SequenceEqual(free, StringComparer.Ordinal),
+            "A build without licensing lists every diagnostic except the license ones. Listed but license-only: ["
+            + string.Join(", ", free.Intersect(LicenseDiagnostics, StringComparer.Ordinal))
+            + "]; left out but not license-only: [" + string.Join(", ", expected.Except(free, StringComparer.Ordinal)) + "].");
+    }
+
+    private static string[] DiagnosticCodes(ProductCatalog catalog)
+    {
+        RootCommand root = RootCommandFactory.Create(new HostContext(catalog), out _);
+        InvocationResult capabilities = Invoke(root, "capabilities", "--output", "json");
+        Assert.Equal(0, capabilities.ExitCode);
+        using JsonDocument document = JsonDocument.Parse(capabilities.StandardOutput);
+        return
+        [
+            .. document.RootElement.GetProperty("diagnostics").EnumerateArray()
+                .Select(static diagnostic => diagnostic.GetProperty("code").GetString()!),
+        ];
+    }
+
     [Fact]
     public void LicenseAwareCatalog_RegistersLicenseSurface()
     {
