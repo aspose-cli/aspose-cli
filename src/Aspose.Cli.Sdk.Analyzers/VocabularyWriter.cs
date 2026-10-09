@@ -14,7 +14,6 @@ internal sealed class VocabularyWriter(
     private const string Sdk = "global::Aspose.Cli.Sdk.Operations.";
     private const string BoundedOperation = "Aspose.Cli.Sdk.Contracts.BoundedOperation";
     private const string Json = "System.Text.Json.Serialization.";
-    private static readonly System.Text.RegularExpressions.Regex RelativeId = new("^[a-z0-9]+(-[a-z0-9]+)*$", System.Text.RegularExpressions.RegexOptions.CultureInvariant);
     private readonly Dictionary<INamedTypeSymbol, string?> _nestedLocals = new(SymbolEqualityComparer.Default);
     private readonly Dictionary<string, INamedTypeSymbol> _definitions = new(StringComparer.Ordinal);
     private readonly StringBuilder _nested = new();
