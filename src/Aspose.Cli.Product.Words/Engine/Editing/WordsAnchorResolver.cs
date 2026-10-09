@@ -37,7 +37,7 @@ internal static class WordsAnchorResolver
                     RevisionChange[] selected = SelectRevisions(changes, numbers);
                     Node[] changed = [.. selected.SelectMany(static change => change.Members)
                         .Select(static revision => revision.ParentNode).OfType<Node>().Distinct()];
-                    resolved.Add(new ResolvedWordsOp(op, [], [], Targets(index, changed, target: null)) { Revisions = selected });
+                    resolved.Add(new ResolvedWordsOp(op, [], [], Targets(index, changed)) { Revisions = selected });
                     continue;
                 }
 
@@ -46,7 +46,7 @@ internal static class WordsAnchorResolver
                 IReadOnlyList<Node> nodes = target is null
                     ? []
                     : ResolveTarget(document, index, target);
-                resolved.Add(new ResolvedWordsOp(op, nodes, ResolveSections(document, op), Targets(index, nodes, target)));
+                resolved.Add(new ResolvedWordsOp(op, nodes, ResolveSections(document, op), Targets(index, nodes)));
             }
             catch (OperationInvalidException rejection)
             {
@@ -248,8 +248,7 @@ internal static class WordsAnchorResolver
     /// </summary>
     internal static IReadOnlyList<string> Targets(
         DocumentBlockIndex index,
-        IReadOnlyList<Node> nodes,
-        WordsTarget? target)
+        IReadOnlyList<Node> nodes)
     {
         int[] blocks = nodes
             .Select(index.FindBlock)
@@ -267,14 +266,32 @@ internal static class WordsAnchorResolver
                 return $"section/{WordsStories.SectionOf(headerFooter)}/{location}/{kind}";
             })
             .ToArray();
-        if (blocks.Length > 100)
+        string[] targets = [.. blocks.Select(static block => $"block/{block}"), .. headersFooters];
+        return targets.Length == 0 ? [DocumentTarget] : targets;
+    }
+
+    /// <summary>
+    /// What an operation that changed more blocks than an outcome lists reports instead: the block
+    /// ranges it addressed followed by the headers and footers it changed, or the whole document
+    /// when it addressed no range or that list would itself exceed the outcome's target cap.
+    /// </summary>
+    internal static IReadOnlyList<string> DegenerateTargets(WordsOp op, IReadOnlyList<string> targets)
+    {
+        if (TargetOf(op)?.Blocks is not { Length: > 0 } ranges)
         {
-            return target?.Blocks is { Length: > 0 } ranges ? [$"blocks/{ranges}", .. headersFooters] : ["document"];
+            return [DocumentTarget];
         }
 
-        string[] targets = [.. blocks.Select(static block => $"block/{block}"), .. headersFooters];
-        return targets.Length == 0 ? ["document"] : targets;
+        string[] degenerate =
+        [
+            $"blocks/{ranges}",
+            .. targets.Where(static target => target.StartsWith("section/", StringComparison.Ordinal)),
+        ];
+        return degenerate.Length <= BoundedOperationRunner.MaximumTargets ? degenerate : [DocumentTarget];
     }
+
+    /// <summary>The whole document, the target of an operation that names no block.</summary>
+    private const string DocumentTarget = "document";
 
     private static WordsTarget? TargetOf(WordsOp op) => op switch
     {

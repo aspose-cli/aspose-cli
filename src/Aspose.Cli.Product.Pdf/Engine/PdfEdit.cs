@@ -121,7 +121,9 @@ internal static class PdfEdit
                 }
                 return new AppliedOperation(affected, OperationTargets(op, operationPages, document));
             },
-            (op, _) => OperationTargets(op, [], applied: null));
+            (op, _) => OperationTargets(op, [], applied: null),
+            // Past the bound, the document root: a part address such as pdf/bookmark means all of that part.
+            static (_, _) => [DocumentRoot]);
         return (outcomes, outputPassword, encryption);
     }
 
@@ -150,7 +152,8 @@ internal static class PdfEdit
 
     /// <summary>
     /// The targets an operation reports. A bookmark operation that succeeded names each bookmark
-    /// it added or deleted by its index, a deleted one as it was before the deletion.
+    /// it added or deleted by its index, a deleted one as it was before the deletion; an operation
+    /// that names no page reports the part of the document it changes.
     /// </summary>
     private static IReadOnlyList<string> OperationTargets(
         PdfOp operation,
@@ -168,14 +171,17 @@ internal static class PdfEdit
             }
         }
 
-        if (pages.Count is > 0 and <= 100)
-        {
-            return pages
-                .Order()
-                .Select(static page => $"pdf/page/{page}")
-                .ToArray();
-        }
-        return [operation switch
+        return pages.Count > 0
+            ? [.. pages.Order().Select(static page => $"pdf/page/{page}")]
+            : [DocumentTarget(operation)];
+    }
+
+    /// <summary>The address of the whole document, which also stands for more targets than an outcome lists.</summary>
+    private const string DocumentRoot = "pdf";
+
+    /// <summary>The part of the document an operation that names no page changes.</summary>
+    private static string DocumentTarget(PdfOp operation) =>
+        operation switch
         {
             SetMetadataOp or RemoveMetadataOp => "pdf/metadata",
             SetFormFieldOp or FlattenFormsOp => "pdf/form",
@@ -184,9 +190,8 @@ internal static class PdfEdit
             AddBookmarkOp or DeleteBookmarksOp => "pdf/bookmark",
             AddAttachmentOp or RemoveAttachmentOp => "pdf/attachment",
             SetPageLabelsOp => "pdf/pages",
-            _ => "pdf",
-        }];
-    }
+            _ => DocumentRoot,
+        };
 
     private static Publication Publish(
         PdfSession session,

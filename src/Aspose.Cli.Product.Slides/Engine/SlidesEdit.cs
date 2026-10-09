@@ -66,7 +66,11 @@ internal static class SlidesEdit
                 touched.UnionWith(operationTouched);
                 return new AppliedOperation(affected, OperationTargets(item, operationTouched));
             },
-            (_, index) => OperationTargets(resolved[index], []));
+            (_, index) => OperationTargets(resolved[index], []),
+            static (_, _) => [PresentationTarget]);
+
+    /// <summary>The whole presentation, the target of an operation that names no slide or changes more than an outcome lists.</summary>
+    private const string PresentationTarget = "presentation";
 
     private static IReadOnlyList<string> OperationTargets(
         SlidesMutationHandlers.ResolvedSlidesOp item,
@@ -89,9 +93,9 @@ internal static class SlidesEdit
         {
             slideIds.Add(item.Slide.SlideId);
         }
-        return slideIds.Count is > 0 and <= 100
+        return slideIds.Count > 0
             ? slideIds.Select(static slideId => $"slide/{slideId}").ToArray()
-            : ["presentation"];
+            : [PresentationTarget];
     }
 
     private static EditPublication Publish(
