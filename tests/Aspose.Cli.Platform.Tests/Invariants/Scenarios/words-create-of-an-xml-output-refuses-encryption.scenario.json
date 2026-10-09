@@ -1,0 +1,74 @@
+{
+  "name": "words create of an .xml output with a password is refused with OPTION_INVALID naming flatopc, for every content source and password option, and writes nothing",
+  "files": {
+    "source.md": { "fixture": "markdown" },
+    "source.txt": { "fixture": "text" },
+    "template.xml": { "fixture": "words.wordml" }
+  },
+  "steps": [
+    {
+      "args": ["words", "create", "blank.xml", "--blank", "--encrypt-env", "NEW_PASSWORD"],
+      "env": { "NEW_PASSWORD": "Scenario-New-Secret-7d2a" },
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "json": [
+          { "path": "error.message", "contains": "'flatopc' format cannot be password-protected" },
+          { "path": "error.details.option", "equals": "--encrypt-env" },
+          { "path": "error.hint", "contains": "docx" }
+        ],
+        "files": { "nothingWritten": true },
+        "hidden": ["Scenario-New-Secret-7d2a"]
+      }
+    },
+    {
+      "args": ["words", "create", "markdown.xml", "--markdown", "source.md", "--encrypt-env", "NEW_PASSWORD"],
+      "env": { "NEW_PASSWORD": "Scenario-New-Secret-7d2a" },
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "json": [{ "path": "error.message", "contains": "'flatopc' format cannot be password-protected" }],
+        "files": { "nothingWritten": true },
+        "hidden": ["Scenario-New-Secret-7d2a"]
+      }
+    },
+    {
+      "args": ["words", "create", "text.xml", "--text", "source.txt", "--encrypt-env", "NEW_PASSWORD"],
+      "env": { "NEW_PASSWORD": "Scenario-New-Secret-7d2a" },
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "json": [{ "path": "error.message", "contains": "'flatopc' format cannot be password-protected" }],
+        "files": { "nothingWritten": true },
+        "hidden": ["Scenario-New-Secret-7d2a"]
+      }
+    },
+    {
+      "args": ["words", "create", "templated.xml", "--markdown", "source.md", "--template", "template.xml", "--encrypt-env", "NEW_PASSWORD"],
+      "env": { "NEW_PASSWORD": "Scenario-New-Secret-7d2a" },
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "json": [{ "path": "error.message", "contains": "'flatopc' format cannot be password-protected" }],
+        "files": { "nothingWritten": true },
+        "hidden": ["Scenario-New-Secret-7d2a"]
+      }
+    },
+    {
+      "args": ["words", "create", "literal.xml", "--blank", "--encrypt", "Scenario-New-Secret-7d2a"],
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "json": [
+          { "path": "error.message", "contains": "'flatopc' format cannot be password-protected" },
+          { "path": "error.details.option", "equals": "--encrypt" }
+        ],
+        "files": { "nothingWritten": true }
+      }
+    },
+    {
+      "args": ["words", "create", "plain.xml", "--blank"],
+      "expect": { "exitCode": 0, "json": [{ "path": "output.format", "equals": "flatopc" }], "files": { "present": ["plain.xml"] } }
+    }
+  ]
+}

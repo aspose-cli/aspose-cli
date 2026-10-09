@@ -1,0 +1,66 @@
+{
+  "name": "words convert to an .xml output with a password is refused with OPTION_INVALID naming the --to format, not the input's XML format, and writes nothing",
+  "files": {
+    "wordml.xml": { "fixture": "words.wordml" },
+    "flat.xml": { "fixture": "words.flatopc" },
+    "source.docx": { "fixture": "words.docx" }
+  },
+  "steps": [
+    {
+      "args": ["words", "convert", "wordml.xml", "--to", "flatopc", "--out", "flat-out.xml", "--encrypt-env", "NEW_PASSWORD"],
+      "env": { "NEW_PASSWORD": "Scenario-New-Secret-7d2a" },
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "json": [
+          { "path": "error.message", "contains": "'flatopc' format cannot be password-protected" },
+          { "path": "error.details.option", "equals": "--encrypt-env" }
+        ],
+        "files": { "nothingWritten": true },
+        "hidden": ["Scenario-New-Secret-7d2a"]
+      }
+    },
+    {
+      "args": ["words", "convert", "flat.xml", "--to", "wordml", "--out", "wordml-out.xml", "--encrypt-env", "NEW_PASSWORD"],
+      "env": { "NEW_PASSWORD": "Scenario-New-Secret-7d2a" },
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "json": [{ "path": "error.message", "contains": "'wordml' format cannot be password-protected" }],
+        "files": { "nothingWritten": true },
+        "hidden": ["Scenario-New-Secret-7d2a"]
+      }
+    },
+    {
+      "args": ["words", "convert", "wordml.xml", "--to", "wordml", "--out", "same-out.xml", "--encrypt-env", "NEW_PASSWORD"],
+      "env": { "NEW_PASSWORD": "Scenario-New-Secret-7d2a" },
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "json": [{ "path": "error.message", "contains": "'wordml' format cannot be password-protected" }],
+        "files": { "nothingWritten": true },
+        "hidden": ["Scenario-New-Secret-7d2a"]
+      }
+    },
+    {
+      "args": ["words", "convert", "source.docx", "--to", "wordml", "--out", "docx-out.xml", "--encrypt", "Scenario-New-Secret-7d2a"],
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "json": [
+          { "path": "error.message", "contains": "'wordml' format cannot be password-protected" },
+          { "path": "error.details.option", "equals": "--encrypt" }
+        ],
+        "files": { "nothingWritten": true }
+      }
+    },
+    {
+      "args": ["words", "convert", "wordml.xml", "--to", "flatopc", "--out", "converted.xml"],
+      "expect": { "exitCode": 0, "files": { "present": ["converted.xml"] } }
+    },
+    {
+      "args": ["words", "inspect", "converted.xml"],
+      "expect": { "exitCode": 0, "json": [{ "path": "source.format", "equals": "flatopc" }] }
+    }
+  ]
+}
