@@ -223,7 +223,7 @@ $", result.StdOut);
         Assert.Contains(product, CapabilitiesSnapshots.Products(capabilities));
         AssertSnapshot(
             Path.Combine("capabilities", product + ".json"),
-            CapabilitiesSnapshots.Product(capabilities, product, SchemaDocument));
+            CapabilitiesSnapshots.Product(capabilities, product, ProductCapabilities, SchemaDocument));
     }
 
     /// <summary>
@@ -238,7 +238,7 @@ $", result.StdOut);
 
         AssertSnapshot(
             Path.Combine("capabilities", "host.json"),
-            CapabilitiesSnapshots.Host(capabilities, SchemaDocument));
+            CapabilitiesSnapshots.Host(capabilities, ProductCapabilities, SchemaDocument));
     }
 
     private JsonNode NormalizedCapabilities()
@@ -249,6 +249,13 @@ $", result.StdOut);
         return Parse(BuildIdentity.Replace(
             result.StdOut,
             static match => match.Groups["key"].Value + "\"<build>\""));
+    }
+
+    private JsonNode ProductCapabilities(string product)
+    {
+        CliResult result = _workspace.Run("capabilities", product, "--output", "json");
+        Assert.True(result.ExitCode == 0, $"capabilities {product}: {result.StdErr}");
+        return Parse(result.StdOut);
     }
 
     private JsonNode SchemaDocument(string id)
