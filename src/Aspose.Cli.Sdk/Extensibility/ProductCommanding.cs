@@ -4,51 +4,21 @@ using Aspose.Cli.Sdk.IO;
 
 namespace Aspose.Cli.Sdk.Extensibility;
 
-/// <summary>
-/// Strongly typed execution scope supplied to commands from exactly one
-/// product. It contains no catalog and cannot resolve sibling runtimes.
-/// </summary>
-/// <typeparam name="TPort">The product's typed port.</typeparam>
-public sealed record ProductCommandContext<TPort>
-    where TPort : class
-{
-    /// <summary>The complete typed runtime binding for host-only lifecycles.</summary>
-    public required ProductBinding<TPort> Binding { get; init; }
-
-    /// <summary>The selected product port, created lazily on first access.</summary>
-    public TPort Port => Binding.Port;
-
-    /// <summary>Path resolver scoped to the invocation working directory.</summary>
-    public required PathResolver Paths { get; init; }
-
-    /// <summary>Single bounded reader for user-controlled file and stdin input.</summary>
-    public required InputSource Inputs { get; init; }
-
-    /// <summary>Resolves a named environment secret through this invocation's input source.</summary>
-    public required Func<string, string?> ReadEnvironment { get; init; }
-}
+/// <summary>What the host gives one invocation of a product command.</summary>
+/// <param name="Binding">The product, activated for this invocation.</param>
+/// <param name="Paths">Path resolver scoped to the invocation working directory.</param>
+/// <param name="Inputs">Single bounded reader for user-controlled file and stdin input.</param>
+/// <param name="ReadEnvironment">Resolves a named environment secret through this invocation's input source.</param>
+public sealed record ProductCommandScope(
+    ProductBinding Binding,
+    PathResolver Paths,
+    InputSource Inputs,
+    Func<string, string?> ReadEnvironment);
 
 /// <summary>
-/// Host execution pipeline captured by a command tree from one product.
-/// Implementations own output rendering, errors, timeouts and runtime binding.
+/// The host's command pipeline, which owns output rendering, errors, deadlines and admission: it
+/// runs the body of one product command in a scope for that product and returns the exit code.
 /// </summary>
-/// <typeparam name="TPort">The product's typed port.</typeparam>
-public interface IProductCommandHost<TPort>
-    where TPort : class
-{
-    /// <summary>Runs a command through the normal result-envelope pipeline.</summary>
-    int Run(
-        ParseResult parseResult,
-        Func<ProductCommandContext<TPort>, ResultEnvelope> handler);
-}
-
-/// <summary>
-/// Creates a strongly typed command host for a statically discovered module.
-/// The generic call is emitted by the product definition itself.
-/// </summary>
-public interface IProductCommandHostFactory
-{
-    /// <summary>Creates the host for one known product and port.</summary>
-    IProductCommandHost<TPort> Create<TPort>(string productId)
-        where TPort : class;
-}
+/// <param name="parse">The parsed command line.</param>
+/// <param name="run">The command body.</param>
+public delegate int ProductCommandRunner(ParseResult parse, Func<ProductCommandScope, ResultEnvelope> run);

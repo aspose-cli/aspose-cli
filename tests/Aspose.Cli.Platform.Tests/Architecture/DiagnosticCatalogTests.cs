@@ -76,7 +76,7 @@ public sealed class DiagnosticCatalogTests
         string id,
         IReadOnlyList<DiagnosticDescriptor> diagnostics)
     {
-        ProductDefinition definition = ExtProduct.Define<ITestPort>(new ProductManifest
+        ProductDefinition definition = ExtProduct.Define<ITestSession>(new ProductManifest
             {
                 Id = id,
                 DisplayName = id,
@@ -102,9 +102,8 @@ public sealed class DiagnosticCatalogTests
             ])
             .Diagnostics(diagnostics)
             .Json(new ProductJsonDefinition(id, SdkJsonContext.Default))
-            .View(new TestProductViewAdapter<ITestPort>())
-            .Output<TestResult>(static (_, _) => { })
-            .Commands(_ => new Command(id))
+            .View(new TestProductViewAdapter<ITestSession>())
+            .WithCommand<ITestSession, TestResult>()
             .Activator(static _ =>
                 throw new InvalidOperationException(
                     "Diagnostic tests must not activate product ports."))
@@ -112,7 +111,7 @@ public sealed class DiagnosticCatalogTests
         return ProductCatalog.Build([new StaticModule(definition)]);
     }
 
-    private interface ITestPort;
+    private interface ITestSession;
 
 #pragma warning disable APCLI003 // A test result, not a product JSON root.
     private sealed record TestResult() : ResultEnvelope("test/diagnostic", 1);

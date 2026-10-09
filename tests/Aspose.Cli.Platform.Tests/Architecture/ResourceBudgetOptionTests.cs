@@ -30,7 +30,7 @@ public sealed class ResourceBudgetOptionTests
 
     private static ProductCatalog Build(string budgetOption)
     {
-        ProductDefinition definition = ExtProduct.Define<ITestPort>(new ProductManifest
+        ProductDefinition definition = ExtProduct.Define<ITestSession>(new ProductManifest
             {
                 Id = "alpha",
                 DisplayName = "alpha",
@@ -45,23 +45,15 @@ public sealed class ResourceBudgetOptionTests
             .Formats([FormatDescriptor.Input("alpha", 0, RouteOwnership.Explicit, ".alpha")])
             .Diagnostics([])
             .Json(new ProductJsonDefinition("alpha", SdkJsonContext.Default))
-            .View(new TestProductViewAdapter<ITestPort>())
-            .Output<TestResult>(static (_, _) => { })
-            .Commands(static _ =>
-            {
-                var read = new Command("read");
-                read.Options.Add(new Option<int>("--max-items"));
-                var root = new Command("alpha");
-                root.Subcommands.Add(read);
-                return root;
-            })
+            .View(new TestProductViewAdapter<ITestSession>())
+            .WithCommand<ITestSession, TestResult>("read", new Option<int>("--max-items"))
             .Activator(static _ =>
                 throw new InvalidOperationException("Budget validation must not activate product ports."))
             .Build();
         return ProductCatalog.Build([new StaticModule(definition)]);
     }
 
-    private interface ITestPort;
+    private interface ITestSession;
 
 #pragma warning disable APCLI003 // A test result, not a product JSON root.
     private sealed record TestResult() : ResultEnvelope("test/budget", 1);

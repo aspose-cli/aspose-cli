@@ -43,7 +43,7 @@ public sealed record BoundedEditDefinition<TOp, TBatch>
     public string? VerifyDescription { get; init; }
 }
 
-/// <summary>One fully resolved bounded-edit invocation, ready for the product port.</summary>
+/// <summary>One fully resolved bounded-edit invocation, ready for the product request.</summary>
 /// <param name="Batch">The validated, identified and path-normalized operation document.</param>
 /// <param name="Output">Where, how and in which format the result is published.</param>
 /// <param name="Options">Precondition, dry-run and best-effort semantics.</param>
@@ -64,9 +64,9 @@ public sealed record BoundedEditInvocation<TBatch>(
 /// document (<c>--ops</c>) and its composition with <c>--set</c> directives and the
 /// execution semantics (<c>--if-match</c>, <c>--dry-run</c>, <c>--best-effort</c>,
 /// <c>--verify</c>), so every product accepts and rejects the same combinations. Its
-/// command is a <see cref="StandardCommand"/> that publishes the edited document as a
+/// command, defined through <see cref="EditDefinition"/>, publishes the edited document as a
 /// mutation output (<c>--out</c>, <c>--overwrite</c>, <c>--in-place</c>, <c>--backup</c>),
-/// and whose input password refuses standard input when the operation document comes from it.
+/// and its input password refuses standard input when the operation document comes from it.
 /// </summary>
 public sealed class BoundedEditCommand<TOp, TBatch>
     where TOp : BoundedOperation, IOperationVocabulary<TOp>
@@ -135,52 +135,6 @@ public sealed class BoundedEditCommand<TOp, TBatch>
             _bestEffort,
             .. _verify is null ? [] : new Option[] { _verify },
         ];
-    }
-
-    /// <summary>
-    /// Creates the product's edit command: the document argument, the shared edit options,
-    /// the product's own parameters, then the mutation output and the common options its
-    /// traits select. The handler receives the composed, path-normalized batch with its
-    /// resolved secrets.
-    /// </summary>
-    /// <param name="host">The product's command host.</param>
-    /// <param name="name">The command name.</param>
-    /// <param name="description">The command help.</param>
-    /// <param name="traits">
-    /// The edited document, its output password and fonts; the edit publishes to a mutation output.
-    /// </param>
-    /// <param name="parameters">The product's own arguments and options, each kind in help order.</param>
-    /// <param name="handler">Maps the invocation to the product port call.</param>
-    /// <param name="checkUsage">
-    /// Rejects a combination of the product's own options that needs no input; it runs before
-    /// the document, the operation document, standard input or any secret is read.
-    /// </param>
-    public Command Create<TPort>(
-        IProductCommandHost<TPort> host,
-        string name,
-        string description,
-        CommandTraits traits,
-        IReadOnlyList<Symbol> parameters,
-        Func<ParseResult, BoundedEditInvocation<TBatch>, StandardInvocation<TPort>, ResultEnvelope> handler,
-        Action<ParseResult>? checkUsage = null)
-        where TPort : class
-    {
-        ArgumentNullException.ThrowIfNull(handler);
-        return StandardCommand.Create(
-            host,
-            name,
-            description,
-            EditTraits(traits),
-            EditParameters(parameters),
-            TakesStandardInput,
-            (parse, standard) =>
-            {
-                checkUsage?.Invoke(parse);
-                return handler(
-                    parse,
-                    Read(parse, standard),
-                    standard);
-            });
     }
 
     /// <summary>The traits of the edit command: the product's, publishing to the mutation output.</summary>

@@ -36,9 +36,6 @@ internal static class DoctorCommand
             {
                 checks.Insert(3, LicenseCheck(licenses));
             }
-            checks.AddRange(catalog.Products
-                .SelectMany(product =>
-                    product.GetDoctorChecks(context.Activate(product))));
             return new DoctorResult
             {
                 Ok = checks.TrueForAll(static check => check.Status != DoctorStatuses.Fail),

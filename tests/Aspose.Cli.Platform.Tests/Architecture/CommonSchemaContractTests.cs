@@ -336,7 +336,7 @@ public sealed class CommonSchemaContractTests
         string productId = "test",
         IReadOnlyList<ProductOperationCommand>? operations = null)
     {
-        ProductDefinition definition = ExtProduct.Define<ITestPort>(
+        ProductDefinition definition = ExtProduct.Define<ITestSession>(
                 new ProductManifest
                 {
                     Id = productId,
@@ -363,9 +363,8 @@ public sealed class CommonSchemaContractTests
             ])
             .Diagnostics([])
             .Json(new ProductJsonDefinition(productId, SdkJsonContext.Default))
-            .View(new TestProductViewAdapter<ITestPort>())
-            .Output<TestResult>(static (_, _) => { })
-            .Commands(_ => new Command("test"))
+            .View(new TestProductViewAdapter<ITestSession>())
+            .WithCommand<ITestSession, TestResult>()
             .Activator(static _ =>
                 throw new InvalidOperationException(
                     "Common schema tests must not activate product ports."))
@@ -373,7 +372,7 @@ public sealed class CommonSchemaContractTests
         return ProductCatalog.Build([new StaticModule(definition)]);
     }
 
-    private interface ITestPort;
+    private interface ITestSession;
 
 #pragma warning disable APCLI003 // A test result, not a product JSON root.
     private sealed record TestResult() : ResultEnvelope("test/result", 1);

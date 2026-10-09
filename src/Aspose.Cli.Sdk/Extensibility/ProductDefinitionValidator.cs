@@ -203,7 +203,11 @@ internal sealed class ProductDefinitionValidator
         }
 
         var registered = new HashSet<string>(StringComparer.Ordinal);
-        CollectOptions(definition.CreateCommand(InertCommandHostFactory.Instance), registered);
+        // A tree built for inspection, whose commands cannot run.
+        CollectOptions(
+            definition.CreateCommand(static (_, _) =>
+                throw new InvalidOperationException("A command tree built for validation cannot run.")),
+            registered);
         foreach (string option in declared)
         {
             if (!registered.Contains(option))
@@ -230,24 +234,6 @@ internal sealed class ProductDefinitionValidator
         {
             CollectOptions(child, names);
         }
-    }
-
-    /// <summary>Builds a command tree for inspection; its commands cannot run.</summary>
-    private sealed class InertCommandHostFactory : IProductCommandHostFactory
-    {
-        public static InertCommandHostFactory Instance { get; } = new();
-
-        public IProductCommandHost<TPort> Create<TPort>(string productId)
-            where TPort : class => new InertCommandHost<TPort>();
-    }
-
-    private sealed class InertCommandHost<TPort> : IProductCommandHost<TPort>
-        where TPort : class
-    {
-        public int Run(
-            ParseResult parseResult,
-            Func<ProductCommandContext<TPort>, ResultEnvelope> handler) =>
-            throw new InvalidOperationException("A command tree built for validation cannot run.");
     }
 
     private static bool IsToken(string value) =>

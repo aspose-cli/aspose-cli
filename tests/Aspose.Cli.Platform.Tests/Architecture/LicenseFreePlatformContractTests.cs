@@ -100,10 +100,10 @@ public sealed class LicenseFreePlatformContractTests
     [Fact]
     public void LicenseFreeBinding_DoesNotReportEvaluationOrCreateFontDiagnostics()
     {
-        ProductBinding<ITestPort> binding =
-            ProductBinding.CreateLicenseFree<ITestPort>(
+        ProductBinding<ITestSession> binding =
+            ProductBinding.CreateLicenseFree<ITestSession>(
                 "free-test",
-                static gate => new TestPort(gate));
+                static gate => new TestSession(gate));
 
         Assert.False(binding.LicenseGate.IsApplicable);
         Assert.Equal(LicenseResolution.None, binding.LicenseGate.Resolution);
@@ -118,7 +118,7 @@ public sealed class LicenseFreePlatformContractTests
         Assert.Null(binding.Publishing);
         Assert.False(binding.HasFontEnvironment);
         Assert.Null(binding.FontEnvironment);
-        Assert.Same(binding.LicenseGate, binding.Port.LicenseGate);
+        Assert.Same(binding.LicenseGate, binding.Session.LicenseGate);
     }
 
     [Fact]
@@ -138,7 +138,7 @@ public sealed class LicenseFreePlatformContractTests
 
     private static ProductCatalog Catalog(bool licensingApplicable = false)
     {
-        ProductDefinition definition = ExtProduct.Define<ITestPort>(
+        ProductDefinition definition = ExtProduct.Define<ITestSession>(
                 new ProductManifest
                 {
                     Id = "free-test",
@@ -165,13 +165,12 @@ public sealed class LicenseFreePlatformContractTests
             ])
             .Diagnostics([])
             .Json(new ProductJsonDefinition("free-test", SdkJsonContext.Default))
-            .View(new TestProductViewAdapter<ITestPort>())
-            .Output<TestResult>(static (_, _) => { })
-            .Commands(_ => new Command("free-test"))
+            .View(new TestProductViewAdapter<ITestSession>())
+            .WithCommand<ITestSession, TestResult>()
             .Activator(static _ =>
-                ProductBinding.CreateLicenseFree<ITestPort>(
+                ProductBinding.CreateLicenseFree<ITestSession>(
                     "free-test",
-                    static gate => new TestPort(gate)))
+                    static gate => new TestSession(gate)))
             .Build();
         return ProductCatalog.Build([new StaticModule(definition)]);
     }
@@ -201,12 +200,12 @@ public sealed class LicenseFreePlatformContractTests
         }
     }
 
-    private interface ITestPort
+    private interface ITestSession
     {
         ILicenseGate LicenseGate { get; }
     }
 
-    private sealed class TestPort(ILicenseGate licenseGate) : ITestPort
+    private sealed class TestSession(ILicenseGate licenseGate) : ITestSession
     {
         public ILicenseGate LicenseGate { get; } = licenseGate;
     }

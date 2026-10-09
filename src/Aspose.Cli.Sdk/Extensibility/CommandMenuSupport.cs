@@ -1,6 +1,4 @@
 using System.CommandLine;
-using Aspose.Cli.Sdk.Contracts;
-using Aspose.Cli.Sdk.IO;
 
 namespace Aspose.Cli.Sdk.Extensibility;
 
@@ -18,24 +16,12 @@ public sealed record CommandHelp(IReadOnlyList<string> Examples, IReadOnlyList<C
 /// <param name="run">The guarded engine call.</param>
 public delegate object? ProductGuard<in TSession>(TSession session, Func<object?> run);
 
-/// <summary>What the host gives one invocation of a menu command.</summary>
-internal sealed record CommandScope<TSession>(
-    ProductBinding<TSession> Binding,
-    PathResolver Paths,
-    InputSource Inputs,
-    Func<string, string?> ReadEnvironment)
-    where TSession : class;
-
-/// <summary>Runs one menu command through the host's envelope, output and exit-code pipeline.</summary>
-internal delegate int CommandRunner<TSession>(ParseResult parse, Func<CommandScope<TSession>, ResultEnvelope> run)
-    where TSession : class;
-
 /// <summary>What every command of one product menu shares when its command tree is built.</summary>
 /// <param name="Run">The host pipeline.</param>
 /// <param name="Guard">The product guard, or null.</param>
 /// <param name="DetectFormat">The product's content format detector, or null.</param>
 internal sealed record MenuContext<TSession>(
-    CommandRunner<TSession> Run,
+    ProductCommandRunner Run,
     ProductGuard<TSession>? Guard,
     Func<string, string?>? DetectFormat)
     where TSession : class

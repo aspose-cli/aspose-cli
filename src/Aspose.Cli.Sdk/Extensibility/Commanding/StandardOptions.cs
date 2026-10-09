@@ -235,8 +235,8 @@ public sealed record EncryptedOutput(string Subject);
 /// fixes their order: the document arguments first, then the target format, the command's own
 /// parameters, the output, the input passwords, the output password and the font directories.
 /// A new common option is added here, and every command that declares the trait gets it.
-/// Product commands are built on it through <see cref="StandardCommand"/>, which runs them
-/// through the host pipeline; only a host command that runs through its own pipeline builds
+/// Product commands are built on it through <see cref="CommandDefinition{TRequest, TResult}"/>, which
+/// runs them through the host pipeline; only a host command that runs through its own pipeline builds
 /// its command with <see cref="CreateCommand"/> and reads each invocation through
 /// <see cref="Bind"/>, and analyzer <c>APCLI011</c> keeps products from doing so.
 /// </summary>
@@ -835,51 +835,4 @@ public partial class StandardInvocation
     private static T Declared<T>(T? value, string trait)
         where T : class =>
         value ?? throw new InvalidOperationException($"The command declares no {trait}.");
-}
-
-/// <summary>
-/// The common values of one product command invocation and the product engine. Disposing the
-/// invocation ends the font scope that <see cref="OpenEngine"/> entered.
-/// </summary>
-/// <typeparam name="TPort">The product's typed port.</typeparam>
-public sealed class StandardInvocation<TPort> : StandardInvocation, IDisposable
-    where TPort : class
-{
-    private readonly ProductCommandContext<TPort> _context;
-    private IDisposable? _fontScope;
-
-    internal StandardInvocation(
-        StandardOptions options,
-        ParseResult parse,
-        ProductCommandContext<TPort> context,
-        bool standardInputAvailable)
-        : base(options, parse, context.Paths, context.Inputs, context.ReadEnvironment, standardInputAvailable)
-    {
-        _context = context;
-    }
-
-    /// <summary>
-    /// Opens the product engine: resolves the input documents and, for a command that uses
-    /// fonts, applies <c>--font-dir</c> to the engine until the invocation ends, so the engine
-    /// never opens a document before its fonts are in place. Run every check that needs no
-    /// input before calling it.
-    /// </summary>
-    /// <exception cref="CliException">An input document does not exist, or a font directory is invalid.</exception>
-    public TPort OpenEngine()
-    {
-        ResolveDocuments();
-        if (UsesFonts && _fontScope is null)
-        {
-            _fontScope = _context.Binding.UseFonts(FontDirectories);
-        }
-
-        return _context.Port;
-    }
-
-    /// <summary>Ends the font scope entered by <see cref="OpenEngine"/>.</summary>
-    public void Dispose()
-    {
-        _fontScope?.Dispose();
-        _fontScope = null;
-    }
 }

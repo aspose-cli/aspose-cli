@@ -3,6 +3,7 @@ using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.Extensibility.Commanding;
+using Aspose.Cli.Sdk.Extensibility.Output;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Ports;
 using Aspose.Cli.Sdk.Rendering;
@@ -27,13 +28,18 @@ public sealed class StandardCommandTests : IDisposable
     };
 
     private readonly TempDirectory _temp = new();
-    private readonly TestHost _host;
+    private readonly TestEngine _engine = new();
+    private readonly TestCommandRunner _runner;
 
     public StandardCommandTests()
     {
         File.WriteAllText(_temp.File("report.test"), "report");
         File.WriteAllText(_temp.File("other.test"), "other");
-        _host = new TestHost(_temp.Path);
+        TestEngine engine = _engine;
+        _runner = new TestCommandRunner(
+            _temp.Path,
+            context => TestBindings.Create(TestProducts.Manifest.Id, () => engine, () => engine, context),
+            static name => name switch { "LEFT" => "a", "RIGHT" => "b", _ => null });
     }
 
     public void Dispose() => _temp.Dispose();
@@ -175,8 +181,7 @@ public sealed class StandardCommandTests : IDisposable
     public void CreatedPath_NeverNamesAFileAProductOptionReads()
     {
         var template = new Option<string?>("--template").WithInput(InputKind.File);
-        Command command = StandardCommand.Create(
-            _host,
+        Command command = Create(
             "create",
             "Creates.",
             new CommandTraits { Output = OutputTarget.CreatedFile("File to create.", Out) },
@@ -194,8 +199,7 @@ public sealed class StandardCommandTests : IDisposable
     public void ProductArguments_FollowTheDocumentsAndTheirFilesAreNeverAnOutput()
     {
         var files = new Argument<string[]>("files") { Arity = ArgumentArity.OneOrMore }.WithInput(InputKind.File);
-        Command command = StandardCommand.Create(
-            _host,
+        Command command = Create(
             "merge",
             "Merges.",
             new CommandTraits { PasswordSubject = "all inputs", Output = OutputTarget.File("Merged file.", Out, required: true) },
@@ -240,8 +244,7 @@ public sealed class StandardCommandTests : IDisposable
     {
         var template = new Option<string?>("--template").WithInput(InputKind.File);
         File.WriteAllText(_temp.File("report.out"), "template");
-        Command command = StandardCommand.Create(
-            _host,
+        Command command = Create(
             "convert",
             "Converts.",
             new CommandTraits { Input = Report, Output = OutputTarget.File("Output path.", Out) },
@@ -350,21 +353,21 @@ public sealed class StandardCommandTests : IDisposable
             FormatDescriptor.Declare("tsx", FormatUse.Input | FormatUse.Convert, 1, 1, null, false, ".tsx"),
         ];
         FormatDescriptor pdf = FormatDescriptor.Declare("pdf", FormatUse.Convert, null, 2, null, false, ".pdf");
-        Command create = StandardCommand.Create(
-            _host, "create", "Creates.",
+        Command create = Create(
+            "create", "Creates.",
             new CommandTraits { Output = OutputTarget.CreatedFile("File to create.", writes), Encrypt = new EncryptedOutput("the file") },
             [],
             (_, standard) => Result(standard.Output.Format.Id + "|" + standard.EncryptPassword()?.Reveal()));
-        Command convert = StandardCommand.Create(
-            _host, "convert", "Converts.",
+        Command convert = Create(
+            "convert", "Converts.",
             new CommandTraits { Input = Report, Output = OutputTarget.File("Output path."), Target = TargetFormat.Convert("Target format.", [.. writes, pdf]) },
             [], (_, _) => Result());
         var root = new RootCommand { new Command("test") { create, convert } };
         CliException Refused(string file)
         {
-            _host.Error = null;
+            _runner.Error = null;
             root.Parse(["test", "create", file]).Invoke();
-            return Assert.IsType<CliException>(_host.Error);
+            return Assert.IsType<CliException>(_runner.Error);
         }
 
         Assert.Equal("tsx|", Run(create, "new.TSX"));
@@ -396,8 +399,8 @@ public sealed class StandardCommandTests : IDisposable
             FormatDescriptor.Declare("old", FormatUse.Input | FormatUse.Convert, 1, 1, null, false, ".test"),
             FormatDescriptor.Declare("tsx", FormatUse.Input | FormatUse.Convert, 2, 2, null, false, ".tsx"),
         ];
-        Command edit = StandardCommand.Create(
-            _host, "edit", "Edits.",
+        Command edit = Create(
+            "edit", "Edits.",
             new CommandTraits { Input = Report, Output = OutputTarget.Mutation(writes) },
             [],
             (_, standard) => Result(string.Join('|',
@@ -464,8 +467,7 @@ public sealed class StandardCommandTests : IDisposable
     [Fact]
     public void InputPassword_RefusesStandardInputThatCarriesTheCommandData()
     {
-        Command command = StandardCommand.Create(
-            _host,
+        Command command = Create(
             "run",
             "Runs.",
             new CommandTraits { Input = Report },
@@ -484,8 +486,8 @@ public sealed class StandardCommandTests : IDisposable
     public void RequiredEnvironmentPassword_IsNamedOnlyByItsVariable()
     {
         PasswordOptions key = PasswordOptions.RequiredEnvironment("--key-password", "the signing key");
-        Command command = StandardCommand.Create(
-            _host, "sign", "Signs.", new CommandTraits { Input = Report }, [.. key.Options],
+        Command command = Create(
+            "sign", "Signs.", new CommandTraits { Input = Report }, [.. key.Options],
             (_, standard) => Result(standard.Password(key).Reveal()));
 
         Option environment = Assert.Single(
@@ -502,8 +504,7 @@ public sealed class StandardCommandTests : IDisposable
     [Fact]
     public void Continuation_RepeatsThePathInputAndPasswordVariableButNeverThePassword()
     {
-        Command command = StandardCommand.Create(
-            _host,
+        Command command = Create(
             "run",
             "Runs.",
             new CommandTraits { Input = Report },
@@ -521,20 +522,21 @@ public sealed class StandardCommandTests : IDisposable
     }
 
     [Fact]
-    public void OpenEngine_ResolvesTheInputAndAppliesTheFontsUntilTheInvocationEnds()
+    public void Handler_RunsInTheFontScopeOfItsInvocationAfterTheInputResolves()
     {
         string fonts = Directory.CreateDirectory(_temp.File("fonts")).FullName;
-        Command command = Create(
-            new CommandTraits { Input = Report, UsesFonts = true },
-            (_, standard) => Result(standard.OpenEngine().ActiveDirectories()));
+        Command command = Product(Definition(
+                "run", "Runs.", new CommandTraits { Input = Report, UsesFonts = true }, [], null, static (_, _) => Result()),
+            static (engine, _) => Result(engine.ActiveDirectories()))
+            .Subcommands.Single();
 
         Assert.Equal(fonts, Run(command, "report.test", "--font-dir", "fonts"));
-        Assert.Equal(1, _host.Engine.ScopesEntered);
-        Assert.Equal(0, _host.Engine.ScopesOpen);
+        Assert.Equal(1, _engine.ScopesEntered);
+        Assert.Equal(0, _engine.ScopesOpen);
 
         CliException missing = RunFailing(command, "missing.test", "--font-dir", "fonts");
         Assert.Equal(ErrorCodes.FileNotFound, missing.Code);
-        Assert.Equal(1, _host.Engine.ScopesEntered);
+        Assert.Equal(1, _engine.ScopesEntered);
     }
 
     [Fact]
@@ -543,15 +545,14 @@ public sealed class StandardCommandTests : IDisposable
         var template = new Option<string?>("--template").WithInput(InputKind.File);
         var images = new Option<string[]>("--image").WithInput(InputKind.File);
         var title = new Option<string?>("--title").WithInput(InputKind.None);
-        Command command = StandardCommand.Create(
-            _host,
+        Command command = Create(
             "create",
             "Creates.",
             new CommandTraits { Output = OutputTarget.CreatedFile("File to create.", Out) },
             [template, images, title],
             (_, standard) => Result(standard.InputFile(template) + "|" + string.Join(';', standard.InputFiles(images))));
-        Command undeclared = StandardCommand.Create(
-            _host, "create", "Creates.", new CommandTraits { Output = OutputTarget.CreatedFile("File to create.", Out) }, [title],
+        Command undeclared = Create(
+            "create", "Creates.", new CommandTraits { Output = OutputTarget.CreatedFile("File to create.", Out) }, [title],
             (_, standard) => Result(standard.InputFile(title)));
 
         Assert.Equal(
@@ -559,14 +560,14 @@ public sealed class StandardCommandTests : IDisposable
             Run(command, "new.test", "--template", "report.test", "--image", "other.test"));
         Assert.Equal("|", Run(command, "new.test"));
         var certificate = new Option<string>("--certificate") { Required = true }.WithInput(InputKind.File);
-        Command required = StandardCommand.Create(
-            _host, "sign", "Signs.", new CommandTraits { Input = Report }, [certificate],
+        Command required = Create(
+            "sign", "Signs.", new CommandTraits { Input = Report }, [certificate],
             (_, standard) => Result(standard.RequiredInputFile(certificate)));
         Assert.Equal(_temp.File("other.test"), Run(required, "report.test", "--certificate", "other.test"));
         Assert.Equal(ErrorCodes.FileNotFound, RunFailing(command, "new.test", "--template", "missing.test").Code);
-        _host.Error = null;
+        _runner.Error = null;
         undeclared.Parse(["new.test", "--title", "x"]).Invoke();
-        Assert.IsType<InvalidOperationException>(_host.Error);
+        Assert.IsType<InvalidOperationException>(_runner.Error);
     }
 
     [Fact]
@@ -604,74 +605,76 @@ public sealed class StandardCommandTests : IDisposable
             () => option.Read(command.Parse([MaxCharactersOption.Name, "0"]))).Code);
     }
 
-    private Command Create(CommandTraits traits, Func<ParseResult, StandardInvocation<ITestPort>, ResultEnvelope> handler) =>
-        StandardCommand.Create(_host, "run", "Runs.", traits, [Mode()], handler);
+    private Command Create(CommandTraits traits, Func<ParseResult, StandardInvocation, TestResult> bind) =>
+        Create("run", "Runs.", traits, [Mode()], bind);
+
+    private Command Create(
+        string name,
+        string description,
+        CommandTraits traits,
+        IReadOnlyList<Symbol> parameters,
+        Func<ParseResult, StandardInvocation, TestResult> bind) =>
+        Create(name, description, traits, parameters, standardInputTaken: null, bind);
+
+    // One command of a product menu whose handler returns what the binding made of the command line.
+    private Command Create(
+        string name,
+        string description,
+        CommandTraits traits,
+        IReadOnlyList<Symbol> parameters,
+        Func<ParseResult, bool>? standardInputTaken,
+        Func<ParseResult, StandardInvocation, TestResult> bind) =>
+        Product(Definition(name, description, traits, parameters, standardInputTaken, bind), static (_, request) => request)
+            .Subcommands.Single();
+
+    private static Func<CommandDefinition<TestResult, TestResult>> Definition(
+        string name,
+        string description,
+        CommandTraits traits,
+        IReadOnlyList<Symbol> parameters,
+        Func<ParseResult, bool>? standardInputTaken,
+        Func<ParseResult, StandardInvocation, TestResult> bind) =>
+        () => new CommandDefinition<TestResult, TestResult>(
+            name, description, traits, parameters, standardInputTaken, bind, NoTable);
+
+    private Command Product(
+        Func<CommandDefinition<TestResult, TestResult>> definition,
+        Func<TestEngine, TestResult, TestResult> handler) =>
+        TestProducts.Command<TestEngine>(_runner, product => product.Command(definition, handler));
+
+
+    private static void NoTable(TestResult result, TableSurface table)
+    {
+    }
 
     private static Option<string> Mode() =>
         new Option<string>("--mode") { DefaultValueFactory = _ => "plain" }.WithInput(InputKind.None);
 
     private string? Run(Command command, params string[] arguments)
     {
-        _host.Error = null;
+        _runner.Error = null;
         ParseResult parse = command.Parse(arguments);
         Assert.Empty(parse.Errors);
         Assert.Equal(0, parse.Invoke());
-        return _host.Error is { } error ? throw error : _host.Result?.Value;
+        return _runner.Error is { } error ? throw error : (_runner.Result as TestResult)?.Value;
     }
 
     private CliException RunFailing(Command command, params string[] arguments)
     {
-        _host.Error = null;
+        _runner.Error = null;
         ParseResult parse = command.Parse(arguments);
         Assert.Empty(parse.Errors);
         parse.Invoke();
-        return Assert.IsType<CliException>(_host.Error);
+        return Assert.IsType<CliException>(_runner.Error);
     }
 
     private static TestResult Result(string? value = null) => new(value);
-
-    public interface ITestPort
-    {
-        string ActiveDirectories();
-    }
 
 #pragma warning disable APCLI003 // A test result, not a product JSON root.
     private sealed record TestResult(string? Value) : ResultEnvelope("test/result", 1);
 #pragma warning restore APCLI003
 
-    private sealed class TestHost(string workDirectory) : IProductCommandHost<ITestPort>
-    {
-        public TestEngine Engine { get; } = new();
-
-        public TestResult? Result { get; private set; }
-
-        public Exception? Error { get; set; }
-
-        public int Run(ParseResult parseResult, Func<ProductCommandContext<ITestPort>, ResultEnvelope> handler)
-        {
-            TestEngine engine = Engine;
-            var context = new ProductCommandContext<ITestPort>
-            {
-                Binding = ProductBinding.CreateLicenseFree<ITestPort>("test", _ => engine, _ => engine),
-                Paths = new PathResolver(workDirectory),
-                Inputs = TestBudgets.Create().Inputs,
-                ReadEnvironment = static name => name switch { "LEFT" => "a", "RIGHT" => "b", _ => null },
-            };
-            try
-            {
-                Result = (TestResult)handler(context);
-            }
-            catch (Exception exception)
-            {
-                Result = null;
-                Error = exception;
-            }
-
-            return 0;
-        }
-    }
-
-    private sealed class TestEngine : ITestPort, IFontEnvironment
+    private sealed class TestEngine : IFontEnvironment
     {
         private FontSearchProfile? _active;
 

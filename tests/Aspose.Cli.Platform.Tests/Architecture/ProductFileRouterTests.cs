@@ -308,7 +308,7 @@ public sealed class ProductFileRouterTests
     public async Task OperationSpecificRouteIsEnforcedByResolverAndRegistry()
     {
         var recognizer = Match(FileRecognitionKind.Match);
-        ProductDefinitionBuilder<ITestPort> builder = ExtProduct.Define<ITestPort>(
+        ProductDefinitionBuilder<ITestSession> builder = ExtProduct.Define<ITestSession>(
                 new ProductManifest
                 {
                     Id = "preview-only",
@@ -378,7 +378,7 @@ public sealed class ProductFileRouterTests
     [Fact]
     public void GenericFormatRejectsUnisolatedNonCooperativeRecognizer()
     {
-        ProductDefinitionBuilder<ITestPort> builder = ExtProduct.Define<ITestPort>(
+        ProductDefinitionBuilder<ITestSession> builder = ExtProduct.Define<ITestSession>(
                 new ProductManifest
                 {
                     Id = "unsafe",
@@ -417,7 +417,7 @@ public sealed class ProductFileRouterTests
     [Fact]
     public void DefaultOwnedFormatRequiresExactlyOneRecognitionMechanism()
     {
-        ProductDefinitionBuilder<ITestPort> missing = ExtProduct.Define<ITestPort>(
+        ProductDefinitionBuilder<ITestSession> missing = ExtProduct.Define<ITestSession>(
                 Manifest("missing"))
             .Formats(
             [
@@ -431,7 +431,7 @@ public sealed class ProductFileRouterTests
             Assert.Throws<InvalidOperationException>(() => missing.Build());
         Assert.Contains("recognition", missingError.Message, StringComparison.OrdinalIgnoreCase);
 
-        ProductDefinitionBuilder<ITestPort> mixed = ExtProduct.Define<ITestPort>(
+        ProductDefinitionBuilder<ITestSession> mixed = ExtProduct.Define<ITestSession>(
                 Manifest("mixed"))
             .Formats(
             [
@@ -470,7 +470,7 @@ public sealed class ProductFileRouterTests
             ["alpha"] = FileFormatRecognition.Match(signature, "same signature"),
             ["beta"] = FileFormatRecognition.Match(signature, "same signature"),
         });
-        ProductDefinitionBuilder<ITestPort> builder = ExtProduct.Define<ITestPort>(
+        ProductDefinitionBuilder<ITestSession> builder = ExtProduct.Define<ITestSession>(
                 Manifest("ambiguous-format"))
             .Formats(formats);
         Complete(builder, "ambiguous-format");
@@ -579,7 +579,7 @@ public sealed class ProductFileRouterTests
         {
             ["alpha"] = FileFormatRecognition.Match(FileProbePattern.AsciiBytesAt(0, "alpha"), "alpha signature"),
         });
-        ProductDefinitionBuilder<ITestPort> builder = ExtProduct.Define<ITestPort>(Manifest("explicit-rules"))
+        ProductDefinitionBuilder<ITestSession> builder = ExtProduct.Define<ITestSession>(Manifest("explicit-rules"))
             .Formats(
             [
                 .. formats,
@@ -631,7 +631,7 @@ public sealed class ProductFileRouterTests
         {
             ["rows"] = FileFormatRecognition.Match(FileProbePattern.TextContains(","), "delimited text", 70),
         });
-        ProductDefinitionBuilder<ITestPort> rows = ExtProduct.Define<ITestPort>(Manifest("two")).Formats(formats);
+        ProductDefinitionBuilder<ITestSession> rows = ExtProduct.Define<ITestSession>(Manifest("two")).Formats(formats);
         Complete(rows, "two");
         ProductCatalog catalog = ProductCatalog.Build(
         [
@@ -677,7 +677,7 @@ public sealed class ProductFileRouterTests
             ["alpha"] = FileFormatRecognition.Match(signature, "same signature"),
             ["beta"] = FileFormatRecognition.Match(signature, "same signature"),
         });
-        ProductDefinitionBuilder<ITestPort> builder = ExtProduct.Define<ITestPort>(
+        ProductDefinitionBuilder<ITestSession> builder = ExtProduct.Define<ITestSession>(
                 Manifest("ambiguous-format"))
             .Formats(formats);
         Complete(builder, "ambiguous-format");
@@ -700,7 +700,7 @@ public sealed class ProductFileRouterTests
                 FileProbePattern.ZipContainsAny("required/marker.xml"),
                 "package marker"),
         });
-        ProductDefinitionBuilder<ITestPort> builder = ExtProduct.Define<ITestPort>(
+        ProductDefinitionBuilder<ITestSession> builder = ExtProduct.Define<ITestSession>(
                 Manifest("package"))
             .Formats(formats);
         Complete(builder, "package");
@@ -741,7 +741,7 @@ public sealed class ProductFileRouterTests
         {
             ["sample"] = recognition,
         });
-        ProductDefinitionBuilder<ITestPort> builder = ExtProduct.Define<ITestPort>(
+        ProductDefinitionBuilder<ITestSession> builder = ExtProduct.Define<ITestSession>(
                 Manifest("snapshot"))
             .Formats(formats);
         Complete(builder, "snapshot");
@@ -777,7 +777,7 @@ public sealed class ProductFileRouterTests
                     FileProbePattern.BytesAt(int.MaxValue, 0x43),
                     "far byte")),
         });
-        ProductDefinitionBuilder<ITestPort> builder = ExtProduct.Define<ITestPort>(
+        ProductDefinitionBuilder<ITestSession> builder = ExtProduct.Define<ITestSession>(
                 Manifest("bounded-offset"))
             .Formats(formats);
         Complete(builder, "bounded-offset");
@@ -802,7 +802,7 @@ public sealed class ProductFileRouterTests
         string extension,
         IFileRecognizer recognizer)
     {
-        ProductDefinitionBuilder<ITestPort> builder = ExtProduct.Define<ITestPort>(
+        ProductDefinitionBuilder<ITestSession> builder = ExtProduct.Define<ITestSession>(
             new ProductManifest
             {
                 Id = id,
@@ -835,39 +835,38 @@ public sealed class ProductFileRouterTests
     }
 
     private static void Complete(
-        ProductDefinitionBuilder<ITestPort> builder,
+        ProductDefinitionBuilder<ITestSession> builder,
         string id)
     {
         builder
             .Diagnostics([])
             .Json(new ProductJsonDefinition(id, SdkJsonContext.Default))
-            .View(new TestProductViewAdapter<ITestPort>())
-            .Commands(_ => new Command(id))
+            .View(new TestProductViewAdapter<ITestSession>())
             .Activator(static _ =>
                 throw new InvalidOperationException(
                     "Routing tests must not activate product ports."));
         switch (id)
         {
             case "one":
-                builder.Output<TestResultOne>(static (_, _) => { });
+                builder.WithCommand<ITestSession, TestResultOne>();
                 break;
             case "two":
-                builder.Output<TestResultTwo>(static (_, _) => { });
+                builder.WithCommand<ITestSession, TestResultTwo>();
                 break;
             case "three":
-                builder.Output<TestResultThree>(static (_, _) => { });
+                builder.WithCommand<ITestSession, TestResultThree>();
                 break;
             case "four":
-                builder.Output<TestResultFour>(static (_, _) => { });
+                builder.WithCommand<ITestSession, TestResultFour>();
                 break;
             case "owner":
-                builder.Output<TestResultOwner>(static (_, _) => { });
+                builder.WithCommand<ITestSession, TestResultOwner>();
                 break;
             case "detector":
-                builder.Output<TestResultDetector>(static (_, _) => { });
+                builder.WithCommand<ITestSession, TestResultDetector>();
                 break;
             default:
-                builder.Output<TestResultOther>(static (_, _) => { });
+                builder.WithCommand<ITestSession, TestResultOther>();
                 break;
         }
     }
@@ -913,7 +912,7 @@ public sealed class ProductFileRouterTests
         return path;
     }
 
-    private interface ITestPort;
+    private interface ITestSession;
 
 #pragma warning disable APCLI003 // Test results, not product JSON roots.
     private sealed record TestResultOne() : ResultEnvelope("test/one", 1);
