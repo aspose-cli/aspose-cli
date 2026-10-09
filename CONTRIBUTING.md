@@ -36,16 +36,14 @@ Every change reaches `master` through a pull request that passes the two require
 `verify` runs the tests and `conventions` checks the branch name, the title and every commit
 subject.
 
-- **One stage per pull request, one concern per commit.** A pull request carries a stage of
-  related work. Each commit is one concern, split by responsibility rather than by file, with
-  its tests, schemas, Skills and docs; it builds on its own and passes the tests it reaches.
-  Keep a mechanical refactor apart from a behavior change, in its own commit. Fold review
-  fixes into the commit they fix, so the history reads as the finished work.
+- **Commits.** A pull request holds at most 100 commits, the most GitHub can rebase-merge.
+  Split them as you judge best for review; every commit builds, and review fixes are folded
+  into the commits they fix, so the history reads as the finished work.
 - **Branch:** `<type>/<kebab-case-summary>` or `stage/<kebab-case-summary>` from the latest
   `master`, for example `fix/backup-disclosure` or `stage/coded-verification`. GitHub's own
   `revert-<number>-<branch>` and `dependabot/...` branches are accepted too.
 - **Title and commit subjects:** `<type>(<scope>): <summary>`, imperative, starting in lower case,
-  no final period, at most 65 characters. The title summarizes the stage. Types: `feat`, `fix`,
+  no final period, at most 85 characters. The title summarizes the change. Types: `feat`, `fix`,
   `refactor`, `perf`, `test`, `docs`, `build`, `ci`, `chore`, `revert`. The scope is optional:
   `sdk`, `host`, `cli`, `app`, `cells`, `pdf`, `slides`, `words`, `skills`, `install`,
   `release`, `deps`. Retitle a GitHub-generated revert as `revert: <original summary>`; its
@@ -57,12 +55,9 @@ subject.
 - **Merge** by rebase, so each commit lands on `master` as written. Rebase on the latest `master`
   before pushing; the branch need not stay up to date after that, so parallel pull requests
   merge in the order they finish.
-- **A red `master` comes first.** Find the pull request that broke it and fix or revert it
-  before merging anything else, unless the failure is flaky.
 - **A failure the change cannot reach may be flaky,** on a pull request or on `master`. Rerun the
-  failed job once. If it passes, the test is flaky: make it reliable in its own `test(...)`
-  commit, ahead of other work, relaxing only the test's own timing, never a product check. If it
-  fails again, it is a real failure.
+  failed job once. If it passes, the test is flaky: make it reliable by relaxing only the test's
+  own timing, never a product check. If it fails again, it is a real failure.
 - **Dependabot** opens one pull request a month that updates the pinned actions; merge it
   like any other once CI passes.
 
