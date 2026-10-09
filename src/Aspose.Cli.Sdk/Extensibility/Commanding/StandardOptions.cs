@@ -84,7 +84,9 @@ public sealed class TargetFormat
     /// <summary>
     /// An optional <c>--to</c> among the product's render formats; when it is omitted, the
     /// <c>--out</c> extension names the format, and otherwise <paramref name="defaultFormat"/>.
-    /// Its help is the standard wording, such as <c>Image format: png, jpeg or svg.</c>
+    /// The option has no parser default, since the extension decides first; its help is the
+    /// standard wording, such as
+    /// <c>Image format: png, jpeg or svg. Default: the --out extension's format, else png.</c>
     /// </summary>
     /// <param name="formats">The product's format declarations; those with the render use are offered.</param>
     /// <param name="defaultFormat">The render format id used when nothing else names one.</param>
@@ -93,7 +95,12 @@ public sealed class TargetFormat
         ArgumentNullException.ThrowIfNull(formats);
         IReadOnlyList<string> ids = [.. formats.IdsFor(FormatUse.Render)];
         string listed = ids.Count < 2 ? string.Concat(ids) : $"{string.Join(", ", ids.Take(ids.Count - 1))} or {ids[^1]}";
-        return new(FormatUse.Render, $"Image format: {listed}.", formats, defaultFormat, required: false);
+        return new(
+            FormatUse.Render,
+            $"Image format: {listed}. Default: the {StandardOptionNames.Out} extension's format, else {defaultFormat}.",
+            formats,
+            defaultFormat,
+            required: false);
     }
 
     /// <summary>
@@ -494,11 +501,6 @@ public sealed class StandardOptions
             Description = target.Description,
             Required = target.Required,
         }.WithInput(InputKind.None);
-        if (target.Default is { } fallback)
-        {
-            option.DefaultValueFactory = _ => fallback;
-        }
-
         option.CompletionSources.Add([.. target.Offered.Select(static format => format.Id)]);
         string names = string.Join(", ", target.Offered.SelectMany(static format => format.Aliases.Prepend(format.Id)));
         option.Validators.Add(result =>

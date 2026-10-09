@@ -1506,7 +1506,7 @@
             "secret": false,
             "valueSource": "command-line",
             "inputKind": "none",
-            "description": "Extra sections to include; repeat for more. names: defined names; errors: formula-error scan; fonts: fonts used; layout: frozen panes, outline groups, filter, print area and page setup of each sheet."
+            "description": "Extra sections to include; repeat for more. names: defined names; errors: formula-error scan; layout: frozen panes, outline groups, filter, print area and page setup of each sheet."
           },
           {
             "name": "--password",
@@ -2175,8 +2175,7 @@
             "required": false,
             "recursive": false,
             "hidden": false,
-            "hasDefault": true,
-            "default": "png",
+            "hasDefault": false,
             "allowedValues": [
               "jpeg",
               "png",
@@ -2185,7 +2184,7 @@
             "secret": false,
             "valueSource": "command-line",
             "inputKind": "none",
-            "description": "Image format: png, jpeg or svg."
+            "description": "Image format: png, jpeg or svg. Default: the --out extension's format, else png."
           }
         ],
         "arguments": [

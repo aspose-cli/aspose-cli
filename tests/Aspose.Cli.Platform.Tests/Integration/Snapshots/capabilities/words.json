@@ -1916,7 +1916,7 @@
             "secret": false,
             "valueSource": "command-line",
             "inputKind": "none",
-            "description": "Extra sections to include; repeat for more. outline: headings; sections: page setup, headers and footers; properties: title, author, subject and keywords; fonts: fonts used."
+            "description": "Extra sections to include; repeat for more. outline: headings; sections: page setup, headers and footers; properties: title, author, subject and keywords."
           },
           {
             "name": "--font-dir",
@@ -2555,8 +2555,7 @@
             "required": false,
             "recursive": false,
             "hidden": false,
-            "hasDefault": true,
-            "default": "png",
+            "hasDefault": false,
             "allowedValues": [
               "jpeg",
               "png",
@@ -2565,7 +2564,7 @@
             "secret": false,
             "valueSource": "command-line",
             "inputKind": "none",
-            "description": "Image format: png, jpeg or svg."
+            "description": "Image format: png, jpeg or svg. Default: the --out extension's format, else png."
           }
         ],
         "arguments": [
