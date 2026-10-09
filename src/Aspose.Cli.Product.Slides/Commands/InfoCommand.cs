@@ -16,7 +16,7 @@ internal static class InfoCommand
             Details,
             new Dictionary<string, string>(StringComparer.Ordinal)
             {
-                ["notes"] = "presence and character count; query slides --notes reads the text",
+                ["notes"] = "presence and character count, with the text from query slides --notes",
             });
         return new(
             "inspect",

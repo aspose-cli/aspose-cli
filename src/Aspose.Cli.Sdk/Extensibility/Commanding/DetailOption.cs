@@ -4,7 +4,8 @@ namespace Aspose.Cli.Sdk.Extensibility.Commanding;
 
 /// <summary>
 /// The one <c>--detail</c> option of an inspect command: extra sections the result includes,
-/// repeatable, among the product's section names, in the standard wording generated from them.
+/// repeatable, among the product's section names, in the standard wording with a note for the
+/// sections whose names do not say what they hold.
 /// </summary>
 public sealed class DetailOption
 {
@@ -25,11 +26,15 @@ public sealed class DetailOption
             throw new ArgumentException($"The note for '{unknown}' names no section.", nameof(notes));
         }
 
-        IEnumerable<string> listed = values.Select(value =>
-            notes is not null && notes.TryGetValue(value, out string? note) ? $"{value} ({note})" : value);
+        // Help prints the allowed values after the description, so it names only those with a note.
+        string[] noted =
+        [
+            .. values.Where(value => notes?.ContainsKey(value) == true).Select(value => $"{value}: {notes![value]}"),
+        ];
         _detail = new Option<string[]>("--detail")
         {
-            Description = $"Extra sections to include; repeat for more: {string.Join(", ", listed)}.",
+            Description = "Extra sections to include; repeat for more."
+                + (noted.Length == 0 ? string.Empty : $" {string.Join("; ", noted)}."),
             AllowMultipleArgumentsPerToken = true,
         }.WithInput(InputKind.None);
         _detail.AcceptOnlyFromAmong([.. values]);

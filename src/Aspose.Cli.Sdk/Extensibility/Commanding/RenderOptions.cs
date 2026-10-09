@@ -10,7 +10,7 @@ public sealed class DpiOption
 {
     private readonly Option<int> _dpi = new("--dpi")
     {
-        Description = $"Raster resolution, {RenderPixelGuard.MinimumDpi}-{RenderPixelGuard.MaximumDpi}; ignored for vector formats.",
+        Description = $"Raster resolution ({RenderPixelGuard.MinimumDpi}-{RenderPixelGuard.MaximumDpi}); ignored for vector formats.",
         DefaultValueFactory = _ => RenderPixelGuard.DefaultDpi,
     };
 

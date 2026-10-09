@@ -1506,7 +1506,7 @@
             "secret": false,
             "valueSource": "command-line",
             "inputKind": "none",
-            "description": "Extra sections to include; repeat for more: names (defined names), errors (formula-error scan), fonts (fonts used), tables, charts, pivots, validation, layout (frozen panes, outline groups, filter, print area and page setup of each sheet)."
+            "description": "Extra sections to include; repeat for more. names: defined names; errors: formula-error scan; fonts: fonts used; layout: frozen panes, outline groups, filter, print area and page setup of each sheet."
           },
           {
             "name": "--password",
@@ -2027,7 +2027,7 @@
             "secret": false,
             "valueSource": "command-line",
             "inputKind": "none",
-            "description": "Raster resolution, 36-1200; ignored for vector formats."
+            "description": "Raster resolution (36-1200); ignored for vector formats."
           },
           {
             "name": "--font-dir",
