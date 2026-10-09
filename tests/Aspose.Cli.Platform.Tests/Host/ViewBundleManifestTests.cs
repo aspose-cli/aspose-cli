@@ -129,7 +129,6 @@ public sealed class ViewBundleManifestTests
         MaximumSnapshotFiles: 4,
         MaximumSnapshotFileBytes: 1024,
         MaximumSnapshotBytes: 4096,
-        MaximumInlineHtmlBytes: 1024,
         MaximumUploadFiles: 4,
         MaximumUploadSessionBytes: 4096,
         RenderTimeout: TimeSpan.FromMinutes(1));

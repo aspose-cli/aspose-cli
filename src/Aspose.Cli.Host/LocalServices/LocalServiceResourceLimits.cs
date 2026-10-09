@@ -15,7 +15,6 @@ internal sealed record LocalServiceResourceLimits(
     int MaximumSnapshotFiles,
     long MaximumSnapshotFileBytes,
     long MaximumSnapshotBytes,
-    long MaximumInlineHtmlBytes,
     int MaximumUploadFiles,
     long MaximumUploadSessionBytes,
     TimeSpan RenderTimeout)
@@ -61,11 +60,6 @@ internal sealed record LocalServiceResourceLimits(
                 DistributionInfo.EnvironmentVariablePrefix + "PREVIEW_MAX_SNAPSHOT_BYTES",
                 defaultValue: 256L * 1024 * 1024,
                 maximum: 1024L * 1024 * 1024),
-            Bytes(
-                environment,
-                DistributionInfo.EnvironmentVariablePrefix + "PREVIEW_MAX_INLINE_HTML_BYTES",
-                defaultValue: 8L * 1024 * 1024,
-                maximum: 32L * 1024 * 1024),
             Integer(
                 environment,
                 DistributionInfo.EnvironmentVariablePrefix + "APP_MAX_UPLOAD_FILES",
