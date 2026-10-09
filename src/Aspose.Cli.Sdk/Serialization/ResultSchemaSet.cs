@@ -278,11 +278,20 @@ public sealed class ResultSchemaSet
         Value(schema, member.Value, [.. member.Constraints.Select(static constraint => (constraint, constraint.Depth))], member.OpenPattern, definitions, defined);
         if (member.AlwaysPresent.Count > 0)
         {
-            ResultRecord held = member.Value is { Kind: ResultValueKind.Record, Record: { } type }
+            // The held record, or the record each item of an array holds.
+            JsonObject target = schema;
+            ResultValue value = member.Value;
+            while (value is { Kind: ResultValueKind.Array, Items: { Nullable: false } items })
+            {
+                target = (JsonObject)target["items"]!;
+                value = items;
+            }
+
+            ResultRecord held = value is { Kind: ResultValueKind.Record, Record: { } type }
                 ? Resolve(type, out _)
-                : throw new InvalidOperationException($"[AlwaysPresent] on {record.Type.Name}.{member.Name} needs a member that holds a record.");
+                : throw new InvalidOperationException($"[AlwaysPresent] on {record.Type.Name}.{member.Name} needs a member that holds a record or an array of records.");
             CheckAlwaysPresent(held, Members(held), member.AlwaysPresent);
-            schema["required"] = new JsonArray([.. member.AlwaysPresent.Select(static name => (JsonNode)name)]);
+            target["required"] = new JsonArray([.. member.AlwaysPresent.Select(static name => (JsonNode)name)]);
         }
 
         // A value kind may describe itself; the member's own summary says what this member means.

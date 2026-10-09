@@ -11,6 +11,7 @@ public sealed record PdfInfoResult() : ResultEnvelope("pdf-info", 2)
 
     /// <summary>The inspected PDF.</summary>
     [JsonPropertyOrder(-49)]
+    [AlwaysPresent("fingerprint")]
     public required SourceInfo Source { get; init; }
 
     /// <summary>The document summary every inspection reports.</summary>
@@ -383,6 +384,7 @@ public sealed record PdfConvertResult() : ResultEnvelope("convert-result", 2)
     /// <summary>The files written: one, or one per page for an image format.</summary>
     [JsonPropertyOrder(-49)]
     [MinItems(1)]
+    [AlwaysPresent("format")]
     public required IReadOnlyList<OutputInfo> Outputs { get; init; }
 
     /// <summary>The page range converted, as <c>--pages</c> gave it; absent when every page was.</summary>
@@ -438,6 +440,7 @@ public sealed record PdfPageOutput
     public required int Page { get; init; }
 
     /// <summary>The image written for the page.</summary>
+    [AlwaysPresent("format")]
     public required OutputInfo Output { get; init; }
 }
 
@@ -451,6 +454,7 @@ public sealed record PdfWriteResult() : ResultEnvelope("write-result", 2)
 
     /// <summary>The PDF written.</summary>
     [JsonPropertyOrder(-49)]
+    [AlwaysPresent("format")]
     public required OutputInfo Output { get; init; }
 
     /// <summary>The documents merged, in order; absent for <c>create</c>.</summary>
@@ -482,6 +486,7 @@ public sealed record PdfSplitOutput
     public string? Bookmark { get; init; }
 
     /// <summary>The PDF written for the part.</summary>
+    [AlwaysPresent("format")]
     public required OutputInfo Output { get; init; }
 }
 
@@ -558,7 +563,7 @@ public sealed record PdfEditResult() : ResultEnvelope("edit-result", 2), IPartia
 
     /// <summary>The PDF written; absent for a dry run, which writes nothing.</summary>
     [JsonPropertyOrder(-49)]
-    [AlwaysPresent("fingerprint")]
+    [AlwaysPresent("format", "fingerprint")]
     public OutputInfo? Output { get; init; }
 
     /// <summary>Whether the batch was only checked and applied in memory (<c>--dry-run</c>).</summary>
@@ -708,6 +713,7 @@ public sealed record PdfFormExportResult() : ResultEnvelope("form-export-result"
 
     /// <summary>The form-data file written: JSON, FDF or XFDF.</summary>
     [JsonPropertyOrder(-49)]
+    [AlwaysPresent("format")]
     public required OutputInfo Output { get; init; }
 }
 
@@ -780,6 +786,7 @@ public sealed record PdfSignResult() : ResultEnvelope("sign-result", 2)
 
     /// <summary>The signed PDF written.</summary>
     [JsonPropertyOrder(-49)]
+    [AlwaysPresent("format")]
     public required OutputInfo Output { get; init; }
 
     /// <summary>The signature field as the saved file reports it.</summary>

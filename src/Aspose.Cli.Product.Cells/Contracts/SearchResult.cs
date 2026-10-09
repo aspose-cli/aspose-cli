@@ -13,6 +13,7 @@ public sealed record SearchResult() : ResultEnvelope("search-result", 2)
 {
     /// <summary>The searched file.</summary>
     [JsonPropertyOrder(-50)]
+    [AlwaysPresent("fingerprint")]
     public required SourceInfo Source { get; init; }
 
     /// <summary>The pattern that was searched for (echoed back).</summary>

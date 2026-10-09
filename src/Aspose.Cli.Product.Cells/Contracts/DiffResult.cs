@@ -12,10 +12,12 @@ public sealed record DiffResult() : ResultEnvelope("diff-result", 2)
 {
     /// <summary>The left (baseline) file.</summary>
     [JsonPropertyOrder(-50)]
+    [AlwaysPresent("fingerprint")]
     public required SourceInfo Left { get; init; }
 
     /// <summary>The right (candidate) file.</summary>
     [JsonPropertyOrder(-49)]
+    [AlwaysPresent("fingerprint")]
     public required SourceInfo Right { get; init; }
 
     /// <summary>True when the two workbooks are equal within the compared scope.</summary>
