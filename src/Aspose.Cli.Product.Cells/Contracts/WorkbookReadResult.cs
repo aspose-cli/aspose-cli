@@ -19,6 +19,7 @@ public sealed record WorkbookReadResult() : ResultEnvelope("workbook-read", 2)
 
     /// <summary>The projected file.</summary>
     [JsonPropertyOrder(-49)]
+    [AlwaysPresent("fingerprint")]
     public required SourceInfo Source { get; init; }
 
     /// <summary>The scope that was projected.</summary>

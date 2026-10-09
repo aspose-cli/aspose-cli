@@ -15,6 +15,7 @@ public sealed record WorkbookInfoResult() : ResultEnvelope("workbook-info", 2)
 
     /// <summary>The inspected file.</summary>
     [JsonPropertyOrder(-49)]
+    [AlwaysPresent("fingerprint")]
     public required SourceInfo Source { get; init; }
 
     /// <summary>Workbook-level summary.</summary>

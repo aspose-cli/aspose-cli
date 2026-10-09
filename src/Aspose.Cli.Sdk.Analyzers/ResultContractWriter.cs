@@ -288,9 +288,9 @@ internal sealed class ResultContractWriter(Compilation compilation, Action<Locat
 
         if (AlwaysPresent(property) is { } present)
         {
-            if (levels.Count != 1 || levels[0] != "Record")
+            if (levels[levels.Count - 1] != "Record" ||levels.Take(levels.Count - 1).Any(static level => level != "Array"))
             {
-                Invalid(property, "[AlwaysPresent] names members of the record the member holds, so the member must hold one record");
+                Invalid(property, "[AlwaysPresent] names members of the record the member holds, so the member must hold a record or an array of records");
             }
 
             code.Append(", AlwaysPresent = ").Append(present);

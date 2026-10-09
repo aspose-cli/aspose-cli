@@ -152,7 +152,7 @@ public sealed class ResultContractGeneratorTests
 
                 /// <summary>The names read.</summary>
                 [AlwaysPresent("fingerprint")]
-                public IReadOnlyList<SourceInfo>? Names { get; init; }
+                public IReadOnlyDictionary<string, SourceInfo>? Names { get; init; }
             }
 
             [JsonSerializable(typeof(ReadResult))]
@@ -161,7 +161,7 @@ public sealed class ResultContractGeneratorTests
 
         Diagnostic error = Assert.Single(result.Diagnostics, static diagnostic => diagnostic.Id == "APCLI013");
         Assert.Contains("'ReadResult.Names'", error.GetMessage(), StringComparison.Ordinal);
-        Assert.Contains("must hold one record", error.GetMessage(), StringComparison.Ordinal);
+        Assert.Contains("must hold a record or an array of records", error.GetMessage(), StringComparison.Ordinal);
 
         result = Run(
             """
@@ -172,6 +172,10 @@ public sealed class ResultContractGeneratorTests
                 /// <summary>The file read.</summary>
                 [AlwaysPresent("fingerprint")]
                 public required SourceInfo Source { get; init; }
+
+                /// <summary>The files written.</summary>
+                [AlwaysPresent("format")]
+                public required IReadOnlyList<OutputInfo> Outputs { get; init; }
             }
 
             [JsonSerializable(typeof(ReadResult))]
@@ -182,6 +186,7 @@ public sealed class ResultContractGeneratorTests
         string source = Assert.Single(Assert.Single(result.Results).GeneratedSources).SourceText.ToString();
         Assert.Contains("SchemaId = \"read-result\", SchemaVersion = 2, AlwaysPresent = [\"window\"], Properties = [", source, StringComparison.Ordinal);
         Assert.Contains("Record = typeof(global::Aspose.Cli.Sdk.Contracts.SourceInfo) }, Required = true, AlwaysPresent = [\"fingerprint\"] }", source, StringComparison.Ordinal);
+        Assert.Contains("Record = typeof(global::Aspose.Cli.Sdk.Contracts.OutputInfo) } }, Required = true, AlwaysPresent = [\"format\"] }", source, StringComparison.Ordinal);
     }
 
     [Theory]
