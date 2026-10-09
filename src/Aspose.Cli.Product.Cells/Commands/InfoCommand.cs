@@ -13,28 +13,24 @@ internal static class InfoCommand
 
     public static CommandDefinition<InfoRequest, WorkbookInfoResult> Create()
     {
-        var preview = new Option<bool>("--preview")
-        {
-            Description = "Include a small sample of display values for each sheet.",
-        };
+        var preview = new PreviewOption("display values of the first --preview-rows rows and up to 20 columns of each sheet, from A1");
         var previewRows = new Option<int>("--preview-rows")
         {
             Description = $"Number of preview rows per sheet (1-{MaxPreviewRows}).",
             DefaultValueFactory = _ => 5,
         };
-        var detail = new Option<string[]>("--detail")
+        var detail = new DetailOption(InfoDetails.All, new Dictionary<string, string>
         {
-            Description = "Extra sections: names (defined names), errors (formula-error scan), "
-                + "fonts (fonts used), tables, charts, pivots, validation, layout (frozen panes, outline groups, filter, "
-                + "print area and page setup of each sheet). Repeatable.",
-            AllowMultipleArgumentsPerToken = true,
-        }.WithInput(InputKind.None);
-        detail.AcceptOnlyFromAmong([.. InfoDetails.All]);
+            [InfoDetails.Names] = "defined names",
+            [InfoDetails.Errors] = "formula-error scan",
+            [InfoDetails.Fonts] = "fonts used",
+            [InfoDetails.Layout] = "frozen panes, outline groups, filter, print area and page setup of each sheet",
+        });
         return new(
             "inspect",
             "Show structure and metadata of a workbook.",
             new CommandTraits { Input = CellsTraits.Workbook("Workbook to inspect (xlsx, xlsm, xlsb, xls, ods, csv, ...).") },
-            [preview, previewRows, detail],
+            [.. preview.Options, previewRows, .. detail.Options],
             (parse, standard) =>
             {
                 int rows = parse.GetValue(previewRows);
@@ -43,9 +39,9 @@ internal static class InfoCommand
                 return new InfoRequest
                 {
                     Input = standard.Input,
-                    IncludePreview = parse.GetValue(preview),
+                    IncludePreview = preview.Read(parse),
                     PreviewRows = rows,
-                    Details = parse.GetValue(detail),
+                    Details = detail.Read(parse),
                     Password = standard.InputPassword,
                 };
             },
