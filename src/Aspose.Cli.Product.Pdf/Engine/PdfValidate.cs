@@ -14,13 +14,8 @@ internal static class PdfValidate
     internal static PdfValidateResult Run(PdfSession session, PdfValidateRequest request)
     {
         string filePath = request.Input;
-        PdfFormat format = request.Profile.ToLowerInvariant() switch
-        {
-            "pdfa-1b" => PdfFormat.PDF_A_1B,
-            "pdfa-2b" => PdfFormat.PDF_A_2B,
-            "pdfa-3b" => PdfFormat.PDF_A_3B,
-            _ => throw CliErrors.OptionInvalid("--profile", $"unknown profile '{request.Profile}'", "Use pdfa-1b, pdfa-2b or pdfa-3b."),
-        };
+        PdfFormat format = PdfEngineFormats.Archive(request.Profile.ToLowerInvariant())
+            ?? throw CliErrors.OptionInvalid("--profile", $"unknown profile '{request.Profile}'", "Use pdfa-1b, pdfa-2b or pdfa-3b.");
         LicenseState state = session.Outputs.License;
         using LoadedPdf loaded = session.Loader.Open(filePath, request.Password);
         using var log = new MemoryStream();

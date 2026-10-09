@@ -22,16 +22,18 @@ internal static class PdfConvert
         IReadOnlyList<int> pages = request.Pages?.Resolve(loaded.Document.Pages.Count)
             ?? Enumerable.Range(1, loaded.Document.Pages.Count).ToArray();
         List<Warning> warnings = [];
-        IReadOnlyList<OutputInfo> outputs = request.Output.Format.Id switch
+        PdfEngineFormat target = PdfEngineFormats.Of(request.Output.Format.Id);
+        IReadOnlyList<OutputInfo> outputs = target.Write switch
         {
-            "png" or "jpeg" or "svg" => ConvertPages(session, loaded.Document, pages, request),
-            "tiff" => [ConvertTiff(session, loaded.Document, pages, request)],
-            "txt" => [ConvertText(session, loaded.Document, pages, request)],
-            "pdfa-1b" or "pdfa-2b" or "pdfa-3b" => [ConvertPdfa(session, loaded.Document, pages, request, state, warnings)],
-            _ => [ConvertDocument(session, loaded.Document, pages, request, state, warnings)],
+            PdfEngineWrite.PageImage => ConvertPages(session, loaded.Document, pages, request),
+            PdfEngineWrite.Tiff => [ConvertTiff(session, loaded.Document, pages, request)],
+            PdfEngineWrite.Text => [ConvertText(session, loaded.Document, pages, request)],
+            PdfEngineWrite.Archive => [ConvertPdfa(session, loaded.Document, pages, request, state, warnings)],
+            PdfEngineWrite.Document => [ConvertDocument(session, loaded.Document, pages, request, state, warnings)],
+            _ => throw new InvalidOperationException($"'{target.Id}' is not a PDF convert format."),
         };
 
-        if (request.Output.Format.Id is not ("xps" or "svg" or "png" or "jpeg" or "tiff" or "pdfa-1b" or "pdfa-2b" or "pdfa-3b"))
+        if (target.Lossy)
         {
             warnings.Add(new Warning
             {
@@ -73,17 +75,7 @@ internal static class PdfConvert
             warnings.Add(navigation);
         }
 
-        SaveFormat format = request.Output.Format.Id switch
-        {
-            "docx" => SaveFormat.DocX,
-            "xlsx" => SaveFormat.Excel,
-            "pptx" => SaveFormat.Pptx,
-            "html" => SaveFormat.Html,
-            "epub" => SaveFormat.Epub,
-            "md" => SaveFormat.Markdown,
-            "xps" => SaveFormat.Xps,
-            _ => throw new InvalidOperationException($"'{request.Output.Format.Id}' is not a PDF document export."),
-        };
+        SaveFormat format = PdfEngineFormats.Save(request.Output.Format.Id);
         long size = session.Outputs.Write(
             request.Output.Path,
             request.Output.Overwrite,
@@ -182,13 +174,8 @@ internal static class PdfConvert
         List<Warning> warnings)
     {
         string profile = request.Output.Format.Id;
-        PdfFormat format = profile switch
-        {
-            "pdfa-1b" => PdfFormat.PDF_A_1B,
-            "pdfa-2b" => PdfFormat.PDF_A_2B,
-            "pdfa-3b" => PdfFormat.PDF_A_3B,
-            _ => throw new InvalidOperationException($"'{profile}' is not a PDF/A profile."),
-        };
+        PdfFormat format = PdfEngineFormats.Archive(profile)
+            ?? throw new InvalidOperationException($"'{profile}' is not a PDF/A profile.");
 
         // Navigation is counted around the page deletion alone; a bookmark the conversion
         // removes is reported with the outline below.
