@@ -4,6 +4,7 @@ using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using Aspose.Cli.Sdk.Contracts;
 
 namespace Aspose.Cli.Sdk.Operations;
 
@@ -204,11 +205,10 @@ internal sealed class OperationSchemaWriter
         if (record.Constraints.Count > 0)
         {
             // Each record rule is one allOf entry, so rules never compete for a keyword.
-            var shape = new OperationValue { Kind = OperationValueKind.Record, Record = record };
             schema["allOf"] = new JsonArray([.. record.Constraints.Select(constraint =>
             {
                 var rule = new JsonObject();
-                constraint.Describe(rule, shape);
+                constraint.Describe(rule, record);
                 return (JsonNode)rule;
             })]);
         }
@@ -263,7 +263,7 @@ internal sealed class OperationSchemaWriter
 
         foreach (ValueConstraintAttribute constraint in here.Except(shared))
         {
-            constraint.Describe(schema, value);
+            constraint.Describe(schema);
         }
 
         if (value.Kind is OperationValueKind.Array or OperationValueKind.Map)
@@ -299,7 +299,7 @@ internal sealed class OperationSchemaWriter
             definition["type"] = type;
         }
 
-        constraint.Describe(definition, value);
+        constraint.Describe(definition);
         if (_records.ContainsKey(name)
             || (_shared.TryGetValue(name, out JsonObject? existing) && !JsonNode.DeepEquals(existing, definition)))
         {

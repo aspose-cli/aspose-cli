@@ -1,4 +1,6 @@
 using System.Collections;
+using Aspose.Cli.Sdk.Contracts;
+using Aspose.Cli.Sdk.Errors;
 
 namespace Aspose.Cli.Sdk.Operations;
 
@@ -61,7 +63,7 @@ internal static class OperationContractValidator
             CheckValue(property.Value, PlacedConstraint.Declared(property.Constraints), value, Join(path, property.Name));
         }
 
-        foreach (ValueConstraintAttribute constraint in record.Constraints)
+        foreach (RecordRuleAttribute constraint in record.Constraints)
         {
             if (constraint.Check(set) is { } reason)
             {
@@ -77,7 +79,9 @@ internal static class OperationContractValidator
         {
             if (constraint.Check(value) is { } reason)
             {
-                throw new OperationInvalidException($"{path} {reason}", mistake: constraint.MistakeOf(value));
+                throw new OperationInvalidException(
+                    $"{path} {reason}",
+                    mistake: constraint is AllowedValuesAttribute allowed && value is string text ? Mistake.Of(text, allowed.Spelled) : null);
             }
         }
 
