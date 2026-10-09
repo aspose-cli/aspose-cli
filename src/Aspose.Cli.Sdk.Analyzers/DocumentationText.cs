@@ -14,7 +14,17 @@ internal static class DocumentationText
     private static readonly Regex Whitespace = new(@"\s+", RegexOptions.CultureInvariant);
 
     /// <summary>The summary with inline code and references rendered as text, or null when there is none.</summary>
-    public static string? Summary(ISymbol symbol)
+    public static string? Summary(ISymbol symbol) =>
+        Text(symbol, static documentation => documentation.Element("summary"));
+
+    /// <summary>
+    /// The text a record's <c>&lt;param&gt;</c> gives a primary constructor parameter, which
+    /// describes the positional property of the same name; null when there is none.
+    /// </summary>
+    public static string? Parameter(INamedTypeSymbol record, string name) =>
+        Text(record, documentation => documentation.Elements("param").FirstOrDefault(parameter => (string?)parameter.Attribute("name") == name));
+
+    private static string? Text(ISymbol symbol, Func<XElement, XElement?> select)
     {
         foreach (SyntaxReference reference in symbol.DeclaringSyntaxReferences)
         {
@@ -28,17 +38,17 @@ internal static class DocumentationText
                 }
             }
 
-            XElement? summary;
+            XElement? element;
             try
             {
-                summary = XElement.Parse("<doc>" + xml + "</doc>", LoadOptions.PreserveWhitespace).Element("summary");
+                element = select(XElement.Parse("<doc>" + xml + "</doc>", LoadOptions.PreserveWhitespace));
             }
             catch (XmlException)
             {
                 continue;
             }
 
-            string? text = summary is null ? null : Whitespace.Replace(Render(summary), " ").Trim();
+            string? text = element is null ? null : Whitespace.Replace(Render(element), " ").Trim();
             if (!string.IsNullOrEmpty(text))
             {
                 return text;

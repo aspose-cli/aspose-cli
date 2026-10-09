@@ -6,8 +6,9 @@ namespace Aspose.Cli.Sdk.Analyzers;
 
 /// <summary>
 /// Extracts the operation contracts of every <c>[OperationVocabulary]</c> base record into
-/// descriptors and generates the vocabulary's catalog, handler interface and dispatch. It only
-/// reads facts from the records; validation, schema writing and default filling live in the SDK.
+/// descriptors and generates the vocabulary's catalog, handler interface and dispatch, and
+/// describes the result records of the compilation (see <see cref="ResultContractWriter"/>). It
+/// only reads facts from the records; validation, schema writing and default filling live in the SDK.
 /// </summary>
 [Generator]
 public sealed class OperationContractGenerator : IIncrementalGenerator
@@ -27,6 +28,18 @@ public sealed class OperationContractGenerator : IIncrementalGenerator
             + "listed in its vocabulary's camelCase JSON context, and every member has a supported "
             + "type, a distinct wire name and a declared requirement or default.");
 
+    internal static readonly DiagnosticDescriptor InvalidResult = new(
+        "APCLI013",
+        "Result contract is invalid",
+        "{0}",
+        "Aspose.Cli.ResultContracts",
+        DiagnosticSeverity.Error,
+        isEnabledByDefault: true,
+        description:
+            "Result records must describe their published schema completely: every serialized member "
+            + "has a documentation summary and a supported type, a published id is relative and used "
+            + "once, and every constraint fits its member.");
+
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
         IncrementalValueProvider<ImmutableArray<INamedTypeSymbol>> vocabularies = Records(context, "OperationVocabularyAttribute");
@@ -37,7 +50,7 @@ public sealed class OperationContractGenerator : IIncrementalGenerator
                 static (node, _) => node is PropertyDeclarationSyntax,
                 static (attributed, _) => attributed.Attributes
                     .Where(static attribute => attribute.ConstructorArguments.FirstOrDefault().Kind == TypedConstantKind.Type)
-                    .Select(attribute => ((IPropertySymbol)attributed.TargetSymbol, VocabularyWriter.AttributeLocation(attribute, attributed.TargetSymbol)))
+                    .Select(attribute => ((IPropertySymbol)attributed.TargetSymbol, ContractTypes.AttributeLocation(attribute, attributed.TargetSymbol)))
                     .ToImmutableArray())
             .SelectMany(static (found, _) => found)
             .Collect();
@@ -70,6 +83,14 @@ public sealed class OperationContractGenerator : IIncrementalGenerator
             }
         }
 
+        void ReportResult(Location location, string message)
+        {
+            if (reported.Add(location + message))
+            {
+                production.ReportDiagnostic(Diagnostic.Create(InvalidResult, location, message));
+            }
+        }
+
         var vocabularies = new Dictionary<INamedTypeSymbol, List<(string Name, INamedTypeSymbol Type)>>(SymbolEqualityComparer.Default);
         foreach (INamedTypeSymbol vocabulary in declaredVocabularies.Distinct<INamedTypeSymbol>(SymbolEqualityComparer.Default))
         {
@@ -78,13 +99,13 @@ public sealed class OperationContractGenerator : IIncrementalGenerator
 
         foreach (INamedTypeSymbol operation in declaredOperations.Distinct<INamedTypeSymbol>(SymbolEqualityComparer.Default))
         {
-            INamedTypeSymbol? vocabulary = VocabularyWriter.BaseTypes(operation).FirstOrDefault(vocabularies.ContainsKey);
+            INamedTypeSymbol? vocabulary = ContractTypes.BaseTypes(operation).FirstOrDefault(vocabularies.ContainsKey);
             if (vocabulary is null || operation.IsAbstract || !operation.IsRecord
-                || VocabularyWriter.Find(operation, Operations + "OperationAttribute")?.ConstructorArguments.FirstOrDefault().Value
+                || ContractTypes.Find(operation, Operations + "OperationAttribute")?.ConstructorArguments.FirstOrDefault().Value
                     is not string { Length: > 0 } name)
             {
                 Report(
-                    VocabularyWriter.SourceLocation(operation),
+                    ContractTypes.SourceLocation(operation),
                     $"Operation '{operation.Name}' must be a non-abstract record with a wire name that derives from an [OperationVocabulary] base record.");
                 continue;
             }
@@ -104,11 +125,18 @@ public sealed class OperationContractGenerator : IIncrementalGenerator
             described.UnionWith(writer.Records);
         }
 
+        var results = new ResultContractWriter(compilation, ReportResult);
+        foreach ((string hintName, string source) in results.Write())
+        {
+            production.AddSource(hintName, SourceText.From(source, Encoding.UTF8));
+        }
+
+        described.UnionWith(results.Records);
         foreach ((IPropertySymbol property, Location location) in constantLists)
         {
             if (!described.Contains(property.ContainingType))
             {
-                Report(location, $"'{property.ContainingType.Name}.{property.Name}': [AllowedValues(typeof(...))] is expanded only on members of operation contract records.");
+                Report(location, $"'{property.ContainingType.Name}.{property.Name}': [AllowedValues(typeof(...))] is expanded only on members of operation and result contract records.");
             }
         }
     }
