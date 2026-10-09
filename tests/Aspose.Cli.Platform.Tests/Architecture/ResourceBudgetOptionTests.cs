@@ -48,7 +48,7 @@ public sealed class ResourceBudgetOptionTests
             .View(new TestProductViewAdapter<ITestSession>())
             .WithCommand<ITestSession, TestResult>("read", new Option<int>("--max-items"))
             .Activator(static _ =>
-                throw new InvalidOperationException("Budget validation must not activate product ports."))
+                throw new InvalidOperationException("Budget validation must not activate a product session."))
             .Build();
         return ProductCatalog.Build([new StaticModule(definition)]);
     }
