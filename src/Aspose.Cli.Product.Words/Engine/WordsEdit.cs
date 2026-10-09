@@ -178,9 +178,10 @@ internal static class WordsEdit
                 changed.AddRange(nodes);
                 return new AppliedOperation(
                     count,
-                    nodes.Count == 0 ? resolved[index].Targets : WordsAnchorResolver.Targets(blocks, nodes, target: null));
+                    nodes.Count == 0 ? resolved[index].Targets : WordsAnchorResolver.Targets(blocks, nodes));
             },
-            (_, index) => resolved[index].Targets);
+            (_, index) => resolved[index].Targets,
+            WordsAnchorResolver.DegenerateTargets);
     }
 
     /// <summary>
