@@ -154,7 +154,7 @@ public sealed class CommandDefinition<TRequest, TResult>
     private ResultEnvelope Execute<TSession>(
         StandardOptions options,
         ParseResult parse,
-        CommandScope<TSession> scope,
+        ProductCommandScope scope,
         MenuContext<TSession> context,
         Func<TSession, TRequest, TResult> handler)
         where TSession : class
@@ -175,7 +175,7 @@ public sealed class CommandDefinition<TRequest, TResult>
             FontSearchProfile? fonts = invocation.UsesFonts ? invocation.FontDirectories : null;
             TRequest request = _bind(parse, invocation);
             using IDisposable? fontScope = fonts is null ? null : scope.Binding.UseFonts(fonts);
-            TSession session = scope.Binding.Port;
+            TSession session = ((ProductBinding<TSession>)scope.Binding).Session;
             TResult result = context.Guarded(handler, session, request);
             if (Finish is not null)
             {

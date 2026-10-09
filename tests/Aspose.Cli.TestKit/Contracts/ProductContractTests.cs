@@ -177,10 +177,8 @@ public abstract class ProductContractTests<TModule>
     {
         ProductCatalog catalog = ProductCatalog.Build([new TModule()]);
         ProductDefinition product = Assert.Single(catalog.Products);
-        var host = new ContractCommandHostFactory();
-
-        Command first = product.CreateCommand(host);
-        Command second = product.CreateCommand(host);
+        Command first = product.CreateCommand(Unavailable);
+        Command second = product.CreateCommand(Unavailable);
 
         Assert.Equal(product.Manifest.Id, first.Name);
         Assert.Equal(CommandFingerprint(first), CommandFingerprint(second));
@@ -913,7 +911,7 @@ public abstract class ProductContractTests<TModule>
             definition.Manifest.DisplayName,
             definition.Manifest.DisplayOrder,
             definition.Manifest.ContractVersion,
-            definition.PortType,
+            definition.SessionType,
             string.Join(
                 "\n",
                 definition.Files.DefaultOwnerExtensions.Order(StringComparer.Ordinal)),
@@ -971,7 +969,7 @@ public abstract class ProductContractTests<TModule>
                         .Order(StringComparer.Ordinal))),
             string.Join(
                 "|",
-                $"{definition.View.ProductId}:{definition.View.PortType.AssemblyQualifiedName}",
+                $"{definition.View.ProductId}:{definition.View.SessionType.AssemblyQualifiedName}",
                 $"{definition.View.ReviewView}:{definition.View.LiveView}:{definition.View.VisualInspectionRequired}",
                 string.Join(
                     ",",
@@ -1095,7 +1093,7 @@ public abstract class ProductContractTests<TModule>
         string DisplayName,
         int DisplayOrder,
         string ContractVersion,
-        Type PortType,
+        Type SessionType,
         string DefaultOwnerExtensions,
         string AcceptedInputExtensions,
         string? FileRecognizer,
@@ -1107,24 +1105,10 @@ public abstract class ProductContractTests<TModule>
         string? CommandFactory,
         string? BindingFactory);
 
-    private sealed class ContractCommandHostFactory
-        : IProductCommandHostFactory
-    {
-        public IProductCommandHost<TPort> Create<TPort>(string productId)
-            where TPort : class =>
-            new ContractCommandHost<TPort>();
-    }
-
-    private sealed class ContractCommandHost<TPort>
-        : IProductCommandHost<TPort>
-        where TPort : class
-    {
-        public int Run(
-            ParseResult parseResult,
-            Func<ProductCommandContext<TPort>, ResultEnvelope> handler) =>
-            throw ExecutionUnavailable();
-    }
+    // Contract tests build command trees; they never run a command.
+    private static int Unavailable(ParseResult parse, Func<ProductCommandScope, ResultEnvelope> run) =>
+        throw ExecutionUnavailable();
 
     private static InvalidOperationException ExecutionUnavailable() =>
-        new("Product contract command hosts cannot execute commands.");
+        new("Product contract tests cannot execute commands.");
 }

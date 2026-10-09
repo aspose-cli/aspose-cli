@@ -16,21 +16,20 @@ public sealed class ProductDefinition
 {
     internal ProductDefinition(
         ProductManifest manifest,
-        Type portType,
+        Type sessionType,
         FileRouteDefinition files,
         IReadOnlyList<FormatDescriptor> formats,
         ProductJsonDefinition json,
         ProductViewDefinition view,
         Func<IReadOnlyList<ProductOutputDefinition>> outputs,
         IReadOnlyList<DiagnosticDescriptor> diagnostics,
-        Func<object, IReadOnlyList<Aspose.Cli.Sdk.Contracts.DoctorCheck>>? doctorChecks,
-        Func<IProductCommandHostFactory, Command> commandFactory,
+        Func<ProductCommandRunner, Command> commandFactory,
         Func<
             ProductActivationContext,
             ProductBinding> bindingFactory)
     {
         Manifest = manifest;
-        PortType = portType;
+        SessionType = sessionType;
         Files = files;
         Formats = formats;
         Json = json ?? throw new ArgumentNullException(nameof(json));
@@ -38,7 +37,6 @@ public sealed class ProductDefinition
         _outputs = new Lazy<IReadOnlyList<ProductOutputDefinition>>(
             outputs ?? throw new ArgumentNullException(nameof(outputs)));
         Diagnostics = diagnostics;
-        DoctorChecks = doctorChecks;
         CommandFactory = commandFactory
             ?? throw new ArgumentNullException(nameof(commandFactory));
         BindingFactory = bindingFactory
@@ -48,8 +46,8 @@ public sealed class ProductDefinition
     /// <summary>Product identity and advertised public surface.</summary>
     public ProductManifest Manifest { get; }
 
-    /// <summary>Strongly typed port bound by this product.</summary>
-    public Type PortType { get; }
+    /// <summary>The engine session type this product binds.</summary>
+    public Type SessionType { get; }
 
     /// <summary>File ownership and explicit-input associations.</summary>
     public FileRouteDefinition Files { get; }
@@ -84,11 +82,12 @@ public sealed class ProductDefinition
     /// <summary>Immutable error and warning descriptors owned by this product.</summary>
     public IReadOnlyList<DiagnosticDescriptor> Diagnostics { get; }
 
-    /// <summary>Creates the product-owned command tree through a typed host.</summary>
-    public Command CreateCommand(IProductCommandHostFactory hostFactory)
+    /// <summary>Creates the product's command tree, whose commands run through <paramref name="runner"/>.</summary>
+    /// <param name="runner">The host pipeline, which runs each command in a scope for this product.</param>
+    public Command CreateCommand(ProductCommandRunner runner)
     {
-        ArgumentNullException.ThrowIfNull(hostFactory);
-        return CommandFactory(hostFactory)
+        ArgumentNullException.ThrowIfNull(runner);
+        return CommandFactory(runner)
             ?? throw new InvalidOperationException(
                 $"Product '{Manifest.Id}' returned no command contribution.");
     }
@@ -117,7 +116,7 @@ public sealed class ProductDefinition
                 binding.ProductId,
                 Manifest.Id,
                 StringComparison.Ordinal)
-            || binding.PortType != PortType)
+            || binding.SessionType != SessionType)
         {
             throw new InvalidOperationException(
                 $"Product '{Manifest.Id}' activated an incompatible binding.");
@@ -135,26 +134,7 @@ public sealed class ProductDefinition
         return binding;
     }
 
-    /// <summary>
-    /// Evaluates product-owned diagnostics against an activated binding.
-    /// </summary>
-    public IReadOnlyList<Aspose.Cli.Sdk.Contracts.DoctorCheck> GetDoctorChecks(
-        ProductBinding binding)
-    {
-        ArgumentNullException.ThrowIfNull(binding);
-        if (binding.ProductId != Manifest.Id || binding.PortType != PortType)
-        {
-            throw new InvalidOperationException(
-                $"Binding '{binding.ProductId}' does not belong to product '{Manifest.Id}'.");
-        }
-        return DoctorChecks?.Invoke(binding.UntypedPort) ?? [];
-    }
-
-    private Func<IProductCommandHostFactory, Command> CommandFactory { get; }
-
-    private Func<object, IReadOnlyList<Aspose.Cli.Sdk.Contracts.DoctorCheck>>?
-        DoctorChecks
-    { get; }
+    private Func<ProductCommandRunner, Command> CommandFactory { get; }
 
     private Func<
         ProductActivationContext,
@@ -178,7 +158,7 @@ public static class Product
 /// The menu lines live in <c>Aspose.Cli.Sdk.Extensibility.Commanding.ProductMenu</c>; their
 /// order is the order of help and capabilities.
 /// </remarks>
-/// <typeparam name="TSession">The product's engine session, or its typed port.</typeparam>
+/// <typeparam name="TSession">The product's engine session.</typeparam>
 public sealed class ProductDefinitionBuilder<TSession>
     where TSession : class
 {
@@ -186,10 +166,7 @@ public sealed class ProductDefinitionBuilder<TSession>
     private readonly List<FormatDescriptor> _formats = [];
     private ProductJsonDefinition? _json;
     private IProductViewAdapter<TSession>? _viewAdapter;
-    private readonly List<ProductOutputDefinition> _outputs = [];
     private readonly List<DiagnosticDescriptor> _diagnostics = [];
-    private Func<object, IReadOnlyList<Aspose.Cli.Sdk.Contracts.DoctorCheck>>? _doctorChecks;
-    private Func<IProductCommandHostFactory, Command>? _commandFactory;
     private readonly List<IMenuEntry<TSession>> _menu = [];
     private string? _description;
     private Func<CommandHelp>? _help;
@@ -232,17 +209,6 @@ public sealed class ProductDefinitionBuilder<TSession>
                     $"Product '{_manifest.Id}' returned no binding.");
             return binding;
         };
-        return this;
-    }
-
-    /// <summary>Registers the product-owned System.CommandLine command tree.</summary>
-    public ProductDefinitionBuilder<TSession> Commands(
-        Func<IProductCommandHost<TSession>, Command> factory)
-    {
-        EnsureMutable();
-        ArgumentNullException.ThrowIfNull(factory);
-        _commandFactory = hostFactory =>
-            factory(hostFactory.Create<TSession>(_manifest.Id));
         return this;
     }
 
@@ -306,16 +272,6 @@ public sealed class ProductDefinitionBuilder<TSession>
         return this;
     }
 
-    /// <summary>Registers a human-readable renderer for one result type.</summary>
-    public ProductDefinitionBuilder<TSession> Output<TResult>(
-        Action<TResult, Output.TableSurface> renderer)
-        where TResult : Aspose.Cli.Sdk.Contracts.ResultEnvelope
-    {
-        EnsureMutable();
-        _outputs.Add(ProductOutputDefinition.Create(renderer));
-        return this;
-    }
-
     /// <summary>Registers immutable diagnostic descriptors owned by this product.</summary>
     public ProductDefinitionBuilder<TSession> Diagnostics(
         IEnumerable<DiagnosticDescriptor> diagnostics)
@@ -324,16 +280,6 @@ public sealed class ProductDefinitionBuilder<TSession>
         ArgumentNullException.ThrowIfNull(diagnostics);
         _diagnostics.AddRange(diagnostics);
         _diagnosticsDeclared = true;
-        return this;
-    }
-
-    /// <summary>Registers product-owned diagnostics against the typed product port.</summary>
-    public ProductDefinitionBuilder<TSession> Doctor(
-        Func<TSession, IReadOnlyList<Aspose.Cli.Sdk.Contracts.DoctorCheck>> checks)
-    {
-        EnsureMutable();
-        ArgumentNullException.ThrowIfNull(checks);
-        _doctorChecks = port => checks((TSession)port);
         return this;
     }
 
@@ -353,28 +299,18 @@ public sealed class ProductDefinitionBuilder<TSession>
         {
             throw Missing(nameof(View));
         }
-        if (_outputs.Count == 0 && _menu.Count == 0)
-        {
-            throw Missing(nameof(Output));
-        }
         if (!_diagnosticsDeclared)
         {
             throw Missing(nameof(Diagnostics));
         }
-        if (_menu.Count > 0)
+        if (_description is null)
         {
-            if (_commandFactory is not null)
-            {
-                throw new InvalidOperationException(
-                    $"Product '{_manifest.Id}' declares both a command factory and a command menu.");
-            }
-            if (_description is null)
-            {
-                throw Missing(nameof(Describe));
-            }
-            _commandFactory = CreateMenuCommand;
+            throw Missing(nameof(Describe));
         }
-        _ = _commandFactory ?? throw Missing(nameof(Commands));
+        if (_menu.Count == 0)
+        {
+            throw Missing("Command");
+        }
         ProductGuard<TSession>? guard = _guard;
         ProductViewDefinition view = ProductViewDefinition.Create(
             _viewAdapter,
@@ -394,21 +330,13 @@ public sealed class ProductDefinitionBuilder<TSession>
             view,
             Outputs,
             Array.AsReadOnly(_diagnostics.ToArray()),
-            _doctorChecks,
-            _commandFactory,
+            CreateCommand,
             _bindingFactory);
     }
 
-    private Command CreateMenuCommand(IProductCommandHostFactory hostFactory)
+    private Command CreateCommand(ProductCommandRunner runner)
     {
-        // The one adapter from the host's command pipeline to the menu's.
-        IProductCommandHost<TSession> host = hostFactory.Create<TSession>(_manifest.Id);
-        var context = new MenuContext<TSession>(
-            (parse, run) => host.Run(
-                parse,
-                scope => run(new CommandScope<TSession>(scope.Binding, scope.Paths, scope.Inputs, scope.ReadEnvironment))),
-            _guard,
-            _detectFormat);
+        var context = new MenuContext<TSession>(runner, _guard, _detectFormat);
         var product = new Command(_manifest.Id, _description);
         foreach (IMenuEntry<TSession> entry in _menu)
         {
@@ -423,7 +351,7 @@ public sealed class ProductDefinitionBuilder<TSession>
     {
         var byType = new Dictionary<Type, ProductOutputDefinition>();
         var ordered = new List<ProductOutputDefinition>();
-        foreach (ProductOutputDefinition output in _outputs.Concat(_menu.SelectMany(static entry => entry.Outputs())))
+        foreach (ProductOutputDefinition output in _menu.SelectMany(static entry => entry.Outputs()))
         {
             if (byType.TryGetValue(output.ResultType, out ProductOutputDefinition? registered))
             {

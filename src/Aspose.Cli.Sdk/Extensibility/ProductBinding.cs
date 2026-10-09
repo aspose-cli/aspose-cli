@@ -53,25 +53,25 @@ public sealed class ProductActivationContext
 }
 
 /// <summary>
-/// Product-neutral activation result. The product port remains type-safe and
+/// Product-neutral activation result. The product session remains type-safe and
 /// is not exposed through this base class.
 /// </summary>
 public abstract class ProductBinding
 {
-    private readonly Func<object> _port;
+    private readonly Func<object> _session;
 
     internal ProductBinding(
         string productId,
-        Type portType,
-        Func<object> port,
+        Type sessionType,
+        Func<object> session,
         ILicenseGate licenseGate,
         Lazy<IFontEnvironment>? fontEnvironment,
         OutputPipeline? outputs)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(productId);
         ProductId = productId;
-        PortType = portType ?? throw new ArgumentNullException(nameof(portType));
-        _port = port ?? throw new ArgumentNullException(nameof(port));
+        SessionType = sessionType ?? throw new ArgumentNullException(nameof(sessionType));
+        _session = session ?? throw new ArgumentNullException(nameof(session));
         LicenseGate = licenseGate
             ?? throw new ArgumentNullException(nameof(licenseGate));
         FontEnvironmentFactory = fontEnvironment;
@@ -81,8 +81,8 @@ public abstract class ProductBinding
     /// <summary>Stable product identifier.</summary>
     public string ProductId { get; }
 
-    /// <summary>Exact product port type.</summary>
-    public Type PortType { get; }
+    /// <summary>Exact product session type.</summary>
+    public Type SessionType { get; }
 
     /// <summary>Product-specific license gate.</summary>
     public ILicenseGate LicenseGate { get; }
@@ -101,7 +101,7 @@ public abstract class ProductBinding
 
     internal Lazy<IFontEnvironment>? FontEnvironmentFactory { get; }
 
-    internal object UntypedPort => _port();
+    internal object UntypedSession => _session();
 
     /// <summary>
     /// The one entry through which a command applies a font profile to this product's engine:
@@ -138,97 +138,78 @@ public abstract class ProductBinding
     /// <summary>
     /// Creates a licensed-engine binding whose product publishes its outputs through the SDK
     /// write pipeline, which recognizes evaluation marks through <paramref name="evaluation"/>.
-    /// The product and font ports are deferred independently.
+    /// The product session and the font environment are deferred independently.
     /// </summary>
-    public static ProductBinding<TPort> Create<TPort, TDocument>(
+    public static ProductBinding<TSession> Create<TSession, TDocument>(
         ProductActivationContext context,
         string productId,
         Func<LicenseResolution, ILicenseGate> createLicenseGate,
         IEvaluationProfile<TDocument> evaluation,
-        Func<OutputPipeline<TDocument>, TPort> createPort,
+        Func<OutputPipeline<TDocument>, TSession> createSession,
         Func<ILicenseState, IFontEnvironment> createFontEnvironment)
-        where TPort : class
+        where TSession : class
         where TDocument : class
     {
         ArgumentNullException.ThrowIfNull(context);
         ArgumentNullException.ThrowIfNull(evaluation);
-        ArgumentNullException.ThrowIfNull(createPort);
+        ArgumentNullException.ThrowIfNull(createSession);
         ArgumentNullException.ThrowIfNull(createFontEnvironment);
         ILicenseGate license = ProductLicenseGateFactory.Create(
             context,
             productId,
             createLicenseGate);
         var outputs = new OutputPipeline<TDocument>(license, evaluation, context.SafeFileWriter);
-        return new ProductBinding<TPort>(
+        return new ProductBinding<TSession>(
             productId,
-            new Lazy<TPort>(() => createPort(outputs)),
+            new Lazy<TSession>(() => createSession(outputs)),
             license,
             new Lazy<IFontEnvironment>(() => createFontEnvironment(outputs)),
             outputs);
     }
 
     /// <summary>
-    /// Creates a binding for an engine to which Aspose licensing does not apply.
-    /// No activation context is accepted, so license resolution cannot occur.
+    /// Creates a binding for an engine to which Aspose licensing does not apply and which has
+    /// no font environment. No activation context is accepted, so license resolution cannot occur.
     /// </summary>
-    public static ProductBinding<TPort> CreateLicenseFree<TPort>(
+    public static ProductBinding<TSession> CreateLicenseFree<TSession>(
         string productId,
-        Func<ILicenseGate, TPort> createPort)
-        where TPort : class
+        Func<ILicenseGate, TSession> createSession)
+        where TSession : class
     {
-        ArgumentNullException.ThrowIfNull(createPort);
+        ArgumentNullException.ThrowIfNull(createSession);
         ILicenseGate license = LicenseNotApplicableGate.Instance;
-        return new ProductBinding<TPort>(
+        return new ProductBinding<TSession>(
             productId,
-            new Lazy<TPort>(() => createPort(license)),
+            new Lazy<TSession>(() => createSession(license)),
             license,
             fontEnvironment: null,
-            outputs: null);
-    }
-
-    /// <summary>Creates a license-free binding with independently deferred product and font ports.</summary>
-    public static ProductBinding<TPort> CreateLicenseFree<TPort>(
-        string productId,
-        Func<ILicenseGate, TPort> createPort,
-        Func<ILicenseGate, IFontEnvironment> createFontEnvironment)
-        where TPort : class
-    {
-        ArgumentNullException.ThrowIfNull(createPort);
-        ArgumentNullException.ThrowIfNull(createFontEnvironment);
-        ILicenseGate license = LicenseNotApplicableGate.Instance;
-        return new ProductBinding<TPort>(
-            productId,
-            new Lazy<TPort>(() => createPort(license)),
-            license,
-            new Lazy<IFontEnvironment>(() => createFontEnvironment(license)),
             outputs: null);
     }
 }
 
 /// <summary>Strongly typed product binding created once per invocation.</summary>
-/// <typeparam name="TPort">Product-specific typed port.</typeparam>
-public sealed class ProductBinding<TPort> : ProductBinding
-    where TPort : class
+/// <typeparam name="TSession">The product's engine session.</typeparam>
+public sealed class ProductBinding<TSession> : ProductBinding
+    where TSession : class
 {
-    private readonly Lazy<TPort> _port;
+    private readonly Lazy<TSession> _session;
 
     internal ProductBinding(
         string productId,
-        Lazy<TPort> port,
+        Lazy<TSession> session,
         ILicenseGate licenseGate,
         Lazy<IFontEnvironment>? fontEnvironment,
         OutputPipeline? outputs)
-        : base(productId, typeof(TPort), () => port.Value, licenseGate, fontEnvironment, outputs)
+        : base(productId, typeof(TSession), () => session.Value, licenseGate, fontEnvironment, outputs)
     {
-        _port = port ?? throw new ArgumentNullException(nameof(port));
+        _session = session ?? throw new ArgumentNullException(nameof(session));
     }
 
-    /// <summary>Product engine, constructed on first use.</summary>
-    public TPort Port => _port.Value;
-
+    /// <summary>The product's engine session, created on first use.</summary>
+    public TSession Session => _session.Value;
 }
 
 /// <summary>Activates one strongly typed product binding for an invocation.</summary>
-public delegate ProductBinding<TPort> ProductActivator<TPort>(
+public delegate ProductBinding<TSession> ProductActivator<TSession>(
     ProductActivationContext context)
-    where TPort : class;
+    where TSession : class;

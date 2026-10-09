@@ -65,26 +65,6 @@ internal sealed class CommandExecutor
         finally { Console.CancelKeyPress -= onCancel; }
     }
 
-    public int RunProduct<TPort>(
-        ParseResult parseResult,
-        GlobalOptions globalOptions,
-        string productId,
-        Func<ProductCommandContext<TPort>, ResultEnvelope> handler)
-        where TPort : class
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(productId);
-        return RunEnvelope(
-            parseResult,
-            globalOptions,
-            scope => handler(CompositionRoot.CreateProduct<TPort>(
-                        _host.Catalog,
-                        productId,
-                        scope.Globals,
-                        scope.Deadline,
-                        scope.Budgets)),
-            detectPartial: true);
-    }
-
     private int RunEnvelope(
         ParseResult parseResult,
         GlobalOptions globalOptions,

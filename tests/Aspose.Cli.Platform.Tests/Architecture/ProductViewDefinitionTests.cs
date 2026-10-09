@@ -2,6 +2,7 @@ using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Ports;
+using Aspose.Cli.Sdk.Tests;
 using Aspose.Cli.Sdk.Views;
 using Xunit;
 
@@ -13,12 +14,9 @@ public sealed class ProductViewDefinitionTests
     public void ViewDefinition_RejectsAnUndeclaredViewBeforeProductDispatch()
     {
         ProductViewDefinition views = ProductViewDefinition.Create(
-            new TestProductViewAdapter<ITestPort>(),
+            new TestProductViewAdapter<ITestSession>(),
             "test");
-        ProductBinding<ITestPort> binding =
-            ProductBinding.CreateLicenseFree<ITestPort>(
-                "test",
-                static _ => new TestPort());
+        ProductBinding<ITestSession> binding = TestBindings.Create<ITestSession>("test", static () => new TestSession());
 
         CliException failure = Assert.Throws<CliException>(() =>
             views.Render(binding, "file.test", Request("missing"), new RejectingSink()));
@@ -30,13 +28,10 @@ public sealed class ProductViewDefinitionTests
     public void ViewDefinition_MissingFontsCannotRemainComplete()
     {
         ProductViewDefinition views = ProductViewDefinition.Create(
-            new TestProductViewAdapter<ITestPort>(),
+            new TestProductViewAdapter<ITestSession>(),
             "test");
-        ProductBinding<ITestPort> binding =
-            ProductBinding.CreateLicenseFree<ITestPort>(
-                "test",
-                static _ => new FontPort(),
-                static _ => new FontPort());
+        ProductBinding<ITestSession> binding = TestBindings.Create<ITestSession>(
+            "test", static () => new TestSession(), static () => new MissingFonts());
         ViewRenderRequest request = Request("document");
 
         ViewManifest rendered = views.Render(binding, "file.test", request, new RejectingSink());
@@ -53,18 +48,18 @@ public sealed class ProductViewDefinitionTests
     public void ViewDefinition_RequiresProductPrefixedChecksAndReportsOnlyDeclaredFindings()
     {
         var declared = new ReviewCheck("TEST_PAGE_BLANK", ReviewSeverities.Warning, "A page has no content.");
-        ProductBinding<ITestPort> binding = ProductBinding.CreateLicenseFree<ITestPort>(
-            "test", static _ => new FontPort(), static _ => new FontPort());
+        ProductBinding<ITestSession> binding = TestBindings.Create<ITestSession>(
+            "test", static () => new TestSession(), static () => new MissingFonts());
         ViewRenderRequest request = Request("document");
 
         Assert.Throws<InvalidOperationException>(() => ProductViewDefinition.Create(
-            new TestProductViewAdapter<ITestPort>([new ReviewCheck("OTHER_PAGE_BLANK", ReviewSeverities.Info, "x")]),
+            new TestProductViewAdapter<ITestSession>([new ReviewCheck("OTHER_PAGE_BLANK", ReviewSeverities.Info, "x")]),
             "test"));
         ProductViewDefinition declaring = ProductViewDefinition.Create(
-            new TestProductViewAdapter<ITestPort>([declared], [declared.Finding("Page 2 is blank.", "page 2")]),
+            new TestProductViewAdapter<ITestSession>([declared], [declared.Finding("Page 2 is blank.", "page 2")]),
             "test");
         ProductViewDefinition undeclared = ProductViewDefinition.Create(
-            new TestProductViewAdapter<ITestPort>(
+            new TestProductViewAdapter<ITestSession>(
                 [declared], [declared.Finding("x") with { Severity = ReviewSeverities.Error }]),
             "test");
 
@@ -95,11 +90,11 @@ public sealed class ProductViewDefinitionTests
             throw new InvalidOperationException("The test view writes no artifacts.");
     }
 
-    private interface ITestPort;
+    private interface ITestSession;
 
-    private sealed class TestPort : ITestPort;
+    private sealed class TestSession : ITestSession;
 
-    private sealed class FontPort : ITestPort, IFontEnvironment
+    private sealed class MissingFonts : IFontEnvironment
     {
         public FontListResult ListFonts() => new() { Sources = [] };
 

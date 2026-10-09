@@ -29,9 +29,9 @@ public sealed record ProductReviewAssessment
 /// review evidence and live display, so what people watch is exactly what
 /// agents review.
 /// </summary>
-/// <typeparam name="TPort">The product's typed port.</typeparam>
-public interface IProductViewAdapter<TPort>
-    where TPort : class
+/// <typeparam name="TSession">The product's engine session.</typeparam>
+public interface IProductViewAdapter<TSession>
+    where TSession : class
 {
     /// <summary>Views the product renders.</summary>
     IReadOnlyList<ProductView> Views { get; }
@@ -53,14 +53,14 @@ public interface IProductViewAdapter<TPort>
 
     /// <summary>Renders the parts of one view into the bounded sink, opening the source once.</summary>
     ViewManifest Render(
-        TPort port,
+        TSession session,
         string filePath,
         ViewRenderRequest request,
         IViewArtifactSink artifacts);
 
     /// <summary>Inspects the source for review findings and coverage beyond the rendered parts.</summary>
     ProductReviewAssessment Assess(
-        TPort port,
+        TSession session,
         string filePath,
         ViewRenderRequest request,
         ViewManifest rendered);
@@ -74,7 +74,7 @@ public sealed partial class ProductViewDefinition
     private readonly Lazy<ViewPresentation> _presentation;
 
     private ProductViewDefinition(
-        Type portType,
+        Type sessionType,
         string productId,
         IReadOnlyList<ProductView> views,
         string reviewView,
@@ -85,7 +85,7 @@ public sealed partial class ProductViewDefinition
         Func<object, string, ViewRenderRequest, ViewManifest, ProductReviewAssessment> assess,
         Assembly presenterAssembly)
     {
-        PortType = portType;
+        SessionType = sessionType;
         ProductId = productId;
         Views = Array.AsReadOnly(views.ToArray());
         ReviewView = reviewView;
@@ -104,8 +104,8 @@ public sealed partial class ProductViewDefinition
     /// <summary>Product id that owns this adapter.</summary>
     public string ProductId { get; }
 
-    /// <summary>The exact product port required by this adapter.</summary>
-    public Type PortType { get; }
+    /// <summary>The exact product session type this adapter requires.</summary>
+    public Type SessionType { get; }
 
     /// <summary>Every view the product renders.</summary>
     public IReadOnlyList<ProductView> Views { get; }
@@ -140,7 +140,7 @@ public sealed partial class ProductViewDefinition
     {
         ArgumentNullException.ThrowIfNull(request);
         ArgumentNullException.ThrowIfNull(artifacts);
-        object port = Port(binding);
+        object session = Session(binding);
         if (!Views.Any(view => string.Equals(view.Id, request.View, StringComparison.Ordinal)))
         {
             throw CliErrors.OptionInvalid(
@@ -149,7 +149,7 @@ public sealed partial class ProductViewDefinition
                 $"Use {string.Join(", ", Views.Select(static view => view.Id))}.");
         }
         ArgumentOutOfRangeException.ThrowIfLessThan(request.MaxPartCount, 1);
-        ViewManifest manifest = _render(port, filePath, request, artifacts)
+        ViewManifest manifest = _render(session, filePath, request, artifacts)
             ?? throw new InvalidOperationException(
                 $"Product '{ProductId}' returned no view manifest.");
         Validate(manifest, request);
@@ -165,7 +165,7 @@ public sealed partial class ProductViewDefinition
     {
         ArgumentNullException.ThrowIfNull(request);
         ArgumentNullException.ThrowIfNull(rendered);
-        ProductReviewAssessment assessment = _assess(Port(binding), filePath, request, rendered)
+        ProductReviewAssessment assessment = _assess(Session(binding), filePath, request, rendered)
             ?? throw new InvalidOperationException(
                 $"Product '{ProductId}' returned no review assessment.");
         EnsureDeclared(assessment.Findings);
@@ -212,15 +212,15 @@ public sealed partial class ProductViewDefinition
         return reader.ReadToEnd();
     }
 
-    private object Port(ProductBinding binding)
+    private object Session(ProductBinding binding)
     {
         ArgumentNullException.ThrowIfNull(binding);
-        if (binding.ProductId != ProductId || binding.PortType != PortType)
+        if (binding.ProductId != ProductId || binding.SessionType != SessionType)
         {
             throw new InvalidOperationException(
                 $"Binding '{binding.ProductId}' cannot render views for product '{ProductId}'.");
         }
-        return binding.UntypedPort;
+        return binding.UntypedSession;
     }
 
     private void Validate(ViewManifest manifest, ViewRenderRequest request)
@@ -288,11 +288,11 @@ public sealed partial class ProductViewDefinition
         };
     }
 
-    internal static ProductViewDefinition Create<TPort>(
-        IProductViewAdapter<TPort> adapter,
+    internal static ProductViewDefinition Create<TSession>(
+        IProductViewAdapter<TSession> adapter,
         string productId,
         Func<object, Func<object?>, object?>? guard = null)
-        where TPort : class
+        where TSession : class
     {
         ArgumentNullException.ThrowIfNull(adapter);
         ArgumentException.ThrowIfNullOrWhiteSpace(productId);
@@ -321,7 +321,7 @@ public sealed partial class ProductViewDefinition
                 $"Product '{productId}' must declare uniquely coded review checks that start with '{prefix}'.");
         }
         return new ProductViewDefinition(
-            typeof(TPort),
+            typeof(TSession),
             productId,
             views,
             adapter.ReviewView,
@@ -329,12 +329,12 @@ public sealed partial class ProductViewDefinition
             adapter.VisualInspectionRequired,
             Array.AsReadOnly(checks.OrderBy(static check => check.Code, StringComparer.Ordinal).ToArray()),
             // The product guard wraps every adapter call, as it wraps every command handler.
-            (port, path, request, artifacts) => guard is null
-                ? adapter.Render((TPort)port, path, request, artifacts)
-                : (ViewManifest)guard(port, () => adapter.Render((TPort)port, path, request, artifacts))!,
-            (port, path, request, rendered) => guard is null
-                ? adapter.Assess((TPort)port, path, request, rendered)
-                : (ProductReviewAssessment)guard(port, () => adapter.Assess((TPort)port, path, request, rendered))!,
+            (session, path, request, artifacts) => guard is null
+                ? adapter.Render((TSession)session, path, request, artifacts)
+                : (ViewManifest)guard(session, () => adapter.Render((TSession)session, path, request, artifacts))!,
+            (session, path, request, rendered) => guard is null
+                ? adapter.Assess((TSession)session, path, request, rendered)
+                : (ProductReviewAssessment)guard(session, () => adapter.Assess((TSession)session, path, request, rendered))!,
             adapter.GetType().Assembly);
     }
 

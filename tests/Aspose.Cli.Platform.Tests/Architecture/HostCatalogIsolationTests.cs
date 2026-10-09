@@ -55,7 +55,7 @@ public sealed class HostCatalogIsolationTests
 
     private static ProductCatalog Catalog(string id, string extension)
     {
-        ProductDefinition definition = ExtProduct.Define<ITestPort>(
+        ProductDefinition definition = ExtProduct.Define<ITestSession>(
                 new ProductManifest
                 {
                     Id = id,
@@ -82,9 +82,8 @@ public sealed class HostCatalogIsolationTests
             ])
             .Diagnostics([])
             .Json(new ProductJsonDefinition(id, SdkJsonContext.Default))
-            .View(new TestProductViewAdapter<ITestPort>())
-            .Output<TestResult>(static (_, _) => { })
-            .Commands(_ => new Command(id))
+            .View(new TestProductViewAdapter<ITestSession>())
+            .WithCommand<ITestSession, TestResult>()
             .Activator(static _ =>
                 throw new InvalidOperationException(
                     "Catalog isolation tests must not activate product ports."))
@@ -92,7 +91,7 @@ public sealed class HostCatalogIsolationTests
         return ProductCatalog.Build([new StaticModule(definition)]);
     }
 
-    private interface ITestPort;
+    private interface ITestSession;
 
 #pragma warning disable APCLI003 // A test result, not a product JSON root.
     private sealed record TestResult() : ResultEnvelope("test/result", 1);

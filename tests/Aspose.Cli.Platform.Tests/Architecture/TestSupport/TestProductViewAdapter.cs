@@ -5,11 +5,11 @@ using Aspose.Cli.Sdk.Views;
 namespace Aspose.Cli.Architecture.Tests;
 
 /// <summary>The one view a product in these tests declares and renders, with the given review checks and findings.</summary>
-internal sealed class TestProductViewAdapter<TPort>(
+internal sealed class TestProductViewAdapter<TSession>(
     IReadOnlyList<ReviewCheck>? checks = null,
     IReadOnlyList<ReviewFinding>? findings = null)
-    : IProductViewAdapter<TPort>
-    where TPort : class
+    : IProductViewAdapter<TSession>
+    where TSession : class
 {
     public IReadOnlyList<ProductView> Views =>
         [new("document", "Document", ViewPartKinds.Image)];
@@ -23,7 +23,7 @@ internal sealed class TestProductViewAdapter<TPort>(
     public IReadOnlyList<ReviewCheck> Checks => checks ?? [];
 
     public ViewManifest Render(
-        TPort port,
+        TSession session,
         string filePath,
         ViewRenderRequest request,
         IViewArtifactSink artifacts) => new()
@@ -37,7 +37,7 @@ internal sealed class TestProductViewAdapter<TPort>(
         };
 
     public ProductReviewAssessment Assess(
-        TPort port,
+        TSession session,
         string filePath,
         ViewRenderRequest request,
         ViewManifest rendered) => new() { Findings = findings };

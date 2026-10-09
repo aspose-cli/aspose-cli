@@ -51,7 +51,7 @@ public sealed class ProductMenuTests : IDisposable
     private static readonly List<string> Log = [];
 
     private readonly TempDirectory _temp = new();
-    private readonly TestHosts _hosts;
+    private readonly TestCommandRunner _hosts;
 
     public ProductMenuTests()
     {
@@ -59,8 +59,10 @@ public sealed class ProductMenuTests : IDisposable
         File.WriteAllText(_temp.File("doc.test"), "document");
         File.WriteAllText(_temp.File("other.test"), "other");
         Directory.CreateDirectory(_temp.File("fonts"));
-        _hosts = new TestHosts(_temp.Path, () => ProductBinding.CreateLicenseFree<TestSession>(
-            Manifest.Id, _ => new TestSession(Log), _ => new LoggingFonts()));
+        _hosts = new TestCommandRunner(
+            _temp.Path,
+            static context => TestBindings.Create(Manifest.Id, static () => new TestSession(Log), static () => new LoggingFonts(), context),
+            static name => name == "LEFT" ? "a" : null);
     }
 
     public void Dispose() => _temp.Dispose();
@@ -68,7 +70,7 @@ public sealed class ProductMenuTests : IDisposable
     [Fact]
     public void Menu_BuildsTheProductCommandInMenuOrder()
     {
-        Command product = Menu().Build().CreateCommand(_hosts);
+        Command product = Menu().Build().CreateCommand(_hosts.Run);
 
         Assert.Equal(("menu", "A product in a menu."), (product.Name, product.Description));
         Assert.Equal(["info", "query", "edit"], product.Subcommands.Select(static command => command.Name));
@@ -87,7 +89,7 @@ public sealed class ProductMenuTests : IDisposable
     [Fact]
     public void Command_ChecksTheFontsThenBindsThenRunsTheGuardedHandlerAndFinishesInsideTheFontScope()
     {
-        Command product = Menu().Build().CreateCommand(_hosts);
+        Command product = Menu().Build().CreateCommand(_hosts.Run);
 
         TextResult result = Assert.IsType<TextResult>(Run(product, "info", "doc.test", "--font-dir", "fonts", "--password-env", "LEFT"));
 
@@ -100,7 +102,7 @@ public sealed class ProductMenuTests : IDisposable
     [Fact]
     public void Command_ReportsAMissingInputThenABadFontDirectoryBeforeBindingReadsAnything()
     {
-        Command product = Menu().Build().CreateCommand(_hosts);
+        Command product = Menu().Build().CreateCommand(_hosts.Run);
 
         CliException missing = RunFailing(product, "info", "missing.test", "--font-dir", "nope", "--fail");
         CliException fonts = RunFailing(product, "info", "doc.test", "--font-dir", "nope", "--fail");
@@ -121,7 +123,7 @@ public sealed class ProductMenuTests : IDisposable
             .Command(CompareCommand.Create, TestHandlers.Compare)
             .Complete()
             .Build()
-            .CreateCommand(_hosts);
+            .CreateCommand(_hosts.Run);
 
         CliException error = RunFailing(product, "compare", "doc.test", "other.test");
 
@@ -167,7 +169,7 @@ public sealed class ProductMenuTests : IDisposable
     [Fact]
     public void Edit_ChecksUsageBeforeReadingTheOperationsThenBindsTheBatch()
     {
-        Command product = Menu().Build().CreateCommand(_hosts);
+        Command product = Menu().Build().CreateCommand(_hosts.Run);
 
         CliException strict = RunFailing(product, "edit", "doc.test", "--ops", "missing.json", "--strict");
         EditedResult edited = Assert.IsType<EditedResult>(
@@ -190,8 +192,8 @@ public sealed class ProductMenuTests : IDisposable
             return detect is null ? builder : builder.DetectFormat(detect);
         }
 
-        Command judged = Product(null).Build().CreateCommand(_hosts);
-        Command detected = Product(static _ => "old").Build().CreateCommand(_hosts);
+        Command judged = Product(null).Build().CreateCommand(_hosts.Run);
+        Command detected = Product(static _ => "old").Build().CreateCommand(_hosts.Run);
 
         Assert.Equal("secret", Assert.IsType<TextResult>(Run(judged, "protect", "doc.test", "--encrypt", "secret")).Value);
         CliException refused = RunFailing(detected, "protect", "doc.test", "--encrypt", "secret");
@@ -203,8 +205,7 @@ public sealed class ProductMenuTests : IDisposable
     public void Guard_WrapsEveryViewAdapterCall()
     {
         ProductViewDefinition view = Menu().Build().View;
-        ProductBinding<TestSession> binding = ProductBinding.CreateLicenseFree<TestSession>(
-            Manifest.Id, static _ => new TestSession(Log));
+        ProductBinding<TestSession> binding = TestBindings.Create(Manifest.Id, static () => new TestSession(Log));
         var request = new ViewRenderRequest { View = "document", MaxPartCount = 1, Purpose = ViewPurpose.Evidence };
 
         ViewManifest rendered = view.Render(binding, "doc.test", request, new NoArtifacts());
@@ -505,46 +506,6 @@ public sealed class ProductMenuTests : IDisposable
     private sealed class StaticModule(ProductDefinition definition) : IProductModule
     {
         public ProductDefinition Define() => definition;
-    }
-
-    /// <summary>The host side of the tests: a binding per run, and the result or the error of the last run.</summary>
-    private sealed class TestHosts(string workDirectory, Func<ProductBinding> binding) : IProductCommandHostFactory
-    {
-        public ResultEnvelope? Result { get; private set; }
-
-        public Exception? Error { get; set; }
-
-        public IProductCommandHost<TPort> Create<TPort>(string productId)
-            where TPort : class =>
-            new Host<TPort>(this);
-
-        private ProductCommandContext<TPort> Context<TPort>()
-            where TPort : class => new()
-            {
-                Binding = (ProductBinding<TPort>)binding(),
-                Paths = new PathResolver(workDirectory),
-                Inputs = TestBudgets.Create().Inputs,
-                ReadEnvironment = static name => name == "LEFT" ? "a" : null,
-            };
-
-        private sealed class Host<TPort>(TestHosts owner) : IProductCommandHost<TPort>
-            where TPort : class
-        {
-            public int Run(ParseResult parseResult, Func<ProductCommandContext<TPort>, ResultEnvelope> handler)
-            {
-                try
-                {
-                    owner.Result = handler(owner.Context<TPort>());
-                }
-                catch (Exception exception)
-                {
-                    owner.Result = null;
-                    owner.Error = exception;
-                }
-
-                return 0;
-            }
-        }
     }
 }
 

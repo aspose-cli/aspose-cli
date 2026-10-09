@@ -113,29 +113,7 @@ public sealed class ProductCatalog
         return _derivedCapabilities[product];
     }
 
-    /// <summary>
-    /// Activates one product and caches its binding in the invocation context.
-    /// </summary>
-    public ProductBinding<TPort> Activate<TPort>(
-        string productId,
-        ProductActivationContext context)
-        where TPort : class
-    {
-        ArgumentNullException.ThrowIfNull(context);
-        ProductDefinition target = Get(productId);
-        if (target.PortType != typeof(TPort))
-        {
-            throw new InvalidOperationException(
-                $"Product '{productId}' binds '{target.PortType.FullName}', not '{typeof(TPort).FullName}'.");
-        }
-
-        lock (context.SyncRoot)
-        {
-            return (ProductBinding<TPort>)ActivateUntyped(target, context);
-        }
-    }
-
-    /// <summary>Activates a product for a product-neutral host surface.</summary>
+    /// <summary>Activates one product and caches its binding in the invocation context.</summary>
     public ProductBinding Activate(
         string productId,
         ProductActivationContext context)
@@ -144,21 +122,14 @@ public sealed class ProductCatalog
         ProductDefinition product = Get(productId);
         lock (context.SyncRoot)
         {
-            return ActivateUntyped(product, context);
+            if (context.TryGetBinding(product, out ProductBinding? existing))
+            {
+                return existing!;
+            }
+            ProductBinding binding = product.Activate(context);
+            context.AddBinding(product, binding);
+            return binding;
         }
-    }
-
-    private static ProductBinding ActivateUntyped(
-        ProductDefinition definition,
-        ProductActivationContext context)
-    {
-        if (context.TryGetBinding(definition, out ProductBinding? existing))
-        {
-            return existing!;
-        }
-        ProductBinding binding = definition.Activate(context);
-        context.AddBinding(definition, binding);
-        return binding;
     }
 
     /// <summary>Finds the unique generic-routing owner for an extension.</summary>

@@ -13,44 +13,6 @@ namespace Aspose.Cli.Host.Invocation;
 /// </summary>
 internal static class CompositionRoot
 {
-    /// <summary>
-    /// Binds exactly one statically registered product for its product-owned
-    /// command tree. No sibling runtime is constructed or exposed.
-    /// </summary>
-    public static ProductCommandContext<TPort> CreateProduct<TPort>(
-        ProductCatalog catalog,
-        string productId,
-        GlobalValues globals,
-        OperationDeadline? deadline = null,
-        ResourceBudgetLedger? resourceBudgets = null)
-        where TPort : class
-    {
-        ArgumentNullException.ThrowIfNull(catalog);
-        ArgumentException.ThrowIfNullOrWhiteSpace(productId);
-        ArgumentNullException.ThrowIfNull(globals);
-
-        string workDir = ResolveWorkDir(globals.WorkDir);
-        OperationDeadline effectiveDeadline =
-            resourceBudgets?.Deadline ?? deadline ?? OperationDeadline.Start(null);
-        ResourceBudgetLedger effectiveBudgets =
-            resourceBudgets ?? CreateBudgets(catalog, globals, effectiveDeadline);
-        ProductActivationContext activation = CreateActivation(
-            globals,
-            workDir,
-            effectiveBudgets);
-        ProductBinding<TPort> binding =
-            catalog.Activate<TPort>(
-                productId,
-                activation);
-        return new ProductCommandContext<TPort>
-        {
-            Binding = binding,
-            Paths = new PathResolver(workDir),
-            Inputs = effectiveBudgets.Inputs,
-            ReadEnvironment = InvocationEnvironment.CreateSecretReader(effectiveBudgets),
-        };
-    }
-
     public static CommandContext Create(
         ProductCatalog catalog,
         GlobalValues globals,

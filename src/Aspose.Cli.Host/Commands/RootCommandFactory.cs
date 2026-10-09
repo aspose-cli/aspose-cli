@@ -53,10 +53,17 @@ internal static class RootCommandFactory
             host.ContractJson.Serializer,
             globals)
             .WithInvocationPolicy(new CommandInvocationPolicy(McpAllowed: true)));
-        var productHostFactory = new ProductCommandHostFactory(executor, globals);
+        GlobalOptions options = globals;
         foreach (ProductDefinition product in catalog.Products)
         {
-            root.Subcommands.Add(product.CreateCommand(productHostFactory).WithInvocationPolicy(
+            // Each product command runs in the host pipeline with that product activated.
+            Command command = product.CreateCommand((parse, run) => executor.Run(parse, options, context => run(
+                new ProductCommandScope(
+                    context.Activate(product),
+                    context.Paths,
+                    context.ResourceBudgets.Inputs,
+                    context.ReadEnvironment))));
+            root.Subcommands.Add(command.WithInvocationPolicy(
                 new CommandInvocationPolicy(ProductId: product.Manifest.Id)));
         }
         if (licensingApplicable)
