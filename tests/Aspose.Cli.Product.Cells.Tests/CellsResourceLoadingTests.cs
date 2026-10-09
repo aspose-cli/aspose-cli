@@ -79,16 +79,16 @@ public sealed class CellsResourceLoadingTests
             Assert.True(server.RequestCount == 0, string.Join("; ", server.Requests));
             AssertOmission(loaded.Warnings());
         }
-        AssertOmission(fixture.Engine.GetInfo(input, new InfoRequest()).Warnings);
-        AssertOmission(fixture.Engine.Read(input, new ReadRequest()).Warnings);
+        AssertOmission(CellsInfo.Run(fixture.Session, new InfoRequest { Input = input }).Warnings);
+        AssertOmission(CellsRead.Run(fixture.Session, new ReadRequest { Input = input }).Warnings);
         string output = fixture.Temp.File("converted-" + extension + ".xlsx");
-        AssertOmission(fixture.Engine.Convert(input, new ConvertRequest
+        AssertOmission(CellsConvert.Run(fixture.Session, new ConvertRequest
         {
+            Input = input,
             Output = TestOutput.At(output, format: "xlsx"),
         }).Warnings);
         var sink = new MemoryArtifactSink();
-        AssertOmission(fixture.Engine.RenderView(
-            input,
+        AssertOmission(CellsView.Render(fixture.Session, input,
             new ViewRenderRequest
             {
                 View = CellsViews.Workbook,
@@ -117,9 +117,9 @@ public sealed class CellsResourceLoadingTests
             Purpose = ViewPurpose.Evidence,
         };
         var sink = new MemoryArtifactSink();
-        ViewManifest rendered = adapter.Render(fixture.Engine, input, request, sink);
+        ViewManifest rendered = adapter.Render(fixture.Session, input, request, sink);
         Assert.All(sink.Paths, path => Assert.NotEmpty(sink.Bytes(path)));
-        ProductReviewAssessment assessment = adapter.Assess(fixture.Engine, input, request, rendered);
+        ProductReviewAssessment assessment = adapter.Assess(fixture.Session, input, request, rendered);
         Assert.False(assessment.Complete);
         AssertOmission(rendered.Warnings);
         AssertOmission(assessment.Warnings);

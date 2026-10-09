@@ -10,71 +10,50 @@ using static Aspose.Cli.Product.Cells.Engine.CellsEngineSupport;
 
 namespace Aspose.Cli.Product.Cells.Engine;
 
-/// <summary>Owns bounded mutation: opens a workbook, applies an ops batch and publishes the result.</summary>
-internal sealed class CellsMutationService
+/// <summary><c>cells edit</c>: opens a workbook, applies an ops batch atomically and publishes the result.</summary>
+internal static class CellsEdit
 {
-    private readonly OutputPipeline<Workbook> _outputs;
-    private readonly CellsWorkbookLoader _loader;
-    private readonly CellsSavePipeline _saver;
-    private readonly ResourceBudgetLedger _budgets;
-    private readonly CellsEditVerifier _verifier;
-
-    internal CellsMutationService(
-        OutputPipeline<Workbook> outputs,
-        CellsWorkbookLoader loader,
-        CellsSavePipeline saver,
-        ResourceBudgetLedger budgets,
-        CellsEditVerifier verifier)
+    public static EditResult Run(CellsSession session, EditRequest request)
     {
-        ArgumentNullException.ThrowIfNull(outputs);
-        ArgumentNullException.ThrowIfNull(loader);
-        ArgumentNullException.ThrowIfNull(saver);
-        _outputs = outputs;
-        _loader = loader;
-        _saver = saver;
-        _budgets = budgets;
-        _verifier = verifier;
-    }
-
-    /// <inheritdoc />
-    internal EditResult ApplyOps(string filePath, CellsOpsBatch batch, EditRequest options)
-    {
-        ArgumentException.ThrowIfNullOrEmpty(filePath);
-        ArgumentNullException.ThrowIfNull(batch);
-        ArgumentNullException.ThrowIfNull(options);
-        ResolvedOutput output = options.Output;
+        ArgumentNullException.ThrowIfNull(session);
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentException.ThrowIfNullOrEmpty(request.Input);
+        ArgumentNullException.ThrowIfNull(request.Batch);
+        string filePath = request.Input;
+        var saver = new CellsSavePipeline(session.Outputs, session.Loader);
+        ResolvedOutput output = request.Output;
         string format = output.Format.Id;
-        batch = CellsOp.Catalog.Prepare(batch);
-        using OutputSet<Workbook>? transaction = options.Options.DryRun ? null
-            : _saver.CreateOutputSet([output.Directory], "cells-edit", output.BackupPath);
+        CellsOpsBatch batch = CellsOp.Catalog.Prepare(request.Batch);
+        using OutputSet<Workbook>? transaction = request.Options.DryRun ? null
+            : saver.CreateOutputSet([output.Directory], "cells-edit", output.BackupPath);
 
-        LicenseState licenseState = _outputs.License;
+        LicenseState licenseState = session.Outputs.License;
         FileWritePrecondition precondition = FileWritePrecondition.Capture(filePath);
-        using InputResourceScope operationInputs = _budgets.Inputs.CreateScope();
+        using InputResourceScope operationInputs = session.Budgets.Inputs.CreateScope();
         // The edit recalculates after its operations, or was told not to calculate at all.
-        using LoadedWorkbook loaded = _loader.Open(filePath, options.Password, calculateOnOpen: false);
+        using LoadedWorkbook loaded = session.Loader.Open(filePath, request.Password, calculateOnOpen: false);
         Workbook workbook = loaded.Workbook;
         SourceInfo input = BuildSource(filePath, workbook);
         FileFingerprints.EnsureUnchanged(filePath, precondition.Fingerprint, input.Fingerprint!);
         FileFingerprints.EnsureMatch(
             filePath,
-            options.Options.IfMatch,
+            request.Options.IfMatch,
             input.Fingerprint!);
 
-        using CellsEditBaseline? baseline = options.Verify
-            ? CellsEditBaseline.Capture(filePath, precondition, _budgets) : null;
-        WorkbookSavePlan savePlan = WorkbookSavePlan.Create(output.Format, licenseState, options.EncryptPassword,
-            loaded.IsEncrypted ? options.Password : null);
-        using var importSources = new CellsImportSources(_loader, _budgets, options.OpSecrets);
+        using CellsEditBaseline? baseline = request.Verify
+            ? CellsEditBaseline.Capture(filePath, precondition, session.Budgets) : null;
+        WorkbookSavePlan savePlan = WorkbookSavePlan.Create(output.Format, licenseState, request.EncryptPassword,
+            loaded.IsEncrypted ? request.Password : null);
+        using var importSources = new CellsImportSources(session.Loader, session.Budgets, request.OpSecrets);
         var protection = new CellsProtectionTracker();
         string[] linksBefore = LinkSources(workbook);
         (IReadOnlyList<BoundedOperationOutcome> applied, bool defaultedToActiveSheet, IReadOnlyList<Cell> formulaAnchors) = ApplyOperations(
-            workbook, batch, options.Options.BestEffort, options.OpSecrets, operationInputs, importSources, protection);
+            session.Budgets, workbook, batch, request.Options.BestEffort, request.OpSecrets, operationInputs, importSources, protection);
         Warning? skippedSheet = loaded.SkippedSheetWarning(defaultedToActiveSheet);
         Warning? unenforced = protection.Warning(output.Format);
         Warning? relativeLinks = RelativeLinkWarning(workbook, linksBefore);
         Warning? unknownFunctions = UnknownFunctions.Warning(workbook, formulaAnchors);
-        if (options.Recalculate)
+        if (request.Recalculate)
         {
             workbook.CalculateFormula();
         }
@@ -89,7 +68,7 @@ internal sealed class CellsMutationService
                 loaded.RestoreActiveSheet(savePlan);
             }
 
-            saved = _saver.Stage(transaction, workbook, savePlan, output, precondition, verifyReopen: true);
+            saved = saver.Stage(transaction, workbook, savePlan, output, precondition, verifyReopen: true);
         }
 
         Warning?[] editWarnings = [skippedSheet, unenforced, relativeLinks, unknownFunctions];
@@ -101,11 +80,11 @@ internal sealed class CellsMutationService
                 EnvelopeParts.BackupWarnings(saved.Backup));
         if (transaction is not null)
         {
-            if (options.Verify)
+            if (request.Verify)
             {
                 // Verification reports the warnings that make the output incomplete as issues.
-                verification = _verifier.Verify(saved!.Candidate, baseline!.Path, filePath,
-                    options.Password, savePlan.OutputPassword, batch, warnings);
+                verification = new CellsEditVerifier(session.Loader, session.Budgets).Verify(saved!.Candidate, baseline!.Path, filePath,
+                    request.Password, savePlan.OutputPassword, batch, warnings);
             }
             transaction.Commit();
         }
@@ -114,8 +93,8 @@ internal sealed class CellsMutationService
         {
             Input = input,
             Output = saved?.Output,
-            DryRun = options.Options.DryRun,
-            Recalculated = options.Recalculate,
+            DryRun = request.Options.DryRun,
+            Recalculated = request.Recalculate,
             Applied = applied,
             Backup = saved?.Backup,
             Verification = verification,
@@ -130,7 +109,8 @@ internal sealed class CellsMutationService
     /// operation that changed a protected sheet or structure is recorded in
     /// <paramref name="protection"/>.
     /// </summary>
-    private (IReadOnlyList<BoundedOperationOutcome> Applied, bool DefaultedToActiveSheet, IReadOnlyList<Cell> FormulaAnchors) ApplyOperations(
+    private static (IReadOnlyList<BoundedOperationOutcome> Applied, bool DefaultedToActiveSheet, IReadOnlyList<Cell> FormulaAnchors) ApplyOperations(
+        ResourceBudgetLedger budgets,
         Workbook workbook,
         CellsOpsBatch batch,
         bool bestEffort,
@@ -144,12 +124,12 @@ internal sealed class CellsMutationService
             CellsOp.Catalog,
             batch.Ops,
             bestEffort,
-            _budgets.Deadline,
+            budgets.Deadline,
             (op, _) =>
             {
                 // Charge the cells an operation writes before it writes them: a tiny op over a
                 // whole sheet must fail on the budget, not after billions of assignments.
-                _budgets.Consume(CellsBudgetDomains.Cells, OpsFootprint.CellCost(op), "items", "edit");
+                budgets.Consume(CellsBudgetDomains.Cells, OpsFootprint.CellCost(op), "items", "edit");
                 ProtectedChange protectedTarget = CellsProtectionTracker.Observe(workbook, op);
                 long affected = handlers.Run(op) ?? 0;
                 protection.Record(protectedTarget);

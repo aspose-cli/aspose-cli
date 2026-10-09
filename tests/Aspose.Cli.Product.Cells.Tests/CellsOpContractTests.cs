@@ -194,8 +194,6 @@ public sealed class CellsOpContractTests : IClassFixture<CellsFixture>
         CellsOp.Catalog.Parse<CellsOpsBatch>(json, Aspose.Cli.Generated.ProductJsonContext.Definition);
 
     private string Apply(string path, string operations, string output) =>
-        _fixture.Engine.ApplyOps(
-            path,
-            Parse(operations),
-            new EditRequest { Output = TestOutput.At(_fixture.Temp.File(output), overwrite: true) }).Output!.Path;
+        CellsEdit.Run(_fixture.Session,
+            new EditRequest { Input = path, Batch = Parse(operations), Output = TestOutput.At(_fixture.Temp.File(output), overwrite: true) }).Output!.Path;
 }

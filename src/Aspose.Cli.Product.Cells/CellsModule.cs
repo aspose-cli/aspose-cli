@@ -1,5 +1,4 @@
 using Aspose.Cli.Product.Cells.Commands;
-using Aspose.Cli.Product.Cells.Output;
 using Aspose.Cli.Sdk.Extensibility;
 
 namespace Aspose.Cli.Product.Cells;
@@ -30,21 +29,30 @@ public sealed class CellsModule : IProductModule
 
     /// <summary>Returns the pure, immutable Cells product definition.</summary>
     public ProductDefinition Define() =>
-        Aspose.Cli.Sdk.Extensibility.Product.Define<ICellsEngine>(Manifest)
+        Aspose.Cli.Sdk.Extensibility.Product.Define<CellsSession>(Manifest)
             .Formats(CellsFormats.Definitions)
             .Diagnostics(CellsDiagnostics.All)
             .Json(ProductJsonContext.Definition)
             .View(new CellsViewAdapter())
-            .Output<WorkbookInfoResult>(CellsRenderers.Render)
-            .Output<WorkbookReadResult>(CellsRenderers.Render)
-            .Output<ConvertResult>(CellsRenderers.Render)
-            .Output<RenderResult>(CellsRenderers.Render)
-            .Output<EditResult>(CellsRenderers.Render)
-            .Output<CreateResult>(CellsRenderers.Render)
-            .Output<DiffResult>(CellsRenderers.Render)
-            .Output<SearchResult>(CellsRenderers.Render)
-            .Commands(CellsCommands.Create)
+            .Describe("Spreadsheet operations (Excel and friends) with engine-grade fidelity.", Help)
+            .Command(InfoCommand.Create, CellsInfo.Run)
+            .Group("query", "Read bounded workbook data without mutating the source file.", static query => query
+                .Command(ReadCommand.Create, CellsRead.Run)
+                .Command(SearchCommand.Create, CellsSearch.Run))
+            .Command(NewCommand.Create, CellsCreate.Run)
+            .Command(EditCommand.Create, CellsEdit.Run)
+            .Command(DiffCommand.Create, CellsDiff.Run)
+            .Command(ConvertCommand.Create, CellsConvert.Run)
+            .Command(RenderCommand.Create, CellsRender.Run)
             .Activator(static context => CellsActivation.Activate(context, Manifest.Id))
             .Build();
 
+    private static CommandHelp Help() => new(
+        ["cells inspect book.xlsx --output json"],
+        [
+            CommandHelpLink.Docs(Manifest, "editing", "the edit-operation vocabulary and recipes"),
+            CommandHelpLink.Docs(Manifest, "workbook-standards", "professional workbook construction guidance"),
+            CommandHelpLink.Docs(Manifest, "verification", "the spreadsheet delivery verification protocol"),
+            CommandHelpLink.Schema(Manifest, "the operations JSON Schema"),
+        ]);
 }

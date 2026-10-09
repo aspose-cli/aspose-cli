@@ -1,6 +1,6 @@
 using System.CommandLine;
 using Aspose.Cli.Sdk.Errors;
-using Aspose.Cli.Sdk.Extensibility;
+using Aspose.Cli.Sdk.Extensibility.Output;
 using Aspose.Cli.Sdk.IO;
 
 namespace Aspose.Cli.Product.Cells.Commands;
@@ -8,7 +8,7 @@ namespace Aspose.Cli.Product.Cells.Commands;
 /// <summary><c>cells convert</c> — workbook format conversion.</summary>
 internal static class ConvertCommand
 {
-    public static Command Create(IProductCommandHost<ICellsEngine> host)
+    public static CommandDefinition<ConvertRequest, ConvertResult> Create()
     {
         var sheet = new Option<string?>("--sheet")
         {
@@ -29,16 +29,15 @@ internal static class ConvertCommand
             Description = "Start a CSV or TSV output with a UTF-8 byte order mark, so Excel reads its non-English text "
                 + "correctly. Default: UTF-8 without one.",
         };
-        return StandardCommand.Create(
-            host,
+        return new(
             "convert",
             "Convert a workbook to another format.",
             new CommandTraits
             {
-                Input = CellsCommands.Workbook("Workbook to convert."),
+                Input = CellsTraits.Workbook("Workbook to convert."),
                 Output = OutputTarget.File("Output path. Default: the input path with the target extension "
                     + "(with '.out' inserted when that would overwrite the input)."),
-                Encrypt = CellsCommands.EncryptedWorkbook,
+                Encrypt = CellsTraits.EncryptedWorkbook,
                 UsesFonts = true,
                 Target = TargetFormat.Convert(
                     $"Target format: {string.Join(", ", CellsFormats.Definitions.IdsFor(FormatUse.Convert))}.",
@@ -67,8 +66,9 @@ internal static class ConvertCommand
                 }
 
                 Secret? encryptPassword = standard.EncryptPassword();
-                return standard.OpenEngine().Convert(standard.Input, new ConvertRequest
+                return new ConvertRequest
                 {
+                    Input = standard.Input,
                     Output = output,
                     SheetName = sheetName,
                     Password = standard.InputPassword,
@@ -77,8 +77,11 @@ internal static class ConvertCommand
                         ? null
                         : new TextImportOptions { Encoding = encodingName, Culture = cultureName },
                     ByteOrderMark = byteOrderMark,
-                });
-            }).WithExamples(
+                };
+            },
+            Table)
+        {
+            Examples =
             [
                 "cells convert sales.csv --to xlsx",
                 "cells convert erp-export.csv --to xlsx --encoding gb18030",
@@ -86,6 +89,10 @@ internal static class ConvertCommand
                 "cells convert book.xlsx --to csv --bom --out for-excel.csv",
                 "cells convert book.xlsx --to pdf --out report.pdf",
                 "cells convert book.xlsx --to pdf --font-dir fonts --out report.pdf",
-            ]);
+            ],
+        };
     }
+
+    internal static void Table(ConvertResult convert, TableSurface surface) =>
+        ResultText.Produced(surface, convert.Output, convert.Sheet is null ? null : $"sheet {convert.Sheet}");
 }

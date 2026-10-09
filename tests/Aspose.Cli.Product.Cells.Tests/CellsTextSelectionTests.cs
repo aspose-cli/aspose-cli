@@ -30,11 +30,12 @@ public sealed class CellsTextSelectionTests : IClassFixture<CellsTextSelectionFi
         byte[] sourceBytes = File.ReadAllBytes(source);
         var request = new ConvertRequest
         {
+            Input = source,
             Output = TestOutput.At(output, format: format, overwrite: true),
             SheetName = "Detail",
         };
 
-        ConvertResult result = _fixture.Engine.Convert(source, request);
+        ConvertResult result = CellsConvert.Run(_fixture.Session, request);
         Assert.Equal("Detail", result.Sheet);
         string text = File.ReadAllText(output);
         Assert.Contains("SO-001", text, StringComparison.Ordinal);
@@ -51,8 +52,9 @@ public sealed class CellsTextSelectionTests : IClassFixture<CellsTextSelectionFi
     {
         string source = _sources.DashboardActive;
         string output = _fixture.Temp.File($"text-first.{format}");
-        ConvertResult result = _fixture.Engine.Convert(source, new ConvertRequest
+        ConvertResult result = CellsConvert.Run(_fixture.Session, new ConvertRequest
         {
+            Input = source,
             Output = TestOutput.At(output, format: format, overwrite: true),
             SheetName = "Dashboard",
         });
@@ -71,8 +73,9 @@ public sealed class CellsTextSelectionTests : IClassFixture<CellsTextSelectionFi
     {
         string source = _sources.DetailActive;
         string output = _fixture.Temp.File($"text-default.{format}");
-        ConvertResult result = _fixture.Engine.Convert(source, new ConvertRequest
+        ConvertResult result = CellsConvert.Run(_fixture.Session, new ConvertRequest
         {
+            Input = source,
             Output = TestOutput.At(output, format: format, overwrite: true),
         });
 

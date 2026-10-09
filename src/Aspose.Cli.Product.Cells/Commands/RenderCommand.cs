@@ -1,6 +1,6 @@
 using System.CommandLine;
 using Aspose.Cli.Sdk.Errors;
-using Aspose.Cli.Sdk.Extensibility;
+using Aspose.Cli.Sdk.Extensibility.Output;
 using Aspose.Cli.Sdk.IO;
 
 namespace Aspose.Cli.Product.Cells.Commands;
@@ -11,7 +11,7 @@ namespace Aspose.Cli.Product.Cells.Commands;
 /// </summary>
 internal static class RenderCommand
 {
-    public static Command Create(IProductCommandHost<ICellsEngine> host)
+    public static CommandDefinition<RenderRequest, RenderResult> Create()
     {
         var sheet = new Option<string?>("--sheet")
         {
@@ -26,13 +26,12 @@ internal static class RenderCommand
             Description = "Render every visible sheet, one image per sheet named <out-base>.<Sheet><ext>.",
         };
         var dpi = new DpiOption();
-        return StandardCommand.Create(
-            host,
+        return new(
             "render",
             "Render a sheet, a range, or every visible sheet to images.",
             new CommandTraits
             {
-                Input = CellsCommands.Workbook("Workbook to render."),
+                Input = CellsTraits.Workbook("Workbook to render."),
                 Output = OutputTarget.File("Output path. Default: the input path with the image extension. "
                     + "With --all-sheets it is the naming template: <base>.<Sheet><ext>."),
                 UsesFonts = true,
@@ -64,20 +63,60 @@ internal static class RenderCommand
 
                 (string? sheetName, RangeRef? range) = SheetRangeInput.Resolve(
                     parse.GetValue(sheet), parse.GetValue(rangeOption));
-                return standard.OpenEngine().Render(standard.Input, new RenderRequest
+                return new RenderRequest
                 {
+                    Input = standard.Input,
                     Output = output,
                     SheetName = sheetName,
                     Range = range,
                     AllSheets = allSheets,
                     Dpi = resolution,
                     Password = standard.InputPassword,
-                });
-            }).WithExamples(
+                };
+            },
+            Table)
+        {
+            Examples =
             [
                 "cells render book.xlsx --range Sales!A1:G20 --out sales.png",
                 "cells render book.xlsx --sheet Dashboard --out dashboard.png",
                 "cells render book.xlsx --all-sheets --out check.png",
-            ]);
+            ],
+        };
+    }
+
+    internal static void Table(RenderResult render, TableSurface surface)
+    {
+        if (render.Outputs is { } outputs)
+        {
+            // The --all-sheets shape: the per-sheet list IS the result, so a
+            // human sees every produced file, not just the first-sheet summary.
+            string dpi = render.Dpi is { } value ? $", {TableText.Int(value)} dpi" : string.Empty;
+            surface.Out.WriteLine($"rendered {TableText.Int(outputs.Count)} sheet(s) ({render.Output.Format}{dpi})");
+            foreach (SheetRenderOutput output in outputs)
+            {
+                surface.Out.WriteLine($"  {output.Sheet}: {output.Path} ({TableText.Bytes(output.SizeBytes)})");
+            }
+
+            return;
+        }
+
+        ResultText.Produced(surface, render.Output, Describe(render));
+    }
+
+    private static string Describe(RenderResult render)
+    {
+        var parts = new List<string>(3) { $"sheet {render.Sheet}" };
+        if (render.Range is { } range)
+        {
+            parts.Add($"range {range}");
+        }
+
+        if (render.Dpi is { } dpi)
+        {
+            parts.Add(TableText.Int(dpi) + " dpi");
+        }
+
+        return string.Join(", ", parts);
     }
 }

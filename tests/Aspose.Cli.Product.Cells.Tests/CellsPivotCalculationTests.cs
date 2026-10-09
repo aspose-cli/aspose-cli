@@ -156,17 +156,17 @@ public sealed class CellsPivotCalculationTests : IClassFixture<CellsFixture>
         Assert.Equal("平均净额", pivot.DataFields[1].DisplayName);
     }
 
-    private string CreateWorkbook(string output) => _fixture.Engine.Create(new NewWorkbookRequest
+    private string CreateWorkbook(string output) => CellsCreate.Run(_fixture.Session, new NewWorkbookRequest
     {
         Output = TestOutput.At(_fixture.Temp.File(output), overwrite: true),
         SheetNames = ["Data", "Pivot"],
     }).Output.Path;
 
-    private string Apply(string source, string operations, string output) => _fixture.Engine.ApplyOps(
-        source,
-        ParseOps(operations),
+    private string Apply(string source, string operations, string output) => CellsEdit.Run(_fixture.Session,
         new EditRequest
         {
+            Input = source,
+            Batch = ParseOps(operations),
             Output = TestOutput.At(_fixture.Temp.File(output), overwrite: true),
         }).Output!.Path;
 

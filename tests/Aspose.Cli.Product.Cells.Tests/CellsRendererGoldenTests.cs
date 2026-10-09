@@ -1,4 +1,4 @@
-using Aspose.Cli.Product.Cells.Output;
+using Aspose.Cli.Product.Cells.Commands;
 using Aspose.Cli.Sdk.Extensibility.Output;
 using Xunit;
 
@@ -13,7 +13,7 @@ public sealed class CellsRendererGoldenTests
     [Fact]
     public void Info_WithEveryDetail_Plain()
     {
-        string text = RenderedText.Of(surface => CellsRenderers.Render(InfoWithDetails(), surface), TableFormat.Plain);
+        string text = RenderedText.Of(surface => InfoCommand.Table(InfoWithDetails(), surface), TableFormat.Plain);
 
         RenderedText.Equal(
             """
@@ -63,7 +63,7 @@ public sealed class CellsRendererGoldenTests
     [Fact]
     public void Info_WithEveryDetail_Markdown()
     {
-        string text = RenderedText.Of(surface => CellsRenderers.Render(InfoWithDetails(), surface), TableFormat.Markdown);
+        string text = RenderedText.Of(surface => InfoCommand.Table(InfoWithDetails(), surface), TableFormat.Markdown);
 
         RenderedText.Equal(
             """
@@ -135,7 +135,7 @@ public sealed class CellsRendererGoldenTests
             },
         };
 
-        string text = RenderedText.Of(surface => CellsRenderers.Render(result, surface), TableFormat.Plain);
+        string text = RenderedText.Of(surface => InfoCommand.Table(result, surface), TableFormat.Plain);
 
         RenderedText.Equal(
             """
@@ -180,7 +180,7 @@ public sealed class CellsRendererGoldenTests
     [Fact]
     public void Info_WithoutDetails_PrintsOnlyTheSummary()
     {
-        string text = RenderedText.Of(surface => CellsRenderers.Render(Info(), surface), TableFormat.Plain);
+        string text = RenderedText.Of(surface => InfoCommand.Table(Info(), surface), TableFormat.Plain);
 
         RenderedText.Equal(
             """
@@ -219,7 +219,7 @@ public sealed class CellsRendererGoldenTests
             },
         };
 
-        string text = RenderedText.Of(surface => CellsRenderers.Render(result, surface), TableFormat.Plain);
+        string text = RenderedText.Of(surface => ReadCommand.Table(result, surface), TableFormat.Plain);
 
         RenderedText.Equal(
             """
@@ -271,7 +271,7 @@ public sealed class CellsRendererGoldenTests
             },
         };
 
-        string text = RenderedText.Of(surface => CellsRenderers.Render(result, surface), TableFormat.Plain);
+        string text = RenderedText.Of(surface => EditCommand.Table(result, surface), TableFormat.Plain);
 
         RenderedText.Equal(
             """
@@ -299,7 +299,7 @@ public sealed class CellsRendererGoldenTests
             Applied = [new BoundedOperationOutcome { Id = "op-0001", Index = 0, Op = "set_values", Status = OpStatuses.Ok, ItemsAffected = 1 }],
         };
 
-        string text = RenderedText.Of(surface => CellsRenderers.Render(result, surface), TableFormat.Plain);
+        string text = RenderedText.Of(surface => EditCommand.Table(result, surface), TableFormat.Plain);
 
         RenderedText.Equal(
             """

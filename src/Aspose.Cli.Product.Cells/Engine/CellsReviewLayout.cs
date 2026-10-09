@@ -1,4 +1,4 @@
-namespace Aspose.Cli.Product.Cells.Ports;
+namespace Aspose.Cli.Product.Cells.Engine;
 
 /// <summary>Bounded layout facts from the real workbook model, one entry per worksheet.</summary>
 internal sealed record CellsReviewLayout(

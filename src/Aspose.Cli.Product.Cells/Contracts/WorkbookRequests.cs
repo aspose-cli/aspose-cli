@@ -6,6 +6,9 @@ namespace Aspose.Cli.Product.Cells.Contracts;
 /// <summary>Options of <c>cells inspect</c>.</summary>
 public sealed record InfoRequest
 {
+    /// <summary>The workbook to inspect.</summary>
+    public required string Input { get; init; }
+
     /// <summary>Include a small sample of display values per sheet.</summary>
     public bool IncludePreview { get; init; }
 
@@ -22,6 +25,9 @@ public sealed record InfoRequest
 /// <summary>Options of <c>cells query range</c>.</summary>
 public sealed record ReadRequest
 {
+    /// <summary>The workbook to read.</summary>
+    public required string Input { get; init; }
+
     /// <summary>Sheet to project; the active sheet when null.</summary>
     public string? SheetName { get; init; }
 
@@ -52,6 +58,9 @@ public sealed record ReadRequest
 /// <summary>Options of <c>cells convert</c>.</summary>
 public sealed record ConvertRequest
 {
+    /// <summary>The workbook to convert.</summary>
+    public required string Input { get; init; }
+
     /// <summary>The resolved output: its format, path and overwrite permission.</summary>
     public required ResolvedOutput Output { get; init; }
 
@@ -87,6 +96,9 @@ public sealed record TextImportOptions
 /// <summary>Options of <c>cells render</c>.</summary>
 public sealed record RenderRequest
 {
+    /// <summary>The workbook to render.</summary>
+    public required string Input { get; init; }
+
     /// <summary>The resolved output: its format, path and overwrite permission.</summary>
     public required ResolvedOutput Output { get; init; }
 
@@ -114,6 +126,12 @@ public sealed record RenderRequest
 /// <summary>Options of <c>cells edit</c>.</summary>
 public sealed record EditRequest
 {
+    /// <summary>The workbook to edit.</summary>
+    public required string Input { get; init; }
+
+    /// <summary>The validated operation batch to apply atomically.</summary>
+    public required CellsOpsBatch Batch { get; init; }
+
     /// <summary>Transient environment secret values; never part of ops JSON or result envelopes.</summary>
     public IReadOnlyDictionary<string, Secret>? OpSecrets { get; init; }
 
@@ -155,6 +173,9 @@ public sealed record NewWorkbookRequest
 /// <summary>Options of <c>cells query search</c>.</summary>
 public sealed record SearchRequest
 {
+    /// <summary>The workbook to search.</summary>
+    public required string Input { get; init; }
+
     /// <summary>The validated pattern, hit budget and paging of the search.</summary>
     public required SearchQuery Query { get; init; }
 
@@ -184,6 +205,12 @@ public enum SearchIn
 /// <summary>Options of <c>cells compare</c>.</summary>
 public sealed record DiffRequest
 {
+    /// <summary>The baseline workbook.</summary>
+    public required string Left { get; init; }
+
+    /// <summary>The candidate workbook compared against the baseline.</summary>
+    public required string Right { get; init; }
+
     /// <summary>What to compare.</summary>
     public DiffScope Scope { get; init; } = DiffScope.Formulas;
 

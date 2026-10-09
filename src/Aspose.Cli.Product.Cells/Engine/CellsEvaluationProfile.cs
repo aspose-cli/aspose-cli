@@ -13,7 +13,7 @@ namespace Aspose.Cli.Product.Cells.Engine;
 /// </summary>
 /// <remarks>
 /// The profile sees the workbook and the output format, not which sheets an output holds, so
-/// the Cells services decide what to hand the write pipeline:
+/// the Cells handlers decide what to hand the write pipeline:
 /// <list type="bullet">
 /// <item>A PDF of one sheet (<c>convert --sheet</c>) is published without the workbook, since the
 /// content sheet it prints carries none of the workbook's marks.</item>

@@ -49,8 +49,9 @@ public sealed class CellsOutputFormatTests : IClassFixture<CellsFixture>
     {
         string output = _fixture.Temp.File("converted.xltx");
 
-        ConvertResult result = _fixture.Engine.Convert(_fixture.CreateSalesWorkbook("convert-source.xlsx"), new ConvertRequest
+        ConvertResult result = CellsConvert.Run(_fixture.Session, new ConvertRequest
         {
+            Input = _fixture.CreateSalesWorkbook("convert-source.xlsx"),
             Output = TestOutput.At(output, format: "xltx", overwrite: true),
         });
 
@@ -95,8 +96,6 @@ public sealed class CellsOutputFormatTests : IClassFixture<CellsFixture>
     }
 
     private EditResult Apply(string source, string output) =>
-        _fixture.Engine.ApplyOps(
-            source,
-            CellsOp.Catalog.Parse<CellsOpsBatch>(Edit, Aspose.Cli.Generated.ProductJsonContext.Definition),
-            new EditRequest { Output = TestOutput.At(output, overwrite: true) });
+        CellsEdit.Run(_fixture.Session,
+            new EditRequest { Input = source, Batch = CellsOp.Catalog.Parse<CellsOpsBatch>(Edit, Aspose.Cli.Generated.ProductJsonContext.Definition), Output = TestOutput.At(output, overwrite: true) });
 }

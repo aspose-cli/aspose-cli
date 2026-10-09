@@ -26,8 +26,8 @@ public sealed class CellsReviewTests
         };
         var sink = new MemoryArtifactSink();
 
-        ViewManifest rendered = adapter.Render(fixture.Engine, input, request, sink);
-        ProductReviewAssessment assessment = adapter.Assess(fixture.Engine, input, request, rendered);
+        ViewManifest rendered = adapter.Render(fixture.Session, input, request, sink);
+        ProductReviewAssessment assessment = adapter.Assess(fixture.Session, input, request, rendered);
         Assert.NotNull(assessment.Findings);
         IReadOnlyList<ReviewFinding> findings = assessment.Findings;
         // The formula error is a finding, not a check that failed to run, so review --code
@@ -107,8 +107,8 @@ public sealed class CellsReviewTests
 
         var adapter = new CellsViewAdapter();
         var request = new ViewRenderRequest { View = CellsViews.Sheets, MaxPartCount = 10, Purpose = ViewPurpose.Evidence };
-        ViewManifest rendered = adapter.Render(fixture.Engine, input, request, new MemoryArtifactSink());
-        ProductReviewAssessment assessment = adapter.Assess(fixture.Engine, input, request, rendered);
+        ViewManifest rendered = adapter.Render(fixture.Session, input, request, new MemoryArtifactSink());
+        ProductReviewAssessment assessment = adapter.Assess(fixture.Session, input, request, rendered);
 
         Dictionary<string, string> clipped = assessment.Findings!
             .Where(static finding => finding.Code == "CELLS_VALUES_CLIPPED")
@@ -265,8 +265,8 @@ public sealed class CellsReviewTests
     {
         var adapter = new CellsViewAdapter();
         var request = new ViewRenderRequest { View = CellsViews.Sheets, MaxPartCount = 10, Purpose = ViewPurpose.Evidence };
-        ViewManifest rendered = adapter.Render(fixture.Engine, input, request, new MemoryArtifactSink());
-        return adapter.Assess(fixture.Engine, input, request, rendered).Findings!;
+        ViewManifest rendered = adapter.Render(fixture.Session, input, request, new MemoryArtifactSink());
+        return adapter.Assess(fixture.Session, input, request, rendered).Findings!;
     }
 
     private static void CreateLayoutProblemWorkbook(string path)

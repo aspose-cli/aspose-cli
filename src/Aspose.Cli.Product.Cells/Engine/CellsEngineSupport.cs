@@ -4,7 +4,7 @@ using Aspose.Cli.Sdk.IO;
 
 namespace Aspose.Cli.Product.Cells.Engine;
 
-/// <summary>Shared contract projection helpers used by Cells responsibility services.</summary>
+/// <summary>Contract projection helpers the Cells handlers share.</summary>
 internal static class CellsEngineSupport
 {
     /// <summary>

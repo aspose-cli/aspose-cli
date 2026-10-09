@@ -1,6 +1,6 @@
 using System.CommandLine;
 using Aspose.Cli.Sdk.Errors;
-using Aspose.Cli.Sdk.Extensibility;
+using Aspose.Cli.Sdk.Extensibility.Output;
 using Aspose.Cli.Sdk.IO;
 
 namespace Aspose.Cli.Product.Cells.Commands;
@@ -8,20 +8,19 @@ namespace Aspose.Cli.Product.Cells.Commands;
 /// <summary><c>cells create</c> — create a blank workbook.</summary>
 internal static class NewCommand
 {
-    public static Command Create(IProductCommandHost<ICellsEngine> host)
+    public static CommandDefinition<NewWorkbookRequest, CreateResult> Create()
     {
         var sheets = new Option<string?>("--sheets")
         {
             Description = "Comma-separated sheet names, e.g. \"Data,Summary\". Default: one sheet named Sheet1.",
         }.WithInput(InputKind.None);
-        return StandardCommand.Create(
-            host,
+        return new(
             "create",
             "Create a new workbook.",
             new CommandTraits
             {
                 Output = OutputTarget.CreatedFile("Path of the workbook to create, e.g. report.xlsx.", CellsFormats.Convertible),
-                Encrypt = CellsCommands.EncryptedWorkbook,
+                Encrypt = CellsTraits.EncryptedWorkbook,
             },
             [sheets],
             (parse, standard) =>
@@ -29,14 +28,21 @@ internal static class NewCommand
                 IReadOnlyList<string> sheetNames = ParseSheetNames(parse.GetValue(sheets));
                 ResolvedOutput output = standard.Output;
                 Secret? encryptPassword = standard.EncryptPassword();
-                return standard.OpenEngine().Create(new NewWorkbookRequest
+                return new NewWorkbookRequest
                 {
                     Output = output,
                     SheetNames = sheetNames,
                     EncryptPassword = encryptPassword,
-                });
-            }).WithExamples(["cells create book.xlsx --sheets \"Data,Summary\""]);
+                };
+            },
+            Table)
+        {
+            Examples = ["cells create book.xlsx --sheets \"Data,Summary\""],
+        };
     }
+
+    internal static void Table(CreateResult create, TableSurface surface) =>
+        ResultText.Produced(surface, create.Output, $"sheets: {string.Join(", ", create.Sheets)}");
 
     private static IReadOnlyList<string> ParseSheetNames(string? sheets)
     {

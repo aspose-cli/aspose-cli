@@ -359,16 +359,16 @@ public sealed class CellsOperationBehaviorTests : IClassFixture<CellsFixture>
     public void BestEffort_ARejectedPivotLeavesNoPivotBehind()
     {
         string source = _fixture.CreateSalesWorkbook("pivot-rollback.xlsx");
-        EditResult result = _fixture.Engine.ApplyOps(
-            source,
-            Parse("""
+        EditResult result = CellsEdit.Run(_fixture.Session,
+            new EditRequest
+            {
+                Input = source,
+                Batch = Parse("""
                 { "ops": [
                   { "op": "create_pivot", "sheet": "Second", "sourceRange": "Data!A1:C2", "at": "D1", "rows": ["Region"], "values": [{ "field": "Ghost" }] },
                   { "op": "set_values", "sheet": "Second", "range": "A2", "values": [["after"]] }
                 ] }
                 """),
-            new EditRequest
-            {
                 Output = TestOutput.At(_fixture.Temp.File("pivot-rollback.out.xlsx"), overwrite: true),
                 Options = new EditCommandOptions { BestEffort = true },
             });
@@ -385,16 +385,16 @@ public sealed class CellsOperationBehaviorTests : IClassFixture<CellsFixture>
     public void BestEffort_AxisTitlesOnAnExistingPieChangeNothing()
     {
         string source = _fixture.CreateSalesWorkbook("pie.xlsx");
-        EditResult result = _fixture.Engine.ApplyOps(
-            source,
-            Parse("""
+        EditResult result = CellsEdit.Run(_fixture.Session,
+            new EditRequest
+            {
+                Input = source,
+                Batch = Parse("""
                 { "ops": [
                   { "op": "create_chart", "sheet": "Data", "type": "pie", "dataRange": "A1:B2", "at": "E2:K12", "title": "Share" },
                   { "op": "update_chart", "sheet": "Data", "index": 0, "title": "Changed", "axisTitles": { "value": "USD" } }
                 ] }
                 """),
-            new EditRequest
-            {
                 Output = TestOutput.At(_fixture.Temp.File("pie.out.xlsx"), overwrite: true),
                 Options = new EditCommandOptions { BestEffort = true },
             });
@@ -499,8 +499,6 @@ public sealed class CellsOperationBehaviorTests : IClassFixture<CellsFixture>
         CellsOp.Catalog.Parse<CellsOpsBatch>(json, Aspose.Cli.Generated.ProductJsonContext.Definition);
 
     private EditResult Apply(string path, string operations, string output) =>
-        _fixture.Engine.ApplyOps(
-            path,
-            Parse($$"""{ "ops": [ {{operations}} ] }"""),
-            new EditRequest { Output = TestOutput.At(_fixture.Temp.File(output), overwrite: true) });
+        CellsEdit.Run(_fixture.Session,
+            new EditRequest { Input = path, Batch = Parse($$"""{ "ops": [ {{operations}} ] }"""), Output = TestOutput.At(_fixture.Temp.File(output), overwrite: true) });
 }

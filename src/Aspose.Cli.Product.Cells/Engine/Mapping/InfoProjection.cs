@@ -17,7 +17,7 @@ internal static class InfoProjection
     private const int MaxPreviewColumns = 20;
 
     public static (WorkbookSummary Summary, Warning? ListTruncated) Summarize(
-        ResourceBudgetLedger budgets, Workbook workbook, string filePath, InfoRequest request)
+        ResourceBudgetLedger budgets, Workbook workbook, InfoRequest request)
     {
         var sheets = new List<SheetInfo>(workbook.Worksheets.Count);
         for (int index = 0; index < workbook.Worksheets.Count; index++)
@@ -39,7 +39,7 @@ internal static class InfoProjection
 
         var summary = new WorkbookSummary
         {
-            Name = Path.GetFileName(filePath),
+            Name = Path.GetFileName(request.Input),
             SheetCount = sheets.Count,
             Sheets = sheets,
             HasVba = workbook.HasMacro,
