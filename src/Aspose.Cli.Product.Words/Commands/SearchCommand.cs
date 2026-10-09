@@ -31,7 +31,7 @@ internal static class SearchCommand
         {
             Finish = static (_, request, result, standard) => result with
             {
-                Window = SearchOptions.Continue(request.Query, result.Window!, standard.Continuation()),
+                Window = SearchOptions.Continue(request.Query, result.Window, standard.Continuation()),
             },
             Examples =
             [

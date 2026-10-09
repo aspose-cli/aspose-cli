@@ -8,8 +8,10 @@ namespace Aspose.Cli.Sdk.Contracts;
 /// <summary>
 /// Base of every successful command result. The envelope carries the fields
 /// that are identical across all products and commands: which schema the
-/// payload follows, the license mode the operation ran under, and any
-/// warnings the caller must not ignore.
+/// payload follows and any warnings the caller must not ignore. A result whose
+/// command runs a product engine derives from <see cref="EngineResultEnvelope"/>,
+/// and a bounded read or search from <see cref="WindowedResultEnvelope"/>, so each
+/// result's schema publishes only the members it can carry.
 /// </summary>
 /// <remarks>
 /// Property order is fixed so output stays byte-for-byte deterministic:
@@ -45,20 +47,6 @@ public abstract partial record ResultEnvelope
     /// <summary>Version of this result contract.</summary>
     [JsonPropertyOrder(-99)]
     public int SchemaVersion { get; }
-
-    /// <summary>
-    /// The window of a bounded read or search: how much it returned and how to continue.
-    /// Omitted for results that are not windowed.
-    /// </summary>
-    [JsonPropertyOrder(800)]
-    public ResultWindow? Window { get; init; }
-
-    /// <summary>
-    /// License mode the operation ran under. Omitted for commands that never
-    /// touch the engine (for example <c>capabilities</c>).
-    /// </summary>
-    [JsonPropertyOrder(900)]
-    public LicenseInfo? License { get; init; }
 
     /// <summary>
     /// Warnings the agent is expected to act on (for example

@@ -7,9 +7,10 @@ namespace Aspose.Cli.Sdk.Analyzers;
 /// <summary>
 /// Describes the result records of one compilation and writes their descriptors onto each JSON
 /// context that lists one of them, as an implementation of <c>IResultSchemaSource</c>. A record is
-/// published when it derives from <c>ResultEnvelope</c> directly, which it passes a constant
-/// relative schema id, or when it declares <c>[SchemaId]</c>; the records it inherits from and the
-/// records its members hold are described with it.
+/// published when it is a concrete record that derives directly from one of the SDK's envelope
+/// bases (<c>ResultEnvelope</c> and its abstract descendants), whose constructor it passes a
+/// constant relative schema id, or when it declares <c>[SchemaId]</c>; the records it inherits
+/// from and the records its members hold are described with it.
 /// </summary>
 internal sealed class ResultContractWriter(Compilation compilation, Action<Location, string> report)
 {
@@ -56,6 +57,13 @@ internal sealed class ResultContractWriter(Compilation compilation, Action<Locat
             return [];
         }
 
+        // The envelope bases are described where they are declared, so the results of another
+        // assembly can inherit them.
+        foreach (INamedTypeSymbol type in declared.Where(IsEnvelope))
+        {
+            Enqueue(type);
+        }
+
         while (_pending.Count > 0)
         {
             Describe(_pending.Dequeue());
@@ -95,13 +103,13 @@ internal sealed class ResultContractWriter(Compilation compilation, Action<Locat
             return (id, 0);
         }
 
-        if (type.IsAbstract || type.TypeKind != TypeKind.Class || type.BaseType?.ToDisplayString() != ResultEnvelope)
+        if (type.IsAbstract || type.TypeKind != TypeKind.Class || type.BaseType is not { } envelope || !IsEnvelope(envelope))
         {
             return null;
         }
 
-        // The arguments the record passes to ResultEnvelope, from its primary constructor's base
-        // type or from a constructor initializer.
+        // The arguments the record passes to its envelope base, from its primary constructor's
+        // base type or from a constructor initializer.
         foreach (SyntaxReference reference in type.DeclaringSyntaxReferences)
         {
             SyntaxNode syntax = reference.GetSyntax();
@@ -127,6 +135,14 @@ internal sealed class ResultContractWriter(Compilation compilation, Action<Locat
         Report(type, $"Result '{type.Name}' must pass the ResultEnvelope constructor a constant relative schema id, such as 'render-result', and a constant version; the schema is published under that id.");
         return null;
     }
+
+    /// <summary>
+    /// Whether a type is one of the SDK's envelope bases: <c>ResultEnvelope</c> or an abstract
+    /// record of the SDK's contracts that derives from it.
+    /// </summary>
+    private static bool IsEnvelope(INamedTypeSymbol type) =>
+        type.IsAbstract && type.ContainingNamespace.ToDisplayString() + "." == Contracts
+        && (type.ToDisplayString() == ResultEnvelope || AnalyzerTypes.Inherits(type, ResultEnvelope));
 
     private void Enqueue(INamedTypeSymbol type)
     {
@@ -156,9 +172,9 @@ internal sealed class ResultContractWriter(Compilation compilation, Action<Locat
             {
                 Enqueue(baseType);
             }
-            else if (baseType.ToDisplayString() != ResultEnvelope)
+            else if (!IsEnvelope(baseType))
             {
-                Report(type, $"Result record '{type.Name}' derives from '{baseType.Name}' of another assembly; only ResultEnvelope can be inherited across assemblies.");
+                Report(type, $"Result record '{type.Name}' derives from '{baseType.Name}' of another assembly; only the SDK's envelope bases can be inherited across assemblies.");
             }
 
             code.Append(", Base = typeof(").Append(TypeName(baseType)).Append(')');
@@ -174,11 +190,6 @@ internal sealed class ResultContractWriter(Compilation compilation, Action<Locat
         }
 
         string[] members = [.. Properties(type).Select(property => Member(type, property)).OfType<string>()];
-        if (AlwaysPresent(type) is { } present)
-        {
-            code.Append(", AlwaysPresent = ").Append(present);
-        }
-
         code.Append(", Properties = [").Append(string.Concat(members.Select(static member => "\n                " + member + ",")))
             .Append(members.Length == 0 ? "]" : "\n            ]");
         _code[type] = code.Append(" },").ToString();

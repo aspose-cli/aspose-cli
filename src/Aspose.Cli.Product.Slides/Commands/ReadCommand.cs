@@ -40,7 +40,7 @@ internal static class ReadCommand
             Table)
         {
             Finish = static (_, request, result, standard) =>
-                result with { Window = result.Window! with { Next = Next(standard.Continuation(), request, result) } },
+                result with { Window = result.Window with { Next = Next(standard.Continuation(), request, result) } },
         };
     }
 
@@ -77,7 +77,7 @@ internal static class ReadCommand
     /// </summary>
     private static string? Next(ContinuationCommand resume, PresentationReadRequest request, PresentationReadResult result)
     {
-        if (!result.Window!.Truncated || result.SlideCount == 0)
+        if (!result.Window.Truncated || result.SlideCount == 0)
         {
             return null;
         }

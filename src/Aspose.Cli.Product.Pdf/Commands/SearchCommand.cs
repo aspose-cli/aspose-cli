@@ -37,7 +37,7 @@ internal static class SearchCommand
                     resume.Option("--pages", range);
                 }
 
-                return result with { Window = SearchOptions.Continue(request.Query, result.Window!, resume) };
+                return result with { Window = SearchOptions.Continue(request.Query, result.Window, resume) };
             },
         };
     }

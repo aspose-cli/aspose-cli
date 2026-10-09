@@ -4,7 +4,7 @@ using Aspose.Cli.Sdk.Rendering;
 namespace Aspose.Cli.Product.Words.Contracts;
 
 /// <summary>Structural information returned by <c>words inspect</c>.</summary>
-public sealed record DocumentInfoResult() : ResultEnvelope("document-info", 2)
+public sealed record DocumentInfoResult() : EngineResultEnvelope("document-info", 2)
 {
     /// <summary>The kind of file inspected: always <c>document</c>.</summary>
     [JsonPropertyOrder(-50)]
@@ -342,8 +342,7 @@ public sealed record TableData
 /// starts again at a block whose content was truncated and doubles <c>--max-chars</c> when that
 /// block alone exceeded the budget.
 /// </summary>
-[AlwaysPresent("window")]
-public sealed record DocumentReadResult() : ResultEnvelope("document-read", 2)
+public sealed record DocumentReadResult() : WindowedResultEnvelope("document-read", 2)
 {
     /// <summary>The kind of file read: always <c>document</c>.</summary>
     [JsonPropertyOrder(-50)]
@@ -520,7 +519,7 @@ public sealed record RunData
 }
 
 /// <summary>Result of <c>words convert</c>.</summary>
-public sealed record WordsConvertResult() : ResultEnvelope("convert-result", 2)
+public sealed record WordsConvertResult() : EngineResultEnvelope("convert-result", 2)
 {
     /// <summary>The converted document.</summary>
     [JsonPropertyOrder(-50)]
@@ -535,7 +534,7 @@ public sealed record WordsConvertResult() : ResultEnvelope("convert-result", 2)
 }
 
 /// <summary>Result of <c>words render</c>.</summary>
-public sealed record WordsRenderResult() : ResultEnvelope("render-result", 2)
+public sealed record WordsRenderResult() : EngineResultEnvelope("render-result", 2)
 {
     /// <summary>The rendered document.</summary>
     [JsonPropertyOrder(-50)]
@@ -563,7 +562,7 @@ public sealed record PageOutput
 }
 
 /// <summary>Result of creating a document.</summary>
-public sealed record WordsCreateResult() : ResultEnvelope("create-result", 2)
+public sealed record WordsCreateResult() : EngineResultEnvelope("create-result", 2)
 {
     /// <summary>The created document.</summary>
     [JsonPropertyOrder(-49)]
@@ -571,7 +570,7 @@ public sealed record WordsCreateResult() : ResultEnvelope("create-result", 2)
 }
 
 /// <summary>Result of a Words mutation.</summary>
-public sealed record WordsEditResult() : ResultEnvelope("edit-result", 2), IPartialOutcome
+public sealed record WordsEditResult() : EngineResultEnvelope("edit-result", 2), IPartialOutcome
 {
     /// <summary>The edited document.</summary>
     [JsonPropertyOrder(-50)]
@@ -637,7 +636,7 @@ public sealed record WordsVerification
 }
 
 /// <summary>Semantic comparison result.</summary>
-public sealed record WordsCompareResult() : ResultEnvelope("compare-result", 2)
+public sealed record WordsCompareResult() : EngineResultEnvelope("compare-result", 2)
 {
     /// <summary>The original document.</summary>
     public required SourceInfo Left { get; init; }
@@ -690,8 +689,7 @@ public sealed record RevisionSample
 }
 
 /// <summary>One window of search hits; its <c>window</c> counts hits and continues with <c>--skip</c>.</summary>
-[AlwaysPresent("window")]
-public sealed record WordsSearchResult() : ResultEnvelope("search-result", 2)
+public sealed record WordsSearchResult() : WindowedResultEnvelope("search-result", 2)
 {
     /// <summary>The searched document.</summary>
     [JsonPropertyOrder(-50)]
@@ -737,7 +735,7 @@ public sealed record WordsSearchHit
 }
 
 /// <summary>Result of splitting a document.</summary>
-public sealed record WordsSplitResult() : ResultEnvelope("split-result", 2)
+public sealed record WordsSplitResult() : EngineResultEnvelope("split-result", 2)
 {
     /// <summary>The split document.</summary>
     public required SourceInfo Input { get; init; }
@@ -761,7 +759,7 @@ public sealed record SplitOutput
 }
 
 /// <summary>Result of extracting assets.</summary>
-public sealed record WordsExtractResult() : ResultEnvelope("extract-result", 2)
+public sealed record WordsExtractResult() : EngineResultEnvelope("extract-result", 2)
 {
     /// <summary>The document extracted from.</summary>
     public required SourceInfo Input { get; init; }

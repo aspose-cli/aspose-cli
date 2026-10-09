@@ -4,8 +4,8 @@ namespace Aspose.Cli.Platform.Tests;
 
 /// <summary>
 /// Base of the results these tests declare. The contract generator publishes a schema only for a
-/// record that derives from <see cref="ResultEnvelope"/> directly, so a test result needs neither
-/// documentation nor a JSON context.
+/// record that derives directly from one of the SDK's envelope bases, such as
+/// <see cref="ResultEnvelope"/>, so a test result needs neither documentation nor a JSON context.
 /// </summary>
 public abstract record TestResultEnvelope : ResultEnvelope
 {

@@ -74,18 +74,17 @@ internal sealed class TableOutputWriter : IOutputWriter
             }
         }
 
-        WriteWindow(output, result.Window);
+        if (result is WindowedResultEnvelope windowed)
+        {
+            WriteWindow(output, windowed.Window);
+        }
+
         WriteWarnings(result.Warnings);
     }
 
     // The window line is the same for every windowed result, so product renderers omit it.
-    private static void WriteWindow(TextWriter output, ResultWindow? window)
+    private static void WriteWindow(TextWriter output, ResultWindow window)
     {
-        if (window is null)
-        {
-            return;
-        }
-
         string total = window.Total is long count ? $" of {count}" : string.Empty;
         string state = window.Truncated ? "more remain" : "complete";
         output.WriteLine($"window: {window.Returned}{total} {window.Unit}(s), {state}");

@@ -204,6 +204,7 @@ public sealed class CellsRendererGoldenTests
         var result = new WorkbookReadResult
         {
             Source = new SourceInfo { Path = "book.xlsx", Format = "xlsx", SizeBytes = 2_048 },
+            Window = new ResultWindow { Unit = "cell", Returned = 4, Truncated = false },
             Scope = ReadScopes.Values,
             Sheet = new SheetProjection
             {

@@ -4,7 +4,7 @@ namespace Aspose.Cli.Sdk.Contracts;
 
 /// <summary>Result of starting or reusing a product preview session.</summary>
 public sealed record ProductPreviewStartResult()
-    : ResultEnvelope("preview-session", 2)
+    : EngineResultEnvelope("preview-session", 2)
 {
     /// <summary>Opaque session identifier used by status and stop.</summary>
     [JsonPropertyOrder(-50)]
@@ -39,7 +39,7 @@ public sealed record ProductPreviewStartResult()
 /// of <c>preview stop</c>, which also names the sessions it stopped.
 /// </summary>
 public sealed record ProductPreviewStatusResult()
-    : ResultEnvelope("preview-status", 2)
+    : EngineResultEnvelope("preview-status", 2)
 {
     /// <summary>
     /// Session identifiers that accepted an authenticated stop request; present only in the

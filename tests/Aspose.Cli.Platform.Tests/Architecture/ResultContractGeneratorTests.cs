@@ -138,12 +138,11 @@ public sealed class ResultContractGeneratorTests
     }
 
     [Fact]
-    public void AlwaysPresentMembers_AreCarriedOnTheRecordAndTheMember()
+    public void AlwaysPresentMembers_AreCarriedOnTheMember()
     {
         GeneratorDriverRunResult result = Run(
             """
-            /// <summary>A windowed read.</summary>
-            [AlwaysPresent("window")]
+            /// <summary>A read.</summary>
             public sealed record ReadResult() : ResultEnvelope("read-result", 2)
             {
                 /// <summary>The file read.</summary>
@@ -165,8 +164,7 @@ public sealed class ResultContractGeneratorTests
 
         result = Run(
             """
-            /// <summary>A windowed read.</summary>
-            [AlwaysPresent("window")]
+            /// <summary>A read.</summary>
             public sealed record ReadResult() : ResultEnvelope("read-result", 2)
             {
                 /// <summary>The file read.</summary>
@@ -184,9 +182,38 @@ public sealed class ResultContractGeneratorTests
 
         Assert.Empty(result.Diagnostics.Where(static diagnostic => diagnostic.Id == "APCLI013"));
         string source = Assert.Single(Assert.Single(result.Results).GeneratedSources).SourceText.ToString();
-        Assert.Contains("SchemaId = \"read-result\", SchemaVersion = 2, AlwaysPresent = [\"window\"], Properties = [", source, StringComparison.Ordinal);
+        Assert.Contains("SchemaId = \"read-result\", SchemaVersion = 2, Properties = [", source, StringComparison.Ordinal);
         Assert.Contains("Record = typeof(global::Aspose.Cli.Sdk.Contracts.SourceInfo) }, Required = true, AlwaysPresent = [\"fingerprint\"] }", source, StringComparison.Ordinal);
         Assert.Contains("Record = typeof(global::Aspose.Cli.Sdk.Contracts.OutputInfo) } }, Required = true, AlwaysPresent = [\"format\"] }", source, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ResultOfAnSdkEnvelopeBase_IsPublished_AndOneOfALocalBaseIsNot()
+    {
+        GeneratorDriverRunResult result = Run(
+            """
+            /// <summary>A bounded read.</summary>
+            public sealed record ReadResult() : WindowedResultEnvelope("read-result", 2);
+
+            public abstract record LocalEnvelope : ResultEnvelope
+            {
+                protected LocalEnvelope(string schema)
+                    : base(schema, 1)
+                {
+                }
+            }
+
+            public sealed record LocalResult() : LocalEnvelope("local");
+
+            [JsonSerializable(typeof(ReadResult))]
+            internal sealed partial class ProductJsonContext : JsonSerializerContext;
+            """);
+
+        Assert.Empty(result.Diagnostics.Where(static diagnostic => diagnostic.Id == "APCLI013"));
+        string source = Assert.Single(Assert.Single(result.Results).GeneratedSources).SourceText.ToString();
+        Assert.Contains("Base = typeof(global::Aspose.Cli.Sdk.Contracts.WindowedResultEnvelope), SchemaId = \"read-result\", SchemaVersion = 2", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("LocalResult", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("LocalEnvelope", source, StringComparison.Ordinal);
     }
 
     [Theory]

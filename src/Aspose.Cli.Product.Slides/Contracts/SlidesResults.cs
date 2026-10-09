@@ -7,7 +7,7 @@ namespace Aspose.Cli.Product.Slides.Contracts;
 /// Result of <c>slides inspect</c>: the presentation's structure, its slides with their stable
 /// ids, and the detail inventories <c>--detail</c> asked for.
 /// </summary>
-public sealed record PresentationInfoResult() : ResultEnvelope("presentation-info", 2)
+public sealed record PresentationInfoResult() : EngineResultEnvelope("presentation-info", 2)
 {
     /// <summary>The kind of document inspected, always <c>presentation</c>.</summary>
     [JsonPropertyOrder(-50)]
@@ -233,8 +233,7 @@ public sealed record PresentationSectionInfo
 }
 
 /// <summary>Result of <c>slides query slides</c>: a window of slides with their content at the requested scope.</summary>
-[AlwaysPresent("window")]
-public sealed record PresentationReadResult() : ResultEnvelope("presentation-read", 2)
+public sealed record PresentationReadResult() : WindowedResultEnvelope("presentation-read", 2)
 {
     /// <summary>The kind of document read, always <c>presentation</c>.</summary>
     [JsonPropertyOrder(-50)]
@@ -416,7 +415,7 @@ public sealed record SlideCommentData
 /// Result of <c>slides convert</c>: the files a presentation or its selected slides were
 /// converted to. PNG and JPEG use the default 192 DPI render geometry and pixel budgets.
 /// </summary>
-public sealed record SlidesConvertResult() : ResultEnvelope("convert-result", 2)
+public sealed record SlidesConvertResult() : EngineResultEnvelope("convert-result", 2)
 {
     /// <summary>The converted presentation.</summary>
     [JsonPropertyOrder(-50)]
@@ -433,7 +432,7 @@ public sealed record SlidesConvertResult() : ResultEnvelope("convert-result", 2)
 }
 
 /// <summary>Result of <c>slides render</c>: one image per rendered slide.</summary>
-public sealed record SlidesRenderResult() : ResultEnvelope("render-result", 2)
+public sealed record SlidesRenderResult() : EngineResultEnvelope("render-result", 2)
 {
     /// <summary>The rendered presentation.</summary>
     [JsonPropertyOrder(-50)]
@@ -470,7 +469,7 @@ public sealed record SlideRenderOutput
 }
 
 /// <summary>Result of <c>slides create</c>: the new presentation and what it was built from.</summary>
-public sealed record SlidesCreateResult() : ResultEnvelope("create-result", 2)
+public sealed record SlidesCreateResult() : EngineResultEnvelope("create-result", 2)
 {
     /// <summary>The created presentation.</summary>
     [JsonPropertyOrder(-50)]
@@ -488,7 +487,7 @@ public sealed record SlidesCreateResult() : ResultEnvelope("create-result", 2)
 }
 
 /// <summary>Result of <c>slides extract</c>: the files written for the extracted content.</summary>
-public sealed record SlidesExtractResult() : ResultEnvelope("extract-result", 2)
+public sealed record SlidesExtractResult() : EngineResultEnvelope("extract-result", 2)
 {
     /// <summary>The presentation extracted from.</summary>
     [JsonPropertyOrder(-50)]
@@ -539,7 +538,7 @@ public sealed record SlidesExtractedItem
 }
 
 /// <summary>Result of <c>slides edit</c>: one atomic operation batch, applied or checked.</summary>
-public sealed record SlidesEditResult() : ResultEnvelope("edit-result", 2), IPartialOutcome
+public sealed record SlidesEditResult() : EngineResultEnvelope("edit-result", 2), IPartialOutcome
 {
     /// <summary>The edited presentation.</summary>
     [JsonPropertyOrder(-50)]
@@ -568,8 +567,7 @@ public sealed record SlidesEditResult() : ResultEnvelope("edit-result", 2), IPar
 }
 
 /// <summary>Result of <c>slides search</c>: the matches in shape text and speaker notes.</summary>
-[AlwaysPresent("window")]
-public sealed record SlidesSearchResult() : ResultEnvelope("search-result", 2)
+public sealed record SlidesSearchResult() : WindowedResultEnvelope("search-result", 2)
 {
     /// <summary>The searched presentation.</summary>
     [JsonPropertyOrder(-50)]
