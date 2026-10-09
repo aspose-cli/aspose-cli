@@ -9,11 +9,13 @@ namespace Aspose.Cli.Product.Words.Tests;
 public sealed class WordsModuleTests
     : ProductContractTests<WordsModule>
 {
-    protected override IReadOnlyList<ResultEnvelope> CanonicalResults =>
-        WordsContractSamples.Results;
+    // Result schemas are generated from the result records, and real CLI runs validate every
+    // result type against them (WordsResultSchemaCoverageTests), so no hand-written result
+    // samples remain.
+    protected override IReadOnlyList<ResultEnvelope> CanonicalResults => [];
 
-    protected override IReadOnlyList<ProductSchemaSample> CanonicalInputs =>
-        WordsContractSamples.Inputs;
+    protected override IReadOnlyList<ProductSchemaSample> CanonicalInputs { get; } =
+        [new(ResultEnvelope.SchemaUri("words", "ops"), WordsOperationSample.Batch)];
 
     protected override IReadOnlyDictionary<string, string> Homonyms { get; } =
         new Dictionary<string, string>(StringComparer.Ordinal)
@@ -66,7 +68,7 @@ public sealed class WordsModuleTests
     {
         Assert.Equal(
             WordsOp.Catalog.Names.Order(StringComparer.Ordinal),
-            WordsContractSamples.Ops.Ops
+            WordsOperationSample.Batch.Ops
                 .Select(WordsOp.Catalog.NameOf)
                 .Order(StringComparer.Ordinal));
     }

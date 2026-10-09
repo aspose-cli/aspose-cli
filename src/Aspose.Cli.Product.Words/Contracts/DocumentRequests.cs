@@ -138,7 +138,11 @@ public sealed record WordsExtractRequest
 /// <summary>Words read scopes.</summary>
 public static class DocumentReadScopes
 {
-    public static IReadOnlyList<string> All { get; } = ["text", "outline", "full"];
+    public const string Text = "text";
+    public const string Outline = "outline";
+    public const string Full = "full";
+
+    public static IReadOnlyList<string> All { get; } = [Text, Outline, Full];
 }
 
 /// <summary>
@@ -149,10 +153,10 @@ public static class DocumentReadScopes
 /// </summary>
 public static class WordsTextScopes
 {
-    public const string Body = "body";
-    public const string HeadersFooters = "headersFooters";
-    public const string Footnotes = "footnotes";
-    public const string Comments = "comments";
+    public const string Body = WordsStoryScopes.Body;
+    public const string HeadersFooters = WordsStoryScopes.HeadersFooters;
+    public const string Footnotes = WordsStoryScopes.Footnotes;
+    public const string Comments = WordsStoryScopes.Comments;
     public const string All = "all";
 
     public static IReadOnlyList<string> Names { get; } = [Body, HeadersFooters, Footnotes, Comments, All];

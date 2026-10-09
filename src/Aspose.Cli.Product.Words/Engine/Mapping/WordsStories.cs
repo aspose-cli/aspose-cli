@@ -80,18 +80,22 @@ internal static class WordsStories
         _ => null,
     };
 
+    /// <summary>The scope name of the story that holds a node of the document's sections, which every such node has.</summary>
+    internal static string StoryOf(Node node) =>
+        ScopeOf(node) ?? throw new InvalidOperationException($"A {node.NodeType} node lies outside every story of the document.");
+
     /// <summary>
     /// Where a header or footer shows, in the set_header and set_page_numbers vocabulary: its
     /// location, <c>header</c> or <c>footer</c>, and its kind, <c>primary</c>, <c>first</c> or
     /// <c>even</c>.
     /// </summary>
     internal static (string Location, string Kind) PlaceOf(HeaderFooter headerFooter) => (
-        headerFooter.IsHeader ? "header" : "footer",
+        headerFooter.IsHeader ? HeaderFooterLocations.Header : HeaderFooterLocations.Footer,
         headerFooter.HeaderFooterType switch
         {
-            HeaderFooterType.HeaderFirst or HeaderFooterType.FooterFirst => "first",
-            HeaderFooterType.HeaderEven or HeaderFooterType.FooterEven => "even",
-            _ => "primary",
+            HeaderFooterType.HeaderFirst or HeaderFooterType.FooterFirst => HeaderFooterKinds.First,
+            HeaderFooterType.HeaderEven or HeaderFooterType.FooterEven => HeaderFooterKinds.Even,
+            _ => HeaderFooterKinds.Primary,
         });
 
     /// <summary>The 1-based number of the section that holds a node.</summary>

@@ -8,7 +8,7 @@ internal static class ExtractCommand
     public static CommandDefinition<WordsExtractRequest, WordsExtractResult> Create()
     {
         var what = new Option<string>("--what") { Required = true, Description = "images, comments, text (the visible block text, one line per paragraph or table row) or tables (one CSV file per body table)." }.WithInput(InputKind.None);
-        what.AcceptOnlyFromAmong("images", "comments", "text", "tables");
+        what.AcceptOnlyFromAmong([.. WordsExtractTargets.Names]);
         return new(
             "extract",
             "Extract bounded document assets.",

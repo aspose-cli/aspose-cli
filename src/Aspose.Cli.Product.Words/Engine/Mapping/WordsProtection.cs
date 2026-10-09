@@ -8,24 +8,24 @@ namespace Aspose.Cli.Product.Words.Engine.Mapping;
 /// </summary>
 internal static class WordsProtection
 {
-    public const string None = "none";
+    public const string None = WordsProtectionModes.None;
 
     public static string ToMode(ProtectionType type) => type switch
     {
         ProtectionType.NoProtection => None,
-        ProtectionType.ReadOnly => "readOnly",
-        ProtectionType.AllowOnlyComments => "comments",
-        ProtectionType.AllowOnlyRevisions => "trackedChanges",
-        ProtectionType.AllowOnlyFormFields => "forms",
+        ProtectionType.ReadOnly => WordsProtectionModes.ReadOnly,
+        ProtectionType.AllowOnlyComments => WordsProtectionModes.Comments,
+        ProtectionType.AllowOnlyRevisions => WordsProtectionModes.TrackedChanges,
+        ProtectionType.AllowOnlyFormFields => WordsProtectionModes.Forms,
         _ => throw new ArgumentOutOfRangeException(nameof(type), type, "Unmapped protection type."),
     };
 
     public static ProtectionType FromMode(string mode) => mode switch
     {
-        "readOnly" => ProtectionType.ReadOnly,
-        "comments" => ProtectionType.AllowOnlyComments,
-        "trackedChanges" => ProtectionType.AllowOnlyRevisions,
-        "forms" => ProtectionType.AllowOnlyFormFields,
+        WordsProtectionModes.ReadOnly => ProtectionType.ReadOnly,
+        WordsProtectionModes.Comments => ProtectionType.AllowOnlyComments,
+        WordsProtectionModes.TrackedChanges => ProtectionType.AllowOnlyRevisions,
+        WordsProtectionModes.Forms => ProtectionType.AllowOnlyFormFields,
         _ => throw new ArgumentOutOfRangeException(nameof(mode), mode, "Unknown protection mode."),
     };
 }

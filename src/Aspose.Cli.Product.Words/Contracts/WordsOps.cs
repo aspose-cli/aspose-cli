@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using Aspose.Cli.Sdk;
 using Aspose.Cli.Sdk.Serialization;
 
 namespace Aspose.Cli.Product.Words.Contracts;
@@ -12,7 +13,7 @@ public sealed record WordsOpsBatch : BoundedOperationEnvelope<WordsOp>;
 /// document as it was before the first operation, so an insertion does not shift a later
 /// operation's anchor.
 /// </summary>
-[OperationVocabulary(WordsSchemaIds.Ops, MaximumOperations = 256, JsonContext = typeof(WordsOpsJsonContext))]
+[OperationVocabulary(DistributionInfo.SchemaBaseUri + "words/ops.schema.json", MaximumOperations = 256, JsonContext = typeof(WordsOpsJsonContext))]
 [JsonConverter(typeof(OperationJsonConverter<WordsOp>))]
 public abstract partial record WordsOp : BoundedOperation;
 
@@ -68,7 +69,7 @@ public sealed record PageSetupInput
 {
     [AllowedValues("a3", "a4", "a5", "letter", "legal")] public string? Size { get; init; }
 
-    [AllowedValues("portrait", "landscape")] public string? Orientation { get; init; }
+    [AllowedValues(typeof(PageOrientations))] public string? Orientation { get; init; }
 
     public MarginInput? Margins { get; init; }
 
@@ -160,7 +161,7 @@ public sealed record InsertBreakOp : WordsOp
 
     [WordsPosition] public required string Position { get; init; }
 
-    [AllowedValues("page", "section")] public required string Kind { get; init; }
+    [AllowedValues(typeof(WordsBreakKinds))] public required string Kind { get; init; }
 }
 
 /// <summary>Inserts a local image in a new paragraph.</summary>
@@ -372,7 +373,7 @@ public abstract record HeaderFooterOp : WordsOp
     [Minimum(1)] public int? Section { get; init; }
 
     /// <summary>Which pages it shows on; first and even also turn on the section setting that shows it.</summary>
-    [AllowedValues("primary", "first", "even")] public string Kind { get; init; } = "primary";
+    [AllowedValues(typeof(HeaderFooterKinds))] public string Kind { get; init; } = HeaderFooterKinds.Primary;
 
     /// <summary>Plain paragraphs, one per item, in the paragraph and character format of the first paragraph they replace, such as its alignment, or in Word's Header or Footer style when there is none.</summary>
     public IReadOnlyList<string>? Paragraphs { get; init; }
@@ -395,7 +396,7 @@ public sealed record SetPageNumbersOp : WordsOp
     /// <summary>The 1-based section; every section when omitted.</summary>
     [Minimum(1)] public int? Section { get; init; }
 
-    [AllowedValues("header", "footer")] public string Location { get; init; } = "footer";
+    [AllowedValues(typeof(HeaderFooterLocations))] public string Location { get; init; } = HeaderFooterLocations.Footer;
 
     [AllowedValues("left", "center", "right")] public string Alignment { get; init; } = "center";
 
@@ -553,7 +554,8 @@ public sealed record RemoveWatermarkOp : WordsOp;
 [Operation("protect")]
 public sealed record ProtectOp : WordsOp
 {
-    [AllowedValues("readOnly", "comments", "trackedChanges", "forms")] public required string Mode { get; init; }
+    [AllowedValues(WordsProtectionModes.ReadOnly, WordsProtectionModes.Comments, WordsProtectionModes.TrackedChanges, WordsProtectionModes.Forms)]
+    public required string Mode { get; init; }
 
     /// <summary>The environment variable that holds the protection password; no password when omitted.</summary>
     [SecretEnv] public string? PasswordEnv { get; init; }

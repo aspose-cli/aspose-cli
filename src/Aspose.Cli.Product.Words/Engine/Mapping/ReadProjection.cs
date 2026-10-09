@@ -3,7 +3,6 @@ using Aspose.Cli.Sdk.Errors;
 using Aspose.Words;
 using Aspose.Words.Drawing;
 using Aspose.Words.Tables;
-using ContractImageData = Aspose.Cli.Product.Words.Contracts.ImageData;
 
 namespace Aspose.Cli.Product.Words.Engine.Mapping;
 
@@ -123,7 +122,7 @@ internal static class ReadProjection
                 Runs = runs,
                 ParagraphFormat = runs is null ? null : FormatOf(paragraph.ParagraphFormat),
                 Images = paragraph.GetChildNodes(NodeType.Shape, true).Cast<Shape>().Where(static shape => shape.HasImage)
-                    .Select(shape => new ContractImageData
+                    .Select(shape => new BlockImageData
                     {
                         Block = entry.Index,
                         Name = shape.Name,
@@ -199,10 +198,10 @@ internal static class ReadProjection
         if (AfterLeadingBreaks(RunText(paragraph)).Contains(ControlChar.PageBreakChar, StringComparison.Ordinal)
             || paragraph.NextSibling is Paragraph next && StartsPage(next))
         {
-            return "page";
+            return WordsBreakKinds.Page;
         }
 
-        return paragraph.IsEndOfSection && paragraph.ParentSection?.NextSibling is Section ? "section" : null;
+        return paragraph.IsEndOfSection && paragraph.ParentSection?.NextSibling is Section ? WordsBreakKinds.Section : null;
     }
 
     private static bool StartsPage(Paragraph paragraph)

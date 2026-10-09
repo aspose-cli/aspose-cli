@@ -24,7 +24,7 @@ internal static class WordsExtract
         var index = new DocumentBlockIndex(loaded.Document, loaded.Evaluation);
         var items = new List<ExtractedItem>();
         var warnings = new List<Warning>();
-        if (request.What == "images")
+        if (request.What == WordsExtractTargets.Images)
         {
             int number = 0;
             int linked = 0;
@@ -54,7 +54,7 @@ internal static class WordsExtract
                 });
             }
         }
-        else if (request.What == "comments")
+        else if (request.What == WordsExtractTargets.Comments)
         {
             IReadOnlyList<ContractCommentData> comments = loaded.Document.GetChildNodes(NodeType.Comment, true).Cast<Comment>()
                 .Select(comment => new ContractCommentData { Author = comment.Author, Text = WordsText.Of(comment), Block = index.FindBlock(comment) }).ToArray();
@@ -65,13 +65,13 @@ internal static class WordsExtract
             string path = guard.WriteAllBytes("comments.json", bytes);
             items.Add(new ExtractedItem { Path = path, Kind = "comments", SizeBytes = bytes.LongLength });
         }
-        else if (request.What == "text")
+        else if (request.What == WordsExtractTargets.Text)
         {
             byte[] bytes = System.Text.Encoding.UTF8.GetBytes(WordsText.Lines(index.Entries.Select(static entry => entry.Node)));
             string path = guard.WriteAllBytes("document.txt", bytes);
             items.Add(new ExtractedItem { Path = path, Kind = "text", SizeBytes = bytes.LongLength });
         }
-        else if (request.What == "tables")
+        else if (request.What == WordsExtractTargets.Tables)
         {
             int number = 0;
             foreach (BlockEntry entry in index.Entries.Where(static entry => entry.Node is Table))

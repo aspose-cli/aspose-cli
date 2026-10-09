@@ -80,7 +80,7 @@ internal static class InfoProjection
         document.Sections.Cast<Section>().Select((section, index) => new SectionData
         {
             Section = index + 1,
-            Orientation = section.PageSetup.Orientation == Orientation.Landscape ? "landscape" : "portrait",
+            Orientation = section.PageSetup.Orientation == Orientation.Landscape ? PageOrientations.Landscape : PageOrientations.Portrait,
             WidthPoints = section.PageSetup.PageWidth,
             HeightPoints = section.PageSetup.PageHeight,
             Margins = new MarginData
@@ -129,7 +129,7 @@ internal static class InfoProjection
             field => new ContractFieldData
             {
                 Type = field.Type.ToString(),
-                Scope = WordsStories.ScopeOf(field.Start),
+                Scope = WordsStories.StoryOf(field.Start),
                 Block = index.FindBlock(field.Start),
                 Code = field.GetFieldCode(),
                 Result = WordsText.ResultOf(field),
@@ -352,11 +352,11 @@ internal static class InfoProjection
 
     internal static string RevisionTypeName(RevisionType type) => type switch
     {
-        RevisionType.Insertion => "insertion",
-        RevisionType.Deletion => "deletion",
-        RevisionType.FormatChange => "formatChange",
-        RevisionType.StyleDefinitionChange => "styleDefinitionChange",
-        RevisionType.Moving => "moving",
+        RevisionType.Insertion => WordsRevisionTypes.Insertion,
+        RevisionType.Deletion => WordsRevisionTypes.Deletion,
+        RevisionType.FormatChange => WordsRevisionTypes.FormatChange,
+        RevisionType.StyleDefinitionChange => WordsRevisionTypes.StyleDefinitionChange,
+        RevisionType.Moving => WordsRevisionTypes.Moving,
         _ => throw new ArgumentOutOfRangeException(nameof(type), type, "Unmapped revision type."),
     };
 
@@ -365,7 +365,7 @@ internal static class InfoProjection
             document.GetChildNodes(NodeType.Shape, true).Cast<Shape>().Where(static shape => shape.HasImage).ToArray(),
             shape => new ContractImageData
             {
-                Scope = WordsStories.ScopeOf(shape),
+                Scope = WordsStories.StoryOf(shape),
                 Block = index.FindBlock(shape),
                 Name = shape.Name,
                 Width = shape.Width,
