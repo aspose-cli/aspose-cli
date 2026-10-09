@@ -49,7 +49,6 @@ internal sealed class PdfReviewLayoutService
             pageNumber,
             displayed.Width,
             displayed.Height,
-            text.Length,
             // The evaluation finding covers a notice an engine prints beyond the page edge, as
             // Aspose.Cells prints it across the evaluation warning sheet it adds.
             text.Where((_, index) => !notice[index]).Count(fragment => IsOutsidePage(fragment, page.Rect)),

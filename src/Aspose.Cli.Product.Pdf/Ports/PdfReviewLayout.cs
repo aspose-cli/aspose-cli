@@ -15,7 +15,6 @@ internal sealed record PdfReviewPageLayout(
     int Page,
     double WidthPoints,
     double HeightPoints,
-    int TextFragments,
     int OutsideTextFragments,
     double ImageCoverage,
     int CoveredTextFragments,
