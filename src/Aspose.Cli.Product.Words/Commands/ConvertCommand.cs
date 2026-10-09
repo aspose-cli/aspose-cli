@@ -1,4 +1,3 @@
-using System.CommandLine;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Extensibility.Output;
 using Aspose.Cli.Sdk.IO;
@@ -9,7 +8,7 @@ internal static class ConvertCommand
 {
     public static CommandDefinition<WordsConvertRequest, WordsConvertResult> Create()
     {
-        var pages = new Option<string?>("--pages") { Description = "1-based pages for fixed-page targets only." }.WithInput(InputKind.None);
+        var pages = new PartRangeOption("page", "every page", onlyWith: "fixed-page targets");
         return new(
             "convert",
             "Convert a document using the detected input format.",
@@ -21,12 +20,12 @@ internal static class ConvertCommand
                 UsesFonts = true,
                 Target = TargetFormat.Convert("Target document format.", WordsFormats.Definitions),
             },
-            [pages],
+            [.. pages.Options],
             (parse, standard) =>
             {
                 ResolvedOutput output = standard.Output;
                 string format = output.Format.Id;
-                string? pageText = parse.GetValue(pages);
+                string? pageText = pages.Read(parse);
                 if (pageText is not null && !WordsFormats.FixedPageConvertIds.Contains(format, StringComparer.Ordinal))
                 {
                     throw CliErrors.OptionInvalid("--pages", $"'{format}' is a flow format", "Use --pages only with PDF, XPS, OpenXPS, PS or PCL.");

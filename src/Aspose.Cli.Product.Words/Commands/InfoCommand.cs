@@ -1,4 +1,3 @@
-using System.CommandLine;
 using Aspose.Cli.Sdk.Extensibility.Output;
 
 namespace Aspose.Cli.Product.Words.Commands;
@@ -8,25 +7,28 @@ internal static class InfoCommand
     private static readonly string[] Details =
         ["outline", "sections", "styles", "fields", "bookmarks", "comments", "revisions", "images", "tables", "properties", "fonts"];
 
+    private static readonly Dictionary<string, string> DetailNotes = new(StringComparer.Ordinal)
+    {
+        ["outline"] = "headings",
+        ["sections"] = "page setup, headers and footers",
+        ["properties"] = "title, author, subject and keywords",
+        ["fonts"] = "fonts used",
+    };
+
     public static CommandDefinition<DocumentInfoRequest, DocumentInfoResult> Create()
     {
-        var preview = new Option<bool>("--preview") { Description = "Include a bounded outline preview." };
-        var detail = new Option<string[]>("--detail")
-        {
-            Description = "Extra structural projections; repeatable.",
-            AllowMultipleArgumentsPerToken = true,
-        }.WithInput(InputKind.None);
-        detail.AcceptOnlyFromAmong(Details);
+        var preview = new PreviewOption("the heading outline, as with --detail outline");
+        var detail = new DetailOption(Details, DetailNotes);
         return new(
             "inspect",
             "Show document structure, safety state and metadata.",
             new CommandTraits { Input = WordsInputs.Document, UsesFonts = true },
-            [preview, detail],
+            [.. preview.Options, .. detail.Options],
             (parse, standard) => new DocumentInfoRequest
             {
                 Input = standard.Input,
-                IncludePreview = parse.GetValue(preview),
-                Details = parse.GetValue(detail),
+                IncludePreview = preview.Read(parse),
+                Details = detail.Read(parse),
                 Password = standard.InputPassword,
             },
             Render)

@@ -10,7 +10,7 @@ internal static class SplitCommand
     {
         var by = new Option<string>("--by") { Required = true, Description = "section, heading1 (one part per Heading 1, after a leading part for any blocks before the first) or pages." }.WithInput(InputKind.None);
         by.AcceptOnlyFromAmong("section", "heading1", "pages");
-        var pages = new Option<string?>("--pages") { Description = "Page range when --by pages." }.WithInput(InputKind.None);
+        var pages = new PartRangeOption("page", "every page, one part each", onlyWith: "--by pages");
         return new(
             "split",
             "Split a document into safe, deterministically named DOCX files.",
@@ -20,11 +20,11 @@ internal static class SplitCommand
                 Output = OutputTarget.Directory("Directory that receives the parts."),
                 UsesFonts = true,
             },
-            [by, pages],
+            [by, .. pages.Options],
             (parse, standard) =>
             {
                 string mode = parse.GetRequiredValue(by);
-                string? pageText = parse.GetValue(pages);
+                string? pageText = pages.Read(parse);
                 if (pageText is not null && mode != "pages")
                 {
                     throw CliErrors.OptionInvalid("--pages", $"cannot be used with --by {mode}", "Use --by pages or omit the range.");
