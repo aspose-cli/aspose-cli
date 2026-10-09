@@ -331,7 +331,7 @@ public sealed class ReviewViewerBrowserTests(ITestOutputHelper output)
         File.WriteAllText(workspace.File("deck.md"), string.Concat(
             new[] { "Quarterly results", "Revenue by region", "Appendix" }
                 .Select(static title => $"# {title}\n\n- First point\n- Second point\n\n")));
-        workspace.Run("slides", "create", "deck.pptx", "--markdown", "deck.md", "--output", "json").Succeeded();
+        workspace.Run("slides", "create", "deck.pptx", "--from-markdown", "deck.md", "--output", "json").Succeeded();
         workspace.RunWithInput(
             """
             {"ops":[

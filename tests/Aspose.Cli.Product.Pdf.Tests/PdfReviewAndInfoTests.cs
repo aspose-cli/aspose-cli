@@ -323,7 +323,7 @@ public sealed class PdfReviewAndInfoTests
             "cells" => [["cells", "convert", Write("data.csv", "Region,Total\nEast,1\n"), "--to", "pdf", "--out", pdf]],
             "words" => [["words", "convert", Write("note.md", "# Note\n\nA short note.\n"), "--to", "pdf", "--out", pdf]],
             // The notice overlaps the title, so the text review reads interleaves the two.
-            _ => [["slides", "create", workspace.File("deck.pptx"), "--markdown", Write("deck.md", "# 2026 Q3 Operations Review\n")],
+            _ => [["slides", "create", workspace.File("deck.pptx"), "--from-markdown", Write("deck.md", "# 2026 Q3 Operations Review\n")],
                 ["slides", "convert", workspace.File("deck.pptx"), "--to", "pdf", "--out", pdf]],
         };
         foreach (string[] command in commands)

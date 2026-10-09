@@ -306,7 +306,7 @@ public sealed class ViewerLiveBrowserTests : IDisposable
         InBrowser("slides-live", () =>
         {
             File.WriteAllText(_workspace.File("deck.md"), "# First slide\n\n- One\n\n# Second slide\n\n- Two\n");
-            _workspace.Run("slides", "create", "deck.pptx", "--markdown", "deck.md", "--output", "json").Succeeded();
+            _workspace.Run("slides", "create", "deck.pptx", "--from-markdown", "deck.md", "--output", "json").Succeeded();
             return _documents.Open(_workspace.File("deck.pptx"), new LiveDocumentOptions(), ViewerDocuments.PreviewHolder);
         },
         async (page, document) =>
