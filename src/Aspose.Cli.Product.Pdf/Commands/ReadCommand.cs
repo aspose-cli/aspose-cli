@@ -7,23 +7,23 @@ internal static class ReadCommand
 {
     public static CommandDefinition<PdfReadRequest, PdfReadResult> Create()
     {
-        var pages = new Option<string?>("--pages") { Description = "1-based page range, e.g. 1-3,7,9-." }.WithInput(InputKind.None);
+        var pages = new PartRangeOption("page", "every page");
         var mode = new Option<string>("--mode")
         {
             Description = "Text projection: plain or layout.",
             DefaultValueFactory = _ => PdfReadModes.Plain,
         }.WithInput(InputKind.None);
         mode.AcceptOnlyFromAmong([.. PdfReadModes.All]);
-        var maxChars = new MaxCharactersOption("the projected page text");
+        var maxChars = new MaxCharactersOption("the text of the returned pages");
         return new(
             "pages",
             "Read a bounded page-text window.",
             new CommandTraits { Input = PdfInputs.Document },
-            [pages, mode, .. maxChars.Options],
+            [.. pages.Options, mode, .. maxChars.Options],
             (parse, standard) =>
             {
                 int characters = maxChars.Read(parse);
-                string? range = parse.GetValue(pages);
+                string? range = pages.Read(parse);
                 return new PdfReadRequest
                 {
                     Input = standard.Input,
