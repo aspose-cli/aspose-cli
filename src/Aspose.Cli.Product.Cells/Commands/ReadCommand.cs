@@ -87,7 +87,7 @@ internal static class ReadCommand
             // page scans the region its command carries.
             Finish = static (_, request, result, standard) => result with
             {
-                Window = result.Window! with
+                Window = result.Window with
                 {
                     Next = NextReadCommand.Build(standard.Continuation(), result, request.Range, request.Scan, request.MaxCells),
                 },

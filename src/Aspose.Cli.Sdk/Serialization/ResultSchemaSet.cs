@@ -165,10 +165,9 @@ public sealed class ResultSchemaSet
         schema["type"] = "object";
         string[] required =
         [
-            .. members.Where(member => (member.Required || record.AlwaysPresent.Contains(member.Name)) && !member.Extension)
+            .. members.Where(static member => member.Required && !member.Extension)
                 .Select(static member => member.Name),
         ];
-        CheckAlwaysPresent(record, members, record.AlwaysPresent);
         if (required.Length > 0)
         {
             schema["required"] = new JsonArray([.. required.Select(static name => (JsonNode)name)]);

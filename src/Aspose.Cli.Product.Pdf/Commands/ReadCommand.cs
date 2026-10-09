@@ -36,7 +36,7 @@ internal static class ReadCommand
             Table)
         {
             Finish = static (_, request, result, standard) =>
-                result with { Window = result.Window! with { Next = Next(standard.Continuation(), request, result) } },
+                result with { Window = result.Window with { Next = Next(standard.Continuation(), request, result) } },
         };
     }
 
@@ -54,7 +54,7 @@ internal static class ReadCommand
     /// <summary>The read that resumes where this one stopped, or null when it covered the selection.</summary>
     private static string? Next(ContinuationCommand resume, PdfReadRequest request, PdfReadResult result)
     {
-        if (!result.Window!.Truncated)
+        if (!result.Window.Truncated)
         {
             return null;
         }

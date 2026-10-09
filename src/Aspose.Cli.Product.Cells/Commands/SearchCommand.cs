@@ -54,7 +54,7 @@ internal static class SearchCommand
                     resume.Option("--sheet", sheetName);
                 }
 
-                return result with { Window = SearchOptions.Continue(request.Query, result.Window!, resume) };
+                return result with { Window = SearchOptions.Continue(request.Query, result.Window, resume) };
             },
             Examples =
             [

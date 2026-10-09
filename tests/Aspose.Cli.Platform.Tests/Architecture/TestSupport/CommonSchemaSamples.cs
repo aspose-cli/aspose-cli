@@ -13,8 +13,6 @@ internal static class CommonSchemaSamples
 {
     public static LicenseInfo Licensed { get; } = new() { Mode = LicenseModes.Licensed };
 
-    public static LicenseInfo Evaluation { get; } = new() { Mode = LicenseModes.Evaluation };
-
     public static ErrorEnvelope Error { get; } = new()
     {
         Error = new ErrorPayload
@@ -106,7 +104,6 @@ internal static class CommonSchemaSamples
         Reused = false,
         Route = AppRoutes.Preview,
         File = "sample.bin",
-        License = Evaluation,
     };
 
     public static CapabilitiesSummaryResult CapabilitiesSummary { get; } = new()

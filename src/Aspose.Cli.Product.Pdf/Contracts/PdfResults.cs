@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 namespace Aspose.Cli.Product.Pdf.Contracts;
 
 /// <summary>Structural information returned by <c>pdf inspect</c>.</summary>
-public sealed record PdfInfoResult() : ResultEnvelope("pdf-info", 2)
+public sealed record PdfInfoResult() : EngineResultEnvelope("pdf-info", 2)
 {
     /// <summary>The kind of document described: always <c>pdf</c>.</summary>
     [JsonPropertyOrder(-50)]
@@ -329,8 +329,7 @@ public sealed record PdfSignatureInfo
 }
 
 /// <summary>Windowed page text returned by <c>pdf query pages</c>.</summary>
-[AlwaysPresent("window")]
-public sealed record PdfReadResult() : ResultEnvelope("pdf-read", 2)
+public sealed record PdfReadResult() : WindowedResultEnvelope("pdf-read", 2)
 {
     /// <summary>The kind of document read: always <c>pdf</c>.</summary>
     [JsonPropertyOrder(-50)]
@@ -375,7 +374,7 @@ public sealed record PdfPageText
 }
 
 /// <summary>Result of <c>pdf convert</c>.</summary>
-public sealed record PdfConvertResult() : ResultEnvelope("convert-result", 2)
+public sealed record PdfConvertResult() : EngineResultEnvelope("convert-result", 2)
 {
     /// <summary>The converted PDF.</summary>
     [JsonPropertyOrder(-50)]
@@ -392,7 +391,7 @@ public sealed record PdfConvertResult() : ResultEnvelope("convert-result", 2)
 }
 
 /// <summary>Result of <c>pdf render</c>.</summary>
-public sealed record PdfRenderResult() : ResultEnvelope("render-result", 2)
+public sealed record PdfRenderResult() : EngineResultEnvelope("render-result", 2)
 {
     /// <summary>The rendered PDF.</summary>
     [JsonPropertyOrder(-50)]
@@ -445,7 +444,7 @@ public sealed record PdfPageOutput
 }
 
 /// <summary>Result of <c>pdf create</c> or <c>pdf merge</c>.</summary>
-public sealed record PdfWriteResult() : ResultEnvelope("write-result", 2)
+public sealed record PdfWriteResult() : EngineResultEnvelope("write-result", 2)
 {
     /// <summary>The command that wrote the PDF.</summary>
     [JsonPropertyOrder(-50)]
@@ -462,7 +461,7 @@ public sealed record PdfWriteResult() : ResultEnvelope("write-result", 2)
 }
 
 /// <summary>Result of <c>pdf split</c>, which writes every part or none.</summary>
-public sealed record PdfSplitResult() : ResultEnvelope("split-result", 2)
+public sealed record PdfSplitResult() : EngineResultEnvelope("split-result", 2)
 {
     /// <summary>The PDF split.</summary>
     [JsonPropertyOrder(-50)]
@@ -491,7 +490,7 @@ public sealed record PdfSplitOutput
 }
 
 /// <summary>Result of <c>pdf extract</c> for images, attachments, text or tables.</summary>
-public sealed record PdfExtractResult() : ResultEnvelope("extract-result", 2)
+public sealed record PdfExtractResult() : EngineResultEnvelope("extract-result", 2)
 {
     /// <summary>The PDF extracted from.</summary>
     [JsonPropertyOrder(-50)]
@@ -554,7 +553,7 @@ public sealed record PdfRect
 }
 
 /// <summary>Result of one <c>pdf edit</c> batch.</summary>
-public sealed record PdfEditResult() : ResultEnvelope("edit-result", 2), IPartialOutcome
+public sealed record PdfEditResult() : EngineResultEnvelope("edit-result", 2), IPartialOutcome
 {
     /// <summary>The PDF edited.</summary>
     [JsonPropertyOrder(-50)]
@@ -608,7 +607,7 @@ public sealed record PdfEditVerification
 }
 
 /// <summary>The form fields <c>pdf query forms</c> lists.</summary>
-public sealed record PdfFormResult() : ResultEnvelope("form-result", 2)
+public sealed record PdfFormResult() : EngineResultEnvelope("form-result", 2)
 {
     /// <summary>The PDF read.</summary>
     [JsonPropertyOrder(-50)]
@@ -705,7 +704,7 @@ public static class PdfFormFieldTypes
 }
 
 /// <summary>Result of <c>pdf extract --what forms</c>, which exports the form data to a file.</summary>
-public sealed record PdfFormExportResult() : ResultEnvelope("form-export-result", 2)
+public sealed record PdfFormExportResult() : EngineResultEnvelope("form-export-result", 2)
 {
     /// <summary>The PDF whose form data was exported.</summary>
     [JsonPropertyOrder(-50)]
@@ -718,8 +717,7 @@ public sealed record PdfFormExportResult() : ResultEnvelope("form-export-result"
 }
 
 /// <summary>The bounded text search of <c>pdf query search</c>.</summary>
-[AlwaysPresent("window")]
-public sealed record PdfSearchResult() : ResultEnvelope("search-result", 2)
+public sealed record PdfSearchResult() : WindowedResultEnvelope("search-result", 2)
 {
     /// <summary>The PDF searched.</summary>
     [JsonPropertyOrder(-50)]
@@ -759,7 +757,7 @@ public sealed record PdfSearchHit
 }
 
 /// <summary>Result of <c>pdf validate</c>, a PDF/A conformance check.</summary>
-public sealed record PdfValidateResult() : ResultEnvelope("validate-result", 2)
+public sealed record PdfValidateResult() : EngineResultEnvelope("validate-result", 2)
 {
     /// <summary>The PDF checked.</summary>
     [JsonPropertyOrder(-50)]
@@ -778,7 +776,7 @@ public sealed record PdfValidateResult() : ResultEnvelope("validate-result", 2)
 }
 
 /// <summary>Result of <c>pdf sign</c>: the signature applied and read back from the saved file.</summary>
-public sealed record PdfSignResult() : ResultEnvelope("sign-result", 2)
+public sealed record PdfSignResult() : EngineResultEnvelope("sign-result", 2)
 {
     /// <summary>The PDF signed.</summary>
     [JsonPropertyOrder(-50)]
