@@ -8,17 +8,18 @@ the fast feedback loop:
 
 - Fast (default) runs every unmarked test.
 - Changed runs the unmarked tests of only the test projects a change reaches, plus
-  tests/Aspose.Cli.Tests (the architecture and contract tests). A change inside a source or
-  test project reaches the test projects that reference it, a repository file that a test
-  project lists as a RepositoryInput item (such as README.md) reaches that project, other
+  tests/Aspose.Cli.Tests (the architecture and contract tests). Every test project runs the
+  composed launcher through the TestKit, so a change under src/ or to the TestKit reaches every
+  test project, a change inside a test project reaches that project, a repository file that a
+  test project lists as a RepositoryInput item (such as README.md) reaches that project, other
   documentation and repository metadata (*.md, .github/, LICENSE*, .gitignore, .gitattributes,
   .editorconfig) reach nothing, and any other change (build inputs, eng/, scripts/,
   install.ps1) reaches every project. Pull-request CI uses it; master pushes run Fast.
-- Affected adds every test of the projects a change reaches: a change inside a source or test
-  project runs the test projects that reference it in full, a change to a RepositoryInput runs
-  the test projects that list it in full, installer inputs add the installer tests, other
-  documentation adds nothing, and any other change (build inputs, eng/, scripts/) runs
-  everything.
+- Affected adds every test of the projects a change reaches: a change under src/ or to the
+  TestKit runs every test project in full, a change inside a test project runs that project in
+  full, a change to a RepositoryInput runs the test projects that list it in full, installer
+  inputs add the installer tests, other documentation adds nothing, and any other change (build
+  inputs, eng/, scripts/) runs everything.
 - Full runs every test with a required license, including the reproductions of the SDK defects
   in KNOWN-ISSUES.md. Run it before a release and after an SDK update.
 
@@ -109,21 +110,19 @@ function ConvertTo-RepositoryPath {
     return [IO.Path]::GetRelativePath($repoRoot, $Path).Replace('\', '/')
 }
 
-# Directories of a project and every project it references, directly or through others.
-function Get-ProjectClosure {
-    param([Parameter(Mandatory)][string[]] $Roots)
-    $seen = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
-    $pending = [Collections.Generic.Queue[string]]::new()
-    foreach ($root in $Roots) { $pending.Enqueue([IO.Path]::GetFullPath($root)) }
-    while ($pending.Count -ne 0) {
-        $project = $pending.Dequeue()
-        if (-not $seen.Add($project)) { continue }
-        [xml] $xml = [IO.File]::ReadAllText($project)
-        foreach ($reference in @($xml.SelectNodes('//ProjectReference'))) {
-            $pending.Enqueue([IO.Path]::GetFullPath((Join-Path (Split-Path -Parent $project) ([string]$reference.Include))))
-        }
+# The directories whose changes reach each test project: every test project references the TestKit,
+# whose CliRunner runs the launcher, and the launcher composes every source project, so src/ and
+# the TestKit reach every test project; a test project's own directory reaches only that project.
+function Get-TestProjectScopes {
+    $shared = @(
+        (ConvertTo-RepositoryPath $layout.SourceRoot) + '/'
+        (ConvertTo-RepositoryPath (Split-Path -Parent $testKit)) + '/'
+    )
+    $scopes = @{}
+    foreach ($project in $testProjects) {
+        $scopes[$project] = @($shared) + @((ConvertTo-RepositoryPath (Split-Path -Parent $project)) + '/')
     }
-    return @($seen | ForEach-Object { (ConvertTo-RepositoryPath (Split-Path -Parent $_)) + '/' })
+    return $scopes
 }
 
 function Test-PathPrefix {
@@ -151,12 +150,6 @@ function Test-DocumentationPath {
     $name = $Path.Split('/')[-1]
     return $Path -like '*.md' -or (Test-PathPrefix $Path @('.github/')) -or $name -like 'LICENSE*' -or
         $name -in @('.gitignore', '.gitattributes', '.editorconfig')
-}
-
-function Get-TestProjectClosures {
-    $closures = @{}
-    foreach ($project in $testProjects) { $closures[$project] = Get-ProjectClosure @($project, $testKit) }
-    return $closures
 }
 
 # The repository files outside the projects that each test project reads, from its RepositoryInput items.
@@ -189,15 +182,15 @@ switch ($Scope) {
     'Changed' {
         $architectureTests = [IO.Path]::GetFullPath((Join-Path $layout.TestRoot 'Aspose.Cli.Tests/Aspose.Cli.Tests.csproj'))
         if (-not ($testProjects -contains $architectureTests)) { throw "The architecture test project is missing: $architectureTests" }
-        $closures = Get-TestProjectClosures
+        $scopes = Get-TestProjectScopes
         $inputs = Get-TestProjectInputs
-        $projectDirectories = @($closures.Values | ForEach-Object { $_ } | Sort-Object -Unique)
+        $projectDirectories = @($scopes.Values | ForEach-Object { $_ } | Sort-Object -Unique)
         $changed = Get-ChangedPaths
         $reached = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
         [void]$reached.Add($architectureTests)
         foreach ($path in $changed) {
             foreach ($project in $testProjects) {
-                if ((Test-PathPrefix $path $closures[$project]) -or $inputs[$project].Contains($path)) { [void]$reached.Add($project) }
+                if ((Test-PathPrefix $path $scopes[$project]) -or $inputs[$project].Contains($path)) { [void]$reached.Add($project) }
             }
             if (-not (Test-PathPrefix $path $projectDirectories) -and -not (Test-DocumentationPath $path)) {
                 $reached.UnionWith([string[]]$testProjects)
@@ -210,9 +203,9 @@ switch ($Scope) {
         }
     }
     'Affected' {
-        $closures = Get-TestProjectClosures
+        $scopes = Get-TestProjectScopes
         $inputs = Get-TestProjectInputs
-        $projectDirectories = @($closures.Values | ForEach-Object { $_ } | Sort-Object -Unique)
+        $projectDirectories = @($scopes.Values | ForEach-Object { $_ } | Sort-Object -Unique)
         $changed = Get-ChangedPaths
         foreach ($path in $changed) {
             $installerInput = Test-PathPrefix $path $installerInputs
@@ -220,7 +213,7 @@ switch ($Scope) {
                 foreach ($project in $testProjects) { [void]$included[$project].Add('Installer') }
             }
             foreach ($project in $testProjects) {
-                if ((Test-PathPrefix $path $closures[$project]) -or $inputs[$project].Contains($path)) { $included[$project].UnionWith([string[]]@('Browser', 'Slow')) }
+                if ((Test-PathPrefix $path $scopes[$project]) -or $inputs[$project].Contains($path)) { $included[$project].UnionWith([string[]]@('Browser', 'Slow')) }
             }
             if (-not (Test-PathPrefix $path $projectDirectories) -and -not $installerInput -and -not (Test-DocumentationPath $path)) {
                 foreach ($project in $testProjects) { $included[$project].UnionWith([string[]]$categories) }
