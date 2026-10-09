@@ -9,7 +9,7 @@ internal static class NewCommand
 {
     public static CommandDefinition<NewPresentationRequest, SlidesCreateResult> Create()
     {
-        var markdown = new Option<string?>("--from-markdown", "--markdown") { Description = "Markdown outline to author." }.WithInput(InputKind.File);
+        var markdown = new Option<string?>("--from-markdown") { Description = "Markdown outline to author." }.WithInput(InputKind.File);
         var template = new Option<string?>("--template") { Description = "Presentation whose masters, layouts and theme are reused." }.WithInput(InputKind.File);
         var size = new Option<string?>("--size") { Description = "16x9 or 4x3; template size is preserved when omitted." }.WithInput(InputKind.None);
         size.AcceptOnlyFromAmong("16x9", "4x3");
