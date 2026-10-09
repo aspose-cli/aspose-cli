@@ -138,6 +138,46 @@ public sealed class ResultContractGeneratorTests
     }
 
     [Fact]
+    public void DocumentationReferenceToAProperty_IsDescribedByItsWireName()
+    {
+        GeneratorDriverRunResult result = Run(
+            """
+            /// <summary>A stamp: <see cref="Text"/> is drawn on <see cref="Spot.Page"/>, see <see cref="Spot"/>.</summary>
+            public sealed record StampResult() : ResultEnvelope("stamp-result", 2)
+            {
+                /// <summary>The stamp text; present only with <see cref="P:Sample.StampResult.Where"/>.</summary>
+                public required string Text { get; init; }
+
+                /// <summary>Where it is drawn; it may add <see cref="Warnings"/>.</summary>
+                public Spot? Where { get; init; }
+            }
+
+            /// <summary>A place on <paramref name="Page"/>, drawn at <see cref="Path"/>.</summary>
+            /// <param name="Page">The 1-based page; <see cref="Path"/> names the file.</param>
+            public sealed record Spot(int Page)
+            {
+                /// <summary>The file the place is on.</summary>
+                [JsonPropertyName("file")]
+                public required string Path { get; init; }
+            }
+
+            [JsonSerializable(typeof(StampResult))]
+            internal sealed partial class ProductJsonContext : JsonSerializerContext;
+            """);
+
+        Assert.Empty(result.Diagnostics.Where(static diagnostic => diagnostic.Id == "APCLI013"));
+        string source = Assert.Single(Assert.Single(result.Results).GeneratedSources).SourceText.ToString();
+        // A property reference, plain, qualified or by id, renders as the JSON name; a type keeps its name.
+        Assert.Contains("Description = \"A stamp: text is drawn on page, see Spot.\"", source, StringComparison.Ordinal);
+        Assert.Contains("Description = \"The stamp text; present only with where.\"", source, StringComparison.Ordinal);
+        // A member the record inherits from its envelope is found on the base.
+        Assert.Contains("Description = \"Where it is drawn; it may add warnings.\"", source, StringComparison.Ordinal);
+        // A [JsonPropertyName] wins over the camelCase name, for a see and a paramref alike.
+        Assert.Contains("Description = \"A place on page, drawn at file.\"", source, StringComparison.Ordinal);
+        Assert.Contains("Description = \"The 1-based page; file names the file.\"", source, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void AlwaysPresentMembers_AreCarriedOnTheMember()
     {
         GeneratorDriverRunResult result = Run(

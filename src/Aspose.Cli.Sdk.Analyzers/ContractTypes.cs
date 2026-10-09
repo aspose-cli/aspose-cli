@@ -214,6 +214,11 @@ internal static class ContractTypes
         return new string(characters);
     }
 
+    /// <summary>The name a property is serialized under: its <c>[JsonPropertyName]</c>, else its camelCase name.</summary>
+    internal static string WireName(IPropertySymbol property) =>
+        Find(property, "System.Text.Json.Serialization.JsonPropertyNameAttribute")?.ConstructorArguments.FirstOrDefault().Value as string
+        ?? CamelCase(property.Name);
+
     /// <summary>
     /// The level of a member's value a constraint applies to (see ValueConstraintAttribute):
     /// an array constraint applies exactly at its declared depth, and any other constraint at
