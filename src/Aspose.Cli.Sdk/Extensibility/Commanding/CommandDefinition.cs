@@ -167,7 +167,8 @@ public sealed class CommandDefinition<TRequest, TResult>
             scope.ReadEnvironment,
             _standardInputTaken?.Invoke(parse) != true)
         {
-            DetectFormat = context.DetectFormat,
+            // Only an edit keeps its input's format; any other command judges the output's own.
+            DetectFormat = _traits.Output?.Kind == OutputKind.Mutation ? context.DetectFormat : null,
         };
         try
         {
