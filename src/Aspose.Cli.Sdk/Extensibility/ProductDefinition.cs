@@ -254,8 +254,9 @@ public sealed class ProductDefinitionBuilder<TSession>
 
     /// <summary>
     /// Registers how the product detects a file's format id from its content without loading it
-    /// (null when it cannot tell). The menu commands use it to choose among the formats an output
-    /// extension names, as <c>EncryptPassword()</c> does for an edit that keeps its input's format.
+    /// (null when it cannot tell). Only the menu commands that edit their input use it, to choose
+    /// among the formats an output extension names, as <c>EncryptPassword()</c> does for an edit
+    /// that keeps its input's format; a command that creates or converts a file never calls it.
     /// </summary>
     public ProductDefinitionBuilder<TSession> DetectFormat(Func<string, string?> detect)
     {

@@ -202,6 +202,23 @@ public sealed class ProductMenuTests : IDisposable
     }
 
     [Fact]
+    public void EncryptPassword_IgnoresTheDetectorForACommandThatDoesNotEditItsInput()
+    {
+        Command product = ExtProduct.Define<TestSession>(Manifest)
+            .Describe("A product in a menu.")
+            .Command(ProtectedCopyCommand.Create, TestHandlers.Protect)
+            .Complete()
+            .DetectFormat(static _ => throw new InvalidOperationException("Only an edit detects its input's format."))
+            .Build()
+            .CreateCommand(_hosts.Run);
+
+        TextResult copied = Assert.IsType<TextResult>(
+            Run(product, "copy", "doc.test", "--out", "copy.test", "--encrypt", "secret"));
+
+        Assert.Equal("secret", copied.Value);
+    }
+
+    [Fact]
     public void Guard_WrapsEveryViewAdapterCall()
     {
         ProductViewDefinition view = Menu().Build().View;
@@ -458,17 +475,36 @@ public sealed class ProductMenuTests : IDisposable
     /// <summary>An edit whose output extension names a protectable and an unprotectable format.</summary>
     private static class ProtectCommand
     {
+        public static readonly FormatDescriptor[] Writes =
+        [
+            FormatDescriptor.Declare("tst", FormatUse.Input | FormatUse.Convert, 0, 0, null, false, ".test") with { Protectable = true },
+            FormatDescriptor.Declare("old", FormatUse.Input | FormatUse.Convert, 1, 1, null, false, ".test"),
+        ];
+
         public static CommandDefinition<ProtectRequest, TextResult> Create() => new(
             "protect",
             "Protects the document.",
             new CommandTraits
             {
                 Input = Document,
-                Output = OutputTarget.Mutation(
-                [
-                    FormatDescriptor.Declare("tst", FormatUse.Input | FormatUse.Convert, 0, 0, null, false, ".test") with { Protectable = true },
-                    FormatDescriptor.Declare("old", FormatUse.Input | FormatUse.Convert, 1, 1, null, false, ".test"),
-                ]),
+                Output = OutputTarget.Mutation(Writes),
+                Encrypt = new EncryptedOutput("the output document"),
+            },
+            [],
+            static (_, standard) => new ProtectRequest(standard.EncryptPassword()?.Reveal()),
+            TestTables.Text);
+    }
+
+    /// <summary>A conversion to the same output formats, which does not keep its input's format.</summary>
+    private static class ProtectedCopyCommand
+    {
+        public static CommandDefinition<ProtectRequest, TextResult> Create() => new(
+            "copy",
+            "Writes a protected copy of the document.",
+            new CommandTraits
+            {
+                Input = Document,
+                Output = OutputTarget.File("Output path.", ProtectCommand.Writes, required: true),
                 Encrypt = new EncryptedOutput("the output document"),
             },
             [],

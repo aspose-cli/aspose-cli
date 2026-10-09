@@ -710,7 +710,7 @@ public partial class StandardInvocation
 
     internal InputSource Inputs { get; }
 
-    /// <summary>The product's content format detector, which a menu command supplies; null otherwise.</summary>
+    /// <summary>The product's content format detector, which a menu edit command supplies; null otherwise.</summary>
     internal Func<string, string?>? DetectFormat { get; init; }
 
     internal bool UsesFonts => _options.Fonts is not null;
