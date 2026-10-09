@@ -1246,6 +1246,38 @@ public sealed class PdfMutateTests
         Assert.Empty(OutlineOf(fixture, edited));
     }
 
+    /// <summary>
+    /// An outcome lists at most 100 targets: deleting more listed bookmarks than that reports
+    /// the outline as a whole instead of one target per bookmark, and never an internal error.
+    /// </summary>
+    [Fact]
+    public void Bookmarks_DeletingMoreThanAnOutcomeListsReportsTheOutline()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = Outlined(fixture, "many.pdf", static document =>
+        {
+            for (int index = 1; index <= 130; index++)
+            {
+                document.Outlines.Add(Bookmark(document, $"Bookmark {index}", 1));
+            }
+        });
+
+        string edited = fixture.File("many.edited.pdf");
+        PdfEditResult result = PdfEdit.Run(fixture.Session, new PdfEditRequest
+        {
+            Input = input,
+            Batch = new PdfOpsBatch
+            {
+                Ops = [new DeleteBookmarksOp { Indexes = [.. Enumerable.Range(1, 120).Select(static index => $"{index}")] }],
+            },
+            Output = TestOutput.At(edited),
+        });
+
+        Assert.Equal(120, Assert.Single(result.Applied).ItemsAffected);
+        Assert.Equal(["pdf/bookmark"], result.Applied[0].Targets);
+        Assert.Equal(10, OutlineOf(fixture, edited).Length);
+    }
+
     [Fact]
     public void Bookmarks_AMissingIndexDeletesNoneOfTheList()
     {

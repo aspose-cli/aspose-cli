@@ -357,6 +357,75 @@ public sealed class BoundedOperationPipelineTests
         Assert.Equal(EngineErrors.EngineFailed("any", new InvalidOperationException()).Hint, error.Hint);
     }
 
+    private static string[] Targets(int count) => [.. Enumerable.Range(1, count).Select(static index => $"test/item/{index}")];
+
+    [Fact]
+    public void Run_ListsUpToTheMaximumTargetsAsTheyAre()
+    {
+        TestBatch batch = Catalog.Prepare(new TestBatch { Ops = [Note()] });
+
+        IReadOnlyList<BoundedOperationOutcome> outcomes = BoundedOperationRunner.Run(
+            Catalog, batch.Ops, bestEffort: false, deadline: null,
+            static (_, _) => new AppliedOperation(BoundedOperationRunner.MaximumTargets, Targets(BoundedOperationRunner.MaximumTargets)),
+            static (_, _) => ["test/attempted"],
+            static (_, _) => throw new InvalidOperationException("An outcome of 100 targets needs no degenerate form."));
+
+        Assert.Equal(100, BoundedOperationRunner.MaximumTargets);
+        Assert.Equal(Targets(100), Assert.Single(outcomes).Targets);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Run_ListsTheDegenerateFormOfMoreThanTheMaximumTargets(bool failed)
+    {
+        TestBatch batch = Catalog.Prepare(new TestBatch { Ops = [Note()] });
+        IReadOnlyList<string>? received = null;
+
+        IReadOnlyList<BoundedOperationOutcome> outcomes = BoundedOperationRunner.Run(
+            Catalog, batch.Ops, bestEffort: true, deadline: null,
+            (_, _) => failed ? throw new OperationInvalidException("the note has no anchor") : new AppliedOperation(101, Targets(101)),
+            static (_, _) => Targets(101),
+            (op, targets) =>
+            {
+                Assert.IsType<NoteOp>(op);
+                received = targets;
+                return ["test/all"];
+            });
+
+        Assert.Equal(failed ? OpStatuses.Failed : OpStatuses.Ok, Assert.Single(outcomes).Status);
+        Assert.Equal(["test/all"], outcomes[0].Targets);
+        Assert.Equal(Targets(101), received);
+    }
+
+    public static TheoryData<string[]> InvalidDegenerateForms() => new() { Array.Empty<string>(), Targets(101) };
+
+    [Theory]
+    [MemberData(nameof(InvalidDegenerateForms))]
+    public void Run_RefusesADegenerateFormThatIsEmptyOrTooLong(string[] degenerate)
+    {
+        TestBatch batch = Catalog.Prepare(new TestBatch { Ops = [Note()] });
+
+        InvalidOperationException error = Assert.Throws<InvalidOperationException>(() => BoundedOperationRunner.Run(
+            Catalog, batch.Ops, bestEffort: false, deadline: null,
+            static (_, _) => new AppliedOperation(150, Targets(150)),
+            static (_, _) => ["test/attempted"],
+            (_, _) => degenerate));
+
+        Assert.Contains("'note'", error.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Run_RefusesMoreThanTheMaximumTargetsWithoutADegenerateForm()
+    {
+        TestBatch batch = Catalog.Prepare(new TestBatch { Ops = [Note()] });
+
+        InvalidOperationException error = Assert.Throws<InvalidOperationException>(() => Run(batch, bestEffort: false,
+            static (_, _) => new AppliedOperation(101, Targets(101))));
+
+        Assert.Contains("'note'", error.Message, StringComparison.Ordinal);
+    }
+
     private static IReadOnlyList<BoundedOperationOutcome> Run(
         TestBatch batch, bool bestEffort, Func<TestOp, int, AppliedOperation> apply) =>
         BoundedOperationRunner.Run(Catalog, batch.Ops, bestEffort, deadline: null, apply, static (_, _) => ["test/attempted"]);
