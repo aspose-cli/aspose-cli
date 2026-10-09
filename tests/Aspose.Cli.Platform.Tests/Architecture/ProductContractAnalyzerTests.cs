@@ -484,7 +484,7 @@ public sealed class ProductContractAnalyzerTests
 
         public sealed record RunRequest(string Input);
 
-        public sealed record RunResult() : Aspose.Cli.Sdk.Contracts.ResultEnvelope("demo/run", 1);
+        public sealed record RunResult() : Aspose.Cli.Sdk.Contracts.ResultEnvelope("run", 1);
 
         public static class RunCommand
         {

@@ -9,7 +9,7 @@ public sealed class SlidesModuleTests
     : ProductContractTests<SlidesModule>
 {
     protected override IReadOnlyList<ProductSchemaSample> CanonicalInputs { get; } =
-        [new(SlidesOp.SchemaUri, CanonicalOps)];
+        [new(SlidesOp.Catalog.SchemaId, CanonicalOps)];
 
     protected override IReadOnlyDictionary<string, string> Homonyms { get; } =
         new Dictionary<string, string>(StringComparer.Ordinal)
@@ -21,7 +21,7 @@ public sealed class SlidesModuleTests
     /// <summary>One operation document that uses every registered operation.</summary>
     private static SlidesOpsBatch CanonicalOps { get; } = new()
     {
-        Schema = SlidesOp.SchemaUri,
+        Schema = SlidesOp.Catalog.SchemaId,
         SchemaVersion = 2,
         Ops =
         [

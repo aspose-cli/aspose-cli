@@ -6,6 +6,7 @@ using Aspose.Cli.Sdk.Serialization;
 using System.CommandLine;
 using Xunit;
 using ExtProduct = Aspose.Cli.Sdk.Extensibility.Product;
+using Aspose.Cli.Platform.Tests;
 
 namespace Aspose.Cli.Architecture.Tests;
 
@@ -915,19 +916,19 @@ public sealed class ProductFileRouterTests
     private interface ITestSession;
 
 #pragma warning disable APCLI003 // Test results, not product JSON roots.
-    private sealed record TestResultOne() : ResultEnvelope("test/one", 1);
+    private sealed record TestResultOne() : TestResultEnvelope("one");
 
-    private sealed record TestResultTwo() : ResultEnvelope("test/two", 1);
+    private sealed record TestResultTwo() : TestResultEnvelope("two");
 
-    private sealed record TestResultThree() : ResultEnvelope("test/three", 1);
+    private sealed record TestResultThree() : TestResultEnvelope("three");
 
-    private sealed record TestResultFour() : ResultEnvelope("test/four", 1);
+    private sealed record TestResultFour() : TestResultEnvelope("four");
 
-    private sealed record TestResultOwner() : ResultEnvelope("test/owner", 1);
+    private sealed record TestResultOwner() : TestResultEnvelope("owner");
 
-    private sealed record TestResultDetector() : ResultEnvelope("test/detector", 1);
+    private sealed record TestResultDetector() : TestResultEnvelope("detector");
 
-    private sealed record TestResultOther() : ResultEnvelope("test/other", 1);
+    private sealed record TestResultOther() : TestResultEnvelope("other");
 #pragma warning restore APCLI003
 
     private sealed class StaticModule(ProductDefinition definition) : IProductModule

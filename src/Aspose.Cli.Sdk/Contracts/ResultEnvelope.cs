@@ -27,15 +27,14 @@ public abstract partial record ResultEnvelope
     /// <param name="schema">
     /// The schema id relative to the record's owner, such as <c>render-result</c>: the product
     /// whose assembly declares the record, or <c>common</c> for the SDK and the host. The
-    /// contract generator publishes the record's schema under the same id. Any other value, such
-    /// as a full schema URI, is taken as it is and publishes no schema.
+    /// contract generator publishes the record's schema under the same id.
     /// </param>
     /// <param name="schemaVersion">The version of the result contract.</param>
+    /// <exception cref="ArgumentException"><paramref name="schema"/> is not a relative schema id.</exception>
     protected ResultEnvelope(string schema, int schemaVersion)
     {
-        ArgumentException.ThrowIfNullOrEmpty(schema);
         ArgumentOutOfRangeException.ThrowIfLessThan(schemaVersion, 1);
-        Schema = RelativeId().IsMatch(schema) ? SchemaUri(Owner(GetType().Assembly), schema) : schema;
+        Schema = SchemaUri(OwnerOf(GetType().Assembly), schema);
         SchemaVersion = schemaVersion;
     }
 
@@ -71,14 +70,19 @@ public abstract partial record ResultEnvelope
 
     /// <summary>The canonical URI of the schema <paramref name="id"/> of <paramref name="owner"/>.</summary>
     /// <param name="owner">A product id, or <c>common</c>.</param>
-    /// <param name="id">The relative schema id.</param>
-    public static string SchemaUri(string owner, string id) => $"{DistributionInfo.SchemaBaseUri}{owner}/{id}.schema.json";
+    /// <param name="id">The relative schema id, such as <c>render-result</c>.</param>
+    /// <exception cref="ArgumentException"><paramref name="id"/> is not a relative schema id.</exception>
+    public static string SchemaUri(string owner, string id) =>
+        id is not null && RelativeId().IsMatch(id)
+            ? $"{DistributionInfo.SchemaBaseUri}{owner}/{id}.schema.json"
+            : throw new ArgumentException($"'{id}' is not a relative schema id: lower-case words joined by hyphens, such as 'render-result'.", nameof(id));
 
     /// <summary>
-    /// The product id an assembly's product module declares, or <c>common</c>. The declaration is
-    /// read by name, because the product module attribute belongs to a higher SDK layer.
+    /// The owner of the schemas an assembly's records state: the product id its product module
+    /// declares, or <c>common</c>. The declaration is read by name, because the product module
+    /// attribute belongs to a higher SDK layer.
     /// </summary>
-    private static string Owner(Assembly assembly) =>
+    internal static string OwnerOf(Assembly assembly) =>
         Owners.GetOrAdd(assembly, static assembly => assembly.GetCustomAttributesData()
             .Where(static attribute => attribute.AttributeType.FullName == "Aspose.Cli.Sdk.Extensibility.ProductModuleAttribute")
             .Select(static attribute => attribute.ConstructorArguments[0].Value as string)

@@ -14,6 +14,7 @@ using Json.Schema;
 using Aspose.Cli.TestKit;
 using Xunit;
 using ExtProduct = Aspose.Cli.Sdk.Extensibility.Product;
+using Aspose.Cli.Platform.Tests;
 
 namespace Aspose.Cli.Architecture.Tests;
 
@@ -246,7 +247,7 @@ public sealed class CommonSchemaContractTests
         InvalidOperationException error = Assert.Throws<InvalidOperationException>(
             () => CreateCatalog("other", [TestOp.Catalog.Describe("edit")]));
 
-        Assert.Contains("references unowned schema 'v2/test/ops'", error.Message, StringComparison.Ordinal);
+        Assert.Contains("references unowned schema 'v2/common/ops'", error.Message, StringComparison.Ordinal);
     }
 
     /// <summary>A common schema by its canonical URI, with every common schema registered for its references.</summary>
@@ -299,7 +300,7 @@ public sealed class CommonSchemaContractTests
     private interface ITestSession;
 
 #pragma warning disable APCLI003 // A test result, not a product JSON root.
-    private sealed record TestResult() : ResultEnvelope("test/result", 1);
+    private sealed record TestResult() : TestResultEnvelope("result");
 #pragma warning restore APCLI003
 
     private sealed class StaticModule(ProductDefinition definition) : IProductModule

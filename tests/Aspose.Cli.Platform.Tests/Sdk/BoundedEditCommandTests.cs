@@ -469,6 +469,6 @@ public sealed class BoundedEditCommandTests : IDisposable
     }
 
 #pragma warning disable APCLI003 // A test result, not a product JSON root.
-    private sealed record TestResult() : ResultEnvelope("test/result", 1);
+    private sealed record TestResult() : TestResultEnvelope("result");
 #pragma warning restore APCLI003
 }

@@ -8,10 +8,9 @@ namespace Aspose.Cli.Sdk.Analyzers;
 /// <summary>
 /// Describes the result records of one compilation and writes their descriptors onto each JSON
 /// context that lists one of them, as an implementation of <c>IResultSchemaSource</c>. A record is
-/// published when it derives from <c>ResultEnvelope</c> and passes a relative schema id to its
-/// constructor, or when it declares <c>[SchemaId]</c>; the records it inherits from and the
-/// records its members hold are described with it. A result whose constructor passes anything
-/// else, such as a full schema URI, publishes nothing.
+/// published when it derives from <c>ResultEnvelope</c> directly, which it passes a constant
+/// relative schema id, or when it declares <c>[SchemaId]</c>; the records it inherits from and the
+/// records its members hold are described with it.
 /// </summary>
 internal sealed class ResultContractWriter(Compilation compilation, Action<Location, string> report)
 {
@@ -127,6 +126,7 @@ internal sealed class ResultContractWriter(Compilation compilation, Action<Locat
             }
         }
 
+        Report(type, $"Result '{type.Name}' must pass the ResultEnvelope constructor a constant relative schema id, such as 'render-result', and a constant version; the schema is published under that id.");
         return null;
     }
 

@@ -1,6 +1,7 @@
 using Aspose.Cli.Host.Invocation;
 using Aspose.Cli.Sdk.Contracts;
 using Xunit;
+using Aspose.Cli.Platform.Tests;
 
 namespace Aspose.Cli.Architecture.Tests;
 
@@ -67,6 +68,6 @@ public sealed class HostedCommandLifecycleTests
 
 #pragma warning disable APCLI003 // A test result, not a product JSON root.
     private sealed record TestResult()
-        : ResultEnvelope("test/hosted-lifecycle", 1);
+        : TestResultEnvelope("hosted-lifecycle");
 #pragma warning restore APCLI003
 }

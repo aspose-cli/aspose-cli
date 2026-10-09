@@ -15,13 +15,9 @@ public sealed record SlidesOpsBatch : BoundedOperationEnvelope<SlidesOp>;
 /// against the presentation as it was before the first operation, so content inserted earlier
 /// in the batch cannot be targeted, and a target deleted earlier fails the operation.
 /// </summary>
-[OperationVocabulary(SchemaUri, MaximumOperations = 256, JsonContext = typeof(SlidesOpsJsonContext))]
+[OperationVocabulary("ops", MaximumOperations = 256, JsonContext = typeof(SlidesOpsJsonContext))]
 [JsonConverter(typeof(OperationJsonConverter<SlidesOp>))]
-public abstract partial record SlidesOp : BoundedOperation
-{
-    /// <summary>The URI of the operation document's schema.</summary>
-    internal const string SchemaUri = Sdk.DistributionInfo.SchemaBaseUri + ProductBuildMetadata.ProductId + "/ops.schema.json";
-}
+public abstract partial record SlidesOp : BoundedOperation;
 
 /// <summary>An operation on one slide, named by its 1-based number or its stable id.</summary>
 [ExactlyOneOf("slide", "slideId")]

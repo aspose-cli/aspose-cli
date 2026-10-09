@@ -27,7 +27,7 @@ public sealed class OperationContractGeneratorTests
         GeneratorDriverRunResult result = Run(
             """
             /// <summary>Sample operations.</summary>
-            [OperationVocabulary("https://example.test/ops.schema.json", MaximumOperations = 4, JsonContext = typeof(SampleJsonContext))]
+            [OperationVocabulary("ops", MaximumOperations = 4, JsonContext = typeof(SampleJsonContext))]
             public abstract partial record SampleOp : Aspose.Cli.Sdk.Contracts.BoundedOperation;
 
             [ExactlyOneOf("path", "all")]
@@ -88,7 +88,7 @@ public sealed class OperationContractGeneratorTests
     {
         GeneratorDriverRunResult result = Run(
             """
-            [OperationVocabulary("https://example.test/ops.schema.json", MaximumOperations = 4, JsonContext = typeof(OverrideJsonContext))]
+            [OperationVocabulary("ops", MaximumOperations = 4, JsonContext = typeof(OverrideJsonContext))]
             public abstract partial record OverrideOp : Aspose.Cli.Sdk.Contracts.BoundedOperation;
 
             public abstract record BaseOp : OverrideOp
@@ -135,7 +135,7 @@ public sealed class OperationContractGeneratorTests
     {
         GeneratorDriverRunResult result = Run(
             """
-            [OperationVocabulary("https://example.test/ops.schema.json", MaximumOperations = 4, JsonContext = typeof(BadJsonContext))]
+            [OperationVocabulary("ops", MaximumOperations = 4, JsonContext = typeof(BadJsonContext))]
             public abstract partial record BadOp : Aspose.Cli.Sdk.Contracts.BoundedOperation;
 
             public static class Letters { public const char A = 'a'; }

@@ -10,7 +10,7 @@ internal static class WordsOperationSample
 {
     public static WordsOpsBatch Batch { get; } = new()
     {
-        Schema = ResultEnvelope.SchemaUri("words", "ops"),
+        Schema = WordsOp.Catalog.SchemaId,
         SchemaVersion = 2,
         Ops =
         [
