@@ -28,7 +28,7 @@ internal static class ConvertCommand
                 string? pageText = pages.Read(parse);
                 if (pageText is not null && !WordsFormats.FixedPageConvertIds.Contains(format, StringComparer.Ordinal))
                 {
-                    throw CliErrors.OptionInvalid("--pages", $"'{format}' is a flow format", "Use --pages only with PDF, XPS, OpenXPS, PS or PCL.");
+                    throw CliErrors.OptionInvalid(pages.Name, $"'{format}' is a flow format", $"Use {pages.Name} only with PDF, XPS, OpenXPS, PS or PCL.");
                 }
 
                 Secret? encryptPassword = standard.EncryptPassword();

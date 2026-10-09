@@ -33,7 +33,7 @@ internal static class SearchCommand
                 ContinuationCommand resume = standard.Continuation();
                 if (pages.Read(parse) is { } range)
                 {
-                    resume.Option("--pages", range);
+                    resume.Option(pages.Name, range);
                 }
 
                 return result with { Window = SearchOptions.Continue(request.Query, result.Window, resume) };

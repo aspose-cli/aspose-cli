@@ -39,8 +39,8 @@ internal static class ReadCommand
             },
             Table)
         {
-            Finish = static (_, request, result, standard) =>
-                result with { Window = result.Window with { Next = Next(standard.Continuation(), request, result) } },
+            Finish = (_, request, result, standard) =>
+                result with { Window = result.Window with { Next = Next(standard.Continuation(), slides.Name, request, result) } },
         };
     }
 
@@ -75,7 +75,7 @@ internal static class ReadCommand
     /// The read that resumes where this one stopped, or null when it covered the selection.
     /// Without --slides the selection is every slide, read ten at a time.
     /// </summary>
-    private static string? Next(ContinuationCommand resume, PresentationReadRequest request, PresentationReadResult result)
+    private static string? Next(ContinuationCommand resume, string slidesOption, PresentationReadRequest request, PresentationReadResult result)
     {
         if (!result.Window.Truncated || result.SlideCount == 0)
         {
@@ -89,7 +89,7 @@ internal static class ReadCommand
                 [.. result.Slides.Select(static slide => new ReadPart(slide.Slide, slide.ContentTruncated))],
                 request.MaxCharacters) is { } continuation
             ? resume
-                .Option("--slides", continuation.Parts)
+                .Option(slidesOption, continuation.Parts)
                 .Option("--scope", request.Scope)
                 .Flag("--notes", request.IncludeNotes)
                 .Option(MaxCharactersOption.Name, continuation.MaxCharacters)
