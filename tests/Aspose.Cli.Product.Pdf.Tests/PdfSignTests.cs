@@ -16,8 +16,9 @@ public sealed class PdfSignTests
         string certificate = fixture.CreateCertificate(certificatePassword);
         string output = fixture.File(visible ? "visible.pdf" : "invisible.pdf");
 
-        var result = fixture.Engine.Sign(input, new PdfSignRequest
+        var result = PdfSign.Run(fixture.Session, new PdfSignRequest
         {
+            Input = input,
             Output = TestOutput.At(output),
             CertificatePath = certificate,
             CertificatePassword = new Secret(certificatePassword),
@@ -36,8 +37,9 @@ public sealed class PdfSignTests
         Assert.Equal(2, result.Page);
         Assert.Equal(visible, result.Rect is not null);
 
-        var info = fixture.Engine.GetInfo(output, new PdfInfoRequest
+        var info = PdfInfo.Run(fixture.Session, new PdfInfoRequest
         {
+            Input = output,
             Details = ["signatures"],
         });
         Assert.True(info.Pdf.Signed);
@@ -54,8 +56,9 @@ public sealed class PdfSignTests
         string certificate = fixture.CreateCertificate("correct-password");
         string output = fixture.File("should-not-exist.pdf");
 
-        var exception = Assert.Throws<Sdk.Errors.CliException>(() => fixture.Engine.Sign(input, new PdfSignRequest
+        var exception = Assert.Throws<Sdk.Errors.CliException>(() => PdfSign.Run(fixture.Session, new PdfSignRequest
         {
+            Input = input,
             Output = TestOutput.At(output),
             CertificatePath = certificate,
             CertificatePassword = new Secret("wrong-password"),
@@ -79,8 +82,9 @@ public sealed class PdfSignTests
         Sdk.Errors.CliException exception;
         using (new FileStream(certificate, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
         {
-            exception = Assert.Throws<Sdk.Errors.CliException>(() => fixture.Engine.Sign(input, new PdfSignRequest
+            exception = Assert.Throws<Sdk.Errors.CliException>(() => PdfSign.Run(fixture.Session, new PdfSignRequest
             {
+                Input = input,
                 Output = TestOutput.At(output),
                 CertificatePath = certificate,
                 CertificatePassword = new Secret("correct-password"),

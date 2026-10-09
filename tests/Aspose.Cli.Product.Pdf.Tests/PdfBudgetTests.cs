@@ -13,8 +13,9 @@ public sealed class PdfBudgetTests
         using var fixture = new PdfEngineFixture();
         string input = fixture.CreateRawDocument("images.pdf", pages: 2, imagePages: new HashSet<int> { 1, 2 });
 
-        PdfExtractResult result = fixture.Engine.Extract(input, new PdfExtractRequest
+        PdfExtractResult result = PdfExtract.Assets(fixture.Session, new PdfExtractRequest
         {
+            Input = input,
             Output = new ResolvedDirectory(fixture.File("images")),
             What = "images",
         });
@@ -34,9 +35,10 @@ public sealed class PdfBudgetTests
         string input = fixture.CreateRawDocument("blank-first.pdf", pages: 2, textPages: new HashSet<int> { 2 });
         string converted = fixture.File("blank-first.txt");
 
-        fixture.Engine.Convert(input, new PdfConvertRequest { Output = TestOutput.At(converted, format: "txt") });
-        string extracted = Assert.Single(fixture.Engine.Extract(input, new PdfExtractRequest
+        PdfConvert.Run(fixture.Session, new PdfConvertRequest { Input = input, Output = TestOutput.At(converted, format: "txt") });
+        string extracted = Assert.Single(PdfExtract.Assets(fixture.Session, new PdfExtractRequest
         {
+            Input = input,
             Output = new ResolvedDirectory(fixture.File("blank-first")),
             What = "text",
         }).Items).Path;
@@ -57,8 +59,9 @@ public sealed class PdfBudgetTests
         string input = fixture.CreateRawDocument("bomb.pdf", pages: 1, imagePages: new HashSet<int> { 1 }, imageSide: 60_000);
         string output = fixture.File("bomb");
 
-        CliException error = Assert.Throws<CliException>(() => fixture.Engine.Extract(input, new PdfExtractRequest
+        CliException error = Assert.Throws<CliException>(() => PdfExtract.Assets(fixture.Session, new PdfExtractRequest
         {
+            Input = input,
             Output = new ResolvedDirectory(output),
             What = "images",
         }));
@@ -74,8 +77,9 @@ public sealed class PdfBudgetTests
         using var fixture = new PdfEngineFixture();
         string image = fixture.File("mark.png");
         string source = fixture.CreateRawDocument("with-image.pdf", pages: 1, imagePages: new HashSet<int> { 1 });
-        string extracted = Assert.Single(fixture.Engine.Extract(source, new PdfExtractRequest
+        string extracted = Assert.Single(PdfExtract.Assets(fixture.Session, new PdfExtractRequest
         {
+            Input = source,
             Output = new ResolvedDirectory(fixture.File("mark")),
             What = "images",
         }).Items).Path;
@@ -91,9 +95,14 @@ public sealed class PdfBudgetTests
         {
             ProductTestInvocation invocation = ProductTestBudgets.Start<PdfModule>();
             long before = invocation.ResourceBudgets.Remaining(ResourceBudgetKinds.InputBytes);
-            new PdfEngine(owner.Outputs(invocation.Writer), invocation.ResourceBudgets).ApplyOps(path,
-                new PdfOpsBatch { Ops = [new AddWatermarkImageOp { Path = image, Pages = pages }] },
-                new PdfEditRequest { Output = TestOutput.At(owner.File(output)) });
+            var session = new PdfSession(
+                owner.Outputs(invocation.Writer), invocation.ResourceBudgets, new PdfDocumentLoader(invocation.ResourceBudgets));
+            PdfEdit.Run(session, new PdfEditRequest
+            {
+                Input = path,
+                Batch = new PdfOpsBatch { Ops = [new AddWatermarkImageOp { Path = image, Pages = pages }] },
+                Output = TestOutput.At(owner.File(output)),
+            });
             return before - invocation.ResourceBudgets.Remaining(ResourceBudgetKinds.InputBytes);
         }
     }

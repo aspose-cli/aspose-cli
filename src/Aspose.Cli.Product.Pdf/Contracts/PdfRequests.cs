@@ -6,6 +6,8 @@ namespace Aspose.Cli.Product.Pdf.Contracts;
 /// <summary>Options for structural PDF inspection.</summary>
 public sealed record PdfInfoRequest
 {
+    /// <summary>The PDF to open.</summary>
+    public required string Input { get; init; }
     public bool IncludePreview { get; init; }
     public IReadOnlyList<string>? Details { get; init; }
     public Secret? Password { get; init; }
@@ -14,6 +16,8 @@ public sealed record PdfInfoRequest
 /// <summary>Options for a budgeted page-text read.</summary>
 public sealed record PdfReadRequest
 {
+    /// <summary>The PDF to open.</summary>
+    public required string Input { get; init; }
     public PageRange? Pages { get; init; }
     public string Mode { get; init; } = PdfReadModes.Plain;
     public int MaxCharacters { get; init; } = 20_000;
@@ -23,6 +27,8 @@ public sealed record PdfReadRequest
 /// <summary>Options for PDF conversion.</summary>
 public sealed record PdfConvertRequest
 {
+    /// <summary>The PDF to open.</summary>
+    public required string Input { get; init; }
     /// <summary>The resolved output: its format, path and overwrite permission.</summary>
     public required ResolvedOutput Output { get; init; }
     public PageRange? Pages { get; init; }
@@ -32,6 +38,8 @@ public sealed record PdfConvertRequest
 /// <summary>Options for page rendering.</summary>
 public sealed record PdfRenderRequest
 {
+    /// <summary>The PDF to open.</summary>
+    public required string Input { get; init; }
     /// <summary>The resolved output: its format, path and overwrite permission.</summary>
     public required ResolvedOutput Output { get; init; }
     public PageRange? Pages { get; init; }
@@ -79,6 +87,8 @@ public sealed record PdfMergeRequest
 /// <summary>Options for transactional PDF splitting.</summary>
 public sealed record PdfSplitRequest
 {
+    /// <summary>The PDF to open.</summary>
+    public required string Input { get; init; }
     public IReadOnlyList<PageRange>? PageGroups { get; init; }
     public int? Every { get; init; }
     public bool ByBookmarks { get; init; }
@@ -88,8 +98,10 @@ public sealed record PdfSplitRequest
 }
 
 /// <summary>Options for bounded PDF extraction.</summary>
-public sealed record PdfExtractRequest
+public sealed record PdfExtractRequest : IPdfExtractRequest
 {
+    /// <summary>The PDF to open.</summary>
+    public required string Input { get; init; }
     public required string What { get; init; }
     /// <summary>The resolved directory that receives the files.</summary>
     public required ResolvedDirectory Output { get; init; }
@@ -98,6 +110,16 @@ public sealed record PdfExtractRequest
 
     /// <summary>Whether each table's UTF-8 CSV starts with a byte order mark.</summary>
     public bool ByteOrderMark { get; init; }
+}
+
+/// <summary>
+/// A request of <c>pdf extract</c>: assets, text and tables (<see cref="PdfExtractRequest"/>) or
+/// form data (<see cref="PdfFormExportRequest"/>), each with its own result.
+/// </summary>
+public interface IPdfExtractRequest
+{
+    /// <summary>The PDF to open.</summary>
+    string Input { get; }
 }
 
 /// <summary>Stable PDF read projection modes.</summary>
@@ -116,6 +138,12 @@ public static class PdfExtractKinds
 
 public sealed record PdfEditRequest
 {
+    /// <summary>The PDF to edit.</summary>
+    public required string Input { get; init; }
+
+    /// <summary>The validated operation batch.</summary>
+    public required PdfOpsBatch Batch { get; init; }
+
     /// <summary>The resolved output: its path, overwrite permission and in-place backup.</summary>
     public required ResolvedOutput Output { get; init; }
     public EditCommandOptions Options { get; init; } = new();
@@ -128,21 +156,34 @@ public sealed record PdfEditRequest
     public IReadOnlyDictionary<string, Secret>? OpSecrets { get; init; }
 }
 
-public sealed record PdfFormReadRequest { public Secret? Password { get; init; } }
-public sealed record PdfFormExportRequest
+public sealed record PdfFormReadRequest
 {
+    /// <summary>The PDF to open.</summary>
+    public required string Input { get; init; }
+    public Secret? Password { get; init; }
+}
+
+/// <summary>Options for exporting form data, the <c>--what forms</c> request of <c>pdf extract</c>.</summary>
+public sealed record PdfFormExportRequest : IPdfExtractRequest
+{
+    /// <summary>The PDF to open.</summary>
+    public required string Input { get; init; }
     /// <summary>The resolved output: its format, path and overwrite permission.</summary>
     public required ResolvedOutput Output { get; init; }
     public Secret? Password { get; init; }
 }
 public sealed record PdfSearchRequest
 {
+    /// <summary>The PDF to open.</summary>
+    public required string Input { get; init; }
     public required SearchQuery Query { get; init; }
     public PageRange? Pages { get; init; }
     public Secret? Password { get; init; }
 }
 public sealed record PdfValidateRequest
 {
+    /// <summary>The PDF to open.</summary>
+    public required string Input { get; init; }
     public required string Profile { get; init; }
     public Secret? Password { get; init; }
 }
@@ -150,6 +191,8 @@ public sealed record PdfValidateRequest
 /// <summary>Options for applying one PKCS#7 PDF signature.</summary>
 public sealed record PdfSignRequest
 {
+    /// <summary>The PDF to open.</summary>
+    public required string Input { get; init; }
     public required string CertificatePath { get; init; }
     public required Secret CertificatePassword { get; init; }
     /// <summary>The resolved output: its format, path and overwrite permission.</summary>

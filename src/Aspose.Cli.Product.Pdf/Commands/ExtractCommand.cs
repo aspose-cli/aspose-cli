@@ -1,13 +1,18 @@
 using System.CommandLine;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Extensibility;
+using Aspose.Cli.Sdk.Extensibility.Output;
 using Aspose.Cli.Sdk.IO;
 
 namespace Aspose.Cli.Product.Pdf.Commands;
 
+/// <summary>
+/// Extracts assets, text or tables into a directory, or with <c>--what forms</c> exports form
+/// data to a file; each has its own request and result, so the result is their common base.
+/// </summary>
 internal static class ExtractCommand
 {
-    public static Command Create(IProductCommandHost<IPdfEngine> host)
+    public static CommandDefinition<IPdfExtractRequest, ResultEnvelope> Create()
     {
         var what = new Option<string>("--what") { Required = true, Description = "images, attachments, text, tables or forms." }.WithInput(InputKind.None);
         what.AcceptOnlyFromAmong([.. PdfExtractKinds.All, "forms"]);
@@ -17,13 +22,12 @@ internal static class ExtractCommand
             Description = "Start each table's CSV with a UTF-8 byte order mark, so Excel reads its non-English text "
                 + "correctly; only with --what tables. Default: UTF-8 without one.",
         };
-        return StandardCommand.Create(
-            host,
+        return new(
             "extract",
             "Extract bounded PDF assets, text, tables or form data.",
             new CommandTraits
             {
-                Input = PdfCommands.Document,
+                Input = PdfInputs.Document,
                 Output = OutputTarget.FileOrDirectory(
                     "Form-data output file; only with --what forms. Default extension follows --to.",
                     "Safe extraction directory; required unless --what forms."),
@@ -55,11 +59,12 @@ internal static class ExtractCommand
                         throw CliErrors.OptionInvalid("--to", "is required with --what forms", "Use --to json, --to fdf or --to xfdf.");
                     }
 
-                    return standard.OpenEngine().ExportForm(standard.Input, new PdfFormExportRequest
+                    return new PdfFormExportRequest
                     {
+                        Input = standard.Input,
                         Output = standard.Output,
                         Password = standard.InputPassword,
-                    });
+                    };
                 }
 
                 string? formOption = standard.TargetRequested ? "--to" : standard.RequestedOutputPath() is not null ? "--out" : null;
@@ -78,14 +83,37 @@ internal static class ExtractCommand
 
                 PageRange? range = pageText is null ? null : PageRange.Parse(pageText);
                 ResolvedDirectory directory = standard.DirectoryOutput;
-                return standard.OpenEngine().Extract(standard.Input, new PdfExtractRequest
+                return new PdfExtractRequest
                 {
+                    Input = standard.Input,
                     What = kind,
                     Output = directory,
                     Pages = range,
                     Password = standard.InputPassword,
                     ByteOrderMark = byteOrderMark,
-                });
-            });
+                };
+            },
+            table: null)
+        {
+            Renderers =
+            [
+                ProductOutputDefinition.Create<PdfExtractResult>(Table),
+                ProductOutputDefinition.Create<PdfFormExportResult>(Table),
+            ],
+        };
     }
+
+    internal static void Table(PdfExtractResult result, TableSurface surface)
+    {
+        surface.Out.WriteLine($"extracted {result.Items.Count} {result.What} item(s)");
+        foreach (PdfExtractedItem item in result.Items)
+        {
+            string page = item.Page.HasValue ? $" page {item.Page.Value}" : string.Empty;
+            surface.Out.WriteLine($"  {item.Path} ({item.Kind}{page}, {TableText.Bytes(item.SizeBytes)})");
+        }
+    }
+
+    internal static void Table(PdfFormExportResult result, TableSurface surface) =>
+        surface.Out.WriteLine(
+            $"exported form data: {result.Output.Path} ({result.Output.Format}, {TableText.Bytes(result.Output.SizeBytes)})");
 }

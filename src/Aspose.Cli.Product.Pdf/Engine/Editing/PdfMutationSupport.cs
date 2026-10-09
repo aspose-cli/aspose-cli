@@ -169,7 +169,7 @@ internal static class PdfMutationSupport
     /// unchecks a check box; any other field is emptied.
     /// </summary>
     internal static string ClearedFieldValue(Field field) =>
-        field is CheckboxField || PdfFormService.RadioGroup(field) is not null ? "Off" : string.Empty;
+        field is CheckboxField || PdfForms.RadioGroup(field) is not null ? "Off" : string.Empty;
 
     /// <summary>
     /// Explains why a form field cannot display a value, or null when it can.
@@ -180,14 +180,14 @@ internal static class PdfMutationSupport
     internal static string? RejectedFieldValue(Field field, string value)
     {
         if (field is CheckboxField checkbox
-            && PdfFormService.CheckboxStates(checkbox) is { Count: > 0 } states
+            && PdfForms.CheckboxStates(checkbox) is { Count: > 0 } states
             && !states.Contains(value, StringComparer.Ordinal))
         {
             return $"check box '{field.FullName}' has no state '{value}'; use one of: " + string.Join(", ", states);
         }
 
-        if (PdfFormService.RadioGroup(field) is { } group
-            && PdfFormService.ChoiceValues(group) is { Count: > 0 } options
+        if (PdfForms.RadioGroup(field) is { } group
+            && PdfForms.ChoiceValues(group) is { Count: > 0 } options
             && !options.Contains(value, StringComparer.Ordinal))
         {
             return $"radio group '{field.FullName}' has no option '{value}'; use one of: " + string.Join(", ", options);

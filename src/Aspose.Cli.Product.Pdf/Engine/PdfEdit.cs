@@ -7,34 +7,21 @@ using static Aspose.Cli.Product.Pdf.Engine.PdfEngineSupport;
 
 namespace Aspose.Cli.Product.Pdf.Engine;
 
-/// <summary>Owns validated batch execution, atomic persistence and edit verification.</summary>
-internal sealed class PdfMutationService
+/// <summary>
+/// Applies a validated, atomic operation batch, publishes the output and verifies the effect of
+/// each operation: <c>pdf edit</c>.
+/// </summary>
+internal static class PdfEdit
 {
-    private readonly OutputPipeline<Document> _outputs;
-    private readonly PdfDocumentLoader _loader;
-    private readonly InputSource _inputs;
-    private readonly OperationDeadline _deadline;
-
-    internal PdfMutationService(
-        OutputPipeline<Document> outputs,
-        PdfDocumentLoader loader,
-        InputSource inputs,
-        OperationDeadline deadline)
-    {
-        _outputs = outputs ?? throw new ArgumentNullException(nameof(outputs));
-        _loader = loader;
-        _inputs = inputs;
-        _deadline = deadline;
-    }
-
     /// <summary>Opens the document, runs the batch through the mutation handlers and publishes the result.</summary>
-    public PdfEditResult ApplyOps(string filePath, PdfOpsBatch batch, PdfEditRequest request)
+    internal static PdfEditResult Run(PdfSession session, PdfEditRequest request)
     {
-        batch = PdfOp.Catalog.Prepare(batch);
-        LicenseState state = _outputs.License;
+        string filePath = request.Input;
+        PdfOpsBatch batch = PdfOp.Catalog.Prepare(request.Batch);
+        LicenseState state = session.Outputs.License;
         FileWritePrecondition precondition = FileWritePrecondition.Capture(filePath);
-        using InputResourceScope operationInputs = _inputs.CreateScope();
-        using LoadedPdf loaded = _loader.Open(filePath, request.Password);
+        using InputResourceScope operationInputs = session.Budgets.Inputs.CreateScope();
+        using LoadedPdf loaded = session.Loader.Open(filePath, request.Password);
         SourceInfo input = PdfInfoProjection.Source(filePath, includeFingerprint: true);
         FileFingerprints.EnsureUnchanged(filePath, precondition.Fingerprint, input.Fingerprint!);
         FileFingerprints.EnsureMatch(filePath, request.Options.IfMatch, input.Fingerprint!);
@@ -48,14 +35,14 @@ internal sealed class PdfMutationService
         PdfNavigationCensus navigationBefore = PdfNavigationCensus.Unresolved(loaded.Document);
         PdfEditVerifier? verifier = request.Verify ? new PdfEditVerifier(loaded.Document) : null;
         (IReadOnlyList<BoundedOperationOutcome> outcomes, Secret? outputPassword, EncryptPdfOp? encryption) =
-            ApplyOperations(loaded.Document, batch, request, touched, textMoved, operationInputs, verifier);
+            ApplyOperations(session, loaded.Document, batch, request, touched, textMoved, operationInputs, verifier);
         // PDF-ENCRYPTED-INFO-TEXT: document information set in this batch survives only an
         // encryption applied to a reopened copy.
         EncryptPdfOp? encryptCopy = batch.Ops.Any(static op => op is SetMetadataOp) ? encryption : null;
         PdfNavigationCensus navigation = PdfNavigationCensus.Degraded(
             navigationBefore, PdfNavigationCensus.Unresolved(loaded.Document));
         Publication publication;
-        try { publication = Publish(loaded.Document, request, outputPassword, encryptCopy, precondition, verifier, state); }
+        try { publication = Publish(session, loaded.Document, request, outputPassword, encryptCopy, precondition, verifier, state); }
         finally { operationInputs.ThrowIfFailed(); }
         List<Warning> warnings = BuildWarnings(signatures, outcomes, textMoved);
         if (UnpermittedChange(userPermissions, openPassword, outcomes, request.Options.DryRun) is { } protection)
@@ -87,7 +74,8 @@ internal sealed class PdfMutationService
         };
     }
 
-    private (IReadOnlyList<BoundedOperationOutcome> Outcomes, Secret? OutputPassword, EncryptPdfOp? Encryption) ApplyOperations(
+    private static (IReadOnlyList<BoundedOperationOutcome> Outcomes, Secret? OutputPassword, EncryptPdfOp? Encryption) ApplyOperations(
+        PdfSession session,
         Document document,
         PdfOpsBatch batch,
         PdfEditRequest request,
@@ -114,7 +102,7 @@ internal sealed class PdfMutationService
 
                 var operationPages = new SortedSet<int>();
                 var movedPages = new SortedSet<int>();
-                long affected = new PdfMutationHandlers(_loader, operationInputs, document, request.OpSecrets, operationPages, movedPages).Run(op);
+                long affected = new PdfMutationHandlers(session.Loader, operationInputs, document, request.OpSecrets, operationPages, movedPages).Run(op);
                 verifier?.Record(op, op.Id!, affected, document);
                 touched.UnionWith(operationPages);
                 if (movedPages.Count > 0)
@@ -200,7 +188,8 @@ internal sealed class PdfMutationService
         }];
     }
 
-    private Publication Publish(
+    private static Publication Publish(
+        PdfSession session,
         Document document,
         PdfEditRequest request,
         Secret? outputPassword,
@@ -214,7 +203,7 @@ internal sealed class PdfMutationService
         PdfEditVerification? verification = null;
         if (!request.Options.DryRun)
         {
-            using OutputSet<Document> transaction = _outputs.BeginSet([request.Output.Directory], "pdf-edit");
+            using OutputSet<Document> transaction = session.Outputs.BeginSet([request.Output.Directory], "pdf-edit");
             StagedOutput write = transaction.Stage(
                 request.Output.Path,
                 request.Output.Overwrite,
@@ -222,7 +211,7 @@ internal sealed class PdfMutationService
                 temp =>
                 {
                     Save(document, temp, encryptCopy, request.OpSecrets);
-                    using LoadedPdf reopened = _loader.OpenPublishedCandidate(temp, outputPassword);
+                    using LoadedPdf reopened = session.Loader.OpenPublishedCandidate(temp, outputPassword);
                 },
                 backupPath: request.Output.BackupPath,
                 inputPrecondition: precondition);
@@ -236,8 +225,8 @@ internal sealed class PdfMutationService
                 // Issues are reported, not refused: the output is published and the command exits 8.
                 verification = write.Read(candidate =>
                 {
-                    using LoadedPdf reopened = _loader.OpenPublishedCandidate(candidate, outputPassword);
-                    return verifier.Verify(reopened.Document, state, _deadline);
+                    using LoadedPdf reopened = session.Loader.OpenPublishedCandidate(candidate, outputPassword);
+                    return verifier.Verify(reopened.Document, state, session.Budgets.Deadline);
                 });
             }
 

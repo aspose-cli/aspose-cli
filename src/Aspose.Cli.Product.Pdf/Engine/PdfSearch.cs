@@ -9,31 +9,18 @@ using static Aspose.Cli.Product.Pdf.Engine.PdfEngineSupport;
 
 namespace Aspose.Cli.Product.Pdf.Engine;
 
-/// <summary>Owns bounded content inspection and standards validation.</summary>
-internal sealed class PdfInspectionService
+/// <summary>Searches page text and returns page rectangles: <c>pdf query search</c>.</summary>
+internal static class PdfSearch
 {
-    /// <summary>The most validation issues one result lists.</summary>
-    private const int ListedIssues = 100;
-
     /// <summary>The most characters a search hit's context shows on each side of the match.</summary>
     private const int ContextRadius = 40;
 
-    private readonly ILicenseState _license;
-    private readonly PdfDocumentLoader _loader;
-
-    internal PdfInspectionService(
-        ILicenseState license,
-        PdfDocumentLoader loader)
+    internal static PdfSearchResult Run(PdfSession session, PdfSearchRequest request)
     {
-        _license = license ?? throw new ArgumentNullException(nameof(license));
-        _loader = loader;
-    }
-
-    public PdfSearchResult Search(string filePath, PdfSearchRequest request)
-    {
+        string filePath = request.Input;
         TextSearch text = request.Query.Text;
-        LicenseState state = _license.License;
-        using LoadedPdf loaded = _loader.Open(filePath, request.Password);
+        LicenseState state = session.Outputs.License;
+        using LoadedPdf loaded = session.Loader.Open(filePath, request.Password);
         IReadOnlyList<int> pages = request.Pages?.Resolve(loaded.Document.Pages.Count)
             ?? Enumerable.Range(1, loaded.Document.Pages.Count).ToArray();
         SearchHits<PdfSearchHit> hits = request.Query.Collect<PdfSearchHit>();
@@ -98,37 +85,6 @@ internal sealed class PdfInspectionService
             Hits = hits.Hits,
             Window = hits.Window(),
             License = EnvelopeParts.License(state),
-        };
-    }
-
-    public PdfValidateResult Validate(string filePath, PdfValidateRequest request)
-    {
-        PdfFormat format = request.Profile.ToLowerInvariant() switch
-        {
-            "pdfa-1b" => PdfFormat.PDF_A_1B,
-            "pdfa-2b" => PdfFormat.PDF_A_2B,
-            "pdfa-3b" => PdfFormat.PDF_A_3B,
-            _ => throw CliErrors.OptionInvalid("--profile", $"unknown profile '{request.Profile}'", "Use pdfa-1b, pdfa-2b or pdfa-3b."),
-        };
-        LicenseState state = _license.License;
-        using LoadedPdf loaded = _loader.Open(filePath, request.Password);
-        using var log = new MemoryStream();
-        bool valid = loaded.Document.Validate(log, format);
-        IReadOnlyList<PdfComplianceProblem> problems = PdfComplianceLog.Parse(log);
-        return new PdfValidateResult
-        {
-            Input = PdfInfoProjection.Source(filePath),
-            Profile = request.Profile.ToLowerInvariant(),
-            Valid = valid,
-            Issues = problems.Take(ListedIssues).Select(static problem => problem.ToString()).ToArray(),
-            License = EnvelopeParts.License(state),
-            Warnings = problems.Count > ListedIssues
-                ? [EnvelopeParts.ListTruncated(
-                    "issues",
-                    ListedIssues,
-                    problems.Count,
-                    "Fix the listed issues and validate again; 'pdf convert --to <profile>' fixes the ones it can.")]
-                : null,
         };
     }
 }

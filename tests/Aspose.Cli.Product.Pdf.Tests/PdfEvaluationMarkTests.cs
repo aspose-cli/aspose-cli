@@ -25,18 +25,21 @@ public sealed class PdfEvaluationMarkTests
         using var fixture = new PdfEngineFixture();
         string input = MarkedOnFirstPage(fixture);
 
-        PdfSplitResult marked = fixture.Disclosed(engine => engine.Split(input, new PdfSplitRequest
+        PdfSplitResult marked = fixture.Disclosed(session => PdfSplit.Run(session, new PdfSplitRequest
         {
+            Input = input,
             PageGroups = [PageRange.Parse("1")],
             Output = new ResolvedDirectory(fixture.File("marked-part")),
         }));
-        PdfSplitResult clean = fixture.Disclosed(engine => engine.Split(input, new PdfSplitRequest
+        PdfSplitResult clean = fixture.Disclosed(session => PdfSplit.Run(session, new PdfSplitRequest
         {
+            Input = input,
             PageGroups = [PageRange.Parse("2")],
             Output = new ResolvedDirectory(fixture.File("clean-part")),
         }));
-        PdfConvertResult tiff = fixture.Disclosed(engine => engine.Convert(input, new PdfConvertRequest
+        PdfConvertResult tiff = fixture.Disclosed(session => PdfConvert.Run(session, new PdfConvertRequest
         {
+            Input = input,
             Output = TestOutput.At(fixture.File("page2.tiff"), format: "tiff"),
             Pages = PageRange.Parse("2"),
         }));
@@ -57,23 +60,27 @@ public sealed class PdfEvaluationMarkTests
         using var fixture = new PdfEngineFixture();
         string input = Marked(fixture, "combined.pdf", pages: 12, markedPages: 4);
 
-        PdfRenderResult cleanRender = fixture.Disclosed(engine => engine.Render(input, new PdfRenderRequest
+        PdfRenderResult cleanRender = fixture.Disclosed(session => PdfRender.Run(session, new PdfRenderRequest
         {
+            Input = input,
             Output = TestOutput.At(fixture.File("page6.png"), format: "png"),
             Pages = PageRange.Parse("6"),
         }));
-        PdfConvertResult cleanConvert = fixture.Disclosed(engine => engine.Convert(input, new PdfConvertRequest
+        PdfConvertResult cleanConvert = fixture.Disclosed(session => PdfConvert.Run(session, new PdfConvertRequest
         {
+            Input = input,
             Output = TestOutput.At(fixture.File("page6-convert.png"), format: "png"),
             Pages = PageRange.Parse("6"),
         }));
-        PdfConvertResult cleanText = fixture.Disclosed(engine => engine.Convert(input, new PdfConvertRequest
+        PdfConvertResult cleanText = fixture.Disclosed(session => PdfConvert.Run(session, new PdfConvertRequest
         {
+            Input = input,
             Output = TestOutput.At(fixture.File("pages6-8.txt"), format: "txt"),
             Pages = PageRange.Parse("6-8"),
         }));
-        PdfRenderResult markedRender = fixture.Disclosed(engine => engine.Render(input, new PdfRenderRequest
+        PdfRenderResult markedRender = fixture.Disclosed(session => PdfRender.Run(session, new PdfRenderRequest
         {
+            Input = input,
             Output = TestOutput.At(fixture.File("page2.png"), format: "png"),
             Pages = PageRange.Parse("2,6"),
         }));
@@ -93,8 +100,9 @@ public sealed class PdfEvaluationMarkTests
         string input = MarkedOnFirstPage(fixture);
         string certificate = fixture.CreateCertificate(certificatePassword);
 
-        PdfSignResult signed = fixture.Disclosed(engine => engine.Sign(input, new PdfSignRequest
+        PdfSignResult signed = fixture.Disclosed(session => PdfSign.Run(session, new PdfSignRequest
         {
+            Input = input,
             Output = TestOutput.At(fixture.File("signed.pdf")),
             CertificatePath = certificate,
             CertificatePassword = new Secret(certificatePassword),

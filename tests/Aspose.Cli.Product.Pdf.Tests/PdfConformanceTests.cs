@@ -20,7 +20,7 @@ public sealed class PdfConformanceTests
 
         Assert.True(second.Signature.Signed);
         Assert.NotEqual(first.Signature.Name, second.Signature.Name);
-        PdfInfoResult info = fixture.Engine.GetInfo(second.Output.Path, new PdfInfoRequest { Details = ["signatures"] });
+        PdfInfoResult info = PdfInfo.Run(fixture.Session, new PdfInfoRequest { Input = second.Output.Path, Details = ["signatures"] });
         Assert.Contains(info.Signatures!, signature => signature.Name == second.Signature.Name && signature.Signed);
     }
 
@@ -30,7 +30,7 @@ public sealed class PdfConformanceTests
         using var fixture = new PdfEngineFixture();
         string input = fixture.CreateDocument("plain.pdf", pages: 1);
 
-        PdfValidateResult result = fixture.Engine.Validate(input, new PdfValidateRequest { Profile = "pdfa-1b" });
+        PdfValidateResult result = PdfValidate.Run(fixture.Session, new PdfValidateRequest { Input = input, Profile = "pdfa-1b" });
 
         Assert.False(result.Valid);
         Assert.NotEmpty(result.Issues);
@@ -65,8 +65,9 @@ public sealed class PdfConformanceTests
         using var fixture = new PdfEngineFixture();
         string input = fixture.CreateDocument("convertible.pdf", pages: 1);
 
-        PdfConvertResult result = fixture.Engine.Convert(input, new PdfConvertRequest
+        PdfConvertResult result = PdfConvert.Run(fixture.Session, new PdfConvertRequest
         {
+            Input = input,
             Output = TestOutput.At(fixture.File("convertible.pdfa.pdf"), format: "pdfa-2b"),
         });
 
@@ -85,11 +86,12 @@ public sealed class PdfConformanceTests
             <input type="checkbox" name="urgent"/> Urgent
             </form></body></html>
             """);
-        string form = fixture.Engine.Create(new NewPdfRequest { Output = TestOutput.At(fixture.File("form.pdf")), HtmlPath = html }).Output.Path;
+        string form = PdfCreate.Run(fixture.Session, new NewPdfRequest { Output = TestOutput.At(fixture.File("form.pdf")), HtmlPath = html }).Output.Path;
         string output = fixture.File("form.pdfa.pdf");
 
-        CliException error = Assert.Throws<CliException>(() => fixture.Engine.Convert(form, new PdfConvertRequest
+        CliException error = Assert.Throws<CliException>(() => PdfConvert.Run(fixture.Session, new PdfConvertRequest
         {
+            Input = form,
             Output = TestOutput.At(output, format: "pdfa-2b"),
         }));
 
@@ -104,9 +106,14 @@ public sealed class PdfConformanceTests
 
         // The remedy the hint names, flattening only the named fields, makes the conversion conform.
         string flattened = fixture.File("form.flat.pdf");
-        fixture.Engine.ApplyOps(form, new PdfOpsBatch { Ops = [new FlattenFormsOp { Fields = ["radio"] }] }, new PdfEditRequest { Output = TestOutput.At(flattened) });
-        fixture.Engine.Convert(flattened, new PdfConvertRequest { Output = TestOutput.At(output, format: "pdfa-2b") });
-        Assert.True(fixture.Engine.Validate(output, new PdfValidateRequest { Profile = "pdfa-2b" }).Valid);
+        PdfEdit.Run(fixture.Session, new PdfEditRequest
+        {
+            Input = form,
+            Batch = new PdfOpsBatch { Ops = [new FlattenFormsOp { Fields = ["radio"] }] },
+            Output = TestOutput.At(flattened),
+        });
+        PdfConvert.Run(fixture.Session, new PdfConvertRequest { Input = flattened, Output = TestOutput.At(output, format: "pdfa-2b") });
+        Assert.True(PdfValidate.Run(fixture.Session, new PdfValidateRequest { Input = output, Profile = "pdfa-2b" }).Valid);
     }
 
     [Theory]
@@ -118,13 +125,14 @@ public sealed class PdfConformanceTests
         using var fixture = new PdfEngineFixture();
         string input = CreateArchivable(fixture);
 
-        PdfConvertResult result = fixture.Engine.Convert(input, new PdfConvertRequest
+        PdfConvertResult result = PdfConvert.Run(fixture.Session, new PdfConvertRequest
         {
+            Input = input,
             Output = TestOutput.At(fixture.File("archive.pdf"), format: profile),
         });
 
         string output = Assert.Single(result.Outputs).Path;
-        Assert.True(fixture.Engine.Validate(output, new PdfValidateRequest { Profile = profile }).Valid);
+        Assert.True(PdfValidate.Run(fixture.Session, new PdfValidateRequest { Input = output, Profile = profile }).Valid);
         using var archived = new Aspose.Pdf.Document(output);
         Assert.Equal(["Results", "Detail", "Appendix"], OutlineTitles(archived.Outlines));
         Assert.Equal("Quarterly results", archived.Info.Title);
@@ -170,27 +178,31 @@ public sealed class PdfConformanceTests
         string scan = fixture.File("license-scan.png");
         File.WriteAllBytes(scan, [0x89, (byte)'P', (byte)'N', (byte)'G', 0x0D, 0x0A, 0x1A, 0x0A]);
         string attached = fixture.File("attached.pdf");
-        fixture.Engine.ApplyOps(input, new PdfOpsBatch
+        PdfEdit.Run(fixture.Session, new PdfEditRequest
         {
-            Ops =
-            [
-                new AddAttachmentOp { Path = scan, MimeType = "image/png" },
-                new AddAttachmentOp { Path = scan, Name = "untyped.png" },
-            ],
-        }, new PdfEditRequest { Output = TestOutput.At(attached) });
+            Input = input,
+            Batch = new PdfOpsBatch
+            {
+                Ops =
+                [
+                    new AddAttachmentOp { Path = scan, MimeType = "image/png" },
+                    new AddAttachmentOp { Path = scan, Name = "untyped.png" },
+                ],
+            },
+            Output = TestOutput.At(attached),
+        });
 
         Assert.Equal(
             [("license-scan.png", "image/png"), ("untyped.png", null)],
             MediaTypes(attached));
 
         string archive = fixture.File("archive.pdf");
-        fixture.Engine.Convert(attached, new PdfConvertRequest { Output = TestOutput.At(archive, format: "pdfa-3b") });
+        PdfConvert.Run(fixture.Session, new PdfConvertRequest { Input = attached, Output = TestOutput.At(archive, format: "pdfa-3b") });
         Assert.Equal(
             [("license-scan.png", "image/png"), ("untyped.png", "application/octet-stream")],
             MediaTypes(archive));
 
-        (string, string?)[] MediaTypes(string path) => [.. fixture.Engine
-            .GetInfo(path, new PdfInfoRequest { Details = ["attachments"] }).Attachments!
+        (string, string?)[] MediaTypes(string path) => [.. PdfInfo.Run(fixture.Session, new PdfInfoRequest { Input = path, Details = ["attachments"] }).Attachments!
             .Select(static item => (item.Name, item.MimeType))];
     }
 
@@ -215,8 +227,9 @@ public sealed class PdfConformanceTests
         using var fixture = new PdfEngineFixture();
         string input = CreateArchivable(fixture);
 
-        PdfConvertResult result = fixture.Engine.Convert(input, new PdfConvertRequest
+        PdfConvertResult result = PdfConvert.Run(fixture.Session, new PdfConvertRequest
         {
+            Input = input,
             Output = TestOutput.At(fixture.File("every-page.pdf"), format: "pdfa-2b"),
             Pages = Sdk.Addressing.PageRange.Parse("1-2"),
         });
@@ -230,14 +243,15 @@ public sealed class PdfConformanceTests
         using var fixture = new PdfEngineFixture();
         string input = CreateArchivable(fixture);
 
-        PdfConvertResult result = fixture.Engine.Convert(input, new PdfConvertRequest
+        PdfConvertResult result = PdfConvert.Run(fixture.Session, new PdfConvertRequest
         {
+            Input = input,
             Output = TestOutput.At(fixture.File("page-two.pdf"), format: "pdfa-2b"),
             Pages = Sdk.Addressing.PageRange.Parse("2"),
         });
 
         string output = Assert.Single(result.Outputs).Path;
-        Assert.True(fixture.Engine.Validate(output, new PdfValidateRequest { Profile = "pdfa-2b" }).Valid);
+        Assert.True(PdfValidate.Run(fixture.Session, new PdfValidateRequest { Input = output, Profile = "pdfa-2b" }).Valid);
         using var archived = new Aspose.Pdf.Document(output);
         Assert.Single(archived.Pages);
         Assert.Contains("Appendix", OutlineTitles(archived.Outlines));
@@ -250,28 +264,30 @@ public sealed class PdfConformanceTests
         using var fixture = new PdfEngineFixture();
         string input = fixture.CreateEncryptedDocument("user-secret", "owner-secret", "encrypted.pdf");
 
-        PdfConvertResult result = fixture.Engine.Convert(input, new PdfConvertRequest
+        PdfConvertResult result = PdfConvert.Run(fixture.Session, new PdfConvertRequest
         {
+            Input = input,
             Output = TestOutput.At(fixture.File("encrypted.pdfa.pdf"), format: "pdfa-2b"),
             Password = new Secret("user-secret"),
         });
 
         string output = Assert.Single(result.Outputs).Path;
-        Assert.True(fixture.Engine.Validate(output, new PdfValidateRequest { Profile = "pdfa-2b" }).Valid);
+        Assert.True(PdfValidate.Run(fixture.Session, new PdfValidateRequest { Input = output, Profile = "pdfa-2b" }).Valid);
     }
 
     [Fact]
     public void Inspect_OfAnArchive_ReportsTheFileAsItIs()
     {
         using var fixture = new PdfEngineFixture();
-        string output = Assert.Single(fixture.Engine.Convert(CreateArchivable(fixture), new PdfConvertRequest
+        string output = Assert.Single(PdfConvert.Run(fixture.Session, new PdfConvertRequest
         {
+            Input = CreateArchivable(fixture),
             Output = TestOutput.At(fixture.File("archive.pdf"), format: "pdfa-2b"),
         }).Outputs).Path;
-        var request = new PdfInfoRequest { Details = ["metadata"] };
+        var request = new PdfInfoRequest { Input = output, Details = ["metadata"] };
 
-        PdfInfoResult first = fixture.Engine.GetInfo(output, request);
-        PdfInfoResult second = fixture.Engine.GetInfo(output, request);
+        PdfInfoResult first = PdfInfo.Run(fixture.Session, request);
+        PdfInfoResult second = PdfInfo.Run(fixture.Session, request);
 
         Assert.Equal("pdfa-2b", first.Pdf.PdfaProfile);
         Assert.False(first.Pdf.Tagged);
@@ -288,7 +304,7 @@ public sealed class PdfConformanceTests
         using var fixture = new PdfEngineFixture();
         string input = fixture.CreateDocument("plain.pdf", pages: 1);
 
-        PdfInfoResult result = fixture.Engine.GetInfo(input, new PdfInfoRequest { Details = ["metadata"] });
+        PdfInfoResult result = PdfInfo.Run(fixture.Session, new PdfInfoRequest { Input = input, Details = ["metadata"] });
 
         Assert.DoesNotContain(result.Metadata!.Keys, static key => key.StartsWith("xmp:", StringComparison.Ordinal));
         Assert.NotEqual("Tagged PDF", result.Metadata["title"]);
@@ -365,8 +381,9 @@ public sealed class PdfConformanceTests
         items.SelectMany(static item => OutlineTitles(item).Prepend(item.Title)).ToList();
 
     private static PdfSignResult Sign(PdfEngineFixture fixture, string input, string certificate, string password, string output) =>
-        fixture.Engine.Sign(input, new PdfSignRequest
+        PdfSign.Run(fixture.Session, new PdfSignRequest
         {
+            Input = input,
             Output = TestOutput.At(fixture.File(output)),
             CertificatePath = certificate,
             CertificatePassword = new Secret(password),

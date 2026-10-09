@@ -12,32 +12,19 @@ using DrawingRectangle = System.Drawing.Rectangle;
 
 namespace Aspose.Cli.Product.Pdf.Engine;
 
-// Signing implementation.
-internal sealed class PdfSigningService
+/// <summary>Applies one PKCS#7 signature and verifies the saved field: <c>pdf sign</c>.</summary>
+internal static class PdfSign
 {
-    private readonly OutputPipeline<Document> _outputs;
-    private readonly ResourceBudgetLedger _resourceBudgets;
-    private readonly PdfDocumentLoader _loader;
-
-    internal PdfSigningService(
-        OutputPipeline<Document> outputs,
-        ResourceBudgetLedger resourceBudgets,
-        PdfDocumentLoader loader)
+    internal static PdfSignResult Run(PdfSession session, PdfSignRequest request)
     {
-        _outputs = outputs ?? throw new ArgumentNullException(nameof(outputs));
-        _resourceBudgets = resourceBudgets;
-        _loader = loader;
-    }
-
-    public PdfSignResult Sign(string filePath, PdfSignRequest request)
-    {
-        EnsureCertificate(_resourceBudgets, request.CertificatePath);
+        string filePath = request.Input;
+        EnsureCertificate(session.Budgets, request.CertificatePath);
         // The certificate is read once, through the SDK, which reports a file it cannot open; the
         // signer gets the same bytes that were validated.
-        byte[] certificate = _resourceBudgets.Inputs.ReadAllBytes(request.CertificatePath);
+        byte[] certificate = session.Budgets.Inputs.ReadAllBytes(request.CertificatePath);
         ValidateCertificate(certificate, request.CertificatePassword);
-        LicenseState state = _outputs.License;
-        using LoadedPdf loaded = _loader.Open(filePath, request.Password);
+        LicenseState state = session.Outputs.License;
+        using LoadedPdf loaded = session.Loader.Open(filePath, request.Password);
         _ = PageAt(loaded.Document, request.Page);
         // The signature to verify is the one this command adds: a document may already
         // carry signed fields, and the first of them says nothing about the new one.
@@ -66,7 +53,7 @@ internal sealed class PdfSigningService
         // The facade closes the document when it is disposed, so it outlives the publication,
         // whose pipeline inspects the signed document after the save.
         using var facade = new PdfFileSignature(loaded.Document);
-        using OutputSet<Document> transaction = _outputs.BeginSet([request.Output.Directory], "pdf-sign");
+        using OutputSet<Document> transaction = session.Outputs.BeginSet([request.Output.Directory], "pdf-sign");
         StagedOutput write = transaction.Stage(request.Output.Path, request.Output.Overwrite, loaded.Document, temp =>
         {
             using var pkcs12 = new MemoryStream(certificate, writable: false);
@@ -83,7 +70,7 @@ internal sealed class PdfSigningService
         // The staged candidate is the only readable copy before publication: a supervised
         // worker leaves the target to its parent, so reading it here would find nothing.
         PdfSignatureInfo signed = write.Read(
-            candidate => VerifySignedOutput(candidate, request.Password, alreadySigned));
+            candidate => VerifySignedOutput(session.Loader, candidate, request.Password, alreadySigned));
         transaction.Commit();
         return new PdfSignResult
         {
@@ -110,9 +97,10 @@ internal sealed class PdfSigningService
         };
     }
 
-    private PdfSignatureInfo VerifySignedOutput(string path, Secret? password, IReadOnlySet<string> alreadySigned)
+    private static PdfSignatureInfo VerifySignedOutput(
+        PdfDocumentLoader loader, string path, Secret? password, IReadOnlySet<string> alreadySigned)
     {
-        using LoadedPdf reopened = _loader.OpenPublishedCandidate(path, password);
+        using LoadedPdf reopened = loader.OpenPublishedCandidate(path, password);
         SignatureField? field = SignedFields(reopened.Document)
             .FirstOrDefault(value => !alreadySigned.Contains(value.FullName));
         if (field?.Signature is null)

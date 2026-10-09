@@ -1,4 +1,4 @@
-namespace Aspose.Cli.Product.Pdf.Ports;
+namespace Aspose.Cli.Product.Pdf.Engine;
 
 /// <summary>Bounded deterministic facts from the real PDF text layout.</summary>
 internal sealed record PdfReviewLayout(

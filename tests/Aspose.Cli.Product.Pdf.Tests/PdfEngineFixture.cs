@@ -20,24 +20,24 @@ public sealed class PdfEngineFixture : IDisposable
 {
     public ILicenseGate Gate { get; } = TestLicense.Apply(
         static (resolution, environment) => new PdfLicenseGate(resolution, environment));
-    internal PdfEngine Engine =>
-        ProductTestBudgets.StartEngine<PdfModule, PdfEngine>(
-            (budgets, writer) => new PdfEngine(Outputs(writer), budgets));
+
+    /// <summary>A new session, as one invocation's activation creates it.</summary>
+    internal PdfSession Session =>
+        ProductTestBudgets.StartEngine<PdfModule, PdfSession>(
+            (budgets, writer) => new PdfSession(Outputs(writer), budgets, new PdfDocumentLoader(budgets)));
 
     /// <summary>The write pipeline of one invocation, as the product binding creates it.</summary>
     internal OutputPipeline<Document> Outputs(SafeFileWriter writer) => new(Gate, new PdfEvaluationProfile(), writer);
 
     /// <summary>
-    /// Runs one engine call as a command does: on its own engine and write pipeline, whose
-    /// evaluation disclosure the command template adds to the result.
+    /// Runs one handler as a command does: on its own session, whose write pipeline adds its
+    /// evaluation disclosure to the result.
     /// </summary>
-    internal TResult Disclosed<TResult>(Func<PdfEngine, TResult> call)
+    internal TResult Disclosed<TResult>(Func<PdfSession, TResult> call)
         where TResult : ResultEnvelope
     {
-        OutputPipeline<Document>? outputs = null;
-        PdfEngine engine = ProductTestBudgets.StartEngine<PdfModule, PdfEngine>(
-            (budgets, writer) => new PdfEngine(outputs = Outputs(writer), budgets));
-        return (TResult)outputs!.Disclose(call(engine));
+        PdfSession session = Session;
+        return (TResult)session.Outputs.Disclose(call(session));
     }
 
     public LicenseState LicenseState => Gate.EnsureApplied();

@@ -231,7 +231,7 @@ internal sealed class PdfEditVerifier
         {
             _checked.Add(expected.Id);
             Field? field = output.Form.Fields.FirstOrDefault(item => string.Equals(item.FullName, name, StringComparison.Ordinal));
-            string? actual = field is null ? null : (PdfFormService.RadioGroup(field) ?? field).Value;
+            string? actual = field is null ? null : (PdfForms.RadioGroup(field) ?? field).Value;
             if (!string.Equals(actual, expected.Value, StringComparison.Ordinal))
             {
                 issues.Add(Issue(

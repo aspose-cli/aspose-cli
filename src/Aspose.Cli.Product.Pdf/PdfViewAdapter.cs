@@ -5,7 +5,7 @@ using Aspose.Cli.Sdk.Views;
 namespace Aspose.Cli.Product.Pdf;
 
 /// <summary>Page views and the conservative PDF quality findings of their review.</summary>
-internal sealed class PdfViewAdapter : IProductViewAdapter<IPdfEngine>
+internal sealed class PdfViewAdapter : IProductViewAdapter<PdfSession>
 {
     public IReadOnlyList<ProductView> Views { get; } =
         [new(PdfViews.Pages, "Pages", ViewPartKinds.Image)];
@@ -22,35 +22,33 @@ internal sealed class PdfViewAdapter : IProductViewAdapter<IPdfEngine>
     public IReadOnlyList<ReviewCheck> Checks => PdfReviewChecks.All;
 
     public ViewManifest Render(
-        IPdfEngine port,
+        PdfSession session,
         string filePath,
         ViewRenderRequest request,
         IViewArtifactSink artifacts) =>
-        port.RenderView(filePath, request, artifacts);
+        PdfPagesView.Render(session, filePath, request, artifacts);
 
     public ProductReviewAssessment Assess(
-        IPdfEngine port,
+        PdfSession session,
         string filePath,
         ViewRenderRequest request,
         ViewManifest rendered)
     {
-        PdfInfoResult info = port.GetInfo(filePath, new PdfInfoRequest
+        PdfInfoResult info = PdfInfo.Run(session, new PdfInfoRequest
         {
+            Input = filePath,
             Details = ["forms"],
             Password = request.Password,
         });
         int inspected = rendered.Parts.Count;
-        if (port is not IPdfReviewLayoutPort layoutPort)
-        {
-            throw new InvalidOperationException(
-                "The active PDF engine does not expose the product-owned review layout port.");
-        }
-        PdfReviewLayout layout = layoutPort.InspectReviewLayout(
+        PdfReviewLayout layout = PdfReviewLayouts.Inspect(
+            session,
             filePath,
             request.Password,
             inspected);
-        PdfReadResult read = port.Read(filePath, new PdfReadRequest
+        PdfReadResult read = PdfRead.Run(session, new PdfReadRequest
         {
+            Input = filePath,
             Pages = inspected == 0 ? null : PageRange.Parse($"1-{inspected}"),
             Mode = PdfReadModes.Plain,
             MaxCharacters = 1_000_000,
@@ -68,14 +66,14 @@ internal sealed class PdfViewAdapter : IProductViewAdapter<IPdfEngine>
             findings);
         IReadOnlyList<int> scannedPages = AnalyzeScannedPages(read, findings);
         FormAnalysis forms = AnalyzeForms(
-            port,
+            session,
             filePath,
             request.Password,
             info.Pdf.PageCount,
             info.Forms?.FieldCount ?? 0,
             findings);
         int unembeddedFonts = AnalyzeFonts(
-            port,
+            session,
             filePath,
             request.Password,
             read.Pages,
@@ -274,7 +272,7 @@ internal sealed class PdfViewAdapter : IProductViewAdapter<IPdfEngine>
     }
 
     private static FormAnalysis AnalyzeForms(
-        IPdfEngine port,
+        PdfSession session,
         string filePath,
         Secret? password,
         int pages,
@@ -285,8 +283,9 @@ internal sealed class PdfViewAdapter : IProductViewAdapter<IPdfEngine>
         {
             return new FormAnalysis(0, 0);
         }
-        PdfFormResult form = port.ReadForm(filePath, new PdfFormReadRequest
+        PdfFormResult form = PdfForms.Read(session, new PdfFormReadRequest
         {
+            Input = filePath,
             Password = password,
         });
         int fieldsWithoutPage = form.Fields
@@ -309,7 +308,7 @@ internal sealed class PdfViewAdapter : IProductViewAdapter<IPdfEngine>
     }
 
     private static int AnalyzeFonts(
-        IPdfEngine port,
+        PdfSession session,
         string filePath,
         Secret? password,
         IReadOnlyList<PdfPageText> pages,
@@ -319,8 +318,9 @@ internal sealed class PdfViewAdapter : IProductViewAdapter<IPdfEngine>
         {
             return 0;
         }
-        IReadOnlyList<PdfFontInfo> fonts = port.GetInfo(filePath, new PdfInfoRequest
+        IReadOnlyList<PdfFontInfo> fonts = PdfInfo.Run(session, new PdfInfoRequest
         {
+            Input = filePath,
             Details = ["fonts"],
             Password = password,
         }).Fonts ?? [];

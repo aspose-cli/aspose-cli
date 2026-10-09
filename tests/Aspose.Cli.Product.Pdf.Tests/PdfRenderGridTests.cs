@@ -80,8 +80,9 @@ public sealed class PdfRenderGridTests
         string input = CreatePage(fixture, "blank.pdf", Rotation.None, marker: null);
         string output = fixture.File("grid.jpg");
 
-        PdfRenderResult result = fixture.Engine.Render(input, new PdfRenderRequest
+        PdfRenderResult result = PdfRender.Run(fixture.Session, new PdfRenderRequest
         {
+            Input = input,
             Output = TestOutput.At(output, format: "jpeg"),
             Dpi = 72,
             Grid = 20,
@@ -117,8 +118,9 @@ public sealed class PdfRenderGridTests
         string input = CreatePage(fixture, "blank.pdf", Rotation.None, marker: null);
         string output = fixture.File($"refused.{format}");
 
-        CliException error = Assert.Throws<CliException>(() => fixture.Engine.Render(input, new PdfRenderRequest
+        CliException error = Assert.Throws<CliException>(() => PdfRender.Run(fixture.Session, new PdfRenderRequest
         {
+            Input = input,
             Output = TestOutput.At(output, format: format),
             Grid = spacing,
         }));
@@ -129,8 +131,9 @@ public sealed class PdfRenderGridTests
     }
 
     private static PdfRenderResult Render(PdfEngineFixture fixture, string input, string output, int? grid) =>
-        fixture.Engine.Render(input, new PdfRenderRequest
+        PdfRender.Run(fixture.Session, new PdfRenderRequest
         {
+            Input = input,
             Output = TestOutput.At(output, format: "png"),
             Dpi = 144,
             Grid = grid,
