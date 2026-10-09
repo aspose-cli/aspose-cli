@@ -41,7 +41,8 @@ internal static class PdfEvaluation
     /// <summary>
     /// Runs a PDF command, refusing it with EVALUATION_LIMIT when it reads past the limit. A
     /// command that has no <c>--pages</c> states why it needs a later page and what the user
-    /// can do instead.
+    /// can do instead; an outer run keeps that refusal, as it keeps every error a command
+    /// already explained.
     /// </summary>
     internal static T Run<T>(ILicenseState license, Func<T> command, string? cause = null, string? remedy = null)
     {
@@ -49,7 +50,7 @@ internal static class PdfEvaluation
         {
             return command();
         }
-        catch (Exception exception) when (IsCollectionLimit(exception) && license.IsEvaluation)
+        catch (Exception exception) when (exception is not CliException && IsCollectionLimit(exception) && license.IsEvaluation)
         {
             throw CliErrors.EvaluationLimit(
                 $"Evaluation mode lets the PDF engine read only the first {VisiblePages} pages of a document; {cause ?? "this command needs a later page"}, so no output was written.",
