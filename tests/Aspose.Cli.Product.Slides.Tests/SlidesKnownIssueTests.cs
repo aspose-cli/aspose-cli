@@ -198,12 +198,14 @@ public sealed class SlidesKnownIssueTests
         File.Copy(ImplicitTitleDeck, input);
         string plain = fixture.CreatePresentation("plain.pptx", slides: 1);
 
-        SlidesConvertResult affected = fixture.Engine.Convert(input, new PresentationConvertRequest
+        SlidesConvertResult affected = SlidesExport.Convert(fixture.Session, new PresentationConvertRequest
         {
+            Input = input,
             Output = TestOutput.At(fixture.File("implicit-title.pdf"), format: "pdf"),
         });
-        SlidesConvertResult unaffected = fixture.Engine.Convert(plain, new PresentationConvertRequest
+        SlidesConvertResult unaffected = SlidesExport.Convert(fixture.Session, new PresentationConvertRequest
         {
+            Input = plain,
             Output = TestOutput.At(fixture.File("plain.pdf"), format: "pdf"),
         });
 

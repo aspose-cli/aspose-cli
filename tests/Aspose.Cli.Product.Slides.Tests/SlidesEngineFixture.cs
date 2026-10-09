@@ -16,25 +16,25 @@ public sealed class SlidesEngineFixture : IDisposable
 {
     public ILicenseGate Gate { get; } = TestLicense.Apply(
         static (resolution, environment) => new SlidesLicenseGate(resolution, environment));
-    internal SlidesEngine Engine =>
-        ProductTestBudgets.StartEngine<SlidesModule, SlidesEngine>(
-            (budgets, writer) => new SlidesEngine(Outputs(writer), budgets));
+    /// <summary>A fresh session of one invocation, as the product activation creates it.</summary>
+    internal SlidesSession Session =>
+        ProductTestBudgets.StartEngine<SlidesModule, SlidesSession>(
+            (budgets, writer) => new SlidesSession(Outputs(writer), budgets, new SlidesPresentationLoader(budgets)));
 
     /// <summary>The write pipeline of one invocation, as the product binding creates it.</summary>
     internal OutputPipeline<Presentation> Outputs(SafeFileWriter writer) => new(Gate, new SlidesEvaluationProfile(), writer);
 
     /// <summary>
-    /// Runs one engine call as a command does: on its own engine and write pipeline, whose
-    /// evaluation disclosure the command template adds to the result.
+    /// Runs one handler as a command does: on its own session and write pipeline, whose
+    /// evaluation disclosure the SDK adds to the result.
     /// </summary>
-    internal TResult Disclosed<TResult>(Func<SlidesEngine, TResult> call)
+    internal TResult Disclosed<TResult>(Func<SlidesSession, TResult> call)
         where TResult : ResultEnvelope
     {
-        OutputPipeline<Presentation>? outputs = null;
-        SlidesEngine engine = ProductTestBudgets.StartEngine<SlidesModule, SlidesEngine>(
-            (budgets, writer) => new SlidesEngine(outputs = Outputs(writer), budgets));
-        return (TResult)outputs!.Disclose(call(engine));
+        SlidesSession session = Session;
+        return (TResult)session.Outputs.Disclose(call(session));
     }
+
     public LicenseState LicenseState => Gate.EnsureApplied();
 
     /// <summary>

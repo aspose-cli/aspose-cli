@@ -19,10 +19,12 @@ public sealed class SlidesTextCoverageTests
         string input = CreateDeck(fixture);
         string output = fixture.File("replaced.pptx");
 
-        SlidesEditResult result = fixture.Engine.ApplyOps(
-            input,
-            new SlidesOpsBatch { Ops = [new SlidesReplaceTextOp { Find = "bc", Replace = "Q" }] },
-            new PresentationEditRequest { Output = TestOutput.At(output) });
+        SlidesEditResult result = SlidesEdit.Run(fixture.Session, new PresentationEditRequest
+        {
+            Input = input,
+            Batch = new SlidesOpsBatch { Ops = [new SlidesReplaceTextOp { Find = "bc", Replace = "Q" }] },
+            Output = TestOutput.At(output),
+        });
 
         Assert.Equal(1, Assert.Single(result.Applied).ItemsAffected);
         using var deck = new Presentation(output);
@@ -40,9 +42,10 @@ public sealed class SlidesTextCoverageTests
         using var fixture = new SlidesEngineFixture();
         string input = CreateDeck(fixture);
 
-        SlidesEditResult result = fixture.Engine.ApplyOps(
-            input,
-            new SlidesOpsBatch
+        SlidesEditResult result = SlidesEdit.Run(fixture.Session, new PresentationEditRequest
+        {
+            Input = input,
+            Batch = new SlidesOpsBatch
             {
                 Ops =
                 [
@@ -50,7 +53,8 @@ public sealed class SlidesTextCoverageTests
                     new SlidesReplaceTextOp { Find = "q", Replace = "z" },
                 ],
             },
-            new PresentationEditRequest { Output = TestOutput.At(fixture.File("unmatched.pptx")) });
+            Output = TestOutput.At(fixture.File("unmatched.pptx")),
+        });
 
         // Only the first operation matched nothing: "bc" is on the slide, not in its notes.
         Assert.Equal([0L, 4L], result.Applied.Select(static outcome => outcome.ItemsAffected));
@@ -67,9 +71,10 @@ public sealed class SlidesTextCoverageTests
         string input = CreateDeck(fixture);
         string output = fixture.File("covered.pptx");
 
-        SlidesEditResult result = fixture.Engine.ApplyOps(
-            input,
-            new SlidesOpsBatch
+        SlidesEditResult result = SlidesEdit.Run(fixture.Session, new PresentationEditRequest
+        {
+            Input = input,
+            Batch = new SlidesOpsBatch
             {
                 Ops =
                 [
@@ -77,7 +82,8 @@ public sealed class SlidesTextCoverageTests
                     new SlidesReplaceTextOp { Find = "(t)y", Replace = "$1Y", Regex = true },
                 ],
             },
-            new PresentationEditRequest { Output = TestOutput.At(output) });
+            Output = TestOutput.At(output),
+        });
 
         Assert.Equal([4L, 1L], result.Applied.Select(static outcome => outcome.ItemsAffected));
         using var deck = new Presentation(output);
@@ -98,15 +104,15 @@ public sealed class SlidesTextCoverageTests
         using var fixture = new SlidesEngineFixture();
         string input = CreateDeck(fixture);
 
-        PresentationReadResult read = fixture.Engine.Read(
-            input,
-            new PresentationReadRequest { Scope = PresentationReadScopes.Full });
-        SlidesSearchResult search = fixture.Engine.Search(
-            input,
-            new PresentationSearchRequest { Query = new SearchQuery(TextSearch.Create("q", regex: false, caseSensitive: true), 100, PresentationSearchScopes.Shapes) });
-        SlidesExtractResult extract = fixture.Engine.Extract(
-            input,
-            new PresentationExtractRequest { Output = new ResolvedDirectory(fixture.File("text")), What = PresentationExtractKinds.Text });
+        PresentationReadResult read = SlidesRead.Run(
+            fixture.Session,
+            new PresentationReadRequest { Input = input, Scope = PresentationReadScopes.Full });
+        SlidesSearchResult search = SlidesSearch.Run(
+            fixture.Session,
+            new PresentationSearchRequest { Input = input, Query = new SearchQuery(TextSearch.Create("q", regex: false, caseSensitive: true), 100, PresentationSearchScopes.Shapes) });
+        SlidesExtractResult extract = SlidesExtract.Run(
+            fixture.Session,
+            new PresentationExtractRequest { Input = input, Output = new ResolvedDirectory(fixture.File("text")), What = PresentationExtractKinds.Text });
 
         SlideShapeData[] shapes = Assert.Single(read.Slides).Shapes.ToArray();
         Assert.Contains(shapes, static shape => shape.Type == "table" && shape.Text == "tq ty");
@@ -133,12 +139,12 @@ public sealed class SlidesTextCoverageTests
             presentation.Save(input, SaveFormat.Pptx);
         }
 
-        SlidesExtractResult extract = fixture.Engine.Extract(
-            input,
-            new PresentationExtractRequest { Output = new ResolvedDirectory(fixture.File("text")), What = PresentationExtractKinds.Text });
-        SlidesSearchResult search = fixture.Engine.Search(
-            input,
-            new PresentationSearchRequest { Query = new SearchQuery(TextSearch.Create("cd", regex: false, caseSensitive: true), 100, PresentationSearchScopes.Shapes) });
+        SlidesExtractResult extract = SlidesExtract.Run(
+            fixture.Session,
+            new PresentationExtractRequest { Input = input, Output = new ResolvedDirectory(fixture.File("text")), What = PresentationExtractKinds.Text });
+        SlidesSearchResult search = SlidesSearch.Run(
+            fixture.Session,
+            new PresentationSearchRequest { Input = input, Query = new SearchQuery(TextSearch.Create("cd", regex: false, caseSensitive: true), 100, PresentationSearchScopes.Shapes) });
 
         string text = File.ReadAllText(Assert.Single(extract.Items).Path);
         Assert.DoesNotContain('\r', text);
@@ -163,7 +169,7 @@ public sealed class SlidesTextCoverageTests
             source.Save(input, SaveFormat.Pptx);
         }
 
-        PresentationReadResult read = fixture.Engine.Read(input, new PresentationReadRequest { Scope = PresentationReadScopes.Full });
+        PresentationReadResult read = SlidesRead.Run(fixture.Session, new PresentationReadRequest { Input = input, Scope = PresentationReadScopes.Full });
 
         Assert.Equal(
             ["#1B2A41", "#000000"],
@@ -185,7 +191,7 @@ public sealed class SlidesTextCoverageTests
             source.Save(input, SaveFormat.Pptx);
         }
 
-        PresentationReadResult read = fixture.Engine.Read(input, new PresentationReadRequest { Scope = PresentationReadScopes.Full });
+        PresentationReadResult read = SlidesRead.Run(fixture.Session, new PresentationReadRequest { Input = input, Scope = PresentationReadScopes.Full });
 
         SlideTextRunData run = Assert.Single(read.Slides[0].Shapes.Single(static shape => !shape.EvaluationWatermark).Runs!);
         Assert.Equal("Calibri", run.Font);
@@ -199,15 +205,15 @@ public sealed class SlidesTextCoverageTests
         string input = fixture.CreatePresentation("long-text.pptx", slides: 1);
         string output = fixture.File("long-text-replaced.pptx");
         var batch = new SlidesOpsBatch { Ops = [new SlidesReplaceTextOp { Find = "Slide 1", Replace = "Intro" }] };
-        var request = new PresentationEditRequest { Output = TestOutput.At(output) };
+        var request = new PresentationEditRequest { Input = input, Batch = batch, Output = TestOutput.At(output) };
 
         if (fixture.LicenseState == Sdk.Licensing.LicenseState.Licensed)
         {
-            Assert.Equal(1, Assert.Single(fixture.Engine.ApplyOps(input, batch, request).Applied).ItemsAffected);
+            Assert.Equal(1, Assert.Single(SlidesEdit.Run(fixture.Session, request).Applied).ItemsAffected);
             return;
         }
 
-        CliException error = Assert.Throws<CliException>(() => fixture.Engine.ApplyOps(input, batch, request));
+        CliException error = Assert.Throws<CliException>(() => SlidesEdit.Run(fixture.Session, request));
         Assert.Equal(ErrorCodes.EvaluationLimit, error.Code);
         Assert.Contains("replace_text", error.Message, StringComparison.Ordinal);
         Assert.False(File.Exists(output));

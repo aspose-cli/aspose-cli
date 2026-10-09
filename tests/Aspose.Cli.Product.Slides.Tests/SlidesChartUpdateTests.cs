@@ -24,19 +24,24 @@ public sealed class SlidesChartUpdateTests
         });
         string output = fixture.File("updated.pptx");
 
-        fixture.Engine.ApplyOps(seed, new SlidesOpsBatch
+        SlidesEdit.Run(fixture.Session, new PresentationEditRequest
         {
-            Ops =
-            [
-                new UpdateChartDataOp
-                {
-                    Slide = 1,
-                    ShapeId = ChartId(seed),
-                    Categories = ["N", "S", "E", "W", "C"],
-                    Series = [new SlidesChartSeriesInput { Name = "Rev", Values = [5, 4, 3, 2, 1] }],
-                },
-            ],
-        }, new PresentationEditRequest { Output = TestOutput.At(output) });
+            Input = seed,
+            Batch = new SlidesOpsBatch
+            {
+                Ops =
+                [
+                    new UpdateChartDataOp
+                    {
+                        Slide = 1,
+                        ShapeId = ChartId(seed),
+                        Categories = ["N", "S", "E", "W", "C"],
+                        Series = [new SlidesChartSeriesInput { Name = "Rev", Values = [5, 4, 3, 2, 1] }],
+                    },
+                ],
+            },
+            Output = TestOutput.At(output),
+        });
 
         using var deck = new Presentation(output);
         IChart chart = Chart(deck);
@@ -60,23 +65,28 @@ public sealed class SlidesChartUpdateTests
         });
         string output = fixture.File("line.pptx");
 
-        fixture.Engine.ApplyOps(seed, new SlidesOpsBatch
+        SlidesEdit.Run(fixture.Session, new PresentationEditRequest
         {
-            Ops =
-            [
-                new UpdateChartDataOp
-                {
-                    Slide = 1,
-                    ShapeId = ChartId(seed),
-                    Series =
-                    [
-                        new SlidesChartSeriesInput { Name = "One", Values = [7, 8, 9] },
-                        new SlidesChartSeriesInput { Name = "Two", Values = [1, 2, 3] },
-                        new SlidesChartSeriesInput { Name = "Three", Values = [4, 5, 6] },
-                    ],
-                },
-            ],
-        }, new PresentationEditRequest { Output = TestOutput.At(output) });
+            Input = seed,
+            Batch = new SlidesOpsBatch
+            {
+                Ops =
+                [
+                    new UpdateChartDataOp
+                    {
+                        Slide = 1,
+                        ShapeId = ChartId(seed),
+                        Series =
+                        [
+                            new SlidesChartSeriesInput { Name = "One", Values = [7, 8, 9] },
+                            new SlidesChartSeriesInput { Name = "Two", Values = [1, 2, 3] },
+                            new SlidesChartSeriesInput { Name = "Three", Values = [4, 5, 6] },
+                        ],
+                    },
+                ],
+            },
+            Output = TestOutput.At(output),
+        });
 
         using var deck = new Presentation(output);
         IChart chart = Chart(deck);
@@ -95,19 +105,24 @@ public sealed class SlidesChartUpdateTests
         using var fixture = new SlidesEngineFixture();
         string input = fixture.CreatePresentation(slides: 1);
         string seed = fixture.File("scatter.pptx");
-        fixture.Engine.ApplyOps(input, new SlidesOpsBatch
+        SlidesEdit.Run(fixture.Session, new PresentationEditRequest
         {
-            Ops =
-            [
-                new InsertChartOp
-                {
-                    Slide = 1, Kind = "scatter",
-                    Rect = new SlidesRectInput { X = 50, Y = 100, Width = 500, Height = 250 },
-                    Categories = ["A", "B"],
-                    Series = [new SlidesChartSeriesInput { Name = "One", Values = [10, 20], XValues = [1, 2] }],
-                },
-            ],
-        }, new PresentationEditRequest { Output = TestOutput.At(seed) });
+            Input = input,
+            Batch = new SlidesOpsBatch
+            {
+                Ops =
+                [
+                    new InsertChartOp
+                    {
+                        Slide = 1, Kind = "scatter",
+                        Rect = new SlidesRectInput { X = 50, Y = 100, Width = 500, Height = 250 },
+                        Categories = ["A", "B"],
+                        Series = [new SlidesChartSeriesInput { Name = "One", Values = [10, 20], XValues = [1, 2] }],
+                    },
+                ],
+            },
+            Output = TestOutput.At(seed),
+        });
         using (var styled = new Presentation(seed))
         {
             Chart(styled).ChartData.Series[0].Marker.Symbol = MarkerStyleType.Triangle;
@@ -115,17 +130,22 @@ public sealed class SlidesChartUpdateTests
         }
 
         string output = fixture.File("scatter.updated.pptx");
-        fixture.Engine.ApplyOps(seed, new SlidesOpsBatch
+        SlidesEdit.Run(fixture.Session, new PresentationEditRequest
         {
-            Ops =
-            [
-                new UpdateChartDataOp
-                {
-                    Slide = 1, ShapeId = ChartId(seed),
-                    Series = [new SlidesChartSeriesInput { Name = "One", Values = [11, 21, 31], XValues = [1.5, 2.5, 3.5] }],
-                },
-            ],
-        }, new PresentationEditRequest { Output = TestOutput.At(output) });
+            Input = seed,
+            Batch = new SlidesOpsBatch
+            {
+                Ops =
+                [
+                    new UpdateChartDataOp
+                    {
+                        Slide = 1, ShapeId = ChartId(seed),
+                        Series = [new SlidesChartSeriesInput { Name = "One", Values = [11, 21, 31], XValues = [1.5, 2.5, 3.5] }],
+                    },
+                ],
+            },
+            Output = TestOutput.At(output),
+        });
 
         using var deck = new Presentation(output);
         IChartSeries series = Assert.Single(Chart(deck).ChartData.Series);
@@ -142,17 +162,22 @@ public sealed class SlidesChartUpdateTests
         byte[] original = File.ReadAllBytes(seed);
         string output = fixture.File("bubble.pptx");
 
-        CliException error = Assert.Throws<CliException>(() => fixture.Engine.ApplyOps(seed, new SlidesOpsBatch
+        CliException error = Assert.Throws<CliException>(() => SlidesEdit.Run(fixture.Session, new PresentationEditRequest
         {
-            Ops =
-            [
-                new UpdateChartDataOp
-                {
-                    Slide = 1, ShapeId = ChartId(seed),
-                    Series = [new SlidesChartSeriesInput { Name = "One", Values = [1, 2, 3], XValues = [1, 2, 3] }],
-                },
-            ],
-        }, new PresentationEditRequest { Output = TestOutput.At(output) }));
+            Input = seed,
+            Batch = new SlidesOpsBatch
+            {
+                Ops =
+                [
+                    new UpdateChartDataOp
+                    {
+                        Slide = 1, ShapeId = ChartId(seed),
+                        Series = [new SlidesChartSeriesInput { Name = "One", Values = [1, 2, 3], XValues = [1, 2, 3] }],
+                    },
+                ],
+            },
+            Output = TestOutput.At(output),
+        }));
 
         Assert.Equal(SlidesDiagnostics.ChartDataInvalid, error.Code);
         Assert.Contains("insert_chart", error.Message, StringComparison.Ordinal);

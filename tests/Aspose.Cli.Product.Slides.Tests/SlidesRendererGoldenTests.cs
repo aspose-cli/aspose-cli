@@ -1,4 +1,4 @@
-using Aspose.Cli.Product.Slides.Output;
+using Aspose.Cli.Product.Slides.Commands;
 using Aspose.Cli.Sdk.Extensibility.Output;
 using Xunit;
 
@@ -13,7 +13,7 @@ public sealed class SlidesRendererGoldenTests
     [Fact]
     public void Info_WithEveryDetail_Plain()
     {
-        string text = RenderedText.Of(surface => SlidesRenderers.Render(InfoWithDetails(), surface), TableFormat.Plain);
+        string text = RenderedText.Of(surface => InfoCommand.Table(InfoWithDetails(), surface), TableFormat.Plain);
 
         RenderedText.Equal(
             """
@@ -67,7 +67,7 @@ public sealed class SlidesRendererGoldenTests
     [Fact]
     public void Info_WithEveryDetail_Markdown()
     {
-        string text = RenderedText.Of(surface => SlidesRenderers.Render(InfoWithDetails(), surface), TableFormat.Markdown);
+        string text = RenderedText.Of(surface => InfoCommand.Table(InfoWithDetails(), surface), TableFormat.Markdown);
 
         RenderedText.Equal(
             """
@@ -143,7 +143,7 @@ public sealed class SlidesRendererGoldenTests
             Properties = new Dictionary<string, string?>(),
         };
 
-        string text = RenderedText.Of(surface => SlidesRenderers.Render(result, surface), TableFormat.Plain);
+        string text = RenderedText.Of(surface => InfoCommand.Table(result, surface), TableFormat.Plain);
 
         RenderedText.Equal(
             """
@@ -185,7 +185,7 @@ public sealed class SlidesRendererGoldenTests
     [Fact]
     public void Info_WithoutDetails_PrintsOnlyTheSummary()
     {
-        string text = RenderedText.Of(surface => SlidesRenderers.Render(Info(), surface), TableFormat.Plain);
+        string text = RenderedText.Of(surface => InfoCommand.Table(Info(), surface), TableFormat.Plain);
 
         RenderedText.Equal(
             """
@@ -226,7 +226,7 @@ public sealed class SlidesRendererGoldenTests
             ],
         };
 
-        string text = RenderedText.Of(surface => SlidesRenderers.Render(result, surface), TableFormat.Plain);
+        string text = RenderedText.Of(surface => ReadCommand.Table(result, surface), TableFormat.Plain);
 
         RenderedText.Equal(
             """
@@ -255,7 +255,7 @@ public sealed class SlidesRendererGoldenTests
             SlidesTouched = [256, 258],
         };
 
-        string text = RenderedText.Of(surface => SlidesRenderers.Render(result, surface), TableFormat.Plain);
+        string text = RenderedText.Of(surface => EditCommand.Table(result, surface), TableFormat.Plain);
 
         RenderedText.Equal(
             """

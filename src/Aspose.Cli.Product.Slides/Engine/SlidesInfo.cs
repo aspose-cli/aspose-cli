@@ -5,27 +5,16 @@ using static Aspose.Cli.Product.Slides.Engine.SlidesEngineSupport;
 
 namespace Aspose.Cli.Product.Slides.Engine;
 
-/// <summary>Owns presentation info and bounded content-window reads.</summary>
-internal sealed class SlidesReadService
+/// <summary>Presentation structure, stable slide ids and the requested detail inventories.</summary>
+internal static class SlidesInfo
 {
     /// <summary>The most entries the <c>media</c> detail lists; <c>extract --what media</c> exports them all.</summary>
     internal const int MediaListLimit = 100;
 
-    private readonly ILicenseState _license;
-    private readonly SlidesPresentationLoader _loader;
-
-    internal SlidesReadService(
-        ILicenseState license,
-        SlidesPresentationLoader loader)
+    internal static PresentationInfoResult Run(SlidesSession session, PresentationInfoRequest request)
     {
-        _license = license ?? throw new ArgumentNullException(nameof(license));
-        _loader = loader;
-    }
-
-    internal PresentationInfoResult GetInfo(string filePath, PresentationInfoRequest request)
-    {
-        LicenseState state = _license.License;
-        using LoadedPresentation loaded = _loader.Open(filePath, request.Password);
+        LicenseState state = session.Outputs.License;
+        using LoadedPresentation loaded = session.Loader.Open(request.Input, request.Password);
         Presentation presentation = loaded.Presentation;
         bool Details(string name) => request.Details?.Contains(name, StringComparer.Ordinal) == true;
         IComment[] comments = Comments(presentation);
@@ -38,7 +27,7 @@ internal sealed class SlidesReadService
 
         return new PresentationInfoResult
         {
-            Source = Source(filePath, loaded.FormatId),
+            Source = Source(request.Input, loaded.FormatId),
             Presentation = new PresentationSummary
             {
                 SlideCount = presentation.Slides.Count,
@@ -115,57 +104,6 @@ internal sealed class SlidesReadService
                             "Run 'aspose-cli slides extract <presentation> --what media --out <directory>' to export every media item."),
                     ]
                     : null),
-        };
-    }
-
-    internal PresentationReadResult Read(string filePath, PresentationReadRequest request)
-    {
-        LicenseState state = _license.License;
-        using LoadedPresentation loaded = _loader.Open(filePath, request.Password);
-        Presentation presentation = loaded.Presentation;
-        IReadOnlyList<int> requested = request.Slides is null
-            ? Enumerable.Range(1, Math.Min(10, presentation.Slides.Count)).ToArray()
-            : ResolveSlideRange(request.Slides, presentation.Slides.Count);
-        IComment[] comments = Comments(presentation);
-        int remaining = request.MaxCharacters;
-        var slides = new List<SlideData>();
-        foreach (int number in requested)
-        {
-            SlideData projected = ProjectSlide(
-                presentation.Slides[number - 1],
-                number,
-                request.Scope,
-                request.IncludeNotes,
-                comments,
-                ref remaining);
-            slides.Add(projected);
-            if (remaining <= 0)
-            {
-                break;
-            }
-        }
-
-        // Without --slides the selection is every slide, of which a read returns at most ten.
-        int selected = request.Slides is null ? presentation.Slides.Count : requested.Count;
-        int last = slides.Count == 0 ? 0 : slides[^1].Slide;
-        bool selectionTruncated = slides.Count < requested.Count;
-        bool defaultWindowTruncated = request.Slides is null && last < presentation.Slides.Count;
-        bool truncated = selectionTruncated || defaultWindowTruncated || slides.Any(static slide => slide.ContentTruncated);
-        return new PresentationReadResult
-        {
-            Source = Source(filePath, loaded.FormatId),
-            Scope = request.Scope,
-            SlideCount = presentation.Slides.Count,
-            Slides = slides,
-            Window = new ResultWindow
-            {
-                Unit = "slide",
-                Returned = slides.Count,
-                Total = selected,
-                Truncated = truncated,
-            },
-            License = EnvelopeParts.License(state),
-            Warnings = InputWarnings(state, loaded, textRead: true),
         };
     }
 }

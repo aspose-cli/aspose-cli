@@ -1,12 +1,12 @@
 using Aspose.Cli.Product.Slides.Contracts;
-using Aspose.Cli.Product.Slides.Output;
+using Aspose.Cli.Product.Slides.Commands;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Extensibility.Output;
 using Xunit;
 
 namespace Aspose.Cli.Product.Slides.Tests;
 
-public sealed class SlidesRenderersTests
+public sealed class SlidesInfoTableTests
 {
     [Theory]
     [InlineData(TableFormat.Plain, "")]
@@ -33,7 +33,7 @@ public sealed class SlidesRenderersTests
         };
         using var writer = new StringWriter();
 
-        SlidesRenderers.Render(result, new TableSurface(writer, format));
+        InfoCommand.Table(result, new TableSurface(writer, format));
 
         string text = writer.ToString().Replace(Environment.NewLine, "\n", StringComparison.Ordinal);
         string colon = heading.Length == 0 ? ":" : string.Empty;

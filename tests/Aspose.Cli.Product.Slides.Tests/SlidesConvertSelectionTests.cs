@@ -22,8 +22,9 @@ public sealed class SlidesConvertSelectionTests
         }
 
         string output = fixture.File($"selected.{format}");
-        SlidesConvertResult result = fixture.Engine.Convert(input, new PresentationConvertRequest
+        SlidesConvertResult result = SlidesExport.Convert(fixture.Session, new PresentationConvertRequest
         {
+            Input = input,
             Output = TestOutput.At(output, format: format),
             Slides = PageRange.Parse("2-3"),
         });
@@ -47,8 +48,9 @@ public sealed class SlidesConvertSelectionTests
         string input = fixture.CreatePresentation("locked.pptx", slides: 2, password: "secret");
         string output = fixture.File("locked.selected.pptx");
 
-        fixture.Engine.Convert(input, new PresentationConvertRequest
+        SlidesExport.Convert(fixture.Session, new PresentationConvertRequest
         {
+            Input = input,
             Output = TestOutput.At(output, format: "pptx"),
             Slides = PageRange.Parse("1"),
             Password = new Secret("secret"),

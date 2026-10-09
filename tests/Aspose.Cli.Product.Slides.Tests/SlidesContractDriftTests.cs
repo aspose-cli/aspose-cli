@@ -48,13 +48,15 @@ public sealed class SlidesContractDriftTests
             deck.Save(input, SaveFormat.Pptx);
         }
 
-        SlidesExtractResult all = fixture.Engine.Extract(input, new PresentationExtractRequest
+        SlidesExtractResult all = SlidesExtract.Run(fixture.Session, new PresentationExtractRequest
         {
+            Input = input,
             Output = new ResolvedDirectory(fixture.File("all")),
             What = PresentationExtractKinds.Media,
         });
-        SlidesExtractResult selected = fixture.Engine.Extract(input, new PresentationExtractRequest
+        SlidesExtractResult selected = SlidesExtract.Run(fixture.Session, new PresentationExtractRequest
         {
+            Input = input,
             Output = new ResolvedDirectory(fixture.File("selected")),
             What = PresentationExtractKinds.Media,
             Slides = PageRange.Parse("2"),
@@ -72,7 +74,7 @@ public sealed class SlidesContractDriftTests
         using var fixture = new SlidesEngineFixture();
         string input = fixture.CreatePresentation("many-media.pptx", slides: 1);
         byte[] png = SlidesEngineFixture.Png(8);
-        int count = SlidesReadService.MediaListLimit + 1;
+        int count = SlidesInfo.MediaListLimit + 1;
         using (var deck = new Presentation(input))
         {
             // Trailing bytes after IEND keep each image distinct without re-rendering it; a picture
@@ -86,10 +88,10 @@ public sealed class SlidesContractDriftTests
             deck.Save(input, SaveFormat.Pptx);
         }
 
-        PresentationInfoResult info = fixture.Engine.GetInfo(input, new PresentationInfoRequest { Details = ["media"] });
+        PresentationInfoResult info = SlidesInfo.Run(fixture.Session, new PresentationInfoRequest { Input = input, Details = ["media"] });
 
         Assert.Equal(count, info.Presentation.MediaCount);
-        Assert.Equal(SlidesReadService.MediaListLimit, info.Media!.Count);
+        Assert.Equal(SlidesInfo.MediaListLimit, info.Media!.Count);
         Warning warning = Assert.Single(info.Warnings ?? [], static warning => warning.Code == WarningCodes.ListTruncated);
         Assert.Equal("media", warning.Location);
         Assert.Contains("--what media", warning.Hint, StringComparison.Ordinal);
@@ -104,11 +106,13 @@ public sealed class SlidesContractDriftTests
         File.WriteAllBytes(picture, SlidesEngineFixture.Png(40));
         string output = fixture.File("alt.out.pptx");
 
-        fixture.Engine.ApplyOps(
-            input,
-            new SlidesOpsBatch { Ops = [new SlidesInsertImageOp { Slide = 1, Path = picture, AltText = "Logo" }] },
-            new PresentationEditRequest { Output = TestOutput.At(output) });
-        PresentationReadResult read = fixture.Engine.Read(output, new PresentationReadRequest { Scope = PresentationReadScopes.Shapes });
+        SlidesEdit.Run(fixture.Session, new PresentationEditRequest
+        {
+            Input = input,
+            Batch = new SlidesOpsBatch { Ops = [new SlidesInsertImageOp { Slide = 1, Path = picture, AltText = "Logo" }] },
+            Output = TestOutput.At(output),
+        });
+        PresentationReadResult read = SlidesRead.Run(fixture.Session, new PresentationReadRequest { Input = output, Scope = PresentationReadScopes.Shapes });
 
         SlideShapeData image = Assert.Single(Assert.Single(read.Slides).Shapes, static shape => shape.Type == "image");
         Assert.Equal("Logo", image.AltText);

@@ -6,6 +6,8 @@ namespace Aspose.Cli.Product.Slides.Contracts;
 /// <summary>Options for presentation structure inspection.</summary>
 public sealed record PresentationInfoRequest
 {
+    /// <summary>The presentation the command reads.</summary>
+    public required string Input { get; init; }
     public bool IncludePreview { get; init; }
     public IReadOnlyList<string>? Details { get; init; }
     public Secret? Password { get; init; }
@@ -14,6 +16,8 @@ public sealed record PresentationInfoRequest
 /// <summary>Options for a bounded presentation read.</summary>
 public sealed record PresentationReadRequest
 {
+    /// <summary>The presentation the command reads.</summary>
+    public required string Input { get; init; }
     public PageRange? Slides { get; init; }
     public string Scope { get; init; } = PresentationReadScopes.Shapes;
     public bool IncludeNotes { get; init; }
@@ -25,6 +29,8 @@ public sealed record PresentationReadRequest
 /// <summary>Options for presentation conversion.</summary>
 public sealed record PresentationConvertRequest
 {
+    /// <summary>The presentation the command reads.</summary>
+    public required string Input { get; init; }
     /// <summary>The resolved output: its format, path and overwrite permission.</summary>
     public required ResolvedOutput Output { get; init; }
     public PageRange? Slides { get; init; }
@@ -35,6 +41,8 @@ public sealed record PresentationConvertRequest
 /// <summary>Options for rendering one or more slides.</summary>
 public sealed record PresentationRenderRequest
 {
+    /// <summary>The presentation the command reads.</summary>
+    public required string Input { get; init; }
     /// <summary>The resolved output: its format, path and overwrite permission.</summary>
     public required ResolvedOutput Output { get; init; }
     public PageRange? Slides { get; init; }
@@ -58,6 +66,8 @@ public sealed record NewPresentationRequest
 /// <summary>Options for extracting bounded presentation content.</summary>
 public sealed record PresentationExtractRequest
 {
+    /// <summary>The presentation the command reads.</summary>
+    public required string Input { get; init; }
     public required string What { get; init; }
     /// <summary>The resolved directory that receives the files.</summary>
     public required ResolvedDirectory Output { get; init; }
@@ -68,6 +78,10 @@ public sealed record PresentationExtractRequest
 /// <summary>Options for one atomic presentation edit batch.</summary>
 public sealed record PresentationEditRequest
 {
+    /// <summary>The presentation the command edits.</summary>
+    public required string Input { get; init; }
+    /// <summary>The validated operation batch.</summary>
+    public required SlidesOpsBatch Batch { get; init; }
     /// <summary>The resolved output: its format, path, overwrite permission and in-place backup.</summary>
     public required ResolvedOutput Output { get; init; }
     public EditCommandOptions Options { get; init; } = new();
@@ -78,6 +92,8 @@ public sealed record PresentationEditRequest
 /// <summary>Options for bounded shape and notes search.</summary>
 public sealed record PresentationSearchRequest
 {
+    /// <summary>The presentation the command reads.</summary>
+    public required string Input { get; init; }
     /// <summary>The pattern, hit window and scope (one of <see cref="PresentationSearchScopes.Values"/>).</summary>
     public required SearchQuery Query { get; init; }
     public Secret? Password { get; init; }

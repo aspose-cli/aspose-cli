@@ -7,34 +7,18 @@ using static Aspose.Cli.Product.Slides.Engine.SlidesEngineSupport;
 
 namespace Aspose.Cli.Product.Slides.Engine;
 
-/// <summary>Owns validated presentation mutation and verification.</summary>
-internal sealed class SlidesMutationService
+/// <summary>Validated, atomic presentation mutation and verification.</summary>
+internal static class SlidesEdit
 {
-    private readonly OutputPipeline<Presentation> _outputs;
-    private readonly ResourceBudgetLedger _resourceBudgets;
-    private readonly SlidesPresentationLoader _loader;
-
-    internal SlidesMutationService(
-        OutputPipeline<Presentation> outputs,
-        ResourceBudgetLedger resourceBudgets,
-        SlidesPresentationLoader loader)
+    internal static SlidesEditResult Run(SlidesSession session, PresentationEditRequest request)
     {
-        _outputs = outputs ?? throw new ArgumentNullException(nameof(outputs));
-        _resourceBudgets = resourceBudgets;
-        _loader = loader;
-    }
-
-    public SlidesEditResult ApplyOps(
-        string filePath,
-        SlidesOpsBatch batch,
-        PresentationEditRequest request)
-    {
-        batch = SlidesOp.Catalog.Prepare(batch);
+        string filePath = request.Input;
+        SlidesOpsBatch batch = SlidesOp.Catalog.Prepare(request.Batch);
         string format = request.Output.Format.Id;
 
-        LicenseState state = _outputs.License;
+        LicenseState state = session.Outputs.License;
         FileWritePrecondition precondition = FileWritePrecondition.Capture(filePath);
-        using LoadedPresentation loaded = _loader.Open(filePath, request.Password);
+        using LoadedPresentation loaded = session.Loader.Open(filePath, request.Password);
         SourceInfo input = Source(filePath, loaded.FormatId);
         FileFingerprints.EnsureUnchanged(filePath, precondition.Fingerprint, input.Fingerprint!);
         FileFingerprints.EnsureMatch(filePath, request.Options.IfMatch, input.Fingerprint!);
@@ -42,8 +26,8 @@ internal sealed class SlidesMutationService
         IReadOnlyList<SlidesMutationHandlers.ResolvedSlidesOp> resolved = SlidesMutationHandlers.ResolveBatch(presentation, batch);
         var touched = new HashSet<uint>();
         var warnings = new List<Warning>();
-        IReadOnlyList<BoundedOperationOutcome> outcomes = ApplyOperations(presentation, resolved, request.Options.BestEffort, touched, warnings, state);
-        EditPublication publication = Publish(loaded, request, format, precondition);
+        IReadOnlyList<BoundedOperationOutcome> outcomes = ApplyOperations(session, presentation, resolved, request.Options.BestEffort, touched, warnings, state);
+        EditPublication publication = Publish(session, loaded, request, format, precondition);
 
         return new SlidesEditResult
         {
@@ -60,7 +44,8 @@ internal sealed class SlidesMutationService
         };
     }
 
-    private IReadOnlyList<BoundedOperationOutcome> ApplyOperations(
+    private static IReadOnlyList<BoundedOperationOutcome> ApplyOperations(
+        SlidesSession session,
         Presentation presentation,
         IReadOnlyList<SlidesMutationHandlers.ResolvedSlidesOp> resolved,
         bool bestEffort,
@@ -77,7 +62,7 @@ internal sealed class SlidesMutationService
                 SlidesMutationHandlers.ResolvedSlidesOp item = resolved[index];
                 var operationTouched = new SortedSet<uint>();
                 long affected = new SlidesMutationHandlers(
-                    _resourceBudgets.Inputs, _loader, presentation, item, operationTouched, warnings, state == LicenseState.Evaluation).Run();
+                    session.Budgets.Inputs, session.Loader, presentation, item, operationTouched, warnings, state == LicenseState.Evaluation).Run();
                 touched.UnionWith(operationTouched);
                 return new AppliedOperation(affected, OperationTargets(item, operationTouched));
             },
@@ -109,7 +94,8 @@ internal sealed class SlidesMutationService
             : ["presentation"];
     }
 
-    private EditPublication Publish(
+    private static EditPublication Publish(
+        SlidesSession session,
         LoadedPresentation loaded,
         PresentationEditRequest request,
         string format,
@@ -121,7 +107,7 @@ internal sealed class SlidesMutationService
         {
             Presentation presentation = loaded.Presentation;
             Encrypt(presentation, request.EncryptPassword);
-            using OutputSet<Presentation> transaction = _outputs.BeginSet([request.Output.Directory], "slides-edit");
+            using OutputSet<Presentation> transaction = session.Outputs.BeginSet([request.Output.Directory], "slides-edit");
             StagedOutput write = transaction.Stage(
                 request.Output.Path,
                 request.Output.Overwrite,
@@ -130,7 +116,7 @@ internal sealed class SlidesMutationService
                 {
                     presentation.Save(temp, SaveFormatFor(format));
                     loaded.Resources.ThrowIfFailed();
-                    using LoadedPresentation reopened = _loader.OpenPublishedCandidate(
+                    using LoadedPresentation reopened = session.Loader.OpenPublishedCandidate(
                         temp,
                         request.EncryptPassword ?? request.Password);
                 },

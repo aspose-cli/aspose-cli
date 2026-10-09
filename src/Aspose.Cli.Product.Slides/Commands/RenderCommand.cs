@@ -1,25 +1,24 @@
 using System.CommandLine;
 using Aspose.Cli.Sdk.Errors;
-using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.Extensibility.Commanding;
+using Aspose.Cli.Sdk.Extensibility.Output;
 using Aspose.Cli.Sdk.IO;
 
 namespace Aspose.Cli.Product.Slides.Commands;
 
 internal static class RenderCommand
 {
-    public static Command Create(IProductCommandHost<ISlidesEngine> host)
+    public static CommandDefinition<PresentationRenderRequest, SlidesRenderResult> Create()
     {
         var slides = new PartSelectionOptions("slide");
         var dpi = new DpiOption();
         var width = new Option<int?>("--width") { Description = "Exact raster width in pixels (64-20000); replaces --dpi." };
-        return StandardCommand.Create(
-            host,
+        return new(
             "render",
             "Render one or more slides for visual verification.",
             new CommandTraits
             {
-                Input = SlidesCommands.Presentation,
+                Input = SlidesInputs.Presentation,
                 Output = OutputTarget.File("Output path; multi-slide output adds .sN before the extension."),
                 UsesFonts = true,
                 Target = TargetFormat.Render("png, jpeg or svg.", SlidesFormats.Definitions),
@@ -47,15 +46,27 @@ internal static class RenderCommand
                     throw CliErrors.Usage(["SVG is vector output; omit --dpi and --width."]);
                 }
 
-                return standard.OpenEngine().Render(standard.Input, new PresentationRenderRequest
+                return new PresentationRenderRequest
                 {
+                    Input = standard.Input,
                     Output = output,
                     Slides = selection.Range,
                     AllSlides = selection.All,
                     Dpi = pixelWidth is null ? resolution : null,
                     Width = pixelWidth,
                     Password = standard.InputPassword,
-                });
-            });
+                };
+            },
+            Table);
+    }
+
+    internal static void Table(SlidesRenderResult result, TableSurface surface)
+    {
+        foreach (SlideRenderOutput item in result.Outputs)
+        {
+            surface.Out.WriteLine(
+                $"rendered slide {item.Slide} [{item.SlideId}] to {item.Output.Path} "
+                + $"({item.Output.Format}, {TableText.Bytes(item.Output.SizeBytes)})");
+        }
     }
 }
