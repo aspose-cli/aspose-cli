@@ -11,11 +11,12 @@ namespace Aspose.Cli.IntegrationTests;
 /// <summary>
 /// The <c>targets</c> of an edit outcome are bounded once, by the SDK, for every product: an
 /// operation that changed at most 100 parts lists each of them, and one that changed more lists
-/// the product's degenerate form instead, one or a few document-level or range addresses (such as
-/// <c>pdf</c>, <c>presentation</c>, <c>document</c> or <c>blocks/1-101</c>), never a truncated
-/// prefix of the parts. PDF pages, slides and Word blocks are the parts a
-/// single operation can change by the hundred; a Cells target is one range address, so Cells has
-/// no case here.
+/// the product's degenerate form instead: exactly the document root address (<c>pdf</c>,
+/// <c>presentation</c> or <c>document</c>) or, for Words, block-range addresses
+/// (<c>blocks/1-101</c>), never a truncated prefix of the parts and never a category address
+/// that has a documented meaning of its own, such as <c>pdf/bookmark</c> ("all bookmarks").
+/// PDF pages and bookmarks, slides and Word blocks are the parts a single operation can change by
+/// the hundred; a Cells target is one range address, so Cells has no case here.
 /// </summary>
 public sealed partial class BoundedEditTargetTests
 {
@@ -46,14 +47,70 @@ public sealed partial class BoundedEditTargetTests
             string[] targets = [.. beyond["targets"]!.AsArray().Select(static target => target!.GetValue<string>())];
             Assert.True(targets.Length <= Bound, $"{product}: an outcome lists at most {Bound} targets; it lists {targets.Length}.");
             string[] parts = [.. targets.Where(listed.Contains)];
-            Assert.True(targets.Length is > 0 and <= DegenerateMaximum && parts.Length == 0,
-                $"{product}: an operation that changed more than {Bound} parts lists the product's degenerate form, one or a few "
-                + $"document-level or range addresses, not a prefix of its parts; it lists {targets.Length}: [{string.Join(", ", targets.Take(5))}]");
+            Assert.True(targets.Length > 0 && parts.Length == 0 && IsDegenerate(product, targets),
+                $"{product}: an operation that changed more than {Bound} parts lists the product's degenerate form, exactly "
+                + $"['{Roots[product]}']{(product == "words" ? " or blocks/<ranges> addresses" : string.Empty)}, not a prefix of its "
+                + $"parts or a category address; it lists {targets.Length}: [{string.Join(", ", targets.Take(5))}]");
         }
     }
 
-    /// <summary>The most addresses a degenerate form holds: a document, or a few ranges and stories.</summary>
-    private const int DegenerateMaximum = 10;
+    /// <summary>
+    /// Deleting 101 of 150 bookmarks reports the document root, not <c>pdf/bookmark</c>: the PDF
+    /// docs define that address as "all bookmarks", and 49 remain.
+    /// </summary>
+    [LicensedFact]
+    public void Pdf_DeletingMoreBookmarksThanTheBoundReportsTheDocumentRoot()
+    {
+        using var workspace = new TempWorkspace();
+        ScenarioLicense.Project(workspace.Path);
+        File.WriteAllBytes(workspace.File("input.pdf"), ScenarioFixtures.Read("pdf.pdf"));
+        var added = new JsonArray();
+        for (int bookmark = 1; bookmark <= 150; bookmark++)
+        {
+            added.Add(new JsonObject { ["op"] = "add_bookmark", ["title"] = $"BM {bookmark}", ["page"] = 1 });
+        }
+        File.WriteAllText(workspace.File("add.json"), new JsonObject { ["ops"] = added }.ToJsonString());
+        CliResult outlined = workspace.Run("pdf", "edit", "input.pdf", "--ops", "add.json", "--out", "outlined.pdf", "--output", "json");
+        Assert.True(outlined.ExitCode == 0, $"pdf edit (add bookmarks): {outlined.StdErr}");
+
+        var delete = new JsonArray
+        {
+            new JsonObject
+            {
+                ["op"] = "delete_bookmarks",
+                ["indexes"] = new JsonArray([.. Enumerable.Range(1, Bound + 1).Select(static index => (JsonNode)JsonValue.Create($"{index}")!)]),
+            },
+        };
+        File.WriteAllText(workspace.File("delete.json"), new JsonObject { ["ops"] = delete }.ToJsonString());
+        CliResult result = workspace.Run("pdf", "edit", "outlined.pdf", "--ops", "delete.json", "--dry-run", "--output", "json");
+
+        Assert.True(result.ExitCode == 0, $"pdf edit (delete bookmarks): {result.StdErr}");
+        JsonNode outcome = Assert.Single(JsonNode.Parse(result.StdOut)!["applied"]!.AsArray())!;
+        Assert.Equal(Bound + 1, outcome["itemsAffected"]!.GetValue<long>());
+        string[] targets = [.. outcome["targets"]!.AsArray().Select(static target => target!.GetValue<string>())];
+        Assert.True(targets is ["pdf"],
+            $"Deleting {Bound + 1} of 150 bookmarks reports exactly ['pdf'], not a category address such as 'pdf/bookmark' "
+            + $"that the docs define as all bookmarks; it lists [{string.Join(", ", targets)}].");
+    }
+
+    /// <summary>The document root address of each product: the degenerate form of an outcome past the bound.</summary>
+    private static readonly IReadOnlyDictionary<string, string> Roots = new Dictionary<string, string>(StringComparer.Ordinal)
+    {
+        ["pdf"] = "pdf",
+        ["slides"] = "presentation",
+        ["words"] = "document",
+    };
+
+    /// <summary>
+    /// Whether <paramref name="targets"/> is the product's degenerate form: exactly its root address
+    /// or, for Words, block-range addresses within the bound.
+    /// </summary>
+    private static bool IsDegenerate(string product, string[] targets) =>
+        targets.Length == 1 && targets[0] == Roots[product]
+        || product == "words" && targets.Length <= Bound && targets.All(static target => BlockRanges().IsMatch(target));
+
+    [GeneratedRegex(@"^blocks/[0-9]+(-[0-9]*)?(,[0-9]+(-[0-9]*)?)*$")]
+    private static partial Regex BlockRanges();
 
     [Fact]
     public void Products_LeaveTheBoundToTheSdk()
