@@ -45,10 +45,8 @@ internal static class WordsExtract
 
             if (linked > 0)
             {
-                warnings.Add(new Warning
+                warnings.Add(new Warning(WordsDiagnostics.LinkedImagesSkipped, $"{linked} linked image(s) store no bytes in the document and were not extracted.")
                 {
-                    Code = WordsDiagnostics.LinkedImagesSkipped,
-                    Message = $"{linked} linked image(s) store no bytes in the document and were not extracted.",
                     Hint = "Embed linked images in the source document to extract them.",
                     AffectsCompleteness = true,
                 });

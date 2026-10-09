@@ -26,10 +26,8 @@ internal static class WordsEngineSupport
     }
 
     /// <summary>Evaluation mode cut short an input or imported document.</summary>
-    internal static Warning EvaluationTruncated { get; } = new()
+    internal static Warning EvaluationTruncated { get; } = new(WarningCodes.EvalInputTruncated, "Aspose.Words evaluation mode truncated an input document while loading it.")
     {
-        Code = WarningCodes.EvalInputTruncated,
-        Message = "Aspose.Words evaluation mode truncated an input document while loading it.",
         Hint = "Do not treat this projection or output as complete; apply a license and retry.",
     };
 
@@ -81,31 +79,25 @@ internal static class WordsEngineSupport
         : WordsFonts.HasEastAsian(loaded.Document.GetText()) ? [PdfInputReflowed, PdfInputLineEnds]
         : [PdfInputReflowed];
 
-    private static Warning PdfInputLineEnds { get; } = new()
+    private static Warning PdfInputLineEnds { get; } = new(WarningCodes.LossyConversion, "The Chinese, Japanese or Korean text of the PDF input has a space wherever a line ended on its page, and lines of separate paragraphs, such as a heading and the clause after it, may be merged into one paragraph.")
     {
-        Code = WarningCodes.LossyConversion,
-        Message = "The Chinese, Japanese or Korean text of the PDF input has a space wherever a line ended on its page, and lines of separate paragraphs, such as a heading and the clause after it, may be merged into one paragraph.",
         Hint = "Read the blocks before editing, and find a phrase with a regex that allows a space where a line may have ended, such as '甲 ?乙双方'; remove a space only where you read it.",
     };
 
-    private static Warning PdfInputReflowed { get; } = new()
+    private static Warning PdfInputReflowed { get; } = new(WarningCodes.LossyConversion, "A PDF input is rebuilt as flowing text, and its headers and footers are guessed: they may become body text, or headers and footers in which a number, such as a version number, becomes a page-number field; the new layout may add pages.")
     {
-        Code = WarningCodes.LossyConversion,
-        Message = "A PDF input is rebuilt as flowing text, and its headers and footers are guessed: they may become body text, or headers and footers in which a number, such as a version number, becomes a page-number field; the new layout may add pages.",
         Hint = "Check the headers, footers and fields with 'aspose-cli words inspect <file> --detail sections fields' and the body with 'words query blocks'; correct them with 'words edit' and set_header, set_footer, set_page_numbers or delete_blocks.",
     };
 
     /// <summary>The warning for a source with macros saved to a format that drops them, or null.</summary>
     internal static Warning? MacrosDropped(LoadedDocument source, string format) =>
         source.Format.HasMacros && !WordsFormats.KeepsMacros(format)
-            ? new Warning { Code = WordsDiagnostics.MacrosDropped, Message = "The source contains macros which the target format does not preserve.", Hint = "Save to docm or dotm to preserve macros." }
+            ? new Warning(WordsDiagnostics.MacrosDropped, "The source contains macros which the target format does not preserve.") { Hint = "Save to docm or dotm to preserve macros." }
             : null;
 
     /// <summary>Discloses the revisions an output that stores them still contains.</summary>
-    internal static Warning TrackedChangesPresent { get; } = new()
+    internal static Warning TrackedChangesPresent { get; } = new(WordsDiagnostics.TrackedChangesPresent, "The input has tracked changes, and the output still contains tracked changes.")
     {
-        Code = WordsDiagnostics.TrackedChangesPresent,
-        Message = "The input has tracked changes, and the output still contains tracked changes.",
         Hint = "Disclose them and accept or reject only when explicitly requested.",
     };
 
@@ -124,7 +116,7 @@ internal static class WordsEngineSupport
         bool text = format is "txt" or "md";
         if (format is "txt" or "md" or "html" or "html-fixed")
         {
-            yield return new Warning { Code = WarningCodes.LossyConversion, Message = $"Conversion to {format} cannot preserve every Word feature.", Hint = "Keep a DOCX copy when styles, headers, fields or revisions matter." };
+            yield return new Warning(WarningCodes.LossyConversion, $"Conversion to {format} cannot preserve every Word feature.") { Hint = "Keep a DOCX copy when styles, headers, fields or revisions matter." };
         }
 
         bool revised = document.Revisions.Count > 0;
@@ -132,20 +124,16 @@ internal static class WordsEngineSupport
             .Any(static revision => revision.RevisionType is RevisionType.Deletion or RevisionType.Moving);
         if (revised && !mixed && !WordsFormats.KeepsRevisions(format))
         {
-            yield return new Warning
+            yield return new Warning(WarningCodes.LossyConversion, $"The {format} output cannot keep tracked changes as revisions that can be accepted or rejected.")
             {
-                Code = WarningCodes.LossyConversion,
-                Message = $"The {format} output cannot keep tracked changes as revisions that can be accepted or rejected.",
                 Hint = "Disclose the tracked changes; keep a DOCX, RTF or ODT copy to keep them reviewable.",
             };
         }
 
         if (document.ProtectionType != ProtectionType.NoProtection && !WordsFormats.IsWord(format))
         {
-            yield return new Warning
+            yield return new Warning(WarningCodes.LossyConversion, $"The {format} output cannot keep the {WordsProtection.ToMode(document.ProtectionType)} editing restrictions of the document.")
             {
-                Code = WarningCodes.LossyConversion,
-                Message = $"The {format} output cannot keep the {WordsProtection.ToMode(document.ProtectionType)} editing restrictions of the document.",
                 Hint = "Keep a DOCX copy to keep them; restrict a PDF with the encrypt operation of 'aspose-cli pdf edit'.",
             };
         }
@@ -158,20 +146,16 @@ internal static class WordsEngineSupport
         int comments = document.GetChildNodes(NodeType.Comment, true).Count;
         if (comments > 0)
         {
-            yield return new Warning
+            yield return new Warning(WarningCodes.LossyConversion, string.Create(CultureInfo.InvariantCulture, $"The {format} output writes the text of {comments} comment(s) into the body text, where it reads as document text."))
             {
-                Code = WarningCodes.LossyConversion,
-                Message = string.Create(CultureInfo.InvariantCulture, $"The {format} output writes the text of {comments} comment(s) into the body text, where it reads as document text."),
                 Hint = $"To leave the comments out, apply remove_comments with 'aspose-cli words edit' and a .{format} --out; keep a DOCX copy to keep them.",
             };
         }
 
         if (mixed)
         {
-            yield return new Warning
+            yield return new Warning(WarningCodes.LossyConversion, $"The {format} output writes the deleted and moved-from text of tracked changes beside the text that replaces it, so it reads as neither the original nor the revised document.")
             {
-                Code = WarningCodes.LossyConversion,
-                Message = $"The {format} output writes the deleted and moved-from text of tracked changes beside the text that replaces it, so it reads as neither the original nor the revised document.",
                 Hint = $"Disclose the revisions; when the user decides, accept or reject them with 'aspose-cli words edit' and a .{format} --out, or keep a DOCX copy.",
             };
         }

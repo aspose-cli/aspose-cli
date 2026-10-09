@@ -20,19 +20,19 @@ internal static class PdfDiagnostics
     /// <summary>No AcroForm field carries the requested full name.</summary>
     internal static readonly ErrorCode FieldNotFound = ErrorCode.NotFound("FIELD_NOT_FOUND");
 
-    internal const string ScannedPagesSuspected = "SCANNED_PAGES_SUSPECTED";
+    internal static readonly WarningCode ScannedPagesSuspected = new("SCANNED_PAGES_SUSPECTED");
 
     /// <summary>Bookmarks, links or named destinations that no longer lead to their page.</summary>
-    internal const string NavigationDegraded = "NAVIGATION_DEGRADED";
+    internal static readonly WarningCode NavigationDegraded = new("NAVIGATION_DEGRADED");
 
     /// <summary>An HTML import allowed network resources and the importer requested them.</summary>
-    internal const string NetworkResourcesRequested = "NETWORK_RESOURCES_REQUESTED";
+    internal static readonly WarningCode NetworkResourcesRequested = new("NETWORK_RESOURCES_REQUESTED");
 
     /// <summary>A redact_text operation matched no text, so it redacted nothing.</summary>
-    internal const string RedactionNoMatch = "REDACTION_NO_MATCH";
+    internal static readonly WarningCode RedactionNoMatch = new("REDACTION_NO_MATCH");
 
     /// <summary>A redaction moved the text that followed what it removed.</summary>
-    internal const string RedactionTextMoved = "REDACTION_TEXT_MOVED";
+    internal static readonly WarningCode RedactionTextMoved = new("REDACTION_TEXT_MOVED");
 
     /// <summary>A form field of the output does not hold the value set_form_field set.</summary>
     internal static readonly DiagnosticDescriptor FieldValueMismatch = Verification("PDF_FIELD_VALUE_MISMATCH");
@@ -68,16 +68,16 @@ internal static class PdfDiagnostics
         AttachmentMismatch,
         PageCountMismatch,
         VerificationIncomplete,
-        DiagnosticDescriptor.Error(SignCertInvalid, "pdf", "input"),
-        DiagnosticDescriptor.Error(FormXfaUnsupported, "pdf", "format"),
-        DiagnosticDescriptor.Error(PdfaConversionFailed, "pdf", "format"),
-        DiagnosticDescriptor.Error(AttachmentNotFound, "pdf", "validation"),
-        DiagnosticDescriptor.Error(FieldNotFound, "pdf", "validation"),
-        DiagnosticDescriptor.Warning(ScannedPagesSuspected, "pdf", "warning"),
-        DiagnosticDescriptor.Warning(NavigationDegraded, "pdf", "warning"),
-        DiagnosticDescriptor.Warning(NetworkResourcesRequested, "pdf", "warning"),
-        DiagnosticDescriptor.Warning(RedactionNoMatch, "pdf", "warning"),
-        DiagnosticDescriptor.Warning(RedactionTextMoved, "pdf", "warning"),
+        DiagnosticDescriptor.Error(SignCertInvalid, "pdf"),
+        DiagnosticDescriptor.Error(FormXfaUnsupported, "pdf"),
+        DiagnosticDescriptor.Error(PdfaConversionFailed, "pdf"),
+        DiagnosticDescriptor.Error(AttachmentNotFound, "pdf"),
+        DiagnosticDescriptor.Error(FieldNotFound, "pdf"),
+        DiagnosticDescriptor.Warning(ScannedPagesSuspected, "pdf"),
+        DiagnosticDescriptor.Warning(NavigationDegraded, "pdf"),
+        DiagnosticDescriptor.Warning(NetworkResourcesRequested, "pdf"),
+        DiagnosticDescriptor.Warning(RedactionNoMatch, "pdf"),
+        DiagnosticDescriptor.Warning(RedactionTextMoved, "pdf"),
     ];
 
     private static DiagnosticDescriptor Verification(string code) =>

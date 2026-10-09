@@ -165,11 +165,9 @@ internal static class CellsEdit
         }
 
         string typos = string.Concat(added.Select(source => SheetTypo(workbook, source)));
-        return new Warning
+        return new Warning(CellsDiagnostics.ExternalLinkRelative, $"The output stores the target of its new link(s) as {string.Join(", ", added)}: a file name without a folder, "
+                + "relative to the output's folder. A link written with the full path of a file in the input's folder is stored this way too.")
         {
-            Code = CellsDiagnostics.ExternalLinkRelative,
-            Message = $"The output stores the target of its new link(s) as {string.Join(", ", added)}: a file name without a folder, "
-                + "relative to the output's folder. A link written with the full path of a file in the input's folder is stored this way too.",
             Hint = typos + (typos.Length > 0 ? "For a real link, keep" : "Keep")
                 + " the linked workbook(s) in the same folder as the output, or bring their values in with import_range instead of a link.",
             Docs = "cells/editing",

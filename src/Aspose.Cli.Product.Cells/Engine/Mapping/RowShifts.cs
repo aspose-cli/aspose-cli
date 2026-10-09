@@ -81,11 +81,9 @@ internal sealed class RowShifts
             AddShift(shifts, start + leftGap, n - leftGap, start + rightGap, m - rightGap);
         }
 
-        return shifts.Count == 0 ? null : new Warning
+        return shifts.Count == 0 ? null : new Warning(CellsDiagnostics.RowsShifted, $"Rows of sheet '{sheet}' appear shifted: {string.Join("; ", shifts)}. Cells are compared by address, "
+                + "so the cells below a shift are compared with the row that held their address before, and their differences are not edits.")
         {
-            Code = CellsDiagnostics.RowsShifted,
-            Message = $"Rows of sheet '{sheet}' appear shifted: {string.Join("; ", shifts)}. Cells are compared by address, "
-                + "so the cells below a shift are compared with the row that held their address before, and their differences are not edits.",
             Hint = "To compare row for row, apply the same insert_rows or delete_rows to a copy of the left workbook with cells edit --out, and compare that copy.",
             Location = sheet,
         };

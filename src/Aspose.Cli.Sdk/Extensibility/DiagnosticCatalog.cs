@@ -81,13 +81,6 @@ public sealed class DiagnosticCatalog
                 $"Diagnostic '{descriptor.Code}' owner '{descriptor.Owner}' "
                 + $"does not match contribution owner '{expectedOwner}'.");
         }
-        if (string.IsNullOrWhiteSpace(descriptor.Category)
-            || string.IsNullOrWhiteSpace(descriptor.MessageTemplateId)
-            || string.IsNullOrWhiteSpace(descriptor.HintTemplateId))
-        {
-            throw new InvalidOperationException(
-                $"Diagnostic '{descriptor.Code}' has incomplete category/template metadata.");
-        }
         if (descriptor.Severity == DiagnosticSeverity.Error)
         {
             if (descriptor.ExitCode is null

@@ -12,30 +12,8 @@ public static class CommonDiagnostics
     /// <summary>All common descriptors in deterministic code order.</summary>
     public static IReadOnlyList<DiagnosticDescriptor> All { get; } =
         ErrorCodes.All
-            .Select(static code => DiagnosticDescriptor.Error(
-                code,
-                Owner,
-                CategoryFor(code.ExitCode)))
-            .Concat(WarningCodes.All.Select(static code =>
-                DiagnosticDescriptor.Warning(
-                    code,
-                    Owner,
-                    "warning")))
+            .Select(static code => DiagnosticDescriptor.Error(code, Owner))
+            .Concat(WarningCodes.All.Select(static code => DiagnosticDescriptor.Warning(code, Owner)))
             .OrderBy(static descriptor => descriptor.Code, StringComparer.Ordinal)
             .ToArray();
-
-    private static string CategoryFor(ExitCode exitCode) =>
-        exitCode switch
-        {
-            ExitCode.Internal => "internal",
-            ExitCode.Usage => "usage",
-            ExitCode.InputError => "input",
-            ExitCode.ValidationError => "validation",
-            ExitCode.OutputError => "output",
-            ExitCode.FormatError => "format",
-            ExitCode.LicenseError => "license",
-            ExitCode.PartialFailure => "partial",
-            ExitCode.OperationTimeout => "timeout",
-            _ => "error",
-        };
 }

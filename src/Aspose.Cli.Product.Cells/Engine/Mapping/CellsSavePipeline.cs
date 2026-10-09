@@ -124,13 +124,10 @@ internal sealed class CellsSavePipeline(OutputPipeline<Workbook> outputs, CellsW
         {
             return null;
         }
-        return new Warning
+        return new Warning(CellsDiagnostics.DataTruncated, $"The target format's grid holds at most {maxRows} rows × {maxColumns} columns, "
+                + $"so data beyond it was discarded: {string.Join("; ", overflowed)}.")
         {
-            Code = CellsDiagnostics.DataTruncated,
             AffectsCompleteness = true,
-            Message =
-                $"The target format's grid holds at most {maxRows} rows × {maxColumns} columns, "
-                + $"so data beyond it was discarded: {string.Join("; ", overflowed)}.",
             Hint = "Convert to a modern format (xlsx, xlsb, ods) to keep every row and column.",
         };
     }
@@ -162,14 +159,11 @@ internal sealed class CellsSavePipeline(OutputPipeline<Workbook> outputs, CellsW
         {
             return null;
         }
-        return new Warning
-        {
-            Code = CellsDiagnostics.FormulasBroken,
-            AffectsCompleteness = true,
-            Message =
-                $"{newlyBroken} formula(s) referenced cells beyond the {formatId} grid and became #REF! "
+        return new Warning(CellsDiagnostics.FormulasBroken, $"{newlyBroken} formula(s) referenced cells beyond the {formatId} grid and became #REF! "
                 + "(for example a whole-column total like =SUM(A5:A1048576) downconverted to the smaller "
-                + "65,536-row xls grid). The cached values are kept, but the live formulas are broken.",
+                + "65,536-row xls grid). The cached values are kept, but the live formulas are broken.")
+        {
+            AffectsCompleteness = true,
             Hint = "Convert to a modern format (xlsx, xlsb) to preserve every formula.",
         };
     }

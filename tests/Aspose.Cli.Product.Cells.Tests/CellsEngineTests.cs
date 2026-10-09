@@ -75,7 +75,7 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
             Output = TestOutput.At(_fixture.Temp.File("multiple.csv")),
             SheetNames = ["One", "Two"],
         });
-        Assert.Contains(result.Warnings ?? [], warning => warning.Code == "SHEETS_DROPPED" && warning.AffectsCompleteness);
+        Assert.Contains(result.Warnings ?? [], warning => warning.Code.Name == "SHEETS_DROPPED" && warning.AffectsCompleteness);
     }
 
     [Fact]
@@ -85,7 +85,7 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
         EditResult result = CellsEdit.Run(_fixture.Session,
             new EditRequest { Input = source, Batch = ParseOps("""{"ops":[{"op":"set_values","sheet":"Data","range":"B2","values":[[7]]}]}"""), Output = TestOutput.At(_fixture.Temp.File("text-loss.csv")), Verify = true });
         Assert.True(File.Exists(result.Output!.Path));
-        Warning dropped = Assert.Single(result.Warnings ?? [], warning => warning.Code == "SHEETS_DROPPED");
+        Warning dropped = Assert.Single(result.Warnings ?? [], warning => warning.Code.Name == "SHEETS_DROPPED");
         Assert.False(result.Verification!.Ok);
         VerificationIssue issue = Assert.Single(result.Verification.Issues, issue => issue.Code == "SHEETS_DROPPED");
         Assert.Equal(dropped.Message, issue.Message);
@@ -96,12 +96,11 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
     [Fact]
     public void VerificationForwardsACompletenessWarningWithItsLocationAndHint()
     {
-        var located = new Warning
-        {
-            Code = "DATA_TRUNCATED", Message = "Data was discarded.", Hint = "Use xlsx.",
+        var located = new Warning(CellsDiagnostics.DataTruncated, "Data was discarded.")
+        { Hint = "Use xlsx.",
             Location = "'Data'!A1:C3", AffectsCompleteness = true,
         };
-        var informational = new Warning { Code = "FORMULAS_CALCULATED_ON_OPEN", Message = "Recalculated." };
+        var informational = new Warning(CellsDiagnostics.FormulasCalculatedOnOpen, "Recalculated.");
 
         VerificationIssue issue = Assert.Single(
             Aspose.Cli.Product.Cells.Engine.Editing.CellsEditVerifier.CompletenessIssues([located, informational]));
@@ -252,10 +251,10 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
         EditResult again = CellsEdit.Run(_fixture.Session,
             new EditRequest { Input = output, Batch = ParseOps("""{"ops":[{"op":"set_formula","sheet":"Data","range":"E7","formula":"='[fx.xlsx]Rates'!$B$3"}]}"""), Output = TestOutput.At(_fixture.Temp.File("relative-link-again.out.xlsx"), overwrite: true) });
 
-        Warning warning = Assert.Single(result.Warnings!, static warning => warning.Code == "EXTERNAL_LINK_RELATIVE");
+        Warning warning = Assert.Single(result.Warnings!, static warning => warning.Code.Name == "EXTERNAL_LINK_RELATIVE");
         Assert.Contains("fx.xlsx", warning.Message, StringComparison.Ordinal);
         Assert.DoesNotContain("far.xlsx", warning.Message, StringComparison.Ordinal);
-        Assert.DoesNotContain(again.Warnings ?? [], static warning => warning.Code == "EXTERNAL_LINK_RELATIVE");
+        Assert.DoesNotContain(again.Warnings ?? [], static warning => warning.Code.Name == "EXTERNAL_LINK_RELATIVE");
     }
 
     [Fact]
@@ -266,7 +265,7 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
         EditResult result = CellsEdit.Run(_fixture.Session,
             new EditRequest { Input = source, Batch = ParseOps("""{"ops":[{"op":"set_formula","sheet":"Data","range":"E5","formula":"='Secnd'!A1"}]}"""), Output = TestOutput.At(_fixture.Temp.File("sheet-typo.out.xlsx")) });
 
-        Warning warning = Assert.Single(result.Warnings!, static warning => warning.Code == "EXTERNAL_LINK_RELATIVE");
+        Warning warning = Assert.Single(result.Warnings!, static warning => warning.Code.Name == "EXTERNAL_LINK_RELATIVE");
         Assert.StartsWith("No sheet is named 'Secnd'. Did you mean 'Second'?", warning.Hint, StringComparison.Ordinal);
     }
 
@@ -286,7 +285,7 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
                 ]}
                 """), Output = TestOutput.At(_fixture.Temp.File("function-typo.out.xlsx")) });
 
-        Warning warning = Assert.Single(result.Warnings!, static warning => warning.Code == "FORMULA_FUNCTION_UNKNOWN");
+        Warning warning = Assert.Single(result.Warnings!, static warning => warning.Code.Name == "FORMULA_FUNCTION_UNKNOWN");
         Assert.StartsWith(
             "Aspose.Cells does not know the function(s) in 'Data'!E2: summ (did you mean 'SUM'?); 'Data'!E5: VLOKUP (did you mean 'VLOOKUP'?); 'Data'!E6: FOOBAR.",
             warning.Message,
@@ -306,7 +305,7 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
                 ]}
                 """), Output = TestOutput.At(_fixture.Temp.File("function-localized.out.xlsx")) });
 
-        Warning warning = Assert.Single(result.Warnings!, static warning => warning.Code == "FORMULA_FUNCTION_UNKNOWN");
+        Warning warning = Assert.Single(result.Warnings!, static warning => warning.Code.Name == "FORMULA_FUNCTION_UNKNOWN");
         Assert.StartsWith("Aspose.Cells does not know the function(s) in 'Data'!E2: 求和; 'Data'!E3: SUMME", warning.Message, StringComparison.Ordinal);
     }
 
@@ -328,7 +327,7 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
                 ]}
                 """), Output = TestOutput.At(_fixture.Temp.File("function-typo-moved.out.xlsx")) });
 
-        Warning warning = Assert.Single(result.Warnings!, static warning => warning.Code == "FORMULA_FUNCTION_UNKNOWN");
+        Warning warning = Assert.Single(result.Warnings!, static warning => warning.Code.Name == "FORMULA_FUNCTION_UNKNOWN");
         Assert.StartsWith(
             "Aspose.Cells does not know the function(s) in 'Data'!E4: summ (did you mean 'SUM'?); 'Notes'!B1: VLOKUP (did you mean 'VLOOKUP'?).",
             warning.Message,
@@ -628,9 +627,9 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
 
         Assert.Equal("Data", read.Sheet!.Name);
         Warning skipped = Assert.Single(read.Warnings!);
-        Assert.Equal("ACTIVE_SHEET_SKIPPED", skipped.Code);
+        Assert.Equal("ACTIVE_SHEET_SKIPPED", skipped.Code.Name);
         Assert.Equal("Evaluation Warning", skipped.Location);
-        Assert.Contains(csv.Warnings!, static warning => warning.Code == "ACTIVE_SHEET_SKIPPED");
+        Assert.Contains(csv.Warnings!, static warning => warning.Code.Name == "ACTIVE_SHEET_SKIPPED");
         Assert.StartsWith("data", File.ReadAllText(csv.Output.Path), StringComparison.Ordinal);
         Assert.Null(copied.Warnings);
         using var copy = new Aspose.Cells.Workbook(copied.Output.Path);
@@ -638,7 +637,7 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
         // Skipping changes the default only: whole-workbook saves keep the input's active sheet
         // unless the batch chose one.
         Assert.Equal("Evaluation Warning", ActiveSheet(copied.Output.Path));
-        Assert.Contains(edited.Warnings!, static warning => warning.Code == "ACTIVE_SHEET_SKIPPED");
+        Assert.Contains(edited.Warnings!, static warning => warning.Code.Name == "ACTIVE_SHEET_SKIPPED");
         Assert.Equal("Evaluation Warning", ActiveSheet(edited.Output!.Path));
         using (var editedBook = new Aspose.Cells.Workbook(edited.Output.Path))
         {
@@ -693,9 +692,9 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
         EditResult edited = _fixture.Disclosed(session => CellsEdit.Run(session,
             new EditRequest { Input = marked, Batch = ParseOps("""{"ops":[{"op":"set_values","range":"A1","values":[[1]]}]}"""), Output = TestOutput.At(_fixture.Temp.File("marked-once-edited.xlsx"), overwrite: true) }));
 
-        string[] codes = [.. edited.Warnings!.Select(static warning => warning.Code)];
+        string[] codes = [.. edited.Warnings!.Select(static warning => warning.Code.Name)];
         Assert.Equal(codes.Distinct(StringComparer.Ordinal), codes);
-        Assert.Contains(WarningCodes.EvalInputMarked, codes);
+        Assert.Contains(WarningCodes.EvalInputMarked.Name, codes);
         Assert.Contains("ACTIVE_SHEET_SKIPPED", codes);
     }
 
@@ -767,7 +766,7 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
             Output = TestOutput.At(_fixture.Temp.File("tall.xls"), format: "xls", overwrite: true),
         });
 
-        Warning? warning = result.Warnings?.FirstOrDefault(w => w.Code == "DATA_TRUNCATED");
+        Warning? warning = result.Warnings?.FirstOrDefault(w => w.Code.Name == "DATA_TRUNCATED");
         Assert.NotNull(warning);
         Assert.Contains("row", warning!.Message, StringComparison.OrdinalIgnoreCase);
         Assert.NotNull(warning.Hint);
@@ -790,7 +789,7 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
             Output = TestOutput.At(_fixture.Temp.File("wide.xls"), format: "xls", overwrite: true),
         });
 
-        Warning? warning = result.Warnings?.FirstOrDefault(w => w.Code == "DATA_TRUNCATED");
+        Warning? warning = result.Warnings?.FirstOrDefault(w => w.Code.Name == "DATA_TRUNCATED");
         Assert.NotNull(warning);
         Assert.Contains("column", warning!.Message, StringComparison.OrdinalIgnoreCase);
     }
@@ -807,7 +806,7 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
             Output = TestOutput.At(_fixture.Temp.File("small.xls"), format: "xls", overwrite: true),
         });
 
-        Assert.DoesNotContain(result.Warnings ?? [], w => w.Code == "DATA_TRUNCATED");
+        Assert.DoesNotContain(result.Warnings ?? [], w => w.Code.Name == "DATA_TRUNCATED");
     }
 
     [Fact]
@@ -827,7 +826,7 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
             Output = TestOutput.At(_fixture.Temp.File("tall2.xlsb"), format: "xlsb", overwrite: true),
         });
 
-        Assert.DoesNotContain(result.Warnings ?? [], w => w.Code == "DATA_TRUNCATED");
+        Assert.DoesNotContain(result.Warnings ?? [], w => w.Code.Name == "DATA_TRUNCATED");
     }
 
     // The same silent truncation lurks in every write path, not just convert:
@@ -846,7 +845,7 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
         EditResult result = CellsEdit.Run(_fixture.Session,
             new EditRequest { Input = src, Batch = ParseOps("""{ "ops": [ { "op": "set_values", "sheet": "Sheet1", "range": "A1", "values": [["x"]] } ] }"""), Output = TestOutput.At(_fixture.Temp.File("edit-tall.xls"), overwrite: true) });
 
-        Assert.Contains(result.Warnings ?? [], w => w.Code == "DATA_TRUNCATED");
+        Assert.Contains(result.Warnings ?? [], w => w.Code.Name == "DATA_TRUNCATED");
     }
 
     [Fact]
@@ -862,7 +861,7 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
         EditResult result = CellsEdit.Run(_fixture.Session,
             new EditRequest { Input = src, Batch = ParseOps("""{ "ops": [ { "op": "set_formula", "range": "B1", "formula": "=1" } ] }"""), Output = TestOutput.At(_fixture.Temp.File("calc-tall.xls"), overwrite: true) });
 
-        Assert.Contains(result.Warnings ?? [], w => w.Code == "DATA_TRUNCATED");
+        Assert.Contains(result.Warnings ?? [], w => w.Code.Name == "DATA_TRUNCATED");
     }
 
     // A whole-column total (=SUM(A5:A1048576)) references rows past the xls grid.
@@ -888,7 +887,7 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
             Output = TestOutput.At(_fixture.Temp.File("wholecol.xls"), format: "xls", overwrite: true),
         });
 
-        Warning? warning = result.Warnings?.FirstOrDefault(w => w.Code == "FORMULAS_BROKEN");
+        Warning? warning = result.Warnings?.FirstOrDefault(w => w.Code.Name == "FORMULAS_BROKEN");
         Assert.NotNull(warning);
         Assert.Contains("#REF!", warning!.Message, StringComparison.Ordinal);
         Assert.NotNull(warning.Hint);
@@ -914,7 +913,7 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
             Output = TestOutput.At(_fixture.Temp.File("wholecol2.xlsb"), format: "xlsb", overwrite: true),
         });
 
-        Assert.DoesNotContain(result.Warnings ?? [], w => w.Code == "FORMULAS_BROKEN");
+        Assert.DoesNotContain(result.Warnings ?? [], w => w.Code.Name == "FORMULAS_BROKEN");
     }
 
     [Fact]

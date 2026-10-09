@@ -36,7 +36,7 @@ public sealed class CellsLinkedPictureTests
         CliResult result = workspace.Run("cells", "convert", input, "--to", "xlsx",
             "--out", "converted.xlsx", "--output", "json");
         Assert.True(result.ExitCode == 0, result.StdErr);
-        Assert.DoesNotContain(WarningCodes.RemoteResourcesBlocked, result.StdOut, StringComparison.Ordinal);
+        Assert.DoesNotContain(WarningCodes.RemoteResourcesBlocked.Name, result.StdOut, StringComparison.Ordinal);
         using var after = new Workbook(workspace.File("converted.xlsx"));
         Picture actual = Assert.Single(after.Worksheets[0].Pictures.Cast<Picture>());
         Assert.Equal(expected.Data, actual.Data);

@@ -287,10 +287,8 @@ internal sealed partial class WordsMutationHandlers
     private Warning AuthorNoMatch(string author, string items, IReadOnlyCollection<string> authors)
     {
         string listed = string.Join(", ", authors.Select(static name => $"'{name}'"));
-        return new Warning
+        return new Warning(WordsDiagnostics.AuthorNoMatch, $"{WordsOp.Catalog.NameOf(_resolved.Op)} changed nothing: the document has no {items} by '{author}'.")
         {
-            Code = WordsDiagnostics.AuthorNoMatch,
-            Message = $"{WordsOp.Catalog.NameOf(_resolved.Op)} changed nothing: the document has no {items} by '{author}'.",
             Hint = authors.Count == 0
                 ? $"The document has no {items}s; check 'words inspect --detail revisions comments'."
                 : Mistake.Of(author, authors).Hint($"Authors match exactly; the document's are {listed}."),

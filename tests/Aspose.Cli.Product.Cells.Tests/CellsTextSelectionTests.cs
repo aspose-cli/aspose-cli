@@ -82,7 +82,7 @@ public sealed class CellsTextSelectionTests : IClassFixture<CellsTextSelectionFi
         string text = File.ReadAllText(output);
         Assert.Contains("SO-001", text, StringComparison.Ordinal);
         Assert.DoesNotContain("Executive overview", text, StringComparison.Ordinal);
-        Assert.Contains(result.Warnings!, static warning => warning.Code == "SHEETS_DROPPED"
+        Assert.Contains(result.Warnings!, static warning => warning.Code.Name == "SHEETS_DROPPED"
             && warning.Message.Contains("'Detail'", StringComparison.Ordinal));
     }
 }

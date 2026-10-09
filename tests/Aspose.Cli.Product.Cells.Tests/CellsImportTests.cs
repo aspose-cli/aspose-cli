@@ -280,7 +280,7 @@ public sealed class CellsImportTests : IClassFixture<CellsFixture>
             _fixture.CreateSalesWorkbook(sheet + "-uncached.xlsx"),
             operation.Replace("\"{source}\"", Json(source), StringComparison.Ordinal));
 
-        Warning warning = Assert.Single(result.Warnings!, static warning => warning.Code == "EXTERNAL_LINK_CACHE_MISSING");
+        Warning warning = Assert.Single(result.Warnings!, static warning => warning.Code.Name == "EXTERNAL_LINK_CACHE_MISSING");
         Assert.Equal($"'{sheet}'!{cell}", warning.Location);
         Assert.Contains("missing-rates.xlsx", warning.Message, StringComparison.Ordinal);
     }
@@ -298,7 +298,7 @@ public sealed class CellsImportTests : IClassFixture<CellsFixture>
         Assert.False(result.Verification!.Ok);
         VerificationIssue issue = Assert.Single(result.Verification.Issues, static issue => issue.Code == "EXTERNAL_LINK_CACHE_MISSING");
         Assert.Equal("'Linked'!A1", issue.Location);
-        Assert.Contains(result.Warnings!, static warning => warning.Code == "EXTERNAL_LINK_CACHE_MISSING");
+        Assert.Contains(result.Warnings!, static warning => warning.Code.Name == "EXTERNAL_LINK_CACHE_MISSING");
     }
 
     [Fact]
@@ -314,7 +314,7 @@ public sealed class CellsImportTests : IClassFixture<CellsFixture>
         using var output = new Workbook(result.Output!.Path);
         Aspose.Cells.Cells cells = output.Worksheets["Linked"].Cells;
         Assert.Equal(("#REF!", "#REF!"), (cells["A1"].StringValue, cells["A2"].StringValue));
-        Assert.Contains(result.Warnings!, static warning => warning.Code == "EXTERNAL_LINK_CACHE_MISSING");
+        Assert.Contains(result.Warnings!, static warning => warning.Code.Name == "EXTERNAL_LINK_CACHE_MISSING");
     }
 
     [Fact]
@@ -326,7 +326,7 @@ public sealed class CellsImportTests : IClassFixture<CellsFixture>
             _fixture.CreateSalesWorkbook("outside-uncached.xlsx"),
             $$"""{ "op": "import_range", "sheet": "Second", "path": {{Json(source)}}, "from": "Linked!B1:B2", "to": "Second!B2", "content": "all" }""");
 
-        Assert.DoesNotContain(result.Warnings ?? [], static warning => warning.Code == "EXTERNAL_LINK_CACHE_MISSING");
+        Assert.DoesNotContain(result.Warnings ?? [], static warning => warning.Code.Name == "EXTERNAL_LINK_CACHE_MISSING");
     }
 
     /// <summary>
@@ -356,7 +356,7 @@ public sealed class CellsImportTests : IClassFixture<CellsFixture>
             _fixture.CreateSalesWorkbook("linked-cached-warning-target.xlsx"),
             $$"""{ "op": "import_sheet", "sheet": "Linked", "path": {{Json(source)}} }""");
 
-        Assert.DoesNotContain(result.Warnings ?? [], static warning => warning.Code == "EXTERNAL_LINK_CACHE_MISSING");
+        Assert.DoesNotContain(result.Warnings ?? [], static warning => warning.Code.Name == "EXTERNAL_LINK_CACHE_MISSING");
     }
 
     [Theory]

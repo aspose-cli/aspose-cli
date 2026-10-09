@@ -126,10 +126,10 @@ public sealed class WordsDisclosureTests
         }));
 
         // Without a license, opening the document adds the marks itself, and EVAL_MODE says so.
-        string expected = fixture.LicenseState == LicenseState.Licensed ? WarningCodes.EvalInputMarked : WarningCodes.EvalMode;
+        WarningCode expected = fixture.LicenseState == LicenseState.Licensed ? WarningCodes.EvalInputMarked : WarningCodes.EvalMode;
         foreach (ResultEnvelope result in new ResultEnvelope[] { converted, edited })
         {
-            Warning disclosure = Assert.Single(result.Warnings!, static warning => warning.Code.StartsWith("EVAL_", StringComparison.Ordinal));
+            Warning disclosure = Assert.Single(result.Warnings!, static warning => warning.Code.Name.StartsWith("EVAL_", StringComparison.Ordinal));
             Assert.Equal(expected, disclosure.Code);
             if (expected == WarningCodes.EvalInputMarked)
             {

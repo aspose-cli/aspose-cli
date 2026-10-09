@@ -242,9 +242,9 @@ internal sealed class CliCapabilitySnapshot
                 .OrderBy(static budget => budget.Kind, StringComparer.Ordinal)
                 .ToArray(),
             Diagnostics = catalog.Diagnostics.All
-                .Where(descriptor =>
-                    licensingApplicable
-                    || !IsLicenseSurfaceDiagnostic(descriptor.Code))
+                .Concat(HostDiagnostics.All)
+                .Where(descriptor => licensingApplicable || !descriptor.LicenseSurface)
+                .OrderBy(static descriptor => descriptor.Code, StringComparer.Ordinal)
                 .Select(static descriptor => new DiagnosticCapabilities
                 {
                     Code = descriptor.Code,
@@ -254,8 +254,6 @@ internal sealed class CliCapabilitySnapshot
                         ? null
                         : (int)descriptor.ExitCode.Value,
                     Category = descriptor.Category,
-                    MessageTemplateId = descriptor.MessageTemplateId,
-                    HintTemplateId = descriptor.HintTemplateId,
                     DetailsSchemaId = descriptor.DetailsSchemaId,
                 })
                 .ToArray(),
@@ -286,10 +284,6 @@ internal sealed class CliCapabilitySnapshot
             })
             .OrderBy(static pin => pin.Product, StringComparer.Ordinal)
             .ToArray();
-
-    private static bool IsLicenseSurfaceDiagnostic(string code) =>
-        code.StartsWith("LICENSE_", StringComparison.Ordinal)
-        || code is "EVALUATION_LIMIT" or WarningCodes.EvalMode or WarningCodes.EvalInputMarked;
 
     private static Command ProductCommand(
         IReadOnlyDictionary<string, Command> productCommands,

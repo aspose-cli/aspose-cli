@@ -22,7 +22,7 @@ public sealed class CellsOpenCalculationTests : IClassFixture<CellsFixture>
         WorkbookReadResult read = CellsRead.Run(_fixture.Session, new ReadRequest { Input = path });
 
         Assert.Equal("42", read.Sheet!.Cells![0][2].V?.ToString());
-        Assert.Contains(read.Warnings ?? [], static warning => warning.Code == "FORMULAS_CALCULATED_ON_OPEN");
+        Assert.Contains(read.Warnings ?? [], static warning => warning.Code.Name == "FORMULAS_CALCULATED_ON_OPEN");
     }
 
     [Fact]
@@ -33,7 +33,7 @@ public sealed class CellsOpenCalculationTests : IClassFixture<CellsFixture>
         WorkbookReadResult read = CellsRead.Run(_fixture.Session, new ReadRequest { Input = path });
 
         Assert.Equal("42", read.Sheet!.Cells![0][2].V?.ToString());
-        Assert.DoesNotContain(read.Warnings ?? [], static warning => warning.Code == "FORMULAS_CALCULATED_ON_OPEN");
+        Assert.DoesNotContain(read.Warnings ?? [], static warning => warning.Code.Name == "FORMULAS_CALCULATED_ON_OPEN");
     }
 
     private string Workbook(string name, bool calculate)

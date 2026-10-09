@@ -109,7 +109,13 @@ internal static class ContractTypes
             or SpecialType.System_Int32 or SpecialType.System_UInt32 or SpecialType.System_Int64 or SpecialType.System_UInt64 => "Integer",
         SpecialType.System_Single or SpecialType.System_Double or SpecialType.System_Decimal => "Number",
         SpecialType.System_Object => "Any",
-        _ => type.ToDisplayString() == "System.Text.Json.JsonElement" ? "Any" : null,
+        _ => type.ToDisplayString() switch
+        {
+            "System.Text.Json.JsonElement" => "Any",
+            // A declared warning code is written as its code string.
+            "Aspose.Cli.Sdk.Contracts.WarningCode" => "String",
+            _ => null,
+        },
     };
 
     /// <summary>

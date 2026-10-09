@@ -265,10 +265,8 @@ internal static class PdfEdit
         var warnings = new List<Warning>();
         if (signatures && outcomes.Any(static item => item.Status == OpStatuses.Ok && item.ItemsAffected > 0))
         {
-            warnings.Add(new Warning
+            warnings.Add(new Warning(WarningCodes.SignatureInvalidated, "Editing a signed PDF invalidates or changes its existing signature state.")
             {
-                Code = WarningCodes.SignatureInvalidated,
-                Message = "Editing a signed PDF invalidates or changes its existing signature state.",
                 Hint = "Validate signatures again and apply any required signature only after the final edit.",
             });
         }
@@ -281,11 +279,9 @@ internal static class PdfEdit
             .ToArray();
         if (unmatched.Length > 0)
         {
-            warnings.Add(new Warning
+            warnings.Add(new Warning(PdfDiagnostics.RedactionNoMatch, (unmatched.Length == 1 ? "Operation " : "Operations ") + string.Join(", ", unmatched)
+                    + " matched no text on the pages searched, so nothing was redacted there.")
             {
-                Code = PdfDiagnostics.RedactionNoMatch,
-                Message = (unmatched.Length == 1 ? "Operation " : "Operations ") + string.Join(", ", unmatched)
-                    + " matched no text on the pages searched, so nothing was redacted there.",
                 Hint = "Search the pages with 'pdf query search' and the same pattern. When the text shows on the page but is not found, "
                     + "its extracted text differs, for example by spaces between characters: match it with a regular expression "
                     + "that allows them (\\s*), or cover it with redact_area.",
@@ -295,11 +291,9 @@ internal static class PdfEdit
         // PDF-REDACT-TEXT-SHIFT: the text is still in the file, but part of it may now be hidden.
         if (textMoved.Count > 0)
         {
-            warnings.Add(new Warning
+            warnings.Add(new Warning(PdfDiagnostics.RedactionTextMoved, (textMoved.Count == 1 ? "Operation " : "Operations ") + string.Join(", ", textMoved)
+                    + " moved the text that followed what was removed on its line to the left, so part of it may now lie under the cover.")
             {
-                Code = PdfDiagnostics.RedactionTextMoved,
-                Message = (textMoved.Count == 1 ? "Operation " : "Operations ") + string.Join(", ", textMoved)
-                    + " moved the text that followed what was removed on its line to the left, so part of it may now lie under the cover.",
                 Hint = "Run 'aspose-cli review' on the output: PDF_TEXT_COVERED names the pages where text lies hidden under a cover. "
                     + "The moved text is still in the file and searchable; to keep the line visible, redact the source document and create the PDF again.",
             });
@@ -348,11 +342,9 @@ internal static class PdfEdit
         string opened = openPassword
             ? "The input was opened with its user password, whose permissions"
             : "The input has no open password and was opened without its owner password, so its reader permissions apply; they";
-        return new Warning
+        return new Warning(WarningCodes.ProtectionNotEnforced, $"{opened} do not allow {string.Join(", ", changes)}; the engine does not enforce them, so "
+                + (dryRun ? "the batch would change it if it were not a dry run." : "the batch changed it."))
         {
-            Code = WarningCodes.ProtectionNotEnforced,
-            Message = $"{opened} do not allow {string.Join(", ", changes)}; the engine does not enforce them, so "
-                + (dryRun ? "the batch would change it if it were not a dry run." : "the batch changed it."),
             Hint = $"Confirm that the document's owner authorized the change. {output}",
         };
     }

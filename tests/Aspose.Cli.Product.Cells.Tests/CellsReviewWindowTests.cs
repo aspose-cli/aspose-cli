@@ -78,7 +78,7 @@ public sealed class CellsReviewWindowTests : IClassFixture<CellsFixture>
             sink);
 
         Assert.Equal(["Detail", "Summary"], manifest.Parts.Select(static part => part.Id));
-        var window = Assert.Single(manifest.Warnings ?? [], static warning => warning.Code == "CELLS_SHEET_PARTIALLY_RENDERED");
+        var window = Assert.Single(manifest.Warnings ?? [], static warning => warning.Code.Name == "CELLS_SHEET_PARTIALLY_RENDERED");
         Assert.Equal("Detail", window.Location);
         Assert.True(window.AffectsCompleteness);
     }

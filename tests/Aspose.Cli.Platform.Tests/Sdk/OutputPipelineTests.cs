@@ -168,7 +168,7 @@ public sealed class OutputPipelineTests
         Assert.Empty(document.Marks);
     }
 
-    private static readonly Warning Other = new() { Code = WarningCodes.LossyConversion, Message = "Other." };
+    private static readonly Warning Other = new(WarningCodes.LossyConversion, "Other.");
 
     private static OutputPipeline<Document> Pipeline(LicenseState state, LicenseResolution? resolution = null) =>
         new(new FixedGate(state, resolution ?? LicenseResolution.None), new Profile(), TestBudgets.Writer());

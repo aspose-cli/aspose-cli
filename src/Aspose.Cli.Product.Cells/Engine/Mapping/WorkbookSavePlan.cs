@@ -37,10 +37,8 @@ internal sealed record WorkbookSavePlan(string FormatId, SaveFormat Format, Save
             _ => null,
         };
         Secret? password = encryptPassword ?? (encryptable ? inputPassword : null);
-        Warning? warning = inputPassword is not null && password is null ? new Warning
+        Warning? warning = inputPassword is not null && password is null ? new Warning(CellsDiagnostics.EncryptionRemoved, $"The '{formatId}' output cannot retain the source workbook encryption.")
         {
-            Code = CellsDiagnostics.EncryptionRemoved,
-            Message = $"The '{formatId}' output cannot retain the source workbook encryption.",
             Hint = "Use an encryption-capable spreadsheet output to keep password protection.",
         } : null;
         return new WorkbookSavePlan(formatId, format, options, password, warning, licenseState == LicenseState.Evaluation);
@@ -56,10 +54,8 @@ internal sealed record WorkbookSavePlan(string FormatId, SaveFormat Format, Save
     internal bool Encrypts => OutputPassword is not null;
 
     internal Warning? DetectSheetLoss(Workbook workbook) =>
-        WritesActiveSheetOnly && workbook.Worksheets.Count > 1 ? new Warning
+        WritesActiveSheetOnly && workbook.Worksheets.Count > 1 ? new Warning(CellsDiagnostics.SheetsDropped, $"Only worksheet '{TextSheet(workbook).Name}' was exported; the '{FormatId}' output holds one worksheet, so {workbook.Worksheets.Count - 1} other worksheet(s) were not written.")
         {
-            Code = CellsDiagnostics.SheetsDropped,
-            Message = $"Only worksheet '{TextSheet(workbook).Name}' was exported; the '{FormatId}' output holds one worksheet, so {workbook.Worksheets.Count - 1} other worksheet(s) were not written.",
             Hint = "Use a multi-sheet format (xlsx, xlsb, ods, pdf) to retain every worksheet.",
             AffectsCompleteness = true,
         } : null;

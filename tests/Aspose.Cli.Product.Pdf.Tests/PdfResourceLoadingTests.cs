@@ -304,7 +304,7 @@ public sealed class PdfResourceLoadingTests
             omitted => Assert.Equal(WarningCodes.RemoteResourcesBlocked, omitted.Code),
             requested =>
             {
-                Assert.Equal("NETWORK_RESOURCES_REQUESTED", requested.Code);
+                Assert.Equal("NETWORK_RESOURCES_REQUESTED", requested.Code.Name);
                 Assert.Contains("https://example.test/a.png", requested.Message, StringComparison.Ordinal);
                 Assert.DoesNotContain("server/share", requested.Message, StringComparison.Ordinal);
             });

@@ -66,7 +66,7 @@ public sealed record DiagnosticCapabilities
     [Pattern("^[A-Z][A-Z0-9_]*$")]
     public required string Code { get; init; }
 
-    /// <summary>What declares the code: <c>common</c> or a product id.</summary>
+    /// <summary>What declares the code: <c>common</c> (the SDK), <c>host</c> or a product id.</summary>
     [MinLength(1)]
     public required string Owner { get; init; }
 
@@ -82,14 +82,6 @@ public sealed record DiagnosticCapabilities
     /// <summary>What kind of problem the code reports, such as <c>validation</c> or <c>verification</c>.</summary>
     [MinLength(1)]
     public required string Category { get; init; }
-
-    /// <summary>Stable identifier of the message wording.</summary>
-    [MinLength(1)]
-    public required string MessageTemplateId { get; init; }
-
-    /// <summary>Stable identifier of the hint wording.</summary>
-    [MinLength(1)]
-    public required string HintTemplateId { get; init; }
 
     /// <summary>Schema id of the code's <c>details</c> object, printable via <c>aspose-cli schema &lt;id&gt;</c>.</summary>
     [MinLength(1)]

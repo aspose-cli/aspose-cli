@@ -87,10 +87,8 @@ internal sealed class HtmlImportResources(string htmlPath, ResourceBudgetLedger 
                 {
                     string listed = string.Join(", ", _network.Take(ListedAddresses));
                     string more = _network.Count > ListedAddresses ? $", and {_network.Count - ListedAddresses} more" : "";
-                    warnings.Add(new Warning
+                    warnings.Add(new Warning(PdfDiagnostics.NetworkResourcesRequested, $"The HTML importer requested {_network.Count} network resource(s): {listed}{more}.")
                     {
-                        Code = PdfDiagnostics.NetworkResourcesRequested,
-                        Message = $"The HTML importer requested {_network.Count} network resource(s): {listed}{more}.",
                         Hint = "The output includes content fetched from these addresses. Review it, and never pass --allow-network-resources for HTML you do not trust.",
                     });
                 }

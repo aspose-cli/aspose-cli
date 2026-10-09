@@ -52,10 +52,8 @@ public sealed class LocalDocumentResourceLoader : IDisposable
     /// The completeness warning for external resources a document engine was denied, or null
     /// when none were. Every product reports omitted resources through this one warning.
     /// </summary>
-    public static Warning? OmissionWarning(int omitted) => omitted <= 0 ? null : new Warning
+    public static Warning? OmissionWarning(int omitted) => omitted <= 0 ? null : new Warning(WarningCodes.RemoteResourcesBlocked, $"{omitted} external resource(s) were omitted.")
     {
-        Code = WarningCodes.RemoteResourcesBlocked,
-        Message = $"{omitted} external resource(s) were omitted.",
         Hint = "Place required resources beside the input and reference them by relative path, then review the incomplete output.",
         AffectsCompleteness = true,
     };

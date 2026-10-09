@@ -268,10 +268,8 @@ internal static class TextTableLayout
             RowReference(row, row));
     }
 
-    private static Warning Build(string message, string hint, string location) => new()
+    private static Warning Build(string message, string hint, string location) => new(CellsDiagnostics.TextTableLayout, message)
     {
-        Code = CellsDiagnostics.TextTableLayout,
-        Message = message,
         Hint = hint,
         Docs = "cells/troubleshooting",
         Location = location,

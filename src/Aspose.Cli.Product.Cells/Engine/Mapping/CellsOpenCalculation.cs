@@ -43,11 +43,9 @@ internal static class CellsOpenCalculation
             return null;
         }
 
-        return new Warning
+        return new Warning(CellsDiagnostics.FormulasCalculatedOnOpen, $"The workbook asks to be calculated when opened, as Excel does: {changed} of {stored.Count} formula results "
+                + $"shown differ from the stored ones ({empty} were stored without a result).")
         {
-            Code = CellsDiagnostics.FormulasCalculatedOnOpen,
-            Message = $"The workbook asks to be calculated when opened, as Excel does: {changed} of {stored.Count} formula results "
-                + $"shown differ from the stored ones ({empty} were stored without a result).",
             Hint = "The values shown are the engine's, as Excel shows them on opening. Save the workbook with 'cells edit' "
                 + "to store them, or read with --scope formulas to see the formulas.",
         };

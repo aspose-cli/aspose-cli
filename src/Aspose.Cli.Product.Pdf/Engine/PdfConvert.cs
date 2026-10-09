@@ -35,10 +35,8 @@ internal static class PdfConvert
 
         if (target.Lossy)
         {
-            warnings.Add(new Warning
+            warnings.Add(new Warning(WarningCodes.LossyConversion, $"PDF conversion to {request.Output.Format.Id} may not preserve every layout or interactive feature.")
             {
-                Code = WarningCodes.LossyConversion,
-                Message = $"PDF conversion to {request.Output.Format.Id} may not preserve every layout or interactive feature.",
                 Hint = request.Output.Format.Id == "html"
                     ? "Open the HTML in a browser and compare it with the PDF before relying on exact pagination, forms or annotations; review does not lay out HTML made from a PDF, so review the PDF itself."
                     : "Inspect the produced file before relying on exact pagination, forms or annotations.",
@@ -117,10 +115,8 @@ internal static class PdfConvert
             && pages.Count < document.Pages.Count)
         {
             degraded = default;
-            warnings.Add(new Warning
+            warnings.Add(new Warning(WarningCodes.LossyConversion, $"Evaluation mode cannot remove the pages after page {PdfEvaluation.VisiblePages} from the document, so the selected pages were copied into a new one, which has none of the document's bookmarks, attachments and document properties, such as its title, author or subject.")
             {
-                Code = WarningCodes.LossyConversion,
-                Message = $"Evaluation mode cannot remove the pages after page {PdfEvaluation.VisiblePages} from the document, so the selected pages were copied into a new one, which has none of the document's bookmarks, attachments and document properties, such as its title, author or subject.",
                 Hint = "Apply an Aspose.PDF license to keep them.",
             });
             return Select(document, pages);
@@ -217,11 +213,9 @@ internal static class PdfConvert
 
         foreach (string removed in attachments.Except(AttachmentNames(document), StringComparer.Ordinal))
         {
-            warnings.Add(new Warning
+            warnings.Add(new Warning(WarningCodes.LossyConversion, $"Attachment '{removed}' was removed: {AttachmentRule(profile)}.")
             {
-                Code = WarningCodes.LossyConversion,
                 Location = $"attachment {removed}",
-                Message = $"Attachment '{removed}' was removed: {AttachmentRule(profile)}.",
                 Hint = profile == "pdfa-3b"
                     ? "Deliver the file alongside the archive."
                     : "Convert to pdfa-3b to keep attachments, or deliver the file alongside the archive.",
@@ -231,11 +225,9 @@ internal static class PdfConvert
         int lostBookmarks = bookmarks - Editing.PdfMutationSupport.CountOutline(document.Outlines);
         if (lostBookmarks > 0)
         {
-            warnings.Add(new Warning
+            warnings.Add(new Warning(WarningCodes.LossyConversion, $"{lostBookmarks} bookmark(s) were removed by the conversion to {profile}.")
             {
-                Code = WarningCodes.LossyConversion,
                 Location = "outline",
-                Message = $"{lostBookmarks} bookmark(s) were removed by the conversion to {profile}.",
                 Hint = "Compare 'pdf inspect --detail outline' of both files and re-create the missing bookmarks with add_bookmark.",
             });
         }
@@ -247,10 +239,8 @@ internal static class PdfConvert
 
         if (changed > 0)
         {
-            warnings.Add(new Warning
+            warnings.Add(new Warning(WarningCodes.LossyConversion, $"Conversion to {profile} changed {changed} item(s) the profile does not allow, such as fonts that were not embedded, transparency, actions or prohibited annotation entries.")
             {
-                Code = WarningCodes.LossyConversion,
-                Message = $"Conversion to {profile} changed {changed} item(s) the profile does not allow, such as fonts that were not embedded, transparency, actions or prohibited annotation entries.",
                 Hint = $"Run 'pdf validate <original> --profile {profile}' to list them, and compare the pages of both files.",
             });
         }

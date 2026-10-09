@@ -1633,7 +1633,7 @@ public sealed class PdfMutateTests
             Options = new EditCommandOptions { DryRun = dryRun },
         });
 
-        Warning warning = Assert.Single(result.Warnings!, static warning => warning.Code == "REDACTION_NO_MATCH");
+        Warning warning = Assert.Single(result.Warnings!, static warning => warning.Code.Name == "REDACTION_NO_MATCH");
         Assert.Contains("'op-0002' (redact_text)", warning.Message, StringComparison.Ordinal);
         Assert.DoesNotContain("op-0001", warning.Message, StringComparison.Ordinal);
         // Like a verification issue, the warning never repeats the pattern.
@@ -1672,7 +1672,7 @@ public sealed class PdfMutateTests
         });
 
         Assert.True(result.Verification!.Ok);
-        Warning warning = Assert.Single(result.Warnings!, static warning => warning.Code == "REDACTION_TEXT_MOVED");
+        Warning warning = Assert.Single(result.Warnings!, static warning => warning.Code.Name == "REDACTION_TEXT_MOVED");
         Assert.Contains("'op-0001' (redact_text) on page 1", warning.Message, StringComparison.Ordinal);
         Assert.Contains("'op-0002' (redact_area) on page 2", warning.Message, StringComparison.Ordinal);
         Assert.DoesNotContain("op-0003", warning.Message, StringComparison.Ordinal);
@@ -1795,7 +1795,7 @@ public sealed class PdfMutateTests
         Assert.Equal(1, Assert.Single(edited.Applied).ItemsAffected);
         Assert.True(edited.Verification!.Ok);
         // Each run has a position of its own, so the redaction moves none.
-        Assert.DoesNotContain(edited.Warnings ?? [], static warning => warning.Code == "REDACTION_TEXT_MOVED");
+        Assert.DoesNotContain(edited.Warnings ?? [], static warning => warning.Code.Name == "REDACTION_TEXT_MOVED");
         string text = PdfRead.Run(fixture.Session, new PdfReadRequest { Input = output }).Pages[0].Text;
         Assert.Contains("Due", text, StringComparison.Ordinal);
         // The evaluation watermark names a year, so the check reads the East Asian characters.
@@ -1835,7 +1835,7 @@ public sealed class PdfMutateTests
         });
 
         Assert.Equal(0, Assert.Single(edited.Applied).ItemsAffected);
-        Assert.Single(edited.Warnings!, static warning => warning.Code == "REDACTION_NO_MATCH");
+        Assert.Single(edited.Warnings!, static warning => warning.Code.Name == "REDACTION_NO_MATCH");
     }
 
     /// <summary>

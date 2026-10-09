@@ -136,10 +136,8 @@ internal static class CellsView
                 int rows = Math.Clamp((int)(0.9 * (lastRow + 1) * maxPixels / pixels), 1, lastRow);
                 sheet.PageSetup.PrintArea = "A1:" + CellsHelper.CellIndexToName(rows - 1, Math.Max(0, sheet.Cells.MaxDataColumn));
                 render = new SheetRender(sheet, options);
-                window = new Warning
+                window = new Warning(CellsDiagnostics.SheetPartiallyRendered, $"Worksheet '{sheet.Name}' is too large for one review image; only rows 1-{rows} of {lastRow + 1} were rendered.")
                 {
-                    Code = CellsDiagnostics.SheetPartiallyRendered,
-                    Message = $"Worksheet '{sheet.Name}' is too large for one review image; only rows 1-{rows} of {lastRow + 1} were rendered.",
                     Hint = $"Check the rest with 'cells render --sheet \"{sheet.Name}\" --range' windows, or trust 'cells query' for the data.",
                     Location = sheet.Name,
                     AffectsCompleteness = true,

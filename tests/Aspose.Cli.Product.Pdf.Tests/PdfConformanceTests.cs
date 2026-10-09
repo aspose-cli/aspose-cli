@@ -137,7 +137,7 @@ public sealed class PdfConformanceTests
         Assert.Equal(["Results", "Detail", "Appendix"], OutlineTitles(archived.Outlines));
         Assert.Equal("Quarterly results", archived.Info.Title);
         Assert.Equal("A-", archived.PageLabels.GetLabel(0).Prefix);
-        Assert.DoesNotContain(result.Warnings ?? [], static warning => warning.Code == "NAVIGATION_DEGRADED");
+        Assert.DoesNotContain(result.Warnings ?? [], static warning => warning.Code.Name == "NAVIGATION_DEGRADED");
 
         // PDF/A-1 allows no attachment, PDF/A-2 only PDF/A ones, PDF/A-3 any.
         string[] kept = profile switch
@@ -234,7 +234,7 @@ public sealed class PdfConformanceTests
             Pages = Sdk.Addressing.PageRange.Parse("1-2"),
         });
 
-        Assert.DoesNotContain(result.Warnings ?? [], static warning => warning.Code == "NAVIGATION_DEGRADED");
+        Assert.DoesNotContain(result.Warnings ?? [], static warning => warning.Code.Name == "NAVIGATION_DEGRADED");
     }
 
     [Fact]
@@ -255,7 +255,7 @@ public sealed class PdfConformanceTests
         using var archived = new Aspose.Pdf.Document(output);
         Assert.Single(archived.Pages);
         Assert.Contains("Appendix", OutlineTitles(archived.Outlines));
-        Assert.Contains(result.Warnings!, static warning => warning.Code == "NAVIGATION_DEGRADED");
+        Assert.Contains(result.Warnings!, static warning => warning.Code.Name == "NAVIGATION_DEGRADED");
     }
 
     [Fact]

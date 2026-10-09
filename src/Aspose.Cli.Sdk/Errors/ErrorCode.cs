@@ -16,6 +16,12 @@ public sealed record ErrorCode(string Name, ExitCode ExitCode)
     public string DetailsSchemaId { get; private init; } = DiagnosticDetails.CatalogId;
 
     /// <summary>
+    /// Whether only licensing raises this error, such as an invalid license file; a build whose
+    /// products need no license leaves it out of <c>capabilities</c>.
+    /// </summary>
+    public bool LicenseSurface { get; init; }
+
+    /// <summary>
     /// Declares the code for a named or numbered target that the document does not contain,
     /// such as a sheet, slide or bookmark. Its errors are built only by
     /// <see cref="CliErrors.NotFound"/> and <see cref="CliErrors.NotFoundAt"/>, so every

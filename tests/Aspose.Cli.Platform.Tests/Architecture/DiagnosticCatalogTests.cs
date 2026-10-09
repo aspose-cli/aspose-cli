@@ -18,8 +18,7 @@ public sealed class DiagnosticCatalogTests
     {
         DiagnosticDescriptor productDiagnostic = DiagnosticDescriptor.Error(
             new ErrorCode("ALPHA_FAILURE", ExitCode.ValidationError),
-            "alpha",
-            "validation");
+            "alpha");
         ProductCatalog catalog = Build("alpha", [productDiagnostic]);
 
         Assert.All(catalog.Diagnostics.All, descriptor =>
@@ -37,17 +36,15 @@ public sealed class DiagnosticCatalogTests
     {
         DiagnosticDescriptor valid = DiagnosticDescriptor.Error(
             new ErrorCode("ALPHA_FAILURE", ExitCode.ValidationError),
-            "alpha",
-            "validation");
+            "alpha");
 
         InvalidOperationException duplicate = Assert.Throws<InvalidOperationException>(
             () => Build("alpha", [valid, valid]));
         Assert.Contains("multiple owners", duplicate.Message, StringComparison.Ordinal);
 
         DiagnosticDescriptor crossSeverity = DiagnosticDescriptor.Warning(
-            valid.Code,
-            "alpha",
-            "warning");
+            new WarningCode(valid.Code),
+            "alpha");
         InvalidOperationException collision = Assert.Throws<InvalidOperationException>(
             () => Build("alpha", [valid, crossSeverity]));
         Assert.Contains(
@@ -66,10 +63,6 @@ public sealed class DiagnosticCatalogTests
         InvalidOperationException exit = Assert.Throws<InvalidOperationException>(
             () => Build("alpha", [valid with { ExitCode = ExitCode.Success }]));
         Assert.Contains("invalid exit code", exit.Message, StringComparison.Ordinal);
-
-        InvalidOperationException hint = Assert.Throws<InvalidOperationException>(
-            () => Build("alpha", [valid with { HintTemplateId = string.Empty }]));
-        Assert.Contains("incomplete", hint.Message, StringComparison.Ordinal);
 
     }
 

@@ -1224,7 +1224,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
         });
 
         Assert.Empty(extracted.Items);
-        Assert.Contains(extracted.Warnings!, warning => warning.Code == "LINKED_IMAGES_SKIPPED");
+        Assert.Contains(extracted.Warnings!, warning => warning.Code.Name == "LINKED_IMAGES_SKIPPED");
     }
 
     [Fact]
