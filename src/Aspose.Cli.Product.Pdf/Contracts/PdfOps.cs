@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using Aspose.Cli.Sdk;
 using Aspose.Cli.Sdk.Serialization;
 using Aspose.Cli.Sdk.Text;
 
@@ -12,9 +13,13 @@ public sealed record PdfOpsBatch : BoundedOperationEnvelope<PdfOp>;
 /// The operation document of <c>pdf edit --ops</c>. Page numbers and ranges are 1-based and
 /// resolve against the document as the earlier operations left it.
 /// </summary>
-[OperationVocabulary(PdfSchemaIds.Ops, MaximumOperations = 256, JsonContext = typeof(PdfOpsJsonContext))]
+[OperationVocabulary(SchemaUri, MaximumOperations = 256, JsonContext = typeof(PdfOpsJsonContext))]
 [JsonConverter(typeof(OperationJsonConverter<PdfOp>))]
-public abstract partial record PdfOp : BoundedOperation;
+public abstract partial record PdfOp : BoundedOperation
+{
+    /// <summary>The URI of the operation document's schema.</summary>
+    public const string SchemaUri = DistributionInfo.SchemaBaseUri + ProductBuildMetadata.ProductId + "/ops.schema.json";
+}
 
 /// <summary>A rectangle in points (72 per inch) with a top-left origin, relative to the visible, rotated page box.</summary>
 public sealed record PdfRectInput
