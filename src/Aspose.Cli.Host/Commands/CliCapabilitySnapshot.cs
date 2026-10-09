@@ -15,17 +15,20 @@ internal sealed class CliCapabilitySnapshot
     private readonly IReadOnlyDictionary<string, string> _displayNames;
     private readonly IReadOnlyDictionary<string, string> _productRoots;
     private readonly IReadOnlyDictionary<string, string> _commandOwners;
+    private readonly IReadOnlyDictionary<string, string> _schemaOwners;
 
     private CliCapabilitySnapshot(
         CapabilitiesResult result,
         IReadOnlyDictionary<string, string> displayNames,
         IReadOnlyDictionary<string, string> productRoots,
-        IReadOnlyDictionary<string, string> commandOwners)
+        IReadOnlyDictionary<string, string> commandOwners,
+        IReadOnlyDictionary<string, string> schemaOwners)
     {
         Result = result;
         _displayNames = displayNames;
         _productRoots = productRoots;
         _commandOwners = commandOwners;
+        _schemaOwners = schemaOwners;
     }
 
     public CapabilitiesResult Result { get; }
@@ -143,11 +146,10 @@ internal sealed class CliCapabilitySnapshot
                     product.Id,
                     StringComparison.Ordinal))
                 .ToArray(),
+            // A product's selection keeps the schemas it publishes and those no product owns.
             Schemas = Result.Schemas.Where(schema =>
-                    schema.StartsWith("v2/common/", StringComparison.Ordinal)
-                    || schema.StartsWith(
-                        $"v2/{product.Id}/",
-                        StringComparison.Ordinal))
+                    !_schemaOwners.TryGetValue(schema, out string? owner)
+                    || string.Equals(owner, product.Id, StringComparison.Ordinal))
                 .ToArray(),
             Routing = Result.Routing with
             {
@@ -268,6 +270,13 @@ internal sealed class CliCapabilitySnapshot
             .ToDictionary(
                 static owned => owned.Command.Path,
                 static owned => owned.Product!,
+                StringComparer.Ordinal),
+        catalog.Products
+            .SelectMany(product => catalog.Resources.GetProduct(product.Manifest.Id).SchemaIds
+                .Select(schema => (Schema: schema, Owner: product.Manifest.Id)))
+            .ToDictionary(
+                static owned => owned.Schema,
+                static owned => owned.Owner,
                 StringComparer.Ordinal));
     }
 
