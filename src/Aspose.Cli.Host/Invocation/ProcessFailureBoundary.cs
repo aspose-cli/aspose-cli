@@ -13,7 +13,7 @@ internal static class ProcessFailureBoundary
 {
     private const string BootstrapFailureEnvelope = $$"""
         {
-          "schema": "{{CommonSchemaIds.Error}}",
+          "schema": "{{ErrorEnvelope.SchemaUri}}",
           "schemaVersion": 2,
           "error": {
             "code": "INTERNAL_ERROR",

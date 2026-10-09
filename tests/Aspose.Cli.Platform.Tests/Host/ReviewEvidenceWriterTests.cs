@@ -145,7 +145,7 @@ public sealed class ReviewEvidenceWriterTests
         string digest = "sha256:" + Convert.ToHexString(SHA256.HashData(PngHeader)).ToLowerInvariant();
         JsonObject view = JsonNode.Parse(File.ReadAllText(
             Path.Combine(result.OutputDirectory, "artifacts", "view.json")))!.AsObject();
-        Assert.Equal(CommonSchemaIds.View, view["schema"]!.GetValue<string>());
+        Assert.Equal(ResultEnvelope.SchemaUri("common", ViewManifest.Id), view["schema"]!.GetValue<string>());
         Assert.Equal("pages", view["view"]!.GetValue<string>());
         Assert.All(view["parts"]!.AsArray(), part =>
             Assert.Equal(digest, part!["digest"]!.GetValue<string>()));

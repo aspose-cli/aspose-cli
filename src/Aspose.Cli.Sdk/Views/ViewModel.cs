@@ -74,12 +74,15 @@ public interface IViewArtifactSink
 /// What one view render produced: the ordered parts of the document and the
 /// semantic layout of each part. Serialized as <c>view.json</c> beside the parts.
 /// </summary>
-[SchemaId("view")]
+[SchemaId(Id)]
 public sealed record ViewManifest
 {
+    /// <summary>The relative id the manifest's schema is published under.</summary>
+    public const string Id = "view";
+
     /// <summary>Canonical schema of the manifest document.</summary>
     [JsonPropertyOrder(-100)]
-    public string Schema { get; } = CommonSchemaIds.View;
+    public string Schema { get; } = ResultEnvelope.SchemaUri("common", Id);
 
     /// <summary>Schema version of the manifest document.</summary>
     [JsonPropertyOrder(-99)]

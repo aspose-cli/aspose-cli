@@ -89,7 +89,7 @@ public sealed class CommonSchemaContractTests
         ProductPreviewStartResult sample = CommonSchemaSamples.ProductPreviewStart with { Url = url };
         string json = new HostContractJson(CommonCatalog).Serializer.Serialize(sample);
         using JsonDocument instance = JsonDocument.Parse(json);
-        JsonSchema schema = CommonSchema(CommonSchemaIds.PreviewSession);
+        JsonSchema schema = CommonSchema(ResultEnvelope.SchemaUri("common", "preview-session"));
         Assert.Equal(valid, schema.Evaluate(instance.RootElement).IsValid);
     }
 
@@ -107,7 +107,7 @@ public sealed class CommonSchemaContractTests
         };
         string json = new HostContractJson(CommonCatalog).Serializer.Serialize(sample);
         JsonObject instance = JsonNode.Parse(json)!.AsObject();
-        JsonSchema schema = CommonSchema(CommonSchemaIds.Doctor);
+        JsonSchema schema = CommonSchema(ResultEnvelope.SchemaUri("common", "doctor"));
         using JsonDocument complete = JsonDocument.Parse(json);
         Assert.Equal(valid, schema.Evaluate(complete.RootElement).IsValid);
         instance["products"]![0]!.AsObject().Remove("engine");

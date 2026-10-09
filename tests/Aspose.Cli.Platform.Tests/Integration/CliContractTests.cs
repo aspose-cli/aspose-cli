@@ -46,7 +46,7 @@ $", result.StdOut);
 
         Assert.Equal(0, result.ExitCode);
         Assert.Equal(string.Empty, result.StdErr);
-        AssertConformsTo(CommonSchemaIds.Version, result.StdOut);
+        AssertConformsTo(ResultEnvelope.SchemaUri("common", "version"), result.StdOut);
         JsonNode version = Parse(result.StdOut);
         JsonNode expected = Parse(capabilities.StdOut);
         foreach (string field in new[] { "cliVersion", "sourceRevision", "buildDirty", "enginePins" })
@@ -245,7 +245,7 @@ $", result.StdOut);
         CliResult full = _workspace.Run("capabilities", "--output", "json");
 
         Assert.Equal(0, result.ExitCode);
-        AssertConformsTo(CommonSchemaIds.CapabilitiesSummary, result.StdOut);
+        AssertConformsTo(ResultEnvelope.SchemaUri("common", "capabilities-summary"), result.StdOut);
         // The first look stays small next to the full document.
         Assert.True(result.StdOut.Length < 16 * 1024, $"The summary is {result.StdOut.Length} characters.");
         JsonNode summary = Parse(result.StdOut);

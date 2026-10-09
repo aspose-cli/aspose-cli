@@ -950,7 +950,7 @@ public static partial class CliErrors
     private static void RequireNotFoundCode(ErrorCode code)
     {
         ArgumentNullException.ThrowIfNull(code);
-        if (code.DetailsSchemaId != CommonSchemaIds.NotFoundDetails)
+        if (code.DetailsSchemaId != NotFoundDetails.CatalogId)
         {
             throw new ArgumentException(
                 $"Error code '{code.Name}' is not declared with ErrorCode.NotFound.", nameof(code));

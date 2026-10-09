@@ -126,7 +126,7 @@ internal sealed record AppProductView(
 /// <param name="RecentFiles">Recently opened files, newest first.</param>
 /// <param name="Diagnostics">Checks the App's settings show.</param>
 /// <param name="Products">Every product the App can open documents with.</param>
-[SchemaId("app-status")]
+[SchemaId(Id)]
 internal sealed record AppStatusView(
     string Version,
     [property: MinLength(1)] string DisplayName,
@@ -150,9 +150,12 @@ internal sealed record AppStatusView(
     IReadOnlyList<AppDiagnosticView> Diagnostics,
     [property: MinItems(1)] IReadOnlyList<AppProductView> Products)
 {
+    /// <summary>The relative id the status schema is published under.</summary>
+    public const string Id = "app-status";
+
     /// <summary>URI of the JSON schema the status conforms to.</summary>
     [JsonPropertyOrder(-100)]
-    public string Schema => CommonSchemaIds.AppStatus;
+    public string Schema => ResultEnvelope.SchemaUri("common", Id);
 
     /// <summary>Version of the status contract.</summary>
     [JsonPropertyOrder(-99)]
