@@ -31,7 +31,7 @@ internal static class CellsRender
         }
 
         Worksheet sheet = Sheets.Resolve(workbook, request.SheetName);
-        bool isRaster = FormatMapper.IsRaster(request.Output.Format.Id);
+        bool isRaster = CellsEngineFormats.IsRaster(request.Output.Format.Id);
 
         // A hidden sheet renders to zero pages (and would crash the page-size
         // probe below). The caller explicitly asked for THIS sheet, so reveal it
@@ -81,11 +81,11 @@ internal static class CellsRender
     /// </summary>
     private static StagedOutput StageSheet(ResourceBudgetLedger budgets, OutputSet<Workbook> transaction, Worksheet sheet, RenderRequest request, string? printArea, string outputPath)
     {
-        bool isRaster = FormatMapper.IsRaster(request.Output.Format.Id);
+        bool isRaster = CellsEngineFormats.IsRaster(request.Output.Format.Id);
 
         var imageOptions = new ImageOrPrintOptions
         {
-            ImageType = FormatMapper.ToImageType(request.Output.Format.Id),
+            ImageType = CellsEngineFormats.Image(request.Output.Format.Id),
             OnePagePerSheet = true,
         };
 
@@ -216,7 +216,7 @@ internal static class CellsRender
                 SizeBytes = rendered[0].SizeBytes,
             },
             Sheet = rendered[0].Sheet,
-            Dpi = FormatMapper.IsRaster(request.Output.Format.Id) ? request.Dpi : null,
+            Dpi = CellsEngineFormats.IsRaster(request.Output.Format.Id) ? request.Dpi : null,
             Outputs = rendered,
             License = EnvelopeParts.License(licenseState),
             Warnings = CombineWarnings([.. loaded.Warnings() ?? [], sheetsSkipped]),

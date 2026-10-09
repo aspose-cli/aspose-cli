@@ -30,7 +30,7 @@ internal static class CellsEngineSupport
     internal static SourceInfo BuildSource(string path, Workbook workbook) => new()
     {
         Path = path,
-        Format = FormatMapper.ToFormatId(ResolveSourceFormat(path, workbook)),
+        Format = CellsEngineFormats.IdOf(ResolveSourceFormat(path, workbook)),
         SizeBytes = new FileInfo(path).Length,
         Fingerprint = FileFingerprints.Capture(path),
     };

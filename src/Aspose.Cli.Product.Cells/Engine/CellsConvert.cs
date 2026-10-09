@@ -27,7 +27,7 @@ internal static class CellsConvert
         // The imported rows come over as they are; say which of them are not table data.
         IReadOnlyList<Warning> textLayout = TextTableLayout.Warnings(loaded, session.Budgets);
 
-        SaveFormat saveFormat = FormatMapper.ToSaveFormat(request.Output.Format.Id);
+        SaveFormat saveFormat = CellsEngineFormats.Save(request.Output.Format.Id);
         string? resolvedSheetName = null;
         int? selectedSheet = null;
 

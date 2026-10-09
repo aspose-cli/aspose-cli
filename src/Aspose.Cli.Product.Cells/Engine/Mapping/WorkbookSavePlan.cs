@@ -23,7 +23,7 @@ internal sealed record WorkbookSavePlan(string FormatId, SaveFormat Format, Save
             throw new InvalidOperationException($"An output password reached the '{formatId}' format, which cannot carry one.");
         }
 
-        SaveFormat format = FormatMapper.ToSaveFormat(formatId);
+        SaveFormat format = CellsEngineFormats.Save(formatId);
         SaveOptions? options = formatId switch
         {
             "html" => new HtmlSaveOptions { SaveAsSingleFile = true, ExportImagesAsBase64 = true },
