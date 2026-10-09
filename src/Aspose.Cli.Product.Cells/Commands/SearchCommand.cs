@@ -18,7 +18,7 @@ internal static class SearchCommand
     public static CommandDefinition<SearchRequest, SearchResult> Create()
     {
         var search = new SearchOptions(new SearchScopeGrammar(
-            "Where to search: values (default), formulas or both.",
+            "Where to search: values, formulas or both.",
             [InValues, InFormulas, InBoth],
             InValues));
         var sheet = new Option<string?>("--sheet") { Description = "Restrict to one sheet. Default: all sheets." }.WithInput(InputKind.None);

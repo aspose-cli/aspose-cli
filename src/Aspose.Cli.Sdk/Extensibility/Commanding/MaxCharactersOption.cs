@@ -27,7 +27,7 @@ public sealed class MaxCharactersOption
         {
             Description = string.Create(
                 CultureInfo.InvariantCulture,
-                $"Maximum characters returned, counting {what}. Range 1-{ReadContinuation.MaximumCharacters}, default {DefaultCharacters}."),
+                $"Maximum characters returned, counting {what}. Range 1-{ReadContinuation.MaximumCharacters}."),
             DefaultValueFactory = _ => DefaultCharacters,
         };
         Options = [_maxCharacters];

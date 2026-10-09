@@ -34,7 +34,7 @@ internal static class ReadCommand
         var scanOption = new Option<string?>(NextReadCommand.ScanOption) { Hidden = true }.WithInput(InputKind.None);
         var scopeOption = new Option<string>("--scope")
         {
-            Description = "Projection scope: values (default), formulas (adds f), styles (adds styleId + pool), full.",
+            Description = "Projection scope: values, formulas (adds f), styles (adds styleId + pool), full.",
             DefaultValueFactory = _ => ReadScopes.Values,
         }.WithInput(InputKind.None);
         scopeOption.AcceptOnlyFromAmong(ReadScopes.Values, ReadScopes.Formulas, ReadScopes.Styles, ReadScopes.Full);

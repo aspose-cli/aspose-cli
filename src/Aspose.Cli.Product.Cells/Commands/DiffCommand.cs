@@ -19,7 +19,7 @@ internal static class DiffCommand
     {
         var compare = new Option<string>("--compare")
         {
-            Description = "What to compare: values, or formulas (values + formulas, the default).",
+            Description = "What to compare: values, or formulas (values + formulas).",
             DefaultValueFactory = _ => CompareFormulas,
         }.WithInput(InputKind.None);
         compare.AcceptOnlyFromAmong(CompareValues, CompareFormulas);

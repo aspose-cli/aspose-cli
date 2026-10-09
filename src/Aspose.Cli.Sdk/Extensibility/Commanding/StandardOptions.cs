@@ -84,7 +84,7 @@ public sealed class TargetFormat
     /// <summary>
     /// An optional <c>--to</c> among the product's render formats; when it is omitted, the
     /// <c>--out</c> extension names the format, and otherwise <paramref name="defaultFormat"/>.
-    /// Its help is the standard wording, such as <c>Image format: png, jpeg or svg. Default: png.</c>
+    /// Its help is the standard wording, such as <c>Image format: png, jpeg or svg.</c>
     /// </summary>
     /// <param name="formats">The product's format declarations; those with the render use are offered.</param>
     /// <param name="defaultFormat">The render format id used when nothing else names one.</param>
@@ -93,7 +93,7 @@ public sealed class TargetFormat
         ArgumentNullException.ThrowIfNull(formats);
         IReadOnlyList<string> ids = [.. formats.IdsFor(FormatUse.Render)];
         string listed = ids.Count < 2 ? string.Concat(ids) : $"{string.Join(", ", ids.Take(ids.Count - 1))} or {ids[^1]}";
-        return new(FormatUse.Render, $"Image format: {listed}. Default: {defaultFormat}.", formats, defaultFormat, required: false);
+        return new(FormatUse.Render, $"Image format: {listed}.", formats, defaultFormat, required: false);
     }
 
     /// <summary>

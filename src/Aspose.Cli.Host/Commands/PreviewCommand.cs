@@ -194,7 +194,7 @@ internal static class PreviewCommand
                 catalog.Products.Select(static item => item.Manifest.Id).ToArray());
             var view = new Option<string>("--view")
             {
-                Description = "Product view; auto uses the product's default view.",
+                Description = "Product view; auto uses the product's own view.",
                 DefaultValueFactory = _ => AutoView,
             }.WithInput(InputKind.None);
             view.AcceptOnlyFromAmong(

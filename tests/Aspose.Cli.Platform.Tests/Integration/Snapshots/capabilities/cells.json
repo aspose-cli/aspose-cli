@@ -681,7 +681,7 @@
             "secret": false,
             "valueSource": "command-line",
             "inputKind": "none",
-            "description": "What to compare: values, or formulas (values + formulas, the default)."
+            "description": "What to compare: values, or formulas (values + formulas)."
           },
           {
             "name": "--left-password",
@@ -1748,7 +1748,7 @@
             "secret": false,
             "valueSource": "command-line",
             "inputKind": "none",
-            "description": "Projection scope: values (default), formulas (adds f), styles (adds styleId + pool), full."
+            "description": "Projection scope: values, formulas (adds f), styles (adds styleId + pool), full."
           },
           {
             "name": "--sheet",
@@ -1933,7 +1933,7 @@
             "secret": false,
             "valueSource": "command-line",
             "inputKind": "none",
-            "description": "Where to search: values (default), formulas or both."
+            "description": "Where to search: values, formulas or both."
           },
           {
             "name": "--sheet",
@@ -2027,7 +2027,7 @@
             "secret": false,
             "valueSource": "command-line",
             "inputKind": "none",
-            "description": "Raster resolution (36-1200; default 192); ignored for vector formats."
+            "description": "Raster resolution, 36-1200; ignored for vector formats."
           },
           {
             "name": "--font-dir",
@@ -2185,7 +2185,7 @@
             "secret": false,
             "valueSource": "command-line",
             "inputKind": "none",
-            "description": "Image format: png, jpeg or svg. Default: png."
+            "description": "Image format: png, jpeg or svg."
           }
         ],
         "arguments": [

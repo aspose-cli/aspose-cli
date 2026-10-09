@@ -288,7 +288,7 @@ Usage:
   aspose-cli fonts list [options]
 
 Options:
-  --product <cells|pdf|slides|words>          Product font engine to inspect. Default: cells. [default: cells]
+  --product <cells|pdf|slides|words>          Product font engine to inspect. [default: cells]
   -?, -h, --help                              Show help and usage information
   -f, --output <compact|json|markdown|table>  Output format: json (contract envelopes), compact (the same JSON on one line), table (human text) or markdown. Default: table on a terminal, json when redirected.
   -q, --quiet                                 Suppress warnings and notices on stderr (errors still print).
@@ -474,7 +474,7 @@ Arguments:
 Options:
   --port <port>                               Loopback port; 0 chooses a free port. [default: 0]
   --product <cells|pdf|slides|words>          Product that reads the file; by default, the one whose format the file's content matches.
-  --view <auto|pages|sheets|slides|workbook>  Product view; auto uses the product's default view. [default: auto]
+  --view <auto|pages|sheets|slides|workbook>  Product view; auto uses the product's own view. [default: auto]
   --open                                      Open the viewer in the default browser.
   --fx <fx>                                   Presentation effect for live demonstrations (for example 'demo').
   --password <password>                       Password for the file. Discouraged: visible in the process list; prefer --password-env.
@@ -551,7 +551,7 @@ Options:
   -o, --out <out>                             New evidence directory; defaults to <filename>.review beside the source.
   --max-items <max-items>                     Maximum visual units rendered and listed in review.json. [default: 256]
   --product <cells|pdf|slides|words>          Product that reads the file; by default, the one whose format the file's content matches.
-  --view <auto|pages|sheets|slides>           Product view; auto uses the product's default view. [default: auto]
+  --view <auto|pages|sheets|slides>           Product view; auto uses the product's own view. [default: auto]
   --code <code>                               Report only findings of this check (a code from capabilities review.checks); repeat for several. Errors of other checks then do not fail the review. Accepts 63 values, listed in aspose-cli capabilities.
   --password <password>                       Password for the review source. Discouraged: visible in the process list; prefer --password-env.
   --password-env <password-env>               Name of an environment variable holding the password for the review source.
