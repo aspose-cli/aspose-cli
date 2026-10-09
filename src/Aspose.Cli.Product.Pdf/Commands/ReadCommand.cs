@@ -35,8 +35,8 @@ internal static class ReadCommand
             },
             Table)
         {
-            Finish = static (_, request, result, standard) =>
-                result with { Window = result.Window with { Next = Next(standard.Continuation(), request, result) } },
+            Finish = (_, request, result, standard) =>
+                result with { Window = result.Window with { Next = Next(standard.Continuation(), pages.Name, request, result) } },
         };
     }
 
@@ -52,7 +52,7 @@ internal static class ReadCommand
     }
 
     /// <summary>The read that resumes where this one stopped, or null when it covered the selection.</summary>
-    private static string? Next(ContinuationCommand resume, PdfReadRequest request, PdfReadResult result)
+    private static string? Next(ContinuationCommand resume, string pagesOption, PdfReadRequest request, PdfReadResult result)
     {
         if (!result.Window.Truncated)
         {
@@ -66,7 +66,7 @@ internal static class ReadCommand
                 [.. result.Pages.Select(static page => new ReadPart(page.Page, page.Truncated))],
                 request.MaxCharacters) is { } continuation
             ? resume
-                .Option("--pages", continuation.Parts)
+                .Option(pagesOption, continuation.Parts)
                 .Option("--mode", request.Mode)
                 .Option(MaxCharactersOption.Name, continuation.MaxCharacters)
                 .ToString()

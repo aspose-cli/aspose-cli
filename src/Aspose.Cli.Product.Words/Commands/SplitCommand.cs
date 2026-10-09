@@ -27,7 +27,7 @@ internal static class SplitCommand
                 string? pageText = pages.Read(parse);
                 if (pageText is not null && mode != "pages")
                 {
-                    throw CliErrors.OptionInvalid("--pages", $"cannot be used with --by {mode}", "Use --by pages or omit the range.");
+                    throw CliErrors.OptionInvalid(pages.Name, $"cannot be used with --by {mode}", "Use --by pages or omit the range.");
                 }
 
                 return new WordsSplitRequest

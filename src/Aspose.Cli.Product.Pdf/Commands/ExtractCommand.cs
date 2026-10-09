@@ -51,7 +51,7 @@ internal static class ExtractCommand
                 {
                     if (pageText is not null || standard.RequestedOutputDirectory is not null)
                     {
-                        throw CliErrors.OptionInvalid("--what", "forms cannot be combined with --pages or --out-dir", "Use --what forms --to <json|fdf|xfdf> and optionally --out.");
+                        throw CliErrors.OptionInvalid("--what", $"forms cannot be combined with {pages.Name} or --out-dir", "Use --what forms --to <json|fdf|xfdf> and optionally --out.");
                     }
 
                     if (!standard.TargetRequested && standard.RequestedOutputPath() is null)
@@ -78,7 +78,7 @@ internal static class ExtractCommand
 
                 if (string.Equals(kind, "attachments", StringComparison.Ordinal) && pageText is not null)
                 {
-                    throw CliErrors.OptionInvalid("--pages", "attachments belong to the document rather than individual pages", "Omit --pages when extracting attachments.");
+                    throw CliErrors.OptionInvalid(pages.Name, "attachments belong to the document rather than individual pages", $"Omit {pages.Name} when extracting attachments.");
                 }
 
                 PageRange? range = pageText is null ? null : PageRange.Parse(pageText);
