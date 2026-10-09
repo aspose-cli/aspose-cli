@@ -126,50 +126,6 @@ public sealed class LicenseInstallerTests
     }
 
     [Fact]
-    public void InstallMany_NonSeekableStreamUsesOneBoundedSnapshotAndRemainsOpen()
-    {
-        using var temp = new TempDirectory();
-        using var source = new ForwardOnlyStream("stream license bytes"u8.ToArray());
-        string target = temp.File("licenses/alpha.lic");
-        string? snapshotPath = null;
-
-        LicenseInstaller.InstallMany(TestBudgets.Create(), source, snapshot =>
-        {
-            snapshotPath = snapshot;
-            Assert.Equal("stream license bytes", File.ReadAllText(snapshot));
-            return [target];
-        });
-
-        Assert.False(source.Disposed);
-        Assert.Equal("stream license bytes", File.ReadAllText(target));
-        Assert.False(Directory.Exists(Path.GetDirectoryName(snapshotPath!)));
-    }
-
-    [Fact]
-    public void InstallMany_OverLimitStreamStopsAfterLimitPlusOneAndLeavesCallerStreamOpen()
-    {
-        using var temp = new TempDirectory();
-        using var source = new ForwardOnlyStream(new byte[LicenseInstaller.MaximumBytes + 4096]);
-        bool validated = false;
-        CliException error = Assert.Throws<CliException>(() => LicenseInstaller.InstallMany(
-            TestBudgets.Create(), source, _ => { validated = true; return [temp.File("licenses/alpha.lic")]; }));
-
-        Assert.Equal(ErrorCodes.FileTooLarge, error.Code);
-        Assert.Equal(LicenseInstaller.MaximumBytes + 1L, source.BytesRead);
-        Assert.False(source.Disposed);
-        Assert.False(validated);
-    }
-
-    [Fact]
-    public void InstallMany_ValidationFailureDoesNotDisposeCallerStream()
-    {
-        using var source = new ForwardOnlyStream("candidate"u8.ToArray());
-        Assert.Throws<InvalidOperationException>(() => LicenseInstaller.InstallMany(
-            TestBudgets.Create(), source, _ => throw new InvalidOperationException("validation failed")));
-        Assert.False(source.Disposed);
-    }
-
-    [Fact]
     public void InstallMany_LaterInvalidDestinationPreservesExistingAndMissingTargets()
     {
         using var temp = new TempDirectory();
@@ -207,7 +163,8 @@ public sealed class LicenseInstallerTests
         FileSecurity acl = new FileInfo(target).GetAccessControl();
         acl.AddAccessRule(new FileSystemAccessRule(everyone, FileSystemRights.ReadData, AccessControlType.Allow));
         new FileInfo(target).SetAccessControl(acl);
-        using var source = new MemoryStream("replacement"u8.ToArray());
+        string source = temp.File("source.lic");
+        File.WriteAllText(source, "replacement");
 
         if (removing)
         {
@@ -235,7 +192,8 @@ public sealed class LicenseInstallerTests
         string second = Path.Combine(directory, "beta.lic");
         WriteFile(first, "old alpha");
         WriteFile(second, "old beta");
-        using var source = new MemoryStream("new license"u8.ToArray());
+        string source = temp.File("source.lic");
+        File.WriteAllText(source, "new license");
 
         CliException error = Assert.Throws<CliException>(() => LicenseInstaller.InstallMany(
             TestBudgets.Create(), source, _ => [first, second], new FailSecondPublication()));
@@ -301,7 +259,8 @@ public sealed class LicenseInstallerTests
         var budgets = new ResourceBudgetLedger(deadline, outputSession: worker);
         try
         {
-            using var source = new MemoryStream("new license"u8.ToArray());
+            string source = temp.File("source.lic");
+            File.WriteAllText(source, "new license");
             LicenseInstaller.InstallMany(budgets, source, snapshot =>
             {
                 Assert.StartsWith(workerRoot + Path.DirectorySeparatorChar, snapshot);
@@ -323,14 +282,11 @@ public sealed class LicenseInstallerTests
     }
 
     [Fact]
-    public void InstallMany_ExactMaximumIsAcceptedAndCallerPositionIsRespected()
+    public void InstallMany_ExactMaximumIsAccepted()
     {
         using var temp = new TempDirectory();
-        byte[] bytes = new byte[LicenseInstaller.MaximumBytes + 2];
-        bytes[0] = 1;
-        bytes[1] = 2;
-        using var source = new MemoryStream(bytes);
-        source.Position = 2;
+        string source = temp.File("source.lic");
+        File.WriteAllBytes(source, new byte[LicenseInstaller.MaximumBytes]);
         string target = temp.File("licenses/alpha.lic");
         LicenseInstaller.InstallMany(TestBudgets.Create(), source, snapshot =>
         {
@@ -338,14 +294,14 @@ public sealed class LicenseInstallerTests
             return [target];
         });
         Assert.Equal(LicenseInstaller.MaximumBytes, new FileInfo(target).Length);
-        Assert.True(source.CanRead);
-        Assert.Equal(bytes.Length, source.Position);
     }
 
     [Fact]
     public void InstallMany_CannotPublishInsideItsTemporarySnapshotDirectory()
     {
-        using var source = new MemoryStream("candidate"u8.ToArray());
+        using var temp = new TempDirectory();
+        string source = temp.File("source.lic");
+        File.WriteAllText(source, "candidate");
         string? snapshotPath = null;
         Assert.Throws<ArgumentException>(() => LicenseInstaller.InstallMany(
             TestBudgets.Create(), source, snapshot =>
@@ -354,7 +310,6 @@ public sealed class LicenseInstallerTests
                 return [Path.Combine(Path.GetDirectoryName(snapshot)!, "installed.lic")];
             }));
         Assert.False(Directory.Exists(Path.GetDirectoryName(snapshotPath!)));
-        Assert.True(source.CanRead);
     }
     [Fact]
     public void RemoveMany_SharedAndProductLicensesCommitInOneTransaction()
@@ -413,35 +368,6 @@ public sealed class LicenseInstallerTests
             {
                 throw new IOException("test second-publication failure");
             }
-        }
-    }
-
-    private sealed class ForwardOnlyStream(byte[] bytes) : Stream
-    {
-        private readonly MemoryStream _inner = new(bytes);
-        public bool Disposed { get; private set; }
-        public long BytesRead { get; private set; }
-        public override bool CanRead => !Disposed;
-        public override bool CanSeek => false;
-        public override bool CanWrite => false;
-        public override long Length => throw new NotSupportedException();
-        public override long Position { get => throw new NotSupportedException(); set => throw new NotSupportedException(); }
-        public override int Read(byte[] buffer, int offset, int count)
-        {
-            int read = _inner.Read(buffer, offset, count); BytesRead += read; return read;
-        }
-        public override int Read(Span<byte> buffer)
-        {
-            int read = _inner.Read(buffer); BytesRead += read; return read;
-        }
-        public override void Flush() => throw new NotSupportedException();
-        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
-        public override void SetLength(long value) => throw new NotSupportedException();
-        public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
-        protected override void Dispose(bool disposing)
-        {
-            if (disposing) { Disposed = true; _inner.Dispose(); }
-            base.Dispose(disposing);
         }
     }
 }
