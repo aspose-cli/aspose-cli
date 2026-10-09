@@ -74,7 +74,11 @@ A PDF batch, for example:
   operation's outcome in one pass.
 
 Each `applied[]` entry has `id`, `index`, `op`, `status`, `itemsAffected` and
-`targets` (the addresses it changed). A product Skill says when its edits
+`targets` (the addresses it changed). `targets` lists at most 100 addresses;
+when it is only the document root address (`pdf`, `presentation` or
+`document`), read it with `itemsAffected`: over 100 means the operation changed
+too many parts to list, and 0 means it changed nothing.
+A product Skill says when its edits
 reopen the output before publishing it; where a product offers
 `--verify`, it adds a semantic check described in the product Skill. Its
 `verification.issues` entries each have a stable `code`, a `message`, and a
