@@ -1,4 +1,3 @@
-using System.CommandLine;
 using Aspose.Cli.Sdk.Extensibility.Output;
 using Aspose.Cli.Sdk.Text;
 
@@ -9,16 +8,16 @@ internal static class SearchCommand
     public static CommandDefinition<PdfSearchRequest, PdfSearchResult> Create()
     {
         var search = new SearchOptions();
-        var pages = new Option<string?>("--pages") { Description = "Optional 1-based page range." }.WithInput(InputKind.None);
+        var pages = new PartRangeOption("page", "every page");
         return new(
             "search",
             "Search PDF text and return page rectangles.",
             new CommandTraits { Input = PdfInputs.Document },
-            [.. search.Options, pages],
+            [.. search.Options, .. pages.Options],
             (parse, standard) =>
             {
                 SearchQuery query = search.Read(parse);
-                string? range = parse.GetValue(pages);
+                string? range = pages.Read(parse);
                 return new PdfSearchRequest
                 {
                     Input = standard.Input,
@@ -32,7 +31,7 @@ internal static class SearchCommand
             Finish = (parse, request, result, standard) =>
             {
                 ContinuationCommand resume = standard.Continuation();
-                if (parse.GetValue(pages) is { } range)
+                if (pages.Read(parse) is { } range)
                 {
                     resume.Option("--pages", range);
                 }

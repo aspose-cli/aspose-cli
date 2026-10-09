@@ -1,4 +1,3 @@
-using System.CommandLine;
 using Aspose.Cli.Sdk.Extensibility.Output;
 using Aspose.Cli.Sdk.IO;
 
@@ -8,7 +7,7 @@ internal static class ConvertCommand
 {
     public static CommandDefinition<PdfConvertRequest, PdfConvertResult> Create()
     {
-        var pages = new Option<string?>("--pages") { Description = "Optional 1-based page range." }.WithInput(InputKind.None);
+        var pages = new PartRangeOption("page", "every page");
         return new(
             "convert",
             "Convert selected PDF pages to a supported format.",
@@ -19,11 +18,11 @@ internal static class ConvertCommand
                 UsesFonts = true,
                 Target = TargetFormat.Convert("Target PDF export format.", PdfFormats.Definitions),
             },
-            [pages],
+            [.. pages.Options],
             (parse, standard) =>
             {
                 ResolvedOutput output = standard.Output;
-                string? range = parse.GetValue(pages);
+                string? range = pages.Read(parse);
                 return new PdfConvertRequest
                 {
                     Input = standard.Input,

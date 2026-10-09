@@ -16,7 +16,7 @@ internal static class ExtractCommand
     {
         var what = new Option<string>("--what") { Required = true, Description = "images, attachments, text, tables or forms." }.WithInput(InputKind.None);
         what.AcceptOnlyFromAmong([.. PdfExtractKinds.All, "forms"]);
-        var pages = new Option<string?>("--pages") { Description = "Optional page range for images, text or tables." }.WithInput(InputKind.None);
+        var pages = new PartRangeOption("page", "every page", onlyWith: "--what images, text or tables");
         var bom = new Option<bool>("--bom")
         {
             Description = "Start each table's CSV with a UTF-8 byte order mark, so Excel reads its non-English text "
@@ -35,12 +35,12 @@ internal static class ExtractCommand
                     "Form export format: json, fdf or xfdf; only with --what forms. Default: the --out extension's.",
                     PdfFormats.FormData),
             },
-            [what, pages, bom],
+            [what, .. pages.Options, bom],
             (parse, standard) =>
             {
                 // Every usage check runs before the input is resolved or read.
                 string kind = parse.GetRequiredValue(what);
-                string? pageText = parse.GetValue(pages);
+                string? pageText = pages.Read(parse);
                 bool byteOrderMark = parse.GetValue(bom);
                 if (byteOrderMark && kind != "tables")
                 {

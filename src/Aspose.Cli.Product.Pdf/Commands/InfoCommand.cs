@@ -1,4 +1,3 @@
-using System.CommandLine;
 using System.Globalization;
 using Aspose.Cli.Sdk.Extensibility.Output;
 
@@ -9,25 +8,28 @@ internal static class InfoCommand
     private static readonly string[] Details =
         ["outline", "forms", "attachments", "fonts", "permissions", "signatures", "layers", "metadata"];
 
+    private static readonly Dictionary<string, string> DetailNotes = new(StringComparer.Ordinal)
+    {
+        ["outline"] = "bookmarks, up to 200",
+        ["forms"] = "form type and field count",
+        ["layers"] = "optional content layer names",
+        ["metadata"] = "document information such as title and author",
+    };
+
     public static CommandDefinition<PdfInfoRequest, PdfInfoResult> Create()
     {
-        var preview = new Option<bool>("--preview") { Description = "Include bounded per-page geometry." };
-        var detail = new Option<string[]>("--detail")
-        {
-            Description = "Extra structural projections; repeatable.",
-            AllowMultipleArgumentsPerToken = true,
-        }.WithInput(InputKind.None);
-        detail.AcceptOnlyFromAmong(Details);
+        var preview = new PreviewOption("the size and rotation of each page, up to 20 pages");
+        var detail = new DetailOption(Details, DetailNotes);
         return new(
             "inspect",
             "Show PDF structure, security state and metadata.",
             new CommandTraits { Input = PdfInputs.Document },
-            [preview, detail],
+            [.. preview.Options, .. detail.Options],
             (parse, standard) => new PdfInfoRequest
             {
                 Input = standard.Input,
-                IncludePreview = parse.GetValue(preview),
-                Details = parse.GetValue(detail),
+                IncludePreview = preview.Read(parse),
+                Details = detail.Read(parse),
                 Password = standard.InputPassword,
             },
             Table);
