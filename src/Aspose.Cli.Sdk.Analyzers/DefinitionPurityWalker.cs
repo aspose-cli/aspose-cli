@@ -287,9 +287,8 @@ internal sealed class DefinitionPurityWalker : OperationWalker
                 StringComparison.Ordinal))
         {
             return member is
-                "Activator" or "Build" or "Commands" or "Describe"
-                or "DetectFormat" or "Diagnostics" or "Doctor" or "Formats"
-                or "Guard" or "Json" or "Output" or "View";
+                "Activator" or "Build" or "Describe" or "DetectFormat"
+                or "Diagnostics" or "Formats" or "Guard" or "Json" or "View";
         }
         if (typeName.StartsWith(
                 "Aspose.Cli.Sdk.Extensibility.Commanding.CommandMenu<",
@@ -364,16 +363,15 @@ internal sealed class DefinitionPurityWalker : OperationWalker
     }
 
     // A deferred argument runs when a command or a view runs, never in Define(): the activator,
-    // the command factory, the doctor checks, the renderers, the product guard and the product
-    // help. Menu lines are not deferred: they take method groups, which the walker does not
-    // follow, and a group's lambda runs in Define() and is checked.
+    // the product guard and the product help. Menu lines are not deferred: they take method
+    // groups, which the walker does not follow, and a group's lambda runs in Define() and is checked.
     private static bool IsDeferred(
         IMethodSymbol method,
         IArgumentOperation argument)
         => method.ContainingType.OriginalDefinition.ToDisplayString()
             == DefinitionBuilder
         && (argument.Parameter?.Ordinal, method.Name) is
-            (0, "Activator" or "Commands" or "Doctor" or "Output" or "Guard")
+            (0, "Activator" or "Guard")
             or (1, "Describe");
 
     private static bool IsDefinitionValue(string typeName) =>

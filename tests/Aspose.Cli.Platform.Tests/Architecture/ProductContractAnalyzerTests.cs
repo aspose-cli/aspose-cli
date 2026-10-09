@@ -282,12 +282,12 @@ public sealed class ProductContractAnalyzerTests
     {
         string source = ProductSource(
             """
-            public interface IPort { }
+            public interface ISession { }
 
             public sealed class DeferredModule : IProductModule
             {
                 public ProductDefinition Define() =>
-                    Product.Define<IPort>(new ProductManifest
+                    Product.Define<ISession>(new ProductManifest
                     {
                         Id = "deferred",
                         DisplayName = "Deferred",
@@ -324,9 +324,9 @@ public sealed class ProductContractAnalyzerTests
     {
         string source = ProductSource(
             """
-            public interface IPort { }
+            public interface ISession { }
 
-            public sealed class ViewAdapter : IProductViewAdapter<IPort>
+            public sealed class ViewAdapter : IProductViewAdapter<ISession>
             {
                 public System.Collections.Generic.IReadOnlyList<Aspose.Cli.Sdk.Views.ProductView> Views =>
                     new[]
@@ -341,7 +341,7 @@ public sealed class ProductContractAnalyzerTests
                 public bool VisualInspectionRequired => true;
                 public System.Collections.Generic.IReadOnlyList<Aspose.Cli.Sdk.Contracts.ReviewCheck> Checks => [];
                 public Aspose.Cli.Sdk.Views.ViewManifest Render(
-                    IPort port,
+                    ISession session,
                     string filePath,
                     Aspose.Cli.Sdk.Views.ViewRenderRequest request,
                     Aspose.Cli.Sdk.Views.IViewArtifactSink artifacts) =>
@@ -355,7 +355,7 @@ public sealed class ProductContractAnalyzerTests
                         Parts = System.Array.Empty<Aspose.Cli.Sdk.Views.ViewPart>(),
                     };
                 public ProductReviewAssessment Assess(
-                    IPort port,
+                    ISession session,
                     string filePath,
                     Aspose.Cli.Sdk.Views.ViewRenderRequest request,
                     Aspose.Cli.Sdk.Views.ViewManifest rendered) =>
@@ -365,7 +365,7 @@ public sealed class ProductContractAnalyzerTests
             public sealed class ReviewModule : IProductModule
             {
                 public ProductDefinition Define() =>
-                    Product.Define<IPort>(new ProductManifest
+                    Product.Define<ISession>(new ProductManifest
                     {
                         Id = "review",
                         DisplayName = "Review",
@@ -652,7 +652,37 @@ public sealed class ProductContractAnalyzerTests
     }
 
     [Fact]
-    public async Task Apcli009_AllowsCommandsToDependOnContractsAndPorts()
+    public async Task Apcli009_ReportsEngineDependencyOnCommands()
+    {
+        string source = LayeredProductSource(
+            """
+            namespace Demo.Commands
+            {
+                internal static class EditCommand
+                {
+                    internal static string Name() => "edit";
+                }
+            }
+
+            namespace Demo.Engine
+            {
+                internal static class DemoEdit
+                {
+                    internal static string Run() => Demo.Commands.EditCommand.Name();
+                }
+            }
+            """);
+
+        Diagnostic diagnostic = Assert.Single(
+            await Analyze(source),
+            static item => item.Id == "APCLI009");
+
+        Assert.Contains("'Engine'", diagnostic.GetMessage(), StringComparison.Ordinal);
+        Assert.Contains("'Commands'", diagnostic.GetMessage(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Apcli009_AllowsCommandsToDependOnContracts()
     {
         string source = LayeredProductSource(
             """
@@ -661,20 +691,11 @@ public sealed class ProductContractAnalyzerTests
                 public sealed record EditRequest(string Value);
             }
 
-            namespace Demo.Ports
-            {
-                public interface IEditor
-                {
-                    Demo.Contracts.EditRequest Read();
-                }
-            }
-
             namespace Demo.Commands
             {
                 internal sealed class EditCommand
                 {
-                    internal Demo.Contracts.EditRequest Run(Demo.Ports.IEditor editor) =>
-                        editor.Read();
+                    internal Demo.Contracts.EditRequest Run() => new("value");
                 }
             }
             """);
@@ -705,18 +726,13 @@ public sealed class ProductContractAnalyzerTests
     }
 
     [Fact]
-    public async Task Apcli010_AllowsPublicContractsAndPorts()
+    public async Task Apcli010_AllowsPublicContracts()
     {
         string source = LayeredProductSource(
             """
             namespace Demo.Contracts
             {
                 public sealed record EditRequest(string Value);
-            }
-
-            namespace Demo.Ports
-            {
-                public interface IEditor { }
             }
             """);
 

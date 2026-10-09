@@ -20,26 +20,24 @@ public sealed class ProductContractAnalyzer : DiagnosticAnalyzer
     private static readonly ImmutableHashSet<string> ProductLayers =
         ImmutableHashSet.Create(
             StringComparer.Ordinal,
-            "Contracts", "Ports", "Commands", "Engine", "Output");
+            "Contracts", "Commands", "Engine");
 
     private static readonly ImmutableHashSet<string> ImplementationLayers =
         ImmutableHashSet.Create(
             StringComparer.Ordinal,
-            "Commands", "Engine", "Output");
+            "Commands", "Engine");
 
     private static readonly ImmutableDictionary<string, ImmutableHashSet<string>>
         AllowedLayerDependencies =
             new Dictionary<string, ImmutableHashSet<string>>(StringComparer.Ordinal)
             {
                 ["Contracts"] = ImmutableHashSet.Create(StringComparer.Ordinal, "Contracts"),
-                ["Ports"] = ImmutableHashSet.Create(StringComparer.Ordinal, "Contracts", "Ports"),
                 ["Commands"] = ImmutableHashSet.Create(
                     StringComparer.Ordinal,
-                    "Contracts", "Ports", "Commands"),
+                    "Contracts", "Commands"),
                 ["Engine"] = ImmutableHashSet.Create(
                     StringComparer.Ordinal,
-                    "Contracts", "Ports", "Engine"),
-                ["Output"] = ImmutableHashSet.Create(StringComparer.Ordinal, "Contracts", "Output"),
+                    "Contracts", "Engine"),
             }.ToImmutableDictionary(StringComparer.Ordinal);
 
     private static readonly DiagnosticDescriptor ApiIsolation = Rule(
@@ -65,22 +63,21 @@ public sealed class ProductContractAnalyzer : DiagnosticAnalyzer
         "APCLI009",
         "Product layer dependency is not allowed",
         "Product layer '{0}' references '{1}' in layer '{2}'; keep the product "
-            + "dependency direction Contracts <- Ports <- Commands and "
-            + "Contracts/Ports <- Engine, with Output isolated");
+            + "dependency direction Contracts <- Commands and Contracts <- Engine");
 
     private static readonly DiagnosticDescriptor ImplementationVisibility = Rule(
         "APCLI010",
         "Product implementation type is publicly visible",
         "Implementation type '{0}' is public in product layer '{1}'; expose "
-            + "wire contracts through Contracts, ports through Ports, and "
-            + "composition through the product module only");
+            + "wire contracts through Contracts and composition through the "
+            + "product module only");
 
     private static readonly DiagnosticDescriptor HostSeam = Rule(
         "APCLI011",
         "Product builds a command outside the host pipeline",
         "Product code references '{0}', the Host seam that builds and binds a command "
             + "outside the host pipeline and its admission, budgets and licensing; build "
-            + "product commands with StandardCommand or BoundedEditCommand");
+            + "product commands with CommandDefinition or EditDefinition");
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
         [
@@ -466,7 +463,7 @@ public sealed class ProductContractAnalyzer : DiagnosticAnalyzer
             symbol.ContainingNamespace?.ToDisplayString() ?? string.Empty;
         return visible || name.Split('.')
             .Any(static part =>
-                part is "Contracts" or "Ports" or "Commands");
+                part is "Contracts" or "Commands");
     }
 
     private static IEnumerable<ITypeSymbol> ExposedTypes(ISymbol symbol)
