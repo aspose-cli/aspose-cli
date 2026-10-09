@@ -219,6 +219,21 @@ public sealed class MaxItemsAttribute(int count) : ValueConstraintAttribute
     public override void Describe(JsonObject schema) => schema["maxItems"] = Count;
 }
 
+/// <summary>An array whose items are all distinct.</summary>
+[AttributeUsage(AttributeTargets.Property, AllowMultiple = true)]
+public sealed class UniqueItemsAttribute : ValueConstraintAttribute
+{
+    /// <inheritdoc />
+    public override string? Check(object value)
+    {
+        object?[] items = [.. ((System.Collections.IEnumerable)value).Cast<object?>()];
+        return items.Distinct().Count() == items.Length ? null : "must not repeat an item";
+    }
+
+    /// <inheritdoc />
+    public override void Describe(JsonObject schema) => schema["uniqueItems"] = true;
+}
+
 /// <summary>
 /// An ECMA-262 regular expression, as JSON Schema reads it, that every allowed string matches
 /// somewhere; anchor it with <c>^</c> and <c>$</c> to match the whole string. The check runs

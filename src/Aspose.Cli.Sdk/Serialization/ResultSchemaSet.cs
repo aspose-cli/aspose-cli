@@ -181,10 +181,19 @@ public sealed class ResultSchemaSet
         }
 
         schema["type"] = "object";
-        string[] required = [.. members.Where(static member => member.Required).Select(static member => member.Name)];
+        string[] required = [.. members.Where(static member => member.Required && !member.Extension).Select(static member => member.Name)];
         if (required.Length > 0)
         {
             schema["required"] = new JsonArray([.. required.Select(static name => (JsonNode)name)]);
+        }
+
+        // Extension data writes members the record does not declare, so such a record stays open
+        // and declares no members of its own.
+        if (members.Any(static member => member.Extension))
+        {
+            return members.All(static member => member.Extension)
+                ? schema
+                : throw new InvalidOperationException($"Result record {record.Type.Name} declares members beside its extension data.");
         }
 
         schema["additionalProperties"] = false;
@@ -246,6 +255,13 @@ public sealed class ResultSchemaSet
         }
 
         Value(schema, member.Value, [.. member.Constraints.Select(static constraint => (constraint, constraint.Depth))], member.OpenPattern, definitions, defined);
+
+        // A value kind may describe itself; the member's own summary says what this member means.
+        if (member.Description is not null)
+        {
+            schema["description"] = member.Description;
+        }
+
         return schema;
     }
 

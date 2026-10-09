@@ -22,6 +22,7 @@ public sealed class ProductJsonDefinition
         Resolver = resolver;
         Converters = Array.AsReadOnly(
             converters?.ToArray() ?? []);
+        ResultRecords = SdkSchemaCatalog.ResultRecordsOf(resolver);
         _localOptions = ContractJsonSerializer.CreateOptions(
             [SdkJsonContext.Default, resolver],
             Converters);
@@ -35,6 +36,13 @@ public sealed class ProductJsonDefinition
 
     /// <summary>Product-local converters required by abstract contract roots.</summary>
     public IReadOnlyList<JsonConverter> Converters { get; }
+
+    /// <summary>
+    /// The result records the product's contract generator described, which the catalog
+    /// publishes under the product's schema ids; empty for a product whose results still name
+    /// full schema URIs.
+    /// </summary>
+    public IReadOnlyList<Contracts.ResultRecord> ResultRecords { get; }
 
     /// <summary>Frozen options for product-local contract tests and parsers.</summary>
     public JsonSerializerOptions LocalOptions => _localOptions;

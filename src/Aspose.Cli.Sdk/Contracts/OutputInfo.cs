@@ -1,6 +1,7 @@
 namespace Aspose.Cli.Sdk.Contracts;
 
 /// <summary>Describes a file an operation produced.</summary>
+[SchemaId("output")]
 public sealed record OutputInfo
 {
     /// <summary>Absolute path of the produced file.</summary>
@@ -13,6 +14,7 @@ public sealed record OutputInfo
     public required string? Format { get; init; }
 
     /// <summary>File size in bytes.</summary>
+    [Minimum(0)]
     public required long SizeBytes { get; init; }
 
     /// <summary>SHA-256 identity when the owning workflow captured one.</summary>

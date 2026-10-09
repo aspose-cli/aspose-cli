@@ -146,6 +146,12 @@ public sealed class ResultProperty
 
     /// <summary>The cases of a member whose type another member decides (see <see cref="OneOfByAttribute"/>).</summary>
     public IReadOnlyList<OneOfByAttribute> Cases { get; init; } = [];
+
+    /// <summary>
+    /// Whether the member is the record's extension data: its entries are written as members of
+    /// the record, so the record accepts members it does not declare.
+    /// </summary>
+    public bool Extension { get; init; }
 }
 
 /// <summary>One result record: a published schema, a base it inherits members from, or a nested object.</summary>

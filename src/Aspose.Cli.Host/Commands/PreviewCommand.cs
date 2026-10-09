@@ -151,7 +151,7 @@ internal static class PreviewCommand
             var client = new ViewerServiceClient();
             ViewerStopResponse? state = client.Stop(parse.GetValue(id), parse.GetValue(all));
             int pid = state?.Pid ?? 0;
-            return new ProductPreviewStopResult
+            return new ProductPreviewStatusResult
             {
                 Stopped = state?.Stopped ?? [],
                 Sessions = (state?.Documents ?? []).Select(document => ToInfo(document, pid)).ToArray(),

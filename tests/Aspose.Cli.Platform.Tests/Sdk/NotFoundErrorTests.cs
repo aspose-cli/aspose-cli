@@ -2,7 +2,7 @@ using System.Text.Json;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Diagnostics;
 using Aspose.Cli.Sdk.Errors;
-using Aspose.Cli.Sdk.Resources;
+using Aspose.Cli.Sdk.Serialization;
 using Aspose.Cli.Sdk.Text;
 using Json.Schema;
 using Xunit;

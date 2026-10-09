@@ -1,9 +1,11 @@
 namespace Aspose.Cli.Sdk.Contracts;
 
 /// <summary>License mode attached to results produced by engine operations.</summary>
+[SchemaId("license")]
 public sealed record LicenseInfo
 {
     /// <summary>One of the <see cref="LicenseModes"/> constants.</summary>
+    [AllowedValues(LicenseModes.Evaluation, LicenseModes.Licensed, LicenseModes.NotApplicable)]
     public required string Mode { get; init; }
 }
 

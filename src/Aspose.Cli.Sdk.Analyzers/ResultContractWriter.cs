@@ -228,7 +228,16 @@ internal sealed class ResultContractWriter(Compilation compilation, Action<Locat
         }
 
         code.Append(", Value = ").Append(value);
-        if (!nullable && IgnoreCondition(property) is null)
+        if (Find(property, Json + "JsonExtensionDataAttribute") is not null)
+        {
+            if (ResultScalar(type)?.Kind != "Object" || Properties(owner).Count() != 1)
+            {
+                Invalid(property, "extension data must be the record's only member, a JsonObject");
+            }
+
+            code.Append(", Extension = true");
+        }
+        else if (!nullable && IgnoreCondition(property) is null)
         {
             code.Append(", Required = true");
         }

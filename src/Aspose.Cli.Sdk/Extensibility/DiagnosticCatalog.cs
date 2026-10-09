@@ -1,7 +1,7 @@
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Aspose.Cli.Sdk.Diagnostics;
-using Aspose.Cli.Sdk.Resources;
+using Aspose.Cli.Sdk.Serialization;
 
 namespace Aspose.Cli.Sdk.Extensibility;
 

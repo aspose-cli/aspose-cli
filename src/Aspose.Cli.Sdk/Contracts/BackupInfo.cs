@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 namespace Aspose.Cli.Sdk.Contracts;
 
 /// <summary>Stable, never-overwritten safety backup created before an in-place mutation.</summary>
+[SchemaId("backup")]
 public sealed record BackupInfo
 {
     /// <summary>Absolute backup path.</summary>
@@ -12,10 +13,12 @@ public sealed record BackupInfo
     public required bool Created { get; init; }
 
     /// <summary>Backup file size in bytes.</summary>
+    [Minimum(0)]
     public required long SizeBytes { get; init; }
 
     /// <summary>When the content the backup holds was last written, in UTC with the Z designator.</summary>
     [JsonConverter(typeof(UtcTimestampJsonConverter))]
+    [Pattern("Z$")]
     public required DateTimeOffset LastWriteUtc { get; init; }
 
     /// <summary>

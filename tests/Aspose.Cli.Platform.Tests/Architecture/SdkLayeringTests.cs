@@ -22,10 +22,11 @@ public sealed class SdkLayeringTests
     /// </summary>
     /// <remarks>
     /// <list type="number">
-    /// <item>The distribution identity and the embedded resource names.</item>
-    /// <item>Contracts: the serialized result, error and warning shapes. They declare what a
-    /// result says, not how it is checked or produced, so they reference no diagnostics
-    /// catalog, Serialization type or operation schema. A converter that only fixes the wire
+    /// <item>The distribution identity.</item>
+    /// <item>Contracts: the serialized result, error and warning shapes, the value constraints
+    /// and schema attributes they declare, and the descriptors the contract generator extracts
+    /// from them. They declare what a result says, not how it is checked or produced, so they
+    /// reference no diagnostics catalog, Serialization type or operation schema. A converter that only fixes the wire
     /// form of a contract value, such as the UTC timestamp converter, lives with the
     /// contracts that name it in their [JsonConverter] attributes.</item>
     /// <item>Errors: the error vocabulary and its factories over the contract shapes. Limits
@@ -40,8 +41,9 @@ public sealed class SdkLayeringTests
     /// of input files, on which Extensibility builds products and their routes.</item>
     /// <item>Execution (worker output publication, built on IO) and Rendering (font profiles
     /// and pixel budgets).</item>
-    /// <item>Serialization: the shared JSON contexts and converters. Converters for the
-    /// operation vocabulary belong to Operations.</item>
+    /// <item>Serialization: the shared JSON contexts and converters, and the result schemas
+    /// written from the contract descriptors. Converters for the operation vocabulary belong to
+    /// Operations.</item>
     /// <item>Operations: the operation vocabulary, its catalog and its runner.</item>
     /// <item>Services the products bind: licensing, diagnostics and the font port. They
     /// take product data as values, never a Product* type from Extensibility.</item>
@@ -54,7 +56,7 @@ public sealed class SdkLayeringTests
     /// </remarks>
     private static readonly string[][] Layers =
     [
-        [Root, $"{Root}.Resources"],
+        [Root],
         [$"{Root}.Contracts"],
         [$"{Root}.Errors"],
         [$"{Root}.Text", $"{Root}.Addressing", $"{Root}.Configuration", $"{Root}.Views", $"{Root}.Extensibility.Output"],

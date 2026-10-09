@@ -4,9 +4,11 @@ namespace Aspose.Cli.Sdk.Contracts;
 /// A problem found while verifying an edited output that had already been produced.
 /// Any issue makes the verification <c>ok:false</c> and the command exit 8.
 /// </summary>
+[SchemaId("verification-issue")]
 public sealed record VerificationIssue
 {
     /// <summary>Stable SCREAMING_SNAKE_CASE identifier an agent can branch on.</summary>
+    [Pattern("^[A-Z][A-Z0-9_]*$")]
     public required string Code { get; init; }
 
     /// <summary>Human-readable explanation.</summary>

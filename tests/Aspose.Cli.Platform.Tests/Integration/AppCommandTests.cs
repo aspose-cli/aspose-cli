@@ -2,7 +2,6 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using Aspose.Cli.Sdk.Resources;
 using Aspose.Cli.TestKit;
 using Json.Schema;
 using Xunit;
@@ -93,8 +92,7 @@ public sealed class AppCommandTests : IDisposable
             string statusText =
                 await status.Content.ReadAsStringAsync();
             JsonNode statusJson = Parse(statusText);
-            JsonSchema statusSchema = JsonSchema.FromText(
-                SdkSchemaCatalog.Read("v2/common/app-status"));
+            JsonSchema statusSchema = PublishedSchemas.Schema("v2/common/app-status");
             using JsonDocument statusDocument =
                 JsonDocument.Parse(statusText);
             EvaluationResults schemaResult = statusSchema.Evaluate(

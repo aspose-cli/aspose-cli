@@ -4,18 +4,21 @@ namespace Aspose.Cli.Sdk.Contracts;
 /// Result of <c>aspose-cli --version --output json</c>: the build identity alone, so a caller
 /// can read the version without the full capabilities document.
 /// </summary>
-public sealed record VersionResult() : ResultEnvelope(CommonSchemaIds.Version, 2)
+public sealed record VersionResult() : ResultEnvelope("version", 2)
 {
     /// <summary>CLI version without build metadata, e.g. <c>1.0.0</c>; the same value as capabilities <c>cliVersion</c>.</summary>
+    [MinLength(1)]
     public required string CliVersion { get; init; }
 
     /// <summary>
     /// Full artifact version, as plain <c>--version</c> prints it, when it carries build metadata
     /// beyond <see cref="CliVersion"/>; omitted when the two are equal.
     /// </summary>
+    [MinLength(1)]
     public string? ArtifactVersion { get; init; }
 
     /// <summary>Root source revision embedded by the distribution build.</summary>
+    [MinLength(1)]
     public required string SourceRevision { get; init; }
 
     /// <summary>Whether tracked source changes were present during the build.</summary>

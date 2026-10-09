@@ -7,7 +7,7 @@ namespace Aspose.Cli.Sdk.Contracts;
 /// binary was extracted to a target directory, ready for an agent framework to
 /// load.
 /// </summary>
-public sealed record SkillInstallResult() : ResultEnvelope(CommonSchemaIds.SkillInstall, 2)
+public sealed record SkillInstallResult() : ResultEnvelope("skill-install", 2)
 {
     /// <summary>The installed skill's name, e.g. <c>aspose-cli-cells</c>.</summary>
     [JsonPropertyOrder(-50)]
@@ -18,5 +18,6 @@ public sealed record SkillInstallResult() : ResultEnvelope(CommonSchemaIds.Skill
     public required string Target { get; init; }
 
     /// <summary>Number of files written.</summary>
+    [Minimum(0)]
     public required int FileCount { get; init; }
 }

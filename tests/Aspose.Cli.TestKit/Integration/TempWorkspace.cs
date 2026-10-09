@@ -1,5 +1,5 @@
 using System.Text.Json;
-using Aspose.Cli.Sdk.Resources;
+using Aspose.Cli.Sdk.Serialization;
 using Json.Schema;
 
 namespace Aspose.Cli.TestKit;

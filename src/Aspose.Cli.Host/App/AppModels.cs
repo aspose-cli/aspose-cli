@@ -3,90 +3,158 @@ using Aspose.Cli.Sdk.Contracts;
 
 namespace Aspose.Cli.Host.App;
 
+/// <summary>One recently opened file the App offers to reopen.</summary>
+/// <param name="Id">Opaque id of the entry.</param>
+/// <param name="Name">The file's name.</param>
+/// <param name="ProductId">Product that opened the file, when known.</param>
+/// <param name="ProductName">Human-readable name of that product, when known.</param>
+/// <param name="View">View the file was shown in, when known.</param>
 internal sealed record AppRecentView(
-    string Id,
-    string Name,
-    string? ProductId,
-    string? ProductName,
-    string? View);
+    [property: Pattern("^[0-9a-f]{16}$")] string Id,
+    [property: MinLength(1)] string Name,
+    [property: MinLength(1)] string? ProductId,
+    [property: MinLength(1)] string? ProductName,
+    [property: MinLength(1)] string? View);
 
+/// <summary>One check the App's settings show.</summary>
+/// <param name="Name">What was checked, e.g. <c>Runtime</c>.</param>
+/// <param name="Status">The outcome: ok, warn or fail.</param>
+/// <param name="Detail">What was found.</param>
+/// <param name="Hint">How to improve a warn or fail outcome.</param>
 internal sealed record AppDiagnosticView(
-    string Name,
-    string Status,
-    string Detail,
-    string? Hint = null);
+    [property: MinLength(1)] string Name,
+    [property: AllowedValues("ok", "warn", "fail")] string Status,
+    [property: MinLength(1)] string Detail,
+    [property: MinLength(1)] string? Hint = null);
 
-internal sealed record AppPreviewView(string Id, string DisplayName);
+/// <summary>One view a document can be shown in.</summary>
+/// <param name="Id">Stable view id.</param>
+/// <param name="DisplayName">Label people see.</param>
+internal sealed record AppPreviewView(
+    [property: MinLength(1)] string Id,
+    [property: MinLength(1)] string DisplayName);
 
 /// <summary>One document the App has open, as the tab strip shows it.</summary>
+/// <param name="Id">Opaque id of the open document.</param>
+/// <param name="FileName">The document's file name; full paths are never exposed.</param>
+/// <param name="ProductId">Product that opened the document.</param>
+/// <param name="View">View the document is shown in.</param>
+/// <param name="Url">Opaque URL of the document's session.</param>
+/// <param name="UploadedCopy">Whether the App shows an uploaded copy rather than the file itself.</param>
+/// <param name="Active">Whether the document is the one shown.</param>
 internal sealed record AppOpenDocumentView(
-    string Id,
-    string FileName,
-    string ProductId,
-    string View,
+    [property: Pattern("^[0-9a-f]{32}$")] string Id,
+    [property: MinLength(1)] string FileName,
+    [property: Pattern("^[a-z0-9][a-z0-9-]*$")] string ProductId,
+    [property: MinLength(1)] string View,
     string Url,
     bool UploadedCopy,
     bool Active);
 
-/// <summary>
-/// One installable Agent Skill. <paramref name="Product"/> names the product
-/// that owns it; the platform Skill every product builds on has none.
-/// </summary>
+/// <summary>One installable Agent Skill.</summary>
+/// <param name="Name">The Skill's name.</param>
+/// <param name="Description">What the Skill is for.</param>
+/// <param name="Product">Product that owns the Skill; absent for the platform Skill every product builds on.</param>
 internal sealed record AppSkillView(
-    string Name,
-    string Description,
-    string? Product);
+    [property: MinLength(1)] string Name,
+    [property: MinLength(1)] string Description,
+    [property: MinLength(1)] string? Product);
 
+/// <summary>One format a product reads or writes.</summary>
+/// <param name="Id">Format id, e.g. <c>xlsx</c>.</param>
+/// <param name="Extensions">File extensions of the format.</param>
+/// <param name="Uses">What the product does with the format, such as <c>load</c> or <c>convert</c>.</param>
 internal sealed record AppFormatView(
-    string Id,
-    IReadOnlyList<string> Extensions,
-    IReadOnlyList<string> Uses);
+    [property: MinLength(1)] string Id,
+    [property: Pattern("^\\.[a-z0-9]+$")] IReadOnlyList<string> Extensions,
+    [property: MinLength(1)] IReadOnlyList<string> Uses);
 
+/// <summary>How a product previews documents in the App.</summary>
+/// <param name="Fidelity">Whether the preview is rendered by the engine or a semantic projection.</param>
+/// <param name="DefaultView">View shown when none is chosen.</param>
+/// <param name="Views">Views a document can be previewed in.</param>
 internal sealed record AppPreviewCapabilityView(
-    string Fidelity,
-    string DefaultView,
-    IReadOnlyList<AppPreviewView> Views);
+    [property: AllowedValues("rendered", "semantic")] string Fidelity,
+    [property: MinLength(1)] string DefaultView,
+    [property: MinItems(1)] IReadOnlyList<AppPreviewView> Views);
 
+/// <summary>How a product renders review evidence.</summary>
+/// <param name="Fidelity">Whether the evidence is rendered by the engine or a semantic projection.</param>
+/// <param name="DefaultView">View a review renders when none is chosen.</param>
+/// <param name="Views">Views a review can render.</param>
+/// <param name="VisualInspectionRequired">Whether the rendered evidence must be looked at.</param>
 internal sealed record AppReviewCapabilityView(
-    string Fidelity,
-    string DefaultView,
-    IReadOnlyList<AppPreviewView> Views,
+    [property: AllowedValues("rendered", "semantic")] string Fidelity,
+    [property: MinLength(1)] string DefaultView,
+    [property: MinItems(1)] IReadOnlyList<AppPreviewView> Views,
     bool VisualInspectionRequired);
 
+/// <summary>One product the App can open documents with.</summary>
+/// <param name="Id">Product id, e.g. <c>cells</c>.</param>
+/// <param name="Name">Human-readable product name.</param>
+/// <param name="Formats">Formats the product reads or writes.</param>
+/// <param name="Verbs">Commands the product offers.</param>
+/// <param name="Preview">How the product previews documents.</param>
+/// <param name="Review">How the product renders review evidence.</param>
 internal sealed record AppProductView(
-    string Id,
-    string Name,
-    IReadOnlyList<AppFormatView> Formats,
-    IReadOnlyList<string> Verbs,
+    [property: MinLength(1)] string Id,
+    [property: MinLength(1)] string Name,
+    [property: MinItems(1)] IReadOnlyList<AppFormatView> Formats,
+    [property: MinItems(1), MinLength(1)] IReadOnlyList<string> Verbs,
     AppPreviewCapabilityView Preview,
     AppReviewCapabilityView Review);
 
+/// <summary>Deterministic state the loopback-only browser workspace of <c>aspose-cli app</c> reads.</summary>
+/// <param name="Version">CLI version.</param>
+/// <param name="DisplayName">The distribution's display name.</param>
+/// <param name="Experience">Whether every product is license-free or a license applies.</param>
+/// <param name="Route">The App route to show, e.g. <c>home</c>.</param>
+/// <param name="OnboardingCompleted">Whether the first-run choice was made.</param>
+/// <param name="Product">Product of the open document, or the default product.</param>
+/// <param name="DefaultView">View documents of that product open in.</param>
+/// <param name="AvailableViews">Views that product offers.</param>
+/// <param name="PreviewViews">Those views with their labels.</param>
+/// <param name="SupportedExtensions">File extensions the App can open.</param>
+/// <param name="Skills">Every installable Agent Skill: the platform Skill first, then one per product that ships one.</param>
+/// <param name="RememberRecentFiles">Whether the App keeps a list of recent files.</param>
+/// <param name="License">The license status of every product.</param>
+/// <param name="File">File name of the active document, when one is open.</param>
+/// <param name="UploadedCopy">Whether the active document is an uploaded copy.</param>
+/// <param name="PreviewUrl">Opaque URL for the committed App document session; stable until that session is replaced.</param>
+/// <param name="SessionView">View the open document is rendered in, which a saved preference reaches only when the document reopens.</param>
+/// <param name="Documents">Documents the App has open, in the order they were opened; one of them is active.</param>
+/// <param name="RecentFiles">Recently opened files, newest first.</param>
+/// <param name="Diagnostics">Checks the App's settings show.</param>
+/// <param name="Products">Every product the App can open documents with.</param>
+[SchemaId("app-status")]
 internal sealed record AppStatusView(
     string Version,
-    string DisplayName,
-    string Experience,
-    string Route,
+    [property: MinLength(1)] string DisplayName,
+    [property: AllowedValues("license-free", "licensed")] string Experience,
+    [property: MinLength(1)] string Route,
     bool OnboardingCompleted,
-    string Product,
-    string DefaultView,
-    IReadOnlyList<string> AvailableViews,
+    [property: MinLength(1)] string Product,
+    [property: MinLength(1)] string DefaultView,
+    [property: MinLength(1)] IReadOnlyList<string> AvailableViews,
     IReadOnlyList<AppPreviewView> PreviewViews,
-    IReadOnlyList<string> SupportedExtensions,
-    IReadOnlyList<AppSkillView> Skills,
+    [property: Pattern("^\\.[a-z0-9]+$")] IReadOnlyList<string> SupportedExtensions,
+    [property: MinItems(1)] IReadOnlyList<AppSkillView> Skills,
     bool RememberRecentFiles,
     LicenseStatusResult License,
-    string? File,
+    [property: MinLength(1)] string? File,
     bool UploadedCopy,
     string? PreviewUrl,
-    string? SessionView,
+    [property: MinLength(1)] string? SessionView,
     IReadOnlyList<AppOpenDocumentView> Documents,
-    IReadOnlyList<AppRecentView> RecentFiles,
+    [property: MaxItems(8)] IReadOnlyList<AppRecentView> RecentFiles,
     IReadOnlyList<AppDiagnosticView> Diagnostics,
-    IReadOnlyList<AppProductView> Products)
+    [property: MinItems(1)] IReadOnlyList<AppProductView> Products)
 {
+    /// <summary>URI of the JSON schema the status conforms to.</summary>
     [JsonPropertyOrder(-100)]
     public string Schema => CommonSchemaIds.AppStatus;
 
+    /// <summary>Version of the status contract.</summary>
     [JsonPropertyOrder(-99)]
     public int SchemaVersion => 2;
 }

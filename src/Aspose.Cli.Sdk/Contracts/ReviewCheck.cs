@@ -36,12 +36,15 @@ public sealed partial record ReviewCheck
     }
 
     /// <summary>The stable code findings of this check carry.</summary>
+    [Pattern("^[A-Z][A-Z0-9_]*$")]
     public string Code { get; }
 
     /// <summary>The severity findings of this check carry.</summary>
+    [AllowedValues(typeof(ReviewSeverities))]
     public string Severity { get; }
 
     /// <summary>What the check detects.</summary>
+    [MinLength(1)]
     public string Summary { get; }
 
     /// <summary>A finding of this check.</summary>
