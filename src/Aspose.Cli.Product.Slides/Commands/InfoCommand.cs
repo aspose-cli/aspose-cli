@@ -1,4 +1,3 @@
-using System.CommandLine;
 using System.Globalization;
 using Aspose.Cli.Sdk.Extensibility.Commanding;
 using Aspose.Cli.Sdk.Extensibility.Output;
@@ -12,23 +11,23 @@ internal static class InfoCommand
 
     public static CommandDefinition<PresentationInfoRequest, PresentationInfoResult> Create()
     {
-        var preview = new Option<bool>("--preview") { Description = "Include bounded slide titles." };
-        var detail = new Option<string[]>("--detail")
-        {
-            Description = "Extra structural projections; repeatable.",
-            AllowMultipleArgumentsPerToken = true,
-        }.WithInput(InputKind.None);
-        detail.AcceptOnlyFromAmong(Details);
+        var preview = new PreviewOption("each slide's title and up to 240 characters of its text");
+        var detail = new DetailOption(
+            Details,
+            new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["notes"] = "presence and character count; query slides --notes reads the text",
+            });
         return new(
             "inspect",
             "Show presentation structure, stable slide ids and metadata.",
             new CommandTraits { Input = SlidesInputs.Presentation },
-            [preview, detail],
+            [.. preview.Options, .. detail.Options],
             (parse, standard) => new PresentationInfoRequest
             {
                 Input = standard.Input,
-                IncludePreview = parse.GetValue(preview),
-                Details = parse.GetValue(detail),
+                IncludePreview = preview.Read(parse),
+                Details = detail.Read(parse),
                 Password = standard.InputPassword,
             },
             Table);

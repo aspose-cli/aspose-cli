@@ -10,7 +10,7 @@ internal static class ExtractCommand
     {
         var what = new Option<string>("--what") { Required = true, Description = "media, notes or text." }.WithInput(InputKind.None);
         what.AcceptOnlyFromAmong([.. PresentationExtractKinds.All]);
-        var slides = new Option<string?>("--slides") { Description = "Optional 1-based slide range; only those slides are extracted. Default: every slide." }.WithInput(InputKind.None);
+        var slides = new PartRangeOption("slide", "every slide");
         return new(
             "extract",
             "Extract bounded presentation media, notes or text.",
@@ -19,10 +19,10 @@ internal static class ExtractCommand
                 Input = SlidesInputs.Presentation,
                 Output = OutputTarget.Directory("Safe extraction directory."),
             },
-            [what, slides],
+            [what, .. slides.Options],
             (parse, standard) =>
             {
-                string? range = parse.GetValue(slides);
+                string? range = slides.Read(parse);
                 return new PresentationExtractRequest
                 {
                     Input = standard.Input,

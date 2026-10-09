@@ -8,7 +8,7 @@ internal static class ReadCommand
 {
     public static CommandDefinition<PresentationReadRequest, PresentationReadResult> Create()
     {
-        var slides = new Option<string?>("--slides") { Description = "1-based slide range, e.g. 1-3,7,9-. Default: the first 10 slides." }.WithInput(InputKind.None);
+        var slides = new PartRangeOption("slide", "the first 10 slides");
         var scope = new Option<string>("--scope")
         {
             Description = "Projection scope: text, shapes or full.",
@@ -16,17 +16,17 @@ internal static class ReadCommand
         }.WithInput(InputKind.None);
         scope.AcceptOnlyFromAmong([.. PresentationReadScopes.All]);
         var maxChars = new MaxCharactersOption(
-            "title, text, run, notes and comment characters, including repeated projections");
+            "every returned title, text, run, note and comment, repeats included");
         var notes = new Option<bool>("--notes") { Description = "Include speaker notes for returned slides." };
         return new(
             "slides",
             "Read a bounded slide-content window.",
             new CommandTraits { Input = SlidesInputs.Presentation },
-            [slides, scope, .. maxChars.Options, notes],
+            [.. slides.Options, scope, .. maxChars.Options, notes],
             (parse, standard) =>
             {
                 int characters = maxChars.Read(parse);
-                string? range = parse.GetValue(slides);
+                string? range = slides.Read(parse);
                 return new PresentationReadRequest
                 {
                     Input = standard.Input,
