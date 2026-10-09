@@ -1,7 +1,12 @@
-using System.Text.Json.Nodes;
 using System.Diagnostics;
+using System.Reflection;
+using System.Text;
+using System.Text.Json.Nodes;
 using Aspose.Cli.Host.Invocation;
 using Aspose.Cli.TestKit;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Xunit;
 
 namespace Aspose.Cli.Host.Tests;
@@ -153,6 +158,101 @@ public sealed class ProcessFailureBoundaryTests
             "license.lic",
             error.ToString(),
             StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// A bootstrap failure can be the SDK's own static initialization, which then fails again
+    /// wherever the report touches SDK state: the boundary still ends the process with exit code
+    /// 1 and a plain INTERNAL_ERROR line, whatever the envelope's serialization throws.
+    /// </summary>
+    [Fact]
+    public void BootstrapFailure_FallsBackToAPlainLineWhenTheEnvelopeFails()
+    {
+        var error = new FailingWriter(failures: 1);
+
+        int exitCode = ProcessFailureBoundary.RenderBootstrapFailure(
+            new TypeInitializationException("Aspose.Cli.Sdk.Errors.ErrorCodes", new InvalidOperationException("static failure")),
+            error);
+
+        Assert.Equal(1, exitCode);
+        Assert.Contains("INTERNAL_ERROR", error.Written, StringComparison.Ordinal);
+        Assert.Contains("HOST-PROCESS-0003", error.Written, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// Whatever the console throws, the bootstrap boundary itself never throws: a process whose
+    /// startup failed exits with code 1 instead of crashing.
+    /// </summary>
+    [Fact]
+    public void BootstrapFailure_NeverThrowsWhenEveryWriteFails()
+    {
+        var error = new FailingWriter(failures: int.MaxValue);
+
+        int exitCode = ProcessFailureBoundary.RenderBootstrapFailure(
+            new TypeInitializationException("Aspose.Cli.Sdk.Errors.ErrorCodes", new InvalidOperationException("static failure")),
+            error);
+
+        Assert.Equal(1, exitCode);
+    }
+
+    /// <summary>
+    /// The plain fallback line runs when the envelope could not be written, possibly because
+    /// the SDK's static state is what failed, so it reads no static field or property of the SDK
+    /// or Host: only constants and literals, which the compiler inlines.
+    /// </summary>
+    [Fact]
+    public void BootstrapFallback_ReadsNoStaticStateOfTheSdkOrHost()
+    {
+        string path = Path.Combine(RepositoryPaths.Root, "src", "Aspose.Cli.Host", "Invocation", "ProcessFailureBoundary.cs");
+        SyntaxNode root = CSharpSyntaxTree.ParseText(File.ReadAllText(path)).GetRoot();
+        MethodDeclarationSyntax method = root.DescendantNodes().OfType<MethodDeclarationSyntax>()
+            .Single(static candidate => candidate.Identifier.ValueText == nameof(ProcessFailureBoundary.RenderBootstrapFailure));
+        CatchClauseSyntax[] fallbacks = [.. method.DescendantNodes().OfType<CatchClauseSyntax>()];
+        Assert.NotEmpty(fallbacks);
+
+        Type[] types =
+        [
+            .. typeof(Aspose.Cli.Sdk.Errors.ErrorCodes).Assembly.GetTypes(),
+            .. typeof(ProcessFailureBoundary).Assembly.GetTypes(),
+        ];
+        string[] reads =
+        [
+            .. fallbacks.SelectMany(static fallback => fallback.Block.DescendantNodes().OfType<MemberAccessExpressionSyntax>())
+                .Where(access => access.Expression is IdentifierNameSyntax owner && types.Any(type =>
+                    type.Name == owner.Identifier.ValueText && IsStaticState(type, access.Name.Identifier.ValueText)))
+                .Select(static access => $"line {access.GetLocation().GetLineSpan().StartLinePosition.Line + 1}: {access}"),
+        ];
+
+        Assert.True(reads.Length == 0,
+            "The bootstrap fallback reads static state that may be what failed to initialize; write the code as a literal or constant:"
+            + Environment.NewLine + string.Join(Environment.NewLine, reads));
+
+        static bool IsStaticState(Type type, string member) =>
+            type.GetField(member, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static) is { IsLiteral: false }
+            || type.GetProperty(member, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static) is not null;
+    }
+
+    /// <summary>A console whose first writes throw as a type whose static initialization failed would.</summary>
+    private sealed class FailingWriter(int failures) : TextWriter
+    {
+        private readonly StringBuilder _written = new();
+        private int _failures = failures;
+
+        public override Encoding Encoding => Encoding.UTF8;
+
+        public string Written => _written.ToString();
+
+        public override void Write(char value) => Fail().Append(value);
+
+        public override void Write(string? value) => Fail().Append(value);
+
+        public override void WriteLine(string? value) => Fail().AppendLine(value);
+
+        public override void Flush() => Fail();
+
+        private StringBuilder Fail() => _failures-- > 0
+            ? throw new TypeInitializationException("Aspose.Cli.Sdk.Errors.ErrorCodes", null)
+            : _written;
     }
 
     [Theory]
