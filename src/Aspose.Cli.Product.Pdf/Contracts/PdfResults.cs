@@ -328,6 +328,7 @@ public sealed record PdfSignatureInfo
 }
 
 /// <summary>Windowed page text returned by <c>pdf query pages</c>.</summary>
+[AlwaysPresent("window")]
 public sealed record PdfReadResult() : ResultEnvelope("pdf-read", 2)
 {
     /// <summary>The kind of document read: always <c>pdf</c>.</summary>
@@ -552,10 +553,12 @@ public sealed record PdfEditResult() : ResultEnvelope("edit-result", 2), IPartia
 {
     /// <summary>The PDF edited.</summary>
     [JsonPropertyOrder(-50)]
+    [AlwaysPresent("fingerprint")]
     public required SourceInfo Input { get; init; }
 
     /// <summary>The PDF written; absent for a dry run, which writes nothing.</summary>
     [JsonPropertyOrder(-49)]
+    [AlwaysPresent("fingerprint")]
     public OutputInfo? Output { get; init; }
 
     /// <summary>Whether the batch was only checked and applied in memory (<c>--dry-run</c>).</summary>
@@ -709,6 +712,7 @@ public sealed record PdfFormExportResult() : ResultEnvelope("form-export-result"
 }
 
 /// <summary>The bounded text search of <c>pdf query search</c>.</summary>
+[AlwaysPresent("window")]
 public sealed record PdfSearchResult() : ResultEnvelope("search-result", 2)
 {
     /// <summary>The PDF searched.</summary>

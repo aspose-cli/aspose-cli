@@ -55,6 +55,20 @@ public sealed class OpenEnumAttribute(string pattern) : Attribute
 }
 
 /// <summary>
+/// Requires members, by wire name, that are optional where they are declared but always present
+/// here. On a result record it names inherited members, such as the <c>window</c> every read
+/// returns; on a member that holds a record it names that record's members, such as the
+/// <c>fingerprint</c> of an edited source.
+/// </summary>
+/// <param name="members">The wire names of the members that are always present.</param>
+[AttributeUsage(AttributeTargets.Class | AttributeTargets.Property, Inherited = false)]
+public sealed class AlwaysPresentAttribute(params string[] members) : Attribute
+{
+    /// <summary>The wire names of the members that are always present.</summary>
+    public IReadOnlyList<string> Members { get; } = members;
+}
+
+/// <summary>
 /// Implemented by generated code on every JSON context that lists a result record, so the
 /// catalog reaches the records that the context's assembly describes without reflection.
 /// </summary>
@@ -147,6 +161,9 @@ public sealed class ResultProperty
     /// <summary>The cases of a member whose type another member decides (see <see cref="OneOfByAttribute"/>).</summary>
     public IReadOnlyList<OneOfByAttribute> Cases { get; init; } = [];
 
+    /// <summary>The members of the held record that are always present here (see <see cref="AlwaysPresentAttribute"/>).</summary>
+    public IReadOnlyList<string> AlwaysPresent { get; init; } = [];
+
     /// <summary>
     /// Whether the member is the record's extension data: its entries are written as members of
     /// the record, so the record accepts members it does not declare.
@@ -174,4 +191,7 @@ public sealed class ResultRecord
 
     /// <summary>The record's own serialized members in declaration order; inherited members come from <see cref="Base"/>.</summary>
     public IReadOnlyList<ResultProperty> Properties { get; init; } = [];
+
+    /// <summary>The inherited members that are always present on this record (see <see cref="AlwaysPresentAttribute"/>).</summary>
+    public IReadOnlyList<string> AlwaysPresent { get; init; } = [];
 }

@@ -342,6 +342,7 @@ public sealed record TableData
 /// starts again at a block whose content was truncated and doubles <c>--max-chars</c> when that
 /// block alone exceeded the budget.
 /// </summary>
+[AlwaysPresent("window")]
 public sealed record DocumentReadResult() : ResultEnvelope("document-read", 2)
 {
     /// <summary>The kind of file read: always <c>document</c>.</summary>
@@ -689,6 +690,7 @@ public sealed record RevisionSample
 }
 
 /// <summary>One window of search hits; its <c>window</c> counts hits and continues with <c>--skip</c>.</summary>
+[AlwaysPresent("window")]
 public sealed record WordsSearchResult() : ResultEnvelope("search-result", 2)
 {
     /// <summary>The searched document.</summary>
