@@ -57,8 +57,8 @@ public sealed class OpenEnumAttribute(string pattern) : Attribute
 /// <summary>
 /// Requires members, by wire name, that are optional where they are declared but always present
 /// here. On a result record it names inherited members, such as the <c>window</c> every read
-/// returns; on a member that holds a record it names that record's members, such as the
-/// <c>fingerprint</c> of an edited source.
+/// returns; on a member that holds a record, or an array of records, it names that record's
+/// members, such as the <c>fingerprint</c> of an edited source.
 /// </summary>
 /// <param name="members">The wire names of the members that are always present.</param>
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Property, Inherited = false)]

@@ -274,6 +274,13 @@ public sealed class ResultSchemaSetTests
             Properties =
             [
                 new() { Name = "page", Description = "P.", Value = new() { Kind = ResultValueKind.Record, Record = typeof(SamplePage) }, AlwaysPresent = pagePresent },
+                new()
+                {
+                    Name = "pages",
+                    Description = "Ps.",
+                    Value = new() { Kind = ResultValueKind.Array, Items = new() { Kind = ResultValueKind.Record, Record = typeof(SamplePage) } },
+                    AlwaysPresent = pagePresent,
+                },
             ],
         };
 
@@ -282,6 +289,8 @@ public sealed class ResultSchemaSetTests
         Assert.Equal(["window"], schema["required"]!.AsArray().Select(static name => name!.GetValue<string>()));
         Assert.Equal("#/$defs/samplePage", schema["properties"]!["page"]!["$ref"]!.GetValue<string>());
         Assert.Equal(["label"], schema["properties"]!["page"]!["required"]!.AsArray().Select(static name => name!.GetValue<string>()));
+        Assert.Equal("#/$defs/samplePage", schema["properties"]!["pages"]!["items"]!["$ref"]!.GetValue<string>());
+        Assert.Equal(["label"], schema["properties"]!["pages"]!["items"]!["required"]!.AsArray().Select(static name => name!.GetValue<string>()));
 
         foreach ((string[] present, string[] pagePresent, string named) in new[]
         {
