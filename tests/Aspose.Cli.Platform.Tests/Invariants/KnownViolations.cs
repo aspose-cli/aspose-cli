@@ -45,7 +45,7 @@ internal static class KnownViolations
         IReadOnlyList<ScenarioProblem> problems;
         try
         {
-            problems = ScenarioRunner.Run(item.Scenario).Problems;
+            problems = item.Check?.Invoke() ?? ScenarioRunner.Run(item.Scenario!).Problems;
         }
         catch (InvalidOperationException exception) when (exception.Message.StartsWith("A scenario fixture", StringComparison.Ordinal))
         {
@@ -74,7 +74,13 @@ internal static class KnownViolations
             message.AppendLine($"'{id}' breaks invariants in {mode} mode. Fix the product so the case holds:");
             foreach (string invariant in added)
             {
-                message.AppendLine($"  {invariant}: {actual[invariant]}");
+                // Every problem in full, one per line; the list compares the shortened text.
+                message.AppendLine($"  {invariant}:");
+                foreach (string text in problems.Where(problem => InvariantOf(item, problem.Check) == invariant)
+                    .Select(static problem => problem.Message).Distinct())
+                {
+                    message.AppendLine($"    {text}");
+                }
             }
             message.AppendLine($"  {FileName} lists only accepted product defects; a new entry needs the owner's approval, the '{ApprovalLabel}' label on the pull request.");
         }
