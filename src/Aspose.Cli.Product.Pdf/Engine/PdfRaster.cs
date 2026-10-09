@@ -29,7 +29,13 @@ internal static class PdfRaster
         PdfRenderGrid? grid = null)
     {
         Page page = document.Pages[pageNumber];
-        if (format != "svg")
+        PdfEngineFormat image = PdfEngineFormats.Of(format);
+        if (image.Write != PdfEngineWrite.PageImage)
+        {
+            throw new InvalidOperationException($"'{format}' is not a PDF render format.");
+        }
+
+        if (image.Device is not null)
         {
             EnsurePageFits(budgets, page, dpi);
         }
@@ -44,24 +50,14 @@ internal static class PdfRaster
             return;
         }
 
-        switch (format)
+        if (image.Device is { } device)
         {
-            case "png":
-                new PngDevice(new Resolution(dpi)).Process(page, stream);
-                break;
-            case "jpeg":
-                new JpegDevice(new Resolution(dpi), 95).Process(page, stream);
-                break;
-            case "svg":
-                using (Document selected = Select(document, [pageNumber]))
-                {
-                    selected.Save(stream, SaveFormat.Svg);
-                }
-
-                break;
-            default:
-                throw new InvalidOperationException($"'{format}' is not a PDF render format.");
+            device(new Resolution(dpi)).Process(page, stream);
+            return;
         }
+
+        using Document selected = Select(document, [pageNumber]);
+        selected.Save(stream, PdfEngineFormats.Save(format));
     }
 
     /// <summary>

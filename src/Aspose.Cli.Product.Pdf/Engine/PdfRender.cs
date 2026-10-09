@@ -49,7 +49,7 @@ internal static class PdfRender
                 Page = item.Page,
                 Output = BuildOutput(item.Path, request.Output.Format.Id, sizes[index]),
             }).ToArray(),
-            Dpi = request.Output.Format.Id == "svg" ? null : request.Dpi,
+            Dpi = PdfEngineFormats.IsRaster(request.Output.Format.Id) ? request.Dpi : null,
             Grid = grid,
             License = EnvelopeParts.License(state),
         };
@@ -63,7 +63,7 @@ internal static class PdfRender
             return null;
         }
 
-        if (request.Output.Format.Id == "svg")
+        if (!PdfEngineFormats.IsRaster(request.Output.Format.Id))
         {
             throw CliErrors.OptionInvalid(
                 "--grid",
