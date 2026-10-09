@@ -38,7 +38,7 @@ internal static class SlidesExport
         IReadOnlyList<int>? slides)
     {
         Presentation presentation = loaded.Presentation;
-        if (request.Output.Format.Id is "png" or "jpeg" or "svg")
+        if (SlidesEngineFormats.IsSlideImage(request.Output.Format.Id))
         {
             IReadOnlyList<int> selected = slides ?? AllSlides(presentation.Slides.Count);
             return RenderImages(
@@ -51,7 +51,7 @@ internal static class SlidesExport
         }
         else
         {
-            SaveFormat format = SaveFormatFor(request.Output.Format.Id);
+            SaveFormat format = SlidesEngineFormats.SaveFormatOf(request.Output.Format.Id);
             return session.Outputs.Write(request.Output, presentation, temp =>
             {
                 Save(temp);

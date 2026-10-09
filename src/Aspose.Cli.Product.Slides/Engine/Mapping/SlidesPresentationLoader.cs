@@ -61,7 +61,7 @@ internal sealed class SlidesPresentationLoader(
             source = InputFiles.OpenRead(path);
             IPresentationInfo info = PresentationFactory.Instance.GetPresentationInfo(source);
             source.Position = 0;
-            string format = FormatId(info.LoadFormat);
+            string format = SlidesEngineFormats.IdOf(info.LoadFormat);
             if (!SlidesFormats.LoadIds.Contains(format, StringComparer.Ordinal))
             {
                 throw Loading.Unloadable(path, info.LoadFormat.ToString());
@@ -156,24 +156,6 @@ internal sealed class SlidesPresentationLoader(
             }
         }
     }
-
-    private static string FormatId(LoadFormat format) => format switch
-    {
-        LoadFormat.Ppt => "ppt",
-        LoadFormat.Pps => "pps",
-        LoadFormat.Pptx => "pptx",
-        LoadFormat.Ppsx => "ppsx",
-        LoadFormat.Odp => "odp",
-        LoadFormat.Potx => "potx",
-        LoadFormat.Pptm => "pptm",
-        LoadFormat.Ppsm => "ppsm",
-        LoadFormat.Potm => "potm",
-        LoadFormat.Otp => "otp",
-        LoadFormat.Ppt95 => "ppt",
-        LoadFormat.Pot => "pot",
-        LoadFormat.Fodp => "fodp",
-        _ => "unknown",
-    };
 }
 
 internal sealed record LoadedPresentation(Presentation Presentation, string FormatId, SlidesResourcePolicy Resources)
