@@ -204,27 +204,63 @@ $", result.StdOut);
     }
 
     /// <summary>
-    /// Pins the complete capabilities document, including every command's option metadata.
-    /// Only the build identity is normalized: the CLI version, source revision, dirty flag and
-    /// engine package versions change with releases and SDK updates, not with command
-    /// definitions, and <see cref="Capabilities_ExposeTheCurrentDeterministicSourceRevision"/>
-    /// checks them.
+    /// Pins the complete capabilities of each product, including every command's option metadata
+    /// and the product's operation and result schemas, in <c>capabilities/&lt;product&gt;.json</c>
+    /// (see <see cref="CapabilitiesSnapshots"/>). Only the build identity is normalized: the CLI
+    /// version, source revision, dirty flag and engine package versions change with releases and
+    /// SDK updates, not with command definitions, and
+    /// <see cref="Capabilities_ExposeTheCurrentDeterministicSourceRevision"/> checks them.
+    /// </summary>
+    [Theory]
+    [InlineData("cells")]
+    [InlineData("pdf")]
+    [InlineData("slides")]
+    [InlineData("words")]
+    public void ProductCapabilities_MatchTheSnapshot(string product)
+    {
+        JsonNode capabilities = NormalizedCapabilities();
+
+        Assert.Contains(product, CapabilitiesSnapshots.Products(capabilities));
+        AssertSnapshot(
+            Path.Combine("capabilities", product + ".json"),
+            CapabilitiesSnapshots.Product(capabilities, product, SchemaDocument));
+    }
+
+    /// <summary>
+    /// Pins the rest of the capabilities document in <c>capabilities/host.json</c>: the Host
+    /// commands, common diagnostics, routing defaults, budgets, engine pins and common schemas.
+    /// The build identity is normalized as in <see cref="ProductCapabilities_MatchTheSnapshot"/>.
     /// </summary>
     [Fact]
-    public void Capabilities_MatchTheSnapshot()
+    public void HostCapabilities_MatchTheSnapshot()
+    {
+        JsonNode capabilities = NormalizedCapabilities();
+
+        AssertSnapshot(
+            Path.Combine("capabilities", "host.json"),
+            CapabilitiesSnapshots.Host(capabilities, SchemaDocument));
+    }
+
+    private JsonNode NormalizedCapabilities()
     {
         CliResult result = _workspace.Run("capabilities", "--output", "json");
 
         Assert.Equal(0, result.ExitCode);
-        string normalized = BuildIdentity.Replace(
+        return Parse(BuildIdentity.Replace(
             result.StdOut,
-            static match => match.Groups["key"].Value + "\"<build>\"");
-        AssertSnapshot("capabilities.json", normalized);
+            static match => match.Groups["key"].Value + "\"<build>\""));
+    }
+
+    private JsonNode SchemaDocument(string id)
+    {
+        CliResult result = _workspace.Run("schema", id);
+        Assert.True(result.ExitCode == 0, $"schema {id}: {result.StdErr}");
+        return Parse(result.StdOut);
     }
 
     /// <summary>
     /// Pins the capabilities summary; the build identity is normalized as in
-    /// <see cref="Capabilities_MatchTheSnapshot"/>.
+    /// <see cref="ProductCapabilities_MatchTheSnapshot"/>.
     /// </summary>
     [Fact]
     public void CapabilitiesSummary_MatchesTheSnapshot()
