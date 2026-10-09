@@ -176,6 +176,7 @@ public sealed class TempWorkspace : IDisposable
                     + " Instance: "
                     + instance.RootElement.GetRawText());
         }
+        ResultSchemaCoverage.Record(PublishedSchemas.IdOf(schemaUri));
         return result;
     }
 
