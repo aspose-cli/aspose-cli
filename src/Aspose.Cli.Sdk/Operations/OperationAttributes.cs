@@ -1,3 +1,5 @@
+using Aspose.Cli.Sdk.Contracts;
+
 namespace Aspose.Cli.Sdk.Operations;
 
 /// <summary>
@@ -77,9 +79,9 @@ public abstract class NotBlankAttribute : MinLengthAttribute
         base.Check(value) ?? (Visible.Check(value) is null ? null : "must not be blank");
 
     /// <inheritdoc />
-    public sealed override void Describe(System.Text.Json.Nodes.JsonObject schema, OperationValue value)
+    public sealed override void Describe(System.Text.Json.Nodes.JsonObject schema)
     {
-        base.Describe(schema, value);
-        Visible.Describe(schema, value);
+        base.Describe(schema);
+        Visible.Describe(schema);
     }
 }

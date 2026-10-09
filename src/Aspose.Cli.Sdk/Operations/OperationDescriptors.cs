@@ -79,7 +79,7 @@ public sealed class OperationRecord
     public IReadOnlyList<OperationProperty> Properties { get; init; } = [];
 
     /// <summary>Rules over several members, such as <see cref="ExactlyOneOfAttribute"/>.</summary>
-    public IReadOnlyList<ValueConstraintAttribute> Constraints { get; init; } = [];
+    public IReadOnlyList<RecordRuleAttribute> Constraints { get; init; } = [];
 
     /// <summary>The op names commonly written for this operation (see <see cref="MistakenForAttribute"/>).</summary>
     public IReadOnlyList<string> MistakenFor { get; init; } = [];

@@ -13,6 +13,7 @@ public sealed class OperationContractGeneratorTests
         """
         using System.Collections.Generic;
         using System.Text.Json.Serialization;
+        using Aspose.Cli.Sdk.Contracts;
         using Aspose.Cli.Sdk.Operations;
         namespace Sample;
 
@@ -74,12 +75,12 @@ public sealed class OperationContractGeneratorTests
         Assert.Equal(1, source.Split("Name = \"sheet\"").Length - 1);
         Assert.Contains("Constraints = [new global::Aspose.Cli.Sdk.Operations.ExactlyOneOfAttribute(new string[] { (string)\"path\", (string)\"all\" })]", source, StringComparison.Ordinal);
         Assert.Contains("AllowedValuesAttribute(new object[] { \"fast\", \"slow\" })", source, StringComparison.Ordinal);
-        Assert.Contains("Name = \"count\", Value = new() { Kind = global::Aspose.Cli.Sdk.Operations.OperationValueKind.Integer }, Default = \"0\", Constraints = [new global::Aspose.Cli.Sdk.Operations.MinimumAttribute(0)]", source, StringComparison.Ordinal);
+        Assert.Contains("Name = \"count\", Value = new() { Kind = global::Aspose.Cli.Sdk.Operations.OperationValueKind.Integer }, Default = \"0\", Constraints = [new global::Aspose.Cli.Sdk.Contracts.MinimumAttribute(0)]", source, StringComparison.Ordinal);
         Assert.Contains("Name = \"tags\", Value = new() { Kind = global::Aspose.Cli.Sdk.Operations.OperationValueKind.Array, Items = new() { Kind = global::Aspose.Cli.Sdk.Operations.OperationValueKind.String } }, Default = \"[]\"", source, StringComparison.Ordinal);
         Assert.Contains("ResolveInputPaths = static (operation, resolve) =>", source, StringComparison.Ordinal);
         // A scalar constraint on a list is placed on its items.
         Assert.Contains("Constraints = [new global::Aspose.Cli.Sdk.Operations.HexColorAttribute() { Depth = 1 }]", source, StringComparison.Ordinal);
-        Assert.Contains("Constraints = [new global::Aspose.Cli.Sdk.Operations.MinimumAttribute(0) { Depth = 1 }]", source, StringComparison.Ordinal);
+        Assert.Contains("Constraints = [new global::Aspose.Cli.Sdk.Contracts.MinimumAttribute(0) { Depth = 1 }]", source, StringComparison.Ordinal);
     }
 
     [Fact]

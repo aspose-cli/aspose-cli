@@ -13,6 +13,7 @@ namespace Aspose.Cli.Sdk.Analyzers;
 public sealed class OperationContractGenerator : IIncrementalGenerator
 {
     internal const string Operations = "Aspose.Cli.Sdk.Operations.";
+    internal const string Contracts = "Aspose.Cli.Sdk.Contracts.";
 
     internal static readonly DiagnosticDescriptor InvalidContract = new(
         "APCLI012",
@@ -32,7 +33,7 @@ public sealed class OperationContractGenerator : IIncrementalGenerator
         IncrementalValueProvider<ImmutableArray<INamedTypeSymbol>> operations = Records(context, "OperationAttribute");
         IncrementalValueProvider<ImmutableArray<(IPropertySymbol Property, Location Location)>> constantLists = context.SyntaxProvider
             .ForAttributeWithMetadataName(
-                Operations + "AllowedValuesAttribute",
+                Contracts + "AllowedValuesAttribute",
                 static (node, _) => node is PropertyDeclarationSyntax,
                 static (attributed, _) => attributed.Attributes
                     .Where(static attribute => attribute.ConstructorArguments.FirstOrDefault().Kind == TypedConstantKind.Type)

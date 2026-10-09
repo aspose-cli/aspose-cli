@@ -18,7 +18,7 @@ internal sealed class VocabularyWriter(
     private readonly Dictionary<INamedTypeSymbol, string?> _nestedLocals = new(SymbolEqualityComparer.Default);
     private readonly Dictionary<string, INamedTypeSymbol> _definitions = new(StringComparer.Ordinal);
     private readonly StringBuilder _nested = new();
-    private readonly INamedTypeSymbol? _constraint = compilation.GetTypeByMetadataName(OperationContractGenerator.Operations + "ValueConstraintAttribute");
+    private readonly INamedTypeSymbol? _constraint = compilation.GetTypeByMetadataName(OperationContractGenerator.Contracts + "ValueConstraintAttribute");
     private readonly INamedTypeSymbol? _recordRule = compilation.GetTypeByMetadataName(OperationContractGenerator.Operations + "RecordRuleAttribute");
     private readonly INamedTypeSymbol? _memberCount = compilation.GetTypeByMetadataName(OperationContractGenerator.Operations + "MemberCountAttribute");
     private readonly INamedTypeSymbol? _inputPath = compilation.GetTypeByMetadataName(OperationContractGenerator.Operations + "InputPathAttribute");
@@ -381,7 +381,7 @@ internal sealed class VocabularyWriter(
             .Select(attribute => Constraint(attribute, property, Place(attribute, levels, property)))];
         if (IsUnsigned(Scalar(property.Type)))
         {
-            constraints.Insert(0, $"new {Sdk}MinimumAttribute(0)" + DepthOf(levels.Count - 1));
+            constraints.Insert(0, $"new global::{OperationContractGenerator.Contracts}MinimumAttribute(0)" + DepthOf(levels.Count - 1));
         }
 
         if (constraints.Count > 0)
@@ -556,7 +556,7 @@ internal sealed class VocabularyWriter(
     {
         for (INamedTypeSymbol? current = attribute; current is not null; current = current.BaseType)
         {
-            if (current.ContainingNamespace?.ToDisplayString() + "." == OperationContractGenerator.Operations
+            if (current.ContainingNamespace?.ToDisplayString() + "." is OperationContractGenerator.Operations or OperationContractGenerator.Contracts
                 && ConstraintKinds.TryGetValue(current.Name, out string[]? kinds))
             {
                 return kinds;

@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Operations;
 using Json.Schema;
@@ -58,7 +59,7 @@ public sealed class OperationContractTests
         Assert.Null(explained.Check("aa"));
 
         var schema = new JsonObject();
-        explained.Describe(schema, new OperationValue { Kind = OperationValueKind.String });
+        explained.Describe(schema);
         Assert.Equal("^a+$", Assert.Single(schema).Value!.GetValue<string>());
         Assert.True(schema.ContainsKey("pattern"));
     }
@@ -91,7 +92,7 @@ public sealed class OperationContractTests
             schema["type"] = kind.ToString().ToLowerInvariant();
         }
 
-        constraint.Describe(schema, new OperationValue { Kind = kind });
+        constraint.Describe(schema);
         JsonSchema published = JsonSchema.FromText(schema.ToJsonString());
 
         foreach ((string value, bool accepted) in new[] { (valid, true), (invalid, false) })
