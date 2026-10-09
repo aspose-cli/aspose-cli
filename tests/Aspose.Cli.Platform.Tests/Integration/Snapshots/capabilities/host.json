@@ -973,8 +973,6 @@
             "owner",
             "severity",
             "category",
-            "messageTemplateId",
-            "hintTemplateId",
             "detailsSchemaId"
           ],
           "additionalProperties": false,
@@ -985,7 +983,7 @@
               "pattern": "^[A-Z][A-Z0-9_]*$"
             },
             "owner": {
-              "description": "What declares the code: common or a product id.",
+              "description": "What declares the code: common (the SDK), host or a product id.",
               "type": "string",
               "minLength": 1
             },
@@ -1005,16 +1003,6 @@
             },
             "category": {
               "description": "What kind of problem the code reports, such as validation or verification.",
-              "type": "string",
-              "minLength": 1
-            },
-            "messageTemplateId": {
-              "description": "Stable identifier of the message wording.",
-              "type": "string",
-              "minLength": 1
-            },
-            "hintTemplateId": {
-              "description": "Stable identifier of the hint wording.",
               "type": "string",
               "minLength": 1
             },
@@ -4465,7 +4453,7 @@
           "secret": false,
           "valueSource": "command-line",
           "inputKind": "none",
-          "description": "Loopback port of the viewer service when it starts; 0 chooses a free port."
+          "description": "Loopback port; 0 chooses a free port."
         },
         {
           "name": "--product",
@@ -4509,7 +4497,7 @@
           "secret": false,
           "valueSource": "command-line",
           "inputKind": "none",
-          "description": "Product view; auto uses the product's live view."
+          "description": "Product view; auto uses the product's default view."
         }
       ],
       "arguments": [
@@ -4825,7 +4813,7 @@
           "secret": false,
           "valueSource": "command-line",
           "inputKind": "none",
-          "description": "Review view; auto uses the product default."
+          "description": "Product view; auto uses the product's default view."
         }
       ],
       "arguments": [
@@ -5172,8 +5160,6 @@
       "severity": "error",
       "exitCode": 5,
       "category": "output",
-      "messageTemplateId": "common.app-busy.message.v1",
-      "hintTemplateId": "common.app-busy.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -5181,8 +5167,6 @@
       "owner": "common",
       "severity": "warning",
       "category": "warning",
-      "messageTemplateId": "common.backup-predates-edit.message.v1",
-      "hintTemplateId": "common.backup-predates-edit.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -5191,8 +5175,6 @@
       "severity": "error",
       "exitCode": 4,
       "category": "validation",
-      "messageTemplateId": "common.bookmark-not-found.message.v1",
-      "hintTemplateId": "common.bookmark-not-found.hint.v1",
       "detailsSchemaId": "v2/common/not-found-details"
     },
     {
@@ -5201,8 +5183,6 @@
       "severity": "error",
       "exitCode": 7,
       "category": "license",
-      "messageTemplateId": "common.evaluation-limit.message.v1",
-      "hintTemplateId": "common.evaluation-limit.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -5210,8 +5190,6 @@
       "owner": "common",
       "severity": "warning",
       "category": "warning",
-      "messageTemplateId": "common.eval-input-marked.message.v1",
-      "hintTemplateId": "common.eval-input-marked.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -5219,8 +5197,6 @@
       "owner": "common",
       "severity": "warning",
       "category": "warning",
-      "messageTemplateId": "common.eval-input-truncated.message.v1",
-      "hintTemplateId": "common.eval-input-truncated.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -5228,8 +5204,6 @@
       "owner": "common",
       "severity": "warning",
       "category": "warning",
-      "messageTemplateId": "common.eval-mode.message.v1",
-      "hintTemplateId": "common.eval-mode.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -5238,8 +5212,6 @@
       "severity": "error",
       "exitCode": 4,
       "category": "validation",
-      "messageTemplateId": "common.extract-budget-exceeded.message.v1",
-      "hintTemplateId": "common.extract-budget-exceeded.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -5248,8 +5220,6 @@
       "severity": "error",
       "exitCode": 6,
       "category": "format",
-      "messageTemplateId": "common.feature-unsupported.message.v1",
-      "hintTemplateId": "common.feature-unsupported.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -5258,8 +5228,6 @@
       "severity": "error",
       "exitCode": 3,
       "category": "input",
-      "messageTemplateId": "common.file-access-denied.message.v1",
-      "hintTemplateId": "common.file-access-denied.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -5268,8 +5236,6 @@
       "severity": "error",
       "exitCode": 3,
       "category": "input",
-      "messageTemplateId": "common.file-corrupt.message.v1",
-      "hintTemplateId": "common.file-corrupt.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -5278,8 +5244,6 @@
       "severity": "error",
       "exitCode": 3,
       "category": "input",
-      "messageTemplateId": "common.file-locked.message.v1",
-      "hintTemplateId": "common.file-locked.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -5288,8 +5252,6 @@
       "severity": "error",
       "exitCode": 3,
       "category": "input",
-      "messageTemplateId": "common.file-not-found.message.v1",
-      "hintTemplateId": "common.file-not-found.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -5298,8 +5260,6 @@
       "severity": "error",
       "exitCode": 3,
       "category": "input",
-      "messageTemplateId": "common.file-too-large.message.v1",
-      "hintTemplateId": "common.file-too-large.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -5308,8 +5268,6 @@
       "severity": "error",
       "exitCode": 6,
       "category": "format",
-      "messageTemplateId": "common.format-ambiguous.message.v1",
-      "hintTemplateId": "common.format-ambiguous.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -5318,8 +5276,6 @@
       "severity": "error",
       "exitCode": 6,
       "category": "format",
-      "messageTemplateId": "common.format-mismatch.message.v1",
-      "hintTemplateId": "common.format-mismatch.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -5328,8 +5284,6 @@
       "severity": "error",
       "exitCode": 6,
       "category": "format",
-      "messageTemplateId": "common.format-unsupported.message.v1",
-      "hintTemplateId": "common.format-unsupported.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -5338,8 +5292,6 @@
       "severity": "error",
       "exitCode": 3,
       "category": "input",
-      "messageTemplateId": "common.input-budget-exceeded.message.v1",
-      "hintTemplateId": "common.input-budget-exceeded.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -5348,8 +5300,6 @@
       "severity": "error",
       "exitCode": 3,
       "category": "input",
-      "messageTemplateId": "common.input-changed.message.v1",
-      "hintTemplateId": "common.input-changed.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -5358,8 +5308,6 @@
       "severity": "error",
       "exitCode": 3,
       "category": "input",
-      "messageTemplateId": "common.input-encoding-invalid.message.v1",
-      "hintTemplateId": "common.input-encoding-invalid.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -5368,8 +5316,6 @@
       "severity": "error",
       "exitCode": 1,
       "category": "internal",
-      "messageTemplateId": "common.internal-error.message.v1",
-      "hintTemplateId": "common.internal-error.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -5378,8 +5324,6 @@
       "severity": "error",
       "exitCode": 7,
       "category": "license",
-      "messageTemplateId": "common.license-file-not-found.message.v1",
-      "hintTemplateId": "common.license-file-not-found.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -5388,8 +5332,6 @@
       "severity": "error",
       "exitCode": 7,
       "category": "license",
-      "messageTemplateId": "common.license-invalid.message.v1",
-      "hintTemplateId": "common.license-invalid.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -5398,8 +5340,6 @@
       "severity": "error",
       "exitCode": 4,
       "category": "validation",
-      "messageTemplateId": "common.license-not-applicable.message.v1",
-      "hintTemplateId": "common.license-not-applicable.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -5407,8 +5347,6 @@
       "owner": "common",
       "severity": "warning",
       "category": "warning",
-      "messageTemplateId": "common.list-truncated.message.v1",
-      "hintTemplateId": "common.list-truncated.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -5417,8 +5355,6 @@
       "severity": "error",
       "exitCode": 5,
       "category": "output",
-      "messageTemplateId": "common.loopback-listener-unavailable.message.v1",
-      "hintTemplateId": "common.loopback-listener-unavailable.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -5427,8 +5363,6 @@
       "severity": "error",
       "exitCode": 5,
       "category": "output",
-      "messageTemplateId": "common.loopback-port-in-use.message.v1",
-      "hintTemplateId": "common.loopback-port-in-use.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -5436,8 +5370,6 @@
       "owner": "common",
       "severity": "warning",
       "category": "warning",
-      "messageTemplateId": "common.lossy-conversion.message.v1",
-      "hintTemplateId": "common.lossy-conversion.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -5446,8 +5378,6 @@
       "severity": "error",
       "exitCode": 9,
       "category": "timeout",
-      "messageTemplateId": "common.operation-timeout.message.v1",
-      "hintTemplateId": "common.operation-timeout.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -5456,8 +5386,6 @@
       "severity": "error",
       "exitCode": 4,
       "category": "validation",
-      "messageTemplateId": "common.ops-invalid.message.v1",
-      "hintTemplateId": "common.ops-invalid.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -5466,8 +5394,6 @@
       "severity": "error",
       "exitCode": 2,
       "category": "usage",
-      "messageTemplateId": "common.option-invalid.message.v1",
-      "hintTemplateId": "common.option-invalid.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -5476,8 +5402,6 @@
       "severity": "error",
       "exitCode": 5,
       "category": "output",
-      "messageTemplateId": "common.output-conflict.message.v1",
-      "hintTemplateId": "common.output-conflict.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -5486,8 +5410,6 @@
       "severity": "error",
       "exitCode": 5,
       "category": "output",
-      "messageTemplateId": "common.output-exists.message.v1",
-      "hintTemplateId": "common.output-exists.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -5496,8 +5418,6 @@
       "severity": "error",
       "exitCode": 5,
       "category": "output",
-      "messageTemplateId": "common.output-publication-failed.message.v1",
-      "hintTemplateId": "common.output-publication-failed.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -5506,8 +5426,6 @@
       "severity": "error",
       "exitCode": 8,
       "category": "partial",
-      "messageTemplateId": "common.output-publication-partial.message.v1",
-      "hintTemplateId": "common.output-publication-partial.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -5516,8 +5434,6 @@
       "severity": "error",
       "exitCode": 5,
       "category": "output",
-      "messageTemplateId": "common.output-unwritable.message.v1",
-      "hintTemplateId": "common.output-unwritable.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -5526,8 +5442,6 @@
       "severity": "error",
       "exitCode": 4,
       "category": "validation",
-      "messageTemplateId": "common.page-not-found.message.v1",
-      "hintTemplateId": "common.page-not-found.hint.v1",
       "detailsSchemaId": "v2/common/not-found-details"
     },
     {
@@ -5536,8 +5450,6 @@
       "severity": "error",
       "exitCode": 4,
       "category": "validation",
-      "messageTemplateId": "common.page-range-invalid.message.v1",
-      "hintTemplateId": "common.page-range-invalid.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -5546,8 +5458,6 @@
       "severity": "error",
       "exitCode": 3,
       "category": "input",
-      "messageTemplateId": "common.password-invalid.message.v1",
-      "hintTemplateId": "common.password-invalid.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -5556,8 +5466,6 @@
       "severity": "error",
       "exitCode": 3,
       "category": "input",
-      "messageTemplateId": "common.password-required.message.v1",
-      "hintTemplateId": "common.password-required.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -5566,8 +5474,6 @@
       "severity": "error",
       "exitCode": 4,
       "category": "validation",
-      "messageTemplateId": "common.preview-budget-exceeded.message.v1",
-      "hintTemplateId": "common.preview-budget-exceeded.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -5575,8 +5481,6 @@
       "owner": "common",
       "severity": "warning",
       "category": "warning",
-      "messageTemplateId": "common.protection-not-enforced.message.v1",
-      "hintTemplateId": "common.protection-not-enforced.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -5585,8 +5489,6 @@
       "severity": "error",
       "exitCode": 5,
       "category": "output",
-      "messageTemplateId": "common.release-feed-unavailable.message.v1",
-      "hintTemplateId": "common.release-feed-unavailable.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -5595,8 +5497,6 @@
       "severity": "error",
       "exitCode": 5,
       "category": "output",
-      "messageTemplateId": "common.release-verification-failed.message.v1",
-      "hintTemplateId": "common.release-verification-failed.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -5604,8 +5504,6 @@
       "owner": "common",
       "severity": "warning",
       "category": "warning",
-      "messageTemplateId": "common.remote-resources-blocked.message.v1",
-      "hintTemplateId": "common.remote-resources-blocked.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -5614,8 +5512,6 @@
       "severity": "error",
       "exitCode": 4,
       "category": "validation",
-      "messageTemplateId": "common.render-failed.message.v1",
-      "hintTemplateId": "common.render-failed.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -5624,8 +5520,6 @@
       "severity": "error",
       "exitCode": 4,
       "category": "validation",
-      "messageTemplateId": "common.render-too-large.message.v1",
-      "hintTemplateId": "common.render-too-large.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -5633,8 +5527,6 @@
       "owner": "common",
       "severity": "warning",
       "category": "warning",
-      "messageTemplateId": "common.replace-no-match.message.v1",
-      "hintTemplateId": "common.replace-no-match.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -5642,8 +5534,6 @@
       "owner": "common",
       "severity": "warning",
       "category": "warning",
-      "messageTemplateId": "common.signature-invalidated.message.v1",
-      "hintTemplateId": "common.signature-invalidated.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -5652,9 +5542,21 @@
       "severity": "error",
       "exitCode": 4,
       "category": "validation",
-      "messageTemplateId": "common.style-not-found.message.v1",
-      "hintTemplateId": "common.style-not-found.hint.v1",
       "detailsSchemaId": "v2/common/not-found-details"
+    },
+    {
+      "code": "UPDATE_FAILED",
+      "owner": "host",
+      "severity": "warning",
+      "category": "warning",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
+      "code": "UPDATE_IN_PROGRESS",
+      "owner": "host",
+      "severity": "warning",
+      "category": "warning",
+      "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
       "code": "UPLOAD_BUDGET_EXCEEDED",
@@ -5662,8 +5564,6 @@
       "severity": "error",
       "exitCode": 4,
       "category": "validation",
-      "messageTemplateId": "common.upload-budget-exceeded.message.v1",
-      "hintTemplateId": "common.upload-budget-exceeded.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -5672,8 +5572,6 @@
       "severity": "error",
       "exitCode": 2,
       "category": "usage",
-      "messageTemplateId": "common.usage-error.message.v1",
-      "hintTemplateId": "common.usage-error.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -5682,8 +5580,6 @@
       "severity": "error",
       "exitCode": 8,
       "category": "partial",
-      "messageTemplateId": "common.worker-termination-failed.message.v1",
-      "hintTemplateId": "common.worker-termination-failed.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     }
   ]

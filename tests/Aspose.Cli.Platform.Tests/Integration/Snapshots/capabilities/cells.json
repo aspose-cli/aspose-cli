@@ -1506,7 +1506,7 @@
             "secret": false,
             "valueSource": "command-line",
             "inputKind": "none",
-            "description": "Extra sections: names (defined names), errors (formula-error scan), fonts (fonts used), tables, charts, pivots, validation, layout (frozen panes, outline groups, filter, print area and page setup of each sheet). Repeatable."
+            "description": "Extra sections to include; repeat for more: names (defined names), errors (formula-error scan), fonts (fonts used), tables, charts, pivots, validation, layout (frozen panes, outline groups, filter, print area and page setup of each sheet)."
           },
           {
             "name": "--password",
@@ -1577,7 +1577,7 @@
             "secret": false,
             "valueSource": "command-line",
             "inputKind": "none",
-            "description": "Include a small sample of display values for each sheet."
+            "description": "Include a bounded preview: display values of the first --preview-rows rows and up to 20 columns of each sheet, from A1. Default: off."
           },
           {
             "name": "--preview-rows",
@@ -2185,7 +2185,7 @@
             "secret": false,
             "valueSource": "command-line",
             "inputKind": "none",
-            "description": "Image format: png, jpeg, svg."
+            "description": "Image format: png, jpeg or svg. Default: png."
           }
         ],
         "arguments": [
@@ -2363,8 +2363,6 @@
       "owner": "cells",
       "severity": "warning",
       "category": "warning",
-      "messageTemplateId": "cells.active-sheet-skipped.message.v1",
-      "hintTemplateId": "cells.active-sheet-skipped.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -2372,8 +2370,6 @@
       "owner": "cells",
       "severity": "warning",
       "category": "warning",
-      "messageTemplateId": "cells.cells-sheet-partially-rendered.message.v1",
-      "hintTemplateId": "cells.cells-sheet-partially-rendered.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -2382,8 +2378,6 @@
       "severity": "error",
       "exitCode": 4,
       "category": "validation",
-      "messageTemplateId": "cells.chart-not-found.message.v1",
-      "hintTemplateId": "cells.chart-not-found.hint.v1",
       "detailsSchemaId": "v2/common/not-found-details"
     },
     {
@@ -2391,8 +2385,6 @@
       "owner": "cells",
       "severity": "warning",
       "category": "warning",
-      "messageTemplateId": "cells.chart-split-across-pages.message.v1",
-      "hintTemplateId": "cells.chart-split-across-pages.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -2401,8 +2393,6 @@
       "severity": "error",
       "exitCode": 4,
       "category": "validation",
-      "messageTemplateId": "cells.comment-not-found.message.v1",
-      "hintTemplateId": "cells.comment-not-found.hint.v1",
       "detailsSchemaId": "v2/common/not-found-details"
     },
     {
@@ -2410,8 +2400,6 @@
       "owner": "cells",
       "severity": "warning",
       "category": "warning",
-      "messageTemplateId": "cells.data-truncated.message.v1",
-      "hintTemplateId": "cells.data-truncated.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -2419,8 +2407,6 @@
       "owner": "cells",
       "severity": "warning",
       "category": "warning",
-      "messageTemplateId": "cells.external-link-cache-missing.message.v1",
-      "hintTemplateId": "cells.external-link-cache-missing.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -2428,8 +2414,6 @@
       "owner": "cells",
       "severity": "warning",
       "category": "warning",
-      "messageTemplateId": "cells.external-link-relative.message.v1",
-      "hintTemplateId": "cells.external-link-relative.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -2437,8 +2421,6 @@
       "owner": "cells",
       "severity": "warning",
       "category": "warning",
-      "messageTemplateId": "cells.formulas-broken.message.v1",
-      "hintTemplateId": "cells.formulas-broken.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -2446,8 +2428,6 @@
       "owner": "cells",
       "severity": "warning",
       "category": "warning",
-      "messageTemplateId": "cells.formulas-calculated-on-open.message.v1",
-      "hintTemplateId": "cells.formulas-calculated-on-open.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -2455,8 +2435,6 @@
       "owner": "cells",
       "severity": "warning",
       "category": "verification",
-      "messageTemplateId": "cells.formula-errors.message.v1",
-      "hintTemplateId": "cells.formula-errors.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -2464,8 +2442,6 @@
       "owner": "cells",
       "severity": "warning",
       "category": "warning",
-      "messageTemplateId": "cells.formula-function-unknown.message.v1",
-      "hintTemplateId": "cells.formula-function-unknown.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -2474,8 +2450,6 @@
       "severity": "error",
       "exitCode": 4,
       "category": "validation",
-      "messageTemplateId": "cells.hyperlink-not-found.message.v1",
-      "hintTemplateId": "cells.hyperlink-not-found.hint.v1",
       "detailsSchemaId": "v2/common/not-found-details"
     },
     {
@@ -2483,8 +2457,6 @@
       "owner": "cells",
       "severity": "warning",
       "category": "warning",
-      "messageTemplateId": "cells.mhtml-resource-coverage-unverified.message.v1",
-      "hintTemplateId": "cells.mhtml-resource-coverage-unverified.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -2493,8 +2465,6 @@
       "severity": "error",
       "exitCode": 4,
       "category": "validation",
-      "messageTemplateId": "cells.name-not-found.message.v1",
-      "hintTemplateId": "cells.name-not-found.hint.v1",
       "detailsSchemaId": "v2/common/not-found-details"
     },
     {
@@ -2503,8 +2473,6 @@
       "severity": "error",
       "exitCode": 4,
       "category": "validation",
-      "messageTemplateId": "cells.pivot-not-found.message.v1",
-      "hintTemplateId": "cells.pivot-not-found.hint.v1",
       "detailsSchemaId": "v2/common/not-found-details"
     },
     {
@@ -2513,8 +2481,6 @@
       "severity": "error",
       "exitCode": 4,
       "category": "validation",
-      "messageTemplateId": "cells.range-invalid.message.v1",
-      "hintTemplateId": "cells.range-invalid.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -2523,8 +2489,6 @@
       "severity": "error",
       "exitCode": 4,
       "category": "validation",
-      "messageTemplateId": "cells.range-too-large.message.v1",
-      "hintTemplateId": "cells.range-too-large.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -2533,8 +2497,6 @@
       "severity": "error",
       "exitCode": 4,
       "category": "validation",
-      "messageTemplateId": "cells.render-empty.message.v1",
-      "hintTemplateId": "cells.render-empty.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -2542,8 +2504,6 @@
       "owner": "cells",
       "severity": "warning",
       "category": "warning",
-      "messageTemplateId": "cells.rows-shifted.message.v1",
-      "hintTemplateId": "cells.rows-shifted.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -2551,8 +2511,6 @@
       "owner": "cells",
       "severity": "warning",
       "category": "warning",
-      "messageTemplateId": "cells.sheets-dropped.message.v1",
-      "hintTemplateId": "cells.sheets-dropped.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -2560,8 +2518,6 @@
       "owner": "cells",
       "severity": "warning",
       "category": "warning",
-      "messageTemplateId": "cells.sheets-skipped.message.v1",
-      "hintTemplateId": "cells.sheets-skipped.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -2570,8 +2526,6 @@
       "severity": "error",
       "exitCode": 4,
       "category": "validation",
-      "messageTemplateId": "cells.sheet-not-found.message.v1",
-      "hintTemplateId": "cells.sheet-not-found.hint.v1",
       "detailsSchemaId": "v2/common/not-found-details"
     },
     {
@@ -2579,8 +2533,6 @@
       "owner": "cells",
       "severity": "warning",
       "category": "warning",
-      "messageTemplateId": "cells.text-table-layout.message.v1",
-      "hintTemplateId": "cells.text-table-layout.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -2588,8 +2540,6 @@
       "owner": "cells",
       "severity": "warning",
       "category": "warning",
-      "messageTemplateId": "cells.workbook-encryption-removed.message.v1",
-      "hintTemplateId": "cells.workbook-encryption-removed.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     }
   ],

@@ -514,7 +514,7 @@
             "secret": false,
             "valueSource": "command-line",
             "inputKind": "none",
-            "description": "Optional 1-based page range."
+            "description": "Pages to process, as 1-based numbers and ranges such as 1-3,7,9-. Default: every page."
           },
           {
             "name": "--password",
@@ -1139,7 +1139,7 @@
             "secret": false,
             "valueSource": "command-line",
             "inputKind": "none",
-            "description": "Optional page range for images, text or tables."
+            "description": "Pages to process, as 1-based numbers and ranges such as 1-3,7,9-. Default: every page. Only with --what images, text or tables."
           },
           {
             "name": "--password",
@@ -1281,7 +1281,7 @@
             "secret": false,
             "valueSource": "command-line",
             "inputKind": "none",
-            "description": "Extra structural projections; repeatable."
+            "description": "Extra sections to include; repeat for more: outline (bookmarks, up to 200), forms (form type and field count), attachments, fonts, permissions, signatures, layers (optional content layer names), metadata (document information such as title and author)."
           },
           {
             "name": "--password",
@@ -1352,7 +1352,7 @@
             "secret": false,
             "valueSource": "command-line",
             "inputKind": "none",
-            "description": "Include bounded per-page geometry."
+            "description": "Include a bounded preview: the size and rotation of each page, up to 20 pages. Default: off."
           }
         ],
         "arguments": [
@@ -1610,7 +1610,7 @@
             "secret": false,
             "valueSource": "command-line",
             "inputKind": "none",
-            "description": "Maximum projected characters."
+            "description": "Maximum characters returned, counting the text of the returned pages. Range 1-10000000, default 20000."
           },
           {
             "name": "--mode",
@@ -1646,7 +1646,7 @@
             "secret": false,
             "valueSource": "command-line",
             "inputKind": "none",
-            "description": "1-based page range, e.g. 1-3,7,9-."
+            "description": "Pages to process, as 1-based numbers and ranges such as 1-3,7,9-. Default: every page."
           },
           {
             "name": "--password",
@@ -1774,7 +1774,7 @@
             "secret": false,
             "valueSource": "command-line",
             "inputKind": "none",
-            "description": "Optional 1-based page range."
+            "description": "Pages to process, as 1-based numbers and ranges such as 1-3,7,9-. Default: every page."
           },
           {
             "name": "--password",
@@ -2025,7 +2025,7 @@
             "secret": false,
             "valueSource": "command-line",
             "inputKind": "none",
-            "description": "1-based page range, e.g. 1-3,7,9-. Default: page 1."
+            "description": "Pages to process, as 1-based numbers and ranges such as 1-3,7,9-. Default: page 1."
           },
           {
             "name": "--password",
@@ -2097,7 +2097,7 @@
             "secret": false,
             "valueSource": "command-line",
             "inputKind": "none",
-            "description": "png, jpeg or svg."
+            "description": "Image format: png, jpeg or svg. Default: png."
           }
         ],
         "arguments": [
@@ -2677,8 +2677,6 @@
       "severity": "error",
       "exitCode": 4,
       "category": "validation",
-      "messageTemplateId": "pdf.attachment-not-found.message.v1",
-      "hintTemplateId": "pdf.attachment-not-found.hint.v1",
       "detailsSchemaId": "v2/common/not-found-details"
     },
     {
@@ -2687,8 +2685,6 @@
       "severity": "error",
       "exitCode": 4,
       "category": "validation",
-      "messageTemplateId": "pdf.field-not-found.message.v1",
-      "hintTemplateId": "pdf.field-not-found.hint.v1",
       "detailsSchemaId": "v2/common/not-found-details"
     },
     {
@@ -2697,8 +2693,6 @@
       "severity": "error",
       "exitCode": 6,
       "category": "format",
-      "messageTemplateId": "pdf.form-xfa-unsupported.message.v1",
-      "hintTemplateId": "pdf.form-xfa-unsupported.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -2706,8 +2700,6 @@
       "owner": "pdf",
       "severity": "warning",
       "category": "warning",
-      "messageTemplateId": "pdf.navigation-degraded.message.v1",
-      "hintTemplateId": "pdf.navigation-degraded.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -2715,8 +2707,6 @@
       "owner": "pdf",
       "severity": "warning",
       "category": "warning",
-      "messageTemplateId": "pdf.network-resources-requested.message.v1",
-      "hintTemplateId": "pdf.network-resources-requested.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -2725,8 +2715,6 @@
       "severity": "error",
       "exitCode": 6,
       "category": "format",
-      "messageTemplateId": "pdf.pdfa-conversion-failed.message.v1",
-      "hintTemplateId": "pdf.pdfa-conversion-failed.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -2734,8 +2722,6 @@
       "owner": "pdf",
       "severity": "warning",
       "category": "verification",
-      "messageTemplateId": "pdf.pdf-attachment-mismatch.message.v1",
-      "hintTemplateId": "pdf.pdf-attachment-mismatch.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -2743,8 +2729,6 @@
       "owner": "pdf",
       "severity": "warning",
       "category": "verification",
-      "messageTemplateId": "pdf.pdf-bookmark-mismatch.message.v1",
-      "hintTemplateId": "pdf.pdf-bookmark-mismatch.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -2752,8 +2736,6 @@
       "owner": "pdf",
       "severity": "warning",
       "category": "verification",
-      "messageTemplateId": "pdf.pdf-field-not-flattened.message.v1",
-      "hintTemplateId": "pdf.pdf-field-not-flattened.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -2761,8 +2743,6 @@
       "owner": "pdf",
       "severity": "warning",
       "category": "verification",
-      "messageTemplateId": "pdf.pdf-field-value-mismatch.message.v1",
-      "hintTemplateId": "pdf.pdf-field-value-mismatch.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -2770,8 +2750,6 @@
       "owner": "pdf",
       "severity": "warning",
       "category": "verification",
-      "messageTemplateId": "pdf.pdf-metadata-mismatch.message.v1",
-      "hintTemplateId": "pdf.pdf-metadata-mismatch.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -2779,8 +2757,6 @@
       "owner": "pdf",
       "severity": "warning",
       "category": "verification",
-      "messageTemplateId": "pdf.pdf-page-count-mismatch.message.v1",
-      "hintTemplateId": "pdf.pdf-page-count-mismatch.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -2788,8 +2764,6 @@
       "owner": "pdf",
       "severity": "warning",
       "category": "verification",
-      "messageTemplateId": "pdf.pdf-redacted-text-found.message.v1",
-      "hintTemplateId": "pdf.pdf-redacted-text-found.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -2797,8 +2771,6 @@
       "owner": "pdf",
       "severity": "warning",
       "category": "verification",
-      "messageTemplateId": "pdf.pdf-verification-incomplete.message.v1",
-      "hintTemplateId": "pdf.pdf-verification-incomplete.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -2806,8 +2778,6 @@
       "owner": "pdf",
       "severity": "warning",
       "category": "warning",
-      "messageTemplateId": "pdf.redaction-no-match.message.v1",
-      "hintTemplateId": "pdf.redaction-no-match.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -2815,8 +2785,6 @@
       "owner": "pdf",
       "severity": "warning",
       "category": "warning",
-      "messageTemplateId": "pdf.redaction-text-moved.message.v1",
-      "hintTemplateId": "pdf.redaction-text-moved.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -2824,8 +2792,6 @@
       "owner": "pdf",
       "severity": "warning",
       "category": "warning",
-      "messageTemplateId": "pdf.scanned-pages-suspected.message.v1",
-      "hintTemplateId": "pdf.scanned-pages-suspected.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -2834,8 +2800,6 @@
       "severity": "error",
       "exitCode": 3,
       "category": "input",
-      "messageTemplateId": "pdf.sign-cert-invalid.message.v1",
-      "hintTemplateId": "pdf.sign-cert-invalid.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     }
   ],

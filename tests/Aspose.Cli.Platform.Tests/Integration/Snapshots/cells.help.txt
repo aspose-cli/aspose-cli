@@ -200,9 +200,9 @@ Arguments:
   <file>  Workbook to inspect (xlsx, xlsm, xlsb, xls, ods, csv, ...).
 
 Options:
-  --preview                                   Include a small sample of display values for each sheet.
+  --preview                                   Include a bounded preview: display values of the first --preview-rows rows and up to 20 columns of each sheet, from A1. Default: off.
   --preview-rows <preview-rows>               Number of preview rows per sheet (1-100). [default: 5]
-  --detail <detail>                           Extra sections: names (defined names), errors (formula-error scan), fonts (fonts used), tables, charts, pivots, validation, layout (frozen panes, outline groups, filter, print area and page setup of each sheet). Repeatable. Values: charts, errors, fonts, layout, names, pivots, tables, validation.
+  --detail <detail>                           Extra sections to include; repeat for more: names (defined names), errors (formula-error scan), fonts (fonts used), tables, charts, pivots, validation, layout (frozen panes, outline groups, filter, print area and page setup of each sheet). Values: charts, errors, fonts, layout, names, pivots, tables, validation.
   --password <password>                       Password for the workbook. Discouraged: visible in the process list; prefer --password-env.
   --password-env <password-env>               Name of an environment variable holding the password for the workbook.
   --password-stdin                            Read the password for the workbook from the first line of stdin.
@@ -324,7 +324,7 @@ Arguments:
   <file>  Workbook to render.
 
 Options:
-  --to <jpeg|png|svg>                         Image format: png, jpeg, svg. [default: png]
+  --to <jpeg|png|svg>                         Image format: png, jpeg or svg. Default: png. [default: png]
   --sheet <sheet>                             Sheet to render. Default: the active sheet.
   --range <range>                             Render only this range, e.g. A1:G20 or Sales!A1:G20.
   --all-sheets                                Render every visible sheet, one image per sheet named <out-base>.<Sheet><ext>.
