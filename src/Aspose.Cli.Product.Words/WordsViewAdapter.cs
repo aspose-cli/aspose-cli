@@ -4,7 +4,7 @@ using Aspose.Cli.Sdk.Views;
 namespace Aspose.Cli.Product.Words;
 
 /// <summary>Product-owned page views and the structural heuristics of their review.</summary>
-internal sealed class WordsViewAdapter : IProductViewAdapter<IWordsEngine>
+internal sealed class WordsViewAdapter : IProductViewAdapter<WordsSession>
 {
     private const string RepairHint =
         "Adjust the affected page structure or pagination, save, and run review again in a new directory.";
@@ -21,29 +21,26 @@ internal sealed class WordsViewAdapter : IProductViewAdapter<IWordsEngine>
     public IReadOnlyList<ReviewCheck> Checks => WordsReviewChecks.All;
 
     public ViewManifest Render(
-        IWordsEngine port,
+        WordsSession session,
         string filePath,
         ViewRenderRequest request,
         IViewArtifactSink artifacts) =>
-        port.RenderView(filePath, request, artifacts);
+        WordsRender.View(session, filePath, request, artifacts);
 
     public ProductReviewAssessment Assess(
-        IWordsEngine port,
+        WordsSession session,
         string filePath,
         ViewRenderRequest request,
         ViewManifest rendered)
     {
-        DocumentInfoResult info = port.GetInfo(filePath, new DocumentInfoRequest
+        DocumentInfoResult info = WordsInspect.Run(session, new DocumentInfoRequest
         {
+            Input = filePath,
             Details = ["sections", "outline", "images", "tables", "fonts"],
             Password = request.Password,
         });
-        if (port is not IWordsReviewLayoutPort layoutPort)
-        {
-            throw new InvalidOperationException(
-                "The active Words engine does not expose the product-owned review layout port.");
-        }
-        WordsReviewLayout layout = layoutPort.InspectReviewLayout(
+        WordsReviewLayout layout = WordsReviewLayoutReader.Read(
+            session,
             filePath,
             request.Password,
             rendered.Parts.Count);

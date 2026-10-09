@@ -1,6 +1,7 @@
 using System.CommandLine;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Extensibility;
+using Aspose.Cli.Sdk.Extensibility.Output;
 
 namespace Aspose.Cli.Product.Words.Commands;
 
@@ -20,27 +21,28 @@ internal static class EditCommand
         Writes = WordsFormats.Writable,
     };
 
-    public static Command Create(IProductCommandHost<IWordsEngine> host)
+    public static CommandDefinition<WordsEditRequest, WordsEditResult> Create()
     {
         var trackChanges = new Option<bool>("--track-changes") { Description = "Track this batch as revisions." };
         var author = new Option<string?>("--author") { Description = "Revision author; required with --track-changes." }.WithInput(InputKind.None);
-        return new BoundedEditCommand<WordsOp, WordsOpsBatch>(Definition).Create(
-            host,
-            "edit",
+        return EditDefinition.Create<WordsOp, WordsOpsBatch, WordsEditRequest, WordsEditResult>(
+            new BoundedEditCommand<WordsOp, WordsOpsBatch>(Definition),
             "Apply one validated, atomic Words operation batch.",
             new CommandTraits
             {
-                Input = WordsCommands.Document with { Description = "Document to edit." },
-                Encrypt = WordsCommands.EncryptedDocument,
+                Input = WordsInputs.Document with { Description = "Document to edit." },
+                Encrypt = WordsInputs.EncryptedDocument,
                 UsesFonts = true,
             },
             [trackChanges, author],
             (parse, edit, standard) =>
             {
-                IWordsEngine engine = standard.OpenEngine();
-                Secret? encryptPassword = standard.EncryptPassword(() => engine.DetectFormat(standard.Input));
-                return engine.ApplyOps(standard.Input, edit.Batch, new WordsEditRequest
+                // The edit keeps its input's format, which the product's format detector tells.
+                Secret? encryptPassword = standard.EncryptPassword();
+                return new WordsEditRequest
                 {
+                    Input = standard.Input,
+                    Batch = edit.Batch,
                     Output = standard.Output,
                     Options = edit.Options,
                     Verify = edit.Verify,
@@ -49,8 +51,9 @@ internal static class EditCommand
                     Password = standard.InputPassword,
                     EncryptPassword = encryptPassword,
                     OpSecrets = edit.Secrets,
-                });
+                };
             },
+            Render,
             checkUsage: parse =>
             {
                 if (parse.GetValue(trackChanges) && string.IsNullOrWhiteSpace(parse.GetValue(author)))
@@ -60,16 +63,31 @@ internal static class EditCommand
                         "--track-changes requires a non-empty author",
                         "Pass --author with the person or agent responsible for the edit.");
                 }
-            })
-            .WithExamples(
+            },
+            examples:
             [
                 "words edit contract.docx --in-place --backup --verify --set \"bookmark:Client=Contoso\"",
                 "words edit contract.docx --in-place --backup --ops ops.json --verify",
             ],
+            links:
             [
                 CommandHelpLink.Docs(WordsModule.Manifest, "editing", "addressing and operation recipes"),
                 CommandHelpLink.Schema(WordsModule.Manifest, "the exact edit-batch contract"),
             ]);
+    }
+
+    internal static void Render(WordsEditResult result, TableSurface surface)
+    {
+        ResultText.Edit(surface, result.DryRun, result.Output, result.Applied, result.Backup);
+        if (result.PagesTouched is { Count: > 0 } pages)
+        {
+            surface.Out.WriteLine($"pages touched: {string.Join(", ", pages)}");
+        }
+
+        if (result.Verification is { } verification)
+        {
+            ResultText.Verification(surface, verification.Ok, verification.Issues, locations: false);
+        }
     }
 
     private static WordsOp ParseSet(string value)

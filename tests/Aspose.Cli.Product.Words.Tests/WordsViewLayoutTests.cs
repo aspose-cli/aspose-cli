@@ -67,8 +67,7 @@ public sealed class WordsViewLayoutTests : IClassFixture<WordsFixture>
         Assert.Equal(1, plain.Zip(bold).Count(static pair => pair.First != pair.Second));
     }
 
-    private ViewManifest Render(string path) => _fixture.Engine.RenderView(
-        path,
+    private ViewManifest Render(string path) => WordsRender.View(_fixture.Session, path,
         new ViewRenderRequest
         {
             View = WordsViews.Pages,

@@ -18,13 +18,17 @@ public sealed class WordsAllocationBudgetTests
         string input = fixture.CreateReport();
         string output = fixture.Temp.File("table.docx");
 
-        CliException error = Assert.Throws<CliException>(() => Engine(fixture, nodes: 500).ApplyOps(
-            input,
-            new WordsOpsBatch
+        CliException error = Assert.Throws<CliException>(() => WordsEdit.Run(
+            Session(fixture, nodes: 500),
+            new WordsEditRequest
             {
-                Ops = [new InsertTableOp { At = new WordsTarget { Block = 1 }, Position = "after", RowCount = 100, ColumnCount = 20 }],
-            },
-            new WordsEditRequest { Output = TestOutput.At(output) }));
+                Input = input,
+                Batch = new WordsOpsBatch
+                {
+                    Ops = [new InsertTableOp { At = new WordsTarget { Block = 1 }, Position = "after", RowCount = 100, ColumnCount = 20 }],
+                },
+                Output = TestOutput.At(output),
+            }));
 
         Assert.Equal(ErrorCodes.InputBudgetExceeded, error.Code);
         Assert.Contains("pre-allocation", error.Message + error.Details, StringComparison.Ordinal);
@@ -41,10 +45,14 @@ public sealed class WordsAllocationBudgetTests
             .Select(static index => (IReadOnlyDictionary<string, object?>)new Dictionary<string, object?> { ["Name"] = $"N{index}" })
             .ToArray();
 
-        CliException error = Assert.Throws<CliException>(() => Engine(fixture, nodes: 500).ApplyOps(
-            input,
-            new WordsOpsBatch { Ops = [new MailMergeOp { Inline = rows }] },
-            new WordsEditRequest { Output = TestOutput.At(output) }));
+        CliException error = Assert.Throws<CliException>(() => WordsEdit.Run(
+            Session(fixture, nodes: 500),
+            new WordsEditRequest
+            {
+                Input = input,
+                Batch = new WordsOpsBatch { Ops = [new MailMergeOp { Inline = rows }] },
+                Output = TestOutput.At(output),
+            }));
 
         Assert.Equal(ErrorCodes.InputBudgetExceeded, error.Code);
         Assert.False(File.Exists(output));
@@ -68,13 +76,17 @@ public sealed class WordsAllocationBudgetTests
         template.Save(input, SaveFormat.Docx);
         string output = fixture.Temp.File("regions.out.docx");
 
-        CliException error = Assert.Throws<CliException>(() => fixture.Engine.ApplyOps(
-            input,
-            new WordsOpsBatch
+        CliException error = Assert.Throws<CliException>(() => WordsEdit.Run(
+            fixture.Session,
+            new WordsEditRequest
             {
-                Ops = [new MailMergeOp { Regions = true, Inline = [new Dictionary<string, object?> { ["Name"] = "Ava" }] }],
-            },
-            new WordsEditRequest { Output = TestOutput.At(output) }));
+                Input = input,
+                Batch = new WordsOpsBatch
+                {
+                    Ops = [new MailMergeOp { Regions = true, Inline = [new Dictionary<string, object?> { ["Name"] = "Ava" }] }],
+                },
+                Output = TestOutput.At(output),
+            }));
 
         Assert.Equal(WordsDiagnostics.MergeDataInvalid, error.Code);
         Assert.Contains("People", error.Message, StringComparison.Ordinal);
@@ -90,10 +102,14 @@ public sealed class WordsAllocationBudgetTests
         string input = fixture.CreateReport();
         string missing = fixture.Temp.File("missing.png");
 
-        CliException error = Assert.Throws<CliException>(() => fixture.Engine.ApplyOps(
-            input,
-            new WordsOpsBatch { Ops = [new AddWatermarkOp { ImagePath = missing }] },
-            new WordsEditRequest { Output = TestOutput.At(fixture.Temp.File("watermarked.docx")) }));
+        CliException error = Assert.Throws<CliException>(() => WordsEdit.Run(
+            fixture.Session,
+            new WordsEditRequest
+            {
+                Input = input,
+                Batch = new WordsOpsBatch { Ops = [new AddWatermarkOp { ImagePath = missing }] },
+                Output = TestOutput.At(fixture.Temp.File("watermarked.docx")),
+            }));
 
         Assert.Equal(ErrorCodes.FileNotFound, error.Code);
     }
@@ -110,10 +126,14 @@ public sealed class WordsAllocationBudgetTests
             File.WriteAllBytes(image, data.ToArray());
         }
 
-        CliException error = Assert.Throws<CliException>(() => Engine(fixture, memoryBytes: 4L * 1024 * 1024).ApplyOps(
-            input,
-            new WordsOpsBatch { Ops = [new AddWatermarkOp { ImagePath = image }] },
-            new WordsEditRequest { Output = TestOutput.At(fixture.Temp.File("watermarked.docx")) }));
+        CliException error = Assert.Throws<CliException>(() => WordsEdit.Run(
+            Session(fixture, memoryBytes: 4L * 1024 * 1024),
+            new WordsEditRequest
+            {
+                Input = input,
+                Batch = new WordsOpsBatch { Ops = [new AddWatermarkOp { ImagePath = image }] },
+                Output = TestOutput.At(fixture.Temp.File("watermarked.docx")),
+            }));
 
         Assert.Equal(ErrorCodes.InputBudgetExceeded, error.Code);
     }
@@ -131,7 +151,7 @@ public sealed class WordsAllocationBudgetTests
         Assert.Throws<CliException>(() => WordsMutationHandlers.ReadCsv("\"open"));
     }
 
-    private static WordsEngine Engine(WordsFixture fixture, long? nodes = null, long? memoryBytes = null)
+    private static WordsSession Session(WordsFixture fixture, long? nodes = null, long? memoryBytes = null)
     {
         var limits = WordsModule.Manifest.ResourceBudgets.ToDictionary(static item => item.Kind, static item => item.Default);
         if (nodes is long nodeLimit)
@@ -145,6 +165,6 @@ public sealed class WordsAllocationBudgetTests
         }
 
         var budgets = new ResourceBudgetLedger(OperationDeadline.Start(null), limits);
-        return new WordsEngine(fixture.Outputs(new SafeFileWriter(budgets)), budgets);
+        return WordsActivation.Session(fixture.Outputs(new SafeFileWriter(budgets)), budgets);
     }
 }

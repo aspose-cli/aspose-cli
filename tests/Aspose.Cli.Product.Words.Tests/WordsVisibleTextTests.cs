@@ -24,7 +24,7 @@ public sealed class WordsVisibleTextTests : IClassFixture<WordsFixture>
     {
         string input = CreateAnnotatedParagraph();
 
-        DocumentReadResult read = _fixture.Engine.Read(input, new DocumentReadRequest { Scope = "text" });
+        DocumentReadResult read = WordsRead.Run(_fixture.Session, new DocumentReadRequest { Input = input, Scope = "text" });
 
         Assert.Equal(Visible, read.Blocks[0].Text);
     }
@@ -34,7 +34,7 @@ public sealed class WordsVisibleTextTests : IClassFixture<WordsFixture>
     {
         string input = CreateAnnotatedParagraph();
 
-        DocumentReadResult read = _fixture.Engine.Read(input, new DocumentReadRequest { Scope = "full" });
+        DocumentReadResult read = WordsRead.Run(_fixture.Session, new DocumentReadRequest { Input = input, Scope = "full" });
 
         Assert.Equal(Visible, string.Concat(read.Blocks[0].Runs!.Select(static run => run.Text)));
     }
@@ -44,13 +44,17 @@ public sealed class WordsVisibleTextTests : IClassFixture<WordsFixture>
     {
         string input = CreateAnnotatedParagraph();
 
-        WordsSearchResult link = _fixture.Engine.Search(input, WordsFixture.Search("link text"));
-        WordsSearchResult code = _fixture.Engine.Search(input, WordsFixture.Search("HYPERLINK"));
-        WordsSearchResult deleted = _fixture.Engine.Search(input, WordsFixture.Search("withdrawn"));
-        CliException anchor = Assert.Throws<CliException>(() => _fixture.Engine.ApplyOps(
-            input,
-            new WordsOpsBatch { Ops = [new SetTextOp { At = new WordsTarget { Find = "example.com" }, Text = "x" }] },
-            new WordsEditRequest { Output = TestOutput.At(_fixture.Temp.File("anchor.docx")) }));
+        WordsSearchResult link = WordsSearch.Run(_fixture.Session, WordsFixture.Search(input, "link text"));
+        WordsSearchResult code = WordsSearch.Run(_fixture.Session, WordsFixture.Search(input, "HYPERLINK"));
+        WordsSearchResult deleted = WordsSearch.Run(_fixture.Session, WordsFixture.Search(input, "withdrawn"));
+        CliException anchor = Assert.Throws<CliException>(() => WordsEdit.Run(
+            _fixture.Session,
+            new WordsEditRequest
+            {
+                Input = input,
+                Batch = new WordsOpsBatch { Ops = [new SetTextOp { At = new WordsTarget { Find = "example.com" }, Text = "x" }] },
+                Output = TestOutput.At(_fixture.Temp.File("anchor.docx")),
+            }));
 
         Assert.Equal(Visible, Assert.Single(link.Hits).Snippet);
         Assert.Empty(code.Hits);
@@ -63,8 +67,9 @@ public sealed class WordsVisibleTextTests : IClassFixture<WordsFixture>
     {
         string input = CreateAnnotatedParagraph();
 
-        WordsExtractResult result = _fixture.Engine.Extract(input, new WordsExtractRequest
+        WordsExtractResult result = WordsExtract.Run(_fixture.Session, new WordsExtractRequest
         {
+            Input = input,
             Output = new ResolvedDirectory(_fixture.Temp.File($"text-{Guid.NewGuid():N}")),
             What = "text",
         });
@@ -87,7 +92,7 @@ public sealed class WordsVisibleTextTests : IClassFixture<WordsFixture>
         string input = _fixture.Temp.File("comment-field.docx");
         document.Save(input, SaveFormat.Docx);
 
-        DocumentInfoResult info = _fixture.Engine.GetInfo(input, new DocumentInfoRequest { Details = ["comments"] });
+        DocumentInfoResult info = WordsInspect.Run(_fixture.Session, new DocumentInfoRequest { Input = input, Details = ["comments"] });
 
         Assert.Equal("See the source", Assert.Single(info.Comments!).Text);
     }
@@ -97,7 +102,7 @@ public sealed class WordsVisibleTextTests : IClassFixture<WordsFixture>
     {
         string input = CreateNumberedClauses();
 
-        DocumentReadResult read = _fixture.Engine.Read(input, new DocumentReadRequest { Scope = "full" });
+        DocumentReadResult read = WordsRead.Run(_fixture.Session, new DocumentReadRequest { Input = input, Scope = "full" });
 
         Assert.Equal(["1.", "1.1", "1.2"], read.Blocks.Select(static block => block.ListLabel));
         Assert.Equal("First clause", read.Blocks[1].Text);
@@ -110,13 +115,18 @@ public sealed class WordsVisibleTextTests : IClassFixture<WordsFixture>
         string input = CreateNumberedClauses();
         string output = _fixture.Temp.File($"numbered-{Guid.NewGuid():N}.docx");
 
-        WordsSearchResult search = _fixture.Engine.Search(input, WordsFixture.Search("1.2"));
-        _fixture.Engine.ApplyOps(
-            input,
-            new WordsOpsBatch { Ops = [new SetTextOp { At = new WordsTarget { Find = "1.2 Second" }, Text = "Changed clause" }] },
-            new WordsEditRequest { Output = TestOutput.At(output) });
-        WordsExtractResult extracted = _fixture.Engine.Extract(output, new WordsExtractRequest
+        WordsSearchResult search = WordsSearch.Run(_fixture.Session, WordsFixture.Search(input, "1.2"));
+        WordsEdit.Run(
+            _fixture.Session,
+            new WordsEditRequest
+            {
+                Input = input,
+                Batch = new WordsOpsBatch { Ops = [new SetTextOp { At = new WordsTarget { Find = "1.2 Second" }, Text = "Changed clause" }] },
+                Output = TestOutput.At(output),
+            });
+        WordsExtractResult extracted = WordsExtract.Run(_fixture.Session, new WordsExtractRequest
         {
+            Input = output,
             Output = new ResolvedDirectory(_fixture.Temp.File($"numbered-text-{Guid.NewGuid():N}")),
             What = "text",
         });

@@ -1,23 +1,22 @@
 using System.CommandLine;
 using Aspose.Cli.Sdk.Errors;
-using Aspose.Cli.Sdk.Extensibility;
+using Aspose.Cli.Sdk.Extensibility.Output;
 
 namespace Aspose.Cli.Product.Words.Commands;
 
 internal static class SplitCommand
 {
-    public static Command Create(IProductCommandHost<IWordsEngine> host)
+    public static CommandDefinition<WordsSplitRequest, WordsSplitResult> Create()
     {
         var by = new Option<string>("--by") { Required = true, Description = "section, heading1 (one part per Heading 1, after a leading part for any blocks before the first) or pages." }.WithInput(InputKind.None);
         by.AcceptOnlyFromAmong("section", "heading1", "pages");
         var pages = new Option<string?>("--pages") { Description = "Page range when --by pages." }.WithInput(InputKind.None);
-        return StandardCommand.Create(
-            host,
+        return new(
             "split",
             "Split a document into safe, deterministically named DOCX files.",
             new CommandTraits
             {
-                Input = WordsCommands.Document,
+                Input = WordsInputs.Document,
                 Output = OutputTarget.Directory("Directory that receives the parts."),
                 UsesFonts = true,
             },
@@ -31,18 +30,31 @@ internal static class SplitCommand
                     throw CliErrors.OptionInvalid("--pages", $"cannot be used with --by {mode}", "Use --by pages or omit the range.");
                 }
 
-                return standard.OpenEngine().Split(standard.Input, new WordsSplitRequest
+                return new WordsSplitRequest
                 {
+                    Input = standard.Input,
                     By = mode,
                     Pages = pageText is null ? null : PageRange.Parse(pageText),
                     Output = standard.DirectoryOutput,
                     Password = standard.InputPassword,
-                });
-            })
-            .WithExamples(
+                };
+            },
+            Render)
+        {
+            Examples =
             [
                 "words split report.docx --by heading1 --out-dir chapters",
                 "words split report.docx --by pages --pages 1-3,8 --out-dir excerpts",
-            ]);
+            ],
+        };
+    }
+
+    internal static void Render(WordsSplitResult result, TableSurface surface)
+    {
+        surface.Out.WriteLine($"wrote {result.Outputs.Count} part(s)");
+        foreach (SplitOutput output in result.Outputs)
+        {
+            surface.Out.WriteLine($"  {output.Index}: {output.Output.Path}");
+        }
     }
 }

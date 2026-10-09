@@ -15,24 +15,29 @@ public sealed class WordsMarkdownImportTests
         string markdown = fixture.Temp.File("bid.md");
         File.WriteAllText(markdown, "# Chapter one\n\nBody text.\n");
         string created = fixture.Temp.File("bid.docx");
-        fixture.Engine.Create(new NewDocumentRequest { Output = TestOutput.At(created), MarkdownPath = markdown });
+        WordsCreate.Run(fixture.Session, new NewDocumentRequest { Output = TestOutput.At(created), MarkdownPath = markdown });
         string output = fixture.Temp.File("bid-toc.docx");
 
-        fixture.Engine.ApplyOps(created, new WordsOpsBatch
+        WordsEdit.Run(fixture.Session, new WordsEditRequest
         {
-            Ops =
-            [
-                new InsertParagraphsOp
-                {
-                    At = new WordsTarget { Block = 1 },
-                    Position = "before",
-                    Paragraphs = [new ParagraphInput { Text = "Contents", Style = "Title" }, new ParagraphInput { Text = "Bid 2026", Style = "Subtitle" }],
-                },
-                new InsertTocOp { At = new WordsTarget { Block = 1 }, Position = "before" },
-            ],
-        }, new WordsEditRequest { Output = TestOutput.At(output) });
+            Input = created,
+            Batch = new WordsOpsBatch
+            {
+                Ops =
+                [
+                    new InsertParagraphsOp
+                    {
+                        At = new WordsTarget { Block = 1 },
+                        Position = "before",
+                        Paragraphs = [new ParagraphInput { Text = "Contents", Style = "Title" }, new ParagraphInput { Text = "Bid 2026", Style = "Subtitle" }],
+                    },
+                    new InsertTocOp { At = new WordsTarget { Block = 1 }, Position = "before" },
+                ],
+            },
+            Output = TestOutput.At(output),
+        });
 
-        DocumentInfoResult info = fixture.Engine.GetInfo(output, new DocumentInfoRequest { Details = ["outline"] });
+        DocumentInfoResult info = WordsInspect.Run(fixture.Session, new DocumentInfoRequest { Input = output, Details = ["outline"] });
         Assert.Equal(["Chapter one"], info.Outline!.Select(static item => item.Text));
         string toc = new Document(output).Range.Fields.Cast<Aspose.Words.Fields.Field>()
             .Single(static field => field.Type == Aspose.Words.Fields.FieldType.FieldTOC).Result;
@@ -50,7 +55,7 @@ public sealed class WordsMarkdownImportTests
         File.WriteAllText(markdown, "施行。~~原《守则》~~同时废止。\n\n施行。<del>原《守则》</del>同时废止。\n");
         string output = fixture.Temp.File("struck.docx");
 
-        fixture.Engine.Create(new NewDocumentRequest { Output = TestOutput.At(output), MarkdownPath = markdown });
+        WordsCreate.Run(fixture.Session, new NewDocumentRequest { Output = TestOutput.At(output), MarkdownPath = markdown });
 
         Paragraph[] paragraphs = [.. new Document(output).FirstSection.Body.Paragraphs.Cast<Paragraph>().TakeLast(2)];
         Assert.Equal("施行。~~原《守则》~~同时废止。", paragraphs[0].GetText().TrimEnd('\r'));
@@ -66,7 +71,7 @@ public sealed class WordsMarkdownImportTests
         File.WriteAllText(markdown, string.Concat(Enumerable.Repeat("甲，乙。", 120)) + "\n");
         string output = fixture.Temp.File("clauses.docx");
 
-        fixture.Engine.Create(new NewDocumentRequest { Output = TestOutput.At(output), MarkdownPath = markdown });
+        WordsCreate.Run(fixture.Session, new NewDocumentRequest { Output = TestOutput.At(output), MarkdownPath = markdown });
 
         IReadOnlyList<string> lines = WordsFixture.LayoutLines(new Document(output));
         Assert.True(lines.Count > 4, string.Join(" | ", lines));
@@ -81,7 +86,7 @@ public sealed class WordsMarkdownImportTests
         File.WriteAllText(markdown, "# Brief\n\nPlain **bold** and `code`.\n");
         string output = fixture.Temp.File("brief.docx");
 
-        fixture.Engine.Create(new NewDocumentRequest { Output = TestOutput.At(output), MarkdownPath = markdown });
+        WordsCreate.Run(fixture.Session, new NewDocumentRequest { Output = TestOutput.At(output), MarkdownPath = markdown });
 
         var document = new Document(output);
         Section section = Assert.Single(document.Sections.Cast<Section>());
@@ -117,7 +122,7 @@ public sealed class WordsMarkdownImportTests
         File.WriteAllText(markdown, "# Report\n\n![Completion](chart.png)\n");
         string output = fixture.Temp.File("report.docx");
 
-        fixture.Engine.Create(new NewDocumentRequest { Output = TestOutput.At(output), MarkdownPath = markdown });
+        WordsCreate.Run(fixture.Session, new NewDocumentRequest { Output = TestOutput.At(output), MarkdownPath = markdown });
 
         var document = new Document(output);
         PageSetup page = document.FirstSection.PageSetup;
@@ -133,9 +138,9 @@ public sealed class WordsMarkdownImportTests
         string markdown = fixture.Temp.File("fonts.md");
         File.WriteAllText(markdown, "# Title\n\nHello 你好\n");
         string output = fixture.Temp.File("fonts.docx");
-        fixture.Engine.Create(new NewDocumentRequest { Output = TestOutput.At(output), MarkdownPath = markdown });
+        WordsCreate.Run(fixture.Session, new NewDocumentRequest { Output = TestOutput.At(output), MarkdownPath = markdown });
 
-        DocumentInfoResult info = fixture.Engine.GetInfo(output, new DocumentInfoRequest { Details = ["fonts"] });
+        DocumentInfoResult info = WordsInspect.Run(fixture.Session, new DocumentInfoRequest { Input = output, Details = ["fonts"] });
 
         Assert.Equal(["Calibri", "Microsoft YaHei"], info.Fonts);
     }
@@ -158,7 +163,7 @@ public sealed class WordsMarkdownImportTests
     [Fact]
     public void BuiltInDesign_CarriesNoGeneratorMetadata()
     {
-        using Stream stream = typeof(WordsEngine).Assembly.GetManifestResourceStream("Templates/default-a4.docx")!;
+        using Stream stream = typeof(WordsSession).Assembly.GetManifestResourceStream("Templates/default-a4.docx")!;
         using var package = new System.IO.Compression.ZipArchive(stream);
         foreach (System.IO.Compression.ZipArchiveEntry entry in package.Entries)
         {
@@ -177,17 +182,22 @@ public sealed class WordsMarkdownImportTests
         source.Save(input, SaveFormat.Docx);
 
         string output = fixture.Temp.File("imported.docx");
-        fixture.Engine.ApplyOps(input, new WordsOpsBatch
+        WordsEdit.Run(fixture.Session, new WordsEditRequest
         {
-            Ops =
-            [
-                new InsertMarkdownOp
-                {
-                    At = new WordsTarget { Find = "Operations remained" }, Position = "after", Markdown = "## Outlook\n\nPlain *emphasis*.",
-                },
-                new SetHeaderOp { Markdown = "## Confidential" },
-            ],
-        }, new WordsEditRequest { Output = TestOutput.At(output) });
+            Input = input,
+            Batch = new WordsOpsBatch
+            {
+                Ops =
+                [
+                    new InsertMarkdownOp
+                    {
+                        At = new WordsTarget { Find = "Operations remained" }, Position = "after", Markdown = "## Outlook\n\nPlain *emphasis*.",
+                    },
+                    new SetHeaderOp { Markdown = "## Confidential" },
+                ],
+            },
+            Output = TestOutput.At(output),
+        });
 
         var document = new Document(output);
         Assert.Null(document.Styles["Heading 2_0"]);
@@ -211,10 +221,15 @@ public sealed class WordsMarkdownImportTests
         string input = fixture.CreateReport();
         string output = fixture.Temp.File($"header-{kind}.docx");
 
-        fixture.Engine.ApplyOps(input, new WordsOpsBatch
+        WordsEdit.Run(fixture.Session, new WordsEditRequest
         {
-            Ops = [new SetHeaderOp { Kind = kind, Paragraphs = ["Header"] }],
-        }, new WordsEditRequest { Output = TestOutput.At(output) });
+            Input = input,
+            Batch = new WordsOpsBatch
+            {
+                Ops = [new SetHeaderOp { Kind = kind, Paragraphs = ["Header"] }],
+            },
+            Output = TestOutput.At(output),
+        });
 
         PageSetup setup = new Document(output).FirstSection.PageSetup;
         Assert.Equal(kind == "first", setup.DifferentFirstPageHeaderFooter);
@@ -237,10 +252,15 @@ public sealed class WordsMarkdownImportTests
         source.Save(input);
         string output = fixture.Temp.File("aligned-header-out.docx");
 
-        fixture.Engine.ApplyOps(input, new WordsOpsBatch
+        WordsEdit.Run(fixture.Session, new WordsEditRequest
         {
-            Ops = [new SetHeaderOp { Paragraphs = ["New header"] }, new SetFooterOp { Paragraphs = ["New footer"] }],
-        }, new WordsEditRequest { Output = TestOutput.At(output) });
+            Input = input,
+            Batch = new WordsOpsBatch
+            {
+                Ops = [new SetHeaderOp { Paragraphs = ["New header"] }, new SetFooterOp { Paragraphs = ["New footer"] }],
+            },
+            Output = TestOutput.At(output),
+        });
 
         Section section = new Document(output).FirstSection;
         Paragraph header = WordsFixture.FirstAuthoredParagraph(section.HeadersFooters[HeaderFooterType.HeaderPrimary]);
@@ -273,10 +293,15 @@ public sealed class WordsMarkdownImportTests
         source.Save(input);
         string output = fixture.Temp.File("continued-header-out.docx");
 
-        fixture.Engine.ApplyOps(input, new WordsOpsBatch
+        WordsEdit.Run(fixture.Session, new WordsEditRequest
         {
-            Ops = [new SetHeaderOp { Paragraphs = ["New header"], Section = target }],
-        }, new WordsEditRequest { Output = TestOutput.At(output) });
+            Input = input,
+            Batch = new WordsOpsBatch
+            {
+                Ops = [new SetHeaderOp { Paragraphs = ["New header"], Section = target }],
+            },
+            Output = TestOutput.At(output),
+        });
 
         Section second = new Document(output).Sections[1];
         Paragraph header = WordsFixture.FirstAuthoredParagraph(second.HeadersFooters[HeaderFooterType.HeaderPrimary]);

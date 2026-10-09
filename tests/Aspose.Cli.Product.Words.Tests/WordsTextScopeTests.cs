@@ -22,7 +22,7 @@ public sealed class WordsTextScopeTests : IClassFixture<WordsFixture>
     {
         string input = CreateStories();
 
-        WordsSearchResult result = _fixture.Engine.Search(input, WordsFixture.Search("needle", scope));
+        WordsSearchResult result = WordsSearch.Run(_fixture.Session, WordsFixture.Search(input, "needle", scope));
 
         Assert.All(result.Hits, hit => Assert.Equal(scope, hit.Scope));
         Assert.Equal(expected.Order(), result.Hits.SelectMany(static hit => Needles(hit.Snippet)).Order());
@@ -33,7 +33,7 @@ public sealed class WordsTextScopeTests : IClassFixture<WordsFixture>
     {
         string input = CreateStories();
 
-        WordsSearchResult result = _fixture.Engine.Search(input, WordsFixture.Search("needle", "all"));
+        WordsSearchResult result = WordsSearch.Run(_fixture.Session, WordsFixture.Search(input, "needle", "all"));
 
         Assert.Equal(
             ["Body needle", "Box needle", "Comment needle", "Footer needle", "Footnote needle", "Header needle"],
@@ -58,7 +58,7 @@ public sealed class WordsTextScopeTests : IClassFixture<WordsFixture>
         string input = _fixture.Temp.File("section-headers.docx");
         document.Save(input);
 
-        WordsSearchResult result = _fixture.Engine.Search(input, WordsFixture.Search("needle", "all"));
+        WordsSearchResult result = WordsSearch.Run(_fixture.Session, WordsFixture.Search(input, "needle", "all"));
 
         WordsSearchHit body = Assert.Single(result.Hits, static hit => hit.Scope == "body");
         Assert.Equal(2, body.Section);
@@ -84,12 +84,16 @@ public sealed class WordsTextScopeTests : IClassFixture<WordsFixture>
         string input = _fixture.Temp.File("named-headers.docx");
         document.Save(input);
 
-        DocumentInfoResult info = _fixture.Engine.GetInfo(input, new DocumentInfoRequest { Details = ["sections"] });
-        WordsSearchResult search = _fixture.Engine.Search(input, WordsFixture.Search("needle", "all"));
-        WordsEditResult edit = _fixture.Engine.ApplyOps(
-            input,
-            new WordsOpsBatch { Ops = [new ReplaceTextOp { Scope = "all", Find = "needle", Replace = "pin" }] },
-            new WordsEditRequest { Output = TestOutput.At(_fixture.Temp.File("named-headers-out.docx")) });
+        DocumentInfoResult info = WordsInspect.Run(_fixture.Session, new DocumentInfoRequest { Input = input, Details = ["sections"] });
+        WordsSearchResult search = WordsSearch.Run(_fixture.Session, WordsFixture.Search(input, "needle", "all"));
+        WordsEditResult edit = WordsEdit.Run(
+            _fixture.Session,
+            new WordsEditRequest
+            {
+                Input = input,
+                Batch = new WordsOpsBatch { Ops = [new ReplaceTextOp { Scope = "all", Find = "needle", Replace = "pin" }] },
+                Output = TestOutput.At(_fixture.Temp.File("named-headers-out.docx")),
+            });
 
         Assert.Equivalent(
             new[]
@@ -118,10 +122,14 @@ public sealed class WordsTextScopeTests : IClassFixture<WordsFixture>
         string input = CreateStories();
         string output = _fixture.Temp.File($"replaced-{scope}.docx");
 
-        WordsEditResult result = _fixture.Engine.ApplyOps(
-            input,
-            new WordsOpsBatch { Ops = [new ReplaceTextOp { Scope = scope, Find = "needle", Replace = "pin" }] },
-            new WordsEditRequest { Output = TestOutput.At(output) });
+        WordsEditResult result = WordsEdit.Run(
+            _fixture.Session,
+            new WordsEditRequest
+            {
+                Input = input,
+                Batch = new WordsOpsBatch { Ops = [new ReplaceTextOp { Scope = scope, Find = "needle", Replace = "pin" }] },
+                Output = TestOutput.At(output),
+            });
 
         var document = new Document(output);
         Assert.Equal(expected.Length, result.Applied[0].ItemsAffected);
@@ -146,10 +154,14 @@ public sealed class WordsTextScopeTests : IClassFixture<WordsFixture>
         document.Save(input);
         string output = _fixture.Temp.File("amount-out.docx");
 
-        _fixture.Engine.ApplyOps(
-            input,
-            new WordsOpsBatch { Ops = [new ReplaceTextOp { Find = "1,860,000.00 元（大写：壹佰捌拾陆万元整 ）", Replace = "1,920,000.00 元（大写：壹佰玖拾贰万元整）" }] },
-            new WordsEditRequest { Output = TestOutput.At(output) });
+        WordsEdit.Run(
+            _fixture.Session,
+            new WordsEditRequest
+            {
+                Input = input,
+                Batch = new WordsOpsBatch { Ops = [new ReplaceTextOp { Find = "1,860,000.00 元（大写：壹佰捌拾陆万元整 ）", Replace = "1,920,000.00 元（大写：壹佰玖拾贰万元整）" }] },
+                Output = TestOutput.At(output),
+            });
 
         Run replaced = new Document(output).GetChildNodes(NodeType.Run, true).Cast<Run>()
             .Single(static run => run.Text.Contains("壹佰玖拾贰", StringComparison.Ordinal));

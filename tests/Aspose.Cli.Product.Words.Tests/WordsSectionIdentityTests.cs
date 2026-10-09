@@ -25,8 +25,10 @@ public sealed class WordsSectionIdentityTests
                 new SetTextOp { At = new WordsTarget { Find = "First" }, Text = "Lost" },
             ],
         };
-        CliException error = Assert.Throws<CliException>(() => fixture.Engine.ApplyOps(input, batch, new WordsEditRequest
+        CliException error = Assert.Throws<CliException>(() => WordsEdit.Run(fixture.Session, new WordsEditRequest
         {
+            Input = input,
+            Batch = batch,
             Output = TestOutput.At(output),
             Options = new EditCommandOptions { BestEffort = bestEffort, DryRun = dryRun },
         }));
@@ -43,10 +45,16 @@ public sealed class WordsSectionIdentityTests
         using var fixture = new WordsFixture();
         string input = CreateSections(fixture);
         string output = fixture.Temp.File("repeated.docx");
-        Assert.Throws<CliException>(() => fixture.Engine.ApplyOps(input, new WordsOpsBatch
+        Assert.Throws<CliException>(() => WordsEdit.Run(fixture.Session, new WordsEditRequest
         {
-            Ops = [new DeleteSectionOp { Section = 1 }, new DeleteSectionOp { Section = 1 }],
-        }, new WordsEditRequest { Output = TestOutput.At(output), Options = new EditCommandOptions { BestEffort = bestEffort } }));
+            Input = input,
+            Batch = new WordsOpsBatch
+            {
+                Ops = [new DeleteSectionOp { Section = 1 }, new DeleteSectionOp { Section = 1 }],
+            },
+            Output = TestOutput.At(output),
+            Options = new EditCommandOptions { BestEffort = bestEffort },
+        }));
         Assert.False(File.Exists(output));
     }
 
@@ -56,14 +64,19 @@ public sealed class WordsSectionIdentityTests
         using var fixture = new WordsFixture();
         string input = CreateSections(fixture);
         string output = fixture.Temp.File("overlap.docx");
-        Assert.Throws<CliException>(() => fixture.Engine.ApplyOps(input, new WordsOpsBatch
+        Assert.Throws<CliException>(() => WordsEdit.Run(fixture.Session, new WordsEditRequest
         {
-            Ops =
-            [
-                new DeleteBlocksOp { Target = new WordsTarget { Find = "First" } },
-                new DeleteSectionOp { Section = 1 },
-            ],
-        }, new WordsEditRequest { Output = TestOutput.At(output) }));
+            Input = input,
+            Batch = new WordsOpsBatch
+            {
+                Ops =
+                [
+                    new DeleteBlocksOp { Target = new WordsTarget { Find = "First" } },
+                    new DeleteSectionOp { Section = 1 },
+                ],
+            },
+            Output = TestOutput.At(output),
+        }));
         Assert.False(File.Exists(output));
     }
 
@@ -73,20 +86,25 @@ public sealed class WordsSectionIdentityTests
         using var fixture = new WordsFixture();
         string input = CreateSections(fixture);
         string output = fixture.Temp.File("shifted.docx");
-        fixture.Engine.ApplyOps(input, new WordsOpsBatch
+        WordsEdit.Run(fixture.Session, new WordsEditRequest
         {
-            Ops =
-            [
-                new AddSectionOp { Position = "start" },
-                new DeleteSectionOp { Section = 2 },
-                new SetHeaderOp { Section = 3, Paragraphs = ["Head"] },
-                new SetFooterOp { Section = 3, Paragraphs = ["Foot"] },
-                new SetPageSetupOp { Section = 3, Setup = new PageSetupInput { Orientation = "landscape" } },
-                new SetPageNumbersOp { Section = 3, Start = 7 },
-                new SetTextOp { At = new WordsTarget { Find = "Third" }, Text = "Safe" },
-                new AddSectionOp { Position = "after", After = 1 },
-            ],
-        }, new WordsEditRequest { Output = TestOutput.At(output) });
+            Input = input,
+            Batch = new WordsOpsBatch
+            {
+                Ops =
+                [
+                    new AddSectionOp { Position = "start" },
+                    new DeleteSectionOp { Section = 2 },
+                    new SetHeaderOp { Section = 3, Paragraphs = ["Head"] },
+                    new SetFooterOp { Section = 3, Paragraphs = ["Foot"] },
+                    new SetPageSetupOp { Section = 3, Setup = new PageSetupInput { Orientation = "landscape" } },
+                    new SetPageNumbersOp { Section = 3, Start = 7 },
+                    new SetTextOp { At = new WordsTarget { Find = "Third" }, Text = "Safe" },
+                    new AddSectionOp { Position = "after", After = 1 },
+                ],
+            },
+            Output = TestOutput.At(output),
+        });
         var reopened = new Document(output);
         Assert.Equal(4, reopened.Sections.Count);
         Assert.Contains("First", reopened.Sections[1].Body.GetText(), StringComparison.Ordinal);
@@ -105,10 +123,15 @@ public sealed class WordsSectionIdentityTests
         using var fixture = new WordsFixture();
         string input = CreateSections(fixture);
         string output = fixture.Temp.File("remaining.docx");
-        fixture.Engine.ApplyOps(input, new WordsOpsBatch
+        WordsEdit.Run(fixture.Session, new WordsEditRequest
         {
-            Ops = [new DeleteSectionOp { Section = 1 }, new DeleteSectionOp { Section = 2 }],
-        }, new WordsEditRequest { Output = TestOutput.At(output) });
+            Input = input,
+            Batch = new WordsOpsBatch
+            {
+                Ops = [new DeleteSectionOp { Section = 1 }, new DeleteSectionOp { Section = 2 }],
+            },
+            Output = TestOutput.At(output),
+        });
         var reopened = new Document(output);
         Assert.Single(reopened.Sections.Cast<Section>());
         Assert.Contains("Third", reopened.GetText(), StringComparison.Ordinal);
@@ -120,10 +143,15 @@ public sealed class WordsSectionIdentityTests
         using var fixture = new WordsFixture();
         string input = CreateSections(fixture);
         string output = fixture.Temp.File("all-original.docx");
-        fixture.Engine.ApplyOps(input, new WordsOpsBatch
+        WordsEdit.Run(fixture.Session, new WordsEditRequest
         {
-            Ops = [new AddSectionOp { Position = "start" }, new SetHeaderOp { Paragraphs = ["All"] }],
-        }, new WordsEditRequest { Output = TestOutput.At(output) });
+            Input = input,
+            Batch = new WordsOpsBatch
+            {
+                Ops = [new AddSectionOp { Position = "start" }, new SetHeaderOp { Paragraphs = ["All"] }],
+            },
+            Output = TestOutput.At(output),
+        });
         var reopened = new Document(output);
         Assert.Equal(4, reopened.Sections.Count);
         fixture.AssertNoOwnHeader(reopened.FirstSection);
@@ -137,14 +165,20 @@ public sealed class WordsSectionIdentityTests
         using var fixture = new WordsFixture();
         string input = CreateSections(fixture);
         string output = fixture.Temp.File("partial.docx");
-        WordsEditResult result = fixture.Engine.ApplyOps(input, new WordsOpsBatch
+        WordsEditResult result = WordsEdit.Run(fixture.Session, new WordsEditRequest
         {
-            Ops =
-            [
-                new DeleteSectionOp { Section = 1 }, new DeleteSectionOp { Section = 2 },
-                new DeleteSectionOp { Section = 3 }, new SetPropertiesOp { Title = "Kept" },
-            ],
-        }, new WordsEditRequest { Output = TestOutput.At(output), Options = new EditCommandOptions { BestEffort = true } });
+            Input = input,
+            Batch = new WordsOpsBatch
+            {
+                Ops =
+                [
+                    new DeleteSectionOp { Section = 1 }, new DeleteSectionOp { Section = 2 },
+                    new DeleteSectionOp { Section = 3 }, new SetPropertiesOp { Title = "Kept" },
+                ],
+            },
+            Output = TestOutput.At(output),
+            Options = new EditCommandOptions { BestEffort = true },
+        });
         Assert.Equal(["ok", "ok", "failed", "ok"], result.Applied.Select(operation => operation.Status));
         var reopened = new Document(output);
         Assert.Single(reopened.Sections.Cast<Section>());

@@ -14,23 +14,28 @@ public sealed class WordsContractGapTests
         string input = fixture.CreateReport();
         string output = fixture.Temp.File("list.docx");
 
-        fixture.Engine.ApplyOps(input, new WordsOpsBatch
+        WordsEdit.Run(fixture.Session, new WordsEditRequest
         {
-            Ops =
-            [
-                new InsertParagraphsOp
-                {
-                    At = new WordsTarget { Find = "Operations remained" },
-                    Position = "after",
-                    Paragraphs =
-                    [
-                        new ParagraphInput { Text = "Point", ListLevel = 0 },
-                        new ParagraphInput { Text = "Detail", ListLevel = 1 },
-                        new ParagraphInput { Text = "Plain" },
-                    ],
-                },
-            ],
-        }, new WordsEditRequest { Output = TestOutput.At(output) });
+            Input = input,
+            Batch = new WordsOpsBatch
+            {
+                Ops =
+                [
+                    new InsertParagraphsOp
+                    {
+                        At = new WordsTarget { Find = "Operations remained" },
+                        Position = "after",
+                        Paragraphs =
+                        [
+                            new ParagraphInput { Text = "Point", ListLevel = 0 },
+                            new ParagraphInput { Text = "Detail", ListLevel = 1 },
+                            new ParagraphInput { Text = "Plain" },
+                        ],
+                    },
+                ],
+            },
+            Output = TestOutput.At(output),
+        });
 
         Paragraph[] paragraphs = new Document(output).FirstSection.Body.Paragraphs.Cast<Paragraph>().ToArray();
         Paragraph point = paragraphs.Single(static p => p.GetText().Trim() == "Point");
@@ -75,22 +80,27 @@ public sealed class WordsContractGapTests
         source.Save(input, SaveFormat.Docx);
         string output = fixture.Temp.File("clauses-out.docx");
 
-        fixture.Engine.ApplyOps(input, new WordsOpsBatch
+        WordsEdit.Run(fixture.Session, new WordsEditRequest
         {
-            Ops =
-            [
-                new InsertParagraphsOp
-                {
-                    At = new WordsTarget { Find = "Second clause" },
-                    Position = "after",
-                    Paragraphs =
-                    [
-                        new ParagraphInput { Text = "New clause", ListLevel = 1 },
-                        new ParagraphInput { Text = "New chapter", ListLevel = 0 },
-                    ],
-                },
-            ],
-        }, new WordsEditRequest { Output = TestOutput.At(output) });
+            Input = input,
+            Batch = new WordsOpsBatch
+            {
+                Ops =
+                [
+                    new InsertParagraphsOp
+                    {
+                        At = new WordsTarget { Find = "Second clause" },
+                        Position = "after",
+                        Paragraphs =
+                        [
+                            new ParagraphInput { Text = "New clause", ListLevel = 1 },
+                            new ParagraphInput { Text = "New chapter", ListLevel = 0 },
+                        ],
+                    },
+                ],
+            },
+            Output = TestOutput.At(output),
+        });
 
         Paragraph[] paragraphs = new Document(output).FirstSection.Body.Paragraphs.Cast<Paragraph>().ToArray();
         Paragraph clause = paragraphs.Single(static p => p.GetText().Trim() == "New clause");
@@ -112,37 +122,42 @@ public sealed class WordsContractGapTests
         string markdown = fixture.Temp.File("nested.md");
         File.WriteAllText(markdown, "# T\n\n1. First\n    1. Sub A\n    2. Sub B\n2. Second\n    1. Sub C\n");
         string input = fixture.Temp.File("nested.docx");
-        fixture.Engine.Create(new NewDocumentRequest { Output = TestOutput.At(input), MarkdownPath = markdown });
+        WordsCreate.Run(fixture.Session, new NewDocumentRequest { Output = TestOutput.At(input), MarkdownPath = markdown });
         string output = fixture.Temp.File("nested-out.docx");
 
-        fixture.Engine.ApplyOps(input, new WordsOpsBatch
+        WordsEdit.Run(fixture.Session, new WordsEditRequest
         {
-            Ops =
-            [
-                new InsertParagraphsOp
-                {
-                    At = new WordsTarget { Find = "First" },
-                    Position = "after",
-                    Paragraphs = [new ParagraphInput { Text = "New sub", ListLevel = 1 }],
-                },
-                new InsertParagraphsOp
-                {
-                    At = new WordsTarget { Find = "Sub C" },
-                    Position = "after",
-                    Paragraphs =
-                    [
-                        new ParagraphInput { Text = "Later sub", ListLevel = 1 },
-                        new ParagraphInput { Text = "Third", ListLevel = 0 },
-                    ],
-                },
-                new InsertParagraphsOp
-                {
-                    At = new WordsTarget { Find = "Second" },
-                    Position = "before",
-                    Paragraphs = [new ParagraphInput { Text = "Between", ListLevel = 0 }],
-                },
-            ],
-        }, new WordsEditRequest { Output = TestOutput.At(output) });
+            Input = input,
+            Batch = new WordsOpsBatch
+            {
+                Ops =
+                [
+                    new InsertParagraphsOp
+                    {
+                        At = new WordsTarget { Find = "First" },
+                        Position = "after",
+                        Paragraphs = [new ParagraphInput { Text = "New sub", ListLevel = 1 }],
+                    },
+                    new InsertParagraphsOp
+                    {
+                        At = new WordsTarget { Find = "Sub C" },
+                        Position = "after",
+                        Paragraphs =
+                        [
+                            new ParagraphInput { Text = "Later sub", ListLevel = 1 },
+                            new ParagraphInput { Text = "Third", ListLevel = 0 },
+                        ],
+                    },
+                    new InsertParagraphsOp
+                    {
+                        At = new WordsTarget { Find = "Second" },
+                        Position = "before",
+                        Paragraphs = [new ParagraphInput { Text = "Between", ListLevel = 0 }],
+                    },
+                ],
+            },
+            Output = TestOutput.At(output),
+        });
 
         var document = new Document(output);
         document.UpdateListLabels();
@@ -178,21 +193,26 @@ public sealed class WordsContractGapTests
         string markdown = fixture.Temp.File("flat.md");
         File.WriteAllText(markdown, "1. First\n2. Second\n");
         string input = fixture.Temp.File("flat.docx");
-        fixture.Engine.Create(new NewDocumentRequest { Output = TestOutput.At(input), MarkdownPath = markdown });
+        WordsCreate.Run(fixture.Session, new NewDocumentRequest { Output = TestOutput.At(input), MarkdownPath = markdown });
         string output = fixture.Temp.File("flat-out.docx");
 
-        fixture.Engine.ApplyOps(input, new WordsOpsBatch
+        WordsEdit.Run(fixture.Session, new WordsEditRequest
         {
-            Ops =
-            [
-                new InsertParagraphsOp
-                {
-                    At = new WordsTarget { Find = "First" },
-                    Position = "after",
-                    Paragraphs = [new ParagraphInput { Text = "Detail", ListLevel = 1 }],
-                },
-            ],
-        }, new WordsEditRequest { Output = TestOutput.At(output) });
+            Input = input,
+            Batch = new WordsOpsBatch
+            {
+                Ops =
+                [
+                    new InsertParagraphsOp
+                    {
+                        At = new WordsTarget { Find = "First" },
+                        Position = "after",
+                        Paragraphs = [new ParagraphInput { Text = "Detail", ListLevel = 1 }],
+                    },
+                ],
+            },
+            Output = TestOutput.At(output),
+        });
 
         var document = new Document(output);
         document.UpdateListLabels();
@@ -225,18 +245,23 @@ public sealed class WordsContractGapTests
         source.Save(input, SaveFormat.Docx);
         string output = fixture.Temp.File("bold-list-out.docx");
 
-        fixture.Engine.ApplyOps(input, new WordsOpsBatch
+        WordsEdit.Run(fixture.Session, new WordsEditRequest
         {
-            Ops =
-            [
-                new InsertParagraphsOp
-                {
-                    At = new WordsTarget { Find = "Chapter" },
-                    Position = "after",
-                    Paragraphs = [new ParagraphInput { Text = "First detail", ListLevel = 1 }],
-                },
-            ],
-        }, new WordsEditRequest { Output = TestOutput.At(output) });
+            Input = input,
+            Batch = new WordsOpsBatch
+            {
+                Ops =
+                [
+                    new InsertParagraphsOp
+                    {
+                        At = new WordsTarget { Find = "Chapter" },
+                        Position = "after",
+                        Paragraphs = [new ParagraphInput { Text = "First detail", ListLevel = 1 }],
+                    },
+                ],
+            },
+            Output = TestOutput.At(output),
+        });
 
         Paragraph added = new Document(output).FirstSection.Body.Paragraphs.Cast<Paragraph>()
             .Single(static p => p.GetText().Trim() == "First detail");
@@ -259,7 +284,7 @@ public sealed class WordsContractGapTests
         {
             string source = fixture.Temp.File("items.md");
             File.WriteAllText(source, "1. **First**\n2. Second\n");
-            fixture.Engine.Create(new NewDocumentRequest { Output = TestOutput.At(input), MarkdownPath = source });
+            WordsCreate.Run(fixture.Session, new NewDocumentRequest { Output = TestOutput.At(input), MarkdownPath = source });
         }
         else
         {
@@ -274,22 +299,29 @@ public sealed class WordsContractGapTests
         }
 
         string output = fixture.Temp.File("items-out.docx");
-        fixture.Engine.ApplyOps(input, new WordsOpsBatch
+        WordsEdit.Run(fixture.Session, new WordsEditRequest
         {
-            Ops =
-            [
-                new InsertParagraphsOp
-                {
-                    At = new WordsTarget { Find = markdown ? "First" : "Second" },
-                    Position = markdown ? "after" : "before",
-                    Paragraphs =
-                    [
-                        new ParagraphInput { Text = "Detail one", ListLevel = 1 },
-                        new ParagraphInput { Text = "Detail two", ListLevel = 1 },
-                    ],
-                },
-            ],
-        }, new WordsEditRequest { Output = TestOutput.At(output), TrackChanges = trackChanges, Author = "Reviewer" });
+            Input = input,
+            Batch = new WordsOpsBatch
+            {
+                Ops =
+                [
+                    new InsertParagraphsOp
+                    {
+                        At = new WordsTarget { Find = markdown ? "First" : "Second" },
+                        Position = markdown ? "after" : "before",
+                        Paragraphs =
+                        [
+                            new ParagraphInput { Text = "Detail one", ListLevel = 1 },
+                            new ParagraphInput { Text = "Detail two", ListLevel = 1 },
+                        ],
+                    },
+                ],
+            },
+            Output = TestOutput.At(output),
+            TrackChanges = trackChanges,
+            Author = "Reviewer",
+        });
 
         Paragraph[] paragraphs = [.. new Document(output).FirstSection.Body.Paragraphs.Cast<Paragraph>()];
         Paragraph first = paragraphs.Single(static p => p.GetText().Trim() == "Detail one");
@@ -325,18 +357,23 @@ public sealed class WordsContractGapTests
         source.Save(input, SaveFormat.Docx);
         string output = fixture.Temp.File("plain-list-out.docx");
 
-        fixture.Engine.ApplyOps(input, new WordsOpsBatch
+        WordsEdit.Run(fixture.Session, new WordsEditRequest
         {
-            Ops =
-            [
-                new InsertParagraphsOp
-                {
-                    At = new WordsTarget { Find = "Detail" },
-                    Position = "after",
-                    Paragraphs = [new ParagraphInput { Text = "New detail", ListLevel = 1 }],
-                },
-            ],
-        }, new WordsEditRequest { Output = TestOutput.At(output) });
+            Input = input,
+            Batch = new WordsOpsBatch
+            {
+                Ops =
+                [
+                    new InsertParagraphsOp
+                    {
+                        At = new WordsTarget { Find = "Detail" },
+                        Position = "after",
+                        Paragraphs = [new ParagraphInput { Text = "New detail", ListLevel = 1 }],
+                    },
+                ],
+            },
+            Output = TestOutput.At(output),
+        });
 
         // The new item has no indent of its own: moving the level moves it with the others.
         var document = new Document(output);
@@ -357,10 +394,15 @@ public sealed class WordsContractGapTests
         string input = fixture.CreateReport();
         string output = fixture.Temp.File("regex.docx");
 
-        fixture.Engine.ApplyOps(input, new WordsOpsBatch
+        WordsEdit.Run(fixture.Session, new WordsEditRequest
         {
-            Ops = [new ReplaceTextOp { Find = @"(\w+) percent", Replace = "$1 %", Regex = true }],
-        }, new WordsEditRequest { Output = TestOutput.At(output) });
+            Input = input,
+            Batch = new WordsOpsBatch
+            {
+                Ops = [new ReplaceTextOp { Find = @"(\w+) percent", Replace = "$1 %", Regex = true }],
+            },
+            Output = TestOutput.At(output),
+        });
 
         Assert.Contains("twelve %", new Document(output).GetText(), StringComparison.Ordinal);
     }
@@ -372,14 +414,19 @@ public sealed class WordsContractGapTests
         string input = fixture.CreateReport();
         string output = fixture.Temp.File("unmatched.docx");
 
-        WordsEditResult result = fixture.Engine.ApplyOps(input, new WordsOpsBatch
+        WordsEditResult result = WordsEdit.Run(fixture.Session, new WordsEditRequest
         {
-            Ops =
-            [
-                new ReplaceTextOp { Find = "eleven percent", Replace = "ten percent" },
-                new ReplaceTextOp { Find = "twelve", Replace = "ten" },
-            ],
-        }, new WordsEditRequest { Output = TestOutput.At(output) });
+            Input = input,
+            Batch = new WordsOpsBatch
+            {
+                Ops =
+                [
+                    new ReplaceTextOp { Find = "eleven percent", Replace = "ten percent" },
+                    new ReplaceTextOp { Find = "twelve", Replace = "ten" },
+                ],
+            },
+            Output = TestOutput.At(output),
+        });
 
         Assert.Equal([0L, 1L], result.Applied.Select(static applied => applied.ItemsAffected));
         Warning warning = Assert.Single(result.Warnings!, static warning => warning.Code == "REPLACE_NO_MATCH");
@@ -402,8 +449,8 @@ public sealed class WordsContractGapTests
         string input = fixture.Temp.File("search.docx");
         source.Save(input, SaveFormat.Docx);
 
-        WordsSearchResult body = fixture.Engine.Search(input, WordsFixture.Search("needle", "body"));
-        WordsSearchResult all = fixture.Engine.Search(input, WordsFixture.Search("needle", "all"));
+        WordsSearchResult body = WordsSearch.Run(fixture.Session, WordsFixture.Search(input, "needle", "body"));
+        WordsSearchResult all = WordsSearch.Run(fixture.Session, WordsFixture.Search(input, "needle", "all"));
 
         Assert.Equal(["body"], body.Hits.Select(static hit => hit.Scope));
         Assert.Equal(["body", "comments", "footnotes"], all.Hits.Select(static hit => hit.Scope).Order());
@@ -425,7 +472,7 @@ public sealed class WordsContractGapTests
         string input = fixture.Temp.File("breaks.docx");
         source.Save(input, SaveFormat.Docx);
 
-        DocumentReadResult read = fixture.Engine.Read(input, new DocumentReadRequest { Scope = "text" });
+        DocumentReadResult read = WordsRead.Run(fixture.Session, new DocumentReadRequest { Input = input, Scope = "text" });
 
         string? BreakAfter(string text) => read.Blocks.Single(block => block.Text == text).BreakAfter;
         Assert.Equal("page", BreakAfter("Before page"));
@@ -447,7 +494,7 @@ public sealed class WordsContractGapTests
         string input = fixture.Temp.File("leading-break.docx");
         source.Save(input, SaveFormat.Docx);
 
-        DocumentReadResult read = fixture.Engine.Read(input, new DocumentReadRequest { Scope = "full" });
+        DocumentReadResult read = WordsRead.Run(fixture.Session, new DocumentReadRequest { Input = input, Scope = "full" });
 
         Assert.Equal(["Page one", "第五条 违约责任", "Body"], read.Blocks.Select(static block => block.Text));
         Assert.Equal(["page", null, null], read.Blocks.Select(static block => block.BreakAfter));

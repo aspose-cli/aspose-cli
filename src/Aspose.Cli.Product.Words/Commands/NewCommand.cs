@@ -1,27 +1,26 @@
 using System.CommandLine;
 using Aspose.Cli.Sdk.Errors;
-using Aspose.Cli.Sdk.Extensibility;
+using Aspose.Cli.Sdk.Extensibility.Output;
 using Aspose.Cli.Sdk.IO;
 
 namespace Aspose.Cli.Product.Words.Commands;
 
 internal static class NewCommand
 {
-    public static Command Create(IProductCommandHost<IWordsEngine> host)
+    public static CommandDefinition<NewDocumentRequest, WordsCreateResult> Create()
     {
         var blank = new Option<bool>("--blank") { Description = "Create a blank document." };
         var markdown = new Option<string?>("--markdown") { Description = "Create from a Markdown file." }.WithInput(InputKind.File);
         var text = new Option<string?>("--text") { Description = "Create from a UTF-8 text file." }.WithInput(InputKind.File);
         var template = new Option<string?>("--template") { Description = "Document whose styles, page setup, headers and footers the new document uses; its body is replaced by --markdown or --text content." }.WithInput(InputKind.File);
         var title = new Option<string?>("--title") { Description = "Set the built-in title property." }.WithInput(InputKind.None);
-        return StandardCommand.Create(
-            host,
+        return new(
             "create",
             "Create a document from one content source, optionally inside a template.",
             new CommandTraits
             {
                 Output = OutputTarget.CreatedFile("Document path to create.", WordsFormats.Writable),
-                Encrypt = WordsCommands.EncryptedDocument,
+                Encrypt = WordsInputs.EncryptedDocument,
                 UsesFonts = true,
             },
             [blank, markdown, text, template, title],
@@ -44,7 +43,7 @@ internal static class NewCommand
                 string? templatePath = standard.InputFile(template);
                 ResolvedOutput output = standard.Output;
                 Secret? encryptPassword = standard.EncryptPassword();
-                return standard.OpenEngine().Create(new NewDocumentRequest
+                return new NewDocumentRequest
                 {
                     Output = output,
                     MarkdownPath = markdownPath,
@@ -52,12 +51,17 @@ internal static class NewCommand
                     TemplatePath = templatePath,
                     Title = parse.GetValue(title),
                     EncryptPassword = encryptPassword,
-                });
-            })
-            .WithExamples(
+                };
+            },
+            Render)
+        {
+            Examples =
             [
                 "words create report.docx --markdown report.md --template brand.docx --title \"Quarterly report\"",
                 "words create letter.docx --template letter.dotx",
-            ]);
+            ],
+        };
     }
+
+    internal static void Render(WordsCreateResult result, TableSurface surface) => ResultText.Produced(surface, result.Output);
 }

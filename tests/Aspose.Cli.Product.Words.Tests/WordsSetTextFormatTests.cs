@@ -30,8 +30,10 @@ public sealed class WordsSetTextFormatTests
         string input = fixture.Temp.File("plain.docx");
         document.Save(input);
 
-        Run run = SetText(fixture, input, new WordsEditRequest
+        Run run = SetText(fixture, new WordsEditRequest
         {
+            Input = input,
+            Batch = SetLiability,
             Output = TestOutput.At(fixture.Temp.File("plain.out.docx")),
             TrackChanges = trackChanges,
             Author = trackChanges ? "Reviewer" : null,
@@ -56,17 +58,16 @@ public sealed class WordsSetTextFormatTests
         string input = fixture.Temp.File("source.pdf");
         document.Save(input, SaveFormat.Pdf);
 
-        Run run = SetText(fixture, input, new WordsEditRequest { Output = TestOutput.At(fixture.Temp.File("from-pdf.docx")) });
+        Run run = SetText(fixture, new WordsEditRequest { Input = input, Batch = SetLiability, Output = TestOutput.At(fixture.Temp.File("from-pdf.docx")) });
 
         AssertFont(run, "Arial", 11);
     }
 
-    private static Run SetText(WordsFixture fixture, string input, WordsEditRequest request)
+    private static readonly WordsOpsBatch SetLiability = new() { Ops = [new SetTextOp { At = new WordsTarget { Find = "liability" }, Text = NewText }] };
+
+    private static Run SetText(WordsFixture fixture, WordsEditRequest request)
     {
-        fixture.Engine.ApplyOps(
-            input,
-            new WordsOpsBatch { Ops = [new SetTextOp { At = new WordsTarget { Find = "liability" }, Text = NewText }] },
-            request);
+        WordsEdit.Run(fixture.Session, request);
         return new Document(request.Output.Path).GetChildNodes(NodeType.Run, true).Cast<Run>()
             .Single(static run => run.Text == NewText);
     }

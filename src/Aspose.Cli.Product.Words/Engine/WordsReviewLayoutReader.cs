@@ -1,5 +1,4 @@
 using Aspose.Cli.Product.Words.Engine.Mapping;
-using Aspose.Cli.Sdk.Licensing;
 using Aspose.Words;
 using Aspose.Words.Drawing;
 using Aspose.Words.Layout;
@@ -8,27 +7,19 @@ using Aspose.Words.Tables;
 namespace Aspose.Cli.Product.Words.Engine;
 
 /// <summary>Projects conservative review facts from the real fixed-page layout model.</summary>
-internal sealed class WordsReviewLayoutService
+internal static class WordsReviewLayoutReader
 {
     private const double PageBoundaryTolerance = 0.5;
-    private readonly ILicenseState _license;
-    private readonly WordsDocumentLoader _loader;
 
-    internal WordsReviewLayoutService(
-        ILicenseState license,
-        WordsDocumentLoader loader)
-    {
-        _license = license ?? throw new ArgumentNullException(nameof(license));
-        _loader = loader ?? throw new ArgumentNullException(nameof(loader));
-    }
-
-    internal WordsReviewLayout Inspect(
+    /// <summary>The layout facts of the first <paramref name="maxPages"/> pages of a document.</summary>
+    internal static WordsReviewLayout Read(
+        WordsSession session,
         string filePath,
         Secret? password,
         int maxPages)
     {
-        _ = _license.License;
-        using LoadedDocument loaded = _loader.Open(filePath, password);
+        _ = session.Outputs.License;
+        using LoadedDocument loaded = session.Loader.Open(filePath, password);
         Document document = loaded.Document;
         document.UpdatePageLayout();
         int pageCount = Math.Min(document.PageCount, maxPages);

@@ -1,24 +1,23 @@
 using System.CommandLine;
 using Aspose.Cli.Sdk.Errors;
-using Aspose.Cli.Sdk.Extensibility;
+using Aspose.Cli.Sdk.Extensibility.Output;
 using Aspose.Cli.Sdk.IO;
 
 namespace Aspose.Cli.Product.Words.Commands;
 
 internal static class ConvertCommand
 {
-    public static Command Create(IProductCommandHost<IWordsEngine> host)
+    public static CommandDefinition<WordsConvertRequest, WordsConvertResult> Create()
     {
         var pages = new Option<string?>("--pages") { Description = "1-based pages for fixed-page targets only." }.WithInput(InputKind.None);
-        return StandardCommand.Create(
-            host,
+        return new(
             "convert",
             "Convert a document using the detected input format.",
             new CommandTraits
             {
-                Input = WordsCommands.Document,
+                Input = WordsInputs.Document,
                 Output = OutputTarget.File("Output path; defaults to a sibling using the target extension."),
-                Encrypt = WordsCommands.EncryptedDocument,
+                Encrypt = WordsInputs.EncryptedDocument,
                 UsesFonts = true,
                 Target = TargetFormat.Convert("Target document format.", WordsFormats.Definitions),
             },
@@ -34,19 +33,26 @@ internal static class ConvertCommand
                 }
 
                 Secret? encryptPassword = standard.EncryptPassword();
-                return standard.OpenEngine().Convert(standard.Input, new WordsConvertRequest
+                return new WordsConvertRequest
                 {
+                    Input = standard.Input,
                     Output = output,
                     Pages = pageText is null ? null : PageRange.Parse(pageText),
                     Password = standard.InputPassword,
                     EncryptPassword = encryptPassword,
-                });
-            })
-            .WithExamples(
+                };
+            },
+            Render)
+        {
+            Examples =
             [
                 "words convert contract.docx --to pdf",
                 "words convert contract.docx --to pdf --pages 1-3 --out excerpt.pdf",
                 "words convert contract.docx --to pdf --font-dir fonts",
-            ]);
+            ],
+        };
     }
+
+    internal static void Render(WordsConvertResult result, TableSurface surface) =>
+        ResultText.Produced(surface, result.Output, result.Pages is null ? null : $"pages {result.Pages}");
 }

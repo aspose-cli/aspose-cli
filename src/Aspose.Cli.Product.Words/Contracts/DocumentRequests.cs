@@ -6,6 +6,8 @@ namespace Aspose.Cli.Product.Words.Contracts;
 /// <summary>Options for structural Words inspection.</summary>
 public sealed record DocumentInfoRequest
 {
+    /// <summary>The document to open.</summary>
+    public required string Input { get; init; }
     public bool IncludePreview { get; init; }
     public IReadOnlyList<string>? Details { get; init; }
     public Secret? Password { get; init; }
@@ -14,6 +16,8 @@ public sealed record DocumentInfoRequest
 /// <summary>Options for a budgeted canonical block read.</summary>
 public sealed record DocumentReadRequest
 {
+    /// <summary>The document to open.</summary>
+    public required string Input { get; init; }
     public PageRange? Blocks { get; init; }
     public int? Section { get; init; }
     public string Scope { get; init; } = "text";
@@ -26,6 +30,8 @@ public sealed record DocumentReadRequest
 /// <summary>Options for document conversion.</summary>
 public sealed record WordsConvertRequest
 {
+    /// <summary>The document to open.</summary>
+    public required string Input { get; init; }
     /// <summary>The resolved output: its format, path and overwrite permission.</summary>
     public required ResolvedOutput Output { get; init; }
     public PageRange? Pages { get; init; }
@@ -36,6 +42,8 @@ public sealed record WordsConvertRequest
 /// <summary>Options for page rendering.</summary>
 public sealed record WordsRenderRequest
 {
+    /// <summary>The document to open.</summary>
+    public required string Input { get; init; }
     /// <summary>The resolved output: its format, path and overwrite permission.</summary>
     public required ResolvedOutput Output { get; init; }
     public PageRange? Pages { get; init; }
@@ -59,6 +67,10 @@ public sealed record NewDocumentRequest
 /// <summary>Options for an atomic Words edit batch.</summary>
 public sealed record WordsEditRequest
 {
+    /// <summary>The document to edit.</summary>
+    public required string Input { get; init; }
+    /// <summary>The validated operation batch.</summary>
+    public required WordsOpsBatch Batch { get; init; }
     /// <summary>The resolved output: its format, path, overwrite permission and in-place backup.</summary>
     public required ResolvedOutput Output { get; init; }
     public EditCommandOptions Options { get; init; } = new();
@@ -76,6 +88,10 @@ public sealed record WordsCompareRequest
     /// <summary>The unit a change is marked in, by default.</summary>
     internal const string DefaultGranularity = "word";
 
+    /// <summary>The original document.</summary>
+    public required string Left { get; init; }
+    /// <summary>The changed document.</summary>
+    public required string Right { get; init; }
     public bool IgnoreFormatting { get; init; }
     /// <summary>The unit a change is marked in: <c>word</c> or <c>char</c>.</summary>
     public string Granularity { get; init; } = DefaultGranularity;
@@ -90,6 +106,8 @@ public sealed record WordsCompareRequest
 /// <summary>Options for bounded document search; the query's scope is one of <see cref="WordsTextScopes"/>.</summary>
 public sealed record WordsSearchRequest
 {
+    /// <summary>The document to open.</summary>
+    public required string Input { get; init; }
     public required SearchQuery Query { get; init; }
     public Secret? Password { get; init; }
 }
@@ -97,6 +115,8 @@ public sealed record WordsSearchRequest
 /// <summary>Options for transactional document splitting.</summary>
 public sealed record WordsSplitRequest
 {
+    /// <summary>The document to open.</summary>
+    public required string Input { get; init; }
     public required string By { get; init; }
     public PageRange? Pages { get; init; }
     /// <summary>The resolved directory that receives the files.</summary>
@@ -107,6 +127,8 @@ public sealed record WordsSplitRequest
 /// <summary>Options for bounded asset extraction.</summary>
 public sealed record WordsExtractRequest
 {
+    /// <summary>The document to open.</summary>
+    public required string Input { get; init; }
     public required string What { get; init; }
     /// <summary>The resolved directory that receives the files.</summary>
     public required ResolvedDirectory Output { get; init; }

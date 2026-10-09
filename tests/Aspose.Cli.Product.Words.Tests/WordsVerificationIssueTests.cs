@@ -21,8 +21,10 @@ public sealed class WordsVerificationIssueTests
         string input = fixture.Temp.File("fields.docx");
         document.Save(input, SaveFormat.Docx);
 
-        VerificationIssue issue = VerifyAsText(fixture, input, new WordsEditRequest
+        VerificationIssue issue = VerifyAsText(fixture, new WordsEditRequest
         {
+            Input = input,
+            Batch = ReplaceTwelve,
             Output = TestOutput.At(fixture.Temp.File("fields.txt")),
             Verify = true,
         });
@@ -42,8 +44,10 @@ public sealed class WordsVerificationIssueTests
     public void Verify_ReportsRevisionsLostOnReopen()
     {
         using var fixture = new WordsFixture();
-        VerificationIssue issue = VerifyAsText(fixture, fixture.CreateReport(), new WordsEditRequest
+        VerificationIssue issue = VerifyAsText(fixture, new WordsEditRequest
         {
+            Input = fixture.CreateReport(),
+            Batch = ReplaceTwelve,
             Output = TestOutput.At(fixture.Temp.File("revisions.txt")),
             Verify = true,
             TrackChanges = true,
@@ -59,10 +63,15 @@ public sealed class WordsVerificationIssueTests
     public void Verify_ReportsProtectionLostOnReopen()
     {
         using var fixture = new WordsFixture();
-        WordsEditResult result = fixture.Engine.ApplyOps(
-            fixture.CreateReport(),
-            new WordsOpsBatch { Ops = [new ProtectOp { Mode = "readOnly" }] },
-            new WordsEditRequest { Output = TestOutput.At(fixture.Temp.File("protection.txt")), Verify = true });
+        WordsEditResult result = WordsEdit.Run(
+            fixture.Session,
+            new WordsEditRequest
+            {
+                Input = fixture.CreateReport(),
+                Batch = new WordsOpsBatch { Ops = [new ProtectOp { Mode = "readOnly" }] },
+                Output = TestOutput.At(fixture.Temp.File("protection.txt")),
+                Verify = true,
+            });
 
         Assert.False(result.Verification!.Ok);
         Assert.True(result.HasFailures);
@@ -82,7 +91,7 @@ public sealed class WordsVerificationIssueTests
     [InlineData("flatopc")]
     public void Hint_ForAWordFormatOutput_DoesNotAdviseSavingToAWordFormat(string format)
     {
-        string hint = WordsMutationService.KeepStateHint("fields", format, WordsFormats.WordIds);
+        string hint = WordsEdit.KeepStateHint("fields", format, WordsFormats.WordIds);
 
         Assert.DoesNotContain("save to", hint, StringComparison.Ordinal);
         Assert.Contains($"did not survive save and reopen in {format}", hint, StringComparison.Ordinal);
@@ -93,7 +102,7 @@ public sealed class WordsVerificationIssueTests
     [InlineData("rtf")]
     public void Hint_ForRevisionsInAFormatThatStoresThem_DoesNotAdviseAnotherFormat(string format)
     {
-        string hint = WordsMutationService.KeepStateHint("tracked revisions", format, WordsFormats.RevisionIds);
+        string hint = WordsEdit.KeepStateHint("tracked revisions", format, WordsFormats.RevisionIds);
 
         Assert.DoesNotContain("save to", hint, StringComparison.Ordinal);
     }
@@ -108,12 +117,11 @@ public sealed class WordsVerificationIssueTests
         }
     }
 
-    private static VerificationIssue VerifyAsText(WordsFixture fixture, string input, WordsEditRequest request)
+    private static readonly WordsOpsBatch ReplaceTwelve = new() { Ops = [new ReplaceTextOp { Find = "twelve", Replace = "ten" }] };
+
+    private static VerificationIssue VerifyAsText(WordsFixture fixture, WordsEditRequest request)
     {
-        WordsEditResult result = fixture.Engine.ApplyOps(
-            input,
-            new WordsOpsBatch { Ops = [new ReplaceTextOp { Find = "twelve", Replace = "ten" }] },
-            request);
+        WordsEditResult result = WordsEdit.Run(fixture.Session, request);
 
         Assert.Equal("ok", Assert.Single(result.Applied).Status);
         Assert.False(result.Verification!.Ok);

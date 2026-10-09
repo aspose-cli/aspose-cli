@@ -20,7 +20,7 @@ public sealed class WordsResourceLoadingTests
         File.WriteAllBytes(fixture.Temp.File("local.png"), ResourceHttpServer.Image);
         File.WriteAllText(input, $"<html><body><p>Template</p><img src='local.png'><img src='{server.Url}/remote.png'></body></html>");
         string output = fixture.Temp.File("created.docx");
-        var created = fixture.Engine.Create(new NewDocumentRequest
+        var created = WordsCreate.Run(fixture.Session, new NewDocumentRequest
         {
             Output = TestOutput.At(output),
             TemplatePath = input,
@@ -46,8 +46,12 @@ public sealed class WordsResourceLoadingTests
         source.Save(input);
         string output = Path.Combine(documents, "updated.docx");
 
-        fixture.Engine.ApplyOps(input, new WordsOpsBatch { Ops = [new UpdateFieldsOp()] },
-            new WordsEditRequest { Output = TestOutput.At(output) });
+        WordsEdit.Run(fixture.Session, new WordsEditRequest
+        {
+            Input = input,
+            Batch = new WordsOpsBatch { Ops = [new UpdateFieldsOp()] },
+            Output = TestOutput.At(output),
+        });
 
         Assert.DoesNotContain("OUTSIDE-SECRET", new Document(output).GetText(), StringComparison.Ordinal);
     }
@@ -84,17 +88,22 @@ public sealed class WordsResourceLoadingTests
         File.WriteAllText(svg, $"""<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="20" height="20"><style>@import url('{server.Url}/svg.css');</style><image xlink:href="{server.Url}/svg.png" width="10" height="10"/></svg>""");
         string edited = fixture.Temp.File("edited.docx");
 
-        fixture.Engine.ApplyOps(input, new WordsOpsBatch
+        WordsEdit.Run(fixture.Session, new WordsEditRequest
         {
-            Ops =
-            [
-                new InsertImageOp { At = new WordsTarget { Block = 1 }, Position = "after", Path = svg },
-                new UpdateFieldsOp(),
-            ],
-        }, new WordsEditRequest { Output = TestOutput.At(edited) });
-        fixture.Engine.Read(edited, new DocumentReadRequest());
-        fixture.Engine.Render(edited, new WordsRenderRequest { Output = TestOutput.At(fixture.Temp.File("page.png"), format: "png") });
-        fixture.Engine.Convert(edited, new WordsConvertRequest { Output = TestOutput.At(fixture.Temp.File("edited.pdf"), format: "pdf") });
+            Input = input,
+            Batch = new WordsOpsBatch
+            {
+                Ops =
+                [
+                    new InsertImageOp { At = new WordsTarget { Block = 1 }, Position = "after", Path = svg },
+                    new UpdateFieldsOp(),
+                ],
+            },
+            Output = TestOutput.At(edited),
+        });
+        WordsRead.Run(fixture.Session, new DocumentReadRequest { Input = edited });
+        WordsRender.Run(fixture.Session, new WordsRenderRequest { Input = edited, Output = TestOutput.At(fixture.Temp.File("page.png"), format: "png") });
+        WordsConvert.Run(fixture.Session, new WordsConvertRequest { Input = edited, Output = TestOutput.At(fixture.Temp.File("edited.pdf"), format: "pdf") });
 
         Assert.True(server.RequestCount == 0, string.Join("; ", server.Requests));
     }
@@ -119,12 +128,13 @@ public sealed class WordsResourceLoadingTests
                 shape => shape.HasImage && shape.ImageData.ImageBytes.Length > 0);
             Assert.True(loaded.RemoteResourcesBlocked > 0);
         }
-        var read = fixture.Engine.Read(input, new DocumentReadRequest());
+        var read = WordsRead.Run(fixture.Session, new DocumentReadRequest { Input = input });
         Assert.Contains(read.Warnings!, warning =>
             warning.Code == WarningCodes.RemoteResourcesBlocked && warning.AffectsCompleteness);
         string output = fixture.Temp.File("converted.docx");
-        var converted = fixture.Engine.Convert(input, new WordsConvertRequest
+        var converted = WordsConvert.Run(fixture.Session, new WordsConvertRequest
         {
+            Input = input,
             Output = TestOutput.At(output, format: "docx"),
         });
         Assert.Contains(converted.Warnings!, warning =>

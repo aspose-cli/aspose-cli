@@ -76,15 +76,20 @@ public sealed class WordsPageNumberTests : IClassFixture<WordsFixture>
             Assert.True(labelPresent);
         }
 
-        _fixture.Engine.ApplyOps(input, new WordsOpsBatch
+        WordsEdit.Run(_fixture.Session, new WordsEditRequest
         {
-            Ops =
-            [
-                new SetPageNumbersOp { Location = location, Alignment = "right", Section = 2, Start = 7, Format = "lowerRoman" },
-                new SetPageNumbersOp { Location = location, Alignment = "center", Section = 2, Start = 9, Format = "upperRoman" },
-                new UpdateFieldsOp(),
-            ],
-        }, new WordsEditRequest { Output = TestOutput.At(output) });
+            Input = input,
+            Batch = new WordsOpsBatch
+            {
+                Ops =
+                [
+                    new SetPageNumbersOp { Location = location, Alignment = "right", Section = 2, Start = 7, Format = "lowerRoman" },
+                    new SetPageNumbersOp { Location = location, Alignment = "center", Section = 2, Start = 9, Format = "upperRoman" },
+                    new UpdateFieldsOp(),
+                ],
+            },
+            Output = TestOutput.At(output),
+        });
 
         var changed = new Document(output);
         HeaderFooter target = changed.Sections[1].HeadersFooters[type];
