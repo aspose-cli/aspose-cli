@@ -92,9 +92,14 @@ without a license: a pull request runs `Changed` against its target branch and a
 runs `Fast`, so a test a pull request skipped runs when it merges.
 
 Snapshots pin the help and capabilities output (`CliContractTests`, in
-`tests/Aspose.Cli.Platform.Tests/Integration/Snapshots`); schemas are generated from the records
-and not committed. After an intended change, rerun those tests with
-`ASPOSE_CLI_TEST_UPDATE_SNAPSHOTS=1` and review the regenerated files in the diff.
+`tests/Aspose.Cli.Platform.Tests/Integration/Snapshots`), split by owner so a change to one
+product touches that product's files: `capabilities/<product>.json` holds the product's entry
+with its commands, routes, diagnostics and its operation and result schemas;
+`capabilities/host.json` the Host commands, common diagnostics, routing defaults, budgets, engine
+pins and common schemas; `capabilities-summary.json` the summary; `<product>.help.txt` and
+`host.help.txt` the help text. Schemas are generated from the records and committed only there.
+After an intended change, rerun those tests with `ASPOSE_CLI_TEST_UPDATE_SNAPSHOTS=1` and review
+the regenerated files in the diff.
 
 Runs are isolated from the developer's machine: they never read `%APPDATA%\aspose-cli`, project
 `.aspose` files or `ASPOSE_*` settings; only `ASPOSE_CLI_TEST_*` variables pass through. App

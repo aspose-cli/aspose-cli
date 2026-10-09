@@ -1,0 +1,5690 @@
+{
+  "schema": "https://schemas.aspose.com/aspose-cli/v2/common/capabilities.schema.json",
+  "schemaVersion": 2,
+  "cliVersion": "<build>",
+  "sourceRevision": "<build>",
+  "buildDirty": "<build>",
+  "enginePins": [
+    {
+      "product": "cells",
+      "engine": "aspose",
+      "version": "<build>"
+    },
+    {
+      "product": "pdf",
+      "engine": "aspose",
+      "version": "<build>"
+    },
+    {
+      "product": "slides",
+      "engine": "aspose",
+      "version": "<build>"
+    },
+    {
+      "product": "words",
+      "engine": "aspose",
+      "version": "<build>"
+    }
+  ],
+  "products": [
+    "cells",
+    "pdf",
+    "slides",
+    "words"
+  ],
+  "schemas": {
+    "v2/common/app-result": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "$id": "https://schemas.aspose.com/aspose-cli/v2/common/app-result.schema.json",
+      "description": "Result of aspose-cli app: the local browser application was started, reused, queried or stopped.",
+      "type": "object",
+      "required": [
+        "schema",
+        "schemaVersion",
+        "running",
+        "reused",
+        "route"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "schema": {
+          "description": "URI of the JSON schema this result conforms to.",
+          "const": "https://schemas.aspose.com/aspose-cli/v2/common/app-result.schema.json"
+        },
+        "schemaVersion": {
+          "description": "Version of this result contract.",
+          "const": 2
+        },
+        "running": {
+          "description": "Whether a local application instance is running after the command.",
+          "type": "boolean"
+        },
+        "url": {
+          "description": "Loopback URL of the application, omitted when it is not running.",
+          "type": "string",
+          "pattern": "^http://127\\.0\\.0\\.1:[0-9]+/"
+        },
+        "port": {
+          "description": "Resolved loopback port, omitted when it is not running.",
+          "type": "integer",
+          "maximum": 65535,
+          "minimum": 1
+        },
+        "pid": {
+          "description": "Process id of the application host, omitted when it is not running.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "reused": {
+          "description": "True when the command activated an existing application instance.",
+          "type": "boolean"
+        },
+        "route": {
+          "description": "Initial application route: welcome, home, preview or settings.",
+          "type": "string",
+          "enum": [
+            "welcome",
+            "home",
+            "preview",
+            "settings"
+          ]
+        },
+        "file": {
+          "description": "Current document file name, when one is open. Full paths are never exposed.",
+          "type": "string"
+        },
+        "warnings": {
+          "description": "Warnings the agent is expected to act on (for example EVAL_MODE: tell the user about the evaluation watermark). Omitted when empty.",
+          "type": "array",
+          "items": {
+            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
+          }
+        }
+      }
+    },
+    "v2/common/app-status": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "$id": "https://schemas.aspose.com/aspose-cli/v2/common/app-status.schema.json",
+      "description": "Deterministic state the loopback-only browser workspace of aspose-cli app reads.",
+      "type": "object",
+      "required": [
+        "schema",
+        "schemaVersion",
+        "version",
+        "displayName",
+        "experience",
+        "route",
+        "onboardingCompleted",
+        "product",
+        "defaultView",
+        "availableViews",
+        "previewViews",
+        "supportedExtensions",
+        "skills",
+        "rememberRecentFiles",
+        "license",
+        "uploadedCopy",
+        "documents",
+        "recentFiles",
+        "diagnostics",
+        "products"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "schema": {
+          "description": "URI of the JSON schema the status conforms to.",
+          "const": "https://schemas.aspose.com/aspose-cli/v2/common/app-status.schema.json"
+        },
+        "schemaVersion": {
+          "description": "Version of the status contract.",
+          "const": 2
+        },
+        "version": {
+          "description": "CLI version.",
+          "type": "string"
+        },
+        "displayName": {
+          "description": "The distribution's display name.",
+          "type": "string",
+          "minLength": 1
+        },
+        "experience": {
+          "description": "Whether every product is license-free or a license applies.",
+          "type": "string",
+          "enum": [
+            "license-free",
+            "licensed"
+          ]
+        },
+        "route": {
+          "description": "The App route to show, e.g. home.",
+          "type": "string",
+          "minLength": 1
+        },
+        "onboardingCompleted": {
+          "description": "Whether the first-run choice was made.",
+          "type": "boolean"
+        },
+        "product": {
+          "description": "Product of the open document, or the default product.",
+          "type": "string",
+          "minLength": 1
+        },
+        "defaultView": {
+          "description": "View documents of that product open in.",
+          "type": "string",
+          "minLength": 1
+        },
+        "availableViews": {
+          "description": "Views that product offers.",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "previewViews": {
+          "description": "Those views with their labels.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/appPreviewView"
+          }
+        },
+        "supportedExtensions": {
+          "description": "File extensions the App can open.",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^\\.[a-z0-9]+$"
+          }
+        },
+        "skills": {
+          "description": "Every installable Agent Skill: the platform Skill first, then one per product that ships one.",
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/appSkillView"
+          }
+        },
+        "rememberRecentFiles": {
+          "description": "Whether the App keeps a list of recent files.",
+          "type": "boolean"
+        },
+        "license": {
+          "description": "The license status of every product.",
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/license-status.schema.json"
+        },
+        "file": {
+          "description": "File name of the active document, when one is open.",
+          "type": "string",
+          "minLength": 1
+        },
+        "uploadedCopy": {
+          "description": "Whether the active document is an uploaded copy.",
+          "type": "boolean"
+        },
+        "previewUrl": {
+          "description": "Opaque URL for the committed App document session; stable until that session is replaced.",
+          "type": "string"
+        },
+        "sessionView": {
+          "description": "View the open document is rendered in, which a saved preference reaches only when the document reopens.",
+          "type": "string",
+          "minLength": 1
+        },
+        "documents": {
+          "description": "Documents the App has open, in the order they were opened; one of them is active.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/appOpenDocumentView"
+          }
+        },
+        "recentFiles": {
+          "description": "Recently opened files, newest first.",
+          "type": "array",
+          "maxItems": 8,
+          "items": {
+            "$ref": "#/$defs/appRecentView"
+          }
+        },
+        "diagnostics": {
+          "description": "Checks the App's settings show.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/appDiagnosticView"
+          }
+        },
+        "products": {
+          "description": "Every product the App can open documents with.",
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/appProductView"
+          }
+        }
+      },
+      "$defs": {
+        "appDiagnosticView": {
+          "description": "One check the App's settings show.",
+          "type": "object",
+          "required": [
+            "name",
+            "status",
+            "detail"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "description": "What was checked, e.g. Runtime.",
+              "type": "string",
+              "minLength": 1
+            },
+            "status": {
+              "description": "The outcome: ok, warn or fail.",
+              "type": "string",
+              "enum": [
+                "ok",
+                "warn",
+                "fail"
+              ]
+            },
+            "detail": {
+              "description": "What was found.",
+              "type": "string",
+              "minLength": 1
+            },
+            "hint": {
+              "description": "How to improve a warn or fail outcome.",
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "appFormatView": {
+          "description": "One format a product reads or writes.",
+          "type": "object",
+          "required": [
+            "id",
+            "extensions",
+            "uses"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "description": "Format id, e.g. xlsx.",
+              "type": "string",
+              "minLength": 1
+            },
+            "extensions": {
+              "description": "File extensions of the format.",
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^\\.[a-z0-9]+$"
+              }
+            },
+            "uses": {
+              "description": "What the product does with the format, such as load or convert.",
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        "appOpenDocumentView": {
+          "description": "One document the App has open, as the tab strip shows it.",
+          "type": "object",
+          "required": [
+            "id",
+            "fileName",
+            "productId",
+            "view",
+            "url",
+            "uploadedCopy",
+            "active"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "description": "Opaque id of the open document.",
+              "type": "string",
+              "pattern": "^[0-9a-f]{32}$"
+            },
+            "fileName": {
+              "description": "The document's file name; full paths are never exposed.",
+              "type": "string",
+              "minLength": 1
+            },
+            "productId": {
+              "description": "Product that opened the document.",
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9-]*$"
+            },
+            "view": {
+              "description": "View the document is shown in.",
+              "type": "string",
+              "minLength": 1
+            },
+            "url": {
+              "description": "Opaque URL of the document's session.",
+              "type": "string"
+            },
+            "uploadedCopy": {
+              "description": "Whether the App shows an uploaded copy rather than the file itself.",
+              "type": "boolean"
+            },
+            "active": {
+              "description": "Whether the document is the one shown.",
+              "type": "boolean"
+            }
+          }
+        },
+        "appPreviewCapabilityView": {
+          "description": "How a product previews documents in the App.",
+          "type": "object",
+          "required": [
+            "fidelity",
+            "defaultView",
+            "views"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "fidelity": {
+              "description": "Whether the preview is rendered by the engine or a semantic projection.",
+              "type": "string",
+              "enum": [
+                "rendered",
+                "semantic"
+              ]
+            },
+            "defaultView": {
+              "description": "View shown when none is chosen.",
+              "type": "string",
+              "minLength": 1
+            },
+            "views": {
+              "description": "Views a document can be previewed in.",
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/$defs/appPreviewView"
+              }
+            }
+          }
+        },
+        "appPreviewView": {
+          "description": "One view a document can be shown in.",
+          "type": "object",
+          "required": [
+            "id",
+            "displayName"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "description": "Stable view id.",
+              "type": "string",
+              "minLength": 1
+            },
+            "displayName": {
+              "description": "Label people see.",
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "appProductView": {
+          "description": "One product the App can open documents with.",
+          "type": "object",
+          "required": [
+            "id",
+            "name",
+            "formats",
+            "verbs",
+            "preview",
+            "review"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "description": "Product id, e.g. cells.",
+              "type": "string",
+              "minLength": 1
+            },
+            "name": {
+              "description": "Human-readable product name.",
+              "type": "string",
+              "minLength": 1
+            },
+            "formats": {
+              "description": "Formats the product reads or writes.",
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/$defs/appFormatView"
+              }
+            },
+            "verbs": {
+              "description": "Commands the product offers.",
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "preview": {
+              "description": "How the product previews documents.",
+              "$ref": "#/$defs/appPreviewCapabilityView"
+            },
+            "review": {
+              "description": "How the product renders review evidence.",
+              "$ref": "#/$defs/appReviewCapabilityView"
+            }
+          }
+        },
+        "appRecentView": {
+          "description": "One recently opened file the App offers to reopen.",
+          "type": "object",
+          "required": [
+            "id",
+            "name"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "description": "Opaque id of the entry.",
+              "type": "string",
+              "pattern": "^[0-9a-f]{16}$"
+            },
+            "name": {
+              "description": "The file's name.",
+              "type": "string",
+              "minLength": 1
+            },
+            "productId": {
+              "description": "Product that opened the file, when known.",
+              "type": "string",
+              "minLength": 1
+            },
+            "productName": {
+              "description": "Human-readable name of that product, when known.",
+              "type": "string",
+              "minLength": 1
+            },
+            "view": {
+              "description": "View the file was shown in, when known.",
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "appReviewCapabilityView": {
+          "description": "How a product renders review evidence.",
+          "type": "object",
+          "required": [
+            "fidelity",
+            "defaultView",
+            "views",
+            "visualInspectionRequired"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "fidelity": {
+              "description": "Whether the evidence is rendered by the engine or a semantic projection.",
+              "type": "string",
+              "enum": [
+                "rendered",
+                "semantic"
+              ]
+            },
+            "defaultView": {
+              "description": "View a review renders when none is chosen.",
+              "type": "string",
+              "minLength": 1
+            },
+            "views": {
+              "description": "Views a review can render.",
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/$defs/appPreviewView"
+              }
+            },
+            "visualInspectionRequired": {
+              "description": "Whether the rendered evidence must be looked at.",
+              "type": "boolean"
+            }
+          }
+        },
+        "appSkillView": {
+          "description": "One installable Agent Skill.",
+          "type": "object",
+          "required": [
+            "name",
+            "description"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "description": "The Skill's name.",
+              "type": "string",
+              "minLength": 1
+            },
+            "description": {
+              "description": "What the Skill is for.",
+              "type": "string",
+              "minLength": 1
+            },
+            "product": {
+              "description": "Product that owns the Skill; absent for the platform Skill every product builds on.",
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      }
+    },
+    "v2/common/backup": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "$id": "https://schemas.aspose.com/aspose-cli/v2/common/backup.schema.json",
+      "description": "Stable, never-overwritten safety backup created before an in-place mutation.",
+      "type": "object",
+      "required": [
+        "path",
+        "created",
+        "sizeBytes",
+        "lastWriteUtc",
+        "holdsReplacedVersion"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "description": "Absolute backup path.",
+          "type": "string"
+        },
+        "created": {
+          "description": "True when this invocation created the backup; false when it reused an existing one.",
+          "type": "boolean"
+        },
+        "sizeBytes": {
+          "description": "Backup file size in bytes.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "lastWriteUtc": {
+          "description": "When the content the backup holds was last written, in UTC with the Z designator.",
+          "type": "string",
+          "format": "date-time",
+          "pattern": "Z$"
+        },
+        "holdsReplacedVersion": {
+          "description": "True when the backup holds exactly the version this invocation replaced; false when a reused backup holds an earlier version, which a BACKUP_PREDATES_EDIT warning discloses.",
+          "type": "boolean"
+        }
+      }
+    },
+    "v2/common/capabilities": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "$id": "https://schemas.aspose.com/aspose-cli/v2/common/capabilities.schema.json",
+      "description": "Machine-readable self-description of the CLI: which products, verbs, formats and ops this build supports. Agents use it for runtime discovery instead of hard-coding command lists.",
+      "type": "object",
+      "required": [
+        "schema",
+        "schemaVersion",
+        "cliVersion",
+        "sourceRevision",
+        "buildDirty",
+        "enginePins",
+        "products",
+        "schemas",
+        "routing",
+        "commands",
+        "resourceBudgets",
+        "resourceBudgetContractVersion",
+        "diagnostics"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "schema": {
+          "description": "URI of the JSON schema this result conforms to.",
+          "const": "https://schemas.aspose.com/aspose-cli/v2/common/capabilities.schema.json"
+        },
+        "schemaVersion": {
+          "description": "Version of this result contract.",
+          "const": 2
+        },
+        "cliVersion": {
+          "description": "CLI version, e.g. 0.2.0.",
+          "type": "string"
+        },
+        "sourceRevision": {
+          "description": "Root source revision embedded by the distribution build.",
+          "type": "string",
+          "minLength": 1
+        },
+        "buildDirty": {
+          "description": "Whether tracked source changes were present during the build.",
+          "type": "boolean"
+        },
+        "enginePins": {
+          "description": "Exact engine version or source pin compiled for each product.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/enginePinCapabilities"
+          }
+        },
+        "products": {
+          "description": "One entry per compiled-in product engine.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/productCapabilities"
+          }
+        },
+        "schemas": {
+          "description": "Schema ids printable via aspose-cli schema <id>.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "routing": {
+          "description": "Final operation-aware routing truth for this compiled distribution.",
+          "$ref": "#/$defs/routingCapabilities"
+        },
+        "commands": {
+          "description": "Complete root command grammar, including global commands and options.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/commandCapabilities"
+          }
+        },
+        "resourceBudgets": {
+          "description": "Versioned global resource defaults and hard safety maxima.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/resourceBudgetCapabilities"
+          }
+        },
+        "resourceBudgetContractVersion": {
+          "description": "Version of the global/product resource-budget contract.",
+          "type": "integer",
+          "enum": [
+            2
+          ]
+        },
+        "diagnostics": {
+          "description": "Resolved common and compiled-product diagnostic catalog.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/diagnosticCapabilities"
+          }
+        },
+        "warnings": {
+          "description": "Warnings the agent is expected to act on (for example EVAL_MODE: tell the user about the evaluation watermark). Omitted when empty.",
+          "type": "array",
+          "items": {
+            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
+          }
+        }
+      },
+      "$defs": {
+        "commandArgumentCapabilities": {
+          "description": "One positional argument accepted by a command.",
+          "type": "object",
+          "required": [
+            "name",
+            "type",
+            "inputKind",
+            "valueSource",
+            "secret",
+            "minimumArity",
+            "maximumArity",
+            "required",
+            "hasDefault",
+            "allowedValues"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "description": "The argument's name in help.",
+              "type": "string"
+            },
+            "type": {
+              "description": "The argument's value type, e.g. string.",
+              "type": "string"
+            },
+            "inputKind": {
+              "description": "What the value names: nothing to read, a file, or a JSON source.",
+              "type": "string",
+              "enum": [
+                "none",
+                "file",
+                "json-source"
+              ]
+            },
+            "valueSource": {
+              "description": "Where the value comes from: the command line, the environment variable it names, or standard input.",
+              "type": "string",
+              "enum": [
+                "command-line",
+                "environment-variable-name",
+                "stdin"
+              ]
+            },
+            "secret": {
+              "description": "Whether the value is a secret that is never echoed.",
+              "type": "boolean"
+            },
+            "minimumArity": {
+              "description": "Fewest values the argument takes.",
+              "type": "integer",
+              "minimum": 0
+            },
+            "maximumArity": {
+              "description": "Most values the argument takes.",
+              "type": "integer",
+              "minimum": 0
+            },
+            "required": {
+              "description": "Whether the command needs the argument.",
+              "type": "boolean"
+            },
+            "hasDefault": {
+              "description": "Whether the argument has a default value.",
+              "type": "boolean"
+            },
+            "default": {
+              "description": "The default value as text, when there is one.",
+              "type": "string"
+            },
+            "allowedValues": {
+              "description": "The only values the argument accepts; empty when it accepts any.",
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "description": {
+              "description": "The argument's help description.",
+              "type": "string"
+            }
+          }
+        },
+        "commandCapabilities": {
+          "description": "One command or subcommand in a product grammar.",
+          "type": "object",
+          "required": [
+            "path",
+            "name",
+            "aliases",
+            "hidden",
+            "options",
+            "arguments"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "path": {
+              "description": "Full command path, e.g. cells query range.",
+              "type": "string"
+            },
+            "name": {
+              "description": "The command's own name, the last word of its path.",
+              "type": "string"
+            },
+            "aliases": {
+              "description": "Other names the command answers to.",
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "description": {
+              "description": "The command's help description.",
+              "type": "string"
+            },
+            "hidden": {
+              "description": "Whether help leaves the command out.",
+              "type": "boolean"
+            },
+            "options": {
+              "description": "Options the command accepts, in help order.",
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/commandOptionCapabilities"
+              }
+            },
+            "arguments": {
+              "description": "Positional arguments the command accepts, in order.",
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/commandArgumentCapabilities"
+              }
+            }
+          }
+        },
+        "commandOptionCapabilities": {
+          "description": "One option accepted by a command.",
+          "type": "object",
+          "required": [
+            "name",
+            "aliases",
+            "type",
+            "minimumArity",
+            "maximumArity",
+            "required",
+            "recursive",
+            "hidden",
+            "hasDefault",
+            "allowedValues",
+            "secret",
+            "valueSource",
+            "inputKind"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "description": "The option's name, e.g. --output.",
+              "type": "string"
+            },
+            "aliases": {
+              "description": "Other names the option answers to.",
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "type": {
+              "description": "The option's value type, e.g. string or bool.",
+              "type": "string"
+            },
+            "minimumArity": {
+              "description": "Fewest values the option takes.",
+              "type": "integer",
+              "minimum": 0
+            },
+            "maximumArity": {
+              "description": "Most values the option takes.",
+              "type": "integer",
+              "minimum": 0
+            },
+            "required": {
+              "description": "Whether the command needs the option.",
+              "type": "boolean"
+            },
+            "recursive": {
+              "description": "Whether the option applies to the command's subcommands too.",
+              "type": "boolean"
+            },
+            "hidden": {
+              "description": "Whether help leaves the option out; a hidden option is never suggested for a mistyped one.",
+              "type": "boolean"
+            },
+            "hasDefault": {
+              "description": "Whether the option has a default value.",
+              "type": "boolean"
+            },
+            "default": {
+              "description": "The default value as text, when there is one.",
+              "type": "string"
+            },
+            "allowedValues": {
+              "description": "The only values the option accepts; empty when it accepts any.",
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "secret": {
+              "description": "Whether the value is a secret that is never echoed.",
+              "type": "boolean"
+            },
+            "valueSource": {
+              "description": "Where the value comes from: the command line, the environment variable it names, or standard input.",
+              "type": "string",
+              "enum": [
+                "command-line",
+                "environment-variable-name",
+                "stdin"
+              ]
+            },
+            "inputKind": {
+              "description": "What the value names: nothing to read, a file, or a JSON source.",
+              "type": "string",
+              "enum": [
+                "none",
+                "file",
+                "json-source"
+              ]
+            },
+            "description": {
+              "description": "The option's help description.",
+              "type": "string"
+            }
+          }
+        },
+        "diagnosticCapabilities": {
+          "description": "Machine-readable metadata for one stable CLI diagnostic.",
+          "type": "object",
+          "required": [
+            "code",
+            "owner",
+            "severity",
+            "category",
+            "messageTemplateId",
+            "hintTemplateId",
+            "detailsSchemaId"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "code": {
+              "description": "Stable SCREAMING_SNAKE_CASE code, e.g. FILE_NOT_FOUND.",
+              "type": "string",
+              "pattern": "^[A-Z][A-Z0-9_]*$"
+            },
+            "owner": {
+              "description": "What declares the code: common or a product id.",
+              "type": "string",
+              "minLength": 1
+            },
+            "severity": {
+              "description": "Whether the code names an error or a warning.",
+              "type": "string",
+              "enum": [
+                "error",
+                "warning"
+              ]
+            },
+            "exitCode": {
+              "description": "Process exit code of an error; omitted for a warning.",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9
+            },
+            "category": {
+              "description": "What kind of problem the code reports, such as validation or verification.",
+              "type": "string",
+              "minLength": 1
+            },
+            "messageTemplateId": {
+              "description": "Stable identifier of the message wording.",
+              "type": "string",
+              "minLength": 1
+            },
+            "hintTemplateId": {
+              "description": "Stable identifier of the hint wording.",
+              "type": "string",
+              "minLength": 1
+            },
+            "detailsSchemaId": {
+              "description": "Schema id of the code's details object, printable via aspose-cli schema <id>.",
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "enginePinCapabilities": {
+          "description": "One compiled product engine identity used for release provenance.",
+          "type": "object",
+          "required": [
+            "product",
+            "engine",
+            "version"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "product": {
+              "description": "Product id, e.g. cells.",
+              "type": "string",
+              "minLength": 1
+            },
+            "engine": {
+              "description": "Engine package compiled for the product, e.g. Aspose.Cells.",
+              "type": "string",
+              "minLength": 1
+            },
+            "version": {
+              "description": "Exact engine package version.",
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "productCapabilities": {
+          "description": "Capabilities of one product surface (e.g. cells).",
+          "type": "object",
+          "required": [
+            "id",
+            "verbs",
+            "convertFormats",
+            "renderFormats",
+            "operations",
+            "loadFormats",
+            "availableEngines",
+            "formats",
+            "commands",
+            "resourceBudgets"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "description": "Product id as used on the command line, e.g. cells.",
+              "type": "string"
+            },
+            "verbs": {
+              "description": "Available verbs, e.g. inspect, convert.",
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "convertFormats": {
+              "description": "Format ids accepted by convert --to.",
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "renderFormats": {
+              "description": "Format ids accepted by render --to.",
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "operations": {
+              "description": "Structured mutation operations exposed by this product.",
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/productOperationDescriptor"
+              }
+            },
+            "loadFormats": {
+              "description": "Format ids accepted as input by this product.",
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "engine": {
+              "description": "Default engine compiled into this product.",
+              "$ref": "#/$defs/productEngineCapabilities"
+            },
+            "availableEngines": {
+              "description": "Engine ids available in this build.",
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "preview": {
+              "description": "Live-preview views and lifecycle support exposed by this product.",
+              "$ref": "#/$defs/productPreviewCapabilities"
+            },
+            "review": {
+              "description": "Static review evidence capabilities exposed by this product.",
+              "$ref": "#/$defs/productReviewCapabilities"
+            },
+            "formats": {
+              "description": "Canonical input/output format declarations.",
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/productFormatCapabilities"
+              }
+            },
+            "commands": {
+              "description": "Complete product command grammar in stable path order.",
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/commandCapabilities"
+              }
+            },
+            "resourceBudgets": {
+              "description": "Product-owned domain resource budgets.",
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/resourceBudgetCapabilities"
+              }
+            }
+          }
+        },
+        "productEngineCapabilities": {
+          "description": "Public identity and licensing requirements of one product engine.",
+          "type": "object",
+          "required": [
+            "id",
+            "sdk",
+            "sdkVersion",
+            "licenseApplicable",
+            "licenseRequired",
+            "supportsFontDiagnostics"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "description": "Engine id, as availableEngines lists it.",
+              "type": "string",
+              "minLength": 1
+            },
+            "sdk": {
+              "description": "The engine's SDK package, e.g. Aspose.Cells.",
+              "type": "string",
+              "minLength": 1
+            },
+            "sdkVersion": {
+              "description": "The engine SDK package version.",
+              "type": "string",
+              "minLength": 1
+            },
+            "licenseApplicable": {
+              "description": "Whether an Aspose license changes what the engine produces.",
+              "type": "boolean"
+            },
+            "licenseRequired": {
+              "description": "Whether the engine refuses to run without a license.",
+              "type": "boolean"
+            },
+            "supportsFontDiagnostics": {
+              "description": "Whether doctor and fonts report the fonts the engine resolves.",
+              "type": "boolean"
+            }
+          }
+        },
+        "productFormatCapabilities": {
+          "description": "Resolved capabilities of one product format declaration.",
+          "type": "object",
+          "required": [
+            "id",
+            "extensions",
+            "aliases",
+            "uses",
+            "operations",
+            "declaredOwnership",
+            "genericAvailable",
+            "explicitAvailable"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "description": "Format id, e.g. xlsx.",
+              "type": "string"
+            },
+            "extensions": {
+              "description": "File extensions of the format.",
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "aliases": {
+              "description": "Other names the format id accepts.",
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "uses": {
+              "description": "What the product does with the format, such as load, convert or render.",
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "operations": {
+              "description": "Generic commands the format takes part in.",
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "declaredOwnership": {
+              "description": "Whether the product claims files of the format by default or only when it is named.",
+              "type": "string",
+              "enum": [
+                "explicit",
+                "default"
+              ]
+            },
+            "finalOwner": {
+              "description": "Product that owns the format's files after distribution overrides; omitted when none does.",
+              "type": "string"
+            },
+            "genericAvailable": {
+              "description": "Whether generic commands route the format to this product.",
+              "type": "boolean"
+            },
+            "explicitAvailable": {
+              "description": "Whether the product's own commands accept the format.",
+              "type": "boolean"
+            },
+            "recognizerStrategy": {
+              "description": "How the format's content is recognized, when it is.",
+              "type": "string"
+            },
+            "maxProbeBytes": {
+              "description": "Most bytes the recognizer reads, when it reads any.",
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        },
+        "productOperationDescriptor": {
+          "description": "One command that applies a bounded operation document, and the operations it accepts. Every such command is atomic unless --best-effort is given and supports --dry-run.",
+          "type": "object",
+          "required": [
+            "command",
+            "inputSchema",
+            "operationSchema",
+            "contractFingerprint",
+            "maximumOperationCount",
+            "ops"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "command": {
+              "description": "Product-relative command path, such as edit.",
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9_-]*( [a-z][a-z0-9_-]*)*$"
+            },
+            "inputSchema": {
+              "description": "Product-owned schema id printable through schema <id>.",
+              "type": "string",
+              "pattern": "^v2/[a-z][a-z0-9_-]*/[a-z][a-z0-9_/-]*$"
+            },
+            "operationSchema": {
+              "description": "The command that prints one operation's schema, with <op> standing for its name.",
+              "type": "string",
+              "pattern": " schema v2/[a-z][a-z0-9_-]*/[a-z][a-z0-9_/-]* --operation <op>$"
+            },
+            "contractFingerprint": {
+              "description": "sha256: and the lowercase hex SHA-256 of the served input schema (UTF-8, \\n line endings); it changes whenever the published schema text changes, descriptions included. It is computed once, when first read.",
+              "type": "string",
+              "pattern": "^sha256:[0-9a-f]{64}$"
+            },
+            "maximumOperationCount": {
+              "description": "Largest accepted number of operations in one document.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "ops": {
+              "description": "Operation names in published order.",
+              "type": "array",
+              "uniqueItems": true,
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_-]*$"
+              }
+            }
+          }
+        },
+        "productPreviewCapabilities": {
+          "description": "Live-preview capabilities of one product.",
+          "type": "object",
+          "required": [
+            "defaultView",
+            "views",
+            "background"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "defaultView": {
+              "description": "View selected when the caller requests automatic preview routing.",
+              "type": "string"
+            },
+            "views": {
+              "description": "Stable view identifiers accepted by this product.",
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "background": {
+              "description": "Whether the product can run as a discoverable background preview.",
+              "type": "boolean"
+            }
+          }
+        },
+        "productReviewCapabilities": {
+          "description": "Static review evidence capabilities of one product.",
+          "type": "object",
+          "required": [
+            "defaultView",
+            "views",
+            "visualInspectionRequired",
+            "checks"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "defaultView": {
+              "description": "View a review renders when the caller names none.",
+              "type": "string"
+            },
+            "views": {
+              "description": "Stable view identifiers a review accepts.",
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "visualInspectionRequired": {
+              "description": "Whether the rendered evidence must be looked at, because the checks alone cannot judge it.",
+              "type": "boolean"
+            },
+            "checks": {
+              "description": "Every check a review can report, ordered by code; review --code filters by them.",
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/reviewCheck"
+              }
+            }
+          }
+        },
+        "resolvedRouteCapabilities": {
+          "description": "One final generic route.",
+          "type": "object",
+          "required": [
+            "extension",
+            "product",
+            "operations",
+            "requiresContentProbe",
+            "recognizerStrategy",
+            "maxProbeBytes"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "extension": {
+              "description": "File extension the route matches, e.g. .xlsx.",
+              "type": "string"
+            },
+            "product": {
+              "description": "Product that owns files with this extension.",
+              "type": "string"
+            },
+            "operations": {
+              "description": "Generic commands that route such files to the product.",
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "requiresContentProbe": {
+              "description": "Whether the file's content is read to confirm its format before routing.",
+              "type": "boolean"
+            },
+            "recognizerStrategy": {
+              "description": "How the content is recognized.",
+              "type": "string"
+            },
+            "maxProbeBytes": {
+              "description": "Most bytes the recognizer reads.",
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        },
+        "resourceBudgetCapabilities": {
+          "description": "One discoverable default and hard maximum for a resource.",
+          "type": "object",
+          "required": [
+            "kind",
+            "default",
+            "maximum",
+            "unit",
+            "enforcementStage"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "description": "What the budget limits, such as input-bytes.",
+              "type": "string",
+              "minLength": 1
+            },
+            "default": {
+              "description": "The limit applied when nothing overrides it.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "maximum": {
+              "description": "The hard safety maximum no override may exceed.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "unit": {
+              "description": "The unit of default and maximum, such as bytes.",
+              "type": "string",
+              "minLength": 1
+            },
+            "option": {
+              "description": "The command-line option that overrides the budget, when there is one.",
+              "type": "string"
+            },
+            "environmentVariable": {
+              "description": "The environment variable that overrides the budget, when there is one.",
+              "type": "string"
+            },
+            "enforcementStage": {
+              "description": "When the budget is enforced, such as before or while the input is read.",
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "reviewCheck": {
+          "description": "One deterministic review check, declared once by its owner: the stable code a caller can filter by (review --code), the severity every finding of the check carries, and what it detects. Findings are built only from their check, so a code's severity and meaning cannot drift between call sites. Codes read <OWNER>_<OBJECT>_<CONDITION>, for example WORDS_PAGE_BLANK.",
+          "type": "object",
+          "required": [
+            "code",
+            "severity",
+            "summary"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "code": {
+              "description": "The stable code findings of this check carry.",
+              "type": "string",
+              "pattern": "^[A-Z][A-Z0-9_]*$"
+            },
+            "severity": {
+              "description": "The severity findings of this check carry.",
+              "type": "string",
+              "enum": [
+                "info",
+                "warning",
+                "error"
+              ]
+            },
+            "summary": {
+              "description": "What the check detects.",
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "routingCapabilities": {
+          "description": "Resolved generic-routing contract for this distribution.",
+          "type": "object",
+          "required": [
+            "totalProbeMilliseconds",
+            "totalProbeBytes",
+            "maxConcurrency",
+            "indeterminatePolicy",
+            "routes"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "defaultProduct": {
+              "description": "Explicit default product; omitted when callers must choose.",
+              "type": "string"
+            },
+            "defaultProductSource": {
+              "description": "Where the default came from; omitted when none is declared.",
+              "type": "string"
+            },
+            "totalProbeMilliseconds": {
+              "description": "Absolute shared recognizer budget in milliseconds.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "totalProbeBytes": {
+              "description": "Maximum bytes read once and shared by all recognizers.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "maxConcurrency": {
+              "description": "Maximum in-process recognizer concurrency.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "indeterminatePolicy": {
+              "description": "Behavior when content cannot be proven.",
+              "type": "string"
+            },
+            "routes": {
+              "description": "Final extension/operation ownership after distribution overrides.",
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/resolvedRouteCapabilities"
+              }
+            }
+          }
+        }
+      }
+    },
+    "v2/common/capabilities-summary": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "$id": "https://schemas.aspose.com/aspose-cli/v2/common/capabilities-summary.schema.json",
+      "description": "Result of aspose-cli capabilities --summary: the short first look at what this build can do, projected from the capabilities document. Each product lists its commands with their descriptions, its formats and its edit operation names; capabilities <product> <command> gives the full detail of one command.",
+      "type": "object",
+      "required": [
+        "schema",
+        "schemaVersion",
+        "cliVersion",
+        "products"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "schema": {
+          "description": "URI of the JSON schema this result conforms to.",
+          "const": "https://schemas.aspose.com/aspose-cli/v2/common/capabilities-summary.schema.json"
+        },
+        "schemaVersion": {
+          "description": "Version of this result contract.",
+          "const": 2
+        },
+        "cliVersion": {
+          "description": "CLI version, the same value as capabilities cliVersion.",
+          "type": "string",
+          "minLength": 1
+        },
+        "products": {
+          "description": "One entry per selected product, in display order.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/productCapabilitiesSummary"
+          }
+        },
+        "warnings": {
+          "description": "Warnings the agent is expected to act on (for example EVAL_MODE: tell the user about the evaluation watermark). Omitted when empty.",
+          "type": "array",
+          "items": {
+            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
+          }
+        }
+      },
+      "$defs": {
+        "commandCapabilitiesSummary": {
+          "description": "One product command and what it does.",
+          "type": "object",
+          "required": [
+            "command"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "command": {
+              "description": "Product-relative command path, e.g. query range.",
+              "type": "string",
+              "minLength": 1
+            },
+            "description": {
+              "description": "The command's one-line description.",
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "operationCapabilitiesSummary": {
+          "description": "The operation names one operation-document command accepts.",
+          "type": "object",
+          "required": [
+            "command",
+            "ops"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "command": {
+              "description": "Product-relative command path, e.g. edit.",
+              "type": "string",
+              "minLength": 1
+            },
+            "ops": {
+              "description": "Operation names in published order.",
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        "productCapabilitiesSummary": {
+          "description": "What one product can do, without option and schema detail.",
+          "type": "object",
+          "required": [
+            "id",
+            "name",
+            "loadFormats",
+            "convertFormats",
+            "renderFormats",
+            "commands",
+            "operations"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "description": "Product id as used on the command line, e.g. cells.",
+              "type": "string",
+              "minLength": 1
+            },
+            "name": {
+              "description": "Human-readable product name.",
+              "type": "string",
+              "minLength": 1
+            },
+            "description": {
+              "description": "What the product's command group does.",
+              "type": "string",
+              "minLength": 1
+            },
+            "engine": {
+              "description": "Default engine id compiled into this product.",
+              "type": "string",
+              "minLength": 1
+            },
+            "engineVersion": {
+              "description": "Version of that engine, as capabilities enginePins reports it.",
+              "type": "string",
+              "minLength": 1
+            },
+            "loadFormats": {
+              "description": "Format ids accepted as input.",
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "convertFormats": {
+              "description": "Format ids accepted by convert --to.",
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "renderFormats": {
+              "description": "Format ids accepted by render --to.",
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "commands": {
+              "description": "Visible product commands in path order.",
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/commandCapabilitiesSummary"
+              }
+            },
+            "operations": {
+              "description": "Operation names each operation-document command accepts.",
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/operationCapabilitiesSummary"
+              }
+            }
+          }
+        }
+      }
+    },
+    "v2/common/diagnostic-details": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "$id": "https://schemas.aspose.com/aspose-cli/v2/common/diagnostic-details.schema.json",
+      "description": "Base schema for product-owned diagnostic details: an object whose members a product may narrow without changing the common envelope.",
+      "type": "object"
+    },
+    "v2/common/doctor": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "$id": "https://schemas.aspose.com/aspose-cli/v2/common/doctor.schema.json",
+      "description": "Result of aspose-cli doctor: environment self-diagnosis so an agent (or a user) can tell whether the CLI is ready — licensed, on a supported runtime, able to write output — before a task fails midway.",
+      "type": "object",
+      "required": [
+        "schema",
+        "schemaVersion",
+        "ok",
+        "checks"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "schema": {
+          "description": "URI of the JSON schema this result conforms to.",
+          "const": "https://schemas.aspose.com/aspose-cli/v2/common/doctor.schema.json"
+        },
+        "schemaVersion": {
+          "description": "Version of this result contract.",
+          "const": 2
+        },
+        "ok": {
+          "description": "true when no check failed; warnings still allow readiness.",
+          "type": "boolean"
+        },
+        "checks": {
+          "description": "The diagnostic checks, in run order.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/doctorCheck"
+          }
+        },
+        "products": {
+          "description": "License readiness for each compiled product.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/doctorProductStatus"
+          }
+        },
+        "warnings": {
+          "description": "Warnings the agent is expected to act on (for example EVAL_MODE: tell the user about the evaluation watermark). Omitted when empty.",
+          "type": "array",
+          "items": {
+            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
+          }
+        }
+      },
+      "$defs": {
+        "doctorCheck": {
+          "description": "Outcome of one diagnostic check.",
+          "type": "object",
+          "required": [
+            "name",
+            "status",
+            "detail"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "description": "Short stable identifier, e.g. license or runtime.",
+              "type": "string"
+            },
+            "status": {
+              "description": "Whether the check passed (ok), found a non-fatal concern (warn) or a blocking problem (fail).",
+              "type": "string",
+              "enum": [
+                "ok",
+                "warn",
+                "fail"
+              ]
+            },
+            "detail": {
+              "description": "What was found.",
+              "type": "string"
+            },
+            "hint": {
+              "description": "How to improve a warn/fail result; omitted when ok.",
+              "type": "string"
+            }
+          }
+        },
+        "doctorProductStatus": {
+          "description": "Readiness of one compiled-in product.",
+          "type": "object",
+          "required": [
+            "product",
+            "licenseMode",
+            "engine"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "product": {
+              "description": "Product id, e.g. cells.",
+              "type": "string"
+            },
+            "licenseMode": {
+              "description": "The license mode the product runs under.",
+              "type": "string",
+              "enum": [
+                "evaluation",
+                "licensed",
+                "invalid",
+                "not-applicable"
+              ]
+            },
+            "engine": {
+              "description": "Engine id the product runs.",
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "v2/common/error": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "$id": "https://schemas.aspose.com/aspose-cli/v2/common/error.schema.json",
+      "description": "The single error shape of the CLI, written to stderr when a command fails. Exit codes are coarse and frozen; code carries the precise, machine-readable meaning.",
+      "type": "object",
+      "required": [
+        "schema",
+        "schemaVersion",
+        "error"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "schema": {
+          "description": "URI of the JSON schema this error conforms to.",
+          "const": "https://schemas.aspose.com/aspose-cli/v2/common/error.schema.json"
+        },
+        "schemaVersion": {
+          "description": "Version of the error contract.",
+          "const": 2
+        },
+        "error": {
+          "description": "The error details.",
+          "$ref": "#/$defs/errorPayload"
+        }
+      },
+      "$defs": {
+        "errorPayload": {
+          "description": "Error details designed for agent self-correction: the message states the fact, details carries structured context (often including the valid alternatives), and hint tells the caller the most likely fix.",
+          "type": "object",
+          "required": [
+            "code",
+            "message"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "code": {
+              "description": "Stable SCREAMING_SNAKE_CASE error code, e.g. SHEET_NOT_FOUND.",
+              "type": "string",
+              "pattern": "^[A-Z][A-Z0-9_]*$"
+            },
+            "message": {
+              "description": "Human-readable description of what went wrong.",
+              "type": "string"
+            },
+            "details": {
+              "description": "Structured context, e.g. {\"requested\": \"Salez\", \"available\": [\"Sales\"]}.",
+              "type": "object"
+            },
+            "hint": {
+              "description": "Recommended next action for the caller.",
+              "type": "string"
+            },
+            "docs": {
+              "description": "Topic name for aspose-cli docs <topic> with background details.",
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "v2/common/file-fingerprint": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "$id": "https://schemas.aspose.com/aspose-cli/v2/common/file-fingerprint.schema.json",
+      "description": "Content identity of one admitted input or published output file.",
+      "type": "object",
+      "required": [
+        "sha256"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "sha256": {
+          "description": "Lower-case SHA-256 digest of the complete file.",
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      }
+    },
+    "v2/common/font-check": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "$id": "https://schemas.aspose.com/aspose-cli/v2/common/font-check.schema.json",
+      "description": "Result of aspose-cli fonts check <file>: whether the fonts a document uses are available on this machine and, if not, what they will be substituted with. This is the rendering-fidelity diagnostic that a product listing of the used fonts cannot give.",
+      "type": "object",
+      "required": [
+        "schema",
+        "schemaVersion",
+        "source",
+        "allAvailable",
+        "fonts"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "schema": {
+          "description": "URI of the JSON schema this result conforms to.",
+          "const": "https://schemas.aspose.com/aspose-cli/v2/common/font-check.schema.json"
+        },
+        "schemaVersion": {
+          "description": "Version of this result contract.",
+          "const": 2
+        },
+        "source": {
+          "description": "The document that was checked.",
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/source.schema.json"
+        },
+        "allAvailable": {
+          "description": "true when every used font is available — no substitution.",
+          "type": "boolean"
+        },
+        "fonts": {
+          "description": "Each font the document uses, with its availability.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/fontAvailability"
+          }
+        },
+        "license": {
+          "description": "License mode the engine ran under.",
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/license.schema.json"
+        },
+        "warnings": {
+          "description": "Warnings the agent is expected to act on (for example EVAL_MODE: tell the user about the evaluation watermark). Omitted when empty.",
+          "type": "array",
+          "items": {
+            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
+          }
+        }
+      },
+      "$defs": {
+        "fontAvailability": {
+          "description": "Availability of one font a document uses.",
+          "type": "object",
+          "required": [
+            "name",
+            "available"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "description": "The font family name as stored in the document.",
+              "type": "string"
+            },
+            "available": {
+              "description": "Whether the engine can render with this exact font.",
+              "type": "boolean"
+            },
+            "substitutedBy": {
+              "description": "The font used instead; omitted when the font is available.",
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "v2/common/font-list": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "$id": "https://schemas.aspose.com/aspose-cli/v2/common/font-list.schema.json",
+      "description": "Result of aspose-cli fonts list: the engine's font environment — the default fallback font and the sources it scans. Answers \"where does this build look for fonts, and what does it fall back to\" so a \"renders wrong on the server\" problem (P-5) can be traced to font configuration.",
+      "type": "object",
+      "required": [
+        "schema",
+        "schemaVersion",
+        "sources"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "schema": {
+          "description": "URI of the JSON schema this result conforms to.",
+          "const": "https://schemas.aspose.com/aspose-cli/v2/common/font-list.schema.json"
+        },
+        "schemaVersion": {
+          "description": "Version of this result contract.",
+          "const": 2
+        },
+        "defaultFont": {
+          "description": "The font substituted for any unavailable font when rendering; omitted when the engine exposes no configured default (it then uses an internal fallback).",
+          "type": "string"
+        },
+        "sources": {
+          "description": "The font sources the engine scans, in configured order. Empty means the engine uses its platform defaults (typically the OS font folders).",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/fontSource"
+          }
+        },
+        "license": {
+          "description": "License mode the engine ran under.",
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/license.schema.json"
+        },
+        "warnings": {
+          "description": "Warnings the agent is expected to act on (for example EVAL_MODE: tell the user about the evaluation watermark). Omitted when empty.",
+          "type": "array",
+          "items": {
+            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
+          }
+        }
+      },
+      "$defs": {
+        "fontSource": {
+          "description": "One place the engine looks for fonts.",
+          "type": "object",
+          "required": [
+            "type"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "description": "Source kind: folder, file, memory, system or other.",
+              "type": "string",
+              "enum": [
+                "folder",
+                "file",
+                "memory",
+                "system",
+                "other"
+              ]
+            },
+            "location": {
+              "description": "Filesystem location; omitted for in-memory sources.",
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "v2/common/license": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "$id": "https://schemas.aspose.com/aspose-cli/v2/common/license.schema.json",
+      "description": "License mode attached to results produced by engine operations.",
+      "type": "object",
+      "required": [
+        "mode"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "mode": {
+          "description": "The license mode: licensed, evaluation or not-applicable.",
+          "type": "string",
+          "enum": [
+            "evaluation",
+            "licensed",
+            "not-applicable"
+          ]
+        }
+      }
+    },
+    "v2/common/license-status": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "$id": "https://schemas.aspose.com/aspose-cli/v2/common/license-status.schema.json",
+      "description": "Result of aspose-cli license status: the effective, independently verified license status of every selected product; there is no first-product summary.",
+      "type": "object",
+      "required": [
+        "schema",
+        "schemaVersion",
+        "applicable",
+        "products",
+        "sharedUserLicenseInstalled"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "schema": {
+          "description": "URI of the JSON schema this result conforms to.",
+          "const": "https://schemas.aspose.com/aspose-cli/v2/common/license-status.schema.json"
+        },
+        "schemaVersion": {
+          "description": "Version of this result contract.",
+          "const": 2
+        },
+        "applicable": {
+          "description": "Whether a license changes what any selected product produces.",
+          "type": "boolean"
+        },
+        "products": {
+          "description": "The license status of each selected product.",
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/productLicenseStatus"
+          }
+        },
+        "sharedUserLicenseInstalled": {
+          "description": "Whether the shared user license, which every product reads, is installed.",
+          "type": "boolean"
+        },
+        "identity": {
+          "description": "Opaque identity of this validated snapshot; absent when any selected source is invalid.",
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "warnings": {
+          "description": "Warnings the agent is expected to act on (for example EVAL_MODE: tell the user about the evaluation watermark). Omitted when empty.",
+          "type": "array",
+          "items": {
+            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
+          }
+        }
+      },
+      "$defs": {
+        "productLicenseStatus": {
+          "description": "Effective license configuration and validation for one product.",
+          "type": "object",
+          "required": [
+            "product",
+            "name",
+            "applicable",
+            "mode",
+            "userLicenseInstalled"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "product": {
+              "description": "Product id, e.g. cells.",
+              "type": "string",
+              "minLength": 1
+            },
+            "name": {
+              "description": "Human-readable product name.",
+              "type": "string",
+              "minLength": 1
+            },
+            "applicable": {
+              "description": "Whether a license changes what the product produces.",
+              "type": "boolean"
+            },
+            "mode": {
+              "description": "The license mode the product runs under.",
+              "type": "string",
+              "enum": [
+                "evaluation",
+                "licensed",
+                "invalid",
+                "not-applicable"
+              ]
+            },
+            "source": {
+              "description": "Where the license comes from, such as an environment variable or the user license; omitted when there is none.",
+              "type": "string",
+              "minLength": 1
+            },
+            "path": {
+              "description": "The license file's path, when the license is a file.",
+              "type": "string",
+              "minLength": 1
+            },
+            "problem": {
+              "description": "Why the configured license was rejected; omitted when it is valid.",
+              "type": "string",
+              "minLength": 1
+            },
+            "hint": {
+              "description": "How to fix the license; omitted when nothing needs fixing.",
+              "type": "string",
+              "minLength": 1
+            },
+            "userLicenseInstalled": {
+              "description": "Whether a user license for this product is installed.",
+              "type": "boolean"
+            }
+          }
+        }
+      }
+    },
+    "v2/common/not-found-details": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "$id": "https://schemas.aspose.com/aspose-cli/v2/common/not-found-details.schema.json",
+      "description": "Details of an error whose code names a target the document does not contain. They state what was requested and what exists, so the caller can correct the request without another inspection. Operation errors add the operation's index and op.",
+      "type": "object",
+      "required": [
+        "subject",
+        "requested",
+        "availableCount"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "subject": {
+          "description": "What was looked up, e.g. sheet, slide, bookmark or page.",
+          "type": "string"
+        },
+        "requested": {
+          "description": "The name, number or range as the caller wrote it.",
+          "type": "string"
+        },
+        "availableCount": {
+          "description": "How many targets of this kind the document contains.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "available": {
+          "description": "The names that exist, in document order; present for named targets and truncated to 50 when availableCount is larger.",
+          "type": "array",
+          "maxItems": 50,
+          "items": {
+            "type": "string"
+          }
+        },
+        "suggestions": {
+          "description": "The existing names closest to the request, best first; present only when some name is close.",
+          "type": "array",
+          "maxItems": 3,
+          "items": {
+            "type": "string"
+          }
+        },
+        "index": {
+          "description": "The zero-based position of the failing operation in its batch; present only for an operation error.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "op": {
+          "description": "The failing operation's op name; present only for an operation error that states one.",
+          "type": "string"
+        }
+      }
+    },
+    "v2/common/operation-outcome": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "$id": "https://schemas.aspose.com/aspose-cli/v2/common/operation-outcome.schema.json",
+      "description": "The stable wire result for one bounded edit operation.",
+      "type": "object",
+      "required": [
+        "id",
+        "index",
+        "op",
+        "status",
+        "itemsAffected",
+        "targets"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "description": "Stable correlation id from the input batch.",
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9._-]{0,63}$"
+        },
+        "index": {
+          "description": "Zero-based position in the input batch.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "op": {
+          "description": "Product-owned operation id.",
+          "type": "string"
+        },
+        "status": {
+          "description": "Whether the operation applied (ok) or failed.",
+          "type": "string",
+          "enum": [
+            "ok",
+            "failed"
+          ]
+        },
+        "itemsAffected": {
+          "description": "Number of product-owned items changed by the operation.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "targets": {
+          "description": "Product-owned stable addresses; failed outcomes identify attempted targets.",
+          "type": "array",
+          "maxItems": 100,
+          "items": {
+            "type": "string"
+          }
+        },
+        "error": {
+          "description": "Failure details; present only when status is failed.",
+          "$ref": "#/$defs/opError"
+        }
+      },
+      "$defs": {
+        "opError": {
+          "description": "An operation failure reported by a best-effort batch.",
+          "type": "object",
+          "required": [
+            "code",
+            "message",
+            "hint"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "code": {
+              "description": "Stable machine-readable error code.",
+              "type": "string"
+            },
+            "message": {
+              "description": "Human-readable failure description.",
+              "type": "string"
+            },
+            "hint": {
+              "description": "Actionable recovery guidance for the failed operation.",
+              "type": "string"
+            },
+            "details": {
+              "description": "Structured context from the error, such as the names a not-found target could have been; the same object a failing batch would report in its error envelope.",
+              "type": "object"
+            }
+          }
+        }
+      }
+    },
+    "v2/common/output": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "$id": "https://schemas.aspose.com/aspose-cli/v2/common/output.schema.json",
+      "description": "Describes a file an operation produced.",
+      "type": "object",
+      "required": [
+        "path",
+        "sizeBytes"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "description": "Absolute path of the produced file.",
+          "type": "string"
+        },
+        "format": {
+          "description": "Format id of the produced file, e.g. pdf; omitted for a companion file the engine writes beside it, such as a script of an HTML5 deck.",
+          "type": "string"
+        },
+        "sizeBytes": {
+          "description": "File size in bytes.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "fingerprint": {
+          "description": "SHA-256 identity when the owning workflow captured one.",
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/file-fingerprint.schema.json"
+        },
+        "encrypted": {
+          "description": "true when the produced file is encrypted and opens only with its password, false when it is not; omitted when the owning workflow does not report it.",
+          "type": "boolean"
+        }
+      }
+    },
+    "v2/common/preview-session": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "$id": "https://schemas.aspose.com/aspose-cli/v2/common/preview-session.schema.json",
+      "description": "Result of starting or reusing a product preview session.",
+      "type": "object",
+      "required": [
+        "schema",
+        "schemaVersion",
+        "id",
+        "product",
+        "url",
+        "pid",
+        "file",
+        "view",
+        "reused"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "schema": {
+          "description": "URI of the JSON schema this result conforms to.",
+          "const": "https://schemas.aspose.com/aspose-cli/v2/common/preview-session.schema.json"
+        },
+        "schemaVersion": {
+          "description": "Version of this result contract.",
+          "const": 2
+        },
+        "id": {
+          "description": "Opaque session identifier used by status and stop.",
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$"
+        },
+        "product": {
+          "description": "Product that owns the preview.",
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9-]*$"
+        },
+        "url": {
+          "description": "Loopback browser URL of the document.",
+          "type": "string",
+          "pattern": "^http://127\\.0\\.0\\.1:[0-9]+/d/[0-9a-f]{32}/$"
+        },
+        "pid": {
+          "description": "Background process identifier.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "file": {
+          "description": "Absolute source file path.",
+          "type": "string"
+        },
+        "view": {
+          "description": "Effective product preview view.",
+          "type": "string",
+          "minLength": 1
+        },
+        "reused": {
+          "description": "true when an equivalent live session was reused.",
+          "type": "boolean"
+        },
+        "license": {
+          "description": "License mode the engine ran under.",
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/license.schema.json"
+        },
+        "warnings": {
+          "description": "Warnings the agent is expected to act on (for example EVAL_MODE: tell the user about the evaluation watermark). Omitted when empty.",
+          "type": "array",
+          "items": {
+            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
+          }
+        }
+      }
+    },
+    "v2/common/preview-status": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "$id": "https://schemas.aspose.com/aspose-cli/v2/common/preview-status.schema.json",
+      "description": "Result of aspose-cli preview status, which lists the live product preview sessions, or of preview stop, which also names the sessions it stopped.",
+      "type": "object",
+      "required": [
+        "schema",
+        "schemaVersion",
+        "sessions"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "schema": {
+          "description": "URI of the JSON schema this result conforms to.",
+          "const": "https://schemas.aspose.com/aspose-cli/v2/common/preview-status.schema.json"
+        },
+        "schemaVersion": {
+          "description": "Version of this result contract.",
+          "const": 2
+        },
+        "stopped": {
+          "description": "Session identifiers that accepted an authenticated stop request; present only in the result of preview stop.",
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{32}$"
+          }
+        },
+        "sessions": {
+          "description": "Live sessions owned by the current user; after preview stop, the sessions still live.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/productPreviewSessionInfo"
+          }
+        },
+        "license": {
+          "description": "License mode the engine ran under.",
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/license.schema.json"
+        },
+        "warnings": {
+          "description": "Warnings the agent is expected to act on (for example EVAL_MODE: tell the user about the evaluation watermark). Omitted when empty.",
+          "type": "array",
+          "items": {
+            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
+          }
+        }
+      },
+      "$defs": {
+        "productPreviewSessionInfo": {
+          "description": "Discoverable state of one current-user product preview.",
+          "type": "object",
+          "required": [
+            "id",
+            "product",
+            "url",
+            "pid",
+            "file",
+            "view"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "description": "Opaque session identifier.",
+              "type": "string",
+              "pattern": "^[0-9a-f]{32}$"
+            },
+            "product": {
+              "description": "Product that owns the preview.",
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9-]*$"
+            },
+            "url": {
+              "description": "Loopback browser URL of the document.",
+              "type": "string",
+              "pattern": "^http://127\\.0\\.0\\.1:[0-9]+/d/[0-9a-f]{32}/$"
+            },
+            "pid": {
+              "description": "Background process identifier.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "file": {
+              "description": "Absolute source file path.",
+              "type": "string"
+            },
+            "view": {
+              "description": "Effective product preview view.",
+              "type": "string",
+              "minLength": 1
+            },
+            "revision": {
+              "description": "Current published document revision, when the live process reported it.",
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        }
+      }
+    },
+    "v2/common/result-window": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "$id": "https://schemas.aspose.com/aspose-cli/v2/common/result-window.schema.json",
+      "description": "How much of a larger collection a bounded read or search returned, and the ready-to-run command that continues it. Every windowed result carries it as window, written after the payload and before license and warnings, so an agent always finds it in the same place.",
+      "type": "object",
+      "required": [
+        "unit",
+        "returned",
+        "truncated"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "unit": {
+          "description": "The unit returned and total count, e.g. page, block or hit.",
+          "type": "string"
+        },
+        "returned": {
+          "description": "How many units this result returned.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "total": {
+          "description": "How many units the selection holds; omitted when the read stopped before counting them all.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "truncated": {
+          "description": "Whether units remain after the returned ones, or the last one was cut short.",
+          "type": "boolean"
+        },
+        "next": {
+          "description": "The command that returns the next window; omitted when nothing remains.",
+          "type": "string"
+        }
+      }
+    },
+    "v2/common/review": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "$id": "https://schemas.aspose.com/aspose-cli/v2/common/review.schema.json",
+      "description": "Result of aspose-cli review <file>: a portable, static evidence bundle, and the review.json manifest written into the new evidence directory.",
+      "type": "object",
+      "required": [
+        "schema",
+        "schemaVersion",
+        "product",
+        "input",
+        "outputDirectory",
+        "index",
+        "manifest",
+        "view",
+        "sourceFormat",
+        "sourceSizeBytes",
+        "sourceEncrypted",
+        "visualInspectionRequired",
+        "coverage",
+        "artifacts",
+        "findings"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "schema": {
+          "description": "URI of the JSON schema this result conforms to.",
+          "const": "https://schemas.aspose.com/aspose-cli/v2/common/review.schema.json"
+        },
+        "schemaVersion": {
+          "description": "Version of this result contract.",
+          "const": 2
+        },
+        "product": {
+          "description": "Product that reviewed the document.",
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9-]*$"
+        },
+        "input": {
+          "description": "Absolute path of the reviewed document.",
+          "type": "string"
+        },
+        "outputDirectory": {
+          "description": "Absolute path of the new evidence directory.",
+          "type": "string"
+        },
+        "index": {
+          "description": "Absolute path of the bundle's index.html, which shows the evidence to people.",
+          "type": "string"
+        },
+        "manifest": {
+          "description": "Absolute path of the bundle's review.json manifest.",
+          "type": "string"
+        },
+        "view": {
+          "description": "View the evidence was rendered in.",
+          "type": "string",
+          "minLength": 1
+        },
+        "sourceFormat": {
+          "description": "Detected format id of the reviewed document.",
+          "type": "string",
+          "minLength": 1
+        },
+        "sourceSizeBytes": {
+          "description": "Size of the reviewed document in bytes.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "sourceEncrypted": {
+          "description": "Whether the reviewed document is encrypted.",
+          "type": "boolean"
+        },
+        "visualInspectionRequired": {
+          "description": "Whether the rendered evidence must be looked at, because the findings alone cannot judge the document.",
+          "type": "boolean"
+        },
+        "coverage": {
+          "description": "How much of the document the evidence covers.",
+          "$ref": "#/$defs/reviewCoverage"
+        },
+        "artifacts": {
+          "description": "Every file of the bundle, in sequence order.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/reviewArtifact"
+          }
+        },
+        "findings": {
+          "description": "What the product's checks found, ordered by code.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/reviewFinding"
+          }
+        },
+        "filter": {
+          "description": "The --code filter applied to findings; omitted without one. Errors of checks outside the filter do not fail the review.",
+          "$ref": "#/$defs/reviewFilter"
+        },
+        "license": {
+          "description": "License mode the engine ran under.",
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/license.schema.json"
+        },
+        "warnings": {
+          "description": "Warnings the agent is expected to act on (for example EVAL_MODE: tell the user about the evaluation watermark). Omitted when empty.",
+          "type": "array",
+          "items": {
+            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
+          }
+        }
+      },
+      "$defs": {
+        "reviewArtifact": {
+          "description": "One safe relative path in a review evidence bundle.",
+          "type": "object",
+          "required": [
+            "sequence",
+            "path",
+            "role",
+            "mediaType"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "sequence": {
+              "description": "The artifact's position in the bundle.",
+              "type": "integer",
+              "minimum": 0
+            },
+            "path": {
+              "description": "Path relative to the evidence directory.",
+              "type": "string",
+              "pattern": "^(index\\.html|review\\.json|artifacts/.+)$"
+            },
+            "role": {
+              "description": "What the artifact is: the bundle's index page, its manifest, the view's entry manifest, or a rendered part that is evidence.",
+              "type": "string",
+              "enum": [
+                "index",
+                "manifest",
+                "evidence",
+                "entry"
+              ]
+            },
+            "mediaType": {
+              "description": "The artifact's media type, e.g. image/png.",
+              "type": "string",
+              "minLength": 1
+            },
+            "scope": {
+              "description": "The view the artifact belongs to; omitted for the bundle's own files.",
+              "type": "string",
+              "minLength": 1
+            },
+            "label": {
+              "description": "Label people see for the artifact.",
+              "type": "string",
+              "minLength": 1
+            },
+            "width": {
+              "description": "Image width in pixels; omitted when the artifact is not an image.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "height": {
+              "description": "Image height in pixels; omitted when the artifact is not an image.",
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        },
+        "reviewCoverage": {
+          "description": "Bounded coverage of the renderer-owned evidence inventory.",
+          "type": "object",
+          "required": [
+            "maxItemCount",
+            "discoveredItemCount",
+            "reportedItemCount",
+            "truncated",
+            "expectedItemCount",
+            "renderedItemCount",
+            "omittedItemCount",
+            "complete",
+            "metrics"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "maxItemCount": {
+              "description": "Most items the review reports.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "discoveredItemCount": {
+              "description": "Items the product found in the document.",
+              "type": "integer",
+              "minimum": 0
+            },
+            "reportedItemCount": {
+              "description": "Items the review reports, at most maxItemCount.",
+              "type": "integer",
+              "minimum": 0
+            },
+            "truncated": {
+              "description": "Whether items were left out to stay within maxItemCount.",
+              "type": "boolean"
+            },
+            "expectedItemCount": {
+              "description": "Parts the view was expected to render.",
+              "type": "integer",
+              "minimum": 0
+            },
+            "renderedItemCount": {
+              "description": "Parts the view rendered.",
+              "type": "integer",
+              "minimum": 0
+            },
+            "omittedItemCount": {
+              "description": "Parts the view left out.",
+              "type": "integer",
+              "minimum": 0
+            },
+            "complete": {
+              "description": "Whether the evidence covers the whole document; an incomplete review exits 8.",
+              "type": "boolean"
+            },
+            "metrics": {
+              "description": "Product-owned coverage measurements.",
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/reviewCoverageMetric"
+              }
+            }
+          }
+        },
+        "reviewCoverageMetric": {
+          "description": "One deterministic product-owned coverage measurement.",
+          "type": "object",
+          "required": [
+            "name",
+            "value"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "description": "What is measured, e.g. pages.",
+              "type": "string",
+              "pattern": "^[a-z][A-Za-z0-9.-]*$"
+            },
+            "value": {
+              "description": "The measured amount.",
+              "type": "integer",
+              "minimum": 0
+            },
+            "unit": {
+              "description": "The unit of the amount, when it has one.",
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "reviewFilter": {
+          "description": "The check codes a review reported, and how many findings of other checks it left out.",
+          "type": "object",
+          "required": [
+            "codes",
+            "omittedFindingCount"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "codes": {
+              "description": "The check codes review --code named.",
+              "type": "array",
+              "uniqueItems": true,
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "pattern": "^[A-Z][A-Z0-9_]*$"
+              }
+            },
+            "omittedFindingCount": {
+              "description": "How many findings of other checks the filter left out.",
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "reviewFinding": {
+          "description": "One product-owned structural or semantic review observation.",
+          "type": "object",
+          "required": [
+            "code",
+            "severity",
+            "message"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "code": {
+              "description": "The code of the check that found it.",
+              "type": "string",
+              "pattern": "^[A-Z][A-Z0-9_]*$"
+            },
+            "severity": {
+              "description": "The check's severity; error fails the review.",
+              "type": "string",
+              "enum": [
+                "info",
+                "warning",
+                "error"
+              ]
+            },
+            "message": {
+              "description": "What was found.",
+              "type": "string",
+              "minLength": 1
+            },
+            "location": {
+              "description": "Where, in words people read, for example page 3.",
+              "type": "string",
+              "minLength": 1
+            },
+            "hint": {
+              "description": "How to resolve it.",
+              "type": "string",
+              "minLength": 1
+            },
+            "evidence": {
+              "description": "Reported artifact paths that provide visual evidence for this finding.",
+              "type": "array",
+              "uniqueItems": true,
+              "minItems": 1,
+              "items": {
+                "type": "string",
+                "pattern": "^artifacts/.+"
+              }
+            }
+          }
+        }
+      }
+    },
+    "v2/common/schema-list": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "$id": "https://schemas.aspose.com/aspose-cli/v2/common/schema-list.schema.json",
+      "description": "Result of aspose-cli schema without a schema id.",
+      "type": "object",
+      "required": [
+        "schema",
+        "schemaVersion",
+        "schemas"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "schema": {
+          "description": "URI of the JSON schema this result conforms to.",
+          "const": "https://schemas.aspose.com/aspose-cli/v2/common/schema-list.schema.json"
+        },
+        "schemaVersion": {
+          "description": "Version of this result contract.",
+          "const": 2
+        },
+        "schemas": {
+          "description": "Canonical schema ids available in this compiled distribution.",
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "warnings": {
+          "description": "Warnings the agent is expected to act on (for example EVAL_MODE: tell the user about the evaluation watermark). Omitted when empty.",
+          "type": "array",
+          "items": {
+            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
+          }
+        }
+      }
+    },
+    "v2/common/skill-install": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "$id": "https://schemas.aspose.com/aspose-cli/v2/common/skill-install.schema.json",
+      "description": "Result of aspose-cli skill install: the agent skill bundled inside the binary was extracted to a target directory, ready for an agent framework to load.",
+      "type": "object",
+      "required": [
+        "schema",
+        "schemaVersion",
+        "skill",
+        "target",
+        "fileCount"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "schema": {
+          "description": "URI of the JSON schema this result conforms to.",
+          "const": "https://schemas.aspose.com/aspose-cli/v2/common/skill-install.schema.json"
+        },
+        "schemaVersion": {
+          "description": "Version of this result contract.",
+          "const": 2
+        },
+        "skill": {
+          "description": "The installed skill's name, e.g. aspose-cli-cells.",
+          "type": "string"
+        },
+        "target": {
+          "description": "Absolute directory the skill was written to.",
+          "type": "string"
+        },
+        "fileCount": {
+          "description": "Number of files written.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "warnings": {
+          "description": "Warnings the agent is expected to act on (for example EVAL_MODE: tell the user about the evaluation watermark). Omitted when empty.",
+          "type": "array",
+          "items": {
+            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
+          }
+        }
+      }
+    },
+    "v2/common/skill-list": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "$id": "https://schemas.aspose.com/aspose-cli/v2/common/skill-list.schema.json",
+      "description": "Result of aspose-cli skill list: skills bundled in this build.",
+      "type": "object",
+      "required": [
+        "schema",
+        "schemaVersion",
+        "skills"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "schema": {
+          "description": "URI of the JSON schema this result conforms to.",
+          "const": "https://schemas.aspose.com/aspose-cli/v2/common/skill-list.schema.json"
+        },
+        "schemaVersion": {
+          "description": "Version of this result contract.",
+          "const": 2
+        },
+        "skills": {
+          "description": "Bundled skill packages available for installation.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/skillPackageInfo"
+          }
+        },
+        "warnings": {
+          "description": "Warnings the agent is expected to act on (for example EVAL_MODE: tell the user about the evaluation watermark). Omitted when empty.",
+          "type": "array",
+          "items": {
+            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
+          }
+        }
+      },
+      "$defs": {
+        "skillPackageInfo": {
+          "description": "One bundled Agent Skill and the supported host integrations.",
+          "type": "object",
+          "required": [
+            "name",
+            "description",
+            "hosts"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "description": "Stable package name.",
+              "type": "string"
+            },
+            "description": {
+              "description": "Short human-readable purpose.",
+              "type": "string"
+            },
+            "hosts": {
+              "description": "Agent hosts with a known skills-directory convention.",
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "v2/common/source": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "$id": "https://schemas.aspose.com/aspose-cli/v2/common/source.schema.json",
+      "description": "Describes the input file an operation ran against.",
+      "type": "object",
+      "required": [
+        "path",
+        "format",
+        "sizeBytes"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "description": "Absolute path of the file.",
+          "type": "string"
+        },
+        "format": {
+          "description": "Detected format id, e.g. xlsx.",
+          "type": "string"
+        },
+        "sizeBytes": {
+          "description": "File size in bytes.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "fingerprint": {
+          "description": "SHA-256 identity when the owning workflow captured one.",
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/file-fingerprint.schema.json"
+        },
+        "encrypted": {
+          "description": "true when the file is encrypted and opens only with its password, false when it is not; omitted when the owning workflow does not report it.",
+          "type": "boolean"
+        }
+      }
+    },
+    "v2/common/update-result": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "$id": "https://schemas.aspose.com/aspose-cli/v2/common/update-result.schema.json",
+      "description": "Result of aspose-cli update: an update check, or an install handed to the installer.",
+      "type": "object",
+      "required": [
+        "schema",
+        "schemaVersion",
+        "status",
+        "currentVersion"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "schema": {
+          "description": "URI of the JSON schema this result conforms to.",
+          "const": "https://schemas.aspose.com/aspose-cli/v2/common/update-result.schema.json"
+        },
+        "schemaVersion": {
+          "description": "Version of this result contract.",
+          "const": 2
+        },
+        "status": {
+          "description": "up-to-date when no newer release exists, available when one does, or pending when its install was handed to the installer process.",
+          "type": "string",
+          "enum": [
+            "up-to-date",
+            "available",
+            "pending"
+          ]
+        },
+        "currentVersion": {
+          "description": "The running CLI's artifact version.",
+          "type": "string",
+          "minLength": 1
+        },
+        "availableVersion": {
+          "description": "The newer release's artifact version; omitted when the CLI is up to date.",
+          "type": "string",
+          "minLength": 1
+        },
+        "sourceRevision": {
+          "description": "The source revision the feed's release was built from.",
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$"
+        },
+        "feed": {
+          "description": "The release feed that was checked.",
+          "type": "string",
+          "minLength": 1
+        },
+        "archiveSha256": {
+          "description": "The lowercase hex SHA-256 of the release archive.",
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "processId": {
+          "description": "The installer process id; present only when the status is pending.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "warnings": {
+          "description": "Warnings the agent is expected to act on (for example EVAL_MODE: tell the user about the evaluation watermark). Omitted when empty.",
+          "type": "array",
+          "items": {
+            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
+          }
+        }
+      }
+    },
+    "v2/common/verification-issue": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "$id": "https://schemas.aspose.com/aspose-cli/v2/common/verification-issue.schema.json",
+      "description": "A problem found while verifying an edited output that had already been produced. Any issue makes the verification ok:false and the command exit 8.",
+      "type": "object",
+      "required": [
+        "code",
+        "message"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "description": "Stable SCREAMING_SNAKE_CASE identifier an agent can branch on.",
+          "type": "string",
+          "pattern": "^[A-Z][A-Z0-9_]*$"
+        },
+        "message": {
+          "description": "Human-readable explanation.",
+          "type": "string"
+        },
+        "location": {
+          "description": "Stable product-owned address of the affected item, when there is exactly one.",
+          "type": "string"
+        },
+        "hint": {
+          "description": "Recommended next action for the caller.",
+          "type": "string"
+        }
+      }
+    },
+    "v2/common/version": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "$id": "https://schemas.aspose.com/aspose-cli/v2/common/version.schema.json",
+      "description": "Result of aspose-cli --version --output json: the build identity alone, so a caller can read the version without the full capabilities document.",
+      "type": "object",
+      "required": [
+        "schema",
+        "schemaVersion",
+        "cliVersion",
+        "sourceRevision",
+        "buildDirty",
+        "enginePins"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "schema": {
+          "description": "URI of the JSON schema this result conforms to.",
+          "const": "https://schemas.aspose.com/aspose-cli/v2/common/version.schema.json"
+        },
+        "schemaVersion": {
+          "description": "Version of this result contract.",
+          "const": 2
+        },
+        "cliVersion": {
+          "description": "CLI version without build metadata, e.g. 1.0.0; the same value as capabilities cliVersion.",
+          "type": "string",
+          "minLength": 1
+        },
+        "artifactVersion": {
+          "description": "Full artifact version, as plain --version prints it, when it carries build metadata beyond cliVersion; omitted when the two are equal.",
+          "type": "string",
+          "minLength": 1
+        },
+        "sourceRevision": {
+          "description": "Root source revision embedded by the distribution build.",
+          "type": "string",
+          "minLength": 1
+        },
+        "buildDirty": {
+          "description": "Whether tracked source changes were present during the build.",
+          "type": "boolean"
+        },
+        "enginePins": {
+          "description": "Exact engine version compiled for each product, as capabilities reports them.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/enginePinCapabilities"
+          }
+        },
+        "warnings": {
+          "description": "Warnings the agent is expected to act on (for example EVAL_MODE: tell the user about the evaluation watermark). Omitted when empty.",
+          "type": "array",
+          "items": {
+            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
+          }
+        }
+      },
+      "$defs": {
+        "enginePinCapabilities": {
+          "description": "One compiled product engine identity used for release provenance.",
+          "type": "object",
+          "required": [
+            "product",
+            "engine",
+            "version"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "product": {
+              "description": "Product id, e.g. cells.",
+              "type": "string",
+              "minLength": 1
+            },
+            "engine": {
+              "description": "Engine package compiled for the product, e.g. Aspose.Cells.",
+              "type": "string",
+              "minLength": 1
+            },
+            "version": {
+              "description": "Exact engine package version.",
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      }
+    },
+    "v2/common/view": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "$id": "https://schemas.aspose.com/aspose-cli/v2/common/view.schema.json",
+      "description": "What one view render produced: the ordered parts of the document and the semantic layout of each part. Serialized as view.json beside the parts.",
+      "type": "object",
+      "required": [
+        "schema",
+        "schemaVersion",
+        "view",
+        "sourceFormat",
+        "sourceSizeBytes",
+        "sourceEncrypted",
+        "totalPartCount",
+        "parts"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "schema": {
+          "description": "Canonical schema of the manifest document.",
+          "const": "https://schemas.aspose.com/aspose-cli/v2/common/view.schema.json"
+        },
+        "schemaVersion": {
+          "description": "Schema version of the manifest document.",
+          "const": 2
+        },
+        "view": {
+          "description": "View id that produced the parts.",
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]{0,31}$"
+        },
+        "sourceFormat": {
+          "description": "Detected format id of the source document.",
+          "type": "string",
+          "minLength": 1
+        },
+        "sourceSizeBytes": {
+          "description": "Size of the source document in bytes.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "sourceEncrypted": {
+          "description": "Whether the source document is encrypted.",
+          "type": "boolean"
+        },
+        "totalPartCount": {
+          "description": "Parts the document contains, including parts beyond the render bound.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "parts": {
+          "description": "Rendered parts in document order.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/viewPart"
+          }
+        },
+        "warnings": {
+          "description": "Product warnings raised while rendering.",
+          "type": "array",
+          "items": {
+            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
+          }
+        }
+      },
+      "$defs": {
+        "viewBox": {
+          "description": "A rectangle in a part's CSS pixel space.",
+          "type": "object",
+          "required": [
+            "x",
+            "y",
+            "width",
+            "height"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "x": {
+              "description": "Left edge.",
+              "type": "number"
+            },
+            "y": {
+              "description": "Top edge.",
+              "type": "number"
+            },
+            "width": {
+              "description": "Width, never negative.",
+              "type": "number",
+              "minimum": 0
+            },
+            "height": {
+              "description": "Height, never negative.",
+              "type": "number",
+              "minimum": 0
+            }
+          }
+        },
+        "viewElement": {
+          "description": "One semantic element placed on a rendered part.",
+          "type": "object",
+          "required": [
+            "kind",
+            "box",
+            "digest"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "description": "Identity that survives edits where the document model provides one.",
+              "type": "string",
+              "minLength": 1
+            },
+            "kind": {
+              "description": "Element kind, for example paragraph, heading or shape.",
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9-]*$"
+            },
+            "box": {
+              "description": "Bounds in the part's CSS pixel space.",
+              "$ref": "#/$defs/viewBox"
+            },
+            "digest": {
+              "description": "Digest of the element's content and formatting, used to detect changes.",
+              "type": "string",
+              "minLength": 1
+            },
+            "label": {
+              "description": "Short text people can recognize the element by.",
+              "type": "string"
+            },
+            "level": {
+              "description": "Outline level of a heading.",
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        },
+        "viewPart": {
+          "description": "One page, slide or sheet of a rendered view.",
+          "type": "object",
+          "required": [
+            "id",
+            "label",
+            "file",
+            "kind",
+            "hidden"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "description": "Identity of the part that survives unrelated edits where the document model allows it, for example a slide id or a sheet name.",
+              "type": "string",
+              "minLength": 1
+            },
+            "label": {
+              "description": "Label people see, for example Page 3 or a slide title.",
+              "type": "string"
+            },
+            "file": {
+              "description": "Sink-relative path of the rendered file.",
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*(/[A-Za-z0-9][A-Za-z0-9._-]*)*$"
+            },
+            "kind": {
+              "description": "Kind of the rendered file: image for a raster page, slide or sheet, or html for a product-rendered document.",
+              "type": "string",
+              "enum": [
+                "image",
+                "html"
+              ]
+            },
+            "width": {
+              "description": "Layout width in CSS pixels; required for image parts.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "height": {
+              "description": "Layout height in CSS pixels; required for image parts.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "hidden": {
+              "description": "Whether the document hides the part, for example a hidden slide.",
+              "type": "boolean"
+            },
+            "digest": {
+              "description": "SHA-256 of the rendered file, assigned by the host after rendering so viewers can tell exactly which parts changed between two renders.",
+              "type": "string",
+              "pattern": "^sha256:[0-9a-f]{64}$"
+            },
+            "properties": {
+              "description": "Product-owned presentation facts, such as slide notes.",
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              }
+            },
+            "elements": {
+              "description": "Semantic elements laid out on the part, in reading order.",
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/viewElement"
+              }
+            }
+          }
+        }
+      }
+    },
+    "v2/common/warning": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "$id": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json",
+      "description": "A non-fatal condition the caller should act on. Warnings are part of the public contract, and hint tells an agent what to do next.",
+      "type": "object",
+      "required": [
+        "code",
+        "message"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "description": "Stable SCREAMING_SNAKE_CASE identifier, e.g. EVAL_MODE.",
+          "type": "string",
+          "pattern": "^[A-Z][A-Z0-9_]*$"
+        },
+        "message": {
+          "description": "Human-readable statement of the condition.",
+          "type": "string",
+          "minLength": 1
+        },
+        "hint": {
+          "description": "Recommended next action for the caller.",
+          "type": "string",
+          "minLength": 1
+        },
+        "docs": {
+          "description": "Topic name for aspose-cli docs <topic> with background details.",
+          "type": "string",
+          "minLength": 1
+        },
+        "location": {
+          "description": "Stable product-owned address of the affected item, when known.",
+          "type": "string",
+          "minLength": 1
+        },
+        "affectsCompleteness": {
+          "description": "Whether this condition leaves the output or its visual evidence incomplete, or different from the input; a review counts it against coverage and an edit's verification reports it as an issue.",
+          "type": "boolean"
+        }
+      }
+    }
+  },
+  "routing": {
+    "defaultProduct": "cells",
+    "defaultProductSource": "product-manifest",
+    "totalProbeMilliseconds": 500,
+    "totalProbeBytes": 65536,
+    "maxConcurrency": 4,
+    "indeterminatePolicy": "fail-closed-explicit-product-required"
+  },
+  "commands": [
+    {
+      "path": "aspose-cli",
+      "name": "aspose-cli",
+      "aliases": [],
+      "description": "Aspose CLI — high-fidelity file automation for people, scripts, and AI agents. Structured commands support --output json for stable, machine-readable results; explicit schema and docs documents remain raw.",
+      "hidden": false,
+      "options": [
+        {
+          "name": "--help",
+          "aliases": [
+            "-?",
+            "-h",
+            "/?",
+            "/h"
+          ],
+          "type": "Void",
+          "minimumArity": 0,
+          "maximumArity": 0,
+          "required": false,
+          "recursive": true,
+          "hidden": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "inputKind": "none",
+          "description": "Show help and usage information"
+        },
+        {
+          "name": "--license",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": true,
+          "hidden": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "inputKind": "none",
+          "description": "Path to an Aspose license file; overrides every other license source."
+        },
+        {
+          "name": "--license-mode",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": true,
+          "hidden": false,
+          "hasDefault": false,
+          "allowedValues": [
+            "auto",
+            "evaluation"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "inputKind": "none",
+          "description": "auto (default) resolves the license sources in order; evaluation reads none of them and runs this command in evaluation mode. Cannot be combined with --license."
+        },
+        {
+          "name": "--max-input-bytes",
+          "aliases": [],
+          "type": "long",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": true,
+          "hidden": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "inputKind": "none",
+          "description": "Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296)."
+        },
+        {
+          "name": "--output",
+          "aliases": [
+            "-f"
+          ],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": true,
+          "hidden": false,
+          "hasDefault": false,
+          "allowedValues": [
+            "compact",
+            "json",
+            "markdown",
+            "table"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "inputKind": "none",
+          "description": "Output format: json (contract envelopes), compact (the same JSON on one line), table (human text) or markdown. Default: table on a terminal, json when redirected."
+        },
+        {
+          "name": "--quiet",
+          "aliases": [
+            "-q"
+          ],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": true,
+          "hidden": false,
+          "hasDefault": true,
+          "default": "false",
+          "allowedValues": [
+            "False",
+            "True"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "inputKind": "none",
+          "description": "Suppress warnings and notices on stderr (errors still print)."
+        },
+        {
+          "name": "--timeout",
+          "aliases": [],
+          "type": "integer",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": true,
+          "hidden": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "inputKind": "none",
+          "description": "Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered."
+        },
+        {
+          "name": "--verbose",
+          "aliases": [
+            "-v"
+          ],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": true,
+          "hidden": false,
+          "hasDefault": true,
+          "default": "false",
+          "allowedValues": [
+            "False",
+            "True"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "inputKind": "none",
+          "description": "Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched."
+        },
+        {
+          "name": "--version",
+          "aliases": [],
+          "type": "Void",
+          "minimumArity": 0,
+          "maximumArity": 0,
+          "required": false,
+          "recursive": false,
+          "hidden": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "inputKind": "none",
+          "description": "Show version information"
+        },
+        {
+          "name": "--workdir",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": true,
+          "hidden": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "inputKind": "none",
+          "description": "Base directory for relative paths. Default: the current directory."
+        }
+      ],
+      "arguments": []
+    },
+    {
+      "path": "aspose-cli __render-worker",
+      "name": "__render-worker",
+      "aliases": [],
+      "description": "Serve view render requests for the local viewer service.",
+      "hidden": true,
+      "options": [],
+      "arguments": []
+    },
+    {
+      "path": "aspose-cli __viewer-service",
+      "name": "__viewer-service",
+      "aliases": [],
+      "description": "Host the local viewer service.",
+      "hidden": true,
+      "options": [
+        {
+          "name": "--port",
+          "aliases": [],
+          "type": "integer",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hidden": false,
+          "hasDefault": true,
+          "default": "0",
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "inputKind": "none",
+          "description": "Loopback port; 0 chooses a free port."
+        }
+      ],
+      "arguments": []
+    },
+    {
+      "path": "aspose-cli app",
+      "name": "app",
+      "aliases": [],
+      "description": "Open the local file workspace in a browser.",
+      "hidden": false,
+      "options": [
+        {
+          "name": "--foreground",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hidden": false,
+          "hasDefault": true,
+          "default": "false",
+          "allowedValues": [
+            "False",
+            "True"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "inputKind": "none",
+          "description": "Keep the App in this process for debugging, containers and tests."
+        },
+        {
+          "name": "--no-open",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hidden": false,
+          "hasDefault": true,
+          "default": "false",
+          "allowedValues": [
+            "False",
+            "True"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "inputKind": "none",
+          "description": "Start or activate the App without opening a browser."
+        },
+        {
+          "name": "--port",
+          "aliases": [],
+          "type": "integer",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hidden": false,
+          "hasDefault": true,
+          "default": "0",
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "inputKind": "none",
+          "description": "Loopback port; 0 chooses a free port."
+        },
+        {
+          "name": "--route",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hidden": true,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "inputKind": "none"
+        },
+        {
+          "name": "--welcome",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hidden": false,
+          "hasDefault": true,
+          "default": "false",
+          "allowedValues": [
+            "False",
+            "True"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "inputKind": "none",
+          "description": "Open the first-run workspace guide."
+        }
+      ],
+      "arguments": []
+    },
+    {
+      "path": "aspose-cli app open",
+      "name": "open",
+      "aliases": [],
+      "description": "Open a file in the local App.",
+      "hidden": false,
+      "options": [
+        {
+          "name": "--foreground",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hidden": false,
+          "hasDefault": true,
+          "default": "false",
+          "allowedValues": [
+            "False",
+            "True"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "inputKind": "none",
+          "description": "Keep the App in this process for debugging, containers and tests."
+        },
+        {
+          "name": "--no-open",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hidden": false,
+          "hasDefault": true,
+          "default": "false",
+          "allowedValues": [
+            "False",
+            "True"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "inputKind": "none",
+          "description": "Start or activate the App without opening a browser."
+        },
+        {
+          "name": "--port",
+          "aliases": [],
+          "type": "integer",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hidden": false,
+          "hasDefault": true,
+          "default": "0",
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "inputKind": "none",
+          "description": "Loopback port; 0 chooses a free port."
+        }
+      ],
+      "arguments": [
+        {
+          "name": "file",
+          "type": "string",
+          "inputKind": "file",
+          "valueSource": "command-line",
+          "secret": false,
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "description": "File to open in the local App."
+        }
+      ]
+    },
+    {
+      "path": "aspose-cli app status",
+      "name": "status",
+      "aliases": [],
+      "description": "Show whether the local App is running.",
+      "hidden": false,
+      "options": [],
+      "arguments": []
+    },
+    {
+      "path": "aspose-cli app stop",
+      "name": "stop",
+      "aliases": [],
+      "description": "Stop the local App, its documents and the viewer service.",
+      "hidden": false,
+      "options": [],
+      "arguments": []
+    },
+    {
+      "path": "aspose-cli capabilities",
+      "name": "capabilities",
+      "aliases": [],
+      "description": "Describe everything this build supports (products, verbs, formats), as data.",
+      "hidden": false,
+      "options": [
+        {
+          "name": "--summary",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hidden": false,
+          "hasDefault": true,
+          "default": "false",
+          "allowedValues": [
+            "False",
+            "True"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "inputKind": "none",
+          "description": "List only each product's commands, formats and edit operation names."
+        }
+      ],
+      "arguments": [
+        {
+          "name": "product",
+          "type": "string",
+          "inputKind": "none",
+          "valueSource": "command-line",
+          "secret": false,
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "description": "Optional product id to select."
+        },
+        {
+          "name": "command",
+          "type": "string",
+          "inputKind": "none",
+          "valueSource": "command-line",
+          "secret": false,
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "description": "Optional product-relative command path to select."
+        }
+      ]
+    },
+    {
+      "path": "aspose-cli docs",
+      "name": "docs",
+      "aliases": [],
+      "description": "Print an offline reference document bundled with this binary.",
+      "hidden": false,
+      "options": [],
+      "arguments": [
+        {
+          "name": "topic",
+          "type": "string",
+          "inputKind": "none",
+          "valueSource": "command-line",
+          "secret": false,
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "description": "Doc topic to print; omit to list the available topics."
+        }
+      ]
+    },
+    {
+      "path": "aspose-cli doctor",
+      "name": "doctor",
+      "aliases": [],
+      "description": "Diagnose the environment: runtime, resource budgets and output writability.",
+      "hidden": false,
+      "options": [],
+      "arguments": []
+    },
+    {
+      "path": "aspose-cli fonts",
+      "name": "fonts",
+      "aliases": [],
+      "description": "Diagnose the font environment used for rendering.",
+      "hidden": false,
+      "options": [],
+      "arguments": []
+    },
+    {
+      "path": "aspose-cli fonts check",
+      "name": "check",
+      "aliases": [],
+      "description": "Check whether a document's fonts are available here, and what they substitute to.",
+      "hidden": false,
+      "options": [
+        {
+          "name": "--font-dir",
+          "aliases": [],
+          "type": "string[]",
+          "minimumArity": 1,
+          "maximumArity": 16,
+          "required": false,
+          "recursive": false,
+          "hidden": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "inputKind": "none",
+          "description": "Local font directory searched in addition to the system fonts; repeat for more."
+        },
+        {
+          "name": "--password",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hidden": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": true,
+          "valueSource": "command-line",
+          "inputKind": "none",
+          "description": "Password for the document. Discouraged: visible in the process list; prefer --password-env."
+        },
+        {
+          "name": "--password-env",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hidden": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": true,
+          "valueSource": "environment-variable-name",
+          "inputKind": "none",
+          "description": "Name of an environment variable holding the password for the document."
+        },
+        {
+          "name": "--password-stdin",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hidden": false,
+          "hasDefault": true,
+          "allowedValues": [
+            "False",
+            "True"
+          ],
+          "secret": true,
+          "valueSource": "stdin",
+          "inputKind": "none",
+          "description": "Read the password for the document from the first line of stdin."
+        }
+      ],
+      "arguments": [
+        {
+          "name": "file",
+          "type": "string",
+          "inputKind": "file",
+          "valueSource": "command-line",
+          "secret": false,
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": true,
+          "hasDefault": false,
+          "allowedValues": [],
+          "description": "Supported document whose fonts to check."
+        }
+      ]
+    },
+    {
+      "path": "aspose-cli fonts list",
+      "name": "list",
+      "aliases": [],
+      "description": "List the engine's font sources and its default fallback font.",
+      "hidden": false,
+      "options": [
+        {
+          "name": "--product",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hidden": false,
+          "hasDefault": true,
+          "default": "cells",
+          "allowedValues": [
+            "cells",
+            "pdf",
+            "slides",
+            "words"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "inputKind": "none",
+          "description": "Product font engine to inspect. Default: cells."
+        }
+      ],
+      "arguments": []
+    },
+    {
+      "path": "aspose-cli license",
+      "name": "license",
+      "aliases": [],
+      "description": "Inspect and manage the Aspose license used by the CLI.",
+      "hidden": false,
+      "options": [],
+      "arguments": []
+    },
+    {
+      "path": "aspose-cli license install",
+      "name": "install",
+      "aliases": [],
+      "description": "Validate a license file and install it for every compatible product.",
+      "hidden": false,
+      "options": [
+        {
+          "name": "--product",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hidden": false,
+          "hasDefault": false,
+          "allowedValues": [
+            "cells",
+            "pdf",
+            "slides",
+            "words"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "inputKind": "none",
+          "description": "Install only for this product instead of detecting compatible products."
+        }
+      ],
+      "arguments": [
+        {
+          "name": "file",
+          "type": "string",
+          "inputKind": "none",
+          "valueSource": "command-line",
+          "secret": false,
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": true,
+          "hasDefault": false,
+          "allowedValues": [],
+          "description": "Path to an Aspose license file (.lic) to install as this user's default."
+        }
+      ]
+    },
+    {
+      "path": "aspose-cli license remove",
+      "name": "remove",
+      "aliases": [],
+      "description": "Remove saved user licenses; env and project sources are left untouched.",
+      "hidden": false,
+      "options": [
+        {
+          "name": "--product",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hidden": false,
+          "hasDefault": false,
+          "allowedValues": [
+            "cells",
+            "pdf",
+            "slides",
+            "words"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "inputKind": "none",
+          "description": "Remove only this product's saved user license."
+        }
+      ],
+      "arguments": []
+    },
+    {
+      "path": "aspose-cli license status",
+      "name": "status",
+      "aliases": [],
+      "description": "Show whether licensing applies and which license source and mode are in effect.",
+      "hidden": false,
+      "options": [
+        {
+          "name": "--product",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hidden": false,
+          "hasDefault": false,
+          "allowedValues": [
+            "cells",
+            "pdf",
+            "slides",
+            "words"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "inputKind": "none",
+          "description": "Inspect only this product."
+        }
+      ],
+      "arguments": []
+    },
+    {
+      "path": "aspose-cli mcp",
+      "name": "mcp",
+      "aliases": [],
+      "description": "Expose this CLI to a local MCP client over stdio.",
+      "hidden": false,
+      "options": [],
+      "arguments": []
+    },
+    {
+      "path": "aspose-cli mcp serve",
+      "name": "serve",
+      "aliases": [],
+      "description": "Run the single-session MCP stdio server.",
+      "hidden": false,
+      "options": [],
+      "arguments": []
+    },
+    {
+      "path": "aspose-cli preview",
+      "name": "preview",
+      "aliases": [],
+      "description": "Watch files in the local viewer and follow every change.",
+      "hidden": false,
+      "options": [],
+      "arguments": []
+    },
+    {
+      "path": "aspose-cli preview open",
+      "name": "open",
+      "aliases": [],
+      "description": "Open a file in the local viewer and follow every change.",
+      "hidden": false,
+      "options": [
+        {
+          "name": "--font-dir",
+          "aliases": [],
+          "type": "string[]",
+          "minimumArity": 1,
+          "maximumArity": 16,
+          "required": false,
+          "recursive": false,
+          "hidden": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "inputKind": "none",
+          "description": "Local font directory searched in addition to the system fonts; repeat for more."
+        },
+        {
+          "name": "--fx",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hidden": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "inputKind": "none",
+          "description": "Presentation effect for live demonstrations (for example 'demo')."
+        },
+        {
+          "name": "--open",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hidden": false,
+          "hasDefault": true,
+          "default": "false",
+          "allowedValues": [
+            "False",
+            "True"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "inputKind": "none",
+          "description": "Open the viewer in the default browser."
+        },
+        {
+          "name": "--password",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hidden": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": true,
+          "valueSource": "command-line",
+          "inputKind": "none",
+          "description": "Password for the file. Discouraged: visible in the process list; prefer --password-env."
+        },
+        {
+          "name": "--password-env",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hidden": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": true,
+          "valueSource": "environment-variable-name",
+          "inputKind": "none",
+          "description": "Name of an environment variable holding the password for the file."
+        },
+        {
+          "name": "--password-stdin",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hidden": false,
+          "hasDefault": true,
+          "allowedValues": [
+            "False",
+            "True"
+          ],
+          "secret": true,
+          "valueSource": "stdin",
+          "inputKind": "none",
+          "description": "Read the password for the file from the first line of stdin."
+        },
+        {
+          "name": "--port",
+          "aliases": [],
+          "type": "integer",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hidden": false,
+          "hasDefault": true,
+          "default": "0",
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "inputKind": "none",
+          "description": "Loopback port of the viewer service when it starts; 0 chooses a free port."
+        },
+        {
+          "name": "--product",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hidden": false,
+          "hasDefault": false,
+          "allowedValues": [
+            "cells",
+            "pdf",
+            "slides",
+            "words"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "inputKind": "none",
+          "description": "Product that reads the file; by default, the one whose format the file's content matches."
+        },
+        {
+          "name": "--view",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hidden": false,
+          "hasDefault": true,
+          "default": "auto",
+          "allowedValues": [
+            "auto",
+            "pages",
+            "sheets",
+            "slides",
+            "workbook"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "inputKind": "none",
+          "description": "Product view; auto uses the product's live view."
+        }
+      ],
+      "arguments": [
+        {
+          "name": "file",
+          "type": "string",
+          "inputKind": "file",
+          "valueSource": "command-line",
+          "secret": false,
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "description": "File to preview; content detection selects the product unless --product is supplied."
+        }
+      ]
+    },
+    {
+      "path": "aspose-cli preview status",
+      "name": "status",
+      "aliases": [],
+      "description": "List the documents the local viewer has open.",
+      "hidden": false,
+      "options": [],
+      "arguments": [
+        {
+          "name": "id",
+          "type": "string",
+          "inputKind": "none",
+          "valueSource": "command-line",
+          "secret": false,
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "description": "Optional document id."
+        }
+      ]
+    },
+    {
+      "path": "aspose-cli preview stop",
+      "name": "stop",
+      "aliases": [],
+      "description": "Close one document, or stop the local viewer service.",
+      "hidden": false,
+      "options": [
+        {
+          "name": "--all",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hidden": false,
+          "hasDefault": true,
+          "default": "false",
+          "allowedValues": [
+            "False",
+            "True"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "inputKind": "none",
+          "description": "Close every document and stop the viewer service."
+        }
+      ],
+      "arguments": [
+        {
+          "name": "id",
+          "type": "string",
+          "inputKind": "none",
+          "valueSource": "command-line",
+          "secret": false,
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "description": "Document id to close."
+        }
+      ]
+    },
+    {
+      "path": "aspose-cli review",
+      "name": "review",
+      "aliases": [],
+      "description": "Create a portable static evidence directory for visual inspection.",
+      "hidden": false,
+      "options": [
+        {
+          "name": "--code",
+          "aliases": [],
+          "type": "string[]",
+          "minimumArity": 1,
+          "maximumArity": 100000,
+          "required": false,
+          "recursive": false,
+          "hidden": false,
+          "hasDefault": false,
+          "allowedValues": [
+            "CELLS_CHART_ANCHORED_IN_HIDDEN_CELLS",
+            "CELLS_CHART_HIDDEN",
+            "CELLS_CHART_SPLIT_ACROSS_PAGES",
+            "CELLS_CHART_TOO_SMALL",
+            "CELLS_CHART_WITHOUT_SERIES",
+            "CELLS_EVALUATION_NOTICE",
+            "CELLS_EVALUATION_SHEET",
+            "CELLS_FORMULA_ERROR",
+            "CELLS_POPULATED_COLUMNS_HIDDEN",
+            "CELLS_POPULATED_COLUMNS_NARROW",
+            "CELLS_POPULATED_COLUMNS_WIDE",
+            "CELLS_POPULATED_ROWS_HIDDEN",
+            "CELLS_POPULATED_ROWS_SHORT",
+            "CELLS_POPULATED_ROWS_TALL",
+            "CELLS_PRINT_AREA_EXCESSIVE",
+            "CELLS_PRINT_AREA_EXCLUDES_CHART",
+            "CELLS_PRINT_AREA_EXCLUDES_CONTENT",
+            "CELLS_PRINT_AREA_INVALID",
+            "CELLS_REVIEW_TRUNCATED",
+            "CELLS_SHEET_EMPTY",
+            "CELLS_SHEET_HIDDEN",
+            "CELLS_TEXT_OVERFLOWS",
+            "CELLS_USED_RANGE_SPARSE",
+            "CELLS_VALUES_CLIPPED",
+            "CELLS_VBA_PRESENT",
+            "FONTS_MISSING_OR_SUBSTITUTED",
+            "FONTS_NOT_CHECKED",
+            "PDF_EVALUATION_WATERMARK",
+            "PDF_FONTS_NOT_EMBEDDED",
+            "PDF_FORM_APPEARANCE_REVIEW_REQUIRED",
+            "PDF_FORM_FIELD_PAGE_UNRESOLVED",
+            "PDF_PAGE_SIZE_UNUSUAL",
+            "PDF_PAGE_UTILIZATION_LOW",
+            "PDF_PAGE_WITHOUT_READABLE_CONTENT",
+            "PDF_PAGE_WITHOUT_TEXT_LAYER",
+            "PDF_TEXT_ANALYSIS_TRUNCATED",
+            "PDF_TEXT_COVERED",
+            "PDF_TEXT_OUTSIDE_PAGE",
+            "SLIDES_CHART_COVERED",
+            "SLIDES_CONTENT_DENSITY_HIGH",
+            "SLIDES_CONTENT_DENSITY_LOW",
+            "SLIDES_EVALUATION_WATERMARK",
+            "SLIDES_PLACEHOLDER_EMPTY",
+            "SLIDES_SHAPES_OVERLAP",
+            "SLIDES_SHAPE_OUTSIDE_SLIDE",
+            "SLIDES_SLIDE_BLANK",
+            "SLIDES_SLIDE_DUPLICATE",
+            "SLIDES_TEXT_LOW_CONTRAST",
+            "SLIDES_TEXT_OUTSIDE_SLIDE",
+            "SLIDES_TEXT_OVERFLOWS_SHAPE",
+            "SLIDES_TEXT_OVERLAPS_OBJECT",
+            "SLIDES_TEXT_TOO_SMALL",
+            "WORDS_COMMENTS_PRESENT",
+            "WORDS_DOCUMENT_EMPTY",
+            "WORDS_EVALUATION_MARKS",
+            "WORDS_HEADING_ORPHANED",
+            "WORDS_OBJECT_OUTSIDE_PAGE",
+            "WORDS_PAGE_BLANK",
+            "WORDS_PAGE_BREAKS_EXCESSIVE",
+            "WORDS_PAGE_UTILIZATION_LOW",
+            "WORDS_REVISIONS_PRESENT",
+            "WORDS_TEXT_TOO_LARGE",
+            "WORDS_TEXT_TOO_SMALL"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "inputKind": "none",
+          "description": "Report only findings of this check (a code from capabilities review.checks); repeat for several. Errors of other checks then do not fail the review."
+        },
+        {
+          "name": "--font-dir",
+          "aliases": [],
+          "type": "string[]",
+          "minimumArity": 1,
+          "maximumArity": 16,
+          "required": false,
+          "recursive": false,
+          "hidden": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "inputKind": "none",
+          "description": "Local font directory searched in addition to the system fonts; repeat for more."
+        },
+        {
+          "name": "--max-items",
+          "aliases": [],
+          "type": "integer",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hidden": false,
+          "hasDefault": true,
+          "default": "256",
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "inputKind": "none",
+          "description": "Maximum visual units rendered and listed in review.json."
+        },
+        {
+          "name": "--out",
+          "aliases": [
+            "-o"
+          ],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hidden": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "inputKind": "none",
+          "description": "New evidence directory; defaults to <filename>.review beside the source."
+        },
+        {
+          "name": "--password",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hidden": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": true,
+          "valueSource": "command-line",
+          "inputKind": "none",
+          "description": "Password for the review source. Discouraged: visible in the process list; prefer --password-env."
+        },
+        {
+          "name": "--password-env",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hidden": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": true,
+          "valueSource": "environment-variable-name",
+          "inputKind": "none",
+          "description": "Name of an environment variable holding the password for the review source."
+        },
+        {
+          "name": "--password-stdin",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hidden": false,
+          "hasDefault": true,
+          "allowedValues": [
+            "False",
+            "True"
+          ],
+          "secret": true,
+          "valueSource": "stdin",
+          "inputKind": "none",
+          "description": "Read the password for the review source from the first line of stdin."
+        },
+        {
+          "name": "--product",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hidden": false,
+          "hasDefault": false,
+          "allowedValues": [
+            "cells",
+            "pdf",
+            "slides",
+            "words"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "inputKind": "none",
+          "description": "Product that reads the file; by default, the one whose format the file's content matches."
+        },
+        {
+          "name": "--view",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hidden": false,
+          "hasDefault": true,
+          "default": "auto",
+          "allowedValues": [
+            "auto",
+            "pages",
+            "sheets",
+            "slides"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "inputKind": "none",
+          "description": "Review view; auto uses the product default."
+        }
+      ],
+      "arguments": [
+        {
+          "name": "file",
+          "type": "string",
+          "inputKind": "file",
+          "valueSource": "command-line",
+          "secret": false,
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": true,
+          "hasDefault": false,
+          "allowedValues": [],
+          "description": "Source file to review; its content decides which product reads it."
+        }
+      ]
+    },
+    {
+      "path": "aspose-cli schema",
+      "name": "schema",
+      "aliases": [],
+      "description": "List schema ids as an envelope, or print one raw JSON Schema document when an id is supplied.",
+      "hidden": false,
+      "options": [
+        {
+          "name": "--operation",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hidden": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "inputKind": "none",
+          "description": "Narrow an ops schema to one exact operation id."
+        }
+      ],
+      "arguments": [
+        {
+          "name": "id",
+          "type": "string",
+          "inputKind": "none",
+          "valueSource": "command-line",
+          "secret": false,
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "description": "Schema id to print; omit it to return the available ids."
+        }
+      ]
+    },
+    {
+      "path": "aspose-cli skill",
+      "name": "skill",
+      "aliases": [],
+      "description": "List or install Agent Skills bundled with this binary.",
+      "hidden": false,
+      "options": [],
+      "arguments": []
+    },
+    {
+      "path": "aspose-cli skill install",
+      "name": "install",
+      "aliases": [],
+      "description": "Install a bundled Agent Skill for Codex, Claude Code, or OpenCode.",
+      "hidden": false,
+      "options": [
+        {
+          "name": "--dir",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hidden": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "inputKind": "none",
+          "description": "Project root used with --scope project. Default: current working directory."
+        },
+        {
+          "name": "--host",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hidden": false,
+          "hasDefault": false,
+          "allowedValues": [
+            "claude-code",
+            "codex",
+            "opencode"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "inputKind": "none",
+          "description": "Agent host whose standard skills directory should be used."
+        },
+        {
+          "name": "--scope",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hidden": false,
+          "hasDefault": true,
+          "default": "project",
+          "allowedValues": [
+            "project",
+            "user"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "inputKind": "none",
+          "description": "Install for the current project or the current user."
+        },
+        {
+          "name": "--target",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hidden": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "inputKind": "none",
+          "description": "Advanced: explicit parent directory; the selected Skill folder is created there."
+        }
+      ],
+      "arguments": [
+        {
+          "name": "skill",
+          "type": "string",
+          "inputKind": "none",
+          "valueSource": "command-line",
+          "secret": false,
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": true,
+          "hasDefault": false,
+          "allowedValues": [],
+          "description": "Bundled skill to install: aspose-cli-platform, aspose-cli-cells, aspose-cli-pdf, aspose-cli-slides, aspose-cli-words."
+        }
+      ]
+    },
+    {
+      "path": "aspose-cli skill list",
+      "name": "list",
+      "aliases": [],
+      "description": "List bundled Agent Skills and supported hosts.",
+      "hidden": false,
+      "options": [],
+      "arguments": []
+    },
+    {
+      "path": "aspose-cli update",
+      "name": "update",
+      "aliases": [],
+      "description": "Check or install a CLI release; no background checks are performed.",
+      "hidden": false,
+      "options": [],
+      "arguments": []
+    },
+    {
+      "path": "aspose-cli update _prepare",
+      "name": "_prepare",
+      "aliases": [],
+      "description": "Prepare a verified update for its owning parent.",
+      "hidden": true,
+      "options": [],
+      "arguments": [
+        {
+          "name": "feed",
+          "type": "string",
+          "inputKind": "none",
+          "valueSource": "command-line",
+          "secret": false,
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": true,
+          "hasDefault": false,
+          "allowedValues": []
+        },
+        {
+          "name": "target",
+          "type": "string",
+          "inputKind": "none",
+          "valueSource": "command-line",
+          "secret": false,
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": true,
+          "hasDefault": false,
+          "allowedValues": []
+        }
+      ]
+    },
+    {
+      "path": "aspose-cli update check",
+      "name": "check",
+      "aliases": [],
+      "description": "Check whether a newer release is available.",
+      "hidden": false,
+      "options": [],
+      "arguments": [
+        {
+          "name": "feed",
+          "type": "string",
+          "inputKind": "none",
+          "valueSource": "command-line",
+          "secret": false,
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "hasDefault": true,
+          "default": "https://github.com/aspose-cli/aspose-cli/releases/latest/download/RELEASE-MANIFEST.json",
+          "allowedValues": [],
+          "description": "RELEASE-MANIFEST.json, as a local path or an HTTPS URL."
+        }
+      ]
+    },
+    {
+      "path": "aspose-cli update install",
+      "name": "install",
+      "aliases": [],
+      "description": "Install a newer release after checking its archive against the release manifest.",
+      "hidden": false,
+      "options": [],
+      "arguments": [
+        {
+          "name": "feed",
+          "type": "string",
+          "inputKind": "none",
+          "valueSource": "command-line",
+          "secret": false,
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "hasDefault": true,
+          "default": "https://github.com/aspose-cli/aspose-cli/releases/latest/download/RELEASE-MANIFEST.json",
+          "allowedValues": [],
+          "description": "RELEASE-MANIFEST.json, as a local path or an HTTPS URL."
+        }
+      ]
+    }
+  ],
+  "resourceBudgets": [
+    {
+      "kind": "decoded-text-characters",
+      "default": 16777216,
+      "maximum": 67108864,
+      "unit": "characters",
+      "enforcementStage": "decode"
+    },
+    {
+      "kind": "input-bytes",
+      "default": 1073741824,
+      "maximum": 4294967296,
+      "unit": "bytes",
+      "option": "--max-input-bytes",
+      "environmentVariable": "ASPOSE_CLI_MAX_FILE_BYTES",
+      "enforcementStage": "pre-runtime-and-stream"
+    },
+    {
+      "kind": "memory-buffer-bytes",
+      "default": 67108864,
+      "maximum": 268435456,
+      "unit": "bytes",
+      "enforcementStage": "buffer-allocation"
+    },
+    {
+      "kind": "output-bytes",
+      "default": 536870912,
+      "maximum": 2147483648,
+      "unit": "bytes",
+      "enforcementStage": "output-stream"
+    },
+    {
+      "kind": "output-set-directories",
+      "default": 1000,
+      "maximum": 1000,
+      "unit": "items",
+      "enforcementStage": "output-directory-admission"
+    },
+    {
+      "kind": "output-set-entries",
+      "default": 1000,
+      "maximum": 1000,
+      "unit": "items",
+      "enforcementStage": "output-set-admission"
+    },
+    {
+      "kind": "publication-metadata-bytes",
+      "default": 8388608,
+      "maximum": 8388608,
+      "unit": "bytes",
+      "enforcementStage": "publication-seal"
+    },
+    {
+      "kind": "raster-pixels",
+      "default": 268435456,
+      "maximum": 268435456,
+      "unit": "pixels",
+      "enforcementStage": "pre-render"
+    },
+    {
+      "kind": "secret-characters",
+      "default": 4096,
+      "maximum": 16384,
+      "unit": "characters",
+      "enforcementStage": "secret-read"
+    },
+    {
+      "kind": "stdin-bytes",
+      "default": 16777216,
+      "maximum": 67108864,
+      "unit": "bytes",
+      "enforcementStage": "stdin-stream"
+    }
+  ],
+  "resourceBudgetContractVersion": 2,
+  "diagnostics": [
+    {
+      "code": "APP_BUSY",
+      "owner": "common",
+      "severity": "error",
+      "exitCode": 5,
+      "category": "output",
+      "messageTemplateId": "common.app-busy.message.v1",
+      "hintTemplateId": "common.app-busy.hint.v1",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
+      "code": "BACKUP_PREDATES_EDIT",
+      "owner": "common",
+      "severity": "warning",
+      "category": "warning",
+      "messageTemplateId": "common.backup-predates-edit.message.v1",
+      "hintTemplateId": "common.backup-predates-edit.hint.v1",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
+      "code": "BOOKMARK_NOT_FOUND",
+      "owner": "common",
+      "severity": "error",
+      "exitCode": 4,
+      "category": "validation",
+      "messageTemplateId": "common.bookmark-not-found.message.v1",
+      "hintTemplateId": "common.bookmark-not-found.hint.v1",
+      "detailsSchemaId": "v2/common/not-found-details"
+    },
+    {
+      "code": "EVALUATION_LIMIT",
+      "owner": "common",
+      "severity": "error",
+      "exitCode": 7,
+      "category": "license",
+      "messageTemplateId": "common.evaluation-limit.message.v1",
+      "hintTemplateId": "common.evaluation-limit.hint.v1",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
+      "code": "EVAL_INPUT_MARKED",
+      "owner": "common",
+      "severity": "warning",
+      "category": "warning",
+      "messageTemplateId": "common.eval-input-marked.message.v1",
+      "hintTemplateId": "common.eval-input-marked.hint.v1",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
+      "code": "EVAL_INPUT_TRUNCATED",
+      "owner": "common",
+      "severity": "warning",
+      "category": "warning",
+      "messageTemplateId": "common.eval-input-truncated.message.v1",
+      "hintTemplateId": "common.eval-input-truncated.hint.v1",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
+      "code": "EVAL_MODE",
+      "owner": "common",
+      "severity": "warning",
+      "category": "warning",
+      "messageTemplateId": "common.eval-mode.message.v1",
+      "hintTemplateId": "common.eval-mode.hint.v1",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
+      "code": "EXTRACT_BUDGET_EXCEEDED",
+      "owner": "common",
+      "severity": "error",
+      "exitCode": 4,
+      "category": "validation",
+      "messageTemplateId": "common.extract-budget-exceeded.message.v1",
+      "hintTemplateId": "common.extract-budget-exceeded.hint.v1",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
+      "code": "FEATURE_UNSUPPORTED",
+      "owner": "common",
+      "severity": "error",
+      "exitCode": 6,
+      "category": "format",
+      "messageTemplateId": "common.feature-unsupported.message.v1",
+      "hintTemplateId": "common.feature-unsupported.hint.v1",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
+      "code": "FILE_ACCESS_DENIED",
+      "owner": "common",
+      "severity": "error",
+      "exitCode": 3,
+      "category": "input",
+      "messageTemplateId": "common.file-access-denied.message.v1",
+      "hintTemplateId": "common.file-access-denied.hint.v1",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
+      "code": "FILE_CORRUPT",
+      "owner": "common",
+      "severity": "error",
+      "exitCode": 3,
+      "category": "input",
+      "messageTemplateId": "common.file-corrupt.message.v1",
+      "hintTemplateId": "common.file-corrupt.hint.v1",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
+      "code": "FILE_LOCKED",
+      "owner": "common",
+      "severity": "error",
+      "exitCode": 3,
+      "category": "input",
+      "messageTemplateId": "common.file-locked.message.v1",
+      "hintTemplateId": "common.file-locked.hint.v1",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
+      "code": "FILE_NOT_FOUND",
+      "owner": "common",
+      "severity": "error",
+      "exitCode": 3,
+      "category": "input",
+      "messageTemplateId": "common.file-not-found.message.v1",
+      "hintTemplateId": "common.file-not-found.hint.v1",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
+      "code": "FILE_TOO_LARGE",
+      "owner": "common",
+      "severity": "error",
+      "exitCode": 3,
+      "category": "input",
+      "messageTemplateId": "common.file-too-large.message.v1",
+      "hintTemplateId": "common.file-too-large.hint.v1",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
+      "code": "FORMAT_AMBIGUOUS",
+      "owner": "common",
+      "severity": "error",
+      "exitCode": 6,
+      "category": "format",
+      "messageTemplateId": "common.format-ambiguous.message.v1",
+      "hintTemplateId": "common.format-ambiguous.hint.v1",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
+      "code": "FORMAT_MISMATCH",
+      "owner": "common",
+      "severity": "error",
+      "exitCode": 6,
+      "category": "format",
+      "messageTemplateId": "common.format-mismatch.message.v1",
+      "hintTemplateId": "common.format-mismatch.hint.v1",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
+      "code": "FORMAT_UNSUPPORTED",
+      "owner": "common",
+      "severity": "error",
+      "exitCode": 6,
+      "category": "format",
+      "messageTemplateId": "common.format-unsupported.message.v1",
+      "hintTemplateId": "common.format-unsupported.hint.v1",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
+      "code": "INPUT_BUDGET_EXCEEDED",
+      "owner": "common",
+      "severity": "error",
+      "exitCode": 3,
+      "category": "input",
+      "messageTemplateId": "common.input-budget-exceeded.message.v1",
+      "hintTemplateId": "common.input-budget-exceeded.hint.v1",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
+      "code": "INPUT_CHANGED",
+      "owner": "common",
+      "severity": "error",
+      "exitCode": 3,
+      "category": "input",
+      "messageTemplateId": "common.input-changed.message.v1",
+      "hintTemplateId": "common.input-changed.hint.v1",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
+      "code": "INPUT_ENCODING_INVALID",
+      "owner": "common",
+      "severity": "error",
+      "exitCode": 3,
+      "category": "input",
+      "messageTemplateId": "common.input-encoding-invalid.message.v1",
+      "hintTemplateId": "common.input-encoding-invalid.hint.v1",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
+      "code": "INTERNAL_ERROR",
+      "owner": "common",
+      "severity": "error",
+      "exitCode": 1,
+      "category": "internal",
+      "messageTemplateId": "common.internal-error.message.v1",
+      "hintTemplateId": "common.internal-error.hint.v1",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
+      "code": "LICENSE_FILE_NOT_FOUND",
+      "owner": "common",
+      "severity": "error",
+      "exitCode": 7,
+      "category": "license",
+      "messageTemplateId": "common.license-file-not-found.message.v1",
+      "hintTemplateId": "common.license-file-not-found.hint.v1",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
+      "code": "LICENSE_INVALID",
+      "owner": "common",
+      "severity": "error",
+      "exitCode": 7,
+      "category": "license",
+      "messageTemplateId": "common.license-invalid.message.v1",
+      "hintTemplateId": "common.license-invalid.hint.v1",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
+      "code": "LICENSE_NOT_APPLICABLE",
+      "owner": "common",
+      "severity": "error",
+      "exitCode": 4,
+      "category": "validation",
+      "messageTemplateId": "common.license-not-applicable.message.v1",
+      "hintTemplateId": "common.license-not-applicable.hint.v1",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
+      "code": "LIST_TRUNCATED",
+      "owner": "common",
+      "severity": "warning",
+      "category": "warning",
+      "messageTemplateId": "common.list-truncated.message.v1",
+      "hintTemplateId": "common.list-truncated.hint.v1",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
+      "code": "LOOPBACK_LISTENER_UNAVAILABLE",
+      "owner": "common",
+      "severity": "error",
+      "exitCode": 5,
+      "category": "output",
+      "messageTemplateId": "common.loopback-listener-unavailable.message.v1",
+      "hintTemplateId": "common.loopback-listener-unavailable.hint.v1",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
+      "code": "LOOPBACK_PORT_IN_USE",
+      "owner": "common",
+      "severity": "error",
+      "exitCode": 5,
+      "category": "output",
+      "messageTemplateId": "common.loopback-port-in-use.message.v1",
+      "hintTemplateId": "common.loopback-port-in-use.hint.v1",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
+      "code": "LOSSY_CONVERSION",
+      "owner": "common",
+      "severity": "warning",
+      "category": "warning",
+      "messageTemplateId": "common.lossy-conversion.message.v1",
+      "hintTemplateId": "common.lossy-conversion.hint.v1",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
+      "code": "OPERATION_TIMEOUT",
+      "owner": "common",
+      "severity": "error",
+      "exitCode": 9,
+      "category": "timeout",
+      "messageTemplateId": "common.operation-timeout.message.v1",
+      "hintTemplateId": "common.operation-timeout.hint.v1",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
+      "code": "OPS_INVALID",
+      "owner": "common",
+      "severity": "error",
+      "exitCode": 4,
+      "category": "validation",
+      "messageTemplateId": "common.ops-invalid.message.v1",
+      "hintTemplateId": "common.ops-invalid.hint.v1",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
+      "code": "OPTION_INVALID",
+      "owner": "common",
+      "severity": "error",
+      "exitCode": 2,
+      "category": "usage",
+      "messageTemplateId": "common.option-invalid.message.v1",
+      "hintTemplateId": "common.option-invalid.hint.v1",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
+      "code": "OUTPUT_CONFLICT",
+      "owner": "common",
+      "severity": "error",
+      "exitCode": 5,
+      "category": "output",
+      "messageTemplateId": "common.output-conflict.message.v1",
+      "hintTemplateId": "common.output-conflict.hint.v1",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
+      "code": "OUTPUT_EXISTS",
+      "owner": "common",
+      "severity": "error",
+      "exitCode": 5,
+      "category": "output",
+      "messageTemplateId": "common.output-exists.message.v1",
+      "hintTemplateId": "common.output-exists.hint.v1",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
+      "code": "OUTPUT_PUBLICATION_FAILED",
+      "owner": "common",
+      "severity": "error",
+      "exitCode": 5,
+      "category": "output",
+      "messageTemplateId": "common.output-publication-failed.message.v1",
+      "hintTemplateId": "common.output-publication-failed.hint.v1",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
+      "code": "OUTPUT_PUBLICATION_PARTIAL",
+      "owner": "common",
+      "severity": "error",
+      "exitCode": 8,
+      "category": "partial",
+      "messageTemplateId": "common.output-publication-partial.message.v1",
+      "hintTemplateId": "common.output-publication-partial.hint.v1",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
+      "code": "OUTPUT_UNWRITABLE",
+      "owner": "common",
+      "severity": "error",
+      "exitCode": 5,
+      "category": "output",
+      "messageTemplateId": "common.output-unwritable.message.v1",
+      "hintTemplateId": "common.output-unwritable.hint.v1",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
+      "code": "PAGE_NOT_FOUND",
+      "owner": "common",
+      "severity": "error",
+      "exitCode": 4,
+      "category": "validation",
+      "messageTemplateId": "common.page-not-found.message.v1",
+      "hintTemplateId": "common.page-not-found.hint.v1",
+      "detailsSchemaId": "v2/common/not-found-details"
+    },
+    {
+      "code": "PAGE_RANGE_INVALID",
+      "owner": "common",
+      "severity": "error",
+      "exitCode": 4,
+      "category": "validation",
+      "messageTemplateId": "common.page-range-invalid.message.v1",
+      "hintTemplateId": "common.page-range-invalid.hint.v1",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
+      "code": "PASSWORD_INVALID",
+      "owner": "common",
+      "severity": "error",
+      "exitCode": 3,
+      "category": "input",
+      "messageTemplateId": "common.password-invalid.message.v1",
+      "hintTemplateId": "common.password-invalid.hint.v1",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
+      "code": "PASSWORD_REQUIRED",
+      "owner": "common",
+      "severity": "error",
+      "exitCode": 3,
+      "category": "input",
+      "messageTemplateId": "common.password-required.message.v1",
+      "hintTemplateId": "common.password-required.hint.v1",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
+      "code": "PREVIEW_BUDGET_EXCEEDED",
+      "owner": "common",
+      "severity": "error",
+      "exitCode": 4,
+      "category": "validation",
+      "messageTemplateId": "common.preview-budget-exceeded.message.v1",
+      "hintTemplateId": "common.preview-budget-exceeded.hint.v1",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
+      "code": "PROTECTION_NOT_ENFORCED",
+      "owner": "common",
+      "severity": "warning",
+      "category": "warning",
+      "messageTemplateId": "common.protection-not-enforced.message.v1",
+      "hintTemplateId": "common.protection-not-enforced.hint.v1",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
+      "code": "RELEASE_FEED_UNAVAILABLE",
+      "owner": "common",
+      "severity": "error",
+      "exitCode": 5,
+      "category": "output",
+      "messageTemplateId": "common.release-feed-unavailable.message.v1",
+      "hintTemplateId": "common.release-feed-unavailable.hint.v1",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
+      "code": "RELEASE_VERIFICATION_FAILED",
+      "owner": "common",
+      "severity": "error",
+      "exitCode": 5,
+      "category": "output",
+      "messageTemplateId": "common.release-verification-failed.message.v1",
+      "hintTemplateId": "common.release-verification-failed.hint.v1",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
+      "code": "REMOTE_RESOURCES_BLOCKED",
+      "owner": "common",
+      "severity": "warning",
+      "category": "warning",
+      "messageTemplateId": "common.remote-resources-blocked.message.v1",
+      "hintTemplateId": "common.remote-resources-blocked.hint.v1",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
+      "code": "RENDER_FAILED",
+      "owner": "common",
+      "severity": "error",
+      "exitCode": 4,
+      "category": "validation",
+      "messageTemplateId": "common.render-failed.message.v1",
+      "hintTemplateId": "common.render-failed.hint.v1",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
+      "code": "RENDER_TOO_LARGE",
+      "owner": "common",
+      "severity": "error",
+      "exitCode": 4,
+      "category": "validation",
+      "messageTemplateId": "common.render-too-large.message.v1",
+      "hintTemplateId": "common.render-too-large.hint.v1",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
+      "code": "REPLACE_NO_MATCH",
+      "owner": "common",
+      "severity": "warning",
+      "category": "warning",
+      "messageTemplateId": "common.replace-no-match.message.v1",
+      "hintTemplateId": "common.replace-no-match.hint.v1",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
+      "code": "SIGNATURE_INVALIDATED",
+      "owner": "common",
+      "severity": "warning",
+      "category": "warning",
+      "messageTemplateId": "common.signature-invalidated.message.v1",
+      "hintTemplateId": "common.signature-invalidated.hint.v1",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
+      "code": "STYLE_NOT_FOUND",
+      "owner": "common",
+      "severity": "error",
+      "exitCode": 4,
+      "category": "validation",
+      "messageTemplateId": "common.style-not-found.message.v1",
+      "hintTemplateId": "common.style-not-found.hint.v1",
+      "detailsSchemaId": "v2/common/not-found-details"
+    },
+    {
+      "code": "UPLOAD_BUDGET_EXCEEDED",
+      "owner": "common",
+      "severity": "error",
+      "exitCode": 4,
+      "category": "validation",
+      "messageTemplateId": "common.upload-budget-exceeded.message.v1",
+      "hintTemplateId": "common.upload-budget-exceeded.hint.v1",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
+      "code": "USAGE_ERROR",
+      "owner": "common",
+      "severity": "error",
+      "exitCode": 2,
+      "category": "usage",
+      "messageTemplateId": "common.usage-error.message.v1",
+      "hintTemplateId": "common.usage-error.hint.v1",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
+      "code": "WORKER_TERMINATION_FAILED",
+      "owner": "common",
+      "severity": "error",
+      "exitCode": 8,
+      "category": "partial",
+      "messageTemplateId": "common.worker-termination-failed.message.v1",
+      "hintTemplateId": "common.worker-termination-failed.hint.v1",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    }
+  ]
+}

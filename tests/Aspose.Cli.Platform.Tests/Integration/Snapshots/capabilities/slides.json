@@ -1,0 +1,5332 @@
+{
+  "product": {
+    "id": "slides",
+    "verbs": [
+      "inspect",
+      "query",
+      "convert",
+      "render",
+      "create",
+      "edit",
+      "extract"
+    ],
+    "convertFormats": [
+      "pptx",
+      "ppt",
+      "pptm",
+      "odp",
+      "pdf",
+      "xps",
+      "html",
+      "html5",
+      "png",
+      "jpeg",
+      "tiff",
+      "gif",
+      "svg",
+      "md"
+    ],
+    "renderFormats": [
+      "png",
+      "jpeg",
+      "svg"
+    ],
+    "operations": [
+      {
+        "command": "edit",
+        "inputSchema": "v2/slides/ops",
+        "operationSchema": "aspose-cli schema v2/slides/ops --operation <op>",
+        "contractFingerprint": "sha256:081a53f836cdf8671cc7751e4fe32863b28fc21b7cc49bb80f9602d80a2f296a",
+        "maximumOperationCount": 256,
+        "ops": [
+          "add_section",
+          "add_slide",
+          "append_presentation",
+          "apply_layout",
+          "delete_shape",
+          "delete_slides",
+          "duplicate_slide",
+          "insert_chart",
+          "insert_image",
+          "insert_shape",
+          "insert_table",
+          "move_slide",
+          "replace_text",
+          "set_background",
+          "set_body",
+          "set_footer",
+          "set_notes",
+          "set_properties",
+          "set_shape_bounds",
+          "set_shape_style",
+          "set_slide_hidden",
+          "set_slide_size",
+          "set_table_cell",
+          "set_text",
+          "set_title",
+          "set_transition",
+          "update_chart_data"
+        ]
+      }
+    ],
+    "loadFormats": [
+      "ppt",
+      "pptx",
+      "pptm",
+      "pps",
+      "ppsx",
+      "ppsm",
+      "pot",
+      "potx",
+      "potm",
+      "odp",
+      "otp",
+      "fodp"
+    ],
+    "engine": {
+      "id": "aspose",
+      "sdk": "Aspose.Slides.NET6.CrossPlatform",
+      "sdkVersion": "<build>",
+      "licenseApplicable": true,
+      "licenseRequired": false,
+      "supportsFontDiagnostics": true
+    },
+    "availableEngines": [
+      "aspose"
+    ],
+    "preview": {
+      "defaultView": "slides",
+      "views": [
+        "slides"
+      ],
+      "background": true
+    },
+    "review": {
+      "defaultView": "slides",
+      "views": [
+        "slides"
+      ],
+      "visualInspectionRequired": true,
+      "checks": [
+        {
+          "code": "FONTS_MISSING_OR_SUBSTITUTED",
+          "severity": "error",
+          "summary": "A font the document uses is unavailable or substituted, so the rendering may differ from the author's."
+        },
+        {
+          "code": "FONTS_NOT_CHECKED",
+          "severity": "warning",
+          "summary": "The product engine exposes no font diagnostics, so the fonts the document uses were not checked."
+        },
+        {
+          "code": "SLIDES_CHART_COVERED",
+          "severity": "warning",
+          "summary": "An opaque foreground shape covers at least 30% of a chart."
+        },
+        {
+          "code": "SLIDES_CONTENT_DENSITY_HIGH",
+          "severity": "warning",
+          "summary": "A slide holds so many content objects or so much text that it may be hard to read."
+        },
+        {
+          "code": "SLIDES_CONTENT_DENSITY_LOW",
+          "severity": "warning",
+          "summary": "Several content objects with little text occupy only a small part of a slide."
+        },
+        {
+          "code": "SLIDES_EVALUATION_WATERMARK",
+          "severity": "warning",
+          "summary": "A slide carries the watermark text box that an Aspose.Slides save without a license added; a licensed re-save keeps it."
+        },
+        {
+          "code": "SLIDES_PLACEHOLDER_EMPTY",
+          "severity": "info",
+          "summary": "An empty placeholder is invisible in a slide show but shows its prompt text when the deck is edited."
+        },
+        {
+          "code": "SLIDES_SHAPES_OVERLAP",
+          "severity": "warning",
+          "summary": "An opaque foreground shape covers at least 80% of a content shape."
+        },
+        {
+          "code": "SLIDES_SHAPE_OUTSIDE_SLIDE",
+          "severity": "warning",
+          "summary": "A shape extends beyond the slide boundaries."
+        },
+        {
+          "code": "SLIDES_SLIDE_BLANK",
+          "severity": "warning",
+          "summary": "A slide has no visible authored content."
+        },
+        {
+          "code": "SLIDES_SLIDE_DUPLICATE",
+          "severity": "warning",
+          "summary": "A slide repeats the meaningful content and geometry of an earlier slide."
+        },
+        {
+          "code": "SLIDES_TEXT_LOW_CONTRAST",
+          "severity": "warning",
+          "summary": "Text has a contrast below 3:1 with the solid fill or background behind it, so it is hard to read."
+        },
+        {
+          "code": "SLIDES_TEXT_OUTSIDE_SLIDE",
+          "severity": "warning",
+          "summary": "Laid-out text runs past a slide edge, where the slide cuts it off."
+        },
+        {
+          "code": "SLIDES_TEXT_OVERFLOWS_SHAPE",
+          "severity": "warning",
+          "summary": "Laid-out text spills out of a shape that neither grows to fit it nor shrinks it on overflow."
+        },
+        {
+          "code": "SLIDES_TEXT_OVERLAPS_OBJECT",
+          "severity": "warning",
+          "summary": "Laid-out text runs into a table or chart, or an opaque shape in front of it covers the text."
+        },
+        {
+          "code": "SLIDES_TEXT_TOO_SMALL",
+          "severity": "warning",
+          "summary": "A shape contains visible text smaller than 12 pt."
+        }
+      ]
+    },
+    "formats": [
+      {
+        "id": "fodp",
+        "extensions": [
+          ".fodp"
+        ],
+        "aliases": [],
+        "uses": [
+          "input"
+        ],
+        "operations": [
+          "app",
+          "fonts",
+          "open",
+          "preview",
+          "review"
+        ],
+        "declaredOwnership": "default",
+        "finalOwner": "slides",
+        "genericAvailable": true,
+        "explicitAvailable": true,
+        "recognizerStrategy": "standard-signature-v1",
+        "maxProbeBytes": 65536
+      },
+      {
+        "id": "gif",
+        "extensions": [
+          ".gif"
+        ],
+        "aliases": [],
+        "uses": [
+          "convert"
+        ],
+        "operations": [],
+        "declaredOwnership": "explicit",
+        "genericAvailable": false,
+        "explicitAvailable": false
+      },
+      {
+        "id": "html",
+        "extensions": [
+          ".htm",
+          ".html"
+        ],
+        "aliases": [],
+        "uses": [
+          "convert"
+        ],
+        "operations": [],
+        "declaredOwnership": "explicit",
+        "genericAvailable": false,
+        "explicitAvailable": false
+      },
+      {
+        "id": "html5",
+        "extensions": [
+          ".htm",
+          ".html"
+        ],
+        "aliases": [],
+        "uses": [
+          "convert"
+        ],
+        "operations": [],
+        "declaredOwnership": "explicit",
+        "genericAvailable": false,
+        "explicitAvailable": false
+      },
+      {
+        "id": "jpeg",
+        "extensions": [
+          ".jpeg",
+          ".jpg"
+        ],
+        "aliases": [
+          "jpg"
+        ],
+        "uses": [
+          "convert",
+          "render"
+        ],
+        "operations": [],
+        "declaredOwnership": "explicit",
+        "genericAvailable": false,
+        "explicitAvailable": false
+      },
+      {
+        "id": "md",
+        "extensions": [
+          ".markdown",
+          ".md"
+        ],
+        "aliases": [],
+        "uses": [
+          "convert"
+        ],
+        "operations": [],
+        "declaredOwnership": "explicit",
+        "finalOwner": "words",
+        "genericAvailable": false,
+        "explicitAvailable": false
+      },
+      {
+        "id": "odp",
+        "extensions": [
+          ".odp"
+        ],
+        "aliases": [],
+        "uses": [
+          "input",
+          "convert"
+        ],
+        "operations": [
+          "app",
+          "fonts",
+          "open",
+          "preview",
+          "review"
+        ],
+        "declaredOwnership": "default",
+        "finalOwner": "slides",
+        "genericAvailable": true,
+        "explicitAvailable": true,
+        "recognizerStrategy": "standard-signature-v1",
+        "maxProbeBytes": 65536
+      },
+      {
+        "id": "otp",
+        "extensions": [
+          ".otp"
+        ],
+        "aliases": [],
+        "uses": [
+          "input"
+        ],
+        "operations": [
+          "app",
+          "fonts",
+          "open",
+          "preview",
+          "review"
+        ],
+        "declaredOwnership": "default",
+        "finalOwner": "slides",
+        "genericAvailable": true,
+        "explicitAvailable": true,
+        "recognizerStrategy": "standard-signature-v1",
+        "maxProbeBytes": 65536
+      },
+      {
+        "id": "pdf",
+        "extensions": [
+          ".pdf"
+        ],
+        "aliases": [],
+        "uses": [
+          "convert"
+        ],
+        "operations": [],
+        "declaredOwnership": "explicit",
+        "finalOwner": "pdf",
+        "genericAvailable": false,
+        "explicitAvailable": false
+      },
+      {
+        "id": "png",
+        "extensions": [
+          ".png"
+        ],
+        "aliases": [],
+        "uses": [
+          "convert",
+          "render"
+        ],
+        "operations": [],
+        "declaredOwnership": "explicit",
+        "genericAvailable": false,
+        "explicitAvailable": false
+      },
+      {
+        "id": "pot",
+        "extensions": [
+          ".pot"
+        ],
+        "aliases": [],
+        "uses": [
+          "input"
+        ],
+        "operations": [
+          "app",
+          "fonts",
+          "open",
+          "preview",
+          "review"
+        ],
+        "declaredOwnership": "default",
+        "finalOwner": "slides",
+        "genericAvailable": true,
+        "explicitAvailable": true,
+        "recognizerStrategy": "standard-signature-v1",
+        "maxProbeBytes": 65536
+      },
+      {
+        "id": "potm",
+        "extensions": [
+          ".potm"
+        ],
+        "aliases": [],
+        "uses": [
+          "input"
+        ],
+        "operations": [
+          "app",
+          "fonts",
+          "open",
+          "preview",
+          "review"
+        ],
+        "declaredOwnership": "default",
+        "finalOwner": "slides",
+        "genericAvailable": true,
+        "explicitAvailable": true,
+        "recognizerStrategy": "standard-signature-v1",
+        "maxProbeBytes": 65536
+      },
+      {
+        "id": "potx",
+        "extensions": [
+          ".potx"
+        ],
+        "aliases": [],
+        "uses": [
+          "input"
+        ],
+        "operations": [
+          "app",
+          "fonts",
+          "open",
+          "preview",
+          "review"
+        ],
+        "declaredOwnership": "default",
+        "finalOwner": "slides",
+        "genericAvailable": true,
+        "explicitAvailable": true,
+        "recognizerStrategy": "standard-signature-v1",
+        "maxProbeBytes": 65536
+      },
+      {
+        "id": "pps",
+        "extensions": [
+          ".pps"
+        ],
+        "aliases": [],
+        "uses": [
+          "input"
+        ],
+        "operations": [
+          "app",
+          "fonts",
+          "open",
+          "preview",
+          "review"
+        ],
+        "declaredOwnership": "default",
+        "finalOwner": "slides",
+        "genericAvailable": true,
+        "explicitAvailable": true,
+        "recognizerStrategy": "standard-signature-v1",
+        "maxProbeBytes": 65536
+      },
+      {
+        "id": "ppsm",
+        "extensions": [
+          ".ppsm"
+        ],
+        "aliases": [],
+        "uses": [
+          "input"
+        ],
+        "operations": [
+          "app",
+          "fonts",
+          "open",
+          "preview",
+          "review"
+        ],
+        "declaredOwnership": "default",
+        "finalOwner": "slides",
+        "genericAvailable": true,
+        "explicitAvailable": true,
+        "recognizerStrategy": "standard-signature-v1",
+        "maxProbeBytes": 65536
+      },
+      {
+        "id": "ppsx",
+        "extensions": [
+          ".ppsx"
+        ],
+        "aliases": [],
+        "uses": [
+          "input"
+        ],
+        "operations": [
+          "app",
+          "fonts",
+          "open",
+          "preview",
+          "review"
+        ],
+        "declaredOwnership": "default",
+        "finalOwner": "slides",
+        "genericAvailable": true,
+        "explicitAvailable": true,
+        "recognizerStrategy": "standard-signature-v1",
+        "maxProbeBytes": 65536
+      },
+      {
+        "id": "ppt",
+        "extensions": [
+          ".ppt"
+        ],
+        "aliases": [],
+        "uses": [
+          "input",
+          "convert"
+        ],
+        "operations": [
+          "app",
+          "fonts",
+          "open",
+          "preview",
+          "review"
+        ],
+        "declaredOwnership": "default",
+        "finalOwner": "slides",
+        "genericAvailable": true,
+        "explicitAvailable": true,
+        "recognizerStrategy": "standard-signature-v1",
+        "maxProbeBytes": 65536
+      },
+      {
+        "id": "pptm",
+        "extensions": [
+          ".pptm"
+        ],
+        "aliases": [],
+        "uses": [
+          "input",
+          "convert"
+        ],
+        "operations": [
+          "app",
+          "fonts",
+          "open",
+          "preview",
+          "review"
+        ],
+        "declaredOwnership": "default",
+        "finalOwner": "slides",
+        "genericAvailable": true,
+        "explicitAvailable": true,
+        "recognizerStrategy": "standard-signature-v1",
+        "maxProbeBytes": 65536
+      },
+      {
+        "id": "pptx",
+        "extensions": [
+          ".pptx"
+        ],
+        "aliases": [],
+        "uses": [
+          "input",
+          "convert"
+        ],
+        "operations": [
+          "app",
+          "fonts",
+          "open",
+          "preview",
+          "review"
+        ],
+        "declaredOwnership": "default",
+        "finalOwner": "slides",
+        "genericAvailable": true,
+        "explicitAvailable": true,
+        "recognizerStrategy": "standard-signature-v1",
+        "maxProbeBytes": 65536
+      },
+      {
+        "id": "svg",
+        "extensions": [
+          ".svg"
+        ],
+        "aliases": [],
+        "uses": [
+          "convert",
+          "render"
+        ],
+        "operations": [],
+        "declaredOwnership": "explicit",
+        "genericAvailable": false,
+        "explicitAvailable": false
+      },
+      {
+        "id": "tiff",
+        "extensions": [
+          ".tif",
+          ".tiff"
+        ],
+        "aliases": [],
+        "uses": [
+          "convert"
+        ],
+        "operations": [],
+        "declaredOwnership": "explicit",
+        "genericAvailable": false,
+        "explicitAvailable": false
+      },
+      {
+        "id": "xps",
+        "extensions": [
+          ".xps"
+        ],
+        "aliases": [],
+        "uses": [
+          "convert"
+        ],
+        "operations": [],
+        "declaredOwnership": "explicit",
+        "genericAvailable": false,
+        "explicitAvailable": false
+      }
+    ],
+    "commands": [
+      {
+        "path": "slides",
+        "name": "slides",
+        "aliases": [],
+        "description": "Presentation automation with slide, layout and notes semantics.",
+        "hidden": false,
+        "options": [],
+        "arguments": []
+      },
+      {
+        "path": "slides convert",
+        "name": "convert",
+        "aliases": [],
+        "description": "Convert a presentation or selected slides.",
+        "hidden": false,
+        "options": [
+          {
+            "name": "--encrypt",
+            "aliases": [],
+            "type": "string",
+            "minimumArity": 1,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": false,
+            "allowedValues": [],
+            "secret": true,
+            "valueSource": "command-line",
+            "inputKind": "none",
+            "description": "Password for the output presentation. Discouraged: visible in the process list; prefer --encrypt-env."
+          },
+          {
+            "name": "--encrypt-env",
+            "aliases": [],
+            "type": "string",
+            "minimumArity": 1,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": false,
+            "allowedValues": [],
+            "secret": true,
+            "valueSource": "environment-variable-name",
+            "inputKind": "none",
+            "description": "Name of an environment variable holding the password for the output presentation."
+          },
+          {
+            "name": "--font-dir",
+            "aliases": [],
+            "type": "string[]",
+            "minimumArity": 1,
+            "maximumArity": 16,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": false,
+            "allowedValues": [],
+            "secret": false,
+            "valueSource": "command-line",
+            "inputKind": "none",
+            "description": "Local font directory searched in addition to the system fonts; repeat for more."
+          },
+          {
+            "name": "--out",
+            "aliases": [
+              "-o"
+            ],
+            "type": "string",
+            "minimumArity": 1,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": false,
+            "allowedValues": [],
+            "secret": false,
+            "valueSource": "command-line",
+            "inputKind": "none",
+            "description": "Output path; defaults to a sibling using the target extension; multi-slide image output adds .sN before the extension."
+          },
+          {
+            "name": "--overwrite",
+            "aliases": [],
+            "type": "boolean",
+            "minimumArity": 0,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": true,
+            "default": "false",
+            "allowedValues": [
+              "False",
+              "True"
+            ],
+            "secret": false,
+            "valueSource": "command-line",
+            "inputKind": "none",
+            "description": "Replace the output file if it already exists."
+          },
+          {
+            "name": "--password",
+            "aliases": [],
+            "type": "string",
+            "minimumArity": 1,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": false,
+            "allowedValues": [],
+            "secret": true,
+            "valueSource": "command-line",
+            "inputKind": "none",
+            "description": "Password for the presentation. Discouraged: visible in the process list; prefer --password-env."
+          },
+          {
+            "name": "--password-env",
+            "aliases": [],
+            "type": "string",
+            "minimumArity": 1,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": false,
+            "allowedValues": [],
+            "secret": true,
+            "valueSource": "environment-variable-name",
+            "inputKind": "none",
+            "description": "Name of an environment variable holding the password for the presentation."
+          },
+          {
+            "name": "--password-stdin",
+            "aliases": [],
+            "type": "boolean",
+            "minimumArity": 0,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": true,
+            "allowedValues": [
+              "False",
+              "True"
+            ],
+            "secret": true,
+            "valueSource": "stdin",
+            "inputKind": "none",
+            "description": "Read the password for the presentation from the first line of stdin."
+          },
+          {
+            "name": "--slides",
+            "aliases": [],
+            "type": "string",
+            "minimumArity": 1,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": false,
+            "allowedValues": [],
+            "secret": false,
+            "valueSource": "command-line",
+            "inputKind": "none",
+            "description": "Optional 1-based slide range."
+          },
+          {
+            "name": "--to",
+            "aliases": [],
+            "type": "string",
+            "minimumArity": 1,
+            "maximumArity": 1,
+            "required": true,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": false,
+            "allowedValues": [
+              "gif",
+              "html",
+              "html5",
+              "jpeg",
+              "md",
+              "odp",
+              "pdf",
+              "png",
+              "ppt",
+              "pptm",
+              "pptx",
+              "svg",
+              "tiff",
+              "xps"
+            ],
+            "secret": false,
+            "valueSource": "command-line",
+            "inputKind": "none",
+            "description": "Target presentation export format. PNG and JPEG use 192 DPI; use slides render for custom dimensions."
+          }
+        ],
+        "arguments": [
+          {
+            "name": "file",
+            "type": "string",
+            "inputKind": "file",
+            "valueSource": "command-line",
+            "secret": false,
+            "minimumArity": 1,
+            "maximumArity": 1,
+            "required": true,
+            "hasDefault": false,
+            "allowedValues": [],
+            "description": "Presentation file path."
+          }
+        ]
+      },
+      {
+        "path": "slides create",
+        "name": "create",
+        "aliases": [],
+        "description": "Create a blank, template-based or Markdown-authored presentation.",
+        "hidden": false,
+        "options": [
+          {
+            "name": "--encrypt",
+            "aliases": [],
+            "type": "string",
+            "minimumArity": 1,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": false,
+            "allowedValues": [],
+            "secret": true,
+            "valueSource": "command-line",
+            "inputKind": "none",
+            "description": "Password for the output presentation. Discouraged: visible in the process list; prefer --encrypt-env."
+          },
+          {
+            "name": "--encrypt-env",
+            "aliases": [],
+            "type": "string",
+            "minimumArity": 1,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": false,
+            "allowedValues": [],
+            "secret": true,
+            "valueSource": "environment-variable-name",
+            "inputKind": "none",
+            "description": "Name of an environment variable holding the password for the output presentation."
+          },
+          {
+            "name": "--font-dir",
+            "aliases": [],
+            "type": "string[]",
+            "minimumArity": 1,
+            "maximumArity": 16,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": false,
+            "allowedValues": [],
+            "secret": false,
+            "valueSource": "command-line",
+            "inputKind": "none",
+            "description": "Local font directory searched in addition to the system fonts; repeat for more."
+          },
+          {
+            "name": "--from-markdown",
+            "aliases": [],
+            "type": "string",
+            "minimumArity": 1,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": false,
+            "allowedValues": [],
+            "secret": false,
+            "valueSource": "command-line",
+            "inputKind": "file",
+            "description": "Markdown outline to author."
+          },
+          {
+            "name": "--overwrite",
+            "aliases": [],
+            "type": "boolean",
+            "minimumArity": 0,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": true,
+            "default": "false",
+            "allowedValues": [
+              "False",
+              "True"
+            ],
+            "secret": false,
+            "valueSource": "command-line",
+            "inputKind": "none",
+            "description": "Replace the output file if it already exists."
+          },
+          {
+            "name": "--size",
+            "aliases": [],
+            "type": "string",
+            "minimumArity": 1,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": false,
+            "allowedValues": [
+              "16x9",
+              "4x3"
+            ],
+            "secret": false,
+            "valueSource": "command-line",
+            "inputKind": "none",
+            "description": "16x9 or 4x3; template size is preserved when omitted."
+          },
+          {
+            "name": "--template",
+            "aliases": [],
+            "type": "string",
+            "minimumArity": 1,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": false,
+            "allowedValues": [],
+            "secret": false,
+            "valueSource": "command-line",
+            "inputKind": "file",
+            "description": "Presentation whose masters, layouts and theme are reused."
+          }
+        ],
+        "arguments": [
+          {
+            "name": "file",
+            "type": "string",
+            "inputKind": "none",
+            "valueSource": "command-line",
+            "secret": false,
+            "minimumArity": 1,
+            "maximumArity": 1,
+            "required": true,
+            "hasDefault": false,
+            "allowedValues": [],
+            "description": "PPTX or PPTM path to create."
+          }
+        ]
+      },
+      {
+        "path": "slides edit",
+        "name": "edit",
+        "aliases": [],
+        "description": "Apply one validated, atomic presentation operation batch.",
+        "hidden": false,
+        "options": [
+          {
+            "name": "--backup",
+            "aliases": [],
+            "type": "boolean",
+            "minimumArity": 0,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": true,
+            "default": "false",
+            "allowedValues": [
+              "False",
+              "True"
+            ],
+            "secret": false,
+            "valueSource": "command-line",
+            "inputKind": "none",
+            "description": "Create a non-overwriting backup before an in-place write."
+          },
+          {
+            "name": "--best-effort",
+            "aliases": [],
+            "type": "boolean",
+            "minimumArity": 0,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": true,
+            "default": "false",
+            "allowedValues": [
+              "False",
+              "True"
+            ],
+            "secret": false,
+            "valueSource": "command-line",
+            "inputKind": "none",
+            "description": "Keep successful operations, report failures, and exit 8."
+          },
+          {
+            "name": "--dry-run",
+            "aliases": [],
+            "type": "boolean",
+            "minimumArity": 0,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": true,
+            "default": "false",
+            "allowedValues": [
+              "False",
+              "True"
+            ],
+            "secret": false,
+            "valueSource": "command-line",
+            "inputKind": "none",
+            "description": "Resolve and apply operations in memory without writing."
+          },
+          {
+            "name": "--encrypt",
+            "aliases": [],
+            "type": "string",
+            "minimumArity": 1,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": false,
+            "allowedValues": [],
+            "secret": true,
+            "valueSource": "command-line",
+            "inputKind": "none",
+            "description": "Password for the output presentation. Discouraged: visible in the process list; prefer --encrypt-env."
+          },
+          {
+            "name": "--encrypt-env",
+            "aliases": [],
+            "type": "string",
+            "minimumArity": 1,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": false,
+            "allowedValues": [],
+            "secret": true,
+            "valueSource": "environment-variable-name",
+            "inputKind": "none",
+            "description": "Name of an environment variable holding the password for the output presentation."
+          },
+          {
+            "name": "--font-dir",
+            "aliases": [],
+            "type": "string[]",
+            "minimumArity": 1,
+            "maximumArity": 16,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": false,
+            "allowedValues": [],
+            "secret": false,
+            "valueSource": "command-line",
+            "inputKind": "none",
+            "description": "Local font directory searched in addition to the system fonts; repeat for more."
+          },
+          {
+            "name": "--if-match",
+            "aliases": [],
+            "type": "string",
+            "minimumArity": 1,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": false,
+            "allowedValues": [],
+            "secret": false,
+            "valueSource": "command-line",
+            "inputKind": "none",
+            "description": "Require the current input SHA-256 fingerprint before editing."
+          },
+          {
+            "name": "--in-place",
+            "aliases": [],
+            "type": "boolean",
+            "minimumArity": 0,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": true,
+            "default": "false",
+            "allowedValues": [
+              "False",
+              "True"
+            ],
+            "secret": false,
+            "valueSource": "command-line",
+            "inputKind": "none",
+            "description": "Modify the input file itself atomically."
+          },
+          {
+            "name": "--ops",
+            "aliases": [],
+            "type": "string",
+            "minimumArity": 1,
+            "maximumArity": 1,
+            "required": true,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": false,
+            "allowedValues": [],
+            "secret": false,
+            "valueSource": "command-line",
+            "inputKind": "json-source",
+            "description": "The ops JSON: a path to the document, '-' to read it from stdin, or the document itself when the value starts with { or [ (inline). To name a file whose name starts with '[', prefix it with ./ . Vocabulary: aspose-cli schema v2/slides/ops."
+          },
+          {
+            "name": "--out",
+            "aliases": [
+              "-o"
+            ],
+            "type": "string",
+            "minimumArity": 1,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": false,
+            "allowedValues": [],
+            "secret": false,
+            "valueSource": "command-line",
+            "inputKind": "none",
+            "description": "Output path. Default: the input path with '.out' inserted before the extension."
+          },
+          {
+            "name": "--overwrite",
+            "aliases": [],
+            "type": "boolean",
+            "minimumArity": 0,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": true,
+            "default": "false",
+            "allowedValues": [
+              "False",
+              "True"
+            ],
+            "secret": false,
+            "valueSource": "command-line",
+            "inputKind": "none",
+            "description": "Replace the output file if it already exists."
+          },
+          {
+            "name": "--password",
+            "aliases": [],
+            "type": "string",
+            "minimumArity": 1,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": false,
+            "allowedValues": [],
+            "secret": true,
+            "valueSource": "command-line",
+            "inputKind": "none",
+            "description": "Password for the presentation. Discouraged: visible in the process list; prefer --password-env."
+          },
+          {
+            "name": "--password-env",
+            "aliases": [],
+            "type": "string",
+            "minimumArity": 1,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": false,
+            "allowedValues": [],
+            "secret": true,
+            "valueSource": "environment-variable-name",
+            "inputKind": "none",
+            "description": "Name of an environment variable holding the password for the presentation."
+          },
+          {
+            "name": "--password-stdin",
+            "aliases": [],
+            "type": "boolean",
+            "minimumArity": 0,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": true,
+            "allowedValues": [
+              "False",
+              "True"
+            ],
+            "secret": true,
+            "valueSource": "stdin",
+            "inputKind": "none",
+            "description": "Read the password for the presentation from the first line of stdin."
+          }
+        ],
+        "arguments": [
+          {
+            "name": "file",
+            "type": "string",
+            "inputKind": "file",
+            "valueSource": "command-line",
+            "secret": false,
+            "minimumArity": 1,
+            "maximumArity": 1,
+            "required": true,
+            "hasDefault": false,
+            "allowedValues": [],
+            "description": "Presentation file path."
+          }
+        ]
+      },
+      {
+        "path": "slides extract",
+        "name": "extract",
+        "aliases": [],
+        "description": "Extract bounded presentation media, notes or text.",
+        "hidden": false,
+        "options": [
+          {
+            "name": "--out-dir",
+            "aliases": [],
+            "type": "string",
+            "minimumArity": 1,
+            "maximumArity": 1,
+            "required": true,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": false,
+            "allowedValues": [],
+            "secret": false,
+            "valueSource": "command-line",
+            "inputKind": "none",
+            "description": "Safe extraction directory."
+          },
+          {
+            "name": "--overwrite",
+            "aliases": [],
+            "type": "boolean",
+            "minimumArity": 0,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": true,
+            "default": "false",
+            "allowedValues": [
+              "False",
+              "True"
+            ],
+            "secret": false,
+            "valueSource": "command-line",
+            "inputKind": "none",
+            "description": "Replace the output file if it already exists."
+          },
+          {
+            "name": "--password",
+            "aliases": [],
+            "type": "string",
+            "minimumArity": 1,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": false,
+            "allowedValues": [],
+            "secret": true,
+            "valueSource": "command-line",
+            "inputKind": "none",
+            "description": "Password for the presentation. Discouraged: visible in the process list; prefer --password-env."
+          },
+          {
+            "name": "--password-env",
+            "aliases": [],
+            "type": "string",
+            "minimumArity": 1,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": false,
+            "allowedValues": [],
+            "secret": true,
+            "valueSource": "environment-variable-name",
+            "inputKind": "none",
+            "description": "Name of an environment variable holding the password for the presentation."
+          },
+          {
+            "name": "--password-stdin",
+            "aliases": [],
+            "type": "boolean",
+            "minimumArity": 0,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": true,
+            "allowedValues": [
+              "False",
+              "True"
+            ],
+            "secret": true,
+            "valueSource": "stdin",
+            "inputKind": "none",
+            "description": "Read the password for the presentation from the first line of stdin."
+          },
+          {
+            "name": "--slides",
+            "aliases": [],
+            "type": "string",
+            "minimumArity": 1,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": false,
+            "allowedValues": [],
+            "secret": false,
+            "valueSource": "command-line",
+            "inputKind": "none",
+            "description": "Optional 1-based slide range; only those slides are extracted. Default: every slide."
+          },
+          {
+            "name": "--what",
+            "aliases": [],
+            "type": "string",
+            "minimumArity": 1,
+            "maximumArity": 1,
+            "required": true,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": false,
+            "allowedValues": [
+              "media",
+              "notes",
+              "text"
+            ],
+            "secret": false,
+            "valueSource": "command-line",
+            "inputKind": "none",
+            "description": "media, notes or text."
+          }
+        ],
+        "arguments": [
+          {
+            "name": "file",
+            "type": "string",
+            "inputKind": "file",
+            "valueSource": "command-line",
+            "secret": false,
+            "minimumArity": 1,
+            "maximumArity": 1,
+            "required": true,
+            "hasDefault": false,
+            "allowedValues": [],
+            "description": "Presentation file path."
+          }
+        ]
+      },
+      {
+        "path": "slides inspect",
+        "name": "inspect",
+        "aliases": [],
+        "description": "Show presentation structure, stable slide ids and metadata.",
+        "hidden": false,
+        "options": [
+          {
+            "name": "--detail",
+            "aliases": [],
+            "type": "string[]",
+            "minimumArity": 1,
+            "maximumArity": 100000,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": false,
+            "allowedValues": [
+              "comments",
+              "fonts",
+              "layouts",
+              "masters",
+              "media",
+              "notes",
+              "properties",
+              "sections"
+            ],
+            "secret": false,
+            "valueSource": "command-line",
+            "inputKind": "none",
+            "description": "Extra structural projections; repeatable."
+          },
+          {
+            "name": "--password",
+            "aliases": [],
+            "type": "string",
+            "minimumArity": 1,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": false,
+            "allowedValues": [],
+            "secret": true,
+            "valueSource": "command-line",
+            "inputKind": "none",
+            "description": "Password for the presentation. Discouraged: visible in the process list; prefer --password-env."
+          },
+          {
+            "name": "--password-env",
+            "aliases": [],
+            "type": "string",
+            "minimumArity": 1,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": false,
+            "allowedValues": [],
+            "secret": true,
+            "valueSource": "environment-variable-name",
+            "inputKind": "none",
+            "description": "Name of an environment variable holding the password for the presentation."
+          },
+          {
+            "name": "--password-stdin",
+            "aliases": [],
+            "type": "boolean",
+            "minimumArity": 0,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": true,
+            "allowedValues": [
+              "False",
+              "True"
+            ],
+            "secret": true,
+            "valueSource": "stdin",
+            "inputKind": "none",
+            "description": "Read the password for the presentation from the first line of stdin."
+          },
+          {
+            "name": "--preview",
+            "aliases": [],
+            "type": "boolean",
+            "minimumArity": 0,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": true,
+            "default": "false",
+            "allowedValues": [
+              "False",
+              "True"
+            ],
+            "secret": false,
+            "valueSource": "command-line",
+            "inputKind": "none",
+            "description": "Include bounded slide titles."
+          }
+        ],
+        "arguments": [
+          {
+            "name": "file",
+            "type": "string",
+            "inputKind": "file",
+            "valueSource": "command-line",
+            "secret": false,
+            "minimumArity": 1,
+            "maximumArity": 1,
+            "required": true,
+            "hasDefault": false,
+            "allowedValues": [],
+            "description": "Presentation file path."
+          }
+        ]
+      },
+      {
+        "path": "slides query",
+        "name": "query",
+        "aliases": [],
+        "description": "Read bounded presentation projections without mutating the source.",
+        "hidden": false,
+        "options": [],
+        "arguments": []
+      },
+      {
+        "path": "slides query search",
+        "name": "search",
+        "aliases": [],
+        "description": "Search presentation shape and speaker-notes text.",
+        "hidden": false,
+        "options": [
+          {
+            "name": "--case-sensitive",
+            "aliases": [],
+            "type": "boolean",
+            "minimumArity": 0,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": true,
+            "default": "false",
+            "allowedValues": [
+              "False",
+              "True"
+            ],
+            "secret": false,
+            "valueSource": "command-line",
+            "inputKind": "none",
+            "description": "Match letter case exactly."
+          },
+          {
+            "name": "--max-hits",
+            "aliases": [],
+            "type": "integer",
+            "minimumArity": 1,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": true,
+            "default": "100",
+            "allowedValues": [],
+            "secret": false,
+            "valueSource": "command-line",
+            "inputKind": "none",
+            "description": "Maximum returned hits (1-10000)."
+          },
+          {
+            "name": "--password",
+            "aliases": [],
+            "type": "string",
+            "minimumArity": 1,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": false,
+            "allowedValues": [],
+            "secret": true,
+            "valueSource": "command-line",
+            "inputKind": "none",
+            "description": "Password for the presentation. Discouraged: visible in the process list; prefer --password-env."
+          },
+          {
+            "name": "--password-env",
+            "aliases": [],
+            "type": "string",
+            "minimumArity": 1,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": false,
+            "allowedValues": [],
+            "secret": true,
+            "valueSource": "environment-variable-name",
+            "inputKind": "none",
+            "description": "Name of an environment variable holding the password for the presentation."
+          },
+          {
+            "name": "--password-stdin",
+            "aliases": [],
+            "type": "boolean",
+            "minimumArity": 0,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": true,
+            "allowedValues": [
+              "False",
+              "True"
+            ],
+            "secret": true,
+            "valueSource": "stdin",
+            "inputKind": "none",
+            "description": "Read the password for the presentation from the first line of stdin."
+          },
+          {
+            "name": "--pattern",
+            "aliases": [],
+            "type": "string",
+            "minimumArity": 1,
+            "maximumArity": 1,
+            "required": true,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": false,
+            "allowedValues": [],
+            "secret": false,
+            "valueSource": "command-line",
+            "inputKind": "none",
+            "description": "Text to find, or a regular expression with --regex."
+          },
+          {
+            "name": "--regex",
+            "aliases": [],
+            "type": "boolean",
+            "minimumArity": 0,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": true,
+            "default": "false",
+            "allowedValues": [
+              "False",
+              "True"
+            ],
+            "secret": false,
+            "valueSource": "command-line",
+            "inputKind": "none",
+            "description": "Treat the pattern as a culture-invariant regular expression with a one-second budget."
+          },
+          {
+            "name": "--scope",
+            "aliases": [],
+            "type": "string",
+            "minimumArity": 1,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": true,
+            "default": "all",
+            "allowedValues": [
+              "all",
+              "notes",
+              "shapes"
+            ],
+            "secret": false,
+            "valueSource": "command-line",
+            "inputKind": "none",
+            "description": "Search scope: shapes, notes, or all."
+          },
+          {
+            "name": "--skip",
+            "aliases": [],
+            "type": "integer",
+            "minimumArity": 1,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": true,
+            "default": "0",
+            "allowedValues": [],
+            "secret": false,
+            "valueSource": "command-line",
+            "inputKind": "none",
+            "description": "Matches to pass over before the returned hits; a truncated search's window.next sets it."
+          }
+        ],
+        "arguments": [
+          {
+            "name": "file",
+            "type": "string",
+            "inputKind": "file",
+            "valueSource": "command-line",
+            "secret": false,
+            "minimumArity": 1,
+            "maximumArity": 1,
+            "required": true,
+            "hasDefault": false,
+            "allowedValues": [],
+            "description": "Presentation file path."
+          }
+        ]
+      },
+      {
+        "path": "slides query slides",
+        "name": "slides",
+        "aliases": [],
+        "description": "Read a bounded slide-content window.",
+        "hidden": false,
+        "options": [
+          {
+            "name": "--max-chars",
+            "aliases": [],
+            "type": "integer",
+            "minimumArity": 1,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": true,
+            "default": "20000",
+            "allowedValues": [],
+            "secret": false,
+            "valueSource": "command-line",
+            "inputKind": "none",
+            "description": "Maximum returned title/text/run/notes/comment characters, including repeated projections."
+          },
+          {
+            "name": "--notes",
+            "aliases": [],
+            "type": "boolean",
+            "minimumArity": 0,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": true,
+            "default": "false",
+            "allowedValues": [
+              "False",
+              "True"
+            ],
+            "secret": false,
+            "valueSource": "command-line",
+            "inputKind": "none",
+            "description": "Include speaker notes for returned slides."
+          },
+          {
+            "name": "--password",
+            "aliases": [],
+            "type": "string",
+            "minimumArity": 1,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": false,
+            "allowedValues": [],
+            "secret": true,
+            "valueSource": "command-line",
+            "inputKind": "none",
+            "description": "Password for the presentation. Discouraged: visible in the process list; prefer --password-env."
+          },
+          {
+            "name": "--password-env",
+            "aliases": [],
+            "type": "string",
+            "minimumArity": 1,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": false,
+            "allowedValues": [],
+            "secret": true,
+            "valueSource": "environment-variable-name",
+            "inputKind": "none",
+            "description": "Name of an environment variable holding the password for the presentation."
+          },
+          {
+            "name": "--password-stdin",
+            "aliases": [],
+            "type": "boolean",
+            "minimumArity": 0,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": true,
+            "allowedValues": [
+              "False",
+              "True"
+            ],
+            "secret": true,
+            "valueSource": "stdin",
+            "inputKind": "none",
+            "description": "Read the password for the presentation from the first line of stdin."
+          },
+          {
+            "name": "--scope",
+            "aliases": [],
+            "type": "string",
+            "minimumArity": 1,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": true,
+            "default": "shapes",
+            "allowedValues": [
+              "full",
+              "shapes",
+              "text"
+            ],
+            "secret": false,
+            "valueSource": "command-line",
+            "inputKind": "none",
+            "description": "Projection scope: text, shapes or full."
+          },
+          {
+            "name": "--slides",
+            "aliases": [],
+            "type": "string",
+            "minimumArity": 1,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": false,
+            "allowedValues": [],
+            "secret": false,
+            "valueSource": "command-line",
+            "inputKind": "none",
+            "description": "1-based slide range, e.g. 1-3,7,9-. Default: the first 10 slides."
+          }
+        ],
+        "arguments": [
+          {
+            "name": "file",
+            "type": "string",
+            "inputKind": "file",
+            "valueSource": "command-line",
+            "secret": false,
+            "minimumArity": 1,
+            "maximumArity": 1,
+            "required": true,
+            "hasDefault": false,
+            "allowedValues": [],
+            "description": "Presentation file path."
+          }
+        ]
+      },
+      {
+        "path": "slides render",
+        "name": "render",
+        "aliases": [],
+        "description": "Render one or more slides for visual verification.",
+        "hidden": false,
+        "options": [
+          {
+            "name": "--all-slides",
+            "aliases": [],
+            "type": "boolean",
+            "minimumArity": 0,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": true,
+            "default": "false",
+            "allowedValues": [
+              "False",
+              "True"
+            ],
+            "secret": false,
+            "valueSource": "command-line",
+            "inputKind": "none",
+            "description": "Render every slide."
+          },
+          {
+            "name": "--dpi",
+            "aliases": [],
+            "type": "integer",
+            "minimumArity": 1,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": true,
+            "default": "192",
+            "allowedValues": [],
+            "secret": false,
+            "valueSource": "command-line",
+            "inputKind": "none",
+            "description": "Raster resolution (36-1200; default 192); ignored for vector formats."
+          },
+          {
+            "name": "--font-dir",
+            "aliases": [],
+            "type": "string[]",
+            "minimumArity": 1,
+            "maximumArity": 16,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": false,
+            "allowedValues": [],
+            "secret": false,
+            "valueSource": "command-line",
+            "inputKind": "none",
+            "description": "Local font directory searched in addition to the system fonts; repeat for more."
+          },
+          {
+            "name": "--out",
+            "aliases": [
+              "-o"
+            ],
+            "type": "string",
+            "minimumArity": 1,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": false,
+            "allowedValues": [],
+            "secret": false,
+            "valueSource": "command-line",
+            "inputKind": "none",
+            "description": "Output path; multi-slide output adds .sN before the extension."
+          },
+          {
+            "name": "--overwrite",
+            "aliases": [],
+            "type": "boolean",
+            "minimumArity": 0,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": true,
+            "default": "false",
+            "allowedValues": [
+              "False",
+              "True"
+            ],
+            "secret": false,
+            "valueSource": "command-line",
+            "inputKind": "none",
+            "description": "Replace the output file if it already exists."
+          },
+          {
+            "name": "--password",
+            "aliases": [],
+            "type": "string",
+            "minimumArity": 1,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": false,
+            "allowedValues": [],
+            "secret": true,
+            "valueSource": "command-line",
+            "inputKind": "none",
+            "description": "Password for the presentation. Discouraged: visible in the process list; prefer --password-env."
+          },
+          {
+            "name": "--password-env",
+            "aliases": [],
+            "type": "string",
+            "minimumArity": 1,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": false,
+            "allowedValues": [],
+            "secret": true,
+            "valueSource": "environment-variable-name",
+            "inputKind": "none",
+            "description": "Name of an environment variable holding the password for the presentation."
+          },
+          {
+            "name": "--password-stdin",
+            "aliases": [],
+            "type": "boolean",
+            "minimumArity": 0,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": true,
+            "allowedValues": [
+              "False",
+              "True"
+            ],
+            "secret": true,
+            "valueSource": "stdin",
+            "inputKind": "none",
+            "description": "Read the password for the presentation from the first line of stdin."
+          },
+          {
+            "name": "--slides",
+            "aliases": [],
+            "type": "string",
+            "minimumArity": 1,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": false,
+            "allowedValues": [],
+            "secret": false,
+            "valueSource": "command-line",
+            "inputKind": "none",
+            "description": "1-based slide range, e.g. 1-3,7,9-. Default: slide 1."
+          },
+          {
+            "name": "--to",
+            "aliases": [],
+            "type": "string",
+            "minimumArity": 1,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": true,
+            "default": "png",
+            "allowedValues": [
+              "jpeg",
+              "png",
+              "svg"
+            ],
+            "secret": false,
+            "valueSource": "command-line",
+            "inputKind": "none",
+            "description": "png, jpeg or svg."
+          },
+          {
+            "name": "--width",
+            "aliases": [],
+            "type": "integer",
+            "minimumArity": 1,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": false,
+            "allowedValues": [],
+            "secret": false,
+            "valueSource": "command-line",
+            "inputKind": "none",
+            "description": "Exact raster width in pixels (64-20000); replaces --dpi."
+          }
+        ],
+        "arguments": [
+          {
+            "name": "file",
+            "type": "string",
+            "inputKind": "file",
+            "valueSource": "command-line",
+            "secret": false,
+            "minimumArity": 1,
+            "maximumArity": 1,
+            "required": true,
+            "hasDefault": false,
+            "allowedValues": [],
+            "description": "Presentation file path."
+          }
+        ]
+      }
+    ],
+    "resourceBudgets": [
+      {
+        "kind": "slides.slides",
+        "default": 10000,
+        "maximum": 50000,
+        "unit": "items",
+        "enforcementStage": "post-load"
+      },
+      {
+        "kind": "slides.shapes",
+        "default": 1000000,
+        "maximum": 5000000,
+        "unit": "items",
+        "enforcementStage": "projection"
+      }
+    ]
+  },
+  "routes": [
+    {
+      "extension": ".fodp",
+      "product": "slides",
+      "operations": [
+        "app",
+        "fonts",
+        "open",
+        "preview",
+        "review"
+      ],
+      "requiresContentProbe": true,
+      "recognizerStrategy": "standard-signature-v1",
+      "maxProbeBytes": 65536
+    },
+    {
+      "extension": ".odp",
+      "product": "slides",
+      "operations": [
+        "app",
+        "fonts",
+        "open",
+        "preview",
+        "review"
+      ],
+      "requiresContentProbe": true,
+      "recognizerStrategy": "standard-signature-v1",
+      "maxProbeBytes": 65536
+    },
+    {
+      "extension": ".otp",
+      "product": "slides",
+      "operations": [
+        "app",
+        "fonts",
+        "open",
+        "preview",
+        "review"
+      ],
+      "requiresContentProbe": true,
+      "recognizerStrategy": "standard-signature-v1",
+      "maxProbeBytes": 65536
+    },
+    {
+      "extension": ".pot",
+      "product": "slides",
+      "operations": [
+        "app",
+        "fonts",
+        "open",
+        "preview",
+        "review"
+      ],
+      "requiresContentProbe": true,
+      "recognizerStrategy": "standard-signature-v1",
+      "maxProbeBytes": 65536
+    },
+    {
+      "extension": ".potm",
+      "product": "slides",
+      "operations": [
+        "app",
+        "fonts",
+        "open",
+        "preview",
+        "review"
+      ],
+      "requiresContentProbe": true,
+      "recognizerStrategy": "standard-signature-v1",
+      "maxProbeBytes": 65536
+    },
+    {
+      "extension": ".potx",
+      "product": "slides",
+      "operations": [
+        "app",
+        "fonts",
+        "open",
+        "preview",
+        "review"
+      ],
+      "requiresContentProbe": true,
+      "recognizerStrategy": "standard-signature-v1",
+      "maxProbeBytes": 65536
+    },
+    {
+      "extension": ".pps",
+      "product": "slides",
+      "operations": [
+        "app",
+        "fonts",
+        "open",
+        "preview",
+        "review"
+      ],
+      "requiresContentProbe": true,
+      "recognizerStrategy": "standard-signature-v1",
+      "maxProbeBytes": 65536
+    },
+    {
+      "extension": ".ppsm",
+      "product": "slides",
+      "operations": [
+        "app",
+        "fonts",
+        "open",
+        "preview",
+        "review"
+      ],
+      "requiresContentProbe": true,
+      "recognizerStrategy": "standard-signature-v1",
+      "maxProbeBytes": 65536
+    },
+    {
+      "extension": ".ppsx",
+      "product": "slides",
+      "operations": [
+        "app",
+        "fonts",
+        "open",
+        "preview",
+        "review"
+      ],
+      "requiresContentProbe": true,
+      "recognizerStrategy": "standard-signature-v1",
+      "maxProbeBytes": 65536
+    },
+    {
+      "extension": ".ppt",
+      "product": "slides",
+      "operations": [
+        "app",
+        "fonts",
+        "open",
+        "preview",
+        "review"
+      ],
+      "requiresContentProbe": true,
+      "recognizerStrategy": "standard-signature-v1",
+      "maxProbeBytes": 65536
+    },
+    {
+      "extension": ".pptm",
+      "product": "slides",
+      "operations": [
+        "app",
+        "fonts",
+        "open",
+        "preview",
+        "review"
+      ],
+      "requiresContentProbe": true,
+      "recognizerStrategy": "standard-signature-v1",
+      "maxProbeBytes": 65536
+    },
+    {
+      "extension": ".pptx",
+      "product": "slides",
+      "operations": [
+        "app",
+        "fonts",
+        "open",
+        "preview",
+        "review"
+      ],
+      "requiresContentProbe": true,
+      "recognizerStrategy": "standard-signature-v1",
+      "maxProbeBytes": 65536
+    }
+  ],
+  "diagnostics": [
+    {
+      "code": "CHART_DATA_INVALID",
+      "owner": "slides",
+      "severity": "error",
+      "exitCode": 4,
+      "category": "validation",
+      "messageTemplateId": "slides.chart-data-invalid.message.v1",
+      "hintTemplateId": "slides.chart-data-invalid.hint.v1",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
+      "code": "CHART_TITLE_OVERLAID",
+      "owner": "slides",
+      "severity": "warning",
+      "category": "warning",
+      "messageTemplateId": "slides.chart-title-overlaid.message.v1",
+      "hintTemplateId": "slides.chart-title-overlaid.hint.v1",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
+      "code": "LAYOUT_NOT_FOUND",
+      "owner": "slides",
+      "severity": "error",
+      "exitCode": 4,
+      "category": "validation",
+      "messageTemplateId": "slides.layout-not-found.message.v1",
+      "hintTemplateId": "slides.layout-not-found.hint.v1",
+      "detailsSchemaId": "v2/common/not-found-details"
+    },
+    {
+      "code": "PLACEHOLDER_NOT_FOUND",
+      "owner": "slides",
+      "severity": "error",
+      "exitCode": 4,
+      "category": "validation",
+      "messageTemplateId": "slides.placeholder-not-found.message.v1",
+      "hintTemplateId": "slides.placeholder-not-found.hint.v1",
+      "detailsSchemaId": "v2/common/not-found-details"
+    },
+    {
+      "code": "SHAPE_NOT_FOUND",
+      "owner": "slides",
+      "severity": "error",
+      "exitCode": 4,
+      "category": "validation",
+      "messageTemplateId": "slides.shape-not-found.message.v1",
+      "hintTemplateId": "slides.shape-not-found.hint.v1",
+      "detailsSchemaId": "v2/common/not-found-details"
+    },
+    {
+      "code": "SLIDE_BACKGROUND_RESET",
+      "owner": "slides",
+      "severity": "warning",
+      "category": "warning",
+      "messageTemplateId": "slides.slide-background-reset.message.v1",
+      "hintTemplateId": "slides.slide-background-reset.hint.v1",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
+      "code": "SLIDE_NOT_FOUND",
+      "owner": "slides",
+      "severity": "error",
+      "exitCode": 4,
+      "category": "validation",
+      "messageTemplateId": "slides.slide-not-found.message.v1",
+      "hintTemplateId": "slides.slide-not-found.hint.v1",
+      "detailsSchemaId": "v2/common/not-found-details"
+    },
+    {
+      "code": "TABLE_OVERFLOW",
+      "owner": "slides",
+      "severity": "warning",
+      "category": "warning",
+      "messageTemplateId": "slides.table-overflow.message.v1",
+      "hintTemplateId": "slides.table-overflow.hint.v1",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    }
+  ],
+  "schemas": {
+    "v2/slides/convert-result": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "$id": "https://schemas.aspose.com/aspose-cli/v2/slides/convert-result.schema.json",
+      "description": "Result of slides convert: the files a presentation or its selected slides were converted to. PNG and JPEG use the default 192 DPI render geometry and pixel budgets.",
+      "type": "object",
+      "required": [
+        "schema",
+        "schemaVersion",
+        "input",
+        "outputs"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "schema": {
+          "description": "URI of the JSON schema this result conforms to.",
+          "const": "https://schemas.aspose.com/aspose-cli/v2/slides/convert-result.schema.json"
+        },
+        "schemaVersion": {
+          "description": "Version of this result contract.",
+          "const": 2
+        },
+        "input": {
+          "description": "The converted presentation.",
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/source.schema.json"
+        },
+        "outputs": {
+          "description": "The written files: one per slide for an image format, otherwise one, with any companion files the format needs.",
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/output.schema.json"
+          }
+        },
+        "slides": {
+          "description": "The --slides selection that was converted, normalized; omitted when every slide was.",
+          "type": "string",
+          "pattern": "^\\s*0*[1-9][0-9]*(-(0*[1-9][0-9]*)?)?(\\s*,\\s*0*[1-9][0-9]*(-(0*[1-9][0-9]*)?)?)*\\s*$"
+        },
+        "license": {
+          "description": "License mode the engine ran under.",
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/license.schema.json"
+        },
+        "warnings": {
+          "description": "Warnings the agent is expected to act on (for example EVAL_MODE: tell the user about the evaluation watermark). Omitted when empty.",
+          "type": "array",
+          "items": {
+            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
+          }
+        }
+      }
+    },
+    "v2/slides/create-result": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "$id": "https://schemas.aspose.com/aspose-cli/v2/slides/create-result.schema.json",
+      "description": "Result of slides create: the new presentation and what it was built from.",
+      "type": "object",
+      "required": [
+        "schema",
+        "schemaVersion",
+        "output",
+        "slideCount"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "schema": {
+          "description": "URI of the JSON schema this result conforms to.",
+          "const": "https://schemas.aspose.com/aspose-cli/v2/slides/create-result.schema.json"
+        },
+        "schemaVersion": {
+          "description": "Version of this result contract.",
+          "const": 2
+        },
+        "output": {
+          "description": "The created presentation.",
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/output.schema.json"
+        },
+        "slideCount": {
+          "description": "How many slides the created presentation holds.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "template": {
+          "description": "The template the presentation was built from; omitted without --template.",
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/source.schema.json"
+        },
+        "markdown": {
+          "description": "The Markdown outline the slides were filled from; omitted without --from-markdown.",
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/source.schema.json"
+        },
+        "license": {
+          "description": "License mode the engine ran under.",
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/license.schema.json"
+        },
+        "warnings": {
+          "description": "Warnings the agent is expected to act on (for example EVAL_MODE: tell the user about the evaluation watermark). Omitted when empty.",
+          "type": "array",
+          "items": {
+            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
+          }
+        }
+      }
+    },
+    "v2/slides/edit-result": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "$id": "https://schemas.aspose.com/aspose-cli/v2/slides/edit-result.schema.json",
+      "description": "Result of slides edit: one atomic operation batch, applied or checked.",
+      "type": "object",
+      "required": [
+        "schema",
+        "schemaVersion",
+        "input",
+        "dryRun",
+        "applied"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "schema": {
+          "description": "URI of the JSON schema this result conforms to.",
+          "const": "https://schemas.aspose.com/aspose-cli/v2/slides/edit-result.schema.json"
+        },
+        "schemaVersion": {
+          "description": "Version of this result contract.",
+          "const": 2
+        },
+        "input": {
+          "description": "The edited presentation.",
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/source.schema.json"
+        },
+        "output": {
+          "description": "The written presentation; omitted for a dry run.",
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/output.schema.json"
+        },
+        "dryRun": {
+          "description": "Whether the batch was only checked, without writing anything.",
+          "type": "boolean"
+        },
+        "applied": {
+          "description": "The outcome of every operation, in batch order.",
+          "type": "array",
+          "items": {
+            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/operation-outcome.schema.json"
+          }
+        },
+        "backup": {
+          "description": "The backup of the replaced presentation; only for an in-place edit that kept one.",
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/backup.schema.json"
+        },
+        "slidesTouched": {
+          "description": "The stable ids of the slides the batch changed, ascending; omitted when it changed none.",
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "integer",
+            "minimum": 1
+          }
+        },
+        "license": {
+          "description": "License mode the engine ran under.",
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/license.schema.json"
+        },
+        "warnings": {
+          "description": "Warnings the agent is expected to act on (for example EVAL_MODE: tell the user about the evaluation watermark). Omitted when empty.",
+          "type": "array",
+          "items": {
+            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
+          }
+        }
+      }
+    },
+    "v2/slides/extract-result": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "$id": "https://schemas.aspose.com/aspose-cli/v2/slides/extract-result.schema.json",
+      "description": "Result of slides extract: the files written for the extracted content.",
+      "type": "object",
+      "required": [
+        "schema",
+        "schemaVersion",
+        "input",
+        "what",
+        "items"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "schema": {
+          "description": "URI of the JSON schema this result conforms to.",
+          "const": "https://schemas.aspose.com/aspose-cli/v2/slides/extract-result.schema.json"
+        },
+        "schemaVersion": {
+          "description": "Version of this result contract.",
+          "const": 2
+        },
+        "input": {
+          "description": "The presentation extracted from.",
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/source.schema.json"
+        },
+        "what": {
+          "description": "What was extracted.",
+          "type": "string",
+          "enum": [
+            "media",
+            "notes",
+            "text"
+          ]
+        },
+        "items": {
+          "description": "The written files: media in presentation order, or one text file per slide that has text.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/slidesExtractedItem"
+          }
+        },
+        "license": {
+          "description": "License mode the engine ran under.",
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/license.schema.json"
+        },
+        "warnings": {
+          "description": "Warnings the agent is expected to act on (for example EVAL_MODE: tell the user about the evaluation watermark). Omitted when empty.",
+          "type": "array",
+          "items": {
+            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
+          }
+        }
+      },
+      "$defs": {
+        "slidesExtractedItem": {
+          "description": "One extracted file.",
+          "type": "object",
+          "required": [
+            "path",
+            "kind",
+            "sizeBytes"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "path": {
+              "description": "Absolute path of the written file.",
+              "type": "string"
+            },
+            "kind": {
+              "description": "What the file holds: a media kind, or the speaker notes or text of one slide.",
+              "type": "string",
+              "enum": [
+                "image",
+                "audio",
+                "video",
+                "notes",
+                "text"
+              ]
+            },
+            "sizeBytes": {
+              "description": "The file's size in bytes.",
+              "type": "integer",
+              "minimum": 0
+            },
+            "slide": {
+              "description": "The 1-based slide number of slide text or notes; omitted for media.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "slideId": {
+              "description": "The stable slide id of slide text or notes; omitted for media.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "index": {
+              "description": "The media item's 1-based position among all images, then audio, then video, as inspect reports it; omitted for text and notes.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "name": {
+              "description": "The slide's name for slide text or notes; omitted when it has none.",
+              "type": "string"
+            },
+            "contentType": {
+              "description": "The MIME type of the file; omitted when the presentation states none for a media item.",
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "v2/slides/ops": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "$id": "https://schemas.aspose.com/aspose-cli/v2/slides/ops.schema.json",
+      "description": "The operation document of slides edit --ops. Every slide and shape target resolves against the presentation as it was before the first operation, so content inserted earlier in the batch cannot be targeted, and a target deleted earlier fails the operation. Operations apply in order. Without --best-effort the batch is atomic: if any operation fails, no file is written. With --best-effort the operations that succeed are kept and saved, each one that fails is reported, and the command exits 8 when any failed; an invalid document or a failure inside the document engine still writes nothing.",
+      "type": "object",
+      "required": [
+        "ops"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "schema": {
+          "description": "Optional; checked when present.",
+          "const": "https://schemas.aspose.com/aspose-cli/v2/slides/ops.schema.json"
+        },
+        "schemaVersion": {
+          "const": 2
+        },
+        "ifMatch": {
+          "description": "The SHA-256 fingerprint the input must still have; the edit fails when it changed.",
+          "type": "string",
+          "pattern": "^[0-9A-Fa-f]{64}$"
+        },
+        "ops": {
+          "description": "Operations applied in order.",
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 256,
+          "items": {
+            "oneOf": [
+              {
+                "$ref": "#/$defs/add_section"
+              },
+              {
+                "$ref": "#/$defs/add_slide"
+              },
+              {
+                "$ref": "#/$defs/append_presentation"
+              },
+              {
+                "$ref": "#/$defs/apply_layout"
+              },
+              {
+                "$ref": "#/$defs/delete_shape"
+              },
+              {
+                "$ref": "#/$defs/delete_slides"
+              },
+              {
+                "$ref": "#/$defs/duplicate_slide"
+              },
+              {
+                "$ref": "#/$defs/insert_chart"
+              },
+              {
+                "$ref": "#/$defs/insert_image"
+              },
+              {
+                "$ref": "#/$defs/insert_shape"
+              },
+              {
+                "$ref": "#/$defs/insert_table"
+              },
+              {
+                "$ref": "#/$defs/move_slide"
+              },
+              {
+                "$ref": "#/$defs/replace_text"
+              },
+              {
+                "$ref": "#/$defs/set_background"
+              },
+              {
+                "$ref": "#/$defs/set_body"
+              },
+              {
+                "$ref": "#/$defs/set_footer"
+              },
+              {
+                "$ref": "#/$defs/set_notes"
+              },
+              {
+                "$ref": "#/$defs/set_properties"
+              },
+              {
+                "$ref": "#/$defs/set_shape_bounds"
+              },
+              {
+                "$ref": "#/$defs/set_shape_style"
+              },
+              {
+                "$ref": "#/$defs/set_slide_hidden"
+              },
+              {
+                "$ref": "#/$defs/set_slide_size"
+              },
+              {
+                "$ref": "#/$defs/set_table_cell"
+              },
+              {
+                "$ref": "#/$defs/set_text"
+              },
+              {
+                "$ref": "#/$defs/set_title"
+              },
+              {
+                "$ref": "#/$defs/set_transition"
+              },
+              {
+                "$ref": "#/$defs/update_chart_data"
+              }
+            ]
+          }
+        }
+      },
+      "$defs": {
+        "id": {
+          "description": "A correlation id echoed in the result; op-0001 style ids are assigned when omitted.",
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9._-]{0,63}$"
+        },
+        "add_section": {
+          "description": "Starts a new section at a slide; section names are unique.",
+          "type": "object",
+          "required": [
+            "op",
+            "name",
+            "startSlide"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/id"
+            },
+            "op": {
+              "const": "add_section"
+            },
+            "name": {
+              "type": "string",
+              "pattern": "\\S"
+            },
+            "startSlide": {
+              "description": "The 1-based number of the section's first slide.",
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        },
+        "add_slide": {
+          "description": "Adds an empty slide.",
+          "type": "object",
+          "required": [
+            "op"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/id"
+            },
+            "op": {
+              "const": "add_slide"
+            },
+            "layout": {
+              "description": "The layout name, matched case-insensitively; the first layout when omitted.",
+              "type": "string",
+              "pattern": "\\S"
+            },
+            "at": {
+              "description": "The 1-based position of the new slide, at most the slide count plus one; the end when omitted.",
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        },
+        "append_presentation": {
+          "description": "Appends every slide of another presentation.",
+          "type": "object",
+          "required": [
+            "op",
+            "path"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/id"
+            },
+            "op": {
+              "const": "append_presentation"
+            },
+            "path": {
+              "description": "The source presentation, relative to the working directory.",
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            },
+            "masterPolicy": {
+              "description": "Whether appended slides keep their own masters, or take the destination's first master and show its layouts' backgrounds instead of their own.",
+              "type": "string",
+              "enum": [
+                "keep-source",
+                "use-dest"
+              ],
+              "default": "keep-source"
+            }
+          }
+        },
+        "apply_layout": {
+          "description": "Applies a layout to slides, which drop their own background to show the layout's.",
+          "type": "object",
+          "required": [
+            "op",
+            "slides",
+            "layout"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/id"
+            },
+            "op": {
+              "const": "apply_layout"
+            },
+            "slides": {
+              "$ref": "#/$defs/pages"
+            },
+            "layout": {
+              "description": "The layout name, matched case-insensitively.",
+              "type": "string",
+              "pattern": "\\S"
+            }
+          }
+        },
+        "delete_shape": {
+          "description": "Deletes one shape.",
+          "type": "object",
+          "required": [
+            "op"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/id"
+            },
+            "op": {
+              "const": "delete_shape"
+            },
+            "slide": {
+              "description": "The 1-based slide number.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "slideId": {
+              "description": "The stable slide id reported by inspect and query slides.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "shapeId": {
+              "description": "The persistent slide-scoped shapeId returned by query slides; not a shape position.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "shapeName": {
+              "description": "The shape name, matched case-sensitively.",
+              "type": "string",
+              "pattern": "\\S"
+            },
+            "placeholder": {
+              "description": "The placeholder role, as query slides reports it.",
+              "type": "string",
+              "enum": [
+                "title",
+                "body",
+                "subtitle",
+                "footer"
+              ]
+            }
+          },
+          "allOf": [
+            {
+              "oneOf": [
+                {
+                  "required": [
+                    "slide"
+                  ]
+                },
+                {
+                  "required": [
+                    "slideId"
+                  ]
+                }
+              ]
+            },
+            {
+              "oneOf": [
+                {
+                  "required": [
+                    "shapeId"
+                  ]
+                },
+                {
+                  "required": [
+                    "shapeName"
+                  ]
+                },
+                {
+                  "required": [
+                    "placeholder"
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "delete_slides": {
+          "description": "Deletes slides; a presentation must keep at least one slide.",
+          "type": "object",
+          "required": [
+            "op",
+            "slides"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/id"
+            },
+            "op": {
+              "const": "delete_slides"
+            },
+            "slides": {
+              "$ref": "#/$defs/pages"
+            }
+          }
+        },
+        "duplicate_slide": {
+          "description": "Inserts a copy of one slide.",
+          "type": "object",
+          "required": [
+            "op"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/id"
+            },
+            "op": {
+              "const": "duplicate_slide"
+            },
+            "slide": {
+              "description": "The 1-based slide number.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "slideId": {
+              "description": "The stable slide id reported by inspect and query slides.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "at": {
+              "description": "The 1-based position of the copy, at most the slide count plus one; the end when omitted.",
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          "allOf": [
+            {
+              "oneOf": [
+                {
+                  "required": [
+                    "slide"
+                  ]
+                },
+                {
+                  "required": [
+                    "slideId"
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "insert_chart": {
+          "description": "Inserts a chart. Every series has one value per category, and a scatter series has one x value per value.",
+          "type": "object",
+          "required": [
+            "op",
+            "kind",
+            "rect",
+            "categories",
+            "series"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/id"
+            },
+            "op": {
+              "const": "insert_chart"
+            },
+            "slide": {
+              "description": "The 1-based slide number.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "slideId": {
+              "description": "The stable slide id reported by inspect and query slides.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "kind": {
+              "type": "string",
+              "enum": [
+                "bar",
+                "column",
+                "line",
+                "pie",
+                "scatter"
+              ]
+            },
+            "rect": {
+              "$ref": "#/$defs/slidesRectInput"
+            },
+            "categories": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 1000,
+              "items": {
+                "type": "string"
+              }
+            },
+            "series": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 50,
+              "items": {
+                "$ref": "#/$defs/slidesChartSeriesInput"
+              }
+            },
+            "title": {
+              "type": "string"
+            }
+          },
+          "allOf": [
+            {
+              "oneOf": [
+                {
+                  "required": [
+                    "slide"
+                  ]
+                },
+                {
+                  "required": [
+                    "slideId"
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "insert_image": {
+          "description": "Inserts a picture.",
+          "type": "object",
+          "required": [
+            "op",
+            "path"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/id"
+            },
+            "op": {
+              "const": "insert_image"
+            },
+            "slide": {
+              "description": "The 1-based slide number.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "slideId": {
+              "description": "The stable slide id reported by inspect and query slides.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "path": {
+              "description": "The picture, relative to the working directory.",
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            },
+            "rect": {
+              "description": "Where the picture goes; when omitted it keeps its aspect ratio, centered in 80% by 75% of the slide.",
+              "$ref": "#/$defs/slidesRectInput"
+            },
+            "altText": {
+              "description": "The picture's alternative text, which screen readers and exported PDFs carry.",
+              "type": "string"
+            }
+          },
+          "allOf": [
+            {
+              "oneOf": [
+                {
+                  "required": [
+                    "slide"
+                  ]
+                },
+                {
+                  "required": [
+                    "slideId"
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "insert_shape": {
+          "description": "Inserts a shape.",
+          "type": "object",
+          "required": [
+            "op",
+            "kind",
+            "rect"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/id"
+            },
+            "op": {
+              "const": "insert_shape"
+            },
+            "slide": {
+              "description": "The 1-based slide number.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "slideId": {
+              "description": "The stable slide id reported by inspect and query slides.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "kind": {
+              "type": "string",
+              "enum": [
+                "rectangle",
+                "rounded-rectangle",
+                "ellipse",
+                "line",
+                "chevron"
+              ]
+            },
+            "rect": {
+              "$ref": "#/$defs/slidesRectInput"
+            },
+            "text": {
+              "type": "string"
+            },
+            "style": {
+              "$ref": "#/$defs/slidesShapeStyleInput"
+            }
+          },
+          "allOf": [
+            {
+              "oneOf": [
+                {
+                  "required": [
+                    "slide"
+                  ]
+                },
+                {
+                  "required": [
+                    "slideId"
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "insert_table": {
+          "description": "Inserts a table with equal rows and columns; data fills it from the top-left cell.",
+          "type": "object",
+          "required": [
+            "op",
+            "rect",
+            "rowCount",
+            "columnCount"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/id"
+            },
+            "op": {
+              "const": "insert_table"
+            },
+            "slide": {
+              "description": "The 1-based slide number.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "slideId": {
+              "description": "The stable slide id reported by inspect and query slides.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "rect": {
+              "$ref": "#/$defs/slidesRectInput"
+            },
+            "rowCount": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100
+            },
+            "columnCount": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50
+            },
+            "data": {
+              "description": "Cell text by row, at most rowCount rows of at most columnCount cells each.",
+              "type": "array",
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "allOf": [
+            {
+              "oneOf": [
+                {
+                  "required": [
+                    "slide"
+                  ]
+                },
+                {
+                  "required": [
+                    "slideId"
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "move_slide": {
+          "description": "Moves one slide to a position; it keeps its slide id.",
+          "type": "object",
+          "required": [
+            "op",
+            "to"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/id"
+            },
+            "op": {
+              "const": "move_slide"
+            },
+            "slide": {
+              "description": "The 1-based slide number.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "slideId": {
+              "description": "The stable slide id reported by inspect and query slides.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "to": {
+              "description": "The 1-based position, at most the slide count.",
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          "allOf": [
+            {
+              "oneOf": [
+                {
+                  "required": [
+                    "slide"
+                  ]
+                },
+                {
+                  "required": [
+                    "slideId"
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "replace_text": {
+          "description": "Replaces text within each paragraph of every slide's shapes (including table cells, group children and SmartArt nodes) and speaker notes. A regular expression runs with a one-second timeout and must compile.",
+          "type": "object",
+          "required": [
+            "op",
+            "find",
+            "replace"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/id"
+            },
+            "op": {
+              "const": "replace_text"
+            },
+            "find": {
+              "type": "string",
+              "minLength": 1
+            },
+            "replace": {
+              "description": "The replacement; with regex it honors .NET substitutions such as $1, and $$ is a literal $.",
+              "type": "string"
+            },
+            "regex": {
+              "description": "Whether find is a .NET regular expression rather than literal text.",
+              "type": "boolean",
+              "default": false
+            },
+            "matchCase": {
+              "type": "boolean",
+              "default": false
+            },
+            "scope": {
+              "type": "string",
+              "enum": [
+                "shapes",
+                "notes",
+                "all"
+              ],
+              "default": "all"
+            }
+          }
+        },
+        "set_background": {
+          "description": "Gives slides their own solid-color or stretched-picture background.",
+          "type": "object",
+          "required": [
+            "op"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/id"
+            },
+            "op": {
+              "const": "set_background"
+            },
+            "slides": {
+              "description": "The slides to change; every slide when omitted.",
+              "$ref": "#/$defs/pages"
+            },
+            "color": {
+              "$ref": "#/$defs/color"
+            },
+            "imagePath": {
+              "description": "The picture, relative to the working directory.",
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S"
+            }
+          },
+          "allOf": [
+            {
+              "oneOf": [
+                {
+                  "required": [
+                    "color"
+                  ]
+                },
+                {
+                  "required": [
+                    "imagePath"
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "set_body": {
+          "description": "Replaces the paragraphs of a slide's body placeholder.",
+          "type": "object",
+          "required": [
+            "op",
+            "paragraphs"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/id"
+            },
+            "op": {
+              "const": "set_body"
+            },
+            "slide": {
+              "description": "The 1-based slide number.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "slideId": {
+              "description": "The stable slide id reported by inspect and query slides.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "paragraphs": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/$defs/slidesParagraphInput"
+              }
+            }
+          },
+          "allOf": [
+            {
+              "oneOf": [
+                {
+                  "required": [
+                    "slide"
+                  ]
+                },
+                {
+                  "required": [
+                    "slideId"
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "set_footer": {
+          "description": "Shows footer text, slide numbers or dates through the layout's own placeholders; it must set at least one of text, showNumber and showDate.",
+          "type": "object",
+          "required": [
+            "op"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/id"
+            },
+            "op": {
+              "const": "set_footer"
+            },
+            "slides": {
+              "description": "The slides to change; every slide when omitted.",
+              "$ref": "#/$defs/pages"
+            },
+            "text": {
+              "type": "string"
+            },
+            "showNumber": {
+              "type": "boolean"
+            },
+            "showDate": {
+              "type": "boolean"
+            }
+          },
+          "allOf": [
+            {
+              "anyOf": [
+                {
+                  "required": [
+                    "text"
+                  ]
+                },
+                {
+                  "required": [
+                    "showNumber"
+                  ]
+                },
+                {
+                  "required": [
+                    "showDate"
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "set_notes": {
+          "description": "Replaces a slide's speaker-note text.",
+          "type": "object",
+          "required": [
+            "op",
+            "text"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/id"
+            },
+            "op": {
+              "const": "set_notes"
+            },
+            "slide": {
+              "description": "The 1-based slide number.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "slideId": {
+              "description": "The stable slide id reported by inspect and query slides.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "text": {
+              "type": "string"
+            }
+          },
+          "allOf": [
+            {
+              "oneOf": [
+                {
+                  "required": [
+                    "slide"
+                  ]
+                },
+                {
+                  "required": [
+                    "slideId"
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "set_properties": {
+          "description": "Sets document properties; omitted properties keep their values.",
+          "type": "object",
+          "required": [
+            "op"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/id"
+            },
+            "op": {
+              "const": "set_properties"
+            },
+            "title": {
+              "type": "string"
+            },
+            "author": {
+              "type": "string"
+            },
+            "subject": {
+              "type": "string"
+            },
+            "keywords": {
+              "type": "string"
+            },
+            "company": {
+              "type": "string"
+            }
+          },
+          "allOf": [
+            {
+              "anyOf": [
+                {
+                  "required": [
+                    "title"
+                  ]
+                },
+                {
+                  "required": [
+                    "author"
+                  ]
+                },
+                {
+                  "required": [
+                    "subject"
+                  ]
+                },
+                {
+                  "required": [
+                    "keywords"
+                  ]
+                },
+                {
+                  "required": [
+                    "company"
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "set_shape_bounds": {
+          "description": "Moves or resizes one shape in presentation points from the slide's top-left corner; omitted sides keep their values. It must set at least one of x, y, width and height.",
+          "type": "object",
+          "required": [
+            "op"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/id"
+            },
+            "op": {
+              "const": "set_shape_bounds"
+            },
+            "slide": {
+              "description": "The 1-based slide number.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "slideId": {
+              "description": "The stable slide id reported by inspect and query slides.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "shapeId": {
+              "description": "The persistent slide-scoped shapeId returned by query slides; not a shape position.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "shapeName": {
+              "description": "The shape name, matched case-sensitively.",
+              "type": "string",
+              "pattern": "\\S"
+            },
+            "placeholder": {
+              "description": "The placeholder role, as query slides reports it.",
+              "type": "string",
+              "enum": [
+                "title",
+                "body",
+                "subtitle",
+                "footer"
+              ]
+            },
+            "x": {
+              "type": "number",
+              "minimum": 0
+            },
+            "y": {
+              "type": "number",
+              "minimum": 0
+            },
+            "width": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "height": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            }
+          },
+          "allOf": [
+            {
+              "oneOf": [
+                {
+                  "required": [
+                    "slide"
+                  ]
+                },
+                {
+                  "required": [
+                    "slideId"
+                  ]
+                }
+              ]
+            },
+            {
+              "oneOf": [
+                {
+                  "required": [
+                    "shapeId"
+                  ]
+                },
+                {
+                  "required": [
+                    "shapeName"
+                  ]
+                },
+                {
+                  "required": [
+                    "placeholder"
+                  ]
+                }
+              ]
+            },
+            {
+              "anyOf": [
+                {
+                  "required": [
+                    "x"
+                  ]
+                },
+                {
+                  "required": [
+                    "y"
+                  ]
+                },
+                {
+                  "required": [
+                    "width"
+                  ]
+                },
+                {
+                  "required": [
+                    "height"
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "set_shape_style": {
+          "description": "Styles one shape and every run of its text. A table's fill, line and text are those of all its cells; a chart's fill and line are its chart area's, and its text includes the title, legend, axes and data labels. A shape without text, such as a picture, refuses text styles.",
+          "type": "object",
+          "required": [
+            "op",
+            "style"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/id"
+            },
+            "op": {
+              "const": "set_shape_style"
+            },
+            "slide": {
+              "description": "The 1-based slide number.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "slideId": {
+              "description": "The stable slide id reported by inspect and query slides.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "shapeId": {
+              "description": "The persistent slide-scoped shapeId returned by query slides; not a shape position.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "shapeName": {
+              "description": "The shape name, matched case-sensitively.",
+              "type": "string",
+              "pattern": "\\S"
+            },
+            "placeholder": {
+              "description": "The placeholder role, as query slides reports it.",
+              "type": "string",
+              "enum": [
+                "title",
+                "body",
+                "subtitle",
+                "footer"
+              ]
+            },
+            "style": {
+              "$ref": "#/$defs/slidesShapeStyleInput"
+            }
+          },
+          "allOf": [
+            {
+              "oneOf": [
+                {
+                  "required": [
+                    "slide"
+                  ]
+                },
+                {
+                  "required": [
+                    "slideId"
+                  ]
+                }
+              ]
+            },
+            {
+              "oneOf": [
+                {
+                  "required": [
+                    "shapeId"
+                  ]
+                },
+                {
+                  "required": [
+                    "shapeName"
+                  ]
+                },
+                {
+                  "required": [
+                    "placeholder"
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "set_slide_hidden": {
+          "description": "Hides or shows slides in a slide show.",
+          "type": "object",
+          "required": [
+            "op",
+            "slides",
+            "hidden"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/id"
+            },
+            "op": {
+              "const": "set_slide_hidden"
+            },
+            "slides": {
+              "$ref": "#/$defs/pages"
+            },
+            "hidden": {
+              "type": "boolean"
+            }
+          }
+        },
+        "set_slide_size": {
+          "description": "Sets the slide size of the whole presentation.",
+          "type": "object",
+          "required": [
+            "op",
+            "size"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/id"
+            },
+            "op": {
+              "const": "set_slide_size"
+            },
+            "size": {
+              "description": "16x9, 4x3, or WxHpt such as 800x450pt; each side is 72 through 7200 points.",
+              "type": "string",
+              "pattern": "^(16x9|4x3|[0-9]+(?:\\.[0-9]+)?x[0-9]+(?:\\.[0-9]+)?pt)$"
+            },
+            "scaleContent": {
+              "description": "Whether the content is scaled to fit the new size rather than kept at its position.",
+              "type": "boolean",
+              "default": true
+            }
+          }
+        },
+        "set_table_cell": {
+          "description": "Sets the text of one cell of a table shape.",
+          "type": "object",
+          "required": [
+            "op",
+            "row",
+            "col",
+            "text"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/id"
+            },
+            "op": {
+              "const": "set_table_cell"
+            },
+            "slide": {
+              "description": "The 1-based slide number.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "slideId": {
+              "description": "The stable slide id reported by inspect and query slides.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "shapeId": {
+              "description": "The persistent slide-scoped shapeId returned by query slides; not a shape position.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "shapeName": {
+              "description": "The shape name, matched case-sensitively.",
+              "type": "string",
+              "pattern": "\\S"
+            },
+            "placeholder": {
+              "description": "The placeholder role, as query slides reports it.",
+              "type": "string",
+              "enum": [
+                "title",
+                "body",
+                "subtitle",
+                "footer"
+              ]
+            },
+            "row": {
+              "description": "The 1-based row.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "col": {
+              "description": "The 1-based column.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "text": {
+              "type": "string"
+            }
+          },
+          "allOf": [
+            {
+              "oneOf": [
+                {
+                  "required": [
+                    "slide"
+                  ]
+                },
+                {
+                  "required": [
+                    "slideId"
+                  ]
+                }
+              ]
+            },
+            {
+              "oneOf": [
+                {
+                  "required": [
+                    "shapeId"
+                  ]
+                },
+                {
+                  "required": [
+                    "shapeName"
+                  ]
+                },
+                {
+                  "required": [
+                    "placeholder"
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "set_text": {
+          "description": "Replaces the text of one shape that has a text frame.",
+          "type": "object",
+          "required": [
+            "op",
+            "text"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/id"
+            },
+            "op": {
+              "const": "set_text"
+            },
+            "slide": {
+              "description": "The 1-based slide number.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "slideId": {
+              "description": "The stable slide id reported by inspect and query slides.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "shapeId": {
+              "description": "The persistent slide-scoped shapeId returned by query slides; not a shape position.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "shapeName": {
+              "description": "The shape name, matched case-sensitively.",
+              "type": "string",
+              "pattern": "\\S"
+            },
+            "placeholder": {
+              "description": "The placeholder role, as query slides reports it.",
+              "type": "string",
+              "enum": [
+                "title",
+                "body",
+                "subtitle",
+                "footer"
+              ]
+            },
+            "text": {
+              "type": "string"
+            }
+          },
+          "allOf": [
+            {
+              "oneOf": [
+                {
+                  "required": [
+                    "slide"
+                  ]
+                },
+                {
+                  "required": [
+                    "slideId"
+                  ]
+                }
+              ]
+            },
+            {
+              "oneOf": [
+                {
+                  "required": [
+                    "shapeId"
+                  ]
+                },
+                {
+                  "required": [
+                    "shapeName"
+                  ]
+                },
+                {
+                  "required": [
+                    "placeholder"
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "set_title": {
+          "description": "Sets the text of a slide's title placeholder.",
+          "type": "object",
+          "required": [
+            "op",
+            "text"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/id"
+            },
+            "op": {
+              "const": "set_title"
+            },
+            "slide": {
+              "description": "The 1-based slide number.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "slideId": {
+              "description": "The stable slide id reported by inspect and query slides.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "text": {
+              "type": "string"
+            }
+          },
+          "allOf": [
+            {
+              "oneOf": [
+                {
+                  "required": [
+                    "slide"
+                  ]
+                },
+                {
+                  "required": [
+                    "slideId"
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "set_transition": {
+          "description": "Sets the slide-show transition of slides.",
+          "type": "object",
+          "required": [
+            "op",
+            "slides"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/id"
+            },
+            "op": {
+              "const": "set_transition"
+            },
+            "slides": {
+              "$ref": "#/$defs/pages"
+            },
+            "kind": {
+              "type": "string",
+              "enum": [
+                "none",
+                "fade",
+                "push",
+                "wipe",
+                "split",
+                "cover"
+              ]
+            },
+            "durationMs": {
+              "description": "The transition duration in milliseconds.",
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 60000
+            }
+          },
+          "allOf": [
+            {
+              "anyOf": [
+                {
+                  "required": [
+                    "kind"
+                  ]
+                },
+                {
+                  "required": [
+                    "durationMs"
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "update_chart_data": {
+          "description": "Replaces the categories or series of a chart in its embedded workbook. When both are given, every series has one value per category.",
+          "type": "object",
+          "required": [
+            "op"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/id"
+            },
+            "op": {
+              "const": "update_chart_data"
+            },
+            "slide": {
+              "description": "The 1-based slide number.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "slideId": {
+              "description": "The stable slide id reported by inspect and query slides.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "shapeId": {
+              "description": "The persistent slide-scoped shapeId returned by query slides; not a shape position.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "shapeName": {
+              "description": "The shape name, matched case-sensitively.",
+              "type": "string",
+              "pattern": "\\S"
+            },
+            "placeholder": {
+              "description": "The placeholder role, as query slides reports it.",
+              "type": "string",
+              "enum": [
+                "title",
+                "body",
+                "subtitle",
+                "footer"
+              ]
+            },
+            "categories": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 1000,
+              "items": {
+                "type": "string"
+              }
+            },
+            "series": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 50,
+              "items": {
+                "$ref": "#/$defs/slidesChartSeriesInput"
+              }
+            }
+          },
+          "allOf": [
+            {
+              "oneOf": [
+                {
+                  "required": [
+                    "slide"
+                  ]
+                },
+                {
+                  "required": [
+                    "slideId"
+                  ]
+                }
+              ]
+            },
+            {
+              "oneOf": [
+                {
+                  "required": [
+                    "shapeId"
+                  ]
+                },
+                {
+                  "required": [
+                    "shapeName"
+                  ]
+                },
+                {
+                  "required": [
+                    "placeholder"
+                  ]
+                }
+              ]
+            },
+            {
+              "anyOf": [
+                {
+                  "required": [
+                    "categories"
+                  ]
+                },
+                {
+                  "required": [
+                    "series"
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "color": {
+          "type": "string",
+          "pattern": "^#[0-9A-Fa-f]{6}$"
+        },
+        "pages": {
+          "type": "string",
+          "description": "1-based pages and ranges separated by commas, such as 1-3,7,9-; a range with no end runs to the last page, and a range must not end before it starts.",
+          "pattern": "^\\s*0*[1-9][0-9]*(-(0*[1-9][0-9]*)?)?(\\s*,\\s*0*[1-9][0-9]*(-(0*[1-9][0-9]*)?)?)*\\s*$"
+        },
+        "slidesChartSeriesInput": {
+          "description": "One chart series.",
+          "type": "object",
+          "required": [
+            "name",
+            "values"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "values": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 1000,
+              "items": {
+                "type": "number"
+              }
+            },
+            "xValues": {
+              "description": "The x value of each point of a scatter series, one per value.",
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "number"
+              }
+            }
+          }
+        },
+        "slidesParagraphInput": {
+          "description": "One body paragraph; its bullets and spacing come from the placeholder's level.",
+          "type": "object",
+          "required": [
+            "text"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "text": {
+              "type": "string"
+            },
+            "level": {
+              "description": "The outline level, 0 for a top-level paragraph.",
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 8,
+              "default": 0
+            },
+            "bullet": {
+              "description": "Whether the paragraph shows its level's bullet; false writes a plain paragraph without one.",
+              "type": "boolean",
+              "default": true
+            }
+          }
+        },
+        "slidesRectInput": {
+          "description": "A rectangle in presentation points from the top-left origin.",
+          "type": "object",
+          "required": [
+            "x",
+            "y",
+            "width",
+            "height"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "x": {
+              "type": "number",
+              "minimum": 0
+            },
+            "y": {
+              "type": "number",
+              "minimum": 0
+            },
+            "width": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "height": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            }
+          }
+        },
+        "slidesShapeStyleInput": {
+          "description": "Visual styling of a slide shape and its text; it must set at least one property.",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "fill": {
+              "$ref": "#/$defs/color"
+            },
+            "line": {
+              "$ref": "#/$defs/color"
+            },
+            "font": {
+              "description": "A font name for Latin, East Asian and complex-script text.",
+              "type": "string",
+              "pattern": "^[^+]"
+            },
+            "latinFont": {
+              "description": "The font of Latin text, in place of font's: a font name, or the theme's heading font \"+mj-lt\" or body font \"+mn-lt\", which returns the text to the template's font.",
+              "type": "string",
+              "pattern": "^(?:\\+m[jn]-lt$|[^+])"
+            },
+            "eastAsianFont": {
+              "description": "The font of Chinese, Japanese and Korean text, in place of font's: a font name, or the theme's heading font \"+mj-ea\" or body font \"+mn-ea\", which returns the text to the template's font.",
+              "type": "string",
+              "pattern": "^(?:\\+m[jn]-ea$|[^+])"
+            },
+            "size": {
+              "description": "The font size in points.",
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "maximum": 400
+            },
+            "color": {
+              "description": "The text color.",
+              "$ref": "#/$defs/color"
+            },
+            "bold": {
+              "type": "boolean"
+            }
+          },
+          "allOf": [
+            {
+              "minProperties": 1
+            }
+          ]
+        }
+      }
+    },
+    "v2/slides/presentation-info": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "$id": "https://schemas.aspose.com/aspose-cli/v2/slides/presentation-info.schema.json",
+      "description": "Result of slides inspect: the presentation's structure, its slides with their stable ids, and the detail inventories --detail asked for.",
+      "type": "object",
+      "required": [
+        "schema",
+        "schemaVersion",
+        "kind",
+        "source",
+        "presentation",
+        "slides"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "schema": {
+          "description": "URI of the JSON schema this result conforms to.",
+          "const": "https://schemas.aspose.com/aspose-cli/v2/slides/presentation-info.schema.json"
+        },
+        "schemaVersion": {
+          "description": "Version of this result contract.",
+          "const": 2
+        },
+        "kind": {
+          "description": "The kind of document inspected, always presentation.",
+          "const": "presentation"
+        },
+        "source": {
+          "description": "The inspected presentation.",
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/source.schema.json"
+        },
+        "presentation": {
+          "description": "Presentation-level counts and slide geometry.",
+          "$ref": "#/$defs/presentationSummary"
+        },
+        "slides": {
+          "description": "Every slide in presentation order.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/slideInfo"
+          }
+        },
+        "sections": {
+          "description": "The named sections in presentation order; only with --detail sections.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/presentationSectionInfo"
+          }
+        },
+        "masters": {
+          "description": "The slide masters ordered by name; only with --detail masters.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/presentationMasterInfo"
+          }
+        },
+        "layouts": {
+          "description": "The layouts ordered by name; only with --detail layouts.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/presentationLayoutInfo"
+          }
+        },
+        "media": {
+          "description": "The embedded images, then audio, then video, at most the first 100; only with --detail media. A LIST_TRUNCATED warning discloses a longer list, which slides extract --what media exports in full.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/presentationMediaInfo"
+          }
+        },
+        "notes": {
+          "description": "Speaker-note presence and size for every slide; only with --detail notes.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/presentationNotesInfo"
+          }
+        },
+        "comments": {
+          "description": "Every comment ordered by slide, then author; only with --detail comments.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/presentationCommentInfo"
+          }
+        },
+        "fonts": {
+          "description": "The distinct font names the presentation uses, in ordinal order; only with --detail fonts.",
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string"
+          }
+        },
+        "properties": {
+          "description": "The document properties author, company, keywords, subject and title, each null when empty; only with --detail properties.",
+          "type": "object",
+          "additionalProperties": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "license": {
+          "description": "License mode the engine ran under.",
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/license.schema.json"
+        },
+        "warnings": {
+          "description": "Warnings the agent is expected to act on (for example EVAL_MODE: tell the user about the evaluation watermark). Omitted when empty.",
+          "type": "array",
+          "items": {
+            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
+          }
+        }
+      },
+      "$defs": {
+        "presentationCommentInfo": {
+          "description": "One presentation comment.",
+          "type": "object",
+          "required": [
+            "slide",
+            "author",
+            "text"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "slide": {
+              "description": "The 1-based number of the slide the comment is on.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "author": {
+              "description": "The name of the comment's author.",
+              "type": "string"
+            },
+            "text": {
+              "description": "The comment's text.",
+              "type": "string"
+            }
+          }
+        },
+        "presentationLayoutInfo": {
+          "description": "One layout and its direct slide usage.",
+          "type": "object",
+          "required": [
+            "name",
+            "slideCount"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "description": "The layout's name, which add_slide and apply_layout accept as layout.",
+              "type": "string"
+            },
+            "master": {
+              "description": "The name of the master the layout belongs to; omitted when it has none.",
+              "type": "string"
+            },
+            "slideCount": {
+              "description": "How many slides use this layout.",
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "presentationMasterInfo": {
+          "description": "One slide master and its direct slide usage.",
+          "type": "object",
+          "required": [
+            "name",
+            "slideCount"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "description": "The master's name.",
+              "type": "string"
+            },
+            "slideCount": {
+              "description": "How many slides use one of this master's layouts.",
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "presentationMediaInfo": {
+          "description": "One embedded media item.",
+          "type": "object",
+          "required": [
+            "index",
+            "type",
+            "sizeBytes"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "index": {
+              "description": "The 1-based position among all images, then audio, then video, which slides extract --what media uses in its file names.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "type": {
+              "description": "The kind of media.",
+              "type": "string",
+              "enum": [
+                "image",
+                "audio",
+                "video"
+              ]
+            },
+            "contentType": {
+              "description": "The MIME type the presentation states for the item; omitted when it states none.",
+              "type": "string"
+            },
+            "sizeBytes": {
+              "description": "The item's size in bytes.",
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "presentationNotesInfo": {
+          "description": "Speaker-note presence and size for one slide.",
+          "type": "object",
+          "required": [
+            "slide",
+            "present",
+            "characterCount"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "slide": {
+              "description": "The 1-based slide number.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "present": {
+              "description": "Whether the slide has speaker notes with text.",
+              "type": "boolean"
+            },
+            "characterCount": {
+              "description": "How many characters the speaker notes hold; 0 without notes.",
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "presentationSectionInfo": {
+          "description": "One named presentation section.",
+          "type": "object",
+          "required": [
+            "name",
+            "sectionId",
+            "startSlide"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "description": "The section's name.",
+              "type": "string"
+            },
+            "sectionId": {
+              "description": "The section's stable id, a GUID.",
+              "type": "string",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+            },
+            "startSlide": {
+              "description": "The 1-based number of the section's first slide; 0 when the section holds no slides.",
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "presentationSummary": {
+          "description": "Presentation-level counts and slide geometry.",
+          "type": "object",
+          "required": [
+            "slideCount",
+            "widthPoints",
+            "heightPoints",
+            "orientation",
+            "masterCount",
+            "layoutCount",
+            "sectionCount",
+            "commentCount",
+            "mediaCount",
+            "hasMacros"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "slideCount": {
+              "description": "How many slides the presentation holds.",
+              "type": "integer",
+              "minimum": 0
+            },
+            "widthPoints": {
+              "description": "The slide width in points.",
+              "type": "number",
+              "minimum": 0
+            },
+            "heightPoints": {
+              "description": "The slide height in points.",
+              "type": "number",
+              "minimum": 0
+            },
+            "orientation": {
+              "description": "Whether slides are wider than tall, taller than wide, or square.",
+              "type": "string",
+              "enum": [
+                "landscape",
+                "portrait",
+                "square"
+              ]
+            },
+            "masterCount": {
+              "description": "How many slide masters the presentation holds.",
+              "type": "integer",
+              "minimum": 0
+            },
+            "layoutCount": {
+              "description": "How many layouts the presentation holds.",
+              "type": "integer",
+              "minimum": 0
+            },
+            "sectionCount": {
+              "description": "How many named sections the presentation holds.",
+              "type": "integer",
+              "minimum": 0
+            },
+            "commentCount": {
+              "description": "How many comments the presentation holds.",
+              "type": "integer",
+              "minimum": 0
+            },
+            "mediaCount": {
+              "description": "How many images, audio and video items the presentation embeds.",
+              "type": "integer",
+              "minimum": 0
+            },
+            "hasMacros": {
+              "description": "Whether the presentation carries a VBA macro project.",
+              "type": "boolean"
+            }
+          }
+        },
+        "slideInfo": {
+          "description": "One slide in a structural presentation inventory.",
+          "type": "object",
+          "required": [
+            "slide",
+            "slideId",
+            "shapeCount",
+            "hidden",
+            "hasNotes",
+            "commentCount"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "slide": {
+              "description": "The 1-based slide number.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "slideId": {
+              "description": "The stable slide id, which edit operations accept as slideId.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "name": {
+              "description": "The slide's name; omitted when it has none.",
+              "type": "string"
+            },
+            "layout": {
+              "description": "The name of the slide's layout; omitted when it has none.",
+              "type": "string"
+            },
+            "title": {
+              "description": "The slide's title text; only with --preview, and omitted when the slide has no title.",
+              "type": "string"
+            },
+            "previewText": {
+              "description": "The slide's shape text joined by · , at most 240 characters; only with --preview, and omitted when the slide has no text.",
+              "type": "string",
+              "maxLength": 240
+            },
+            "shapeCount": {
+              "description": "How many top-level shapes the slide holds.",
+              "type": "integer",
+              "minimum": 0
+            },
+            "hidden": {
+              "description": "Whether the slide is hidden in a slide show.",
+              "type": "boolean"
+            },
+            "hasNotes": {
+              "description": "Whether the slide has speaker notes with text.",
+              "type": "boolean"
+            },
+            "commentCount": {
+              "description": "How many comments the slide holds.",
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        }
+      }
+    },
+    "v2/slides/presentation-read": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "$id": "https://schemas.aspose.com/aspose-cli/v2/slides/presentation-read.schema.json",
+      "description": "Result of slides query slides: a window of slides with their content at the requested scope.",
+      "type": "object",
+      "required": [
+        "schema",
+        "schemaVersion",
+        "kind",
+        "source",
+        "scope",
+        "slideCount",
+        "slides",
+        "window"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "schema": {
+          "description": "URI of the JSON schema this result conforms to.",
+          "const": "https://schemas.aspose.com/aspose-cli/v2/slides/presentation-read.schema.json"
+        },
+        "schemaVersion": {
+          "description": "Version of this result contract.",
+          "const": 2
+        },
+        "kind": {
+          "description": "The kind of document read, always presentation.",
+          "const": "presentation"
+        },
+        "source": {
+          "description": "The presentation read.",
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/source.schema.json"
+        },
+        "scope": {
+          "description": "How much of each slide was projected: text the text blocks, shapes every shape with its text and geometry, full also text runs, notes and comments.",
+          "type": "string",
+          "enum": [
+            "text",
+            "shapes",
+            "full"
+          ]
+        },
+        "slideCount": {
+          "description": "How many slides the presentation holds, which open slide ranges resolve against.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "slides": {
+          "description": "The returned slides in presentation order; the window tells whether more were selected.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/slideData"
+          }
+        },
+        "window": {
+          "description": "The window of the read or search: how much it returned and how to continue.",
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/result-window.schema.json"
+        },
+        "license": {
+          "description": "License mode the engine ran under.",
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/license.schema.json"
+        },
+        "warnings": {
+          "description": "Warnings the agent is expected to act on (for example EVAL_MODE: tell the user about the evaluation watermark). Omitted when empty.",
+          "type": "array",
+          "items": {
+            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
+          }
+        }
+      },
+      "$defs": {
+        "slideCommentData": {
+          "description": "One comment on a slide.",
+          "type": "object",
+          "required": [
+            "author",
+            "text"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "author": {
+              "description": "The name of the comment's author.",
+              "type": "string"
+            },
+            "text": {
+              "description": "The comment's text, cut short when the max-chars budget runs out.",
+              "type": "string"
+            }
+          }
+        },
+        "slideData": {
+          "description": "The content of one slide.",
+          "type": "object",
+          "required": [
+            "slide",
+            "slideId",
+            "shapes",
+            "contentTruncated"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "slide": {
+              "description": "The 1-based slide number.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "slideId": {
+              "description": "The stable slide id, which edit operations accept as slideId.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "name": {
+              "description": "The slide's name; omitted when it has none.",
+              "type": "string"
+            },
+            "layout": {
+              "description": "The name of the slide's layout; omitted when it has none.",
+              "type": "string"
+            },
+            "title": {
+              "description": "The slide's title text; omitted when the slide has no title.",
+              "type": "string"
+            },
+            "text": {
+              "description": "The text of each shape that has text, in shape order; only at scope text.",
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "shapes": {
+              "description": "The slide's top-level shapes in z-order; empty at scope text.",
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/slideShapeData"
+              }
+            },
+            "notes": {
+              "description": "The speaker notes; at scope full or with --notes, and omitted when the slide has none.",
+              "type": "string"
+            },
+            "comments": {
+              "description": "The slide's comments; only at scope full.",
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/slideCommentData"
+              }
+            },
+            "contentTruncated": {
+              "description": "Whether the shared max-chars budget cut this slide's content. The budget covers title, text, runs, requested notes and comments, including repeated projections; re-read this slide with a larger budget for the omitted content.",
+              "type": "boolean"
+            }
+          }
+        },
+        "slideRect": {
+          "description": "A slide rectangle in points from the slide's top-left corner.",
+          "type": "object",
+          "required": [
+            "x",
+            "y",
+            "width",
+            "height"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "x": {
+              "description": "The left edge in points.",
+              "type": "number"
+            },
+            "y": {
+              "description": "The top edge in points.",
+              "type": "number"
+            },
+            "width": {
+              "description": "The width in points.",
+              "type": "number"
+            },
+            "height": {
+              "description": "The height in points.",
+              "type": "number"
+            }
+          }
+        },
+        "slideShapeData": {
+          "description": "One top-level shape of a slide.",
+          "type": "object",
+          "required": [
+            "shapeId",
+            "type",
+            "rect"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "shapeId": {
+              "description": "A positive identifier persisted within its slide; edit operations accept it as shapeId.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "shapeName": {
+              "description": "The shape's name, which edit operations accept as shapeName; omitted when it has none.",
+              "type": "string"
+            },
+            "type": {
+              "description": "What the shape is: placeholder for any placeholder, then chart, table, audio, video, image, group, or shape for any other shape.",
+              "type": "string",
+              "enum": [
+                "placeholder",
+                "chart",
+                "table",
+                "audio",
+                "video",
+                "image",
+                "group",
+                "shape"
+              ]
+            },
+            "placeholder": {
+              "description": "The placeholder role, which set_text and the other shape operations accept as placeholder when it is one they name; omitted for a shape that is not a placeholder. Roles outside the listed ones are the engine's placeholder type in lower case.",
+              "type": "string",
+              "anyOf": [
+                {
+                  "enum": [
+                    "title",
+                    "body",
+                    "subtitle",
+                    "footer",
+                    "date",
+                    "slide-number"
+                  ]
+                },
+                {
+                  "pattern": "^[a-z]+$"
+                }
+              ]
+            },
+            "altText": {
+              "description": "The shape's alternative text, which screen readers and exported PDFs carry.",
+              "type": "string"
+            },
+            "text": {
+              "description": "The shape's text; omitted when it has none.",
+              "type": "string"
+            },
+            "runs": {
+              "description": "The shape's text runs with their effective formatting; only at scope full, and omitted for a shape without text.",
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/slideTextRunData"
+              }
+            },
+            "rect": {
+              "description": "Where the shape is on the slide.",
+              "$ref": "#/$defs/slideRect"
+            }
+          }
+        },
+        "slideTextRunData": {
+          "description": "One text run with its effective formatting.",
+          "type": "object",
+          "required": [
+            "text"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "text": {
+              "description": "The run's text.",
+              "type": "string"
+            },
+            "font": {
+              "description": "The font of the run's Latin text.",
+              "type": "string"
+            },
+            "eastAsianFont": {
+              "description": "The font of the run's Chinese, Japanese and Korean text.",
+              "type": "string"
+            },
+            "size": {
+              "description": "The font size in points.",
+              "type": "number"
+            },
+            "bold": {
+              "description": "Whether the run is bold.",
+              "type": "boolean"
+            },
+            "italic": {
+              "description": "Whether the run is italic.",
+              "type": "boolean"
+            },
+            "color": {
+              "description": "The solid color the text is drawn in, stated or inherited, as #RRGGBB; omitted for text without a solid fill.",
+              "type": "string",
+              "pattern": "^#[0-9A-F]{6}$"
+            }
+          }
+        }
+      }
+    },
+    "v2/slides/render-result": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "$id": "https://schemas.aspose.com/aspose-cli/v2/slides/render-result.schema.json",
+      "description": "Result of slides render: one image per rendered slide.",
+      "type": "object",
+      "required": [
+        "schema",
+        "schemaVersion",
+        "input",
+        "outputs"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "schema": {
+          "description": "URI of the JSON schema this result conforms to.",
+          "const": "https://schemas.aspose.com/aspose-cli/v2/slides/render-result.schema.json"
+        },
+        "schemaVersion": {
+          "description": "Version of this result contract.",
+          "const": 2
+        },
+        "input": {
+          "description": "The rendered presentation.",
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/source.schema.json"
+        },
+        "outputs": {
+          "description": "The rendered slides in presentation order.",
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/slideRenderOutput"
+          }
+        },
+        "dpi": {
+          "description": "The raster resolution used; omitted for SVG and when --width set the size.",
+          "type": "integer",
+          "minimum": 36,
+          "maximum": 1200
+        },
+        "width": {
+          "description": "The exact raster width in pixels --width asked for; omitted otherwise.",
+          "type": "integer",
+          "minimum": 64,
+          "maximum": 20000
+        },
+        "license": {
+          "description": "License mode the engine ran under.",
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/license.schema.json"
+        },
+        "warnings": {
+          "description": "Warnings the agent is expected to act on (for example EVAL_MODE: tell the user about the evaluation watermark). Omitted when empty.",
+          "type": "array",
+          "items": {
+            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
+          }
+        }
+      },
+      "$defs": {
+        "slideRenderOutput": {
+          "description": "One rendered slide image.",
+          "type": "object",
+          "required": [
+            "slide",
+            "slideId",
+            "output"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "slide": {
+              "description": "The 1-based slide number.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "slideId": {
+              "description": "The stable slide id.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "output": {
+              "description": "The image written for the slide.",
+              "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/output.schema.json"
+            }
+          }
+        }
+      }
+    },
+    "v2/slides/search-result": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "$id": "https://schemas.aspose.com/aspose-cli/v2/slides/search-result.schema.json",
+      "description": "Result of slides query search: the matches in shape text and speaker notes.",
+      "type": "object",
+      "required": [
+        "schema",
+        "schemaVersion",
+        "source",
+        "pattern",
+        "scope",
+        "hits",
+        "window"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "schema": {
+          "description": "URI of the JSON schema this result conforms to.",
+          "const": "https://schemas.aspose.com/aspose-cli/v2/slides/search-result.schema.json"
+        },
+        "schemaVersion": {
+          "description": "Version of this result contract.",
+          "const": 2
+        },
+        "source": {
+          "description": "The searched presentation.",
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/source.schema.json"
+        },
+        "pattern": {
+          "description": "The searched pattern as given.",
+          "type": "string"
+        },
+        "scope": {
+          "description": "Where the search looked.",
+          "type": "string",
+          "enum": [
+            "shapes",
+            "notes",
+            "all"
+          ]
+        },
+        "hits": {
+          "description": "The returned matches in slide order; the window tells whether more exist.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/slidesSearchHit"
+          }
+        },
+        "window": {
+          "description": "The window of the read or search: how much it returned and how to continue.",
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/result-window.schema.json"
+        },
+        "license": {
+          "description": "License mode the engine ran under.",
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/license.schema.json"
+        },
+        "warnings": {
+          "description": "Warnings the agent is expected to act on (for example EVAL_MODE: tell the user about the evaluation watermark). Omitted when empty.",
+          "type": "array",
+          "items": {
+            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
+          }
+        }
+      },
+      "$defs": {
+        "slidesSearchHit": {
+          "description": "One match in a shape's text or a slide's speaker notes.",
+          "type": "object",
+          "required": [
+            "slide",
+            "slideId",
+            "scope",
+            "text",
+            "start",
+            "length"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "slide": {
+              "description": "The 1-based slide number.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "slideId": {
+              "description": "The stable slide id.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "scope": {
+              "description": "Whether the match is in a shape's text or in the speaker notes.",
+              "type": "string",
+              "enum": [
+                "shapes",
+                "notes"
+              ]
+            },
+            "shapeId": {
+              "description": "A positive identifier persisted within the hit slide; omitted for a match in the notes.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "shapeName": {
+              "description": "The name of the matched shape; omitted for the notes and for a shape without a name.",
+              "type": "string"
+            },
+            "text": {
+              "description": "The match with up to 100 characters of context on each side.",
+              "type": "string"
+            },
+            "start": {
+              "description": "Where the match starts in the shape's or the notes' text, as a 0-based character offset.",
+              "type": "integer",
+              "minimum": 0
+            },
+            "length": {
+              "description": "How many characters the match spans.",
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        }
+      }
+    }
+  }
+}
