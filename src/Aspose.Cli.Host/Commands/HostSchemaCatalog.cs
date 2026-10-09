@@ -19,12 +19,14 @@ internal sealed class HostSchemaCatalog
         Aspose.Cli.Sdk.Extensibility.ProductCatalog catalog)
     {
         _catalog = catalog ?? throw new ArgumentNullException(nameof(catalog));
-        Ids = SdkSchemaCatalog.Ids
-            .Concat(HostSchemas.Ids)
-            .Concat(catalog.Resources.SchemaIds)
-            .Distinct(StringComparer.Ordinal)
-            .Order(StringComparer.Ordinal)
-            .ToArray();
+        string[] ids = [.. SdkSchemaCatalog.Ids.Concat(HostSchemas.Ids).Concat(catalog.Resources.SchemaIds).Order(StringComparer.Ordinal)];
+        // The SDK, the host and the products publish disjoint ids, so no schema shadows another.
+        if (ids.Zip(ids.Skip(1)).FirstOrDefault(static pair => pair.First == pair.Second).First is { } shared)
+        {
+            throw new InvalidOperationException($"Schema '{shared}' is published twice, by the SDK, the host or a product.");
+        }
+
+        Ids = ids;
     }
 
     public IReadOnlyList<string> Ids { get; }
