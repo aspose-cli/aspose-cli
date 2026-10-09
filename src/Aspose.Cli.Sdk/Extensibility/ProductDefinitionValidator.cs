@@ -51,15 +51,6 @@ internal sealed class ProductDefinitionValidator
                 $"Product '{productId}' received resources for '{resources.ProductId}'.");
         }
 
-        string schemaPrefix = $"v2/{productId}/";
-        foreach (string schemaId in resources.SchemaIds)
-        {
-            if (!schemaId.StartsWith(schemaPrefix, StringComparison.Ordinal))
-            {
-                throw new InvalidOperationException(
-                    $"Product '{productId}' schema '{schemaId}' is outside resource namespace '{schemaPrefix}'.");
-            }
-        }
         ValidateOperationSchemas(definition);
     }
 

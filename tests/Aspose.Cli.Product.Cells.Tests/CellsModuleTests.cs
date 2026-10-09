@@ -11,12 +11,6 @@ namespace Aspose.Cli.Product.Cells.Tests;
 public sealed class CellsModuleTests
     : ProductContractTests<CellsModule>
 {
-    /// <summary>
-    /// None: the result schemas are generated from the result records, and every result type
-    /// is checked against real output by <see cref="CellsResultSchemaCoverageTests"/>.
-    /// </summary>
-    protected override IReadOnlyList<ResultEnvelope> CanonicalResults => [];
-
     protected override IReadOnlyList<ProductSchemaSample> CanonicalInputs { get; } =
         [new(CellsOp.Catalog.SchemaId, CellsOpsSample.Batch)];
 
