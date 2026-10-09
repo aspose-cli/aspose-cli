@@ -4,7 +4,6 @@ using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Rendering;
 using Aspose.Slides;
 using Aspose.Slides.Charts;
-using Aspose.Slides.Export;
 using Aspose.Slides.SmartArt;
 
 namespace Aspose.Cli.Product.Slides.Engine;
@@ -524,22 +523,4 @@ internal static class SlidesEngineSupport
     /// <summary>Every slide number, as the range <c>1-</c> selects them.</summary>
     internal static IReadOnlyList<int> AllSlides(int slideCount) =>
         ResolveSlideRange(PageRange.Parse("1-"), slideCount);
-
-    internal static SaveFormat SaveFormatFor(string format) => format switch
-    {
-        "pptx" => SaveFormat.Pptx,
-        "ppt" => SaveFormat.Ppt,
-        "pptm" => SaveFormat.Pptm,
-        "odp" => SaveFormat.Odp,
-        "pdf" => SaveFormat.Pdf,
-        "xps" => SaveFormat.Xps,
-        "html" => SaveFormat.Html,
-        "html5" => SaveFormat.Html5,
-        "tiff" => SaveFormat.Tiff,
-        "gif" => SaveFormat.Gif,
-        "md" => SaveFormat.Md,
-        _ => throw new InvalidOperationException($"'{format}' has no presentation save format."),
-    };
-
 }
-

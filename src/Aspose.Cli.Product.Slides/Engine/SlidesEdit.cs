@@ -114,7 +114,7 @@ internal static class SlidesEdit
                 presentation,
                 temp =>
                 {
-                    presentation.Save(temp, SaveFormatFor(format));
+                    presentation.Save(temp, SlidesEngineFormats.SaveFormatOf(format));
                     loaded.Resources.ThrowIfFailed();
                     using LoadedPresentation reopened = session.Loader.OpenPublishedCandidate(
                         temp,

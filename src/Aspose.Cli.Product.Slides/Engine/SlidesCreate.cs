@@ -39,7 +39,7 @@ internal static class SlidesCreate
             presentation,
             temp =>
             {
-                presentation.Save(temp, SaveFormatFor(format));
+                presentation.Save(temp, SlidesEngineFormats.SaveFormatOf(format));
                 template.Resources.ThrowIfFailed();
             });
         return new SlidesCreateResult
