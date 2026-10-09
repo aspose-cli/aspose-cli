@@ -8,7 +8,7 @@ namespace Aspose.Cli.Product.Cells.Contracts;
 /// window counts the returned hits and, when more match, carries the command that returns
 /// the next ones.
 /// </summary>
-public sealed record SearchResult() : ResultEnvelope(CellsSchemaIds.SearchResult, 2)
+public sealed record SearchResult() : ResultEnvelope("search-result", 2)
 {
     /// <summary>The searched file.</summary>
     [JsonPropertyOrder(-50)]

@@ -23,11 +23,11 @@ public sealed record EditVerification
 
     /// <summary>
     /// <c>true</c> when the edit changed more than 1000 cells, so the change lists hold only the
-    /// first 1000; the checks behind <see cref="Ok"/> still cover every cell.
+    /// first 1000; the checks behind <c>ok</c> still cover every cell.
     /// </summary>
     public required bool Truncated { get; init; }
 
-    /// <summary>Verification problems, empty when <see cref="Ok"/>; an edit artifact is preserved when this list is non-empty.</summary>
+    /// <summary>Verification problems, empty when <c>ok</c> is true; an edit artifact is preserved when this list is non-empty.</summary>
     public required IReadOnlyList<VerificationIssue> Issues { get; init; }
 }
 
@@ -64,6 +64,7 @@ public sealed record VerificationOtherChange
     public required string Sheet { get; init; }
 
     /// <summary>Sheet status: <c>added</c>, <c>removed</c>, <c>modified</c> or <c>renamed</c>.</summary>
+    [AllowedValues(typeof(SheetChangeStatuses))]
     public required string Status { get; init; }
 
     /// <summary>A1 cell address for a cell-level change.</summary>

@@ -11,11 +11,14 @@ namespace Aspose.Cli.Product.Cells.Tests;
 public sealed class CellsModuleTests
     : ProductContractTests<CellsModule>
 {
-    protected override IReadOnlyList<ResultEnvelope> CanonicalResults =>
-        CellsContractSamples.Results;
+    /// <summary>
+    /// None: the result schemas are generated from the result records, and every result type
+    /// is checked against real output by <see cref="CellsResultSchemaCoverageTests"/>.
+    /// </summary>
+    protected override IReadOnlyList<ResultEnvelope> CanonicalResults => [];
 
-    protected override IReadOnlyList<ProductSchemaSample> CanonicalInputs =>
-        CellsContractSamples.Inputs;
+    protected override IReadOnlyList<ProductSchemaSample> CanonicalInputs { get; } =
+        [new(CellsOp.Catalog.SchemaId, CellsOpsSample.Batch)];
 
     protected override IReadOnlyDictionary<string, string> Homonyms { get; } =
         new Dictionary<string, string>(StringComparer.Ordinal)
@@ -95,7 +98,7 @@ public sealed class CellsModuleTests
     public void CanonicalOps_CoverEveryRegisteredOperation() =>
         Assert.Equal(
             CellsOp.Catalog.Names.Order(StringComparer.Ordinal),
-            CellsContractSamples.Ops.Ops
+            CellsOpsSample.Batch.Ops
                 .Select(CellsOp.Catalog.NameOf)
                 .Order(StringComparer.Ordinal));
 

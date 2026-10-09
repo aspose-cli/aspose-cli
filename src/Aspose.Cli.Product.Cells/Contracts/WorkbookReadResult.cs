@@ -5,11 +5,12 @@ namespace Aspose.Cli.Product.Cells.Contracts;
 /// <summary>
 /// Result of <c>aspose-cli cells query range</c>: a budgeted projection of one sheet's
 /// cell data. The envelope's window counts cells: how many the read returned, how many
-/// the read covers, and for a planned scan the command that returns the next page. The
-/// file on disk remains the primary artifact — this JSON is a view of it, never a
-/// round-trip format.
+/// the read covers, and for a planned scan (a default read over the used range, or a page
+/// generated for an explicit range too large for one read) the ready-to-run command that
+/// returns the next page. The file on disk remains the primary artifact — this JSON is a
+/// view of it, never a round-trip format.
 /// </summary>
-public sealed record WorkbookReadResult() : ResultEnvelope(CellsSchemaIds.WorkbookRead, 2)
+public sealed record WorkbookReadResult() : ResultEnvelope("workbook-read", 2)
 {
     /// <summary>Document kind discriminator; always <c>workbook</c> for cells.</summary>
     [JsonPropertyOrder(-50)]
@@ -19,8 +20,9 @@ public sealed record WorkbookReadResult() : ResultEnvelope(CellsSchemaIds.Workbo
     [JsonPropertyOrder(-49)]
     public required SourceInfo Source { get; init; }
 
-    /// <summary>The scope that was projected: one of <see cref="ReadScopes"/>.</summary>
+    /// <summary>The scope that was projected.</summary>
     [JsonPropertyOrder(-48)]
+    [AllowedValues(typeof(ReadScopes))]
     public required string Scope { get; init; }
 
     /// <summary>Projection of the requested sheet.</summary>
@@ -57,19 +59,20 @@ public sealed record SheetProjection
     public required string Name { get; init; }
 
     /// <summary>Zero-based position in the tab order, as add_sheet and move_sheet take it.</summary>
+    [Minimum(0)]
     public required int Position { get; init; }
 
     /// <summary>A1 range covering all data on the sheet; omitted when empty.</summary>
     public string? UsedRange { get; init; }
 
     /// <summary>
-    /// A1 range returned in <see cref="Cells"/>; omitted when no cells were returned, as for
+    /// A1 range returned in <c>cells</c>; omitted when no cells were returned, as for
     /// an empty sheet or a default read over the cell budget.
     /// </summary>
     public string? Range { get; init; }
 
     /// <summary>
-    /// Row-major cell matrix covering exactly <see cref="Range"/>. Omitted when the sheet
+    /// Row-major cell matrix covering exactly <c>range</c>. Omitted when the sheet
     /// is empty or a default read over the cell budget returned only a summary.
     /// </summary>
     public IReadOnlyList<IReadOnlyList<CellData>>? Cells { get; init; }
@@ -83,9 +86,14 @@ public sealed record CellData
     /// date/time values, the error literal (e.g. <c>#DIV/0!</c>) for error
     /// cells, or omitted for empty cells.
     /// </summary>
+    [OneOfBy("t", CellValueTypes.String, CellValueTypes.DateTime, CellValueTypes.Error, Type = "string")]
+    [OneOfBy("t", CellValueTypes.Number, Type = "number")]
+    [OneOfBy("t", CellValueTypes.Boolean, Type = "boolean")]
+    [OneOfBy("t", CellValueTypes.Empty)]
     public object? V { get; init; }
 
-    /// <summary>Value type; one of <see cref="CellValueTypes"/>.</summary>
+    /// <summary>Value type.</summary>
+    [AllowedValues(typeof(CellValueTypes))]
     public required string T { get; init; }
 
     /// <summary>Formula in A1 notation (with leading <c>=</c>); only in formula-bearing scopes.</summary>
@@ -98,10 +106,21 @@ public sealed record CellData
 /// <summary>Accepted values of <see cref="CellData.T"/>.</summary>
 public static class CellValueTypes
 {
+    /// <summary>Text.</summary>
     public const string String = "string";
+
+    /// <summary>A number.</summary>
     public const string Number = "number";
+
+    /// <summary>A boolean.</summary>
     public const string Boolean = "boolean";
+
+    /// <summary>A date or time, reported as an ISO 8601 string.</summary>
     public const string DateTime = "datetime";
+
+    /// <summary>An error value such as <c>#DIV/0!</c>.</summary>
     public const string Error = "error";
+
+    /// <summary>An empty cell.</summary>
     public const string Empty = "empty";
 }
