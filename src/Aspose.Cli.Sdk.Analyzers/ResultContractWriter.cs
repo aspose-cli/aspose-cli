@@ -176,6 +176,11 @@ internal sealed class ResultContractWriter(Compilation compilation, Action<Locat
         }
 
         string[] members = [.. Properties(type).Select(property => Member(type, property)).OfType<string>()];
+        if (AlwaysPresent(type) is { } present)
+        {
+            code.Append(", AlwaysPresent = ").Append(present);
+        }
+
         code.Append(", Properties = [").Append(string.Concat(members.Select(static member => "\n                " + member + ",")))
             .Append(members.Length == 0 ? "]" : "\n            ]");
         _code[type] = code.Append(" },").ToString();
@@ -283,8 +288,26 @@ internal sealed class ResultContractWriter(Compilation compilation, Action<Locat
             code.Append(", Cases = [").Append(string.Join(", ", cases.Select(attribute => ContractTypes.Constraint(attribute, property, 0, Report)))).Append(']');
         }
 
+        if (AlwaysPresent(property) is { } present)
+        {
+            if (levels.Count != 1 || levels[0] != "Record")
+            {
+                Invalid(property, "[AlwaysPresent] names members of the record the member holds, so the member must hold one record");
+            }
+
+            code.Append(", AlwaysPresent = ").Append(present);
+        }
+
         return code.Append(" }").ToString();
     }
+
+    /// <summary>The wire names an <c>[AlwaysPresent]</c> declares, as a collection expression, or null.</summary>
+    private static string? AlwaysPresent(ISymbol symbol) =>
+        Find(symbol, Contracts + "AlwaysPresentAttribute") is { } attribute
+            ? "[" + string.Join(", ", attribute.ConstructorArguments.SelectMany(static argument =>
+                argument.Kind == TypedConstantKind.Array ? argument.Values : ImmutableArray.Create(argument))
+                .Select(static value => Literal(value.Value as string ?? string.Empty))) + "]"
+            : null;
 
     /// <summary>Whether a member without its own summary is described by the record its schema references.</summary>
     private bool DescribedByRecord(ITypeSymbol type) =>

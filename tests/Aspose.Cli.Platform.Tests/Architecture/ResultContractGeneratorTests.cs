@@ -138,6 +138,53 @@ public sealed class ResultContractGeneratorTests
     }
 
     [Fact]
+    public void AlwaysPresentMembers_AreCarriedOnTheRecordAndTheMember()
+    {
+        GeneratorDriverRunResult result = Run(
+            """
+            /// <summary>A windowed read.</summary>
+            [AlwaysPresent("window")]
+            public sealed record ReadResult() : ResultEnvelope("read-result", 2)
+            {
+                /// <summary>The file read.</summary>
+                [AlwaysPresent("fingerprint")]
+                public required SourceInfo Source { get; init; }
+
+                /// <summary>The names read.</summary>
+                [AlwaysPresent("fingerprint")]
+                public IReadOnlyList<SourceInfo>? Names { get; init; }
+            }
+
+            [JsonSerializable(typeof(ReadResult))]
+            internal sealed partial class ProductJsonContext : JsonSerializerContext;
+            """);
+
+        Diagnostic error = Assert.Single(result.Diagnostics, static diagnostic => diagnostic.Id == "APCLI013");
+        Assert.Contains("'ReadResult.Names'", error.GetMessage(), StringComparison.Ordinal);
+        Assert.Contains("must hold one record", error.GetMessage(), StringComparison.Ordinal);
+
+        result = Run(
+            """
+            /// <summary>A windowed read.</summary>
+            [AlwaysPresent("window")]
+            public sealed record ReadResult() : ResultEnvelope("read-result", 2)
+            {
+                /// <summary>The file read.</summary>
+                [AlwaysPresent("fingerprint")]
+                public required SourceInfo Source { get; init; }
+            }
+
+            [JsonSerializable(typeof(ReadResult))]
+            internal sealed partial class ProductJsonContext : JsonSerializerContext;
+            """);
+
+        Assert.Empty(result.Diagnostics.Where(static diagnostic => diagnostic.Id == "APCLI013"));
+        string source = Assert.Single(Assert.Single(result.Results).GeneratedSources).SourceText.ToString();
+        Assert.Contains("SchemaId = \"read-result\", SchemaVersion = 2, AlwaysPresent = [\"window\"], Properties = [", source, StringComparison.Ordinal);
+        Assert.Contains("Record = typeof(global::Aspose.Cli.Sdk.Contracts.SourceInfo) }, Required = true, AlwaysPresent = [\"fingerprint\"] }", source, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void ResultWithAFullSchemaUri_PublishesNothing()
     {
         GeneratorDriverRunResult result = Run(

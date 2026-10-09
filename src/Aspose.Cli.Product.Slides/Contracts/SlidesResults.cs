@@ -233,6 +233,7 @@ public sealed record PresentationSectionInfo
 }
 
 /// <summary>Result of <c>slides query slides</c>: a window of slides with their content at the requested scope.</summary>
+[AlwaysPresent("window")]
 public sealed record PresentationReadResult() : ResultEnvelope("presentation-read", 2)
 {
     /// <summary>The kind of document read, always <c>presentation</c>.</summary>
@@ -567,6 +568,7 @@ public sealed record SlidesEditResult() : ResultEnvelope("edit-result", 2), IPar
 }
 
 /// <summary>Result of <c>slides search</c>: the matches in shape text and speaker notes.</summary>
+[AlwaysPresent("window")]
 public sealed record SlidesSearchResult() : ResultEnvelope("search-result", 2)
 {
     /// <summary>The searched presentation.</summary>

@@ -8,6 +8,7 @@ namespace Aspose.Cli.Product.Cells.Contracts;
 /// window counts the returned hits and, when more match, carries the command that returns
 /// the next ones.
 /// </summary>
+[AlwaysPresent("window")]
 public sealed record SearchResult() : ResultEnvelope("search-result", 2)
 {
     /// <summary>The searched file.</summary>

@@ -247,6 +247,53 @@ public sealed class ResultSchemaSetTests
         Assert.Contains("claimed by Twin and Twin", Assert.Throws<InvalidOperationException>(() => set.TryRead("v2/test/root", out _)).Message, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void AlwaysPresentMembers_AreRequiredWhereTheRecordStatesThem()
+    {
+        ResultRecord window = new()
+        {
+            Type = typeof(Nested.Twin),
+            Properties = [new() { Name = "window", Description = "W.", Value = new() { Kind = ResultValueKind.String } }],
+        };
+        ResultRecord page = new()
+        {
+            Type = typeof(SamplePage),
+            Description = "A page.",
+            Properties =
+            [
+                new() { Name = "number", Description = "N.", Value = new() { Kind = ResultValueKind.Integer }, Required = true },
+                new() { Name = "label", Description = "L.", Value = new() { Kind = ResultValueKind.String } },
+            ],
+        };
+        static ResultRecord Root(string[] present, string[] pagePresent) => new()
+        {
+            Type = typeof(SampleBlock),
+            Base = typeof(Nested.Twin),
+            SchemaId = "root",
+            AlwaysPresent = present,
+            Properties =
+            [
+                new() { Name = "page", Description = "P.", Value = new() { Kind = ResultValueKind.Record, Record = typeof(SamplePage) }, AlwaysPresent = pagePresent },
+            ],
+        };
+
+        Assert.True(new ResultSchemaSet("test", [Root(["window"], ["label"]), window, page], common: null).TryRead("v2/test/root", out string? document));
+        JsonObject schema = JsonNode.Parse(document)!.AsObject();
+        Assert.Equal(["window"], schema["required"]!.AsArray().Select(static name => name!.GetValue<string>()));
+        Assert.Equal("#/$defs/samplePage", schema["properties"]!["page"]!["$ref"]!.GetValue<string>());
+        Assert.Equal(["label"], schema["properties"]!["page"]!["required"]!.AsArray().Select(static name => name!.GetValue<string>()));
+
+        foreach ((string[] present, string[] pagePresent, string named) in new[]
+        {
+            (new[] { "missing" }, Array.Empty<string>(), "'missing'"),
+            ([], ["number"], "'number'"),
+        })
+        {
+            var set = new ResultSchemaSet("test", [Root(present, pagePresent), window, page], common: null);
+            Assert.Contains(named + ", which is not an optional member", Assert.Throws<InvalidOperationException>(() => set.TryRead("v2/test/root", out _)).Message, StringComparison.Ordinal);
+        }
+    }
+
     private static class Nested
     {
         public sealed record Twin;

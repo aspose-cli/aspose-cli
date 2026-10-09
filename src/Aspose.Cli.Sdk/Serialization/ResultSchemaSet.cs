@@ -155,25 +155,7 @@ public sealed class ResultSchemaSet
         SortedDictionary<string, JsonObject?> definitions,
         Dictionary<string, Type> defined)
     {
-        var chain = new List<ResultRecord>();
-        for (ResultRecord? current = record; current is not null; current = current.Base is null ? null : Resolve(current.Base, out _))
-        {
-            chain.Insert(0, current);
-        }
-
-        ResultProperty[] members =
-        [
-            .. chain.SelectMany(static (owner, level) => owner.Properties.Select((property, index) => (property, level, index)))
-                .OrderBy(static member => member.property.Order)
-                .ThenBy(static member => member.level)
-                .ThenBy(static member => member.index)
-                .Select(static member => member.property),
-        ];
-        if (members.Select(static member => member.Name).Distinct(StringComparer.Ordinal).Count() != members.Length)
-        {
-            throw new InvalidOperationException($"Result record {record.Type.Name} has two members with one wire name.");
-        }
-
+        ResultProperty[] members = Members(record);
         var schema = new JsonObject();
         if (record.Description is not null)
         {
@@ -181,7 +163,12 @@ public sealed class ResultSchemaSet
         }
 
         schema["type"] = "object";
-        string[] required = [.. members.Where(static member => member.Required && !member.Extension).Select(static member => member.Name)];
+        string[] required =
+        [
+            .. members.Where(member => (member.Required || record.AlwaysPresent.Contains(member.Name)) && !member.Extension)
+                .Select(static member => member.Name),
+        ];
+        CheckAlwaysPresent(record, members, record.AlwaysPresent);
         if (required.Length > 0)
         {
             schema["required"] = new JsonArray([.. required.Select(static name => (JsonNode)name)]);
@@ -216,6 +203,40 @@ public sealed class ResultSchemaSet
         }
 
         return schema;
+    }
+
+    /// <summary>A record's members with the inherited ones first, in their JSON property order.</summary>
+    private ResultProperty[] Members(ResultRecord record)
+    {
+        var chain = new List<ResultRecord>();
+        for (ResultRecord? current = record; current is not null; current = current.Base is null ? null : Resolve(current.Base, out _))
+        {
+            chain.Insert(0, current);
+        }
+
+        ResultProperty[] members =
+        [
+            .. chain.SelectMany(static (owner, level) => owner.Properties.Select((property, index) => (property, level, index)))
+                .OrderBy(static member => member.property.Order)
+                .ThenBy(static member => member.level)
+                .ThenBy(static member => member.index)
+                .Select(static member => member.property),
+        ];
+        return members.Select(static member => member.Name).Distinct(StringComparer.Ordinal).Count() == members.Length
+            ? members
+            : throw new InvalidOperationException($"Result record {record.Type.Name} has two members with one wire name.");
+    }
+
+    /// <summary>Checks that each member an <see cref="AlwaysPresentAttribute"/> names is an optional member of the record.</summary>
+    private static void CheckAlwaysPresent(ResultRecord record, ResultProperty[] members, IReadOnlyList<string> present)
+    {
+        foreach (string name in present)
+        {
+            if (!members.Any(member => member.Name == name && !member.Required && !member.Extension))
+            {
+                throw new InvalidOperationException($"[AlwaysPresent] names '{name}', which is not an optional member of {record.Type.Name}.");
+            }
+        }
     }
 
     private JsonObject Property(
@@ -255,6 +276,14 @@ public sealed class ResultSchemaSet
         }
 
         Value(schema, member.Value, [.. member.Constraints.Select(static constraint => (constraint, constraint.Depth))], member.OpenPattern, definitions, defined);
+        if (member.AlwaysPresent.Count > 0)
+        {
+            ResultRecord held = member.Value is { Kind: ResultValueKind.Record, Record: { } type }
+                ? Resolve(type, out _)
+                : throw new InvalidOperationException($"[AlwaysPresent] on {record.Type.Name}.{member.Name} needs a member that holds a record.");
+            CheckAlwaysPresent(held, Members(held), member.AlwaysPresent);
+            schema["required"] = new JsonArray([.. member.AlwaysPresent.Select(static name => (JsonNode)name)]);
+        }
 
         // A value kind may describe itself; the member's own summary says what this member means.
         if (member.Description is not null)

@@ -10,6 +10,7 @@ namespace Aspose.Cli.Product.Cells.Contracts;
 /// returns the next page. The file on disk remains the primary artifact — this JSON is a
 /// view of it, never a round-trip format.
 /// </summary>
+[AlwaysPresent("window")]
 public sealed record WorkbookReadResult() : ResultEnvelope("workbook-read", 2)
 {
     /// <summary>Document kind discriminator; always <c>workbook</c> for cells.</summary>
