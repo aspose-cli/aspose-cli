@@ -22,17 +22,6 @@ public static class LicenseInstaller
         InstallMany(resourceBudgets, sourcePath, validateAndSelectDestinations,
             NoPublicationFaultInjector.Instance);
 
-    /// <summary>
-    /// Installs a caller-owned readable stream through the same
-    /// snapshot and validation boundary. The input stream remains open.
-    /// </summary>
-    public static IReadOnlyList<string> InstallMany(
-        ResourceBudgetLedger resourceBudgets,
-        Stream source,
-        Func<string, IEnumerable<string>> validateAndSelectDestinations) =>
-        InstallMany(resourceBudgets, source, validateAndSelectDestinations,
-            NoPublicationFaultInjector.Instance);
-
     internal static IReadOnlyList<string> InstallMany(
         ResourceBudgetLedger resourceBudgets,
         string sourcePath,
@@ -51,24 +40,6 @@ public static class LicenseInstaller
             contents = ReadSource(resourceBudgets, source);
         }
         return InstallSnapshot(resourceBudgets, contents, validateAndSelectDestinations, faults);
-    }
-
-    internal static IReadOnlyList<string> InstallMany(
-        ResourceBudgetLedger resourceBudgets,
-        Stream source,
-        Func<string, IEnumerable<string>> validateAndSelectDestinations,
-        IPublicationFaultInjector faults)
-    {
-        ArgumentNullException.ThrowIfNull(resourceBudgets);
-        ArgumentNullException.ThrowIfNull(source);
-        ArgumentNullException.ThrowIfNull(validateAndSelectDestinations);
-        ArgumentNullException.ThrowIfNull(faults);
-        if (!source.CanRead)
-        {
-            throw new ArgumentException("The license stream must be readable.", nameof(source));
-        }
-        return InstallSnapshot(resourceBudgets, ReadSource(resourceBudgets, source),
-            validateAndSelectDestinations, faults);
     }
 
     private static IReadOnlyList<string> InstallSnapshot(
