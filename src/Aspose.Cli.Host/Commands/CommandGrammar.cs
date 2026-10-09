@@ -1,5 +1,4 @@
 using System.CommandLine;
-using System.CommandLine.Completions;
 using System.Globalization;
 using System.Reflection;
 using Aspose.Cli.Host.Invocation;
@@ -7,30 +6,41 @@ using Aspose.Cli.Sdk.Contracts;
 
 namespace Aspose.Cli.Host.Commands;
 
+/// <summary>A described command and the product whose command root it sits under, if any.</summary>
+/// <param name="Command">The command as capabilities lists it, with its path from the executable.</param>
+/// <param name="Product">
+/// The product whose command root declares this command's owner where the tree is assembled;
+/// <see langword="null"/> for a host command.
+/// </param>
+internal sealed record OwnedCommand(CommandCapabilities Command, string? Product);
+
 internal static class CommandGrammar
 {
-    public static IReadOnlyList<CommandCapabilities> Describe(
-        Command root,
-        IReadOnlyDictionary<string, ProductCapabilities>? products = null)
+    /// <summary>
+    /// Describes every command under <paramref name="root"/>, in ordinal path order, with the
+    /// product that owns it: the one a command root names in its invocation policy.
+    /// </summary>
+    public static IReadOnlyList<OwnedCommand> Describe(Command root)
     {
         ArgumentNullException.ThrowIfNull(root);
-        var result = new List<CommandCapabilities>();
-        Visit(root, string.Empty, result, products);
+        var result = new List<OwnedCommand>();
+        Visit(root, string.Empty, owner: null, result);
         return result
-            .OrderBy(static command => command.Path, StringComparer.Ordinal)
+            .OrderBy(static command => command.Command.Path, StringComparer.Ordinal)
             .ToArray();
     }
 
     private static void Visit(
         Command command,
         string parent,
-        ICollection<CommandCapabilities> result,
-        IReadOnlyDictionary<string, ProductCapabilities>? products)
+        string? owner,
+        ICollection<OwnedCommand> result)
     {
         string path = parent.Length == 0
             ? command.Name
             : parent + " " + command.Name;
-        result.Add(new CommandCapabilities
+        owner = command.Policy().ProductId ?? owner;
+        result.Add(new OwnedCommand(new CommandCapabilities
         {
             Path = path,
             Name = command.Name,
@@ -39,22 +49,19 @@ internal static class CommandGrammar
             Hidden = command.Hidden,
             Options = command.Options
                 .OrderBy(static option => option.Name, StringComparer.Ordinal)
-                .Select(option => Describe(option, path, products))
+                .Select(Describe)
                 .ToArray(),
             Arguments = command.Arguments
                 .Select(Describe)
                 .ToArray(),
-        });
+        }, owner));
         foreach (Command child in command.Subcommands)
         {
-            Visit(child, path, result, products);
+            Visit(child, path, owner, result);
         }
     }
 
-    private static CommandOptionCapabilities Describe(
-        Option option,
-        string commandPath,
-        IReadOnlyDictionary<string, ProductCapabilities>? products)
+    private static CommandOptionCapabilities Describe(Option option)
     {
         ParameterMetadata metadata = option.GetParameterMetadata();
         bool secret = metadata.Secret;
@@ -72,10 +79,7 @@ internal static class CommandGrammar
             Default = option.HasDefaultValue && !secret
                 ? ReadDefault(option)
                 : null,
-            AllowedValues = ReadAllowedValues(
-                option,
-                commandPath,
-                products),
+            AllowedValues = OptionCompletions.Read(option),
             Secret = secret,
             ValueSource = metadata.ValueSource.ToContractName(),
             InputKind = metadata.InputKind.ToContractName(),
@@ -101,87 +105,6 @@ internal static class CommandGrammar
             Secret = argument.GetParameterMetadata().Secret,
             Description = argument.Description,
         };
-
-    private static IReadOnlyList<string> ReadAllowedValues(
-        IEnumerable<Func<CompletionContext, IEnumerable<CompletionItem>>> sources)
-    {
-        var values = new SortedSet<string>(StringComparer.Ordinal);
-        foreach (Func<CompletionContext, IEnumerable<CompletionItem>> source
-            in sources)
-        {
-            try
-            {
-                foreach (CompletionItem item in source(CompletionContext.Empty))
-                {
-                    if (!string.IsNullOrWhiteSpace(item.InsertText))
-                    {
-                        values.Add(item.InsertText);
-                    }
-                }
-            }
-            catch (Exception)
-            {
-                // Context-dependent completion is not an allowed-value
-                // declaration and is intentionally omitted.
-            }
-        }
-        return values.ToArray();
-    }
-
-    private static IReadOnlyList<string> ReadAllowedValues(
-        Option option,
-        string commandPath,
-        IReadOnlyDictionary<string, ProductCapabilities>? products)
-    {
-        IReadOnlyList<string> declared = OptionCompletions.Read(option);
-        if (declared.Count > 0)
-        {
-            return declared;
-        }
-
-        string[] segments = commandPath.Split(
-            ' ',
-            StringSplitOptions.RemoveEmptyEntries);
-        if (segments.Length > 1
-            && products is not null
-            && products.TryGetValue(
-                segments[0],
-                out ProductCapabilities? product))
-        {
-            string verb = segments[^1];
-            IReadOnlyList<string>? inferred = option.Name switch
-            {
-                "--to" when verb == "render" => product.RenderFormats,
-                "--to" => product.ConvertFormats,
-                "--view" when verb == "preview" => product.Preview?.Views,
-                _ => null,
-            };
-            if (inferred is { Count: > 0 })
-            {
-                return inferred
-                    .Distinct(StringComparer.Ordinal)
-                    .Order(StringComparer.Ordinal)
-                    .ToArray();
-            }
-        }
-        return ReadAllowedValues(
-            option.CompletionSources.Concat(
-                ReadOptionArgumentCompletionSources(option)));
-    }
-
-    private static IEnumerable<
-        Func<CompletionContext, IEnumerable<CompletionItem>>>
-        ReadOptionArgumentCompletionSources(Option option)
-    {
-        PropertyInfo? property = typeof(Option).GetProperty(
-            "Argument",
-            BindingFlags.Public
-                | BindingFlags.NonPublic
-                | BindingFlags.Instance);
-        return property?.GetValue(option) is Argument argument
-            ? argument.CompletionSources
-            : [];
-    }
 
     private static string? ReadDefault(object symbol)
     {

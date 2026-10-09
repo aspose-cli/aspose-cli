@@ -13,13 +13,19 @@ namespace Aspose.Cli.Host.Commands;
 internal sealed class CliCapabilitySnapshot
 {
     private readonly IReadOnlyDictionary<string, string> _displayNames;
+    private readonly IReadOnlyDictionary<string, string> _productRoots;
+    private readonly IReadOnlyDictionary<string, string> _commandOwners;
 
     private CliCapabilitySnapshot(
         CapabilitiesResult result,
-        IReadOnlyDictionary<string, string> displayNames)
+        IReadOnlyDictionary<string, string> displayNames,
+        IReadOnlyDictionary<string, string> productRoots,
+        IReadOnlyDictionary<string, string> commandOwners)
     {
         Result = result;
         _displayNames = displayNames;
+        _productRoots = productRoots;
+        _commandOwners = commandOwners;
     }
 
     public CapabilitiesResult Result { get; }
@@ -42,7 +48,7 @@ internal sealed class CliCapabilitySnapshot
                     Description = product.Commands
                         .Single(command => string.Equals(
                             command.Path,
-                            product.Id,
+                            _productRoots[product.Id],
                             StringComparison.Ordinal))
                         .Description,
                     Engine = product.Engine?.Id,
@@ -53,11 +59,11 @@ internal sealed class CliCapabilitySnapshot
                     Commands = product.Commands
                         .Where(command => !command.Hidden
                             && command.Path.StartsWith(
-                                product.Id + " ",
+                                _productRoots[product.Id] + " ",
                                 StringComparison.Ordinal))
                         .Select(command => new CommandCapabilitiesSummary
                         {
-                            Command = command.Path[(product.Id.Length + 1)..],
+                            Command = command.Path[(_productRoots[product.Id].Length + 1)..],
                             Description = command.Description,
                         })
                         .ToArray(),
@@ -103,12 +109,13 @@ internal sealed class CliCapabilitySnapshot
         string? command = string.IsNullOrWhiteSpace(commandPath)
             ? null
             : NormalizeCommand(commandPath);
+        string productRoot = _productRoots[product.Id];
         string[] availableCommands = product.Commands
             .Where(candidate => !string.Equals(
                 candidate.Path,
-                product.Id,
+                productRoot,
                 StringComparison.Ordinal))
-            .Select(candidate => candidate.Path[(product.Id.Length + 1)..])
+            .Select(candidate => candidate.Path[(productRoot.Length + 1)..])
             .Order(StringComparer.Ordinal)
             .ToArray();
         if (command is not null
@@ -123,9 +130,10 @@ internal sealed class CliCapabilitySnapshot
 
         ProductCapabilities selected = command is null
             ? product
-            : FilterProduct(product, command);
-        string productCommandPrefix = "aspose-cli " + product.Id
-            + (command is null ? string.Empty : " " + command);
+            : FilterProduct(product, productRoot, command);
+        HashSet<string> selectedPaths = selected.Commands
+            .Select(static candidate => candidate.Path)
+            .ToHashSet(StringComparer.Ordinal);
         return Result with
         {
             Products = [selected],
@@ -151,9 +159,10 @@ internal sealed class CliCapabilitySnapshot
                     .ToArray(),
             },
             Commands = Result.Commands
-                .Where(candidate => PathMatches(
-                    candidate.Path,
-                    productCommandPrefix))
+                .Where(candidate =>
+                    _commandOwners.TryGetValue(candidate.Path, out string? owner)
+                    && string.Equals(owner, product.Id, StringComparison.Ordinal)
+                    && selectedPaths.Contains(RelativePath(candidate.Path)))
                 .ToArray(),
             Diagnostics = Result.Diagnostics
                 .Where(diagnostic => diagnostic.Owner is "common"
@@ -174,14 +183,20 @@ internal sealed class CliCapabilitySnapshot
         ArgumentNullException.ThrowIfNull(catalog);
         ArgumentNullException.ThrowIfNull(schemas);
 
+        // A product's commands are those under the command root whose invocation policy names
+        // the product where the tree is assembled; a product entry's paths start at that root.
         IReadOnlyDictionary<string, Command> productCommands =
             root.Subcommands
-                .Where(command => catalog.TryGet(
-                    command.Name,
-                    out ProductDefinition? _))
+                .Where(static command => command.Policy().ProductId is not null)
                 .ToDictionary(
-                    static command => command.Name,
+                    static command => command.Policy().ProductId!,
                     StringComparer.Ordinal);
+        IReadOnlyList<OwnedCommand> tree = CommandGrammar.Describe(root);
+        IReadOnlyDictionary<string, string> productRoots = catalog.Products
+            .ToDictionary(
+                static product => product.Manifest.Id,
+                product => ProductCommand(productCommands, product.Manifest.Id).Name,
+                StringComparer.Ordinal);
         ProductCapabilities[] products = catalog.Products
             .Select(product =>
             {
@@ -194,25 +209,20 @@ internal sealed class CliCapabilitySnapshot
                     Verbs = command.Subcommands
                         .Select(static child => child.Name)
                         .ToArray(),
+                    Commands = tree
+                        .Where(owned => string.Equals(
+                            owned.Product,
+                            product.Manifest.Id,
+                            StringComparison.Ordinal))
+                        .Select(static owned => owned.Command with
+                        {
+                            Path = RelativePath(owned.Command.Path),
+                        })
+                        .ToArray(),
                 };
             })
             .ToArray();
-        IReadOnlyDictionary<string, ProductCapabilities> productIndex =
-            products.ToDictionary(
-                static product => product.Id,
-                StringComparer.Ordinal);
-        products = products
-            .Select(product => product with
-            {
-                Commands = CommandGrammar.Describe(
-                    ProductCommand(productCommands, product.Id),
-                    productIndex),
-            })
-            .ToArray();
-        ValidateOperationCommands(products);
-        productIndex = products.ToDictionary(
-            static product => product.Id,
-            StringComparer.Ordinal);
+        ValidateOperationCommands(products, productRoots);
         bool licensingApplicable = catalog.Products.Any(
             static product => product.Manifest.Engine.LicenseApplicable);
 
@@ -225,7 +235,7 @@ internal sealed class CliCapabilitySnapshot
             Products = products,
             Schemas = schemas.Ids,
             Routing = catalog.GetRoutingCapabilities(),
-            Commands = CommandGrammar.Describe(root, productIndex),
+            Commands = tree.Select(static owned => owned.Command).ToArray(),
             ResourceBudgetContractVersion =
                 ResourceBudgetDefaults.ContractVersion,
             ResourceBudgets = ResourceBudgetDefaults.Global
@@ -253,7 +263,14 @@ internal sealed class CliCapabilitySnapshot
         catalog.Products.ToDictionary(
             static product => product.Manifest.Id,
             static product => product.Manifest.DisplayName,
-            StringComparer.Ordinal));
+            StringComparer.Ordinal),
+        productRoots,
+        tree
+            .Where(static owned => owned.Product is not null)
+            .ToDictionary(
+                static owned => owned.Command.Path,
+                static owned => owned.Product!,
+                StringComparer.Ordinal));
     }
 
     /// <summary>The engine pin of each product, as capabilities and <c>--version</c> report them.</summary>
@@ -282,11 +299,18 @@ internal sealed class CliCapabilitySnapshot
             : throw new InvalidOperationException(
                 $"The executable command tree has no root for product '{productId}'.");
 
+    /// <summary>A command path relative to the executable: without the root command's name.</summary>
+    private static string RelativePath(string path) =>
+        path.IndexOf(' ', StringComparison.Ordinal) is var separator and >= 0
+            ? path[(separator + 1)..]
+            : string.Empty;
+
     private static ProductCapabilities FilterProduct(
         ProductCapabilities product,
+        string productRoot,
         string command)
     {
-        string path = product.Id + " " + command;
+        string path = productRoot + " " + command;
         return product with
         {
             Verbs = [command.Split(' ', 2)[0]],
@@ -336,7 +360,8 @@ internal sealed class CliCapabilitySnapshot
     }
 
     private static void ValidateOperationCommands(
-        IEnumerable<ProductCapabilities> products)
+        IEnumerable<ProductCapabilities> products,
+        IReadOnlyDictionary<string, string> productRoots)
     {
         foreach (ProductCapabilities product in products)
         {
@@ -346,7 +371,7 @@ internal sealed class CliCapabilitySnapshot
             foreach (ProductOperationDescriptor operation in
                 product.Operations)
             {
-                string path = product.Id + " " + operation.Command;
+                string path = productRoots[product.Id] + " " + operation.Command;
                 if (!commands.Contains(path))
                 {
                     throw new InvalidOperationException(
