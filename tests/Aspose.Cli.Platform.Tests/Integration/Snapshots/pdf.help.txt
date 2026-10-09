@@ -53,7 +53,7 @@ Arguments:
 
 Options:
   --to <to> (REQUIRED)                        Target PDF export format. Values: docx, epub, html, jpeg, md, pdfa-1b, pdfa-2b, pdfa-3b, png, pptx, svg, tiff, txt, xlsx, xps.
-  --pages <pages>                             Optional 1-based page range.
+  --pages <pages>                             Pages to process, as 1-based numbers and ranges such as 1-3,7,9-. Default: every page.
   -o, --out <out>                             Output path; defaults to a sibling using the target extension.
   --overwrite                                 Replace the output file if it already exists.
   --password <password>                       Password for the PDF. Discouraged: visible in the process list; prefer --password-env.
@@ -149,7 +149,7 @@ Arguments:
 Options:
   --to <fdf|json|xfdf>                                      Form export format: json, fdf or xfdf; only with --what forms. Default: the --out extension's.
   --what <attachments|forms|images|tables|text> (REQUIRED)  images, attachments, text, tables or forms.
-  --pages <pages>                                           Optional page range for images, text or tables.
+  --pages <pages>                                           Pages to process, as 1-based numbers and ranges such as 1-3,7,9-. Default: every page. Only with --what images, text or tables.
   --bom                                                     Start each table's CSV with a UTF-8 byte order mark, so Excel reads its non-English text correctly; only with --what tables. Default: UTF-8 without one.
   --out-dir <out-dir>                                       Safe extraction directory; required unless --what forms.
   -o, --out <out>                                           Form-data output file; only with --what forms. Default extension follows --to.
@@ -179,8 +179,8 @@ Arguments:
   <file>  PDF document to open.
 
 Options:
-  --preview                                   Include bounded per-page geometry.
-  --detail <detail>                           Extra structural projections; repeatable. Values: attachments, fonts, forms, layers, metadata, outline, permissions, signatures.
+  --preview                                   Include a bounded preview: the size and rotation of each page, up to 20 pages. Default: off.
+  --detail <detail>                           Extra sections to include; repeat for more: outline (bookmarks, up to 200), forms (form type and field count), attachments, fonts, permissions, signatures, layers (optional content layer names), metadata (document information such as title and author). Values: attachments, fonts, forms, layers, metadata, outline, permissions, signatures.
   --password <password>                       Password for the PDF. Discouraged: visible in the process list; prefer --password-env.
   --password-env <password-env>               Name of an environment variable holding the password for the PDF.
   --password-stdin                            Read the password for the PDF from the first line of stdin.
@@ -283,9 +283,9 @@ Arguments:
   <file>  PDF document to open.
 
 Options:
-  --pages <pages>                             1-based page range, e.g. 1-3,7,9-.
+  --pages <pages>                             Pages to process, as 1-based numbers and ranges such as 1-3,7,9-. Default: every page.
   --mode <layout|plain>                       Text projection: plain or layout. [default: plain]
-  --max-chars <max-chars>                     Maximum projected characters. [default: 20000]
+  --max-chars <max-chars>                     Maximum characters returned, counting the text of the returned pages. Range 1-10000000, default 20000. [default: 20000]
   --password <password>                       Password for the PDF. Discouraged: visible in the process list; prefer --password-env.
   --password-env <password-env>               Name of an environment variable holding the password for the PDF.
   --password-stdin                            Read the password for the PDF from the first line of stdin.
@@ -316,7 +316,7 @@ Options:
   --case-sensitive                            Match letter case exactly.
   --max-hits <max-hits>                       Maximum returned hits (1-10000). [default: 100]
   --skip <skip>                               Matches to pass over before the returned hits; a truncated search's window.next sets it. [default: 0]
-  --pages <pages>                             Optional 1-based page range.
+  --pages <pages>                             Pages to process, as 1-based numbers and ranges such as 1-3,7,9-. Default: every page.
   --password <password>                       Password for the PDF. Discouraged: visible in the process list; prefer --password-env.
   --password-env <password-env>               Name of an environment variable holding the password for the PDF.
   --password-stdin                            Read the password for the PDF from the first line of stdin.
@@ -342,8 +342,8 @@ Arguments:
   <file>  PDF document to open.
 
 Options:
-  --to <jpeg|png|svg>                         png, jpeg or svg. [default: png]
-  --pages <pages>                             1-based page range, e.g. 1-3,7,9-. Default: page 1.
+  --to <jpeg|png|svg>                         Image format: png, jpeg or svg. Default: png. [default: png]
+  --pages <pages>                             Pages to process, as 1-based numbers and ranges such as 1-3,7,9-. Default: page 1.
   --all-pages                                 Render every page.
   --dpi <dpi>                                 Raster resolution (36-1200; default 192); ignored for vector formats. [default: 192]
   --grid <grid>                               Draw a labelled coordinate grid with a line every <grid> points (10-500) on png or jpeg output, measured from the top-left corner as redact_area takes them.

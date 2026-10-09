@@ -1119,7 +1119,7 @@
             "secret": false,
             "valueSource": "command-line",
             "inputKind": "none",
-            "description": "1-based pages for fixed-page targets only."
+            "description": "Pages to process, as 1-based numbers and ranges such as 1-3,7,9-. Default: every page. Only with fixed-page targets."
           },
           {
             "name": "--password",
@@ -1916,7 +1916,7 @@
             "secret": false,
             "valueSource": "command-line",
             "inputKind": "none",
-            "description": "Extra structural projections; repeatable."
+            "description": "Extra sections to include; repeat for more: outline (headings), sections (page setup, headers and footers), styles, fields, bookmarks, comments, revisions, images, tables, properties (title, author, subject and keywords), fonts (fonts used)."
           },
           {
             "name": "--font-dir",
@@ -2003,7 +2003,7 @@
             "secret": false,
             "valueSource": "command-line",
             "inputKind": "none",
-            "description": "Include a bounded outline preview."
+            "description": "Include a bounded preview: the heading outline, as with --detail outline. Default: off."
           }
         ],
         "arguments": [
@@ -2086,7 +2086,7 @@
             "secret": false,
             "valueSource": "command-line",
             "inputKind": "none",
-            "description": "Maximum returned content characters, including repeated text/run projections."
+            "description": "Maximum characters returned, counting the text of the returned blocks, including repeated text and run projections. Range 1-10000000, default 20000."
           },
           {
             "name": "--password",
@@ -2493,7 +2493,7 @@
             "secret": false,
             "valueSource": "command-line",
             "inputKind": "none",
-            "description": "1-based page range, e.g. 1-3,7,9-. Default: page 1."
+            "description": "Pages to process, as 1-based numbers and ranges such as 1-3,7,9-. Default: page 1."
           },
           {
             "name": "--password",
@@ -2565,7 +2565,7 @@
             "secret": false,
             "valueSource": "command-line",
             "inputKind": "none",
-            "description": "png, jpeg or svg."
+            "description": "Image format: png, jpeg or svg. Default: png."
           }
         ],
         "arguments": [
@@ -2677,7 +2677,7 @@
             "secret": false,
             "valueSource": "command-line",
             "inputKind": "none",
-            "description": "Page range when --by pages."
+            "description": "Pages to process, as 1-based numbers and ranges such as 1-3,7,9-. Default: every page, one part each. Only with --by pages."
           },
           {
             "name": "--password",
@@ -2998,8 +2998,6 @@
       "severity": "error",
       "exitCode": 4,
       "category": "validation",
-      "messageTemplateId": "words.anchor-not-found.message.v1",
-      "hintTemplateId": "words.anchor-not-found.hint.v1",
       "detailsSchemaId": "v2/common/not-found-details"
     },
     {
@@ -3007,8 +3005,6 @@
       "owner": "words",
       "severity": "warning",
       "category": "warning",
-      "messageTemplateId": "words.author-no-match.message.v1",
-      "hintTemplateId": "words.author-no-match.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -3017,8 +3013,6 @@
       "severity": "error",
       "exitCode": 4,
       "category": "validation",
-      "messageTemplateId": "words.block-not-found.message.v1",
-      "hintTemplateId": "words.block-not-found.hint.v1",
       "detailsSchemaId": "v2/common/not-found-details"
     },
     {
@@ -3026,8 +3020,6 @@
       "owner": "words",
       "severity": "warning",
       "category": "warning",
-      "messageTemplateId": "words.document-encryption-removed.message.v1",
-      "hintTemplateId": "words.document-encryption-removed.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -3036,8 +3028,6 @@
       "severity": "error",
       "exitCode": 3,
       "category": "input",
-      "messageTemplateId": "words.document-has-revisions.message.v1",
-      "hintTemplateId": "words.document-has-revisions.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -3045,8 +3035,6 @@
       "owner": "words",
       "severity": "warning",
       "category": "verification",
-      "messageTemplateId": "words.field-count-changed.message.v1",
-      "hintTemplateId": "words.field-count-changed.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -3054,8 +3042,6 @@
       "owner": "words",
       "severity": "warning",
       "category": "warning",
-      "messageTemplateId": "words.layout-may-differ.message.v1",
-      "hintTemplateId": "words.layout-may-differ.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -3063,8 +3049,6 @@
       "owner": "words",
       "severity": "warning",
       "category": "warning",
-      "messageTemplateId": "words.linked-images-skipped.message.v1",
-      "hintTemplateId": "words.linked-images-skipped.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -3072,8 +3056,6 @@
       "owner": "words",
       "severity": "warning",
       "category": "warning",
-      "messageTemplateId": "words.macros-dropped.message.v1",
-      "hintTemplateId": "words.macros-dropped.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -3082,8 +3064,6 @@
       "severity": "error",
       "exitCode": 4,
       "category": "validation",
-      "messageTemplateId": "words.merge-data-invalid.message.v1",
-      "hintTemplateId": "words.merge-data-invalid.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -3091,8 +3071,6 @@
       "owner": "words",
       "severity": "warning",
       "category": "warning",
-      "messageTemplateId": "words.merge-value-missing.message.v1",
-      "hintTemplateId": "words.merge-value-missing.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -3100,8 +3078,6 @@
       "owner": "words",
       "severity": "warning",
       "category": "verification",
-      "messageTemplateId": "words.output-truncated.message.v1",
-      "hintTemplateId": "words.output-truncated.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -3109,8 +3085,6 @@
       "owner": "words",
       "severity": "warning",
       "category": "verification",
-      "messageTemplateId": "words.protection-changed.message.v1",
-      "hintTemplateId": "words.protection-changed.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -3118,8 +3092,6 @@
       "owner": "words",
       "severity": "warning",
       "category": "verification",
-      "messageTemplateId": "words.revision-count-changed.message.v1",
-      "hintTemplateId": "words.revision-count-changed.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -3128,8 +3100,6 @@
       "severity": "error",
       "exitCode": 4,
       "category": "validation",
-      "messageTemplateId": "words.revision-not-found.message.v1",
-      "hintTemplateId": "words.revision-not-found.hint.v1",
       "detailsSchemaId": "v2/common/not-found-details"
     },
     {
@@ -3138,8 +3108,6 @@
       "severity": "error",
       "exitCode": 4,
       "category": "validation",
-      "messageTemplateId": "words.section-not-found.message.v1",
-      "hintTemplateId": "words.section-not-found.hint.v1",
       "detailsSchemaId": "v2/common/not-found-details"
     },
     {
@@ -3147,8 +3115,6 @@
       "owner": "words",
       "severity": "warning",
       "category": "warning",
-      "messageTemplateId": "words.tracked-changes-present.message.v1",
-      "hintTemplateId": "words.tracked-changes-present.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     }
   ],
