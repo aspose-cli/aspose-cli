@@ -66,6 +66,14 @@ public abstract partial record ResultEnvelope
             : throw new ArgumentException($"'{id}' is not a relative schema id: lower-case words joined by hyphens, such as 'render-result'.", nameof(id));
 
     /// <summary>
+    /// The id the schema catalog names the schema <paramref name="id"/> of <paramref name="owner"/> by,
+    /// such as <c>v2/common/backup</c>.
+    /// </summary>
+    /// <param name="owner">A product id, or <c>common</c>.</param>
+    /// <param name="id">The relative schema id, such as <c>backup</c>.</param>
+    public static string CatalogId(string owner, string id) => $"v2/{owner}/{id}";
+
+    /// <summary>
     /// The owner of the schemas an assembly's records state: the product id its product module
     /// declares, or <c>common</c>. The declaration is read by name, because the product module
     /// attribute belongs to a higher SDK layer.

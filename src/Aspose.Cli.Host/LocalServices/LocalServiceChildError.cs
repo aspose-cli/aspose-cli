@@ -23,7 +23,7 @@ internal static class LocalServiceChildError
         try
         {
             JsonObject? root = JsonNode.Parse(standardError) as JsonObject;
-            if (root?["schema"]?.GetValue<string>() != CommonSchemaIds.Error
+            if (root?["schema"]?.GetValue<string>() != ErrorEnvelope.SchemaUri
                 || root["schemaVersion"]?.GetValue<int>() != 2)
             {
                 return null;

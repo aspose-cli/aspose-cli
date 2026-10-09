@@ -13,7 +13,7 @@ public sealed record ErrorCode(string Name, ExitCode ExitCode)
     /// Schema id of the error's <c>details</c> object, published with the code in the
     /// diagnostic catalog.
     /// </summary>
-    public string DetailsSchemaId { get; private init; } = CommonSchemaIds.DiagnosticDetails;
+    public string DetailsSchemaId { get; private init; } = DiagnosticDetails.CatalogId;
 
     /// <summary>
     /// Declares the code for a named or numbered target that the document does not contain,
@@ -22,7 +22,7 @@ public sealed record ErrorCode(string Name, ExitCode ExitCode)
     /// such error lists what the document does contain.
     /// </summary>
     public static ErrorCode NotFound(string name) =>
-        new(name, ExitCode.ValidationError) { DetailsSchemaId = CommonSchemaIds.NotFoundDetails };
+        new(name, ExitCode.ValidationError) { DetailsSchemaId = NotFoundDetails.CatalogId };
 
     public override string ToString() => Name;
 }

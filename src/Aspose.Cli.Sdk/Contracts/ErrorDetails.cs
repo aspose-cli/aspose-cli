@@ -7,9 +7,15 @@ namespace Aspose.Cli.Sdk.Contracts;
 /// Base schema for product-owned diagnostic details: an object whose members a product may
 /// narrow without changing the common envelope.
 /// </summary>
-[SchemaId("diagnostic-details")]
+[SchemaId(Id)]
 public sealed record DiagnosticDetails
 {
+    /// <summary>The relative id the record's schema is published under.</summary>
+    public const string Id = "diagnostic-details";
+
+    /// <summary>The schema id the diagnostic catalog names the record's schema by.</summary>
+    public static string CatalogId { get; } = ResultEnvelope.CatalogId("common", Id);
+
     /// <summary>The details' members.</summary>
     [JsonExtensionData]
     public JsonObject? Members { get; init; }
@@ -20,9 +26,15 @@ public sealed record DiagnosticDetails
 /// was requested and what exists, so the caller can correct the request without another
 /// inspection. Operation errors add the operation's index and op.
 /// </summary>
-[SchemaId("not-found-details")]
+[SchemaId(Id)]
 public sealed record NotFoundDetails
 {
+    /// <summary>The relative id the record's schema is published under.</summary>
+    public const string Id = "not-found-details";
+
+    /// <summary>The schema id the diagnostic catalog names the record's schema by.</summary>
+    public static string CatalogId { get; } = ResultEnvelope.CatalogId("common", Id);
+
     /// <summary>What was looked up, e.g. sheet, slide, bookmark or page.</summary>
     public required string Subject { get; init; }
 

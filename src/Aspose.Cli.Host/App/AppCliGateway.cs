@@ -85,8 +85,7 @@ internal sealed class AppCliGateway
             }
             LicenseStatusResult status = Read(
                 ["license", "status"],
-                SdkJsonContext.Default.LicenseStatusResult,
-                CommonSchemaIds.LicenseStatus);
+                SdkJsonContext.Default.LicenseStatusResult);
             lock (_gate)
             {
                 // Font discovery depends on the license: a changed one is asked afresh too.
@@ -106,8 +105,7 @@ internal sealed class AppCliGateway
             : ["license", "install", sourcePath, "--product", productId];
         LicenseStatusResult installed = Read(
             arguments,
-            SdkJsonContext.Default.LicenseStatusResult,
-            CommonSchemaIds.LicenseStatus);
+            SdkJsonContext.Default.LicenseStatusResult);
         Invalidate();
         return installed.Products
             .Where(static product => product.Mode == LicenseModes.Licensed)
@@ -123,8 +121,7 @@ internal sealed class AppCliGateway
             : ["license", "remove", "--product", productId];
         _ = Read(
             arguments,
-            SdkJsonContext.Default.LicenseStatusResult,
-            CommonSchemaIds.LicenseStatus);
+            SdkJsonContext.Default.LicenseStatusResult);
         Invalidate();
     }
 
@@ -152,8 +149,7 @@ internal sealed class AppCliGateway
         {
             answer = new FontAnswer(Read(
                 ["fonts", "list", "--product", productId],
-                SdkJsonContext.Default.FontListResult,
-                CommonSchemaIds.FontList), null, _clock.GetUtcNow());
+                SdkJsonContext.Default.FontListResult), null, _clock.GetUtcNow());
         }
         catch (CliException failure)
         {
@@ -189,8 +185,7 @@ internal sealed class AppCliGateway
 
     private T Read<T>(
         IReadOnlyList<string> arguments,
-        System.Text.Json.Serialization.Metadata.JsonTypeInfo<T> type,
-        string schemaId)
+        System.Text.Json.Serialization.Metadata.JsonTypeInfo<T> type)
         where T : ResultEnvelope
     {
         byte[] output = Run(arguments);
@@ -200,16 +195,19 @@ internal sealed class AppCliGateway
                 output,
                 new JsonDocumentOptions { MaxDepth = 16 });
             if (document.RootElement.ValueKind != JsonValueKind.Object
-                || !document.RootElement.TryGetProperty("schema", out JsonElement schema)
-                || schema.GetString() != schemaId)
+                || !document.RootElement.TryGetProperty("schema", out JsonElement schema))
             {
                 throw new InvalidDataException($"The CLI answered '{arguments[0]}' with another envelope.");
             }
             BoundedJsonValidation.ValidateNoDuplicateProperties(
                 document.RootElement,
                 static reason => new JsonException(reason));
-            return document.RootElement.Deserialize(type)
+            T result = document.RootElement.Deserialize(type)
                 ?? throw new InvalidDataException($"The CLI answered '{arguments[0]}' with nothing.");
+            // A result states its schema from its record, so another envelope differs from it.
+            return schema.GetString() == result.Schema
+                ? result
+                : throw new InvalidDataException($"The CLI answered '{arguments[0]}' with another envelope.");
         }
         catch (Exception exception) when (exception is JsonException or InvalidDataException)
         {

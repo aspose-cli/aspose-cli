@@ -47,7 +47,7 @@ public sealed class LicenseFreePlatformContractTests
         using (JsonDocument schema = JsonDocument.Parse(schemaJson.StandardOutput))
         {
             Assert.Equal(
-                CommonSchemaIds.SchemaList,
+                ResultEnvelope.SchemaUri("common", "schema-list"),
                 schema.RootElement.GetProperty("schema").GetString());
             Assert.Contains(
                 "v2/common/schema-list",
