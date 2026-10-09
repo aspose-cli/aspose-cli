@@ -411,6 +411,129 @@ public sealed class ProductContractAnalyzerTests
             static item => item.Id == "APCLI007");
     }
 
+    /// <summary>
+    /// A menu lists method groups, which the walker does not follow; the guard and the product help
+    /// run only when a command runs or its help is shown, so they may do runtime work.
+    /// </summary>
+    [Fact]
+    public async Task Apcli007_AllowsAMenuOfMethodGroupsWithADeferredGuardAndHelp()
+    {
+        string source = MenuSource(
+            """
+            .Describe("Menu.", static () =>
+            {
+                _ = System.IO.File.Exists("help.txt");
+                return new CommandHelp(System.Array.Empty<string>(), System.Array.Empty<CommandHelpLink>());
+            })
+            .Guard(static (session, run) =>
+            {
+                _ = System.IO.File.Exists("guard.txt");
+                return run();
+            })
+            .Command(RunCommand.Create, Handlers.Run)
+            .Group("query", "Query.", static query => query.Command(RunCommand.Create, Handlers.Run))
+            """);
+
+        ImmutableArray<Diagnostic> diagnostics = await Analyze(source);
+
+        Assert.DoesNotContain(diagnostics, static item => item.Id == "APCLI007");
+    }
+
+    /// <summary>A group's lines are added while the definition is built, so its lambda is checked.</summary>
+    [Fact]
+    public async Task Apcli007_ReportsRuntimeWorkInAGroupOfTheMenu()
+    {
+        string source = MenuSource(
+            """
+            .Describe("Menu.")
+            .Group("query", "Query.", static query =>
+            {
+                _ = System.IO.File.Exists("group.txt");
+                query.Command(RunCommand.Create, Handlers.Run);
+            })
+            """);
+
+        Diagnostic diagnostic = Assert.Single(await Analyze(source), static item => item.Id == "APCLI007");
+
+        Assert.Contains("File.Exists", diagnostic.GetMessage(), StringComparison.Ordinal);
+    }
+
+    /// <summary>Only the help of <c>Describe</c> is deferred; its description is read in Define().</summary>
+    [Fact]
+    public async Task Apcli007_ReportsRuntimeWorkInTheProductDescription()
+    {
+        string source = MenuSource(
+            """
+            .Describe(System.IO.File.ReadAllText("description.txt"))
+            .Command(RunCommand.Create, Handlers.Run)
+            """);
+
+        Diagnostic diagnostic = Assert.Single(await Analyze(source), static item => item.Id == "APCLI007");
+
+        Assert.Contains("File.ReadAllText", diagnostic.GetMessage(), StringComparison.Ordinal);
+    }
+
+    // A product with one command definition and its handler, whose menu is <paramref name="menu"/>.
+    private static string MenuSource(string menu) =>
+        $$"""
+        using Aspose.Cli.Sdk.Extensibility;
+        using Aspose.Cli.Sdk.Extensibility.Commanding;
+        [assembly: ProductModule("menu", typeof(Demo.MenuModule))]
+        namespace Demo;
+        public sealed class Session { }
+
+        public sealed record RunRequest(string Input);
+
+        public sealed record RunResult() : Aspose.Cli.Sdk.Contracts.ResultEnvelope("demo/run", 1);
+
+        public static class RunCommand
+        {
+            public static Aspose.Cli.Sdk.Extensibility.Commanding.CommandDefinition<RunRequest, RunResult> Create() => new(
+                "run",
+                "Runs.",
+                new Aspose.Cli.Sdk.Extensibility.Commanding.CommandTraits(),
+                System.Array.Empty<System.CommandLine.Symbol>(),
+                static (_, _) =>
+                {
+                    _ = System.IO.File.Exists("bind.txt");
+                    return new RunRequest("input");
+                },
+                static (_, _) => { });
+        }
+
+        public static class Handlers
+        {
+            public static RunResult Run(Session session, RunRequest request)
+            {
+                _ = System.IO.File.Exists(request.Input);
+                return new RunResult();
+            }
+        }
+
+        public sealed class MenuModule : IProductModule
+        {
+            public ProductDefinition Define() =>
+                Product.Define<Session>(new ProductManifest
+                    {
+                        Id = "menu",
+                        DisplayName = "Menu",
+                        Operations = System.Array.Empty<Aspose.Cli.Sdk.Operations.ProductOperationCommand>(),
+                        Engine = new Aspose.Cli.Sdk.Contracts.ProductEngineCapabilities
+                        {
+                            Id = "aspose",
+                            Sdk = "Aspose.Test",
+                            SdkVersion = "1.0.0",
+                            LicenseApplicable = true,
+                            LicenseRequired = false,
+                            SupportsFontDiagnostics = true,
+                        },
+                        AvailableEngines = new[] { "aspose" },
+                    })
+                    {{menu}}
+                    .Build();
+        }
+        """;
+
     [Fact]
     public async Task Apcli008_ReportsReservedGlobalAlias()
     {

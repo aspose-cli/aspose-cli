@@ -31,10 +31,13 @@ public partial class StandardInvocation
     /// secret is read and before any input is loaded. When the output's extension names several
     /// formats, as <c>.xml</c> names WordML and Flat OPC, the edited input keeps its own: the
     /// overload that takes a detector of the input's format refuses that format, and while it is
-    /// unknown every such format must be protectable; this overload judges <see cref="ResolvedOutput.Format"/>.
+    /// unknown every such format must be protectable. This overload uses the detector the product
+    /// registered (<c>ProductDefinitionBuilder.DetectFormat</c>) for a menu command, and otherwise
+    /// judges <see cref="ResolvedOutput.Format"/>.
     /// </summary>
     /// <exception cref="CliException"><c>OPTION_INVALID</c> for an unprotectable format or a bad source.</exception>
-    public Secret? EncryptPassword() => EncryptPassword(sourceFormat: null);
+    public Secret? EncryptPassword() =>
+        EncryptPassword(DetectFormat is { } detect ? () => detect(Input) : null);
 
     /// <inheritdoc cref="EncryptPassword()"/>
     /// <param name="sourceFormat">

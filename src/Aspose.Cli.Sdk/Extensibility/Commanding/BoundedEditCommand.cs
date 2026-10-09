@@ -165,23 +165,14 @@ public sealed class BoundedEditCommand<TOp, TBatch>
         Action<ParseResult>? checkUsage = null)
         where TPort : class
     {
-        ArgumentNullException.ThrowIfNull(traits);
-        ArgumentNullException.ThrowIfNull(parameters);
         ArgumentNullException.ThrowIfNull(handler);
-        if (traits.Other is not null || traits.Output is not null)
-        {
-            throw new ArgumentException(
-                "An edit reads one input document and publishes it as its mutation output.",
-                nameof(traits));
-        }
-
         return StandardCommand.Create(
             host,
             name,
             description,
-            traits with { Output = OutputTarget.Mutation(_definition.Writes) },
-            [.. _options, .. parameters],
-            parse => parse.GetValue(_ops) == StandardInputSource,
+            EditTraits(traits),
+            EditParameters(parameters),
+            TakesStandardInput,
             (parse, standard) =>
             {
                 checkUsage?.Invoke(parse);
@@ -191,6 +182,30 @@ public sealed class BoundedEditCommand<TOp, TBatch>
                     standard);
             });
     }
+
+    /// <summary>The traits of the edit command: the product's, publishing to the mutation output.</summary>
+    internal CommandTraits EditTraits(CommandTraits traits)
+    {
+        ArgumentNullException.ThrowIfNull(traits);
+        if (traits.Other is not null || traits.Output is not null)
+        {
+            throw new ArgumentException(
+                "An edit reads one input document and publishes it as its mutation output.",
+                nameof(traits));
+        }
+
+        return traits with { Output = OutputTarget.Mutation(_definition.Writes) };
+    }
+
+    /// <summary>The shared edit options, then the product's own parameters.</summary>
+    internal IReadOnlyList<Symbol> EditParameters(IReadOnlyList<Symbol> parameters)
+    {
+        ArgumentNullException.ThrowIfNull(parameters);
+        return [.. _options, .. parameters];
+    }
+
+    /// <summary>Whether the operation document comes from standard input (<c>--ops -</c>).</summary>
+    internal bool TakesStandardInput(ParseResult parse) => parse.GetValue(_ops) == StandardInputSource;
 
     /// <summary>Whether <c>--verify</c> was requested; false when the product has no verification.</summary>
     public bool IsVerifyRequested(ParseResult parse)
@@ -206,7 +221,7 @@ public sealed class BoundedEditCommand<TOp, TBatch>
     /// </summary>
     /// <param name="parse">The parsed command line.</param>
     /// <param name="standard">The invocation's common values.</param>
-    private BoundedEditInvocation<TBatch> Read(ParseResult parse, StandardInvocation standard)
+    internal BoundedEditInvocation<TBatch> Read(ParseResult parse, StandardInvocation standard)
     {
         string? source = parse.GetValue(_ops);
         string[] directives = _set is null ? [] : parse.GetValue(_set) ?? [];

@@ -21,6 +21,7 @@ internal sealed class ProductDefinitionValidator
         ProductDefinition definition = module.Define()
             ?? throw new InvalidOperationException(
                 $"Product module '{module.GetType().FullName}' returned null.");
+        definition.AttachModule(module);
         if (_descriptors is not null
             && _descriptors.TryGetValue(module, out ProductModuleRegistration? descriptor))
         {

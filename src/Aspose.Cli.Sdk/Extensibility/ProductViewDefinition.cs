@@ -290,7 +290,8 @@ public sealed partial class ProductViewDefinition
 
     internal static ProductViewDefinition Create<TPort>(
         IProductViewAdapter<TPort> adapter,
-        string productId)
+        string productId,
+        Func<object, Func<object?>, object?>? guard = null)
         where TPort : class
     {
         ArgumentNullException.ThrowIfNull(adapter);
@@ -327,10 +328,13 @@ public sealed partial class ProductViewDefinition
             adapter.LiveView,
             adapter.VisualInspectionRequired,
             Array.AsReadOnly(checks.OrderBy(static check => check.Code, StringComparer.Ordinal).ToArray()),
-            (port, path, request, artifacts) =>
-                adapter.Render((TPort)port, path, request, artifacts),
-            (port, path, request, rendered) =>
-                adapter.Assess((TPort)port, path, request, rendered),
+            // The product guard wraps every adapter call, as it wraps every command handler.
+            (port, path, request, artifacts) => guard is null
+                ? adapter.Render((TPort)port, path, request, artifacts)
+                : (ViewManifest)guard(port, () => adapter.Render((TPort)port, path, request, artifacts))!,
+            (port, path, request, rendered) => guard is null
+                ? adapter.Assess((TPort)port, path, request, rendered)
+                : (ProductReviewAssessment)guard(port, () => adapter.Assess((TPort)port, path, request, rendered))!,
             adapter.GetType().Assembly);
     }
 

@@ -710,9 +710,13 @@ public partial class StandardInvocation
 
     internal InputSource Inputs { get; }
 
-    private protected bool UsesFonts => _options.Fonts is not null;
+    /// <summary>The product's content format detector, which a menu command supplies; null otherwise.</summary>
+    internal Func<string, string?>? DetectFormat { get; init; }
 
-    private protected void ResolveDocuments()
+    internal bool UsesFonts => _options.Fonts is not null;
+
+    /// <summary>Resolves the input documents the command declares, so a password error names its input.</summary>
+    internal void ResolveDocuments()
     {
         if (_options.Input is not null)
         {
