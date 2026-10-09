@@ -218,8 +218,7 @@ internal sealed class ResultContractWriter(Compilation compilation, Action<Locat
     {
         SyntaxNode? syntax = property.DeclaringSyntaxReferences.FirstOrDefault()?.GetSyntax();
         bool positional = syntax is ParameterSyntax;
-        string wire = Find(property, Json + "JsonPropertyNameAttribute")?.ConstructorArguments.FirstOrDefault().Value as string
-            ?? CamelCase(property.Name);
+        string wire = WireName(property);
         bool nullable = property.NullableAnnotation == NullableAnnotation.Annotated
             || property.Type.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T;
         ITypeSymbol type = property.Type is INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } wrapped
