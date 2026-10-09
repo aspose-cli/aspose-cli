@@ -1,4 +1,3 @@
-using System.CommandLine;
 using Aspose.Cli.Sdk.Extensibility.Commanding;
 using Aspose.Cli.Sdk.Extensibility.Output;
 using Aspose.Cli.Sdk.IO;
@@ -9,7 +8,7 @@ internal static class ConvertCommand
 {
     public static CommandDefinition<PresentationConvertRequest, SlidesConvertResult> Create()
     {
-        var slides = new Option<string?>("--slides") { Description = "Optional 1-based slide range." }.WithInput(InputKind.None);
+        var slides = new PartRangeOption("slide", "every slide");
         return new(
             "convert",
             "Convert a presentation or selected slides.",
@@ -21,11 +20,11 @@ internal static class ConvertCommand
                 UsesFonts = true,
                 Target = TargetFormat.Convert("Target presentation export format. PNG and JPEG use 192 DPI; use slides render for custom dimensions.", SlidesFormats.Definitions),
             },
-            [slides],
+            [.. slides.Options],
             (parse, standard) =>
             {
                 ResolvedOutput output = standard.Output;
-                string? range = parse.GetValue(slides);
+                string? range = slides.Read(parse);
                 Secret? encryptPassword = standard.EncryptPassword();
                 return new PresentationConvertRequest
                 {
