@@ -1,0 +1,52 @@
+{
+  "name": "a missing input file is reported before an invalid --font-dir, in every product",
+  "files": {
+    "not-a-directory.txt": { "text": "fonts" }
+  },
+  "steps": [
+    {
+      "args": ["pdf", "render", "missing.pdf", "--out", "page.png", "--font-dir", "missing-fonts"],
+      "expect": {
+        "exitCode": 3,
+        "error": "FILE_NOT_FOUND",
+        "json": [{ "path": "error.message", "contains": "missing.pdf" }],
+        "files": { "nothingWritten": true }
+      }
+    },
+    {
+      "args": ["pdf", "render", "missing.pdf", "--out", "page.png", "--font-dir", "not-a-directory.txt"],
+      "expect": {
+        "exitCode": 3,
+        "error": "FILE_NOT_FOUND",
+        "files": { "nothingWritten": true }
+      }
+    },
+    {
+      "args": ["cells", "render", "missing.xlsx", "--out", "page.png", "--font-dir", "missing-fonts"],
+      "expect": {
+        "exitCode": 3,
+        "error": "FILE_NOT_FOUND",
+        "json": [{ "path": "error.message", "contains": "missing.xlsx" }],
+        "files": { "nothingWritten": true }
+      }
+    },
+    {
+      "args": ["words", "render", "missing.docx", "--out", "page.png", "--font-dir", "missing-fonts"],
+      "expect": {
+        "exitCode": 3,
+        "error": "FILE_NOT_FOUND",
+        "json": [{ "path": "error.message", "contains": "missing.docx" }],
+        "files": { "nothingWritten": true }
+      }
+    },
+    {
+      "args": ["slides", "render", "missing.pptx", "--out", "page.png", "--font-dir", "missing-fonts"],
+      "expect": {
+        "exitCode": 3,
+        "error": "FILE_NOT_FOUND",
+        "json": [{ "path": "error.message", "contains": "missing.pptx" }],
+        "files": { "nothingWritten": true }
+      }
+    }
+  ]
+}
