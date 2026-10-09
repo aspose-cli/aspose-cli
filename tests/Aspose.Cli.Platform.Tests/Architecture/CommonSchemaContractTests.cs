@@ -367,7 +367,7 @@ public sealed class CommonSchemaContractTests
             .WithCommand<ITestSession, TestResult>()
             .Activator(static _ =>
                 throw new InvalidOperationException(
-                    "Common schema tests must not activate product ports."))
+                    "Common schema tests must not activate a product session."))
             .Build();
         return ProductCatalog.Build([new StaticModule(definition)]);
     }

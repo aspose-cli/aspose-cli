@@ -86,7 +86,7 @@ public sealed class HostCatalogIsolationTests
             .WithCommand<ITestSession, TestResult>()
             .Activator(static _ =>
                 throw new InvalidOperationException(
-                    "Catalog isolation tests must not activate product ports."))
+                    "Catalog isolation tests must not activate a product session."))
             .Build();
         return ProductCatalog.Build([new StaticModule(definition)]);
     }

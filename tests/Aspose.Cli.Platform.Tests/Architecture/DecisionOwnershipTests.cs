@@ -38,9 +38,9 @@ public sealed partial class DecisionOwnershipTests
     // -- D1 Output ---------------------------------------------------------------------------
 
     [Fact]
-    public void D1_ProductRequestsAndPorts_TakeNoRawOutputPathString()
+    public void D1_ProductRequests_TakeNoRawOutputPathString()
     {
-        string[] violations = [.. ProductFiles("Contracts", "Ports").SelectMany(file => file.Root.DescendantNodes()
+        string[] violations = [.. ProductFiles("Contracts").SelectMany(file => file.Root.DescendantNodes()
             .SelectMany(static node => node switch
             {
                 PropertyDeclarationSyntax property => [(node, property.Type, property.Identifier.ValueText)],
@@ -53,13 +53,13 @@ public sealed partial class DecisionOwnershipTests
             .Select(member => file.At(member.Item1, $"string {member.Item3}")))];
 
         AssertNone(violations,
-            "Product request and port types receive the SDK's resolved output, never a raw output path string:");
+            "Product request types receive the SDK's resolved output, never a raw output path string:");
     }
 
     [Fact]
     public void D1_ProductCommandsAndContracts_DeriveNoFormatFromAnExtension()
     {
-        string[] violations = [.. ProductFiles("Commands", "Contracts", "Ports").SelectMany(file => file.Root.DescendantNodes()
+        string[] violations = [.. ProductFiles("Commands", "Contracts").SelectMany(file => file.Root.DescendantNodes()
             .OfType<InvocationExpressionSyntax>()
             .Where(static invocation => InvokedName(invocation) is "GetExtension" or "ChangeExtension" or "HasExtension"
                 || (InvokedName(invocation) == "EndsWith"

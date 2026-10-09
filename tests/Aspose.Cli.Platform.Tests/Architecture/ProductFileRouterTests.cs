@@ -844,7 +844,7 @@ public sealed class ProductFileRouterTests
             .View(new TestProductViewAdapter<ITestSession>())
             .Activator(static _ =>
                 throw new InvalidOperationException(
-                    "Routing tests must not activate product ports."));
+                    "Routing tests must not activate a product session."));
         switch (id)
         {
             case "one":

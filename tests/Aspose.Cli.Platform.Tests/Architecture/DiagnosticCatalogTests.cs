@@ -106,7 +106,7 @@ public sealed class DiagnosticCatalogTests
             .WithCommand<ITestSession, TestResult>()
             .Activator(static _ =>
                 throw new InvalidOperationException(
-                    "Diagnostic tests must not activate product ports."))
+                    "Diagnostic tests must not activate a product session."))
             .Build();
         return ProductCatalog.Build([new StaticModule(definition)]);
     }
