@@ -1281,7 +1281,7 @@
             "secret": false,
             "valueSource": "command-line",
             "inputKind": "none",
-            "description": "Extra sections to include; repeat for more: outline (bookmarks, up to 200), forms (form type and field count), attachments, fonts, permissions, signatures, layers (optional content layer names), metadata (document information such as title and author)."
+            "description": "Extra sections to include; repeat for more. outline: bookmarks, up to 200; forms: form type and field count; layers: optional content layer names; metadata: document information such as title and author."
           },
           {
             "name": "--password",
@@ -1939,7 +1939,7 @@
             "secret": false,
             "valueSource": "command-line",
             "inputKind": "none",
-            "description": "Raster resolution, 36-1200; ignored for vector formats."
+            "description": "Raster resolution (36-1200); ignored for vector formats."
           },
           {
             "name": "--font-dir",

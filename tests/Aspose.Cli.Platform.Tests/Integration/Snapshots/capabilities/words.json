@@ -1916,7 +1916,7 @@
             "secret": false,
             "valueSource": "command-line",
             "inputKind": "none",
-            "description": "Extra sections to include; repeat for more: outline (headings), sections (page setup, headers and footers), styles, fields, bookmarks, comments, revisions, images, tables, properties (title, author, subject and keywords), fonts (fonts used)."
+            "description": "Extra sections to include; repeat for more. outline: headings; sections: page setup, headers and footers; properties: title, author, subject and keywords; fonts: fonts used."
           },
           {
             "name": "--font-dir",
@@ -2423,7 +2423,7 @@
             "secret": false,
             "valueSource": "command-line",
             "inputKind": "none",
-            "description": "Raster resolution, 36-1200; ignored for vector formats."
+            "description": "Raster resolution (36-1200); ignored for vector formats."
           },
           {
             "name": "--font-dir",

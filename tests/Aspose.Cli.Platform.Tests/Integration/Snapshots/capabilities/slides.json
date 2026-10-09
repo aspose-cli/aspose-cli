@@ -1435,7 +1435,7 @@
             "secret": false,
             "valueSource": "command-line",
             "inputKind": "none",
-            "description": "Extra sections to include; repeat for more: masters, layouts, media, fonts, notes (presence and character count; query slides --notes reads the text), comments, sections, properties."
+            "description": "Extra sections to include; repeat for more. notes: presence and character count, with the text from query slides --notes."
           },
           {
             "name": "--password",
@@ -1911,7 +1911,7 @@
             "secret": false,
             "valueSource": "command-line",
             "inputKind": "none",
-            "description": "Raster resolution, 36-1200; ignored for vector formats."
+            "description": "Raster resolution (36-1200); ignored for vector formats."
           },
           {
             "name": "--font-dir",
