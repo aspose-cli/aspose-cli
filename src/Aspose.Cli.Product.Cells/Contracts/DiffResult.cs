@@ -8,7 +8,7 @@ namespace Aspose.Cli.Product.Cells.Contracts;
 /// <c>identical</c>, not a failure, which lets a caller (or the eval harness) use compare as
 /// a verifier.
 /// </summary>
-public sealed record DiffResult() : ResultEnvelope("diff-result", 2)
+public sealed record DiffResult() : EngineResultEnvelope("diff-result", 2)
 {
     /// <summary>The left (baseline) file.</summary>
     [JsonPropertyOrder(-50)]

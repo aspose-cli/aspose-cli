@@ -235,6 +235,7 @@ public sealed class WordsRendererGoldenTests
         var result = new DocumentReadResult
         {
             Source = new SourceInfo { Path = "report.docx", Format = "docx", SizeBytes = 10_240 },
+            Window = new ResultWindow { Unit = "block", Returned = 2, Total = 12, Truncated = true },
             Scope = "body",
             BlockCount = 12,
             Blocks =

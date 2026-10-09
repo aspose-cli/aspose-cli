@@ -8,7 +8,7 @@ namespace Aspose.Cli.Sdk.Contracts;
 /// build look for fonts, and what does it fall back to" so a "renders wrong on
 /// the server" problem (P-5) can be traced to font configuration.
 /// </summary>
-public sealed record FontListResult() : ResultEnvelope("font-list", 2)
+public sealed record FontListResult() : EngineResultEnvelope("font-list", 2)
 {
     /// <summary>
     /// The font substituted for any unavailable font when rendering; omitted

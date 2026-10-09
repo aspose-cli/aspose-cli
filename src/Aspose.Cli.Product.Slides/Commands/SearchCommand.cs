@@ -26,7 +26,7 @@ internal static class SearchCommand
             Table)
         {
             Finish = static (_, request, result, standard) =>
-                result with { Window = SearchOptions.Continue(request.Query, result.Window!, standard.Continuation()) },
+                result with { Window = SearchOptions.Continue(request.Query, result.Window, standard.Continuation()) },
         };
     }
 

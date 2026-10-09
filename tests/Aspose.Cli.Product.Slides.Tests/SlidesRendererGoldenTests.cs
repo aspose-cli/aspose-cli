@@ -207,6 +207,7 @@ public sealed class SlidesRendererGoldenTests
         var result = new PresentationReadResult
         {
             Source = new SourceInfo { Path = "deck.pptx", Format = "pptx", SizeBytes = 50_000 },
+            Window = new ResultWindow { Unit = "slide", Returned = 2, Total = 2, Truncated = false },
             Scope = "text",
             SlideCount = 2,
             Slides =

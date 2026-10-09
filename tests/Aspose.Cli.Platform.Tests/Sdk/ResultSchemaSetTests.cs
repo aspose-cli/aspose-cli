@@ -248,13 +248,8 @@ public sealed class ResultSchemaSetTests
     }
 
     [Fact]
-    public void AlwaysPresentMembers_AreRequiredWhereTheRecordStatesThem()
+    public void AlwaysPresentMembers_AreRequiredWhereTheMemberStatesThem()
     {
-        ResultRecord window = new()
-        {
-            Type = typeof(Nested.Twin),
-            Properties = [new() { Name = "window", Description = "W.", Value = new() { Kind = ResultValueKind.String } }],
-        };
         ResultRecord page = new()
         {
             Type = typeof(SamplePage),
@@ -265,12 +260,10 @@ public sealed class ResultSchemaSetTests
                 new() { Name = "label", Description = "L.", Value = new() { Kind = ResultValueKind.String } },
             ],
         };
-        static ResultRecord Root(string[] present, string[] pagePresent) => new()
+        static ResultRecord Root(string[] pagePresent) => new()
         {
             Type = typeof(SampleBlock),
-            Base = typeof(Nested.Twin),
             SchemaId = "root",
-            AlwaysPresent = present,
             Properties =
             [
                 new() { Name = "page", Description = "P.", Value = new() { Kind = ResultValueKind.Record, Record = typeof(SamplePage) }, AlwaysPresent = pagePresent },
@@ -284,22 +277,17 @@ public sealed class ResultSchemaSetTests
             ],
         };
 
-        Assert.True(new ResultSchemaSet("test", [Root(["window"], ["label"]), window, page], common: null).TryRead("v2/test/root", out string? document));
+        Assert.True(new ResultSchemaSet("test", [Root(["label"]), page], common: null).TryRead("v2/test/root", out string? document));
         JsonObject schema = JsonNode.Parse(document)!.AsObject();
-        Assert.Equal(["window"], schema["required"]!.AsArray().Select(static name => name!.GetValue<string>()));
         Assert.Equal("#/$defs/samplePage", schema["properties"]!["page"]!["$ref"]!.GetValue<string>());
         Assert.Equal(["label"], schema["properties"]!["page"]!["required"]!.AsArray().Select(static name => name!.GetValue<string>()));
         Assert.Equal("#/$defs/samplePage", schema["properties"]!["pages"]!["items"]!["$ref"]!.GetValue<string>());
         Assert.Equal(["label"], schema["properties"]!["pages"]!["items"]!["required"]!.AsArray().Select(static name => name!.GetValue<string>()));
 
-        foreach ((string[] present, string[] pagePresent, string named) in new[]
+        foreach (string named in new[] { "missing", "number" })
         {
-            (new[] { "missing" }, Array.Empty<string>(), "'missing'"),
-            ([], ["number"], "'number'"),
-        })
-        {
-            var set = new ResultSchemaSet("test", [Root(present, pagePresent), window, page], common: null);
-            Assert.Contains(named + ", which is not an optional member", Assert.Throws<InvalidOperationException>(() => set.TryRead("v2/test/root", out _)).Message, StringComparison.Ordinal);
+            var set = new ResultSchemaSet("test", [Root([named]), page], common: null);
+            Assert.Contains($"'{named}', which is not an optional member", Assert.Throws<InvalidOperationException>(() => set.TryRead("v2/test/root", out _)).Message, StringComparison.Ordinal);
         }
     }
 

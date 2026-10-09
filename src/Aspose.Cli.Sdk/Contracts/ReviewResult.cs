@@ -6,7 +6,7 @@ namespace Aspose.Cli.Sdk.Contracts;
 /// Result of <c>aspose-cli review &lt;file&gt;</c>: a portable, static evidence bundle, and the
 /// <c>review.json</c> manifest written into the new evidence directory.
 /// </summary>
-public sealed record ReviewResult() : ResultEnvelope("review", 2), IPartialOutcome
+public sealed record ReviewResult() : EngineResultEnvelope("review", 2), IPartialOutcome
 {
     /// <summary>Product that reviewed the document.</summary>
     [Pattern("^[a-z0-9][a-z0-9-]*$")]

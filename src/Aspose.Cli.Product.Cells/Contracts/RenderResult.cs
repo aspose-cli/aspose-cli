@@ -7,7 +7,7 @@ namespace Aspose.Cli.Product.Cells.Contracts;
 /// Result of <c>aspose-cli cells render</c>: a visual image of one sheet (or a
 /// range of it), the primary way for an agent to "look at" a spreadsheet.
 /// </summary>
-public sealed record RenderResult() : ResultEnvelope("render-result", 2)
+public sealed record RenderResult() : EngineResultEnvelope("render-result", 2)
 {
     /// <summary>The rendered input file.</summary>
     [JsonPropertyOrder(-50)]

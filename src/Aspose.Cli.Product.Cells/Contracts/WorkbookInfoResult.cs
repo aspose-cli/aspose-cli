@@ -7,7 +7,7 @@ namespace Aspose.Cli.Product.Cells.Contracts;
 /// as the first step of the projection ladder (metadata before structure,
 /// structure before values). Never contains full cell data.
 /// </summary>
-public sealed record WorkbookInfoResult() : ResultEnvelope("workbook-info", 2)
+public sealed record WorkbookInfoResult() : EngineResultEnvelope("workbook-info", 2)
 {
     /// <summary>Document kind discriminator; always <c>workbook</c> for cells.</summary>
     [JsonPropertyOrder(-50)]

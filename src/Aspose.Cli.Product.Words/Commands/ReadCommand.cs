@@ -42,7 +42,7 @@ internal static class ReadCommand
             Render)
         {
             Finish = static (_, request, result, standard) =>
-                result with { Window = result.Window! with { Next = Next(standard.Continuation(), request, result) } },
+                result with { Window = result.Window with { Next = Next(standard.Continuation(), request, result) } },
             Examples =
             [
                 "words query blocks contract.docx --blocks 1-30 --scope full --output json",
@@ -70,7 +70,7 @@ internal static class ReadCommand
     /// </summary>
     private static string? Next(ContinuationCommand resume, DocumentReadRequest request, DocumentReadResult result)
     {
-        if (!result.Window!.Truncated || result.BlockCount == 0)
+        if (!result.Window.Truncated || result.BlockCount == 0)
         {
             return null;
         }
