@@ -72,9 +72,15 @@ internal static class SameNameOptions
         new("--set", OptionAspect.Description,
             "cells edit --set writes one cell as SHEET!CELL=VALUE; words edit --set replaces a bookmark as "
             + "bookmark:NAME=TEXT: two different syntaxes."),
+        new("--bom", OptionAspect.Description, OwnCondition),
+        new("--author", OptionAspect.Description, OwnCondition),
+        new("--range", OptionAspect.Description, OwnCondition),
+        new("--template", OptionAspect.Description, OwnCondition),
     ];
 
     private const string OwnOutput = "Describes this command's own output or check; S3 unifies.";
+
+    private const string OwnCondition = "States this command's own condition or default; S3 unifies.";
 
     /// <summary>The wording a password option of the SDK templates shares, with the noun of what it protects as a wildcard.</summary>
     private static string PasswordTemplate(string option) =>
@@ -94,6 +100,10 @@ internal static class SameNameOptions
         new("--slides", @"^Slides to process, as 1-based numbers and ranges such as 1-3,7,9-\. Default: [^.]+\.( Only with [^.]+\.)?$"),
         new("--preview", @"^Include a bounded preview: .+\. Default: off\.$"),
         new("--detail", @"^Extra sections to include; repeat for more: .+\.$"),
+        new("--ops", "^" + Regex.Escape(
+            "The ops JSON: a path to the document, '-' to read it from stdin, or the document itself when the value starts "
+            + "with { or [ (inline). To name a file whose name starts with '[', prefix it with ./ . Vocabulary: aspose-cli "
+            + "schema v2/") + "[a-z]+" + Regex.Escape("/ops.") + "$"),
         new("--max-chars", @"^Maximum characters returned, counting .+\. Range 1-10000000, default 20000\.$"),
         new("--to", @"^Image format: png, jpeg or svg\. Default: png\.$", static command => command.EndsWith(" render", StringComparison.Ordinal)),
         new("--password", PasswordTemplate("--password")),
