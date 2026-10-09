@@ -47,10 +47,8 @@ internal static class PdfRead
         bool windowTruncated = pages.Count < requested.Count || pages.Any(static page => page.Truncated);
         IReadOnlyList<Warning>? warnings = scanned.Count == 0
             ? null
-            : [new Warning
+            : [new Warning(PdfDiagnostics.ScannedPagesSuspected, $"Pages with no extractable text appear image-dominated: {string.Join(", ", scanned)}.")
             {
-                Code = PdfDiagnostics.ScannedPagesSuspected,
-                Message = $"Pages with no extractable text appear image-dominated: {string.Join(", ", scanned)}.",
                 Hint = "This build has no OCR: read those pages from rendered images ('aspose-cli pdf render'), and hide content "
                     + "on them with redact_area, whose coordinates you can read from 'aspose-cli pdf render --grid 50', "
                     + "which labels points from the page's top-left corner.",

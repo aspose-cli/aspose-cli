@@ -11,11 +11,7 @@ public sealed class WarningContractTests
     [Fact]
     public void OptionalVisualFields_AreOmittedByDefault()
     {
-        var warning = new Warning
-        {
-            Code = "TEST_WARNING",
-            Message = "A bounded warning.",
-        };
+        var warning = new Warning(new WarningCode("TEST_WARNING"), "A bounded warning.");
 
         JsonObject json = Serialize(warning);
 
@@ -27,10 +23,8 @@ public sealed class WarningContractTests
     [Fact]
     public void VisualFields_SerializeAfterTheExistingContract()
     {
-        var warning = new Warning
+        var warning = new Warning(new WarningCode("TEST_WARNING"), "A bounded warning.")
         {
-            Code = "TEST_WARNING",
-            Message = "A bounded warning.",
             Hint = "Inspect the affected item.",
             Docs = "test/verification",
             Location = "page:2",

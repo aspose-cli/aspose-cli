@@ -81,10 +81,8 @@ internal static class WordsEdit
         var outputWarnings = new List<Warning>();
         if (loaded.Format.IsEncrypted && outputPassword is null && !request.Options.DryRun)
         {
-            outputWarnings.Add(new Warning
+            outputWarnings.Add(new Warning(WordsDiagnostics.EncryptionRemoved, $"The '{format}' output cannot retain the source document encryption.")
             {
-                Code = WordsDiagnostics.EncryptionRemoved,
-                Message = $"The '{format}' output cannot retain the source document encryption.",
                 Hint = "Use an encryption-capable document output to keep password protection.",
             });
         }
@@ -92,10 +90,8 @@ internal static class WordsEdit
         outputWarnings.AddRange(SaveWarnings(loaded, format));
         if (truncation is not null)
         {
-            outputWarnings.Add(new Warning
+            outputWarnings.Add(new Warning(WarningCodes.EvalInputTruncated, $"Aspose.Words evaluation mode cut the edited document short: {truncation}")
             {
-                Code = WarningCodes.EvalInputTruncated,
-                Message = $"Aspose.Words evaluation mode cut the edited document short: {truncation}",
                 Hint = "Do not deliver this output as complete; apply a license and retry.",
             });
         }
@@ -426,16 +422,14 @@ internal static class WordsEdit
 
         if (inputWasSigned)
         {
-            extra.Add(new Warning { Code = WarningCodes.SignatureInvalidated, Message = "Editing invalidates the document's digital signature.", Hint = "Re-sign the produced document after review." });
+            extra.Add(new Warning(WarningCodes.SignatureInvalidated, "Editing invalidates the document's digital signature.") { Hint = "Re-sign the produced document after review." });
         }
 
         if (inputProtection != ProtectionType.NoProtection)
         {
             // Editing restrictions guide Word's UI; they are not encryption and do not bind the SDK.
-            extra.Add(new Warning
+            extra.Add(new Warning(WarningCodes.ProtectionNotEnforced, $"The input has {WordsProtection.ToMode(inputProtection)} editing restrictions; the edit was applied through them.")
             {
-                Code = WarningCodes.ProtectionNotEnforced,
-                Message = $"The input has {WordsProtection.ToMode(inputProtection)} editing restrictions; the edit was applied through them.",
                 // LOSSY_CONVERSION discloses restrictions a non-Word output cannot keep.
                 Hint = WordsFormats.IsWord(format)
                     ? "Confirm the change is authorized. The output keeps the restrictions unless the batch changed them with protect or unprotect."

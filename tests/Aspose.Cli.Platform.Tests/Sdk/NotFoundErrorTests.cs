@@ -74,6 +74,6 @@ public sealed class NotFoundErrorTests
         Assert.Throws<ArgumentException>(() => CliErrors.NotFoundAt(ErrorCodes.OpsInvalid, "page", "4", 3));
         Assert.Equal(
             NotFoundDetails.CatalogId,
-            DiagnosticDescriptor.Error(SheetNotFound, "cells", "validation").DetailsSchemaId);
+            DiagnosticDescriptor.Error(SheetNotFound, "cells").DetailsSchemaId);
     }
 }

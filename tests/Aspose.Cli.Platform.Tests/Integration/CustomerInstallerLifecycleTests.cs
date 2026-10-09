@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using Aspose.Cli.Host.Invocation;
 using Aspose.Cli.Host.Updating;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.TestKit;
@@ -118,7 +119,7 @@ public sealed partial class CustomerInstallerPowerShellTests
         Assert.Equal(Path.ChangeExtension(status, ".log"), log);
         Assert.Contains("Injected installer failure at 'newPublished'", File.ReadAllText(log), StringComparison.Ordinal);
         Warning warning = UpdateStatus.ReadWarning(status)!;
-        Assert.Equal(UpdateStatus.FailedWarningCode, warning.Code);
+        Assert.Equal(HostDiagnostics.UpdateFailed, warning.Code);
         Assert.Contains("Injected installer failure", warning.Message, StringComparison.Ordinal);
 
         PowerShellResult crashed = RunInstaller(_package.Path, install,

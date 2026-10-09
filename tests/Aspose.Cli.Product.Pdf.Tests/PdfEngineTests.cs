@@ -285,7 +285,7 @@ public sealed class PdfEngineTests
         CliResult review = workspace.Run(["review", created.Output.Path, "--out", workspace.File("review"), "--output", "json"]);
 
         Assert.Equal([1, 2, 3, 4], read.ScannedPagesSuspected);
-        Assert.Contains(read.Warnings!, static warning => warning.Code == "SCANNED_PAGES_SUSPECTED");
+        Assert.Contains(read.Warnings!, static warning => warning.Code.Name == "SCANNED_PAGES_SUSPECTED");
         Assert.Equal(
             ["page 1", "page 2", "page 3", "page 4"],
             review.Json()["findings"]!.AsArray()
@@ -731,7 +731,7 @@ public sealed class PdfEngineTests
             Pages = CliPageRange.Parse(pages),
         });
 
-        Warning? warning = result.Warnings?.SingleOrDefault(static item => item.Code == "NAVIGATION_DEGRADED");
+        Warning? warning = result.Warnings?.SingleOrDefault(static item => item.Code.Name == "NAVIGATION_DEGRADED");
         Assert.Equal(degraded, warning is not null);
         if (warning is not null)
         {

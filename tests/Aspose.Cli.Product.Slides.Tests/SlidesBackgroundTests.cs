@@ -35,7 +35,7 @@ public sealed class SlidesBackgroundTests
 
         using var deck = new Presentation(output);
         Assert.Equal(kept, IsBeige(deck.Slides[1]));
-        Assert.Equal(kept ? null : "slide 2", result.Warnings?.SingleOrDefault(static warning => warning.Code == "SLIDE_BACKGROUND_RESET")?.Location);
+        Assert.Equal(kept ? null : "slide 2", result.Warnings?.SingleOrDefault(static warning => warning.Code.Name == "SLIDE_BACKGROUND_RESET")?.Location);
     }
 
     [Fact]
@@ -84,7 +84,7 @@ public sealed class SlidesBackgroundTests
         });
 
         // Only a slide that had its own background is named.
-        Warning warning = Assert.Single(result.Warnings!, static warning => warning.Code == "SLIDE_BACKGROUND_RESET");
+        Warning warning = Assert.Single(result.Warnings!, static warning => warning.Code.Name == "SLIDE_BACKGROUND_RESET");
         Assert.Equal(("slides 2, 3", "The own background of slide(s) 2, 3 was removed, so they show their layout's background."),
             (warning.Location, warning.Message));
         using var deck = new Presentation(output);

@@ -80,10 +80,8 @@ internal sealed class WorkbookResources(string path, ResourceBudgetLedger budget
     internal void ThrowIfFailed() => _loader.ThrowIfFailed();
 
     internal Warning? CoverageWarning =>
-        _loader.Warning ?? (embeddedContainer ? new Warning
+        _loader.Warning ?? (embeddedContainer ? new Warning(CellsDiagnostics.MhtmlResourceCoverageUnverified, "The SDK resolves embedded MHTML resources internally without reporting unresolved references.")
         {
-            Code = CellsDiagnostics.MhtmlResourceCoverageUnverified,
-            Message = "The SDK resolves embedded MHTML resources internally without reporting unresolved references.",
             Hint = "Inspect every required image and style; external resource completeness cannot be confirmed.",
             AffectsCompleteness = true,
         } : null);

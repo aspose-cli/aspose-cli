@@ -23,10 +23,20 @@ public enum DiagnosticSeverity
 /// </summary>
 public sealed record DiagnosticDescriptor
 {
+    /// <summary>Category of every warning that is not a verification issue.</summary>
+    public const string WarningCategory = "warning";
+
+    /// <summary>Category of codes reported as <see cref="VerificationIssue"/> entries.</summary>
+    public const string VerificationCategory = "verification";
+
+    private DiagnosticDescriptor()
+    {
+    }
+
     /// <summary>SCREAMING_SNAKE_CASE public code.</summary>
     public required string Code { get; init; }
 
-    /// <summary>Product id, or <c>common</c> for shared infrastructure.</summary>
+    /// <summary>Product id, <c>common</c> for the SDK's shared mechanisms, or <c>host</c>.</summary>
     public required string Owner { get; init; }
 
     /// <summary>Whether this is a fatal error or a non-fatal warning.</summary>
@@ -35,69 +45,76 @@ public sealed record DiagnosticDescriptor
     /// <summary>Error exit category; null for warnings.</summary>
     public ExitCode? ExitCode { get; init; }
 
-    /// <summary>Category exposed by the current capability catalog.</summary>
+    /// <summary>
+    /// Category exposed by the capability catalog: an error's follows from its exit code, a
+    /// warning's is <see cref="WarningCategory"/> or <see cref="VerificationCategory"/>.
+    /// </summary>
     public required string Category { get; init; }
-
-    /// <summary>Identity of the product-owned message template.</summary>
-    public required string MessageTemplateId { get; init; }
-
-    /// <summary>Identity of the product-owned recovery template.</summary>
-    public required string HintTemplateId { get; init; }
 
     /// <summary>Schema governing the dynamic details object.</summary>
     public string DetailsSchemaId { get; init; } = DiagnosticDetails.CatalogId;
 
-    /// <summary>Declares an immutable error descriptor; the details schema is the code's own.</summary>
-    public static DiagnosticDescriptor Error(ErrorCode code, string owner, string category)
+    /// <summary>
+    /// Whether only licensing produces this diagnostic, as its code declares; a build whose
+    /// products need no license leaves it out of <c>capabilities</c>.
+    /// </summary>
+    public bool LicenseSurface { get; init; }
+
+    /// <summary>Declares an error; its category follows from its exit code and its details schema is the code's own.</summary>
+    public static DiagnosticDescriptor Error(ErrorCode code, string owner)
     {
         ArgumentNullException.ThrowIfNull(code);
-        return Create(
-            code.Name,
-            owner,
-            DiagnosticSeverity.Error,
-            code.ExitCode,
-            category,
-            code.DetailsSchemaId);
-    }
-
-    /// <summary>Declares an immutable warning descriptor.</summary>
-    public static DiagnosticDescriptor Warning(string code, string owner, string category) =>
-        Create(
-            code,
-            owner,
-            DiagnosticSeverity.Warning,
-            null,
-            category,
-            DiagnosticDetails.CatalogId);
-
-    /// <summary>Category of codes reported as <see cref="VerificationIssue"/> entries.</summary>
-    public const string VerificationCategory = "verification";
-
-    /// <summary>Declares an immutable verification-issue descriptor in the <see cref="VerificationCategory"/> category.</summary>
-    public static DiagnosticDescriptor Verification(string code, string owner) =>
-        Warning(code, owner, VerificationCategory);
-
-    private static DiagnosticDescriptor Create(
-        string code,
-        string owner,
-        DiagnosticSeverity severity,
-        ExitCode? exitCode,
-        string category,
-        string detailsSchemaId)
-    {
-        string normalizedOwner = owner?.Trim() ?? string.Empty;
-        string templateStem =
-            $"{normalizedOwner}.{code.ToLowerInvariant().Replace('_', '-')}";
         return new DiagnosticDescriptor
         {
-            Code = code,
-            Owner = normalizedOwner,
-            Severity = severity,
-            ExitCode = exitCode,
-            Category = category,
-            MessageTemplateId = templateStem + ".message.v1",
-            HintTemplateId = templateStem + ".hint.v1",
-            DetailsSchemaId = detailsSchemaId,
+            Code = code.Name,
+            Owner = Normalized(owner),
+            Severity = DiagnosticSeverity.Error,
+            ExitCode = code.ExitCode,
+            Category = CategoryOf(code.ExitCode),
+            DetailsSchemaId = code.DetailsSchemaId,
+            LicenseSurface = code.LicenseSurface,
         };
     }
+
+    /// <summary>Declares a warning in the <see cref="WarningCategory"/> category.</summary>
+    public static DiagnosticDescriptor Warning(WarningCode code, string owner)
+    {
+        ArgumentNullException.ThrowIfNull(code);
+        return new DiagnosticDescriptor
+        {
+            Code = code.Name,
+            Owner = Normalized(owner),
+            Severity = DiagnosticSeverity.Warning,
+            Category = WarningCategory,
+            LicenseSurface = code.LicenseSurface,
+        };
+    }
+
+    /// <summary>Declares a verification issue in the <see cref="VerificationCategory"/> category.</summary>
+    public static DiagnosticDescriptor Verification(string code, string owner) =>
+        new()
+        {
+            Code = code,
+            Owner = Normalized(owner),
+            Severity = DiagnosticSeverity.Warning,
+            Category = VerificationCategory,
+        };
+
+    private static string Normalized(string owner) => owner?.Trim() ?? string.Empty;
+
+    /// <summary>The category an error with <paramref name="exitCode"/> belongs to.</summary>
+    private static string CategoryOf(ExitCode exitCode) =>
+        exitCode switch
+        {
+            global::Aspose.Cli.Sdk.Errors.ExitCode.Internal => "internal",
+            global::Aspose.Cli.Sdk.Errors.ExitCode.Usage => "usage",
+            global::Aspose.Cli.Sdk.Errors.ExitCode.InputError => "input",
+            global::Aspose.Cli.Sdk.Errors.ExitCode.ValidationError => "validation",
+            global::Aspose.Cli.Sdk.Errors.ExitCode.OutputError => "output",
+            global::Aspose.Cli.Sdk.Errors.ExitCode.FormatError => "format",
+            global::Aspose.Cli.Sdk.Errors.ExitCode.LicenseError => "license",
+            global::Aspose.Cli.Sdk.Errors.ExitCode.PartialFailure => "partial",
+            global::Aspose.Cli.Sdk.Errors.ExitCode.OperationTimeout => "timeout",
+            _ => "error",
+        };
 }

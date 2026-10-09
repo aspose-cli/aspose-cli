@@ -27,7 +27,7 @@ public sealed class PdfNavigationTests
 
         // "Three" and the explicit link are retargeted; "appendix" has left 0, which may stand
         // for an omitted coordinate, so it and the bookmark and link that use it are counted.
-        Warning warning = Assert.Single(result.Warnings!, static item => item.Code == "NAVIGATION_DEGRADED");
+        Warning warning = Assert.Single(result.Warnings!, static item => item.Code.Name == "NAVIGATION_DEGRADED");
         Assert.True(warning.AffectsCompleteness);
         Assert.StartsWith("1 bookmark(s), 1 link(s) and 1 named destination(s)", warning.Message, StringComparison.Ordinal);
         using var moved = new Document(result.Output!.Path);
@@ -84,7 +84,7 @@ public sealed class PdfNavigationTests
             Output = TestOutput.At(fixture.File("exact.out.pdf")),
         });
 
-        Assert.DoesNotContain(result.Warnings ?? [], static item => item.Code == "NAVIGATION_DEGRADED");
+        Assert.DoesNotContain(result.Warnings ?? [], static item => item.Code.Name == "NAVIGATION_DEGRADED");
         using var moved = new Document(result.Output!.Path);
         Assert.Equal(["Page 2", "Page 3", "Page 1"], Enumerable.Range(1, 3).Select(number => Text(moved.Pages[number])));
         OutlineItemCollection parentItem = moved.Outlines.Single(static item => item.Title == "Parent");
@@ -132,7 +132,7 @@ public sealed class PdfNavigationTests
             Output = TestOutput.At(fixture.File("metadata.out.pdf")),
         });
 
-        Assert.DoesNotContain(result.Warnings ?? [], static item => item.Code == "NAVIGATION_DEGRADED");
+        Assert.DoesNotContain(result.Warnings ?? [], static item => item.Code.Name == "NAVIGATION_DEGRADED");
     }
 
     [Fact]
@@ -148,7 +148,7 @@ public sealed class PdfNavigationTests
             Output = TestOutput.At(fixture.File("attachments.out.pdf")),
         });
 
-        Assert.DoesNotContain(result.Warnings ?? [], static item => item.Code == "NAVIGATION_DEGRADED");
+        Assert.DoesNotContain(result.Warnings ?? [], static item => item.Code.Name == "NAVIGATION_DEGRADED");
         using var edited = new Document(result.Output!.Path);
         Assert.Single(edited.EmbeddedFiles);
     }
@@ -182,7 +182,7 @@ public sealed class PdfNavigationTests
         });
 
         // "Two" was Fit and survives; "Three" (XYZ) becomes Fit and "Named" loses its name.
-        Warning warning = Assert.Single(result.Warnings!, static item => item.Code == "NAVIGATION_DEGRADED");
+        Warning warning = Assert.Single(result.Warnings!, static item => item.Code.Name == "NAVIGATION_DEGRADED");
         Assert.StartsWith("2 bookmark(s), 1 link(s) and 1 named destination(s)", warning.Message, StringComparison.Ordinal);
         using var merged = new Document(result.Output.Path);
         Assert.Equal(3, merged.Outlines.Count);

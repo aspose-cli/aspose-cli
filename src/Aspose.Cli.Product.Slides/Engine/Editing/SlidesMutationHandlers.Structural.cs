@@ -105,10 +105,8 @@ internal sealed partial class SlidesMutationHandlers
         if (reset.Length > 0)
         {
             string numbers = string.Join(", ", reset);
-            _warnings.Add(new Warning
+            _warnings.Add(new Warning(SlidesDiagnostics.SlideBackgroundReset, $"The own background of slide(s) {numbers} was removed, so they show their layout's background.")
             {
-                Code = SlidesDiagnostics.SlideBackgroundReset,
-                Message = $"The own background of slide(s) {numbers} was removed, so they show their layout's background.",
                 Hint = "To keep a background, set it again with set_background after this operation, then review the slides.",
                 Location = (reset.Length == 1 ? "slide " : "slides ") + numbers,
             });

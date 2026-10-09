@@ -37,7 +37,7 @@ public sealed class VerificationIssueTests
     [Fact]
     public void Of_RejectsADescriptorOutsideTheVerificationCategory()
     {
-        DiagnosticDescriptor warning = DiagnosticDescriptor.Warning("TEST_WARNING", "test", "warning");
+        DiagnosticDescriptor warning = DiagnosticDescriptor.Warning(new WarningCode("TEST_WARNING"), "test");
 
         Assert.Throws<ArgumentException>(() => VerificationIssues.Of(warning, "Not a verification code."));
     }
@@ -45,10 +45,8 @@ public sealed class VerificationIssueTests
     [Fact]
     public void From_KeepsTheWarningsLocationAndHint()
     {
-        var warning = new Warning
+        var warning = new Warning(new WarningCode("TEST_WARNING"), "A bounded warning.")
         {
-            Code = "TEST_WARNING",
-            Message = "A bounded warning.",
             Hint = "Inspect the affected item.",
             Docs = "test/verification",
             Location = "page:2",

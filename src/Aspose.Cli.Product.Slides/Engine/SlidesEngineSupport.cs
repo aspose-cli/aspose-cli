@@ -14,10 +14,8 @@ internal static class SlidesEngineSupport
     internal const string EvaluationTruncationMarker = "truncated due to evaluation version limitation";
     internal const int DefaultRasterDpi = 192;
 
-    internal static Warning EvaluationInputWarning { get; } = new()
+    internal static Warning EvaluationInputWarning { get; } = new(WarningCodes.EvalInputTruncated, "Aspose.Slides evaluation mode reads text longer than five characters as its first characters and a truncation notice, so the text in this result is not the presentation's text.")
     {
-        Code = WarningCodes.EvalInputTruncated,
-        Message = "Aspose.Slides evaluation mode reads text longer than five characters as its first characters and a truncation notice, so the text in this result is not the presentation's text.",
         Hint = "Check the text in rendered slide images, which show it in full, or apply a license and retry. Presentations, PDFs and images the CLI saves keep the full text.",
     };
 
@@ -491,10 +489,8 @@ internal static class SlidesEngineSupport
         {
             foreach ((int slide, string chart) in loaded.ImplicitTitleCharts)
             {
-                warnings.Add(new Warning
+                warnings.Add(new Warning(SlidesDiagnostics.ChartTitleOverlaid, $"The chart '{chart}' on slide {slide} has an implicit automatic title, which this output draws over the plot, enlarging the plot area.")
                 {
-                    Code = SlidesDiagnostics.ChartTitleOverlaid,
-                    Message = $"The chart '{chart}' on slide {slide} has an implicit automatic title, which this output draws over the plot, enlarging the plot area.",
                     Hint = "Inspect the chart in PowerPoint and restore its title layout there if it changed.",
                     Location = string.Create(CultureInfo.InvariantCulture, $"slide {slide}"),
                     AffectsCompleteness = true,

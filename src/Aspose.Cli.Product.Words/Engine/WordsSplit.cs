@@ -59,7 +59,7 @@ internal static class WordsSplit
             Outputs = outputs,
             License = EnvelopeParts.License(state),
             Warnings = request.By == "pages"
-                ? EnvelopeParts.CombineWarnings(WrittenWarnings(loaded, "docx"), [new Warning { Code = WordsDiagnostics.LayoutMayDiffer, Message = "Page extraction can slightly reflow complex layouts.", Hint = "Visually inspect the split pages." }])
+                ? EnvelopeParts.CombineWarnings(WrittenWarnings(loaded, "docx"), [new Warning(WordsDiagnostics.LayoutMayDiffer, "Page extraction can slightly reflow complex layouts.") { Hint = "Visually inspect the split pages." }])
                 : WrittenWarnings(loaded, "docx"),
         };
     }

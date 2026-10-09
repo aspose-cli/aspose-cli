@@ -9,13 +9,24 @@ namespace Aspose.Cli.Sdk.Contracts;
 [SchemaId("warning")]
 public sealed record Warning
 {
+    /// <summary>Creates a warning with a declared code.</summary>
+    /// <param name="code">The declared code.</param>
+    /// <param name="message">Human-readable statement of the condition.</param>
+    public Warning(WarningCode code, string message)
+    {
+        ArgumentNullException.ThrowIfNull(code);
+        ArgumentNullException.ThrowIfNull(message);
+        Code = code;
+        Message = message;
+    }
+
     /// <summary>Stable SCREAMING_SNAKE_CASE identifier, e.g. <c>EVAL_MODE</c>.</summary>
     [Pattern("^[A-Z][A-Z0-9_]*$")]
-    public required string Code { get; init; }
+    public WarningCode Code { get; }
 
     /// <summary>Human-readable statement of the condition.</summary>
     [MinLength(1)]
-    public required string Message { get; init; }
+    public string Message { get; init; }
 
     /// <summary>Recommended next action for the caller.</summary>
     [MinLength(1)]
@@ -38,41 +49,48 @@ public sealed record Warning
     public bool AffectsCompleteness { get; init; }
 }
 
-/// <summary>Well-known warning codes.</summary>
-public static partial class WarningCodes
+/// <summary>The warning codes the SDK's shared mechanisms emit.</summary>
+public static class WarningCodes
 {
     /// <summary>
     /// Emitted on every output-producing operation that ran without a license.
     /// The produced file carries an Aspose evaluation watermark.
     /// </summary>
-    public const string EvalMode = "EVAL_MODE";
+    public static readonly WarningCode EvalMode = new("EVAL_MODE") { LicenseSurface = true };
 
-    public const string RemoteResourcesBlocked = "REMOTE_RESOURCES_BLOCKED";
-    public const string LossyConversion = "LOSSY_CONVERSION";
-    public const string SignatureInvalidated = "SIGNATURE_INVALIDATED";
-    public const string EvalInputTruncated = "EVAL_INPUT_TRUNCATED";
+    /// <summary>A document referenced remote resources, which the CLI did not load.</summary>
+    public static readonly WarningCode RemoteResourcesBlocked = new("REMOTE_RESOURCES_BLOCKED");
+
+    /// <summary>The output format cannot hold everything the input holds.</summary>
+    public static readonly WarningCode LossyConversion = new("LOSSY_CONVERSION");
+
+    /// <summary>A change invalidated a digital signature of the input.</summary>
+    public static readonly WarningCode SignatureInvalidated = new("SIGNATURE_INVALIDATED");
+
+    /// <summary>Without a license, the engine loaded only the start of the input.</summary>
+    public static readonly WarningCode EvalInputTruncated = new("EVAL_INPUT_TRUNCATED") { LicenseSurface = true };
 
     /// <summary>
     /// With a license, the output keeps evaluation marks that an earlier save without a license
     /// wrote into its input, or renders a source that carries them. Only the write pipeline
     /// reports it.
     /// </summary>
-    public const string EvalInputMarked = "EVAL_INPUT_MARKED";
+    public static readonly WarningCode EvalInputMarked = new("EVAL_INPUT_MARKED") { LicenseSurface = true };
 
-    /// <summary>A list inside a result was capped; the warning.s location names the list.</summary>
-    public const string ListTruncated = "LIST_TRUNCATED";
+    /// <summary>A list inside a result was capped; the warning's location names the list.</summary>
+    public static readonly WarningCode ListTruncated = new("LIST_TRUNCATED");
 
     /// <summary>An in-place edit kept an existing backup that holds an earlier version than the file it replaced.</summary>
-    public const string BackupPredatesEdit = "BACKUP_PREDATES_EDIT";
+    public static readonly WarningCode BackupPredatesEdit = new("BACKUP_PREDATES_EDIT");
 
     /// <summary>An edit went through restrictions the input declares but the engine does not enforce.</summary>
-    public const string ProtectionNotEnforced = "PROTECTION_NOT_ENFORCED";
+    public static readonly WarningCode ProtectionNotEnforced = new("PROTECTION_NOT_ENFORCED");
 
     /// <summary>A replace_text operation matched no text in its scope, so it changed nothing; the warning never repeats the find text.</summary>
-    public const string ReplaceNoMatch = "REPLACE_NO_MATCH";
+    public static readonly WarningCode ReplaceNoMatch = new("REPLACE_NO_MATCH");
 
     /// <summary>Every common warning code in this SDK build.</summary>
-    public static IReadOnlyList<string> All { get; } =
+    public static IReadOnlyList<WarningCode> All { get; } =
     [
         EvalMode,
         RemoteResourcesBlocked,

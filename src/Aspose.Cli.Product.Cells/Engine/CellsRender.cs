@@ -199,10 +199,8 @@ internal static class CellsRender
         }
 
         transaction.Commit();
-        Warning? sheetsSkipped = skipped.Count == 0 ? null : new Warning
+        Warning? sheetsSkipped = skipped.Count == 0 ? null : new Warning(CellsDiagnostics.SheetsSkipped, $"Skipped {skipped.Count} sheet(s): {string.Join(", ", skipped)}.")
         {
-            Code = CellsDiagnostics.SheetsSkipped,
-            Message = $"Skipped {skipped.Count} sheet(s): {string.Join(", ", skipped)}.",
             Hint = "Render a skipped sheet alone with --sheet to get the full error.",
         };
 

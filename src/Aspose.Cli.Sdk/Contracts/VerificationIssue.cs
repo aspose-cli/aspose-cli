@@ -26,7 +26,7 @@ public sealed record VerificationIssue
         ArgumentNullException.ThrowIfNull(warning);
         return new VerificationIssue
         {
-            Code = warning.Code,
+            Code = warning.Code.Name,
             Message = warning.Message,
             Location = warning.Location,
             Hint = warning.Hint,

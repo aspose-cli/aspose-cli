@@ -13,14 +13,14 @@ internal static class WordsDiagnostics
     internal static readonly ErrorCode DocumentHasRevisions =
         new("DOCUMENT_HAS_REVISIONS", ExitCode.InputError);
 
-    internal const string EncryptionRemoved = "DOCUMENT_ENCRYPTION_REMOVED";
-    internal const string TrackedChangesPresent = "TRACKED_CHANGES_PRESENT";
-    internal const string MacrosDropped = "MACROS_DROPPED";
-    internal const string LayoutMayDiffer = "LAYOUT_MAY_DIFFER";
-    internal const string LinkedImagesSkipped = "LINKED_IMAGES_SKIPPED";
-    internal const string MergeValueMissing = "MERGE_VALUE_MISSING";
+    internal static readonly WarningCode EncryptionRemoved = new("DOCUMENT_ENCRYPTION_REMOVED");
+    internal static readonly WarningCode TrackedChangesPresent = new("TRACKED_CHANGES_PRESENT");
+    internal static readonly WarningCode MacrosDropped = new("MACROS_DROPPED");
+    internal static readonly WarningCode LayoutMayDiffer = new("LAYOUT_MAY_DIFFER");
+    internal static readonly WarningCode LinkedImagesSkipped = new("LINKED_IMAGES_SKIPPED");
+    internal static readonly WarningCode MergeValueMissing = new("MERGE_VALUE_MISSING");
     /// <summary>A review operation named an author whose revisions or comments the document does not hold, so it changed nothing.</summary>
-    internal const string AuthorNoMatch = "AUTHOR_NO_MATCH";
+    internal static readonly WarningCode AuthorNoMatch = new("AUTHOR_NO_MATCH");
 
     internal static readonly DiagnosticDescriptor FieldCountChanged = Verification("FIELD_COUNT_CHANGED");
     internal static readonly DiagnosticDescriptor RevisionCountChanged = Verification("REVISION_COUNT_CHANGED");
@@ -29,12 +29,12 @@ internal static class WordsDiagnostics
 
     internal static IReadOnlyList<DiagnosticDescriptor> All { get; } =
     [
-        Error(BlockNotFound, "validation"),
-        Error(SectionNotFound, "validation"),
-        Error(AnchorNotFound, "validation"),
-        Error(RevisionNotFound, "validation"),
-        Error(MergeDataInvalid, "validation"),
-        Error(DocumentHasRevisions, "input"),
+        Error(BlockNotFound),
+        Error(SectionNotFound),
+        Error(AnchorNotFound),
+        Error(RevisionNotFound),
+        Error(MergeDataInvalid),
+        Error(DocumentHasRevisions),
         Warning(EncryptionRemoved),
         Warning(TrackedChangesPresent),
         Warning(MacrosDropped),
@@ -51,11 +51,11 @@ internal static class WordsDiagnostics
     private static ErrorCode Validation(string code) =>
         new(code, ExitCode.ValidationError);
 
-    private static DiagnosticDescriptor Error(ErrorCode code, string category) =>
-        DiagnosticDescriptor.Error(code, "words", category);
+    private static DiagnosticDescriptor Error(ErrorCode code) =>
+        DiagnosticDescriptor.Error(code, "words");
 
-    private static DiagnosticDescriptor Warning(string code) =>
-        DiagnosticDescriptor.Warning(code, "words", "warning");
+    private static DiagnosticDescriptor Warning(WarningCode code) =>
+        DiagnosticDescriptor.Warning(code, "words");
 
     private static DiagnosticDescriptor Verification(string code) =>
         DiagnosticDescriptor.Verification(code, "words");

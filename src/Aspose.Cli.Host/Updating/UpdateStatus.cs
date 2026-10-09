@@ -6,6 +6,7 @@ using System.Text.Json.Nodes;
 using Aspose.Cli.Sdk;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.IO;
+using Aspose.Cli.Host.Invocation;
 using Aspose.Cli.Host.LocalServices;
 
 namespace Aspose.Cli.Host.Updating;
@@ -17,8 +18,6 @@ namespace Aspose.Cli.Host.Updating;
 /// </summary>
 internal static class UpdateStatus
 {
-    internal const string FailedWarningCode = "UPDATE_FAILED";
-    internal const string InProgressWarningCode = "UPDATE_IN_PROGRESS";
     private const int MaximumBytes = 64 * 1024;
 
     /// <summary>The status file of the installation rooted at <paramref name="installRoot"/>.</summary>
@@ -65,19 +64,17 @@ internal static class UpdateStatus
         {
             case "failed":
                 string reason = Text(status, "message") ?? "the installer reported no reason";
-                return new Warning { Code = FailedWarningCode, Message = $"{update} failed: {reason}", Hint = hint };
+                return new Warning(HostDiagnostics.UpdateFailed, $"{update} failed: {reason}") { Hint = hint };
             case "pending" or "running":
                 int? processId = status["installerProcessId"] is JsonValue value && value.TryGetValue(out int id) ? id : null;
                 if (processId is int alive && IsInstallerRunning(alive))
                 {
-                    return new Warning
+                    return new Warning(HostDiagnostics.UpdateInProgress, $"{update} is still being installed by process {alive}.")
                     {
-                        Code = InProgressWarningCode,
-                        Message = $"{update} is still being installed by process {alive}.",
                         Hint = $"Wait for it to finish; '{DistributionInfo.CommandName} --version' then reports the installed version.",
                     };
                 }
-                return new Warning { Code = FailedWarningCode, Message = $"{update} stopped before its installer reported a result.", Hint = hint };
+                return new Warning(HostDiagnostics.UpdateFailed, $"{update} stopped before its installer reported a result.") { Hint = hint };
             default:
                 return null;
         }

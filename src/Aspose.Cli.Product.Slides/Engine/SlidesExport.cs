@@ -91,10 +91,8 @@ internal static class SlidesExport
         var warnings = WrittenWarnings(state, loaded, textRead: targetFormatId == "md")?.ToList() ?? [];
         if (targetFormatId is "html" or "html5" or "md")
         {
-            warnings.Add(new Warning
+            warnings.Add(new Warning(WarningCodes.LossyConversion, $"Slides conversion to {targetFormatId} may not preserve every presentation feature.")
             {
-                Code = WarningCodes.LossyConversion,
-                Message = $"Slides conversion to {targetFormatId} may not preserve every presentation feature.",
                 Hint = "Keep the source deck and inspect the produced file for layout, animation and interactive-media changes.",
             });
         }

@@ -85,7 +85,7 @@ public static partial class ErrorCodes
         new("UPLOAD_BUDGET_EXCEEDED", ExitCode.ValidationError);
     /// <summary>The selected distribution or product does not use Aspose licensing.</summary>
     public static readonly ErrorCode LicenseNotApplicable =
-        new("LICENSE_NOT_APPLICABLE", ExitCode.ValidationError);
+        new("LICENSE_NOT_APPLICABLE", ExitCode.ValidationError) { LicenseSurface = true };
     // -- Output problems (exit 5) --------------------------------------------
 
     /// <summary>The output file already exists and --overwrite was not given.</summary>
@@ -135,13 +135,13 @@ public static partial class ErrorCodes
     // -- License problems (exit 7) -------------------------------------------
 
     /// <summary>A license was configured but points to a missing file.</summary>
-    public static readonly ErrorCode LicenseFileNotFound = new("LICENSE_FILE_NOT_FOUND", ExitCode.LicenseError);
+    public static readonly ErrorCode LicenseFileNotFound = new("LICENSE_FILE_NOT_FOUND", ExitCode.LicenseError) { LicenseSurface = true };
 
     /// <summary>The configured license file was rejected by the engine.</summary>
-    public static readonly ErrorCode LicenseInvalid = new("LICENSE_INVALID", ExitCode.LicenseError);
+    public static readonly ErrorCode LicenseInvalid = new("LICENSE_INVALID", ExitCode.LicenseError) { LicenseSurface = true };
 
     /// <summary>An SDK evaluation restriction prevented the requested operation.</summary>
-    public static readonly ErrorCode EvaluationLimit = new("EVALUATION_LIMIT", ExitCode.LicenseError);
+    public static readonly ErrorCode EvaluationLimit = new("EVALUATION_LIMIT", ExitCode.LicenseError) { LicenseSurface = true };
 
     // -- Timeout (exit 9) ----------------------------------------------------
 

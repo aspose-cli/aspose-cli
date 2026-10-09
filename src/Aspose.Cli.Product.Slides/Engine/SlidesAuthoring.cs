@@ -117,12 +117,10 @@ internal static class SlidesAuthoring
         // A table may end half a point below its area before it is reported.
         table.Height <= areaHeight + 0.5
             ? null
-            : new Warning
-            {
-                Code = SlidesDiagnostics.TableOverflow,
-                Message = string.Create(
+            : new Warning(SlidesDiagnostics.TableOverflow, string.Create(
                     CultureInfo.InvariantCulture,
-                    $"The table on slide {slideNumber} is {table.Height:0} pt high but its area is {areaHeight:0} pt, so it runs past the area."),
+                    $"The table on slide {slideNumber} is {table.Height:0} pt high but its area is {areaHeight:0} pt, so it runs past the area."))
+            {
                 Hint = "Split the table across slides under the same heading, shorten its cells or give it a smaller text size with set_shape_style, then review the slide.",
                 Location = string.Create(CultureInfo.InvariantCulture, $"slide {slideNumber}"),
             };

@@ -162,7 +162,7 @@ public sealed class CellsResourceLoadingTests
         var verification = System.Text.Json.Nodes.JsonNode.Parse(edited.StdOut)!["verification"]!;
         Assert.False(verification["ok"]!.GetValue<bool>());
         Assert.Contains(verification["issues"]!.AsArray(),
-            issue => issue!["code"]!.GetValue<string>() == WarningCodes.RemoteResourcesBlocked);
+            issue => issue!["code"]!.GetValue<string>() == WarningCodes.RemoteResourcesBlocked.Name);
         Assert.Equal(0, server.RequestCount);
     }
 

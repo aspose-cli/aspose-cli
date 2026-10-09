@@ -228,10 +228,8 @@ internal static class PdfCreate
             losses.Add($"it dropped {dropped.Length} input(s) of type {string.Join(", ", dropped.Distinct(StringComparer.Ordinal))}, which have no field");
         }
 
-        return losses.Count == 0 ? null : new Warning
+        return losses.Count == 0 ? null : new Warning(WarningCodes.LossyConversion, $"The HTML importer keeps the name and value of single-line text inputs only: {string.Join("; ", losses)}.")
         {
-            Code = WarningCodes.LossyConversion,
-            Message = $"The HTML importer keeps the name and value of single-line text inputs only: {string.Join("; ", losses)}.",
             Hint = "Read the fields with 'pdf query forms' and match each field's page and rect to the label beside it before filling; give a dropped input type=\"text\" to keep it as a field.",
         };
     }

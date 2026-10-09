@@ -39,10 +39,8 @@ internal static partial class CellsEvaluation
 
         Worksheet skipped = sheets[sheets.ActiveSheetIndex];
         sheets.ActiveSheetIndex = replacement.Index;
-        return new SkippedWarningSheet(skipped, new Warning
+        return new SkippedWarningSheet(skipped, new Warning(CellsDiagnostics.ActiveSheetSkipped, $"The active sheet '{skipped.Name}' is the evaluation warning sheet Aspose.Cells evaluation mode added when it saved this workbook, so this command, which names no sheet, uses '{replacement.Name}' in its place.")
         {
-            Code = CellsDiagnostics.ActiveSheetSkipped,
-            Message = $"The active sheet '{skipped.Name}' is the evaluation warning sheet Aspose.Cells evaluation mode added when it saved this workbook, so this command, which names no sheet, uses '{replacement.Name}' in its place.",
             Hint = "Pass --sheet (or an operation's \"sheet\") to choose any sheet; names come from inspect.",
             Docs = "cells/troubleshooting",
             Location = skipped.Name,

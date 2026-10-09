@@ -12,13 +12,13 @@ internal static class SlidesDiagnostics
     internal static readonly ErrorCode LayoutNotFound = ErrorCode.NotFound("LAYOUT_NOT_FOUND");
 
     /// <summary>An output draws a chart's implicit automatic title over its plot.</summary>
-    internal const string ChartTitleOverlaid = "CHART_TITLE_OVERLAID";
+    internal static readonly WarningCode ChartTitleOverlaid = new("CHART_TITLE_OVERLAID");
 
     /// <summary>An authored table is taller than the area it was placed in.</summary>
-    internal const string TableOverflow = "TABLE_OVERFLOW";
+    internal static readonly WarningCode TableOverflow = new("TABLE_OVERFLOW");
 
     /// <summary>A slide that took another design lost its own background.</summary>
-    internal const string SlideBackgroundReset = "SLIDE_BACKGROUND_RESET";
+    internal static readonly WarningCode SlideBackgroundReset = new("SLIDE_BACKGROUND_RESET");
 
     internal static IReadOnlyList<DiagnosticDescriptor> All { get; } =
     [
@@ -27,14 +27,14 @@ internal static class SlidesDiagnostics
         Error(ChartDataInvalid),
         Error(ShapeNotFound),
         Error(LayoutNotFound),
-        DiagnosticDescriptor.Warning(ChartTitleOverlaid, "slides", "warning"),
-        DiagnosticDescriptor.Warning(TableOverflow, "slides", "warning"),
-        DiagnosticDescriptor.Warning(SlideBackgroundReset, "slides", "warning"),
+        DiagnosticDescriptor.Warning(ChartTitleOverlaid, "slides"),
+        DiagnosticDescriptor.Warning(TableOverflow, "slides"),
+        DiagnosticDescriptor.Warning(SlideBackgroundReset, "slides"),
     ];
 
     private static ErrorCode Validation(string code) =>
         new(code, ExitCode.ValidationError);
 
     private static DiagnosticDescriptor Error(ErrorCode code) =>
-        DiagnosticDescriptor.Error(code, "slides", "validation");
+        DiagnosticDescriptor.Error(code, "slides");
 }

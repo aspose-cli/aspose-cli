@@ -117,12 +117,12 @@ internal static class WordsCreate
 
         if (created.HasMacros && !WordsFormats.KeepsMacros(format))
         {
-            extra.Add(new Warning { Code = WordsDiagnostics.MacrosDropped, Message = "The source template contains macros which the target format does not preserve.", Hint = "Create a docm or dotm output to preserve macros." });
+            extra.Add(new Warning(WordsDiagnostics.MacrosDropped, "The source template contains macros which the target format does not preserve.") { Hint = "Create a docm or dotm output to preserve macros." });
         }
 
         if (created.WasSigned)
         {
-            extra.Add(new Warning { Code = WarningCodes.SignatureInvalidated, Message = "Creating from the signed source invalidates its digital signature.", Hint = "Sign the produced document after review." });
+            extra.Add(new Warning(WarningCodes.SignatureInvalidated, "Creating from the signed source invalidates its digital signature.") { Hint = "Sign the produced document after review." });
         }
 
         return EnvelopeParts.CombineWarnings(extra);

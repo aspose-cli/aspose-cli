@@ -47,12 +47,10 @@ internal static partial class UnknownFunctions
                 .ToArray()))
             .Where(static entry => entry.Names.Length > 0)
             .Select(static entry => $"{Sheets.QuotedName(entry.Cell.Worksheet.Name)}!{entry.Cell.Name}: {string.Join(", ", entry.Names)}")];
-        return findings.Length == 0 ? null : new Warning
-        {
-            Code = CellsDiagnostics.FormulaFunctionUnknown,
-            Message = $"Aspose.Cells does not know the function(s) in {string.Join("; ", findings.Take(ListedCells))}"
+        return findings.Length == 0 ? null : new Warning(CellsDiagnostics.FormulaFunctionUnknown, $"Aspose.Cells does not know the function(s) in {string.Join("; ", findings.Take(ListedCells))}"
                 + (findings.Length > ListedCells ? $"; and {findings.Length - ListedCells} more cell(s)" : string.Empty)
-                + ". Those formulas evaluate to #NAME?.",
+                + ". Those formulas evaluate to #NAME?.")
+        {
             Hint = "Correct a misspelled name, and replace a localized one with its English name. " + CellOps.EnglishFormulaHint
                 + " An add-in or VBA function, or one newer than the engine, keeps its name in the file for Excel to calculate.",
             Docs = "cells/editing",

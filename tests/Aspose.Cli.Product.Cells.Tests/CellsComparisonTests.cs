@@ -249,7 +249,7 @@ public sealed class CellsComparisonTests
         Warning shift = Assert.Single(Compare(left, right).Warnings);
         Warning reverse = Assert.Single(Compare(right, left).Warnings);
 
-        Assert.Equal(("ROWS_SHIFTED", "Quote"), (shift.Code, shift.Location));
+        Assert.Equal(("ROWS_SHIFTED", "Quote"), (shift.Code.Name, shift.Location));
         Assert.Contains("1 row inserted at right row 6", shift.Message, StringComparison.Ordinal);
         Assert.Contains("1 row deleted at left row 6", reverse.Message, StringComparison.Ordinal);
         Assert.Empty(Compare(left, edited).Warnings);

@@ -41,7 +41,7 @@ public sealed class WordsResourceBoundaryTests
         Assert.True(result.ExitCode == 0, result.StdErr);
         Assert.Equal(0, server.RequestCount);
         Assert.Contains(JsonNode.Parse(result.StdOut)!["warnings"]!.AsArray(),
-            warning => warning!["code"]!.GetValue<string>() == WarningCodes.RemoteResourcesBlocked);
+            warning => warning!["code"]!.GetValue<string>() == WarningCodes.RemoteResourcesBlocked.Name);
         var reopened = new Document(workspace.File("edited.docx"));
         try
         {

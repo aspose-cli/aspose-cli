@@ -89,10 +89,8 @@ internal sealed class CellsProtectionTracker
             : $"A {format.Id} output does not keep the protection; save to xlsx or another workbook format to keep it.";
         string passwords = _keptPasswords.Count == 0 ? string.Empty
             : $" protect_sheet kept the existing password of {(_keptPasswords.Count == 1 ? "sheet" : "sheets")} {string.Join(", ", _keptPasswords.Select(Sheets.QuotedName))}: only that password unprotects it, and a password the operation named has no effect; unprotect_sheet first to change it.";
-        return new Warning
+        return new Warning(WarningCodes.ProtectionNotEnforced, $"The edit changed {string.Join(" and ", changed)}; protection only guides Excel, so the edit was applied through it." + passwords)
         {
-            Code = WarningCodes.ProtectionNotEnforced,
-            Message = $"The edit changed {string.Join(" and ", changed)}; protection only guides Excel, so the edit was applied through it." + passwords,
             Hint = "Confirm the change is authorized: " + (_sheets.Count == 0
                     ? "Excel adds, deletes, renames, moves and hides no sheets while the structure is protected. "
                     : _structure

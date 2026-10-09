@@ -168,10 +168,8 @@ internal static class EvaluationDisclosure
         }
 
         sentences.Add("The license does not remove them.");
-        return new Warning
+        return new Warning(WarningCodes.EvalInputMarked, string.Join(" ", sentences))
         {
-            Code = WarningCodes.EvalInputMarked,
-            Message = string.Join(" ", sentences),
             Hint = "Tell the user. Regenerate the deliverable from the original, unmarked inputs with a license; editing this file keeps the marks.",
             Docs = "licensing",
             AffectsCompleteness = kept.IsTruncated,

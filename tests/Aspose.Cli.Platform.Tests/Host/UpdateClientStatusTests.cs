@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
 using System.Text.Json.Nodes;
+using Aspose.Cli.Host.Invocation;
 using Aspose.Cli.Host.Updating;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.TestKit;
@@ -39,7 +40,7 @@ public sealed class UpdateClientStatusTests : IDisposable
 
         Warning warning = UpdateStatus.ReadWarning(path)!;
 
-        Assert.Equal(UpdateStatus.FailedWarningCode, warning.Code);
+        Assert.Equal(HostDiagnostics.UpdateFailed, warning.Code);
         Assert.Contains("1.2.0", warning.Message, StringComparison.Ordinal);
         Assert.Contains("Directory publication remained blocked", warning.Message, StringComparison.Ordinal);
         Assert.Contains(@"C:\temp\status.log", warning.Hint, StringComparison.Ordinal);
@@ -58,7 +59,7 @@ public sealed class UpdateClientStatusTests : IDisposable
         Assert.Equal(Path.ChangeExtension(path, ".log"), written["log"]!.GetValue<string>());
 
         Warning warning = UpdateStatus.ReadWarning(path)!;
-        Assert.Equal(UpdateStatus.FailedWarningCode, warning.Code);
+        Assert.Equal(HostDiagnostics.UpdateFailed, warning.Code);
         Assert.Contains("stopped before", warning.Message, StringComparison.Ordinal);
     }
 
@@ -74,7 +75,7 @@ public sealed class UpdateClientStatusTests : IDisposable
         {
             string path = _directory.File("status.json");
             Write(path, new JsonObject { ["state"] = "running", ["installerProcessId"] = installer.Id });
-            Assert.Equal(UpdateStatus.InProgressWarningCode, UpdateStatus.ReadWarning(path)!.Code);
+            Assert.Equal(HostDiagnostics.UpdateInProgress, UpdateStatus.ReadWarning(path)!.Code);
         }
         finally { installer.Kill(entireProcessTree: true); }
     }

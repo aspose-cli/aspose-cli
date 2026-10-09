@@ -20,22 +20,22 @@ internal static class CellsDiagnostics
     internal static readonly ErrorCode RenderEmpty =
         new("RENDER_EMPTY", ExitCode.ValidationError);
 
-    internal const string SheetsDropped = "SHEETS_DROPPED";
-    internal const string SheetsSkipped = "SHEETS_SKIPPED";
-    internal const string DataTruncated = "DATA_TRUNCATED";
-    internal const string MhtmlResourceCoverageUnverified = "MHTML_RESOURCE_COVERAGE_UNVERIFIED";
-    internal const string FormulasBroken = "FORMULAS_BROKEN";
-    internal const string EncryptionRemoved = "WORKBOOK_ENCRYPTION_REMOVED";
-    internal const string FormulasCalculatedOnOpen = "FORMULAS_CALCULATED_ON_OPEN";
-    internal const string SheetPartiallyRendered = "CELLS_SHEET_PARTIALLY_RENDERED";
+    internal static readonly WarningCode SheetsDropped = new("SHEETS_DROPPED");
+    internal static readonly WarningCode SheetsSkipped = new("SHEETS_SKIPPED");
+    internal static readonly WarningCode DataTruncated = new("DATA_TRUNCATED");
+    internal static readonly WarningCode MhtmlResourceCoverageUnverified = new("MHTML_RESOURCE_COVERAGE_UNVERIFIED");
+    internal static readonly WarningCode FormulasBroken = new("FORMULAS_BROKEN");
+    internal static readonly WarningCode EncryptionRemoved = new("WORKBOOK_ENCRYPTION_REMOVED");
+    internal static readonly WarningCode FormulasCalculatedOnOpen = new("FORMULAS_CALCULATED_ON_OPEN");
+    internal static readonly WarningCode SheetPartiallyRendered = new("CELLS_SHEET_PARTIALLY_RENDERED");
     /// <summary>The active sheet is an evaluation warning sheet, so a command that names no sheet used another one.</summary>
-    internal const string ActiveSheetSkipped = "ACTIVE_SHEET_SKIPPED";
+    internal static readonly WarningCode ActiveSheetSkipped = new("ACTIVE_SHEET_SKIPPED");
 
     /// <summary>A delimited text input has a preamble before its header, empty rows or a total row.</summary>
-    internal const string TextTableLayout = "TEXT_TABLE_LAYOUT";
+    internal static readonly WarningCode TextTableLayout = new("TEXT_TABLE_LAYOUT");
 
     /// <summary>A PDF export splits a chart across pages.</summary>
-    internal const string ChartSplitAcrossPages = "CHART_SPLIT_ACROSS_PAGES";
+    internal static readonly WarningCode ChartSplitAcrossPages = new("CHART_SPLIT_ACROSS_PAGES");
 
     /// <summary>
     /// How to keep a chart on one page, shared by the conversion warning and the review finding,
@@ -44,16 +44,16 @@ internal static class CellsDiagnostics
     internal const string ChartSplitRemedy = "(fitToWidth 1 and fitToHeight 0, or orientation landscape), or move or resize the chart";
 
     /// <summary>An import copied formulas that read a link without cached values, and their results changed.</summary>
-    internal const string ExternalLinkCacheMissing = "EXTERNAL_LINK_CACHE_MISSING";
+    internal static readonly WarningCode ExternalLinkCacheMissing = new("EXTERNAL_LINK_CACHE_MISSING");
 
     /// <summary>An edit added a link that the output stores as a file name relative to its folder.</summary>
-    internal const string ExternalLinkRelative = "EXTERNAL_LINK_RELATIVE";
+    internal static readonly WarningCode ExternalLinkRelative = new("EXTERNAL_LINK_RELATIVE");
 
     /// <summary>An edit wrote formulas that call functions the engine does not know.</summary>
-    internal const string FormulaFunctionUnknown = "FORMULA_FUNCTION_UNKNOWN";
+    internal static readonly WarningCode FormulaFunctionUnknown = new("FORMULA_FUNCTION_UNKNOWN");
 
     /// <summary>A comparison found rows one side inserted or deleted, which shift the cells below them.</summary>
-    internal const string RowsShifted = "ROWS_SHIFTED";
+    internal static readonly WarningCode RowsShifted = new("ROWS_SHIFTED");
 
     /// <summary>Verification: the edited workbook contains formula errors.</summary>
     internal static readonly DiagnosticDescriptor FormulaErrors = DiagnosticDescriptor.Verification("FORMULA_ERRORS", "cells");
@@ -88,8 +88,8 @@ internal static class CellsDiagnostics
     ];
 
     private static DiagnosticDescriptor Error(ErrorCode code) =>
-        DiagnosticDescriptor.Error(code, "cells", "validation");
+        DiagnosticDescriptor.Error(code, "cells");
 
-    private static DiagnosticDescriptor Warning(string code) =>
-        DiagnosticDescriptor.Warning(code, "cells", "warning");
+    private static DiagnosticDescriptor Warning(WarningCode code) =>
+        DiagnosticDescriptor.Warning(code, "cells");
 }
