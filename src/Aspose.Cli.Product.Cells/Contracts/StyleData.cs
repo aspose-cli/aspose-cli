@@ -15,8 +15,10 @@ public sealed record StyleData
     /// <summary>The font size in points; fractional sizes such as 10.5 are kept.</summary>
     [Minimum(1), Maximum(409)] public double? Size { get; init; }
 
+    /// <summary>Whether the text is bold.</summary>
     public bool? Bold { get; init; }
 
+    /// <summary>Whether the text is italic.</summary>
     public bool? Italic { get; init; }
 
     /// <summary>The text color.</summary>
@@ -29,9 +31,11 @@ public sealed record StyleData
     /// <summary>The number format code, such as 0.0%.</summary>
     [MinLength(1)] public string? NumberFormat { get; init; }
 
+    /// <summary>The horizontal alignment of the text.</summary>
     [MistakenFor("horizontalAlignment", "alignment", "align", "textAlign")]
     [AllowedValues(typeof(HorizontalAlignments))] public string? HAlign { get; init; }
 
+    /// <summary>The vertical alignment of the text.</summary>
     [AllowedValues(typeof(VerticalAlignments))] public string? VAlign { get; init; }
 
     /// <summary>Whether text wraps within the cell.</summary>
@@ -40,6 +44,7 @@ public sealed record StyleData
     /// <summary>Whether the text has a single underline.</summary>
     public bool? Underline { get; init; }
 
+    /// <summary>Whether the text is struck through.</summary>
     public bool? Strikethrough { get; init; }
 
     /// <summary>The indent level; 0 removes the indent.</summary>
@@ -60,13 +65,16 @@ public sealed record StyleData
 [MinProperties(1)]
 public sealed record ConditionalStyle
 {
+    /// <summary>Whether the text is bold.</summary>
     public bool? Bold { get; init; }
 
+    /// <summary>Whether the text is italic.</summary>
     public bool? Italic { get; init; }
 
     /// <summary>Whether the text has a single underline.</summary>
     public bool? Underline { get; init; }
 
+    /// <summary>Whether the text is struck through.</summary>
     public bool? Strikethrough { get; init; }
 
     /// <summary>The text color.</summary>

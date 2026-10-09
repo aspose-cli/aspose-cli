@@ -13,7 +13,7 @@ public sealed record CellsOpsBatch : BoundedOperationEnvelope<CellsOp>;
 /// the active sheet; rows are 1-based numbers, columns are letters, and cells and ranges use A1
 /// notation on that sheet unless a field says it may name another sheet.
 /// </summary>
-[OperationVocabulary(CellsSchemaIds.Ops, MaximumOperations = 10_000, JsonContext = typeof(CellsOpsJsonContext))]
+[OperationVocabulary(Sdk.DistributionInfo.SchemaBaseUri + "cells/ops.schema.json", MaximumOperations = 10_000, JsonContext = typeof(CellsOpsJsonContext))]
 [JsonConverter(typeof(OperationJsonConverter<CellsOp>))]
 public abstract partial record CellsOp : BoundedOperation
 {

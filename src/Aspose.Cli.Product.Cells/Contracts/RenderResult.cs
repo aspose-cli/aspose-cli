@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using Aspose.Cli.Sdk.Rendering;
 
 namespace Aspose.Cli.Product.Cells.Contracts;
 
@@ -6,7 +7,7 @@ namespace Aspose.Cli.Product.Cells.Contracts;
 /// Result of <c>aspose-cli cells render</c>: a visual image of one sheet (or a
 /// range of it), the primary way for an agent to "look at" a spreadsheet.
 /// </summary>
-public sealed record RenderResult() : ResultEnvelope(CellsSchemaIds.RenderResult, 2)
+public sealed record RenderResult() : ResultEnvelope("render-result", 2)
 {
     /// <summary>The rendered input file.</summary>
     [JsonPropertyOrder(-50)]
@@ -23,13 +24,14 @@ public sealed record RenderResult() : ResultEnvelope(CellsSchemaIds.RenderResult
     public string? Range { get; init; }
 
     /// <summary>Raster resolution in dots per inch; omitted for vector output.</summary>
+    [Minimum(RenderPixelGuard.MinimumDpi), Maximum(RenderPixelGuard.MaximumDpi)]
     public int? Dpi { get; init; }
 
     /// <summary>
     /// Per-sheet output files of an <c>--all-sheets</c> render, in workbook
-    /// order. Omitted for a single-sheet render. When present,
-    /// <see cref="Output"/> and <see cref="Sheet"/> describe the first
-    /// rendered sheet — a stable summary for single-output consumers.
+    /// order. Omitted for a single-sheet render. When present, <c>output</c> and
+    /// <c>sheet</c> describe the first rendered sheet — a stable summary for
+    /// single-output consumers.
     /// </summary>
     public IReadOnlyList<SheetRenderOutput>? Outputs { get; init; }
 }
@@ -44,5 +46,6 @@ public sealed record SheetRenderOutput
     public required string Path { get; init; }
 
     /// <summary>Size of the produced image file in bytes.</summary>
+    [Minimum(0)]
     public required long SizeBytes { get; init; }
 }

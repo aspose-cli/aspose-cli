@@ -7,7 +7,7 @@ namespace Aspose.Cli.Product.Cells.Contracts;
 /// as the first step of the projection ladder (metadata before structure,
 /// structure before values). Never contains full cell data.
 /// </summary>
-public sealed record WorkbookInfoResult() : ResultEnvelope(CellsSchemaIds.WorkbookInfo, 2)
+public sealed record WorkbookInfoResult() : ResultEnvelope("workbook-info", 2)
 {
     /// <summary>Document kind discriminator; always <c>workbook</c> for cells.</summary>
     [JsonPropertyOrder(-50)]
@@ -34,6 +34,7 @@ public sealed record WorkbookSummary
     public required string Name { get; init; }
 
     /// <summary>Total number of worksheets, including hidden ones.</summary>
+    [Minimum(0)]
     public required int SheetCount { get; init; }
 
     /// <summary>Per-sheet summaries, in workbook order.</summary>
@@ -43,6 +44,7 @@ public sealed record WorkbookSummary
     public required bool HasVba { get; init; }
 
     /// <summary>Number of defined names in the workbook.</summary>
+    [Minimum(0)]
     public required int DefinedNameCount { get; init; }
 
     /// <summary>
@@ -120,12 +122,15 @@ public sealed record SheetLayoutInfo
     public string? TitleColumns { get; init; }
 
     /// <summary>The page orientation: <c>portrait</c> or <c>landscape</c>.</summary>
+    [AllowedValues(typeof(PageOrientations))]
     public required string Orientation { get; init; }
 
     /// <summary>The number of pages the printout fits across, 0 automatic; present when it fits to pages.</summary>
+    [Minimum(0)]
     public int? FitToWidth { get; init; }
 
     /// <summary>The number of pages the printout fits down, 0 automatic; present when it fits to pages.</summary>
+    [Minimum(0)]
     public int? FitToHeight { get; init; }
 
     /// <summary>The zoom percentage; present when the printout does not fit to pages.</summary>
@@ -142,12 +147,15 @@ public sealed record SheetLayoutInfo
 public sealed record RowGroupInfo
 {
     /// <summary>The first row of the group (1-based).</summary>
+    [Minimum(1)]
     public required int From { get; init; }
 
     /// <summary>The last row of the group (1-based).</summary>
+    [Minimum(1)]
     public required int To { get; init; }
 
     /// <summary>The outline level, 1 for the outermost group.</summary>
+    [Minimum(1)]
     public required int Level { get; init; }
 
     /// <summary><c>true</c> when every row of the group is hidden, as a collapsed group's rows are.</summary>
@@ -164,6 +172,7 @@ public sealed record ColumnGroupInfo
     public required string To { get; init; }
 
     /// <summary>The outline level, 1 for the outermost group.</summary>
+    [Minimum(1)]
     public required int Level { get; init; }
 
     /// <summary><c>true</c> when every column of the group is hidden, as a collapsed group's columns are.</summary>
@@ -196,6 +205,7 @@ public sealed record CellError
     /// <c>true</c> in edit verification when the input cell had the same formula and the same
     /// error value; omitted otherwise.
     /// </summary>
+    [AllowedValues(true)]
     public bool? Preexisting { get; init; }
 }
 
@@ -219,6 +229,7 @@ public sealed record ChartInfo
     public required string Sheet { get; init; }
 
     /// <summary>The zero-based index of the chart on its sheet, as update_chart and delete_chart take it.</summary>
+    [Minimum(0)]
     public required int Index { get; init; }
 
     /// <summary>The chart's name.</summary>
@@ -228,6 +239,7 @@ public sealed record ChartInfo
     /// The chart type: a create_chart type such as <c>column</c>, or the lower-camel engine name
     /// of a type outside that vocabulary, such as <c>columnStacked</c>.
     /// </summary>
+    [AllowedValues(typeof(ChartTypes)), OpenEnum("^[a-z][A-Za-z0-9]*$")]
     public required string Type { get; init; }
 }
 
@@ -257,6 +269,7 @@ public sealed record ValidationInfo
     /// The validation type: a set_validation type such as <c>list</c> or <c>wholeNumber</c>, or
     /// the lower-camel engine name of a type outside that vocabulary, such as <c>anyValue</c>.
     /// </summary>
+    [AllowedValues(typeof(ValidationTypes)), OpenEnum("^[a-z][A-Za-z0-9]*$")]
     public required string Type { get; init; }
 }
 
@@ -301,6 +314,7 @@ public sealed record SheetInfo
     public required string Name { get; init; }
 
     /// <summary>Zero-based position in the tab order, as add_sheet and move_sheet take it.</summary>
+    [Minimum(0)]
     public required int Position { get; init; }
 
     /// <summary>
@@ -309,10 +323,12 @@ public sealed record SheetInfo
     /// </summary>
     public string? UsedRange { get; init; }
 
-    /// <summary>Number of data rows inside <see cref="UsedRange"/>.</summary>
+    /// <summary>Number of data rows inside <c>usedRange</c>.</summary>
+    [Minimum(0)]
     public required int RowCount { get; init; }
 
-    /// <summary>Number of data columns inside <see cref="UsedRange"/>.</summary>
+    /// <summary>Number of data columns inside <c>usedRange</c>.</summary>
+    [Minimum(0)]
     public required int ColumnCount { get; init; }
 
     /// <summary><c>true</c> when the sheet is hidden.</summary>
@@ -328,9 +344,11 @@ public sealed record SheetInfo
     public required bool PasswordProtected { get; init; }
 
     /// <summary>Number of charts on the sheet.</summary>
+    [Minimum(0)]
     public required int ChartCount { get; init; }
 
     /// <summary>Number of pivot tables on the sheet.</summary>
+    [Minimum(0)]
     public required int PivotTableCount { get; init; }
 
     /// <summary>

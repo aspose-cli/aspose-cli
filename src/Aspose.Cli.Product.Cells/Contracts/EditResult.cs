@@ -7,9 +7,10 @@ namespace Aspose.Cli.Product.Cells.Contracts;
 /// atomic by default: the result exists only when every op applied (or on a dry
 /// run). With <c>--best-effort</c> the batch is partial — failing ops
 /// are recorded with <c>status: failed</c> and an error, the rest still apply,
-/// and the command exits 8.
+/// and the command exits 8. A resource failure of the invocation aborts publication.
+/// Verification describes the staged candidate and the evidence published with it.
 /// </summary>
-public sealed record EditResult() : ResultEnvelope(CellsSchemaIds.EditResult, 2), IPartialOutcome
+public sealed record EditResult() : ResultEnvelope("edit-result", 2), IPartialOutcome
 {
     /// <summary>The workbook that was edited.</summary>
     [JsonPropertyOrder(-50)]
@@ -22,7 +23,10 @@ public sealed record EditResult() : ResultEnvelope(CellsSchemaIds.EditResult, 2)
     /// <summary><c>true</c> when nothing was written (<c>--dry-run</c>).</summary>
     public required bool DryRun { get; init; }
 
-    /// <summary><c>true</c> when formulas were recalculated before saving.</summary>
+    /// <summary>
+    /// <c>true</c> when formulas were recalculated before saving: a calculation runs after the
+    /// complete batch unless <c>--no-recalc</c> is given, and this is true when it succeeded.
+    /// </summary>
     public required bool Recalculated { get; init; }
 
     /// <summary>Per-op outcomes, in batch order.</summary>
@@ -58,18 +62,16 @@ public sealed record EditResult() : ResultEnvelope(CellsSchemaIds.EditResult, 2)
     }
 }
 
-/// <summary>Outcome of one op in a batch.</summary>
-
-/// <summary>Visible Cells address associated with an operation result.</summary>
 /// <summary>
 /// Result of <c>aspose-cli cells create</c>.
 /// </summary>
-public sealed record CreateResult() : ResultEnvelope(CellsSchemaIds.CreateResult, 2)
+public sealed record CreateResult() : ResultEnvelope("create-result", 2)
 {
     /// <summary>The produced file.</summary>
     [JsonPropertyOrder(-49)]
     public required OutputInfo Output { get; init; }
 
     /// <summary>Sheet names of a newly created workbook.</summary>
+    [MinItems(1), MinLength(1)]
     public required IReadOnlyList<string> Sheets { get; init; }
 }
