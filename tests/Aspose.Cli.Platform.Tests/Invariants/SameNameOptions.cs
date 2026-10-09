@@ -99,7 +99,8 @@ internal static class SameNameOptions
         new("--pages", @"^Pages to process, as 1-based numbers and ranges such as 1-3,7,9-\. Default: [^.]+\.( Only with [^.]+\.)?$"),
         new("--slides", @"^Slides to process, as 1-based numbers and ranges such as 1-3,7,9-\. Default: [^.]+\.( Only with [^.]+\.)?$"),
         new("--preview", @"^Include a bounded preview: .+\. Default: off\.$"),
-        new("--detail", @"^Extra sections to include; repeat for more: .+\.$"),
+        // Help prints the values after the description, so it names only those that need a note.
+        new("--detail", @"^Extra sections to include; repeat for more\.( .+)?$", ListsNoValues: true),
         new("--ops", "^" + Regex.Escape(
             "The ops JSON: a path to the document, '-' to read it from stdin, or the document itself when the value starts "
             + "with { or [ (inline). To name a file whose name starts with '[', prefix it with ./ . Vocabulary: aspose-cli "
@@ -173,6 +174,16 @@ internal static class SameNameOptions
                 problems.Add(Problem($"{name}: {mismatched.Length} descriptions do not match the standard template {template.Pattern}: "
                     + string.Join(" | ", mismatched)));
             }
+            string[] restated =
+            [
+                .. declared.Where(option => template.ListsNoValues && template.Covers(option.Command) && RestatesValues(option.Option))
+                    .Select(static option => $"{option.Read(OptionAspect.Description)} ({option.Command})"),
+            ];
+            if (restated.Length > 0)
+            {
+                problems.Add(Problem($"{name}: {restated.Length} descriptions list every allowed value, which help already prints "
+                    + "after the description; name only the values that need a note: " + string.Join(" | ", restated)));
+            }
         }
         foreach (OptionAspect aspect in new[] { OptionAspect.Description, OptionAspect.Arity, OptionAspect.AllowedValues, OptionAspect.Default })
         {
@@ -215,6 +226,18 @@ internal static class SameNameOptions
         return problems;
     }
 
+    /// <summary>
+    /// Whether a description names every one of two or more allowed values: a list help already
+    /// prints as <c>Values: ...</c>.
+    /// </summary>
+    internal static bool RestatesValues(JsonNode option)
+    {
+        string description = option["description"]?.GetValue<string>() ?? string.Empty;
+        string[] values = [.. (option["allowedValues"]?.AsArray() ?? []).Select(static value => value!.GetValue<string>())];
+        return values.Length > 1 && values.All(value =>
+            Regex.IsMatch(description, $@"(?<![\w-]){Regex.Escape(value)}(?![\w-])", RegexOptions.IgnoreCase));
+    }
+
     private static ScenarioProblem Problem(string message) => new(0, InvariantCases.SameNameOption, message);
 
     private static string Describe(OptionAspect aspect) => aspect switch
@@ -229,9 +252,11 @@ internal static class SameNameOptions
 
 /// <summary>
 /// The approved standard wording of an option's description, as a regular expression, for the
-/// commands <see cref="Commands"/> accepts (every command when null).
+/// commands <see cref="Commands"/> accepts (every command when null). With
+/// <see cref="ListsNoValues"/>, the description also must not name every allowed value, which
+/// help prints after it.
 /// </summary>
-internal sealed record DescriptionTemplate(string Option, string Pattern, Func<string, bool>? Commands = null)
+internal sealed record DescriptionTemplate(string Option, string Pattern, Func<string, bool>? Commands = null, bool ListsNoValues = false)
 {
     public bool Covers(string command) => Commands?.Invoke(command) ?? true;
 }
@@ -258,6 +283,26 @@ internal sealed record DeclaredOption(string Command, JsonNode Option)
 /// <summary>The exemption list itself stays honest: each entry names a repeated option with its reason.</summary>
 public sealed class SameNameExemptionTests
 {
+    [Theory]
+    [InlineData("Extra sections to include; repeat for more.", true)]
+    [InlineData("Extra sections to include; repeat for more. outline: bookmarks, up to 200; layers: optional content layer names.", true)]
+    [InlineData("Extra sections to include; repeat for more: outline (bookmarks, up to 200), forms, layers.", false)]
+    [InlineData("Extra sections to include; repeat for more. outline, forms, layers.", false)]
+    public void DetailTemplate_TakesNotesButNoValueList(string description, bool accepted)
+    {
+        DescriptionTemplate template = SameNameOptions.Templates.Single(static template => template.Option == "--detail");
+        JsonNode option = new JsonObject
+        {
+            ["description"] = description,
+            ["allowedValues"] = new JsonArray("outline", "forms", "layers"),
+        };
+
+        bool matches = Regex.IsMatch(description, template.Pattern)
+            && !(template.ListsNoValues && SameNameOptions.RestatesValues(option));
+
+        Assert.Equal(accepted, matches);
+    }
+
     [Fact]
     public void EveryExemptionNamesARepeatedOptionWithAReason()
     {
