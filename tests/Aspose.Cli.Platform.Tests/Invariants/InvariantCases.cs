@@ -309,7 +309,8 @@ internal static class InvariantCases
         }
     }
 
-    // ----- (e) read-only commands succeed and write nothing; dry runs write nothing ----------
+    // ----- (e) read-only commands succeed and write nothing; dry runs write nothing and ------
+    // ----- report no output, while the same edit run for real reports the file it wrote ----
 
     private static IEnumerable<InvariantCase> ReadOnlyCases(CliCommand command)
     {
@@ -356,10 +357,37 @@ internal static class InvariantCases
             yield return Case(DryRun, $"{command} --dry-run{subject}", product, slow: false, invocation, new ScenarioExpectation
             {
                 ExitCode = [0],
-                Json = [new JsonAssertion { Path = "dryRun", Value = true }],
+                Json =
+                [
+                    new JsonAssertion { Path = "dryRun", Value = true },
+                    // A dry run publishes nothing, so its result names no output, even for --out or --in-place.
+                    new JsonAssertion { Path = "output", Exists = false },
+                ],
                 Files = new ScenarioFiles { NothingWritten = true },
             });
         }
+        // The same edit run for real says it was not a dry run and names the file it published.
+        if (command.Has("--out"))
+        {
+            string output = "out." + extension;
+            yield return Case(DryRun, $"{command} --out {output}", product, slow: false, Invocation.For(command).Add("--out", output), Published(output));
+        }
+        if (command.Has("--in-place"))
+        {
+            Invocation inPlace = Invocation.For(command).Add("--in-place");
+            yield return Case(DryRun, $"{command} --in-place", product, slow: false, inPlace, Published(inPlace.Input!));
+        }
+
+        static ScenarioExpectation Published(string path) => new()
+        {
+            ExitCode = [0],
+            Json =
+            [
+                new JsonAssertion { Path = "dryRun", Value = false },
+                new JsonAssertion { Path = "output.path", Exists = true },
+            ],
+            Files = new ScenarioFiles { Present = [path] },
+        };
     }
 
     // ----- (f) every declared conversion opens again ----------------------------------------
