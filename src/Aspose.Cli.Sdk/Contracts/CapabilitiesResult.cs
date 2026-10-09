@@ -301,10 +301,10 @@ public sealed record ProductReviewCapabilities
 /// <summary>Resolved generic-routing contract for this distribution.</summary>
 public sealed record RoutingCapabilities
 {
-    /// <summary>Explicit default product, or null when callers must choose.</summary>
+    /// <summary>Explicit default product; omitted when callers must choose.</summary>
     public string? DefaultProduct { get; init; }
 
-    /// <summary>Where the default came from; null when none is declared.</summary>
+    /// <summary>Where the default came from; omitted when none is declared.</summary>
     public string? DefaultProductSource { get; init; }
 
     /// <summary>Absolute shared recognizer budget in milliseconds.</summary>

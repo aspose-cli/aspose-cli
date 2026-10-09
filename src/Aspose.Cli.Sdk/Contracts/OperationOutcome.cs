@@ -26,7 +26,7 @@ public sealed record BoundedOperationOutcome
     /// <summary>Product-owned operation id.</summary>
     public required string Op { get; init; }
 
-    /// <summary>One of <see cref="OpStatuses"/>.</summary>
+    /// <summary>Whether the operation applied (<c>ok</c>) or <c>failed</c>.</summary>
     [AllowedValues(typeof(OpStatuses))]
     public required string Status { get; init; }
 

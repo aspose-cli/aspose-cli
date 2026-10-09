@@ -4,7 +4,7 @@ namespace Aspose.Cli.Sdk.Contracts;
 [SchemaId("license")]
 public sealed record LicenseInfo
 {
-    /// <summary>One of the <see cref="LicenseModes"/> constants.</summary>
+    /// <summary>The license mode: <c>licensed</c>, <c>evaluation</c> or <c>not-applicable</c>.</summary>
     [AllowedValues(LicenseModes.Evaluation, LicenseModes.Licensed, LicenseModes.NotApplicable)]
     public required string Mode { get; init; }
 }

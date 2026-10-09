@@ -131,7 +131,7 @@ public sealed record ViewPart
     [Pattern("^[A-Za-z0-9][A-Za-z0-9._-]*(/[A-Za-z0-9][A-Za-z0-9._-]*)*$")]
     public required string File { get; init; }
 
-    /// <summary>Kind of the rendered file; see <see cref="ViewPartKinds"/>.</summary>
+    /// <summary>Kind of the rendered file: <c>image</c> for a raster page, slide or sheet, or <c>html</c> for a product-rendered document.</summary>
     [AllowedValues(typeof(ViewPartKinds))]
     public required string Kind { get; init; }
 

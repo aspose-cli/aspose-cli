@@ -40,7 +40,7 @@ public sealed record DoctorCheck
     /// <summary>Short stable identifier, e.g. <c>license</c> or <c>runtime</c>.</summary>
     public required string Name { get; init; }
 
-    /// <summary>One of the <see cref="DoctorStatuses"/> values.</summary>
+    /// <summary>Whether the check passed (<c>ok</c>), found a non-fatal concern (<c>warn</c>) or a blocking problem (<c>fail</c>).</summary>
     [AllowedValues(typeof(DoctorStatuses))]
     public required string Status { get; init; }
 
