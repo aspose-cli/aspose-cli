@@ -103,7 +103,11 @@ any runner, run one at a time: a second run builds, then waits for the first to 
 tests start. `scripts/test.ps1` holds the lock for its whole run; a test process started any other
 way, such as by `dotnet test`, takes it in its assembly fixture, so `dotnet test` of several
 projects runs them one after another. A test process that waits for another run says so on
-standard error, which `dotnet test` shows with `--logger "console;verbosity=detailed"`.
+standard error, which `dotnet test` shows with `--logger "console;verbosity=detailed"`. To use a
+checkout's build for real apart from other checkouts and the user installation, set
+`ASPOSE_CLI_CONFIG_DIR` to an absolute directory of that checkout, run
+`scripts/install-local.ps1 -InstallDirectory <dir> -SkipPath -SkillsRoot <dir>` and call the
+installed executable by its path with the variable still set.
 
 A run is licensed only when `ASPOSE_CLI_TEST_LICENSE_PATH` names a license file. Without it,
 the cases that need a license are skipped and listed; the `Full` scope requires the license and
