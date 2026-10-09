@@ -23,7 +23,7 @@ public sealed class WordsContentControlTests : IClassFixture<WordsFixture>
     {
         string input = CreateDocument();
 
-        DocumentReadResult read = _fixture.Engine.Read(input, new DocumentReadRequest { Scope = "text" });
+        DocumentReadResult read = WordsRead.Run(_fixture.Session, new DocumentReadRequest { Input = input, Scope = "text" });
 
         Assert.Equal(Blocks, read.Blocks.Select(static block => block.Text));
         Assert.Equal([1, 2, 3, 4, 5], read.Blocks.Select(static block => block.Block));
@@ -34,8 +34,9 @@ public sealed class WordsContentControlTests : IClassFixture<WordsFixture>
     {
         string input = CreateDocument();
 
-        WordsExtractResult result = _fixture.Engine.Extract(input, new WordsExtractRequest
+        WordsExtractResult result = WordsExtract.Run(_fixture.Session, new WordsExtractRequest
         {
+            Input = input,
             Output = new ResolvedDirectory(_fixture.Temp.File($"text-{Guid.NewGuid():N}")),
             What = "text",
         });
@@ -49,10 +50,15 @@ public sealed class WordsContentControlTests : IClassFixture<WordsFixture>
         string input = CreateDocument();
         string output = _fixture.Temp.File($"set-{Guid.NewGuid():N}.docx");
 
-        _fixture.Engine.ApplyOps(input, new WordsOpsBatch
+        WordsEdit.Run(_fixture.Session, new WordsEditRequest
         {
-            Ops = [new SetTextOp { At = new WordsTarget { Block = 3 }, Text = "Replaced" }],
-        }, new WordsEditRequest { Output = TestOutput.At(output) });
+            Input = input,
+            Batch = new WordsOpsBatch
+            {
+                Ops = [new SetTextOp { At = new WordsTarget { Block = 3 }, Text = "Replaced" }],
+            },
+            Output = TestOutput.At(output),
+        });
 
         var document = new Document(output);
         StructuredDocumentTag control = Controls(document).First();
@@ -66,13 +72,18 @@ public sealed class WordsContentControlTests : IClassFixture<WordsFixture>
         string input = CreateDocument();
         string output = _fixture.Temp.File($"delete-{Guid.NewGuid():N}.docx");
 
-        _fixture.Engine.ApplyOps(input, new WordsOpsBatch
+        WordsEdit.Run(_fixture.Session, new WordsEditRequest
         {
-            Ops = [new DeleteBlocksOp { Target = new WordsTarget { Blocks = "2-4" } }],
-        }, new WordsEditRequest { Output = TestOutput.At(output) });
+            Input = input,
+            Batch = new WordsOpsBatch
+            {
+                Ops = [new DeleteBlocksOp { Target = new WordsTarget { Blocks = "2-4" } }],
+            },
+            Output = TestOutput.At(output),
+        });
 
         Assert.Empty(Controls(new Document(output)));
-        DocumentReadResult read = _fixture.Engine.Read(output, new DocumentReadRequest { Scope = "text" });
+        DocumentReadResult read = WordsRead.Run(_fixture.Session, new DocumentReadRequest { Input = output, Scope = "text" });
         Assert.Equal(["Before", "After"], read.Blocks.Select(static block => block.Text));
     }
 
@@ -81,10 +92,15 @@ public sealed class WordsContentControlTests : IClassFixture<WordsFixture>
     {
         string input = CreateDocument();
 
-        CliException error = Assert.Throws<CliException>(() => _fixture.Engine.ApplyOps(input, new WordsOpsBatch
+        CliException error = Assert.Throws<CliException>(() => WordsEdit.Run(_fixture.Session, new WordsEditRequest
         {
-            Ops = [new InsertBreakOp { At = new WordsTarget { Block = 2 }, Position = "after", Kind = "section" }],
-        }, new WordsEditRequest { Output = TestOutput.At(_fixture.Temp.File($"break-{Guid.NewGuid():N}.docx")) }));
+            Input = input,
+            Batch = new WordsOpsBatch
+            {
+                Ops = [new InsertBreakOp { At = new WordsTarget { Block = 2 }, Position = "after", Kind = "section" }],
+            },
+            Output = TestOutput.At(_fixture.Temp.File($"break-{Guid.NewGuid():N}.docx")),
+        }));
 
         Assert.Contains("content control", error.Message, StringComparison.Ordinal);
     }

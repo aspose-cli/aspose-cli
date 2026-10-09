@@ -75,9 +75,9 @@ public sealed class WordsFieldAndReviewTests
     {
         var adapter = new WordsViewAdapter();
         var request = new ViewRenderRequest { View = WordsViews.Pages, MaxPartCount = 4, Purpose = ViewPurpose.Evidence };
-        ViewManifest rendered = adapter.Render(fixture.Engine, input, request, new MemoryArtifactSink());
+        ViewManifest rendered = adapter.Render(fixture.Session, input, request, new MemoryArtifactSink());
         Assert.False(rendered.SourceEncrypted);
-        return [.. adapter.Assess(fixture.Engine, input, request, rendered).Findings!
+        return [.. adapter.Assess(fixture.Session, input, request, rendered).Findings!
             .Where(static finding => finding.Code == "WORDS_EVALUATION_MARKS")];
     }
 
@@ -96,10 +96,15 @@ public sealed class WordsFieldAndReviewTests
         source.Save(input, SaveFormat.Docx);
         string output = fixture.Temp.File("toc.docx");
 
-        fixture.Engine.ApplyOps(input, new WordsOpsBatch
+        WordsEdit.Run(fixture.Session, new WordsEditRequest
         {
-            Ops = [new InsertTocOp { At = new WordsTarget { Heading = "Scope" }, Position = "before" }],
-        }, new WordsEditRequest { Output = TestOutput.At(output) });
+            Input = input,
+            Batch = new WordsOpsBatch
+            {
+                Ops = [new InsertTocOp { At = new WordsTarget { Heading = "Scope" }, Position = "before" }],
+            },
+            Output = TestOutput.At(output),
+        });
 
         var document = new Document(output);
         Field[] fields = document.Range.Fields.Cast<Field>().ToArray();
@@ -123,7 +128,7 @@ public sealed class WordsFieldAndReviewTests
         string input = fixture.Temp.File("toc-fields.docx");
         source.Save(input, SaveFormat.Docx);
 
-        DocumentInfoResult info = fixture.Engine.GetInfo(input, new DocumentInfoRequest { Details = ["fields"] });
+        DocumentInfoResult info = WordsInspect.Run(fixture.Session, new DocumentInfoRequest { Input = input, Details = ["fields"] });
 
         Assert.All(info.Fields!, static field => Assert.DoesNotContain(field.Result!, static c => c is '\u0013' or '\u0014' or '\u0015'));
         Assert.Equal("Scope\t2\rTerms\t2", Assert.Single(info.Fields!, static field => field.Type == "FieldTOC").Result);
@@ -136,14 +141,19 @@ public sealed class WordsFieldAndReviewTests
         using var fixture = new WordsFixture();
         string output = fixture.Temp.File("numpages.docx");
 
-        fixture.Engine.ApplyOps(fixture.CreateReport(), new WordsOpsBatch
+        WordsEdit.Run(fixture.Session, new WordsEditRequest
         {
-            Ops =
-            [
-                new InsertFieldOp { At = new WordsTarget { Block = 1 }, Position = "after", Code = "PAGE" },
-                new InsertFieldOp { At = new WordsTarget { Block = 1 }, Position = "after", Code = "NUMPAGES" },
-            ],
-        }, new WordsEditRequest { Output = TestOutput.At(output) });
+            Input = fixture.CreateReport(),
+            Batch = new WordsOpsBatch
+            {
+                Ops =
+                [
+                    new InsertFieldOp { At = new WordsTarget { Block = 1 }, Position = "after", Code = "PAGE" },
+                    new InsertFieldOp { At = new WordsTarget { Block = 1 }, Position = "after", Code = "NUMPAGES" },
+                ],
+            },
+            Output = TestOutput.At(output),
+        });
 
         var document = new Document(output);
         Field[] fields = document.Range.Fields.Cast<Field>().ToArray();
@@ -166,7 +176,7 @@ public sealed class WordsFieldAndReviewTests
         string input = fixture.Temp.File("stories.docx");
         source.Save(input, SaveFormat.Docx);
 
-        DocumentInfoResult info = fixture.Engine.GetInfo(input, new DocumentInfoRequest { Details = ["fields", "images"] });
+        DocumentInfoResult info = WordsInspect.Run(fixture.Session, new DocumentInfoRequest { Input = input, Details = ["fields", "images"] });
 
         Assert.Equal(
             ["FieldMergeField:body:1", "FieldPage:headersFooters:"],
@@ -182,18 +192,27 @@ public sealed class WordsFieldAndReviewTests
         using var fixture = new WordsFixture();
         string input = fixture.CreateReport();
         string commented = fixture.Temp.File("commented.docx");
-        fixture.Engine.ApplyOps(input, new WordsOpsBatch
+        WordsEdit.Run(fixture.Session, new WordsEditRequest
         {
-            Ops = Enumerable.Range(1, 3)
-                .Select(static block => (WordsOp)new AddCommentOp { At = new WordsTarget { Block = block }, Author = "A", Text = "Note" })
-                .ToArray(),
-        }, new WordsEditRequest { Output = TestOutput.At(commented) });
+            Input = input,
+            Batch = new WordsOpsBatch
+            {
+                Ops = Enumerable.Range(1, 3)
+                    .Select(static block => (WordsOp)new AddCommentOp { At = new WordsTarget { Block = block }, Author = "A", Text = "Note" })
+                    .ToArray(),
+            },
+            Output = TestOutput.At(commented),
+        });
         string output = fixture.Temp.File("clean.docx");
 
-        WordsEditResult result = fixture.Engine.ApplyOps(
-            commented,
-            new WordsOpsBatch { Ops = [new RemoveCommentsOp()] },
-            new WordsEditRequest { Output = TestOutput.At(output) });
+        WordsEditResult result = WordsEdit.Run(
+            fixture.Session,
+            new WordsEditRequest
+            {
+                Input = commented,
+                Batch = new WordsOpsBatch { Ops = [new RemoveCommentsOp()] },
+                Output = TestOutput.At(output),
+            });
 
         Assert.Equal(3, Assert.Single(result.Applied).ItemsAffected);
         var document = new Document(output);
@@ -222,10 +241,15 @@ public sealed class WordsFieldAndReviewTests
         source.Save(input, SaveFormat.Docx);
         string output = fixture.Temp.File("accepted.docx");
 
-        fixture.Engine.ApplyOps(input, new WordsOpsBatch
+        WordsEdit.Run(fixture.Session, new WordsEditRequest
         {
-            Ops = [new AcceptRevisionsOp { Author = author }],
-        }, new WordsEditRequest { Output = TestOutput.At(output) });
+            Input = input,
+            Batch = new WordsOpsBatch
+            {
+                Ops = [new AcceptRevisionsOp { Author = author }],
+            },
+            Output = TestOutput.At(output),
+        });
 
         var document = new Document(output);
         Assert.Equal(remaining, document.Revisions.Select(static revision => revision.Author).Distinct().Count());
@@ -252,22 +276,27 @@ public sealed class WordsFieldAndReviewTests
     {
         using var fixture = new WordsFixture();
         string input = CreateReviewedContract(fixture);
-        IReadOnlyList<RevisionData> listed = fixture.Engine.GetInfo(input, new DocumentInfoRequest { Details = ["revisions"] }).Revisions!;
+        IReadOnlyList<RevisionData> listed = WordsInspect.Run(fixture.Session, new DocumentInfoRequest { Input = input, Details = ["revisions"] }).Revisions!;
         Assert.Equal(Enumerable.Range(1, listed.Count), listed.Select(static revision => revision.Revision));
         int[] Numbers(params string[] texts) => [.. listed.Where(revision => texts.Contains(revision.Text)).Select(static revision => revision.Revision)];
         string output = fixture.Temp.File("decided.docx");
 
         // Accepting the first change removes its deletion; later numbers still name the changes
         // inspect listed.
-        WordsEditResult result = fixture.Engine.ApplyOps(input, new WordsOpsBatch
+        WordsEditResult result = WordsEdit.Run(fixture.Session, new WordsEditRequest
         {
-            Ops =
-            [
-                new AcceptRevisionsOp { Revisions = Numbers("30 days", "15 days") },
-                new AcceptRevisionsOp { Revisions = Numbers("10%", "20%") },
-                new RejectRevisionsOp { Revisions = Numbers("with us", "with them") },
-            ],
-        }, new WordsEditRequest { Output = TestOutput.At(output) });
+            Input = input,
+            Batch = new WordsOpsBatch
+            {
+                Ops =
+                [
+                    new AcceptRevisionsOp { Revisions = Numbers("30 days", "15 days") },
+                    new AcceptRevisionsOp { Revisions = Numbers("10%", "20%") },
+                    new RejectRevisionsOp { Revisions = Numbers("with us", "with them") },
+                ],
+            },
+            Output = TestOutput.At(output),
+        });
 
         Assert.All(result.Applied, static applied => Assert.Equal(2L, applied.ItemsAffected));
         var document = new Document(output);
@@ -284,17 +313,21 @@ public sealed class WordsFieldAndReviewTests
         using var fixture = new WordsFixture();
         string input = CreateReviewedContract(fixture);
 
-        CliException error = Assert.Throws<CliException>(() => fixture.Engine.ApplyOps(
-            input,
-            new WordsOpsBatch
+        CliException error = Assert.Throws<CliException>(() => WordsEdit.Run(
+            fixture.Session,
+            new WordsEditRequest
             {
-                Ops =
-                [
-                    new ReplaceTextOp { Find = "15", Replace = "14" },
-                    new AcceptRevisionsOp { Revisions = [1, 2] },
-                ],
-            },
-            new WordsEditRequest { Output = TestOutput.At(fixture.Temp.File("late.docx")) }));
+                Input = input,
+                Batch = new WordsOpsBatch
+                {
+                    Ops =
+                    [
+                        new ReplaceTextOp { Find = "15", Replace = "14" },
+                        new AcceptRevisionsOp { Revisions = [1, 2] },
+                    ],
+                },
+                Output = TestOutput.At(fixture.Temp.File("late.docx")),
+            }));
 
         Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
         Assert.Contains("before", error.Message, StringComparison.Ordinal);
@@ -307,10 +340,14 @@ public sealed class WordsFieldAndReviewTests
         string input = CreateReviewedContract(fixture);
         string output = fixture.Temp.File("twice.docx");
 
-        CliException error = Assert.Throws<CliException>(() => fixture.Engine.ApplyOps(
-            input,
-            new WordsOpsBatch { Ops = [new AcceptRevisionsOp(), new RejectRevisionsOp { Revisions = [1, 2] }] },
-            new WordsEditRequest { Output = TestOutput.At(output) }));
+        CliException error = Assert.Throws<CliException>(() => WordsEdit.Run(
+            fixture.Session,
+            new WordsEditRequest
+            {
+                Input = input,
+                Batch = new WordsOpsBatch { Ops = [new AcceptRevisionsOp(), new RejectRevisionsOp { Revisions = [1, 2] }] },
+                Output = TestOutput.At(output),
+            }));
 
         Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
         Assert.Contains("earlier operation", error.Message, StringComparison.Ordinal);
@@ -323,10 +360,14 @@ public sealed class WordsFieldAndReviewTests
         using var fixture = new WordsFixture();
         string input = CreateReviewedContract(fixture);
 
-        CliException error = Assert.Throws<CliException>(() => fixture.Engine.ApplyOps(
-            input,
-            new WordsOpsBatch { Ops = [new AcceptRevisionsOp { Revisions = [1, 7] }] },
-            new WordsEditRequest { Output = TestOutput.At(fixture.Temp.File("none.docx")) }));
+        CliException error = Assert.Throws<CliException>(() => WordsEdit.Run(
+            fixture.Session,
+            new WordsEditRequest
+            {
+                Input = input,
+                Batch = new WordsOpsBatch { Ops = [new AcceptRevisionsOp { Revisions = [1, 7] }] },
+                Output = TestOutput.At(fixture.Temp.File("none.docx")),
+            }));
 
         Assert.Equal("REVISION_NOT_FOUND", error.Code.Name);
         Assert.Contains("6 exist", error.Message, StringComparison.Ordinal);
@@ -339,10 +380,15 @@ public sealed class WordsFieldAndReviewTests
         string input = CreateReviewedContract(fixture);
         string output = fixture.Temp.File("unchanged.docx");
 
-        WordsEditResult result = fixture.Engine.ApplyOps(input, new WordsOpsBatch
+        WordsEditResult result = WordsEdit.Run(fixture.Session, new WordsEditRequest
         {
-            Ops = [new AcceptRevisionsOp { Author = "Li" }, new RemoveCommentsOp { Author = "Li" }],
-        }, new WordsEditRequest { Output = TestOutput.At(output) });
+            Input = input,
+            Batch = new WordsOpsBatch
+            {
+                Ops = [new AcceptRevisionsOp { Author = "Li" }, new RemoveCommentsOp { Author = "Li" }],
+            },
+            Output = TestOutput.At(output),
+        });
 
         Assert.All(result.Applied, static applied => Assert.Equal(0L, applied.ItemsAffected));
         Warning[] warnings = [.. result.Warnings!.Where(static warning => warning.Code == "AUTHOR_NO_MATCH")];

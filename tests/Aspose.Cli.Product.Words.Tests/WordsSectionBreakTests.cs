@@ -16,10 +16,15 @@ public sealed class WordsSectionBreakTests
         string input = CreateA4(fixture);
         string output = fixture.Temp.File($"split-{position}.docx");
 
-        fixture.Engine.ApplyOps(input, new WordsOpsBatch
+        WordsEdit.Run(fixture.Session, new WordsEditRequest
         {
-            Ops = [new InsertBreakOp { At = new WordsTarget { Find = "Two" }, Position = position, Kind = "section" }],
-        }, new WordsEditRequest { Output = TestOutput.At(output) });
+            Input = input,
+            Batch = new WordsOpsBatch
+            {
+                Ops = [new InsertBreakOp { At = new WordsTarget { Find = "Two" }, Position = position, Kind = "section" }],
+            },
+            Output = TestOutput.At(output),
+        });
 
         var document = new Document(output);
         Assert.Equal(2, document.Sections.Count);
@@ -40,7 +45,7 @@ public sealed class WordsSectionBreakTests
         string input = CreateA4(fixture);
         string output = fixture.Temp.File("added.docx");
 
-        fixture.Engine.ApplyOps(input, new WordsOpsBatch { Ops = [new AddSectionOp()] }, new WordsEditRequest { Output = TestOutput.At(output) });
+        WordsEdit.Run(fixture.Session, new WordsEditRequest { Input = input, Batch = new WordsOpsBatch { Ops = [new AddSectionOp()] }, Output = TestOutput.At(output) });
 
         var document = new Document(output);
         Section added = document.LastSection;

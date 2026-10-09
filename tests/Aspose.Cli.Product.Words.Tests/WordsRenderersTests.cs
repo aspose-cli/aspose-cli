@@ -1,5 +1,5 @@
 using Aspose.Cli.Product.Words.Contracts;
-using Aspose.Cli.Product.Words.Output;
+using Aspose.Cli.Product.Words.Commands;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Extensibility.Output;
 using Xunit;
@@ -30,7 +30,7 @@ public sealed class WordsRenderersTests
         };
         using var writer = new StringWriter();
 
-        WordsRenderers.Render(result, new TableSurface(writer, format));
+        InfoCommand.Render(result, new TableSurface(writer, format));
 
         string text = writer.ToString().Replace(Environment.NewLine, "\n", StringComparison.Ordinal);
         string gap = format == TableFormat.Markdown ? "\n\n" : "\n";

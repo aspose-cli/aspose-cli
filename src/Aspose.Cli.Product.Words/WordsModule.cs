@@ -1,5 +1,5 @@
 using Aspose.Cli.Product.Words.Commands;
-using Aspose.Cli.Product.Words.Output;
+using Aspose.Cli.Product.Words.Engine.Mapping;
 using Aspose.Cli.Sdk.Extensibility;
 
 namespace Aspose.Cli.Product.Words;
@@ -27,23 +27,35 @@ public sealed class WordsModule : IProductModule
     };
 
     public ProductDefinition Define() =>
-        Aspose.Cli.Sdk.Extensibility.Product.Define<IWordsEngine>(Manifest)
+        Aspose.Cli.Sdk.Extensibility.Product.Define<WordsSession>(Manifest)
             .Formats(WordsFormats.Definitions)
             .Diagnostics(WordsDiagnostics.All)
             .Json(ProductJsonContext.Definition)
             .View(new WordsViewAdapter())
-            .Output<DocumentInfoResult>(WordsRenderers.Render)
-            .Output<DocumentReadResult>(WordsRenderers.Render)
-            .Output<WordsConvertResult>(WordsRenderers.Render)
-            .Output<WordsRenderResult>(WordsRenderers.Render)
-            .Output<WordsCreateResult>(WordsRenderers.Render)
-            .Output<WordsEditResult>(WordsRenderers.Render)
-            .Output<WordsCompareResult>(WordsRenderers.Render)
-            .Output<WordsSearchResult>(WordsRenderers.Render)
-            .Output<WordsSplitResult>(WordsRenderers.Render)
-            .Output<WordsExtractResult>(WordsRenderers.Render)
-            .Commands(WordsCommands.Create)
+            .DetectFormat(WordsDocumentLoader.DetectFormatId)
+            .Describe(
+                "Word-processing document automation with layout fidelity.",
+                static () => new CommandHelp(
+                    [
+                        "words inspect contract.docx --detail outline sections --preview",
+                        "words query blocks contract.docx --blocks 1-30 --scope full",
+                    ],
+                    [
+                        CommandHelpLink.Docs(Manifest, "editing", "the document block model and edit operations"),
+                        CommandHelpLink.Docs(Manifest, "verification", "read-back, semantic and visual verification"),
+                        CommandHelpLink.Schema(Manifest, "the operation JSON schema"),
+                    ]))
+            .Command(InfoCommand.Create, WordsInspect.Run)
+            .Group("query", "Read bounded document projections without mutating the source.", query => query
+                .Command(ReadCommand.Create, WordsRead.Run)
+                .Command(SearchCommand.Create, WordsSearch.Run))
+            .Command(ConvertCommand.Create, WordsConvert.Run)
+            .Command(RenderCommand.Create, WordsRender.Run)
+            .Command(NewCommand.Create, WordsCreate.Run)
+            .Command(EditCommand.Create, WordsEdit.Run)
+            .Command(CompareCommand.Create, WordsCompare.Run)
+            .Command(SplitCommand.Create, WordsSplit.Run)
+            .Command(ExtractCommand.Create, WordsExtract.Run)
             .Activator(static context => WordsActivation.Activate(context, Manifest.Id))
             .Build();
-
 }

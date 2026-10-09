@@ -2,7 +2,6 @@ using Aspose.Cli.Product.Words.Engine.Mapping;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Results;
-using Aspose.Cli.Sdk.Text;
 using Aspose.Words;
 using Aspose.Words.Comparing;
 using Aspose.Words.Saving;
@@ -10,29 +9,20 @@ using static Aspose.Cli.Product.Words.Engine.WordsEngineSupport;
 
 namespace Aspose.Cli.Product.Words.Engine;
 
-/// <summary>Owns comparison and bounded content search.</summary>
-internal sealed class WordsInspectionService
+/// <summary>Serves <c>words compare</c>: a semantic comparison and an optional redline.</summary>
+internal static class WordsCompare
 {
     // The revision samples a comparison returns; the revision counts always cover every revision.
     private const int SampleLimit = 50;
 
-    private readonly OutputPipeline<Document> _outputs;
-    private readonly WordsDocumentLoader _loader;
-
-    internal WordsInspectionService(
-        OutputPipeline<Document> outputs,
-        WordsDocumentLoader loader)
-    {
-        _outputs = outputs ?? throw new ArgumentNullException(nameof(outputs));
-        _loader = loader ?? throw new ArgumentNullException(nameof(loader));
-    }
-
     /// <summary>Compares two documents and optionally writes a reviewed copy.</summary>
-    internal WordsCompareResult Compare(string leftPath, string rightPath, WordsCompareRequest request)
+    internal static WordsCompareResult Run(WordsSession session, WordsCompareRequest request)
     {
-        LicenseState state = _outputs.License;
-        using LoadedDocument leftLoaded = _loader.Open(leftPath, request.LeftPassword);
-        using LoadedDocument rightLoaded = _loader.Open(rightPath, request.RightPassword);
+        string leftPath = request.Left;
+        string rightPath = request.Right;
+        LicenseState state = session.Outputs.License;
+        using LoadedDocument leftLoaded = session.Loader.Open(leftPath, request.LeftPassword);
+        using LoadedDocument rightLoaded = session.Loader.Open(rightPath, request.RightPassword);
         if (leftLoaded.Document.Revisions.Count > 0 || rightLoaded.Document.Revisions.Count > 0)
         {
             throw new CliException(
@@ -56,7 +46,7 @@ internal sealed class WordsInspectionService
             format = redline.Keeping(leftLoaded.FormatId).Id;
             SaveOptions options = WordsSavePipeline.Options(format);
             WordsSavePipeline.RemoveMacrosUnlessKept(compared, format);
-            long size = _outputs.Write(redline.Path, redline.Overwrite, compared, temp => compared.Save(temp, options));
+            long size = session.Outputs.Write(redline.Path, redline.Overwrite, compared, temp => compared.Save(temp, options));
             output = BuildOutput(redline.Path, format, size);
         }
 
@@ -87,52 +77,6 @@ internal sealed class WordsInspectionService
                 revisions.Length > SampleLimit
                     ? [EnvelopeParts.ListTruncated("samples", SampleLimit, revisions.Length, "Write the redline with --out to review every revision.")]
                     : null),
-        };
-    }
-
-    /// <summary>Searches selected document scopes within the configured hit budget.</summary>
-    internal WordsSearchResult Search(string filePath, WordsSearchRequest request)
-    {
-        LicenseState state = _outputs.License;
-        using LoadedDocument loaded = _loader.Open(filePath, request.Password);
-        var index = new DocumentBlockIndex(loaded.Document, loaded.Evaluation);
-        SearchQuery query = request.Query;
-        SearchHits<WordsSearchHit> hits = query.Collect<WordsSearchHit>();
-        IEnumerable<(Node Node, string Scope)> units = WordsStories.In(loaded.Document, query.Scope ?? WordsTextScopes.Body)
-            .SelectMany(static story => WordsStories.Units(story.Story).Select(unit => (unit, story.Scope)));
-        foreach ((Node node, string scope) in units)
-        {
-            string text = WordsText.Of(node);
-            if (query.Text.IsMatch(text) && !hits.Offer(() => Hit(index, node, scope, text)))
-            {
-                break;
-            }
-        }
-
-        return new WordsSearchResult
-        {
-            Source = InfoProjection.Source(filePath, loaded),
-            Pattern = query.Text.Pattern,
-            Hits = hits.Hits,
-            Window = hits.Window(),
-            License = EnvelopeParts.License(state),
-            Warnings = InputWarnings(loaded),
-        };
-    }
-
-    private static WordsSearchHit Hit(DocumentBlockIndex index, Node node, string scope, string text)
-    {
-        (string Location, string Kind)? place = scope == WordsTextScopes.HeadersFooters && node.GetAncestor(NodeType.HeaderFooter) is HeaderFooter headerFooter
-            ? WordsStories.PlaceOf(headerFooter)
-            : null;
-        return new()
-        {
-            Block = index.FindBlock(node),
-            Section = WordsStories.SectionOf(node),
-            Scope = scope,
-            Location = place?.Location,
-            Kind = place?.Kind,
-            Snippet = Truncate(text, 300),
         };
     }
 }

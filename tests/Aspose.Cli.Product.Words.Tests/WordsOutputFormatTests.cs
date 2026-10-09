@@ -82,7 +82,7 @@ public sealed class WordsOutputFormatTests
         document.Save(input);
         string output = fixture.Temp.File("picture.rtf");
 
-        fixture.Engine.Convert(input, new WordsConvertRequest { Output = TestOutput.At(output, format: "rtf") });
+        WordsConvert.Run(fixture.Session, new WordsConvertRequest { Input = input, Output = TestOutput.At(output, format: "rtf") });
 
         Assert.True(new FileInfo(output).Length < 100_000, $"{new FileInfo(output).Length} bytes");
         Assert.Single(new Document(output).FirstSection.Body.GetChildNodes(NodeType.Shape, true).Cast<Aspose.Words.Drawing.Shape>(), static shape => shape.HasImage);
@@ -117,7 +117,7 @@ public sealed class WordsOutputFormatTests
         changed.Save(right);
         string output = fixture.Temp.File("redline.pdf");
 
-        WordsCompareResult result = fixture.Engine.Compare(left, right, new WordsCompareRequest { Output = TestOutput.At(output) });
+        WordsCompareResult result = WordsCompare.Run(fixture.Session, new WordsCompareRequest { Left = left, Right = right, Output = TestOutput.At(output) });
 
         Assert.Equal("pdf", result.Output!.Format);
         Assert.Equal("%PDF", System.Text.Encoding.ASCII.GetString(File.ReadAllBytes(output), 0, 4));

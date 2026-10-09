@@ -18,33 +18,19 @@ namespace Aspose.Cli.Product.Words.Engine;
 /// first operation runs, runs the handlers, and commits the result through the atomic writer
 /// with optional save-and-reopen verification.
 /// </summary>
-internal sealed class WordsMutationService
+internal static class WordsEdit
 {
-    private readonly OutputPipeline<Document> _outputs;
-    private readonly WordsDocumentLoader _loader;
-    private readonly InputSource _inputs;
-
-    internal WordsMutationService(
-        OutputPipeline<Document> outputs,
-        WordsDocumentLoader loader,
-        InputSource inputs)
-    {
-        _outputs = outputs ?? throw new ArgumentNullException(nameof(outputs));
-        _loader = loader ?? throw new ArgumentNullException(nameof(loader));
-        _inputs = inputs ?? throw new ArgumentNullException(nameof(inputs));
-    }
-
     /// <summary>Applies a validated operation batch and commits it atomically.</summary>
-    internal WordsEditResult ApplyOps(string filePath, WordsOpsBatch batch, WordsEditRequest request)
+    internal static WordsEditResult Run(WordsSession session, WordsEditRequest request)
     {
-        batch = WordsOp.Catalog.Prepare(batch);
-        LicenseState state = _outputs.License;
-        FileWritePrecondition precondition = FileWritePrecondition.Capture(filePath);
-        using LoadedDocument loaded = _loader.Open(filePath, request.Password);
+        WordsOpsBatch batch = WordsOp.Catalog.Prepare(request.Batch);
+        LicenseState state = session.Outputs.License;
+        FileWritePrecondition precondition = FileWritePrecondition.Capture(request.Input);
+        using LoadedDocument loaded = session.Loader.Open(request.Input, request.Password);
         bool inputHadRevisions = loaded.Document.Revisions.Count > 0;
         bool inputWasSigned = loaded.Format.HasDigitalSignature;
         ProtectionType inputProtection = loaded.Document.ProtectionType;
-        using InputResourceScope operationInputs = _inputs.CreateScope();
+        using InputResourceScope operationInputs = session.Budgets.Inputs.CreateScope();
         ValidateRequest(request, batch);
         FormatDescriptor written = request.Output.Keeping(loaded.FormatId);
         string format = written.Id;
@@ -56,9 +42,9 @@ internal sealed class WordsMutationService
             throw CliErrors.OptionInvalid("--verify", $"format '{format}' cannot be reopened as a document",
                 "Use a reloadable document output when requesting semantic verification.");
         }
-        SourceInfo input = InfoProjection.Source(filePath, loaded);
-        FileFingerprints.EnsureUnchanged(filePath, precondition.Fingerprint, input.Fingerprint!);
-        FileFingerprints.EnsureMatch(filePath, request.Options.IfMatch, input.Fingerprint!);
+        SourceInfo input = InfoProjection.Source(request.Input, loaded);
+        FileFingerprints.EnsureUnchanged(request.Input, precondition.Fingerprint, input.Fingerprint!);
+        FileFingerprints.EnsureMatch(request.Input, request.Options.IfMatch, input.Fingerprint!);
         Node[] blocksBefore = BodyBlocks(loaded.Document).ToArray();
         var blocks = new DocumentBlockIndex(loaded.Document, loaded.Evaluation);
         IReadOnlyList<ResolvedWordsOp> resolved = WordsAnchorResolver.Resolve(loaded.Document, blocks, batch);
@@ -71,16 +57,17 @@ internal sealed class WordsMutationService
         var changed = new List<Node>();
         var pageFields = new List<Field>();
         IReadOnlyList<BoundedOperationOutcome> outcomes =
-            ApplyOperations(loaded, resolved, blocks, request, operationInputs, tracking, operationWarnings, changed, pageFields);
+            ApplyOperations(session, loaded, resolved, blocks, request, operationInputs, tracking, operationWarnings, changed, pageFields);
         tracking?.Stop();
         UpdatePageFields(loaded.Document, pageFields);
         IReadOnlyList<int> pagesTouched = TouchedPages(loaded.Document, blocksBefore, resolved, changed);
 
-        _loader.EnsureWithinBudgets(loaded.Document, loaded.Resources);
+        session.Loader.EnsureWithinBudgets(loaded.Document, loaded.Resources);
         WordsSavePipeline.RemoveMacrosUnlessKept(loaded.Document, format);
 
         (OutputInfo? output, BackupInfo? backup, WordsVerification? verification, string? truncation) =
             Persist(
+                session,
                 loaded.Document,
                 request,
                 baseline,
@@ -169,7 +156,8 @@ internal sealed class WordsMutationService
         or SetTableCellOp or RepeatTableRowOp or InsertTocOp or InsertBookmarkOp or InsertHyperlinkOp or InsertFieldOp
         or AddCommentOp or RemoveCommentsOp or AppendDocumentOp;
 
-    private IReadOnlyList<BoundedOperationOutcome> ApplyOperations(
+    private static IReadOnlyList<BoundedOperationOutcome> ApplyOperations(
+        WordsSession session,
         LoadedDocument loaded,
         IReadOnlyList<ResolvedWordsOp> resolved,
         DocumentBlockIndex blocks,
@@ -190,7 +178,7 @@ internal sealed class WordsMutationService
                 // An operation without a block address, such as replace_text, names the
                 // original blocks that hold the nodes it changed.
                 var nodes = new List<Node>();
-                long count = new WordsMutationHandlers(loaded, resolved[index], _outputs, _loader, _inputs, operationInputs, request.OpSecrets, tracking, warnings, nodes, pageFields).Run();
+                long count = new WordsMutationHandlers(loaded, resolved[index], session.Outputs, session.Loader, session.Budgets.Inputs, operationInputs, request.OpSecrets, tracking, warnings, nodes, pageFields).Run();
                 changed.AddRange(nodes);
                 return new AppliedOperation(
                     count,
@@ -205,11 +193,12 @@ internal sealed class WordsMutationService
     /// only the start of a long document it lays out or saves in evaluation mode and ends it
     /// with its truncation notice, in the saved file and in the document itself alike.
     /// </summary>
-    private (
+    private static (
         OutputInfo? Output,
         BackupInfo? Backup,
         WordsVerification? Verification,
         string? Truncation) Persist(
+        WordsSession session,
         Document document,
         WordsEditRequest request,
         Document? baseline,
@@ -226,7 +215,7 @@ internal sealed class WordsMutationService
         string? truncation = null;
         if (!request.Options.DryRun)
         {
-            using OutputSet<Document> transaction = _outputs.BeginSet([request.Output.Directory], "words-edit");
+            using OutputSet<Document> transaction = session.Outputs.BeginSet([request.Output.Directory], "words-edit");
             StagedOutput write = transaction.Stage(
                 request.Output.Path,
                 request.Output.Overwrite,
@@ -242,7 +231,7 @@ internal sealed class WordsMutationService
                     }
                     if (!request.Verify && WordsFormats.IsLoad(format))
                     {
-                        using LoadedDocument reopened = _loader.OpenPublishedCandidate(temp, outputPassword);
+                        using LoadedDocument reopened = session.Loader.OpenPublishedCandidate(temp, outputPassword);
                     }
                 },
                 backupPath: request.Output.BackupPath,
@@ -257,7 +246,7 @@ internal sealed class WordsMutationService
                     document.Revisions.Count,
                     WordsProtection.ToMode(document.ProtectionType));
                 verification = write.Read(
-                    candidate => Verify(candidate, format, outputPassword, baseline!, expected, truncation));
+                    candidate => Verify(session, candidate, format, outputPassword, baseline!, expected, truncation));
             }
             transaction.Commit();
         }
@@ -339,7 +328,8 @@ internal sealed class WordsMutationService
     /// finds no body change is evidence, not a fault: whether an operation did
     /// anything is already answered, authoritatively, by its own outcome.
     /// </summary>
-    private WordsVerification Verify(
+    private static WordsVerification Verify(
+        WordsSession session,
         string candidatePath,
         string format,
         Secret? outputPassword,
@@ -356,7 +346,7 @@ internal sealed class WordsMutationService
                 hint: "Apply a license and run the edit again; the output does not hold the whole result."));
         }
 
-        using LoadedDocument reopened = _loader.OpenPublishedCandidate(
+        using LoadedDocument reopened = session.Loader.OpenPublishedCandidate(
             candidatePath,
             outputPassword);
         int fieldCount = reopened.Document.Range.Fields.Count;

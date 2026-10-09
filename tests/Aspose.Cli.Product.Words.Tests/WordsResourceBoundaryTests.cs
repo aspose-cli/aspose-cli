@@ -66,12 +66,17 @@ public sealed class WordsResourceBoundaryTests
         CliException error = Assert.Throws<CliException>(() => loader.OpenMarkdown(new string('a', 9), loaded));
         Assert.Equal(ErrorCodes.InputBudgetExceeded, error.Code);
         string output = fixture.Temp.File("budget-failure.docx");
-        var engine = new WordsEngine(fixture.Outputs(new SafeFileWriter(budgets)), budgets);
-        CliException batchError = Assert.Throws<CliException>(() => engine.ApplyOps(input,
-            new WordsOpsBatch { Ops = [new InsertMarkdownOp
+        WordsSession engine = WordsActivation.Session(fixture.Outputs(new SafeFileWriter(budgets)), budgets);
+        CliException batchError = Assert.Throws<CliException>(() => WordsEdit.Run(engine, new WordsEditRequest
+        {
+            Input = input,
+            Batch = new WordsOpsBatch { Ops = [new InsertMarkdownOp
             {
                 At = new WordsTarget { Find = "Quarterly report" }, Position = "after", Markdown = new string('a', 9),
-            }] }, new WordsEditRequest { Output = TestOutput.At(output), Options = new EditCommandOptions { BestEffort = true } }));
+            }] },
+            Output = TestOutput.At(output),
+            Options = new EditCommandOptions { BestEffort = true },
+        }));
         Assert.Equal(ErrorCodes.InputBudgetExceeded, batchError.Code);
         Assert.False(File.Exists(output));
     }

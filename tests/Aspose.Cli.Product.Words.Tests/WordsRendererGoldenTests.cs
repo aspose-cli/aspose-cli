@@ -1,4 +1,4 @@
-using Aspose.Cli.Product.Words.Output;
+using Aspose.Cli.Product.Words.Commands;
 using Aspose.Cli.Sdk.Extensibility.Output;
 using Xunit;
 
@@ -13,7 +13,7 @@ public sealed class WordsRendererGoldenTests
     [Fact]
     public void Info_WithEveryDetail_Plain()
     {
-        string text = RenderedText.Of(surface => WordsRenderers.Render(InfoWithDetails(), surface), TableFormat.Plain);
+        string text = RenderedText.Of(surface => InfoCommand.Render(InfoWithDetails(), surface), TableFormat.Plain);
 
         RenderedText.Equal(
             """
@@ -79,7 +79,7 @@ public sealed class WordsRendererGoldenTests
     [Fact]
     public void Info_WithEveryDetail_Markdown()
     {
-        string text = RenderedText.Of(surface => WordsRenderers.Render(InfoWithDetails(), surface), TableFormat.Markdown);
+        string text = RenderedText.Of(surface => InfoCommand.Render(InfoWithDetails(), surface), TableFormat.Markdown);
 
         RenderedText.Equal(
             """
@@ -171,7 +171,7 @@ public sealed class WordsRendererGoldenTests
             Images = [], Tables = [], Properties = new Dictionary<string, string?>(), Fonts = [],
         };
 
-        string text = RenderedText.Of(surface => WordsRenderers.Render(result, surface), TableFormat.Plain);
+        string text = RenderedText.Of(surface => InfoCommand.Render(result, surface), TableFormat.Plain);
 
         RenderedText.Equal(
             """
@@ -218,7 +218,7 @@ public sealed class WordsRendererGoldenTests
     [Fact]
     public void Info_WithoutDetails_PrintsOnlyTheSummary()
     {
-        string text = RenderedText.Of(surface => WordsRenderers.Render(Info(), surface), TableFormat.Plain);
+        string text = RenderedText.Of(surface => InfoCommand.Render(Info(), surface), TableFormat.Plain);
 
         RenderedText.Equal(
             """
@@ -245,7 +245,7 @@ public sealed class WordsRendererGoldenTests
             ],
         };
 
-        string text = RenderedText.Of(surface => WordsRenderers.Render(result, surface), TableFormat.Plain);
+        string text = RenderedText.Of(surface => ReadCommand.Render(result, surface), TableFormat.Plain);
 
         RenderedText.Equal(
             """
@@ -281,7 +281,7 @@ public sealed class WordsRendererGoldenTests
             },
         };
 
-        string text = RenderedText.Of(surface => WordsRenderers.Render(result, surface), TableFormat.Plain);
+        string text = RenderedText.Of(surface => EditCommand.Render(result, surface), TableFormat.Plain);
 
         RenderedText.Equal(
             """

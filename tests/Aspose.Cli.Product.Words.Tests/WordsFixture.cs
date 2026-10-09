@@ -21,9 +21,10 @@ public sealed class WordsFixture : IDisposable
     public ILicenseGate Gate { get; } = TestLicense.Apply(
         static (resolution, environment) => new WordsLicenseGate(resolution, environment));
 
-    internal WordsEngine Engine =>
-        ProductTestBudgets.StartEngine<WordsModule, WordsEngine>(
-            (budgets, writer) => new WordsEngine(Outputs(writer), budgets));
+    /// <summary>A new session of one invocation, as the product binding creates it.</summary>
+    internal WordsSession Session =>
+        ProductTestBudgets.StartEngine<WordsModule, WordsSession>(
+            (budgets, writer) => WordsActivation.Session(Outputs(writer), budgets));
 
     internal WordsFontEnvironment Fonts =>
         ProductTestBudgets.StartEngine<WordsModule, WordsFontEnvironment>(
@@ -33,16 +34,14 @@ public sealed class WordsFixture : IDisposable
     internal OutputPipeline<Document> Outputs(SafeFileWriter writer) => new(Gate, new WordsEvaluationProfile(), writer);
 
     /// <summary>
-    /// Runs one engine call as a command does: on its own engine and write pipeline, whose
+    /// Runs one handler call as a command does: on its own session and write pipeline, whose
     /// evaluation disclosure the command template adds to the result.
     /// </summary>
-    internal TResult Disclosed<TResult>(Func<WordsEngine, TResult> call)
+    internal TResult Disclosed<TResult>(Func<WordsSession, TResult> call)
         where TResult : ResultEnvelope
     {
-        OutputPipeline<Document>? outputs = null;
-        WordsEngine engine = ProductTestBudgets.StartEngine<WordsModule, WordsEngine>(
-            (budgets, writer) => new WordsEngine(outputs = Outputs(writer), budgets));
-        return (TResult)outputs!.Disclose(call(engine));
+        WordsSession session = Session;
+        return (TResult)session.Outputs.Disclose(call(session));
     }
 
     /// <summary>The banner paragraph an unlicensed save writes at the start of a document.</summary>
@@ -77,8 +76,8 @@ public sealed class WordsFixture : IDisposable
         header.Paragraphs.Cast<Paragraph>().First(static paragraph => !WordsEvaluation.IsBanner(paragraph));
 
     /// <summary>A plain-text search of one scope with the default hit budget.</summary>
-    internal static WordsSearchRequest Search(string pattern, string scope = WordsTextScopes.Body) =>
-        new() { Query = new SearchQuery(TextSearch.Create(pattern, regex: false, caseSensitive: false), 100, scope) };
+    internal static WordsSearchRequest Search(string input, string pattern, string scope = WordsTextScopes.Body) =>
+        new() { Input = input, Query = new SearchQuery(TextSearch.Create(pattern, regex: false, caseSensitive: false), 100, scope) };
 
     public string CreateReport(string fileName = "report.docx")
     {
