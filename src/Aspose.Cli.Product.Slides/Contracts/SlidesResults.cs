@@ -380,7 +380,7 @@ public sealed record SlideTextRunData
     /// <summary>Whether the run is italic.</summary>
     public bool? Italic { get; init; }
 
-    /// <summary>The solid color the text is drawn in, stated or inherited, as #RRGGBB; null for text without a solid fill.</summary>
+    /// <summary>The solid color the text is drawn in, stated or inherited, as #RRGGBB; omitted for text without a solid fill.</summary>
     [Pattern("^#[0-9A-F]{6}$")]
     public string? Color { get; init; }
 }
@@ -566,7 +566,7 @@ public sealed record SlidesEditResult() : EngineResultEnvelope("edit-result", 2)
     public bool HasFailures => Applied.Any(static op => op.Status == "failed");
 }
 
-/// <summary>Result of <c>slides search</c>: the matches in shape text and speaker notes.</summary>
+/// <summary>Result of <c>slides query search</c>: the matches in shape text and speaker notes.</summary>
 public sealed record SlidesSearchResult() : WindowedResultEnvelope("search-result", 2)
 {
     /// <summary>The searched presentation.</summary>

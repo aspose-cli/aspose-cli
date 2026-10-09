@@ -630,7 +630,7 @@ public sealed record PdfFormField
     /// <summary>The field's full name, which <c>set_form_field</c> accepts.</summary>
     public required string Name { get; init; }
 
-    /// <summary>The field kind; one of <see cref="PdfFormFieldTypes"/>.</summary>
+    /// <summary>The field kind, such as <c>text</c>, <c>checkbox</c>, or <c>radio-option</c> for one button of a radio group.</summary>
     [AllowedValues(typeof(PdfFormFieldTypes))]
     public required string Type { get; init; }
 
