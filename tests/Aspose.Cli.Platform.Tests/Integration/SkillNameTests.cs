@@ -12,8 +12,10 @@ namespace Aspose.Cli.IntegrationTests;
 /// that capabilities lists; a <c>--option</c> is an option of some command; a <c>snake_case</c>
 /// name is an operation of some product; and a snippet that starts with a command path, such as
 /// <c>cells convert data.csv --to xlsx</c>, parses against the tree as
-/// <c>aspose-cli &lt;snippet&gt;</c>. Placeholders (<c>&lt;name&gt;</c>) are skipped, and so are
-/// environment variables (<c>ASPOSE_*</c>). Commands written with <c>aspose-cli</c> are already
+/// <c>aspose-cli &lt;snippet&gt;</c>, or with a placeholder names only existing options. A
+/// placeholder (<c>&lt;name&gt;</c>) is removed and the names around it are still checked, such as
+/// the option of <c>--pages &lt;range&gt;</c>; environment variables (<c>ASPOSE_*</c>) are skipped.
+/// Each kind of name is checked at least once, and every Skill set has names checked. Commands written with <c>aspose-cli</c> are already
 /// checked by <see cref="SkillInstallTests"/>, and product operation documents by each product's
 /// contract tests; here a fenced JSON block that names its schema, or a platform Skill operation
 /// document, validates against the schema the CLI serves.
@@ -64,18 +66,30 @@ public sealed partial class SkillNameTests(DocumentationContractFixture fixture)
         ];
 
         var problems = new List<string>();
-        foreach ((string file, int line, string code) in InlineCode())
+        // How many names of each kind each Skill set checked, so a rule that stops matching fails.
+        var checkedNames = new Dictionary<(string Skills, NameKind Kind), int>();
+        foreach ((string file, int line, string written) in InlineCode())
         {
-            string where = $"{Path.GetRelativePath(RepositoryPaths.Root, file)}:{line}: `{code}`";
+            string where = $"{Path.GetRelativePath(RepositoryPaths.Root, file)}:{line}: `{written}`";
+            // A placeholder stands for a value the reader supplies; the names around it are still checked.
+            string code = Placeholder().Replace(written, string.Empty).Trim();
+            bool placeholders = code.Length != written.Trim().Length;
+            NameKind? kind = null;
             if (UpperSnake().IsMatch(code))
             {
-                if (!code.StartsWith("ASPOSE_", StringComparison.Ordinal) && !codes.Contains(code))
+                if (code.StartsWith("ASPOSE_", StringComparison.Ordinal))
+                {
+                    continue;
+                }
+                kind = NameKind.Code;
+                if (!codes.Contains(code))
                 {
                     problems.Add($"{where} is no diagnostic or review check of this build");
                 }
             }
             else if (OptionSnippet().Match(code) is { Success: true } option)
             {
+                kind = NameKind.Option;
                 if (!options.Contains(option.Groups["name"].Value))
                 {
                     problems.Add($"{where} is no option of any command");
@@ -83,6 +97,7 @@ public sealed partial class SkillNameTests(DocumentationContractFixture fixture)
             }
             else if (LowerSnake().IsMatch(code))
             {
+                kind = NameKind.Operation;
                 if (!operations.Contains(code) && !NotOperations.ContainsKey(code))
                 {
                     problems.Add($"{where} is no operation of any product");
@@ -90,17 +105,54 @@ public sealed partial class SkillNameTests(DocumentationContractFixture fixture)
             }
             else if (code.Split(' ', 2) is [{ } first, _] && roots.Contains(first))
             {
-                if (fixture.Validator.ValidateCommand("aspose-cli " + code) is { } problem)
+                kind = NameKind.Command;
+                if (placeholders)
+                {
+                    // A command with a placeholder cannot parse; each option it names must still exist.
+                    problems.AddRange(OptionToken().Matches(code).Select(static match => match.Groups["name"].Value)
+                        .Where(name => !options.Contains(name))
+                        .Select(name => $"{where}: {name} is no option of any command"));
+                }
+                else if (fixture.Validator.ValidateCommand("aspose-cli " + code) is { } problem)
                 {
                     problems.Add($"{where}: {problem}");
                 }
             }
+
+            if (kind is { } counted)
+            {
+                (string, NameKind) key = (SkillSetOf(file), counted);
+                checkedNames[key] = checkedNames.GetValueOrDefault(key) + 1;
+            }
         }
+
+        string counts = string.Join(", ", checkedNames.OrderBy(static pair => pair.Key.Skills, StringComparer.Ordinal)
+            .ThenBy(static pair => pair.Key.Kind)
+            .Select(static pair => $"{pair.Key.Skills} {pair.Key.Kind}: {pair.Value}"));
+        NameKind[] unmatched = [.. Enum.GetValues<NameKind>().Where(kind => !checkedNames.Keys.Any(key => key.Kind == kind))];
+        Assert.True(unmatched.Length == 0,
+            $"No Skill names a {string.Join(" or ", unmatched)} the rule recognizes, so it checks nothing; the inline-code rules stopped matching ({counts}).");
+        string[] silent = [.. SkillFiles().Select(SkillSetOf).Distinct(StringComparer.Ordinal)
+            .Where(skills => !checkedNames.Keys.Any(key => key.Skills == skills))];
+        Assert.True(silent.Length == 0,
+            $"The rule checks no name of the Skills of {string.Join(", ", silent)} ({counts}).");
 
         Assert.True(problems.Count == 0,
             "Every code, option, operation and command a Skill names exists in this build:" + Environment.NewLine
             + string.Join(Environment.NewLine, problems));
     }
+
+    private enum NameKind
+    {
+        Code,
+        Option,
+        Operation,
+        Command,
+    }
+
+    /// <summary>The project whose Skills hold a file, such as <c>Aspose.Cli.Product.Pdf</c>.</summary>
+    private static string SkillSetOf(string file) =>
+        Path.GetRelativePath(Path.Combine(RepositoryPaths.Root, "src"), file).Split(Path.DirectorySeparatorChar)[0];
 
     [Fact]
     public void JsonBlocks_ThatNameASchemaOrHoldPlatformOperations_Validate()
@@ -169,7 +221,7 @@ public sealed partial class SkillNameTests(DocumentationContractFixture fixture)
             .SelectMany(static skills => Directory.EnumerateFiles(skills, "*.md", SearchOption.AllDirectories))
             .Order(StringComparer.Ordinal);
 
-    /// <summary>Inline code spans outside fenced blocks, with their line, without placeholders or <c>aspose-cli</c> commands.</summary>
+    /// <summary>Inline code spans outside fenced blocks, with their line, other than <c>aspose-cli</c> commands.</summary>
     private static IEnumerable<(string File, int Line, string Code)> InlineCode()
     {
         foreach (string file in SkillFiles())
@@ -190,7 +242,7 @@ public sealed partial class SkillNameTests(DocumentationContractFixture fixture)
                 foreach (Match span in InlineSpan().Matches(lines[index]))
                 {
                     string code = span.Groups["code"].Value.Trim();
-                    if (code.Length > 0 && !code.Contains('<') && !code.StartsWith("aspose-cli", StringComparison.Ordinal))
+                    if (code.Length > 0 && !code.StartsWith("aspose-cli", StringComparison.Ordinal))
                     {
                         yield return (file, index + 1, code);
                     }
@@ -234,4 +286,12 @@ public sealed partial class SkillNameTests(DocumentationContractFixture fixture)
 
     [GeneratedRegex(@"^(?<name>--[a-z][a-z0-9-]*)(?:[ =].*)?$")]
     private static partial Regex OptionSnippet();
+
+    /// <summary>An option named anywhere in a snippet.</summary>
+    [GeneratedRegex(@"(?<![\w-])(?<name>--[a-z][a-z0-9-]*)")]
+    private static partial Regex OptionToken();
+
+    /// <summary>A placeholder such as <c>&lt;range&gt;</c> or <c>&lt;out.pdf&gt;</c>.</summary>
+    [GeneratedRegex(@"<[^<>\s][^<>]*>")]
+    private static partial Regex Placeholder();
 }
