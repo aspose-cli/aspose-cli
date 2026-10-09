@@ -26,7 +26,10 @@ public sealed class OperationCatalog<TOp>
     /// Creates a vocabulary from its operation descriptors, published in ordinal order of their
     /// wire names. Only generated code calls this constructor.
     /// </summary>
-    /// <param name="schemaId">Canonical schema identifier of the operation document.</param>
+    /// <param name="schemaId">
+    /// The schema id of the operation document relative to the vocabulary's owner, such as
+    /// <c>ops</c>: the product whose assembly declares the vocabulary.
+    /// </param>
     /// <param name="maximumOperationCount">Largest accepted number of operations in one document.</param>
     /// <param name="description">The vocabulary's description, published on the schema.</param>
     /// <param name="contracts">Source-generated JSON metadata for every operation record.</param>
@@ -42,13 +45,11 @@ public sealed class OperationCatalog<TOp>
         ArgumentOutOfRangeException.ThrowIfLessThan(maximumOperationCount, 1);
         ArgumentNullException.ThrowIfNull(contracts);
         ArgumentNullException.ThrowIfNull(operations);
-        SchemaId = schemaId;
+        string owner = ResultEnvelope.OwnerOf(typeof(TOp).Assembly);
+        SchemaId = ResultEnvelope.SchemaUri(owner, schemaId);
         MaximumOperationCount = maximumOperationCount;
         Contracts = contracts;
-        string relative = schemaId.StartsWith(DistributionInfo.SchemaBaseUri, StringComparison.Ordinal)
-            ? schemaId[DistributionInfo.SchemaBaseUri.Length..]
-            : schemaId;
-        SchemaCommandId = "v2/" + relative.Replace(".schema.json", string.Empty, StringComparison.Ordinal);
+        SchemaCommandId = ResultSchemaSet.Id(owner, schemaId);
         DefaultHint = $"Fix the named operation; '{DistributionInfo.CommandName} schema {SchemaCommandId}' documents every operation.";
         OperationDescriptor[] ordered = [.. operations.OrderBy(static operation => operation.Record.Name, StringComparer.Ordinal)];
         foreach (OperationDescriptor operation in ordered)
@@ -82,7 +83,7 @@ public sealed class OperationCatalog<TOp>
         _schema = new GeneratedOperationSchema(() => OperationSchemaWriter.Write(SchemaId, MaximumOperationCount, description, records), Names);
     }
 
-    /// <summary>Canonical schema identifier of the operation document.</summary>
+    /// <summary>The canonical URI of the operation document's schema, which a document may state as its <c>schema</c>.</summary>
     public string SchemaId { get; }
 
     /// <summary>Largest accepted number of operations in one document.</summary>

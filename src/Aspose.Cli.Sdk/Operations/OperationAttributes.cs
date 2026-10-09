@@ -8,11 +8,14 @@ namespace Aspose.Cli.Sdk.Operations;
 /// the vocabulary's catalog (<see cref="IOperationVocabulary{TOp}.Catalog"/>), its handler
 /// interface <c>I{Base}Handler&lt;TResult&gt;</c> and the <c>Accept</c> dispatch on the base.
 /// </summary>
-/// <param name="schemaId">Canonical schema identifier of the operation document.</param>
+/// <param name="schemaId">
+/// The schema id of the operation document relative to the product, such as <c>ops</c>; the
+/// SDK publishes the schema under <c>v2/&lt;product&gt;/</c>, as it does a result's.
+/// </param>
 [AttributeUsage(AttributeTargets.Class, Inherited = false)]
 public sealed class OperationVocabularyAttribute(string schemaId) : Attribute
 {
-    /// <summary>Canonical schema identifier of the operation document.</summary>
+    /// <summary>The schema id of the operation document relative to the product.</summary>
     public string SchemaId { get; } = schemaId;
 
     /// <summary>Largest accepted number of operations in one document.</summary>

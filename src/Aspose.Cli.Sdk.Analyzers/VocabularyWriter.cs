@@ -14,6 +14,7 @@ internal sealed class VocabularyWriter(
     private const string Sdk = "global::Aspose.Cli.Sdk.Operations.";
     private const string BoundedOperation = "Aspose.Cli.Sdk.Contracts.BoundedOperation";
     private const string Json = "System.Text.Json.Serialization.";
+    private static readonly System.Text.RegularExpressions.Regex RelativeId = new("^[a-z0-9]+(-[a-z0-9]+)*$", System.Text.RegularExpressions.RegexOptions.CultureInvariant);
     private readonly Dictionary<INamedTypeSymbol, string?> _nestedLocals = new(SymbolEqualityComparer.Default);
     private readonly Dictionary<string, INamedTypeSymbol> _definitions = new(StringComparer.Ordinal);
     private readonly StringBuilder _nested = new();
@@ -50,7 +51,7 @@ internal sealed class VocabularyWriter(
 
         if (schemaId.Length == 0 || maximum < 1)
         {
-            Report(vocabulary, $"Vocabulary '{vocabulary.Name}' must name its schema id and a positive MaximumOperations.");
+            Report(vocabulary, $"Vocabulary '{vocabulary.Name}' must name a relative schema id, such as 'ops', and a positive MaximumOperations.");
         }
 
         CheckJsonContext(context);
@@ -70,23 +71,11 @@ internal sealed class VocabularyWriter(
         return _failed ? null : Source(schemaId, maximum, context!, ordered, descriptors);
     }
 
-    /// <summary>
-    /// The schema id as a C# expression. A constant built from generated build metadata has no
-    /// value this generator can see, so a field reference is emitted as that field.
-    /// </summary>
-    private string SchemaId(AttributeData declaration)
-    {
-        if (declaration.ConstructorArguments.FirstOrDefault().Value is string { Length: > 0 } literal)
-        {
-            return Literal(literal);
-        }
-
-        return declaration.ApplicationSyntaxReference?.GetSyntax() is AttributeSyntax { ArgumentList.Arguments: { Count: > 0 } arguments }
-            && arguments[0] is var argument
-            && compilation.GetSemanticModel(argument.SyntaxTree).GetSymbolInfo(argument.Expression).Symbol is IFieldSymbol { IsConst: true } field
-                ? $"{TypeName(field.ContainingType)}.{field.Name}"
-                : string.Empty;
-    }
+    /// <summary>The relative schema id as a C# literal, or empty when the declaration names none.</summary>
+    private static string SchemaId(AttributeData declaration) =>
+        declaration.ConstructorArguments.FirstOrDefault().Value is string literal && RelativeId.IsMatch(literal)
+            ? Literal(literal)
+            : string.Empty;
 
     private void CheckJsonContext(INamedTypeSymbol? context)
     {

@@ -1,5 +1,4 @@
 using System.Text.Json.Serialization;
-using Aspose.Cli.Sdk;
 using Aspose.Cli.Sdk.Serialization;
 
 namespace Aspose.Cli.Product.Words.Contracts;
@@ -13,7 +12,7 @@ public sealed record WordsOpsBatch : BoundedOperationEnvelope<WordsOp>;
 /// document as it was before the first operation, so an insertion does not shift a later
 /// operation's anchor.
 /// </summary>
-[OperationVocabulary(DistributionInfo.SchemaBaseUri + "words/ops.schema.json", MaximumOperations = 256, JsonContext = typeof(WordsOpsJsonContext))]
+[OperationVocabulary("ops", MaximumOperations = 256, JsonContext = typeof(WordsOpsJsonContext))]
 [JsonConverter(typeof(OperationJsonConverter<WordsOp>))]
 public abstract partial record WordsOp : BoundedOperation;
 

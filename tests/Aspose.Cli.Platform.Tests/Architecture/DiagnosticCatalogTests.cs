@@ -7,6 +7,7 @@ using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Serialization;
 using Xunit;
 using ExtProduct = Aspose.Cli.Sdk.Extensibility.Product;
+using Aspose.Cli.Platform.Tests;
 
 namespace Aspose.Cli.Architecture.Tests;
 
@@ -114,7 +115,7 @@ public sealed class DiagnosticCatalogTests
     private interface ITestSession;
 
 #pragma warning disable APCLI003 // A test result, not a product JSON root.
-    private sealed record TestResult() : ResultEnvelope("test/diagnostic", 1);
+    private sealed record TestResult() : TestResultEnvelope("diagnostic");
 #pragma warning restore APCLI003
 
     private sealed class StaticModule(ProductDefinition definition) : IProductModule

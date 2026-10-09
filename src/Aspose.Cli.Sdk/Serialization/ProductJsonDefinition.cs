@@ -39,8 +39,7 @@ public sealed class ProductJsonDefinition
 
     /// <summary>
     /// The result records the product's contract generator described, which the catalog
-    /// publishes under the product's schema ids; empty for a product whose results still name
-    /// full schema URIs.
+    /// publishes under the product's schema ids.
     /// </summary>
     public IReadOnlyList<Contracts.ResultRecord> ResultRecords { get; }
 

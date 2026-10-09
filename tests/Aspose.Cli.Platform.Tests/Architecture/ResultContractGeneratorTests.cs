@@ -184,21 +184,25 @@ public sealed class ResultContractGeneratorTests
         Assert.Contains("Record = typeof(global::Aspose.Cli.Sdk.Contracts.SourceInfo) }, Required = true, AlwaysPresent = [\"fingerprint\"] }", source, StringComparison.Ordinal);
     }
 
-    [Fact]
-    public void ResultWithAFullSchemaUri_PublishesNothing()
+    [Theory]
+    [InlineData("\"https://example.test/legacy.schema.json\"")]
+    [InlineData("Id")]
+    public void ResultWithoutAConstantRelativeId_IsReported(string id)
     {
         GeneratorDriverRunResult result = Run(
-            """
-            public sealed record LegacyResult() : ResultEnvelope("https://example.test/legacy.schema.json", 2)
+            $$"""
+            /// <summary>A result.</summary>
+            public sealed record LegacyResult() : ResultEnvelope({{id}}, 2)
             {
-                public string? Undescribed { get; init; }
+                public static readonly string Id = "legacy-result";
             }
 
             [JsonSerializable(typeof(LegacyResult))]
             internal sealed partial class ProductJsonContext : JsonSerializerContext;
             """);
 
-        Assert.Empty(result.Diagnostics.Where(static diagnostic => diagnostic.Id == "APCLI013"));
+        Diagnostic error = Assert.Single(result.Diagnostics, static diagnostic => diagnostic.Id == "APCLI013");
+        Assert.Contains("'LegacyResult' must pass the ResultEnvelope constructor a constant relative schema id", error.GetMessage(), StringComparison.Ordinal);
         Assert.Empty(Assert.Single(result.Results).GeneratedSources);
     }
 

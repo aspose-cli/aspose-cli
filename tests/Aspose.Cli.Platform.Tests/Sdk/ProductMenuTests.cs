@@ -323,11 +323,11 @@ public sealed class ProductMenuTests : IDisposable
     public sealed record ProtectRequest(string? Password);
 
 #pragma warning disable APCLI003 // Test results, not product JSON roots.
-    public sealed record TextResult(string Value) : ResultEnvelope("test/text", 1);
+    public sealed record TextResult(string Value) : TestResultEnvelope("text");
 
-    public sealed record FoundResult() : ResultEnvelope("test/found", 1);
+    public sealed record FoundResult() : TestResultEnvelope("found");
 
-    public sealed record EditedResult(int Operations, bool DryRun) : ResultEnvelope("test/edited", 1);
+    public sealed record EditedResult(int Operations, bool DryRun) : TestResultEnvelope("edited");
 #pragma warning restore APCLI003
 
     private static class TestHandlers

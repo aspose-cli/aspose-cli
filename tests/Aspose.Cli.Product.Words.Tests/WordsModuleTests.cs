@@ -10,7 +10,7 @@ public sealed class WordsModuleTests
     : ProductContractTests<WordsModule>
 {
     protected override IReadOnlyList<ProductSchemaSample> CanonicalInputs { get; } =
-        [new(ResultEnvelope.SchemaUri("words", "ops"), WordsOperationSample.Batch)];
+        [new(WordsOp.Catalog.SchemaId, WordsOperationSample.Batch)];
 
     protected override IReadOnlyDictionary<string, string> Homonyms { get; } =
         new Dictionary<string, string>(StringComparer.Ordinal)

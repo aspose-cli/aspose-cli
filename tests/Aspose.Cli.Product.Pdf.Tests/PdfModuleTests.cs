@@ -7,7 +7,7 @@ namespace Aspose.Cli.Product.Pdf.Tests;
 public sealed class PdfModuleTests
     : ProductContractTests<PdfModule>
 {
-    protected override IReadOnlyList<ProductSchemaSample> CanonicalInputs => [new(PdfOp.SchemaUri, CanonicalOps)];
+    protected override IReadOnlyList<ProductSchemaSample> CanonicalInputs => [new(PdfOp.Catalog.SchemaId, CanonicalOps)];
 
     protected override IReadOnlyDictionary<string, string> Homonyms { get; } =
         new Dictionary<string, string>(StringComparer.Ordinal)
@@ -86,7 +86,7 @@ public sealed class PdfModuleTests
 
     private static PdfOpsBatch CanonicalOps { get; } = new()
     {
-        Schema = PdfOp.SchemaUri,
+        Schema = PdfOp.Catalog.SchemaId,
         SchemaVersion = 2,
         Ops =
         [

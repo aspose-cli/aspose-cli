@@ -26,7 +26,7 @@ public sealed class BoundedOperationPipelineTests
         Assert.Equal(2, error.Details!["index"]!.GetValue<int>());
         Assert.Equal("set", error.Details["op"]!.GetValue<string>());
         Assert.Equal("value must be at least 0", error.Details["reason"]!.GetValue<string>());
-        Assert.Contains("aspose-cli schema v2/test/ops", error.Hint, StringComparison.Ordinal);
+        Assert.Contains("aspose-cli schema v2/common/ops", error.Hint, StringComparison.Ordinal);
         Assert.Equal(["op-0001", "op-0002"], Catalog.Prepare(new TestBatch { Ops = [Set(1), Note()] })
             .Ops.Select(static op => op.Id));
     }

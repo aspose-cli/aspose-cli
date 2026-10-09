@@ -16,7 +16,7 @@ public static class Shades
 }
 
 /// <summary>Test operations.</summary>
-[OperationVocabulary("https://schemas.aspose.com/aspose-cli/v2/test/ops.schema.json", MaximumOperations = 8, JsonContext = typeof(TestOpsJsonContext))]
+[OperationVocabulary("ops", MaximumOperations = 8, JsonContext = typeof(TestOpsJsonContext))]
 [JsonConverter(typeof(OperationJsonConverter<TestOp>))]
 public abstract partial record TestOp : BoundedOperation;
 
