@@ -561,7 +561,7 @@ public sealed record PageOutput
     public required OutputInfo Output { get; init; }
 }
 
-/// <summary>Result of creating a document.</summary>
+/// <summary>Result of <c>words create</c>: the document written.</summary>
 public sealed record WordsCreateResult() : EngineResultEnvelope("create-result", 2)
 {
     /// <summary>The created document.</summary>
@@ -569,7 +569,10 @@ public sealed record WordsCreateResult() : EngineResultEnvelope("create-result",
     public required OutputInfo Output { get; init; }
 }
 
-/// <summary>Result of a Words mutation.</summary>
+/// <summary>
+/// Result of <c>words edit</c>: one operation batch, applied or checked, and the checks run on
+/// the written document.
+/// </summary>
 public sealed record WordsEditResult() : EngineResultEnvelope("edit-result", 2), IPartialOutcome
 {
     /// <summary>The edited document.</summary>
@@ -635,7 +638,10 @@ public sealed record WordsVerification
     public string? Protection { get; init; }
 }
 
-/// <summary>Semantic comparison result.</summary>
+/// <summary>
+/// Result of <c>words compare</c>: the revisions a semantic comparison of two documents found,
+/// and the redline document when one is written.
+/// </summary>
 public sealed record WordsCompareResult() : EngineResultEnvelope("compare-result", 2)
 {
     /// <summary>The original document.</summary>
@@ -688,7 +694,10 @@ public sealed record RevisionSample
     public string? Text { get; init; }
 }
 
-/// <summary>One window of search hits; its <c>window</c> counts hits and continues with <c>--skip</c>.</summary>
+/// <summary>
+/// Result of <c>words query search</c>: one window of search hits; its <c>window</c> counts hits
+/// and continues with <c>--skip</c>.
+/// </summary>
 public sealed record WordsSearchResult() : WindowedResultEnvelope("search-result", 2)
 {
     /// <summary>The searched document.</summary>
@@ -734,7 +743,7 @@ public sealed record WordsSearchHit
     public required string Snippet { get; init; }
 }
 
-/// <summary>Result of splitting a document.</summary>
+/// <summary>Result of <c>words split</c>: the parts the document was split into, in document order.</summary>
 public sealed record WordsSplitResult() : EngineResultEnvelope("split-result", 2)
 {
     /// <summary>The split document.</summary>
@@ -758,7 +767,7 @@ public sealed record SplitOutput
     public string? Source { get; init; }
 }
 
-/// <summary>Result of extracting assets.</summary>
+/// <summary>Result of <c>words extract</c>: the files written for the images, comments, text or tables extracted.</summary>
 public sealed record WordsExtractResult() : EngineResultEnvelope("extract-result", 2)
 {
     /// <summary>The document extracted from.</summary>

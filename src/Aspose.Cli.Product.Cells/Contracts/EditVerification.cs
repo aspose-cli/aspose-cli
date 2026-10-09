@@ -50,10 +50,10 @@ public sealed record VerifiedCellChange
     /// <summary>A1 cell address.</summary>
     public required string Cell { get; init; }
 
-    /// <summary>Cell before the edit; null when it was empty.</summary>
+    /// <summary>Cell before the edit; omitted when it was empty.</summary>
     public CellSide? Left { get; init; }
 
-    /// <summary>Cell after the edit; null when it is empty.</summary>
+    /// <summary>Cell after the edit; omitted when it is empty.</summary>
     public CellSide? Right { get; init; }
 }
 
@@ -70,9 +70,9 @@ public sealed record VerificationOtherChange
     /// <summary>A1 cell address for a cell-level change.</summary>
     public string? Cell { get; init; }
 
-    /// <summary>Cell before the edit; null when absent or sheet-level.</summary>
+    /// <summary>Cell before the edit; omitted when absent or sheet-level.</summary>
     public CellSide? Left { get; init; }
 
-    /// <summary>Cell after the edit; null when absent or sheet-level.</summary>
+    /// <summary>Cell after the edit; omitted when absent or sheet-level.</summary>
     public CellSide? Right { get; init; }
 }

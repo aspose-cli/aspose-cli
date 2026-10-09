@@ -9,7 +9,7 @@ namespace Aspose.Cli.Sdk.Contracts;
 [SchemaId("result-window")]
 public sealed record ResultWindow
 {
-    /// <summary>What <see cref="Returned"/> and <see cref="Total"/> count, e.g. <c>page</c>, <c>block</c> or <c>hit</c>.</summary>
+    /// <summary>The unit <see cref="Returned"/> and <see cref="Total"/> count, e.g. <c>page</c>, <c>block</c> or <c>hit</c>.</summary>
     public required string Unit { get; init; }
 
     /// <summary>How many units this result returned.</summary>
