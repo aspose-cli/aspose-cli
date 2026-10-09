@@ -301,6 +301,20 @@ public sealed class ResultSchemaSetTests
         Assert.Equal(ErrorEnvelope.SchemaUri, JsonNode.Parse(error)!["$id"]!.GetValue<string>());
     }
 
+    [Fact]
+    public void ProductAssemblyWithoutAProductModule_HasNoSchemaOwner()
+    {
+        static System.Reflection.Assembly Named(string name) =>
+            System.Reflection.Emit.AssemblyBuilder.DefineDynamicAssembly(new System.Reflection.AssemblyName(name), System.Reflection.Emit.AssemblyBuilderAccess.Run);
+
+        Assert.Equal("common", ResultEnvelope.OwnerOf(typeof(ResultEnvelope).Assembly));
+        Assert.Equal("common", ResultEnvelope.OwnerOf(Named("Aspose.Cli.Product.Sample.Tests")));
+        Assert.Contains(
+            "'Aspose.Cli.Product.Sample' declares no product module",
+            Assert.Throws<InvalidOperationException>(() => ResultEnvelope.OwnerOf(Named("Aspose.Cli.Product.Sample"))).Message,
+            StringComparison.Ordinal);
+    }
+
     private static class Nested
     {
         public sealed record Twin;
