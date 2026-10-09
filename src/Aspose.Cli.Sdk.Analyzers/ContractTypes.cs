@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text;
+using System.Text.RegularExpressions;
 using CSharpDisplay = Microsoft.CodeAnalysis.CSharp.SymbolDisplay;
 
 namespace Aspose.Cli.Sdk.Analyzers;
@@ -11,6 +12,9 @@ namespace Aspose.Cli.Sdk.Analyzers;
 /// </summary>
 internal static class ContractTypes
 {
+    /// <summary>A schema id relative to its owner, such as <c>render-result</c>: lower-case words joined by hyphens.</summary>
+    internal static readonly Regex RelativeId = new("^[a-z0-9]+(-[a-z0-9]+)*$", RegexOptions.CultureInvariant);
+
     internal static AttributeData? Find(ISymbol symbol, string attribute) =>
         symbol.GetAttributes().FirstOrDefault(data => data.AttributeClass?.ToDisplayString() == attribute);
 
