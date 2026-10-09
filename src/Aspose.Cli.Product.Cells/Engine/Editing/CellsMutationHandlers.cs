@@ -9,7 +9,7 @@ namespace Aspose.Cli.Product.Cells.Engine.Editing;
 /// Applies one validated operation to an in-memory workbook: routes it to its mapper, which
 /// does the work and returns the count of cells it touched where that is meaningful, and
 /// launders Aspose.Cells exceptions into <see cref="EngineOpException"/>.
-/// <see cref="CellsMutationService"/> runs the batch.
+/// <see cref="CellsEdit"/> runs the batch.
 /// </summary>
 internal sealed class CellsMutationHandlers : ICellsOpHandler<long?>
 {

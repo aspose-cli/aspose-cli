@@ -19,7 +19,7 @@ public sealed class CellsSparseQueryTests
         int original = sheet.Cells.Count;
         using var deadline = OperationDeadline.Start(null);
         var budgets = Budgets(deadline, 3);
-        var result = SearchMatcher.Find(budgets, workbook, new SearchRequest { Query = CellsFixture.Search("needle") }, null);
+        var result = SearchMatcher.Find(budgets, workbook, new SearchRequest { Input = "sample.xlsx", Query = CellsFixture.Search("needle") }, null);
         Assert.Equal(["A1", "C2", "XFD1048576"], result.Hits.Select(hit => hit.Cell));
         Assert.False(result.Truncated);
         Assert.Equal(0, budgets.Remaining(CellsBudgetDomains.Cells));
@@ -34,12 +34,12 @@ public sealed class CellsSparseQueryTests
         workbook.Worksheets[0].Cells["XFD1048576"].PutValue("needle");
         using var deadline = OperationDeadline.Start(null);
         var result = SearchMatcher.Find(Budgets(deadline, 2), workbook,
-            new SearchRequest { Query = CellsFixture.Search("needle", maxHits: 1) }, null);
+            new SearchRequest { Input = "sample.xlsx", Query = CellsFixture.Search("needle", maxHits: 1) }, null);
         Assert.Equal("A1", Assert.Single(result.Hits).Cell);
         Assert.True(result.Truncated);
         Assert.Equal(ErrorCodes.InputBudgetExceeded, Assert.Throws<CliException>(() =>
             SearchMatcher.Find(Budgets(deadline, 1), workbook,
-                new SearchRequest { Query = CellsFixture.Search("needle", maxHits: 1) }, null)).Code);
+                new SearchRequest { Input = "sample.xlsx", Query = CellsFixture.Search("needle", maxHits: 1) }, null)).Code);
     }
 
     [Fact]
@@ -54,7 +54,7 @@ public sealed class CellsSparseQueryTests
         int original = first.Cells.Count + second.Cells.Count;
         using var deadline = OperationDeadline.Start(null);
         var result = InfoProjection.Summarize(Budgets(deadline, original), workbook,
-            "sample.xlsx", new InfoRequest { Details = [InfoDetails.Errors] });
+            new InfoRequest { Input = "sample.xlsx", Details = [InfoDetails.Errors] });
         Assert.Equal(1000, result.Summary.FormulaErrors!.Count);
         Assert.Equal("A1", result.Summary.FormulaErrors[0].Cell);
         Assert.Equal("A1000", result.Summary.FormulaErrors[^1].Cell);
@@ -122,9 +122,9 @@ public sealed class CellsSparseQueryTests
     {
         if (inspect)
         {
-            _ = InfoProjection.Summarize(budgets, workbook, "sample.xlsx", new InfoRequest { Details = [InfoDetails.Errors] });
+            _ = InfoProjection.Summarize(budgets, workbook, new InfoRequest { Input = "sample.xlsx", Details = [InfoDetails.Errors] });
         }
-        else { _ = SearchMatcher.Find(budgets, workbook, new SearchRequest { Query = CellsFixture.Search("needle", maxHits: 1) }, null); }
+        else { _ = SearchMatcher.Find(budgets, workbook, new SearchRequest { Input = "sample.xlsx", Query = CellsFixture.Search("needle", maxHits: 1) }, null); }
     }
 
     private static ResourceBudgetLedger Budgets(OperationDeadline deadline, int cells) =>

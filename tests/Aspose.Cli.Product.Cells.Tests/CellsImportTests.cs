@@ -187,16 +187,16 @@ public sealed class CellsImportTests : IClassFixture<CellsFixture>
     public void ImportSheet_BestEffortFailureLeavesNoSheetBehind()
     {
         string source = CreateSource("best-effort-source.xlsx");
-        EditResult result = _fixture.Engine.ApplyOps(
-            _fixture.CreateSalesWorkbook("best-effort.xlsx"),
-            Parse($$"""
+        EditResult result = CellsEdit.Run(_fixture.Session,
+            new EditRequest
+            {
+                Input = _fixture.CreateSalesWorkbook("best-effort.xlsx"),
+                Batch = Parse($$"""
                 { "ops": [
                   { "op": "import_sheet", "sheet": "Totals", "path": {{Json(source)}}, "name": "Data" },
                   { "op": "set_values", "sheet": "Second", "range": "A2", "values": [["after"]] }
                 ] }
                 """),
-            new EditRequest
-            {
                 Output = TestOutput.At(_fixture.Temp.File("best-effort.out.xlsx"), overwrite: true),
                 Options = new EditCommandOptions { BestEffort = true },
             });
@@ -372,11 +372,11 @@ public sealed class CellsImportTests : IClassFixture<CellsFixture>
         }
 
         string passwordEnv = password is null ? string.Empty : """, "passwordEnv": "SOURCE_PWD" """;
-        CliException error = Assert.Throws<CliException>(() => _fixture.Engine.ApplyOps(
-            _fixture.CreateSalesWorkbook($"encrypted-{code}-target.xlsx"),
-            Parse($$"""{ "ops": [ { "op": "import_sheet", "sheet": "Totals", "path": {{Json(source)}}{{passwordEnv}} } ] }"""),
+        CliException error = Assert.Throws<CliException>(() => CellsEdit.Run(_fixture.Session,
             new EditRequest
             {
+                Input = _fixture.CreateSalesWorkbook($"encrypted-{code}-target.xlsx"),
+                Batch = Parse($$"""{ "ops": [ { "op": "import_sheet", "sheet": "Totals", "path": {{Json(source)}}{{passwordEnv}} } ] }"""),
                 Output = TestOutput.At(_fixture.Temp.File($"encrypted-{code}.out.xlsx"), overwrite: true),
                 OpSecrets = password is null ? null : new Dictionary<string,
                 Secret> { ["SOURCE_PWD"] = new(password) },
@@ -544,10 +544,8 @@ public sealed class CellsImportTests : IClassFixture<CellsFixture>
 
     private EditResult ApplyResult(string path, string operations, bool recalculate = true, bool verify = false)
     {
-        EditResult result = _fixture.Engine.ApplyOps(
-            path,
-            Parse($$"""{ "ops": [ {{operations}} ] }"""),
-            new EditRequest { Output = TestOutput.At(_fixture.Temp.File(Path.GetFileNameWithoutExtension(path) + ".out.xlsx"), overwrite: true), Recalculate = recalculate, Verify = verify });
+        EditResult result = CellsEdit.Run(_fixture.Session,
+            new EditRequest { Input = path, Batch = Parse($$"""{ "ops": [ {{operations}} ] }"""), Output = TestOutput.At(_fixture.Temp.File(Path.GetFileNameWithoutExtension(path) + ".out.xlsx"), overwrite: true), Recalculate = recalculate, Verify = verify });
         Assert.All(result.Applied, static outcome => Assert.Equal(OpStatuses.Ok, outcome.Status));
         return result;
     }

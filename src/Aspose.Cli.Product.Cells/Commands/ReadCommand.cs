@@ -1,5 +1,6 @@
 using System.CommandLine;
-using Aspose.Cli.Sdk.Extensibility;
+using System.Globalization;
+using Aspose.Cli.Sdk.Extensibility.Output;
 
 namespace Aspose.Cli.Product.Cells.Commands;
 
@@ -15,7 +16,7 @@ internal static class ReadCommand
     private const int MinMaxCells = 1;
     private const int MaxMaxCells = 1_000_000;
 
-    public static Command Create(IProductCommandHost<ICellsEngine> host)
+    public static CommandDefinition<ReadRequest, WorkbookReadResult> Create()
     {
         var sheet = new Option<string?>("--sheet")
         {
@@ -42,11 +43,10 @@ internal static class ReadCommand
             Description = $"Cell budget per call ({MinMaxCells}-{MaxMaxCells}).",
             DefaultValueFactory = _ => 10_000,
         };
-        return StandardCommand.Create(
-            host,
+        return new(
             "range",
             "Read cell data of one sheet as a windowed projection.",
-            new CommandTraits { Input = CellsCommands.Workbook("Workbook to read.") },
+            new CommandTraits { Input = CellsTraits.Workbook("Workbook to read.") },
             [sheet, rangeOption, scanOption, scopeOption, maxCellsOption],
             (parse, standard) =>
             {
@@ -69,30 +69,91 @@ internal static class ReadCommand
                             + " and follow each window.next command, or raise --max-cells.");
                 }
 
-                WorkbookReadResult result = standard.OpenEngine().Read(input, new ReadRequest
+                return new ReadRequest
                 {
+                    Input = input,
                     SheetName = sheetName,
                     Range = range,
                     Scan = scan,
                     Scope = scope,
                     MaxCells = maxCells,
                     Password = standard.InputPassword,
-                });
-
-                // An explicit range is a complete, bounded request. Only a CLI-planned scan
-                // has another page: a default read scans the used range, and a generated
-                // page scans the region its command carries.
-                return result with
-                {
-                    Window = result.Window! with
-                    {
-                        Next = NextReadCommand.Build(standard.Continuation(), result, range, scan, maxCells),
-                    },
                 };
-            }).WithExamples(
+            },
+            Table)
+        {
+            // An explicit range is a complete, bounded request. Only a CLI-planned scan
+            // has another page: a default read scans the used range, and a generated
+            // page scans the region its command carries.
+            Finish = static (_, request, result, standard) => result with
+            {
+                Window = result.Window! with
+                {
+                    Next = NextReadCommand.Build(standard.Continuation(), result, request.Range, request.Scan, request.MaxCells),
+                },
+            },
+            Examples =
             [
                 "cells query range book.xlsx --range Sales!A1:D10 --scope values --output json",
                 "cells query range book.xlsx --sheet Sales --scope formulas --output json",
-            ]);
+            ],
+        };
     }
+
+    internal static void Table(WorkbookReadResult read, TableSurface surface)
+    {
+        SheetProjection sheet = read.Sheet;
+        var headline = new List<string> { sheet.Name };
+        if (sheet.Range is { } returned)
+        {
+            headline.Add(returned);
+        }
+
+        if (sheet.UsedRange is { } used)
+        {
+            headline.Add($"(used {used})");
+        }
+
+        surface.Out.WriteLine(string.Join(' ', headline));
+
+        if (sheet.Cells is { Count: > 0 } cells && sheet.Range is not null)
+        {
+            RangeRef range = A1.ParseRange(sheet.Range).Range;
+
+            string[] headers = new string[range.ColumnCount + 1];
+            headers[0] = string.Empty;
+            for (int column = 0; column < range.ColumnCount; column++)
+            {
+                headers[column + 1] = A1.ColumnName(range.Start.Column + column);
+            }
+
+            var table = new TextTable(headers);
+            for (int row = 0; row < cells.Count; row++)
+            {
+                string[] line = new string[range.ColumnCount + 1];
+                line[0] = TableText.Int(range.Start.Row + row + 1);
+                for (int column = 0; column < cells[row].Count; column++)
+                {
+                    line[column + 1] = FormatCellValue(cells[row][column]);
+                }
+
+                table.AddRow(line);
+            }
+
+            table.WriteTo(surface.Out, surface.Format);
+        }
+        else if (read.Window is { Truncated: true })
+        {
+            surface.Out.WriteLine("cell data omitted: the sheet exceeds the cell budget");
+        }
+    }
+
+    private static string FormatCellValue(CellData cell) => cell.V switch
+    {
+        null => string.Empty,
+        bool value => value ? "TRUE" : "FALSE",
+        double value => value.ToString(CultureInfo.InvariantCulture),
+        string value => value,
+        var value => Convert.ToString(value, CultureInfo.InvariantCulture) ?? string.Empty,
+    };
 }

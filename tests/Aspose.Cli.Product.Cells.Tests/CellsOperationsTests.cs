@@ -22,11 +22,11 @@ public sealed class CellsOperationsTests : IClassFixture<CellsFixture>
 
     private EditResult Apply(string path, string operations, string output,
         IReadOnlyDictionary<string, Secret>? secrets = null) =>
-        _fixture.Engine.ApplyOps(
-            path,
-            ParseOps(operations),
+        CellsEdit.Run(_fixture.Session,
             new EditRequest
             {
+                Input = path,
+                Batch = ParseOps(operations),
                 Output = TestOutput.At(_fixture.Temp.File(output), overwrite: true),
                 OpSecrets = secrets,
             });
@@ -46,11 +46,11 @@ public sealed class CellsOperationsTests : IClassFixture<CellsFixture>
     public void BestEffort_ReportsSuccessfulAndFailedAttemptedTargets()
     {
         string source = _fixture.CreateSalesWorkbook("attempted.xlsx");
-        EditResult result = _fixture.Engine.ApplyOps(
-            source,
-            ParseOps("{\"ops\":[{\"op\":\"set_values\",\"sheet\":\"Data\",\"range\":\"A1\",\"values\":[[1]]},{\"op\":\"clear_range\",\"sheet\":\"Missing\",\"range\":\"A1:B1\"}]}"),
+        EditResult result = CellsEdit.Run(_fixture.Session,
             new EditRequest
             {
+                Input = source,
+                Batch = ParseOps("{\"ops\":[{\"op\":\"set_values\",\"sheet\":\"Data\",\"range\":\"A1\",\"values\":[[1]]},{\"op\":\"clear_range\",\"sheet\":\"Missing\",\"range\":\"A1:B1\"}]}"),
                 Output = TestOutput.At(_fixture.Temp.File("attempted.out.xlsx"), overwrite: true),
                 Options = new EditCommandOptions { BestEffort = true },
             });
@@ -67,10 +67,8 @@ public sealed class CellsOperationsTests : IClassFixture<CellsFixture>
         string source = _fixture.CreateSalesWorkbook("budget.xlsx");
         string output = _fixture.Temp.File("budget.out.xlsx");
 
-        CliException error = Assert.Throws<CliException>(() => _fixture.Engine.ApplyOps(
-            source,
-            ParseOps("{\"ops\":[{\"op\":\"set_formula\",\"range\":\"A1:XFD1048576\",\"formula\":\"=1\"}]}"),
-            new EditRequest { Output = TestOutput.At(output, overwrite: true) }));
+        CliException error = Assert.Throws<CliException>(() => CellsEdit.Run(_fixture.Session,
+            new EditRequest { Input = source, Batch = ParseOps("{\"ops\":[{\"op\":\"set_formula\",\"range\":\"A1:XFD1048576\",\"formula\":\"=1\"}]}"), Output = TestOutput.At(output, overwrite: true) }));
 
         Assert.Equal(ErrorCodes.InputBudgetExceeded, error.Code);
         Assert.False(File.Exists(output));
@@ -142,7 +140,7 @@ public sealed class CellsOperationsTests : IClassFixture<CellsFixture>
     [InlineData("""{ "op": "create_pivot", "sheet": "Pivot", "sourceRange": "Data!A1:B3", "at": "A1", "rows": ["Ghost"], "values": [{ "field": "Amount" }] }""")]
     public void PivotWithUnknownField_IsAnActionableOperationsError(string pivotOperation)
     {
-        string created = _fixture.Engine.Create(new NewWorkbookRequest
+        string created = CellsCreate.Run(_fixture.Session, new NewWorkbookRequest
         {
             Output = TestOutput.At(_fixture.Temp.File("pivot.xlsx"), overwrite: true),
             SheetNames = ["Data", "Pivot"],
@@ -231,10 +229,10 @@ public sealed class CellsOperationsTests : IClassFixture<CellsFixture>
             Assert.True(cells["B3"].GetStyle().IsLocked);
         }
 
-        WorkbookReadResult read = _fixture.Engine.Read(
-            result.Output.Path,
+        WorkbookReadResult read = CellsRead.Run(_fixture.Session,
             new ReadRequest
             {
+                Input = result.Output.Path,
                 SheetName = "Data",
                 Range = global::Aspose.Cli.Product.Cells.Contracts.Addressing.A1.ParseRange("B2:B3").Range,
                 Scope = ReadScope.Full,
@@ -327,10 +325,10 @@ public sealed class CellsOperationsTests : IClassFixture<CellsFixture>
             Assert.Equal("=$C3=\"OVERDUE\"", condition.GetFormula1(2, 0));
         }
 
-        WorkbookReadResult read = _fixture.Engine.Read(
-            result.Output.Path,
+        WorkbookReadResult read = CellsRead.Run(_fixture.Session,
             new ReadRequest
             {
+                Input = result.Output.Path,
                 SheetName = "Data",
                 Range = global::Aspose.Cli.Product.Cells.Contracts.Addressing.A1.ParseRange("B2:B2").Range,
                 Scope = ReadScope.Full,

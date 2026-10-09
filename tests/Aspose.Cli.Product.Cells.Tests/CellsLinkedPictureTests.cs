@@ -49,8 +49,7 @@ public sealed class CellsLinkedPictureTests
         Assert.True(string.IsNullOrEmpty(actual.SourceFullName));
 
         var sink = new MemoryArtifactSink();
-        fixture.Engine.RenderView(
-            input,
+        CellsView.Render(fixture.Session, input,
             new ViewRenderRequest
             {
                 View = CellsViews.Workbook,

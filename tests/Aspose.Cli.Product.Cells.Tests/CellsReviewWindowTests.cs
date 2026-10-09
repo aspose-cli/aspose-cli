@@ -42,8 +42,8 @@ public sealed class CellsReviewWindowTests : IClassFixture<CellsFixture>
             workbook.Save(path);
         }
 
-        Ports.CellsReviewSheetLayout sheet = Assert.Single(
-            ((Ports.ICellsReviewLayoutPort)_fixture.Engine).Inspect(path, null).Sheets);
+        CellsReviewSheetLayout sheet = Assert.Single(
+            CellsView.Layout(_fixture.Session, path, null).Sheets);
 
         Assert.Equal(3, sheet.ClippedCells.Count);
         Assert.Equal(["A1", "A2", "D5"], sheet.ClippedCells.Samples);
@@ -73,8 +73,7 @@ public sealed class CellsReviewWindowTests : IClassFixture<CellsFixture>
         }
 
         var sink = new MemoryArtifactSink();
-        ViewManifest manifest = _fixture.Engine.RenderView(
-            path,
+        ViewManifest manifest = CellsView.Render(_fixture.Session, path,
             new ViewRenderRequest { View = CellsViews.Sheets, MaxPartCount = 8, Purpose = ViewPurpose.Evidence },
             sink);
 

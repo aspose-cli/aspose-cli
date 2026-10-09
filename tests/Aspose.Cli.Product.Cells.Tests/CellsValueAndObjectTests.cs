@@ -36,8 +36,9 @@ public sealed class CellsValueAndObjectTests : IClassFixture<CellsFixture>
             Assert.Equal(11.5, workbook.Worksheets["Data"].Cells["A1"].GetStyle().Font.DoubleSize);
         }
 
-        WorkbookReadResult read = _fixture.Engine.Read(output, new ReadRequest
+        WorkbookReadResult read = CellsRead.Run(_fixture.Session, new ReadRequest
         {
+            Input = output,
             SheetName = "Data",
             Range = A1.ParseRange("A1").Range,
             Scope = ReadScope.Full,
@@ -243,8 +244,6 @@ public sealed class CellsValueAndObjectTests : IClassFixture<CellsFixture>
         CellsOp.Catalog.Parse<CellsOpsBatch>(json, Aspose.Cli.Generated.ProductJsonContext.Definition);
 
     private string Apply(string path, string operations, string output) =>
-        _fixture.Engine.ApplyOps(
-            path,
-            Parse(operations),
-            new EditRequest { Output = TestOutput.At(_fixture.Temp.File(output), overwrite: true) }).Output!.Path;
+        CellsEdit.Run(_fixture.Session,
+            new EditRequest { Input = path, Batch = Parse(operations), Output = TestOutput.At(_fixture.Temp.File(output), overwrite: true) }).Output!.Path;
 }

@@ -28,13 +28,14 @@ public sealed class CellsFixture : IDisposable
     public ILicenseGate Gate { get; } = TestLicense.Apply(
         static (resolution, environment) => new CellsLicenseGate(resolution, environment));
 
-    internal CellsEngine Engine
+    /// <summary>The session of one invocation, as activation builds it.</summary>
+    internal CellsSession Session
     {
         get
         {
             TestLicense.Require(EvaluationLimit);
-            return ProductTestBudgets.StartEngine<CellsModule, CellsEngine>(
-                (budgets, writer) => new CellsEngine(Outputs(writer), budgets));
+            return ProductTestBudgets.StartEngine<CellsModule, CellsSession>(
+                (budgets, writer) => NewSession(Outputs(writer), budgets));
         }
     }
 
@@ -42,18 +43,21 @@ public sealed class CellsFixture : IDisposable
     internal OutputPipeline<Workbook> Outputs(SafeFileWriter writer) => new(Gate, new CellsEvaluationProfile(), writer);
 
     /// <summary>
-    /// Runs one engine call as a command does: on its own engine and write pipeline, whose
-    /// evaluation disclosure the command template adds to the result.
+    /// Runs one handler as a command does: on its own session and write pipeline, whose
+    /// evaluation disclosure the command adds to the result.
     /// </summary>
-    internal TResult Disclosed<TResult>(Func<CellsEngine, TResult> call)
+    internal TResult Disclosed<TResult>(Func<CellsSession, TResult> call)
         where TResult : ResultEnvelope
     {
         TestLicense.Require(EvaluationLimit);
         OutputPipeline<Workbook>? outputs = null;
-        CellsEngine engine = ProductTestBudgets.StartEngine<CellsModule, CellsEngine>(
-            (budgets, writer) => new CellsEngine(outputs = Outputs(writer), budgets));
-        return (TResult)outputs!.Disclose(call(engine));
+        CellsSession session = ProductTestBudgets.StartEngine<CellsModule, CellsSession>(
+            (budgets, writer) => NewSession(outputs = Outputs(writer), budgets));
+        return (TResult)outputs!.Disclose(call(session));
     }
+
+    private static CellsSession NewSession(OutputPipeline<Workbook> outputs, ResourceBudgetLedger budgets) =>
+        new(outputs, budgets, new CellsWorkbookLoader(budgets));
 
     internal CellsFontEnvironment Fonts
     {

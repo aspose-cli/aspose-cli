@@ -26,7 +26,7 @@ public sealed class CellsTextImportTests : IClassFixture<CellsFixture>
         string path = _fixture.Temp.File("erp-gbk.csv");
         File.WriteAllBytes(path, Encoding.GetEncoding("GB18030").GetBytes("大区,金额\n华东一区,\"1,234.50\"\n"));
 
-        CliException refused = Assert.Throws<CliException>(() => _fixture.Engine.Read(path, new ReadRequest()));
+        CliException refused = Assert.Throws<CliException>(() => CellsRead.Run(_fixture.Session, new ReadRequest { Input = path }));
         Assert.Equal(ErrorCodes.InputEncodingInvalid, refused.Code);
         Assert.Contains($"cells convert \"{path}\" --to xlsx --encoding gb18030", refused.Hint, StringComparison.Ordinal);
 
@@ -41,7 +41,7 @@ public sealed class CellsTextImportTests : IClassFixture<CellsFixture>
         string path = _fixture.Temp.File("partner.csv");
         File.WriteAllText(path, "Land;Preis;Betrag;Datum\nDE;2,71;1.253,96;20.08.2026\n", new UTF8Encoding(true));
 
-        CliException refused = Assert.Throws<CliException>(() => _fixture.Engine.Read(path, new ReadRequest()));
+        CliException refused = Assert.Throws<CliException>(() => CellsRead.Run(_fixture.Session, new ReadRequest { Input = path }));
         Assert.Equal(ErrorCodes.FormatAmbiguous, refused.Code);
         Assert.Equal("2,71", refused.Details!["sample"]!.GetValue<string>());
         Assert.Contains($"cells convert \"{path}\" --to xlsx --culture de-DE", refused.Hint, StringComparison.Ordinal);
@@ -58,7 +58,7 @@ public sealed class CellsTextImportTests : IClassFixture<CellsFixture>
         string path = _fixture.Temp.File("us.csv");
         File.WriteAllText(path, "Region,Amount,Note\nNortheast,\"1,234.50\",Müller\n");
 
-        WorkbookReadResult read = _fixture.Engine.Read(path, new ReadRequest());
+        WorkbookReadResult read = CellsRead.Run(_fixture.Session, new ReadRequest { Input = path });
 
         Assert.Equal("1234.5", read.Sheet!.Cells![1][1].V?.ToString());
         Assert.Equal("Müller", read.Sheet.Cells![1][2].V?.ToString());
@@ -82,7 +82,7 @@ public sealed class CellsTextImportTests : IClassFixture<CellsFixture>
 
         File.WriteAllBytes(path, [.. content]);
 
-        WorkbookReadResult read = _fixture.Engine.Read(path, new ReadRequest());
+        WorkbookReadResult read = CellsRead.Run(_fixture.Session, new ReadRequest { Input = path });
 
         Assert.Equal("text", read.Sheet!.Cells![0][0].V?.ToString());
     }
@@ -99,7 +99,7 @@ public sealed class CellsTextImportTests : IClassFixture<CellsFixture>
         content.AddRange(Encoding.ASCII.GetBytes("\n"));
         File.WriteAllBytes(path, [.. content]);
 
-        CliException refused = Assert.Throws<CliException>(() => _fixture.Engine.Read(path, new ReadRequest()));
+        CliException refused = Assert.Throws<CliException>(() => CellsRead.Run(_fixture.Session, new ReadRequest { Input = path }));
 
         Assert.Equal(ErrorCodes.InputEncodingInvalid, refused.Code);
         Assert.Equal(invalidOffset, refused.Details!["offset"]!.GetValue<long>());
@@ -115,7 +115,7 @@ public sealed class CellsTextImportTests : IClassFixture<CellsFixture>
         content.AddRange(Encoding.ASCII.GetBytes("ab\n"));
         File.WriteAllBytes(path, [.. content]);
 
-        CliException refused = Assert.Throws<CliException>(() => _fixture.Engine.Read(path, new ReadRequest()));
+        CliException refused = Assert.Throws<CliException>(() => CellsRead.Run(_fixture.Session, new ReadRequest { Input = path }));
 
         Assert.Equal(ErrorCodes.InputEncodingInvalid, refused.Code);
         Assert.Equal(SplitBoundaries[0] - 2, refused.Details!["offset"]!.GetValue<long>());
@@ -168,12 +168,13 @@ public sealed class CellsTextImportTests : IClassFixture<CellsFixture>
     }
 
     private ConvertResult ImportText(string path, TextImportOptions import) =>
-        _fixture.Engine.Convert(path, new ConvertRequest
+        CellsConvert.Run(_fixture.Session, new ConvertRequest
         {
+            Input = path,
             Output = TestOutput.At(_fixture.Temp.File(Path.GetFileNameWithoutExtension(path) + "-" + Guid.NewGuid().ToString("N") + ".xlsx"), format: "xlsx"),
             TextImport = import,
         });
 
     private WorkbookReadResult ImportAndRead(string path, TextImportOptions import) =>
-        _fixture.Engine.Read(ImportText(path, import).Output.Path, new ReadRequest());
+        CellsRead.Run(_fixture.Session, new ReadRequest { Input = ImportText(path, import).Output.Path });
 }

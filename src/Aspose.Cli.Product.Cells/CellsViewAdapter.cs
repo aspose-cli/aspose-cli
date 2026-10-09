@@ -7,7 +7,7 @@ namespace Aspose.Cli.Product.Cells;
 /// Worksheet image and interactive workbook views, and the bounded
 /// workbook-structure findings of their review.
 /// </summary>
-internal sealed class CellsViewAdapter : IProductViewAdapter<ICellsEngine>
+internal sealed class CellsViewAdapter : IProductViewAdapter<CellsSession>
 {
     private const string Hint =
         "Adjust only the affected worksheet layout, save, and run review again in a new directory.";
@@ -27,31 +27,25 @@ internal sealed class CellsViewAdapter : IProductViewAdapter<ICellsEngine>
     public IReadOnlyList<ReviewCheck> Checks => CellsReviewChecks.All;
 
     public ViewManifest Render(
-        ICellsEngine port,
+        CellsSession session,
         string filePath,
         ViewRenderRequest request,
         IViewArtifactSink artifacts) =>
-        port.RenderView(filePath, request, artifacts);
+        CellsView.Render(session, filePath, request, artifacts);
 
     public ProductReviewAssessment Assess(
-        ICellsEngine port,
+        CellsSession session,
         string filePath,
         ViewRenderRequest request,
         ViewManifest rendered)
     {
-        WorkbookInfoResult info = port.GetInfo(filePath, new InfoRequest
+        WorkbookInfoResult info = CellsInfo.Run(session, new InfoRequest
         {
+            Input = filePath,
             Details = [InfoDetails.Errors],
             Password = request.Password,
         });
-        if (port is not ICellsReviewLayoutPort reviewPort)
-        {
-            throw new InvalidOperationException(
-                "The activated Cells engine does not provide review layout facts.");
-        }
-        CellsReviewLayout layout = reviewPort.Inspect(
-            filePath,
-            request.Password);
+        CellsReviewLayout layout = CellsView.Layout(session, filePath, request.Password);
         SheetInfo[] visible = info.Workbook.Sheets
             .Where(static sheet => !sheet.Hidden)
             .ToArray();
