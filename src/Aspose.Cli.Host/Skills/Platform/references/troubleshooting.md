@@ -44,7 +44,7 @@ with `code`, `message` and `hint`, and on stderr in table output.
 | 7 | License | `LICENSE_FILE_NOT_FOUND`, `LICENSE_INVALID`, `EVALUATION_LIMIT` |
 | 8 | Partial | a `--best-effort` failure, a failed review, `OUTPUT_PUBLICATION_PARTIAL` |
 | 9 | Timeout | `OPERATION_TIMEOUT` |
-| 130 | Cancelled | the caller interrupted the command, as with Ctrl+C; no error is written |
+| 130 | Cancelled | Ctrl+C interrupted `update`, or a command run with `--timeout`, which supervises it in a worker; no error is written. Otherwise the operating system ends the process with its own code |
 
 `capabilities --output json` lists every error and warning code of this build
 with its owner, severity and exit code under `diagnostics`.
