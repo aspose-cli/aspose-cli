@@ -1,7 +1,10 @@
 using System.Globalization;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using Aspose.Cli.Host.Output;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
+using Aspose.Cli.Sdk.Serialization;
 
 namespace Aspose.Cli.Host.Invocation;
 
@@ -11,20 +14,10 @@ namespace Aspose.Cli.Host.Invocation;
 /// </summary>
 internal static class ProcessFailureBoundary
 {
-    private const string BootstrapFailureEnvelope = $$"""
-        {
-          "schema": "{{ErrorEnvelope.SchemaUri}}",
-          "schemaVersion": 2,
-          "error": {
-            "code": "INTERNAL_ERROR",
-            "message": "The CLI could not complete process startup.",
-            "details": {
-              "diagnosticId": "HOST-PROCESS-0003"
-            },
-            "hint": "Retry once; if startup still fails, report the diagnostic id and command without including secrets."
-          }
-        }
-        """;
+    private const string BootstrapFallbackLine =
+        "error INTERNAL_ERROR: The CLI could not complete process startup. "
+        + "Diagnostic id: " + HostDiagnosticIds.BootstrapFailure + ".";
+
     private static int _unhandledHandlerInstalled;
 
     private static (OutputMode Output, bool Quiet) ResolveErrorOutput(
@@ -80,15 +73,34 @@ internal static class ProcessFailureBoundary
         ProcessFailureLog.Write("bootstrap", exception);
         try
         {
-            errorOutput.WriteLine(BootstrapFailureEnvelope);
+            // The catalog may be what failed, so the envelope uses only the SDK's own contracts.
+            errorOutput.WriteLine(JsonSerializer.Serialize(
+                new ErrorEnvelope
+                {
+                    Error = new ErrorPayload
+                    {
+                        Code = ErrorCodes.Internal.Name,
+                        Message = "The CLI could not complete process startup.",
+                        Details = new JsonObject { ["diagnosticId"] = HostDiagnosticIds.BootstrapFailure },
+                        Hint = "Retry once; if startup still fails, report the diagnostic id and command without including secrets.",
+                    },
+                },
+                SdkJsonContext.Default.ErrorEnvelope));
             errorOutput.Flush();
         }
-        catch (Exception consoleFailure) when (
-            consoleFailure is IOException
-                or ObjectDisposedException
-                or InvalidOperationException)
+        catch (Exception reportingFailure)
         {
-            ProcessFailureLog.Write("bootstrap-console", consoleFailure);
+            ProcessFailureLog.Write("bootstrap-console", reportingFailure);
+            try
+            {
+                // The SDK's static state may be what failed, so this line uses only constants.
+                errorOutput.WriteLine(BootstrapFallbackLine);
+            }
+            catch (Exception consoleFailure)
+            {
+                // Last resort: nothing is left to report to, and startup must still exit.
+                ProcessFailureLog.Write("console", consoleFailure);
+            }
         }
 
         return (int)ExitCode.Internal;
