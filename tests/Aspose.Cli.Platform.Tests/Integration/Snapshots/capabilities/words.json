@@ -2086,7 +2086,7 @@
             "secret": false,
             "valueSource": "command-line",
             "inputKind": "none",
-            "description": "Maximum characters returned, counting the text of the returned blocks, including repeated text and run projections. Range 1-10000000, default 20000."
+            "description": "Maximum characters returned, counting the text of the returned blocks, including repeated text and run projections. Range 1-10000000."
           },
           {
             "name": "--password",
@@ -2423,7 +2423,7 @@
             "secret": false,
             "valueSource": "command-line",
             "inputKind": "none",
-            "description": "Raster resolution (36-1200; default 192); ignored for vector formats."
+            "description": "Raster resolution, 36-1200; ignored for vector formats."
           },
           {
             "name": "--font-dir",
@@ -2565,7 +2565,7 @@
             "secret": false,
             "valueSource": "command-line",
             "inputKind": "none",
-            "description": "Image format: png, jpeg or svg. Default: png."
+            "description": "Image format: png, jpeg or svg."
           }
         ],
         "arguments": [

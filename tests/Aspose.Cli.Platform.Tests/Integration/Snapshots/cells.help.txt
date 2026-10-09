@@ -47,7 +47,7 @@ Arguments:
   <right>  Candidate workbook to compare against the baseline.
 
 Options:
-  --compare <formulas|values>                 What to compare: values, or formulas (values + formulas, the default). [default: formulas]
+  --compare <formulas|values>                 What to compare: values, or formulas (values + formulas). [default: formulas]
   --max-diffs <max-diffs>                     Maximum differing cells to list across the entire workbook (1-1000000). [default: 1000]
   --left-password <left-password>             Password for the baseline file. Discouraged: visible in the process list; prefer --left-password-env.
   --left-password-env <left-password-env>     Name of an environment variable holding the password for the baseline file.
@@ -257,7 +257,7 @@ Arguments:
 Options:
   --sheet <sheet>                             Sheet to read. Default: the active sheet.
   --range <range>                             Window to read, e.g. A1:F50 or Sales!A1:F50. Default: the used range, subject to --max-cells.
-  --scope <formulas|full|styles|values>       Projection scope: values (default), formulas (adds f), styles (adds styleId + pool), full. [default: values]
+  --scope <formulas|full|styles|values>       Projection scope: values, formulas (adds f), styles (adds styleId + pool), full. [default: values]
   --max-cells <max-cells>                     Cell budget per call (1-1000000). [default: 10000]
   --password <password>                       Password for the workbook. Discouraged: visible in the process list; prefer --password-env.
   --password-env <password-env>               Name of an environment variable holding the password for the workbook.
@@ -291,7 +291,7 @@ Options:
   --pattern <pattern> (REQUIRED)              Text to find, or a regular expression with --regex.
   --regex                                     Treat the pattern as a culture-invariant regular expression with a one-second budget.
   --case-sensitive                            Match letter case exactly.
-  --scope <both|formulas|values>              Where to search: values (default), formulas or both. [default: values]
+  --scope <both|formulas|values>              Where to search: values, formulas or both. [default: values]
   --max-hits <max-hits>                       Maximum returned hits (1-10000). [default: 100]
   --skip <skip>                               Matches to pass over before the returned hits; a truncated search's window.next sets it. [default: 0]
   --sheet <sheet>                             Restrict to one sheet. Default: all sheets.
@@ -324,11 +324,11 @@ Arguments:
   <file>  Workbook to render.
 
 Options:
-  --to <jpeg|png|svg>                         Image format: png, jpeg or svg. Default: png. [default: png]
+  --to <jpeg|png|svg>                         Image format: png, jpeg or svg. [default: png]
   --sheet <sheet>                             Sheet to render. Default: the active sheet.
   --range <range>                             Render only this range, e.g. A1:G20 or Sales!A1:G20.
   --all-sheets                                Render every visible sheet, one image per sheet named <out-base>.<Sheet><ext>.
-  --dpi <dpi>                                 Raster resolution (36-1200; default 192); ignored for vector formats. [default: 192]
+  --dpi <dpi>                                 Raster resolution, 36-1200; ignored for vector formats. [default: 192]
   -o, --out <out>                             Output path. Default: the input path with the image extension. With --all-sheets it is the naming template: <base>.<Sheet><ext>.
   --overwrite                                 Replace the output file if it already exists.
   --password <password>                       Password for the workbook. Discouraged: visible in the process list; prefer --password-env.

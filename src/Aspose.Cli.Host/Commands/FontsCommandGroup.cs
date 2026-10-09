@@ -40,7 +40,7 @@ internal static class FontsCommandGroup
             Required = defaultProduct is null,
             Description = defaultProduct is null
                 ? "Product font engine to inspect. Required because this distribution has no declared default."
-                : $"Product font engine to inspect. Default: {defaultProduct}.",
+                : "Product font engine to inspect.",
         }.WithInput(InputKind.None);
         if (defaultProduct is not null)
         {

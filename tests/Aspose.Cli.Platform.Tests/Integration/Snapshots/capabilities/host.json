@@ -4180,7 +4180,7 @@
           "secret": false,
           "valueSource": "command-line",
           "inputKind": "none",
-          "description": "Product font engine to inspect. Default: cells."
+          "description": "Product font engine to inspect."
         }
       ],
       "arguments": []
@@ -4497,7 +4497,7 @@
           "secret": false,
           "valueSource": "command-line",
           "inputKind": "none",
-          "description": "Product view; auto uses the product's default view."
+          "description": "Product view; auto uses the product's own view."
         }
       ],
       "arguments": [
@@ -4813,7 +4813,7 @@
           "secret": false,
           "valueSource": "command-line",
           "inputKind": "none",
-          "description": "Product view; auto uses the product's default view."
+          "description": "Product view; auto uses the product's own view."
         }
       ],
       "arguments": [
