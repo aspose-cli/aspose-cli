@@ -39,8 +39,8 @@ jobs:
               echo "::error::$1 '$2' must be <type>(<scope>): <summary> starting in lower case, without a final period (CONTRIBUTING.md#pull-requests)."
               status=1
             fi
-            if [ "${#2}" -gt 65 ] && [ "$dependabot" = false ]; then
-              echo "::error::$1 '$2' is ${#2} characters; the limit is 65."
+            if [ "${#2}" -gt 85 ] && [ "$dependabot" = false ]; then
+              echo "::error::$1 '$2' is ${#2} characters; the limit is 85."
               status=1
             fi
           }

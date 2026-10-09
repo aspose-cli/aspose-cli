@@ -1,6 +1,6 @@
 ## Summary
 
-<!-- What the stage changes and why, then one line per commit. Name any user-visible contract change. -->
+<!-- What the change does and why, then one line per commit. Name any user-visible contract change. -->
 
 ## Test plan
 
