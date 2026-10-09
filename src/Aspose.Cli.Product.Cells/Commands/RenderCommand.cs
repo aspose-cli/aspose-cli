@@ -35,9 +35,7 @@ internal static class RenderCommand
                 Output = OutputTarget.File("Output path. Default: the input path with the image extension. "
                     + "With --all-sheets it is the naming template: <base>.<Sheet><ext>."),
                 UsesFonts = true,
-                Target = TargetFormat.Render(
-                    $"Image format: {string.Join(", ", CellsFormats.Definitions.IdsFor(FormatUse.Render))}.",
-                    CellsFormats.Definitions),
+                Target = TargetFormat.Render(CellsFormats.Definitions),
             },
             [sheet, rangeOption, allSheetsOption, .. dpi.Options],
             (parse, standard) =>

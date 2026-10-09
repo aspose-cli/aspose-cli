@@ -14,7 +14,7 @@ internal static class ReadCommand
             DefaultValueFactory = _ => PdfReadModes.Plain,
         }.WithInput(InputKind.None);
         mode.AcceptOnlyFromAmong([.. PdfReadModes.All]);
-        var maxChars = new MaxCharactersOption("Maximum projected characters.");
+        var maxChars = new MaxCharactersOption("the projected page text");
         return new(
             "pages",
             "Read a bounded page-text window.",

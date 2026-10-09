@@ -16,7 +16,7 @@ internal static class ReadCommand
         }.WithInput(InputKind.None);
         scope.AcceptOnlyFromAmong([.. PresentationReadScopes.All]);
         var maxChars = new MaxCharactersOption(
-            "Maximum returned title/text/run/notes/comment characters, including repeated projections.");
+            "title, text, run, notes and comment characters, including repeated projections");
         var notes = new Option<bool>("--notes") { Description = "Include speaker notes for returned slides." };
         return new(
             "slides",

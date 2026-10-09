@@ -1,11 +1,12 @@
 using System.CommandLine;
+using System.Globalization;
 using Aspose.Cli.Sdk.Errors;
 
 namespace Aspose.Cli.Sdk.Extensibility.Commanding;
 
 /// <summary>
 /// The one <c>--max-chars</c> option of a character-budgeted read: the shared default and
-/// range, with product help naming what the budget counts.
+/// range in the standard wording, with the product naming what the budget counts.
 /// </summary>
 public sealed class MaxCharactersOption
 {
@@ -17,13 +18,16 @@ public sealed class MaxCharactersOption
 
     private readonly Option<int> _maxCharacters;
 
-    /// <summary>Creates the option with product help.</summary>
-    public MaxCharactersOption(string description)
+    /// <summary>Creates the option.</summary>
+    /// <param name="what">What the budget counts, such as <c>the text of each returned page</c>.</param>
+    public MaxCharactersOption(string what)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(description);
+        ArgumentException.ThrowIfNullOrWhiteSpace(what);
         _maxCharacters = new Option<int>(Name)
         {
-            Description = description,
+            Description = string.Create(
+                CultureInfo.InvariantCulture,
+                $"Maximum characters returned, counting {what}. Range 1-{ReadContinuation.MaximumCharacters}, default {DefaultCharacters}."),
             DefaultValueFactory = _ => DefaultCharacters,
         };
         Options = [_maxCharacters];

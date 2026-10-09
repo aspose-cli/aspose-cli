@@ -45,24 +45,22 @@ public sealed class DpiOption
 public sealed record PartSelection(PageRange? Range, bool All);
 
 /// <summary>
-/// The shared part selection of a render command: <c>--{part}s</c> with
-/// <c>--all-{part}s</c> for a product-supplied part noun. Omitting both renders the first part.
+/// The shared part selection of a render command: the <see cref="PartRangeOption"/>
+/// <c>--{part}s</c> with <c>--all-{part}s</c> for a product-supplied part noun. Omitting both
+/// renders the first part.
 /// </summary>
 public sealed class PartSelectionOptions
 {
-    private readonly Option<string?> _range;
+    private readonly PartRangeOption _range;
     private readonly Option<bool> _all;
 
     /// <summary>Creates the options for a product-supplied part noun, such as <c>page</c>.</summary>
     public PartSelectionOptions(string part)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(part);
-        _range = new Option<string?>($"--{part}s")
-        {
-            Description = $"1-based {part} range, e.g. 1-3,7,9-. Default: {part} 1.",
-        }.WithInput(InputKind.None);
+        _range = new PartRangeOption(part, $"{part} 1");
         _all = new Option<bool>($"--all-{part}s") { Description = $"Render every {part}." };
-        Options = [_range, _all];
+        Options = [.. _range.Options, _all];
     }
 
     /// <summary>Both options, for a product command's option list.</summary>
@@ -75,7 +73,7 @@ public sealed class PartSelectionOptions
     public PartSelection Read(ParseResult parse)
     {
         ArgumentNullException.ThrowIfNull(parse);
-        string? range = parse.GetValue(_range);
+        string? range = _range.Read(parse);
         bool all = parse.GetValue(_all);
         if (range is not null && all)
         {
