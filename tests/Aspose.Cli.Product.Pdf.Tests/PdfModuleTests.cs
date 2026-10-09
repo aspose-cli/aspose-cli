@@ -7,11 +7,13 @@ namespace Aspose.Cli.Product.Pdf.Tests;
 public sealed class PdfModuleTests
     : ProductContractTests<PdfModule>
 {
-    protected override IReadOnlyList<Aspose.Cli.Sdk.Contracts.ResultEnvelope>
-        CanonicalResults => PdfContractSamples.Results;
+    /// <summary>
+    /// None: every result schema is generated from its record and checked against real CLI output
+    /// (<see cref="PdfResultSchemaCoverageTests"/>), so hand-written result samples prove nothing more.
+    /// </summary>
+    protected override IReadOnlyList<Aspose.Cli.Sdk.Contracts.ResultEnvelope> CanonicalResults => [];
 
-    protected override IReadOnlyList<ProductSchemaSample> CanonicalInputs =>
-        PdfContractSamples.Inputs;
+    protected override IReadOnlyList<ProductSchemaSample> CanonicalInputs => [new(PdfOp.SchemaUri, CanonicalOps)];
 
     protected override IReadOnlyDictionary<string, string> Homonyms { get; } =
         new Dictionary<string, string>(StringComparer.Ordinal)
@@ -44,7 +46,7 @@ public sealed class PdfModuleTests
     public void CanonicalOps_CoverEveryRegisteredOperation() =>
         Assert.Equal(
             PdfOp.Catalog.Names.Order(StringComparer.Ordinal),
-            PdfContractSamples.PdfOpsBatch.Ops
+            CanonicalOps.Ops
                 .Select(PdfOp.Catalog.NameOf)
                 .Order(StringComparer.Ordinal));
 
@@ -87,6 +89,43 @@ public sealed class PdfModuleTests
             Parse(
                 """{"ops":[{"op":"encrypt","ownerPasswordEnv":"OWNER","permissions":null}]}"""));
     }
+
+    private static PdfOpsBatch CanonicalOps { get; } = new()
+    {
+        Schema = PdfOp.SchemaUri,
+        SchemaVersion = 2,
+        Ops =
+        [
+            new RotatePagesOp { Pages = "1", Angle = 90 },
+            new DeletePagesOp { Pages = "3" },
+            new MovePagesOp { Pages = "2", To = 1 },
+            new InsertPagesFromOp { Path = "D:/data/append.pdf", Pages = "1", At = 2, PasswordEnv = "PDF_PASSWORD" },
+            new InsertBlankPageOp { At = 2, Size = "A4" },
+            new CropPagesOp { Pages = "1", Box = "crop", Rect = new PdfRectInput { X = 10, Y = 20, Width = 500, Height = 700 } },
+            new SetPageSizeOp { Pages = "1", Size = "Letter", ScaleContent = true },
+            new AddWatermarkTextOp { Pages = "1-", Text = "DRAFT" },
+            new AddWatermarkImageOp { Path = "D:/data/logo.png" },
+            new AddPageNumbersOp(),
+            new AddHeaderTextOp { Text = "Quarterly report" },
+            new AddFooterTextOp { Text = "Confidential" },
+            new AddStampImageOp { Page = 1, Path = "D:/data/sign.png", Rect = new PdfRectInput { X = 20, Y = 30, Width = 120, Height = 60 } },
+            new AddLinkOp { Page = 1, Rect = new PdfRectInput { X = 20, Y = 100, Width = 160, Height = 20 }, Url = "https://example.com" },
+            new RedactTextOp { Pattern = "secret", Regex = false },
+            new RedactAreaOp { Page = 1, Rect = new PdfRectInput { X = 20, Y = 140, Width = 160, Height = 20 } },
+            new SetMetadataOp { Title = "Quarterly report", Custom = new SortedDictionary<string, string> { ["Department"] = "Finance" } },
+            new RemoveMetadataOp(),
+            new AddBookmarkOp { Title = "Overview", Page = 1 },
+            new DeleteBookmarksOp { All = true },
+            new Aspose.Cli.Product.Pdf.Contracts.AddAttachmentOp { Path = "D:/data/source.csv", Name = "source.csv" },
+            new Aspose.Cli.Product.Pdf.Contracts.RemoveAttachmentOp { Name = "old.csv" },
+            new SetPageLabelsOp { Ranges = [new PdfPageLabelRange { StartPage = 1, Style = "roman-lower" }] },
+            new SetFormFieldOp { Name = "Customer", Value = "Contoso" },
+            new FlattenFormsOp(),
+            new EncryptPdfOp { OwnerPasswordEnv = "PDF_OWNER_PASSWORD" },
+            new DecryptPdfOp(),
+            new OptimizePdfOp { DownsampleImagesDpi = 150, ImageQuality = 75 },
+        ],
+    };
 
     private static PdfOpsBatch Parse(string json) =>
         PdfOp.Catalog.Parse<PdfOpsBatch>(json, Aspose.Cli.Generated.ProductJsonContext.Definition);
