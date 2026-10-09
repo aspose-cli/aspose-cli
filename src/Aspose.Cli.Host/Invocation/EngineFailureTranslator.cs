@@ -29,7 +29,7 @@ internal sealed class EngineFailureTranslator
         var products = new Dictionary<Assembly, string>();
         foreach (ProductDefinition product in catalog.Products)
         {
-            products[product.PortType.Assembly] = product.Manifest.DisplayName;
+            products[product.ModuleAssembly] = product.Manifest.DisplayName;
         }
         var own = new HashSet<Assembly>(products.Keys)
         {

@@ -10,14 +10,19 @@ public sealed class ProductOutputDefinition
 
     private ProductOutputDefinition(
         Type resultType,
+        Delegate source,
         Action<ResultEnvelope, TableSurface> render)
     {
         ResultType = resultType;
+        Source = source;
         _render = render;
     }
 
     /// <summary>Exact result-envelope type handled by this renderer.</summary>
     public Type ResultType { get; }
+
+    /// <summary>The renderer as the product wrote it; two registrations of one method are one renderer.</summary>
+    internal Delegate Source { get; }
 
     /// <summary>Creates a renderer registration for one concrete result type.</summary>
     public static ProductOutputDefinition Create<TResult>(
@@ -27,6 +32,7 @@ public sealed class ProductOutputDefinition
         ArgumentNullException.ThrowIfNull(renderer);
         return new ProductOutputDefinition(
             typeof(TResult),
+            renderer,
             (result, surface) => renderer((TResult)result, surface));
     }
 

@@ -1,6 +1,7 @@
 namespace Aspose.Cli.Sdk.Extensibility;
 
 using System.CommandLine;
+using System.Reflection;
 using Aspose.Cli.Sdk.Diagnostics;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Operations;
@@ -20,7 +21,7 @@ public sealed class ProductDefinition
         IReadOnlyList<FormatDescriptor> formats,
         ProductJsonDefinition json,
         ProductViewDefinition view,
-        IReadOnlyList<ProductOutputDefinition> outputs,
+        Func<IReadOnlyList<ProductOutputDefinition>> outputs,
         IReadOnlyList<DiagnosticDescriptor> diagnostics,
         Func<object, IReadOnlyList<Aspose.Cli.Sdk.Contracts.DoctorCheck>>? doctorChecks,
         Func<IProductCommandHostFactory, Command> commandFactory,
@@ -34,7 +35,8 @@ public sealed class ProductDefinition
         Formats = formats;
         Json = json ?? throw new ArgumentNullException(nameof(json));
         View = view ?? throw new ArgumentNullException(nameof(view));
-        Outputs = outputs;
+        _outputs = new Lazy<IReadOnlyList<ProductOutputDefinition>>(
+            outputs ?? throw new ArgumentNullException(nameof(outputs)));
         Diagnostics = diagnostics;
         DoctorChecks = doctorChecks;
         CommandFactory = commandFactory
@@ -61,8 +63,23 @@ public sealed class ProductDefinition
     /// <summary>Product-owned views shared by static review and live display.</summary>
     public ProductViewDefinition View { get; }
 
-    /// <summary>Human-readable result renderers owned by this product.</summary>
-    public IReadOnlyList<ProductOutputDefinition> Outputs { get; }
+    /// <summary>
+    /// Human-readable result renderers owned by this product, one per result type; a menu's
+    /// renderers come from its command definitions, created on first access.
+    /// </summary>
+    public IReadOnlyList<ProductOutputDefinition> Outputs => _outputs.Value;
+
+    /// <summary>
+    /// The assembly of the module that defined this product, which owns its failures; known once
+    /// the product catalog has prepared the definition.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">The definition did not come from a catalog.</exception>
+    public Assembly ModuleAssembly =>
+        _moduleAssembly ?? throw new InvalidOperationException(
+            $"Product '{Manifest.Id}' was not prepared by a product catalog.");
+
+    private readonly Lazy<IReadOnlyList<ProductOutputDefinition>> _outputs;
+    private Assembly? _moduleAssembly;
 
     /// <summary>Immutable error and warning descriptors owned by this product.</summary>
     public IReadOnlyList<DiagnosticDescriptor> Diagnostics { get; }
@@ -74,6 +91,19 @@ public sealed class ProductDefinition
         return CommandFactory(hostFactory)
             ?? throw new InvalidOperationException(
                 $"Product '{Manifest.Id}' returned no command contribution.");
+    }
+
+    /// <summary>Records the module that defined this product; a definition belongs to one module.</summary>
+    internal void AttachModule(IProductModule module)
+    {
+        Assembly assembly = module.GetType().Assembly;
+        if (_moduleAssembly is not null && _moduleAssembly != assembly)
+        {
+            throw new InvalidOperationException(
+                $"Product '{Manifest.Id}' is defined by two module assemblies.");
+        }
+
+        _moduleAssembly = assembly;
     }
 
     internal ProductBinding Activate(
@@ -135,25 +165,36 @@ public sealed class ProductDefinition
 /// <summary>Starts a strongly typed, pure product definition.</summary>
 public static class Product
 {
-    /// <summary>Creates a definition builder for one typed product port.</summary>
-    public static ProductDefinitionBuilder<TPort> Define<TPort>(ProductManifest manifest)
-        where TPort : class =>
+    /// <summary>Creates a definition builder for one product and its engine session type.</summary>
+    public static ProductDefinitionBuilder<TSession> Define<TSession>(ProductManifest manifest)
+        where TSession : class =>
         new(manifest);
 }
 
 /// <summary>Builds an immutable definition without access to the product catalog.</summary>
-/// <typeparam name="TPort">Product-specific typed port.</typeparam>
-public sealed class ProductDefinitionBuilder<TPort>
-    where TPort : class
+/// <remarks>
+/// A product lists its commands as a menu: each <c>Command</c> line pairs a command definition
+/// with the static handler that serves it, and <c>Group</c> nests lines under a group command.
+/// The menu lines live in <c>Aspose.Cli.Sdk.Extensibility.Commanding.ProductMenu</c>; their
+/// order is the order of help and capabilities.
+/// </remarks>
+/// <typeparam name="TSession">The product's engine session, or its typed port.</typeparam>
+public sealed class ProductDefinitionBuilder<TSession>
+    where TSession : class
 {
     private readonly ProductManifest _manifest;
     private readonly List<FormatDescriptor> _formats = [];
     private ProductJsonDefinition? _json;
-    private ProductViewDefinition? _view;
+    private IProductViewAdapter<TSession>? _viewAdapter;
     private readonly List<ProductOutputDefinition> _outputs = [];
     private readonly List<DiagnosticDescriptor> _diagnostics = [];
     private Func<object, IReadOnlyList<Aspose.Cli.Sdk.Contracts.DoctorCheck>>? _doctorChecks;
     private Func<IProductCommandHostFactory, Command>? _commandFactory;
+    private readonly List<IMenuEntry<TSession>> _menu = [];
+    private string? _description;
+    private Func<CommandHelp>? _help;
+    private ProductGuard<TSession>? _guard;
+    private Func<string, string?>? _detectFormat;
     private Func<
         ProductActivationContext,
         ProductBinding>? _bindingFactory;
@@ -168,7 +209,7 @@ public sealed class ProductDefinitionBuilder<TPort>
     }
 
     /// <summary>Registers canonical input, output, and routing format metadata.</summary>
-    public ProductDefinitionBuilder<TPort> Formats(
+    public ProductDefinitionBuilder<TSession> Formats(
         IEnumerable<FormatDescriptor> formats)
     {
         EnsureMutable();
@@ -179,14 +220,14 @@ public sealed class ProductDefinitionBuilder<TPort>
     }
 
     /// <summary>Registers the deferred typed product activator.</summary>
-    public ProductDefinitionBuilder<TPort> Activator(
-        ProductActivator<TPort> activator)
+    public ProductDefinitionBuilder<TSession> Activator(
+        ProductActivator<TSession> activator)
     {
         EnsureMutable();
         ArgumentNullException.ThrowIfNull(activator);
         _bindingFactory = context =>
         {
-            ProductBinding<TPort> binding = activator(context)
+            ProductBinding<TSession> binding = activator(context)
                 ?? throw new InvalidOperationException(
                     $"Product '{_manifest.Id}' returned no binding.");
             return binding;
@@ -195,18 +236,18 @@ public sealed class ProductDefinitionBuilder<TPort>
     }
 
     /// <summary>Registers the product-owned System.CommandLine command tree.</summary>
-    public ProductDefinitionBuilder<TPort> Commands(
-        Func<IProductCommandHost<TPort>, Command> factory)
+    public ProductDefinitionBuilder<TSession> Commands(
+        Func<IProductCommandHost<TSession>, Command> factory)
     {
         EnsureMutable();
         ArgumentNullException.ThrowIfNull(factory);
         _commandFactory = hostFactory =>
-            factory(hostFactory.Create<TPort>(_manifest.Id));
+            factory(hostFactory.Create<TSession>(_manifest.Id));
         return this;
     }
 
     /// <summary>Registers product-owned source-generated JSON metadata.</summary>
-    public ProductDefinitionBuilder<TPort> Json(ProductJsonDefinition json)
+    public ProductDefinitionBuilder<TSession> Json(ProductJsonDefinition json)
     {
         EnsureMutable();
         _json = json ?? throw new ArgumentNullException(nameof(json));
@@ -214,16 +255,59 @@ public sealed class ProductDefinitionBuilder<TPort>
     }
 
     /// <summary>Registers the product-owned view adapter used by review and live display.</summary>
-    public ProductDefinitionBuilder<TPort> View(
-        IProductViewAdapter<TPort> adapter)
+    public ProductDefinitionBuilder<TSession> View(
+        IProductViewAdapter<TSession> adapter)
     {
         EnsureMutable();
-        _view = ProductViewDefinition.Create(adapter, _manifest.Id);
+        _viewAdapter = adapter ?? throw new ArgumentNullException(nameof(adapter));
+        return this;
+    }
+
+    /// <summary>Describes the product command of a menu: its help and, optionally, its examples and links.</summary>
+    /// <param name="description">The product command help.</param>
+    /// <param name="help">Creates the examples and links; called each time the command tree is built.</param>
+    public ProductDefinitionBuilder<TSession> Describe(string description, Func<CommandHelp>? help = null)
+    {
+        EnsureMutable();
+        ArgumentException.ThrowIfNullOrWhiteSpace(description);
+        _description = description;
+        _help = help;
+        return this;
+    }
+
+    /// <summary>
+    /// Runs <paramref name="guard"/> around every handler call of the product's menu commands,
+    /// inside their font scope, and around every call of its view adapter.
+    /// </summary>
+    public ProductDefinitionBuilder<TSession> Guard(ProductGuard<TSession> guard)
+    {
+        EnsureMutable();
+        _guard = guard ?? throw new ArgumentNullException(nameof(guard));
+        return this;
+    }
+
+    /// <summary>
+    /// Registers how the product detects a file's format id from its content without loading it
+    /// (null when it cannot tell). The menu commands use it to choose among the formats an output
+    /// extension names, as <c>EncryptPassword()</c> does for an edit that keeps its input's format.
+    /// </summary>
+    public ProductDefinitionBuilder<TSession> DetectFormat(Func<string, string?> detect)
+    {
+        EnsureMutable();
+        _detectFormat = detect ?? throw new ArgumentNullException(nameof(detect));
+        return this;
+    }
+
+    /// <summary>Adds one menu line, in help order.</summary>
+    internal ProductDefinitionBuilder<TSession> AddMenuEntry(IMenuEntry<TSession> entry)
+    {
+        EnsureMutable();
+        _menu.Add(entry ?? throw new ArgumentNullException(nameof(entry)));
         return this;
     }
 
     /// <summary>Registers a human-readable renderer for one result type.</summary>
-    public ProductDefinitionBuilder<TPort> Output<TResult>(
+    public ProductDefinitionBuilder<TSession> Output<TResult>(
         Action<TResult, Output.TableSurface> renderer)
         where TResult : Aspose.Cli.Sdk.Contracts.ResultEnvelope
     {
@@ -233,7 +317,7 @@ public sealed class ProductDefinitionBuilder<TPort>
     }
 
     /// <summary>Registers immutable diagnostic descriptors owned by this product.</summary>
-    public ProductDefinitionBuilder<TPort> Diagnostics(
+    public ProductDefinitionBuilder<TSession> Diagnostics(
         IEnumerable<DiagnosticDescriptor> diagnostics)
     {
         EnsureMutable();
@@ -244,12 +328,12 @@ public sealed class ProductDefinitionBuilder<TPort>
     }
 
     /// <summary>Registers product-owned diagnostics against the typed product port.</summary>
-    public ProductDefinitionBuilder<TPort> Doctor(
-        Func<TPort, IReadOnlyList<Aspose.Cli.Sdk.Contracts.DoctorCheck>> checks)
+    public ProductDefinitionBuilder<TSession> Doctor(
+        Func<TSession, IReadOnlyList<Aspose.Cli.Sdk.Contracts.DoctorCheck>> checks)
     {
         EnsureMutable();
         ArgumentNullException.ThrowIfNull(checks);
-        _doctorChecks = port => checks((TPort)port);
+        _doctorChecks = port => checks((TSession)port);
         return this;
     }
 
@@ -265,11 +349,11 @@ public sealed class ProductDefinitionBuilder<TPort>
         {
             throw Missing(nameof(Json));
         }
-        if (_view is null)
+        if (_viewAdapter is null)
         {
             throw Missing(nameof(View));
         }
-        if (_outputs.Count == 0)
+        if (_outputs.Count == 0 && _menu.Count == 0)
         {
             throw Missing(nameof(Output));
         }
@@ -277,7 +361,25 @@ public sealed class ProductDefinitionBuilder<TPort>
         {
             throw Missing(nameof(Diagnostics));
         }
+        if (_menu.Count > 0)
+        {
+            if (_commandFactory is not null)
+            {
+                throw new InvalidOperationException(
+                    $"Product '{_manifest.Id}' declares both a command factory and a command menu.");
+            }
+            if (_description is null)
+            {
+                throw Missing(nameof(Describe));
+            }
+            _commandFactory = CreateMenuCommand;
+        }
         _ = _commandFactory ?? throw Missing(nameof(Commands));
+        ProductGuard<TSession>? guard = _guard;
+        ProductViewDefinition view = ProductViewDefinition.Create(
+            _viewAdapter,
+            _manifest.Id,
+            guard is null ? null : (session, run) => guard((TSession)session, run));
         _ = _bindingFactory ?? throw Missing(nameof(Activator));
         _built = true;
         IReadOnlyList<FormatDescriptor> formats = Array.AsReadOnly(
@@ -285,16 +387,58 @@ public sealed class ProductDefinitionBuilder<TPort>
         FileRouteDefinition files = CreateFileRoutes(formats);
         return new ProductDefinition(
             _manifest,
-            typeof(TPort),
+            typeof(TSession),
             files,
             formats,
             _json,
-            _view,
-            Array.AsReadOnly(_outputs.ToArray()),
+            view,
+            Outputs,
             Array.AsReadOnly(_diagnostics.ToArray()),
             _doctorChecks,
             _commandFactory,
             _bindingFactory);
+    }
+
+    private Command CreateMenuCommand(IProductCommandHostFactory hostFactory)
+    {
+        // The one adapter from the host's command pipeline to the menu's.
+        IProductCommandHost<TSession> host = hostFactory.Create<TSession>(_manifest.Id);
+        var context = new MenuContext<TSession>(
+            (parse, run) => host.Run(
+                parse,
+                scope => run(new CommandScope<TSession>(scope.Binding, scope.Paths, scope.Inputs, scope.ReadEnvironment))),
+            _guard,
+            _detectFormat);
+        var product = new Command(_manifest.Id, _description);
+        foreach (IMenuEntry<TSession> entry in _menu)
+        {
+            product.Subcommands.Add(entry.Create(context));
+        }
+
+        return _help?.Invoke() is { } help ? product.WithExamples(help.Examples, help.Links) : product;
+    }
+
+    // One renderer per result type: commands that share a result type share its renderer method.
+    private IReadOnlyList<ProductOutputDefinition> Outputs()
+    {
+        var byType = new Dictionary<Type, ProductOutputDefinition>();
+        var ordered = new List<ProductOutputDefinition>();
+        foreach (ProductOutputDefinition output in _outputs.Concat(_menu.SelectMany(static entry => entry.Outputs())))
+        {
+            if (byType.TryGetValue(output.ResultType, out ProductOutputDefinition? registered))
+            {
+                if (!registered.Source.Equals(output.Source))
+                {
+                    throw new InvalidOperationException(
+                        $"Product '{_manifest.Id}' renders '{output.ResultType.FullName}' with two different renderers; "
+                        + "commands that share a result type share one renderer method.");
+                }
+                continue;
+            }
+            byType.Add(output.ResultType, output);
+            ordered.Add(output);
+        }
+        return Array.AsReadOnly(ordered.ToArray());
     }
 
     private static FileRouteDefinition CreateFileRoutes(
