@@ -14,8 +14,10 @@ the fixed distribution identity; the generated projections and the solution come
   signatures and method bodies alike; analyzers and architecture tests enforce this.
 - Host carries no product-specific branch. Product ids come from the catalog, and
   distribution metadata identifies this executable.
-- Each Product owns its Contracts, Ports, Engine, Commands, Output, Schemas/v2, view adapter,
-  Presenter, Skills and module definition, and its definitions are pure and deterministic.
+- Each Product owns its Contracts, Engine (a session and the static handlers its commands run),
+  Commands (options, binding and table output per command), Schemas/v2, view adapter, Presenter,
+  Skills and module definition, whose command menu pairs each command with its handler; its
+  definitions are pure and deterministic.
   Skill names begin with `aspose-cli-`, their executable examples must match this build's
   capabilities, and package-relative documentation links must resolve. What every product
   shares lives once, in the Host's `aspose-cli-platform` Skill; a product Skill holds only
