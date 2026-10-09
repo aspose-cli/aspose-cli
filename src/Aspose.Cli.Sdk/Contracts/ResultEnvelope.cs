@@ -78,11 +78,26 @@ public abstract partial record ResultEnvelope
     /// declares, or <c>common</c>. The declaration is read by name, because the product module
     /// attribute belongs to a higher SDK layer.
     /// </summary>
+    /// <exception cref="InvalidOperationException">
+    /// A product assembly, named <c>Aspose.Cli.Product.&lt;Name&gt;</c>, declares no product module, so
+    /// its results would state common schemas.
+    /// </exception>
     internal static string OwnerOf(Assembly assembly) =>
-        Owners.GetOrAdd(assembly, static assembly => assembly.GetCustomAttributesData()
-            .Where(static attribute => attribute.AttributeType.FullName == "Aspose.Cli.Sdk.Extensibility.ProductModuleAttribute")
-            .Select(static attribute => attribute.ConstructorArguments[0].Value as string)
-            .FirstOrDefault() ?? "common");
+        Owners.GetOrAdd(assembly, static assembly =>
+        {
+            string? product = assembly.GetCustomAttributesData()
+                .Where(static attribute => attribute.AttributeType.FullName == "Aspose.Cli.Sdk.Extensibility.ProductModuleAttribute")
+                .Select(static attribute => attribute.ConstructorArguments[0].Value as string)
+                .FirstOrDefault();
+            string name = assembly.GetName().Name ?? string.Empty;
+            return product
+                ?? (name.StartsWith(ProductAssemblyPrefix, StringComparison.Ordinal) && !name[ProductAssemblyPrefix.Length..].Contains('.', StringComparison.Ordinal)
+                    ? throw new InvalidOperationException($"Product assembly '{name}' declares no product module, so the owner of its result schemas is unknown.")
+                    : "common");
+        });
+
+    /// <summary>The name of a product assembly up to the product's name.</summary>
+    private const string ProductAssemblyPrefix = "Aspose.Cli.Product.";
 
     /// <summary>A relative schema id: lower-case words joined by hyphens.</summary>
     [GeneratedRegex("^[a-z0-9]+(-[a-z0-9]+)*$", RegexOptions.CultureInvariant)]
