@@ -1,5 +1,4 @@
 using System.Text;
-using System.Text.RegularExpressions;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using static Aspose.Cli.Sdk.Analyzers.ContractTypes;
 
@@ -18,7 +17,6 @@ internal sealed class ResultContractWriter(Compilation compilation, Action<Locat
     private const string Sdk = "global::" + Contracts;
     private const string ResultEnvelope = Contracts + "ResultEnvelope";
     private const string Json = "System.Text.Json.Serialization.";
-    private static readonly Regex RelativeId = new("^[a-z0-9]+(-[a-z0-9]+)*$", RegexOptions.CultureInvariant);
     private static readonly string[] CaseTypes = ["null", "string", "number", "integer", "boolean"];
     private readonly INamedTypeSymbol? _constraint = compilation.GetTypeByMetadataName(Contracts + "ValueConstraintAttribute");
     private readonly Dictionary<INamedTypeSymbol, (string? SchemaId, int Version)> _published = new(SymbolEqualityComparer.Default);
