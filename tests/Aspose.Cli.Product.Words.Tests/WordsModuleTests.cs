@@ -9,11 +9,6 @@ namespace Aspose.Cli.Product.Words.Tests;
 public sealed class WordsModuleTests
     : ProductContractTests<WordsModule>
 {
-    // Result schemas are generated from the result records, and real CLI runs validate every
-    // result type against them (WordsResultSchemaCoverageTests), so no hand-written result
-    // samples remain.
-    protected override IReadOnlyList<ResultEnvelope> CanonicalResults => [];
-
     protected override IReadOnlyList<ProductSchemaSample> CanonicalInputs { get; } =
         [new(ResultEnvelope.SchemaUri("words", "ops"), WordsOperationSample.Batch)];
 

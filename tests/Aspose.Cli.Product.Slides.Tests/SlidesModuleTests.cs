@@ -8,10 +8,6 @@ namespace Aspose.Cli.Product.Slides.Tests;
 public sealed class SlidesModuleTests
     : ProductContractTests<SlidesModule>
 {
-    // Result schemas are generated from the result records and every result type is checked
-    // against real output (SlidesResultSchemaCoverageTests), so no result is sampled here.
-    protected override IReadOnlyList<Aspose.Cli.Sdk.Contracts.ResultEnvelope> CanonicalResults => [];
-
     protected override IReadOnlyList<ProductSchemaSample> CanonicalInputs { get; } =
         [new(SlidesOp.SchemaUri, CanonicalOps)];
 
@@ -19,6 +15,7 @@ public sealed class SlidesModuleTests
         new Dictionary<string, string>(StringComparer.Ordinal)
         {
             ["kind"] = "An extracted item's kind names what was extracted, not a shape, chart or transition kind.",
+            ["text"] = "A read slide's text lists the text of each of its shapes, while an operation's text is one shape's or paragraph's text.",
         };
 
     /// <summary>One operation document that uses every registered operation.</summary>

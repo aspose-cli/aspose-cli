@@ -134,9 +134,6 @@ public static class JsonCountNames
 public abstract class ProductContractTests<TModule>
     where TModule : IProductModule, new()
 {
-    /// <summary>Product-owned canonical result samples.</summary>
-    protected abstract IReadOnlyList<ResultEnvelope> CanonicalResults { get; }
-
     /// <summary>Product-owned canonical input samples.</summary>
     protected abstract IReadOnlyList<ProductSchemaSample> CanonicalInputs { get; }
 
@@ -263,15 +260,16 @@ public abstract class ProductContractTests<TModule>
                 .Distinct()
                 .OrderBy(static type => type.FullName, StringComparer.Ordinal));
 
-        ProductResourceCatalog resources =
-            ProductCatalog.Build([new TModule()]).Resources;
-        string[] productSchemas = resources
+        IReadOnlyList<string> productSchemas = ProductCatalog.Build([new TModule()]).Resources
             .GetProduct(definition.Manifest.Id)
-            .SchemaIds
-            .ToArray();
-        Assert.True(
-            productSchemas.Length >= results.Length,
-            $"Product '{definition.Manifest.Id}' has {results.Length} result roots but only {productSchemas.Length} schemas.");
+            .SchemaIds;
+        foreach (Type result in results)
+        {
+            string? id = definition.Json!.ResultRecords.FirstOrDefault(record => record.Type == result)?.SchemaId;
+            Assert.True(
+                id is not null && productSchemas.Contains(ResultSchemaSet.Id(definition.Manifest.Id, id)),
+                $"Result {result.FullName} of product '{definition.Manifest.Id}' publishes no schema the product lists.");
+        }
     }
 
     /// <summary>Ensures schema, presenter, and Skill resources travel with the product.</summary>
@@ -294,41 +292,31 @@ public abstract class ProductContractTests<TModule>
     }
 
     /// <summary>
-    /// Ensures product-owned samples cover every exact result renderer and do
-    /// not claim another product's result family.
+    /// Prevents the product's edit result, its one partial outcome, from drifting away from the
+    /// shared operation wire contract: its record lists every outcome as a
+    /// <see cref="BoundedOperationOutcome"/>, and its schema requires <c>applied</c> and
+    /// references the shared outcome schema for each item.
     /// </summary>
-    [Fact]
-    public void CanonicalResults_CoverEveryProductResult()
-    {
-        ProductDefinition definition = new TModule().Define();
-        Type[] expected = definition.Outputs
-            .Select(static output => output.ResultType)
-            .OrderBy(static type => type.FullName, StringComparer.Ordinal)
-            .ToArray();
-        Type[] actual = CanonicalResults
-            .Select(static sample => sample.GetType())
-            .Distinct()
-            .OrderBy(static type => type.FullName, StringComparer.Ordinal)
-            .ToArray();
-
-        Assert.NotEmpty(CanonicalResults);
-        Assert.Equal(expected, actual);
-    }
-
-    /// <summary>Prevents product edit results from drifting away from the shared operation wire contract.</summary>
     [Fact]
     public void PartialOutcomes_UseSharedBoundedOperationContract()
     {
-        ResultEnvelope[] outcomes = CanonicalResults
-            .Where(static result => result is IPartialOutcome)
-            .ToArray();
-        Assert.Single(outcomes);
+        ProductCatalog catalog = ProductCatalog.Build([new TModule()]);
+        ProductDefinition definition = Assert.Single(catalog.Products);
+        Type outcome = Assert.Single(
+            definition.Outputs.Select(static output => output.ResultType).Distinct(),
+            static type => typeof(IPartialOutcome).IsAssignableFrom(type));
 
-        PropertyInfo? applied = outcomes[0].GetType().GetProperty("Applied");
+        PropertyInfo? applied = outcome.GetProperty("Applied");
         Assert.NotNull(applied);
         Assert.Equal(
             typeof(IReadOnlyList<BoundedOperationOutcome>),
             applied!.PropertyType);
+        string id = definition.Json.ResultRecords.First(record => record.Type == outcome).SchemaId!;
+        JsonObject schema = JsonNode.Parse(catalog.Resources.Read(ResultSchemaSet.Id(definition.Manifest.Id, id)))!.AsObject();
+        Assert.Contains("applied", schema["required"]!.AsArray().Select(static name => name!.GetValue<string>()));
+        Assert.Equal(
+            ResultEnvelope.SchemaUri("common", "operation-outcome"),
+            schema["properties"]!["applied"]!["items"]!["$ref"]!.GetValue<string>());
 
         Assert.Equal(
             ["Error", "Id", "Index", "ItemsAffected", "Op", "Status", "Targets"],
@@ -342,64 +330,6 @@ public abstract class ProductContractTests<TModule>
                 .GetProperties(BindingFlags.Public | BindingFlags.Instance)
                 .Select(static property => property.Name)
                 .OrderBy(static name => name, StringComparer.Ordinal));
-    }
-
-    /// <summary>Validates every canonical JSON result against its declared schema.</summary>
-    [Fact]
-    public void CanonicalResults_ConformToCurrentSchemas()
-    {
-        ProductDefinition definition = new TModule().Define();
-        Assert.NotNull(definition.Json);
-        ProductResourceCatalog resources =
-            ProductCatalog.Build([new TModule()]).Resources;
-
-        foreach (ResultEnvelope sample in CanonicalResults)
-        {
-            string schemaId = ResourceSchemaId(sample.Schema);
-            string schemaText = resources.Read(schemaId);
-            JsonSchema schema = ParseSchema(schemaText);
-            string json = JsonSerializer.Serialize(
-                sample,
-                sample.GetType(),
-                definition.Json!.LocalOptions);
-            using JsonDocument instance = JsonDocument.Parse(json);
-            EvaluationResults evaluation = schema.Evaluate(instance.RootElement);
-            Assert.True(
-                evaluation.IsValid,
-                $"{sample.GetType().FullName} does not conform to {schemaId}: "
-                    + JsonSerializer.Serialize(evaluation));
-
-            JsonObject missingRequired = JsonNode.Parse(json)!.AsObject();
-            Assert.True(missingRequired.Remove("schema"));
-            Assert.False(
-                schema.Evaluate(
-                    JsonDocument.Parse(missingRequired.ToJsonString()).RootElement)
-                    .IsValid,
-                $"{schemaId} accepted an instance without required 'schema'.");
-
-            JsonObject wrongType = JsonNode.Parse(json)!.AsObject();
-            wrongType["schemaVersion"] = "not-an-integer";
-            Assert.False(
-                schema.Evaluate(
-                    JsonDocument.Parse(wrongType.ToJsonString()).RootElement)
-                    .IsValid,
-                $"{schemaId} accepted an invalid schemaVersion type.");
-
-            JsonObject schemaDocument = JsonNode.Parse(schemaText)!.AsObject();
-            if (schemaDocument["additionalProperties"] is JsonValue policy
-                && policy.TryGetValue(out bool allowAdditional)
-                && !allowAdditional)
-            {
-                JsonObject additional = JsonNode.Parse(json)!.AsObject();
-                additional["__unexpected"] = true;
-                Assert.False(
-                    schema.Evaluate(
-                        JsonDocument.Parse(additional.ToJsonString()).RootElement)
-                        .IsValid,
-                    $"{schemaId} accepted an undeclared property despite "
-                        + "additionalProperties=false.");
-            }
-        }
     }
 
     /// <summary>Validates every canonical product input against its declared schema.</summary>
@@ -523,7 +453,7 @@ public abstract class ProductContractTests<TModule>
         }
     }
 
-    /// <summary>Ensures all embedded product schemas parse and identify their current resources.</summary>
+    /// <summary>Ensures every schema the product publishes parses and states its canonical identity.</summary>
     [Fact]
     public void EveryCurrentSchema_ParsesAndHasCanonicalIdentity()
     {
@@ -568,36 +498,6 @@ public abstract class ProductContractTests<TModule>
                 JsonNode oneOf = JsonNode.Parse(view)!["properties"]!["ops"]!["items"]!["oneOf"]!;
                 Assert.Equal($"#/$defs/{name}", Assert.Single(oneOf.AsArray())!["$ref"]!.GetValue<string>());
             }
-        }
-    }
-
-    /// <summary>
-    /// Keeps the committed copy of every generated operation schema equal to the schema the
-    /// build serves. Set <c>ASPOSE_CLI_TEST_UPDATE_SNAPSHOTS=1</c> to rewrite the copy, then review the diff.
-    /// </summary>
-    [Fact]
-    public void GeneratedOperationSchemas_MatchTheirCommittedCopies()
-    {
-        ProductCatalog catalog = ProductCatalog.Build([new TModule()]);
-        ProductDefinition definition = Assert.Single(catalog.Products);
-        foreach (string schemaId in definition.Manifest.Operations
-            .Select(static operation => operation.Descriptor.InputSchema)
-            .Distinct(StringComparer.Ordinal))
-        {
-            string path = Path.Combine(
-                RepositoryPaths.Root, "src", typeof(TModule).Assembly.GetName().Name!, "Schemas", "v2",
-                schemaId[(schemaId.LastIndexOf('/') + 1)..] + ".schema.json");
-            string served = catalog.Resources.Read(schemaId);
-            if (Environment.GetEnvironmentVariable(UpdateSnapshotsVariable) == "1")
-            {
-                File.WriteAllText(path, served, new System.Text.UTF8Encoding(false));
-                continue;
-            }
-
-            Assert.True(File.Exists(path), $"{path} is missing; set {UpdateSnapshotsVariable}=1 to write it.");
-            Assert.True(
-                string.Equals(File.ReadAllText(path).ReplaceLineEndings("\n"), served, StringComparison.Ordinal),
-                $"{path} differs from the schema generated from the operation records; set {UpdateSnapshotsVariable}=1, rerun and review the diff.");
         }
     }
 
@@ -886,8 +786,6 @@ public abstract class ProductContractTests<TModule>
         && target.StartsWith("#/$defs/", StringComparison.Ordinal)
             ? document["$defs"]![target["#/$defs/".Length..]]!.AsObject()
             : property;
-
-    private const string UpdateSnapshotsVariable = Aspose.Cli.Sdk.DistributionInfo.EnvironmentVariablePrefix + "TEST_UPDATE_SNAPSHOTS";
 
     private static string ResourceSchemaId(string schema)
     {

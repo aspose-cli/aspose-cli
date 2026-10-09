@@ -15,19 +15,13 @@ public sealed class ProductPackageResources
     {
         ArgumentNullException.ThrowIfNull(assembly);
         ArgumentException.ThrowIfNullOrWhiteSpace(productId);
-        string[] names = assembly.GetManifestResourceNames();
         SkillFrontMatter? skill = SkillFrontMatter.Read(assembly, DistributionInfo.SkillPrefix + productId);
 
         return new ProductPackageResources(
             productId,
             assembly,
-            Array.AsReadOnly(names),
-            Array.AsReadOnly(
-                names.Select(ProductResourceCatalog.TryGetSchemaId)
-                    .Where(static id => id is not null)
-                    .Cast<string>()
-                    .Order(StringComparer.Ordinal)
-                    .ToArray()),
+            Array.AsReadOnly(assembly.GetManifestResourceNames()),
+            [],
             skill?.Name,
             skill?.Description);
     }
@@ -57,7 +51,10 @@ public sealed class ProductPackageResources
     /// <summary>Embedded resource names captured by the catalog's single scan.</summary>
     public IReadOnlyList<string> ResourceNames { get; }
 
-    /// <summary>Schema identifiers owned by this package.</summary>
+    /// <summary>
+    /// The schema ids this package publishes, in ordinal order: its operation vocabularies' and
+    /// its result records' schemas, both written from the product's records.
+    /// </summary>
     public IReadOnlyList<string> SchemaIds { get; }
 
     /// <summary>Agent Skill package name, when the product ships one.</summary>
@@ -65,4 +62,8 @@ public sealed class ProductPackageResources
 
     /// <summary>Human-readable Agent Skill summary.</summary>
     public string? SkillDescription { get; }
+
+    /// <summary>The same package publishing <paramref name="schemaIds"/>.</summary>
+    internal ProductPackageResources Publishing(IEnumerable<string> schemaIds) =>
+        new(ProductId, ResourceAssembly, ResourceNames, [.. schemaIds.Order(StringComparer.Ordinal)], SkillName, SkillDescription);
 }

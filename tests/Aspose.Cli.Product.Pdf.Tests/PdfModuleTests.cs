@@ -7,12 +7,6 @@ namespace Aspose.Cli.Product.Pdf.Tests;
 public sealed class PdfModuleTests
     : ProductContractTests<PdfModule>
 {
-    /// <summary>
-    /// None: every result schema is generated from its record and checked against real CLI output
-    /// (<see cref="PdfResultSchemaCoverageTests"/>), so hand-written result samples prove nothing more.
-    /// </summary>
-    protected override IReadOnlyList<Aspose.Cli.Sdk.Contracts.ResultEnvelope> CanonicalResults => [];
-
     protected override IReadOnlyList<ProductSchemaSample> CanonicalInputs => [new(PdfOp.SchemaUri, CanonicalOps)];
 
     protected override IReadOnlyDictionary<string, string> Homonyms { get; } =
