@@ -1,0 +1,28 @@
+{
+  "name": "pdf merge refused by the evaluation page limit names merge's own cause and remedy",
+  "files": {
+    "lines.txt": { "text": "Line 1\nLine 2\nLine 3\nLine 4\nLine 5\nLine 6\nLine 7\nLine 8\nLine 9\nLine 10\nLine 11\nLine 12\nLine 13\nLine 14\nLine 15\nLine 16\nLine 17\nLine 18\nLine 19\nLine 20\nLine 21\nLine 22\nLine 23\nLine 24\nLine 25\nLine 26\nLine 27\nLine 28\nLine 29\nLine 30" }
+  },
+  "steps": [
+    {
+      "args": ["pdf", "create", "four.pdf", "--from-text", "lines.txt", "--margins", "380,36,380,36", "--license-mode", "evaluation"],
+      "expect": { "exitCode": 0, "files": { "present": ["four.pdf"] } }
+    },
+    {
+      "args": ["pdf", "inspect", "four.pdf", "--license-mode", "evaluation"],
+      "expect": { "exitCode": 0, "json": [{ "path": "pdf.pageCount", "equals": 4 }] }
+    },
+    {
+      "args": ["pdf", "merge", "four.pdf", "four.pdf", "--out", "merged.pdf", "--license-mode", "evaluation"],
+      "expect": {
+        "exitCode": 7,
+        "error": "EVALUATION_LIMIT",
+        "json": [
+          { "path": "error.message", "contains": "merging reads every page of the inputs, and together they have more" },
+          { "path": "error.hint", "contains": "merge inputs that have at most 4 pages together" }
+        ],
+        "files": { "absent": ["merged.pdf"], "unchanged": ["four.pdf"], "nothingWritten": true }
+      }
+    }
+  ]
+}
