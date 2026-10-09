@@ -166,7 +166,7 @@ internal sealed partial class PdfMutationHandlers
         }
 
         // The name of a radio group resolves to its first button; the group holds the selection.
-        (PdfFormService.RadioGroup(field) ?? field).Value = operation.Value ?? ClearedFieldValue(field);
+        (PdfForms.RadioGroup(field) ?? field).Value = operation.Value ?? ClearedFieldValue(field);
         return 1;
     }
 
@@ -185,7 +185,7 @@ internal sealed partial class PdfMutationHandlers
         Field[][] fields = [.. operation.Fields.Distinct(StringComparer.Ordinal).Select(name => FormFields(_document, name))];
         foreach (Field[] named in fields)
         {
-            (PdfFormService.RadioGroup(named[0]) ?? named[0]).Flatten();
+            (PdfForms.RadioGroup(named[0]) ?? named[0]).Flatten();
         }
 
         return fields.Sum(static named => named.Length);

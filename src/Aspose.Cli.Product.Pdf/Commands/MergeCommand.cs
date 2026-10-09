@@ -1,11 +1,10 @@
 using System.CommandLine;
-using Aspose.Cli.Sdk.Extensibility;
 
 namespace Aspose.Cli.Product.Pdf.Commands;
 
 internal static class MergeCommand
 {
-    public static Command Create(IProductCommandHost<IPdfEngine> host)
+    public static CommandDefinition<PdfMergeRequest, PdfWriteResult> Create()
     {
         var inputs = new Argument<string[]>("files")
         {
@@ -18,8 +17,7 @@ internal static class MergeCommand
             Description = "preserve or drop input bookmarks.",
         }.WithInput(InputKind.None);
         bookmarks.AcceptOnlyFromAmong("preserve", "drop");
-        return StandardCommand.Create(
-            host,
+        return new(
             "merge",
             "Merge PDF inputs in order.",
             new CommandTraits
@@ -31,13 +29,14 @@ internal static class MergeCommand
             (parse, standard) =>
             {
                 string[] inputPaths = standard.InputFiles(inputs);
-                return standard.OpenEngine().Merge(new PdfMergeRequest
+                return new PdfMergeRequest
                 {
                     InputPaths = inputPaths,
                     Output = standard.Output,
                     PreserveBookmarks = parse.GetRequiredValue(bookmarks) == "preserve",
                     Password = standard.InputPassword,
-                });
-            });
+                };
+            },
+            PdfText.Written);
     }
 }

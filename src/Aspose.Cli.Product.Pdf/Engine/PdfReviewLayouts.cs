@@ -1,4 +1,3 @@
-using Aspose.Cli.Sdk.Licensing;
 using Aspose.Pdf;
 using Aspose.Pdf.Operators;
 using Aspose.Pdf.Text;
@@ -7,27 +6,18 @@ using Aspose.Pdf.Vector;
 namespace Aspose.Cli.Product.Pdf.Engine;
 
 /// <summary>Projects the displayed page sizes and conservative text-boundary facts from the real PDF layout.</summary>
-internal sealed class PdfReviewLayoutService
+internal static class PdfReviewLayouts
 {
     private const double PageBoundaryTolerance = 0.5;
-    private readonly ILicenseState _license;
-    private readonly PdfDocumentLoader _loader;
 
-    internal PdfReviewLayoutService(
-        ILicenseState license,
-        PdfDocumentLoader loader)
-    {
-        _license = license ?? throw new ArgumentNullException(nameof(license));
-        _loader = loader ?? throw new ArgumentNullException(nameof(loader));
-    }
-
-    internal PdfReviewLayout Inspect(
+    internal static PdfReviewLayout Inspect(
+        PdfSession session,
         string filePath,
         Secret? password,
         int maxPages)
     {
-        _ = _license.License;
-        using LoadedPdf loaded = _loader.Open(filePath, password);
+        _ = session.Outputs.License;
+        using LoadedPdf loaded = session.Loader.Open(filePath, password);
         int inspectedPages = Math.Min(loaded.Document.Pages.Count, maxPages);
         var pages = new List<PdfReviewPageLayout>(inspectedPages);
         for (int pageNumber = 1; pageNumber <= inspectedPages; pageNumber++)

@@ -5,38 +5,14 @@ using static Aspose.Cli.Product.Pdf.Engine.PdfEngineSupport;
 
 namespace Aspose.Cli.Product.Pdf.Engine;
 
-/// <summary>Owns PDF structure and bounded content reading.</summary>
-internal sealed class PdfReadService
+/// <summary>Reads a bounded page-text window: <c>pdf query pages</c>.</summary>
+internal static class PdfRead
 {
-    private readonly ILicenseState _license;
-    private readonly PdfDocumentLoader _loader;
-
-    internal PdfReadService(
-        ILicenseState license,
-        PdfDocumentLoader loader)
+    internal static PdfReadResult Run(PdfSession session, PdfReadRequest request)
     {
-        _license = license ?? throw new ArgumentNullException(nameof(license));
-        _loader = loader;
-    }
-
-    internal PdfInfoResult GetInfo(string filePath, PdfInfoRequest request)
-    {
-        LicenseState state = _license.License;
-        using LoadedPdf loaded = _loader.Open(filePath, request.Password);
-        PdfInfoResult info = PdfInfoProjection.Project(loaded, filePath, request);
-        return info with
-        {
-            License = EnvelopeParts.License(state),
-            Warnings = PdfEvaluation.InputTruncated(state, loaded.Document.Pages.Count) is { } truncated
-                ? EnvelopeParts.CombineWarnings(info.Warnings, [truncated])
-                : info.Warnings,
-        };
-    }
-
-    internal PdfReadResult Read(string filePath, PdfReadRequest request)
-    {
-        LicenseState state = _license.License;
-        using LoadedPdf loaded = _loader.Open(filePath, request.Password);
+        string filePath = request.Input;
+        LicenseState state = session.Outputs.License;
+        using LoadedPdf loaded = session.Loader.Open(filePath, request.Password);
         IReadOnlyList<int> requested = request.Pages?.Resolve(loaded.Document.Pages.Count)
             ?? Enumerable.Range(1, loaded.Document.Pages.Count).ToArray();
         var pages = new List<PdfPageText>();

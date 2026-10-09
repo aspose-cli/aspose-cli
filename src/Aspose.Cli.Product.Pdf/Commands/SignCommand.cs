@@ -1,14 +1,14 @@
 using System.CommandLine;
 using System.Globalization;
 using Aspose.Cli.Sdk.Errors;
-using Aspose.Cli.Sdk.Extensibility;
+using Aspose.Cli.Sdk.Extensibility.Output;
 using Aspose.Cli.Sdk.IO;
 
 namespace Aspose.Cli.Product.Pdf.Commands;
 
 internal static class SignCommand
 {
-    public static Command Create(IProductCommandHost<IPdfEngine> host)
+    public static CommandDefinition<PdfSignRequest, PdfSignResult> Create()
     {
         var certificate = new Option<string>("--certificate")
         {
@@ -32,13 +32,12 @@ internal static class SignCommand
         var reason = new Option<string?>("--reason") { Description = "Signing reason stored in the signature." }.WithInput(InputKind.None);
         var location = new Option<string?>("--location") { Description = "Signing location stored in the signature." }.WithInput(InputKind.None);
         var contact = new Option<string?>("--contact") { Description = "Signer contact stored in the signature." }.WithInput(InputKind.None);
-        return StandardCommand.Create(
-            host,
+        return new(
             "sign",
             "Apply a PKCS#7 signature and verify the saved signature field.",
             new CommandTraits
             {
-                Input = PdfCommands.Document with { PasswordSubject = "the input PDF" },
+                Input = PdfInputs.Document with { PasswordSubject = "the input PDF" },
                 Output = OutputTarget.File("Signed PDF path. Default: <input>.signed.pdf.", PdfFormats.Document, derivedMarker: ".signed"),
                 UsesFonts = true,
             },
@@ -62,8 +61,9 @@ internal static class SignCommand
                 ResolvedOutput output = standard.Output;
                 Secret certificateSecret = standard.Password(certificatePassword);
 
-                return standard.OpenEngine().Sign(input, new PdfSignRequest
+                return new PdfSignRequest
                 {
+                    Input = input,
                     CertificatePath = certificatePath,
                     CertificatePassword = certificateSecret,
                     Output = output,
@@ -74,8 +74,17 @@ internal static class SignCommand
                     Reason = parse.GetValue(reason),
                     Location = parse.GetValue(location),
                     Contact = parse.GetValue(contact),
-                });
-            });
+                };
+            },
+            Table);
+    }
+
+    internal static void Table(PdfSignResult result, TableSurface surface)
+    {
+        surface.Out.WriteLine($"signed: {result.Output.Path} ({TableText.Bytes(result.Output.SizeBytes)})");
+        surface.Out.WriteLine($"  field: {result.Signature.Name}");
+        surface.Out.WriteLine($"  valid: {result.Signature.Valid?.ToString().ToLowerInvariant() ?? "unknown"}");
+        surface.Out.WriteLine($"  appearance: {(result.Visible ? $"visible on page {result.Page}" : "invisible")}");
     }
 
     private static PdfSignatureRect ParseRect(string text)

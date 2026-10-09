@@ -24,7 +24,7 @@ public sealed class PdfFontDiagnosticsTests
             Assert.Equal(imageOnly ? 1 : 0, document.Pages[1].Resources.Images?.Count ?? 0);
         }
 
-        PdfInfoResult info = fixture.Engine.GetInfo(input, new PdfInfoRequest { Details = ["fonts"] });
+        PdfInfoResult info = PdfInfo.Run(fixture.Session, new PdfInfoRequest { Input = input, Details = ["fonts"] });
         var environment = new PdfFontEnvironment(fixture.Outputs(ProductTestBudgets.Start<PdfModule>().Writer), ProductTestBudgets.Create<PdfModule>());
         FontCheckResult result = environment.CheckFonts(input, new FontCheckRequest());
 
@@ -40,7 +40,7 @@ public sealed class PdfFontDiagnosticsTests
         using var fixture = new PdfEngineFixture();
         string input = fixture.CreateRawDocument("mixed.pdf", pages: 3,
             textPages: new HashSet<int> { 3 }, imagePages: new HashSet<int> { 2 });
-        PdfInfoResult info = fixture.Engine.GetInfo(input, new PdfInfoRequest { Details = ["fonts"] });
+        PdfInfoResult info = PdfInfo.Run(fixture.Session, new PdfInfoRequest { Input = input, Details = ["fonts"] });
         var environment = new PdfFontEnvironment(fixture.Outputs(ProductTestBudgets.Start<PdfModule>().Writer), ProductTestBudgets.Create<PdfModule>());
         FontCheckResult result = environment.CheckFonts(input, new FontCheckRequest());
 

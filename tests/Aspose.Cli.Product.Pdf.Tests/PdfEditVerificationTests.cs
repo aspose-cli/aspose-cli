@@ -21,7 +21,7 @@ public sealed class PdfEditVerificationTests
         string attachment = fixture.File("figures.csv");
         File.WriteAllText(attachment, "region,total\neast,1\n");
 
-        PdfEditResult result = fixture.Engine.ApplyOps(input, new PdfOpsBatch
+        PdfEditResult result = PdfEdit.Run(fixture.Session, Request(fixture, input, new PdfOpsBatch
         {
             Ops =
             [
@@ -34,7 +34,7 @@ public sealed class PdfEditVerificationTests
                 new AddAttachmentOp { Path = attachment },
                 new RemoveAttachmentOp { Name = "old.txt" },
             ],
-        }, Request(fixture, "verified.pdf"));
+        }, "verified.pdf"));
 
         PdfEditVerification verification = Assert.IsType<PdfEditVerification>(result.Verification);
         Assert.True(verification.Ok, string.Join("; ", verification.Issues.Select(static issue => issue.Message)));
@@ -48,7 +48,7 @@ public sealed class PdfEditVerificationTests
         using var fixture = new PdfEngineFixture();
         string input = CreateDocument(fixture);
 
-        PdfEditResult result = fixture.Engine.ApplyOps(input, new PdfOpsBatch
+        PdfEditResult result = PdfEdit.Run(fixture.Session, Request(fixture, input, new PdfOpsBatch
         {
             Ops =
             [
@@ -56,7 +56,7 @@ public sealed class PdfEditVerificationTests
                 new DeleteBookmarksOp { Indexes = ["1"] },
                 new AddBookmarkOp { Title = "Closing", Page = 1 },
             ],
-        }, Request(fixture, "renumbered.pdf"));
+        }, "renumbered.pdf"));
 
         // The first bookmark's position was renumbered by the deletion, so it was not checked.
         Assert.True(result.Verification!.Ok, string.Join("; ", result.Verification.Issues.Select(static issue => issue.Message)));
@@ -71,10 +71,10 @@ public sealed class PdfEditVerificationTests
         string attachment = fixture.File("old.txt");
         File.WriteAllText(attachment, "a longer replacement");
 
-        PdfEditResult result = fixture.Engine.ApplyOps(input, new PdfOpsBatch
+        PdfEditResult result = PdfEdit.Run(fixture.Session, Request(fixture, input, new PdfOpsBatch
         {
             Ops = [new AddAttachmentOp { Path = attachment }],
-        }, Request(fixture, "same-name.pdf"));
+        }, "same-name.pdf"));
 
         // The engine keeps both attachments named old.txt; the added one is found by its length.
         Assert.True(result.Verification!.Ok, string.Join("; ", result.Verification.Issues.Select(static issue => issue.Message)));
@@ -87,7 +87,7 @@ public sealed class PdfEditVerificationTests
         using var fixture = new PdfEngineFixture();
         string input = CreateDocument(fixture);
 
-        PdfEditResult result = fixture.Engine.ApplyOps(input, new PdfOpsBatch
+        PdfEditResult result = PdfEdit.Run(fixture.Session, Request(fixture, input, new PdfOpsBatch
         {
             Ops =
             [
@@ -96,7 +96,7 @@ public sealed class PdfEditVerificationTests
                 new RemoveMetadataOp(),
                 new SetMetadataOp { Title = "After removal" },
             ],
-        }, Request(fixture, "deleted.pdf"));
+        }, "deleted.pdf"));
 
         Assert.True(result.Verification!.Ok, string.Join("; ", result.Verification.Issues.Select(static issue => issue.Message)));
         // remove_metadata has no reliable read-back: saving writes the producer and dates again.
@@ -109,14 +109,14 @@ public sealed class PdfEditVerificationTests
         using var fixture = new PdfEngineFixture();
         string input = CreateDocument(fixture);
 
-        PdfEditResult result = fixture.Engine.ApplyOps(input, new PdfOpsBatch
+        PdfEditResult result = PdfEdit.Run(fixture.Session, Request(fixture, input, new PdfOpsBatch
         {
             Ops =
             [
                 new RedactTextOp { Pattern = "Secret" },
                 new AddHeaderTextOp { Text = "Secret draft", Pages = "1" },
             ],
-        }, Request(fixture, "readded.pdf"));
+        }, "readded.pdf"));
 
         VerificationIssue issue = Assert.Single(result.Verification!.Issues);
         Assert.Equal("PDF_REDACTED_TEXT_FOUND", issue.Code);
@@ -129,7 +129,7 @@ public sealed class PdfEditVerificationTests
         Assert.True(File.Exists(result.Output!.Path));
 
         using var writer = new StringWriter();
-        Output.PdfRenderers.Render(result, new Sdk.Extensibility.Output.TableSurface(writer, Sdk.Extensibility.Output.TableFormat.Plain));
+        Commands.EditCommand.Table(result, new Sdk.Extensibility.Output.TableSurface(writer, Sdk.Extensibility.Output.TableFormat.Plain));
         string text = writer.ToString();
         Assert.Contains("verification: needs attention", text, StringComparison.Ordinal);
         Assert.Contains("PDF_REDACTED_TEXT_FOUND [pdf/page/1]: Operation 'op-0001' (redact_text)", text, StringComparison.Ordinal);
@@ -143,15 +143,15 @@ public sealed class PdfEditVerificationTests
         string input = CreateDocument(fixture);
 
         // The evaluation watermark reads "Evaluation Only. Created with Aspose.PDF. ...".
-        PdfEditResult result = fixture.Engine.ApplyOps(input, new PdfOpsBatch
+        PdfEditResult result = PdfEdit.Run(fixture.Session, Request(fixture, input, new PdfOpsBatch
         {
             Ops = [new RedactTextOp { Pattern = "Created with" }],
-        }, Request(fixture, "watermark.pdf"));
+        }, "watermark.pdf"));
 
         Assert.True(result.Verification!.Ok, string.Join("; ", result.Verification.Issues.Select(static issue => issue.Message)));
 
         using var writer = new StringWriter();
-        Output.PdfRenderers.Render(result, new Sdk.Extensibility.Output.TableSurface(writer, Sdk.Extensibility.Output.TableFormat.Plain));
+        Commands.EditCommand.Table(result, new Sdk.Extensibility.Output.TableSurface(writer, Sdk.Extensibility.Output.TableFormat.Plain));
         Assert.Contains("verification: ok (1 operation(s) read back: op-0001)", writer.ToString(), StringComparison.Ordinal);
     }
 
@@ -162,14 +162,14 @@ public sealed class PdfEditVerificationTests
         string input = CreateDocument(fixture);
 
         // In evaluation mode the header sits at the top of the page, as the watermark does.
-        PdfEditResult result = fixture.Engine.ApplyOps(input, new PdfOpsBatch
+        PdfEditResult result = PdfEdit.Run(fixture.Session, Request(fixture, input, new PdfOpsBatch
         {
             Ops =
             [
                 new RedactTextOp { Pattern = "Created with" },
                 new AddHeaderTextOp { Text = "Created with care", Pages = "1" },
             ],
-        }, Request(fixture, "header.pdf"));
+        }, "header.pdf"));
 
         VerificationIssue issue = Assert.Single(result.Verification!.Issues);
         Assert.Equal("PDF_REDACTED_TEXT_FOUND", issue.Code);
@@ -270,7 +270,7 @@ public sealed class PdfEditVerificationTests
         using var fixture = new PdfEngineFixture();
         string input = CreateDocument(fixture);
 
-        PdfEditResult result = fixture.Engine.ApplyOps(input, new PdfOpsBatch
+        PdfEditResult result = PdfEdit.Run(fixture.Session, Request(fixture, input, new PdfOpsBatch
         {
             Ops =
             [
@@ -279,7 +279,7 @@ public sealed class PdfEditVerificationTests
                 new SetFormFieldOp { Name = "Customer", Value = "Contoso" },
                 new FlattenFormsOp(),
             ],
-        }, Request(fixture, "superseded.pdf"));
+        }, "superseded.pdf"));
 
         Assert.True(result.Verification!.Ok, string.Join("; ", result.Verification.Issues.Select(static issue => issue.Message)));
         Assert.Equal(["op-0002", "op-0004"], result.Verification.CheckedOps);
@@ -293,10 +293,10 @@ public sealed class PdfEditVerificationTests
         string source = fixture.File("source.pdf");
         File.Copy(input, source);
 
-        PdfEditResult result = fixture.Engine.ApplyOps(input, new PdfOpsBatch
+        PdfEditResult result = PdfEdit.Run(fixture.Session, Request(fixture, input, new PdfOpsBatch
         {
             Ops = [new FlattenFormsOp(), new InsertPagesFromOp { Path = source, At = 3 }],
-        }, Request(fixture, "inserted.pdf"));
+        }, "inserted.pdf"));
 
         Assert.True(result.Verification!.Ok, string.Join("; ", result.Verification.Issues.Select(static issue => issue.Message)));
         Assert.Equal(["op-0002"], result.Verification.CheckedOps);
@@ -308,16 +308,21 @@ public sealed class PdfEditVerificationTests
         using var fixture = new PdfEngineFixture();
         string input = CreateDocument(fixture);
 
-        PdfEditResult result = fixture.Engine.ApplyOps(input, new PdfOpsBatch
+        PdfEditResult result = PdfEdit.Run(fixture.Session, new PdfEditRequest
         {
-            Ops = [new SetMetadataOp { Title = "Plain" }],
-        }, new PdfEditRequest { Output = TestOutput.At(fixture.File("plain.pdf")) });
+            Input = input,
+            Batch = new PdfOpsBatch
+            {
+                Ops = [new SetMetadataOp { Title = "Plain" }],
+            },
+            Output = TestOutput.At(fixture.File("plain.pdf")),
+        });
 
         Assert.Null(result.Verification);
     }
 
-    private static PdfEditRequest Request(PdfEngineFixture fixture, string output) =>
-        new() { Output = TestOutput.At(fixture.File(output)), Verify = true };
+    private static PdfEditRequest Request(PdfEngineFixture fixture, string input, PdfOpsBatch batch, string output) =>
+        new() { Input = input, Batch = batch, Output = TestOutput.At(fixture.File(output)), Verify = true };
 
     /// <summary>
     /// Two pages ("Customer Secret 42", "Public text"), a text field Customer on page 1, one

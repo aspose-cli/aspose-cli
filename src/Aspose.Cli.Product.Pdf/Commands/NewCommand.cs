@@ -1,14 +1,13 @@
 using System.CommandLine;
 using System.Globalization;
 using Aspose.Cli.Sdk.Errors;
-using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.IO;
 
 namespace Aspose.Cli.Product.Pdf.Commands;
 
 internal static class NewCommand
 {
-    public static Command Create(IProductCommandHost<IPdfEngine> host)
+    public static CommandDefinition<NewPdfRequest, PdfWriteResult> Create()
     {
         var images = new Option<string[]>("--from-images")
         {
@@ -24,8 +23,7 @@ internal static class NewCommand
         var pageSize = new Option<string>("--page-size") { DefaultValueFactory = _ => "A4", Description = "A3, A4, Letter or Legal." }.WithInput(InputKind.None);
         pageSize.AcceptOnlyFromAmong([.. PdfPageSizes.Names]);
         var margins = new Option<string>("--margins") { DefaultValueFactory = _ => "36", Description = "One value or top,right,bottom,left in points." }.WithInput(InputKind.None);
-        return StandardCommand.Create(
-            host,
+        return new(
             "create",
             "Create a PDF from exactly one source family.",
             new CommandTraits
@@ -51,7 +49,7 @@ internal static class NewCommand
                 string? htmlPath = standard.InputFile(html);
                 string? textPath = standard.InputFile(text);
                 ResolvedOutput output = standard.Output;
-                return standard.OpenEngine().Create(new NewPdfRequest
+                return new NewPdfRequest
                 {
                     Output = output,
                     ImagePaths = imagePaths,
@@ -60,8 +58,9 @@ internal static class NewCommand
                     TextPath = textPath,
                     PageSize = parse.GetValue(pageSize) ?? "A4",
                     Margins = ParseMargins(parse.GetValue(margins) ?? "36"),
-                });
-            });
+                };
+            },
+            PdfText.Written);
     }
 
     private static PdfMargins ParseMargins(string text)

@@ -23,7 +23,7 @@ public sealed class PdfReviewAndInfoTests
             document.Save(path);
         }
 
-        PdfPageInfo page = Assert.Single(fixture.Engine.GetInfo(path, new PdfInfoRequest { IncludePreview = true }).Pages!);
+        PdfPageInfo page = Assert.Single(PdfInfo.Run(fixture.Session, new PdfInfoRequest { Input = path, IncludePreview = true }).Pages!);
 
         Assert.Equal(degrees, page.Rotation);
     }
@@ -122,9 +122,10 @@ public sealed class PdfReviewAndInfoTests
         using var workspace = new TempWorkspace();
         string input = fixture.CreateRawDocument("runs.pdf", pages: 2, textContent: PdfMutateTests.ConsecutiveRuns);
         string output = fixture.File("runs.redacted.pdf");
-        fixture.Engine.ApplyOps(
-            input,
-            new PdfOpsBatch
+        PdfEdit.Run(fixture.Session, new PdfEditRequest
+        {
+            Input = input,
+            Batch = new PdfOpsBatch
             {
                 Ops =
                 [
@@ -133,7 +134,8 @@ public sealed class PdfReviewAndInfoTests
                     new RedactTextOp { Pattern = "order.", Pages = "2" },
                 ],
             },
-            new PdfEditRequest { Output = TestOutput.At(output) });
+            Output = TestOutput.At(output),
+        });
 
         JsonNode review = Review(workspace, output);
 
@@ -366,11 +368,11 @@ public sealed class PdfReviewAndInfoTests
             document.Save(input);
         }
 
-        PdfInfoResult info = fixture.Engine.GetInfo(input, new PdfInfoRequest { Details = ["forms"] });
+        PdfInfoResult info = PdfInfo.Run(fixture.Session, new PdfInfoRequest { Input = input, Details = ["forms"] });
         JsonNode result = Review(workspace, input);
 
         Assert.Equal(2, info.Forms!.FieldCount);
-        Assert.Equal(2, fixture.Engine.ReadForm(input, new PdfFormReadRequest()).Fields.Select(static field => field.Name).Distinct().Count());
+        Assert.Equal(2, PdfForms.Read(fixture.Session, new PdfFormReadRequest { Input = input }).Fields.Select(static field => field.Name).Distinct().Count());
         Assert.Contains(result["findings"]!.AsArray(), static item => item!["code"]!.GetValue<string>() == "PDF_FORM_APPEARANCE_REVIEW_REQUIRED"
             && item["message"]!.GetValue<string>().Contains("2 form field(s)", StringComparison.Ordinal));
         Assert.Equal(2, result["coverage"]!["metrics"]!.AsArray()

@@ -6,26 +6,17 @@ using static Aspose.Cli.Product.Pdf.Engine.PdfEngineSupport;
 
 namespace Aspose.Cli.Product.Pdf.Engine;
 
-/// <summary>Owns AcroForm and XFA read, fill and export behavior.</summary>
-internal sealed class PdfFormService
+/// <summary>
+/// Reads AcroForm and XFA fields (<c>pdf query forms</c>) and exports form data
+/// (<c>pdf extract --what forms</c>); the field helpers serve editing too.
+/// </summary>
+internal static class PdfForms
 {
-    private readonly OutputPipeline<Document> _outputs;
-    private readonly PdfDocumentLoader _loader;
-
-    internal PdfFormService(
-        OutputPipeline<Document> outputs,
-        PdfDocumentLoader loader)
+    internal static PdfFormResult Read(PdfSession session, PdfFormReadRequest request)
     {
-        _outputs = outputs ?? throw new ArgumentNullException(nameof(outputs));
-        _loader = loader;
-    }
-
-    /// <inheritdoc />
-
-    public PdfFormResult ReadForm(string filePath, PdfFormReadRequest request)
-    {
-        LicenseState state = _outputs.License;
-        using LoadedPdf loaded = _loader.Open(filePath, request.Password);
+        string filePath = request.Input;
+        LicenseState state = session.Outputs.License;
+        using LoadedPdf loaded = session.Loader.Open(filePath, request.Password);
         Form form = loaded.Document.Form;
         var unpaged = new List<string>();
         var fields = form.Fields.OrderBy(static field => field.FullName, StringComparer.Ordinal)
@@ -138,12 +129,13 @@ internal sealed class PdfFormService
         _ => PdfFormFieldTypes.Other,
     };
 
-    public PdfFormExportResult ExportForm(string filePath, PdfFormExportRequest request)
+    internal static PdfFormExportResult Export(PdfSession session, PdfFormExportRequest request)
     {
-        LicenseState state = _outputs.License;
-        using LoadedPdf loaded = _loader.Open(filePath, request.Password);
+        string filePath = request.Input;
+        LicenseState state = session.Outputs.License;
+        using LoadedPdf loaded = session.Loader.Open(filePath, request.Password);
         EnsureAcroForm(loaded.Document);
-        long size = _outputs.Write(request.Output.Path, request.Output.Overwrite, null, temp =>
+        long size = session.Outputs.Write(request.Output.Path, request.Output.Overwrite, null, temp =>
         {
             var facade = new Aspose.Pdf.Facades.Form(loaded.Document);
             using FileStream stream = File.Create(temp);

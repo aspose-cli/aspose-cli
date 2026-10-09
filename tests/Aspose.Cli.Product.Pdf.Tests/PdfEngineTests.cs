@@ -32,12 +32,13 @@ public sealed class PdfEngineTests
             document.Save(path);
         }
 
-        PdfInfoResult info = fixture.Engine.GetInfo(path, new PdfInfoRequest
+        PdfInfoResult info = PdfInfo.Run(fixture.Session, new PdfInfoRequest
         {
+            Input = path,
             Details = ["outline", "forms", "attachments", "fonts", "permissions", "signatures", "layers", "metadata"],
         });
         using var writer = new StringWriter();
-        Output.PdfRenderers.Render(info, new Sdk.Extensibility.Output.TableSurface(writer, format));
+        Commands.InfoCommand.Table(info, new Sdk.Extensibility.Output.TableSurface(writer, format));
         string text = writer.ToString();
 
         string heading = format == Sdk.Extensibility.Output.TableFormat.Markdown ? "### " : string.Empty;
@@ -66,9 +67,9 @@ public sealed class PdfEngineTests
             <body><h1>Report</h1></body></html>
             """);
 
-        PdfWriteResult result = fixture.Engine.Create(new NewPdfRequest { Output = TestOutput.At(fixture.File("report.pdf")), HtmlPath = input });
+        PdfWriteResult result = PdfCreate.Run(fixture.Session, new NewPdfRequest { Output = TestOutput.At(fixture.File("report.pdf")), HtmlPath = input });
 
-        PdfInfoResult info = fixture.Engine.GetInfo(result.Output.Path, new PdfInfoRequest { Details = ["metadata"] });
+        PdfInfoResult info = PdfInfo.Run(fixture.Session, new PdfInfoRequest { Input = result.Output.Path, Details = ["metadata"] });
         Assert.Equal("2026 Q3 运营报告 & East", info.Metadata!["title"]);
         Assert.Null(info.Metadata["author"]);
         Assert.Null(info.Metadata["subject"]);
@@ -86,7 +87,7 @@ public sealed class PdfEngineTests
             </form></body></html>
             """);
 
-        PdfWriteResult result = fixture.Engine.Create(new NewPdfRequest { Output = TestOutput.At(fixture.File("form.pdf")), HtmlPath = input });
+        PdfWriteResult result = PdfCreate.Run(fixture.Session, new NewPdfRequest { Output = TestOutput.At(fixture.File("form.pdf")), HtmlPath = input });
 
         using var document = new Document(result.Output.Path);
         CheckboxField[] boxes = [.. document.Form.Fields.OfType<CheckboxField>()];
@@ -102,9 +103,9 @@ public sealed class PdfEngineTests
         string input = fixture.File("notes.md");
         File.WriteAllText(input, "# Notes\n\nBody text.\n");
 
-        PdfWriteResult result = fixture.Engine.Create(new NewPdfRequest { Output = TestOutput.At(fixture.File("notes.pdf")), TextPath = input });
+        PdfWriteResult result = PdfCreate.Run(fixture.Session, new NewPdfRequest { Output = TestOutput.At(fixture.File("notes.pdf")), TextPath = input });
 
-        PdfInfoResult info = fixture.Engine.GetInfo(result.Output.Path, new PdfInfoRequest { Details = ["metadata"] });
+        PdfInfoResult info = PdfInfo.Run(fixture.Session, new PdfInfoRequest { Input = result.Output.Path, Details = ["metadata"] });
         Assert.Null(info.Metadata!["title"]);
         Assert.Null(info.Metadata["author"]);
         Assert.Null(info.Metadata["subject"]);
@@ -119,7 +120,7 @@ public sealed class PdfEngineTests
         string portrait = fixture.File("portrait.svg");
         File.WriteAllText(portrait, """<svg xmlns="http://www.w3.org/2000/svg" width="100" height="300"><rect width="100" height="300" fill="#246"/></svg>""");
 
-        PdfWriteResult result = fixture.Engine.Create(new NewPdfRequest
+        PdfWriteResult result = PdfCreate.Run(fixture.Session, new NewPdfRequest
         {
             Output = TestOutput.At(fixture.File("images.pdf")),
             ImagePaths = [landscape, portrait],
@@ -157,13 +158,13 @@ public sealed class PdfEngineTests
         // 600 points of top and bottom margin fit A4 portrait (842 high), not landscape (595).
         var margins = new PdfMargins(300, 36, 300, 36);
 
-        PdfWriteResult created = fixture.Engine.Create(new NewPdfRequest
+        PdfWriteResult created = PdfCreate.Run(fixture.Session, new NewPdfRequest
         {
             Output = TestOutput.At(fixture.File("portrait.pdf")),
             ImagePaths = [portrait],
             Margins = margins,
         });
-        CliException refused = Assert.Throws<CliException>(() => fixture.Engine.Create(new NewPdfRequest
+        CliException refused = Assert.Throws<CliException>(() => PdfCreate.Run(fixture.Session, new NewPdfRequest
         {
             Output = TestOutput.At(fixture.File("mixed.pdf")),
             ImagePaths = [portrait, landscape],
@@ -235,7 +236,7 @@ public sealed class PdfEngineTests
         string image = fixture.File("image.svg");
         File.WriteAllText(image, svg);
 
-        PdfWriteResult result = fixture.Engine.Create(new NewPdfRequest { Output = TestOutput.At(fixture.File("svg.pdf")), ImagePaths = [image] });
+        PdfWriteResult result = PdfCreate.Run(fixture.Session, new NewPdfRequest { Output = TestOutput.At(fixture.File("svg.pdf")), ImagePaths = [image] });
 
         using var document = new Document(result.Output.Path);
         Page page = document.Pages[1];
@@ -255,7 +256,7 @@ public sealed class PdfEngineTests
         string photo = fixture.File("photo.jpg");
         File.WriteAllBytes(photo, OrientedJpeg(200, 100, orientation: 6));
 
-        PdfWriteResult result = fixture.Engine.Create(new NewPdfRequest { Output = TestOutput.At(fixture.File("photo.pdf")), ImagePaths = [photo] });
+        PdfWriteResult result = PdfCreate.Run(fixture.Session, new NewPdfRequest { Output = TestOutput.At(fixture.File("photo.pdf")), ImagePaths = [photo] });
 
         using var document = new Document(result.Output.Path);
         Page page = document.Pages[1];
@@ -278,9 +279,9 @@ public sealed class PdfEngineTests
         File.WriteAllBytes(images[1], Bitmap(300, 100));
         File.WriteAllBytes(images[2], Bitmap(100, 100));
         File.WriteAllBytes(images[3], Bitmap(100, 300));
-        PdfWriteResult created = fixture.Engine.Create(new NewPdfRequest { Output = TestOutput.At(fixture.File("scans.pdf")), ImagePaths = images });
+        PdfWriteResult created = PdfCreate.Run(fixture.Session, new NewPdfRequest { Output = TestOutput.At(fixture.File("scans.pdf")), ImagePaths = images });
 
-        PdfReadResult read = fixture.Engine.Read(created.Output.Path, new PdfReadRequest());
+        PdfReadResult read = PdfRead.Run(fixture.Session, new PdfReadRequest { Input = created.Output.Path });
         CliResult review = workspace.Run(["review", created.Output.Path, "--out", workspace.File("review"), "--output", "json"]);
 
         Assert.Equal([1, 2, 3, 4], read.ScannedPagesSuspected);
@@ -309,7 +310,7 @@ public sealed class PdfEngineTests
 
         CliResult created = workspace.Run(
             ["pdf", "merge", scan, text, "--out", merged, "--license-mode", "evaluation", "--output", "json"]);
-        PdfReadResult read = fixture.Engine.Read(merged, new PdfReadRequest());
+        PdfReadResult read = PdfRead.Run(fixture.Session, new PdfReadRequest { Input = merged });
 
         Assert.True(created.ExitCode == 0, created.StdOut + created.StdErr);
         Assert.Contains("Evaluation Only", read.Pages[0].Text, StringComparison.Ordinal);
@@ -375,7 +376,7 @@ public sealed class PdfEngineTests
             document.Save(path);
         }
 
-        PdfInfoResult result = fixture.Engine.GetInfo(path, new PdfInfoRequest { Details = ["metadata"] });
+        PdfInfoResult result = PdfInfo.Run(fixture.Session, new PdfInfoRequest { Input = path, Details = ["metadata"] });
 
         Assert.Equal(expected, result.Metadata!["creationDate"]);
     }
@@ -408,8 +409,9 @@ public sealed class PdfEngineTests
             document.Save(path);
         }
 
-        var result = fixture.Engine.GetInfo(path, new PdfInfoRequest
+        var result = PdfInfo.Run(fixture.Session, new PdfInfoRequest
         {
+            Input = path,
             IncludePreview = true,
             Details = ["outline", "forms", "attachments", "fonts", "permissions", "signatures", "layers", "metadata"],
         });
@@ -460,8 +462,9 @@ public sealed class PdfEngineTests
         using var fixture = new PdfEngineFixture();
         string path = fixture.CreateDocument(pages: 3);
 
-        var result = fixture.Engine.Read(path, new PdfReadRequest
+        var result = PdfRead.Run(fixture.Session, new PdfReadRequest
         {
+            Input = path,
             Pages = CliPageRange.Parse("2-3"),
             Mode = mode,
             MaxCharacters = 20_000,
@@ -480,7 +483,7 @@ public sealed class PdfEngineTests
         using var fixture = new PdfEngineFixture();
         string path = fixture.CreateDocument(pages: 3);
 
-        var result = fixture.Engine.Read(path, new PdfReadRequest { MaxCharacters = 24 });
+        var result = PdfRead.Run(fixture.Session, new PdfReadRequest { Input = path, MaxCharacters = 24 });
 
         Assert.True(result.Window!.Truncated);
         Assert.Equal(24, result.Pages.Sum(static page => page.Text.Length));
@@ -506,14 +509,15 @@ public sealed class PdfEngineTests
         }
 
         CliException required = Assert.Throws<CliException>(
-            () => fixture.Engine.GetInfo(path, new PdfInfoRequest()));
+            () => PdfInfo.Run(fixture.Session, new PdfInfoRequest { Input = path }));
         Assert.Equal(ErrorCodes.PasswordRequired, required.Code);
         CliException invalid = Assert.Throws<CliException>(
-            () => fixture.Engine.GetInfo(path, new PdfInfoRequest { Password = new Secret("wrong") }));
+            () => PdfInfo.Run(fixture.Session, new PdfInfoRequest { Input = path, Password = new Secret("wrong") }));
         Assert.Equal(ErrorCodes.PasswordInvalid, invalid.Code);
 
-        var user = fixture.Engine.GetInfo(path, new PdfInfoRequest
+        var user = PdfInfo.Run(fixture.Session, new PdfInfoRequest
         {
+            Input = path,
             Password = new Secret("reader-secret"),
             Details = ["permissions"],
         });
@@ -521,8 +525,9 @@ public sealed class PdfEngineTests
         Assert.False(user.Permissions!.OwnerAccess);
         Assert.False(user.Permissions.Copy);
 
-        var owner = fixture.Engine.GetInfo(path, new PdfInfoRequest
+        var owner = PdfInfo.Run(fixture.Session, new PdfInfoRequest
         {
+            Input = path,
             Password = new Secret("owner-secret"),
             Details = ["permissions"],
         });
@@ -541,12 +546,8 @@ public sealed class PdfEngineTests
             "owner-secret",
             "owner-password-only.pdf");
 
-        var normal = fixture.Engine.GetInfo(
-            path,
-            new PdfInfoRequest { Details = ["permissions"] });
-        var owner = fixture.Engine.GetInfo(
-            path,
-            new PdfInfoRequest { Password = new Secret("owner-secret"), Details = ["permissions"] });
+        var normal = PdfInfo.Run(fixture.Session, new PdfInfoRequest { Input = path, Details = ["permissions"] });
+        var owner = PdfInfo.Run(fixture.Session, new PdfInfoRequest { Input = path, Password = new Secret("owner-secret"), Details = ["permissions"] });
 
         Assert.True(normal.Pdf.Encrypted);
         // The file has only an owner password, so it opened without one.
@@ -567,7 +568,7 @@ public sealed class PdfEngineTests
         File.WriteAllText(path, "not really a PDF");
 
         CliException exception = Assert.Throws<CliException>(
-            () => fixture.Engine.GetInfo(path, new PdfInfoRequest()));
+            () => PdfInfo.Run(fixture.Session, new PdfInfoRequest { Input = path }));
 
         Assert.Equal(ErrorCodes.FileCorrupt, exception.Code);
     }
@@ -578,7 +579,7 @@ public sealed class PdfEngineTests
         using var fixture = new PdfEngineFixture();
         string path = fixture.CreateRawDocument("hundred-pages.pdf", pages: 100);
 
-        var result = fixture.Engine.Read(path, new PdfReadRequest { MaxCharacters = 1 });
+        var result = PdfRead.Run(fixture.Session, new PdfReadRequest { Input = path, MaxCharacters = 1 });
 
         Assert.Equal(new ResultWindow { Unit = "page", Returned = 1, Total = 100, Truncated = true }, result.Window);
         Assert.Single(result.Pages);
@@ -590,7 +591,7 @@ public sealed class PdfEngineTests
         using var fixture = new PdfEngineFixture();
         string path = fixture.CreateRawDocument("many-pages.pdf", pages: 21);
 
-        PdfInfoResult info = fixture.Engine.GetInfo(path, new PdfInfoRequest { IncludePreview = true });
+        PdfInfoResult info = PdfInfo.Run(fixture.Session, new PdfInfoRequest { Input = path, IncludePreview = true });
 
         Assert.Equal(20, info.Pages!.Count);
         Warning warning = Assert.Single(info.Warnings!);
@@ -627,7 +628,7 @@ public sealed class PdfEngineTests
             document.Save(path);
         }
 
-        var result = fixture.Engine.GetInfo(path, new PdfInfoRequest { Details = ["forms"] });
+        var result = PdfInfo.Run(fixture.Session, new PdfInfoRequest { Input = path, Details = ["forms"] });
 
         Assert.Equal("xfa", result.Pdf.FormType);
         Assert.Equal("xfa", result.Forms!.Type);
@@ -641,8 +642,9 @@ public sealed class PdfEngineTests
         string input = fixture.CreateDocument("html-source.pdf", 1);
         string output = fixture.File("self-contained.html");
 
-        var result = fixture.Engine.Convert(input, new PdfConvertRequest
+        var result = PdfConvert.Run(fixture.Session, new PdfConvertRequest
         {
+            Input = input,
             Output = TestOutput.At(output, format: "html"),
         });
 
@@ -665,7 +667,7 @@ public sealed class PdfEngineTests
         }
         string output = fixture.File("titled.html");
 
-        PdfConvertResult result = fixture.Engine.Convert(input, new PdfConvertRequest { Output = TestOutput.At(output, format: "html") });
+        PdfConvertResult result = PdfConvert.Run(fixture.Session, new PdfConvertRequest { Input = input, Output = TestOutput.At(output, format: "html") });
 
         Warning lossy = Assert.Single(result.Warnings!, static warning => warning.Code == WarningCodes.LossyConversion);
         Assert.StartsWith("Open the HTML in a browser", lossy.Hint, StringComparison.Ordinal);
@@ -690,8 +692,9 @@ public sealed class PdfEngineTests
         }
         string output = fixture.File("titled.xps");
 
-        fixture.Engine.Convert(input, new PdfConvertRequest
+        PdfConvert.Run(fixture.Session, new PdfConvertRequest
         {
+            Input = input,
             Output = TestOutput.At(output, format: "xps"),
             Pages = pages is null ? null : CliPageRange.Parse(pages),
         });
@@ -721,8 +724,9 @@ public sealed class PdfEngineTests
             document.Save(input);
         }
 
-        PdfConvertResult result = fixture.Engine.Convert(input, new PdfConvertRequest
+        PdfConvertResult result = PdfConvert.Run(fixture.Session, new PdfConvertRequest
         {
+            Input = input,
             Output = TestOutput.At(fixture.File("chapters.docx"), format: "docx"),
             Pages = CliPageRange.Parse(pages),
         });
@@ -757,8 +761,9 @@ public sealed class PdfEngineTests
         string input = fixture.CreateDocument(pages: 1);
         string output = fixture.File("output" + PdfFormats.Definitions.ExtensionFor(format));
 
-        var result = fixture.Disclosed(engine => engine.Convert(input, new PdfConvertRequest
+        var result = fixture.Disclosed(session => PdfConvert.Run(session, new PdfConvertRequest
         {
+            Input = input,
             Output = TestOutput.At(output, format: format),
         }));
 

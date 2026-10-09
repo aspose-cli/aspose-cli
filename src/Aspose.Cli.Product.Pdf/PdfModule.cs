@@ -1,5 +1,4 @@
 using Aspose.Cli.Product.Pdf.Commands;
-using Aspose.Cli.Product.Pdf.Output;
 using Aspose.Cli.Sdk.Extensibility;
 
 namespace Aspose.Cli.Product.Pdf;
@@ -27,26 +26,41 @@ public sealed class PdfModule : IProductModule
     };
 
     public ProductDefinition Define() =>
-        Aspose.Cli.Sdk.Extensibility.Product.Define<IPdfEngine>(Manifest)
+        Aspose.Cli.Sdk.Extensibility.Product.Define<PdfSession>(Manifest)
             .Formats(PdfFormats.Definitions)
             .Diagnostics(PdfDiagnostics.All)
             .Json(ProductJsonContext.Definition)
             .View(new PdfViewAdapter())
-            .Output<PdfInfoResult>(PdfRenderers.Render)
-            .Output<PdfReadResult>(PdfRenderers.Render)
-            .Output<PdfConvertResult>(PdfRenderers.Render)
-            .Output<PdfRenderResult>(PdfRenderers.Render)
-            .Output<PdfWriteResult>(PdfRenderers.Render)
-            .Output<PdfSplitResult>(PdfRenderers.Render)
-            .Output<PdfExtractResult>(PdfRenderers.Render)
-            .Output<PdfEditResult>(PdfRenderers.Render)
-            .Output<PdfFormResult>(PdfRenderers.Render)
-            .Output<PdfFormExportResult>(PdfRenderers.Render)
-            .Output<PdfSearchResult>(PdfRenderers.Render)
-            .Output<PdfValidateResult>(PdfRenderers.Render)
-            .Output<PdfSignResult>(PdfRenderers.Render)
-            .Commands(PdfCommands.Create)
+            // Only the EVALUATION_LIMIT refusal; the write pipeline discloses evaluation output.
+            .Guard(static (session, run) => PdfEvaluation.Run(session.Outputs, run))
+            .Describe("PDF automation with page, security and fixed-layout semantics.", Help)
+            .Command(InfoCommand.Create, PdfInfo.Run)
+            .Group("query", "Query bounded PDF pages, forms or text matches.", static query => query
+                .Command(ReadCommand.Create, PdfRead.Run)
+                .Command(FormsCommand.Create, PdfForms.Read)
+                .Command(SearchCommand.Create, PdfSearch.Run))
+            .Command(ConvertCommand.Create, PdfConvert.Run)
+            .Command(RenderCommand.Create, PdfRender.Run)
+            .Command(NewCommand.Create, PdfCreate.Run)
+            .Command(MergeCommand.Create, PdfMerge.Run)
+            .Command(SplitCommand.Create, PdfSplit.Run)
+            .Command(ExtractCommand.Create, PdfExtract.Run)
+            .Command(EditCommand.Create, PdfEdit.Run)
+            .Command(ValidateCommand.Create, PdfValidate.Run)
+            .Command(SignCommand.Create, PdfSign.Run)
             .Activator(static context => PdfActivation.Activate(context, Manifest.Id))
             .Build();
 
+    private static CommandHelp Help() => new(
+        [
+            "pdf inspect report.pdf --preview --detail permissions forms signatures",
+            "pdf query pages report.pdf --pages 1-5 --mode layout --output json",
+            "pdf edit report.pdf --ops ops.json --out reviewed.pdf",
+            "pdf sign reviewed.pdf --certificate signer.pfx --certificate-password-env PDF_SIGNING_PASSWORD --out approved.pdf",
+        ],
+        [
+            CommandHelpLink.Docs(Manifest, "editing", "fixed-layout operations and safe mutation"),
+            CommandHelpLink.Docs(Manifest, "verification", "read-back, rendering and PDF/A evidence"),
+            CommandHelpLink.Schema(Manifest, "the operation JSON schema"),
+        ]);
 }
