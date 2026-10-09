@@ -34,7 +34,7 @@ internal sealed record SameNameExemption(string Option, OptionAspect Aspects, st
 /// differences allowed are the <see cref="Exemptions"/>, each with its reason; an exemption that no
 /// longer matches a difference fails, so the list only shrinks.
 /// </summary>
-internal static class SameNameOptions
+internal static partial class SameNameOptions
 {
     /// <summary>
     /// The names that mean different things on different commands, or whose values the command
@@ -52,9 +52,8 @@ internal static class SameNameOptions
         new("--sheet", OptionAspect.Description,
             "The sheet a command reads defaults differently: the active sheet (cells query range, render), every sheet "
             + "(cells query search) or the whole workbook (cells convert, for csv, tsv, md and pdf only)."),
-        new("--to", OptionAspect.AllowedValues | OptionAspect.Default,
-            "Each convert and render writes its own product's formats, and render defaults to png where convert has no "
-            + "default; S1 keeps both."),
+        new("--to", OptionAspect.AllowedValues,
+            "Each convert, extract and render writes its own product's formats; S1 keeps each list."),
         new("--to", OptionAspect.Description, OwnOutput),
         new("--out", OptionAspect.Description, OwnOutput),
         new("--out-dir", OptionAspect.Description, OwnOutput),
@@ -106,7 +105,9 @@ internal static class SameNameOptions
             + "with { or [ (inline). To name a file whose name starts with '[', prefix it with ./ . Vocabulary: aspose-cli "
             + "schema v2/") + "[a-z]+" + Regex.Escape("/ops.") + "$"),
         new("--max-chars", @"^Maximum characters returned, counting .+\. Range 1-10000000\.$"),
-        new("--to", @"^Image format: png, jpeg or svg\.$", static command => command.EndsWith(" render", StringComparison.Ordinal)),
+        // Without --to, render takes the format from the --out extension, else png: no parser default.
+        new("--to", "^" + Regex.Escape("Image format: png, jpeg or svg. Default: the --out extension's format, else png.") + "$",
+            static command => command.EndsWith(" render", StringComparison.Ordinal)),
         new("--password", PasswordTemplate("--password")),
         new("--password-env", PasswordEnvTemplate),
         new("--password-stdin", @"^Read the password for .+ from the first line of stdin\.$"),
@@ -184,6 +185,16 @@ internal static class SameNameOptions
                 problems.Add(Problem($"{name}: {restated.Length} descriptions list every allowed value, which help already prints "
                     + "after the description; name only the values that need a note: " + string.Join(" | ", restated)));
             }
+            string[] echoing =
+            [
+                .. declared.Where(option => template.ListsNoValues && template.Covers(option.Command))
+                    .SelectMany(option => NotesRepeatingTheirValue(option.Option).Select(note => $"'{note}' ({option.Command})")),
+            ];
+            if (echoing.Length > 0)
+            {
+                problems.Add(Problem($"{name}: {echoing.Length} notes only repeat the value they describe; say what the value holds, "
+                    + "or drop the note: " + string.Join(" | ", echoing)));
+            }
         }
         foreach (OptionAspect aspect in new[] { OptionAspect.Description, OptionAspect.Arity, OptionAspect.AllowedValues, OptionAspect.Default })
         {
@@ -238,6 +249,41 @@ internal static class SameNameOptions
             Regex.IsMatch(description, $@"(?<![\w-]){Regex.Escape(value)}(?![\w-])", RegexOptions.IgnoreCase));
     }
 
+    /// <summary>
+    /// The <c>value: note</c> notes of a description whose note says nothing beyond the value's
+    /// own name, such as <c>fonts: fonts used</c>: once the value's name and filler words are
+    /// removed, no word is left.
+    /// </summary>
+    internal static IEnumerable<string> NotesRepeatingTheirValue(JsonNode option)
+    {
+        string description = option["description"]?.GetValue<string>() ?? string.Empty;
+        HashSet<string> values = [.. (option["allowedValues"]?.AsArray() ?? []).Select(static value => value!.GetValue<string>())];
+        foreach (Match note in ValueNote().Matches(description))
+        {
+            string value = note.Groups["value"].Value;
+            if (!values.Contains(value))
+            {
+                continue;
+            }
+            string singular = value.EndsWith('s') ? value[..^1] : value;
+            bool informative = Regex.Matches(note.Groups["note"].Value.ToLowerInvariant(), "[a-z0-9]+")
+                .Select(static word => word.Value)
+                .Any(word => word != value && word != singular && word != singular + "s" && !NoteFiller.Contains(word));
+            if (!informative)
+            {
+                yield return note.Value.Trim();
+            }
+        }
+    }
+
+    /// <summary>Words that add nothing to a note: the value's name with only these left is a repetition.</summary>
+    private static readonly HashSet<string> NoteFiller =
+        ["used", "the", "a", "an", "all", "any", "each", "every", "of", "in", "its", "their", "list", "listed", "included"];
+
+    /// <summary>One <c>value: note</c> entry of a description, ended by ';' or the final '.'.</summary>
+    [GeneratedRegex(@"(?<=(?:^|[.;]\s))(?<value>[a-z][a-z0-9-]*): (?<note>[^;]+?)(?=;|\.$)")]
+    private static partial Regex ValueNote();
+
     private static ScenarioProblem Problem(string message) => new(0, InvariantCases.SameNameOption, message);
 
     private static string Describe(OptionAspect aspect) => aspect switch
@@ -287,18 +333,23 @@ public sealed class SameNameExemptionTests
     [InlineData("Extra sections to include; repeat for more.", true)]
     [InlineData("Extra sections to include; repeat for more. outline: bookmarks, up to 200; layers: optional content layer names.", true)]
     [InlineData("Extra sections to include; repeat for more: outline (bookmarks, up to 200), forms, layers.", false)]
-    [InlineData("Extra sections to include; repeat for more. outline, forms, layers.", false)]
+    [InlineData("Extra sections to include; repeat for more. outline, forms, layers, fonts, names.", false)]
+    [InlineData("Extra sections to include; repeat for more. fonts: fonts used.", false)]
+    [InlineData("Extra sections to include; repeat for more. outline: headings; fonts: fonts used.", false)]
+    [InlineData("Extra sections to include; repeat for more. fonts: font names and whether each is embedded.", true)]
+    [InlineData("Extra sections to include; repeat for more. names: defined names; fonts: names of the fonts the document uses.", true)]
     public void DetailTemplate_TakesNotesButNoValueList(string description, bool accepted)
     {
         DescriptionTemplate template = SameNameOptions.Templates.Single(static template => template.Option == "--detail");
         JsonNode option = new JsonObject
         {
             ["description"] = description,
-            ["allowedValues"] = new JsonArray("outline", "forms", "layers"),
+            ["allowedValues"] = new JsonArray("outline", "forms", "layers", "fonts", "names"),
         };
 
         bool matches = Regex.IsMatch(description, template.Pattern)
-            && !(template.ListsNoValues && SameNameOptions.RestatesValues(option));
+            && !(template.ListsNoValues && SameNameOptions.RestatesValues(option))
+            && !(template.ListsNoValues && SameNameOptions.NotesRepeatingTheirValue(option).Any());
 
         Assert.Equal(accepted, matches);
     }
