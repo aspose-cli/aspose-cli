@@ -6,11 +6,18 @@ namespace Aspose.Cli.Platform.Tests.Invariants;
 
 /// <summary>
 /// One generated invariant case: a scenario whose expectations state one invariant for one
-/// command, option, operation or format pair. <see cref="Slow"/> cases complete a matrix whose
-/// unmarked sample already covers every command and product; a slow case that a known violation
-/// names still runs unmarked.
+/// command, option, operation or format pair, or a <see cref="Check"/> of the command tree that
+/// the live catalog alone answers, such as one option name across every command. <see cref="Slow"/>
+/// cases complete a matrix whose unmarked sample already covers every command and product; a slow
+/// case that a known violation names still runs unmarked.
 /// </summary>
-internal sealed record InvariantCase(string Id, string Invariant, string Shard, bool Slow, Scenario Scenario);
+internal sealed record InvariantCase(
+    string Id,
+    string Invariant,
+    string Shard,
+    bool Slow,
+    Scenario? Scenario,
+    Func<IReadOnlyList<ScenarioProblem>>? Check = null);
 
 /// <summary>
 /// Generates the invariant cases from the live CLI catalog (<see cref="CliCatalog"/>): nothing
@@ -33,6 +40,7 @@ internal static class InvariantCases
     public const string OutputReopens = "output-reopens";
     public const string SecretHidden = "secret-hidden";
     public const string EvaluationDisclosed = "evaluation-disclosed";
+    public const string SameNameOption = "same-name-option";
     public const string Platform = "platform";
 
     /// <summary>The warning that discloses evaluation output (<c>aspose-cli docs licensing</c>).</summary>
@@ -54,7 +62,7 @@ internal static class InvariantCases
     {
         ScenarioContract.NoInternalError, ScenarioContract.ErrorEnvelope, ScenarioContract.ResultEnvelope,
         MissingInput, CorruptInput, UnknownOption, UnknownCommand, UnknownOp, UnknownField, InvalidEnum,
-        UnwritableOutput, ReadOnly, DryRun, OutputReopens, SecretHidden, EvaluationDisclosed,
+        UnwritableOutput, ReadOnly, DryRun, OutputReopens, SecretHidden, EvaluationDisclosed, SameNameOption,
     };
 
     public static IReadOnlyDictionary<string, InvariantCase> All => Generated.Value;
@@ -104,6 +112,7 @@ internal static class InvariantCases
             cases.AddRange(UnwritableOutputCases(catalog, product));
             cases.AddRange(OutputReopensCases(catalog, product));
         }
+        cases.AddRange(SameNameOptions.Cases(catalog));
         return cases.ToDictionary(static item => item.Id, StringComparer.Ordinal);
     }
 
