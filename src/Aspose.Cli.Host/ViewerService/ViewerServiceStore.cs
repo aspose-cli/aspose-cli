@@ -53,10 +53,10 @@ internal sealed class ViewerServiceStore
     /// <summary>Removes the marker, unless another service has published its own.</summary>
     public void DeleteIfOwned(string token) =>
         Files().DeleteIf(current => current is null
-            || string.Equals(current.Value.Secrets.Token, token, StringComparison.Ordinal));
+            || SecretText.FixedEquals(current.Value.Secrets.Token?.Reveal(), token));
 
     private static bool IsSameService((ViewerServiceMarker Marker, ViewerServiceSecrets Secrets) stored, ViewerServiceMarker judged) =>
-        string.Equals(stored.Secrets.Token, judged.Token, StringComparison.Ordinal)
+        Equals(stored.Secrets.Token, judged.Token)
         && string.Equals(stored.Marker.Nonce, judged.Nonce, StringComparison.Ordinal);
 
     private ViewerServiceMarker? Read()
@@ -67,7 +67,7 @@ internal sealed class ViewerServiceStore
             if (stored is null
                 || string.IsNullOrWhiteSpace(stored.Value.Marker.Nonce)
                 || string.IsNullOrWhiteSpace(stored.Value.Marker.Url)
-                || string.IsNullOrWhiteSpace(stored.Value.Secrets.Token))
+                || string.IsNullOrWhiteSpace(stored.Value.Secrets.Token?.Reveal()))
             {
                 return null;
             }

@@ -75,7 +75,7 @@ internal sealed class ViewerServiceHost : IDisposable
             LocalServiceResourceLimits limits = LocalServiceResourceLimits.Resolve();
             string id = LocalHttpRequestSecurity.RandomToken();
             string nonce = secrets?.ServiceNonce ?? LocalHttpRequestSecurity.RandomToken();
-            _token = secrets?.ServiceToken ?? LocalHttpRequestSecurity.RandomToken();
+            _token = secrets?.ServiceToken?.Reveal() ?? LocalHttpRequestSecurity.RandomToken();
             _worker = new RenderWorkerSupervisor(
                 () => WorkerProcess(globals, secrets),
                 limits.RenderTimeout,
@@ -106,7 +106,7 @@ internal sealed class ViewerServiceHost : IDisposable
             _control.Start();
             _store.Write(new ViewerServiceMarker(
                 id,
-                _token,
+                new WireSecret(_token),
                 Environment.ProcessId,
                 LocalServiceProcessIdentity.Current(nonce).StartTicksUtc,
                 _http.Port,

@@ -1,3 +1,5 @@
+using Aspose.Cli.Host.LocalServices;
+
 namespace Aspose.Cli.Host.ViewerService;
 
 /// <summary>

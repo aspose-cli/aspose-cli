@@ -134,7 +134,7 @@ internal sealed record ServiceStartSecrets
 
     public string? LicensePath { get; init; }
 
-    public required string ServiceToken { get; init; }
+    public required WireSecret ServiceToken { get; init; }
 
     public required string ServiceNonce { get; init; }
 }

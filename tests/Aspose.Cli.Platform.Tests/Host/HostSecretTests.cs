@@ -88,9 +88,82 @@ public sealed class HostSecretTests : IDisposable
     }
 
     [Fact]
+    public void LocalServiceRecords_DoNotPrintTheToken()
+    {
+        var request = new LocalServiceControlRequest(1, "request", "viewer", "instance", "nonce", Token(Sentinel), "ping");
+        var start = new ServiceStartSecrets { WorkDirectory = "work", ServiceToken = Token(Sentinel), ServiceNonce = "nonce" };
+        var marker = new ViewerServiceMarker("id", Token(Sentinel), 1, 2, 3, "http://127.0.0.1:3/", "nonce");
+        var secrets = new ViewerServiceSecrets(Token(Sentinel));
+
+        Assert.All(new object[] { request, start, marker, secrets },
+            record => Assert.DoesNotContain(Sentinel, record.ToString(), StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task LocalServiceFrames_KeepTheTokenAsAJsonString()
+    {
+        var request = new LocalServiceControlRequest(1, "request", "viewer", "instance", "nonce", Token(Sentinel), "ping");
+        byte[] payload = LocalServiceControlCodec.Serialize(request);
+        Assert.Equal(Sentinel, JsonNode.Parse(payload)!["token"]!.GetValue<string>());
+        LocalServiceControlRequest received = JsonSerializer.Deserialize(payload, LocalServiceJsonContext.Default.LocalServiceControlRequest)!;
+        Assert.Equal(Sentinel, Reveal(received.Token));
+
+        using var frames = new MemoryStream();
+        await ProcessPipeMessages.WriteAsync(
+            frames, new ServiceStartSecrets { WorkDirectory = "work", ServiceToken = Token(Sentinel), ServiceNonce = "nonce" },
+            CancellationToken.None);
+        Assert.Equal(Sentinel, JsonNode.Parse(frames.ToArray().AsSpan(sizeof(int)))!["serviceToken"]!.GetValue<string>());
+        frames.Position = 0;
+        ServiceStartSecrets start = await ProcessPipeMessages.ReadAsync<ServiceStartSecrets>(frames, CancellationToken.None);
+        Assert.Equal(Sentinel, Reveal(start.ServiceToken));
+    }
+
+    [Fact]
+    public void ViewerServiceStore_KeepsTheTokenOnlyInTheSecretFile()
+    {
+        string directory = _workspace.File("viewer");
+        var store = new ViewerServiceStore(directory);
+
+        store.Write(new ViewerServiceMarker("id", Token(Sentinel), 1, 2, 3, "http://127.0.0.1:3/", "nonce"));
+
+        Assert.DoesNotContain(Sentinel, File.ReadAllText(Path.Combine(directory, "service.json")), StringComparison.Ordinal);
+        Assert.Equal(
+            new JsonObject { ["token"] = Sentinel }.ToJsonString(),
+            JsonNode.Parse(File.ReadAllText(Path.Combine(directory, "service.secret")))!.ToJsonString());
+        Assert.Equal(Sentinel, Reveal(store.ReadCandidate()?.Token));
+        store.DeleteIfOwned("other-token");
+        Assert.NotNull(store.ReadCandidate());
+        store.DeleteIfOwned(Sentinel);
+        Assert.Null(store.ReadCandidate());
+    }
+
+    [Fact]
     public void HostSource_HoldsNoPasswordAsAString()
     {
-        string[] violations = [.. Directory.GetFiles(HostRoot, "*.cs", SearchOption.AllDirectories)
+        string[] violations = [.. HostMembers()
+            .Where(static member => IsString(member.Type) && member.Name.EndsWith("Password", StringComparison.OrdinalIgnoreCase))
+            .Select(static member => member.Location)];
+
+        Assert.True(violations.Length == 0,
+            "The Host carries a password as a redacting secret type, never as a string:" + Environment.NewLine
+            + string.Join(Environment.NewLine, violations));
+    }
+
+    [Fact]
+    public void HostRecords_HoldNoTokenAsAString()
+    {
+        string[] violations = [.. HostMembers()
+            .Where(static member => member.InRecord && IsString(member.Type) && member.Name.EndsWith("Token", StringComparison.Ordinal))
+            .Select(static member => member.Location)];
+
+        Assert.True(violations.Length == 0,
+            "A Host record carries a token as a redacting secret type, never as a string, so printing the record never shows it:"
+            + Environment.NewLine + string.Join(Environment.NewLine, violations));
+    }
+
+    /// <summary>Every property, field, local and parameter the Host declares with a type.</summary>
+    private static IEnumerable<(TypeSyntax Type, string Name, bool InRecord, string Location)> HostMembers() =>
+        Directory.GetFiles(HostRoot, "*.cs", SearchOption.AllDirectories)
             .Where(static path => !path.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.OrdinalIgnoreCase)
                 && !path.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}", StringComparison.OrdinalIgnoreCase))
             .SelectMany(static path => CSharpSyntaxTree.ParseText(File.ReadAllText(path), path: path).GetRoot().DescendantNodes()
@@ -102,15 +175,22 @@ public sealed class HostSecretTests : IDisposable
                     LocalDeclarationStatementSyntax local => local.Declaration.Variables
                         .Select(variable => ((SyntaxNode)variable, local.Declaration.Type, variable.Identifier.ValueText)),
                     ParameterSyntax { Type: { } type } parameter => [(node, type, parameter.Identifier.ValueText)],
-                    _ => Array.Empty<(SyntaxNode, TypeSyntax, string)>(),
+                    _ => Array.Empty<(SyntaxNode Node, TypeSyntax Type, string Name)>(),
                 })
-                .Where(static member => IsString(member.Item2) && member.Item3.EndsWith("Password", StringComparison.OrdinalIgnoreCase))
-                .Select(member => $"{Path.GetRelativePath(HostRoot, path)}:{member.Item1.GetLocation().GetLineSpan().StartLinePosition.Line + 1}: string {member.Item3}"))];
+                .Select(member => (
+                    member.Item2,
+                    member.Item3,
+                    member.Item1 switch
+                    {
+                        PropertyDeclarationSyntax property => property.Parent is RecordDeclarationSyntax,
+                        ParameterSyntax parameter => parameter.Parent?.Parent is RecordDeclarationSyntax,
+                        _ => false,
+                    },
+                    $"{Path.GetRelativePath(HostRoot, path)}:{member.Item1.GetLocation().GetLineSpan().StartLinePosition.Line + 1}: string {member.Item3}")));
 
-        Assert.True(violations.Length == 0,
-            "The Host carries a password as a redacting secret type, never as a string:" + Environment.NewLine
-            + string.Join(Environment.NewLine, violations));
-    }
+    private static WireSecret Token(string value) => new(value);
+
+    private static string? Reveal(WireSecret? token) => token?.Reveal();
 
     private static bool IsString(TypeSyntax type) => type switch
     {

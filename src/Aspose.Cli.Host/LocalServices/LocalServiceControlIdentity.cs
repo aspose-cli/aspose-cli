@@ -22,7 +22,7 @@ internal sealed class LocalServiceControlIdentity(
             request.Nonce,
             nonce)
         && SecretText.FixedEquals(
-            request.Token,
+            request.Token?.Reveal(),
             token)
         && request.RequestId.Length is > 0 and <= 64
         && request.Command.Length is > 0 and <= 64;

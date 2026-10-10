@@ -15,7 +15,7 @@ internal sealed record LocalServiceControlRequest(
     string Service,
     string InstanceId,
     string Nonce,
-    string Token,
+    WireSecret Token,
     string Command,
     string? Path = null,
     string? Payload = null,

@@ -185,7 +185,7 @@ public sealed class LocalServiceRuntimeTests
         {
             byte[] request = LocalServiceControlCodec.Serialize(new LocalServiceControlRequest(
                 LocalServiceControlCodec.ProtocolVersion, Guid.NewGuid().ToString("N"), endpoint.Service,
-                endpoint.InstanceId, nonce, token, "cancel"));
+                endpoint.InstanceId, nonce, new WireSecret(token), "cancel"));
             await LocalServiceControlCodec.WriteFrameAsync(connection, request, CancellationToken.None);
             Assert.True(entered.Wait(TimeSpan.FromSeconds(5)));
         }
