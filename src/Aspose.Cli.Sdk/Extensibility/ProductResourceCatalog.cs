@@ -108,6 +108,9 @@ public sealed class ProductResourceCatalog
         return true;
     }
 
+    /// <summary>Whether a schema is registered under <paramref name="id"/>, without writing it.</summary>
+    internal bool Contains(string? id) => id is not null && _schemas.ContainsKey(id);
+
     /// <summary>Reads a registered schema document.</summary>
     public string Read(string id) =>
         TryRead(id, out string? document)

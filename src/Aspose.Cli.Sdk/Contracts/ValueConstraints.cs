@@ -251,7 +251,11 @@ public sealed class PatternAttribute(string pattern) : ValueConstraintAttribute
     private const string Space = @"\t\n\v\f\r \u00A0\u1680\u2000-\u200A\u2028\u2029\u202F\u205F\u3000\uFEFF";
     private const string LineTerminators = @"\n\r\u2028\u2029";
 
-    private readonly Regex _regex = new(Ecma262(pattern), RegexOptions.ECMAScript, TimeSpan.FromSeconds(1));
+    private readonly string _ecma262 = Ecma262(pattern);
+
+    // Built on the first check: the contract records' attributes are created whenever the
+    // product catalog starts, and most invocations check no value.
+    private Regex? _regex;
 
     /// <summary>The regular expression.</summary>
     public string Pattern { get; } = pattern;
@@ -265,7 +269,7 @@ public sealed class PatternAttribute(string pattern) : ValueConstraintAttribute
 
     /// <inheritdoc />
     public override string? Check(object value) =>
-        _regex.IsMatch((string)value) ? null
+        (_regex ??= new Regex(_ecma262, RegexOptions.ECMAScript, TimeSpan.FromSeconds(1))).IsMatch((string)value) ? null
         : Meaning is null ? $"must match the pattern {Pattern}"
         : $"{Meaning} (pattern {Pattern})";
 

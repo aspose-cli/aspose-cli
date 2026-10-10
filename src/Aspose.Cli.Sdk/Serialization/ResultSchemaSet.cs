@@ -92,6 +92,9 @@ public sealed class ResultSchemaSet
         return document is not null;
     }
 
+    /// <summary>Whether a schema is published under <paramref name="id"/>, without writing it.</summary>
+    internal bool Contains(string? id) => id is not null && _schemas.ContainsKey(id);
+
     private bool TryResolve(Type type, [NotNullWhen(true)] out ResultRecord? record, [NotNullWhen(true)] out string? owner)
     {
         if (_records.TryGetValue(type, out record))
