@@ -31,7 +31,7 @@ internal sealed partial class WordsMutationHandlers
         InsertRelative(Anchor, ref cursor, paragraph, operation.Position);
         var builder = new DocumentBuilder(_document);
         builder.MoveTo(paragraph);
-        Shape shape = builder.InsertImage(_operationInputs.OpenFile(operation.Path));
+        Shape shape = builder.InsertImage(OperationImages.Read(_operationInputs, operation.Path));
         if (operation.Width is not null)
         {
             shape.Width = operation.Width.Value;
@@ -166,19 +166,23 @@ internal sealed partial class WordsMutationHandlers
             return 1;
         }
 
-        // The image is an admitted, size-bounded input; its decoded pixels are charged to the
-        // memory budget from the header before any pixel buffer is allocated.
-        byte[] encoded = _inputs.ReadAllBytes(operation.ImagePath!);
-        using SKCodec codec = SKCodec.Create(new SKMemoryStream(encoded))
-            ?? throw Invalid($"watermark image '{operation.ImagePath}' is not a supported image");
-        _loader.ResourceBudgets.Consume(
-            ResourceBudgetKinds.MemoryBufferBytes,
-            (long)codec.Info.Width * codec.Info.Height * 4,
-            "bytes",
-            "image-decode");
-        using SKBitmap bitmap = SKBitmap.Decode(codec)
-            ?? throw Invalid($"watermark image '{operation.ImagePath}' could not be decoded");
-        _document.Watermark.SetImage(bitmap, new ImageWatermarkOptions { IsWashout = operation.Faded });
+        // The image is an admitted, size-bounded input, checked to decode before the engine
+        // embeds it. The engine decodes it into a bitmap it keeps, whose pixels are charged to the
+        // memory budget from the header.
+        byte[] image = OperationImages.Read(_inputs, operation.ImagePath!);
+        using (SKCodec? codec = SKCodec.Create(new SKMemoryStream(image)))
+        {
+            if (codec is not null)
+            {
+                _loader.ResourceBudgets.Consume(
+                    ResourceBudgetKinds.MemoryBufferBytes,
+                    (long)codec.Info.Width * codec.Info.Height * 4,
+                    "bytes",
+                    "image-decode");
+            }
+        }
+
+        _document.Watermark.SetImage(new MemoryStream(image, writable: false), new ImageWatermarkOptions { IsWashout = operation.Faded });
         return 1;
     }
 
