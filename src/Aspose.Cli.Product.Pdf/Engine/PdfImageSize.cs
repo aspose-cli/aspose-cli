@@ -7,8 +7,8 @@ using SkiaSharp;
 namespace Aspose.Cli.Product.Pdf.Engine;
 
 /// <summary>
-/// The proportions an image is drawn with on a PDF page, read through the invocation's input
-/// budget. Only the ratio of the width to the height is meaningful.
+/// The proportions an image is drawn with on a PDF page, read from the image's bytes. Only the
+/// ratio of the width to the height is meaningful.
 /// </summary>
 internal static class PdfImageSize
 {
@@ -17,43 +17,34 @@ internal static class PdfImageSize
     /// image turned by its EXIF orientation, which the engine applies, and for an SVG without
     /// both a width and a height those of its viewBox, which the engine does not read.
     /// </summary>
-    internal static (double Width, double Height) Read(InputSource inputs, string path)
+    internal static (double Width, double Height) Read(byte[] content)
     {
-        if (string.Equals(Path.GetExtension(path), ".svg", StringComparison.OrdinalIgnoreCase)
-            && SvgViewBox(inputs, path) is { } viewBox)
+        if (ImageInput.EngineFormatOf(content) == EngineImageFormat.Svg && SvgViewBox(content) is { } viewBox)
         {
             return viewBox;
         }
 
-        double width;
-        double height;
-        using (Stream content = inputs.OpenFile(path))
-        {
-            // An image the engine cannot load reads as 0 x 0 here and fails when the page is saved.
-            var image = new ImageStamp(content);
-            width = Math.Max(1, image.Width);
-            height = Math.Max(1, image.Height);
-        }
-
-        return QuarterTurned(inputs, path) ? (height, width) : (width, height);
+        // An image the engine cannot load reads as 0 x 0 here and fails when the page is saved.
+        var image = new ImageStamp(new MemoryStream(content, writable: false));
+        double width = Math.Max(1, image.Width);
+        double height = Math.Max(1, image.Height);
+        return QuarterTurned(content) ? (height, width) : (width, height);
     }
 
     /// <summary>Whether the image's EXIF orientation turns it a quarter, swapping its sides.</summary>
-    private static bool QuarterTurned(InputSource inputs, string path)
+    private static bool QuarterTurned(byte[] content)
     {
-        using Stream content = inputs.OpenFile(path);
-        using SKCodec? codec = SKCodec.Create(content);
+        using SKCodec? codec = SKCodec.Create(new MemoryStream(content, writable: false));
         return codec?.EncodedOrigin is SKEncodedOrigin.LeftTop or SKEncodedOrigin.RightTop
             or SKEncodedOrigin.RightBottom or SKEncodedOrigin.LeftBottom;
     }
 
     /// <summary>The viewBox size of an SVG whose root element lacks a width or a height.</summary>
-    private static (double Width, double Height)? SvgViewBox(InputSource inputs, string path)
+    private static (double Width, double Height)? SvgViewBox(byte[] content)
     {
         try
         {
-            using Stream content = inputs.OpenFile(path);
-            using var reader = XmlReader.Create(content, new XmlReaderSettings
+            using var reader = XmlReader.Create(new MemoryStream(content, writable: false), new XmlReaderSettings
             {
                 DtdProcessing = DtdProcessing.Prohibit,
                 XmlResolver = null,

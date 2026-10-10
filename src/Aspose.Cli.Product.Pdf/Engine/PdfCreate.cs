@@ -31,7 +31,7 @@ internal static class PdfCreate
                 "The Markdown importer follows local file references inside fetched resources without any resource hook, so network resources stay refused for Markdown; convert the Markdown to HTML first.");
         }
 
-        byte[]? html = EnsureCreationInputs(session.Budgets, request);
+        (byte[]? html, IReadOnlyList<byte[]> imageContents) = EnsureCreationInputs(session.Budgets, request);
         // The Markdown importer resolves the Markdown's relative references against the
         // working directory and reads files itself; the check holds them until the save.
         bool fromMarkdown = request.TextPath is { } textPath
@@ -42,7 +42,7 @@ internal static class PdfCreate
         using HtmlImportResources? resources = request.HtmlPath is { } htmlPath
             ? new HtmlImportResources(htmlPath, session.Budgets, request.AllowNetworkResources) : null;
         using Document document = request.ImagePaths is { Count: > 0 } images
-            ? CreateFromImages(images, request, session.Budgets)
+            ? CreateFromImages(images, imageContents, request)
             : request.HtmlPath is not null
                 ? CreateFromHtml(request.HtmlPath, request, resources!)
                 : CreateFromText(request.TextPath!, fromMarkdown, request);
@@ -82,25 +82,23 @@ internal static class PdfCreate
     /// One page per image. The page takes the named size in the image's orientation (landscape
     /// for an image wider than it is tall), and the image keeps its aspect ratio: it is scaled to
     /// fill the margin box in one dimension and centred in the other. The margins must leave a
-    /// content area on each page in the orientation it takes.
+    /// content area on each page in the orientation it takes. The engine embeds the bytes the
+    /// image check read, so each file is read once and cannot change between the check and the
+    /// save.
     /// </summary>
     private static Document CreateFromImages(
-        IReadOnlyList<string> paths, NewPdfRequest request, ResourceBudgetLedger resourceBudgets)
+        IReadOnlyList<string> paths, IReadOnlyList<byte[]> contents, NewPdfRequest request)
     {
         var document = new Document();
         try
         {
             (double portraitWidth, double portraitHeight) = PdfPageSizes.Dimensions(request.PageSize);
             PdfMargins margins = request.Margins;
-            foreach (string path in paths)
+            for (int index = 0; index < paths.Count; index++)
             {
-                if (!File.Exists(path))
-                {
-                    throw CliErrors.FileNotFound(path);
-                }
-
-                string fullPath = Path.GetFullPath(path);
-                (double imageWidth, double imageHeight) = PdfImageSize.Read(resourceBudgets.Inputs, fullPath);
+                string path = paths[index];
+                byte[] content = contents[index];
+                (double imageWidth, double imageHeight) = PdfImageSize.Read(content);
                 bool landscape = imageWidth > imageHeight;
                 (double width, double height) = landscape
                     ? (portraitHeight, portraitWidth)
@@ -123,7 +121,8 @@ internal static class PdfCreate
                 page.PageInfo.Margin = new MarginInfo { Top = top, Left = left, Right = 0, Bottom = 0 };
                 page.Paragraphs.Add(new Aspose.Pdf.Image
                 {
-                    File = fullPath,
+                    ImageStream = new MemoryStream(content, writable: false),
+                    FileType = FileTypeOf(content),
                     FixWidth = Math.Min(Math.Max(1, imageWidth * scale), width - left),
                     FixHeight = Math.Min(Math.Max(1, imageHeight * scale), height - top),
                 });
@@ -137,6 +136,17 @@ internal static class PdfCreate
             throw;
         }
     }
+
+    /// <summary>
+    /// The type the engine reads a streamed image as, from the format the image check recognized:
+    /// SVG and DICOM have their own types, and the engine recognizes any other image itself.
+    /// </summary>
+    internal static ImageFileType FileTypeOf(byte[] content) => ImageInput.EngineFormatOf(content) switch
+    {
+        EngineImageFormat.Svg => ImageFileType.Svg,
+        EngineImageFormat.Dicom => ImageFileType.Dicom,
+        _ => ImageFileType.Unknown,
+    };
 
     private static Document CreateFromHtml(
         string path, NewPdfRequest request, HtmlImportResources resources)
@@ -345,8 +355,8 @@ internal static class PdfCreate
         }).ToArray();
     }
 
-    /// <summary>Checks every creation input and returns the HTML input's bytes, if any.</summary>
-    private static byte[]? EnsureCreationInputs(
+    /// <summary>Checks every creation input and returns the HTML input's bytes, if any, and the images' bytes.</summary>
+    private static (byte[]? Html, IReadOnlyList<byte[]> Images) EnsureCreationInputs(
         ResourceBudgetLedger resourceBudgets,
         NewPdfRequest request)
     {
@@ -365,15 +375,18 @@ internal static class PdfCreate
             InputSizeGuard.Ensure(resourceBudgets, path);
         }
 
+        // The engine decodes each image only when the document is saved, and a damaged one fails
+        // there or is embedded as it is; refuse it first.
+        var images = new List<byte[]>();
         foreach (string image in request.ImagePaths ?? [])
         {
-            using Stream content = resourceBudgets.Inputs.OpenFile(image);
-            NetworkReferenceGuard.EnsureNoneInImage(content, image);
+            using InputResourceScope scope = resourceBudgets.Inputs.CreateScope();
+            images.Add(ImageInput.Read(scope, image, refuseNetworkReferences: true));
         }
 
         if (request.HtmlPath is not { } html)
         {
-            return null;
+            return (null, images);
         }
 
         // The HTML importer reaches the network before any resource policy applies; refuse
@@ -384,6 +397,6 @@ internal static class PdfCreate
             NetworkReferenceGuard.EnsureNone(bytes, "HTML input", html, optIn: "--allow-network-resources");
         }
 
-        return bytes;
+        return (bytes, images);
     }
 }
