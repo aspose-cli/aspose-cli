@@ -7,15 +7,22 @@ namespace Aspose.Cli.Product.Cells.Tests;
 /// import_range and import_sheet through the built CLI. Every child process runs in evaluation
 /// mode, so these cover the import operations where the licensed engine suite skips.
 /// </summary>
-public sealed class CellsImportCliTests : IDisposable
+public sealed class CellsImportCliTests : IClassFixture<CellsImportCliTests.Sources>, IDisposable
 {
     private readonly TempWorkspace _workspace = new();
+
+    /// <summary>Each test edits its own copies of the workbooks the class creates once.</summary>
+    public CellsImportCliTests(Sources sources)
+    {
+        foreach (string name in new[] { "eu.xlsx", "report.xlsx" })
+        {
+            File.Copy(sources.Workspace.File(name), _workspace.File(name));
+        }
+    }
 
     [Fact]
     public void ImportRange_BringsValuesOrEverythingFromAnotherWorkbook()
     {
-        CreateSource();
-        CreateReport();
         byte[] source = File.ReadAllBytes(_workspace.File("eu.xlsx"));
 
         JsonNode edited = _workspace.Run(
@@ -63,8 +70,6 @@ public sealed class CellsImportCliTests : IDisposable
     [Fact]
     public void ImportSheet_AddsANamedSheetFromAWorkbookOrCsvAndRefusesATakenName()
     {
-        CreateSource();
-        CreateReport();
         File.WriteAllText(_workspace.File("it.csv"), "Region,Sales\nIT,5\nES,7\n");
 
         _workspace.Run(
@@ -109,9 +114,6 @@ public sealed class CellsImportCliTests : IDisposable
     [InlineData("""{"ops":[{"op":"import_range","sheet":"Report","path":"eu.xlsx","from":"Ghost!A1:B2","to":"A1"}]}""")]
     public void AMissingSourceSheet_ListsTheSourcesSheets(string operations)
     {
-        CreateSource();
-        CreateReport();
-
         CliResult missing = _workspace.Run(
             "cells", "edit", "report.xlsx", "--out", "report.out.xlsx", "--output", "json", "--ops", operations);
 
@@ -126,26 +128,36 @@ public sealed class CellsImportCliTests : IDisposable
     public void Dispose() => _workspace.Dispose();
 
     /// <summary>
-    /// eu.xlsx: a Notes first sheet, a Totals sheet (formatted numbers, a SUM and a formula that
-    /// reads the Rates sheet) and a Rates sheet.
+    /// The workbooks every test starts from, created through the built CLI: eu.xlsx, a Notes
+    /// first sheet, a Totals sheet (formatted numbers, a SUM and a formula that reads the Rates
+    /// sheet) and a Rates sheet; and report.xlsx, one Report sheet.
     /// </summary>
-    private void CreateSource()
+    public sealed class Sources : IDisposable
     {
-        _workspace.Run("cells", "create", "eu.xlsx", "--sheets", "Notes,Totals,Rates").Succeeded();
-        _workspace.Run(
-            "cells", "edit", "eu.xlsx", "--in-place", "--output", "json", "--ops",
-            """
-            {"ops":[
-              {"op":"set_values","sheet":"Notes","range":"A1","values":[["first-sheet"]]},
-              {"op":"set_values","sheet":"Totals","range":"A1","values":[["Region","Sales"],["DE",1200.5],["FR",800]]},
-              {"op":"set_formula","sheet":"Totals","range":"B4","formula":"=SUM(B2:B3)"},
-              {"op":"set_formula","sheet":"Totals","range":"B5","formula":"=B4*Rates!A1"},
-              {"op":"set_values","sheet":"Rates","range":"A1","values":[[2]]},
-              {"op":"format_range","sheet":"Totals","range":"B2:B4","style":{"numberFormat":"#,##0.00","bg":"#FFF2CC"}}
-            ]}
-            """).Succeeded();
-    }
+        public Sources()
+        {
+            Parallel.Invoke(
+                () =>
+                {
+                    Workspace.Run("cells", "create", "eu.xlsx", "--sheets", "Notes,Totals,Rates").Succeeded();
+                    Workspace.Run(
+                        "cells", "edit", "eu.xlsx", "--in-place", "--output", "json", "--ops",
+                        """
+                        {"ops":[
+                          {"op":"set_values","sheet":"Notes","range":"A1","values":[["first-sheet"]]},
+                          {"op":"set_values","sheet":"Totals","range":"A1","values":[["Region","Sales"],["DE",1200.5],["FR",800]]},
+                          {"op":"set_formula","sheet":"Totals","range":"B4","formula":"=SUM(B2:B3)"},
+                          {"op":"set_formula","sheet":"Totals","range":"B5","formula":"=B4*Rates!A1"},
+                          {"op":"set_values","sheet":"Rates","range":"A1","values":[[2]]},
+                          {"op":"format_range","sheet":"Totals","range":"B2:B4","style":{"numberFormat":"#,##0.00","bg":"#FFF2CC"}}
+                        ]}
+                        """).Succeeded();
+                },
+                () => Workspace.Run("cells", "create", "report.xlsx", "--sheets", "Report").Succeeded());
+        }
 
-    private void CreateReport() =>
-        _workspace.Run("cells", "create", "report.xlsx", "--sheets", "Report").Succeeded();
+        public TempWorkspace Workspace { get; } = new();
+
+        public void Dispose() => Workspace.Dispose();
+    }
 }

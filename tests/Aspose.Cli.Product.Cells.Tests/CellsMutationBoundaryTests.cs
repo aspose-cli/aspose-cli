@@ -60,10 +60,14 @@ public sealed class CellsMutationBoundaryTests
         CliResult edit = workspace.RunWithEnv(environment, arguments.ToArray());
         Assert.True(edit.ExitCode == 0, edit.StdErr);
         Assert.True(JsonNode.Parse(edit.StdOut)!["output"]!["encrypted"]!.GetValue<bool>());
-        CliResult inspect = workspace.RunWithEnv(environment, "cells", "inspect", "edited.xlsx", "--password-env", changePassword ? "NEW_PASSWORD" : "OLD_PASSWORD", "--output", "json");
+        // Both reads of the output run at once: with its password, and without one.
+        CliResult inspect = null!, unopened = null!;
+        Parallel.Invoke(
+            () => inspect = workspace.RunWithEnv(environment, "cells", "inspect", "edited.xlsx", "--password-env", changePassword ? "NEW_PASSWORD" : "OLD_PASSWORD", "--output", "json"),
+            () => unopened = workspace.Run("cells", "inspect", "edited.xlsx", "--output", "json"));
         Assert.True(inspect.ExitCode == 0, inspect.StdErr);
         Assert.True(JsonNode.Parse(inspect.StdOut)!["source"]!["encrypted"]!.GetValue<bool>());
-        Assert.NotEqual(0, workspace.Run("cells", "inspect", "edited.xlsx", "--output", "json").ExitCode);
+        Assert.NotEqual(0, unopened.ExitCode);
         Assert.DoesNotContain("test-password", edit.StdOut + edit.StdErr, StringComparison.Ordinal);
     }
 
