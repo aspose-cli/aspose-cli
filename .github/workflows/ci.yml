@@ -3,6 +3,9 @@ name: CI
 # package only when a packaging input changes. Pushes to master run the whole Fast scope, so a
 # test a pull request skipped runs when it merges. A manual run adds packaging, to rehearse a
 # release; release.yml packages and publishes on a version tag.
+# The plan job lists the test projects the scope starts and each runs in its own test job, so a
+# new test project gets its job without a change here. verify, the required check, passes only
+# when every job it needs has passed.
 on:
   push:
     branches: [master]
@@ -17,10 +20,86 @@ concurrency:
 env:
   DOTNET_NOLOGO: 'true'
   DOTNET_CLI_TELEMETRY_OPTOUT: 'true'
+  SCOPE: ${{ github.event_name == 'pull_request' && 'Changed' || 'Fast' }}
+  # The Changed scope measures a pull request against the merge base with its target.
+  BASE_REF: origin/${{ github.base_ref }}
 jobs:
+  plan:
+    runs-on: windows-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        shell: pwsh
+    outputs:
+      projects: ${{ steps.plan.outputs.projects }}
+      package: ${{ github.event_name == 'workflow_dispatch' || steps.packaging.outputs.changed == 'true' }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          # (0 is falsy in expressions, so the pull-request case must be the fallback.)
+          fetch-depth: ${{ github.event_name != 'pull_request' && 1 || 0 }}
+      - name: Plan the test jobs
+        id: plan
+        run: |
+          $plan = @(./scripts/test.ps1 -Configuration Release -Scope $env:SCOPE -Base $env:BASE_REF -Plan 6>&1 | ForEach-Object { "$_" })
+          $plan | Write-Host
+          $projects = @($plan | ForEach-Object { if ($_ -match '^TEST (\S+) ') { $Matches[1] } })
+          if ($projects.Count -eq 0) { throw "The $env:SCOPE scope starts no test project." }
+          "projects=$(ConvertTo-Json -Compress -InputObject $projects)" >> $env:GITHUB_OUTPUT
+      - name: Detect a packaging change
+        id: packaging
+        if: github.event_name == 'pull_request'
+        run: |
+          $base = git merge-base $env:BASE_REF HEAD
+          if ($LASTEXITCODE -ne 0) { throw "The merge base with $env:BASE_REF could not be found." }
+          $inputs = @('install.ps1', 'scripts/', 'eng/', 'Directory.Build.', 'global.json', 'src/Aspose.Cli/')
+          $changed = @(git diff --name-only --no-renames $base HEAD |
+            Where-Object { $path = $_; $inputs | Where-Object { $path.StartsWith($_, [StringComparison]::OrdinalIgnoreCase) } })
+          "changed=$($changed.Count -ne 0)".ToLowerInvariant() >> $env:GITHUB_OUTPUT
+          Write-Host "PACKAGING $($changed.Count) packaging input(s) changed."
+
   # No license reaches CI: the commercial SDKs run in evaluation mode and the cases that need a
   # license are skipped. The licensed Full scope runs locally before a push (CONTRIBUTING.md).
-  verify:
+  test:
+    needs: plan
+    runs-on: windows-latest
+    timeout-minutes: 60
+    strategy:
+      # Every project reports its result, whichever fails first.
+      fail-fast: false
+      matrix:
+        project: ${{ fromJSON(needs.plan.outputs.projects) }}
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: ${{ github.event_name != 'pull_request' && 1 || 0 }}
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          global-json-file: global.json
+          cache: true
+          cache-dependency-path: '**/packages.lock.json'
+      - name: Test ${{ matrix.project }}
+        env:
+          PROJECT: ${{ matrix.project }}
+        run: ./scripts/test.ps1 -Configuration Release -Scope $env:SCOPE -Base $env:BASE_REF -TestProject $env:PROJECT
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: verification-evidence-${{ matrix.project }}
+          path: |
+            artifacts/TestResults/**/*.trx
+            artifacts/TestResults/**/*.log
+          if-no-files-found: warn
+
+  # Publishes the package and checks it with an install, update and uninstall.
+  package:
+    needs: plan
+    if: needs.plan.outputs.package == 'true'
     runs-on: windows-latest
     timeout-minutes: 60
     defaults:
@@ -30,44 +109,29 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-          # The Changed scope measures a pull request against the merge base with its target.
-          # (0 is falsy in expressions, so the pull-request case must be the fallback.)
-          fetch-depth: ${{ github.event_name != 'pull_request' && 1 || 0 }}
       - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           global-json-file: global.json
           cache: true
           cache-dependency-path: '**/packages.lock.json'
-      - name: Test the change
-        if: github.event_name == 'pull_request'
-        env:
-          BASE_REF: origin/${{ github.base_ref }}
-        run: ./scripts/test.ps1 -Configuration Release -Scope Changed -Base $env:BASE_REF
-      - name: Test
-        if: github.event_name != 'pull_request'
-        run: ./scripts/test.ps1 -Configuration Release -Scope Fast
-      - name: Detect a packaging change
-        id: packaging
-        if: github.event_name == 'pull_request'
-        env:
-          BASE_REF: origin/${{ github.base_ref }}
-        run: |
-          $base = git merge-base $env:BASE_REF HEAD
-          if ($LASTEXITCODE -ne 0) { throw "The merge base with $env:BASE_REF could not be found." }
-          $inputs = @('install.ps1', 'scripts/', 'eng/', 'Directory.Build.', 'global.json', 'src/Aspose.Cli/')
-          $changed = @(git diff --name-only --no-renames $base HEAD |
-            Where-Object { $path = $_; $inputs | Where-Object { $path.StartsWith($_, [StringComparison]::OrdinalIgnoreCase) } })
-          "changed=$($changed.Count -ne 0)".ToLowerInvariant() >> $env:GITHUB_OUTPUT
-          Write-Host "PACKAGING $($changed.Count) packaging input(s) changed."
-      # Publishes the package and checks it with an install, update and uninstall.
       - name: Package
-        if: github.event_name == 'workflow_dispatch' || steps.packaging.outputs.changed == 'true'
         run: ./scripts/package.ps1 -Configuration Release -RuntimeIdentifier win-x64
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        if: always()
+
+  # The required check. It runs even when a job it needs fails or is cancelled, since a skipped
+  # required check counts as passed. Only package may be skipped, when no packaging input changed.
+  verify:
+    needs: [plan, test, package]
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          name: verification-evidence
-          path: |
-            artifacts/TestResults/**/*.trx
-            artifacts/TestResults/**/*.log
-          if-no-files-found: warn
+          persist-credentials: false
+      - name: Require every job to pass
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+        run: ./scripts/require-jobs.ps1 -Needs $env:NEEDS -MaySkip package
