@@ -12,7 +12,7 @@ internal sealed partial class SlidesMutationHandlers
     public long Apply(SlidesInsertImageOp operation)
     {
         EnsureFile(operation.Path);
-        IPPImage image = _presentation.Images.AddImage(_inputs.ReadAllBytes(operation.Path));
+        IPPImage image = _presentation.Images.AddImage(OperationImages.Read(_inputs, operation.Path));
         // Without a rectangle the picture keeps its aspect ratio, centered in 80% x 75% of the slide.
         RectangleF rect = operation.Rect is { } given
             ? new RectangleF((float)given.X, (float)given.Y, (float)given.Width, (float)given.Height)
