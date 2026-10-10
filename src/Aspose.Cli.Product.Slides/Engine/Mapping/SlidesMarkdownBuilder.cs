@@ -268,7 +268,7 @@ internal static partial class SlidesMarkdownBuilder
     {
         string imagePath = ResolveLocalImage(root, source.Path);
         InputSizeGuard.Ensure(resourceBudgets, imagePath);
-        IPPImage image = presentation.Images.AddImage(resourceBudgets.Inputs.ReadAllBytes(imagePath));
+        IPPImage image = presentation.Images.AddImage(ImageInput.Read(resourceBudgets.Inputs, imagePath));
 
         // The image takes the frame of the first content placeholder that holds no text.
         IAutoShape? frame = content.FirstOrDefault(static shape => string.IsNullOrEmpty(shape.TextFrame?.Text));

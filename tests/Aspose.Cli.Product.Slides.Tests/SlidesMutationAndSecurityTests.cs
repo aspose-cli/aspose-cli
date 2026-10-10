@@ -374,16 +374,17 @@ public sealed class SlidesMutationAndSecurityTests
 
     /// <summary>
     /// An I/O exception the engine raises inside an operation, such as Aspose.Slides reading past
-    /// the end of a picture cut after its PNG signature, is an engine failure of that operation:
-    /// the error names its index as every other engine failure does.
+    /// the end of a TIFF picture cut after its header (the CLI recognizes TIFF by its signature
+    /// and leaves its decoding to the engine), is an engine failure of that operation: the error
+    /// names its index as every other engine failure does.
     /// </summary>
     [Fact]
     public void AnEngineIoFailureInsideAnOperation_NamesTheOperation()
     {
         using var fixture = new SlidesEngineFixture();
         string input = fixture.CreatePresentation("cut-image.pptx", slides: 1);
-        string picture = fixture.File("cut.png");
-        File.WriteAllBytes(picture, SlidesEngineFixture.Png(8)[..8]);
+        string picture = fixture.File("cut.tif");
+        File.WriteAllBytes(picture, [(byte)'I', (byte)'I', 0x2A, 0x00, 0x08, 0x00, 0x00, 0x00]);
         string output = fixture.File("cut-image.out.pptx");
 
         CliException error = Assert.Throws<CliException>(() => SlidesEdit.Run(fixture.Session, new PresentationEditRequest
