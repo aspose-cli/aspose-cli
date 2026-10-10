@@ -32,6 +32,11 @@ only when its scope runs that category.
 
 -Plan lists the test projects the scope starts, with their filters, and stops before building.
 
+-TestProject narrows the run to the named test projects (such as Aspose.Cli.Tests) among the
+ones the scope starts; a named project that the scope leaves out is skipped as usual. The
+category-only projects of the scope are still checked, so a run split by -TestProject makes
+every check of the whole run. CI plans the scope once and runs each project in its own job.
+
 Test projects run at the same time, each with its log beside its TRX result. Prerequisites are
 checked first: PowerShell 7.4 (tests start pwsh.exe from PATH), and only when the scope needs
 them Windows PowerShell 5.1 (the customer installer's runtime), the pinned Chromium that the
@@ -72,6 +77,9 @@ param(
 
     # Lists the test projects the scope starts, with their filters, without building or running them.
     [switch] $Plan,
+
+    # Runs only these test projects, by name, of the ones the scope starts.
+    [string[]] $TestProject,
 
     # Runs the tests without a license, under en-US and without tiered compilation, as on CI.
     [switch] $CiLike,
@@ -257,6 +265,23 @@ foreach ($project in @($selected)) {
     }
 }
 
+# -TestProject narrows only the projects that run: every run still checks the category-only
+# projects of its scope, so the CI jobs that a run is split into each make the checks it makes.
+if ($PSBoundParameters.ContainsKey('TestProject')) {
+    $projectNames = @($testProjects | ForEach-Object { [IO.Path]::GetFileNameWithoutExtension($_) })
+    $unknown = @($TestProject | Where-Object { $_ -notin $projectNames })
+    if ($unknown.Count -ne 0) {
+        throw "-TestProject names no test project: $($unknown -join ', '). Name one of: $($projectNames -join ', ')."
+    }
+    foreach ($candidate in @($selected)) {
+        $name = [IO.Path]::GetFileNameWithoutExtension($candidate)
+        if ($name -notin $TestProject) {
+            $selected = @($selected | Where-Object { $_ -ne $candidate })
+            Write-Host "SKIP $name (not named by -TestProject)"
+        }
+    }
+}
+
 function Get-ProjectFilter {
     param([Parameter(Mandatory)][string] $Project)
     $excluded = @($categories | Where-Object { -not $included[$Project].Contains($_) })
@@ -269,6 +294,10 @@ foreach ($project in $selected) {
     Write-Host "TEST $([IO.Path]::GetFileNameWithoutExtension($project)) $(if ($null -eq $filter) { '(all tests)' } else { "($filter)" })"
 }
 if ($Plan) {
+    return
+}
+if ($selected.Count -eq 0 -and $categoryOnly.Count -eq 0) {
+    Write-Host "PASS $Scope scope: no test project to run."
     return
 }
 
@@ -332,6 +361,10 @@ foreach ($project in $categoryOnly.Keys) {
     if ($uncategorized.Count -ne 0) {
         throw "$(ConvertTo-RepositoryPath $project) declares TestProjectCategory $category, but these tests do not carry [Category(TestCategory.$category)], so the $Scope scope would never run them:$([Environment]::NewLine)- $($uncategorized -join "$([Environment]::NewLine)- ")"
     }
+}
+if ($selected.Count -eq 0) {
+    Write-Host "PASS $Scope scope: no test project to run besides the category-only checks."
+    return
 }
 
 if ($runsBrowser) {
