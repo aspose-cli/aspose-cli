@@ -27,17 +27,19 @@ public sealed class InputLoadingAlikeTests
     {
         using var workspace = new TempWorkspace();
         ScenarioLicense.Project(workspace.Path);
-        var codes = new List<string>();
-        foreach ((string product, string fixture) in LegacyInputs)
+        // Every input has its own file, so the inspections run at the same time.
+        string[] codes = new string[LegacyInputs.Length];
+        Parallel.For(0, LegacyInputs.Length, index =>
         {
+            (string product, string fixture) = LegacyInputs[index];
             string input = $"{fixture.Replace('.', '-')}.{ScenarioFixtures.PrimaryFormat(product)}";
             File.WriteAllBytes(workspace.File(input), ScenarioFixtures.Read(fixture));
             CliResult result = workspace.Run(product, "inspect", input, "--output", "json");
             string code = result.ExitCode == 0
                 ? "(opened)"
                 : JsonNode.Parse(result.StdErr)?["error"]?["code"]?.GetValue<string>() ?? $"(exit {result.ExitCode})";
-            codes.Add($"{product} inspect {input}: {code}");
-        }
+            codes[index] = $"{product} inspect {input}: {code}";
+        });
 
         string report = string.Join(Environment.NewLine, codes);
         string[] distinct = [.. codes.Select(static line => line[(line.LastIndexOf(": ", StringComparison.Ordinal) + 2)..]).Distinct(StringComparer.Ordinal)];

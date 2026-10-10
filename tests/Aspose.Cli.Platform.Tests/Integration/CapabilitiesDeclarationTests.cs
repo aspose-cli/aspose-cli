@@ -1,4 +1,3 @@
-using System.Collections.Concurrent;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using Aspose.Cli.TestKit;
@@ -31,20 +30,15 @@ public sealed partial class CapabilitiesDeclarationTests : IDisposable
                 .Order(StringComparer.Ordinal),
         ];
 
-        var reached = new ConcurrentBag<string>();
+        // Help runs once per path for the process; running the listed paths' help together first
+        // only warms that cache. The walk below still reaches commands from help alone.
+        HelpOutputs.Prefetch(listed.Select(static path => path.Split(' ')[1..]));
+        var reached = new List<string>();
         var pending = new List<string> { "aspose-cli" };
         while (pending.Count > 0)
         {
-            var next = new ConcurrentBag<string>();
-            Parallel.ForEach(pending, new ParallelOptions { MaxDegreeOfParallelism = 8 }, path =>
-            {
-                reached.Add(path);
-                foreach (string child in Subcommands(Help(path)))
-                {
-                    next.Add(path + " " + child);
-                }
-            });
-            pending = [.. next];
+            reached.AddRange(pending);
+            pending = [.. pending.SelectMany(path => Subcommands(Help(path)).Select(child => path + " " + child))];
         }
 
         string[] helped = [.. reached.Order(StringComparer.Ordinal)];
@@ -82,8 +76,9 @@ public sealed partial class CapabilitiesDeclarationTests : IDisposable
     {
         JsonNode capabilities = Capabilities();
         JsonNode[] commands = [.. capabilities["commands"]!.AsArray().Where(static command => !command!["hidden"]!.GetValue<bool>()).Select(static command => command!)];
-        var problems = new ConcurrentBag<string>();
-        Parallel.ForEach(commands, new ParallelOptions { MaxDegreeOfParallelism = 8 }, command =>
+        HelpOutputs.Prefetch(commands.Select(static command => command["path"]!.GetValue<string>().Split(' ')[1..]));
+        var problems = new List<string>();
+        foreach (JsonNode command in commands)
         {
             string path = command["path"]!.GetValue<string>();
             Dictionary<string, HelpValues> help = HelpOptions(Help(path));
@@ -109,9 +104,9 @@ public sealed partial class CapabilitiesDeclarationTests : IDisposable
                         + (shown.Count is { } total ? $"{total} values" : $"[{string.Join(", ", shown.Values)}]"));
                 }
             }
-        });
+        }
 
-        Assert.True(problems.IsEmpty,
+        Assert.True(problems.Count == 0,
             "Every option's allowed values in capabilities are the values its declaration accepts, as help shows them:"
             + Environment.NewLine + string.Join(Environment.NewLine, problems.Order(StringComparer.Ordinal)));
     }
@@ -123,10 +118,9 @@ public sealed partial class CapabilitiesDeclarationTests : IDisposable
         return JsonNode.Parse(result.StdOut)!;
     }
 
-    private string Help(string path)
+    private static string Help(string path)
     {
-        string[] words = path.Split(' ')[1..];
-        CliResult result = _workspace.Run([.. words, "--help"]);
+        CliResult result = HelpOutputs.Of(path.Split(' ')[1..]);
         Assert.True(result.ExitCode == 0, $"{path} --help: {result.StdErr}");
         return result.StdOut.ReplaceLineEndings("\n");
     }

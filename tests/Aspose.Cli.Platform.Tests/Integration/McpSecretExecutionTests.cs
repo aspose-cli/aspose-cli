@@ -52,15 +52,20 @@ public sealed class McpSecretExecutionTests
     public async Task OversizedSecret_HasTheSameBudgetFailureAcrossProcesses(bool supervised)
     {
         using var workspace = new TempWorkspace();
-        Assert.Equal(0, workspace.Run("cells", "create", "input.xlsx", "--sheets", "Data").ExitCode);
         string value = new('x', 5000);
         var variables = new Dictionary<string, string?> { [Variable] = value };
+        // The server starts while the input is created, and is disposed whatever the creation does.
+        Task<McpTestServer> starting = McpTestServer.Start(workspace.Path, workspace.Path, variables);
+        Task<CliResult> creating = Task.Run(() => workspace.Run("cells", "create", "input.xlsx", "--sheets", "Data"));
+        await using var server = await starting;
+        Assert.Equal(0, (await creating).ExitCode);
         string ops = $$"""{"ops":[{"op":"protect_sheet","sheet":"Data","passwordEnv":"{{Variable}}"}]}""";
         string[] args = ["cells", "edit", "input.xlsx", "--ops", ops, "--out", "never.xlsx", "--output=json"];
         if (supervised) { args = ["--timeout=10", .. args]; }
-        CliResult direct = workspace.RunWithEnv(variables, args);
-        await using var server = await McpTestServer.Start(workspace.Path, workspace.Path, variables);
+        // The direct run and the MCP execution both refuse before writing, so they run at the same time.
+        Task<CliResult> directRun = Task.Run(() => workspace.RunWithEnv(variables, args));
         JsonNode remote = (await server.Execute(args))["result"]!["structuredContent"]!;
+        CliResult direct = await directRun;
         Assert.Equal(direct.ExitCode, remote["exitCode"]!.GetValue<int>());
         JsonNode expected = JsonNode.Parse(direct.StdErr)!["error"]!;
         JsonNode actual = JsonNode.Parse(remote["stderr"]!.GetValue<string>())!["error"]!;
@@ -111,28 +116,47 @@ public sealed class McpSecretExecutionTests
         };
         var cli = new CliProcess(CliRunner.ExecutablePath,
             CliEnvironment.Evaluation(workspace.ConfigDirectory, variables), TimeSpan.FromSeconds(30));
-        await using var server = await McpTestServer.Start(workspace.Path, workspace.Path, variables);
-        for (int mode = 0; mode < 4; mode++)
+        // A server runs one call at a time. The direct runs (modes 0 and 1) go at once and a
+        // server checks their outputs, while a second server started alike runs and checks the
+        // MCP executions (modes 2 and 3); every mode writes its own output.
+        await Task.WhenAll(Direct(), Remote());
+
+        async Task Direct()
         {
-            string output = $"result-{mode}.{extension}";
-            string[] args = [product, "edit", input, "--ops=" + value, "--out", output, "--output=json"];
-            if (mode % 2 == 1) { args = ["--timeout=15", .. args]; }
-            string stdout;
-            string stderr;
-            int exitCode;
-            if (mode < 2)
+            Task<McpTestServer> starting = McpTestServer.Start(workspace.Path, workspace.Path, variables);
+            Task<CliResult>[] runs = [.. Enumerable.Range(0, 2).Select(mode => Task.Run(() => cli.Run(workspace.Path, stdin, Arguments(mode))))];
+            await using McpTestServer server = await starting;
+            for (int mode = 0; mode < 2; mode++)
             {
-                CliResult result = cli.Run(workspace.Path, stdin, args);
-                (exitCode, stdout, stderr) = (result.ExitCode, result.StdOut, result.StdErr);
+                CliResult result = await runs[mode];
+                await Check(server, mode, result.ExitCode, result.StdOut, result.StdErr);
             }
-            else
+        }
+
+        async Task Remote()
+        {
+            await using McpTestServer server = await McpTestServer.Start(workspace.Path, workspace.Path, variables);
+            for (int mode = 2; mode < 4; mode++)
             {
-                JsonNode reply = await server.Execute(args, stdin);
+                JsonNode reply = await server.Execute(Arguments(mode), stdin);
                 AssertSuccess(reply);
                 JsonNode result = reply["result"]!["structuredContent"]!;
-                (exitCode, stdout, stderr) = (result["exitCode"]!.GetValue<int>(),
+                await Check(server, mode, result["exitCode"]!.GetValue<int>(),
                     result["stdout"]!.GetValue<string>(), result["stderr"]!.GetValue<string>());
             }
+        }
+
+        string[] Arguments(int mode)
+        {
+            string[] args = [product, "edit", input, "--ops=" + value, "--out", Output(mode), "--output=json"];
+            return mode % 2 == 1 ? ["--timeout=15", .. args] : args;
+        }
+
+        string Output(int mode) => $"result-{mode}.{extension}";
+
+        async Task Check(McpTestServer server, int mode, int exitCode, string stdout, string stderr)
+        {
+            string output = Output(mode);
             Assert.True(exitCode == 0, stderr);
             Assert.DoesNotContain(OperationSecret, stdout + stderr, StringComparison.Ordinal);
             Assert.True(File.Exists(workspace.File(output)));
@@ -149,7 +173,7 @@ public sealed class McpSecretExecutionTests
                     ? $$"""{"ops":[{"op":"unprotect_sheet","sheet":"Data","passwordEnv":"{{Variable}}"}]}"""
                     : $$"""{"ops":[{"op":"unprotect","passwordEnv":"{{Variable}}"}]}""";
                 AssertSuccess(await server.Execute([product, "edit", output, "--ops", unprotect,
-                    "--out", "checked." + extension, "--dry-run", "--output=json"]));
+                    "--out", $"checked-{mode}.{extension}", "--dry-run", "--output=json"]));
             }
         }
     }
@@ -158,7 +182,7 @@ public sealed class McpSecretExecutionTests
     [InlineData("cells")]
     [InlineData("pdf")]
     [InlineData("words")]
-    public void MissingSecret_FailsOnlyTheOperationThatNamesIt(string product)
+    public async Task MissingSecret_FailsOnlyTheOperationThatNamesIt(string product)
     {
         using var workspace = new TempWorkspace();
         File.WriteAllText(workspace.File("content.txt"), "Secret fixture");
@@ -177,8 +201,11 @@ public sealed class McpSecretExecutionTests
         Assert.True(created.ExitCode == 0, created.StdErr);
         string[] edit = [product, "edit", input, "--ops", ops, "--out", "result." + extension, "--output=json"];
 
-        CliResult partial = workspace.Run([.. edit, "--best-effort", "--dry-run"]);
-        CliResult failed = workspace.Run(edit);
+        // Neither run publishes an output, so they run at the same time.
+        CliResult[] runs = await Task.WhenAll(
+            Task.Run(() => workspace.Run([.. edit, "--best-effort", "--dry-run"])),
+            Task.Run(() => workspace.Run(edit)));
+        (CliResult partial, CliResult failed) = (runs[0], runs[1]);
 
         Assert.True(partial.ExitCode == 8, partial.StdErr);
         JsonNode outcomes = JsonNode.Parse(partial.StdOut)!["applied"]!;
@@ -197,10 +224,13 @@ public sealed class McpSecretExecutionTests
     public async Task CellsMissingSecret_PreservesBestEffortAndDryRunOutcomes(bool supervised)
     {
         using var workspace = new TempWorkspace();
-        Assert.Equal(0, workspace.Run("cells", "create", "input.xlsx", "--sheets", "Data").ExitCode);
+        // The server starts while the input is created, and is disposed whatever the creation does.
+        Task<McpTestServer> starting = McpTestServer.Start(workspace.Path, workspace.Path);
+        Task<CliResult> creating = Task.Run(() => workspace.Run("cells", "create", "input.xlsx", "--sheets", "Data"));
+        await using var server = await starting;
+        Assert.Equal(0, (await creating).ExitCode);
         string name = "MISSING_" + Guid.NewGuid().ToString("N");
         string ops = $$"""{"ops":[{"op":"protect_sheet","sheet":"Data","passwordEnv":"{{name}}"},{"op":"set_values","sheet":"Data","range":"A1","values":[[42]]}]}""";
-        await using var server = await McpTestServer.Start(workspace.Path, workspace.Path);
         string[] args = ["cells", "edit", "input.xlsx", "--ops", ops, "--out", "partial.xlsx",
             "--best-effort", "--dry-run", "--output=json"];
         if (supervised) { args = ["--timeout=10", .. args]; }

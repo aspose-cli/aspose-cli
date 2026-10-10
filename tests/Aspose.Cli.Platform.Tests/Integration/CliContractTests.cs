@@ -402,13 +402,15 @@ $", result.StdOut);
         Assert.Contains(description, row, StringComparison.Ordinal);
     }
 
-    /// <summary>Runs <c>--help</c> for each command path, relative to the root, and joins the outputs.</summary>
-    private string CollectHelp(IEnumerable<string[]> paths)
+    /// <summary>Joins the <c>--help</c> output of each command path, relative to the root, in order.</summary>
+    private static string CollectHelp(IEnumerable<string[]> paths)
     {
+        string[][] ordered = [.. paths];
+        HelpOutputs.Prefetch(ordered);
         var help = new StringBuilder();
-        foreach (string[] path in paths)
+        foreach (string[] path in ordered)
         {
-            CliResult result = _workspace.Run([.. path, "--help"]);
+            CliResult result = HelpOutputs.Of(path);
             string command = string.Join(' ', ["aspose-cli", .. path]);
             Assert.True(result.ExitCode == 0, $"{command} --help exited {result.ExitCode}: {result.StdErr}");
             help.Append("## ").Append(command).Append(" --help\n")
