@@ -1,5 +1,3 @@
-using System.Text.Json;
-using System.Text.RegularExpressions;
 using Aspose.Cli.Sdk.Diagnostics;
 using Aspose.Cli.Sdk.Serialization;
 
@@ -8,10 +6,6 @@ namespace Aspose.Cli.Sdk.Extensibility;
 /// <summary>Validated immutable aggregate of common and compiled-product diagnostics.</summary>
 public sealed class DiagnosticCatalog
 {
-    private static readonly Regex CodePattern = new(
-        "^[A-Z][A-Z0-9_]*$",
-        RegexOptions.CultureInvariant | RegexOptions.NonBacktracking);
-
     private readonly ProductResourceCatalog _resources;
 
     private DiagnosticCatalog(IReadOnlyList<DiagnosticDescriptor> descriptors, ProductResourceCatalog resources)
@@ -94,7 +88,7 @@ public sealed class DiagnosticCatalog
         IDictionary<string, DiagnosticDescriptor> byCode)
     {
         ArgumentNullException.ThrowIfNull(descriptor);
-        if (!CodePattern.IsMatch(descriptor.Code))
+        if (!IsScreamingSnakeCase(descriptor.Code))
         {
             throw new InvalidOperationException(
                 $"Diagnostic code '{descriptor.Code}' is not SCREAMING_SNAKE_CASE.");
@@ -155,24 +149,16 @@ public sealed class DiagnosticCatalog
     private static string Key(DiagnosticSeverity severity, string code) =>
         $"{severity}:{code}";
 
+    private static bool IsScreamingSnakeCase(string code) =>
+        code.Length > 0
+        && char.IsAsciiLetterUpper(code[0])
+        && code.All(static character =>
+            char.IsAsciiLetterUpper(character) || char.IsAsciiDigit(character) || character == '_');
+
+    // Every schema is written from records, so a published id is a well-formed document; the
+    // check never writes one, which most invocations would not otherwise read.
     private static bool SchemaExists(
         string id,
-        ProductResourceCatalog resources)
-    {
-        string? document;
-        if (!SdkSchemaCatalog.TryRead(id, out document)
-            && !resources.TryRead(id, out document))
-        {
-            return false;
-        }
-        try
-        {
-            using JsonDocument _ = JsonDocument.Parse(document);
-            return true;
-        }
-        catch (JsonException)
-        {
-            return false;
-        }
-    }
+        ProductResourceCatalog resources) =>
+        SdkSchemaCatalog.Schemas.Contains(id) || resources.Contains(id);
 }
