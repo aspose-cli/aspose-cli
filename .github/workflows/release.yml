@@ -1,6 +1,6 @@
 name: Release
 # A release is built only from a protected version tag, v<Version from Directory.Build.props>.
-# The licensed Full scope runs locally before the tag is pushed (CONTRIBUTING.md); this job runs
+# The licensed Full scope runs locally before the tag is pushed; this job runs
 # the Fast scope, packages and checks the release, and publishes it as a GitHub release.
 on:
   push:

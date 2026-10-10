@@ -34,8 +34,71 @@ the fixed distribution identity; the generated projections and the solution come
 - Derive contracts from one source: generate what can be generated and test that it is current,
   rather than keeping hand-written copies in sync.
 - Prefer deleting unused surface to preserving it.
-- The gates in [CONTRIBUTING.md](CONTRIBUTING.md#gates) judge a change: never add a known
-  violation to make a change pass. Code metrics are a diagnostic, never a target.
+- The [gates](#gates) judge a change: never add a known violation to make a change pass. Code
+  metrics (`eng/tools/CodeHealth`) are a diagnostic, never a target.
+
+## Gates
+
+They judge a change without a reviewer reading it. Fix the product or the code to pass them; never
+weaken a check or remove a supported operation to make a test pass.
+
+- **Scenarios and invariants.** `tests/Aspose.Cli.TestKit/Scenarios` runs declarative
+  `*.scenario.json` files (format in its README); add a reproduction or example to
+  `tests/Aspose.Cli.Platform.Tests/Invariants/Scenarios`. The `*InvariantTests` generate cases
+  from `capabilities` and each ops schema and check what every command keeps: no internal error,
+  one valid error envelope, suggestions for mistakes, refused unwritable outputs, read-only
+  commands and dry runs that write nothing, outputs that reopen, hidden secrets, and evaluation
+  writes that warn `EVAL_MODE`.
+- **Known violations.** `Invariants/known-violations.json` lists today's product defects by
+  `cause`, per license mode (`modes`). A case passes only when its violations and their text match
+  its entries, so a new, changed or fixed violation fails; delete an entry when its defect is
+  fixed. Adding an entry or widening `modes` needs the owner's `quality-exception` label.
+- **Analyzers.** Production code builds with the analyzers in the `[src/**.cs]` section of
+  `.editorconfig` as errors; fix a violation rather than suppressing it. `src` projects write a
+  documentation file, so documentation comments must be well formed.
+- **Skill operations.** Every operation a product Skill shows must parse and match the product's
+  ops schema.
+
+## Contracts
+
+- **Operations** are records with `[Operation("name")]` under the product's
+  `[OperationVocabulary]` base, listed in the product's ops JSON context, with the handler method
+  `I{Base}Handler` requires. The record is the contract: `required` members, initializers for
+  defaults, `[InputPath]`, `[SecretEnv]`, constraint attributes and record rules
+  (`[ExactlyOneOf]`, `[AtLeastOneOf]`, `[DependentRequired]`, `[PresentWhen]`, `[MinProperties]`),
+  and a `Validated()` override, stated in its summary, for the rest. Summaries are the schema's
+  descriptions. `APCLI012` rejects an incomplete contract.
+- **Results** are records passing their relative schema id and version to `ResultEnvelope`,
+  `EngineResultEnvelope` (adds `license`) or `WindowedResultEnvelope` (adds `window`), listed in
+  the assembly's JSON context; a shared block publishes itself with `[SchemaId]`. Ids are relative
+  to the owner: `v2/common/` for the SDK and Host, `v2/<product>/` for a product. `required`,
+  nullability, `[AlwaysPresent]`, `[OneOfBy]` and `[OpenEnum]` state the shape. `APCLI013` rejects
+  a record it cannot describe.
+- **JSON input** defaults are tested through the production source-generated serializer,
+  including omitted fields and explicit `false`, `0` and `null`. It
+  [does not preserve init-only initializers](https://github.com/dotnet/runtime/issues/84484), so an
+  input record outside an operation vocabulary takes scalar defaults as optional constructor
+  parameters.
+- **Error codes** shared by products or the Host are declared once in the SDK's `ErrorCodes` and
+  built only by SDK error factories; a product declares its own in its `*Diagnostics` class. A
+  missing target uses an `ErrorCode.NotFound` code built with `CliErrors.NotFound` (named
+  targets) or `CliErrors.NotFoundAt` (numbered targets); a name several targets share is refused.
+- **Command parameters** declare their input role with `WithInput` and their value sources and
+  secret handling on the symbol; the Host reads only these declarations. `GlobalOptionNames` and
+  `StandardOptionNames` are the reserved names (`APCLI008`). Products define commands with
+  `CommandDefinition` or `EditDefinition`, paired with their handlers on the product menu
+  (`APCLI011` forbids `StandardOptions`).
+
+## Tests
+
+- xUnit v3 with real engines and CLI child processes. A test that takes several seconds carries
+  `[Category(TestCategory.Slow)]`; installer and Playwright tests carry `Installer` and
+  `Browser`.
+- A test that changes process-wide state joins its serial collection in
+  `tests/TestAssemblyFixture.cs`. A test project that reads a repository file outside the
+  projects lists it as a `RepositoryInput` item.
+- Runs never read `%APPDATA%\aspose-cli`, project `.aspose` files or `ASPOSE_*` settings; only
+  `ASPOSE_CLI_TEST_*` variables pass through. Keep license contents out of logs and fixtures.
 
 ## Must not break
 
@@ -60,6 +123,6 @@ intentional contract change.
 Before changing code around a commercial SDK, verify the official API usage and reproduce
 suspected engine behavior with a minimal SDK-only case. Correct our misuse in the owning
 adapter. Record each confirmed SDK defect in [KNOWN-ISSUES.md](KNOWN-ISSUES.md) as
-[CONTRIBUTING.md](CONTRIBUTING.md#known-sdk-issues) describes, and handle it openly with a
+its introduction describes, and handle it openly with a
 refusal, a workaround through other public API, or a warning. Never hide a defect with implicit
 default rewrites, file-format patches, or product, producer or version special cases.

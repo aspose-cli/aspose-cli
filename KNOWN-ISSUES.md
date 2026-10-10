@@ -1,7 +1,12 @@
 # Known issues
 
 Confirmed defects in the commercial Aspose SDKs this CLI runs on, and how the CLI handles each.
-How they are reproduced and retired: [CONTRIBUTING.md](CONTRIBUTING.md#known-sdk-issues).
+Each issue is recorded once under its id, below a heading with the SDK version `eng/products.json`
+pins. A test in its product's `<Product>KnownIssueTests` class reproduces it with the SDK alone
+through `KnownIssue.Reproduces`, and the code that handles it names the id in a comment;
+`KnownIssueCatalogTests` keeps this file true. To update an SDK, change its version in
+`eng/products.json`, run `scripts/sync.ps1` and the `Full` scope; for each reproduction that now
+fails, delete the issue's section, the code that names it and the test, then update the headings.
 
 ## Aspose.Cells 26.9.0
 

@@ -114,6 +114,6 @@ unfinished run.
 
 ## Development
 
-[CONTRIBUTING.md](CONTRIBUTING.md) covers building, testing and releasing;
+[CONTRIBUTING.md](CONTRIBUTING.md) covers building, testing and pull requests;
 [AGENTS.md](AGENTS.md) holds the architecture rules; [SECURITY.md](SECURITY.md) explains how to
 report a vulnerability.
