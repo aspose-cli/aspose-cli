@@ -19,7 +19,7 @@ internal static class CellsSearch
         LicenseState licenseState = session.Outputs.License;
         using LoadedWorkbook loaded = session.Loader.Open(request.Input, request.Password);
         Workbook workbook = loaded.Workbook;
-        SourceInfo source = BuildSource(request.Input, workbook);
+        SourceInfo source = BuildSource(request.Input, loaded);
 
         int? sheetIndex = request.SheetName is { } name ? Sheets.Resolve(workbook, name).Index : null;
         SearchHits<SearchHit> hits = SearchMatcher.Find(session.Budgets, workbook, request, sheetIndex);

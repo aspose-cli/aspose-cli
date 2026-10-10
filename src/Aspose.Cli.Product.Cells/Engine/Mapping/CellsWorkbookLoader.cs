@@ -145,7 +145,13 @@ internal sealed class CellsWorkbookLoader(ResourceBudgetLedger resourceBudgets)
             Warning? calculated = calculateOnOpen ? CellsOpenCalculation.Apply(workbook, resourceBudgets) : null;
             CellsEvaluation.SkippedWarningSheet? skipped = published ? null : CellsEvaluation.SkipActiveWarningSheet(workbook);
             transferred = true;
-            return new LoadedWorkbook(workbook, resources, plan.Encrypted) { CalculatedOnOpen = calculated, EvaluationSheetSkipped = skipped, IsDelimitedText = plan.Separator is not null };
+            return new LoadedWorkbook(workbook, resources, plan.Encrypted)
+            {
+                SourceFormat = plan.Detected ?? workbook.FileFormat,
+                CalculatedOnOpen = calculated,
+                EvaluationSheetSkipped = skipped,
+                IsDelimitedText = plan.Separator is not null,
+            };
         }
         catch (Exception exception) when (exception is not CliException and not OperationCanceledException)
         {
@@ -199,10 +205,17 @@ internal sealed class CellsWorkbookLoader(ResourceBudgetLedger resourceBudgets)
             return LoadPlan.Auto with { Encrypted = true };
         }
 
-        if (OpenableFormats.Contains(detected.FileFormatType))
+        return ResolveDetectedFormatPlan(path, detected.FileFormatType) with
         {
-            if (detected.FileFormatType
-                is FileFormatType.Csv or FileFormatType.TabDelimited)
+            Detected = detected.FileFormatType == FileFormatType.Unknown ? null : detected.FileFormatType,
+        };
+    }
+
+    private static LoadPlan ResolveDetectedFormatPlan(string path, FileFormatType detected)
+    {
+        if (OpenableFormats.Contains(detected))
+        {
+            if (detected is FileFormatType.Csv or FileFormatType.TabDelimited)
             {
                 if (!InputExtensions.Contains(Path.GetExtension(path).ToLowerInvariant()))
                 {
@@ -210,13 +223,13 @@ internal sealed class CellsWorkbookLoader(ResourceBudgetLedger resourceBudgets)
                 }
 
                 char separator = DetectDelimiter(path)
-                    ?? (detected.FileFormatType == FileFormatType.TabDelimited
+                    ?? (detected == FileFormatType.TabDelimited
                         ? '\t'
                         : ',');
                 return new LoadPlan(null, separator);
             }
 
-            return detected.FileFormatType switch
+            return detected switch
             {
                 FileFormatType.Html or FileFormatType.XHtml => new LoadPlan(LoadFormat.Html, null),
                 FileFormatType.MHtml => new LoadPlan(LoadFormat.MHtml, null),
@@ -224,7 +237,7 @@ internal sealed class CellsWorkbookLoader(ResourceBudgetLedger resourceBudgets)
             };
         }
 
-        if (detected.FileFormatType == FileFormatType.Unknown)
+        if (detected == FileFormatType.Unknown)
         {
             string extension = Path.GetExtension(path).ToLowerInvariant();
             if (TextExtensions.Contains(extension))
@@ -238,9 +251,9 @@ internal sealed class CellsWorkbookLoader(ResourceBudgetLedger resourceBudgets)
             }
         }
 
-        if (detected.FileFormatType != FileFormatType.Unknown)
+        if (detected != FileFormatType.Unknown)
         {
-            throw Loading.Unloadable(path, detected.FileFormatType.ToString());
+            throw Loading.Unloadable(path, detected.ToString());
         }
 
         throw Loading.Unreadable(path, ContainerSignatures.IsZip(ContainerSignatures.ReadPrefix(path, ContainerSignatures.ZipLocalFileHeader.Length))
@@ -389,6 +402,12 @@ internal sealed class CellsWorkbookLoader(ResourceBudgetLedger resourceBudgets)
     private readonly record struct LoadPlan(LoadFormat? Format, char? Separator, bool Encrypted = false)
     {
         internal static LoadPlan Auto => default;
+
+        /// <summary>
+        /// The on-disk format detection saw; null when detection cannot see it, for an encrypted
+        /// container or content no format recognizes, so the loaded workbook's format stands.
+        /// </summary>
+        internal FileFormatType? Detected { get; init; }
 
         internal Encoding? TextEncoding { get; init; }
 

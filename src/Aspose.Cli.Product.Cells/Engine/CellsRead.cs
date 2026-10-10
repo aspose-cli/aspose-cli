@@ -23,7 +23,7 @@ internal static class CellsRead
 
         return new WorkbookReadResult
         {
-            Source = BuildSource(request.Input, workbook),
+            Source = BuildSource(request.Input, loaded),
             Scope = request.Scope,
             Sheet = sheet,
             Styles = styles,

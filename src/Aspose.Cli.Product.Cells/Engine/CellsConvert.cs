@@ -22,7 +22,7 @@ internal static class CellsConvert
 
         // Capture before saving: Workbook.FileFormat mutates to the target
         // format once the workbook is saved.
-        SourceInfo input = BuildSource(request.Input, workbook);
+        SourceInfo input = BuildSource(request.Input, loaded);
         // The imported rows come over as they are; say which of them are not table data.
         IReadOnlyList<Warning> textLayout = TextTableLayout.Warnings(loaded, session.Budgets);
 
