@@ -277,3 +277,65 @@ function Assert-RuntimePackLock {
         throw "Restored runtime packs [$($downloaded -join ', ')] differ from eng/runtime-packs.lock.json [$($locked -join ', ')]. The active SDK selects a different runtime; run scripts/sync.ps1 and review the lock change."
     }
 }
+
+# The managed assemblies a single-file executable bundles, each with its code form: R2R when it
+# carries precompiled code, IL when it carries only IL. Reads the .NET single-file bundle manifest.
+function Get-BundledAssemblyCode {
+    param([Parameter(Mandatory)][string] $Executable)
+    $bytes = [IO.File]::ReadAllBytes($Executable)
+    # The bundle marker the host searches for; the manifest offset precedes it.
+    $marker = [byte[]](0x8b,0x12,0x02,0xb9,0x6a,0x61,0x20,0x38,0x72,0x7b,0x93,0x02,0x14,0xd7,0xa0,0x32,
+        0x13,0xf5,0xb9,0xe6,0xef,0xae,0x33,0x18,0xee,0x3b,0x2d,0xce,0x24,0xb3,0x6a,0xae)
+    $position = -1
+    $start = 0
+    while ($position -lt 0) {
+        $candidate = [Array]::IndexOf($bytes, $marker[0], $start)
+        if ($candidate -lt 8 -or $candidate -gt $bytes.Length - $marker.Length) {
+            throw "Not a single-file bundle: $Executable"
+        }
+        if ([Linq.Enumerable]::SequenceEqual([ArraySegment[byte]]::new($bytes, $candidate, $marker.Length), $marker)) {
+            $position = $candidate
+        }
+        $start = $candidate + 1
+    }
+    $reader = [IO.BinaryReader]::new([IO.MemoryStream]::new($bytes, $false))
+    $reader.BaseStream.Position = [BitConverter]::ToInt64($bytes, $position - 8)
+    $major = $reader.ReadUInt32()
+    [void]$reader.ReadUInt32()
+    $count = $reader.ReadInt32()
+    [void]$reader.ReadString()
+    if ($major -lt 6) { throw "Unsupported single-file bundle version $major in $Executable." }
+    # The deps.json and runtimeconfig.json locations, then the bundle flags.
+    foreach ($field in 1..4) { [void]$reader.ReadInt64() }
+    [void]$reader.ReadUInt64()
+    foreach ($entry in 1..$count) {
+        $offset = $reader.ReadInt64()
+        $size = $reader.ReadInt64()
+        $compressedSize = $reader.ReadInt64()
+        [void]$reader.ReadByte()
+        $path = $reader.ReadString()
+        if (-not $path.EndsWith('.dll', [StringComparison]::OrdinalIgnoreCase)) { continue }
+        $content = [IO.MemoryStream]::new()
+        if ($compressedSize -gt 0) {
+            $inflate = [IO.Compression.DeflateStream]::new(
+                [IO.MemoryStream]::new($bytes, [int]$offset, [int]$compressedSize, $false),
+                [IO.Compression.CompressionMode]::Decompress)
+            $inflate.CopyTo($content)
+            $inflate.Dispose()
+        }
+        else {
+            $content.Write($bytes, [int]$offset, [int]$size)
+        }
+        $content.Position = 0
+        $pe = [Reflection.PortableExecutable.PEReader]::new($content)
+        try {
+            $cor = $pe.PEHeaders.CorHeader
+            if ($null -eq $cor) { continue }
+            [pscustomobject]@{
+                Name = [IO.Path]::GetFileNameWithoutExtension($path)
+                Code = $(if ($cor.ManagedNativeHeaderDirectory.Size -gt 0) { 'R2R' } else { 'IL' })
+            }
+        }
+        finally { $pe.Dispose() }
+    }
+}
