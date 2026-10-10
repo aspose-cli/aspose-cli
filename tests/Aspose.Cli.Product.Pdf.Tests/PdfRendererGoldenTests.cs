@@ -13,7 +13,7 @@ public sealed class PdfRendererGoldenTests
     [Fact]
     public void Info_WithEveryDetail_Plain()
     {
-        string text = RenderedText.Of(surface => InfoCommand.Table(InfoWithDetails(), surface), TableFormat.Plain);
+        string text = RenderedText.Of(surface => InspectCommand.Table(InfoWithDetails(), surface), TableFormat.Plain);
 
         RenderedText.Equal(
             """
@@ -68,7 +68,7 @@ public sealed class PdfRendererGoldenTests
     [Fact]
     public void Info_WithEveryDetail_Markdown()
     {
-        string text = RenderedText.Of(surface => InfoCommand.Table(InfoWithDetails(), surface), TableFormat.Markdown);
+        string text = RenderedText.Of(surface => InspectCommand.Table(InfoWithDetails(), surface), TableFormat.Markdown);
 
         RenderedText.Equal(
             """
@@ -143,7 +143,7 @@ public sealed class PdfRendererGoldenTests
             Metadata = new Dictionary<string, string?>(),
         };
 
-        string text = RenderedText.Of(surface => InfoCommand.Table(result, surface), TableFormat.Plain);
+        string text = RenderedText.Of(surface => InspectCommand.Table(result, surface), TableFormat.Plain);
 
         RenderedText.Equal(
             """
@@ -179,7 +179,7 @@ public sealed class PdfRendererGoldenTests
         PdfInfoResult info = Info();
         PdfInfoResult result = info with { Pdf = info.Pdf with { DistinctPageSizes = [] } };
 
-        string text = RenderedText.Of(surface => InfoCommand.Table(result, surface), TableFormat.Plain);
+        string text = RenderedText.Of(surface => InspectCommand.Table(result, surface), TableFormat.Plain);
 
         RenderedText.Equal(
             """

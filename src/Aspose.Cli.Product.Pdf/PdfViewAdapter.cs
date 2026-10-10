@@ -37,7 +37,7 @@ internal sealed class PdfViewAdapter : IProductViewAdapter<PdfSession>
         PdfInfoResult info = PdfInfo.Run(session, new PdfInfoRequest
         {
             Input = filePath,
-            Details = ["forms"],
+            Details = [InfoDetails.Forms],
             Password = request.Password,
         });
         int inspected = rendered.Parts.Count;
@@ -321,7 +321,7 @@ internal sealed class PdfViewAdapter : IProductViewAdapter<PdfSession>
         IReadOnlyList<PdfFontInfo> fonts = PdfInfo.Run(session, new PdfInfoRequest
         {
             Input = filePath,
-            Details = ["fonts"],
+            Details = [InfoDetails.Fonts],
             Password = password,
         }).Fonts ?? [];
         int unembeddedFonts = fonts.Count(static font =>

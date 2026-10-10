@@ -2,22 +2,19 @@ using Aspose.Cli.Sdk.Extensibility.Output;
 
 namespace Aspose.Cli.Product.Words.Commands;
 
-internal static class InfoCommand
+internal static class InspectCommand
 {
-    private static readonly string[] Details =
-        ["outline", "sections", "styles", "fields", "bookmarks", "comments", "revisions", "images", "tables", "properties", "fonts"];
-
     private static readonly Dictionary<string, string> DetailNotes = new(StringComparer.Ordinal)
     {
-        ["outline"] = "headings",
-        ["sections"] = "page setup, headers and footers",
-        ["properties"] = "title, author, subject and keywords",
+        [InfoDetails.Outline] = "headings",
+        [InfoDetails.Sections] = "page setup, headers and footers",
+        [InfoDetails.Properties] = "title, author, subject and keywords",
     };
 
     public static CommandDefinition<DocumentInfoRequest, DocumentInfoResult> Create()
     {
         var preview = new PreviewOption("the heading outline, as with --detail outline");
-        var detail = new DetailOption(Details, DetailNotes);
+        var detail = new DetailOption(InfoDetails.All, DetailNotes);
         return new(
             "inspect",
             "Show document structure, safety state and metadata.",
@@ -30,7 +27,7 @@ internal static class InfoCommand
                 Details = detail.Read(parse),
                 Password = standard.InputPassword,
             },
-            Render)
+            Table)
         {
             Examples =
             [
@@ -40,7 +37,7 @@ internal static class InfoCommand
         };
     }
 
-    internal static void Render(DocumentInfoResult result, TableSurface surface)
+    internal static void Table(DocumentInfoResult result, TableSurface surface)
     {
         DocumentSummary document = result.Document;
         ResultText.Source(surface, result.Source);

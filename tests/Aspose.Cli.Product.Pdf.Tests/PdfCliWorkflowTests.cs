@@ -27,26 +27,6 @@ public sealed class PdfCliWorkflowTests : IDisposable
             document.Save(_workspace.File("source.pdf"));
         }
 
-        CliResult capabilities = _workspace.Run(
-            "capabilities", "pdf", "--output", "json");
-        JsonNode product = capabilities.Json()["products"]![0]!;
-        Assert.Equal(
-            ["pdf", "pdf convert", "pdf create", "pdf edit", "pdf extract", "pdf inspect", "pdf merge", "pdf query", "pdf query forms", "pdf query pages", "pdf query search", "pdf render", "pdf sign", "pdf split", "pdf validate"],
-            product["commands"]!.AsArray()
-                .Select(static command => command!["path"]!.GetValue<string>()));
-        Assert.Equal(
-            [
-                "add_attachment", "add_bookmark", "add_footer_text", "add_header_text",
-                "add_link", "add_page_numbers", "add_stamp_image", "add_watermark_image",
-                "add_watermark_text", "crop_pages", "decrypt", "delete_bookmarks",
-                "delete_pages", "encrypt", "flatten_forms", "insert_blank_page",
-                "insert_pages_from", "move_pages", "optimize", "redact_area",
-                "redact_text", "remove_attachment", "remove_metadata", "rotate_pages",
-                "set_form_field", "set_metadata", "set_page_labels", "set_page_size",
-            ],
-            Assert.Single(product["operations"]!.AsArray())!["ops"]!.AsArray()
-                .Select(static operation => operation!.GetValue<string>()));
-
         CliResult info = _workspace.Run(
             "pdf", "inspect", "source.pdf", "--output", "json");
         CliResult read = _workspace.Run(

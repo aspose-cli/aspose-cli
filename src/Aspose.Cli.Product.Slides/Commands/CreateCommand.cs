@@ -5,7 +5,7 @@ using Aspose.Cli.Sdk.IO;
 
 namespace Aspose.Cli.Product.Slides.Commands;
 
-internal static class NewCommand
+internal static class CreateCommand
 {
     public static CommandDefinition<NewPresentationRequest, SlidesCreateResult> Create()
     {

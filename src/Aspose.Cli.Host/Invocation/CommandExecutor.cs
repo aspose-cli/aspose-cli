@@ -177,7 +177,7 @@ internal sealed class CommandExecutor
             globals.Output,
             globals.Quiet,
             _host.Catalog,
-            _host.ContractJson.Serializer);
+            _host.ContractJson);
         var stopwatch = Stopwatch.StartNew();
         ExecutionScope? scope = null;
         try

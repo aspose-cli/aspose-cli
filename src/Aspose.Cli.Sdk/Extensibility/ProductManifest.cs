@@ -1,5 +1,4 @@
 using Aspose.Cli.Sdk.Contracts;
-using Aspose.Cli.Sdk.Operations;
 
 namespace Aspose.Cli.Sdk.Extensibility;
 
@@ -20,9 +19,6 @@ public sealed record ProductManifest
 
     /// <summary>Whether this product is the preferred generic default when compiled.</summary>
     public bool IsDefaultCandidate { get; init; }
-
-    /// <summary>The commands that apply this product's operation documents.</summary>
-    public required IReadOnlyList<ProductOperationCommand> Operations { get; init; }
 
     /// <summary>Default engine compiled into the product.</summary>
     public required ProductEngineCapabilities Engine { get; init; }

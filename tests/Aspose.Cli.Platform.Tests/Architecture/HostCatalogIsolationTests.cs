@@ -61,7 +61,6 @@ public sealed class HostCatalogIsolationTests
                 {
                     Id = id,
                     DisplayName = id,
-                    Operations = [],
                     Engine = new ProductEngineCapabilities
                     {
                         Id = "test",

@@ -30,7 +30,7 @@ public sealed class WordsRenderersTests
         };
         using var writer = new StringWriter();
 
-        InfoCommand.Render(result, new TableSurface(writer, format));
+        InspectCommand.Table(result, new TableSurface(writer, format));
 
         string text = writer.ToString().Replace(Environment.NewLine, "\n", StringComparison.Ordinal);
         string gap = format == TableFormat.Markdown ? "\n\n" : "\n";

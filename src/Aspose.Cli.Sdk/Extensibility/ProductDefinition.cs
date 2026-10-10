@@ -21,6 +21,7 @@ public sealed class ProductDefinition
         ProductJsonDefinition json,
         ProductViewDefinition view,
         Func<IReadOnlyList<ProductOutputDefinition>> outputs,
+        Func<IReadOnlyList<ProductOperationCommand>> operations,
         IReadOnlyList<DiagnosticDescriptor> diagnostics,
         Func<ProductCommandRunner, Command> commandFactory,
         Func<
@@ -35,6 +36,8 @@ public sealed class ProductDefinition
         View = view ?? throw new ArgumentNullException(nameof(view));
         _outputs = new Lazy<IReadOnlyList<ProductOutputDefinition>>(
             outputs ?? throw new ArgumentNullException(nameof(outputs)));
+        _operations = new Lazy<IReadOnlyList<ProductOperationCommand>>(
+            operations ?? throw new ArgumentNullException(nameof(operations)));
         Diagnostics = diagnostics;
         CommandFactory = commandFactory
             ?? throw new ArgumentNullException(nameof(commandFactory));
@@ -67,6 +70,14 @@ public sealed class ProductDefinition
     public IReadOnlyList<ProductOutputDefinition> Outputs => _outputs.Value;
 
     private readonly Lazy<IReadOnlyList<ProductOutputDefinition>> _outputs;
+
+    /// <summary>
+    /// The commands that apply this product's operation documents, in menu order; each comes
+    /// from its edit definition, created on first access.
+    /// </summary>
+    public IReadOnlyList<ProductOperationCommand> Operations => _operations.Value;
+
+    private readonly Lazy<IReadOnlyList<ProductOperationCommand>> _operations;
 
     /// <summary>Immutable error and warning descriptors owned by this product.</summary>
     public IReadOnlyList<DiagnosticDescriptor> Diagnostics { get; }
@@ -248,13 +259,17 @@ public sealed class ProductDefinitionBuilder<TSession>
         return this;
     }
 
-    /// <summary>Registers immutable diagnostic descriptors owned by this product.</summary>
+    /// <summary>
+    /// Registers immutable diagnostic descriptors owned by this product; one declared without an
+    /// owner takes the product id.
+    /// </summary>
     public ProductDefinitionBuilder<TSession> Diagnostics(
         IEnumerable<DiagnosticDescriptor> diagnostics)
     {
         EnsureMutable();
         ArgumentNullException.ThrowIfNull(diagnostics);
-        _diagnostics.AddRange(diagnostics);
+        _diagnostics.AddRange(diagnostics.Select(descriptor =>
+            descriptor is { Owner.Length: 0 } ? descriptor with { Owner = _manifest.Id } : descriptor));
         _diagnosticsDeclared = true;
         return this;
     }
@@ -305,6 +320,7 @@ public sealed class ProductDefinitionBuilder<TSession>
             _json,
             view,
             Outputs,
+            Operations,
             Array.AsReadOnly(_diagnostics.ToArray()),
             CreateCommand,
             _bindingFactory);
@@ -344,6 +360,9 @@ public sealed class ProductDefinitionBuilder<TSession>
         }
         return Array.AsReadOnly(ordered.ToArray());
     }
+
+    private IReadOnlyList<ProductOperationCommand> Operations() =>
+        Array.AsReadOnly(_menu.SelectMany(static entry => entry.Operations("")).ToArray());
 
     private static FileRouteDefinition CreateFileRoutes(
         IReadOnlyList<FormatDescriptor> formats)
@@ -410,8 +429,6 @@ public sealed class ProductDefinitionBuilder<TSession>
     private static ProductManifest Snapshot(ProductManifest manifest) =>
         manifest with
         {
-            Operations = Array.AsReadOnly(
-                manifest.Operations.Select(static operation => new ProductOperationCommand(operation.Descriptor with { }, operation.Schema)).ToArray()),
             Engine = manifest.Engine with { },
             AvailableEngines = ReadOnly(manifest.AvailableEngines),
             ResourceBudgets = Array.AsReadOnly(

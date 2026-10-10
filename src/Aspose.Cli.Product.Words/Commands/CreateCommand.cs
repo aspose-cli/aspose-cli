@@ -5,7 +5,7 @@ using Aspose.Cli.Sdk.IO;
 
 namespace Aspose.Cli.Product.Words.Commands;
 
-internal static class NewCommand
+internal static class CreateCommand
 {
     public static CommandDefinition<NewDocumentRequest, WordsCreateResult> Create()
     {
@@ -53,7 +53,7 @@ internal static class NewCommand
                     EncryptPassword = encryptPassword,
                 };
             },
-            Render)
+            Table)
         {
             Examples =
             [
@@ -63,5 +63,5 @@ internal static class NewCommand
         };
     }
 
-    internal static void Render(WordsCreateResult result, TableSurface surface) => ResultText.Produced(surface, result.Output);
+    internal static void Table(WordsCreateResult result, TableSurface surface) => ResultText.Produced(surface, result.Output);
 }

@@ -101,10 +101,10 @@ public sealed class OperationCatalog<TOp>
     internal string SchemaCommandId { get; }
 
     /// <summary>
-    /// Declares the command that applies documents of this vocabulary, for the product manifest;
-    /// the vocabulary's schema travels with it to the product resources.
+    /// Describes the command, by its path below the product, that applies documents of this
+    /// vocabulary; the vocabulary's schema travels with it to the product resources.
     /// </summary>
-    public ProductOperationCommand Describe(string command)
+    internal ProductOperationCommand Describe(string command)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(command);
         return new ProductOperationCommand(

@@ -33,7 +33,7 @@ public sealed class SlidesInfoTableTests
         };
         using var writer = new StringWriter();
 
-        InfoCommand.Table(result, new TableSurface(writer, format));
+        InspectCommand.Table(result, new TableSurface(writer, format));
 
         string text = writer.ToString().Replace(Environment.NewLine, "\n", StringComparison.Ordinal);
         string colon = heading.Length == 0 ? ":" : string.Empty;

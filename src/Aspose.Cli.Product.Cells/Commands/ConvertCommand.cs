@@ -34,10 +34,10 @@ internal static class ConvertCommand
             "Convert a workbook to another format.",
             new CommandTraits
             {
-                Input = CellsTraits.Workbook("Workbook to convert."),
+                Input = CellsInputs.Workbook("Workbook to convert."),
                 Output = OutputTarget.File("Output path. Default: the input path with the target extension "
                     + "(with '.out' inserted when that would overwrite the input)."),
-                Encrypt = CellsTraits.EncryptedWorkbook,
+                Encrypt = CellsInputs.EncryptedWorkbook,
                 UsesFonts = true,
                 Target = TargetFormat.Convert(
                     $"Target format: {string.Join(", ", CellsFormats.Definitions.IdsFor(FormatUse.Convert))}.",

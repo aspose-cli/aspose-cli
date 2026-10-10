@@ -9,10 +9,10 @@ namespace Aspose.Cli.Product.Words.Engine;
 /// <summary>Activates the Words engine behind the SDK write pipeline for one invocation.</summary>
 internal static class WordsActivation
 {
-    internal static ProductBinding<WordsSession> Activate(ProductActivationContext context, string productId) =>
+    internal static ProductBinding<WordsSession> Activate(ProductActivationContext context) =>
         ProductBinding.Create<WordsSession, Document>(
             context,
-            productId,
+            ProductBuildMetadata.ProductId,
             ApplyLicense,
             new WordsEvaluationProfile(),
             outputs => Session(outputs, context.ResourceBudgets),

@@ -39,7 +39,7 @@ internal static class ReadCommand
                     Password = standard.InputPassword,
                 };
             },
-            Render)
+            Table)
         {
             Finish = static (_, request, result, standard) =>
                 result with { Window = result.Window with { Next = Next(standard.Continuation(), request, result) } },
@@ -51,7 +51,7 @@ internal static class ReadCommand
         };
     }
 
-    internal static void Render(DocumentReadResult result, TableSurface surface)
+    internal static void Table(DocumentReadResult result, TableSurface surface)
     {
         surface.Out.WriteLine($"{result.Source.Path} (scope {result.Scope}, {result.BlockCount} blocks in the document)");
         var table = new TextTable("block", "type", "section", "style", "text");

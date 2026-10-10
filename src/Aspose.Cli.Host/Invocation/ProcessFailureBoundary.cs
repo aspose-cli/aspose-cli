@@ -137,7 +137,7 @@ internal static class ProcessFailureBoundary
                 output,
                 quiet,
                 host.Catalog,
-                host.ContractJson.Serializer,
+                host.ContractJson,
                 error: errorOutput);
             writer.WriteError(error.ToEnvelope());
             errorOutput.Flush();

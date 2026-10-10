@@ -22,26 +22,26 @@ internal static class WordsDiagnostics
     /// <summary>A review operation named an author whose revisions or comments the document does not hold, so it changed nothing.</summary>
     internal static readonly WarningCode AuthorNoMatch = new("AUTHOR_NO_MATCH");
 
-    internal static readonly DiagnosticDescriptor FieldCountChanged = Verification("FIELD_COUNT_CHANGED");
-    internal static readonly DiagnosticDescriptor RevisionCountChanged = Verification("REVISION_COUNT_CHANGED");
-    internal static readonly DiagnosticDescriptor ProtectionChanged = Verification("PROTECTION_CHANGED");
-    internal static readonly DiagnosticDescriptor OutputTruncated = Verification("OUTPUT_TRUNCATED");
+    internal static readonly DiagnosticDescriptor FieldCountChanged = DiagnosticDescriptor.Verification("FIELD_COUNT_CHANGED");
+    internal static readonly DiagnosticDescriptor RevisionCountChanged = DiagnosticDescriptor.Verification("REVISION_COUNT_CHANGED");
+    internal static readonly DiagnosticDescriptor ProtectionChanged = DiagnosticDescriptor.Verification("PROTECTION_CHANGED");
+    internal static readonly DiagnosticDescriptor OutputTruncated = DiagnosticDescriptor.Verification("OUTPUT_TRUNCATED");
 
     internal static IReadOnlyList<DiagnosticDescriptor> All { get; } =
     [
-        Error(BlockNotFound),
-        Error(SectionNotFound),
-        Error(AnchorNotFound),
-        Error(RevisionNotFound),
-        Error(MergeDataInvalid),
-        Error(DocumentHasRevisions),
-        Warning(EncryptionRemoved),
-        Warning(TrackedChangesPresent),
-        Warning(MacrosDropped),
-        Warning(LayoutMayDiffer),
-        Warning(LinkedImagesSkipped),
-        Warning(MergeValueMissing),
-        Warning(AuthorNoMatch),
+        DiagnosticDescriptor.Error(BlockNotFound),
+        DiagnosticDescriptor.Error(SectionNotFound),
+        DiagnosticDescriptor.Error(AnchorNotFound),
+        DiagnosticDescriptor.Error(RevisionNotFound),
+        DiagnosticDescriptor.Error(MergeDataInvalid),
+        DiagnosticDescriptor.Error(DocumentHasRevisions),
+        DiagnosticDescriptor.Warning(EncryptionRemoved),
+        DiagnosticDescriptor.Warning(TrackedChangesPresent),
+        DiagnosticDescriptor.Warning(MacrosDropped),
+        DiagnosticDescriptor.Warning(LayoutMayDiffer),
+        DiagnosticDescriptor.Warning(LinkedImagesSkipped),
+        DiagnosticDescriptor.Warning(MergeValueMissing),
+        DiagnosticDescriptor.Warning(AuthorNoMatch),
         FieldCountChanged,
         RevisionCountChanged,
         ProtectionChanged,
@@ -50,13 +50,4 @@ internal static class WordsDiagnostics
 
     private static ErrorCode Validation(string code) =>
         new(code, ExitCode.ValidationError);
-
-    private static DiagnosticDescriptor Error(ErrorCode code) =>
-        DiagnosticDescriptor.Error(code, "words");
-
-    private static DiagnosticDescriptor Warning(WarningCode code) =>
-        DiagnosticDescriptor.Warning(code, "words");
-
-    private static DiagnosticDescriptor Verification(string code) =>
-        DiagnosticDescriptor.Verification(code, "words");
 }

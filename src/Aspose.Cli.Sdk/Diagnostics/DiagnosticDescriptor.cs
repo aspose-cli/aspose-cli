@@ -36,7 +36,10 @@ public sealed record DiagnosticDescriptor
     /// <summary>SCREAMING_SNAKE_CASE public code.</summary>
     public required string Code { get; init; }
 
-    /// <summary>Product id, <c>common</c> for the SDK's shared mechanisms, or <c>host</c>.</summary>
+    /// <summary>
+    /// Product id, <c>common</c> for the SDK's shared mechanisms, or <c>host</c>. A product declares
+    /// its own without one; its definition's <c>Diagnostics</c> fills in the product id.
+    /// </summary>
     public required string Owner { get; init; }
 
     /// <summary>Whether this is a fatal error or a non-fatal warning.</summary>
@@ -61,7 +64,9 @@ public sealed record DiagnosticDescriptor
     public bool LicenseSurface { get; init; }
 
     /// <summary>Declares an error; its category follows from its exit code and its details schema is the code's own.</summary>
-    public static DiagnosticDescriptor Error(ErrorCode code, string owner)
+    /// <param name="code">The error code.</param>
+    /// <param name="owner">The owner, or empty for a product's own.</param>
+    public static DiagnosticDescriptor Error(ErrorCode code, string owner = "")
     {
         ArgumentNullException.ThrowIfNull(code);
         return new DiagnosticDescriptor
@@ -77,7 +82,9 @@ public sealed record DiagnosticDescriptor
     }
 
     /// <summary>Declares a warning in the <see cref="WarningCategory"/> category.</summary>
-    public static DiagnosticDescriptor Warning(WarningCode code, string owner)
+    /// <param name="code">The warning code.</param>
+    /// <param name="owner">The owner, or empty for a product's own.</param>
+    public static DiagnosticDescriptor Warning(WarningCode code, string owner = "")
     {
         ArgumentNullException.ThrowIfNull(code);
         return new DiagnosticDescriptor
@@ -91,7 +98,9 @@ public sealed record DiagnosticDescriptor
     }
 
     /// <summary>Declares a verification issue in the <see cref="VerificationCategory"/> category.</summary>
-    public static DiagnosticDescriptor Verification(string code, string owner) =>
+    /// <param name="code">The issue code.</param>
+    /// <param name="owner">The owner, or empty for a product's own.</param>
+    public static DiagnosticDescriptor Verification(string code, string owner = "") =>
         new()
         {
             Code = code,

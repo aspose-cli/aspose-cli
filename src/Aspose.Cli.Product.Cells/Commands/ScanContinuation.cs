@@ -7,7 +7,7 @@ namespace Aspose.Cli.Product.Cells.Commands;
 /// with the shared continuation builder, so agents run it verbatim instead of computing
 /// ranges.
 /// </summary>
-internal static class NextReadCommand
+internal static class ScanContinuation
 {
     /// <summary>The hidden option that carries the region a scan covers from page to page.</summary>
     public const string ScanOption = "--scan-range";

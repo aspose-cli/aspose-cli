@@ -1,5 +1,7 @@
 using System.CommandLine;
 using System.Runtime.CompilerServices;
+using Aspose.Cli.Sdk.Contracts;
+using Aspose.Cli.Sdk.Operations;
 
 namespace Aspose.Cli.Sdk.Extensibility;
 
@@ -21,14 +23,12 @@ public sealed record CommandHelpLink(
         return new($"{DistributionInfo.CommandName} docs {product.Id}/{topic}", description);
     }
 
-    /// <summary>Links the JSON schema of a product's operation vocabulary.</summary>
-    /// <param name="product">The product, which declares exactly one operation vocabulary.</param>
+    /// <summary>Links the JSON schema of an operation vocabulary.</summary>
+    /// <typeparam name="TOp">The vocabulary's base operation record.</typeparam>
     /// <param name="description">A short description of the schema.</param>
-    public static CommandHelpLink Schema(ProductManifest product, string description)
-    {
-        ArgumentNullException.ThrowIfNull(product);
-        return new($"{DistributionInfo.CommandName} schema {product.Operations.Single().Descriptor.InputSchema}", description);
-    }
+    public static CommandHelpLink Schema<TOp>(string description)
+        where TOp : BoundedOperation, IOperationVocabulary<TOp> =>
+        new($"{DistributionInfo.CommandName} schema {TOp.Catalog.SchemaCommandId}", description);
 }
 
 /// <summary>Product-owned additions to the standard command help output.</summary>

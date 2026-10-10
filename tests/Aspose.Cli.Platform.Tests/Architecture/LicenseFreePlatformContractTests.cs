@@ -194,7 +194,6 @@ public sealed class LicenseFreePlatformContractTests
                 {
                     Id = "free-test",
                     DisplayName = "Free Test",
-                    Operations = [],
                     Engine = new ProductEngineCapabilities
                     {
                         Id = "foss",

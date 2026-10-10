@@ -94,7 +94,6 @@ internal static class TestProducts
     {
         Id = "test",
         DisplayName = "Test",
-        Operations = [],
         Engine = new ProductEngineCapabilities
         {
             Id = "aspose",

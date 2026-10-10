@@ -35,7 +35,6 @@ public sealed class ResourceBudgetOptionTests
             {
                 Id = "alpha",
                 DisplayName = "alpha",
-                Operations = [],
                 ResourceBudgets =
                 [
                     ResourceBudgetCapabilities.Domain("alpha.items", 10, 100, "items", "projection", budgetOption),

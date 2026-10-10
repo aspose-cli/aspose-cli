@@ -1,7 +1,7 @@
 namespace Aspose.Cli.Product.Cells.Commands;
 
-/// <summary>The document traits the Cells commands share.</summary>
-internal static class CellsTraits
+/// <summary>The input documents and encrypted output the Cells commands declare.</summary>
+internal static class CellsInputs
 {
     /// <summary>The password a writing command can put on its workbook.</summary>
     public static readonly EncryptedOutput EncryptedWorkbook = new("the output file");

@@ -8,7 +8,7 @@ namespace Aspose.Cli.Product.Cells.Commands;
 /// when they differ; the payload's <c>identical</c> flag carries the verdict,
 /// so diff doubles as a verifier in scripts and evaluation harnesses.
 /// </summary>
-internal static class DiffCommand
+internal static class CompareCommand
 {
     private const int MinMaxDiffs = 1;
     private const int MaxMaxDiffs = 1_000_000;

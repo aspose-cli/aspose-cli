@@ -41,7 +41,7 @@ internal static class ConvertCommand
                     EncryptPassword = encryptPassword,
                 };
             },
-            Render)
+            Table)
         {
             Examples =
             [
@@ -52,6 +52,6 @@ internal static class ConvertCommand
         };
     }
 
-    internal static void Render(WordsConvertResult result, TableSurface surface) =>
+    internal static void Table(WordsConvertResult result, TableSurface surface) =>
         ResultText.Produced(surface, result.Output, result.Pages is null ? null : $"pages {result.Pages}");
 }

@@ -127,6 +127,12 @@ public sealed class CommandDefinition<TRequest, TResult>
     /// </summary>
     public IReadOnlyList<ProductOutputDefinition> Renderers { get; init; } = [];
 
+    /// <summary>
+    /// Describes the operation documents the command applies, given its path below the product;
+    /// <see cref="EditDefinition"/> sets it from the vocabulary's catalog.
+    /// </summary>
+    internal Func<string, ProductOperationCommand>? Operations { get; init; }
+
     /// <summary>Every renderer the definition declares.</summary>
     internal IEnumerable<ProductOutputDefinition> Outputs()
     {
@@ -250,6 +256,7 @@ public static class EditDefinition
         {
             Examples = examples ?? [],
             Links = links ?? [],
+            Operations = TOp.Catalog.Describe,
         };
     }
 }

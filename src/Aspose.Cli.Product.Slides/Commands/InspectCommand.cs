@@ -4,19 +4,16 @@ using Aspose.Cli.Sdk.Extensibility.Output;
 
 namespace Aspose.Cli.Product.Slides.Commands;
 
-internal static class InfoCommand
+internal static class InspectCommand
 {
-    private static readonly string[] Details =
-        ["masters", "layouts", "media", "fonts", "notes", "comments", "sections", "properties"];
-
     public static CommandDefinition<PresentationInfoRequest, PresentationInfoResult> Create()
     {
         var preview = new PreviewOption($"each slide's title and up to {SlideInfo.PreviewTextLength} characters of its text");
         var detail = new DetailOption(
-            Details,
+            InfoDetails.All,
             new Dictionary<string, string>(StringComparer.Ordinal)
             {
-                ["notes"] = "presence and character count, with the text from query slides --notes",
+                [InfoDetails.Notes] = "presence and character count, with the text from query slides --notes",
             });
         return new(
             "inspect",

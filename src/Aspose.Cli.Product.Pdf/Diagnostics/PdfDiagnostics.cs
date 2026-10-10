@@ -35,28 +35,28 @@ internal static class PdfDiagnostics
     internal static readonly WarningCode RedactionTextMoved = new("REDACTION_TEXT_MOVED");
 
     /// <summary>A form field of the output does not hold the value set_form_field set.</summary>
-    internal static readonly DiagnosticDescriptor FieldValueMismatch = Verification("PDF_FIELD_VALUE_MISMATCH");
+    internal static readonly DiagnosticDescriptor FieldValueMismatch = DiagnosticDescriptor.Verification("PDF_FIELD_VALUE_MISMATCH");
 
     /// <summary>The output still has a form field that flatten_forms flattened.</summary>
-    internal static readonly DiagnosticDescriptor FieldNotFlattened = Verification("PDF_FIELD_NOT_FLATTENED");
+    internal static readonly DiagnosticDescriptor FieldNotFlattened = DiagnosticDescriptor.Verification("PDF_FIELD_NOT_FLATTENED");
 
     /// <summary>The output still contains text that redact_text redacted.</summary>
-    internal static readonly DiagnosticDescriptor RedactedTextFound = Verification("PDF_REDACTED_TEXT_FOUND");
+    internal static readonly DiagnosticDescriptor RedactedTextFound = DiagnosticDescriptor.Verification("PDF_REDACTED_TEXT_FOUND");
 
     /// <summary>The output's bookmarks differ from what the bookmark operations left.</summary>
-    internal static readonly DiagnosticDescriptor BookmarkMismatch = Verification("PDF_BOOKMARK_MISMATCH");
+    internal static readonly DiagnosticDescriptor BookmarkMismatch = DiagnosticDescriptor.Verification("PDF_BOOKMARK_MISMATCH");
 
     /// <summary>A document information entry differs from what set_metadata set.</summary>
-    internal static readonly DiagnosticDescriptor MetadataMismatch = Verification("PDF_METADATA_MISMATCH");
+    internal static readonly DiagnosticDescriptor MetadataMismatch = DiagnosticDescriptor.Verification("PDF_METADATA_MISMATCH");
 
     /// <summary>An attachment is missing, still present or a different size than the batch left it.</summary>
-    internal static readonly DiagnosticDescriptor AttachmentMismatch = Verification("PDF_ATTACHMENT_MISMATCH");
+    internal static readonly DiagnosticDescriptor AttachmentMismatch = DiagnosticDescriptor.Verification("PDF_ATTACHMENT_MISMATCH");
 
     /// <summary>The output's page count differs from what the page operations left.</summary>
-    internal static readonly DiagnosticDescriptor PageCountMismatch = Verification("PDF_PAGE_COUNT_MISMATCH");
+    internal static readonly DiagnosticDescriptor PageCountMismatch = DiagnosticDescriptor.Verification("PDF_PAGE_COUNT_MISMATCH");
 
     /// <summary>An operation's effect could not be read back, so it was not checked.</summary>
-    internal static readonly DiagnosticDescriptor VerificationIncomplete = Verification("PDF_VERIFICATION_INCOMPLETE");
+    internal static readonly DiagnosticDescriptor VerificationIncomplete = DiagnosticDescriptor.Verification("PDF_VERIFICATION_INCOMPLETE");
 
     internal static IReadOnlyList<DiagnosticDescriptor> All { get; } =
     [
@@ -68,18 +68,15 @@ internal static class PdfDiagnostics
         AttachmentMismatch,
         PageCountMismatch,
         VerificationIncomplete,
-        DiagnosticDescriptor.Error(SignCertInvalid, "pdf"),
-        DiagnosticDescriptor.Error(FormXfaUnsupported, "pdf"),
-        DiagnosticDescriptor.Error(PdfaConversionFailed, "pdf"),
-        DiagnosticDescriptor.Error(AttachmentNotFound, "pdf"),
-        DiagnosticDescriptor.Error(FieldNotFound, "pdf"),
-        DiagnosticDescriptor.Warning(ScannedPagesSuspected, "pdf"),
-        DiagnosticDescriptor.Warning(NavigationDegraded, "pdf"),
-        DiagnosticDescriptor.Warning(NetworkResourcesRequested, "pdf"),
-        DiagnosticDescriptor.Warning(RedactionNoMatch, "pdf"),
-        DiagnosticDescriptor.Warning(RedactionTextMoved, "pdf"),
+        DiagnosticDescriptor.Error(SignCertInvalid),
+        DiagnosticDescriptor.Error(FormXfaUnsupported),
+        DiagnosticDescriptor.Error(PdfaConversionFailed),
+        DiagnosticDescriptor.Error(AttachmentNotFound),
+        DiagnosticDescriptor.Error(FieldNotFound),
+        DiagnosticDescriptor.Warning(ScannedPagesSuspected),
+        DiagnosticDescriptor.Warning(NavigationDegraded),
+        DiagnosticDescriptor.Warning(NetworkResourcesRequested),
+        DiagnosticDescriptor.Warning(RedactionNoMatch),
+        DiagnosticDescriptor.Warning(RedactionTextMoved),
     ];
-
-    private static DiagnosticDescriptor Verification(string code) =>
-        DiagnosticDescriptor.Verification(code, "pdf");
 }
