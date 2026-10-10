@@ -20,6 +20,8 @@ public sealed class PdfSourceEncryptedContractTests : IDisposable
 
     public void Dispose() => _workspace.Dispose();
 
+    // Fourteen licensed CLI runs and the load of every published schema: about 10 s even at once.
+    [Category(TestCategory.Slow)]
     [LicensedFact]
     public void SourceEncrypted_IsTruthfulAndAcceptedByEveryResultSchema()
     {
@@ -36,35 +38,47 @@ public sealed class PdfSourceEncryptedContractTests : IDisposable
         Succeeds(_workspace.Run("pdf", "create", "plain.pdf", "--from-text", "text.txt", "--license", license, "--output", "json"));
         Succeeds(_workspace.RunWithEnv(passwords, "pdf", "edit", "plain.pdf", "--ops", "encrypt.json", "--out", "locked.pdf", "--license", license, "--output", "json"));
 
-        var problems = new List<string>();
-        foreach ((string file, bool encrypted) in new[] { ("plain.pdf", false), ("locked.pdf", true) })
-        {
-            string[][] commands =
+        // The runs are independent, so they run at once, beside the load of the published schemas.
+        (string Name, bool Encrypted, CliResult Result)[] runs = [];
+        Parallel.Invoke(
+            () => _ = PublishedSchemas.Ids,
+            () => runs =
             [
-                ["pdf", "inspect", file],
-                ["pdf", "query", "pages", file],
-                ["pdf", "query", "search", file, "--pattern", "Encrypted"],
-                ["pdf", "render", file, "--out", $"{file}.png", "--overwrite"],
-                ["pdf", "validate", file, "--profile", "pdfa-1b"],
-                ["pdf", "extract", file, "--what", "text", "--out-dir", $"{file}-text"],
-            ];
-            foreach (string[] command in commands)
-            {
-                string[] arguments = [.. command, "--license", license, "--output", "json", .. encrypted ? new[] { "--password-env", UserPassword } : []];
-                CliResult result = _workspace.RunWithEnv(passwords, arguments);
-                string name = string.Join(' ', command);
-                if (result.ExitCode != 0)
-                {
-                    problems.Add($"{name} failed: {result.StdErr}");
-                    continue;
-                }
+                .. new[] { (File: "plain.pdf", Encrypted: false), (File: "locked.pdf", Encrypted: true) }
+                    .SelectMany(static input => Commands(input.File), static (input, command) => (input.Encrypted, Command: command))
+                    .AsParallel().AsOrdered()
+                    .Select(run => (
+                        string.Join(' ', run.Command),
+                        run.Encrypted,
+                        _workspace.RunWithEnv(
+                            passwords,
+                            [.. run.Command, "--license", license, "--output", "json", .. run.Encrypted ? new[] { "--password-env", UserPassword } : []]))),
+            ]);
 
-                Check(name, JsonNode.Parse(result.StdOut)!.AsObject(), encrypted, problems);
+        var problems = new List<string>();
+        foreach ((string name, bool encrypted, CliResult result) in runs)
+        {
+            if (result.ExitCode != 0)
+            {
+                problems.Add($"{name} failed: {result.StdErr}");
+                continue;
             }
+
+            Check(name, JsonNode.Parse(result.StdOut)!.AsObject(), encrypted, problems);
         }
 
         Assert.True(problems.Count == 0, string.Join(Environment.NewLine, problems));
     }
+
+    private static string[][] Commands(string file) =>
+    [
+        ["pdf", "inspect", file],
+        ["pdf", "query", "pages", file],
+        ["pdf", "query", "search", file, "--pattern", "Encrypted"],
+        ["pdf", "render", file, "--out", $"{file}.png", "--overwrite"],
+        ["pdf", "validate", file, "--profile", "pdfa-1b"],
+        ["pdf", "extract", file, "--what", "text", "--out-dir", $"{file}-text"],
+    ];
 
     private static void Check(string name, JsonObject result, bool encrypted, List<string> problems)
     {
