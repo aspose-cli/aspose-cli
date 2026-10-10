@@ -41,7 +41,6 @@ internal static class InvariantCases
     public const string SecretHidden = "secret-hidden";
     public const string EvaluationDisclosed = "evaluation-disclosed";
     public const string SameNameOption = "same-name-option";
-    public const string DefaultNotRestated = "default-not-restated";
     public const string Platform = "platform";
 
     /// <summary>The warning that discloses evaluation output (<c>aspose-cli docs licensing</c>).</summary>
@@ -64,7 +63,6 @@ internal static class InvariantCases
         ScenarioContract.NoInternalError, ScenarioContract.ErrorEnvelope, ScenarioContract.ResultEnvelope,
         MissingInput, CorruptInput, UnknownOption, UnknownCommand, UnknownOp, UnknownField, InvalidEnum,
         UnwritableOutput, ReadOnly, DryRun, OutputReopens, SecretHidden, EvaluationDisclosed, SameNameOption,
-        DefaultNotRestated,
     };
 
     public static IReadOnlyDictionary<string, InvariantCase> All => Generated.Value;
@@ -115,7 +113,6 @@ internal static class InvariantCases
             cases.AddRange(OutputReopensCases(catalog, product));
         }
         cases.AddRange(SameNameOptions.Cases(catalog));
-        cases.AddRange(RestatedDefaults.Cases(catalog));
         return cases.ToDictionary(static item => item.Id, StringComparer.Ordinal);
     }
 

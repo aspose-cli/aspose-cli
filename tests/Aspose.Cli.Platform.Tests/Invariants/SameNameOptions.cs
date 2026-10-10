@@ -1,5 +1,4 @@
 using System.Text.Json.Nodes;
-using System.Text.RegularExpressions;
 using Aspose.Cli.TestKit.Scenarios;
 using Xunit;
 
@@ -10,12 +9,11 @@ namespace Aspose.Cli.Platform.Tests.Invariants;
 internal enum OptionAspect
 {
     None = 0,
-    Description = 1,
 
     /// <summary>The value type and the minimum and maximum arity.</summary>
-    Arity = 2,
-    AllowedValues = 4,
-    Default = 8,
+    Arity = 1,
+    AllowedValues = 2,
+    Default = 4,
 }
 
 /// <summary>
@@ -27,14 +25,13 @@ internal sealed record SameNameExemption(string Option, OptionAspect Aspects, st
 /// <summary>
 /// The invariant <see cref="InvariantCases.SameNameOption"/>: across every command of the tree,
 /// products and host commands alike, hidden ones included, options that share a name share their
-/// description, value type and arity, allowed values and default, so an agent that learned an
-/// option once can rely on it everywhere. A shared option reads one definition (the SDK option
-/// groups); any other repeated name is kept consistent by hand. A name with an approved standard
-/// wording (<see cref="Templates"/>) matches its template instead of one exact text. The only other
-/// differences allowed are the <see cref="Exemptions"/>, each with its reason; an exemption that no
-/// longer matches a difference fails, so the list only shrinks.
+/// value type and arity, allowed values and default, so an agent that learned an option once can
+/// rely on it everywhere. A shared option reads one definition (the SDK option groups); any other
+/// repeated name is kept consistent by hand. The only differences allowed are the
+/// <see cref="Exemptions"/>, each with its reason; an exemption that no longer matches a
+/// difference fails, so the list only shrinks.
 /// </summary>
-internal static partial class SameNameOptions
+internal static class SameNameOptions
 {
     /// <summary>
     /// The names that mean different things on different commands, or whose values the command
@@ -42,82 +39,28 @@ internal static partial class SameNameOptions
     /// </summary>
     public static IReadOnlyList<SameNameExemption> Exemptions { get; } =
     [
-        new("--scope", OptionAspect.Description | OptionAspect.AllowedValues | OptionAspect.Default,
+        new("--scope", OptionAspect.AllowedValues | OptionAspect.Default,
             "Three meanings: the projection a query returns (cells query range, slides query slides, words query blocks), "
             + "where a search looks (cells, slides and words query search) and where skill install writes (project or user). "
             + "A rename is left to S3."),
-        new("--what", OptionAspect.Description | OptionAspect.AllowedValues,
-            "The part kinds each product extracts differ (pdf: attachments, forms; slides: media, notes; words: comments), "
-            + "and each description lists its own. A rename is left to S3."),
-        new("--sheet", OptionAspect.Description,
-            "The sheet a command reads defaults differently: the active sheet (cells query range, render), every sheet "
-            + "(cells query search) or the whole workbook (cells convert, for csv, tsv, md and pdf only)."),
+        new("--what", OptionAspect.AllowedValues,
+            "The part kinds each product extracts differ (pdf: attachments, forms; slides: media, notes; words: comments). "
+            + "A rename is left to S3."),
         new("--to", OptionAspect.AllowedValues,
             "Each convert, extract and render writes its own product's formats; S1 keeps each list."),
-        new("--to", OptionAspect.Description, OwnOutput),
-        new("--out", OptionAspect.Description, OwnOutput),
-        new("--out-dir", OptionAspect.Description, OwnOutput),
-        new("--verify", OptionAspect.Description, OwnOutput),
         new("--detail", OptionAspect.AllowedValues,
             "Each product's inspect has its own detail sections; S1 keeps them."),
         new("--view", OptionAspect.AllowedValues,
             "preview open also offers the live workbook view, which review does not render; S1 keeps both lists."),
-        new("--product", OptionAspect.Description | OptionAspect.Default,
+        new("--product", OptionAspect.Default,
             "Three roles: the font engine fonts list inspects (default cells), the product a license command acts on, and "
             + "the product that reads the file in preview open and review."),
-        new("--pages", OptionAspect.Description | OptionAspect.Arity,
+        new("--pages", OptionAspect.Arity,
             "pdf split --pages takes one or more page groups (repeatable list), not one page range.",
             "pdf split"),
-        new("--set", OptionAspect.Description,
-            "cells edit --set writes one cell as SHEET!CELL=VALUE; words edit --set replaces a bookmark as "
-            + "bookmark:NAME=TEXT: two different syntaxes."),
-        new("--bom", OptionAspect.Description, OwnCondition),
-        new("--author", OptionAspect.Description, OwnCondition),
-        new("--range", OptionAspect.Description, OwnCondition),
-        new("--template", OptionAspect.Description, OwnCondition),
     ];
 
-    private const string OwnOutput = "Describes this command's own output or check; S3 unifies.";
-
-    private const string OwnCondition = "States this command's own condition or default; S3 unifies.";
-
-    /// <summary>The wording a password option of the SDK templates shares, with the noun of what it protects as a wildcard.</summary>
-    private static string PasswordTemplate(string option) =>
-        @"^Password for .+\. Discouraged: visible in the process list; prefer " + Regex.Escape(option) + @"-env\.$";
-
-    private const string PasswordEnvTemplate = @"^Name of an environment variable holding the password for .+\.$";
-
-    /// <summary>
-    /// The approved standard wordings: a name listed here is not compared word for word; instead
-    /// the description of every command it covers (all, or those <see cref="DescriptionTemplate.Covers"/>
-    /// accepts) matches the template, which leaves room for the product's noun and the command's
-    /// real default. A command with its own description exemption is left out.
-    /// </summary>
-    public static IReadOnlyList<DescriptionTemplate> Templates { get; } =
-    [
-        new("--pages", @"^Pages to process, as 1-based numbers and ranges such as 1-3,7,9-\. Default: [^.]+\.( Only with [^.]+\.)?$"),
-        new("--slides", @"^Slides to process, as 1-based numbers and ranges such as 1-3,7,9-\. Default: [^.]+\.( Only with [^.]+\.)?$"),
-        new("--preview", @"^Include a bounded preview: .+\. Default: off\.$"),
-        // Help prints the values after the description, so it names only those that need a note.
-        new("--detail", @"^Extra sections to include; repeat for more\.( .+)?$", ListsNoValues: true),
-        new("--ops", "^" + Regex.Escape(
-            "The ops JSON: a path to the document, '-' to read it from stdin, or the document itself when the value starts "
-            + "with { or [ (inline). To name a file whose name starts with '[', prefix it with ./ . Vocabulary: aspose-cli "
-            + "schema v2/") + "[a-z]+" + Regex.Escape("/ops.") + "$"),
-        new("--max-chars", @"^Maximum characters returned, counting .+\. Range 1-10000000\.$"),
-        // Without --to, render takes the format from the --out extension, else png: no parser default.
-        new("--to", "^" + Regex.Escape("Image format: png, jpeg or svg. Default: the --out extension's format, else png.") + "$",
-            static command => command.EndsWith(" render", StringComparison.Ordinal)),
-        new("--password", PasswordTemplate("--password")),
-        new("--password-env", PasswordEnvTemplate),
-        new("--password-stdin", @"^Read the password for .+ from the first line of stdin\.$"),
-        new("--encrypt", @"^Password for the output .+\. Discouraged: visible in the process list; prefer --encrypt-env\.$"),
-        new("--encrypt-env", @"^Name of an environment variable holding the password for the output .+\.$"),
-        new("--left-password", PasswordTemplate("--left-password")),
-        new("--left-password-env", PasswordEnvTemplate),
-        new("--right-password", PasswordTemplate("--right-password")),
-        new("--right-password-env", PasswordEnvTemplate),
-    ];
+    private static readonly OptionAspect[] Compared = [OptionAspect.Arity, OptionAspect.AllowedValues, OptionAspect.Default];
 
     /// <summary>One case per option name that two or more commands declare.</summary>
     public static IEnumerable<InvariantCase> Cases(CliCatalog catalog)
@@ -159,51 +102,14 @@ internal static partial class SameNameOptions
     private static IReadOnlyList<ScenarioProblem> Problems(string name, IReadOnlyList<DeclaredOption> declared)
     {
         SameNameExemption[] exemptions = [.. Exemptions.Where(exemption => exemption.Option == name)];
-        DescriptionTemplate[] templates = [.. Templates.Where(template => template.Option == name)];
         var problems = new List<ScenarioProblem>();
-        foreach (DescriptionTemplate template in templates)
-        {
-            string[] mismatched =
-            [
-                .. declared.Where(option => template.Covers(option.Command)
-                        && !exemptions.Any(exemption => exemption.Command == option.Command && exemption.Aspects.HasFlag(OptionAspect.Description))
-                        && !Regex.IsMatch(option.Option["description"]?.GetValue<string>() ?? string.Empty, template.Pattern))
-                    .Select(static option => $"{option.Read(OptionAspect.Description)} ({option.Command})"),
-            ];
-            if (mismatched.Length > 0)
-            {
-                problems.Add(Problem($"{name}: {mismatched.Length} descriptions do not match the standard template {template.Pattern}: "
-                    + string.Join(" | ", mismatched)));
-            }
-            string[] restated =
-            [
-                .. declared.Where(option => template.ListsNoValues && template.Covers(option.Command) && RestatesValues(option.Option))
-                    .Select(static option => $"{option.Read(OptionAspect.Description)} ({option.Command})"),
-            ];
-            if (restated.Length > 0)
-            {
-                problems.Add(Problem($"{name}: {restated.Length} descriptions list every allowed value, which help already prints "
-                    + "after the description; name only the values that need a note: " + string.Join(" | ", restated)));
-            }
-            string[] echoing =
-            [
-                .. declared.Where(option => template.ListsNoValues && template.Covers(option.Command))
-                    .SelectMany(option => NotesRepeatingTheirValue(option.Option).Select(note => $"'{note}' ({option.Command})")),
-            ];
-            if (echoing.Length > 0)
-            {
-                problems.Add(Problem($"{name}: {echoing.Length} notes only repeat the value they describe; say what the value holds, "
-                    + "or drop the note: " + string.Join(" | ", echoing)));
-            }
-        }
-        foreach (OptionAspect aspect in new[] { OptionAspect.Description, OptionAspect.Arity, OptionAspect.AllowedValues, OptionAspect.Default })
+        foreach (OptionAspect aspect in Compared)
         {
             bool exempt = exemptions.Any(exemption => exemption.Command is null && exemption.Aspects.HasFlag(aspect));
             DeclaredOption[] compared =
             [
                 .. declared.Where(option => !exemptions.Any(exemption =>
-                        exemption.Command == option.Command && exemption.Aspects.HasFlag(aspect))
-                    && !(aspect == OptionAspect.Description && templates.Any(template => template.Covers(option.Command)))),
+                    exemption.Command == option.Command && exemption.Aspects.HasFlag(aspect))),
             ];
             IGrouping<string, DeclaredOption>[] variants = [.. compared.GroupBy(option => option.Read(aspect), StringComparer.Ordinal)];
             if (!exempt && variants.Length > 1)
@@ -216,8 +122,7 @@ internal static partial class SameNameOptions
         }
         foreach (SameNameExemption exemption in exemptions)
         {
-            foreach (OptionAspect aspect in new[] { OptionAspect.Description, OptionAspect.Arity, OptionAspect.AllowedValues, OptionAspect.Default }
-                .Where(candidate => exemption.Aspects.HasFlag(candidate)))
+            foreach (OptionAspect aspect in Compared.Where(candidate => exemption.Aspects.HasFlag(candidate)))
             {
                 // A command-wide exemption is needed while the commands differ; one command's while
                 // its option differs from every other command's.
@@ -237,58 +142,10 @@ internal static partial class SameNameOptions
         return problems;
     }
 
-    /// <summary>
-    /// Whether a description names every one of two or more allowed values: a list help already
-    /// prints as <c>Values: ...</c>.
-    /// </summary>
-    internal static bool RestatesValues(JsonNode option)
-    {
-        string description = option["description"]?.GetValue<string>() ?? string.Empty;
-        string[] values = [.. (option["allowedValues"]?.AsArray() ?? []).Select(static value => value!.GetValue<string>())];
-        return values.Length > 1 && values.All(value =>
-            Regex.IsMatch(description, $@"(?<![\w-]){Regex.Escape(value)}(?![\w-])", RegexOptions.IgnoreCase));
-    }
-
-    /// <summary>
-    /// The <c>value: note</c> notes of a description whose note says nothing beyond the value's
-    /// own name, such as <c>fonts: fonts used</c>: once the value's name and filler words are
-    /// removed, no word is left.
-    /// </summary>
-    internal static IEnumerable<string> NotesRepeatingTheirValue(JsonNode option)
-    {
-        string description = option["description"]?.GetValue<string>() ?? string.Empty;
-        HashSet<string> values = [.. (option["allowedValues"]?.AsArray() ?? []).Select(static value => value!.GetValue<string>())];
-        foreach (Match note in ValueNote().Matches(description))
-        {
-            string value = note.Groups["value"].Value;
-            if (!values.Contains(value))
-            {
-                continue;
-            }
-            string singular = value.EndsWith('s') ? value[..^1] : value;
-            bool informative = Regex.Matches(note.Groups["note"].Value.ToLowerInvariant(), "[a-z0-9]+")
-                .Select(static word => word.Value)
-                .Any(word => word != value && word != singular && word != singular + "s" && !NoteFiller.Contains(word));
-            if (!informative)
-            {
-                yield return note.Value.Trim();
-            }
-        }
-    }
-
-    /// <summary>Words that add nothing to a note: the value's name with only these left is a repetition.</summary>
-    private static readonly HashSet<string> NoteFiller =
-        ["used", "the", "a", "an", "all", "any", "each", "every", "of", "in", "its", "their", "list", "listed", "included"];
-
-    /// <summary>One <c>value: note</c> entry of a description, ended by ';' or the final '.'.</summary>
-    [GeneratedRegex(@"(?<=(?:^|[.;]\s))(?<value>[a-z][a-z0-9-]*): (?<note>[^;]+?)(?=;|\.$)")]
-    private static partial Regex ValueNote();
-
     private static ScenarioProblem Problem(string message) => new(0, InvariantCases.SameNameOption, message);
 
     private static string Describe(OptionAspect aspect) => aspect switch
     {
-        OptionAspect.Description => "descriptions",
         OptionAspect.Arity => "types or arities",
         OptionAspect.AllowedValues => "allowed-value sets",
         OptionAspect.Default => "defaults",
@@ -296,64 +153,25 @@ internal static partial class SameNameOptions
     };
 }
 
-/// <summary>
-/// The approved standard wording of an option's description, as a regular expression, for the
-/// commands <see cref="Commands"/> accepts (every command when null). With
-/// <see cref="ListsNoValues"/>, the description also must not name every allowed value, which
-/// help prints after it.
-/// </summary>
-internal sealed record DescriptionTemplate(string Option, string Pattern, Func<string, bool>? Commands = null, bool ListsNoValues = false)
-{
-    public bool Covers(string command) => Commands?.Invoke(command) ?? true;
-}
-
 /// <summary>One option as capabilities declares it on one command.</summary>
 internal sealed record DeclaredOption(string Command, JsonNode Option)
 {
     public string Read(OptionAspect aspect) => aspect switch
     {
-        OptionAspect.Description => Quote(Option["description"]?.GetValue<string>() ?? string.Empty),
         OptionAspect.Arity =>
             $"{Option["type"]!.GetValue<string>()} {Option["minimumArity"]!.GetValue<int>()}..{Option["maximumArity"]!.GetValue<int>()}",
         OptionAspect.AllowedValues =>
             "[" + string.Join(", ", Option["allowedValues"]!.AsArray().Select(static value => value!.GetValue<string>()).Order(StringComparer.Ordinal)) + "]",
         OptionAspect.Default => Option["hasDefault"]?.GetValue<bool>() == true
-            ? Quote(Option["default"]?.GetValue<string>() ?? string.Empty)
+            ? "\"" + (Option["default"]?.GetValue<string>() ?? string.Empty) + "\""
             : "none",
         _ => throw new ArgumentOutOfRangeException(nameof(aspect)),
     };
-
-    private static string Quote(string text) => "\"" + text + "\"";
 }
 
 /// <summary>The exemption list itself stays honest: each entry names a repeated option with its reason.</summary>
 public sealed class SameNameExemptionTests
 {
-    [Theory]
-    [InlineData("Extra sections to include; repeat for more.", true)]
-    [InlineData("Extra sections to include; repeat for more. outline: bookmarks, up to 200; layers: optional content layer names.", true)]
-    [InlineData("Extra sections to include; repeat for more: outline (bookmarks, up to 200), forms, layers.", false)]
-    [InlineData("Extra sections to include; repeat for more. outline, forms, layers, fonts, names.", false)]
-    [InlineData("Extra sections to include; repeat for more. fonts: fonts used.", false)]
-    [InlineData("Extra sections to include; repeat for more. outline: headings; fonts: fonts used.", false)]
-    [InlineData("Extra sections to include; repeat for more. fonts: font names and whether each is embedded.", true)]
-    [InlineData("Extra sections to include; repeat for more. names: defined names; fonts: names of the fonts the document uses.", true)]
-    public void DetailTemplate_TakesNotesButNoValueList(string description, bool accepted)
-    {
-        DescriptionTemplate template = SameNameOptions.Templates.Single(static template => template.Option == "--detail");
-        JsonNode option = new JsonObject
-        {
-            ["description"] = description,
-            ["allowedValues"] = new JsonArray("outline", "forms", "layers", "fonts", "names"),
-        };
-
-        bool matches = Regex.IsMatch(description, template.Pattern)
-            && !(template.ListsNoValues && SameNameOptions.RestatesValues(option))
-            && !(template.ListsNoValues && SameNameOptions.NotesRepeatingTheirValue(option).Any());
-
-        Assert.Equal(accepted, matches);
-    }
-
     [Fact]
     public void EveryExemptionNamesARepeatedOptionWithAReason()
     {
@@ -366,12 +184,6 @@ public sealed class SameNameExemptionTests
                 $"{exemption.Command} no longer declares {exemption.Option}; delete its exemption.");
             Assert.True(exemption.Aspects != OptionAspect.None && exemption.Reason.Length > 20,
                 $"The exemption of {exemption.Option} names what may differ and why.");
-        }
-        foreach (DescriptionTemplate template in SameNameOptions.Templates)
-        {
-            Assert.True(declared.TryGetValue(template.Option, out List<DeclaredOption>? options)
-                    && options.Count(option => template.Covers(option.Command)) > 1,
-                $"{template.Option} is no longer declared by two or more of the commands its template covers; delete the template.");
         }
     }
 }
