@@ -54,7 +54,7 @@ internal sealed record ViewerOpenRequest(long MaxInputBytes = Aspose.Cli.Sdk.IO.
     public string? Effect { get; init; }
 
     /// <summary>Password of an encrypted document.</summary>
-    public string? Password { get; init; }
+    public WireSecret? Password { get; init; }
 
     /// <summary>Explicit license file, or null for the configured sources.</summary>
     public string? License { get; init; }

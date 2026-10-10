@@ -46,7 +46,7 @@ internal sealed record RenderWorkerRequest(long MaxInputBytes = Aspose.Cli.Sdk.I
     public string? View { get; init; }
 
     /// <summary>Password of an encrypted document.</summary>
-    public string? Password { get; init; }
+    public WireSecret? Password { get; init; }
 
     /// <summary>Explicit license file, or null for the configured sources.</summary>
     public string? License { get; init; }
