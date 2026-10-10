@@ -15,11 +15,11 @@ the fast feedback loop:
   documentation and repository metadata (*.md, .github/, LICENSE*, .gitignore, .gitattributes,
   .editorconfig) reach nothing, and any other change (build inputs, eng/, scripts/,
   install.ps1) reaches every project. Pull-request CI uses it; master pushes run Fast.
-- Affected adds every test of the projects a change reaches: a change under src/ or to the
-  TestKit runs every test project in full, a change inside a test project runs that project in
-  full, a change to a RepositoryInput runs the test projects that list it in full, installer
-  inputs add the installer tests, other documentation adds nothing, and any other change (build
-  inputs, eng/, scripts/) runs everything.
+- Affected adds the Browser and Slow tests of the projects a change reaches: a change under src/
+  or to the TestKit adds them to every test project, a change inside a test project to that
+  project, and a change to a RepositoryInput to the test projects that list it. Installer inputs
+  add the installer tests, other documentation adds nothing, and any other change (build inputs,
+  eng/, scripts/) runs everything.
 - Full runs every test with a required license, including the reproductions of the SDK defects
   in KNOWN-ISSUES.md. Run it before a release and after an SDK update.
 
@@ -244,11 +244,15 @@ function Get-TestProjectCategory {
     return $category[0]
 }
 
-# A project whose every test carries a category this scope leaves out would run no test.
+# A project whose every test carries a category this scope leaves out would run no test. After
+# the build, such a project is checked to hold no test without its category, which this scope
+# would otherwise never run.
+$categoryOnly = @{}
 foreach ($project in @($selected)) {
     $category = Get-TestProjectCategory $project
     if ($null -ne $category -and -not $included[$project].Contains($category)) {
         $selected = @($selected | Where-Object { $_ -ne $project })
+        $categoryOnly[$project] = $category
         Write-Host "SKIP $([IO.Path]::GetFileNameWithoutExtension($project)) (its tests are all $category tests, which the $Scope scope leaves out)"
     }
 }
@@ -317,6 +321,17 @@ if (-not $NoBuild) {
 
 if (-not (Test-Path -LiteralPath $builtExecutable -PathType Leaf)) {
     throw "The CLI executable does not exist: $builtExecutable"
+}
+
+foreach ($project in $categoryOnly.Keys) {
+    $category = $categoryOnly[$project]
+    $listing = & dotnet test $project --configuration $Configuration --no-build --no-restore --nologo `
+        --list-tests --filter "Category!=$category" 2>&1
+    if ($LASTEXITCODE -ne 0) { throw "The tests of $(ConvertTo-RepositoryPath $project) could not be listed:$([Environment]::NewLine)$($listing -join [Environment]::NewLine)" }
+    $uncategorized = @($listing | Where-Object { $_ -match '^ {4}\S' } | ForEach-Object { $_.Trim() })
+    if ($uncategorized.Count -ne 0) {
+        throw "$(ConvertTo-RepositoryPath $project) declares TestProjectCategory $category, but these tests do not carry [Category(TestCategory.$category)], so the $Scope scope would never run them:$([Environment]::NewLine)- $($uncategorized -join "$([Environment]::NewLine)- ")"
+    }
 }
 
 if ($runsBrowser) {
