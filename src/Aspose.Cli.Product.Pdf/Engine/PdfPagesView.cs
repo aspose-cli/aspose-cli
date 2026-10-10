@@ -43,6 +43,11 @@ internal static class PdfPagesView
                         PdfRaster.RenderPage(session.Budgets, loaded.Document, number, "png", dpi, stream);
                     }
                 });
+            if (evidence)
+            {
+                ReleaseEvidenceRaster();
+            }
+
             parts.Add(new ViewPart
             {
                 Id = PdfViews.PagePart(pageNumber),
@@ -70,4 +75,13 @@ internal static class PdfPagesView
             Parts = parts,
         };
     }
+
+    /// <summary>
+    /// The engine leaves the buffers of one evidence page raster, several hundred megabytes for
+    /// an A4 page at twice the evidence resolution, as large-object garbage the runtime would
+    /// otherwise keep through many pages and into the review's checks. Collecting it after each
+    /// page bounds the peak memory of a long document's review to about one page's raster, at
+    /// the cost of a collection that is small beside the raster.
+    /// </summary>
+    private static void ReleaseEvidenceRaster() => GC.Collect();
 }
