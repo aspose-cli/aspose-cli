@@ -19,7 +19,7 @@ internal static class ImageOps
         CellRef anchor = A1.ParseCell(op.At);
         // Adding an SVG picture fetches its external images, and WorkbookSettings.ResourceProvider
         // does not govern that request (known issue CELLS-SVG-EGRESS, KNOWN-ISSUES.md); refuse first.
-        byte[] image = NetworkReferenceGuard.ReadImage(inputs, op.Path);
+        byte[] image = OperationImages.Read(inputs, op.Path, refuseNetworkReferences: true);
         int index = sheet.Pictures.Add(anchor.Row, anchor.Column, new MemoryStream(image, writable: false));
         Picture picture = sheet.Pictures[index];
 
