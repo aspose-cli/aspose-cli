@@ -27,8 +27,8 @@ internal static class CellsDiff
 
         return new DiffResult
         {
-            Left = BuildSource(request.Left, left),
-            Right = BuildSource(request.Right, right),
+            Left = BuildSource(request.Left, loaded),
+            Right = BuildSource(request.Right, other),
             Identical = diff.Identical,
             Summary = diff.Summary,
             Sheets = diff.Sheets.Count > 0 ? diff.Sheets : null,

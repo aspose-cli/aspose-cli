@@ -1,4 +1,3 @@
-using Aspose.Cells;
 using Aspose.Cli.Product.Cells.Engine.Mapping;
 using Aspose.Cli.Sdk.IO;
 
@@ -7,42 +6,11 @@ namespace Aspose.Cli.Product.Cells.Engine;
 /// <summary>Contract projection helpers the Cells handlers share.</summary>
 internal static class CellsEngineSupport
 {
-    internal static SourceInfo BuildSource(string path, Workbook workbook) => new()
+    internal static SourceInfo BuildSource(string path, LoadedWorkbook loaded) => new()
     {
         Path = path,
-        Format = CellsEngineFormats.IdOf(ResolveSourceFormat(path, workbook)),
+        Format = CellsEngineFormats.IdOf(loaded.SourceFormat),
         SizeBytes = new FileInfo(path).Length,
         Fingerprint = FileFingerprints.Capture(path),
     };
-
-    /// <summary>
-    /// The honest on-disk format of the file the user gave us. Detection is
-    /// authoritative — <see cref="Workbook.FileFormat"/> reports the in-memory
-    /// model, which the engine "upgrades" to <c>Xlsx</c> for the ancient BIFF
-    /// family (an <c>Excel2</c> file would otherwise be reported as <c>xlsx</c>).
-    /// The loaded workbook is trusted only where detection cannot see the true
-    /// format: an <b>encrypted</b> container detects as its wrapper (an encrypted
-    /// <c>.xlsx</c> sniffs as the OOXML/OLE2 shell, whereas the decrypted workbook
-    /// knows it is <c>xlsx</c>), and a defeated sniff returns <c>Unknown</c> (an
-    /// HTML export whose leading blank lines beat the detector still loaded as
-    /// <c>Html</c> via the fallback).
-    /// </summary>
-    internal static FileFormatType ResolveSourceFormat(string path, Workbook workbook)
-    {
-        FileFormatInfo detected;
-        try
-        {
-            using FileStream input = InputFiles.OpenRead(path);
-            detected = FileFormatUtil.DetectFileFormat(input);
-        }
-        catch
-        {
-            return workbook.FileFormat;
-        }
-
-        return detected.IsEncrypted || detected.FileFormatType == FileFormatType.Unknown
-            ? workbook.FileFormat
-            : detected.FileFormatType;
-    }
-
 }

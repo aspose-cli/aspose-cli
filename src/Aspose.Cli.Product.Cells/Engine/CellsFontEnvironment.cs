@@ -47,7 +47,7 @@ internal sealed class CellsFontEnvironment : IFontEnvironment
         IReadOnlyList<FontAvailability> fonts = FontOps.CheckAvailability(FontOps.UsedFonts(workbook));
         return new FontCheckResult
         {
-            Source = BuildSource(filePath, workbook),
+            Source = BuildSource(filePath, loaded),
             AllAvailable = fonts.All(static font => font.Available),
             Fonts = fonts,
             License = EnvelopeParts.License(licenseState),

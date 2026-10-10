@@ -23,7 +23,7 @@ internal static class CellsRender
         LicenseState licenseState = session.Outputs.License;
         using LoadedWorkbook loaded = session.Loader.Open(request.Input, request.Password);
         Workbook workbook = loaded.Workbook;
-        SourceInfo input = BuildSource(request.Input, workbook);
+        SourceInfo input = BuildSource(request.Input, loaded);
 
         if (request.AllSheets)
         {

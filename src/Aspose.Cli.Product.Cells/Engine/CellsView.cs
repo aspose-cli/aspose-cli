@@ -31,7 +31,7 @@ internal static class CellsView
         _ = session.Outputs.License;
         using LoadedWorkbook loaded = session.Loader.Open(filePath, request.Password);
         Workbook workbook = loaded.Workbook;
-        SourceInfo source = BuildSource(filePath, workbook);
+        SourceInfo source = BuildSource(filePath, loaded);
         if (request.View == CellsViews.Workbook)
         {
             WorkbookGridExporter.Export(workbook, artifacts, session.Budgets, workbookFile);

@@ -33,7 +33,7 @@ internal static class CellsEdit
         // The edit recalculates after its operations, or was told not to calculate at all.
         using LoadedWorkbook loaded = session.Loader.Open(filePath, request.Password, calculateOnOpen: false);
         Workbook workbook = loaded.Workbook;
-        SourceInfo input = BuildSource(filePath, workbook);
+        SourceInfo input = BuildSource(filePath, loaded);
         FileFingerprints.EnsureUnchanged(filePath, precondition.Fingerprint, input.Fingerprint!);
         FileFingerprints.EnsureMatch(
             filePath,
