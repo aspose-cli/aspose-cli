@@ -189,8 +189,11 @@ public sealed class CellsKnownIssueTests
         _ = fixture.LicenseState;
         double[] widths = [.. Enumerable.Range(0, 21).Select(static step => 24 + step * 0.25)];
 
-        double[] cutInPage = [.. widths.Where(width => InkRight(width, onlyArea: false) < InkRight(100, onlyArea: false))];
-        double[] cutInArea = [.. widths.Where(width => InkRight(width, onlyArea: true) < InkRight(100, onlyArea: true))];
+        // The edge of the ink when column B holds the whole text, rendered once per layout.
+        int fullInPage = InkRight(100, onlyArea: false);
+        int fullInArea = InkRight(100, onlyArea: true);
+        double[] cutInPage = [.. widths.Where(width => InkRight(width, onlyArea: false) < fullInPage)];
+        double[] cutInArea = [.. widths.Where(width => InkRight(width, onlyArea: true) < fullInArea)];
 
         KnownIssue.Reproduces(
             "CELLS-OVERFLOW-EDGE",
@@ -223,9 +226,10 @@ public sealed class CellsKnownIssueTests
             }).ToImage(0, path);
             using SkiaSharp.SKBitmap image = SkiaSharp.SKBitmap.Decode(path);
             int right = -1;
-            for (int pixel = 0; pixel < image.Width * image.Height; pixel++)
+            SkiaSharp.SKColor[] pixels = image.Pixels;
+            for (int pixel = 0; pixel < pixels.Length; pixel++)
             {
-                SkiaSharp.SKColor color = image.GetPixel(pixel % image.Width, pixel / image.Width);
+                SkiaSharp.SKColor color = pixels[pixel];
                 if (color.Red > 150 && color.Green < 120 && color.Blue < 120)
                 {
                     right = Math.Max(right, pixel % image.Width);
