@@ -33,6 +33,121 @@ internal static class PdfEngineSupport
     }
 
     /// <summary>
+    /// Copies the document-level attachments of a source into a document assembled from copied
+    /// pages, which carries none of them, and returns the names it left out because an earlier
+    /// source left an attachment of that name with other contents there. An attachment whose
+    /// name and contents the document already holds is not copied again, and the attachments of
+    /// one source are all copied, even two that show the same name.
+    /// </summary>
+    internal static IReadOnlyList<string> CopyAttachments(Document source, Document target)
+    {
+        // A source without attachments leaves the document as it is.
+        if (source.EmbeddedFiles.Count == 0)
+        {
+            return [];
+        }
+
+        ILookup<string, FileSpecification> earlier = target.EmbeddedFiles
+            .ToLookup(static file => AttachmentName(file) ?? string.Empty, StringComparer.Ordinal);
+        // The engine throws for the keys of a document without attachments.
+        var keys = new HashSet<string>(
+            target.EmbeddedFiles.Count == 0 ? [] : target.EmbeddedFiles.Keys, StringComparer.Ordinal);
+        var skipped = new List<string>();
+        foreach (string key in source.EmbeddedFiles.Keys)
+        {
+            FileSpecification file = source.EmbeddedFiles[key];
+            string name = AttachmentName(file) ?? string.Empty;
+            if (earlier[name].Any(held => SameContents(held, file)))
+            {
+                continue;
+            }
+
+            if (name.Length > 0 && earlier.Contains(name))
+            {
+                skipped.Add(name);
+                continue;
+            }
+
+            // The name tree key is not shown to readers; a taken one gets a numbered suffix.
+            string free = key;
+            for (int suffix = 2; !keys.Add(free); suffix++)
+            {
+                free = string.Create(CultureInfo.InvariantCulture, $"{key}-{suffix}");
+            }
+
+            target.EmbeddedFiles.Add(free, file);
+        }
+
+        return skipped;
+    }
+
+    private static bool SameContents(FileSpecification first, FileSpecification second)
+    {
+        Stream? left = first.Contents;
+        Stream? right = second.Contents;
+        if (ReferenceEquals(left, right))
+        {
+            return left is not null;
+        }
+
+        if (left is not { CanSeek: true } || right is not { CanSeek: true } || left.Length != right.Length)
+        {
+            return false;
+        }
+
+        byte[] leftBuffer = new byte[81920];
+        byte[] rightBuffer = new byte[81920];
+        left.Position = 0;
+        right.Position = 0;
+        try
+        {
+            while (true)
+            {
+                int read = left.ReadAtLeast(leftBuffer, leftBuffer.Length, throwOnEndOfStream: false);
+                if (right.ReadAtLeast(rightBuffer.AsSpan(0, read), read, throwOnEndOfStream: false) != read
+                    || !leftBuffer.AsSpan(0, read).SequenceEqual(rightBuffer.AsSpan(0, read)))
+                {
+                    return false;
+                }
+
+                if (read < leftBuffer.Length)
+                {
+                    return true;
+                }
+            }
+        }
+        finally
+        {
+            left.Position = 0;
+            right.Position = 0;
+        }
+    }
+
+    /// <summary>
+    /// The warning that a document assembled from copied pages keeps the attachments of a
+    /// portfolio but not the portfolio itself, or null when the source is not one.
+    /// <paramref name="input"/> names the source among several inputs.
+    /// </summary>
+    internal static Warning? PortfolioNotKept(Document source, string? input) =>
+        source.Collection is null
+            ? null
+            : new Warning(
+                WarningCodes.LossyConversion,
+                $"{(input is null ? "The input" : $"Input '{input}'")} is a PDF portfolio: its attachments were copied as plain attachments, but the portfolio presentation, such as its file list layout, columns and sort order, was not kept.")
+            {
+                Location = input is null ? "portfolio" : $"{input} portfolio",
+                Hint = "List the attachments with 'pdf inspect --detail attachments'; rebuild the portfolio in a PDF editor if readers must open it as a portfolio.",
+                AffectsCompleteness = true,
+            };
+
+    /// <summary>The name a reader shows for an attachment, or null when it has none.</summary>
+    internal static string? AttachmentName(FileSpecification file) =>
+        (file.UnicodeName ?? file.Name) is { Length: > 0 } name ? name : null;
+
+    internal static string[] AttachmentNames(Document document) =>
+        [.. document.EmbeddedFiles.Select(AttachmentName).OfType<string>()];
+
+    /// <summary>
     /// Copies an outline into a document assembled from copied pages, pointing each bookmark at
     /// its page there with a Fit destination, and returns how many working bookmarks lost
     /// fidelity: a location or zoom other than Fit, or a named destination the document does not

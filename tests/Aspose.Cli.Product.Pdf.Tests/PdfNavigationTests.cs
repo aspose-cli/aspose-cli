@@ -189,6 +189,29 @@ public sealed class PdfNavigationTests
     }
 
     /// <summary>
+    /// The attachments the merged document carries give it a name tree without Dests, which a
+    /// named link of another input is looked up in (PDF-NAMES-WITHOUT-DESTS).
+    /// </summary>
+    [Fact]
+    public void Merge_OfNamedLinksAndAttachments_CountsTheLinksThatLostTheirName()
+    {
+        using var fixture = new PdfEngineFixture();
+        string first = CreateNavigationDocument(fixture, "first.pdf");
+        string second = CreateAttachmentOnlyNameTree(fixture, "second.pdf");
+
+        PdfWriteResult result = PdfMerge.Run(fixture.Session, new PdfMergeRequest
+        {
+            Output = TestOutput.At(fixture.File("merged.pdf")),
+            InputPaths = [first, second],
+        });
+
+        Warning warning = Assert.Single(result.Warnings!, static item => item.Code.Name == "NAVIGATION_DEGRADED");
+        Assert.StartsWith("2 bookmark(s), 1 link(s) and 1 named destination(s)", warning.Message, StringComparison.Ordinal);
+        using var merged = new Document(result.Output.Path);
+        Assert.Single(merged.EmbeddedFiles);
+    }
+
+    /// <summary>
     /// Three pages: bookmarks Two (Fit, page 2), Three (XYZ, page 3) and Named (via the
     /// named destination "appendix" on page 3); on page 1 an explicit link and a named
     /// link, both to page 3.

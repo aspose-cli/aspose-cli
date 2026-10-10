@@ -45,6 +45,8 @@ internal static class PdfSplit
             writer.Stage(target, request.Output.Overwrite, selected, staged =>
             {
                 CopyPageLabels(source, selected, pages);
+                // Each part carries every attachment of the source; a part starts with none, so none is left out.
+                CopyAttachments(source, selected);
                 // A part keeps the bookmarks of its pages; what leads elsewhere is counted.
                 bookmarks += CopyOutline(source, source.Outlines, selected.Outlines, selected,
                     page => Array.IndexOf(pages, page) + 1);
@@ -60,6 +62,11 @@ internal static class PdfSplit
 
         IReadOnlyList<long> sizes = writer.Commit();
         List<Warning> warnings = [];
+        if (PortfolioNotKept(loaded.Document, input: null) is { } portfolio)
+        {
+            warnings.Add(portfolio);
+        }
+
         if (new PdfNavigationCensus(bookmarks, links, namedDestinations).ToWarning(
                 "lost their exact target in the parts: bookmarks open their page at Fit zoom, links to a page of another part lead nowhere, and named destinations are not carried into the parts",
                 "Re-create location-sensitive bookmarks (add_bookmark) and links (add_link) on the parts that need them.")

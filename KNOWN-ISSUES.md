@@ -161,10 +161,13 @@ fails, delete the issue's section, the code that names it and the test, then upd
 
 ### PDF-NAMES-WITHOUT-DESTS
 
-- **Defect:** `Document.NamedDestinations.Names` and `Count` throw `NullReferenceException` when
-  the catalog's name tree has no `Dests` entry, for example a tree that holds only attachments.
-- **CLI behavior:** none visible; such a document is read as having no named destinations, so
-  `pdf edit`, `pdf merge` and `pdf convert --to pdfa-*` accept it.
+- **Defect:** `Document.NamedDestinations.Names`, `Count` and the lookup by name
+  (`NamedDestinations[name]`) throw `NullReferenceException` when the catalog's name tree has no
+  `Dests` entry, for example a tree that holds only attachments, such as the one a merged document
+  gets with the attachments of its inputs.
+- **CLI behavior:** none visible; such a document is read as having no named destinations, and a
+  name is looked up only when it is listed (`PdfNavigationCensus.NamedTarget`), so `pdf edit`,
+  `pdf merge`, `pdf split` and `pdf convert --to pdfa-*` accept it.
 - **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
 
 ### PDF-TAGGED-CONTENT-WRITES
