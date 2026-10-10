@@ -13,7 +13,9 @@ namespace Aspose.Cli.Product.Pdf.Engine.Mapping;
 /// import, every file the importer could read must be an ordinary file beneath the Markdown
 /// file's directory: Markdown
 /// images, the resources raw HTML and CSS name, and the resources named inside the
-/// stylesheets, SVG and HTML files those load. As the importer does, the Markdown's own
+/// stylesheets, SVG and HTML files those load. A Markdown image, and an image that HTML or SVG
+/// markup embeds, must also be an intact image (<see cref="ImageInput"/>), checked before the
+/// importer sees it. As the importer does, the Markdown's own
 /// references resolve against the working directory and a loaded file's references against
 /// that file. Every decoding the importer might apply is checked, so a reference that cannot
 /// be proven to stay inside refuses the import. Accepted files are charged to the input budget
@@ -69,6 +71,7 @@ internal sealed class MarkdownImportResources : IDisposable
     private readonly ResourceBudgetLedger _budgets;
     private readonly Dictionary<string, (VerifiedReadLease Lease, bool Scanned)> _files =
         new(StringComparer.OrdinalIgnoreCase);
+    private readonly HashSet<string> _images = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
     /// Refuses a Markdown file that names a network address or script, or references a file
@@ -97,7 +100,7 @@ internal sealed class MarkdownImportResources : IDisposable
             {
                 foreach (string file in Resolve(item.Reference.Value, item.Base, item.Source))
                 {
-                    if (Admit(file, item.Reference.Document, item.Reference.Value, item.Source) is { } content)
+                    if (Admit(file, item.Reference, item.Source) is { } content)
                     {
                         foreach (Reference nested in MarkupReferences(Text(content)))
                         {
@@ -125,15 +128,21 @@ internal sealed class MarkdownImportResources : IDisposable
     }
 
     /// <summary>
-    /// Verifies and holds one file. Returns its content when the importer parses it for further
-    /// references: a file loaded as a stylesheet or document, or an image that is not raster.
+    /// Verifies and holds one file, checking it when an image reference names it. Returns its
+    /// content when the importer parses it for further references: a file loaded as a
+    /// stylesheet or document, or an image that is not raster.
     /// </summary>
-    private byte[]? Admit(string file, bool document, string reference, string source)
+    private byte[]? Admit(string file, Reference reference, string source)
     {
         if (_files.TryGetValue(file, out (VerifiedReadLease Lease, bool Scanned) held))
         {
+            if (reference.Image)
+            {
+                CheckImage(file, held.Lease);
+            }
+
             // An unscanned file is a raster image or font, loaded as an image until now.
-            if (held.Scanned || !document)
+            if (held.Scanned || !reference.Document)
             {
                 return null;
             }
@@ -144,21 +153,40 @@ internal sealed class MarkdownImportResources : IDisposable
 
         if (_files.Count == MaximumFiles)
         {
-            throw Refusal(reference, source, $"is one more file than the {MaximumFiles} a Markdown import may read");
+            throw Refusal(reference.Value, source, $"is one more file than the {MaximumFiles} a Markdown import may read");
         }
 
         VerifiedReadLease lease = _boundary.TryOpenRead(file)
-            ?? throw Refusal(reference, source,
+            ?? throw Refusal(reference.Value, source,
                 $"resolves to '{file}', which is not an ordinary file: it is a link, a junction, a directory, a device or a file with several names");
         _files.Add(file, (lease, false));
         _budgets.Consume(ResourceBudgetKinds.InputBytes, lease.Length, "bytes", "markdown-resource");
-        if (!document && IsSelfContained(lease))
+        if (reference.Image)
+        {
+            CheckImage(file, lease);
+        }
+
+        if (!reference.Document && IsSelfContained(lease))
         {
             return null;
         }
 
         _files[file] = (lease, true);
         return Read(file, lease);
+    }
+
+    /// <summary>Refuses a held file that an image reference names unless it is an intact image.</summary>
+    private void CheckImage(string file, VerifiedReadLease lease)
+    {
+        if (!_images.Add(file))
+        {
+            return;
+        }
+
+        byte[] content = new byte[lease.Length];
+        lease.Position = 0;
+        lease.ReadExactly(content);
+        ImageInput.Check(_budgets.Inputs, content, file);
     }
 
     private static bool IsSelfContained(VerifiedReadLease lease)
@@ -328,7 +356,7 @@ internal sealed class MarkdownImportResources : IDisposable
             int next = close + 1;
             if (next < text.Length && text[next] == '(' && Destination(text, next + 1) is { } destination)
             {
-                references.Add(new Reference(destination, Document: false));
+                references.Add(new Reference(destination, Document: false, Image: true));
             }
             else if (next < text.Length && text[next] == '[')
             {
@@ -344,7 +372,7 @@ internal sealed class MarkdownImportResources : IDisposable
         {
             if (labels.Contains(Label(definition.Groups["label"].Value)))
             {
-                references.Add(new Reference(definition.Groups["destination"].Value, Document: false));
+                references.Add(new Reference(definition.Groups["destination"].Value, Document: false, Image: true));
             }
         }
 
@@ -369,12 +397,12 @@ internal sealed class MarkdownImportResources : IDisposable
                 {
                     foreach (string candidate in value.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
                     {
-                        yield return new Reference(candidate.Split(' ', '\t', '\n')[0], Document: false);
+                        yield return new Reference(candidate.Split(' ', '\t', '\n')[0], Document: false, Image: true);
                     }
                 }
                 else if (IsDocument(element, name) is { } document)
                 {
-                    yield return new Reference(value, document);
+                    yield return new Reference(value, document, IsImage(element, name));
                 }
             }
         }
@@ -411,6 +439,17 @@ internal sealed class MarkdownImportResources : IDisposable
         "background" or "poster" or "lowsrc" or "dynsrc" => false,
         _ when attribute.EndsWith(":href", StringComparison.Ordinal) => element == "a" ? null : true,
         _ => null,
+    };
+
+    /// <summary>
+    /// Whether an attribute names an image the importer embeds. A stylesheet's url() is not
+    /// one: it names a font as often as an image, and nothing in the reference tells which.
+    /// </summary>
+    private static bool IsImage(string element, string attribute) => attribute switch
+    {
+        "src" => element is "img" or "image" or "input",
+        "background" or "poster" or "lowsrc" => true,
+        _ => element == "image" && (attribute == "href" || attribute.EndsWith(":href", StringComparison.Ordinal)),
     };
 
     // The closing bracket that matches the one at open, within one paragraph.
@@ -519,5 +558,6 @@ internal sealed class MarkdownImportResources : IDisposable
         return reader.ReadToEnd().Replace("\r\n", "\n", StringComparison.Ordinal).Replace('\r', '\n');
     }
 
-    private readonly record struct Reference(string Value, bool Document);
+    /// <summary>A reference to a file; <see cref="Image"/> marks an image the importer embeds.</summary>
+    private readonly record struct Reference(string Value, bool Document, bool Image = false);
 }
