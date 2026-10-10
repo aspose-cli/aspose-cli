@@ -387,32 +387,17 @@ function Read-Trx {
     }
 }
 
-# App tests share the per-user App endpoint, so this account's test runs, from any worktree, run
-# one at a time; the build above is not serialized. Windows releases the mutex if a run dies.
-# The test processes this run starts are told it holds the mutex; one started any other way
-# takes it itself (TestKit TestRunLock, which uses the same name).
-$runLock = [Threading.Mutex]::new($false, "Global\$($layout.Identity.id)-test-run-$([Environment]::UserName)")
-try {
-    if (-not $runLock.WaitOne(0)) {
-        Write-Host 'WAIT another test run of this Windows account is in progress.'
-        [void]$runLock.WaitOne()
-    }
-}
-catch [Threading.AbandonedMutexException] {
-    # A run that ended without releasing it; this run now holds the mutex.
-}
-try {
-    $runId = [DateTime]::UtcNow.ToString('yyyyMMddTHHmmssfffZ') + '-' + [Guid]::NewGuid().ToString('N')
-    $resultsRoot = Join-Path $repoRoot "artifacts/TestResults/$runId"
-    $markedFilter = ($categories | ForEach-Object { "Category=$_" }) -join '|'
-    $testEnvironment = @{ ASPOSE_CLI_TEST_RUN_LOCK_HELD = '1' }
-    $ciArguments = @()
-    if ($CiLike) {
-        # The startup hook gives every .NET process of the run the runner's culture; the Windows
-        # user locale has no per-process override, and no runtime variable sets the culture.
-        $cultureHook = Join-Path $resultsRoot 'ci-like/CiLikeCulture.dll'
-        [IO.Directory]::CreateDirectory((Split-Path -Parent $cultureHook)) | Out-Null
-        Add-Type -OutputAssembly $cultureHook -OutputType Library -TypeDefinition @'
+$runId = [DateTime]::UtcNow.ToString('yyyyMMddTHHmmssfffZ') + '-' + [Guid]::NewGuid().ToString('N')
+$resultsRoot = Join-Path $repoRoot "artifacts/TestResults/$runId"
+$markedFilter = ($categories | ForEach-Object { "Category=$_" }) -join '|'
+$testEnvironment = @{}
+$ciArguments = @()
+if ($CiLike) {
+    # The startup hook gives every .NET process of the run the runner's culture; the Windows
+    # user locale has no per-process override, and no runtime variable sets the culture.
+    $cultureHook = Join-Path $resultsRoot 'ci-like/CiLikeCulture.dll'
+    [IO.Directory]::CreateDirectory((Split-Path -Parent $cultureHook)) | Out-Null
+    Add-Type -OutputAssembly $cultureHook -OutputType Library -TypeDefinition @'
 using System.Globalization;
 
 internal static class StartupHook
@@ -427,106 +412,101 @@ internal static class StartupHook
     }
 }
 '@
-        # The license is removed from the whole test process tree; the culture hook and the
-        # compilation mode reach only the test hosts and the processes they start, so dotnet
-        # test itself keeps its usual speed.
-        $testEnvironment[$licenseVariable] = $null
-        $ciArguments = @('--environment', 'DOTNET_TieredCompilation=0', '--environment', "DOTNET_STARTUP_HOOKS=$cultureHook")
-        Write-Host 'CI-LIKE tests run as on the CI runner: no license, en-US culture, DOTNET_TieredCompilation=0.'
-    }
-    # Concurrent projects share the processor: each runs at most its share of 1.5 test threads
-    # per core, so tests with process-start and I/O budgets are not starved.
-    $threadsPerProject = [Math]::Max(2, [int][Math]::Ceiling([Environment]::ProcessorCount * 1.5 / $selected.Count))
-    $runs = foreach ($project in $selected) {
-        $projectName = [IO.Path]::GetFileNameWithoutExtension($project)
-        $resultsDirectory = Join-Path $resultsRoot $projectName
-        $filter = Get-ProjectFilter $project
-        $arguments = @(
-            'test', $project,
-            '--configuration', $Configuration,
-            '--no-build', '--no-restore', '--nologo',
-            '--blame-hang-timeout', $HangTimeout,
-            '--blame-hang-dump-type', 'mini',
-            '--logger', 'trx;LogFileName=results.trx',
-            '--results-directory', $resultsDirectory) + $ciArguments
-        if ($null -ne $filter) { $arguments += @('--filter', $filter) }
-        $arguments += @('--', "xUnit.MaxParallelThreads=$threadsPerProject")
-        $test = Start-Dotnet $arguments (Join-Path $resultsDirectory 'test.log') ($testEnvironment + @{ ASPOSE_CLI_TEST_ARTIFACTS = $resultsDirectory })
-        # A project that runs marked tests lists them, so the slow-test report can leave them out.
-        $listing = if ($included[$project].Count -eq 0) { $null } else {
-            Start-Dotnet @('test', $project, '--configuration', $Configuration, '--no-build', '--no-restore', '--nologo',
-                '--list-tests', '--filter', $markedFilter) (Join-Path $resultsDirectory 'marked.log') $testEnvironment
-        }
-        [pscustomobject]@{
-            Name = $projectName
-            Project = $project
-            ResultsFile = Join-Path $resultsDirectory 'results.trx'
-            Test = $test
-            Listing = $listing
-        }
-    }
-
-    $failures = @()
-    $skipped = @()
-    $unmarkedSlow = @()
-    foreach ($run in $runs) {
-        $exitCode = Complete-Dotnet $run.Test
-        $marked = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
-        if ($null -ne $run.Listing) {
-            if ((Complete-Dotnet $run.Listing) -ne 0) { throw "Marked tests of $($run.Name) could not be listed; see $($run.Listing.LogFile)." }
-            foreach ($line in [IO.File]::ReadAllLines($run.Listing.LogFile)) {
-                if ($line -match '^ {4}(\S.*)$') { [void]$marked.Add($Matches[1].Trim()) }
-            }
-        }
-        $results = @()
-        if (Test-Path -LiteralPath $run.ResultsFile -PathType Leaf) { $results = @(Read-Trx $run.ResultsFile) }
-        $passed = @($results | Where-Object Outcome -eq 'Passed').Count
-        $failed = @($results | Where-Object Outcome -eq 'Failed').Count
-        $notExecuted = @($results | Where-Object Outcome -eq 'NotExecuted')
-        $elapsed = ($run.Test.Process.ExitTime - $run.Test.Process.StartTime).TotalSeconds
-        $state = if ($exitCode -eq 0 -and $results.Count -ne 0) { 'PASS' } else { 'FAIL' }
-        Write-Host ('{0} {1}: {2} passed, {3} failed, {4} skipped ({5:n0} s)' -f $state, $run.Name, $passed, $failed, $notExecuted.Count, $elapsed)
-        if ($state -eq 'FAIL') {
-            Get-Content -LiteralPath $run.Test.LogFile | Write-Host
-            if ($results.Count -eq 0) { Write-Warning "Test project did not produce its TRX result: $($run.ResultsFile)" }
-            $failures += $run.Project
-        }
-        $skipped += @($notExecuted | ForEach-Object { $_ | Add-Member -NotePropertyName Project -NotePropertyValue $run.Name -PassThru })
-        $unmarkedSlow += @($results | Where-Object { $_.Outcome -eq 'Passed' -and $_.Seconds -gt $slowTestSeconds -and -not $marked.Contains($_.Name) } |
-            ForEach-Object { $_ | Add-Member -NotePropertyName Project -NotePropertyValue $run.Name -PassThru })
-    }
-
-    $licensedSkips = @($skipped | Where-Object { $_.Reason -match 'ASPOSE_CLI_TEST_LICENSE_PATH' })
-    if ($skipped.Count -ne 0) {
-        Write-Host "SKIPPED $($skipped.Count) test(s), $($licensedSkips.Count) of them licensed (LicensedFact):"
-        foreach ($test in $skipped | Sort-Object Project, Name) {
-            Write-Host "  [$($test.Project)] $($test.Name): $($test.Reason)"
-        }
-        if ($licensedSkips.Count -ne 0 -and $CiLike) {
-            Write-Host 'Licensed cases were not exercised, as on CI (-CiLike removes the license).'
-        }
-        elseif ($licensedSkips.Count -ne 0) {
-            Write-Host 'Licensed cases were not exercised: set ASPOSE_CLI_TEST_LICENSE_PATH (see CONTRIBUTING.md) to run them.'
-        }
-    }
-    if ($requireLicense -and $licensedSkips.Count -ne 0) {
-        $failures += 'licensed cases were skipped although the Full scope requires a license'
-    }
-    if ($unmarkedSlow.Count -ne 0) {
-        Write-Warning "$($unmarkedSlow.Count) test(s) without a category ran longer than $slowTestSeconds s; speed them up or mark them [Category(TestCategory.Slow)]:"
-        foreach ($test in $unmarkedSlow | Sort-Object Seconds -Descending) {
-            Write-Host ('  [{0}] {1}: {2:n1} s' -f $test.Project, $test.Name, $test.Seconds)
-        }
-    }
-
-    if ($failures.Count -ne 0) {
-        throw "$Scope test run failed:$([Environment]::NewLine)$($failures -join [Environment]::NewLine)"
-    }
-
-    Write-Host "PASS $Scope scope$(if ($CiLike) { ', CI-like' }): $($selected.Count) test projects after one solution build."
-    Write-Host "Test results: $resultsRoot"
+    # The license is removed from the whole test process tree; the culture hook and the
+    # compilation mode reach only the test hosts and the processes they start, so dotnet
+    # test itself keeps its usual speed.
+    $testEnvironment[$licenseVariable] = $null
+    $ciArguments = @('--environment', 'DOTNET_TieredCompilation=0', '--environment', "DOTNET_STARTUP_HOOKS=$cultureHook")
+    Write-Host 'CI-LIKE tests run as on the CI runner: no license, en-US culture, DOTNET_TieredCompilation=0.'
 }
-finally {
-    $runLock.ReleaseMutex()
-    $runLock.Dispose()
+# Concurrent projects share the processor: each runs at most its share of 1.5 test threads
+# per core, so tests with process-start and I/O budgets are not starved.
+$threadsPerProject = [Math]::Max(2, [int][Math]::Ceiling([Environment]::ProcessorCount * 1.5 / $selected.Count))
+$runs = foreach ($project in $selected) {
+    $projectName = [IO.Path]::GetFileNameWithoutExtension($project)
+    $resultsDirectory = Join-Path $resultsRoot $projectName
+    $filter = Get-ProjectFilter $project
+    $arguments = @(
+        'test', $project,
+        '--configuration', $Configuration,
+        '--no-build', '--no-restore', '--nologo',
+        '--blame-hang-timeout', $HangTimeout,
+        '--blame-hang-dump-type', 'mini',
+        '--logger', 'trx;LogFileName=results.trx',
+        '--results-directory', $resultsDirectory) + $ciArguments
+    if ($null -ne $filter) { $arguments += @('--filter', $filter) }
+    $arguments += @('--', "xUnit.MaxParallelThreads=$threadsPerProject")
+    $test = Start-Dotnet $arguments (Join-Path $resultsDirectory 'test.log') ($testEnvironment + @{ ASPOSE_CLI_TEST_ARTIFACTS = $resultsDirectory })
+    # A project that runs marked tests lists them, so the slow-test report can leave them out.
+    $listing = if ($included[$project].Count -eq 0) { $null } else {
+        Start-Dotnet @('test', $project, '--configuration', $Configuration, '--no-build', '--no-restore', '--nologo',
+            '--list-tests', '--filter', $markedFilter) (Join-Path $resultsDirectory 'marked.log') $testEnvironment
+    }
+    [pscustomobject]@{
+        Name = $projectName
+        Project = $project
+        ResultsFile = Join-Path $resultsDirectory 'results.trx'
+        Test = $test
+        Listing = $listing
+    }
 }
+
+$failures = @()
+$skipped = @()
+$unmarkedSlow = @()
+foreach ($run in $runs) {
+    $exitCode = Complete-Dotnet $run.Test
+    $marked = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
+    if ($null -ne $run.Listing) {
+        if ((Complete-Dotnet $run.Listing) -ne 0) { throw "Marked tests of $($run.Name) could not be listed; see $($run.Listing.LogFile)." }
+        foreach ($line in [IO.File]::ReadAllLines($run.Listing.LogFile)) {
+            if ($line -match '^ {4}(\S.*)$') { [void]$marked.Add($Matches[1].Trim()) }
+        }
+    }
+    $results = @()
+    if (Test-Path -LiteralPath $run.ResultsFile -PathType Leaf) { $results = @(Read-Trx $run.ResultsFile) }
+    $passed = @($results | Where-Object Outcome -eq 'Passed').Count
+    $failed = @($results | Where-Object Outcome -eq 'Failed').Count
+    $notExecuted = @($results | Where-Object Outcome -eq 'NotExecuted')
+    $elapsed = ($run.Test.Process.ExitTime - $run.Test.Process.StartTime).TotalSeconds
+    $state = if ($exitCode -eq 0 -and $results.Count -ne 0) { 'PASS' } else { 'FAIL' }
+    Write-Host ('{0} {1}: {2} passed, {3} failed, {4} skipped ({5:n0} s)' -f $state, $run.Name, $passed, $failed, $notExecuted.Count, $elapsed)
+    if ($state -eq 'FAIL') {
+        Get-Content -LiteralPath $run.Test.LogFile | Write-Host
+        if ($results.Count -eq 0) { Write-Warning "Test project did not produce its TRX result: $($run.ResultsFile)" }
+        $failures += $run.Project
+    }
+    $skipped += @($notExecuted | ForEach-Object { $_ | Add-Member -NotePropertyName Project -NotePropertyValue $run.Name -PassThru })
+    $unmarkedSlow += @($results | Where-Object { $_.Outcome -eq 'Passed' -and $_.Seconds -gt $slowTestSeconds -and -not $marked.Contains($_.Name) } |
+        ForEach-Object { $_ | Add-Member -NotePropertyName Project -NotePropertyValue $run.Name -PassThru })
+}
+
+$licensedSkips = @($skipped | Where-Object { $_.Reason -match 'ASPOSE_CLI_TEST_LICENSE_PATH' })
+if ($skipped.Count -ne 0) {
+    Write-Host "SKIPPED $($skipped.Count) test(s), $($licensedSkips.Count) of them licensed (LicensedFact):"
+    foreach ($test in $skipped | Sort-Object Project, Name) {
+        Write-Host "  [$($test.Project)] $($test.Name): $($test.Reason)"
+    }
+    if ($licensedSkips.Count -ne 0 -and $CiLike) {
+        Write-Host 'Licensed cases were not exercised, as on CI (-CiLike removes the license).'
+    }
+    elseif ($licensedSkips.Count -ne 0) {
+        Write-Host 'Licensed cases were not exercised: set ASPOSE_CLI_TEST_LICENSE_PATH (see CONTRIBUTING.md) to run them.'
+    }
+}
+if ($requireLicense -and $licensedSkips.Count -ne 0) {
+    $failures += 'licensed cases were skipped although the Full scope requires a license'
+}
+if ($unmarkedSlow.Count -ne 0) {
+    Write-Warning "$($unmarkedSlow.Count) test(s) without a category ran longer than $slowTestSeconds s; speed them up or mark them [Category(TestCategory.Slow)]:"
+    foreach ($test in $unmarkedSlow | Sort-Object Seconds -Descending) {
+        Write-Host ('  [{0}] {1}: {2:n1} s' -f $test.Project, $test.Name, $test.Seconds)
+    }
+}
+
+if ($failures.Count -ne 0) {
+    throw "$Scope test run failed:$([Environment]::NewLine)$($failures -join [Environment]::NewLine)"
+}
+
+Write-Host "PASS $Scope scope$(if ($CiLike) { ', CI-like' }): $($selected.Count) test projects after one solution build."
+Write-Host "Test results: $resultsRoot"
