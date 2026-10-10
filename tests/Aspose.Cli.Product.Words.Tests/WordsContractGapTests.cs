@@ -48,6 +48,40 @@ public sealed class WordsContractGapTests
     }
 
     [Fact]
+    public void InsertParagraphs_AtOneAnchor_StackAfterItInReverseAndBeforeItInBatchOrder()
+    {
+        // The editing reference documents this order; anchoring every piece before the next
+        // block keeps the batch order as the reading order.
+        using var fixture = new WordsFixture();
+        string input = fixture.CreateReport();
+        string output = fixture.Temp.File("stacked.docx");
+        static InsertParagraphsOp Insert(string text, string position) => new()
+        {
+            At = new WordsTarget { Find = "Operations remained" },
+            Position = position,
+            Paragraphs = [new ParagraphInput { Text = text }],
+        };
+
+        WordsEdit.Run(fixture.Session, new WordsEditRequest
+        {
+            Input = input,
+            Batch = new WordsOpsBatch
+            {
+                Ops = [Insert("After one", "after"), Insert("After two", "after"), Insert("Before one", "before"), Insert("Before two", "before")],
+            },
+            Output = TestOutput.At(output),
+        });
+
+        string[] texts = new Document(output).FirstSection.Body.Paragraphs.Cast<Paragraph>()
+            .Select(static p => p.GetText().Trim())
+            .Where(static text => text.Contains(" one", StringComparison.Ordinal) || text.Contains(" two", StringComparison.Ordinal) || text.StartsWith("Operations remained", StringComparison.Ordinal))
+            .ToArray();
+        Assert.Equal(["Before one", "Before two"], texts[..2]);
+        Assert.StartsWith("Operations remained", texts[2], StringComparison.Ordinal);
+        Assert.Equal(["After two", "After one"], texts[3..]);
+    }
+
+    [Fact]
     public void InsertParagraphs_WithListLevel_TakesTheIndentOfTheListItemsAtThatLevel()
     {
         // Documents converted from RTF often hold a clause's indent on the paragraph rather
