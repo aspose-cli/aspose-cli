@@ -234,10 +234,13 @@ public sealed class WordsCliTests : IDisposable
         File.WriteAllText(_workspace.File("source.md"), "# Title\n\nOne.\n\nTwo.\n\nThree.\n\nFour.\n");
         Assert.Equal(0, _workspace.Run("words", "create", "notes.docx", "--markdown", "source.md").ExitCode);
 
-        CliResult spread = _workspace.Run(
-            "words", "query", "blocks", "notes.docx", "--blocks", "1,3,5", "--max-blocks", "1", "--output", "json");
-        CliResult section = _workspace.Run(
-            "words", "query", "blocks", "notes.docx", "--section", "1", "--blocks", "2-3", "--max-blocks", "1", "--output", "json");
+        // Both queries only read the document, so they run at once.
+        CliResult spread = null!, section = null!;
+        Parallel.Invoke(
+            () => spread = _workspace.Run(
+                "words", "query", "blocks", "notes.docx", "--blocks", "1,3,5", "--max-blocks", "1", "--output", "json"),
+            () => section = _workspace.Run(
+                "words", "query", "blocks", "notes.docx", "--section", "1", "--blocks", "2-3", "--max-blocks", "1", "--output", "json"));
 
         Assert.True(spread.ExitCode == 0, spread.StdErr);
         Assert.EndsWith(
