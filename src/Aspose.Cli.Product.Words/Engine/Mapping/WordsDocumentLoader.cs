@@ -192,7 +192,7 @@ internal sealed class WordsDocumentLoader
                 Password = password?.Reveal(),
                 LoadFormat = format,
                 BaseUri = resources.BaseUri,
-                ResourceLoadingCallback = new BlockingResourceCallback(resources),
+                ResourceLoadingCallback = new BlockingResourceCallback(resources, checksImages: format == LoadFormat.Markdown),
                 PreserveIncludePictureField = true,
                 WarningCallback = warnings,
             });
@@ -248,18 +248,24 @@ internal sealed class WordsDocumentLoader
         public ResourceLoadingAction ResourceLoading(ResourceLoadingArgs args) => ResourceLoadingAction.Skip;
     }
 
+    /// <summary>
+    /// Supplies local resources through the document's loader. The images a Markdown file names
+    /// must be intact images, which the loader checks.
+    /// </summary>
     private sealed class BlockingResourceCallback : IResourceLoadingCallback
     {
         private readonly LocalDocumentResourceLoader _resources;
+        private readonly bool _checksImages;
 
-        public BlockingResourceCallback(LocalDocumentResourceLoader resources)
+        public BlockingResourceCallback(LocalDocumentResourceLoader resources, bool checksImages)
         {
             _resources = resources;
+            _checksImages = checksImages;
         }
 
         public ResourceLoadingAction ResourceLoading(ResourceLoadingArgs args)
         {
-            if (_resources.TryRead(args.Uri, out byte[] data))
+            if (_resources.TryRead(args.Uri, out byte[] data, image: _checksImages && args.ResourceType == ResourceType.Image))
             {
                 args.SetData(data);
                 return ResourceLoadingAction.UserProvided;
