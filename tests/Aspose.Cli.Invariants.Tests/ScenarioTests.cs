@@ -3,16 +3,16 @@ using Aspose.Cli.TestKit;
 using Aspose.Cli.TestKit.Scenarios;
 using Xunit;
 
-namespace Aspose.Cli.Platform.Tests.Invariants;
+namespace Aspose.Cli.Invariants.Tests;
 
 /// <summary>
-/// The declarative scenarios in <c>Invariants/Scenarios</c> run against the built CLI, and the
+/// The declarative scenarios in <c>Scenarios</c> run against the built CLI, and the
 /// scenario format rejects documents it cannot run as written.
 /// </summary>
 public sealed class ScenarioTests
 {
     private static readonly string Directory =
-        Path.Combine(RepositoryPaths.Root, "tests", "Aspose.Cli.Platform.Tests", "Invariants", "Scenarios");
+        Path.Combine(RepositoryPaths.Root, "tests", "Aspose.Cli.Invariants.Tests", "Scenarios");
 
     public static TheoryData<string> Files() =>
         [.. System.IO.Directory.EnumerateFiles(Directory, "*.scenario.json").Select(Path.GetFileName).OfType<string>().Order(StringComparer.Ordinal)];

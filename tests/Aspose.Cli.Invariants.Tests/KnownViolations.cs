@@ -4,7 +4,7 @@ using Aspose.Cli.TestKit;
 using Aspose.Cli.TestKit.Scenarios;
 using Xunit;
 
-namespace Aspose.Cli.Platform.Tests.Invariants;
+namespace Aspose.Cli.Invariants.Tests;
 
 /// <summary>
 /// One recorded product defect: a generated case that violates an invariant today, in the
@@ -34,7 +34,7 @@ internal static class KnownViolations
     private static readonly Lazy<IReadOnlyList<KnownViolation>> Loaded = new(Load);
 
     public static string FilePath =>
-        Path.Combine(RepositoryPaths.Root, "tests", "Aspose.Cli.Platform.Tests", "Invariants", FileName);
+        Path.Combine(RepositoryPaths.Root, "tests", "Aspose.Cli.Invariants.Tests", FileName);
 
     public static IReadOnlyList<KnownViolation> Entries => Loaded.Value;
 

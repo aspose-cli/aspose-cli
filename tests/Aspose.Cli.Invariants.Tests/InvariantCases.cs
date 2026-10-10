@@ -2,7 +2,7 @@ using System.Text.Json.Nodes;
 using Aspose.Cli.TestKit.Scenarios;
 using Xunit;
 
-namespace Aspose.Cli.Platform.Tests.Invariants;
+namespace Aspose.Cli.Invariants.Tests;
 
 /// <summary>
 /// One generated invariant case: a scenario whose expectations state one invariant for one

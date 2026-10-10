@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <Description>Invariants generated from capabilities and the ops schemas, the known violations, and the declarative scenarios, run against the real CLI.</Description>
+  </PropertyGroup>
+
+</Project>
