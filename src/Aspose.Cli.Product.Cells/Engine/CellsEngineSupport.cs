@@ -7,26 +7,6 @@ namespace Aspose.Cli.Product.Cells.Engine;
 /// <summary>Contract projection helpers the Cells handlers share.</summary>
 internal static class CellsEngineSupport
 {
-    /// <summary>
-    /// The non-null warnings the caller produced; the write pipeline adds the evaluation
-    /// disclosure. Returns <c>null</c> when there are none, matching the envelope's
-    /// omit-when-empty rule.
-    /// </summary>
-    internal static IReadOnlyList<Warning>? CombineWarnings(params Warning?[] extra)
-    {
-        List<Warning>? warnings = null;
-        foreach (Warning? warning in extra)
-        {
-            if (warning is not null)
-            {
-                (warnings ??= []).Add(warning);
-            }
-        }
-
-        return warnings;
-    }
-
-
     internal static SourceInfo BuildSource(string path, Workbook workbook) => new()
     {
         Path = path,

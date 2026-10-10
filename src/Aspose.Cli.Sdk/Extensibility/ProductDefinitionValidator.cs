@@ -21,7 +21,6 @@ internal sealed class ProductDefinitionValidator
         ProductDefinition definition = module.Define()
             ?? throw new InvalidOperationException(
                 $"Product module '{module.GetType().FullName}' returned null.");
-        definition.AttachModule(module);
         if (_descriptors is not null
             && _descriptors.TryGetValue(module, out ProductModuleRegistration? descriptor))
         {
@@ -337,13 +336,6 @@ internal sealed class ProductDefinitionValidator
             {
                 throw new InvalidOperationException(
                     $"Product '{definition.Manifest.Id}' format '{format.Id}' declares invalid or duplicate aliases.");
-            }
-            if (format.Operations.Any(string.IsNullOrWhiteSpace)
-                || format.Operations.Distinct(StringComparer.Ordinal).Count()
-                    != format.Operations.Count)
-            {
-                throw new InvalidOperationException(
-                    $"Product '{definition.Manifest.Id}' format '{format.Id}' declares invalid or duplicate operations.");
             }
         }
 

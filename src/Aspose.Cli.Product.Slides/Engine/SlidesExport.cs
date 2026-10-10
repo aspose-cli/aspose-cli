@@ -1,4 +1,5 @@
 using Aspose.Cli.Sdk.Licensing;
+using Aspose.Cli.Sdk.Rendering;
 using Aspose.Cli.Sdk.Results;
 using Aspose.Slides;
 using Aspose.Slides.Export;
@@ -114,7 +115,7 @@ internal static class SlidesExport
             Outputs = outputs,
             Dpi = request.Output.Format.Id == "svg" || request.Width is not null
                 ? null
-                : request.Dpi ?? DefaultRasterDpi,
+                : request.Dpi ?? RenderPixelGuard.DefaultDpi,
             Width = request.Output.Format.Id == "svg" ? null : request.Width,
             License = EnvelopeParts.License(state),
             Warnings = WrittenWarnings(state, loaded, textRead: false),
@@ -138,7 +139,7 @@ internal static class SlidesExport
                 session.Budgets,
                 width,
                 height,
-                request.Width is null ? request.Dpi ?? DefaultRasterDpi : null);
+                request.Width is null ? request.Dpi ?? RenderPixelGuard.DefaultDpi : null);
         }
 
         string directory = request.Output.Directory;

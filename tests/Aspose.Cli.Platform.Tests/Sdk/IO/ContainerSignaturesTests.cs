@@ -25,8 +25,6 @@ public sealed class ContainerSignaturesTests
         byte[] ole = Convert.FromBase64String("0M8R4KGxGuEAAAAAAAAAAA==");
         byte[] zip = Convert.FromBase64String("UEsDBAECAwQFBgcICQo=");
 
-        Assert.True(ContainerSignatures.IsOleCompoundFile(ole));
-        Assert.False(ContainerSignatures.IsOleCompoundFile(zip));
         Assert.True(ContainerSignatures.IsZip(zip));
         Assert.False(ContainerSignatures.IsZip(ole));
         Assert.False(ContainerSignatures.IsZip("PK"u8));

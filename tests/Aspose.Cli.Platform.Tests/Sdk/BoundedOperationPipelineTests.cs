@@ -366,11 +366,11 @@ public sealed class BoundedOperationPipelineTests
 
         IReadOnlyList<BoundedOperationOutcome> outcomes = BoundedOperationRunner.Run(
             Catalog, batch.Ops, bestEffort: false, deadline: null,
-            static (_, _) => new AppliedOperation(BoundedOperationRunner.MaximumTargets, Targets(BoundedOperationRunner.MaximumTargets)),
+            static (_, _) => new AppliedOperation(BoundedOperationOutcome.MaximumTargets, Targets(BoundedOperationOutcome.MaximumTargets)),
             static (_, _) => ["test/attempted"],
             static (_, _) => throw new InvalidOperationException("An outcome of 100 targets needs no degenerate form."));
 
-        Assert.Equal(100, BoundedOperationRunner.MaximumTargets);
+        Assert.Equal(100, BoundedOperationOutcome.MaximumTargets);
         Assert.Equal(Targets(100), Assert.Single(outcomes).Targets);
     }
 

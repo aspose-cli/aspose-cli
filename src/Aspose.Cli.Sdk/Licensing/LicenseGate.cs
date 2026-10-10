@@ -5,15 +5,21 @@ using Aspose.Cli.Sdk.Errors;
 namespace Aspose.Cli.Sdk.Licensing;
 
 /// <summary>Reads one bounded license snapshot and applies exactly those bytes to a product SDK.</summary>
-public abstract class LicenseGate : ILicenseGate
+public sealed class LicenseGate : ILicenseGate
 {
     private readonly Func<string, string?> _environmentVariable;
+    private readonly Action<Stream> _applyLicense;
     private readonly Lazy<(LicenseState State, string Identity)> _application;
 
-    protected LicenseGate(LicenseResolution resolution, Func<string, string?> environmentVariable)
+    /// <summary>Creates a gate that applies the resolved license once, on first use.</summary>
+    /// <param name="resolution">Where the license comes from.</param>
+    /// <param name="environmentVariable">Reads the environment variable a resolution names.</param>
+    /// <param name="applyLicense">Applies the license snapshot to the product's own SDK.</param>
+    public LicenseGate(LicenseResolution resolution, Func<string, string?> environmentVariable, Action<Stream> applyLicense)
     {
         Resolution = resolution ?? throw new ArgumentNullException(nameof(resolution));
         _environmentVariable = environmentVariable ?? throw new ArgumentNullException(nameof(environmentVariable));
+        _applyLicense = applyLicense ?? throw new ArgumentNullException(nameof(applyLicense));
         _application = new Lazy<(LicenseState, string)>(Apply, LazyThreadSafetyMode.ExecutionAndPublication);
     }
 
@@ -21,9 +27,6 @@ public abstract class LicenseGate : ILicenseGate
     public LicenseResolution Resolution { get; }
     public string Identity => _application.Value.Identity;
     public LicenseState EnsureApplied() => _application.Value.State;
-
-    /// <summary>The product adapter only applies the supplied snapshot to its own SDK.</summary>
-    protected abstract void ApplyLicense(Stream stream);
 
     private (LicenseState, string) Apply()
     {
@@ -37,7 +40,7 @@ public abstract class LicenseGate : ILicenseGate
         {
             byte[] content = ReadContent(source);
             using var stream = new MemoryStream(content, writable: false);
-            ApplyLicense(stream);
+            _applyLicense(stream);
             using IncrementalHash hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
             string path = Resolution.Path ?? string.Empty;
             if (OperatingSystem.IsWindows()) { path = path.ToUpperInvariant(); }

@@ -24,7 +24,7 @@ internal static class CellsRead
         return new WorkbookReadResult
         {
             Source = BuildSource(request.Input, workbook),
-            Scope = request.Scope.ToContractName(),
+            Scope = request.Scope,
             Sheet = sheet,
             Styles = styles,
             // The window's next is left unset: the read command spells the follow-up

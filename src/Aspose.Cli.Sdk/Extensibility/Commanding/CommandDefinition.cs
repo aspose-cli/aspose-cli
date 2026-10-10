@@ -42,7 +42,7 @@ namespace Aspose.Cli.Sdk.Extensibility.Commanding;
 /// <item>Every request declares <c>required string Input</c> (or the paths it reads), so a binding
 /// that forgets it does not compile.</item>
 /// <item>Tests call the handlers directly with a session and a request; there are no test shims
-/// with the shape of an engine port.</item>
+/// standing in for the engine.</item>
 /// </list>
 /// </remarks>
 /// <typeparam name="TRequest">The request <c>bind</c> produces and the handler receives.</typeparam>

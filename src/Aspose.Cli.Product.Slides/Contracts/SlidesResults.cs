@@ -123,8 +123,11 @@ public sealed record SlideInfo
     /// The slide's shape text joined by <c> · </c>, at most 240 characters; only with
     /// <c>--preview</c>, and omitted when the slide has no text.
     /// </summary>
-    [MaxLength(240)]
+    [MaxLength(PreviewTextLength)]
     public string? PreviewText { get; init; }
+
+    /// <summary>The most characters <see cref="PreviewText"/> holds.</summary>
+    public const int PreviewTextLength = 240;
 
     /// <summary>How many top-level shapes the slide holds.</summary>
     [Minimum(0)]

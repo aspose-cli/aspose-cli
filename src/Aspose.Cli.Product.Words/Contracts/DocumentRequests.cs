@@ -1,4 +1,5 @@
 using Aspose.Cli.Sdk.IO;
+using Aspose.Cli.Sdk.Rendering;
 using Aspose.Cli.Sdk.Text;
 
 namespace Aspose.Cli.Product.Words.Contracts;
@@ -48,7 +49,7 @@ public sealed record WordsRenderRequest
     public required ResolvedOutput Output { get; init; }
     public PageRange? Pages { get; init; }
     public bool AllPages { get; init; }
-    public int Dpi { get; init; } = 192;
+    public int Dpi { get; init; } = RenderPixelGuard.DefaultDpi;
     public Secret? Password { get; init; }
 }
 

@@ -6,7 +6,7 @@ using Aspose.Words;
 
 namespace Aspose.Cli.Product.Words.Engine;
 
-/// <summary>Provides stateless result, warning and text helpers shared by Words services.</summary>
+/// <summary>Provides stateless result, warning and text helpers shared by Words engine handlers.</summary>
 internal static class WordsEngineSupport
 {
     internal static IReadOnlyList<Warning>? InputWarnings(LoadedDocument loaded)
@@ -166,7 +166,4 @@ internal static class WordsEngineSupport
 
     internal static OutputInfo BuildOutput(string path, string format, long size) =>
         new() { Path = path, Format = format, SizeBytes = size };
-
-    internal static string Truncate(string value, int length) =>
-        value.Length <= length ? value : value[..length] + "\u2026";
 }

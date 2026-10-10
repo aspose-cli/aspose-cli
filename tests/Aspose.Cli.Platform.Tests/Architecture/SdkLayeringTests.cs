@@ -45,7 +45,7 @@ public sealed class SdkLayeringTests
     /// written from the contract descriptors. Converters for the operation vocabulary belong to
     /// Operations.</item>
     /// <item>Operations: the operation vocabulary, its catalog and its runner.</item>
-    /// <item>Services the products bind: licensing, diagnostics and the font port. They
+    /// <item>Services the products bind: licensing, diagnostics and font checks. They
     /// take product data as values, never a Product* type from Extensibility.</item>
     /// <item>Results: the write pipeline (OutputPipeline, OutputSet) and the envelope parts it fills.</item>
     /// <item>Extensibility: product modules, definitions and the catalog, which compose
@@ -64,7 +64,7 @@ public sealed class SdkLayeringTests
         [$"{Root}.Execution", $"{Root}.Rendering"],
         [$"{Root}.Serialization"],
         [$"{Root}.Operations"],
-        [$"{Root}.Licensing", $"{Root}.Diagnostics", $"{Root}.Ports"],
+        [$"{Root}.Licensing", $"{Root}.Diagnostics"],
         [$"{Root}.Results"],
         [$"{Root}.Extensibility"],
         [$"{Root}.Extensibility.Commanding"],

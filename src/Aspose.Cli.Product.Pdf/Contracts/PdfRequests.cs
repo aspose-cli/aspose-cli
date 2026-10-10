@@ -1,4 +1,5 @@
 using Aspose.Cli.Sdk.IO;
+using Aspose.Cli.Sdk.Rendering;
 using Aspose.Cli.Sdk.Text;
 
 namespace Aspose.Cli.Product.Pdf.Contracts;
@@ -44,7 +45,7 @@ public sealed record PdfRenderRequest
     public required ResolvedOutput Output { get; init; }
     public PageRange? Pages { get; init; }
     public bool AllPages { get; init; }
-    public int Dpi { get; init; } = 192;
+    public int Dpi { get; init; } = RenderPixelGuard.DefaultDpi;
 
     /// <summary>Spacing in points of a coordinate grid drawn on raster output, or null for none.</summary>
     public int? Grid { get; init; }

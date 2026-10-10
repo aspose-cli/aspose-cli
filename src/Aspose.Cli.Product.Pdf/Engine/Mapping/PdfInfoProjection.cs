@@ -12,9 +12,6 @@ namespace Aspose.Cli.Product.Pdf.Engine.Mapping;
 
 internal static class PdfInfoProjection
 {
-    private const int PagePreviewLimit = 20;
-    private const int OutlineLimit = 200;
-
     public static PdfInfoResult Project(LoadedPdf loaded, string path, PdfInfoRequest request)
     {
         Document document = loaded.Document;
@@ -24,20 +21,20 @@ internal static class PdfInfoProjection
         PdfSignatureInfo[] signatures = Signatures(document);
         PdfOutlineItem[]? outline = details.Contains("outline") ? Outline(document) : null;
         var warnings = new List<Warning>();
-        if (includePages && document.Pages.Count > PagePreviewLimit)
+        if (includePages && document.Pages.Count > PdfInfoResult.PagePreviewLimit)
         {
             warnings.Add(EnvelopeParts.ListTruncated(
                 "pages",
-                PagePreviewLimit,
+                PdfInfoResult.PagePreviewLimit,
                 document.Pages.Count,
                 "'pdf.distinctPageSizes' counts the size of every page."));
         }
 
-        if (outline?.Length == OutlineLimit && PdfMutationSupport.CountOutline(document.Outlines) is int total and > OutlineLimit)
+        if (outline?.Length == PdfInfoResult.OutlineLimit && PdfMutationSupport.CountOutline(document.Outlines) is int total and > PdfInfoResult.OutlineLimit)
         {
             warnings.Add(EnvelopeParts.ListTruncated(
                 "outline",
-                OutlineLimit,
+                PdfInfoResult.OutlineLimit,
                 total,
                 "Split at top-level bookmarks with 'aspose-cli pdf split --by-bookmarks' and inspect each part's outline."));
         }
@@ -110,7 +107,7 @@ internal static class PdfInfoProjection
     }
 
     private static PdfPageInfo[] Pages(Document document) =>
-        Enumerable.Range(1, Math.Min(document.Pages.Count, PagePreviewLimit))
+        Enumerable.Range(1, Math.Min(document.Pages.Count, PdfInfoResult.PagePreviewLimit))
             .Select(pageNumber => Page(document.Pages[pageNumber]))
             .ToArray();
 
@@ -191,7 +188,7 @@ internal static class PdfInfoProjection
         int position = 0;
         foreach (OutlineItemCollection item in items)
         {
-            if (results.Count >= OutlineLimit)
+            if (results.Count >= PdfInfoResult.OutlineLimit)
             {
                 return;
             }
@@ -212,7 +209,7 @@ internal static class PdfInfoProjection
     private static PdfFormSummary Form(Document document)
     {
         bool xfa = document.Form.HasXfa;
-        string type = xfa ? "xfa" : document.Form.Count > 0 ? "acro" : "none";
+        string type = xfa ? PdfFormKinds.Xfa : document.Form.Count > 0 ? PdfFormKinds.Acro : PdfFormKinds.None;
         return new PdfFormSummary
         {
             Type = type,

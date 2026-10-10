@@ -53,7 +53,7 @@ internal static class ReadCommand
                 int maxCells = parse.GetValue(maxCellsOption);
                 OptionGuards.EnsureInRange("--max-cells", maxCells, MinMaxCells, MaxMaxCells,
                     "Keep the budget modest; page through large sheets with each window.next command instead.");
-                _ = ReadScopeExtensions.TryParse(parse.GetValue(scopeOption), out ReadScope scope);
+                string scope = parse.GetValue(scopeOption) ?? ReadScopes.Values;
                 (string? sheetName, RangeRef? range) = SheetRangeInput.Resolve(
                     parse.GetValue(sheet), parse.GetValue(rangeOption));
                 RangeRef? scan = parse.GetValue(scanOption) is { } region ? A1.ParseRange(region).Range : null;
@@ -65,7 +65,7 @@ internal static class ReadCommand
                         explicitRange.CellCount,
                         maxCells,
                         "Scan the range in budgeted windows: run "
-                            + NextReadCommand.First(standard.Continuation(), sheetName, explicitRange, scope.ToContractName(), maxCells)
+                            + NextReadCommand.First(standard.Continuation(), sheetName, explicitRange, scope, maxCells)
                             + " and follow each window.next command, or raise --max-cells.");
                 }
 

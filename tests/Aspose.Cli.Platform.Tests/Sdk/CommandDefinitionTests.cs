@@ -5,7 +5,6 @@ using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.Extensibility.Commanding;
 using Aspose.Cli.Sdk.Extensibility.Output;
 using Aspose.Cli.Sdk.IO;
-using Aspose.Cli.Sdk.Ports;
 using Aspose.Cli.Sdk.Rendering;
 using Aspose.Cli.Sdk.Tests;
 using Aspose.Cli.TestKit;
@@ -13,7 +12,7 @@ using Xunit;
 
 namespace Aspose.Cli.Platform.Tests.Sdk;
 
-public sealed class StandardCommandTests : IDisposable
+public sealed class CommandDefinitionTests : IDisposable
 {
     private static readonly InputDocument Report = new("Report to open.", "the report");
     private static readonly EncryptedOutput Encrypted = new("the output report");
@@ -31,7 +30,7 @@ public sealed class StandardCommandTests : IDisposable
     private readonly TestEngine _engine = new();
     private readonly TestCommandRunner _runner;
 
-    public StandardCommandTests()
+    public CommandDefinitionTests()
     {
         File.WriteAllText(_temp.File("report.test"), "report");
         File.WriteAllText(_temp.File("other.test"), "other");

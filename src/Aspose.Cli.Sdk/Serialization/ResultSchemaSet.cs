@@ -177,9 +177,7 @@ public sealed class ResultSchemaSet
         // and declares no members of its own.
         if (members.Any(static member => member.Extension))
         {
-            return members.All(static member => member.Extension)
-                ? schema
-                : throw new InvalidOperationException($"Result record {record.Type.Name} declares members beside its extension data.");
+            return schema;
         }
 
         schema["additionalProperties"] = false;
@@ -190,15 +188,9 @@ public sealed class ResultSchemaSet
         }
 
         schema["properties"] = properties;
-        ResultProperty[] dependent = [.. members.Where(static member => member.Cases.Count > 0)];
-        if (dependent.Length > 1)
+        if (members.FirstOrDefault(static member => member.Cases.Count > 0) is { } dependent)
         {
-            throw new InvalidOperationException($"Result record {record.Type.Name} has more than one member whose type another member decides.");
-        }
-
-        if (dependent.Length == 1)
-        {
-            schema["oneOf"] = Cases(dependent[0]);
+            schema["oneOf"] = Cases(dependent);
         }
 
         return schema;
@@ -224,18 +216,6 @@ public sealed class ResultSchemaSet
         return members.Select(static member => member.Name).Distinct(StringComparer.Ordinal).Count() == members.Length
             ? members
             : throw new InvalidOperationException($"Result record {record.Type.Name} has two members with one wire name.");
-    }
-
-    /// <summary>Checks that each member an <see cref="AlwaysPresentAttribute"/> names is an optional member of the record.</summary>
-    private static void CheckAlwaysPresent(ResultRecord record, ResultProperty[] members, IReadOnlyList<string> present)
-    {
-        foreach (string name in present)
-        {
-            if (!members.Any(member => member.Name == name && !member.Required && !member.Extension))
-            {
-                throw new InvalidOperationException($"[AlwaysPresent] names '{name}', which is not an optional member of {record.Type.Name}.");
-            }
-        }
     }
 
     private JsonObject Property(
@@ -286,10 +266,11 @@ public sealed class ResultSchemaSet
                 value = items;
             }
 
-            ResultRecord held = value is { Kind: ResultValueKind.Record, Record: { } type }
-                ? Resolve(type, out _)
-                : throw new InvalidOperationException($"[AlwaysPresent] on {record.Type.Name}.{member.Name} needs a member that holds a record or an array of records.");
-            CheckAlwaysPresent(held, Members(held), member.AlwaysPresent);
+            if (value.Kind != ResultValueKind.Record)
+            {
+                throw new InvalidOperationException($"[AlwaysPresent] on {record.Type.Name}.{member.Name} needs a member that holds a record or an array of records.");
+            }
+
             target["required"] = new JsonArray([.. member.AlwaysPresent.Select(static name => (JsonNode)name)]);
         }
 

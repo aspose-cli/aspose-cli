@@ -1,6 +1,5 @@
 using Aspose.Cli.Host.Catalog;
 using Aspose.Cli.Host.LocalServices;
-using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Licensing;
@@ -43,7 +42,7 @@ internal sealed partial class AppHost
 
     internal void PrepareStop() => Mutate(() => _mutationState = MutationState.Stopping);
 
-    internal string InstallLicense(Stream input, long length, string? productId) => Save(() =>
+    internal void InstallLicense(Stream input, long length, string? productId) => Save(() =>
     {
         if (length > LicenseInstaller.MaximumBytes) { throw CliErrors.FileTooLarge(length, LicenseInstaller.MaximumBytes); }
         // The file the person chose is staged in the per-user temporary root
@@ -74,7 +73,7 @@ internal sealed partial class AppHost
         _log.Write($"license installed for {string.Join(", ", installed)}");
     });
 
-    internal string RemoveLicense(string? productId) => Save(() =>
+    internal void RemoveLicense(string? productId) => Save(() =>
     {
         string target = productId ?? _sessions.Snapshot?.ProductId ?? _catalog.DefaultProductId();
         _cli.RemoveLicense(target);
@@ -82,23 +81,20 @@ internal sealed partial class AppHost
     });
 
     /// <summary>
-    /// Saves a license change and tells the browser where to continue. The
-    /// App holds no engine of its own, so nothing restarts: the viewer
-    /// service recycles its renderer and the next render applies the license.
+    /// Saves a license change. The App holds no engine of its own, so nothing
+    /// restarts: the viewer service recycles its renderer and the next render
+    /// applies the license.
     /// </summary>
     /// <remarks>
     /// The license child publishes under the SDK's own storage locks, so the
     /// App adds only its mutation gate, then the short session state lock.
     /// </remarks>
-    private string Save(Action saveConfiguration)
-    {
-        return Mutate(() =>
+    private void Save(Action saveConfiguration) =>
+        Mutate(() =>
         {
             saveConfiguration();
             _sessions.Refresh();
-            return UrlForRoute(AppRoutes.Settings);
         });
-    }
 
     private void Mutate(Action action) => Mutate(() => { action(); return true; });
 

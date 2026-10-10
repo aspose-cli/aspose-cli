@@ -12,7 +12,7 @@ internal static class ConvertCommand
     {
         var sheet = new Option<string?>("--sheet")
         {
-            Description = $"Convert only this sheet (supported for {string.Join(", ", CellsFormats.SheetScopedConvertIds)}).",
+            Description = $"Convert only this sheet (supported for {string.Join(", ", CellsFormats.SheetScoped)}).",
         }.WithInput(InputKind.None);
         var encoding = new Option<string?>("--encoding")
         {
@@ -51,12 +51,12 @@ internal static class ConvertCommand
                 string? encodingName = parse.GetValue(encoding);
                 string? cultureName = parse.GetValue(culture);
                 string? sheetName = parse.GetValue(sheet);
-                if (sheetName is not null && !CellsFormats.SheetScopedConvertIds.Contains(format))
+                if (sheetName is not null && !CellsFormats.SheetScoped.Contains(format))
                 {
                     throw CliErrors.OptionInvalid(
                         "--sheet",
                         $"the '{format}' format always converts the whole workbook",
-                        $"Drop --sheet, or use one of: {string.Join(", ", CellsFormats.SheetScopedConvertIds)}.");
+                        $"Drop --sheet, or use one of: {string.Join(", ", CellsFormats.SheetScoped)}.");
                 }
 
                 bool byteOrderMark = parse.GetValue(bom);

@@ -235,7 +235,7 @@ public sealed class CellsOperationsTests : IClassFixture<CellsFixture>
                 Input = result.Output.Path,
                 SheetName = "Data",
                 Range = global::Aspose.Cli.Product.Cells.Contracts.Addressing.A1.ParseRange("B2:B3").Range,
-                Scope = ReadScope.Full,
+                Scope = ReadScopes.Full,
                 MaxCells = 10,
             });
         Assert.False(read.Styles![Assert.IsType<string>(read.Sheet.Cells![0][0].StyleId)].Locked);
@@ -331,7 +331,7 @@ public sealed class CellsOperationsTests : IClassFixture<CellsFixture>
                 Input = result.Output.Path,
                 SheetName = "Data",
                 Range = global::Aspose.Cli.Product.Cells.Contracts.Addressing.A1.ParseRange("B2:B2").Range,
-                Scope = ReadScope.Full,
+                Scope = ReadScopes.Full,
                 MaxCells = 10,
             });
         string styleId = Assert.IsType<string>(read.Sheet.Cells![0][0].StyleId);

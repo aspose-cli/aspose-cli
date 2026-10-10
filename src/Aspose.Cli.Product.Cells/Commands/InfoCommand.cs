@@ -13,7 +13,7 @@ internal static class InfoCommand
 
     public static CommandDefinition<InfoRequest, WorkbookInfoResult> Create()
     {
-        var preview = new PreviewOption("display values of the first --preview-rows rows and up to 20 columns of each sheet, from A1");
+        var preview = new PreviewOption($"display values of the first --preview-rows rows and up to {SheetInfo.PreviewColumns} columns of each sheet, from A1");
         var previewRows = new Option<int>("--preview-rows")
         {
             Description = $"Number of preview rows per sheet (1-{MaxPreviewRows}).",

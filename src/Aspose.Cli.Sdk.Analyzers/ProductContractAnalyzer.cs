@@ -40,13 +40,17 @@ public sealed class ProductContractAnalyzer : DiagnosticAnalyzer
                     "Contracts", "Engine"),
             }.ToImmutableDictionary(StringComparer.Ordinal);
 
-    private static readonly DiagnosticDescriptor ApiIsolation = Rule(
+    private const string Category = "Aspose.Cli.ProductIsolation";
+
+    private static readonly DiagnosticDescriptor ApiIsolation = AnalyzerTypes.Rule(
+        Category,
         "APCLI006",
         "Aspose SDK type crosses a product boundary",
         "Product symbol '{0}' exposes Aspose SDK type '{1}'; keep SDK types "
             + "inside the matching product engine");
 
-    internal static readonly DiagnosticDescriptor DefinitionPurity = Rule(
+    internal static readonly DiagnosticDescriptor DefinitionPurity = AnalyzerTypes.Rule(
+        Category,
         "APCLI007",
         "Product definition performs runtime work",
         "Product module Define() reaches '{0}' through {1}; definitions must "
@@ -54,25 +58,29 @@ public sealed class ProductContractAnalyzer : DiagnosticAnalyzer
             + "environment, time, randomness, processes, networks, threads, "
             + "services, dynamic assemblies, or initialize an Aspose SDK");
 
-    private static readonly DiagnosticDescriptor OptionAlias = Rule(
+    private static readonly DiagnosticDescriptor OptionAlias = AnalyzerTypes.Rule(
+        Category,
         "APCLI008",
         "Product option alias is not allowed",
         "Product option alias '{0}' {1}");
 
-    private static readonly DiagnosticDescriptor LayerDependency = Rule(
+    private static readonly DiagnosticDescriptor LayerDependency = AnalyzerTypes.Rule(
+        Category,
         "APCLI009",
         "Product layer dependency is not allowed",
         "Product layer '{0}' references '{1}' in layer '{2}'; keep the product "
             + "dependency direction Contracts <- Commands and Contracts <- Engine");
 
-    private static readonly DiagnosticDescriptor ImplementationVisibility = Rule(
+    private static readonly DiagnosticDescriptor ImplementationVisibility = AnalyzerTypes.Rule(
+        Category,
         "APCLI010",
         "Product implementation type is publicly visible",
         "Implementation type '{0}' is public in product layer '{1}'; expose "
             + "wire contracts through Contracts and composition through the "
             + "product module only");
 
-    private static readonly DiagnosticDescriptor HostSeam = Rule(
+    private static readonly DiagnosticDescriptor HostSeam = AnalyzerTypes.Rule(
+        Category,
         "APCLI011",
         "Product builds a command outside the host pipeline",
         "Product code references '{0}', the Host seam that builds and binds a command "
@@ -217,7 +225,7 @@ public sealed class ProductContractAnalyzer : DiagnosticAnalyzer
         {
             context.ReportDiagnostic(Diagnostic.Create(
                 HostSeam,
-                SourceLocation(context.Symbol),
+                ContractTypes.SourceLocation(context.Symbol),
                 seam.Name));
         }
     }
@@ -256,7 +264,7 @@ public sealed class ProductContractAnalyzer : DiagnosticAnalyzer
         {
             context.ReportDiagnostic(Diagnostic.Create(
                 ImplementationVisibility,
-                SourceLocation(symbol),
+                ContractTypes.SourceLocation(symbol),
                 symbol.ToDisplayString(),
                 source.Layer));
         }
@@ -265,7 +273,7 @@ public sealed class ProductContractAnalyzer : DiagnosticAnalyzer
         {
             ReportForbiddenLayer(
                 context.ReportDiagnostic,
-                SourceLocation(symbol),
+                ContractTypes.SourceLocation(symbol),
                 source,
                 context.Compilation.Assembly,
                 exposed);
@@ -421,10 +429,6 @@ public sealed class ProductContractAnalyzer : DiagnosticAnalyzer
         return true;
     }
 
-    private static Location SourceLocation(ISymbol symbol) =>
-        symbol.Locations.FirstOrDefault(static location => location.IsInSource)
-        ?? Location.None;
-
     private static void ReportAlias(
         OperationAnalysisContext context,
         IArgumentOperation argument,
@@ -577,17 +581,6 @@ public sealed class ProductContractAnalyzer : DiagnosticAnalyzer
         return result.ToArray();
     }
 
-    private static DiagnosticDescriptor Rule(
-        string id,
-        string title,
-        string message) =>
-        new(
-            id,
-            title,
-            message,
-            "Aspose.Cli.ProductIsolation",
-            DiagnosticSeverity.Error,
-            isEnabledByDefault: true);
 
     private sealed class ProductLayer
     {

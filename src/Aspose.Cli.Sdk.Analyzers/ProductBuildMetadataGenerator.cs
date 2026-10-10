@@ -1,6 +1,6 @@
 using System.Text;
 using Microsoft.CodeAnalysis.Text;
-using CSharpDisplay = Microsoft.CodeAnalysis.CSharp.SymbolDisplay;
+using static Aspose.Cli.Sdk.Analyzers.ContractTypes;
 
 namespace Aspose.Cli.Sdk.Analyzers;
 
@@ -94,9 +94,6 @@ public sealed class ProductBuildMetadataGenerator : IIncrementalGenerator
             out string? value)
             ? value.Trim()
             : string.Empty;
-
-    private static string Literal(string value)
-        => CSharpDisplay.FormatLiteral(value, quote: true);
 
     private readonly struct ProductMetadata(
         string id,

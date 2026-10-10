@@ -4,10 +4,7 @@ namespace Aspose.Cli.Sdk.Errors;
 /// Ranks the existing names closest to a name that was not found, so a caller can correct a
 /// typo or a casing slip in one step. Ranking is deterministic: a match that ignores case and
 /// surrounding white space comes first, then names that contain the request or are a whole
-/// word of it, then names within a small edit distance; ties keep the candidates' order. Field
-/// names rank by their words: a contained name that ends the other first, then one that starts
-/// the other or that the request extends, as "replacement" extends "replace", before one that
-/// merely holds the request inside, as "maxReplacementCount" does.
+/// word of it, then names within a small edit distance; ties keep the candidates' order.
 /// </summary>
 internal static class NameSuggestions
 {
@@ -25,9 +22,8 @@ internal static class NameSuggestions
     /// <param name="requested">The name that was not found.</param>
     /// <param name="candidates">The existing names, in the order ties keep.</param>
     /// <param name="fieldNames">
-    /// Whether the names are compound field names such as <c>fontSize</c>, whose last word says
-    /// what the field is: a contained name that ends the other then ranks first, and a name that
-    /// shares the request's start ranks before one that holds the request inside another word.
+    /// Whether the names are compound field names such as <c>fontSize</c>, which rank by their
+    /// words.
     /// </param>
     public static IReadOnlyList<string> Closest(string requested, IEnumerable<string> candidates, bool fieldNames = false)
     {

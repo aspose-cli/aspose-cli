@@ -26,11 +26,10 @@ internal static class ReadCommand
             (parse, standard) =>
             {
                 int characters = maxChars.Read(parse);
-                string? range = slides.Read(parse);
                 return new PresentationReadRequest
                 {
                     Input = standard.Input,
-                    Slides = range is null ? null : PageRange.Parse(range),
+                    Slides = slides.ReadRange(parse),
                     Scope = parse.GetValue(scope) ?? PresentationReadScopes.Shapes,
                     IncludeNotes = parse.GetValue(notes),
                     MaxCharacters = characters,

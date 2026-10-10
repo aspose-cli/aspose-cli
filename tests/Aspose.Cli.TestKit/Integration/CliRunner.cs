@@ -121,10 +121,9 @@ public static class CliRunner
         ThrowIfNewer(root, shared, newestAssembly);
     }
 
-    // A product's committed ops.schema.json is written from its records and is not a build input.
     private static IEnumerable<string> SourceFiles(string root, string directory) =>
         Directory.EnumerateFiles(directory, "*", SearchOption.AllDirectories)
-            .Where(path => !IsBuildOutput(root, path) && !string.Equals(Path.GetFileName(path), "ops.schema.json", StringComparison.OrdinalIgnoreCase));
+            .Where(path => !IsBuildOutput(root, path));
 
     private static bool IsBuildOutput(string root, string path) =>
         Path.GetRelativePath(root, path).Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)

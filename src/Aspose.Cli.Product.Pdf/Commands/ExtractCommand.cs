@@ -81,7 +81,7 @@ internal static class ExtractCommand
                     throw CliErrors.OptionInvalid(pages.Name, "attachments belong to the document rather than individual pages", $"Omit {pages.Name} when extracting attachments.");
                 }
 
-                PageRange? range = pageText is null ? null : PageRange.Parse(pageText);
+                PageRange? range = pages.ReadRange(parse);
                 ResolvedDirectory directory = standard.DirectoryOutput;
                 return new PdfExtractRequest
                 {

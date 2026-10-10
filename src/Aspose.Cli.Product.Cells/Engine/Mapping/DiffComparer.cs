@@ -35,7 +35,7 @@ internal static class DiffComparer
             if (right.Worksheets[sheet.Name] is null && !renames.ContainsValue(sheet))
             {
                 removed++;
-                sheets.Add(new SheetDiff { Name = sheet.Name, Status = "removed" });
+                sheets.Add(new SheetDiff { Name = sheet.Name, Status = SheetChangeStatuses.Removed });
             }
         }
 
@@ -46,7 +46,7 @@ internal static class DiffComparer
             if (leftSheet is null)
             {
                 added++;
-                sheets.Add(new SheetDiff { Name = rightSheet.Name, Status = "added" });
+                sheets.Add(new SheetDiff { Name = rightSheet.Name, Status = SheetChangeStatuses.Added });
                 continue;
             }
 
@@ -93,12 +93,12 @@ internal static class DiffComparer
             if (renames.ContainsKey(rightSheet))
             {
                 renamed++;
-                sheets.Add(new SheetDiff { Name = rightSheet.Name, Status = "renamed", From = leftSheet.Name, Cells = cells });
+                sheets.Add(new SheetDiff { Name = rightSheet.Name, Status = SheetChangeStatuses.Renamed, From = leftSheet.Name, Cells = cells });
             }
             else if (cellsDiffering != before)
             {
                 modified++;
-                sheets.Add(new SheetDiff { Name = rightSheet.Name, Status = "modified", Cells = cells });
+                sheets.Add(new SheetDiff { Name = rightSheet.Name, Status = SheetChangeStatuses.Modified, Cells = cells });
             }
         }
 

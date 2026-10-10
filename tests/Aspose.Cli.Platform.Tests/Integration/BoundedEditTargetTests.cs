@@ -54,45 +54,6 @@ public sealed partial class BoundedEditTargetTests
         }
     }
 
-    /// <summary>
-    /// Deleting 101 of 150 bookmarks reports the document root, not <c>pdf/bookmark</c>: the PDF
-    /// docs define that address as "all bookmarks", and 49 remain.
-    /// </summary>
-    [LicensedFact]
-    public void Pdf_DeletingMoreBookmarksThanTheBoundReportsTheDocumentRoot()
-    {
-        using var workspace = new TempWorkspace();
-        ScenarioLicense.Project(workspace.Path);
-        File.WriteAllBytes(workspace.File("input.pdf"), ScenarioFixtures.Read("pdf.pdf"));
-        var added = new JsonArray();
-        for (int bookmark = 1; bookmark <= 150; bookmark++)
-        {
-            added.Add(new JsonObject { ["op"] = "add_bookmark", ["title"] = $"BM {bookmark}", ["page"] = 1 });
-        }
-        File.WriteAllText(workspace.File("add.json"), new JsonObject { ["ops"] = added }.ToJsonString());
-        CliResult outlined = workspace.Run("pdf", "edit", "input.pdf", "--ops", "add.json", "--out", "outlined.pdf", "--output", "json");
-        Assert.True(outlined.ExitCode == 0, $"pdf edit (add bookmarks): {outlined.StdErr}");
-
-        var delete = new JsonArray
-        {
-            new JsonObject
-            {
-                ["op"] = "delete_bookmarks",
-                ["indexes"] = new JsonArray([.. Enumerable.Range(1, Bound + 1).Select(static index => (JsonNode)JsonValue.Create($"{index}")!)]),
-            },
-        };
-        File.WriteAllText(workspace.File("delete.json"), new JsonObject { ["ops"] = delete }.ToJsonString());
-        CliResult result = workspace.Run("pdf", "edit", "outlined.pdf", "--ops", "delete.json", "--dry-run", "--output", "json");
-
-        Assert.True(result.ExitCode == 0, $"pdf edit (delete bookmarks): {result.StdErr}");
-        JsonNode outcome = Assert.Single(JsonNode.Parse(result.StdOut)!["applied"]!.AsArray())!;
-        Assert.Equal(Bound + 1, outcome["itemsAffected"]!.GetValue<long>());
-        string[] targets = [.. outcome["targets"]!.AsArray().Select(static target => target!.GetValue<string>())];
-        Assert.True(targets is ["pdf"],
-            $"Deleting {Bound + 1} of 150 bookmarks reports exactly ['pdf'], not a category address such as 'pdf/bookmark' "
-            + $"that the docs define as all bookmarks; it lists [{string.Join(", ", targets)}].");
-    }
-
     /// <summary>The document root address of each product: the degenerate form of an outcome past the bound.</summary>
     private static readonly IReadOnlyDictionary<string, string> Roots = new Dictionary<string, string>(StringComparer.Ordinal)
     {

@@ -203,6 +203,22 @@ internal sealed class ResultContractWriter(Compilation compilation, Action<Locat
             && property.Name != "EqualityContract"
             && IgnoreCondition(property) is not "Always");
 
+    /// <summary>The members a record serializes, with the ones it inherits first.</summary>
+    private static IEnumerable<IPropertySymbol> AllProperties(INamedTypeSymbol type) =>
+        (type.BaseType is { SpecialType: not SpecialType.System_Object } baseType ? AllProperties(baseType) : [])
+            .Concat(Properties(type));
+
+    /// <summary>Whether a member is extension data, which writes members its record does not declare.</summary>
+    private static bool IsExtension(IPropertySymbol property) =>
+        Find(property, Json + "JsonExtensionDataAttribute") is not null;
+
+    /// <summary>Whether a member is a required member of its record's schema.</summary>
+    private static bool IsRequired(IPropertySymbol property) =>
+        property.NullableAnnotation != NullableAnnotation.Annotated
+        && property.Type.OriginalDefinition.SpecialType != SpecialType.System_Nullable_T
+        && IgnoreCondition(property) is null
+        && !IsExtension(property);
+
     /// <summary>The <c>[JsonIgnore]</c> condition of a property, or null when it has none.</summary>
     private static string? IgnoreCondition(IPropertySymbol property) =>
         Find(property, Json + "JsonIgnoreAttribute") is not { } ignore ? null
@@ -241,9 +257,9 @@ internal sealed class ResultContractWriter(Compilation compilation, Action<Locat
         }
 
         code.Append(", Value = ").Append(value);
-        if (Find(property, Json + "JsonExtensionDataAttribute") is not null)
+        if (IsExtension(property))
         {
-            if (ResultScalar(type)?.Kind != "Object" || Properties(owner).Count() != 1)
+            if (ResultScalar(type)?.Kind != "Object" || AllProperties(owner).Count() != 1)
             {
                 Invalid(property, "extension data must be the record's only member, a JsonObject");
             }
@@ -265,7 +281,7 @@ internal sealed class ResultContractWriter(Compilation compilation, Action<Locat
             code.Append(", Order = ").Append(order);
         }
 
-        List<string> levels = Levels(type);
+        List<string> levels = Levels(type, static scalar => ResultScalar(scalar)?.Kind);
         AttributeData[] declared = [.. property.GetAttributes().Where(IsConstraint)];
         List<string> constraints = [.. declared.Select(attribute => ContractTypes.Constraint(
             attribute, property, ContractTypes.Place(attribute, levels, property, Report), Report))];
@@ -298,9 +314,19 @@ internal sealed class ResultContractWriter(Compilation compilation, Action<Locat
 
         if (AlwaysPresent(property) is { } present)
         {
-            if (levels[levels.Count - 1] != "Record" ||levels.Take(levels.Count - 1).Any(static level => level != "Array"))
+            if (levels[levels.Count - 1] != "Record" || levels.Take(levels.Count - 1).Any(static level => level != "Array"))
             {
                 Invalid(property, "[AlwaysPresent] names members of the record the member holds, so the member must hold a record or an array of records");
+            }
+            else if (Scalar(type) is INamedTypeSymbol held)
+            {
+                foreach (string name in AlwaysPresentNames(property))
+                {
+                    if (!AllProperties(held).Any(member => WireName(member) == name && !IsRequired(member) && !IsExtension(member)))
+                    {
+                        Invalid(property, $"[AlwaysPresent] names '{name}', which is not an optional member of {held.Name}");
+                    }
+                }
             }
 
             code.Append(", AlwaysPresent = ").Append(present);
@@ -311,11 +337,17 @@ internal sealed class ResultContractWriter(Compilation compilation, Action<Locat
 
     /// <summary>The wire names an <c>[AlwaysPresent]</c> declares, as a collection expression, or null.</summary>
     private static string? AlwaysPresent(ISymbol symbol) =>
-        Find(symbol, Contracts + "AlwaysPresentAttribute") is { } attribute
-            ? "[" + string.Join(", ", attribute.ConstructorArguments.SelectMany(static argument =>
-                argument.Kind == TypedConstantKind.Array ? argument.Values : ImmutableArray.Create(argument))
-                .Select(static value => Literal(value.Value as string ?? string.Empty))) + "]"
+        Find(symbol, Contracts + "AlwaysPresentAttribute") is not null
+            ? "[" + string.Join(", ", AlwaysPresentNames(symbol).Select(Literal)) + "]"
             : null;
+
+    /// <summary>The wire names an <c>[AlwaysPresent]</c> declares.</summary>
+    private static IEnumerable<string> AlwaysPresentNames(ISymbol symbol) =>
+        Find(symbol, Contracts + "AlwaysPresentAttribute") is { } attribute
+            ? attribute.ConstructorArguments.SelectMany(static argument =>
+                argument.Kind == TypedConstantKind.Array ? argument.Values : ImmutableArray.Create(argument))
+                .Select(static value => value.Value as string ?? string.Empty)
+            : [];
 
     /// <summary>Whether a member without its own summary is described by the record its schema references.</summary>
     private bool DescribedByRecord(ITypeSymbol type) =>
@@ -392,37 +424,13 @@ internal sealed class ResultContractWriter(Compilation compilation, Action<Locat
             _ => ScalarKind(type) is { } kind ? (kind, null) : null,
         };
 
-    /// <summary>The value levels of a member from the outside in, such as Array, String, as constraints are placed on them.</summary>
-    private static List<string> Levels(ITypeSymbol type)
-    {
-        var levels = new List<string>();
-        ITypeSymbol current = type;
-        while (true)
-        {
-            if (current is INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } wrapped)
-            {
-                current = wrapped.TypeArguments[0];
-            }
-            else if (Element(current) is { } element)
-            {
-                levels.Add(element.Kind);
-                current = element.Type;
-            }
-            else
-            {
-                levels.Add(ResultScalar(current)?.Kind ?? "Record");
-                return levels;
-            }
-        }
-    }
-
     /// <summary>
     /// The cases of a member whose type another member decides: the discriminator is a member of
     /// the record with allowed values, and the cases cover each of them exactly once.
     /// </summary>
     private void CheckCases(INamedTypeSymbol owner, IPropertySymbol property, AttributeData[] cases)
     {
-        if (Properties(owner).Count(static candidate => candidate.GetAttributes().Any(static attribute =>
+        if (AllProperties(owner).Count(static candidate => candidate.GetAttributes().Any(static attribute =>
                 attribute.AttributeClass?.ToDisplayString() == Contracts + "OneOfByAttribute")) > 1)
         {
             Invalid(property, "only one member of a record may depend on a discriminator");

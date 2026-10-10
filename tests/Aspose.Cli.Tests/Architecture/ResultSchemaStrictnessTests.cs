@@ -24,12 +24,6 @@ namespace Aspose.Cli.Tests;
 /// </remarks>
 public sealed class ResultSchemaStrictnessTests
 {
-    /// <summary>
-    /// Objects allowed to stay open or undescribed, as <c>&lt;id&gt;#&lt;JSON pointer&gt;</c> with
-    /// the reason. Only tighten: an entry that no longer matches a problem fails the test.
-    /// </summary>
-    private static readonly IReadOnlyDictionary<string, string> Exemptions = new Dictionary<string, string>(StringComparer.Ordinal);
-
     private static readonly string[] SubschemaArrays = ["allOf", "anyOf", "oneOf", "prefixItems"];
     private static readonly string[] Refinements = ["not", "if", "then", "else"];
     private static readonly string[] Subschemas = ["items", "contains", "additionalProperties", "unevaluatedProperties", "unevaluatedItems", "propertyNames"];
@@ -47,10 +41,8 @@ public sealed class ResultSchemaStrictnessTests
             Visit(id, document, document, "#", refined: null, problems);
         }
 
-        string[] stale = [.. Exemptions.Keys.Where(key => !problems.ContainsKey(key))];
-        string[] open = [.. problems.Where(problem => !Exemptions.ContainsKey(problem.Key)).Select(static problem => $"{problem.Key}: {problem.Value}")];
+        string[] open = [.. problems.Select(static problem => $"{problem.Key}: {problem.Value}")];
 
-        Assert.True(stale.Length == 0, "Exemptions that no longer match a problem; delete them: " + string.Join(", ", stale));
         Assert.True(
             open.Length == 0,
             $"{open.Length} result schema problems; close each object (additionalProperties or unevaluatedProperties false) "

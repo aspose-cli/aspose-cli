@@ -8,8 +8,7 @@ namespace Aspose.Cli.Host.Invocation;
 /// <summary>
 /// Hand-wired object graph of the CLI. The graph is small and a one-shot
 /// process gains nothing from a DI container, so wiring stays explicit and
-/// readable. Future hosts (an MCP server, another engine) build their own
-/// composition root against the same core ports.
+/// readable.
 /// </summary>
 internal static class CompositionRoot
 {

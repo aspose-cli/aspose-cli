@@ -11,13 +11,9 @@ internal enum CommandExecutionOwnership { Worker, Service, ParentHandoff }
 /// <param name="McpAllowed">
 /// Whether MCP <c>execute</c> may run this host command. Every product command
 /// is available through MCP; of the host commands, only those that change no
-/// user or service state beyond publishing new outputs are: <c>doctor</c>,
-/// <c>schema</c>, <c>docs</c>, <c>fonts list</c>, <c>fonts check</c>,
-/// <c>license status</c>, <c>skill list</c>, <c>preview status</c>,
-/// <c>app status</c> and <c>review</c>, which publishes a new evidence
-/// directory. <c>capabilities</c> has its own MCP tool.
+/// user or service state beyond publishing new outputs are, as
+/// <see cref="InvocationParser.McpHostCommands"/> lists them. <c>capabilities</c> has its own MCP tool.
 /// </param>
-/// <param name="EnvironmentVariables">Extra environment variables a supervised worker receives.</param>
 /// <param name="OutputBytesLimit">A command-specific output byte limit.</param>
 /// <param name="RefusesEvaluationRequest">
 /// Whether the command refuses <c>--license-mode evaluation</c> because its effect outlives the
@@ -28,7 +24,6 @@ internal sealed record CommandInvocationPolicy(
     string? ProductId = null,
     CommandExecutionOwnership Execution = CommandExecutionOwnership.Worker,
     bool McpAllowed = false,
-    IReadOnlyList<string>? EnvironmentVariables = null,
     long? OutputBytesLimit = null,
     bool RefusesEvaluationRequest = false);
 

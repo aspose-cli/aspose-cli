@@ -17,12 +17,11 @@ internal static class SearchCommand
             (parse, standard) =>
             {
                 SearchQuery query = search.Read(parse);
-                string? range = pages.Read(parse);
                 return new PdfSearchRequest
                 {
                     Input = standard.Input,
                     Query = query,
-                    Pages = range is null ? null : PageRange.Parse(range),
+                    Pages = pages.ReadRange(parse),
                     Password = standard.InputPassword,
                 };
             },

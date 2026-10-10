@@ -121,15 +121,6 @@ internal sealed class AppRequestHandler
             case "/api/status":
                 await WriteJson(response, HttpStatusCode.OK, _host.Status()).ConfigureAwait(false);
                 break;
-            case "/api/health":
-                await WriteJson(
-                    response,
-                    HttpStatusCode.OK,
-                    new AppHealthResult(
-                        true,
-                        Environment.ProcessId))
-                    .ConfigureAwait(false);
-                break;
             default:
                 await WriteError(response, HttpStatusCode.NotFound, "NOT_FOUND", "That local App page does not exist.").ConfigureAwait(false);
                 break;
@@ -156,12 +147,12 @@ internal sealed class AppRequestHandler
                     request.InputStream, request.ContentLength64, cancellationToken).ConfigureAwait(false);
                 break;
             case ("POST", "/api/license"):
-                string installed = _host.InstallLicense(request.InputStream, request.ContentLength64,
+                _host.InstallLicense(request.InputStream, request.ContentLength64,
                     NormalizeProduct(request.Headers["X-Product"]));
-                return (HttpStatusCode.OK, new AppLicenseSavedResult(true, installed), false);
+                break;
             case ("DELETE", "/api/license"):
-                string removed = _host.RemoveLicense(NormalizeProduct(request.Headers["X-Product"]));
-                return (HttpStatusCode.OK, new AppLicenseSavedResult(true, removed), false);
+                _host.RemoveLicense(NormalizeProduct(request.Headers["X-Product"]));
+                break;
             case ("POST", "/api/preferences"):
                 AppApiResult preferences = _host.UpdatePreferences(await ReadJson<AppPreferenceRequest>(request).ConfigureAwait(false));
                 return (HttpStatusCode.OK, preferences, false);

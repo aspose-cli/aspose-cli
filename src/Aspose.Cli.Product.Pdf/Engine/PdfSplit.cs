@@ -73,7 +73,7 @@ internal static class PdfSplit
             Outputs = targets.Select((item, index) => new PdfSplitOutput
             {
                 Index = item.Part.Index,
-                Pages = PageRangeText(item.Part.Pages),
+                Pages = Aspose.Cli.Sdk.Addressing.PageRange.Describe(item.Part.Pages) ?? string.Empty,
                 Bookmark = item.Part.Bookmark,
                 Output = BuildOutput(item.Path, "pdf", sizes[index]),
             }).ToArray(),

@@ -8,8 +8,6 @@ namespace Aspose.Cli.Host.App;
     DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
 [JsonSerializable(typeof(AppStatusView))]
 [JsonSerializable(typeof(AppApiResult))]
-[JsonSerializable(typeof(AppHealthResult))]
-[JsonSerializable(typeof(AppLicenseSavedResult))]
 [JsonSerializable(typeof(AppPreferenceRequest))]
 [JsonSerializable(typeof(AppIdRequest))]
 [JsonSerializable(typeof(AppDocumentViewRequest))]

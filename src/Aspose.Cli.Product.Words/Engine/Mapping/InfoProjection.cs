@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Results;
+using Aspose.Cli.Sdk.Text;
 using Aspose.Words;
 using Aspose.Words.Drawing;
 using Aspose.Words.Fields;
@@ -333,7 +334,7 @@ internal static class InfoProjection
     private static RevisionData Entry(Revision revision, int number, string? text, DocumentBlockIndex index)
     {
         bool style = revision.RevisionType == RevisionType.StyleDefinitionChange;
-        text = text is null ? null : WordsEngineSupport.Truncate(WordsText.Clean(text), RevisionTextLimit);
+        text = text is null ? null : TextSearch.Truncate(WordsText.Clean(text), RevisionTextLimit);
         return new RevisionData
         {
             Revision = number,

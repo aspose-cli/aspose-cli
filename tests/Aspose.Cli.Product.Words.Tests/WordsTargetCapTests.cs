@@ -4,7 +4,7 @@ using Xunit;
 namespace Aspose.Cli.Product.Words.Tests;
 
 /// <summary>
-/// An outcome lists at most <see cref="BoundedOperationRunner.MaximumTargets"/> targets, the
+/// An outcome lists at most <see cref="BoundedOperationOutcome.MaximumTargets"/> targets, the
 /// headers and footers an operation changed counted with its blocks; past the cap it lists the
 /// Words degenerate form, which itself fits the cap however many headers and footers changed, so
 /// a large edit never ends in an internal error.
@@ -32,7 +32,7 @@ public sealed class WordsTargetCapTests
 
         IReadOnlyList<string> targets = Run(BlockRange, changed);
 
-        Assert.InRange(targets.Count, 1, BoundedOperationRunner.MaximumTargets);
+        Assert.InRange(targets.Count, 1, BoundedOperationOutcome.MaximumTargets);
         Assert.StartsWith("blocks/1-60", targets[0], StringComparison.Ordinal);
     }
 
@@ -43,7 +43,7 @@ public sealed class WordsTargetCapTests
 
         IReadOnlyList<string> degenerate = WordsAnchorResolver.DegenerateTargets(BlockRange, changed);
 
-        Assert.InRange(degenerate.Count, 1, BoundedOperationRunner.MaximumTargets);
+        Assert.InRange(degenerate.Count, 1, BoundedOperationOutcome.MaximumTargets);
     }
 
     [Fact]
@@ -53,7 +53,7 @@ public sealed class WordsTargetCapTests
 
         IReadOnlyList<string> targets = Run(BlockRange, changed);
 
-        Assert.InRange(targets.Count, 1, BoundedOperationRunner.MaximumTargets);
+        Assert.InRange(targets.Count, 1, BoundedOperationOutcome.MaximumTargets);
         Assert.True(targets is ["document"] || targets[0] == "blocks/1-60",
             $"The degenerate form is the whole document or the block range first: {string.Join(", ", targets)}");
     }

@@ -57,7 +57,7 @@ internal static class SearchMatcher
                     // date hit is "2023-05-31" on every machine, deterministic
                     // and agreeing with read/convert, never using the
                     // zh month name the matching already normalized past).
-                    Value = Truncate(rawValue ?? display),
+                    Value = TextSearch.Truncate(rawValue ?? display, MaxValueLength),
                     Formula = formula,
                 });
                 if (!kept)
@@ -69,7 +69,4 @@ internal static class SearchMatcher
 
         return hits;
     }
-
-    private static string Truncate(string value) =>
-        value.Length <= MaxValueLength ? value : value[..MaxValueLength] + "…";
 }

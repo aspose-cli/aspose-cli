@@ -53,30 +53,23 @@ internal sealed class SlidesViewAdapter : IProductViewAdapter<SlidesSession>
             Findings = analysis.Findings,
             Coverage =
             [
-                Metric("slides", info.Presentation.SlideCount, "slides"),
-                Metric("inspectedSlides", inspected, "slides"),
-                Metric("blankSlides", analysis.BlankSlides, "slides"),
-                Metric("outsideShapes", analysis.OutsideShapes, "shapes"),
-                Metric("smallTextShapes", analysis.SmallTextShapes, "shapes"),
-                Metric("duplicateSlides", analysis.DuplicateSlides, "slides"),
-                Metric("severeOverlaps", analysis.SevereOverlaps, "pairs"),
-                Metric("coveredCharts", analysis.CoveredCharts, "charts"),
-                Metric("highDensitySlides", analysis.HighDensitySlides, "slides"),
-                Metric("lowDensitySlides", analysis.LowDensitySlides, "slides"),
-                Metric("textOverlaps", analysis.TextOverlaps, "shapes"),
-                Metric("textOutsideSlide", analysis.TextOutsideSlide, "shapes"),
-                Metric("textOverflows", analysis.TextOverflows, "shapes"),
-                Metric("emptyPlaceholders", analysis.EmptyPlaceholders, "placeholders"),
-                Metric("lowContrastTexts", analysis.LowContrastTexts, "shapes"),
-                Metric("excludedEvaluationWatermarks", analysis.ExcludedEvaluationWatermarks, "shapes"),
+                ReviewCoverageMetric.Of("slides", info.Presentation.SlideCount, "slides"),
+                ReviewCoverageMetric.Of("inspectedSlides", inspected, "slides"),
+                ReviewCoverageMetric.Of("blankSlides", analysis.BlankSlides, "slides"),
+                ReviewCoverageMetric.Of("outsideShapes", analysis.OutsideShapes, "shapes"),
+                ReviewCoverageMetric.Of("smallTextShapes", analysis.SmallTextShapes, "shapes"),
+                ReviewCoverageMetric.Of("duplicateSlides", analysis.DuplicateSlides, "slides"),
+                ReviewCoverageMetric.Of("severeOverlaps", analysis.SevereOverlaps, "pairs"),
+                ReviewCoverageMetric.Of("coveredCharts", analysis.CoveredCharts, "charts"),
+                ReviewCoverageMetric.Of("highDensitySlides", analysis.HighDensitySlides, "slides"),
+                ReviewCoverageMetric.Of("lowDensitySlides", analysis.LowDensitySlides, "slides"),
+                ReviewCoverageMetric.Of("textOverlaps", analysis.TextOverlaps, "shapes"),
+                ReviewCoverageMetric.Of("textOutsideSlide", analysis.TextOutsideSlide, "shapes"),
+                ReviewCoverageMetric.Of("textOverflows", analysis.TextOverflows, "shapes"),
+                ReviewCoverageMetric.Of("emptyPlaceholders", analysis.EmptyPlaceholders, "placeholders"),
+                ReviewCoverageMetric.Of("lowContrastTexts", analysis.LowContrastTexts, "shapes"),
+                ReviewCoverageMetric.Of("excludedEvaluationWatermarks", analysis.ExcludedEvaluationWatermarks, "shapes"),
             ],
         };
     }
-
-    private static ReviewCoverageMetric Metric(string name, long value, string unit) => new()
-    {
-        Name = name,
-        Value = value,
-        Unit = unit,
-    };
 }

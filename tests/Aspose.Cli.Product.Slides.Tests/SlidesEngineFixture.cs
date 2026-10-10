@@ -14,8 +14,7 @@ namespace Aspose.Cli.Product.Slides.Tests;
 /// </summary>
 public sealed class SlidesEngineFixture : IDisposable
 {
-    public ILicenseGate Gate { get; } = TestLicense.Apply(
-        static (resolution, environment) => new SlidesLicenseGate(resolution, environment));
+    public ILicenseGate Gate { get; } = TestLicense.Apply(SlidesActivation.ApplyLicense);
     /// <summary>A fresh session of one invocation, as the product activation creates it.</summary>
     internal SlidesSession Session =>
         ProductTestBudgets.StartEngine<SlidesModule, SlidesSession>(

@@ -1,7 +1,6 @@
 namespace Aspose.Cli.Sdk.Extensibility;
 
 using System.CommandLine;
-using System.Reflection;
 using Aspose.Cli.Sdk.Diagnostics;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Operations;
@@ -67,17 +66,7 @@ public sealed class ProductDefinition
     /// </summary>
     public IReadOnlyList<ProductOutputDefinition> Outputs => _outputs.Value;
 
-    /// <summary>
-    /// The assembly of the module that defined this product, which owns its failures; known once
-    /// the product catalog has prepared the definition.
-    /// </summary>
-    /// <exception cref="InvalidOperationException">The definition did not come from a catalog.</exception>
-    public Assembly ModuleAssembly =>
-        _moduleAssembly ?? throw new InvalidOperationException(
-            $"Product '{Manifest.Id}' was not prepared by a product catalog.");
-
     private readonly Lazy<IReadOnlyList<ProductOutputDefinition>> _outputs;
-    private Assembly? _moduleAssembly;
 
     /// <summary>Immutable error and warning descriptors owned by this product.</summary>
     public IReadOnlyList<DiagnosticDescriptor> Diagnostics { get; }
@@ -92,19 +81,6 @@ public sealed class ProductDefinition
                 $"Product '{Manifest.Id}' returned no command contribution.");
     }
 
-    /// <summary>Records the module that defined this product; a definition belongs to one module.</summary>
-    internal void AttachModule(IProductModule module)
-    {
-        Assembly assembly = module.GetType().Assembly;
-        if (_moduleAssembly is not null && _moduleAssembly != assembly)
-        {
-            throw new InvalidOperationException(
-                $"Product '{Manifest.Id}' is defined by two module assemblies.");
-        }
-
-        _moduleAssembly = assembly;
-    }
-
     internal ProductBinding Activate(
         ProductActivationContext context)
     {
@@ -115,8 +91,7 @@ public sealed class ProductDefinition
         if (!string.Equals(
                 binding.ProductId,
                 Manifest.Id,
-                StringComparison.Ordinal)
-            || binding.SessionType != SessionType)
+                StringComparison.Ordinal))
         {
             throw new InvalidOperationException(
                 $"Product '{Manifest.Id}' activated an incompatible binding.");
@@ -449,7 +424,6 @@ public sealed class ProductDefinitionBuilder<TSession>
         {
             Extensions = ReadOnly(format.Extensions),
             Aliases = ReadOnly(format.Aliases),
-            Operations = ReadOnly(format.Operations),
             Recognition = format.Recognition?.Snapshot(),
         };
 

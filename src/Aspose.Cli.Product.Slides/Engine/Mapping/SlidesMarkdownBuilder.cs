@@ -155,8 +155,8 @@ internal static partial class SlidesMarkdownBuilder
 
                 current.Image ??= new MarkdownImage(
                     image.Groups["path"].Value,
-                    EmptyToNull(image.Groups["alt"].Value),
-                    EmptyToNull(image.Groups["title"].Value));
+                    SlidesEngineSupport.EmptyToNull(image.Groups["alt"].Value),
+                    SlidesEngineSupport.EmptyToNull(image.Groups["title"].Value));
             }
             else if (trimmed.StartsWith('>'))
             {
@@ -326,8 +326,6 @@ internal static partial class SlidesMarkdownBuilder
 
         return path;
     }
-
-    private static string? EmptyToNull(string value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
     [GeneratedRegex(@"^(?<marks>#{1,6})\s+(?<text>.+?)\s*#*$", RegexOptions.CultureInvariant)]
     private static partial Regex HeadingPattern();

@@ -1,6 +1,5 @@
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Licensing;
-using Aspose.Cli.Sdk.Ports;
 using Aspose.Cli.Sdk.Rendering;
 using Aspose.Cli.Sdk.Results;
 using Aspose.Pdf;
@@ -8,7 +7,7 @@ using Aspose.Pdf.Text;
 
 namespace Aspose.Cli.Product.Pdf.Engine;
 
-/// <summary>Aspose.PDF font diagnostics behind the product-neutral font port.</summary>
+/// <summary>Aspose.PDF font diagnostics behind the product-neutral <see cref="IFontEnvironment"/>.</summary>
 internal sealed class PdfFontEnvironment : IFontEnvironment
 {
     private readonly ILicenseState _license;

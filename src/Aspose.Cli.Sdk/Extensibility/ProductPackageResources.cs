@@ -45,7 +45,10 @@ public sealed class ProductPackageResources
     /// <summary>Stable product id that owns every indexed resource.</summary>
     public string ProductId { get; }
 
-    /// <summary>Assembly containing the declared embedded resources.</summary>
+    /// <summary>
+    /// The assembly of the module that defined the product: it contains the declared embedded
+    /// resources and owns the product's failures.
+    /// </summary>
     public Assembly ResourceAssembly { get; }
 
     /// <summary>Embedded resource names captured by the catalog's single scan.</summary>

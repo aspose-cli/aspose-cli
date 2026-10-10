@@ -80,6 +80,17 @@ public sealed class TextSearch
     /// <exception cref="CliException"><c>OPERATION_TIMEOUT</c> when the expression exceeds its budget.</exception>
     public IReadOnlyList<(int Start, int Length)> Find(string text) => Matches(text).ToArray();
 
+    /// <summary>
+    /// Returns <paramref name="text"/> unchanged when it has at most <paramref name="length"/>
+    /// characters, or its first <paramref name="length"/> characters followed by an ellipsis.
+    /// </summary>
+    public static string Truncate(string text, int length)
+    {
+        ArgumentNullException.ThrowIfNull(text);
+        ArgumentOutOfRangeException.ThrowIfNegative(length);
+        return text.Length <= length ? text : text[..length] + "\u2026";
+    }
+
     /// <summary>Builds a bounded context excerpt around one match.</summary>
     public static string Preview(
         string text,

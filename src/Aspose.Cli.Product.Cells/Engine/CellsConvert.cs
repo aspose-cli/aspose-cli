@@ -1,6 +1,5 @@
 using Aspose.Cells;
 using Aspose.Cli.Product.Cells.Engine.Mapping;
-using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Results;
 using static Aspose.Cli.Product.Cells.Engine.CellsEngineSupport;
@@ -54,11 +53,8 @@ internal static class CellsConvert
             }
             else
             {
-                // Command-layer validation prevents this; guard against future drift.
-                throw CliErrors.OptionInvalid(
-                    "--sheet",
-                    $"the '{request.Output.Format.Id}' format always converts the whole workbook",
-                    $"Drop --sheet, or convert to {string.Join(", ", CellsFormats.SheetScopedConvertIds)} for a single-sheet export.");
+                throw new InvalidOperationException(
+                    $"--sheet reached the engine for '{request.Output.Format.Id}', which ConvertCommand refuses.");
             }
         }
 
@@ -99,7 +95,7 @@ internal static class CellsConvert
             License = EnvelopeParts.License(licenseState),
             // Only a text export without --sheet writes one sheet chosen by default; the other
             // formats write every sheet.
-            Warnings = CombineWarnings([loaded.Resources.CoverageWarning, loaded.CalculatedOnOpen,
+            Warnings = EnvelopeParts.CombineWarnings([loaded.Resources.CoverageWarning, loaded.CalculatedOnOpen,
                 loaded.SkippedSheetWarning(request.SheetName is null && savePlan.WritesActiveSheetOnly), sheetsDropped, dataTruncated, formulasBroken, savePlan.EncryptionWarning, chartsSplit,
                 .. textLayout]),
         };

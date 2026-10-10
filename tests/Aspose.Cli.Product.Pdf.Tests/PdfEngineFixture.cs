@@ -18,8 +18,7 @@ namespace Aspose.Cli.Product.Pdf.Tests;
 /// </summary>
 public sealed class PdfEngineFixture : IDisposable
 {
-    public ILicenseGate Gate { get; } = TestLicense.Apply(
-        static (resolution, environment) => new PdfLicenseGate(resolution, environment));
+    public ILicenseGate Gate { get; } = TestLicense.Apply(PdfActivation.ApplyLicense);
 
     /// <summary>A new session, as one invocation's activation creates it.</summary>
     internal PdfSession Session =>

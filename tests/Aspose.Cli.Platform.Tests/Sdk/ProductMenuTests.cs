@@ -9,7 +9,6 @@ using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.Extensibility.Commanding;
 using Aspose.Cli.Sdk.Extensibility.Output;
 using Aspose.Cli.Sdk.IO;
-using Aspose.Cli.Sdk.Ports;
 using Aspose.Cli.Sdk.Rendering;
 using Aspose.Cli.Sdk.Serialization;
 using Aspose.Cli.Sdk.Tests;
@@ -247,12 +246,11 @@ public sealed class ProductMenuTests : IDisposable
             .View(new TestProductViewAdapter<StringBuilder>())
             .Activator(static _ => throw new InvalidOperationException("Not activated."))
             .Build();
-        Assert.Throws<InvalidOperationException>(() => definition.ModuleAssembly);
 
         ProductCatalog catalog = ProductCatalog.Build([new StaticModule(definition)]);
         CliException? error = EngineFailureTranslator.Create(catalog).Translate(Caught(static () => Assert.Fail("engine choked")));
 
-        Assert.Equal(typeof(ProductMenuTests).Assembly, Assert.Single(catalog.Products).ModuleAssembly);
+        Assert.Equal(typeof(ProductMenuTests).Assembly, Assert.Single(catalog.Resources.Products).ResourceAssembly);
         Assert.StartsWith("Menu failed inside its document engine", error?.Message, StringComparison.Ordinal);
     }
 

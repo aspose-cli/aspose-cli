@@ -83,7 +83,7 @@ internal sealed class CellsEditVerifier(CellsWorkbookLoader loader, ResourceBudg
     {
         foreach (SheetDiff sheet in diff.Sheets ?? [])
         {
-            if (sheet.Status != "modified")
+            if (sheet.Status != SheetChangeStatuses.Modified)
             {
                 other.Add(new VerificationOtherChange { Sheet = sheet.Name, Status = sheet.Status });
             }

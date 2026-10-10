@@ -1,7 +1,4 @@
-using System.Reflection;
-using System.Text.Json;
 using System.Text.Json.Nodes;
-using System.Text.RegularExpressions;
 using Aspose.Cli.Sdk.Extensibility;
 using Xunit;
 
@@ -95,61 +92,6 @@ public sealed class CellsModuleTests
             CellsOpsSample.Batch.Ops
                 .Select(CellsOp.Catalog.NameOf)
                 .Order(StringComparer.Ordinal));
-
-    [Fact]
-    public void ManagedSkiaSharp_MatchesTheLinuxNativePin()
-    {
-        Version managed = ThreePartVersion(SkiaSharpInformationalVersion());
-        Version pinned = ThreePartVersion(LinuxNativePin());
-
-        Assert.True(
-            managed == pinned,
-            $"Managed SkiaSharp is {managed} but SkiaSharp.NativeAssets.Linux is pinned at {pinned} in " +
-            "the product catalog. Bump the Cells supplemental package version in " +
-            "eng/products.json, or the Linux render native goes out of step.");
-    }
-
-    private static string SkiaSharpInformationalVersion()
-    {
-        _ = typeof(Aspose.Cells.Workbook);
-        Assembly skiaSharp = Assembly.Load("SkiaSharp");
-        return skiaSharp.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
-            ?? skiaSharp.GetName().Version?.ToString()
-            ?? throw new InvalidOperationException("SkiaSharp exposes no version.");
-    }
-
-    private static string LinuxNativePin()
-    {
-        using JsonDocument catalog = JsonDocument.Parse(
-            File.ReadAllText(Path.Combine(RepositoryPaths.Root, "eng", "products.json")));
-        JsonElement cells = catalog.RootElement
-            .GetProperty("products")
-            .EnumerateArray()
-            .Single(static product =>
-                product.GetProperty("id").GetString() == "cells");
-        if (cells.GetProperty("supplementalPackages").TryGetProperty(
-            "SkiaSharp.NativeAssets.Linux",
-            out JsonElement version))
-        {
-            return version.GetString()!;
-        }
-        throw new InvalidOperationException(
-            "SkiaSharp.NativeAssets.Linux pin not found in eng/products.json.");
-    }
-
-    private static Version ThreePartVersion(string raw)
-    {
-        Match match = Regex.Match(raw, @"^(\d+)\.(\d+)\.(\d+)");
-        if (!match.Success)
-        {
-            throw new FormatException($"Unrecognized version string '{raw}'.");
-        }
-
-        return new Version(
-            int.Parse(match.Groups[1].Value),
-            int.Parse(match.Groups[2].Value),
-            int.Parse(match.Groups[3].Value));
-    }
 
     private static CellsOpsBatch ParseOps(string json) =>
         CellsOp.Catalog.Parse<CellsOpsBatch>(json, Aspose.Cli.Generated.ProductJsonContext.Definition);

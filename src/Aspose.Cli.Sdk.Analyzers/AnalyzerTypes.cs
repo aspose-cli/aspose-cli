@@ -2,6 +2,20 @@ namespace Aspose.Cli.Sdk.Analyzers;
 
 internal static class AnalyzerTypes
 {
+    /// <summary>An error-severity rule, enabled by default.</summary>
+    internal static DiagnosticDescriptor Rule(
+        string category,
+        string id,
+        string title,
+        string message) =>
+        new(
+            id,
+            title,
+            message,
+            category,
+            DiagnosticSeverity.Error,
+            isEnabledByDefault: true);
+
     internal static IEnumerable<INamedTypeSymbol> Declared(
         Compilation compilation) =>
         compilation.GetSymbolsWithName(

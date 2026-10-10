@@ -83,17 +83,17 @@ internal sealed class PdfViewAdapter : IProductViewAdapter<PdfSession>
             Findings = findings,
             Coverage =
             [
-                Metric("pages", info.Pdf.PageCount, "pages"),
-                Metric("inspectedPages", inspected, "pages"),
-                Metric("emptyTextPages", text.EmptyPages, "pages"),
-                Metric("scannedPages", scannedPages.Count, "pages"),
-                Metric("lowUtilizationPages", text.LowUtilizationPages, "pages"),
-                Metric("outsideTextFragments", layout.Pages.Sum(static page => page.OutsideTextFragments), "fragments"),
-                Metric("coveredTextFragments", layout.Pages.Sum(static page => page.CoveredTextFragments), "fragments"),
-                Metric("unusualPageSizes", unusualPages, "pages"),
-                Metric("unembeddedFonts", unembeddedFonts, "fonts"),
-                Metric("formFields", forms.Fields, "fields"),
-                Metric("formFieldsWithoutPage", forms.FieldsWithoutPage, "fields"),
+                ReviewCoverageMetric.Of("pages", info.Pdf.PageCount, "pages"),
+                ReviewCoverageMetric.Of("inspectedPages", inspected, "pages"),
+                ReviewCoverageMetric.Of("emptyTextPages", text.EmptyPages, "pages"),
+                ReviewCoverageMetric.Of("scannedPages", scannedPages.Count, "pages"),
+                ReviewCoverageMetric.Of("lowUtilizationPages", text.LowUtilizationPages, "pages"),
+                ReviewCoverageMetric.Of("outsideTextFragments", layout.Pages.Sum(static page => page.OutsideTextFragments), "fragments"),
+                ReviewCoverageMetric.Of("coveredTextFragments", layout.Pages.Sum(static page => page.CoveredTextFragments), "fragments"),
+                ReviewCoverageMetric.Of("unusualPageSizes", unusualPages, "pages"),
+                ReviewCoverageMetric.Of("unembeddedFonts", unembeddedFonts, "fonts"),
+                ReviewCoverageMetric.Of("formFields", forms.Fields, "fields"),
+                ReviewCoverageMetric.Of("formFieldsWithoutPage", forms.FieldsWithoutPage, "fields"),
             ],
         };
     }
@@ -346,13 +346,6 @@ internal sealed class PdfViewAdapter : IProductViewAdapter<PdfSession>
             or "Times-Roman" or "Times-Bold" or "Times-Italic" or "Times-BoldItalic"
             or "Symbol" or "ZapfDingbats";
     }
-
-    private static ReviewCoverageMetric Metric(string name, long value, string unit) => new()
-    {
-        Name = name,
-        Value = value,
-        Unit = unit,
-    };
 
     private sealed record TextAnalysis(
         int EmptyPages,

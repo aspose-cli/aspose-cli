@@ -4,7 +4,7 @@ using Xunit;
 namespace Aspose.Cli.Product.Words.Tests;
 
 /// <summary>Every format the product declares is one the engine can load or save.</summary>
-public sealed class WordsFormatMapperTests
+public sealed class WordsEngineFormatsTests
 {
     [Fact]
     public void EveryDeclaredReadFormat_HasAnEngineLoadFormat()
@@ -12,7 +12,7 @@ public sealed class WordsFormatMapperTests
         string[] missing = WordsFormats.Definitions
             .Where(static format => format.Uses.HasFlag(FormatUse.Input))
             .Select(static format => format.Id)
-            .Where(static id => !WordsFormatMapper.Loads(id))
+            .Where(static id => Engine(id)?.Load is null)
             .ToArray();
 
         Assert.True(missing.Length == 0, $"Declared read formats without an engine load format: {string.Join(", ", missing)}");
@@ -24,9 +24,12 @@ public sealed class WordsFormatMapperTests
         string[] missing = WordsFormats.Definitions
             .Where(static format => format.Uses.HasFlag(FormatUse.Convert) || format.Uses.HasFlag(FormatUse.Render))
             .Select(static format => format.Id)
-            .Where(static id => !WordsFormatMapper.Saves(id))
+            .Where(static id => Engine(id)?.Save is null)
             .ToArray();
 
         Assert.True(missing.Length == 0, $"Declared write formats without an engine save format: {string.Join(", ", missing)}");
     }
+
+    private static WordsEngineFormat? Engine(string id) =>
+        WordsEngineFormats.All.SingleOrDefault(entry => string.Equals(entry.Id, id, StringComparison.Ordinal));
 }

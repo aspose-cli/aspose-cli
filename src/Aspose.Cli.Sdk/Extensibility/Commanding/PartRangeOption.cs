@@ -1,4 +1,5 @@
 using System.CommandLine;
+using Aspose.Cli.Sdk.Addressing;
 
 namespace Aspose.Cli.Sdk.Extensibility.Commanding;
 
@@ -41,4 +42,9 @@ public sealed class PartRangeOption
         ArgumentNullException.ThrowIfNull(parse);
         return parse.GetValue(_range);
     }
+
+    /// <summary>The parsed range, or null when the option is omitted.</summary>
+    /// <exception cref="Errors.CliException">The range is not valid range syntax.</exception>
+    public PageRange? ReadRange(ParseResult parse) =>
+        Read(parse) is { } text ? PageRange.Parse(text) : null;
 }

@@ -8,9 +8,7 @@
       "engine": "Aspose.Cells",
       "sdkPackageId": "Aspose.Cells",
       "sdkVersion": "26.9.0",
-      "supplementalPackages": {
-        "SkiaSharp.NativeAssets.Linux": "3.119.0"
-      }
+      "supplementalPackages": {}
     },
     {
       "id": "pdf",
@@ -38,9 +36,7 @@
       "engine": "Aspose.Words",
       "sdkPackageId": "Aspose.Words",
       "sdkVersion": "26.9.0",
-      "supplementalPackages": {
-        "SkiaSharp.NativeAssets.Linux": "3.119.0"
-      }
+      "supplementalPackages": {}
     }
   ]
 }

@@ -39,18 +39,22 @@ public static class CellsFormats
 
     /// <summary>Workbook formats whose edited output can be reopened and verified.</summary>
     internal static IReadOnlyList<FormatDescriptor> Editable { get; } =
-        [.. Definitions.Where(static format => format.Id is "xlsx" or "xltx" or "xlsm" or "xltm" or "xlsb" or "xls" or "ods" or "csv" or "tsv" or "html" or "mhtml")];
+        [.. Definitions.Where(static format => format.Uses.HasFlag(FormatUse.Input | FormatUse.Convert))];
 
     /// <summary>The formats a new workbook can be created in.</summary>
     internal static IReadOnlyList<FormatDescriptor> Convertible { get; } =
         [.. Definitions.Where(static format => format.Uses.HasFlag(FormatUse.Convert)).OrderBy(static format => format.ConvertOrder)];
 
     /// <summary>
-    /// Convert formats that can be limited to a single sheet with
-    /// <c>--sheet</c>; every other format always converts the whole workbook.
-    /// csv, tsv and md are single-sheet formats by nature — they export the
-    /// active sheet — so for them <c>--sheet</c> is the only way to reach any
-    /// other one.
+    /// Convert formats that hold one worksheet by nature: they export the active sheet, so for
+    /// them <c>--sheet</c> is the only way to reach any other one.
     /// </summary>
-    public static IReadOnlyList<string> SheetScopedConvertIds { get; } = ["csv", "tsv", "md", "pdf"];
+    public static IReadOnlyList<string> ActiveSheetOnly { get; } = ["csv", "tsv", "md"];
+
+    /// <summary>
+    /// Convert formats that can be limited to a single sheet with <c>--sheet</c>: the
+    /// <see cref="ActiveSheetOnly"/> formats and pdf. Every other format always converts the
+    /// whole workbook.
+    /// </summary>
+    public static IReadOnlyList<string> SheetScoped { get; } = [.. ActiveSheetOnly, "pdf"];
 }

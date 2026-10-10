@@ -838,7 +838,6 @@ public abstract class ProductContractTests<TModule>
                             format.OutputExtension,
                             string.Join(',', format.Extensions),
                             string.Join(',', format.Aliases),
-                            string.Join(',', format.Operations),
                             RecognizerFingerprint(format.Recognizer)))
                     .Order(StringComparer.Ordinal)),
             string.Join(

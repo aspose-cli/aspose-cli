@@ -5,6 +5,12 @@ namespace Aspose.Cli.Product.Pdf.Contracts;
 /// <summary>Structural information returned by <c>pdf inspect</c>.</summary>
 public sealed record PdfInfoResult() : EngineResultEnvelope("pdf-info", 2)
 {
+    /// <summary>The most pages <see cref="Pages"/> lists.</summary>
+    public const int PagePreviewLimit = 20;
+
+    /// <summary>The most bookmarks <see cref="Outline"/> lists.</summary>
+    public const int OutlineLimit = 200;
+
     /// <summary>The kind of document described: always <c>pdf</c>.</summary>
     [JsonPropertyOrder(-50)]
     public string Kind { get; } = "pdf";
@@ -21,7 +27,7 @@ public sealed record PdfInfoResult() : EngineResultEnvelope("pdf-info", 2)
     /// The first pages' geometry with <c>--preview</c>; a <c>LIST_TRUNCATED</c> warning names the
     /// page count when there are more.
     /// </summary>
-    [MaxItems(20)]
+    [MaxItems(PagePreviewLimit)]
     public IReadOnlyList<PdfPageInfo>? Pages { get; init; }
 
     /// <summary>The page-label ranges, when the file has any.</summary>
@@ -31,7 +37,7 @@ public sealed record PdfInfoResult() : EngineResultEnvelope("pdf-info", 2)
     /// Bookmarks in reading order, depth first, with <c>--detail outline</c>; a
     /// <c>LIST_TRUNCATED</c> warning names the total when there are more.
     /// </summary>
-    [MaxItems(200)]
+    [MaxItems(OutlineLimit)]
     public IReadOnlyList<PdfOutlineItem>? Outline { get; init; }
 
     /// <summary>The interactive form, with <c>--detail forms</c>.</summary>

@@ -41,7 +41,6 @@ internal sealed class CommandExecutor
             scope => handler(CompositionRoot.Create(
                     _host.Catalog,
                     scope.Globals,
-                    deadline: scope.Deadline,
                     resourceBudgets: scope.Budgets)),
             detectPartial: true);
 
@@ -58,7 +57,7 @@ internal sealed class CommandExecutor
             {
                 scope.Deadline.ThrowIfExpired("handoff-start");
                 ResultEnvelope result = handler(CompositionRoot.Create(_host.Catalog, scope.Globals,
-                    deadline: scope.Deadline, resourceBudgets: scope.Budgets));
+                    resourceBudgets: scope.Budgets));
                 return scope.Complete(result, detectPartial: false);
             });
         }

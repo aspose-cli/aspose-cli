@@ -1,5 +1,4 @@
 using System.Text;
-using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Rendering;
@@ -28,14 +27,6 @@ internal static class PdfExtract
     internal static PdfExtractResult Assets(PdfSession session, PdfExtractRequest request)
     {
         string filePath = request.Input;
-        if (!PdfExtractKinds.All.Contains(request.What, StringComparer.Ordinal))
-        {
-            throw CliErrors.OptionInvalid(
-                "--what",
-                $"unknown extraction kind '{request.What}'",
-                "Use images, attachments, text or tables.");
-        }
-
         LicenseState state = session.Outputs.License;
         using LoadedPdf loaded = session.Loader.Open(filePath, request.Password);
         IReadOnlyList<int> pages = request.Pages?.Resolve(loaded.Document.Pages.Count)

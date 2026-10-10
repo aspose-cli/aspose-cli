@@ -52,7 +52,7 @@ internal static class WordsSearch
             Scope = scope,
             Location = place?.Location,
             Kind = place?.Kind,
-            Snippet = Truncate(text, 300),
+            Snippet = TextSearch.Truncate(text, 300),
         };
     }
 }

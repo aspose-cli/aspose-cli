@@ -22,12 +22,11 @@ internal static class ConvertCommand
             (parse, standard) =>
             {
                 ResolvedOutput output = standard.Output;
-                string? range = pages.Read(parse);
                 return new PdfConvertRequest
                 {
                     Input = standard.Input,
                     Output = output,
-                    Pages = range is null ? null : PageRange.Parse(range),
+                    Pages = pages.ReadRange(parse),
                     Password = standard.InputPassword,
                 };
             },

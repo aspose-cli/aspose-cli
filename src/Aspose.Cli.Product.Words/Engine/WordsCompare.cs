@@ -2,6 +2,7 @@ using Aspose.Cli.Product.Words.Engine.Mapping;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Results;
+using Aspose.Cli.Sdk.Text;
 using Aspose.Words;
 using Aspose.Words.Comparing;
 using Aspose.Words.Saving;
@@ -66,7 +67,7 @@ internal static class WordsCompare
             {
                 Type = InfoProjection.RevisionTypeName(revision.RevisionType),
                 Text = InfoProjection.NodeText(revision) is { } text && WordsText.Clean(text) is { Length: > 0 } clean
-                    ? Truncate(clean, 300)
+                    ? TextSearch.Truncate(clean, 300)
                     : null,
             }).ToArray(),
             Output = output,

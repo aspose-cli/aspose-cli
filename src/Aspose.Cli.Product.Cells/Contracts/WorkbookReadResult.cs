@@ -51,6 +51,12 @@ public static class ReadScopes
 
     /// <summary>Values, formulas, styles.</summary>
     public const string Full = "full";
+
+    /// <summary>Whether a scope carries formulas.</summary>
+    internal static bool IncludesFormulas(string scope) => scope is Formulas or Full;
+
+    /// <summary>Whether a scope carries styles.</summary>
+    internal static bool IncludesStyles(string scope) => scope is Styles or Full;
 }
 
 /// <summary>Budgeted cell data of one sheet.</summary>

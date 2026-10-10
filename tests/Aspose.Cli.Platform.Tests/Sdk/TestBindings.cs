@@ -4,15 +4,16 @@ using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Licensing;
-using Aspose.Cli.Sdk.Ports;
 using Aspose.Cli.Sdk.Rendering;
+using Aspose.Cli.Sdk.Results;
 using Aspose.Cli.Sdk.Serialization;
 
 namespace Aspose.Cli.Sdk.Tests;
 
 /// <summary>
-/// Product bindings for SDK tests, made through <see cref="ProductBinding.Create{TSession, TDocument}"/>,
-/// the one binding API products use: no license source is read and no evaluation mark is found.
+/// Product bindings for SDK tests over the SDK write pipeline that
+/// <see cref="ProductBinding.Create{TSession, TDocument}"/> gives products, but for an engine to
+/// which licensing does not apply: no license source is read and no evaluation mark is found.
 /// </summary>
 internal static class TestBindings
 {
@@ -39,13 +40,12 @@ internal static class TestBindings
         Func<IFontEnvironment>? fonts = null,
         ProductActivationContext? context = null)
         where TSession : class =>
-        ProductBinding.Create<TSession, object>(
-            context ?? Context(Path.GetTempPath()),
+        new(
             productId,
-            static _ => NoLicense.Instance,
-            new NoEvaluationMarks(),
-            _ => session(),
-            _ => fonts?.Invoke() ?? new AvailableFonts());
+            new Lazy<TSession>(session),
+            NoLicense.Instance,
+            new Lazy<IFontEnvironment>(() => fonts?.Invoke() ?? new AvailableFonts()),
+            new OutputPipeline<object>(NoLicense.Instance, new NoEvaluationMarks(), (context ?? Context(Path.GetTempPath())).SafeFileWriter));
 
     private sealed class NoLicense : ILicenseGate
     {

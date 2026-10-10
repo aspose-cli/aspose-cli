@@ -20,21 +20,17 @@ internal sealed class ViewBundleManifest
         string root,
         VerifiedFileBoundary boundary,
         string entryFileName,
-        IReadOnlyDictionary<string, ArtifactRecord> files,
-        long totalBytes)
+        IReadOnlyDictionary<string, ArtifactRecord> files)
     {
         Root = root;
         _boundary = boundary;
         EntryFileName = entryFileName;
         _files = files;
-        TotalBytes = totalBytes;
     }
 
     public string Root { get; }
 
     public string EntryFileName { get; }
-
-    public long TotalBytes { get; }
 
     public static ViewBundleManifest Validate(
         string directory,
@@ -132,8 +128,7 @@ internal sealed class ViewBundleManifest
             root,
             boundary,
             entry,
-            files,
-            total);
+            files);
     }
 
     public bool Contains(string relative)

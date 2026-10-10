@@ -14,8 +14,6 @@ namespace Aspose.Cli.Product.Cells.Engine.Mapping;
 /// </summary>
 internal static class InfoProjection
 {
-    private const int MaxPreviewColumns = 20;
-
     public static (WorkbookSummary Summary, Warning? ListTruncated) Summarize(
         ResourceBudgetLedger budgets, Workbook workbook, InfoRequest request)
     {
@@ -91,7 +89,7 @@ internal static class InfoProjection
         Worksheet sheet, RangeRef range, int previewRows)
     {
         int rowCount = Math.Min(previewRows, range.End.Row + 1);
-        int columnCount = Math.Min(range.End.Column + 1, MaxPreviewColumns);
+        int columnCount = Math.Min(range.End.Column + 1, SheetInfo.PreviewColumns);
 
         var rows = new List<IReadOnlyList<string?>>(rowCount);
         for (int row = 0; row < rowCount; row++)

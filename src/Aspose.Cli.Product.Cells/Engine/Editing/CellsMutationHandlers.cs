@@ -32,7 +32,7 @@ internal sealed class CellsMutationHandlers : ICellsOpHandler<long?>
 
     /// <summary>
     /// Applies one op, laundering the SDK's <see cref="CellsException"/> into the
-    /// Core-visible <see cref="EngineOpException"/>; a mapper's own
+    /// engine-neutral <see cref="EngineOpException"/>; a mapper's own
     /// <c>CliException</c> propagates untouched for the runner to normalize.
     /// </summary>
     internal long? Run(CellsOp op)

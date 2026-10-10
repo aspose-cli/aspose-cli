@@ -90,13 +90,13 @@ internal sealed class WordsViewAdapter : IProductViewAdapter<WordsSession>
             Warnings = info.Warnings,
             Coverage =
             [
-                Metric("pages", info.Document.PageCount, "pages"),
-                Metric("words", info.Document.WordCount, "words"),
-                Metric("renderedPages", rendered.Parts.Count, "pages"),
-                Metric("blankPages", layout.Pages.Count(static page => !HasVisibleContent(page)), "pages"),
-                Metric("lowUtilizationPages", layout.Pages.Count(IsExtremelyLowUtilization), "pages"),
-                Metric("outsideObjects", layout.Pages.Sum(static page => page.OutsideObjects), "objects"),
-                Metric("orphanedHeadings", layout.OrphanedHeadings.Count, "headings"),
+                ReviewCoverageMetric.Of("pages", info.Document.PageCount, "pages"),
+                ReviewCoverageMetric.Of("words", info.Document.WordCount, "words"),
+                ReviewCoverageMetric.Of("renderedPages", rendered.Parts.Count, "pages"),
+                ReviewCoverageMetric.Of("blankPages", layout.Pages.Count(static page => !HasVisibleContent(page)), "pages"),
+                ReviewCoverageMetric.Of("lowUtilizationPages", layout.Pages.Count(IsExtremelyLowUtilization), "pages"),
+                ReviewCoverageMetric.Of("outsideObjects", layout.Pages.Sum(static page => page.OutsideObjects), "objects"),
+                ReviewCoverageMetric.Of("orphanedHeadings", layout.OrphanedHeadings.Count, "headings"),
             ],
         };
     }
@@ -179,11 +179,4 @@ internal sealed class WordsViewAdapter : IProductViewAdapter<WordsSession>
         && page.ContentAreaRatio < 0.025
         && page.VisibleCharacters < 80
         && page.VisualObjects <= 1;
-
-    private static ReviewCoverageMetric Metric(string name, long value, string unit) => new()
-    {
-        Name = name,
-        Value = value,
-        Unit = unit,
-    };
 }

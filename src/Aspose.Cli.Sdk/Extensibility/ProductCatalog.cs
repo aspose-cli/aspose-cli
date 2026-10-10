@@ -177,11 +177,7 @@ public sealed class ProductCatalog
                     NormalizeExtension(candidate),
                     normalized,
                     StringComparison.Ordinal))
-            && (format.Operations.Count == 0
-                ? StandardFileRouteOperations.Contains(operation)
-                : format.Operations.Contains(
-                    operation,
-                    StringComparer.Ordinal)));
+            && StandardFileRouteOperations.Contains(operation));
         if (!eligible)
         {
             product = null;
@@ -216,10 +212,7 @@ public sealed class ProductCatalog
                                     NormalizeExtension(extension),
                                     item.Key,
                                     StringComparison.Ordinal)))
-                        .SelectMany(static format =>
-                            format.Operations.Count == 0
-                                ? StandardFileRouteOperations.All
-                                : format.Operations)
+                        .SelectMany(static _ => StandardFileRouteOperations.All)
                         .Distinct(StringComparer.Ordinal)
                         .Order(StringComparer.Ordinal)
                         .ToArray();

@@ -12,7 +12,7 @@ public readonly record struct AppliedOperation(long ItemsAffected, IReadOnlyList
 
 /// <summary>
 /// Applies a validated batch in order and reports one outcome per operation. An outcome lists
-/// at most <see cref="MaximumTargets"/> targets: one that changed more parts lists the product's
+/// at most <see cref="BoundedOperationOutcome.MaximumTargets"/> targets: one that changed more parts lists the product's
 /// degenerate form instead, never a prefix of the parts.
 /// </summary>
 /// <remarks>
@@ -27,9 +27,6 @@ public static class BoundedOperationRunner
 {
     private const string BestEffortHint = "Fix or remove this operation, then retry the batch.";
 
-    /// <summary>The most targets one outcome lists.</summary>
-    public const int MaximumTargets = 100;
-
     /// <summary>Runs every operation of a validated batch.</summary>
     /// <param name="catalog">The vocabulary the batch was validated against.</param>
     /// <param name="operations">Validated operations with assigned ids.</param>
@@ -39,13 +36,13 @@ public static class BoundedOperationRunner
     /// <param name="attemptedTargets">Addresses reported for an operation that failed; receives its index.</param>
     /// <param name="degenerateTargets">
     /// The product's degenerate form of an operation's targets when it lists more than
-    /// <see cref="MaximumTargets"/>: the document root address, such as <c>document</c>, or range
+    /// <see cref="BoundedOperationOutcome.MaximumTargets"/>: the document root address, such as <c>document</c>, or range
     /// addresses that cover every changed part, never a category address with a meaning of its
     /// own; receives the operation and its full list. A product whose operations never list that
     /// many omits it.
     /// </param>
     /// <exception cref="InvalidOperationException">
-    /// An operation lists more than <see cref="MaximumTargets"/> targets without a degenerate form,
+    /// An operation lists more than <see cref="BoundedOperationOutcome.MaximumTargets"/> targets without a degenerate form,
     /// or the degenerate form is empty or as long.
     /// </exception>
     public static IReadOnlyList<BoundedOperationOutcome> Run<TOp>(
@@ -149,18 +146,18 @@ public static class BoundedOperationRunner
         IReadOnlyList<string> targets,
         Func<TOp, IReadOnlyList<string>, IReadOnlyList<string>>? degenerateTargets)
     {
-        if (targets.Count <= MaximumTargets)
+        if (targets.Count <= BoundedOperationOutcome.MaximumTargets)
         {
             return targets;
         }
 
         IReadOnlyList<string> degenerate = degenerateTargets?.Invoke(operation, targets)
             ?? throw new InvalidOperationException(
-                $"Operation '{name}' lists {targets.Count} targets, more than {MaximumTargets}, and its product declares no degenerate form.");
-        return degenerate.Count is > 0 and <= MaximumTargets
+                $"Operation '{name}' lists {targets.Count} targets, more than {BoundedOperationOutcome.MaximumTargets}, and its product declares no degenerate form.");
+        return degenerate.Count is > 0 and <= BoundedOperationOutcome.MaximumTargets
             ? degenerate
             : throw new InvalidOperationException(
-                $"The degenerate form of operation '{name}' lists {degenerate.Count} targets; it must list 1 to {MaximumTargets}.");
+                $"The degenerate form of operation '{name}' lists {degenerate.Count} targets; it must list 1 to {BoundedOperationOutcome.MaximumTargets}.");
     }
 
     private static bool Declares(IReadOnlyList<string> inputs, string file)

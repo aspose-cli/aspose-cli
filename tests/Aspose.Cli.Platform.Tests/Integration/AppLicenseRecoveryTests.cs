@@ -117,8 +117,6 @@ internal static class AppLicenseChecks
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         JsonNode saved = JsonNode.Parse(body)!;
         Assert.True(saved["ok"]!.GetValue<bool>());
-        Assert.Equal(new Uri(app.Client.BaseAddress!, "/settings").AbsoluteUri,
-            saved["continueUrl"]!.GetValue<string>());
     }
 
     internal static async Task UploadCsv(AppTestSession app, string name, string content)
