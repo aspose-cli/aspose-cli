@@ -177,6 +177,37 @@ public sealed class SlidesAuthoringTests
     }
 
     [Fact]
+    public void SetTitle_WritesOnlyTheTextAndLeavesTheTitleAutofit()
+    {
+        // Shrinking text on overflow does not fix an overflowing title, so set_title never turns it on.
+        using var fixture = new SlidesEngineFixture();
+        string markdown = fixture.File("outline.md");
+        File.WriteAllText(markdown, "# Proposal\n\n## Next steps\n\n- Confirm the pilot site\n");
+        string deck = fixture.File("deck.pptx");
+        string edited = fixture.File("deck.titled.pptx");
+        SlidesCreate.Run(fixture.Session, new NewPresentationRequest { Output = TestOutput.At(deck), MarkdownPath = markdown });
+        SlidesEdit.Run(fixture.Session, new PresentationEditRequest
+        {
+            Input = deck,
+            Batch = new SlidesOpsBatch
+            {
+                Ops = [new SetTitleOp { Slide = 2, Text = string.Join(' ', Enumerable.Repeat("A much longer title", 8)) }],
+            },
+            Output = TestOutput.At(edited),
+        });
+
+        using var before = new Presentation(deck);
+        using var after = new Presentation(edited);
+        IAutoShape original = SlidesPlaceholders.Title(before.Slides[1])!;
+        IAutoShape title = SlidesPlaceholders.Title(after.Slides[1])!;
+        // Evaluation mode truncates the long text, so only the start that survives it is compared.
+        Assert.StartsWith("A muc", title.TextFrame.Text, StringComparison.Ordinal);
+        Assert.NotEqual(original.TextFrame.Text, title.TextFrame.Text);
+        Assert.NotEqual(TextAutofitType.Normal, title.TextFrame.TextFrameFormat.AutofitType);
+        Assert.Equal(original.TextFrame.TextFrameFormat.AutofitType, title.TextFrame.TextFrameFormat.AutofitType);
+    }
+
+    [Fact]
     public void SetTitle_WithoutATitlePlaceholder_NeverWritesIntoASubtitleAndReusesItsBox()
     {
         using var fixture = new SlidesEngineFixture();

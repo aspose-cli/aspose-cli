@@ -267,6 +267,7 @@ public sealed class WordsDisclosureTests
     [InlineData("html", false, true)]
     [InlineData("epub", false, true)]
     [InlineData("pdf", false, true)]
+    [InlineData("xps", false, true)]
     // A text output names the deleted text it mixes into the body instead.
     [InlineData("txt", false, false)]
     public void SavingARevisedDocument_DisclosesWhetherTheOutputKeepsTheRevisions(string format, bool kept, bool dropped)
@@ -412,6 +413,7 @@ public sealed class WordsDisclosureTests
     [Theory]
     [InlineData("docx", true)]
     [InlineData("pdf", true)]
+    [InlineData("xps", true)]
     [InlineData("docm", false)]
     [InlineData("doc", false)]
     public void SavingAMacroDocument_DisclosesTheMacrosTheOutputDrops(string format, bool dropped)

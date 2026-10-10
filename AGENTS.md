@@ -29,13 +29,47 @@ the fixed distribution identity; the generated projections and the solution come
 ## Design rules
 
 - Every behavior has one owner. Behavior shared by Products belongs in the SDK, not in copies.
+  The owner implements the decision with a type, a pipeline or a generator so that nothing else
+  can make it, and analyzers, architecture tests and invariants enforce that; the same decision
+  made in several places is this repository's main source of defects. See
+  [Decision owners](#decision-owners).
 - Extend at compile time through the catalog and explicit registration; no runtime plugin
-  loading, reflection scanning or dependency-injection containers.
+  loading, reflection scanning or dependency-injection containers. Commands are written by hand:
+  no command source generator, runtime reflection binding, reflection-based JSON, or generic
+  session type in the SDK.
+- A command lives in three places, the Contracts request and result, the Commands options,
+  binding and table, and the Engine handler, paired in one line of the product menu. The command
+  tree built from the menus is the registry: capabilities, help, schemas and documentation checks
+  are projections of it, so keep no separate registration data. A product session holds only
+  the write pipeline, the resource budgets and the loader; a product-specific concern that wraps
+  every handler is a `.Guard` on the module.
+- Do not adopt string property bags with regex dispatch, parallel dispatch paths, in-memory
+  sessions with deferred writes, partially successful batches, ambiguous exit codes, raw XML or
+  XPath write layers, whole-document export as a replayable batch, self-update or
+  auto-install, out-of-process plugins, or a home-grown renderer or formula engine. They break
+  one source of truth, atomic publication, local-only operation or files as primary, or move an
+  SDK's job into the CLI.
 - Derive contracts from one source: generate what can be generated and test that it is current,
   rather than keeping hand-written copies in sync.
 - Prefer deleting unused surface to preserving it.
 - The [gates](#gates) judge a change: never add a known violation to make a change pass. Code
   metrics (`eng/tools/CodeHealth`) are a diagnostic, never a target.
+
+### Decision owners
+
+| # | Decision | Owner | Enforced by |
+|---|---|---|---|
+| D1 | Output: path, written format, overwrite, encryption, part names, staging | The SDK resolves a `ResolvedOutput` for the product; the format is resolved once: the format `--to` names, else the one among the command's writable formats that the `--out` extension declares, else the edited input's format, the `--to` default or the command's only format | `DecisionOwnershipTests` D1: no raw output path string in requests, no format from an extension, no product-built `FORMAT_UNSUPPORTED`, resolver or protectable-format list |
+| D2 | Format capabilities | Each product declares its formats once in its Contracts `*Formats.Definitions`, passed to `.Formats(...)` on the module; its `*EngineFormats` maps every declared id to the engine | `CellsEngineFormatTests`, `PdfEngineFormatTests`, `SlidesEngineFormatsTests`, `WordsEngineFormatsTests`: every declared format has an engine mapping; `DecisionOwnershipTests` D2 |
+| D3 | Mistake suggestions | SDK `Mistake` alone writes `details.suggestions[]` and the "did you mean" text | `DecisionOwnershipTests` D3; invariants |
+| D4 | Error construction | SDK error factories alone build shared codes | `DecisionOwnershipTests` D4; `FreeTextErrorFactoryTests` |
+| D5 | Secrets | SDK `Secret`: redacted when printed, revealed only in an engine adapter | `DecisionOwnershipTests` D5: products read no environment variable; passwords outside the engine are `Secret` |
+| D6 | Evaluation detection and disclosure | The SDK write pipeline resolves the license once and derives disclosure by comparing input and output marks; a product supplies only its evaluation-mark recognizer | `EvaluationOwnershipTests`; the evaluation invariant |
+| D7 | Truthful results: affected counts, targets, pages, no match | Planned: the SDK snapshots before and after each operation, reports `OP_NO_EFFECT` for zero, and runs `--verify` as one step | Planned: handlers count nothing; invariant "affected > 0 iff the output changed" |
+| D8 | Input loading: recognition, passwords, corruption | The SDK load result and error translation; a product supplies the engine call and an exception classifier | `InputLoadingOwnershipTests` |
+| D9 | Read and write vocabulary | Planned: one object model per product, where the fields an operation writes are a subset of the read result with the same names and meanings | Planned: a generated operation-to-read field map and the invariant "read back what was written" |
+| D10 | Human-readable output | SDK `ResultText` section helpers | `TableRendererCoverageTests`, `ProductRendererCoverageTests` |
+| D11 | Structure | Three places per command paired on the menu; acyclic SDK layers; one-way product layers | `SdkLayeringTests` (SDK); analyzer `APCLI009` (product layers) |
 
 ## Gates
 
@@ -87,13 +121,26 @@ weaken a check or remove a supported operation to make a test pass.
   secret handling on the symbol; the Host reads only these declarations. `GlobalOptionNames` and
   `StandardOptionNames` are the reserved names (`APCLI008`). Products define commands with
   `CommandDefinition` or `EditDefinition`, paired with their handlers on the product menu
-  (`APCLI011` forbids `StandardOptions`).
+  (`APCLI011` forbids `StandardOptions`). An SDK option type (`PartRangeOption`,
+  `PreviewOption`, `DetailOption`, the render options) exists only for options with the same name
+  and meaning across commands; any other option is a plain `new Option<T>`, and `SameNameOptions`
+  checks that same-named options agree. A description does not restate a default the parser
+  applies.
+- **Targets** in an operation outcome are capped at `BoundedOperationOutcome.MaximumTargets`. An
+  operation that lists more reports its product's degenerate form instead: the document root
+  address, or range addresses that cover every changed part (Words reports `blocks/<ranges>` and
+  the changed `section/...` targets, and `document` when it addressed no range or that list is
+  still too long). `BoundedOperationRunner` throws `InvalidOperationException` when a product
+  without a degenerate form exceeds the cap.
 
 ## Tests
 
 - xUnit v3 with real engines and CLI child processes. A test that takes several seconds carries
   `[Category(TestCategory.Slow)]`; installer and Playwright tests carry `Installer` and
   `Browser`.
+- Tests call handlers directly with real requests, whose `Input` is `required`; production code
+  carries no test shims. Generated schemas are not committed; the contract snapshots in
+  `Integration/Snapshots` are split per product.
 - A test that changes process-wide state joins its serial collection in
   `tests/TestAssemblyFixture.cs`. A test project that reads a repository file outside the
   projects lists it as a `RepositoryInput` item.
@@ -113,7 +160,8 @@ weaken a check or remove a supported operation to make a test pass.
 ## Conventions
 
 Use only the corresponding commercial Aspose SDK packages; no FOSS source, gitlinks or
-Git LFS.
+Git LFS. License-free products live in a separate repository; the license-free path still in
+this one (`ProductBinding.CreateLicenseFree` and its Host branches) is planned for removal.
 Code comments, diagnostics, documentation and Skills are English and describe present behavior.
 Never add old-command aliases, legacy installer or Skill readers, historical version
 baselines, historical trust allowlists, or migration frameworks for unpublished builds.
@@ -122,7 +170,7 @@ intentional contract change.
 
 Before changing code around a commercial SDK, verify the official API usage and reproduce
 suspected engine behavior with a minimal SDK-only case. Correct our misuse in the owning
-adapter. Record each confirmed SDK defect in [KNOWN-ISSUES.md](KNOWN-ISSUES.md) as
-its introduction describes, and handle it openly with a
+adapter. Record each confirmed SDK defect only in [KNOWN-ISSUES.md](KNOWN-ISSUES.md) as
+its introduction describes, without reporting it upstream, and handle it openly with a
 refusal, a workaround through other public API, or a warning. Never hide a defect with implicit
 default rewrites, file-format patches, or product, producer or version special cases.
