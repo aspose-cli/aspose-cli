@@ -5,10 +5,10 @@ namespace Aspose.Cli.Product.Pdf.Engine;
 /// <summary>Activates the PDF session behind the SDK write pipeline for one invocation.</summary>
 internal static class PdfActivation
 {
-    internal static ProductBinding<PdfSession> Activate(ProductActivationContext context, string productId) =>
+    internal static ProductBinding<PdfSession> Activate(ProductActivationContext context) =>
         ProductBinding.Create<PdfSession, Aspose.Pdf.Document>(
             context,
-            productId,
+            ProductBuildMetadata.ProductId,
             ApplyLicense,
             new PdfEvaluationProfile(),
             outputs => new PdfSession(outputs, context.ResourceBudgets, new PdfDocumentLoader(context.ResourceBudgets)),

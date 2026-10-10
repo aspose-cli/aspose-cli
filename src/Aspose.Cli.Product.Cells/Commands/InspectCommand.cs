@@ -7,7 +7,7 @@ namespace Aspose.Cli.Product.Cells.Commands;
 /// <c>cells inspect</c> — the first step of the projection ladder:
 /// structure and metadata, never bulk data.
 /// </summary>
-internal static class InfoCommand
+internal static class InspectCommand
 {
     private const int MaxPreviewRows = 100;
 
@@ -28,7 +28,7 @@ internal static class InfoCommand
         return new(
             "inspect",
             "Show structure and metadata of a workbook.",
-            new CommandTraits { Input = CellsTraits.Workbook("Workbook to inspect (xlsx, xlsm, xlsb, xls, ods, csv, ...).") },
+            new CommandTraits { Input = CellsInputs.Workbook("Workbook to inspect (xlsx, xlsm, xlsb, xls, ods, csv, ...).") },
             [.. preview.Options, previewRows, .. detail.Options],
             (parse, standard) =>
             {

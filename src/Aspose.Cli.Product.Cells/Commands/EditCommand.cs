@@ -34,8 +34,8 @@ internal static class EditCommand
             $"Apply a batch of edit ops atomically. Editable outputs: {string.Join(", ", CellsFormats.Editable.Select(static format => format.Id))}.",
             new CommandTraits
             {
-                Input = CellsTraits.Workbook("Workbook to edit."),
-                Encrypt = CellsTraits.EncryptedWorkbook,
+                Input = CellsInputs.Workbook("Workbook to edit."),
+                Encrypt = CellsInputs.EncryptedWorkbook,
                 UsesFonts = true,
             },
             [noRecalc],
@@ -72,7 +72,7 @@ internal static class EditCommand
             links:
             [
                 CommandHelpLink.Docs(CellsModule.Manifest, "editing", "recipes for every operation family"),
-                CommandHelpLink.Schema(CellsModule.Manifest, "the operations JSON vocabulary"),
+                CommandHelpLink.Schema<CellsOp>("the operations JSON vocabulary"),
                 CommandHelpLink.Docs(CellsModule.Manifest, "verification", "verification before delivering the file"),
             ]);
     }

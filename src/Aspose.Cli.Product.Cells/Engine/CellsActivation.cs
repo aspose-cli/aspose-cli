@@ -6,10 +6,10 @@ namespace Aspose.Cli.Product.Cells.Engine;
 /// <summary>Activates the Cells session behind the SDK write pipeline for one invocation.</summary>
 internal static class CellsActivation
 {
-    internal static ProductBinding<CellsSession> Activate(ProductActivationContext context, string productId) =>
+    internal static ProductBinding<CellsSession> Activate(ProductActivationContext context) =>
         ProductBinding.Create<CellsSession, Aspose.Cells.Workbook>(
             context,
-            productId,
+            ProductBuildMetadata.ProductId,
             ApplyLicense,
             new CellsEvaluationProfile(),
             outputs => new CellsSession(outputs, context.ResourceBudgets, new CellsWorkbookLoader(context.ResourceBudgets)),

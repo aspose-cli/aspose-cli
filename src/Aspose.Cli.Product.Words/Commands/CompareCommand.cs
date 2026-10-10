@@ -50,7 +50,7 @@ internal static class CompareCommand
                     RightPassword = standard.OtherPassword,
                 };
             },
-            Render)
+            Table)
         {
             Examples =
             [
@@ -60,7 +60,7 @@ internal static class CompareCommand
         };
     }
 
-    internal static void Render(WordsCompareResult result, TableSurface surface)
+    internal static void Table(WordsCompareResult result, TableSurface surface)
     {
         surface.Out.WriteLine(result.Identical ? "documents are identical" : "documents differ");
         surface.Out.WriteLine($"insertions: {result.Revisions.InsertionCount}   deletions: {result.Revisions.DeletionCount}   formatting: {result.Revisions.FormatChangeCount}   moves: {result.Revisions.MoveCount}");

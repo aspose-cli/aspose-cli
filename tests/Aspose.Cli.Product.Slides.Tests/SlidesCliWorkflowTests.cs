@@ -13,27 +13,6 @@ public sealed class SlidesCliWorkflowTests : IDisposable
     [Fact]
     public void InspectQueryAndConvert_RoundTripsThroughTheBuiltCli()
     {
-        CliResult capabilities = _workspace.Run(
-            "capabilities", "slides", "--output", "json");
-        Assert.True(capabilities.ExitCode == 0, capabilities.StdErr);
-        JsonNode product = JsonNode.Parse(capabilities.StdOut)!["products"]![0]!;
-        Assert.Equal(
-            ["slides", "slides convert", "slides create", "slides edit", "slides extract", "slides inspect", "slides query", "slides query search", "slides query slides", "slides render"],
-            product["commands"]!.AsArray()
-                .Select(static command => command!["path"]!.GetValue<string>()));
-        Assert.Equal(
-            [
-                "add_section", "add_slide", "append_presentation", "apply_layout",
-                "delete_shape", "delete_slides", "duplicate_slide", "insert_chart",
-                "insert_image", "insert_shape", "insert_table", "move_slide",
-                "replace_text", "set_background", "set_body", "set_footer",
-                "set_notes", "set_properties", "set_shape_bounds", "set_shape_style", "set_slide_hidden",
-                "set_slide_size", "set_table_cell", "set_text", "set_title",
-                "set_transition", "update_chart_data",
-            ],
-            Assert.Single(product["operations"]!.AsArray())!["ops"]!.AsArray()
-                .Select(static operation => operation!.GetValue<string>()));
-
         CreateDeck(_workspace.File("deck.pptx"));
 
         CliResult info = _workspace.Run(

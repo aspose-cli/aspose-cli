@@ -1,6 +1,6 @@
-using Aspose.Cli.Host.Serialization;
 using Aspose.Cli.Host.Skills;
 using Aspose.Cli.Sdk.IO;
+using Aspose.Cli.Sdk.Serialization;
 
 namespace Aspose.Cli.Host.Invocation;
 
@@ -16,7 +16,7 @@ internal sealed class HostContext
             var root = Commands.RootCommandFactory.Create(this, out GlobalOptions globals);
             return new InvocationParser(root, globals);
         });
-        ContractJson = new HostContractJson(catalog);
+        ContractJson = new ContractJsonSerializer(catalog.JsonDefinitions);
         Schemas = new Aspose.Cli.Host.Commands.HostSchemaCatalog(catalog);
         Skills = new SkillCatalog(catalog);
         Docs = new DocsCatalog(Skills);
@@ -30,7 +30,7 @@ internal sealed class HostContext
     public ProductCatalog Catalog { get; }
     public WorkerOutputSession? WorkerOutputs { get; }
 
-    public HostContractJson ContractJson { get; }
+    public ContractJsonSerializer ContractJson { get; }
 
     public Aspose.Cli.Host.Commands.HostSchemaCatalog Schemas { get; }
 

@@ -13,7 +13,6 @@ public sealed class WordsModule : IProductModule
         DisplayName = ProductBuildMetadata.DisplayName,
         DisplayOrder = ProductBuildMetadata.DisplayOrder,
         IsDefaultCandidate = ProductBuildMetadata.IsDefaultCandidate,
-        Operations = [WordsOp.Catalog.Describe("edit")],
             ResourceBudgets =
             [
                 ResourceBudgetCapabilities.Domain(WordsBudgetDomains.Pages, 10_000, 100_000, "items", "post-load"),
@@ -33,29 +32,29 @@ public sealed class WordsModule : IProductModule
             .Json(ProductJsonContext.Definition)
             .View(new WordsViewAdapter())
             .DetectFormat(WordsDocumentLoader.DetectFormatId)
-            .Describe(
-                "Word-processing document automation with layout fidelity.",
-                static () => new CommandHelp(
-                    [
-                        "words inspect contract.docx --detail outline sections --preview",
-                        "words query blocks contract.docx --blocks 1-30 --scope full",
-                    ],
-                    [
-                        CommandHelpLink.Docs(Manifest, "editing", "the document block model and edit operations"),
-                        CommandHelpLink.Docs(Manifest, "verification", "read-back, semantic and visual verification"),
-                        CommandHelpLink.Schema(Manifest, "the operation JSON schema"),
-                    ]))
-            .Command(InfoCommand.Create, WordsInspect.Run)
+            .Describe("Word-processing document automation with layout fidelity.", Help)
+            .Command(InspectCommand.Create, WordsInspect.Run)
             .Group("query", "Read bounded document projections without mutating the source.", query => query
                 .Command(ReadCommand.Create, WordsRead.Run)
                 .Command(SearchCommand.Create, WordsSearch.Run))
             .Command(ConvertCommand.Create, WordsConvert.Run)
             .Command(RenderCommand.Create, WordsRender.Run)
-            .Command(NewCommand.Create, WordsCreate.Run)
+            .Command(CreateCommand.Create, WordsCreate.Run)
             .Command(EditCommand.Create, WordsEdit.Run)
             .Command(CompareCommand.Create, WordsCompare.Run)
             .Command(SplitCommand.Create, WordsSplit.Run)
             .Command(ExtractCommand.Create, WordsExtract.Run)
-            .Activator(static context => WordsActivation.Activate(context, Manifest.Id))
+            .Activator(WordsActivation.Activate)
             .Build();
+
+    private static CommandHelp Help() => new(
+        [
+            "words inspect contract.docx --detail outline sections --preview",
+            "words query blocks contract.docx --blocks 1-30 --scope full",
+        ],
+        [
+            CommandHelpLink.Docs(Manifest, "editing", "the document block model and edit operations"),
+            CommandHelpLink.Docs(Manifest, "verification", "read-back, semantic and visual verification"),
+            CommandHelpLink.Schema<WordsOp>("the operation JSON schema"),
+        ]);
 }

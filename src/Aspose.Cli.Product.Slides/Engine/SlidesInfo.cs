@@ -23,7 +23,7 @@ internal static class SlidesInfo
             .ToArray();
         double width = presentation.SlideSize.Size.Width;
         double height = presentation.SlideSize.Size.Height;
-        IReadOnlyList<PresentationMediaInfo>? media = Details("media") ? Media(presentation) : null;
+        IReadOnlyList<PresentationMediaInfo>? media = Details(InfoDetails.Media) ? Media(presentation) : null;
 
         return new PresentationInfoResult
         {
@@ -42,7 +42,7 @@ internal static class SlidesInfo
                 HasMacros = presentation.VbaProject is not null,
             },
             Slides = slides,
-            Sections = Details("sections")
+            Sections = Details(InfoDetails.Sections)
                 ? presentation.Sections.Select(section => new PresentationSectionInfo
                 {
                     Name = section.Name,
@@ -50,7 +50,7 @@ internal static class SlidesInfo
                     StartSlide = FindSlideNumber(presentation, section.StartedFromSlide),
                 }).ToArray()
                 : null,
-            Masters = Details("masters")
+            Masters = Details(InfoDetails.Masters)
                 ? presentation.Masters.Select(master => new PresentationMasterInfo
                 {
                     Name = master.Name,
@@ -58,7 +58,7 @@ internal static class SlidesInfo
                         ReferenceEquals(slide.LayoutSlide?.MasterSlide, master)),
                 }).OrderBy(static master => master.Name, StringComparer.Ordinal).ToArray()
                 : null,
-            Layouts = Details("layouts")
+            Layouts = Details(InfoDetails.Layouts)
                 ? presentation.LayoutSlides.Select(layout => new PresentationLayoutInfo
                 {
                     Name = layout.Name,
@@ -67,7 +67,7 @@ internal static class SlidesInfo
                 }).OrderBy(static layout => layout.Name, StringComparer.Ordinal).ToArray()
                 : null,
             Media = media?.Take(MediaListLimit).ToArray(),
-            Notes = Details("notes")
+            Notes = Details(InfoDetails.Notes)
                 ? presentation.Slides.Select((slide, index) =>
                 {
                     string? notes = Notes(slide);
@@ -79,7 +79,7 @@ internal static class SlidesInfo
                     };
                 }).ToArray()
                 : null,
-            Comments = Details("comments")
+            Comments = Details(InfoDetails.Comments)
                 ? comments.Select(comment => new PresentationCommentInfo
                 {
                     Slide = FindSlideNumber(presentation, comment.Slide),
@@ -87,10 +87,10 @@ internal static class SlidesInfo
                     Text = comment.Text,
                 }).OrderBy(static comment => comment.Slide).ThenBy(static comment => comment.Author, StringComparer.Ordinal).ToArray()
                 : null,
-            Fonts = Details("fonts")
+            Fonts = Details(InfoDetails.Fonts)
                 ? presentation.FontsManager.GetFonts().Select(static font => font.FontName).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray()
                 : null,
-            Properties = Details("properties") ? Properties(presentation.DocumentProperties) : null,
+            Properties = Details(InfoDetails.Properties) ? Properties(presentation.DocumentProperties) : null,
             License = EnvelopeParts.License(state),
             Warnings = EnvelopeParts.CombineWarnings(
                 InputWarnings(state, loaded, textRead: true),

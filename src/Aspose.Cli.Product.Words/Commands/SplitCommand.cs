@@ -39,7 +39,7 @@ internal static class SplitCommand
                     Password = standard.InputPassword,
                 };
             },
-            Render)
+            Table)
         {
             Examples =
             [
@@ -49,7 +49,7 @@ internal static class SplitCommand
         };
     }
 
-    internal static void Render(WordsSplitResult result, TableSurface surface)
+    internal static void Table(WordsSplitResult result, TableSurface surface)
     {
         surface.Out.WriteLine($"wrote {result.Outputs.Count} part(s)");
         foreach (SplitOutput output in result.Outputs)

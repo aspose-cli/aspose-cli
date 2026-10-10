@@ -12,7 +12,6 @@ public sealed class PdfModule : IProductModule
         DisplayName = ProductBuildMetadata.DisplayName,
         DisplayOrder = ProductBuildMetadata.DisplayOrder,
         IsDefaultCandidate = ProductBuildMetadata.IsDefaultCandidate,
-        Operations = [PdfOp.Catalog.Describe("edit")],
             ResourceBudgets =
             [
                 ResourceBudgetCapabilities.Domain(PdfBudgetDomains.Pages, 10_000, 100_000, "items", "post-load"),
@@ -34,21 +33,21 @@ public sealed class PdfModule : IProductModule
             // Only the EVALUATION_LIMIT refusal; the write pipeline discloses evaluation output.
             .Guard(static (session, run) => PdfEvaluation.Run(session.Outputs, run))
             .Describe("PDF automation with page, security and fixed-layout semantics.", Help)
-            .Command(InfoCommand.Create, PdfInfo.Run)
+            .Command(InspectCommand.Create, PdfInfo.Run)
             .Group("query", "Query bounded PDF pages, forms or text matches.", static query => query
                 .Command(ReadCommand.Create, PdfRead.Run)
                 .Command(FormsCommand.Create, PdfForms.Read)
                 .Command(SearchCommand.Create, PdfSearch.Run))
             .Command(ConvertCommand.Create, PdfConvert.Run)
             .Command(RenderCommand.Create, PdfRender.Run)
-            .Command(NewCommand.Create, PdfCreate.Run)
+            .Command(CreateCommand.Create, PdfCreate.Run)
             .Command(MergeCommand.Create, PdfMerge.Run)
             .Command(SplitCommand.Create, PdfSplit.Run)
             .Command(ExtractCommand.Create, PdfExtract.Run)
             .Command(EditCommand.Create, PdfEdit.Run)
             .Command(ValidateCommand.Create, PdfValidate.Run)
             .Command(SignCommand.Create, PdfSign.Run)
-            .Activator(static context => PdfActivation.Activate(context, Manifest.Id))
+            .Activator(PdfActivation.Activate)
             .Build();
 
     private static CommandHelp Help() => new(
@@ -61,6 +60,6 @@ public sealed class PdfModule : IProductModule
         [
             CommandHelpLink.Docs(Manifest, "editing", "fixed-layout operations and safe mutation"),
             CommandHelpLink.Docs(Manifest, "verification", "read-back, rendering and PDF/A evidence"),
-            CommandHelpLink.Schema(Manifest, "the operation JSON schema"),
+            CommandHelpLink.Schema<PdfOp>("the operation JSON schema"),
         ]);
 }

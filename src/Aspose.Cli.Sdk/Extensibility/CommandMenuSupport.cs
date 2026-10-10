@@ -1,4 +1,5 @@
 using System.CommandLine;
+using Aspose.Cli.Sdk.Operations;
 
 namespace Aspose.Cli.Sdk.Extensibility;
 
@@ -44,6 +45,10 @@ internal interface IMenuEntry<TSession>
 
     /// <summary>The table renderers the entry's commands declare.</summary>
     IEnumerable<ProductOutputDefinition> Outputs();
+
+    /// <summary>The operation documents the entry's commands apply, each under its command path.</summary>
+    /// <param name="parent">The path of the enclosing commands below the product, ending in a space, or empty.</param>
+    IEnumerable<ProductOperationCommand> Operations(string parent);
 }
 
 /// <summary>A named group of menu lines, such as <c>query</c>.</summary>
@@ -63,4 +68,7 @@ internal sealed class MenuGroup<TSession>(string name, string description, IRead
     }
 
     public IEnumerable<ProductOutputDefinition> Outputs() => entries.SelectMany(static entry => entry.Outputs());
+
+    public IEnumerable<ProductOperationCommand> Operations(string parent) =>
+        entries.SelectMany(entry => entry.Operations($"{parent}{name} "));
 }

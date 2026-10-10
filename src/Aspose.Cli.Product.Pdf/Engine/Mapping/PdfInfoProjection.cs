@@ -19,7 +19,7 @@ internal static class PdfInfoProjection
         bool includePages = request.IncludePreview;
         PdfFormSummary form = Form(document);
         PdfSignatureInfo[] signatures = Signatures(document);
-        PdfOutlineItem[]? outline = details.Contains("outline") ? Outline(document) : null;
+        PdfOutlineItem[]? outline = details.Contains(InfoDetails.Outline) ? Outline(document) : null;
         var warnings = new List<Warning>();
         if (includePages && document.Pages.Count > PdfInfoResult.PagePreviewLimit)
         {
@@ -59,13 +59,13 @@ internal static class PdfInfoProjection
             Pages = includePages ? Pages(document) : null,
             PageLabels = PageLabels(document),
             Outline = outline,
-            Forms = details.Contains("forms") ? form : null,
-            Attachments = details.Contains("attachments") ? Attachments(document) : null,
-            Fonts = details.Contains("fonts") ? Fonts(document) : null,
-            Permissions = details.Contains("permissions") ? Permissions(loaded) : null,
-            Signatures = details.Contains("signatures") ? signatures : null,
-            Layers = details.Contains("layers") ? Layers(document) : null,
-            Metadata = details.Contains("metadata") ? Metadata(document) : null,
+            Forms = details.Contains(InfoDetails.Forms) ? form : null,
+            Attachments = details.Contains(InfoDetails.Attachments) ? Attachments(document) : null,
+            Fonts = details.Contains(InfoDetails.Fonts) ? Fonts(document) : null,
+            Permissions = details.Contains(InfoDetails.Permissions) ? Permissions(loaded) : null,
+            Signatures = details.Contains(InfoDetails.Signatures) ? signatures : null,
+            Layers = details.Contains(InfoDetails.Layers) ? Layers(document) : null,
+            Metadata = details.Contains(InfoDetails.Metadata) ? Metadata(document) : null,
             Warnings = warnings.Count == 0 ? null : warnings,
         };
 

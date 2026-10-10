@@ -46,17 +46,17 @@ public sealed class ProductResourceCatalog
     public IReadOnlyList<ProductPackageResources> Products { get; }
 
     internal static ProductResourceCatalog Build(
-        IEnumerable<(ProductPackageResources Package, ProductManifest Manifest, IReadOnlyList<ResultRecord> Results)> products)
+        IEnumerable<(ProductPackageResources Package, IReadOnlyList<ProductOperationCommand> Operations, IReadOnlyList<ResultRecord> Results)> products)
     {
         ArgumentNullException.ThrowIfNull(products);
         var packages = new List<ProductPackageResources>();
         // Schemas and their views are written on first use: most invocations never read one.
         var schemas = new Dictionary<string, Func<string>>(StringComparer.Ordinal);
         var operationSchemas = new Dictionary<string, GeneratedOperationSchema>(StringComparer.Ordinal);
-        foreach ((ProductPackageResources package, ProductManifest manifest, IReadOnlyList<ResultRecord> results) in products)
+        foreach ((ProductPackageResources package, IReadOnlyList<ProductOperationCommand> operations, IReadOnlyList<ResultRecord> results) in products)
         {
             var published = new List<string>();
-            foreach (ProductOperationCommand command in manifest.Operations)
+            foreach (ProductOperationCommand command in operations)
             {
                 string id = command.Descriptor.InputSchema;
                 if (operationSchemas.TryAdd(id, command.Schema))

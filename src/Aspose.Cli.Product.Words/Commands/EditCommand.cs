@@ -53,7 +53,7 @@ internal static class EditCommand
                     OpSecrets = edit.Secrets,
                 };
             },
-            Render,
+            Table,
             checkUsage: parse =>
             {
                 if (parse.GetValue(trackChanges) && string.IsNullOrWhiteSpace(parse.GetValue(author)))
@@ -72,11 +72,11 @@ internal static class EditCommand
             links:
             [
                 CommandHelpLink.Docs(WordsModule.Manifest, "editing", "addressing and operation recipes"),
-                CommandHelpLink.Schema(WordsModule.Manifest, "the exact edit-batch contract"),
+                CommandHelpLink.Schema<WordsOp>("the exact edit-batch contract"),
             ]);
     }
 
-    internal static void Render(WordsEditResult result, TableSurface surface)
+    internal static void Table(WordsEditResult result, TableSurface surface)
     {
         ResultText.Edit(surface, result.DryRun, result.Output, result.Applied, result.Backup);
         if (result.PagesTouched is { Count: > 0 } pages)

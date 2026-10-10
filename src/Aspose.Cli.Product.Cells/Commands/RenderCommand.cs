@@ -31,7 +31,7 @@ internal static class RenderCommand
             "Render a sheet, a range, or every visible sheet to images.",
             new CommandTraits
             {
-                Input = CellsTraits.Workbook("Workbook to render."),
+                Input = CellsInputs.Workbook("Workbook to render."),
                 Output = OutputTarget.File("Output path. Default: the input path with the image extension. "
                     + "With --all-sheets it is the naming template: <base>.<Sheet><ext>."),
                 UsesFonts = true,

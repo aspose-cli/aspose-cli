@@ -50,19 +50,19 @@ internal static class InfoProjection
                 Signed = loaded.Format.HasDigitalSignature,
                 HasMacros = loaded.Format.HasMacros,
             },
-            Sections = details.Contains("sections") ? Sections(document, loaded.Evaluation) : null,
-            Outline = details.Contains("outline") || request.IncludePreview ? Outline(index, warnings) : null,
-            Styles = details.Contains("styles") ? document.Styles.Cast<Style>()
+            Sections = details.Contains(InfoDetails.Sections) ? Sections(document, loaded.Evaluation) : null,
+            Outline = details.Contains(InfoDetails.Outline) || request.IncludePreview ? Outline(index, warnings) : null,
+            Styles = details.Contains(InfoDetails.Styles) ? document.Styles.Cast<Style>()
                 .Select(static s => s.Name).Order(StringComparer.Ordinal).ToArray() : null,
-            Fields = details.Contains("fields") ? Fields(document, index, warnings) : null,
-            Bookmarks = details.Contains("bookmarks") ? document.Range.Bookmarks.Cast<Bookmark>()
+            Fields = details.Contains(InfoDetails.Fields) ? Fields(document, index, warnings) : null,
+            Bookmarks = details.Contains(InfoDetails.Bookmarks) ? document.Range.Bookmarks.Cast<Bookmark>()
                 .Select(static b => b.Name).Order(StringComparer.Ordinal).ToArray() : null,
-            Comments = details.Contains("comments") ? Comments(document, index, warnings) : null,
-            Revisions = details.Contains("revisions") ? Revisions(document, index, warnings) : null,
-            Images = details.Contains("images") ? Images(document, index, warnings) : null,
-            Tables = details.Contains("tables") ? Tables(index) : null,
-            Properties = details.Contains("properties") ? Properties(document) : null,
-            Fonts = details.Contains("fonts") ? WordsFonts.Used(document) : null,
+            Comments = details.Contains(InfoDetails.Comments) ? Comments(document, index, warnings) : null,
+            Revisions = details.Contains(InfoDetails.Revisions) ? Revisions(document, index, warnings) : null,
+            Images = details.Contains(InfoDetails.Images) ? Images(document, index, warnings) : null,
+            Tables = details.Contains(InfoDetails.Tables) ? Tables(index) : null,
+            Properties = details.Contains(InfoDetails.Properties) ? Properties(document) : null,
+            Fonts = details.Contains(InfoDetails.Fonts) ? WordsFonts.Used(document) : null,
             // Last, so it holds the caps the detail lists above disclosed.
             Warnings = warnings.Count == 0 ? null : warnings,
         };

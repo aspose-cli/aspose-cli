@@ -3,23 +3,20 @@ using Aspose.Cli.Sdk.Extensibility.Output;
 
 namespace Aspose.Cli.Product.Pdf.Commands;
 
-internal static class InfoCommand
+internal static class InspectCommand
 {
-    private static readonly string[] Details =
-        ["outline", "forms", "attachments", "fonts", "permissions", "signatures", "layers", "metadata"];
-
     private static readonly Dictionary<string, string> DetailNotes = new(StringComparer.Ordinal)
     {
-        ["outline"] = $"bookmarks, up to {PdfInfoResult.OutlineLimit}",
-        ["forms"] = "form type and field count",
-        ["layers"] = "optional content layer names",
-        ["metadata"] = "document information such as title and author",
+        [InfoDetails.Outline] = $"bookmarks, up to {PdfInfoResult.OutlineLimit}",
+        [InfoDetails.Forms] = "form type and field count",
+        [InfoDetails.Layers] = "optional content layer names",
+        [InfoDetails.Metadata] = "document information such as title and author",
     };
 
     public static CommandDefinition<PdfInfoRequest, PdfInfoResult> Create()
     {
         var preview = new PreviewOption($"the size and rotation of each page, up to {PdfInfoResult.PagePreviewLimit} pages");
-        var detail = new DetailOption(Details, DetailNotes);
+        var detail = new DetailOption(InfoDetails.All, DetailNotes);
         return new(
             "inspect",
             "Show PDF structure, security state and metadata.",

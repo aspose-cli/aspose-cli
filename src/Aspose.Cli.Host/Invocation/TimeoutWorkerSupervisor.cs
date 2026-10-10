@@ -141,7 +141,7 @@ internal static class TimeoutWorkerSupervisor
         using var output = new StringWriter(CultureInfo.InvariantCulture);
         using var diagnostic = new StringWriter(CultureInfo.InvariantCulture);
         IOutputWriter writer = OutputWriterFactory.Create(mode, quiet, host.Catalog,
-            host.ContractJson.Serializer, output, diagnostic);
+            host.ContractJson, output, diagnostic);
         writer.WriteError(error.ToEnvelope());
         return new InvocationProcessResult((int)error.ExitCode, output.ToString(), diagnostic.ToString());
     }

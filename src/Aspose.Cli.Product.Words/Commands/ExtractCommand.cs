@@ -25,7 +25,7 @@ internal static class ExtractCommand
                 Output = standard.DirectoryOutput,
                 Password = standard.InputPassword,
             },
-            Render)
+            Table)
         {
             Examples =
             [
@@ -36,7 +36,7 @@ internal static class ExtractCommand
         };
     }
 
-    internal static void Render(WordsExtractResult result, TableSurface surface)
+    internal static void Table(WordsExtractResult result, TableSurface surface)
     {
         surface.Out.WriteLine($"extracted {result.Items.Count} {result.What} item(s)");
         foreach (ExtractedItem item in result.Items)

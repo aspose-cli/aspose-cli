@@ -27,7 +27,7 @@ internal static class SearchCommand
                     Password = standard.InputPassword,
                 };
             },
-            Render)
+            Table)
         {
             Finish = static (_, request, result, standard) => result with
             {
@@ -41,7 +41,7 @@ internal static class SearchCommand
         };
     }
 
-    internal static void Render(WordsSearchResult result, TableSurface surface)
+    internal static void Table(WordsSearchResult result, TableSurface surface)
     {
         surface.Out.WriteLine($"{result.Hits.Count} hit(s) for '{result.Pattern}'");
         var table = new TextTable("block", "section", "scope", "text");

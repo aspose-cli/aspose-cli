@@ -32,6 +32,23 @@ public sealed class DiagnosticCatalogTests
     }
 
     [Fact]
+    public void Build_GivesADiagnosticDeclaredWithoutAnOwnerTheProductId()
+    {
+        ProductCatalog catalog = Build("alpha",
+        [
+            DiagnosticDescriptor.Error(new ErrorCode("ALPHA_FAILURE", ExitCode.ValidationError)),
+            DiagnosticDescriptor.Warning(new WarningCode("ALPHA_NOTICE")),
+            DiagnosticDescriptor.Verification("ALPHA_MISMATCH"),
+        ]);
+
+        Assert.Equal(
+            ["alpha", "alpha", "alpha"],
+            catalog.Diagnostics.All
+                .Where(static descriptor => descriptor.Code.StartsWith("ALPHA_", StringComparison.Ordinal))
+                .Select(static descriptor => descriptor.Owner));
+    }
+
+    [Fact]
     public void Build_RejectsDuplicateOwnerSchemaExitAndHintViolations()
     {
         DiagnosticDescriptor valid = DiagnosticDescriptor.Error(
@@ -102,7 +119,6 @@ public sealed class DiagnosticCatalogTests
             {
                 Id = id,
                 DisplayName = id,
-                Operations = [],
                 Engine = new Aspose.Cli.Sdk.Contracts.ProductEngineCapabilities
                 {
                     Id = "aspose",

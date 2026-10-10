@@ -50,7 +50,7 @@ internal static class RootCommandFactory
         root.Subcommands.Add(ReviewCommand.Create(
             executor,
             catalog,
-            host.ContractJson.Serializer,
+            host.ContractJson,
             globals)
             .WithInvocationPolicy(new CommandInvocationPolicy(McpAllowed: true)));
         GlobalOptions options = globals;

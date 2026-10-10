@@ -36,7 +36,7 @@ internal sealed class WordsViewAdapter : IProductViewAdapter<WordsSession>
         DocumentInfoResult info = WordsInspect.Run(session, new DocumentInfoRequest
         {
             Input = filePath,
-            Details = ["sections", "outline", "images", "tables", "fonts"],
+            Details = [InfoDetails.Sections, InfoDetails.Outline, InfoDetails.Images, InfoDetails.Tables, InfoDetails.Fonts],
             Password = request.Password,
         });
         WordsReviewLayout layout = WordsReviewLayoutReader.Read(

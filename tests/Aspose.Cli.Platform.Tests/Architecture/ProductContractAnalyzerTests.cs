@@ -291,7 +291,6 @@ public sealed class ProductContractAnalyzerTests
                     {
                         Id = "deferred",
                         DisplayName = "Deferred",
-                        Operations = System.Array.Empty<Aspose.Cli.Sdk.Operations.ProductOperationCommand>(),
                         Engine = new Aspose.Cli.Sdk.Contracts.ProductEngineCapabilities
                         {
                             Id = "aspose",
@@ -369,7 +368,6 @@ public sealed class ProductContractAnalyzerTests
                     {
                         Id = "review",
                         DisplayName = "Review",
-                        Operations = System.Array.Empty<Aspose.Cli.Sdk.Operations.ProductOperationCommand>(),
                         Engine = new Aspose.Cli.Sdk.Contracts.ProductEngineCapabilities
                         {
                             Id = "aspose",
@@ -517,7 +515,6 @@ public sealed class ProductContractAnalyzerTests
                     {
                         Id = "menu",
                         DisplayName = "Menu",
-                        Operations = System.Array.Empty<Aspose.Cli.Sdk.Operations.ProductOperationCommand>(),
                         Engine = new Aspose.Cli.Sdk.Contracts.ProductEngineCapabilities
                         {
                             Id = "aspose",

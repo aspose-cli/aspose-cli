@@ -6,7 +6,7 @@ using Aspose.Cli.Sdk.IO;
 namespace Aspose.Cli.Product.Cells.Commands;
 
 /// <summary><c>cells create</c> — create a blank workbook.</summary>
-internal static class NewCommand
+internal static class CreateCommand
 {
     public static CommandDefinition<NewWorkbookRequest, CreateResult> Create()
     {
@@ -20,7 +20,7 @@ internal static class NewCommand
             new CommandTraits
             {
                 Output = OutputTarget.CreatedFile("Path of the workbook to create, e.g. report.xlsx.", CellsFormats.Convertible),
-                Encrypt = CellsTraits.EncryptedWorkbook,
+                Encrypt = CellsInputs.EncryptedWorkbook,
             },
             [sheets],
             (parse, standard) =>

@@ -3,7 +3,7 @@ using Aspose.Cli.Sdk.Contracts;
 namespace Aspose.Cli.Sdk.Operations;
 
 /// <summary>
-/// One command of a product manifest that applies operation documents: its published
+/// One product command that applies operation documents, from its edit definition: its published
 /// description and the schema its vocabulary's records produce, which the product resources
 /// serve. <see cref="OperationCatalog{TOp}.Describe"/> creates it.
 /// </summary>

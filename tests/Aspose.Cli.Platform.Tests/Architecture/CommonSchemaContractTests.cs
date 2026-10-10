@@ -5,10 +5,10 @@ using System.Text.Json.Nodes;
 using Aspose.Cli.Architecture.Tests.TestSupport;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Extensibility;
+using Aspose.Cli.Sdk.Extensibility.Commanding;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Operations;
 using Aspose.Cli.Sdk.Serialization;
-using Aspose.Cli.Host.Serialization;
 using Aspose.Cli.Platform.Tests.Sdk;
 using Json.Schema;
 using Aspose.Cli.TestKit;
@@ -23,6 +23,8 @@ public sealed class CommonSchemaContractTests
 {
     private const string UriPrefix = "https://schemas.aspose.com/aspose-cli/";
     private static readonly ProductCatalog CommonCatalog = CreateCatalog();
+
+    private static readonly ContractJsonSerializer CommonSerializer = new(CommonCatalog.JsonDefinitions);
     private static readonly BuildOptions CommonSchemas = SchemaTestRegistry.CreateOptions();
 
     [Fact]
@@ -34,8 +36,7 @@ public sealed class CommonSchemaContractTests
         foreach (CommonSchemaSample sample in samples)
         {
             JsonSchema schema = CommonSchema(sample.Schema);
-            string json = new HostContractJson(CommonCatalog)
-                .Serializer.Serialize(sample.Value);
+            string json = CommonSerializer.Serialize(sample.Value);
             using JsonDocument instance = JsonDocument.Parse(json);
             EvaluationResults evaluation = schema.Evaluate(instance.RootElement);
             Assert.True(
@@ -87,7 +88,7 @@ public sealed class CommonSchemaContractTests
     public void PreviewSessionUrl_RequiresOneLoopbackDocument(string url, bool valid)
     {
         ProductPreviewStartResult sample = CommonSchemaSamples.ProductPreviewStart with { Url = url };
-        string json = new HostContractJson(CommonCatalog).Serializer.Serialize(sample);
+        string json = CommonSerializer.Serialize(sample);
         using JsonDocument instance = JsonDocument.Parse(json);
         JsonSchema schema = CommonSchema(ResultEnvelope.SchemaUri("common", "preview-session"));
         Assert.Equal(valid, schema.Evaluate(instance.RootElement).IsValid);
@@ -105,7 +106,7 @@ public sealed class CommonSchemaContractTests
         {
             Products = [new DoctorProductStatus { Product = "cells", Engine = "aspose", LicenseMode = mode }],
         };
-        string json = new HostContractJson(CommonCatalog).Serializer.Serialize(sample);
+        string json = CommonSerializer.Serialize(sample);
         JsonObject instance = JsonNode.Parse(json)!.AsObject();
         JsonSchema schema = CommonSchema(ResultEnvelope.SchemaUri("common", "doctor"));
         using JsonDocument complete = JsonDocument.Parse(json);
@@ -118,8 +119,7 @@ public sealed class CommonSchemaContractTests
     [Fact]
     public void OperationDescriptor_SerializesInDeterministicContractOrder()
     {
-        string json = new HostContractJson(CommonCatalog)
-            .Serializer.Serialize(CommonSchemaSamples.Capabilities);
+        string json = CommonSerializer.Serialize(CommonSchemaSamples.Capabilities);
         JsonObject operation = JsonNode.Parse(json)!["products"]![0]![
             "operations"]![0]!.AsObject();
 
@@ -237,7 +237,7 @@ public sealed class CommonSchemaContractTests
     public void IntegerCounts_AreNamedNounCount()
     {
         IReadOnlyList<string> violations = JsonCountNames.Violations(
-            [typeof(SdkJsonContext).Assembly, typeof(HostContractJson).Assembly]);
+            [typeof(SdkJsonContext).Assembly, typeof(Aspose.Cli.Host.Invocation.HostContext).Assembly]);
         Assert.True(violations.Count == 0, string.Join(Environment.NewLine, violations));
     }
 
@@ -245,7 +245,7 @@ public sealed class CommonSchemaContractTests
     public void ProductCatalog_RejectsAnOperationVocabularyOutsideTheProductNamespace()
     {
         InvalidOperationException error = Assert.Throws<InvalidOperationException>(
-            () => CreateCatalog("other", [TestOp.Catalog.Describe("edit")]));
+            () => CreateCatalog("other", TestOp.Catalog.Describe));
 
         Assert.Contains("references unowned schema 'v2/common/ops'", error.Message, StringComparison.Ordinal);
     }
@@ -259,14 +259,13 @@ public sealed class CommonSchemaContractTests
 
     private static ProductCatalog CreateCatalog(
         string productId = "test",
-        IReadOnlyList<ProductOperationCommand>? operations = null)
+        Func<string, ProductOperationCommand>? operations = null)
     {
         ProductDefinition definition = ExtProduct.Define<ITestSession>(
                 new ProductManifest
                 {
                     Id = productId,
                     DisplayName = "Test",
-                    Operations = operations ?? [],
                     Engine = new ProductEngineCapabilities
                     {
                         Id = "test",
@@ -289,7 +288,19 @@ public sealed class CommonSchemaContractTests
             .Diagnostics([])
             .Json(new ProductJsonDefinition(productId, SdkJsonContext.Default))
             .View(new TestProductViewAdapter<ITestSession>())
-            .WithCommand<ITestSession, TestResult>()
+            .Describe("A test product.")
+            .Command(
+                () => new CommandDefinition<TestMenu.TestRequest, TestResult>(
+                    "edit",
+                    "Edits.",
+                    new CommandTraits(),
+                    [],
+                    static (_, _) => new TestMenu.TestRequest(),
+                    static (_, _) => { })
+                {
+                    Operations = operations,
+                },
+                static (ITestSession _, TestMenu.TestRequest _) => new TestResult())
             .Activator(static _ =>
                 throw new InvalidOperationException(
                     "Common schema tests must not activate a product session."))

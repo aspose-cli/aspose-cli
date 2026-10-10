@@ -25,7 +25,7 @@ internal static class SearchCommand
         return new(
             "search",
             "Find cells whose value or formula matches a pattern.",
-            new CommandTraits { Input = CellsTraits.Workbook("Workbook to search.") },
+            new CommandTraits { Input = CellsInputs.Workbook("Workbook to search.") },
             [.. search.Options, sheet],
             (parse, standard) =>
             {

@@ -25,7 +25,7 @@ internal static class ProductCapabilityDeriver
         ProductCapabilities capabilities = new()
         {
             Id = manifest.Id,
-            Operations = Array.AsReadOnly(manifest.Operations.Select(static operation => operation.Descriptor).ToArray()),
+            Operations = Array.AsReadOnly(product.Operations.Select(static operation => operation.Descriptor).ToArray()),
             Engine = manifest.Engine,
             AvailableEngines = manifest.AvailableEngines,
             ResourceBudgets = manifest.ResourceBudgets,

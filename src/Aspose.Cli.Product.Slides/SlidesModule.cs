@@ -13,7 +13,6 @@ public sealed class SlidesModule : IProductModule
         DisplayName = ProductBuildMetadata.DisplayName,
         DisplayOrder = ProductBuildMetadata.DisplayOrder,
         IsDefaultCandidate = ProductBuildMetadata.IsDefaultCandidate,
-        Operations = [SlidesOp.Catalog.Describe("edit")],
             ResourceBudgets =
             [
                 ResourceBudgetCapabilities.Domain(SlidesBudgetDomains.Slides, 10_000, 50_000, "items", "post-load"),
@@ -36,16 +35,16 @@ public sealed class SlidesModule : IProductModule
             // Aspose.Slides writes to standard output while it renders (known issue SLIDES-FALLBACK-STDOUT).
             .Guard(static (_, run) => SlidesStandardOutput.Muted(run))
             .Describe("Presentation automation with slide, layout and notes semantics.", Help)
-            .Command(InfoCommand.Create, SlidesInfo.Run)
+            .Command(InspectCommand.Create, SlidesInfo.Run)
             .Group("query", "Read bounded presentation projections without mutating the source.", static query => query
                 .Command(ReadCommand.Create, SlidesRead.Run)
                 .Command(SearchCommand.Create, SlidesSearch.Run))
             .Command(ConvertCommand.Create, SlidesExport.Convert)
             .Command(RenderCommand.Create, SlidesExport.Render)
-            .Command(NewCommand.Create, SlidesCreate.Run)
+            .Command(CreateCommand.Create, SlidesCreate.Run)
             .Command(EditCommand.Create, SlidesEdit.Run)
             .Command(ExtractCommand.Create, SlidesExtract.Run)
-            .Activator(static context => SlidesActivation.Activate(context, Manifest.Id))
+            .Activator(SlidesActivation.Activate)
             .Build();
 
     private static CommandHelp Help() => new(
@@ -59,6 +58,6 @@ public sealed class SlidesModule : IProductModule
         [
             CommandHelpLink.Docs(Manifest, "editing", "atomic presentation operations"),
             CommandHelpLink.Docs(Manifest, "verification", "slide read-back and visual review"),
-            CommandHelpLink.Schema(Manifest, "the operation JSON schema"),
+            CommandHelpLink.Schema<SlidesOp>("the operation JSON schema"),
         ]);
 }

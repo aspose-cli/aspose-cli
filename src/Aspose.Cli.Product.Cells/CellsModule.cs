@@ -13,7 +13,6 @@ public sealed class CellsModule : IProductModule
         DisplayName = ProductBuildMetadata.DisplayName,
         DisplayOrder = ProductBuildMetadata.DisplayOrder,
         IsDefaultCandidate = ProductBuildMetadata.IsDefaultCandidate,
-        Operations = [CellsOp.Catalog.Describe("edit")],
             ResourceBudgets =
             [
                 ResourceBudgetCapabilities.Domain(CellsBudgetDomains.Sheets, 1_000, 10_000, "items", "post-load"),
@@ -35,16 +34,16 @@ public sealed class CellsModule : IProductModule
             .Json(ProductJsonContext.Definition)
             .View(new CellsViewAdapter())
             .Describe("Spreadsheet operations (Excel and friends) with engine-grade fidelity.", Help)
-            .Command(InfoCommand.Create, CellsInfo.Run)
+            .Command(InspectCommand.Create, CellsInfo.Run)
             .Group("query", "Read bounded workbook data without mutating the source file.", static query => query
                 .Command(ReadCommand.Create, CellsRead.Run)
                 .Command(SearchCommand.Create, CellsSearch.Run))
-            .Command(NewCommand.Create, CellsCreate.Run)
+            .Command(CreateCommand.Create, CellsCreate.Run)
             .Command(EditCommand.Create, CellsEdit.Run)
-            .Command(DiffCommand.Create, CellsDiff.Run)
+            .Command(CompareCommand.Create, CellsDiff.Run)
             .Command(ConvertCommand.Create, CellsConvert.Run)
             .Command(RenderCommand.Create, CellsRender.Run)
-            .Activator(static context => CellsActivation.Activate(context, Manifest.Id))
+            .Activator(CellsActivation.Activate)
             .Build();
 
     private static CommandHelp Help() => new(
@@ -53,6 +52,6 @@ public sealed class CellsModule : IProductModule
             CommandHelpLink.Docs(Manifest, "editing", "the edit-operation vocabulary and recipes"),
             CommandHelpLink.Docs(Manifest, "workbook-standards", "professional workbook construction guidance"),
             CommandHelpLink.Docs(Manifest, "verification", "the spreadsheet delivery verification protocol"),
-            CommandHelpLink.Schema(Manifest, "the operations JSON Schema"),
+            CommandHelpLink.Schema<CellsOp>("the operations JSON Schema"),
         ]);
 }

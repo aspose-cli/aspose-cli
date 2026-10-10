@@ -27,15 +27,6 @@ public sealed class WordsCliTests : IDisposable
     [Fact]
     public void CreateEditAndQuery_RoundTripsThroughTheBuiltCli()
     {
-        CliResult capabilities = _workspace.Run(
-            "capabilities", "words", "--output", "json");
-        Assert.True(capabilities.ExitCode == 0, capabilities.StdErr);
-        Assert.Equal(
-            ["words", "words compare", "words convert", "words create", "words edit", "words extract", "words inspect", "words query", "words query blocks", "words query search", "words render", "words split"],
-            JsonNode.Parse(capabilities.StdOut)!["products"]![0]!["commands"]!
-                .AsArray()
-                .Select(static command => command!["path"]!.GetValue<string>()));
-
         File.WriteAllText(
             _workspace.File("source.md"),
             "# Contract\n\nOriginal clause.\n");

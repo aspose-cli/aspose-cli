@@ -56,40 +56,34 @@ internal static class CellsDiagnostics
     internal static readonly WarningCode RowsShifted = new("ROWS_SHIFTED");
 
     /// <summary>Verification: the edited workbook contains formula errors.</summary>
-    internal static readonly DiagnosticDescriptor FormulaErrors = DiagnosticDescriptor.Verification("FORMULA_ERRORS", "cells");
+    internal static readonly DiagnosticDescriptor FormulaErrors = DiagnosticDescriptor.Verification("FORMULA_ERRORS");
 
     internal static IReadOnlyList<DiagnosticDescriptor> All { get; } =
     [
-        Error(SheetNotFound),
-        Error(NameNotFound),
-        Error(ChartNotFound),
-        Error(PivotNotFound),
-        Error(CommentNotFound),
-        Error(HyperlinkNotFound),
-        Error(RangeInvalid),
-        Error(RangeTooLarge),
-        Error(RenderEmpty),
-        Warning(SheetsDropped),
-        Warning(SheetsSkipped),
-        Warning(DataTruncated),
-        Warning(FormulasBroken),
-        Warning(EncryptionRemoved),
-        Warning(FormulasCalculatedOnOpen),
-        Warning(SheetPartiallyRendered),
-        Warning(ActiveSheetSkipped),
-        Warning(MhtmlResourceCoverageUnverified),
-        Warning(TextTableLayout),
-        Warning(ExternalLinkCacheMissing),
-        Warning(ExternalLinkRelative),
-        Warning(FormulaFunctionUnknown),
-        Warning(ChartSplitAcrossPages),
-        Warning(RowsShifted),
+        DiagnosticDescriptor.Error(SheetNotFound),
+        DiagnosticDescriptor.Error(NameNotFound),
+        DiagnosticDescriptor.Error(ChartNotFound),
+        DiagnosticDescriptor.Error(PivotNotFound),
+        DiagnosticDescriptor.Error(CommentNotFound),
+        DiagnosticDescriptor.Error(HyperlinkNotFound),
+        DiagnosticDescriptor.Error(RangeInvalid),
+        DiagnosticDescriptor.Error(RangeTooLarge),
+        DiagnosticDescriptor.Error(RenderEmpty),
+        DiagnosticDescriptor.Warning(SheetsDropped),
+        DiagnosticDescriptor.Warning(SheetsSkipped),
+        DiagnosticDescriptor.Warning(DataTruncated),
+        DiagnosticDescriptor.Warning(FormulasBroken),
+        DiagnosticDescriptor.Warning(EncryptionRemoved),
+        DiagnosticDescriptor.Warning(FormulasCalculatedOnOpen),
+        DiagnosticDescriptor.Warning(SheetPartiallyRendered),
+        DiagnosticDescriptor.Warning(ActiveSheetSkipped),
+        DiagnosticDescriptor.Warning(MhtmlResourceCoverageUnverified),
+        DiagnosticDescriptor.Warning(TextTableLayout),
+        DiagnosticDescriptor.Warning(ExternalLinkCacheMissing),
+        DiagnosticDescriptor.Warning(ExternalLinkRelative),
+        DiagnosticDescriptor.Warning(FormulaFunctionUnknown),
+        DiagnosticDescriptor.Warning(ChartSplitAcrossPages),
+        DiagnosticDescriptor.Warning(RowsShifted),
         FormulaErrors,
     ];
-
-    private static DiagnosticDescriptor Error(ErrorCode code) =>
-        DiagnosticDescriptor.Error(code, "cells");
-
-    private static DiagnosticDescriptor Warning(WarningCode code) =>
-        DiagnosticDescriptor.Warning(code, "cells");
 }

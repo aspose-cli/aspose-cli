@@ -28,6 +28,7 @@ internal sealed class ProductDefinitionValidator
         }
 
         ValidateManifest(definition.Manifest);
+        ValidateOperations(definition);
         ValidateFormats(definition);
         ValidateBudgetOptions(definition);
         RegisterContracts(definition);
@@ -107,7 +108,7 @@ internal sealed class ProductDefinitionValidator
         string productId = definition.Manifest.Id;
         string prefix = $"v2/{productId}/";
         foreach (ProductOperationDescriptor operation in
-            definition.Manifest.Operations.Select(static command => command.Descriptor))
+            definition.Operations.Select(static command => command.Descriptor))
         {
             if (!operation.InputSchema.StartsWith(prefix, StringComparison.Ordinal))
             {
@@ -139,7 +140,6 @@ internal sealed class ProductDefinitionValidator
             throw new InvalidOperationException(
                 $"Product '{manifest.Id}' targets unsupported contract '{manifest.ContractVersion}'.");
         }
-        ValidateOperations(manifest);
         if (string.IsNullOrWhiteSpace(manifest.Engine.Id)
             || !manifest.AvailableEngines.Contains(
                 manifest.Engine.Id,
@@ -150,10 +150,11 @@ internal sealed class ProductDefinitionValidator
         }
     }
 
-    private static void ValidateOperations(ProductManifest manifest)
+    private static void ValidateOperations(ProductDefinition definition)
     {
+        ProductManifest manifest = definition.Manifest;
         var commands = new HashSet<string>(StringComparer.Ordinal);
-        foreach (ProductOperationDescriptor? operation in manifest.Operations.Select(static command => command?.Descriptor))
+        foreach (ProductOperationDescriptor? operation in definition.Operations.Select(static command => command?.Descriptor))
         {
             string[] command = operation?.Command.Split(' ', StringSplitOptions.RemoveEmptyEntries) ?? [];
             if (operation is null

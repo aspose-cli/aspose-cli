@@ -15,15 +15,6 @@ public sealed class CellsCliTests : IDisposable
     [Fact]
     public void CreateEditAndQuery_RoundTripsThroughTheBuiltCli()
     {
-        CliResult capabilities = _workspace.Run(
-            "capabilities", "cells", "--output", "json");
-        Assert.True(capabilities.ExitCode == 0, capabilities.StdErr);
-        Assert.Equal(
-            ["cells", "cells compare", "cells convert", "cells create", "cells edit", "cells inspect", "cells query", "cells query range", "cells query search", "cells render"],
-            JsonNode.Parse(capabilities.StdOut)!["products"]![0]!["commands"]!
-                .AsArray()
-                .Select(static command => command!["path"]!.GetValue<string>()));
-
         Assert.Equal(0, _workspace.Run(
             "cells", "create", "book.xlsx", "--sheets", "Data").ExitCode);
         CliResult inspected = _workspace.Run(

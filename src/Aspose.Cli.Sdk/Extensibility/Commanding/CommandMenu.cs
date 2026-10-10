@@ -1,5 +1,6 @@
 using System.CommandLine;
 using Aspose.Cli.Sdk.Contracts;
+using Aspose.Cli.Sdk.Operations;
 
 namespace Aspose.Cli.Sdk.Extensibility.Commanding;
 
@@ -109,6 +110,9 @@ internal sealed class MenuCommand<TSession, TRequest, TResult> : IMenuEntry<TSes
     public Command Create(MenuContext<TSession> context) => Definition().Create(context, _run);
 
     public IEnumerable<ProductOutputDefinition> Outputs() => Definition().Outputs();
+
+    public IEnumerable<ProductOperationCommand> Operations(string parent) =>
+        Definition() is { Operations: { } describe } definition ? [describe(parent + definition.Name)] : [];
 
     private CommandDefinition<TRequest, TResult> Definition() =>
         _create() ?? throw new InvalidOperationException("A command definition factory returned null.");

@@ -38,7 +38,7 @@ public sealed class PdfEngineTests
             Details = ["outline", "forms", "attachments", "fonts", "permissions", "signatures", "layers", "metadata"],
         });
         using var writer = new StringWriter();
-        Commands.InfoCommand.Table(info, new Sdk.Extensibility.Output.TableSurface(writer, format));
+        Commands.InspectCommand.Table(info, new Sdk.Extensibility.Output.TableSurface(writer, format));
         string text = writer.ToString();
 
         string heading = format == Sdk.Extensibility.Output.TableFormat.Markdown ? "### " : string.Empty;

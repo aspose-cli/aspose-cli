@@ -31,7 +31,7 @@ internal static class ReadCommand
         // covers, so each page's --range is one window of that region and the chain keeps
         // covering columns the budget could not fit in one window. Hidden — it is
         // CLI-internal plumbing, not a knob a human sets.
-        var scanOption = new Option<string?>(NextReadCommand.ScanOption) { Hidden = true }.WithInput(InputKind.None);
+        var scanOption = new Option<string?>(ScanContinuation.ScanOption) { Hidden = true }.WithInput(InputKind.None);
         var scopeOption = new Option<string>("--scope")
         {
             Description = "Projection scope: values, formulas (adds f), styles (adds styleId + pool), full.",
@@ -46,7 +46,7 @@ internal static class ReadCommand
         return new(
             "range",
             "Read cell data of one sheet as a windowed projection.",
-            new CommandTraits { Input = CellsTraits.Workbook("Workbook to read.") },
+            new CommandTraits { Input = CellsInputs.Workbook("Workbook to read.") },
             [sheet, rangeOption, scanOption, scopeOption, maxCellsOption],
             (parse, standard) =>
             {
@@ -65,7 +65,7 @@ internal static class ReadCommand
                         explicitRange.CellCount,
                         maxCells,
                         "Scan the range in budgeted windows: run "
-                            + NextReadCommand.First(standard.Continuation(), sheetName, explicitRange, scope, maxCells)
+                            + ScanContinuation.First(standard.Continuation(), sheetName, explicitRange, scope, maxCells)
                             + " and follow each window.next command, or raise --max-cells.");
                 }
 
@@ -89,7 +89,7 @@ internal static class ReadCommand
             {
                 Window = result.Window with
                 {
-                    Next = NextReadCommand.Build(standard.Continuation(), result, request.Range, request.Scan, request.MaxCells),
+                    Next = ScanContinuation.Build(standard.Continuation(), result, request.Range, request.Scan, request.MaxCells),
                 },
             },
             Examples =

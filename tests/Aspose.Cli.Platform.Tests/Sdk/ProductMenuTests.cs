@@ -32,7 +32,6 @@ public sealed class ProductMenuTests : IDisposable
     {
         Id = "menu",
         DisplayName = "Menu",
-        Operations = [],
         Engine = new ProductEngineCapabilities
         {
             Id = "aspose",
@@ -72,14 +71,14 @@ public sealed class ProductMenuTests : IDisposable
         Command product = Menu().Build().CreateCommand(_hosts.Run);
 
         Assert.Equal(("menu", "A product in a menu."), (product.Name, product.Description));
-        Assert.Equal(["info", "query", "edit"], product.Subcommands.Select(static command => command.Name));
+        Assert.Equal(["inspect", "query", "edit"], product.Subcommands.Select(static command => command.Name));
         Assert.Equal(["read", "search"], product.Subcommands[1].Subcommands.Select(static command => command.Name));
         Assert.Equal("Query the document.", product.Subcommands[1].Description);
         Assert.True(product.TryGetHelpMetadata(out CommandHelpMetadata? help));
-        Assert.Equal(["aspose-cli menu info doc.test"], help!.Examples);
+        Assert.Equal(["aspose-cli menu inspect doc.test"], help!.Examples);
         Assert.Equal(["aspose-cli docs menu/editing"], help.LearnMore.Select(static link => link.Command));
         Assert.True(product.Subcommands[0].TryGetHelpMetadata(out CommandHelpMetadata? info));
-        Assert.Equal(["aspose-cli menu info doc.test --font-dir fonts"], info!.Examples);
+        Assert.Equal(["aspose-cli menu inspect doc.test --font-dir fonts"], info!.Examples);
         Assert.Equal(
             ["--ops", "--if-match", "--dry-run", "--best-effort", "--strict", "--out", "--overwrite", "--in-place", "--backup"],
             product.Subcommands[2].Options.Select(static option => option.Name).Take(9));
@@ -90,7 +89,7 @@ public sealed class ProductMenuTests : IDisposable
     {
         Command product = Menu().Build().CreateCommand(_hosts.Run);
 
-        TextResult result = Assert.IsType<TextResult>(Run(product, "info", "doc.test", "--font-dir", "fonts", "--password-env", "LEFT"));
+        TextResult result = Assert.IsType<TextResult>(Run(product, "inspect", "doc.test", "--font-dir", "fonts", "--password-env", "LEFT"));
 
         Assert.Equal(_temp.File("doc.test") + "|a|finished", result.Value);
         Assert.Equal(
@@ -103,14 +102,14 @@ public sealed class ProductMenuTests : IDisposable
     {
         Command product = Menu().Build().CreateCommand(_hosts.Run);
 
-        CliException missing = RunFailing(product, "info", "missing.test", "--font-dir", "nope", "--fail");
-        CliException fonts = RunFailing(product, "info", "doc.test", "--font-dir", "nope", "--fail");
+        CliException missing = RunFailing(product, "inspect", "missing.test", "--font-dir", "nope", "--fail");
+        CliException fonts = RunFailing(product, "inspect", "doc.test", "--font-dir", "nope", "--fail");
 
         Assert.Equal(ErrorCodes.FileNotFound, missing.Code);
         Assert.Equal(ErrorCodes.OptionInvalid, fonts.Code);
         Assert.Equal("--font-dir", fonts.Details!["option"]!.GetValue<string>());
         Assert.Empty(Log);
-        Assert.Equal(ErrorCodes.UsageError, RunFailing(product, "info", "doc.test", "--fail").Code);
+        Assert.Equal(ErrorCodes.UsageError, RunFailing(product, "inspect", "doc.test", "--fail").Code);
         Assert.Equal(["bind"], Log);
     }
 
@@ -142,11 +141,31 @@ public sealed class ProductMenuTests : IDisposable
     }
 
     [Fact]
+    public void Operations_ComeFromTheEditDefinitionsUnderTheirCommandPaths()
+    {
+        ProductDefinition definition = ExtProduct.Define<TestSession>(Manifest)
+            .Describe("A product in a menu.")
+            .Command(InspectCommand.Create, TestHandlers.Info)
+            .Command(EditCommand.Create, TestHandlers.Edit)
+            .Group("batch", "Edit in batches.", static batch => batch
+                .Command(EditCommand.Create, TestHandlers.Edit))
+            .Complete()
+            .Build();
+
+        Assert.Equal(["edit", "batch edit"], definition.Operations.Select(static command => command.Descriptor.Command));
+        Assert.All(definition.Operations, static command =>
+        {
+            Assert.Equal(TestOp.Catalog.Names, command.Descriptor.Ops);
+            Assert.Equal(TestOp.Catalog.MaximumOperationCount, command.Descriptor.MaximumOperationCount);
+        });
+    }
+
+    [Fact]
     public void Outputs_RefuseTwoDifferentRenderersOfOneResultType()
     {
         ProductDefinition definition = ExtProduct.Define<TestSession>(Manifest)
             .Describe("A product in a menu.")
-            .Command(InfoCommand.Create, TestHandlers.Info)
+            .Command(InspectCommand.Create, TestHandlers.Info)
             .Command(OtherTextCommand.Create, TestHandlers.Info)
             .Complete()
             .Build();
@@ -159,7 +178,7 @@ public sealed class ProductMenuTests : IDisposable
     public void Build_RequiresADescriptionForAMenu()
     {
         ProductDefinitionBuilder<TestSession> builder = ExtProduct.Define<TestSession>(Manifest)
-            .Command(InfoCommand.Create, TestHandlers.Info)
+            .Command(InspectCommand.Create, TestHandlers.Info)
             .Complete();
 
         Assert.Contains("Describe", Assert.Throws<InvalidOperationException>(builder.Build).Message, StringComparison.Ordinal);
@@ -239,7 +258,7 @@ public sealed class ProductMenuTests : IDisposable
     {
         ProductDefinition definition = ExtProduct.Define<StringBuilder>(Manifest)
             .Describe("A product in a menu.")
-            .Command(InfoCommand.Create, static (StringBuilder _, InfoRequest _) => new TextResult("x"))
+            .Command(InspectCommand.Create, static (StringBuilder _, InfoRequest _) => new TextResult("x"))
             .Formats([])
             .Diagnostics([])
             .Json(new ProductJsonDefinition(Manifest.Id, SdkJsonContext.Default))
@@ -257,7 +276,7 @@ public sealed class ProductMenuTests : IDisposable
     private static ProductDefinitionBuilder<TestSession> Menu() =>
         ExtProduct.Define<TestSession>(Manifest)
             .Describe("A product in a menu.", static () => new CommandHelp(
-                ["menu info doc.test"],
+                ["menu inspect doc.test"],
                 [CommandHelpLink.Docs(Manifest, "editing", "editing")]))
             .Guard(static (session, run) =>
             {
@@ -266,7 +285,7 @@ public sealed class ProductMenuTests : IDisposable
                 session.Log.Add("guard <");
                 return result;
             })
-            .Command(InfoCommand.Create, TestHandlers.Info)
+            .Command(InspectCommand.Create, TestHandlers.Info)
             .Group("query", "Query the document.", static query => query
                 .Command(ReadCommand.Create, TestHandlers.Info)
                 .Command(SearchCommand.Create, TestHandlers.Search))
@@ -362,13 +381,13 @@ public sealed class ProductMenuTests : IDisposable
         }
     }
 
-    private static class InfoCommand
+    private static class InspectCommand
     {
         public static CommandDefinition<InfoRequest, TextResult> Create()
         {
             var fail = new Option<bool>("--fail") { Description = "Fail the usage check." };
             return new(
-                "info",
+                "inspect",
                 "Shows the document.",
                 new CommandTraits { Input = Document, UsesFonts = true },
                 [fail],
@@ -386,7 +405,7 @@ public sealed class ProductMenuTests : IDisposable
                     Log.Add("finish");
                     return result with { Value = result.Value + "|finished" };
                 },
-                Examples = ["menu info doc.test --font-dir fonts"],
+                Examples = ["menu inspect doc.test --font-dir fonts"],
             };
         }
     }
@@ -416,7 +435,7 @@ public sealed class ProductMenuTests : IDisposable
         };
     }
 
-    /// <summary>Renders the result type <see cref="InfoCommand"/> renders, with another method.</summary>
+    /// <summary>Renders the result type <see cref="InspectCommand"/> renders, with another method.</summary>
     private static class OtherTextCommand
     {
         public static CommandDefinition<InfoRequest, TextResult> Create() => new(

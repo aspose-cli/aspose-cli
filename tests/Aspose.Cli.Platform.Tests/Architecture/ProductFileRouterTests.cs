@@ -313,7 +313,6 @@ public sealed class ProductFileRouterTests
                 {
                     Id = "unsafe",
                     DisplayName = "unsafe",
-                    Operations = [],
                     Engine = new ProductEngineCapabilities
                     {
                         Id = "aspose",
@@ -737,7 +736,6 @@ public sealed class ProductFileRouterTests
             {
                 Id = id,
                 DisplayName = id,
-                Operations = [],
                 Engine = new ProductEngineCapabilities
                 {
                     Id = "aspose",
@@ -805,7 +803,6 @@ public sealed class ProductFileRouterTests
     {
         Id = id,
         DisplayName = id,
-        Operations = [],
         Engine = new ProductEngineCapabilities
         {
             Id = "aspose",

@@ -13,7 +13,7 @@ public sealed class WordsRendererGoldenTests
     [Fact]
     public void Info_WithEveryDetail_Plain()
     {
-        string text = RenderedText.Of(surface => InfoCommand.Render(InfoWithDetails(), surface), TableFormat.Plain);
+        string text = RenderedText.Of(surface => InspectCommand.Table(InfoWithDetails(), surface), TableFormat.Plain);
 
         RenderedText.Equal(
             """
@@ -79,7 +79,7 @@ public sealed class WordsRendererGoldenTests
     [Fact]
     public void Info_WithEveryDetail_Markdown()
     {
-        string text = RenderedText.Of(surface => InfoCommand.Render(InfoWithDetails(), surface), TableFormat.Markdown);
+        string text = RenderedText.Of(surface => InspectCommand.Table(InfoWithDetails(), surface), TableFormat.Markdown);
 
         RenderedText.Equal(
             """
@@ -171,7 +171,7 @@ public sealed class WordsRendererGoldenTests
             Images = [], Tables = [], Properties = new Dictionary<string, string?>(), Fonts = [],
         };
 
-        string text = RenderedText.Of(surface => InfoCommand.Render(result, surface), TableFormat.Plain);
+        string text = RenderedText.Of(surface => InspectCommand.Table(result, surface), TableFormat.Plain);
 
         RenderedText.Equal(
             """
@@ -218,7 +218,7 @@ public sealed class WordsRendererGoldenTests
     [Fact]
     public void Info_WithoutDetails_PrintsOnlyTheSummary()
     {
-        string text = RenderedText.Of(surface => InfoCommand.Render(Info(), surface), TableFormat.Plain);
+        string text = RenderedText.Of(surface => InspectCommand.Table(Info(), surface), TableFormat.Plain);
 
         RenderedText.Equal(
             """
@@ -246,7 +246,7 @@ public sealed class WordsRendererGoldenTests
             ],
         };
 
-        string text = RenderedText.Of(surface => ReadCommand.Render(result, surface), TableFormat.Plain);
+        string text = RenderedText.Of(surface => ReadCommand.Table(result, surface), TableFormat.Plain);
 
         RenderedText.Equal(
             """
@@ -282,7 +282,7 @@ public sealed class WordsRendererGoldenTests
             },
         };
 
-        string text = RenderedText.Of(surface => EditCommand.Render(result, surface), TableFormat.Plain);
+        string text = RenderedText.Of(surface => EditCommand.Table(result, surface), TableFormat.Plain);
 
         RenderedText.Equal(
             """

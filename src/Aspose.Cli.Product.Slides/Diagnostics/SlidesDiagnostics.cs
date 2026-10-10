@@ -22,19 +22,16 @@ internal static class SlidesDiagnostics
 
     internal static IReadOnlyList<DiagnosticDescriptor> All { get; } =
     [
-        Error(SlideNotFound),
-        Error(PlaceholderNotFound),
-        Error(ChartDataInvalid),
-        Error(ShapeNotFound),
-        Error(LayoutNotFound),
-        DiagnosticDescriptor.Warning(ChartTitleOverlaid, "slides"),
-        DiagnosticDescriptor.Warning(TableOverflow, "slides"),
-        DiagnosticDescriptor.Warning(SlideBackgroundReset, "slides"),
+        DiagnosticDescriptor.Error(SlideNotFound),
+        DiagnosticDescriptor.Error(PlaceholderNotFound),
+        DiagnosticDescriptor.Error(ChartDataInvalid),
+        DiagnosticDescriptor.Error(ShapeNotFound),
+        DiagnosticDescriptor.Error(LayoutNotFound),
+        DiagnosticDescriptor.Warning(ChartTitleOverlaid),
+        DiagnosticDescriptor.Warning(TableOverflow),
+        DiagnosticDescriptor.Warning(SlideBackgroundReset),
     ];
 
     private static ErrorCode Validation(string code) =>
         new(code, ExitCode.ValidationError);
-
-    private static DiagnosticDescriptor Error(ErrorCode code) =>
-        DiagnosticDescriptor.Error(code, "slides");
 }

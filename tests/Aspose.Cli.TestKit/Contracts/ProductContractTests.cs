@@ -488,7 +488,7 @@ public abstract class ProductContractTests<TModule>
     public void Operations_HaveNarrowedSchemaViews()
     {
         ProductCatalog catalog = ProductCatalog.Build([new TModule()]);
-        foreach (ProductOperationDescriptor operation in Assert.Single(catalog.Products).Manifest.Operations
+        foreach (ProductOperationDescriptor operation in Assert.Single(catalog.Products).Operations
             .Select(static command => command.Descriptor))
         {
             foreach (string name in operation.Ops)
@@ -526,7 +526,7 @@ public abstract class ProductContractTests<TModule>
     {
         ProductCatalog catalog = ProductCatalog.Build([new TModule()]);
         ProductDefinition definition = Assert.Single(catalog.Products);
-        string[] operationSchemas = definition.Manifest.Operations
+        string[] operationSchemas = definition.Operations
             .Select(static operation => operation.Descriptor.InputSchema)
             .Distinct(StringComparer.Ordinal)
             .ToArray();
@@ -580,7 +580,7 @@ public abstract class ProductContractTests<TModule>
     {
         ProductCatalog catalog = ProductCatalog.Build([new TModule()]);
         ProductDefinition definition = Assert.Single(catalog.Products);
-        ProductOperationDescriptor[] operations = definition.Manifest.Operations
+        ProductOperationDescriptor[] operations = definition.Operations
             .Select(static operation => operation.Descriptor)
             .ToArray();
         string[] operationSchemas = operations

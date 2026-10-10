@@ -33,7 +33,7 @@ internal static class RenderCommand
                     Password = standard.InputPassword,
                 };
             },
-            Render)
+            Table)
         {
             Examples =
             [
@@ -43,7 +43,7 @@ internal static class RenderCommand
         };
     }
 
-    internal static void Render(WordsRenderResult result, TableSurface surface)
+    internal static void Table(WordsRenderResult result, TableSurface surface)
     {
         surface.Out.WriteLine($"rendered {result.Outputs.Count} page(s)");
         foreach (PageOutput page in result.Outputs)
