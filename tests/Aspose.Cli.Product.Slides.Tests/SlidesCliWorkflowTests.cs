@@ -15,13 +15,16 @@ public sealed class SlidesCliWorkflowTests : IDisposable
     {
         CreateDeck(_workspace.File("deck.pptx"));
 
-        CliResult info = _workspace.Run(
-            "slides", "inspect", "deck.pptx", "--output", "json");
-        CliResult read = _workspace.Run(
-            "slides", "query", "slides", "deck.pptx", "--slides", "1", "--output", "json");
-        CliResult convert = _workspace.Run(
-            "slides", "convert", "deck.pptx", "--to", "png",
-            "--slides", "1", "--out", "slide.png", "--output", "json");
+        // The three commands only read the deck, so they run at once.
+        CliResult info = null!, read = null!, convert = null!;
+        Parallel.Invoke(
+            () => info = _workspace.Run(
+                "slides", "inspect", "deck.pptx", "--output", "json"),
+            () => read = _workspace.Run(
+                "slides", "query", "slides", "deck.pptx", "--slides", "1", "--output", "json"),
+            () => convert = _workspace.Run(
+                "slides", "convert", "deck.pptx", "--to", "png",
+                "--slides", "1", "--out", "slide.png", "--output", "json"));
 
         Assert.True(info.ExitCode == 0, info.StdErr);
         Assert.Equal(3, JsonNode.Parse(info.StdOut)!["presentation"]!["slideCount"]!.GetValue<int>());
@@ -144,11 +147,13 @@ public sealed class SlidesCliWorkflowTests : IDisposable
         CreateDeck(_workspace.File("deck.pptx"));
 
         // The unpaged search is the reference, so evaluation watermark text cannot skew the pages.
-        CliResult all = _workspace.Run(
-            "slides", "query", "search", "deck.pptx", "--pattern", "Slide", "--scope", "shapes", "--output", "json");
-        CliResult first = _workspace.Run(
-            "slides", "query", "search", "deck.pptx", "--pattern", "Slide", "--scope", "shapes",
-            "--max-hits", "2", "--output", "json");
+        CliResult all = null!, first = null!;
+        Parallel.Invoke(
+            () => all = _workspace.Run(
+                "slides", "query", "search", "deck.pptx", "--pattern", "Slide", "--scope", "shapes", "--output", "json"),
+            () => first = _workspace.Run(
+                "slides", "query", "search", "deck.pptx", "--pattern", "Slide", "--scope", "shapes",
+                "--max-hits", "2", "--output", "json"));
 
         Assert.True(all.ExitCode == 0, all.StdErr);
         Assert.True(first.ExitCode == 0, first.StdErr);
