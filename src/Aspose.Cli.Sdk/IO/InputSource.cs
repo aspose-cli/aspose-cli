@@ -49,6 +49,8 @@ public sealed class InputSource
 
     internal void ThrowIfFailed() => _budgets.ThrowIfFailed();
 
+    internal ResourceBudgetLedger Budgets => _budgets;
+
     /// <summary>
     /// Opens a bounded read of a file with <see cref="InputFiles.OpenRead"/>; a file that cannot
     /// be opened is the error <see cref="InputFailures.FromAccess"/> names.

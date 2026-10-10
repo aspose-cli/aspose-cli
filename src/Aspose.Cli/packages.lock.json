@@ -195,8 +195,7 @@
         "dependencies": {
           "Aspose.Cli.Sdk": "[1.0.0, )",
           "Aspose.PDF.Drawing": "[26.8.0, )",
-          "Microsoft.Bcl.Memory": "[9.0.18, )",
-          "SkiaSharp": "[3.119.0, )"
+          "Microsoft.Bcl.Memory": "[9.0.18, )"
         }
       },
       "aspose.cli.product.slides": {
@@ -216,6 +215,7 @@
       "aspose.cli.sdk": {
         "type": "Project",
         "dependencies": {
+          "SkiaSharp": "[3.119.0, )",
           "System.CommandLine": "[2.0.9, )"
         }
       },

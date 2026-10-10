@@ -175,7 +175,8 @@ public sealed class SdkLayeringTests
             Root,
             trees,
             RoslynTestSupport.PlatformReferences()
-                .Add(MetadataReference.CreateFromFile(typeof(System.CommandLine.Command).Assembly.Location)),
+                .Add(MetadataReference.CreateFromFile(typeof(System.CommandLine.Command).Assembly.Location))
+                .Add(MetadataReference.CreateFromFile(typeof(SkiaSharp.SKCodec).Assembly.Location)),
             new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, nullableContextOptions: NullableContextOptions.Enable));
 
         var namespaces = new HashSet<string>(StringComparer.Ordinal);

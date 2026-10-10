@@ -38,6 +38,7 @@
       "aspose.cli.sdk": {
         "type": "Project",
         "dependencies": {
+          "SkiaSharp": "[3.119.0, )",
           "System.CommandLine": "[2.0.9, )"
         }
       },
