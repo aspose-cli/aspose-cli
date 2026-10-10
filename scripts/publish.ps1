@@ -188,6 +188,29 @@ if ($customerPublish) {
     }
 
     $executable = Join-Path $publishRoot $executableName
+    # Every invocation starts a process, so the launcher's own assemblies ship precompiled
+    # (ReadyToRun); the document engines stay IL, which keeps them out of the package size.
+    $bundled = @(Get-BundledAssemblyCode -Executable $executable)
+    $ownAssembly = {
+        param($name)
+        $name -ceq [string]$layout.Identity.commandName -or
+            $name -ceq 'System.CommandLine' -or
+            $name.StartsWith('Aspose.Cli.', [StringComparison]::Ordinal)
+    }
+    $own = @($bundled | Where-Object { & $ownAssembly $_.Name })
+    $engines = @($bundled | Where-Object { $_.Name.StartsWith('Aspose.', [StringComparison]::Ordinal) -and -not (& $ownAssembly $_.Name) })
+    $notPrecompiled = @($own | Where-Object Code -cne 'R2R' | ForEach-Object Name)
+    $precompiledEngines = @($engines | Where-Object Code -cne 'IL' | ForEach-Object Name)
+    if ($own.Count -lt 3 -or $engines.Count -lt $productCount) {
+        throw "Customer executable bundles $($own.Count) own and $($engines.Count) engine assemblies; expected the launcher, host and SDK and one engine per product."
+    }
+    if ($notPrecompiled.Count -ne 0) {
+        throw "Customer executable bundles own assemblies without ReadyToRun code: $($notPrecompiled -join ', ')."
+    }
+    if ($precompiledEngines.Count -ne 0) {
+        throw "Customer executable bundles document engines with ReadyToRun code: $($precompiledEngines -join ', ')."
+    }
+
     & $executable --version | Out-Host
     if ($LASTEXITCODE -ne 0) {
         throw "Published executable failed --version with exit code $LASTEXITCODE."

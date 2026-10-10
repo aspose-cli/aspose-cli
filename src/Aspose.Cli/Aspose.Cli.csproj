@@ -14,7 +14,26 @@
     <!-- The runtime a release ships, independent of the SDK that builds it. Raise it to the
          latest patch before a release; scripts/sync.ps1 then records the packs it restores. -->
     <RuntimeFrameworkVersion>10.0.10</RuntimeFrameworkVersion>
+    <!-- Every invocation starts a process, so a publish precompiles this project's own code;
+         see LimitReadyToRunToOwnAssemblies. A build is unaffected. -->
+    <PublishReadyToRun>true</PublishReadyToRun>
+    <!-- A single-file publish would otherwise recompile the precompiled runtime with every
+         assembly into one composite image. -->
+    <PublishReadyToRunComposite>false</PublishReadyToRunComposite>
   </PropertyGroup>
+
+  <!-- The document engines stay IL: precompiled, they would add about 110 MB to the package
+       for a smaller gain than the start-up code that runs on every invocation. -->
+  <Target Name="LimitReadyToRunToOwnAssemblies" BeforeTargets="_PrepareForReadyToRunCompilation">
+    <ItemGroup>
+      <PublishReadyToRunExclude
+        Include="@(ResolvedFileToPublish->'%(Filename)%(Extension)')"
+        Condition="'%(ResolvedFileToPublish.PostprocessAssembly)' == 'true'
+          and '%(Filename)' != '$(AssemblyName)'
+          and '%(Filename)' != 'System.CommandLine'
+          and !$([System.String]::Copy('%(Filename)').StartsWith('Aspose.Cli.'))" />
+    </ItemGroup>
+  </Target>
 
   <ItemGroup>
     <ProjectReference Include="..\Aspose.Cli.Host\Aspose.Cli.Host.csproj" />
