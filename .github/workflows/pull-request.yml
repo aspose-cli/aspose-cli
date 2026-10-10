@@ -94,6 +94,6 @@ jobs:
             echo "::$level::$file $line"
           done <<< "$widened"
           if [ "$APPROVED" != true ]; then
-            echo "::error::Fix the product instead. Accepting a new or wider known violation takes the owner's approval: the 'quality-exception' label on this pull request (CONTRIBUTING.md#gates)."
+            echo "::error::Fix the product instead. Accepting a new or wider known violation takes the owner's approval: the 'quality-exception' label on this pull request (AGENTS.md#gates)."
             exit 1
           fi
