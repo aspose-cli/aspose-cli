@@ -127,7 +127,7 @@ public sealed class TempWorkspace : IDisposable
         return ValidateJsonContract(result, args);
     }
 
-    private CliResult ValidateJsonContract(
+    private static CliResult ValidateJsonContract(
         CliResult result,
         IReadOnlyList<string> args)
     {
@@ -196,7 +196,7 @@ public sealed class TempWorkspace : IDisposable
         }
     }
 
-    private JsonSchema GetSchema(string schemaUri)
+    private static JsonSchema GetSchema(string schemaUri)
     {
         lock (SchemaLock)
         {
@@ -220,21 +220,7 @@ public sealed class TempWorkspace : IDisposable
                 Schemas.Add(schemaUri, commonSchema);
                 return commonSchema;
             }
-            CliResult schemaResult = new CliProcess(
-                CliRunner.ExecutablePath,
-                CliEnvironment.Evaluation(_configDirectory.Path)).Run(
-                    Path,
-                    standardInput: null,
-                    args: ["schema", id]);
-            if (schemaResult.ExitCode != 0)
-            {
-                throw new InvalidOperationException(
-                    $"CLI schema '{id}' could not be loaded: "
-                        + schemaResult.StdErr);
-            }
-            JsonSchema schema = JsonSchema.FromText(
-                schemaResult.StdOut,
-                SchemaBuildOptions);
+            JsonSchema schema = PublishedSchemas.Schema(id);
             Schemas.Add(schemaUri, schema);
             return schema;
         }
