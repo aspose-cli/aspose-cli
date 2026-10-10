@@ -64,6 +64,16 @@ internal readonly record struct PdfNavigationCensus(int Bookmarks, int Links, in
         }
     }
 
+    /// <summary>
+    /// The destination a name leads to, or null when the document has none of that name. The
+    /// engine's lookup throws for a name tree without a Dests entry (PDF-NAMES-WITHOUT-DESTS),
+    /// such as the one a document assembled from copied pages gets with its attachments.
+    /// </summary>
+    internal static IAppointment? NamedTarget(Document document, string name) =>
+        NamedDestinationNames(document).Contains(name, StringComparer.Ordinal)
+            ? document.NamedDestinations[name]
+            : null;
+
     /// <summary>What <paramref name="after"/> has broken that <paramref name="before"/> had not.</summary>
     internal static PdfNavigationCensus Degraded(PdfNavigationCensus before, PdfNavigationCensus after) => new(
         Math.Max(0, after.Bookmarks - before.Bookmarks),
@@ -86,7 +96,7 @@ internal readonly record struct PdfNavigationCensus(int Bookmarks, int Links, in
     {
         ExplicitDestination explicitDestination =>
             explicitDestination.PageNumber >= 1 && explicitDestination.PageNumber <= document.Pages.Count,
-        NamedDestination named => document.NamedDestinations[named.Name] is ExplicitDestination resolved
+        NamedDestination named => NamedTarget(document, named.Name) is ExplicitDestination resolved
             && Resolves(document, resolved),
         _ => false,
     };

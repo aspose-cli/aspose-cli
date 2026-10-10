@@ -125,10 +125,7 @@ internal sealed partial class PdfMutationHandlers
     public long Apply(RemoveAttachmentOp operation)
     {
         // FindByName throws an engine exception for a missing name; match the names query reports.
-        string[] names = _document.EmbeddedFiles
-            .Select(static file => file.UnicodeName ?? file.Name)
-            .Where(static name => !string.IsNullOrEmpty(name))
-            .ToArray();
+        string[] names = AttachmentNames(_document);
         if (!names.Contains(operation.Name, StringComparer.Ordinal))
         {
             throw CliErrors.NotFound(PdfDiagnostics.AttachmentNotFound, "attachment", operation.Name, names);

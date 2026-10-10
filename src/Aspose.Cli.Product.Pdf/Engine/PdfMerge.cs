@@ -33,6 +33,7 @@ internal static class PdfMerge
         int bookmarks = 0;
         int brokenInputLinks = 0;
         int namedDestinations = 0;
+        List<Warning> warnings = [];
         foreach (string path in request.InputPaths)
         {
             using LoadedPdf loaded = session.Loader.Open(path, request.Password);
@@ -52,6 +53,19 @@ internal static class PdfMerge
                 bookmarks += CopyOutline(source, source.Outlines, merged.Outlines, merged, page => offset + page);
             }
 
+            // An attachment keeps the name it has in the first input that holds that name.
+            warnings.AddRange(CopyAttachments(source, merged).Select(name =>
+                new Warning(WarningCodes.LossyConversion, $"Attachment '{name}' of '{path}' was left out: an earlier input has an attachment of that name, which the merged document keeps.")
+                {
+                    Location = $"{path} attachment {name}",
+                    Hint = "Rename the attachment in that input (remove_attachment, then add_attachment with another name) and merge again, or deliver the file alongside the merged PDF.",
+                    AffectsCompleteness = true,
+                }));
+            if (PortfolioNotKept(source, path) is { } portfolio)
+            {
+                warnings.Add(portfolio);
+            }
+
             inputs.Add(PdfInfoProjection.Source(path));
         }
 
@@ -60,7 +74,6 @@ internal static class PdfMerge
             Math.Max(0, PdfNavigationCensus.Unresolved(merged).Links - brokenInputLinks),
             namedDestinations);
         long size = session.Outputs.Write(request.Output.Path, request.Output.Overwrite, merged, merged.Save);
-        List<Warning> warnings = [];
         if (navigation.ToWarning(
                 "lost their exact target: merged bookmarks open their page at Fit zoom, and named destinations are not carried into the merged document",
                 "Re-create location-sensitive bookmarks (add_bookmark) and links (add_link) on the merged PDF.")

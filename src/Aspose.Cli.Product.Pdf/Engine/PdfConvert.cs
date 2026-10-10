@@ -289,12 +289,6 @@ internal static class PdfConvert
         return ContainerSignatures.HasPdfHeader(ContainerSignatures.ReadPrefix(contents));
     }
 
-    private static string[] AttachmentNames(Document document) =>
-        document.EmbeddedFiles
-            .Select(static file => file.UnicodeName ?? file.Name)
-            .Where(static name => !string.IsNullOrEmpty(name))
-            .ToArray();
-
     /// <summary>Why the profile does not keep an attachment.</summary>
     private static string AttachmentRule(string profile) => profile switch
     {

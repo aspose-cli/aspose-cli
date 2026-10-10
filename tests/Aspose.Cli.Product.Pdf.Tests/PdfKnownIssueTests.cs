@@ -140,11 +140,12 @@ public sealed class PdfKnownIssueTests
         using var document = new Document(input);
         Exception? names = Record.Exception(() => document.NamedDestinations.Names);
         Exception? count = Record.Exception(() => document.NamedDestinations.Count);
+        Exception? lookup = Record.Exception(() => document.NamedDestinations["appendix"]);
 
         KnownIssue.Reproduces(
             "PDF-NAMES-WITHOUT-DESTS",
-            names is NullReferenceException && count is NullReferenceException,
-            $"for a name tree with only EmbeddedFiles, Names threw {names?.GetType().Name ?? "nothing"} and Count threw {count?.GetType().Name ?? "nothing"}");
+            names is NullReferenceException && count is NullReferenceException && lookup is NullReferenceException,
+            $"for a name tree with only EmbeddedFiles, Names threw {names?.GetType().Name ?? "nothing"}, Count threw {count?.GetType().Name ?? "nothing"} and the name lookup threw {lookup?.GetType().Name ?? "nothing"}");
     }
 
     [LicensedFact]
