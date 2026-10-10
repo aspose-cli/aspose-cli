@@ -19,7 +19,7 @@ internal sealed record LiveDocumentOptions
     public string? View { get; init; }
 
     /// <summary>Password of an encrypted document.</summary>
-    public string? Password { get; init; }
+    public WireSecret? Password { get; init; }
 
     /// <summary>Explicit license file, or null for the configured sources.</summary>
     public string? License { get; init; }
@@ -177,7 +177,7 @@ internal sealed class LiveDocument : IDisposable
         return _options.Product == options.Product
             && _options.View == options.View
             && _options.Effect == options.Effect
-            && _options.Password == options.Password
+            && Equals(_options.Password, options.Password)
             && _options.License == options.License
             && _options.EvaluationRequested == options.EvaluationRequested
             && _options.MaxInputBytes == options.MaxInputBytes
