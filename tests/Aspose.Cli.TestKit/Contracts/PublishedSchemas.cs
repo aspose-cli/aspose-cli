@@ -6,7 +6,8 @@ namespace Aspose.Cli.TestKit;
 
 /// <summary>
 /// The JSON Schemas the built CLI publishes, read only through its <c>schema</c> command, so a
-/// test sees what an agent sees, whatever produces the schemas inside the CLI.
+/// test sees what an agent sees, whatever produces the schemas inside the CLI. What one build
+/// printed is kept by <see cref="PublishedSchemaCache"/> for the other test processes of a run.
 /// </summary>
 public static class PublishedSchemas
 {
@@ -44,25 +45,11 @@ public static class PublishedSchemas
 
     private static Published Load()
     {
-        using var workspace = new TempWorkspace();
-        CliResult list = workspace.Run("schema", "--output", "json");
-        if (list.ExitCode != 0)
-        {
-            throw new InvalidOperationException("aspose-cli schema failed: " + list.StdErr);
-        }
-
-        string[] ids = [.. JsonNode.Parse(list.StdOut)!["schemas"]!.AsArray().Select(static id => id!.GetValue<string>())];
-        var documents = new ConcurrentDictionary<string, JsonObject>(StringComparer.Ordinal);
-        Parallel.ForEach(ids, new ParallelOptions { MaxDegreeOfParallelism = 8 }, id =>
-        {
-            CliResult schema = workspace.Run("schema", id);
-            if (schema.ExitCode != 0)
-            {
-                throw new InvalidOperationException($"aspose-cli schema {id} failed: {schema.StdErr}");
-            }
-
-            documents[id] = JsonNode.Parse(schema.StdOut)!.AsObject();
-        });
+        PublishedSchemaSnapshot snapshot = PublishedSchemaCache.GetOrAdd(
+            CliRunner.ExecutablePath, PublishedSchemaCache.DefaultDirectory, Read);
+        IReadOnlyList<string> ids = snapshot.Ids;
+        Dictionary<string, JsonObject> documents = ids.ToDictionary(
+            static id => id, id => JsonNode.Parse(snapshot.Documents[id])!.AsObject(), StringComparer.Ordinal);
 
         // A schema can reference another one; build them until every reference resolves.
         var options = new BuildOptions { SchemaRegistry = new SchemaRegistry() };
@@ -93,6 +80,32 @@ public static class PublishedSchemas
         }
 
         return new Published(ids, documents, options);
+    }
+
+    /// <summary>Asks the built CLI for every schema it lists, as an agent would.</summary>
+    private static PublishedSchemaSnapshot Read()
+    {
+        using var workspace = new TempWorkspace();
+        CliResult list = workspace.Run("schema", "--output", "json");
+        if (list.ExitCode != 0)
+        {
+            throw new InvalidOperationException("aspose-cli schema failed: " + list.StdErr);
+        }
+
+        string[] ids = [.. JsonNode.Parse(list.StdOut)!["schemas"]!.AsArray().Select(static id => id!.GetValue<string>())];
+        var documents = new ConcurrentDictionary<string, string>(StringComparer.Ordinal);
+        Parallel.ForEach(ids, new ParallelOptions { MaxDegreeOfParallelism = 8 }, id =>
+        {
+            CliResult schema = workspace.Run("schema", id);
+            if (schema.ExitCode != 0)
+            {
+                throw new InvalidOperationException($"aspose-cli schema {id} failed: {schema.StdErr}");
+            }
+
+            documents[id] = schema.StdOut;
+        });
+
+        return new PublishedSchemaSnapshot(ids, documents);
     }
 
     private sealed record Published(IReadOnlyList<string> Ids, IReadOnlyDictionary<string, JsonObject> Documents, BuildOptions Options);
