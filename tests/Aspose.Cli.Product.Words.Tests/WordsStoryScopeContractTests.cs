@@ -43,9 +43,13 @@ public sealed class WordsStoryScopeContractTests : IDisposable
         builder.InsertImage(png);
         document.Save(_workspace.File("stories.docx"), SaveFormat.Docx);
 
-        CliResult inspected = _workspace.Run(
-            "words", "inspect", "stories.docx", "--detail", "fields", "--detail", "images",
-            "--license", TestLicense.Path!, "--output", "json");
+        // The published schemas load while the document is inspected.
+        CliResult inspected = null!;
+        Parallel.Invoke(
+            () => _ = PublishedSchemas.Ids,
+            () => inspected = _workspace.Run(
+                "words", "inspect", "stories.docx", "--detail", "fields", "--detail", "images",
+                "--license", TestLicense.Path!, "--output", "json"));
 
         Assert.True(inspected.ExitCode == 0, inspected.StdErr);
         JsonObject result = JsonNode.Parse(inspected.StdOut)!.AsObject();
