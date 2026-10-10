@@ -43,7 +43,7 @@ internal static class LocalServiceControlClient
                 endpoint.Service,
                 endpoint.InstanceId,
                 nonce,
-                token,
+                new WireSecret(token),
                 command,
                 path,
                 payload,

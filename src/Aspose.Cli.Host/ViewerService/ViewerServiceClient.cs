@@ -129,7 +129,7 @@ internal sealed class ViewerServiceClient
                 LicensePath = globals.LicensePath is null
                     ? null
                     : Path.GetFullPath(globals.LicensePath, workDirectory),
-                ServiceToken = LocalHttpRequestSecurity.RandomToken(),
+                ServiceToken = new WireSecret(LocalHttpRequestSecurity.RandomToken()),
                 ServiceNonce = LocalHttpRequestSecurity.RandomToken(),
             });
         }
@@ -194,7 +194,7 @@ internal sealed class ViewerServiceClient
         LocalServiceControlResponse response = LocalServiceControlServer.Send(
             new LocalServiceControlEndpoint(ViewerServiceCommands.Service, marker.Id),
             marker.Nonce,
-            marker.Token,
+            marker.Token.Reveal(),
             command,
             path,
             payload: payload,

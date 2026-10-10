@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using Aspose.Cli.Host.LocalServices;
 
 namespace Aspose.Cli.Host.ViewerService;
 
@@ -150,7 +151,7 @@ internal sealed record ViewerFailure(string Code, int Exit, string Message);
 /// <summary>Where the running viewer service can be found.</summary>
 internal sealed record ViewerServiceMarker(
     string Id,
-    [property: JsonIgnore] string Token,
+    [property: JsonIgnore] WireSecret Token,
     int Pid,
     long StartTicksUtc,
     int Port,
@@ -159,7 +160,7 @@ internal sealed record ViewerServiceMarker(
     int Version = 1);
 
 /// <summary>The secret companion of the marker; never in the public file.</summary>
-internal sealed record ViewerServiceSecrets(string Token);
+internal sealed record ViewerServiceSecrets(WireSecret Token);
 
 [JsonSourceGenerationOptions(
     PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase,
