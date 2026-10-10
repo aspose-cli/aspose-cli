@@ -18,8 +18,7 @@
       "sdkPackageId": "Aspose.PDF.Drawing",
       "sdkVersion": "26.8.0",
       "supplementalPackages": {
-        "Microsoft.Bcl.Memory": "9.0.18",
-        "SkiaSharp": "3.119.0"
+        "Microsoft.Bcl.Memory": "9.0.18"
       }
     },
     {

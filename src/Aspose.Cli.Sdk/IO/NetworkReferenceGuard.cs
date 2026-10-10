@@ -113,11 +113,9 @@ public static class NetworkReferenceGuard
         ArgumentNullException.ThrowIfNull(content);
         var head = new byte[1024];
         int length = content.ReadAtLeast(head, head.Length, throwOnEndOfStream: false);
-        if (IsCompressed(head.AsSpan(0, length)))
+        if (CompressedImageRefusal(head.AsSpan(0, length), path) is { } refused)
         {
-            throw CliErrors.ResourceRefused(
-                $"The image is compressed (SVGZ) and cannot be checked for network addresses: {path}.",
-                "Decompress it to an .svg file, or supply a raster image.");
+            throw refused;
         }
 
         if (!IsMarkup(head.AsSpan(0, length)))
@@ -131,20 +129,13 @@ public static class NetworkReferenceGuard
         EnsureNone(markup.ToArray(), "SVG image", path);
     }
 
-    /// <summary>Reads an image input in full and refuses it as <see cref="EnsureNoneInImage"/> does.</summary>
-    public static byte[] ReadImage(InputResourceScope inputs, string path)
-    {
-        ArgumentNullException.ThrowIfNull(inputs);
-        byte[] image;
-        using (var buffer = new MemoryStream())
-        {
-            inputs.OpenFile(path).CopyTo(buffer);
-            image = buffer.ToArray();
-        }
-
-        EnsureNoneInImage(new MemoryStream(image, writable: false), path);
-        return image;
-    }
+    /// <summary>The refusal of a compressed (SVGZ) image, which cannot be checked; null for any other content.</summary>
+    internal static CliException? CompressedImageRefusal(ReadOnlySpan<byte> head, string path) =>
+        IsCompressed(head)
+            ? CliErrors.ResourceRefused(
+                $"The image is compressed (SVGZ) and cannot be checked for network addresses: {path}.",
+                "Decompress it to an .svg file, or supply a raster image.")
+            : null;
 
     /// <summary>
     /// Whether content is a raster image or a font, identified from its first bytes: formats
@@ -189,7 +180,7 @@ public static class NetworkReferenceGuard
 
     // Markup starts with '<' after an optional byte order mark, whitespace and, for unmarked
     // UTF-16, NUL bytes. No raster image format starts that way.
-    private static bool IsMarkup(ReadOnlySpan<byte> head)
+    internal static bool IsMarkup(ReadOnlySpan<byte> head)
     {
         foreach (byte value in head)
         {

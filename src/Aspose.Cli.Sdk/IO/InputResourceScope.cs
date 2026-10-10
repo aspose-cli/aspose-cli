@@ -9,6 +9,8 @@ public sealed class InputResourceScope : IDisposable
 
     internal InputResourceScope(InputSource inputs) => _inputs = inputs;
 
+    internal InputSource Source => _inputs;
+
     public Stream OpenFile(string path)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);

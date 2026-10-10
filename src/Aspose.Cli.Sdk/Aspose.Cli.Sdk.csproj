@@ -11,6 +11,8 @@
 
   <ItemGroup>
     <PackageReference Include="System.CommandLine" />
+    <!-- Decodes image inputs to check them before a document engine embeds them (IO/ImageInput). -->
+    <PackageReference Include="SkiaSharp" />
   </ItemGroup>
 
   <ItemGroup>

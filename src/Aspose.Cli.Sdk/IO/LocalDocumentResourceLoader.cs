@@ -19,6 +19,7 @@ public sealed class LocalDocumentResourceLoader : IDisposable
     private int _omitted;
     private bool _disposed;
     private ExceptionDispatchInfo? _failure;
+    private Exception? _refusedImage;
 
     public LocalDocumentResourceLoader(
         string documentPath,
@@ -68,23 +69,39 @@ public sealed class LocalDocumentResourceLoader : IDisposable
         }
     }
 
-    /// <summary>Propagates a fatal callback failure even if an engine caught it internally.</summary>
+    /// <summary>
+    /// Propagates a fatal callback failure even if an engine caught it internally, and the
+    /// refusal of an image once: it fails the load that read the image, not the document.
+    /// </summary>
     public void ThrowIfFailed()
     {
         lock (_gate)
         {
             _failure?.Throw();
+            if (_refusedImage is { } refused)
+            {
+                _refusedImage = null;
+                throw refused;
+            }
+
             _budgets.Deadline.ThrowIfExpired("document-resource");
         }
     }
 
     /// <summary>
     /// Reads a verified local resource in full. Rejected resources return an empty result;
-    /// shared budget, cancellation and deadline failures abort the operation.
+    /// shared budget, cancellation and deadline failures abort the operation. An image that
+    /// <see cref="ImageInput"/> refuses, when the caller reads an image, fails the load that
+    /// reads it: it is thrown here and once more by the next <see cref="ThrowIfFailed"/>, in case
+    /// the engine swallowed it.
     /// </summary>
-    public bool TryRead(string? reference, out byte[] data)
+    /// <param name="reference">The reference the document names.</param>
+    /// <param name="data">The resource's bytes, or empty when it was rejected.</param>
+    /// <param name="image">Whether the document embeds the resource as an image, which must then be intact.</param>
+    public bool TryRead(string? reference, out byte[] data, bool image = false)
     {
         data = [];
+        Exception? refused;
         lock (_gate)
         {
             ObjectDisposedException.ThrowIf(_disposed, this);
@@ -129,8 +146,12 @@ public sealed class LocalDocumentResourceLoader : IDisposable
                 {
                     return Omit();
                 }
-                data = buffer;
-                return true;
+                refused = image ? ImageInput.Refusal(buffer, _budgets, path!, ImageInput.Corrupt) : null;
+                if (refused is null)
+                {
+                    data = buffer;
+                    return true;
+                }
             }
             catch (Exception exception) when (exception is CliException or OperationCanceledException)
             {
@@ -141,7 +162,11 @@ public sealed class LocalDocumentResourceLoader : IDisposable
             {
                 return Omit();
             }
+
+            _refusedImage = refused;
         }
+
+        throw refused;
     }
 
     private bool TryResolve(string? reference, out string? path)
