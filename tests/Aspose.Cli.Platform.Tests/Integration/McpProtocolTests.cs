@@ -16,52 +16,66 @@ public sealed class McpProtocolTests
         Directory.CreateDirectory(work);
         File.WriteAllBytes(Path.Combine(work, "Data"), new byte[2 * 1024 * 1024]);
         File.WriteAllText(Path.Combine(work, "input.csv"), "Name,Value\nA,42\n");
-        await using var server = await McpTestServer.Start(temp.Path, work);
-
-        JsonNode tools = await server.Request("tools/list", new { });
-        JsonArray listed = tools["result"]!["tools"]!.AsArray();
-        Assert.Equal(2, listed.Count);
-        Assert.True(listed.Single(tool => tool!["name"]!.GetValue<string>() == "capabilities")!["annotations"]!["readOnlyHint"]!.GetValue<bool>());
-        Assert.False(listed.Single(tool => tool!["name"]!.GetValue<string>() == "execute")!["annotations"]!["readOnlyHint"]!.GetValue<bool>());
-
-        string[][] variants =
-        [
-            ["--max-input-bytes", "1048576", "--quiet=false", "-f", "json", "cells", "inspect", "input.csv"],
-            ["--max-input-bytes=1048576", "cells", "--verbose=false", "inspect", "input.csv", "--output=json"],
-            ["cells", "inspect", "input.csv", "-q=false", "-f=json", "--max-input-bytes=1048576"],
-        ];
-        foreach (string[] args in variants)
-        {
-            JsonNode result = await server.Execute(args);
-            AssertSuccess(result);
-            Assert.Equal(Path.Combine(work, "input.csv"),
-                JsonNode.Parse(result["result"]!["structuredContent"]!["stdout"]!.GetValue<string>())!["source"]!["path"]!.GetValue<string>());
-        }
-
-        AssertSuccess(await server.Execute(["cells", "create", "book.xlsx", "--sheets", "Data", "--output=json"]));
-        const string ops = """{"ops":[{"op":"set_values","sheet":"Data","range":"A1","values":[[42]]}]}""";
-        AssertSuccess(await server.Execute(
-            ["cells", "edit", "book.xlsx", "--ops=-", "--in-place", "--output=json"], ops));
-        JsonNode queried = await server.Execute(
-            ["cells", "query", "range", "book.xlsx", "--sheet", "Data", "--range", "A1", "--output=json"]);
-        AssertSuccess(queried);
-        Assert.Equal(42, JsonNode.Parse(queried["result"]!["structuredContent"]!["stdout"]!.GetValue<string>())!["sheet"]!["cells"]![0]![0]!["v"]!.GetValue<int>());
-
-        JsonNode oversized = await server.Execute(["cells", "inspect", "Data", "--output=json"]);
-        Assert.Equal("FILE_TOO_LARGE", JsonNode.Parse(oversized["result"]!["structuredContent"]!["stderr"]!.GetValue<string>())!["error"]!["code"]!.GetValue<string>());
-
-        foreach (string[] args in new string[][]
-        {
-            ["--quiet=false", "license", "install", "anything.lic"],
-            ["--max-input-bytes=1048576", "app", "stop"],
-            ["cells", "does-not-exist", "book.xlsx"],
-            ["--max-input-bytes=2097152", "cells", "inspect", "input.csv"],
-        })
-        {
-            JsonNode refused = await server.Execute(args);
-            Assert.True(refused["result"]!["isError"]!.GetValue<bool>(), refused.ToJsonString());
-        }
+        // The server runs one call at a time, so three servers started alike share the calls:
+        // the syntax variants, the edit chain, and the refusals each run on their own.
+        await Task.WhenAll(Variants(), Chain(), Refusals());
         Assert.Equal(2 * 1024 * 1024, new FileInfo(Path.Combine(work, "Data")).Length);
+
+        async Task Variants()
+        {
+            await using var server = await McpTestServer.Start(temp.Path, work);
+            JsonNode tools = await server.Request("tools/list", new { });
+            JsonArray listed = tools["result"]!["tools"]!.AsArray();
+            Assert.Equal(2, listed.Count);
+            Assert.True(listed.Single(tool => tool!["name"]!.GetValue<string>() == "capabilities")!["annotations"]!["readOnlyHint"]!.GetValue<bool>());
+            Assert.False(listed.Single(tool => tool!["name"]!.GetValue<string>() == "execute")!["annotations"]!["readOnlyHint"]!.GetValue<bool>());
+
+            string[][] variants =
+            [
+                ["--max-input-bytes", "1048576", "--quiet=false", "-f", "json", "cells", "inspect", "input.csv"],
+                ["--max-input-bytes=1048576", "cells", "--verbose=false", "inspect", "input.csv", "--output=json"],
+                ["cells", "inspect", "input.csv", "-q=false", "-f=json", "--max-input-bytes=1048576"],
+            ];
+            foreach (string[] args in variants)
+            {
+                JsonNode result = await server.Execute(args);
+                AssertSuccess(result);
+                Assert.Equal(Path.Combine(work, "input.csv"),
+                    JsonNode.Parse(result["result"]!["structuredContent"]!["stdout"]!.GetValue<string>())!["source"]!["path"]!.GetValue<string>());
+            }
+        }
+
+        async Task Chain()
+        {
+            await using var server = await McpTestServer.Start(temp.Path, work);
+            AssertSuccess(await server.Execute(["cells", "create", "book.xlsx", "--sheets", "Data", "--output=json"]));
+            const string ops = """{"ops":[{"op":"set_values","sheet":"Data","range":"A1","values":[[42]]}]}""";
+            AssertSuccess(await server.Execute(
+                ["cells", "edit", "book.xlsx", "--ops=-", "--in-place", "--output=json"], ops));
+            JsonNode queried = await server.Execute(
+                ["cells", "query", "range", "book.xlsx", "--sheet", "Data", "--range", "A1", "--output=json"]);
+            AssertSuccess(queried);
+            Assert.Equal(42, JsonNode.Parse(queried["result"]!["structuredContent"]!["stdout"]!.GetValue<string>())!["sheet"]!["cells"]![0]![0]!["v"]!.GetValue<int>());
+        }
+
+        async Task Refusals()
+        {
+            await using var server = await McpTestServer.Start(temp.Path, work);
+            JsonNode oversized = await server.Execute(["cells", "inspect", "Data", "--output=json"]);
+            Assert.Equal("FILE_TOO_LARGE", JsonNode.Parse(oversized["result"]!["structuredContent"]!["stderr"]!.GetValue<string>())!["error"]!["code"]!.GetValue<string>());
+
+            foreach (string[] args in new string[][]
+            {
+                ["--quiet=false", "license", "install", "anything.lic"],
+                ["--max-input-bytes=1048576", "app", "stop"],
+                ["cells", "does-not-exist", "book.xlsx"],
+                ["--max-input-bytes=2097152", "cells", "inspect", "input.csv"],
+            })
+            {
+                JsonNode refused = await server.Execute(args);
+                Assert.True(refused["result"]!["isError"]!.GetValue<bool>(), refused.ToJsonString());
+            }
+        }
     }
 
     [Fact]
@@ -107,9 +121,14 @@ public sealed class McpProtocolTests
         {
             ["ASPOSE_CELLS_LICENSE_B64"] = Convert.ToBase64String(Encoding.UTF8.GetBytes("synthetic environment fixture")),
         };
-        await using var server = await McpTestServer.Start(temp.Path, work, variables, ["--license-mode", "evaluation"]);
-        foreach (bool supervised in new[] { false, true })
+        // The server runs one call at a time, so the direct and the supervised calls each get a
+        // server started alike and run at the same time. Each server's last call checks that a
+        // call choosing another mode leaves the next call on the server's mode.
+        await Task.WhenAll(Calls(supervised: false), Calls(supervised: true));
+
+        async Task Calls(bool supervised)
         {
+            await using var server = await McpTestServer.Start(temp.Path, work, variables, ["--license-mode", "evaluation"]);
             string[] args = ["cells", "inspect", "input.csv", "--output=json"];
             if (supervised) { args = ["--timeout=10", .. args]; }
             JsonNode inherited = reply(await server.Execute(args));
@@ -120,6 +139,9 @@ public sealed class McpProtocolTests
 
             JsonNode replaced = Error(await server.Execute([.. args, "--license-mode=auto"]));
             Assert.Equal("LICENSE_INVALID", replaced["code"]!.GetValue<string>());
+
+            JsonNode next = reply(await server.Execute(args));
+            Assert.Equal("evaluation", next["license"]!["mode"]!.GetValue<string>());
         }
 
         static JsonNode reply(JsonNode response)

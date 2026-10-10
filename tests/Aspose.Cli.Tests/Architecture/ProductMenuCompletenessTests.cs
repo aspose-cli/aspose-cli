@@ -30,6 +30,9 @@ public sealed class ProductMenuCompletenessTests : IDisposable
         ProductCatalog catalog = CompiledProductCatalog.Instance;
         Assert.NotEmpty(catalog.Products);
         var problems = new List<string>();
+        // Each product's part of the built tree comes from its own capabilities run; they run at once.
+        var trees = new System.Collections.Concurrent.ConcurrentDictionary<string, Dictionary<string, int>>(StringComparer.Ordinal);
+        Parallel.ForEach(catalog.Products, product => trees[product.Manifest.Id] = TreeNodeNames(product.Manifest.Id));
 
         foreach (ProductDefinition product in catalog.Products)
         {
@@ -47,7 +50,7 @@ public sealed class ProductMenuCompletenessTests : IDisposable
                 continue;
             }
 
-            Dictionary<string, int> tree = TreeNodeNames(id);
+            Dictionary<string, int> tree = trees[id];
             var declared = new Dictionary<string, int>(StringComparer.Ordinal);
             foreach (Type declaration in declarations)
             {

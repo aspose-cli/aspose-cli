@@ -51,28 +51,56 @@ public sealed class RenderFormatTests
     [LicensedFact]
     public void Render_TakesTheFormatFromTheOutExtensionElsePng()
     {
-        foreach (string product in Products)
+        // Each product renders in its own workspace, and its three renders write different files,
+        // so all twelve runs go at once and are checked afterwards.
+        var workspaces = Products.ToDictionary(static product => product, static product =>
         {
-            using var workspace = new TempWorkspace();
+            var workspace = new TempWorkspace();
             ScenarioLicense.Project(workspace.Path);
             string format = ScenarioFixtures.PrimaryFormat(product);
-            string input = $"input.{format}";
-            File.WriteAllBytes(workspace.File(input), ScenarioFixtures.Read($"{product}.{format}"));
-
-            foreach ((string? output, string expected) in new (string?, string)[] { ("page.jpg", "jpeg"), ("page.svg", "svg"), (null, "png") })
+            File.WriteAllBytes(workspace.File($"input.{format}"), ScenarioFixtures.Read($"{product}.{format}"));
+            return workspace;
+        });
+        try
+        {
+            (string Product, string? Output, string Expected)[] cases =
+            [
+                .. Products.SelectMany(static product => new (string?, string)[] { ("page.jpg", "jpeg"), ("page.svg", "svg"), (null, "png") }
+                    .Select(item => (product, item.Item1, item.Item2))),
+            ];
+            var runs = new (string[] Arguments, CliResult Result)[cases.Length];
+            Parallel.For(0, cases.Length, index =>
             {
+                (string product, string? output, _) = cases[index];
+                string input = $"input.{ScenarioFixtures.PrimaryFormat(product)}";
                 string[] arguments = output is null
                     ? [product, "render", input, "--output", "json"]
                     : [product, "render", input, "--out", output, "--output", "json"];
-                CliResult result = workspace.Run(arguments);
+                runs[index] = (arguments, workspaces[product].Run(arguments));
+            });
+
+            for (int index = 0; index < cases.Length; index++)
+            {
+                (string[] arguments, CliResult result) = runs[index];
+                string expected = cases[index].Expected;
                 Assert.True(result.ExitCode == 0, $"{string.Join(' ', arguments)}: {result.StdErr}{result.StdOut}");
                 JsonNode root = JsonNode.Parse(result.StdOut)!;
                 string[] written = [.. OutputFormats(root, root["input"]).Distinct(StringComparer.Ordinal)];
                 Assert.True(written is [var only] && only == expected,
                     $"{string.Join(' ', arguments)} writes {expected} without --to; it wrote [{string.Join(", ", written)}].");
             }
-            Assert.True(File.Exists(workspace.File("input.png")),
-                $"{product} render without --out or --to writes input.png beside the input.");
+            foreach (string product in Products)
+            {
+                Assert.True(File.Exists(workspaces[product].File("input.png")),
+                    $"{product} render without --out or --to writes input.png beside the input.");
+            }
+        }
+        finally
+        {
+            foreach (TempWorkspace workspace in workspaces.Values)
+            {
+                workspace.Dispose();
+            }
         }
     }
 

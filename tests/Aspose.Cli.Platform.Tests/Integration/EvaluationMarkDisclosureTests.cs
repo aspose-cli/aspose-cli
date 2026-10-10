@@ -20,12 +20,15 @@ public sealed class EvaluationMarkDisclosureTests
     private const string EvaluationModeWarning = "EVAL_MODE";
 
     [LicensedFact]
-    public void EveryProduct_DisclosesAnEvaluationMarkedInputWithTheSameSdkCode()
+    public async Task EveryProduct_DisclosesAnEvaluationMarkedInputWithTheSameSdkCode()
     {
+        // The products work in separate workspaces, so they run at the same time.
+        Task<string[]>[] runs = [.. ScenarioFixtures.Products.Select(static product => Task.Run(() => Disclosure(product)))];
+        string[][] found = await Task.WhenAll(runs);
         var disclosures = new Dictionary<string, string[]>(StringComparer.Ordinal);
-        foreach (string product in ScenarioFixtures.Products)
+        foreach ((string product, string[] codes) in ScenarioFixtures.Products.Zip(found))
         {
-            disclosures[product] = Disclosure(product);
+            disclosures[product] = codes;
         }
 
         string report = string.Join(Environment.NewLine, disclosures.Select(static pair => $"  {pair.Key}: [{string.Join(", ", pair.Value)}]"));
@@ -50,10 +53,15 @@ public sealed class EvaluationMarkDisclosureTests
         File.WriteAllBytes(workspace.File("clean." + extension), ScenarioFixtures.Read($"{product}.{extension}"));
         File.WriteAllBytes(workspace.File("ops.json"), ScenarioFixtures.Read($"{product}.ops"));
 
-        JsonNode marked = Edit(workspace, product, "clean." + extension, "marked." + extension, "--license-mode", "evaluation");
+        // The licensed edit of the clean document reads only the clean input, so it runs at the
+        // same time as the evaluation-mode edit that makes the marked document.
+        Task<JsonNode> markedRun = Task.Run(() => Edit(workspace, product, "clean." + extension, "marked." + extension, "--license-mode", "evaluation"));
+        Task<JsonNode> fromCleanRun = Task.Run(() => Edit(workspace, product, "clean." + extension, "licensed-clean." + extension));
+        Task.WaitAll(markedRun, fromCleanRun);
+        JsonNode marked = markedRun.Result;
+        JsonNode fromClean = fromCleanRun.Result;
         Assert.Contains(EvaluationModeWarning, Codes(marked));
 
-        JsonNode fromClean = Edit(workspace, product, "clean." + extension, "licensed-clean." + extension);
         JsonNode fromMarked = Edit(workspace, product, "marked." + extension, "licensed-marked." + extension);
         Assert.Equal("licensed", fromMarked["license"]?["mode"]?.GetValue<string>());
         Assert.DoesNotContain(EvaluationModeWarning, Codes(fromMarked));
