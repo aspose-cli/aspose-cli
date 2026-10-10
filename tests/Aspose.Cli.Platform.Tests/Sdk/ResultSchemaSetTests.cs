@@ -283,12 +283,6 @@ public sealed class ResultSchemaSetTests
         Assert.Equal(["label"], schema["properties"]!["page"]!["required"]!.AsArray().Select(static name => name!.GetValue<string>()));
         Assert.Equal("#/$defs/samplePage", schema["properties"]!["pages"]!["items"]!["$ref"]!.GetValue<string>());
         Assert.Equal(["label"], schema["properties"]!["pages"]!["items"]!["required"]!.AsArray().Select(static name => name!.GetValue<string>()));
-
-        foreach (string named in new[] { "missing", "number" })
-        {
-            var set = new ResultSchemaSet("test", [Root([named]), page], common: null);
-            Assert.Contains($"'{named}', which is not an optional member", Assert.Throws<InvalidOperationException>(() => set.TryRead("v2/test/root", out _)).Message, StringComparison.Ordinal);
-        }
     }
 
     [Fact]

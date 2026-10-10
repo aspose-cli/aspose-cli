@@ -2,7 +2,6 @@ using System.Text.RegularExpressions;
 using Aspose.Cli.Product.Words.Engine.Mapping;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Licensing;
-using Aspose.Cli.Sdk.Ports;
 using Aspose.Cli.Sdk.Rendering;
 using Aspose.Cli.Sdk.Results;
 using Aspose.Words;
@@ -11,8 +10,8 @@ using Aspose.Words.Fonts;
 namespace Aspose.Cli.Product.Words.Engine;
 
 /// <summary>
-/// Aspose.Words font diagnostics behind the product-neutral font port.
-/// SDK font discovery stays in the Words adapter and never crosses into Core.
+/// Aspose.Words font diagnostics behind the product-neutral <see cref="IFontEnvironment"/>.
+/// Aspose.Words font discovery stays in this adapter.
 /// </summary>
 internal sealed partial class WordsFontEnvironment : IFontEnvironment
 {

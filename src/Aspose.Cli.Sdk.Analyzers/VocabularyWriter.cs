@@ -343,7 +343,7 @@ internal sealed class VocabularyWriter(
             code.Append(", Default = ").Append(Literal(literal));
         }
 
-        List<string> levels = Levels(property.Type);
+        List<string> levels = Levels(property.Type, ScalarKind);
         List<string> constraints = [.. property.GetAttributes().Where(IsConstraint)
             .Select(attribute => Constraint(attribute, property, Place(attribute, levels, property)))];
         if (IsUnsigned(Scalar(property.Type)))

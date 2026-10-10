@@ -15,18 +15,12 @@ internal static class PdfMutationSupport
     internal static IReadOnlyList<int> ResolveOptional(Document document, string? text) =>
         text is null ? Enumerable.Range(1, document.Pages.Count).ToArray() : Resolve(document, text);
 
-    internal static PdfColor ParseColor(string value)
-    {
-        if (value.Length != 7 || value[0] != '#'
-            || !int.TryParse(value.AsSpan(1, 2), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out int red)
-            || !int.TryParse(value.AsSpan(3, 2), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out int green)
-            || !int.TryParse(value.AsSpan(5, 2), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out int blue))
-        {
-            throw new OperationInvalidException($"Color '{value}' must use #RRGGBB.");
-        }
+    /// <summary>Converts a <c>#RRGGBB</c> color, which the operation's <c>[HexColor]</c> member has already checked.</summary>
+    internal static PdfColor ParseColor(string value) =>
+        PdfColor.FromRgb(Channel(value, 1), Channel(value, 3), Channel(value, 5));
 
-        return PdfColor.FromRgb(red / 255d, green / 255d, blue / 255d);
-    }
+    private static double Channel(string color, int start) =>
+        int.Parse(color.AsSpan(start, 2), NumberStyles.HexNumber, CultureInfo.InvariantCulture) / 255d;
 
     /// <summary>
     /// Aligns a margin stamp 24 pt inside an edge of the displayed page. The engine aligns the

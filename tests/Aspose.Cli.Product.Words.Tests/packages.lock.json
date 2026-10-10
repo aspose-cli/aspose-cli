@@ -206,8 +206,7 @@
         "type": "Project",
         "dependencies": {
           "Aspose.Cli.Sdk": "[1.0.0, )",
-          "Aspose.Words": "[26.9.0, )",
-          "SkiaSharp.NativeAssets.Linux": "[3.119.0, )"
+          "Aspose.Words": "[26.9.0, )"
         }
       },
       "aspose.cli.sdk": {
@@ -243,12 +242,6 @@
           "SkiaSharp.NativeAssets.Win32": "3.119.0",
           "SkiaSharp.NativeAssets.macOS": "3.119.0"
         }
-      },
-      "SkiaSharp.NativeAssets.Linux": {
-        "type": "CentralTransitive",
-        "requested": "[3.119.0, )",
-        "resolved": "3.119.0",
-        "contentHash": "oBvfueHtYGTmVHkVebZ6lMYN5nCXR/eN5e7a9VGHca1Z0bt8G5QGLtsjPA+hJ30ZK2wq3i02Zoej2aZDIpvcHA=="
       },
       "System.CommandLine": {
         "type": "CentralTransitive",

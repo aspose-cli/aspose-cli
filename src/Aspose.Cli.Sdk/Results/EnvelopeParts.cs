@@ -87,4 +87,12 @@ public static class EnvelopeParts
             .ToArray();
         return warnings.Length == 0 ? null : warnings;
     }
+
+    /// <summary>Collects the warnings that are present without emitting an empty list.</summary>
+    public static IReadOnlyList<Warning>? CombineWarnings(params Warning?[] warnings)
+    {
+        ArgumentNullException.ThrowIfNull(warnings);
+        Warning[] present = [.. warnings.OfType<Warning>()];
+        return present.Length == 0 ? null : present;
+    }
 }

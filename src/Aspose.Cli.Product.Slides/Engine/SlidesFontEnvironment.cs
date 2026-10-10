@@ -2,7 +2,6 @@ using System.Runtime.Versioning;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Licensing;
-using Aspose.Cli.Sdk.Ports;
 using Aspose.Cli.Sdk.Rendering;
 using Aspose.Cli.Sdk.Results;
 using Aspose.Slides;
@@ -10,7 +9,7 @@ using Microsoft.Win32;
 
 namespace Aspose.Cli.Product.Slides.Engine;
 
-/// <summary>Aspose.Slides font diagnostics behind the product-neutral font port.</summary>
+/// <summary>Aspose.Slides font diagnostics behind the product-neutral <see cref="IFontEnvironment"/>.</summary>
 internal sealed class SlidesFontEnvironment : IFontEnvironment
 {
     private readonly ILicenseState _license;

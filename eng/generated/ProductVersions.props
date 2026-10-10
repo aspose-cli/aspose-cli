@@ -7,6 +7,5 @@
     <PackageVersion Include="Aspose.Words" Version="26.9.0" />
     <PackageVersion Include="Microsoft.Bcl.Memory" Version="9.0.18" />
     <PackageVersion Include="SkiaSharp" Version="3.119.0" />
-    <PackageVersion Include="SkiaSharp.NativeAssets.Linux" Version="3.119.0" />
   </ItemGroup>
 </Project>

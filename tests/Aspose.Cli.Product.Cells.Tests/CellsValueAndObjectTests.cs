@@ -41,7 +41,7 @@ public sealed class CellsValueAndObjectTests : IClassFixture<CellsFixture>
             Input = output,
             SheetName = "Data",
             Range = A1.ParseRange("A1").Range,
-            Scope = ReadScope.Full,
+            Scope = ReadScopes.Full,
             MaxCells = 1,
         });
         string styleId = Assert.IsType<string>(read.Sheet.Cells![0][0].StyleId);

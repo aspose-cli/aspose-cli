@@ -27,9 +27,9 @@ internal sealed class EngineFailureTranslator
     {
         ArgumentNullException.ThrowIfNull(catalog);
         var products = new Dictionary<Assembly, string>();
-        foreach (ProductDefinition product in catalog.Products)
+        foreach (ProductPackageResources package in catalog.Resources.Products)
         {
-            products[product.ModuleAssembly] = product.Manifest.DisplayName;
+            products[package.ResourceAssembly] = catalog.Get(package.ProductId).Manifest.DisplayName;
         }
         var own = new HashSet<Assembly>(products.Keys)
         {

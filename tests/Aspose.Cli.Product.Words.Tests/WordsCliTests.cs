@@ -8,6 +8,21 @@ public sealed class WordsCliTests : IDisposable
 {
     private readonly TempWorkspace _workspace = new();
 
+    [Fact]
+    public void Convert_RefusesPagesForAFormatThatIsNotFixedPage()
+    {
+        File.WriteAllText(_workspace.File("source.md"), "# Contract\n\nClause.\n");
+        Assert.Equal(0, _workspace.Run("words", "create", "contract.docx", "--markdown", "source.md").ExitCode);
+
+        CliResult refused = _workspace.Run("words", "convert", "contract.docx", "--to", "html", "--pages", "1", "--out", "contract.html", "--output", "json");
+
+        Assert.Equal(2, refused.ExitCode);
+        JsonNode error = JsonNode.Parse(refused.StdErr)!["error"]!;
+        Assert.Equal("OPTION_INVALID", error["code"]!.GetValue<string>());
+        Assert.Contains("--pages", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.False(File.Exists(_workspace.File("contract.html")));
+    }
+
     [Category(TestCategory.Slow)]
     [Fact]
     public void CreateEditAndQuery_RoundTripsThroughTheBuiltCli()

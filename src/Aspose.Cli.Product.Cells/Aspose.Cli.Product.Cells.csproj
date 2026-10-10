@@ -9,7 +9,6 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Aspose.Cells" />
-    <PackageReference Include="SkiaSharp.NativeAssets.Linux" />
   </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="Aspose.Cli.Product.Cells.Tests" />

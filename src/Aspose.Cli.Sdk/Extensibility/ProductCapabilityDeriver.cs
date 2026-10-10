@@ -103,9 +103,7 @@ internal static class ProductCapabilityDeriver
                 .Select(static use => use.ToString().ToLowerInvariant())
                 .ToArray()),
             Operations = format.Uses.HasFlag(FormatUse.Input)
-                ? Array.AsReadOnly((format.Operations.Count == 0
-                    ? StandardFileRouteOperations.All
-                    : format.Operations)
+                ? Array.AsReadOnly(StandardFileRouteOperations.All
                     .Order(StringComparer.Ordinal)
                     .ToArray())
                 : [],

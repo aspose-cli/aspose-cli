@@ -34,7 +34,7 @@ internal static class SplitCommand
                 {
                     Input = standard.Input,
                     By = mode,
-                    Pages = pageText is null ? null : PageRange.Parse(pageText),
+                    Pages = pages.ReadRange(parse),
                     Output = standard.DirectoryOutput,
                     Password = standard.InputPassword,
                 };

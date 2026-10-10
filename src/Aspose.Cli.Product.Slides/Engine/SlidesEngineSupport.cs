@@ -12,7 +12,6 @@ namespace Aspose.Cli.Product.Slides.Engine;
 internal static class SlidesEngineSupport
 {
     internal const string EvaluationTruncationMarker = "truncated due to evaluation version limitation";
-    internal const int DefaultRasterDpi = 192;
 
     internal static Warning EvaluationInputWarning { get; } = new(WarningCodes.EvalInputTruncated, "Aspose.Slides evaluation mode reads text longer than five characters as its first characters and a truncation notice, so the text in this result is not the presentation's text.")
     {
@@ -320,8 +319,8 @@ internal static class SlidesEngineSupport
         return value.Length switch
         {
             0 => null,
-            <= 240 => value,
-            _ => value[..240],
+            <= SlideInfo.PreviewTextLength => value,
+            _ => value[..SlideInfo.PreviewTextLength],
         };
     }
 
@@ -415,7 +414,7 @@ internal static class SlidesEngineSupport
             return (float)(width / presentation.SlideSize.Size.Width);
         }
 
-        return (request.Dpi ?? DefaultRasterDpi) / 72f;
+        return (request.Dpi ?? RenderPixelGuard.DefaultDpi) / 72f;
     }
 
     internal static void EnsureRasterFits(

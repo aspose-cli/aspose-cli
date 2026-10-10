@@ -1,4 +1,5 @@
 using Aspose.Cli.Sdk.IO;
+using Aspose.Cli.Sdk.Rendering;
 using Aspose.Cli.Sdk.Text;
 
 namespace Aspose.Cli.Product.Cells.Contracts;
@@ -45,8 +46,8 @@ public sealed record ReadRequest
     /// </summary>
     public RangeRef? Scan { get; init; }
 
-    /// <summary>Projection scope.</summary>
-    public ReadScope Scope { get; init; } = ReadScope.Values;
+    /// <summary>Projection scope, one of <see cref="ReadScopes"/>.</summary>
+    public string Scope { get; init; } = ReadScopes.Values;
 
     /// <summary>Maximum number of cells the projection may return.</summary>
     public int MaxCells { get; init; } = 10_000;
@@ -117,7 +118,7 @@ public sealed record RenderRequest
     public bool AllSheets { get; init; }
 
     /// <summary>Raster resolution in dots per inch (ignored for vector formats).</summary>
-    public int Dpi { get; init; } = 192;
+    public int Dpi { get; init; } = RenderPixelGuard.DefaultDpi;
 
     /// <summary>Password for encrypted files.</summary>
     public Secret? Password { get; init; }

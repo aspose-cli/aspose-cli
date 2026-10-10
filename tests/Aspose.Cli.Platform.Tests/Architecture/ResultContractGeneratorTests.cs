@@ -306,6 +306,51 @@ public sealed class ResultContractGeneratorTests
 
                 /// <summary>A cell.</summary>
                 public BadCell? Cell { get; init; }
+
+                /// <summary>A file, with members it cannot keep present.</summary>
+                [AlwaysPresent("fingerprint", "path", "missing")]
+                public SourceInfo? Source { get; init; }
+
+                /// <summary>Open members beside an inherited one.</summary>
+                public OpenBag? Bag { get; init; }
+
+                /// <summary>A cell with two decided members.</summary>
+                public TwoCaseCell? Twice { get; init; }
+            }
+
+            /// <summary>A base with one member.</summary>
+            public record OpenBase
+            {
+                /// <summary>A member.</summary>
+                public string? A { get; init; }
+            }
+
+            /// <summary>Open members.</summary>
+            public sealed record OpenBag : OpenBase
+            {
+                /// <summary>The members.</summary>
+                [System.Text.Json.Serialization.JsonExtensionData]
+                public System.Text.Json.Nodes.JsonObject? Extra { get; init; }
+            }
+
+            /// <summary>A cell.</summary>
+            public record OneCaseCell
+            {
+                /// <summary>The stored type.</summary>
+                [AllowedValues(typeof(CellTypes))]
+                public required string T { get; init; }
+
+                /// <summary>The value.</summary>
+                [OneOfBy("t", "empty", "number", "string", "error", Type = "string")]
+                public object? V { get; init; }
+            }
+
+            /// <summary>A cell with a second decided member.</summary>
+            public sealed record TwoCaseCell : OneCaseCell
+            {
+                /// <summary>Another value.</summary>
+                [OneOfBy("t", "empty", "number", "string", "error", Type = "string")]
+                public object? W { get; init; }
             }
 
             /// <summary>A cell.</summary>
@@ -348,6 +393,11 @@ public sealed class ResultContractGeneratorTests
         Assert.Contains(reported, static item => item.Message.Contains("'BrokenResult.Text': [Minimum] applies to Integer or Number values", StringComparison.Ordinal) && item.At.StartsWith("Minimum", StringComparison.Ordinal));
         Assert.Contains(reported, static item => item.Message.Contains("'BadCell.V': [OneOfBy] cases must cover each allowed value of 't' exactly once: empty, number, string, error", StringComparison.Ordinal) && item.At == "V");
         Assert.Contains(reported, static item => item.Message.Contains("'BadCell.V': [OneOfBy] Type must be one of: null, string, number, integer, boolean", StringComparison.Ordinal) && item.At == "V");
+        Assert.Contains(reported, static item => item.Message.Contains("'BrokenResult.Source': [AlwaysPresent] names 'path', which is not an optional member of SourceInfo", StringComparison.Ordinal) && item.At == "Source");
+        Assert.Contains(reported, static item => item.Message.Contains("'BrokenResult.Source': [AlwaysPresent] names 'missing', which is not an optional member of SourceInfo", StringComparison.Ordinal) && item.At == "Source");
+        Assert.DoesNotContain(reported, static item => item.Message.Contains("names 'fingerprint'", StringComparison.Ordinal));
+        Assert.Contains(reported, static item => item.Message.Contains("'OpenBag.Extra': extension data must be the record's only member", StringComparison.Ordinal) && item.At == "Extra");
+        Assert.Contains(reported, static item => item.Message.Contains("'TwoCaseCell.W': only one member of a record may depend on a discriminator", StringComparison.Ordinal) && item.At == "W");
         Assert.Contains(reported, static item => item.Message.Contains("Result records 'BrokenResult' and 'TwinResult' both publish the schema 'broken-result'", StringComparison.Ordinal) && item.At == "TwinResult");
         Assert.Contains(reported, static item => item.Message.Contains("[SchemaId] on 'Misnamed' must name a relative id", StringComparison.Ordinal) && item.At == "Misnamed");
         Assert.Contains(reported, static item => item.Message.Contains("JSON context 'ProductJsonContext' lists result records, so it must be a top-level partial class.", StringComparison.Ordinal) && item.At == "ProductJsonContext");

@@ -45,12 +45,7 @@ public static class WordsFormats
     public static IReadOnlyList<string> LoadIds { get; } =
         Definitions.IdsFor(FormatUse.Input);
 
-    public static IReadOnlyList<string> ConvertIds { get; } =
-        Definitions.IdsFor(FormatUse.Convert);
-
-    public static IReadOnlyList<string> RenderIds { get; } =
-        Definitions.IdsFor(FormatUse.Render);
-    public static IReadOnlyList<string> FixedPageConvertIds { get; } = ["pdf", "xps", "openxps", "ps", "pcl"];
+    public static IReadOnlyList<string> FixedPageFormats { get; } = ["pdf", "xps", "openxps", "ps", "pcl"];
 
     /// <summary>Microsoft Word formats, which keep fields, revisions and protection.</summary>
     public static IReadOnlyList<string> WordIds { get; } =

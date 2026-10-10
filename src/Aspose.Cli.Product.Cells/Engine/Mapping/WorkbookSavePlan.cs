@@ -45,7 +45,7 @@ internal sealed record WorkbookSavePlan(string FormatId, SaveFormat Format, Save
     }
 
     /// <summary>True for the text formats (csv, tsv, md), which write only the active sheet.</summary>
-    internal static bool WritesActiveSheetOnlyFor(string formatId) => formatId is "csv" or "tsv" or "md";
+    internal static bool WritesActiveSheetOnlyFor(string formatId) => CellsFormats.ActiveSheetOnly.Contains(formatId);
 
     /// <inheritdoc cref="WritesActiveSheetOnlyFor(string)"/>
     internal bool WritesActiveSheetOnly => WritesActiveSheetOnlyFor(FormatId);

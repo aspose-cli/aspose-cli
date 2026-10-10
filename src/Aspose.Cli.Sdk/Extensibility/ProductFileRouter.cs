@@ -481,11 +481,7 @@ public sealed class ProductFileRouter
             : product.Formats.Any(format =>
                 format.Uses.HasFlag(FormatUse.Input)
                 && format.Ownership == RouteOwnership.Default
-                && (format.Operations.Count == 0
-                    ? StandardFileRouteOperations.Contains(operation)
-                    : format.Operations.Contains(
-                        operation,
-                        StringComparer.Ordinal)));
+                && StandardFileRouteOperations.Contains(operation));
 
     private static RecognitionEntry[] StrongMatches(
         IEnumerable<RecognitionEntry> entries) =>

@@ -73,15 +73,15 @@ internal sealed class CellsViewAdapter : IProductViewAdapter<CellsSession>
             Warnings = warnings.DistinctBy(static warning => (warning.Code, warning.Location)).ToArray(),
             Coverage =
             [
-                Metric("sheets", info.Workbook.SheetCount, "sheets"),
-                Metric("visibleSheets", visible.Length, "sheets"),
-                Metric("renderedSheets", rendered.Parts.Count, "sheets"),
-                Metric("usedCells", usedCells, "cells"),
-                Metric("populatedCells", populatedCells, "cells"),
-                Metric("layoutDimensionIssues", layoutIssues, "dimensions"),
-                Metric("charts", layout.Sheets.Sum(static sheet => sheet.Charts.Count), "charts"),
-                Metric("sheetsWithPrintArea", layout.Sheets.Count(static sheet => sheet.PrintArea is not null), "sheets"),
-                Metric("formulaErrors", info.Workbook.FormulaErrors?.Count ?? 0, "cells"),
+                ReviewCoverageMetric.Of("sheets", info.Workbook.SheetCount, "sheets"),
+                ReviewCoverageMetric.Of("visibleSheets", visible.Length, "sheets"),
+                ReviewCoverageMetric.Of("renderedSheets", rendered.Parts.Count, "sheets"),
+                ReviewCoverageMetric.Of("usedCells", usedCells, "cells"),
+                ReviewCoverageMetric.Of("populatedCells", populatedCells, "cells"),
+                ReviewCoverageMetric.Of("layoutDimensionIssues", layoutIssues, "dimensions"),
+                ReviewCoverageMetric.Of("charts", layout.Sheets.Sum(static sheet => sheet.Charts.Count), "charts"),
+                ReviewCoverageMetric.Of("sheetsWithPrintArea", layout.Sheets.Count(static sheet => sheet.PrintArea is not null), "sheets"),
+                ReviewCoverageMetric.Of("formulaErrors", info.Workbook.FormulaErrors?.Count ?? 0, "cells"),
             ],
             // Complete says whether every check ran; an error finding is a result, which the
             // review weighs after any --code filter.
@@ -299,11 +299,4 @@ internal sealed class CellsViewAdapter : IProductViewAdapter<CellsSession>
     /// <summary>A finding on one worksheet, shown with that sheet's image; it is located at the sheet unless <paramref name="location"/> says otherwise.</summary>
     private static ReviewFinding SheetFinding(ReviewCheck check, string sheet, string message, string? location = null, string hint = Hint) =>
         check.Finding(message, location ?? sheet, hint, part: sheet);
-
-    private static ReviewCoverageMetric Metric(string name, long value, string unit) => new()
-    {
-        Name = name,
-        Value = value,
-        Unit = unit,
-    };
 }

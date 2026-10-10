@@ -67,7 +67,7 @@ internal static class CellsRender
             Range = renderedRange,
             Dpi = isRaster ? request.Dpi : null,
             License = EnvelopeParts.License(licenseState),
-            Warnings = CombineWarnings(loaded.Resources.CoverageWarning, loaded.CalculatedOnOpen,
+            Warnings = EnvelopeParts.CombineWarnings(loaded.Resources.CoverageWarning, loaded.CalculatedOnOpen,
                 loaded.SkippedSheetWarning(request.SheetName is null)),
         };
     }
@@ -217,7 +217,7 @@ internal static class CellsRender
             Dpi = CellsEngineFormats.IsRaster(request.Output.Format.Id) ? request.Dpi : null,
             Outputs = rendered,
             License = EnvelopeParts.License(licenseState),
-            Warnings = CombineWarnings([.. loaded.Warnings() ?? [], sheetsSkipped]),
+            Warnings = EnvelopeParts.CombineWarnings([.. loaded.Warnings() ?? [], sheetsSkipped]),
         };
     }
 

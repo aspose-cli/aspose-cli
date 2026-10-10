@@ -7,6 +7,7 @@ using System.Text.RegularExpressions;
 using System.Xml.Linq;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.TestKit;
+using Aspose.Cli.TestKit.Scenarios;
 using Json.Schema;
 using Xunit;
 
@@ -18,6 +19,9 @@ public sealed class CliContractTests : IDisposable
     private readonly TempWorkspace _workspace = new();
 
     public void Dispose() => _workspace.Dispose();
+
+    /// <summary>Every product of this build, so a new product is pinned without changing a test.</summary>
+    public static TheoryData<string> ProductIds() => [.. CliCatalog.Current.Products.Select(static product => product.Id)];
 
     [Fact]
     public void Version_PrintsVersionAndExitsZero()
@@ -212,10 +216,7 @@ $", result.StdOut);
     /// <see cref="Capabilities_ExposeTheCurrentDeterministicSourceRevision"/> checks them.
     /// </summary>
     [Theory]
-    [InlineData("cells")]
-    [InlineData("pdf")]
-    [InlineData("slides")]
-    [InlineData("words")]
+    [MemberData(nameof(ProductIds))]
     public void ProductCapabilities_MatchTheSnapshot(string product)
     {
         JsonNode capabilities = NormalizedCapabilities();
@@ -348,10 +349,7 @@ $", result.StdOut);
     /// The command list comes from the capabilities document, whose snapshot pins that list.
     /// </summary>
     [Theory]
-    [InlineData("cells")]
-    [InlineData("pdf")]
-    [InlineData("slides")]
-    [InlineData("words")]
+    [MemberData(nameof(ProductIds))]
     public void ProductHelp_MatchesTheSnapshot(string product)
     {
         CliResult capabilities = _workspace.Run("capabilities", product, "--output", "json");

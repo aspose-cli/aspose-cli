@@ -168,6 +168,14 @@ public sealed record ReviewCoverageMetric
     /// <summary>The unit of the amount, when it has one.</summary>
     [MinLength(1)]
     public string? Unit { get; init; }
+
+    /// <summary>A measurement of <paramref name="value"/> <paramref name="unit"/> named <paramref name="name"/>.</summary>
+    public static ReviewCoverageMetric Of(string name, long value, string unit) => new()
+    {
+        Name = name,
+        Value = value,
+        Unit = unit,
+    };
 }
 
 /// <summary>One safe relative path in a review evidence bundle.</summary>

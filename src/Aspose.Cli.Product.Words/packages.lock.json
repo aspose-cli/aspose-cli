@@ -12,12 +12,6 @@
           "SkiaSharp": "3.119.0"
         }
       },
-      "SkiaSharp.NativeAssets.Linux": {
-        "type": "Direct",
-        "requested": "[3.119.0, )",
-        "resolved": "3.119.0",
-        "contentHash": "oBvfueHtYGTmVHkVebZ6lMYN5nCXR/eN5e7a9VGHca1Z0bt8G5QGLtsjPA+hJ30ZK2wq3i02Zoej2aZDIpvcHA=="
-      },
       "Microsoft.Extensions.DependencyInjection": {
         "type": "Transitive",
         "resolved": "10.0.2",

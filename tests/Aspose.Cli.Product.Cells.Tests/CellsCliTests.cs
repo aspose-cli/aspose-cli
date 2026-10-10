@@ -251,6 +251,20 @@ public sealed class CellsCliTests : IDisposable
         Assert.Contains("--bom", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void Convert_RefusesSheetForAFormatThatConvertsTheWholeWorkbook()
+    {
+        Assert.Equal(0, _workspace.Run("cells", "create", "book.xlsx", "--sheets", "Data").ExitCode);
+
+        CliResult refused = _workspace.Run("cells", "convert", "book.xlsx", "--to", "xlsx", "--sheet", "Data", "--out", "copy.xlsx", "--output", "json");
+
+        Assert.Equal(2, refused.ExitCode);
+        JsonNode error = JsonNode.Parse(refused.StdErr)!["error"]!;
+        Assert.Equal("OPTION_INVALID", error["code"]!.GetValue<string>());
+        Assert.Contains("--sheet", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.False(File.Exists(_workspace.File("copy.xlsx")));
+    }
+
     /// <summary>
     /// Every CLI child runs in evaluation mode, the only place Cells evaluation is tested:
     /// the in-process engine suite needs a license.

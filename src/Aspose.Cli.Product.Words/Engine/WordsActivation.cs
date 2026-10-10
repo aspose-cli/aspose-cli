@@ -13,7 +13,7 @@ internal static class WordsActivation
         ProductBinding.Create<WordsSession, Document>(
             context,
             productId,
-            resolution => new WordsLicenseGate(resolution, context.EnvironmentVariable),
+            ApplyLicense,
             new WordsEvaluationProfile(),
             outputs => Session(outputs, context.ResourceBudgets),
             outputs => new WordsFontEnvironment(outputs, context.ResourceBudgets));
@@ -21,4 +21,8 @@ internal static class WordsActivation
     /// <summary>The session of one invocation's write pipeline and budgets.</summary>
     internal static WordsSession Session(OutputPipeline<Document> outputs, ResourceBudgetLedger budgets) =>
         new(outputs, budgets, new WordsDocumentLoader(budgets, outputs));
+
+    /// <summary>Applies a license snapshot to Aspose.Words.</summary>
+    internal static void ApplyLicense(Stream stream) =>
+        new Aspose.Words.License().SetLicense(stream);
 }

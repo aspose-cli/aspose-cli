@@ -31,7 +31,7 @@ internal static class ReadProjection
             "items",
             phase: "projection");
 
-        StylePool? stylePool = request.Scope.IncludesStyles() ? new StylePool(workbook) : null;
+        StylePool? stylePool = ReadScopes.IncludesStyles(request.Scope) ? new StylePool(workbook) : null;
         IReadOnlyList<IReadOnlyList<CellData>>? cells = window is { } resolvedWindow
             ? BuildCells(sheet, resolvedWindow, request.Scope, stylePool)
             : null;
@@ -67,9 +67,9 @@ internal static class ReadProjection
     }
 
     private static IReadOnlyList<IReadOnlyList<CellData>> BuildCells(
-        Worksheet sheet, RangeRef window, ReadScope scope, StylePool? stylePool)
+        Worksheet sheet, RangeRef window, string scope, StylePool? stylePool)
     {
-        bool includeFormulas = scope.IncludesFormulas();
+        bool includeFormulas = ReadScopes.IncludesFormulas(scope);
         var rows = new List<IReadOnlyList<CellData>>(window.RowCount);
 
         for (int row = window.Start.Row; row <= window.End.Row; row++)

@@ -10,8 +10,12 @@ internal static class CellsActivation
         ProductBinding.Create<CellsSession, Aspose.Cells.Workbook>(
             context,
             productId,
-            resolution => new CellsLicenseGate(resolution, context.EnvironmentVariable),
+            ApplyLicense,
             new CellsEvaluationProfile(),
             outputs => new CellsSession(outputs, context.ResourceBudgets, new CellsWorkbookLoader(context.ResourceBudgets)),
             outputs => new CellsFontEnvironment(outputs, context.ResourceBudgets));
+
+    /// <summary>Applies a license snapshot to Aspose.Cells.</summary>
+    internal static void ApplyLicense(Stream stream) =>
+        new Aspose.Cells.License().SetLicense(stream);
 }

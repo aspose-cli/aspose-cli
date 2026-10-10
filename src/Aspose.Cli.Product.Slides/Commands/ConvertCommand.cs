@@ -1,6 +1,7 @@
 using Aspose.Cli.Sdk.Extensibility.Commanding;
 using Aspose.Cli.Sdk.Extensibility.Output;
 using Aspose.Cli.Sdk.IO;
+using Aspose.Cli.Sdk.Rendering;
 
 namespace Aspose.Cli.Product.Slides.Commands;
 
@@ -18,19 +19,18 @@ internal static class ConvertCommand
                 Output = OutputTarget.File("Output path; defaults to a sibling using the target extension; multi-slide image output adds .sN before the extension."),
                 Encrypt = SlidesInputs.EncryptedPresentation,
                 UsesFonts = true,
-                Target = TargetFormat.Convert("Target presentation export format. PNG and JPEG use 192 DPI; use slides render for custom dimensions.", SlidesFormats.Definitions),
+                Target = TargetFormat.Convert($"Target presentation export format. PNG and JPEG use {RenderPixelGuard.DefaultDpi} DPI; use slides render for custom dimensions.", SlidesFormats.Definitions),
             },
             [.. slides.Options],
             (parse, standard) =>
             {
                 ResolvedOutput output = standard.Output;
-                string? range = slides.Read(parse);
                 Secret? encryptPassword = standard.EncryptPassword();
                 return new PresentationConvertRequest
                 {
                     Input = standard.Input,
                     Output = output,
-                    Slides = range is null ? null : PageRange.Parse(range),
+                    Slides = slides.ReadRange(parse),
                     Password = standard.InputPassword,
                     EncryptPassword = encryptPassword,
                 };

@@ -10,7 +10,7 @@ internal static class InfoCommand
 
     private static readonly Dictionary<string, string> DetailNotes = new(StringComparer.Ordinal)
     {
-        ["outline"] = "bookmarks, up to 200",
+        ["outline"] = $"bookmarks, up to {PdfInfoResult.OutlineLimit}",
         ["forms"] = "form type and field count",
         ["layers"] = "optional content layer names",
         ["metadata"] = "document information such as title and author",
@@ -18,7 +18,7 @@ internal static class InfoCommand
 
     public static CommandDefinition<PdfInfoRequest, PdfInfoResult> Create()
     {
-        var preview = new PreviewOption("the size and rotation of each page, up to 20 pages");
+        var preview = new PreviewOption($"the size and rotation of each page, up to {PdfInfoResult.PagePreviewLimit} pages");
         var detail = new DetailOption(Details, DetailNotes);
         return new(
             "inspect",

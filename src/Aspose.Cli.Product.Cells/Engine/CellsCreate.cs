@@ -2,7 +2,6 @@ using Aspose.Cells;
 using Aspose.Cli.Product.Cells.Engine.Mapping;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Results;
-using static Aspose.Cli.Product.Cells.Engine.CellsEngineSupport;
 
 namespace Aspose.Cli.Product.Cells.Engine;
 
@@ -34,7 +33,7 @@ internal static class CellsCreate
             Output = saved.Output,
             Sheets = request.SheetNames,
             License = EnvelopeParts.License(licenseState),
-            Warnings = CombineWarnings(saved.Truncated, saved.FormulasBroken, saved.SheetsDropped),
+            Warnings = EnvelopeParts.CombineWarnings(saved.Truncated, saved.FormulasBroken, saved.SheetsDropped),
         };
     }
 }

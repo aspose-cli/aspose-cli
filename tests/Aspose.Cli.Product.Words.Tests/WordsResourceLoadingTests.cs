@@ -57,21 +57,6 @@ public sealed class WordsResourceLoadingTests
     }
 
     [Fact]
-    public void BlankDocumentWithoutAPolicySourceDeniesEveryResource()
-    {
-        using var fixture = new WordsFixture();
-        string text = fixture.Temp.File("body.txt");
-        File.WriteAllText(text, "Body");
-
-        Document blank = WordsDocumentLoader.CreateBlank(policySource: null);
-        new DocumentBuilder(blank).InsertField($"INCLUDETEXT \"{text.Replace("\\", "\\\\")}\"", "placeholder");
-        blank.UpdateFields();
-
-        Assert.NotNull(blank.ResourceLoadingCallback);
-        Assert.DoesNotContain("Body", blank.GetText(), StringComparison.Ordinal);
-    }
-
-    [Fact]
     public async Task RemoteFieldsLinkedImagesAndSvgImages_AreNeverFetched()
     {
         using var fixture = new WordsFixture();

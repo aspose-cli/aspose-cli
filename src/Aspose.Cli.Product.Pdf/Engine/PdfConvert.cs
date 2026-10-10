@@ -1,6 +1,7 @@
 using System.Text;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Licensing;
+using Aspose.Cli.Sdk.Rendering;
 using Aspose.Cli.Sdk.Results;
 using Aspose.Pdf;
 using Aspose.Pdf.Devices;
@@ -11,9 +12,6 @@ namespace Aspose.Cli.Product.Pdf.Engine;
 /// <summary>Converts selected PDF pages to a supported format: <c>pdf convert</c>.</summary>
 internal static class PdfConvert
 {
-    /// <summary>The resolution of the page images convert writes.</summary>
-    private const int ImageDpi = 192;
-
     internal static PdfConvertResult Run(PdfSession session, PdfConvertRequest request)
     {
         string filePath = request.Input;
@@ -320,7 +318,7 @@ internal static class PdfConvert
             writer.Stage(path, request.Output.Overwrite, document, temp =>
             {
                 using FileStream stream = File.Create(temp);
-                PdfRaster.RenderPage(session.Budgets, document, pageNumber, request.Output.Format.Id, ImageDpi, stream);
+                PdfRaster.RenderPage(session.Budgets, document, pageNumber, request.Output.Format.Id, RenderPixelGuard.DefaultDpi, stream);
             }, rendering: true, pages: [pageNumber]);
             paths.Add(path);
         }
@@ -338,14 +336,14 @@ internal static class PdfConvert
     {
         foreach (int pageNumber in pages)
         {
-            PdfRaster.EnsurePageFits(session.Budgets, source.Pages[pageNumber], ImageDpi);
+            PdfRaster.EnsurePageFits(session.Budgets, source.Pages[pageNumber], RenderPixelGuard.DefaultDpi);
         }
 
         using Document selected = Select(source, pages);
         long size = session.Outputs.Write(request.Output.Path, request.Output.Overwrite, selected, temp =>
         {
             using FileStream stream = File.Create(temp);
-            var device = new TiffDevice(new Resolution(ImageDpi), new TiffSettings());
+            var device = new TiffDevice(new Resolution(RenderPixelGuard.DefaultDpi), new TiffSettings());
             device.Process(selected, 1, selected.Pages.Count, stream);
         }, rendering: true);
         return BuildOutput(request.Output.Path, "tiff", size);

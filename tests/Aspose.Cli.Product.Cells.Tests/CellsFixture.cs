@@ -25,8 +25,7 @@ public sealed class CellsFixture : IDisposable
     public static SearchQuery Search(string pattern, int maxHits = 100) =>
         new(Aspose.Cli.Sdk.Text.TextSearch.Create(pattern, regex: false, caseSensitive: false), maxHits, Scope: null);
 
-    public ILicenseGate Gate { get; } = TestLicense.Apply(
-        static (resolution, environment) => new CellsLicenseGate(resolution, environment));
+    public ILicenseGate Gate { get; } = TestLicense.Apply(CellsActivation.ApplyLicense);
 
     /// <summary>The session of one invocation, as activation builds it.</summary>
     internal CellsSession Session

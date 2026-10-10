@@ -19,7 +19,6 @@ internal static class WordsRender
 
     private const int CssDpi = 96;
     private const int EvidenceDpi = 150;
-    private const int DisplayDpi = 192;
     private const string RenderHint = "Render fewer or smaller pages, or lower --dpi.";
 
     /// <summary>Renders selected pages within the pixel budget.</summary>
@@ -67,7 +66,7 @@ internal static class WordsRender
         _ = session.Outputs.License;
         using LoadedDocument loaded = session.Loader.Open(filePath, request.Password);
         Document document = loaded.Document;
-        int dpi = request.Purpose == ViewPurpose.Display ? DisplayDpi : EvidenceDpi;
+        int dpi = request.Purpose == ViewPurpose.Display ? RenderPixelGuard.DefaultDpi : EvidenceDpi;
         int total = document.PageCount;
         int count = Math.Min(total, request.MaxPartCount);
         IReadOnlyList<IReadOnlyList<ViewElement>> layout = WordsViewLayout.Collect(document, loaded.Evaluation, count);

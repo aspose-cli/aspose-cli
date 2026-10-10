@@ -1,6 +1,6 @@
 using System.Text;
 using Microsoft.CodeAnalysis.Text;
-using CSharpDisplay = Microsoft.CodeAnalysis.CSharp.SymbolDisplay;
+using static Aspose.Cli.Sdk.Analyzers.ContractTypes;
 using ModuleExport = (
     string ProductId,
     Microsoft.CodeAnalysis.INamedTypeSymbol? ModuleType,
@@ -19,16 +19,21 @@ public sealed class ProductCatalogGenerator : IIncrementalGenerator
         "Aspose.Cli.Sdk.Extensibility.IProductModule";
     private const string SdkAssemblyName = "Aspose.Cli.Sdk";
 
-    private static readonly DiagnosticDescriptor DuplicateProductId = Rule(
+    private const string Category = "Aspose.Cli.ProductDiscovery";
+
+    private static readonly DiagnosticDescriptor DuplicateProductId = AnalyzerTypes.Rule(
+        Category,
         "APCLI001",
         "Duplicate product id",
         "Product id '{0}' is exported by both '{1}' and '{2}'");
-    private static readonly DiagnosticDescriptor InvalidModuleType = Rule(
+    private static readonly DiagnosticDescriptor InvalidModuleType = AnalyzerTypes.Rule(
+        Category,
         "APCLI002",
         "Invalid product module type",
         "Product module '{0}' must be public, non-abstract, implement "
             + "IProductModule, and expose a public parameterless constructor");
-    private static readonly DiagnosticDescriptor ModuleCountInvalid = Rule(
+    private static readonly DiagnosticDescriptor ModuleCountInvalid = AnalyzerTypes.Rule(
+        Category,
         "APCLI004",
         "Product assembly must export exactly one module",
         "Product assembly '{0}' exports {1} ProductModule attributes; "
@@ -239,19 +244,5 @@ public sealed class ProductCatalogGenerator : IIncrementalGenerator
             ?.Identity.Version.ToString()
         ?? "0.0.0.0";
 
-    private static string Literal(string value) =>
-        CSharpDisplay.FormatLiteral(value, quote: true);
-
-    private static DiagnosticDescriptor Rule(
-        string id,
-        string title,
-        string message) =>
-        new(
-            id,
-            title,
-            message,
-            "Aspose.Cli.ProductDiscovery",
-            DiagnosticSeverity.Error,
-            isEnabledByDefault: true);
 
 }

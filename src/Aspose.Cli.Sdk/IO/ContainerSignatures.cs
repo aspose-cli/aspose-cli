@@ -24,9 +24,6 @@ public static class ContainerSignatures
 
     private static ReadOnlySpan<byte> ZipSpannedArchive => [0x50, 0x4B, 0x07, 0x08];
 
-    /// <summary>Whether <paramref name="prefix"/> starts as an OLE compound file.</summary>
-    public static bool IsOleCompoundFile(ReadOnlySpan<byte> prefix) => prefix.StartsWith(OleCompoundFile);
-
     /// <summary>Whether <paramref name="prefix"/> starts with the PDF header.</summary>
     public static bool StartsWithPdfHeader(ReadOnlySpan<byte> prefix) => prefix.StartsWith(PdfHeader);
 

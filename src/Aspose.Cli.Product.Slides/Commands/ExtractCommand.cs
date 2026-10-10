@@ -22,13 +22,12 @@ internal static class ExtractCommand
             [what, .. slides.Options],
             (parse, standard) =>
             {
-                string? range = slides.Read(parse);
                 return new PresentationExtractRequest
                 {
                     Input = standard.Input,
                     What = parse.GetRequiredValue(what),
                     Output = standard.DirectoryOutput,
-                    Slides = range is null ? null : PageRange.Parse(range),
+                    Slides = slides.ReadRange(parse),
                     Password = standard.InputPassword,
                 };
             },

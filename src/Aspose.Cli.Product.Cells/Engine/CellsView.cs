@@ -3,6 +3,7 @@ using Aspose.Cells.Rendering;
 using Aspose.Cli.Product.Cells.Engine.Mapping;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
+using Aspose.Cli.Sdk.Rendering;
 using Aspose.Cli.Sdk.Views;
 using static Aspose.Cli.Product.Cells.Engine.CellsEngineSupport;
 
@@ -21,7 +22,6 @@ internal static class CellsView
         ViewRenderRequest request,
         IViewArtifactSink artifacts)
     {
-        const int dpi = 192;
         const string workbookFile = "workbook.html";
         ArgumentNullException.ThrowIfNull(session);
         ArgumentException.ThrowIfNullOrEmpty(filePath);
@@ -68,7 +68,7 @@ internal static class CellsView
             string file = string.Create(
                 System.Globalization.CultureInfo.InvariantCulture,
                 $"sheet-{sheet.Index + 1:0000}.png");
-            (int width, int height, Warning? window) = RenderSheetPart(session.Budgets, sheet, dpi, file, artifacts);
+            (int width, int height, Warning? window) = RenderSheetPart(session.Budgets, sheet, RenderPixelGuard.DefaultDpi, file, artifacts);
             if (window is not null)
             {
                 partial.Add(window);

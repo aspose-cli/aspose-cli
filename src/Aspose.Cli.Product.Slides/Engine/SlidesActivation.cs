@@ -9,11 +9,15 @@ internal static class SlidesActivation
         ProductBinding.Create<SlidesSession, Aspose.Slides.Presentation>(
             context,
             productId,
-            resolution => new SlidesLicenseGate(resolution, context.EnvironmentVariable),
+            ApplyLicense,
             new SlidesEvaluationProfile(),
             outputs => new SlidesSession(
                 outputs,
                 context.ResourceBudgets,
                 new SlidesPresentationLoader(context.ResourceBudgets)),
             outputs => new SlidesFontEnvironment(outputs, context.ResourceBudgets));
+
+    /// <summary>Applies a license snapshot to Aspose.Slides.</summary>
+    internal static void ApplyLicense(Stream stream) =>
+        new Aspose.Slides.License().SetLicense(stream);
 }

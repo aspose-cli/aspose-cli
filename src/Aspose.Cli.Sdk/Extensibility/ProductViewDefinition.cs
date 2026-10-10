@@ -3,7 +3,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
-using Aspose.Cli.Sdk.Ports;
+using Aspose.Cli.Sdk.Rendering;
 using Aspose.Cli.Sdk.Views;
 
 namespace Aspose.Cli.Sdk.Extensibility;
@@ -215,7 +215,7 @@ public sealed partial class ProductViewDefinition
     private object Session(ProductBinding binding)
     {
         ArgumentNullException.ThrowIfNull(binding);
-        if (binding.ProductId != ProductId || binding.SessionType != SessionType)
+        if (binding.ProductId != ProductId)
         {
             throw new InvalidOperationException(
                 $"Binding '{binding.ProductId}' cannot render views for product '{ProductId}'.");

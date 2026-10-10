@@ -34,8 +34,11 @@ public sealed record BoundedOperationOutcome
     [Minimum(0)]
     public required long ItemsAffected { get; init; }
 
+    /// <summary>The most targets one outcome lists.</summary>
+    public const int MaximumTargets = 100;
+
     /// <summary>Product-owned stable addresses; failed outcomes identify attempted targets.</summary>
-    [MaxItems(100)]
+    [MaxItems(MaximumTargets)]
     public IReadOnlyList<string> Targets { get; init; } = [];
 
     /// <summary>Failure details; present only when <see cref="Status"/> is <c>failed</c>.</summary>

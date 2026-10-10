@@ -1,6 +1,5 @@
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Licensing;
-using Aspose.Cli.Sdk.Ports;
 using Aspose.Cli.Sdk.Rendering;
 using Aspose.Cli.Sdk.Results;
 
@@ -138,12 +137,13 @@ public abstract class ProductBinding
     /// <summary>
     /// Creates a licensed-engine binding whose product publishes its outputs through the SDK
     /// write pipeline, which recognizes evaluation marks through <paramref name="evaluation"/>.
-    /// The product session and the font environment are deferred independently.
+    /// The product session and the font environment are deferred independently;
+    /// <paramref name="applyLicense"/> applies the resolved license to the product's SDK once.
     /// </summary>
     public static ProductBinding<TSession> Create<TSession, TDocument>(
         ProductActivationContext context,
         string productId,
-        Func<LicenseResolution, ILicenseGate> createLicenseGate,
+        Action<Stream> applyLicense,
         IEvaluationProfile<TDocument> evaluation,
         Func<OutputPipeline<TDocument>, TSession> createSession,
         Func<ILicenseState, IFontEnvironment> createFontEnvironment)
@@ -157,7 +157,7 @@ public abstract class ProductBinding
         ILicenseGate license = ProductLicenseGateFactory.Create(
             context,
             productId,
-            createLicenseGate);
+            applyLicense);
         var outputs = new OutputPipeline<TDocument>(license, evaluation, context.SafeFileWriter);
         return new ProductBinding<TSession>(
             productId,

@@ -187,8 +187,7 @@
         "type": "Project",
         "dependencies": {
           "Aspose.Cells": "[26.9.0, )",
-          "Aspose.Cli.Sdk": "[1.0.0, )",
-          "SkiaSharp.NativeAssets.Linux": "[3.119.0, )"
+          "Aspose.Cli.Sdk": "[1.0.0, )"
         }
       },
       "aspose.cli.product.pdf": {
@@ -211,8 +210,7 @@
         "type": "Project",
         "dependencies": {
           "Aspose.Cli.Sdk": "[1.0.0, )",
-          "Aspose.Words": "[26.9.0, )",
-          "SkiaSharp.NativeAssets.Linux": "[3.119.0, )"
+          "Aspose.Words": "[26.9.0, )"
         }
       },
       "aspose.cli.sdk": {
@@ -294,12 +292,6 @@
           "SkiaSharp.NativeAssets.macOS": "3.119.0"
         }
       },
-      "SkiaSharp.NativeAssets.Linux": {
-        "type": "CentralTransitive",
-        "requested": "[3.119.0, )",
-        "resolved": "3.119.0",
-        "contentHash": "oBvfueHtYGTmVHkVebZ6lMYN5nCXR/eN5e7a9VGHca1Z0bt8G5QGLtsjPA+hJ30ZK2wq3i02Zoej2aZDIpvcHA=="
-      },
       "System.CommandLine": {
         "type": "CentralTransitive",
         "requested": "[2.0.9, )",
@@ -336,12 +328,6 @@
         "type": "Transitive",
         "resolved": "4.5.0",
         "contentHash": "wLBKzFnDCxP12VL9ANydSYhk59fC4cvOr9ypYQLPnAj48NQIhqnjdD2yhP8yEKyBJEjERWS9DisKL7rX5eU25Q=="
-      },
-      "SkiaSharp.NativeAssets.Linux": {
-        "type": "CentralTransitive",
-        "requested": "[3.119.0, )",
-        "resolved": "3.119.0",
-        "contentHash": "oBvfueHtYGTmVHkVebZ6lMYN5nCXR/eN5e7a9VGHca1Z0bt8G5QGLtsjPA+hJ30ZK2wq3i02Zoej2aZDIpvcHA=="
       }
     }
   }

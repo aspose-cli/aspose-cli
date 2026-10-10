@@ -11,7 +11,7 @@ internal static class InfoCommand
 
     public static CommandDefinition<PresentationInfoRequest, PresentationInfoResult> Create()
     {
-        var preview = new PreviewOption("each slide's title and up to 240 characters of its text");
+        var preview = new PreviewOption($"each slide's title and up to {SlideInfo.PreviewTextLength} characters of its text");
         var detail = new DetailOption(
             Details,
             new Dictionary<string, string>(StringComparer.Ordinal)

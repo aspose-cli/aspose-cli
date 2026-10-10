@@ -18,8 +18,7 @@ namespace Aspose.Cli.Product.Words.Tests;
 /// </summary>
 public sealed class WordsFixture : IDisposable
 {
-    public ILicenseGate Gate { get; } = TestLicense.Apply(
-        static (resolution, environment) => new WordsLicenseGate(resolution, environment));
+    public ILicenseGate Gate { get; } = TestLicense.Apply(WordsActivation.ApplyLicense);
 
     /// <summary>A new session of one invocation, as the product binding creates it.</summary>
     internal WordsSession Session =>

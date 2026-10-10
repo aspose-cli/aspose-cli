@@ -41,15 +41,6 @@ internal sealed class WordsDocumentLoader
     }
 
     /// <summary>
-    /// Creates an empty document under the resource policy of <paramref name="policySource"/>,
-    /// or under a policy that denies every external resource. Engine code creates documents
-    /// only here or through <see cref="Open"/>: a document without a resource callback lets
-    /// field updates such as INCLUDETEXT read arbitrary files.
-    /// </summary>
-    internal static Document CreateBlank(Document? policySource) =>
-        new() { ResourceLoadingCallback = policySource?.ResourceLoadingCallback ?? DenyAllResources.Instance };
-
-    /// <summary>
     /// Opens the built-in A4 design that new documents use without a template. It is a
     /// product resource, so it loads under the deny-all resource policy.
     /// </summary>
@@ -94,7 +85,7 @@ internal sealed class WordsDocumentLoader
             return format;
         });
 
-        string id = WordsFormatMapper.ToId(detected.LoadFormat);
+        string id = WordsEngineFormats.IdOf(detected.LoadFormat);
         if (id == "unknown" || IsTextFallbackForNonTextPath(id, path))
         {
             throw loading.Unreadable(
@@ -140,7 +131,7 @@ internal sealed class WordsDocumentLoader
         try
         {
             using FileStream input = InputFiles.OpenRead(path);
-            string id = WordsFormatMapper.ToId(FileFormatUtil.DetectFileFormat(input).LoadFormat);
+            string id = WordsEngineFormats.IdOf(FileFormatUtil.DetectFileFormat(input).LoadFormat);
             return id == "unknown" ? null : id;
         }
         catch (Exception exception) when (exception is not OperationCanceledException)

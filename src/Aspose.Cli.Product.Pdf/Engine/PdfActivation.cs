@@ -9,8 +9,12 @@ internal static class PdfActivation
         ProductBinding.Create<PdfSession, Aspose.Pdf.Document>(
             context,
             productId,
-            resolution => new PdfLicenseGate(resolution, context.EnvironmentVariable),
+            ApplyLicense,
             new PdfEvaluationProfile(),
             outputs => new PdfSession(outputs, context.ResourceBudgets, new PdfDocumentLoader(context.ResourceBudgets)),
             outputs => new PdfFontEnvironment(outputs, context.ResourceBudgets));
+
+    /// <summary>Applies a license snapshot to Aspose.PDF.</summary>
+    internal static void ApplyLicense(Stream stream) =>
+        new Aspose.Pdf.License().SetLicense(stream);
 }

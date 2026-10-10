@@ -1,4 +1,5 @@
 using System.Globalization;
+using Aspose.Cli.Sdk.Rendering;
 using Aspose.Cli.Sdk.Views;
 using Aspose.Pdf;
 
@@ -15,13 +16,12 @@ internal static class PdfPagesView
         IViewArtifactSink artifacts)
     {
         const int evidenceDpi = 150;
-        const int displayDpi = 192;
         const double cssDpi = 96;
         ArgumentNullException.ThrowIfNull(artifacts);
         _ = session.Outputs.License;
         using LoadedPdf loaded = session.Loader.Open(filePath, request.Password);
         bool evidence = request.Purpose != ViewPurpose.Display;
-        int dpi = evidence ? evidenceDpi : displayDpi;
+        int dpi = evidence ? evidenceDpi : RenderPixelGuard.DefaultDpi;
         int total = loaded.Document.Pages.Count;
         int count = Math.Min(total, request.MaxPartCount);
         var parts = new List<ViewPart>(count);

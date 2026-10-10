@@ -1,4 +1,3 @@
-using Aspose.Cli.Sdk.Ports;
 using Aspose.Cli.Sdk.Rendering;
 using Aspose.Cli.TestKit;
 using Aspose.Slides;

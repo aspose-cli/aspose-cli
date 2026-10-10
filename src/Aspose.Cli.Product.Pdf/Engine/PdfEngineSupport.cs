@@ -146,10 +146,6 @@ internal static class PdfEngineSupport
         });
     }
 
-    /// <summary>Pages as the range text --pages accepts, such as <c>1-3,7</c>.</summary>
-    internal static string PageRangeText(IEnumerable<int> values) =>
-        Aspose.Cli.Sdk.Addressing.PageRange.Describe(values) ?? string.Empty;
-
     internal static OutputInfo BuildOutput(string path, string format, long size) => new()
     {
         Path = Path.GetFullPath(path),

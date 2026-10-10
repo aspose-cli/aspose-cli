@@ -1,6 +1,7 @@
 using System.Globalization;
 using Aspose.Cli.Product.Words.Engine.Mapping;
 using Aspose.Cli.Sdk.Errors;
+using Aspose.Cli.Sdk.Text;
 using Aspose.Words;
 
 namespace Aspose.Cli.Product.Words.Engine.Editing;
@@ -199,14 +200,14 @@ internal static class WordsAnchorResolver
     {
         // Each block's text as far as it can name the block; a paragraph can be long.
         string[] available = [.. candidates
-            .Select(static entry => WordsEngineSupport.Truncate(WordsText.Of(entry.Node).Trim(), 80))
+            .Select(static entry => TextSearch.Truncate(WordsText.Of(entry.Node).Trim(), 80))
             .Where(static text => text.Length > 0)];
         string? hint = null;
         if (Mistake.Of(needle, available).Suggestions.Count == 0 && Closest(index, needle) is { } closest)
         {
             string text = WordsText.Of(closest.Node).Trim();
             string heading = subject == "heading" && !candidates.Contains(closest) ? ", but it is not a heading" : string.Empty;
-            hint = $"Block {closest.Index} holds the closest text: '{WordsEngineSupport.Truncate(text, 80)}'{heading}; "
+            hint = $"Block {closest.Index} holds the closest text: '{TextSearch.Truncate(text, 80)}'{heading}; "
                 + $"address it with {{\"block\": {closest.Index}}} or a \"find\" text it contains.";
         }
 
@@ -287,7 +288,7 @@ internal static class WordsAnchorResolver
             $"blocks/{ranges}",
             .. targets.Where(static target => target.StartsWith("section/", StringComparison.Ordinal)),
         ];
-        return degenerate.Length <= BoundedOperationRunner.MaximumTargets ? degenerate : [DocumentTarget];
+        return degenerate.Length <= BoundedOperationOutcome.MaximumTargets ? degenerate : [DocumentTarget];
     }
 
     /// <summary>The whole document, the target of an operation that names no block.</summary>

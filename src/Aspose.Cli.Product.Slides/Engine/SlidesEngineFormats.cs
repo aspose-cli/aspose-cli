@@ -10,7 +10,8 @@ namespace Aspose.Cli.Product.Slides.Engine;
 /// </summary>
 internal static class SlidesEngineFormats
 {
-    private static readonly Row[] Rows =
+    /// <summary>Every format id the engine maps, with what it maps to.</summary>
+    internal static IReadOnlyList<SlidesEngineFormat> All { get; } =
     [
         new("ppt", [LoadFormat.Ppt, LoadFormat.Ppt95], SaveFormat.Ppt),
         new("pptx", [LoadFormat.Pptx], SaveFormat.Pptx),
@@ -38,13 +39,7 @@ internal static class SlidesEngineFormats
 
     /// <summary>The format id of a format Aspose.Slides detected, or <c>unknown</c>.</summary>
     internal static string IdOf(LoadFormat format) =>
-        Rows.FirstOrDefault(row => row.Loads.Contains(format))?.Id ?? "unknown";
-
-    /// <summary>Whether a presentation detected as one of the id's load formats opens.</summary>
-    internal static bool CanLoad(string id) => Find(id)?.Loads.Length > 0;
-
-    /// <summary>Whether the id is written by saving the whole presentation or by rendering each slide.</summary>
-    internal static bool CanWrite(string id) => Find(id) is { } row && (row.Save is not null || row.SlideImage);
+        All.FirstOrDefault(row => row.Loads.Contains(format))?.Id ?? "unknown";
 
     /// <summary>Whether the id is written as one image per slide rather than by saving the presentation.</summary>
     internal static bool IsSlideImage(string id) => Find(id)?.SlideImage == true;
@@ -53,7 +48,12 @@ internal static class SlidesEngineFormats
     internal static SaveFormat SaveFormatOf(string id) =>
         Find(id)?.Save ?? throw new InvalidOperationException($"'{id}' has no presentation save format.");
 
-    private static Row? Find(string id) => Rows.FirstOrDefault(row => string.Equals(row.Id, id, StringComparison.Ordinal));
-
-    private sealed record Row(string Id, LoadFormat[] Loads, SaveFormat? Save = null, bool SlideImage = false);
+    private static SlidesEngineFormat? Find(string id) => All.FirstOrDefault(row => string.Equals(row.Id, id, StringComparison.Ordinal));
 }
+
+/// <summary>What one public format id is to the engine.</summary>
+/// <param name="Id">The public format id.</param>
+/// <param name="Loads">The formats Aspose.Slides detects a presentation of this id as; empty when it is never read.</param>
+/// <param name="Save">The format the whole presentation is saved in, or null.</param>
+/// <param name="SlideImage">Whether the id is written as one image per slide.</param>
+internal sealed record SlidesEngineFormat(string Id, LoadFormat[] Loads, SaveFormat? Save = null, bool SlideImage = false);

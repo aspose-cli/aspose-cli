@@ -112,13 +112,6 @@ internal sealed class OutputFileOption
     /// <summary>Adds the option to a command.</summary>
     public void AddTo(Command command) => command.Options.Add(Option);
 
-    /// <summary>Returns an explicitly requested output extension, if any.</summary>
-    public string? RequestedExtension(ParseResult parseResult) =>
-        parseResult.GetValue(Option) is { } path
-            && Path.GetExtension(path) is { Length: > 1 } extension
-                ? extension
-                : null;
-
     /// <summary>Resolves <c>--out</c>, which must name none of the inputs, or returns null when it was omitted.</summary>
     /// <exception cref="CliException"><c>OPTION_INVALID</c> when the output resolves to an input.</exception>
     public string? Resolve(

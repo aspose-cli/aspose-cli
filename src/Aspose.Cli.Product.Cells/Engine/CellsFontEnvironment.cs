@@ -2,14 +2,13 @@ using Aspose.Cells;
 using Aspose.Cli.Product.Cells.Engine.Mapping;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Licensing;
-using Aspose.Cli.Sdk.Ports;
 using Aspose.Cli.Sdk.Rendering;
 using Aspose.Cli.Sdk.Results;
 using static Aspose.Cli.Product.Cells.Engine.CellsEngineSupport;
 
 namespace Aspose.Cli.Product.Cells.Engine;
 
-/// <summary>Aspose.Cells font diagnostics behind the product-neutral font port.</summary>
+/// <summary>Aspose.Cells font diagnostics behind the product-neutral <see cref="IFontEnvironment"/>.</summary>
 internal sealed class CellsFontEnvironment : IFontEnvironment
 {
     private readonly ILicenseState _license;

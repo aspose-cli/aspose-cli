@@ -73,7 +73,7 @@ public sealed record FormatDescriptor
             extensions);
 
     /// <summary>Creates an input format with explicit routing ownership.</summary>
-    public static FormatDescriptor Input(
+    internal static FormatDescriptor Input(
         string id,
         int inputOrder,
         RouteOwnership ownership,
@@ -152,13 +152,6 @@ public sealed record FormatDescriptor
     /// <summary>Generic-routing ownership for input extensions.</summary>
     public RouteOwnership Ownership { get; init; } = RouteOwnership.Explicit;
 
-    /// <summary>
-    /// Generic operations for which this input declaration is eligible.
-    /// Empty means the standard input operations (<c>open</c>, <c>app</c>,
-    /// <c>fonts</c>, <c>preview</c>, and <c>review</c>).
-    /// </summary>
-    public IReadOnlyList<string> Operations { get; init; } = [];
-
     /// <summary>Stable ordering among advertised input formats.</summary>
     public int InputOrder { get; init; } = int.MaxValue;
 
@@ -168,8 +161,11 @@ public sealed record FormatDescriptor
     /// <summary>Stable ordering among advertised render formats.</summary>
     public int RenderOrder { get; init; } = int.MaxValue;
 
-    /// <summary>Optional content recognizer for ambiguous or renamed inputs.</summary>
-    public IFileRecognizer? Recognizer { get; init; }
+    /// <summary>
+    /// Optional content recognizer for ambiguous or renamed inputs; a test seam for routing
+    /// time-outs and cancellation, since products declare <see cref="Recognition"/> rules.
+    /// </summary>
+    internal IFileRecognizer? Recognizer { get; init; }
 
     /// <summary>
     /// Product-owned declarative recognition rules for this default input

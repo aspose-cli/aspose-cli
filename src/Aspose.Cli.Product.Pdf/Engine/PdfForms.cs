@@ -25,7 +25,7 @@ internal static class PdfForms
         return new PdfFormResult
         {
             Input = PdfInfoProjection.Source(filePath),
-            Type = form.HasXfa ? "xfa" : form.Count > 0 ? "acro" : "none",
+            Type = form.HasXfa ? PdfFormKinds.Xfa : form.Count > 0 ? PdfFormKinds.Acro : PdfFormKinds.None,
             ReadOnly = form.HasXfa,
             Fields = fields,
             License = EnvelopeParts.License(state),

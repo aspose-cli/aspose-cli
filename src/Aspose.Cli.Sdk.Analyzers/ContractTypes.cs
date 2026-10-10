@@ -69,8 +69,12 @@ internal static class ContractTypes
         ["ValueKindAttribute"] = ["String"],
     };
 
-    /// <summary>The value levels of a member from the outside in, such as Array, Array, String.</summary>
-    internal static List<string> Levels(ITypeSymbol type)
+    /// <summary>
+    /// The value levels of a member from the outside in, such as Array, Array, String, as
+    /// constraints are placed on them; <paramref name="scalarKind"/> names the innermost value,
+    /// which is a Record when it returns null.
+    /// </summary>
+    internal static List<string> Levels(ITypeSymbol type, Func<ITypeSymbol, string?> scalarKind)
     {
         var levels = new List<string>();
         ITypeSymbol current = type;
@@ -87,7 +91,7 @@ internal static class ContractTypes
             }
             else
             {
-                levels.Add(ScalarKind(current) ?? "Record");
+                levels.Add(scalarKind(current) ?? "Record");
                 return levels;
             }
         }

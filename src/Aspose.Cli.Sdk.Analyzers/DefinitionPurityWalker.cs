@@ -301,8 +301,7 @@ internal sealed class DefinitionPurityWalker : OperationWalker
         {
             "Aspose.Cli.Sdk.Extensibility.Product" => member == "Define",
             "Aspose.Cli.Sdk.IO.FormatDescriptor" =>
-                member is ".ctor" or "Declare" or "Input" or "Output" or "Render"
-                    or "Routed"
+                member is ".ctor" or "Declare" or "Input" or "Routed"
                     || IsDataMember(symbol),
             "Aspose.Cli.Sdk.IO.FormatDescriptorExtensions" =>
                 member is "IdsFor" or "ExtensionFor",

@@ -23,11 +23,10 @@ internal static class ReadCommand
             (parse, standard) =>
             {
                 int characters = maxChars.Read(parse);
-                string? range = pages.Read(parse);
                 return new PdfReadRequest
                 {
                     Input = standard.Input,
-                    Pages = range is null ? null : PageRange.Parse(range),
+                    Pages = pages.ReadRange(parse),
                     Mode = parse.GetValue(mode) ?? PdfReadModes.Plain,
                     MaxCharacters = characters,
                     Password = standard.InputPassword,

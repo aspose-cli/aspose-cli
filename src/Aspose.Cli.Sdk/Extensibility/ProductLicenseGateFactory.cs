@@ -9,24 +9,22 @@ internal static class ProductLicenseGateFactory
     public static ILicenseGate Create(
         ProductActivationContext context,
         string productId,
-        Func<LicenseResolution, ILicenseGate> factory)
+        Action<Stream> applyLicense)
     {
         ArgumentNullException.ThrowIfNull(context);
         ArgumentException.ThrowIfNullOrWhiteSpace(productId);
-        ArgumentNullException.ThrowIfNull(factory);
+        ArgumentNullException.ThrowIfNull(applyLicense);
         if (context.EvaluationRequested)
         {
             // An explicit request, not a fall back: no source is read, so none can fail.
-            return factory(LicenseResolution.EvaluationRequested)
-                ?? throw new InvalidOperationException($"Product '{productId}' returned no license gate.");
+            return new LicenseGate(LicenseResolution.EvaluationRequested, context.EnvironmentVariable, applyLicense);
         }
         try
         {
             LicenseResolution resolution = LicenseResolver.Resolve(
                 context.LicensePath, productId, context.EnvironmentVariable,
                 context.WorkDirectory, context.ConfigDirectory, context.UserLicenseChanges);
-            return factory(resolution)
-                ?? throw new InvalidOperationException($"Product '{productId}' returned no license gate.");
+            return new LicenseGate(resolution, context.EnvironmentVariable, applyLicense);
         }
         catch (CliException exception) { return new UnavailableLicenseGate(exception); }
     }

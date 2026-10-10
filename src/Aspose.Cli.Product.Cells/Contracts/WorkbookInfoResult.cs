@@ -358,4 +358,7 @@ public sealed record SheetInfo
     /// entry is an empty cell.
     /// </summary>
     public IReadOnlyList<IReadOnlyList<string?>>? Preview { get; init; }
+
+    /// <summary>The most columns a <see cref="Preview"/> row holds.</summary>
+    public const int PreviewColumns = 20;
 }

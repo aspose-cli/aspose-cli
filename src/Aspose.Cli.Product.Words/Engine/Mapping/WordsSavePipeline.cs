@@ -22,7 +22,7 @@ internal static class WordsSavePipeline
 
     public static SaveOptions Options(string formatId, Secret? password = null, IReadOnlyList<int>? pages = null, int? dpi = null)
     {
-        SaveFormat format = WordsFormatMapper.ToSaveFormat(formatId);
+        SaveFormat format = WordsEngineFormats.Save(formatId);
         SaveOptions options = SaveOptions.CreateSaveOptions(format);
         options.UpdateLastSavedTimeProperty = false;
         switch (options)
@@ -62,7 +62,8 @@ internal static class WordsSavePipeline
         {
             if (options is not FixedPageSaveOptions fixedOptions)
             {
-                throw CliErrors.OptionInvalid("--pages", $"format '{formatId}' is not fixed-page", $"Use --pages only with {string.Join(", ", WordsFormats.FixedPageConvertIds)}.");
+                throw new InvalidOperationException(
+                    $"--pages reached the engine for '{formatId}', which is not fixed-page and ConvertCommand refuses.");
             }
 
             fixedOptions.PageSet = new PageSet(pages.Select(static page => page - 1).ToArray());

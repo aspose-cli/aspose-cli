@@ -63,7 +63,35 @@ public sealed class DiagnosticCatalogTests
         InvalidOperationException exit = Assert.Throws<InvalidOperationException>(
             () => Build("alpha", [valid with { ExitCode = ExitCode.Success }]));
         Assert.Contains("invalid exit code", exit.Message, StringComparison.Ordinal);
+    }
 
+    [Fact]
+    public void With_ChecksAnotherOwnersDiagnosticsAgainstTheCatalog()
+    {
+        DiagnosticCatalog catalog = Build("alpha", [DiagnosticDescriptor.Error(
+            new ErrorCode("ALPHA_FAILURE", ExitCode.ValidationError),
+            "alpha")]).Diagnostics;
+        DiagnosticDescriptor added = DiagnosticDescriptor.Warning(new WarningCode("HOST_NOTICE"), "host");
+
+        DiagnosticCatalog combined = catalog.With([added], "host");
+        Assert.Equal(
+            [.. catalog.All.Append(added).Select(static descriptor => descriptor.Code).Order(StringComparer.Ordinal)],
+            combined.All.Select(static descriptor => descriptor.Code));
+
+        Assert.Contains(
+            "reused across severities",
+            Assert.Throws<InvalidOperationException>(() => catalog.With(
+                [DiagnosticDescriptor.Warning(new WarningCode("ALPHA_FAILURE"), "host")], "host")).Message,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "multiple owners",
+            Assert.Throws<InvalidOperationException>(() => catalog.With(
+                [DiagnosticDescriptor.Error(new ErrorCode("ALPHA_FAILURE", ExitCode.ValidationError), "host")], "host")).Message,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            "does not match",
+            Assert.Throws<InvalidOperationException>(() => catalog.With([added], "alpha")).Message,
+            StringComparison.Ordinal);
     }
 
     private static ProductCatalog Build(

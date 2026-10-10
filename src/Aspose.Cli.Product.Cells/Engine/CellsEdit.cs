@@ -75,7 +75,7 @@ internal static class CellsEdit
         IReadOnlyList<Warning>? warnings = saved is null
             ? EnvelopeParts.CombineWarnings(loaded.Warnings(editWarnings), importSources.Warnings())
             : EnvelopeParts.CombineWarnings(
-                CombineWarnings([loaded.Resources.CoverageWarning, .. editWarnings, saved.Truncated, saved.FormulasBroken, saved.SheetsDropped, savePlan.EncryptionWarning]),
+                EnvelopeParts.CombineWarnings([loaded.Resources.CoverageWarning, .. editWarnings, saved.Truncated, saved.FormulasBroken, saved.SheetsDropped, savePlan.EncryptionWarning]),
                 importSources.Warnings(),
                 EnvelopeParts.BackupWarnings(saved.Backup));
         if (transaction is not null)
