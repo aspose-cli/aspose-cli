@@ -26,6 +26,12 @@ the fast feedback loop:
 Changed and Affected read the change against the merge base of -Base and HEAD, including
 uncommitted and untracked files.
 
+A test project whose every test carries one category declares it as its TestProjectCategory
+property (tests/Aspose.Cli.Installer.Tests holds only Installer tests); a run starts that project
+only when its scope runs that category.
+
+-Plan lists the test projects the scope starts, with their filters, and stops before building.
+
 Test projects run at the same time, each with its log beside its TRX result. Prerequisites are
 checked first: PowerShell 7.4 (tests start pwsh.exe from PATH), and only when the scope needs
 them Windows PowerShell 5.1 (the customer installer's runtime), the pinned Chromium that the
@@ -64,6 +70,9 @@ param(
 
     [switch] $NoBuild,
 
+    # Lists the test projects the scope starts, with their filters, without building or running them.
+    [switch] $Plan,
+
     # Runs the tests without a license, under en-US and without tiered compilation, as on CI.
     [switch] $CiLike,
 
@@ -92,8 +101,8 @@ $env:ASPOSE_CLI_TEST_EXECUTABLE = $builtExecutable
 
 $categories = @('Installer', 'Browser', 'Slow')
 $slowTestSeconds = 10
-# Inputs of the customer installer tests outside their source file.
-$installerInputs = @('install.ps1', 'scripts/install-local.ps1', 'tests/Aspose.Cli.Platform.Tests/Integration/CustomerInstaller')
+# The customer installer tests and their inputs.
+$installerInputs = @('install.ps1', 'scripts/install-local.ps1', 'tests/Aspose.Cli.Installer.Tests/')
 
 $testKit = Join-Path $layout.TestRoot 'Aspose.Cli.TestKit/Aspose.Cli.TestKit.csproj'
 $testProjects = @(
@@ -223,11 +232,40 @@ switch ($Scope) {
     }
 }
 
+# The category each test project declares that all its tests carry, or null (TestProjectCategory).
+function Get-TestProjectCategory {
+    param([Parameter(Mandatory)][string] $Project)
+    [xml] $xml = [IO.File]::ReadAllText($Project)
+    $category = @($xml.SelectNodes('//TestProjectCategory') | ForEach-Object { $_.InnerText.Trim() })
+    if ($category.Count -eq 0) { return $null }
+    if ($category.Count -ne 1 -or $category[0] -notin $categories) {
+        throw "$(ConvertTo-RepositoryPath $Project) declares TestProjectCategory '$($category -join ', ')'; name one of: $($categories -join ', ')."
+    }
+    return $category[0]
+}
+
+# A project whose every test carries a category this scope leaves out would run no test.
+foreach ($project in @($selected)) {
+    $category = Get-TestProjectCategory $project
+    if ($null -ne $category -and -not $included[$project].Contains($category)) {
+        $selected = @($selected | Where-Object { $_ -ne $project })
+        Write-Host "SKIP $([IO.Path]::GetFileNameWithoutExtension($project)) (its tests are all $category tests, which the $Scope scope leaves out)"
+    }
+}
+
 function Get-ProjectFilter {
     param([Parameter(Mandatory)][string] $Project)
     $excluded = @($categories | Where-Object { -not $included[$Project].Contains($_) })
     if ($excluded.Count -eq 0) { return $null }
     return ($excluded | ForEach-Object { "Category!=$_" }) -join '&'
+}
+
+foreach ($project in $selected) {
+    $filter = Get-ProjectFilter $project
+    Write-Host "TEST $([IO.Path]::GetFileNameWithoutExtension($project)) $(if ($null -eq $filter) { '(all tests)' } else { "($filter)" })"
+}
+if ($Plan) {
+    return
 }
 
 $runsInstaller = @($selected | Where-Object { $included[$_].Contains('Installer') }).Count -ne 0
@@ -413,7 +451,6 @@ internal static class StartupHook
             '--results-directory', $resultsDirectory) + $ciArguments
         if ($null -ne $filter) { $arguments += @('--filter', $filter) }
         $arguments += @('--', "xUnit.MaxParallelThreads=$threadsPerProject")
-        Write-Host "TEST $projectName $(if ($null -eq $filter) { '(all tests)' } else { "($filter)" })"
         $test = Start-Dotnet $arguments (Join-Path $resultsDirectory 'test.log') ($testEnvironment + @{ ASPOSE_CLI_TEST_ARTIFACTS = $resultsDirectory })
         # A project that runs marked tests lists them, so the slow-test report can leave them out.
         $listing = if ($included[$project].Count -eq 0) { $null } else {

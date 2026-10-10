@@ -7,7 +7,7 @@ using System.Text.Json.Nodes;
 using Aspose.Cli.TestKit;
 using Xunit;
 
-namespace Aspose.Cli.IntegrationTests;
+namespace Aspose.Cli.Installer.Tests;
 
 [CollectionDefinition("Customer installer user state", DisableParallelization = true)]
 public sealed class CustomerInstallerUserStateCollection;

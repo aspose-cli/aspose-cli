@@ -5,9 +5,9 @@ workspace starts with, the command lines run in it, and what each one must produ
 `ScenarioRunner.Run` executes it against the built `aspose-cli` (the one `CliRunner` finds) in a
 `TempWorkspace`, under the run's license mode, and returns every problem it finds rather than the
 first; `ScenarioOutcome.AssertPassed()` fails a test with all of them. `ScenarioTests` runs every
-`*.scenario.json` in `tests/Aspose.Cli.Platform.Tests/Invariants/Scenarios`; add a reproduction
+`*.scenario.json` in `tests/Aspose.Cli.Invariants.Tests/Scenarios`; add a reproduction
 or an executable example there. The generated invariants in
-`tests/Aspose.Cli.Platform.Tests/Invariants` build their scenarios in code from the same records.
+`tests/Aspose.Cli.Invariants.Tests` build their scenarios in code from the same records.
 
 ```json
 {

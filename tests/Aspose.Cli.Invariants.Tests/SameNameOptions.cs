@@ -2,7 +2,7 @@ using System.Text.Json.Nodes;
 using Aspose.Cli.TestKit.Scenarios;
 using Xunit;
 
-namespace Aspose.Cli.Platform.Tests.Invariants;
+namespace Aspose.Cli.Invariants.Tests;
 
 /// <summary>What a same-name option must share with every other option of its name.</summary>
 [Flags]

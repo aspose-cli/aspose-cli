@@ -78,15 +78,15 @@ weaken a check or remove a supported operation to make a test pass.
 
 - **Scenarios and invariants.** `tests/Aspose.Cli.TestKit/Scenarios` runs declarative
   `*.scenario.json` files (format in its README); add a reproduction or example to
-  `tests/Aspose.Cli.Platform.Tests/Invariants/Scenarios`. The `*InvariantTests` generate cases
+  `tests/Aspose.Cli.Invariants.Tests/Scenarios`. The `*InvariantTests` generate cases
   from `capabilities` and each ops schema and check what every command keeps: no internal error,
   one valid error envelope, suggestions for mistakes, refused unwritable outputs, read-only
   commands and dry runs that write nothing, outputs that reopen, hidden secrets, and evaluation
   writes that warn `EVAL_MODE`.
-- **Known violations.** `Invariants/known-violations.json` lists today's product defects by
-  `cause`, per license mode (`modes`). A case passes only when its violations and their text match
-  its entries, so a new, changed or fixed violation fails; delete an entry when its defect is
-  fixed. Adding an entry or widening `modes` needs the owner's `quality-exception` label.
+- **Known violations.** `tests/Aspose.Cli.Invariants.Tests/known-violations.json` lists today's
+  product defects by `cause`, per license mode (`modes`). A case passes only when its violations
+  and their text match its entries, so a new, changed or fixed violation fails; delete an entry
+  when its defect is fixed. Adding an entry or widening `modes` needs the owner's `quality-exception` label.
 - **Analyzers.** Production code builds with the analyzers in the `[src/**.cs]` section of
   `.editorconfig` as errors; fix a violation rather than suppressing it. `src` projects write a
   documentation file, so documentation comments must be well formed.

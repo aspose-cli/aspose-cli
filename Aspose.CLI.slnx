@@ -13,6 +13,8 @@
     <Project Path="src/Aspose.Cli.Product.Words/Aspose.Cli.Product.Words.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/Aspose.Cli.Installer.Tests/Aspose.Cli.Installer.Tests.csproj" />
+    <Project Path="tests/Aspose.Cli.Invariants.Tests/Aspose.Cli.Invariants.Tests.csproj" />
     <Project Path="tests/Aspose.Cli.Platform.Tests/Aspose.Cli.Platform.Tests.csproj" />
     <Project Path="tests/Aspose.Cli.Product.Cells.Tests/Aspose.Cli.Product.Cells.Tests.csproj" />
     <Project Path="tests/Aspose.Cli.Product.Pdf.Tests/Aspose.Cli.Product.Pdf.Tests.csproj" />

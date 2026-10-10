@@ -16,6 +16,7 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="Aspose.Cli.Platform.Tests" />
+    <InternalsVisibleTo Include="Aspose.Cli.Invariants.Tests" />
   </ItemGroup>
 
 </Project>

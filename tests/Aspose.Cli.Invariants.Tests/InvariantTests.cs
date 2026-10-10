@@ -3,7 +3,7 @@ using Aspose.Cli.TestKit;
 using Aspose.Cli.TestKit.Scenarios;
 using Xunit;
 
-namespace Aspose.Cli.Platform.Tests.Invariants;
+namespace Aspose.Cli.Invariants.Tests;
 
 // Generic invariants that every command satisfies, generated from the live CLI catalog by
 // InvariantCases and checked against known-violations.json. Each class is one shard, so the

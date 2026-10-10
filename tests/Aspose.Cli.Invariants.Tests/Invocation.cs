@@ -1,6 +1,6 @@
 using Aspose.Cli.TestKit.Scenarios;
 
-namespace Aspose.Cli.Platform.Tests.Invariants;
+namespace Aspose.Cli.Invariants.Tests;
 
 /// <summary>
 /// A command line under construction with the seed files and environment it needs. <see cref="For"/>

@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <Description>Customer installer tests that run install.ps1 under Windows PowerShell 5.1.</Description>
+    <!-- Every test here carries [Category(Installer)]; scripts/test.ps1 starts this project only
+         when its scope runs installer tests. -->
+    <TestProjectCategory>Installer</TestProjectCategory>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- The lifecycle tests read the update status the Host records. -->
+    <ProjectReference Include="..\..\src\Aspose.Cli.Host\Aspose.Cli.Host.csproj" />
+  </ItemGroup>
+
+</Project>

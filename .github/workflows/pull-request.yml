@@ -58,7 +58,7 @@ jobs:
           HEAD: ${{ github.event.pull_request.head.sha }}
           APPROVED: ${{ contains(github.event.pull_request.labels.*.name, 'quality-exception') }}
         run: |
-          file=tests/Aspose.Cli.Platform.Tests/Invariants/known-violations.json
+          file=tests/Aspose.Cli.Invariants.Tests/known-violations.json
           base=$(git merge-base "origin/$GITHUB_BASE_REF" "$HEAD")
           # entries COMMIT OUT: the list at a commit, or an empty one where the file is missing.
           entries() { git show "$1:$file" > "$2" 2>/dev/null || echo '{"violations":[]}' > "$2"; }

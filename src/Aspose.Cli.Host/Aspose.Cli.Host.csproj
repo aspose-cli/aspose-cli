@@ -29,6 +29,8 @@
   <ItemGroup>
     <!-- The renderer-coverage drift test constructs the internal TableOutputWriter. -->
     <InternalsVisibleTo Include="Aspose.Cli.Platform.Tests" />
+    <!-- The installer lifecycle tests read the update status the Host records. -->
+    <InternalsVisibleTo Include="Aspose.Cli.Installer.Tests" />
   </ItemGroup>
 
   <ItemGroup Label="Embedded local Web App">

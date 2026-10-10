@@ -8,7 +8,7 @@ using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.TestKit;
 using Xunit;
 
-namespace Aspose.Cli.IntegrationTests;
+namespace Aspose.Cli.Installer.Tests;
 
 /// <summary>Update replay, status reporting, uninstall and recovery decisions of the customer installer.</summary>
 public sealed partial class CustomerInstallerPowerShellTests
