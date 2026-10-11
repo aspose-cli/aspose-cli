@@ -8,12 +8,15 @@ namespace Aspose.Cli.Invariants.Tests;
 
 /// <summary>
 /// One recorded product defect: a generated case that violates an invariant today, in the
-/// license modes listed (both when <see cref="Modes"/> is omitted). <see cref="Cause"/> names
-/// the root cause in kebab case, so the entries one product fix removes are listed together.
+/// license modes listed (both when <see cref="Modes"/> is omitted). <see cref="Rule"/> is the
+/// contract rule the invariant enforces (<see cref="InvariantCases.RuleOf"/>), and
+/// <see cref="Cause"/> names the root cause in kebab case, so the entries one product fix removes
+/// are listed together.
 /// </summary>
 internal sealed record KnownViolation(
     [property: JsonPropertyName("case")] string Case,
     [property: JsonPropertyName("invariant")] string Invariant,
+    [property: JsonPropertyName("rule")] string Rule,
     [property: JsonPropertyName("cause")] string Cause,
     [property: JsonPropertyName("modes")] IReadOnlyList<string>? Modes,
     [property: JsonPropertyName("actual")] string Actual);
@@ -32,6 +35,20 @@ internal static class KnownViolations
     public const string ApprovalLabel = "quality-exception";
 
     private static readonly Lazy<IReadOnlyList<KnownViolation>> Loaded = new(Load);
+
+    /// <summary>
+    /// A file to which every failing case appends its violations as entries in this list's
+    /// format, one JSON object per line, with an empty cause to fill in: the way to draft the
+    /// entries of a new rule's baseline.
+    /// </summary>
+    public const string DraftVariable = "ASPOSE_CLI_TEST_KNOWN_VIOLATIONS_DRAFT";
+
+    private static readonly Lock DraftLock = new();
+
+    private static readonly JsonSerializerOptions DraftOptions = new()
+    {
+        Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+    };
 
     public static string FilePath =>
         Path.Combine(RepositoryPaths.Root, "tests", "Aspose.Cli.Invariants.Tests", FileName);
@@ -68,6 +85,7 @@ internal static class KnownViolations
         {
             return;
         }
+        Draft(id, mode, [.. added, .. changed], actual);
         var message = new System.Text.StringBuilder();
         if (added.Length > 0)
         {
@@ -109,6 +127,23 @@ internal static class KnownViolations
 
     public static bool Applies(KnownViolation entry, string mode) =>
         entry.Modes is null || entry.Modes.Contains(mode, StringComparer.Ordinal);
+
+    private static void Draft(string id, string mode, IEnumerable<string> invariants, Dictionary<string, string> actual)
+    {
+        if (Environment.GetEnvironmentVariable(DraftVariable) is not { Length: > 0 } path)
+        {
+            return;
+        }
+        string[] lines =
+        [
+            .. invariants.Select(invariant => JsonSerializer.Serialize(new KnownViolation(
+                id, invariant, InvariantCases.RuleOf(invariant), string.Empty, [mode], actual[invariant]), DraftOptions)),
+        ];
+        lock (DraftLock)
+        {
+            File.AppendAllLines(path, lines);
+        }
+    }
 
     private static string Shorten(string text) => text.Length <= 240 ? text : text[..240] + "...";
 

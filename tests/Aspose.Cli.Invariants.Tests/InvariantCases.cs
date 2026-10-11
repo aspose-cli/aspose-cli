@@ -43,6 +43,9 @@ internal static class InvariantCases
     public const string SameNameOption = "same-name-option";
     public const string Platform = "platform";
 
+    /// <summary>The shard of the contract rules that the catalog, help and schemas alone answer.</summary>
+    public const string Contract = "contract";
+
     /// <summary>The warning that discloses evaluation output (<c>aspose-cli docs licensing</c>).</summary>
     private const string EvaluationWarning = "EVAL_MODE";
 
@@ -57,13 +60,38 @@ internal static class InvariantCases
 
     private static readonly Lazy<IReadOnlyDictionary<string, InvariantCase>> Generated = new(Generate);
 
-    /// <summary>Every invariant a known violation may name.</summary>
-    public static IReadOnlySet<string> Invariants { get; } = new HashSet<string>(StringComparer.Ordinal)
+    /// <summary>
+    /// The contract rule (<c>C-R&lt;nn&gt;</c>) each generic invariant enforces; a contract rule's
+    /// own cases name the rule as their invariant.
+    /// </summary>
+    private static readonly Dictionary<string, string> GenericRules = new(StringComparer.Ordinal)
     {
-        ScenarioContract.NoInternalError, ScenarioContract.ErrorEnvelope, ScenarioContract.ResultEnvelope,
-        MissingInput, CorruptInput, UnknownOption, UnknownCommand, UnknownOp, UnknownField, InvalidEnum,
-        UnwritableOutput, ReadOnly, DryRun, OutputReopens, SecretHidden, EvaluationDisclosed, SameNameOption,
+        [ScenarioContract.NoInternalError] = "C-R24",
+        [ScenarioContract.ErrorEnvelope] = "C-R25",
+        [ScenarioContract.ResultEnvelope] = "C-R33",
+        [MissingInput] = "C-R24",
+        [CorruptInput] = "C-R24",
+        [UnknownOption] = "C-R26",
+        [UnknownCommand] = "C-R26",
+        [UnknownOp] = "C-R26",
+        [UnknownField] = "C-R26",
+        [InvalidEnum] = "C-R26",
+        [UnwritableOutput] = "C-R24",
+        [ReadOnly] = "C-R11",
+        [DryRun] = "C-R11",
+        [OutputReopens] = "C-R31",
+        [SecretHidden] = "C-R10",
+        [EvaluationDisclosed] = "C-R27",
+        [SameNameOption] = "C-R07",
     };
+
+    /// <summary>Every invariant a known violation may name: the generic ones and the contract rules.</summary>
+    public static IReadOnlySet<string> Invariants { get; } =
+        new HashSet<string>([.. GenericRules.Keys, .. ContractRules.All.Select(static rule => rule.Id)], StringComparer.Ordinal);
+
+    /// <summary>The contract rule an invariant enforces.</summary>
+    public static string RuleOf(string invariant) =>
+        GenericRules.TryGetValue(invariant, out string? rule) ? rule : invariant;
 
     public static IReadOnlyDictionary<string, InvariantCase> All => Generated.Value;
 
@@ -113,6 +141,7 @@ internal static class InvariantCases
             cases.AddRange(OutputReopensCases(catalog, product));
         }
         cases.AddRange(SameNameOptions.Cases(catalog));
+        cases.AddRange(ContractRules.All.SelectMany(rule => rule.Cases(catalog)));
         return cases.ToDictionary(static item => item.Id, StringComparer.Ordinal);
     }
 
@@ -120,7 +149,7 @@ internal static class InvariantCases
     private static bool IsRunnable(CliCommand command) =>
         command.Arguments.Any(static argument => argument.Required && argument.InputKind == "file");
 
-    private static string ShardOf(CliCommand command) => command.Product ?? Platform;
+    internal static string ShardOf(CliCommand command) => command.Product ?? Platform;
 
     // ----- (b) failures: a missing and a corrupt input --------------------------------------
 
@@ -604,7 +633,7 @@ internal static class InvariantCases
 
     // ----- helpers ---------------------------------------------------------------------------
 
-    private static InvariantCase Case(
+    internal static InvariantCase Case(
         string invariant,
         string subject,
         string shard,
@@ -632,7 +661,7 @@ internal static class InvariantCases
         return new InvariantCase(id, invariant, shard, slow, scenario);
     }
 
-    private static IEnumerable<int> ExitCodesOf(CliCatalog catalog, params string[] categories) =>
+    internal static IEnumerable<int> ExitCodesOf(CliCatalog catalog, params string[] categories) =>
         catalog.Document["diagnostics"]!.AsArray()
             .Where(diagnostic => categories.Contains(diagnostic!["category"]!.GetValue<string>()))
             .Select(static diagnostic => diagnostic!["exitCode"]?.GetValue<int>())
