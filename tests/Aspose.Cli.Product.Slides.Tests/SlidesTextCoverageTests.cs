@@ -58,7 +58,10 @@ public sealed class SlidesTextCoverageTests
 
         // Only the first operation matched nothing: "bc" is on the slide, not in its notes.
         Assert.Equal([0L, 4L], result.Applied.Select(static outcome => outcome.ItemsAffected));
-        Warning warning = Assert.Single(result.Warnings!, static warning => warning.Code == WarningCodes.ReplaceNoMatch);
+        Warning warning = Assert.Single(result.Warnings!, static warning => warning.Code == WarningCodes.OpNoEffect);
+        Assert.Equal(result.Applied[0].Id, warning.Details!["id"]!.GetValue<string>());
+        Assert.Equal("replace_text", warning.Details["op"]!.GetValue<string>());
+        Assert.Equal(NoEffectReasons.NoMatch, warning.Details["reason"]!.GetValue<string>());
         Assert.Contains("'notes'", warning.Message, StringComparison.Ordinal);
         Assert.DoesNotContain("bc", warning.Message, StringComparison.Ordinal);
         Assert.Contains("slides query search", warning.Hint, StringComparison.Ordinal);

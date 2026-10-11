@@ -9,7 +9,9 @@ namespace Aspose.Cli.Product.Words.Engine.Editing;
 /// <summary>
 /// Resolves every public address against the original document before any
 /// operation mutates the DOM. The returned nodes retain identity even when
-/// insertions change the visible block numbering.
+/// insertions change the visible block numbering. An operation whose address does not
+/// resolve keeps its failure, which it raises when the batch reaches it, so the error names
+/// the operation and a best-effort batch keeps the others.
 /// </summary>
 internal static class WordsAnchorResolver
 {
@@ -49,14 +51,13 @@ internal static class WordsAnchorResolver
                     : ResolveTarget(document, index, target);
                 resolved.Add(new ResolvedWordsOp(op, nodes, ResolveSections(document, op), Targets(index, nodes)));
             }
-            catch (OperationInvalidException rejection)
+            catch (Exception failure) when (failure is CliException or OperationInvalidException)
             {
-                throw WordsOp.Catalog.Invalid(position, op, rejection);
+                resolved.Add(new ResolvedWordsOp(op, [], [], []) { Failure = failure });
             }
         }
 
-        ValidateDeleteConflicts(resolved);
-        return resolved;
+        return RefuseDeleteConflicts(resolved);
     }
 
     // The changes inspect --detail revisions numbers, each once, in document order.
@@ -317,43 +318,61 @@ internal static class WordsAnchorResolver
         _ => null,
     };
 
-    private static void ValidateDeleteConflicts(IReadOnlyList<ResolvedWordsOp> resolved)
+    /// <summary>
+    /// Fails each operation that addresses what an earlier operation deletes; an operation
+    /// that already failed deletes nothing.
+    /// </summary>
+    private static IReadOnlyList<ResolvedWordsOp> RefuseDeleteConflicts(IReadOnlyList<ResolvedWordsOp> resolved)
     {
+        var checkedOps = new List<ResolvedWordsOp>(resolved.Count);
         var deleted = new HashSet<Node>();
-        for (int index = 0; index < resolved.Count; index++)
+        foreach (ResolvedWordsOp item in resolved)
         {
-            ResolvedWordsOp item = resolved[index];
-            foreach (Node target in item.Nodes.Concat<Node>(item.Sections))
+            if (item.Failure is null && Conflict(item, deleted) is { } reason)
             {
-                for (Node? ancestor = target; ancestor is not null; ancestor = ancestor.ParentNode)
-                {
-                    if (deleted.Contains(ancestor))
-                    {
-                        throw Conflict(index, item, "it references an object deleted by an earlier operation");
-                    }
-                }
+                checkedOps.Add(item with { Failure = new OperationInvalidException(reason, DeleteConflictHint) });
+                continue;
+            }
+
+            checkedOps.Add(item);
+            if (item.Failure is not null)
+            {
+                continue;
             }
 
             if (item.Op is DeleteSectionOp)
             {
-                Section section = item.Sections[0];
-                if (deleted.Any(node => ReferenceEquals(node.GetAncestor(NodeType.Section), section)))
-                {
-                    throw Conflict(index, item, "it overlaps an earlier block deletion");
-                }
-                deleted.Add(section);
+                deleted.Add(item.Sections[0]);
             }
             else if (item.Op is DeleteBlocksOp)
             {
                 deleted.UnionWith(item.Nodes);
             }
         }
+
+        return checkedOps;
+    }
+
+    private static string? Conflict(ResolvedWordsOp item, HashSet<Node> deleted)
+    {
+        foreach (Node target in item.Nodes.Concat<Node>(item.Sections))
+        {
+            for (Node? ancestor = target; ancestor is not null; ancestor = ancestor.ParentNode)
+            {
+                if (deleted.Contains(ancestor))
+                {
+                    return "it references an object deleted by an earlier operation";
+                }
+            }
+        }
+
+        return item.Op is DeleteSectionOp
+            && deleted.Any(node => ReferenceEquals(node.GetAncestor(NodeType.Section), item.Sections[0]))
+                ? "it overlaps an earlier block deletion"
+                : null;
     }
 
     private const string DeleteConflictHint = "Split conflicting deletes and dependent edits into separate batches.";
-
-    private static CliException Conflict(int index, ResolvedWordsOp item, string reason) =>
-        WordsOp.Catalog.Invalid(index, item.Op, new OperationInvalidException(reason, DeleteConflictHint));
 }
 
 internal sealed record ResolvedWordsOp(
@@ -364,4 +383,11 @@ internal sealed record ResolvedWordsOp(
 {
     /// <summary>The numbered changes a revision decision names, or null when it names none.</summary>
     public IReadOnlyList<RevisionChange>? Revisions { get; init; }
+
+    /// <summary>
+    /// Why the operation's address did not resolve, or null when it did: an
+    /// <see cref="OperationInvalidException"/> or a domain <see cref="CliException"/>, raised
+    /// when the batch reaches the operation.
+    /// </summary>
+    public Exception? Failure { get; init; }
 }

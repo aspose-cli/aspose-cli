@@ -90,7 +90,7 @@ public sealed class SlidesImageInputTests
         }));
 
         Assert.Equal(ErrorCodes.FeatureUnsupported, error.Code);
-        Assert.Equal(0, error.Details!["index"]!.GetValue<int>());
+        Assert.Equal("op-0001", error.Details!["id"]!.GetValue<string>());
         Assert.Contains("SVGZ", error.Message, StringComparison.Ordinal);
         Assert.False(File.Exists(output));
     }
@@ -109,7 +109,7 @@ public sealed class SlidesImageInputTests
     private static void AssertInvalidOperation(CliException error, int index, string op, string image)
     {
         Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
-        Assert.Equal(index, error.Details!["index"]!.GetValue<int>());
+        Assert.Equal($"op-{index + 1:D4}", error.Details!["id"]!.GetValue<string>());
         Assert.Equal(op, error.Details["op"]!.GetValue<string>());
         Assert.Contains(image, error.Message, StringComparison.Ordinal);
     }

@@ -6,8 +6,9 @@ namespace Aspose.Cli.Sdk.Serialization;
 /// <summary>
 /// An object of the operation document names a field its contract does not declare, or a field
 /// whose contract is an object holds another kind of value. The message is the wire-terms
-/// reason; the fields the object accepts and the mistake, with the fields most likely meant,
-/// travel with it so the operation error can publish them as details.
+/// reason without the list of fields; the fields the object accepts and the mistake, with the
+/// fields most likely meant, travel with it so the operation error lists them once, as
+/// <c>details.available</c> and in the sentence that names them.
 /// </summary>
 internal sealed class AllowedFieldsException : JsonException
 {
@@ -31,14 +32,12 @@ internal sealed class AllowedFieldsException : JsonException
     /// </summary>
     /// <param name="path">The object's field path; empty for an operation or the document itself.</param>
     /// <param name="name">The unknown member's name.</param>
-    /// <param name="subject">How the reason names the object, such as an operation name or a field path.</param>
     /// <param name="allowedFields">The object's accepted wire names in published order.</param>
     /// <param name="missingRequired">The object's required fields the value omits.</param>
     /// <param name="meant">The field that declares <paramref name="name"/> a common mistake for it, or null.</param>
     public static AllowedFieldsException UnknownField(
         string path,
         string name,
-        string subject,
         IReadOnlyList<string> allowedFields,
         IReadOnlyCollection<string> missingRequired,
         string? meant = null)
@@ -50,13 +49,12 @@ internal sealed class AllowedFieldsException : JsonException
         }
 
         string field = path.Length == 0 ? name : $"{path}.{name}";
-        return new AllowedFieldsException(
-            $"unknown field '{field}'; {subject} accepts: {string.Join(", ", allowedFields)}", allowedFields, mistake);
+        return new AllowedFieldsException($"unknown field '{field}'", allowedFields, mistake);
     }
 
     /// <summary>Rejects a value of another kind where the contract expects an object with the given fields.</summary>
     /// <param name="path">The value's field path; never empty.</param>
     /// <param name="allowedFields">The object's accepted wire names in published order.</param>
     public static AllowedFieldsException NotAnObject(string path, IReadOnlyList<string> allowedFields) =>
-        new($"{path} must be an object with the fields: {string.Join(", ", allowedFields)}", allowedFields, mistake: null);
+        new($"{path} must be an object; details.available lists its fields", allowedFields, mistake: null);
 }

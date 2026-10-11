@@ -16,7 +16,7 @@ namespace Aspose.Cli.Sdk.Extensibility.Commanding;
 /// <para>
 /// The SDK runs every menu command in one fixed order, so the first error a caller sees does not
 /// depend on the product: the host admits the declared input files and activates the product;
-/// the input documents are resolved (a missing one is <c>FILE_NOT_FOUND</c>); then
+/// at most one option may read standard input (<c>OPTION_INVALID</c> otherwise); the input documents are resolved (a missing one is <c>FILE_NOT_FOUND</c>); then
 /// <c>--font-dir</c> is validated before any secret or standard input is read; then <c>bind</c> runs, the
 /// product's usage checks first and then the inputs and secrets it reads; then the font scope is
 /// entered; then the product guard runs around the handler; then <see cref="Finish"/>; then the
@@ -52,7 +52,6 @@ public sealed class CommandDefinition<TRequest, TResult>
 {
     private readonly CommandTraits _traits;
     private readonly IReadOnlyList<Symbol> _parameters;
-    private readonly Func<ParseResult, bool>? _standardInputTaken;
     private readonly Func<ParseResult, StandardInvocation, TRequest> _bind;
 
     /// <summary>Defines a standard command.</summary>
@@ -75,18 +74,6 @@ public sealed class CommandDefinition<TRequest, TResult>
         IReadOnlyList<Symbol> parameters,
         Func<ParseResult, StandardInvocation, TRequest> bind,
         Action<TResult, TableSurface>? table)
-        : this(name, description, traits, parameters, standardInputTaken: null, bind, table)
-    {
-    }
-
-    internal CommandDefinition(
-        string name,
-        string description,
-        CommandTraits traits,
-        IReadOnlyList<Symbol> parameters,
-        Func<ParseResult, bool>? standardInputTaken,
-        Func<ParseResult, StandardInvocation, TRequest> bind,
-        Action<TResult, TableSurface>? table)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
         ArgumentException.ThrowIfNullOrWhiteSpace(description);
@@ -94,7 +81,6 @@ public sealed class CommandDefinition<TRequest, TResult>
         Description = description;
         _traits = traits ?? throw new ArgumentNullException(nameof(traits));
         _parameters = parameters ?? throw new ArgumentNullException(nameof(parameters));
-        _standardInputTaken = standardInputTaken;
         _bind = bind ?? throw new ArgumentNullException(nameof(bind));
         Table = table;
     }
@@ -165,13 +151,13 @@ public sealed class CommandDefinition<TRequest, TResult>
         Func<TSession, TRequest, TResult> handler)
         where TSession : class
     {
+        StandardInputSources.EnsureOne(parse);
         var invocation = new StandardInvocation(
             options,
             parse,
             scope.Paths,
             scope.Inputs,
-            scope.ReadEnvironment,
-            _standardInputTaken?.Invoke(parse) != true)
+            scope.ReadEnvironment)
         {
             // Only an edit keeps its input's format; any other command judges the output's own.
             DetectFormat = _traits.Output?.Kind == OutputKind.Mutation ? context.DetectFormat : null,
@@ -205,8 +191,7 @@ public static class EditDefinition
     /// <summary>
     /// Defines an edit command on the shared bounded-edit skeleton (<see cref="BoundedEditCommand{TOp, TBatch}"/>):
     /// <c>--ops</c> and the product's <c>--set</c> shorthand, <c>--if-match</c>, <c>--dry-run</c>,
-    /// <c>--best-effort</c>, <c>--verify</c> and the mutation output, with <c>--ops -</c> taking
-    /// standard input away from the input password. <c>bind</c> receives the composed,
+    /// <c>--best-effort</c>, <c>--verify</c> and the mutation output. <c>bind</c> receives the composed,
     /// path-normalized batch with its resolved secrets.
     /// </summary>
     /// <param name="edit">The product's edit skeleton, which <paramref name="checkUsage"/> may consult.</param>
@@ -246,7 +231,6 @@ public static class EditDefinition
             description,
             edit.EditTraits(traits),
             edit.EditParameters(parameters),
-            edit.TakesStandardInput,
             (parse, standard) =>
             {
                 checkUsage?.Invoke(parse);

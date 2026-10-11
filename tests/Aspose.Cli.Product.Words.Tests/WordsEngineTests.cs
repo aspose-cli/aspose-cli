@@ -129,6 +129,53 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
         Assert.Equal(WordsDiagnostics.BlockNotFound, edit.Code);
     }
 
+    /// <summary>
+    /// An address that does not resolve fails its own operation, named by id and op, when the
+    /// batch reaches it: an atomic batch stops there and a best-effort batch keeps the others.
+    /// </summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void AnAddressThatDoesNotResolve_FailsOnlyItsOwnOperation(bool bestEffort)
+    {
+        string input = _fixture.CreateReport();
+        string output = _fixture.Temp.File($"unresolved-{bestEffort}.docx");
+        WordsEditResult Run() => WordsEdit.Run(_fixture.Session, new WordsEditRequest
+        {
+            Input = input,
+            Batch = new WordsOpsBatch
+            {
+                Ops =
+                [
+                    new ReplaceTextOp { Find = "Revenue", Replace = "Income" },
+                    new DeleteBlocksOp { Target = new WordsTarget { Block = 99 } },
+                    new SetTextOp { At = new WordsTarget { Block = 1 }, Text = "Kept" },
+                ],
+            },
+            Output = TestOutput.At(output),
+            Options = new EditCommandOptions { BestEffort = bestEffort },
+        });
+
+        if (!bestEffort)
+        {
+            CliException error = Assert.Throws<CliException>(Run);
+            Assert.Equal(WordsDiagnostics.BlockNotFound, error.Code);
+            Assert.Equal("op-0002", error.Details!["id"]!.GetValue<string>());
+            Assert.Equal("delete_blocks", error.Details["op"]!.GetValue<string>());
+            Assert.StartsWith("Operation op-0002 (delete_blocks) failed: ", error.Message, StringComparison.Ordinal);
+            Assert.False(File.Exists(output));
+            return;
+        }
+
+        WordsEditResult result = Run();
+        Assert.Equal([OpStatuses.Ok, OpStatuses.Failed, OpStatuses.Ok], result.Applied.Select(static applied => applied.Status));
+        OpError failure = result.Applied[1].Error!;
+        Assert.Equal(WordsDiagnostics.BlockNotFound.Name, failure.Code);
+        Assert.Equal("op-0002", failure.Details!["id"]!.GetValue<string>());
+        Assert.Equal("delete_blocks", failure.Details["op"]!.GetValue<string>());
+        Assert.Contains("Kept", new Document(output).GetText(), StringComparison.Ordinal);
+    }
+
     [Fact]
     public void ABlockRangeOutsideTheSection_IsBlockNotFoundNamingTheSectionBlocks()
     {
@@ -229,7 +276,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
             new SetTextOp { At = new WordsTarget { Heading = "第六条 合同解除" }, Text = "x" }));
 
         Assert.Equal(WordsDiagnostics.AnchorNotFound, find.Code);
-        Assert.Equal("No text '第六条 合同解除' was found.", find.Message);
+        Assert.Equal("Operation op-0001 (set_text) failed: No text '第六条 合同解除' was found.", find.Message);
         Assert.Equal("Block 2 holds the closest text: '第六条 合同的解除和终止'; address it with {\"block\": 2} or a \"find\" text it contains.", find.Hint);
         Assert.Equal(WordsDiagnostics.AnchorNotFound, heading.Code);
         Assert.Equal("Block 2 holds the closest text: '第六条 合同的解除和终止', but it is not a heading; address it with {\"block\": 2} or a \"find\" text it contains.", heading.Hint);

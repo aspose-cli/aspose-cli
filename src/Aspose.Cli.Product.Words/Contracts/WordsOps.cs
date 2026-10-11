@@ -12,7 +12,7 @@ public sealed record WordsOpsBatch : BoundedOperationEnvelope<WordsOp>;
 /// document as it was before the first operation, so an insertion does not shift a later
 /// operation's anchor.
 /// </summary>
-[OperationVocabulary("ops", MaximumOperations = 256, JsonContext = typeof(WordsOpsJsonContext))]
+[OperationVocabulary("ops", JsonContext = typeof(WordsOpsJsonContext))]
 [JsonConverter(typeof(OperationJsonConverter<WordsOp>))]
 public abstract partial record WordsOp : BoundedOperation;
 
@@ -574,7 +574,7 @@ public sealed record UnprotectOp : WordsOp
 /// </summary>
 public abstract record RevisionDecisionOp : WordsOp
 {
-    /// <summary>The author whose revisions are decided; a name no revision has changes nothing and reports AUTHOR_NO_MATCH.</summary>
+    /// <summary>The author whose revisions are decided; a name no revision has changes nothing and reports OP_NO_EFFECT.</summary>
     [MinLength(1)] public string? Author { get; init; }
 
     /// <summary>
@@ -616,7 +616,7 @@ public sealed record AddCommentOp : WordsOp
 [Operation("remove_comments")]
 public sealed record RemoveCommentsOp : WordsOp
 {
-    /// <summary>The author whose comments are removed; a name no comment has changes nothing and reports AUTHOR_NO_MATCH.</summary>
+    /// <summary>The author whose comments are removed; a name no comment has changes nothing and reports OP_NO_EFFECT.</summary>
     [MinLength(1)] public string? Author { get; init; }
 }
 

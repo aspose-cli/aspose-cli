@@ -2190,7 +2190,7 @@
     "v2/common/not-found-details": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "$id": "https://schemas.aspose.com/aspose-cli/v2/common/not-found-details.schema.json",
-      "description": "Details of an error whose code names a target the document does not contain. They state what was requested and what exists, so the caller can correct the request without another inspection. Operation errors add the operation's index and op.",
+      "description": "Details of an error whose code names a target the document does not contain. They state what was requested and what exists, so the caller can correct the request without another inspection. Operation errors add the operation's id and op.",
       "type": "object",
       "required": [
         "subject",
@@ -2228,10 +2228,10 @@
             "type": "string"
           }
         },
-        "index": {
-          "description": "The zero-based position of the failing operation in its batch; present only for an operation error.",
-          "type": "integer",
-          "minimum": 0
+        "id": {
+          "description": "The id of the failing operation, as its applied[] entry states it; present only for an operation error.",
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9._-]{0,63}$"
         },
         "op": {
           "description": "The failing operation's op name; present only for an operation error that states one.",
@@ -2246,7 +2246,6 @@
       "type": "object",
       "required": [
         "id",
-        "index",
         "op",
         "status",
         "itemsAffected",
@@ -2258,11 +2257,6 @@
           "description": "Stable correlation id from the input batch.",
           "type": "string",
           "pattern": "^[A-Za-z][A-Za-z0-9._-]{0,63}$"
-        },
-        "index": {
-          "description": "Zero-based position in the input batch.",
-          "type": "integer",
-          "minimum": 0
         },
         "op": {
           "description": "Product-owned operation id.",
@@ -3513,6 +3507,10 @@
           "description": "Stable product-owned address of the affected item, when known.",
           "type": "string",
           "minLength": 1
+        },
+        "details": {
+          "description": "Structured context, with the keys an error's details use, such as the id and op of the operation a warning is about.",
+          "type": "object"
         },
         "affectsCompleteness": {
           "description": "Whether this condition leaves the output or its visual evidence incomplete, or different from the input; a review counts it against coverage and an edit's verification reports it as an issue.",
@@ -5392,6 +5390,13 @@
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
+      "code": "OP_NO_EFFECT",
+      "owner": "common",
+      "severity": "warning",
+      "category": "warning",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
       "code": "OUTPUT_CONFLICT",
       "owner": "common",
       "severity": "error",
@@ -5515,13 +5520,6 @@
       "severity": "error",
       "exitCode": 4,
       "category": "validation",
-      "detailsSchemaId": "v2/common/diagnostic-details"
-    },
-    {
-      "code": "REPLACE_NO_MATCH",
-      "owner": "common",
-      "severity": "warning",
-      "category": "warning",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {

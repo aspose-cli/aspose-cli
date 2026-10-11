@@ -111,7 +111,7 @@ public sealed class CellsProtectionTests(CellsProtectionTests.ProtectedBook book
             $$"""{"op":"protect_workbook","passwordEnv":"{{PasswordVariable}}"},{"op":"protect_workbook"}"""), exitCode: 4);
 
         Assert.Equal("OPS_INVALID", error["code"]!.GetValue<string>());
-        Assert.Equal(1, error["details"]!["index"]!.GetValue<int>());
+        Assert.Equal("op-0002", error["details"]!["id"]!.GetValue<string>());
         Assert.Contains("unprotect_workbook", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
     }
 

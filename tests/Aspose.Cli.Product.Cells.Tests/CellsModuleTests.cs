@@ -57,9 +57,10 @@ public sealed class CellsModuleTests
         var error = Assert.Throws<Aspose.Cli.Sdk.Errors.CliException>(() => ParseOps(
             """{"ops":[{"op":"set_values","range":"A1","values":[[1]]},{"op":"format_range","range":"A1","style":{"bold":true,"shiny":1}}]}"""));
 
-        Assert.Equal(1, error.Details!["index"]!.GetValue<int>());
+        Assert.Equal("op-0002", error.Details!["id"]!.GetValue<string>());
         Assert.Equal("format_range", error.Details["op"]!.GetValue<string>());
-        Assert.StartsWith("unknown field 'style.shiny'; style accepts: ", error.Details["reason"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.Equal("unknown field 'style.shiny'", error.Details["reason"]!.GetValue<string>());
+        Assert.Contains("bold", error.Details["available"]!.AsArray().Select(static item => item!.GetValue<string>()));
         Assert.DoesNotContain("Aspose.Cli", error.Message, StringComparison.Ordinal);
     }
 

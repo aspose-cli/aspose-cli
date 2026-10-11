@@ -62,9 +62,30 @@ public sealed class BoundedEditCommandTests : IDisposable
     public void Read_RequiresADocumentOrADirective()
     {
         CliException error = Assert.Throws<CliException>(() => Read(WithDirectives()));
+        CliException plain = Assert.Throws<CliException>(() => Read(Plain()));
 
         Assert.Equal(ErrorCodes.UsageError, error.Code);
-        Assert.NotEmpty(Parse(Plain()).Errors);
+        Assert.Contains("--set", error.Message, StringComparison.Ordinal);
+        Assert.Equal(ErrorCodes.UsageError, plain.Code);
+        Assert.Equal("Give --ops (an ops JSON document).", plain.Message);
+        Assert.Empty(Parse(Plain()).Errors);
+        Assert.Empty(Parse(WithDirectives()).Errors);
+    }
+
+    [Fact]
+    public void Create_RefusesTheOperationDocumentFromStdinBesideAnotherStdinOption()
+    {
+        TestCommandRunner runner = Runner();
+        Command command = Edit(
+            Plain(), runner, new CommandTraits { Input = Book }, [],
+            static (_, _, _) => throw new InvalidOperationException("Standard input is never read."));
+
+        command.Parse([Path.GetFileName(_input), "--ops", "-", "--password-stdin"]).Invoke();
+
+        CliException error = Assert.IsType<CliException>(runner.Error);
+        Assert.Equal(ErrorCodes.OptionInvalid, error.Code);
+        Assert.Equal("--password-stdin", error.Details!["option"]!.GetValue<string>());
+        Assert.Contains("--ops - reads it", error.Message, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -172,7 +193,7 @@ public sealed class BoundedEditCommandTests : IDisposable
     }
 
     [Theory]
-    [InlineData("""{"ops":[{"op":"set","value":1},{"op":"set","value":1,"extra":true}]}""", 1, "set", "unknown field 'extra'; set accepts: op, id, value")]
+    [InlineData("""{"ops":[{"op":"set","value":1},{"op":"set","value":1,"extra":true}]}""", 1, "set", "unknown field 'extra'")]
     [InlineData("""{"ops":[{"op":"set","value":"one"}]}""", 0, "set", "value must be a whole number")]
     [InlineData("""{"ops":[{"op":"set","value":1,"value":2}]}""", 0, "set", "value is duplicated")]
     [InlineData("""{"ops":[{"op":"link","path":null}]}""", 0, "link", "path must not be null")]
@@ -181,7 +202,7 @@ public sealed class BoundedEditCommandTests : IDisposable
         CliException error = Assert.Throws<CliException>(() => Read(Plain(), "--ops", document));
 
         Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
-        Assert.Equal(index, error.Details!["index"]!.GetValue<int>());
+        Assert.Equal($"op-{index + 1:D4}", error.Details!["id"]!.GetValue<string>());
         Assert.Equal(op, error.Details["op"]!.GetValue<string>());
         Assert.Equal(reason, error.Details["reason"]!.GetValue<string>());
         Assert.DoesNotContain(nameof(BoundedEditCommandTests), error.Message, StringComparison.Ordinal);
@@ -190,17 +211,16 @@ public sealed class BoundedEditCommandTests : IDisposable
     [Theory]
     [InlineData("""{"ops":[{"op":"sett","value":1}]}""", "unknown op 'sett'")]
     [InlineData("""{"ops":[5]}""", "every op must be an object")]
-    public void Read_NamesOnlyTheIndexOfAnEntryWithoutAKnownOperation(string document, string reason)
+    public void Read_NamesOnlyTheIdOfAnEntryWithoutAKnownOperation(string document, string reason)
     {
         CliException error = Assert.Throws<CliException>(() => Read(Plain(), "--ops", document));
 
-        Assert.Equal(0, error.Details!["index"]!.GetValue<int>());
+        Assert.Equal("op-0001", error.Details!["id"]!.GetValue<string>());
         Assert.Null(error.Details["op"]);
         Assert.StartsWith(reason, error.Details["reason"]!.GetValue<string>(), StringComparison.Ordinal);
     }
 
     [Theory]
-    [InlineData("""[{"op":"set","value":1}]""", "the document must be an object")]
     [InlineData("""{"ops":{"op":"set","value":1}}""", "ops must be an array")]
     [InlineData("""{"schemaVersion":2}""", "the required field 'ops' is missing")]
     public void Read_ExplainsARejectedEnvelopeInWireTerms(string document, string reason)
@@ -342,7 +362,7 @@ public sealed class BoundedEditCommandTests : IDisposable
             [
                 "--ops", "--if-match", "--dry-run", "--best-effort", "--verify", "--fast",
                 "--out", "--overwrite", "--in-place", "--backup",
-                "--password", "--password-env", "--password-stdin", "--encrypt", "--encrypt-env", "--font-dir",
+                "--password", "--password-env", "--password-stdin", "--encrypt", "--encrypt-env", "--encrypt-stdin", "--font-dir",
             ],
             command.Options.Select(static option => option.Name));
         Assert.Throws<ArgumentException>(() => Edit(

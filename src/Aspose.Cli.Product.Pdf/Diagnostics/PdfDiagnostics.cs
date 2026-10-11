@@ -28,9 +28,6 @@ internal static class PdfDiagnostics
     /// <summary>An HTML import allowed network resources and the importer requested them.</summary>
     internal static readonly WarningCode NetworkResourcesRequested = new("NETWORK_RESOURCES_REQUESTED");
 
-    /// <summary>A redact_text operation matched no text, so it redacted nothing.</summary>
-    internal static readonly WarningCode RedactionNoMatch = new("REDACTION_NO_MATCH");
-
     /// <summary>A redaction moved the text that followed what it removed.</summary>
     internal static readonly WarningCode RedactionTextMoved = new("REDACTION_TEXT_MOVED");
 
@@ -76,7 +73,6 @@ internal static class PdfDiagnostics
         DiagnosticDescriptor.Warning(ScannedPagesSuspected),
         DiagnosticDescriptor.Warning(NavigationDegraded),
         DiagnosticDescriptor.Warning(NetworkResourcesRequested),
-        DiagnosticDescriptor.Warning(RedactionNoMatch),
         DiagnosticDescriptor.Warning(RedactionTextMoved),
     ];
 }

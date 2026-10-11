@@ -44,7 +44,7 @@ internal static class PdfEdit
         Publication publication;
         try { publication = Publish(session, loaded.Document, request, outputPassword, encryptCopy, precondition, verifier, state); }
         finally { operationInputs.ThrowIfFailed(); }
-        List<Warning> warnings = BuildWarnings(signatures, outcomes, textMoved);
+        List<Warning> warnings = BuildWarnings(signatures, batch, outcomes, textMoved);
         if (UnpermittedChange(userPermissions, openPassword, outcomes, request.Options.DryRun) is { } protection)
         {
             warnings.Add(protection);
@@ -264,6 +264,7 @@ internal static class PdfEdit
 
     private static List<Warning> BuildWarnings(
         bool signatures,
+        PdfOpsBatch batch,
         IReadOnlyCollection<BoundedOperationOutcome> outcomes,
         IReadOnlyList<string> textMoved)
     {
@@ -278,14 +279,12 @@ internal static class PdfEdit
 
         // A redaction that matched nothing passes its read-back check without having removed
         // anything, so it is disclosed. Like a verification issue, it never repeats the pattern.
-        string[] unmatched = outcomes
-            .Where(static item => item.Op == "redact_text" && item.Status == OpStatuses.Ok && item.ItemsAffected == 0)
-            .Select(static item => $"'{item.Id}' (redact_text)")
-            .ToArray();
-        if (unmatched.Length > 0)
+        foreach (BoundedOperationOutcome unmatched in outcomes.Where(static item =>
+            item.Op == "redact_text" && item.Status == OpStatuses.Ok && item.ItemsAffected == 0))
         {
-            warnings.Add(new Warning(PdfDiagnostics.RedactionNoMatch, (unmatched.Length == 1 ? "Operation " : "Operations ") + string.Join(", ", unmatched)
-                    + " matched no text on the pages searched, so nothing was redacted there.")
+            PdfOp operation = batch.Ops.Single(op => op.Id == unmatched.Id);
+            warnings.Add(PdfOp.Catalog.NoEffect(operation, NoEffectReasons.NoMatch,
+                $"Operation {unmatched.Id} (redact_text) matched no text on the pages searched, so nothing was redacted there.") with
             {
                 Hint = "Search the pages with 'pdf query search' and the same pattern. When the text shows on the page but is not found, "
                     + "its extracted text differs, for example by spaces between characters: match it with a regular expression "

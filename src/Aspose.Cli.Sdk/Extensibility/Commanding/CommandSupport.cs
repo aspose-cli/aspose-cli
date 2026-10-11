@@ -85,6 +85,40 @@ public static class JsonInputSource
 }
 
 /// <summary>
+/// The one rule for standard input: an invocation reads it for at most one value, so no option
+/// reads what another option's value was, and no error repeats it. The options that read it
+/// are the <c>--*-stdin</c> flags and the JSON sources given as <c>-</c>, such as <c>--ops -</c>.
+/// </summary>
+internal static class StandardInputSources
+{
+    /// <summary>Refuses an invocation in which two options read standard input, before either reads it.</summary>
+    /// <exception cref="CliException"><c>OPTION_INVALID</c>, naming the second option.</exception>
+    public static void EnsureOne(ParseResult parse)
+    {
+        ArgumentNullException.ThrowIfNull(parse);
+        Option[] readers = [.. parse.CommandResult.Command.Options.Where(option => Reads(parse, option))];
+        if (readers.Length > 1)
+        {
+            throw CliErrors.OptionInvalid(
+                readers[1].Name,
+                $"stdin can hold one value, and {Spelled(readers[0])} reads it",
+                "Pass one value on stdin and the other through a file or its -env option.");
+        }
+    }
+
+    private static bool Reads(ParseResult parse, Option option)
+    {
+        ParameterMetadata metadata = option.GetParameterMetadata();
+        return metadata.ValueSource == ParameterValueSource.StandardInput
+            ? option is Option<bool> flag && parse.GetValue(flag)
+            : metadata.InputKind == InputKind.JsonSource && option is Option<string> source && parse.GetValue(source) == "-";
+    }
+
+    private static string Spelled(Option option) =>
+        option.GetParameterMetadata().InputKind == InputKind.JsonSource ? $"{option.Name} -" : option.Name;
+}
+
+/// <summary>
 /// The standard <c>--out</c> option of commands that publish one file, and the one rule for
 /// every output file a caller names: it resolves against the working directory and never
 /// names an input.
@@ -210,11 +244,8 @@ public sealed class PasswordOptions
     private readonly Option<bool>? _fromStandardInput;
 
     /// <summary>Creates a password source for one protected input or output.</summary>
-    internal PasswordOptions(
-        string prefix,
-        string subject,
-        bool allowStdin = true)
-        : this(prefix, subject, allowStdin ? Sources.All : Sources.LiteralOrEnvironment)
+    internal PasswordOptions(string prefix, string subject)
+        : this(prefix, subject, Sources.All)
     {
     }
 
@@ -245,7 +276,7 @@ public sealed class PasswordOptions
             : null;
     }
 
-    private enum Sources { All, LiteralOrEnvironment, Environment }
+    private enum Sources { All, Environment }
 
     /// <summary>
     /// A password the caller must name by environment variable, with the required option
@@ -294,12 +325,14 @@ public sealed class PasswordOptions
             : null;
     }
 
-    /// <summary>Resolves the selected secret without serializing it.</summary>
+    /// <summary>
+    /// Resolves the selected secret without serializing it. Standard input holds only the
+    /// password when its stdin option is given (<see cref="StandardInputSources"/>).
+    /// </summary>
     internal Secret? Resolve(
         ParseResult parseResult,
         InputSource inputs,
-        Func<string, string?> readEnvironment,
-        bool stdinAvailable = true)
+        Func<string, string?> readEnvironment)
     {
         ArgumentNullException.ThrowIfNull(parseResult);
         ArgumentNullException.ThrowIfNull(inputs);
@@ -340,14 +373,6 @@ public sealed class PasswordOptions
         if (!fromStandardInput)
         {
             return null;
-        }
-
-        if (!stdinAvailable)
-        {
-            throw CliErrors.OptionInvalid(
-                $"{_prefix}-stdin",
-                "stdin is already being read for the document",
-                $"Pass the password via {_prefix}-env instead when the document comes from stdin.");
         }
 
         string line = inputs.ReadSecretLine(Console.In);

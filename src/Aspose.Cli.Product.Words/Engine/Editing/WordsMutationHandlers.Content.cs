@@ -50,7 +50,8 @@ internal sealed partial class WordsMutationHandlers
         // Like a verification issue, the warning never repeats the find text.
         if (replaced == 0)
         {
-            _warnings.Add(new Warning(WarningCodes.ReplaceNoMatch, $"replace_text matched no text in scope '{operation.Scope}', so nothing was replaced.")
+            _warnings.Add(WordsOp.Catalog.NoEffect(operation, NoEffectReasons.NoMatch,
+                $"Operation {operation.Id} (replace_text) matched no text in scope '{operation.Scope}', so nothing was replaced.") with
             {
                 Hint = "Search with 'words query search' and the same pattern and scope, or --scope all for headers, footers, "
                     + "footnotes and comments. Field codes and text a tracked change deletes are never matched.",

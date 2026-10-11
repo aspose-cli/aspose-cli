@@ -37,7 +37,7 @@
         "command": "edit",
         "inputSchema": "v2/cells/ops",
         "operationSchema": "aspose-cli schema v2/cells/ops --operation <op>",
-        "contractFingerprint": "sha256:c60b4e056b6b793f0f7940f3ddc3a667c69ea4eaa33d72359797d8b4de542420",
+        "contractFingerprint": "sha256:533653d1f9bd6646c56dbedaec61d36c1e7af8acd4db7ff1934c1f63f79e31a6",
         "maximumOperationCount": 10000,
         "ops": [
           "add_comment",
@@ -714,6 +714,25 @@
             "description": "Name of an environment variable holding the password for the baseline file."
           },
           {
+            "name": "--left-password-stdin",
+            "aliases": [],
+            "type": "boolean",
+            "minimumArity": 0,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": true,
+            "allowedValues": [
+              "false",
+              "true"
+            ],
+            "secret": true,
+            "valueSource": "stdin",
+            "inputKind": "none",
+            "description": "Read the password for the baseline file from the first line of stdin."
+          },
+          {
             "name": "--max-diffs",
             "aliases": [],
             "type": "integer",
@@ -761,6 +780,25 @@
             "valueSource": "environment-variable-name",
             "inputKind": "none",
             "description": "Name of an environment variable holding the password for the candidate file."
+          },
+          {
+            "name": "--right-password-stdin",
+            "aliases": [],
+            "type": "boolean",
+            "minimumArity": 0,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": true,
+            "allowedValues": [
+              "false",
+              "true"
+            ],
+            "secret": true,
+            "valueSource": "stdin",
+            "inputKind": "none",
+            "description": "Read the password for the candidate file from the first line of stdin."
           }
         ],
         "arguments": [
@@ -882,6 +920,25 @@
             "valueSource": "environment-variable-name",
             "inputKind": "none",
             "description": "Name of an environment variable holding the password for the output file."
+          },
+          {
+            "name": "--encrypt-stdin",
+            "aliases": [],
+            "type": "boolean",
+            "minimumArity": 0,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": true,
+            "allowedValues": [
+              "false",
+              "true"
+            ],
+            "secret": true,
+            "valueSource": "stdin",
+            "inputKind": "none",
+            "description": "Read the password for the output file from the first line of stdin."
           },
           {
             "name": "--font-dir",
@@ -1093,6 +1150,25 @@
             "description": "Name of an environment variable holding the password for the output file."
           },
           {
+            "name": "--encrypt-stdin",
+            "aliases": [],
+            "type": "boolean",
+            "minimumArity": 0,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": true,
+            "allowedValues": [
+              "false",
+              "true"
+            ],
+            "secret": true,
+            "valueSource": "stdin",
+            "inputKind": "none",
+            "description": "Read the password for the output file from the first line of stdin."
+          },
+          {
             "name": "--overwrite",
             "aliases": [],
             "type": "boolean",
@@ -1245,6 +1321,25 @@
             "description": "Name of an environment variable holding the password for the output file."
           },
           {
+            "name": "--encrypt-stdin",
+            "aliases": [],
+            "type": "boolean",
+            "minimumArity": 0,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": true,
+            "allowedValues": [
+              "false",
+              "true"
+            ],
+            "secret": true,
+            "valueSource": "stdin",
+            "inputKind": "none",
+            "description": "Read the password for the output file from the first line of stdin."
+          },
+          {
             "name": "--font-dir",
             "aliases": [],
             "type": "string[]",
@@ -1330,7 +1425,7 @@
             "secret": false,
             "valueSource": "command-line",
             "inputKind": "json-source",
-            "description": "The ops JSON: a path to the document, '-' to read it from stdin, or the document itself when the value starts with { or [ (inline). To name a file whose name starts with '[', prefix it with ./ . Vocabulary: aspose-cli schema v2/cells/ops."
+            "description": "The ops JSON, an object with ops or the bare array of operations: a path to the document, '-' to read it from stdin, or the document itself when the value starts with { or [ (inline). To name a file whose name starts with '[', prefix it with ./ . At most 10000 operations. Vocabulary: aspose-cli schema v2/cells/ops."
           },
           {
             "name": "--out",
@@ -3228,7 +3323,7 @@
     "v2/cells/ops": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "$id": "https://schemas.aspose.com/aspose-cli/v2/cells/ops.schema.json",
-      "description": "The operation document of cells edit --ops. An operation's sheet defaults to the active sheet; rows are 1-based numbers, columns are letters, and cells and ranges use A1 notation on that sheet unless a field says it may name another sheet. Operations apply in order. Without --best-effort the batch is atomic: if any operation fails, no file is written. With --best-effort the operations that succeed are kept and saved, each one that fails is reported, and the command exits 8 when any failed; an invalid document or a failure inside the document engine still writes nothing.",
+      "description": "The operation document of cells edit --ops. An operation's sheet defaults to the active sheet; rows are 1-based numbers, columns are letters, and cells and ranges use A1 notation on that sheet unless a field says it may name another sheet. Operations apply in order. Without --best-effort the batch is atomic: if any operation fails, no file is written. With --best-effort the operations that succeed are kept and saved, each one that fails is reported, and the command exits 8 when any failed; an invalid document or a failure inside the document engine still writes nothing. The bare array of operations is accepted as the document with only its ops.",
       "type": "object",
       "required": [
         "ops"

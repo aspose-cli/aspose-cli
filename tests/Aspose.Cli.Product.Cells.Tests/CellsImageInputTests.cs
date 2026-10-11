@@ -35,7 +35,7 @@ public sealed class CellsImageInputTests
         Assert.True(edited.ExitCode == 4, edited.StdErr);
         JsonNode error = JsonNode.Parse(edited.StdErr)!["error"]!;
         Assert.Equal("OPS_INVALID", error["code"]!.GetValue<string>());
-        Assert.Equal(1, error["details"]!["index"]!.GetValue<int>());
+        Assert.Equal("op-0002", error["details"]!["id"]!.GetValue<string>());
         Assert.Equal("insert_image", error["details"]!["op"]!.GetValue<string>());
         Assert.False(File.Exists(workspace.File("result.xlsx")));
     }

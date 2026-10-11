@@ -64,7 +64,8 @@ internal sealed class OperationSchemaWriter
     private const string BatchSemantics =
         "Operations apply in order. Without --best-effort the batch is atomic: if any operation fails, no file is written. "
         + "With --best-effort the operations that succeed are kept and saved, each one that fails is reported, and the command "
-        + "exits 8 when any failed; an invalid document or a failure inside the document engine still writes nothing.";
+        + "exits 8 when any failed; an invalid document or a failure inside the document engine still writes nothing. "
+        + "The bare array of operations is accepted as the document with only its ops.";
 
     private static readonly JsonWriterOptions WriterOptions = new()
     {
@@ -83,13 +84,11 @@ internal sealed class OperationSchemaWriter
 
     /// <summary>Writes the schema of one vocabulary.</summary>
     /// <param name="schemaId">Canonical schema identifier.</param>
-    /// <param name="maximumOperationCount">Largest accepted number of operations.</param>
     /// <param name="description">The vocabulary's description, or null.</param>
     /// <param name="operations">The operations in published order.</param>
     /// <exception cref="InvalidOperationException">The descriptors cannot be published consistently.</exception>
     public static string Write(
         string schemaId,
-        int maximumOperationCount,
         string? description,
         IReadOnlyList<OperationRecord> operations)
     {
@@ -118,7 +117,7 @@ internal sealed class OperationSchemaWriter
             definitions.Add(name, definition);
         }
 
-        JsonObject root = Envelope(schemaId, maximumOperationCount, description, operations.Select(static operation => operation.Name));
+        JsonObject root = Envelope(schemaId, description, operations.Select(static operation => operation.Name));
         root["$defs"] = definitions;
         return Serialize(root);
     }
@@ -136,7 +135,7 @@ internal sealed class OperationSchemaWriter
         return views;
     }
 
-    private static JsonObject Envelope(string schemaId, int maximumOperationCount, string? description, IEnumerable<string> operations)
+    private static JsonObject Envelope(string schemaId, string? description, IEnumerable<string> operations)
     {
         var root = new JsonObject
         {
@@ -162,7 +161,7 @@ internal sealed class OperationSchemaWriter
                 ["description"] = "Operations applied in order.",
                 ["type"] = "array",
                 ["minItems"] = 1,
-                ["maxItems"] = maximumOperationCount,
+                ["maxItems"] = BoundedOperation.MaximumPerBatch,
                 ["items"] = new JsonObject
                 {
                     ["oneOf"] = new JsonArray([.. operations.Select(static name => (JsonNode)Reference(name))]),

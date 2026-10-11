@@ -1,3 +1,4 @@
+using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 
 namespace Aspose.Cli.Sdk.Contracts;
@@ -39,6 +40,12 @@ public sealed record Warning
     /// <summary>Stable product-owned address of the affected item, when known.</summary>
     [MinLength(1)]
     public string? Location { get; init; }
+
+    /// <summary>
+    /// Structured context, with the keys an error's details use, such as the <c>id</c> and
+    /// <c>op</c> of the operation a warning is about.
+    /// </summary>
+    public JsonObject? Details { get; init; }
 
     /// <summary>
     /// Whether this condition leaves the output or its visual evidence incomplete, or different
@@ -86,8 +93,11 @@ public static class WarningCodes
     /// <summary>An edit went through restrictions the input declares but the engine does not enforce.</summary>
     public static readonly WarningCode ProtectionNotEnforced = new("PROTECTION_NOT_ENFORCED");
 
-    /// <summary>A replace_text operation matched no text in its scope, so it changed nothing; the warning never repeats the find text.</summary>
-    public static readonly WarningCode ReplaceNoMatch = new("REPLACE_NO_MATCH");
+    /// <summary>
+    /// An operation applied but changed nothing, such as a replacement that matched no text;
+    /// <c>details</c> names the operation by <c>id</c> and <c>op</c> and says why in <c>reason</c>.
+    /// </summary>
+    public static readonly WarningCode OpNoEffect = new("OP_NO_EFFECT");
 
     /// <summary>Every common warning code in this SDK build.</summary>
     public static IReadOnlyList<WarningCode> All { get; } =
@@ -101,6 +111,13 @@ public static class WarningCodes
         ListTruncated,
         BackupPredatesEdit,
         ProtectionNotEnforced,
-        ReplaceNoMatch,
+        OpNoEffect,
     ];
+}
+
+/// <summary>Why an operation changed nothing: the <c>details.reason</c> of an <c>OP_NO_EFFECT</c> warning.</summary>
+public static class NoEffectReasons
+{
+    /// <summary>What the operation looks for, such as text, a pattern or an author, is not in the document.</summary>
+    public const string NoMatch = "no-match";
 }

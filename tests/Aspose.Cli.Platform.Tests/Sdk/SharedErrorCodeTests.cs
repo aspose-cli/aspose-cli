@@ -23,6 +23,27 @@ public sealed class SharedErrorCodeTests
         Assert.Throws<ArgumentException>(() => new CliException(new ErrorCode(name, declared.ExitCode), "Built by hand."));
     }
 
+    /// <summary>
+    /// The free-text factories of <c>FEATURE_UNSUPPORTED</c> say which kind of refusal they are
+    /// in <c>details.reason</c>, so a caller can tell them apart without reading the message.
+    /// </summary>
+    [Fact]
+    public void FeatureUnsupported_FreeTextFactoriesStateTheirReason()
+    {
+        (CliException Error, string Reason)[] cases =
+        [
+            (CliErrors.ResourceRefused("The input names a network address.", "Embed it."), "resource-refused"),
+            (CliErrors.ContentUnsupported("The table is too large.", "Split it."), "content-too-large"),
+            (CliErrors.EnvironmentUnsupported("The font registry is unreadable.", "Repair it."), "environment"),
+        ];
+
+        Assert.All(cases, static item =>
+        {
+            Assert.Equal(ErrorCodes.FeatureUnsupported, item.Error.Code);
+            Assert.Equal(item.Reason, item.Error.Details!["reason"]!.GetValue<string>());
+        });
+    }
+
     [Fact]
     public void Constructor_BuildsAProductCode()
     {

@@ -432,7 +432,7 @@ public sealed class CellsOperationBehaviorTests : IClassFixture<CellsFixture>
             Apply(_fixture.CreateSalesWorkbook("missing-target.xlsx"), operations, "missing-target.out.xlsx"));
 
         Assert.Equal(code, error.Code.Name);
-        Assert.Equal(1, error.Details!["index"]!.GetValue<int>());
+        Assert.Equal("op-0002", error.Details!["id"]!.GetValue<string>());
         Assert.Equal(requested, error.Details["requested"]!.GetValue<string>());
         Assert.Equal(available, Assert.Single(error.Details["available"]!.AsArray())!.GetValue<string>());
         Assert.Equal(suggestion, error.Details["suggestions"]?.AsArray().Single()!.GetValue<string>());

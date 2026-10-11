@@ -112,7 +112,7 @@ Arguments:
   <file>  PDF document to open.
 
 Options:
-  --ops <ops> (REQUIRED)                         The ops JSON: a path to the document, '-' to read it from stdin, or the document itself when the value starts with { or [ (inline). To name a file whose name starts with '[', prefix it with ./ . Vocabulary: aspose-cli schema v2/pdf/ops.
+  --ops <ops>                                    The ops JSON, an object with ops or the bare array of operations: a path to the document, '-' to read it from stdin, or the document itself when the value starts with { or [ (inline). To name a file whose name starts with '[', prefix it with ./ . At most 10000 operations. Vocabulary: aspose-cli schema v2/pdf/ops.
   --if-match <if-match>                          Require the current input SHA-256 fingerprint before editing.
   --dry-run                                      Resolve and apply operations in memory without writing.
   --best-effort                                  Keep successful operations, report failures, and exit 8.

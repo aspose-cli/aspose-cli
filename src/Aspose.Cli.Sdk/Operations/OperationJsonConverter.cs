@@ -32,14 +32,14 @@ public sealed class OperationJsonConverter<TOp> : JsonConverter<TOp>
             || !root.TryGetProperty("op", out JsonElement discriminator)
             || discriminator.ValueKind != JsonValueKind.String)
         {
-            throw new JsonException(
-                $"every op must be an object with a string 'op' field; valid ops: {ValidOperations}");
+            throw new JsonException("every op must be an object with a string 'op' field");
         }
 
         string name = discriminator.GetString()!;
         if (!TOp.Catalog.TryGetOperation(name, out OperationRecord? record))
         {
-            throw new JsonException($"unknown op '{name}'; valid ops: {ValidOperations}");
+            // The operation error lists the operations once, in details.available and the message.
+            throw new JsonException($"unknown op '{name}'");
         }
 
         // The payload below omits the discriminator, so only its duplicates need a check here;
@@ -87,8 +87,6 @@ public sealed class OperationJsonConverter<TOp> : JsonConverter<TOp>
         }
         writer.WriteEndObject();
     }
-
-    private static string ValidOperations => string.Join(", ", TOp.Catalog.Names);
 
     /// <summary>
     /// The outer options with unknown members disallowed and the vocabulary's own operation
@@ -183,7 +181,7 @@ public sealed class OperationJsonConverter<TOp> : JsonConverter<TOp>
             .Select(static property => property.Name)];
         string? meant = record.Properties
             .FirstOrDefault(property => property.MistakenFor.Contains(name, StringComparer.OrdinalIgnoreCase))?.Name;
-        return AllowedFieldsException.UnknownField(path, name, isOperation ? record.Name : path, allowed, missing, meant);
+        return AllowedFieldsException.UnknownField(path, name, allowed, missing, meant);
     }
 
     private static void WriteValue(Utf8JsonWriter writer, JsonElement value, OperationValue shape, string path)

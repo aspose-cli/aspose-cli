@@ -12,11 +12,10 @@ public sealed class ResultTextTests
         var output = new OutputInfo { Path = "out.docx", Format = "docx", SizeBytes = 1_024 };
         BoundedOperationOutcome[] applied =
         [
-            new() { Id = "op-0001", Index = 0, Op = "set_text", Status = OpStatuses.Ok, ItemsAffected = 2 },
+            new() { Id = "op-0001", Op = "set_text", Status = OpStatuses.Ok, ItemsAffected = 2 },
             new()
             {
                 Id = "title",
-                Index = 1,
                 Op = "delete_block",
                 Status = OpStatuses.Failed,
                 ItemsAffected = 0,
@@ -38,8 +37,8 @@ public sealed class ResultTextTests
         Assert.Equal(
             [
                 "wrote out.docx (docx, 1,024 bytes, 1 of 2 op(s) applied, 1 failed)",
-                "  [op-0001/0] set_text: ok (2 item(s))",
-                "  [title/1] delete_block: failed (0 item(s))",
+                "  [op-0001] set_text: ok (2 item(s))",
+                "  [title] delete_block: failed (0 item(s))",
                 "      OPS_INVALID: block 9 does not exist",
                 "      hint: Read the blocks first.",
                 "backup: in.backup.docx (created)",
@@ -76,7 +75,7 @@ public sealed class ResultTextTests
             surface,
             dryRun: true,
             output: null,
-            [new() { Id = "op-0001", Index = 0, Op = "set_text", Status = OpStatuses.Ok, ItemsAffected = 1 }],
+            [new() { Id = "op-0001", Op = "set_text", Status = OpStatuses.Ok, ItemsAffected = 1 }],
             backup: null));
 
         Assert.Equal("dry run: 1 of 1 op(s) applied; nothing was written", Lines(text)[0]);

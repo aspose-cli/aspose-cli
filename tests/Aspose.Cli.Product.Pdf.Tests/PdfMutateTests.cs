@@ -874,7 +874,7 @@ public sealed class PdfMutateTests
         Assert.Equal("customer", error.Details!["requested"]!.GetValue<string>());
         Assert.Equal(["Customer"], error.Details["available"]!.AsArray().Select(static name => name!.GetValue<string>()));
         Assert.Equal("Customer", error.Details["suggestions"]![0]!.GetValue<string>());
-        Assert.Equal(0, error.Details["index"]!.GetValue<int>());
+        Assert.Equal("op-0001", error.Details["id"]!.GetValue<string>());
     }
 
     [Fact]
@@ -1666,8 +1666,11 @@ public sealed class PdfMutateTests
             Options = new EditCommandOptions { DryRun = dryRun },
         });
 
-        Warning warning = Assert.Single(result.Warnings!, static warning => warning.Code.Name == "REDACTION_NO_MATCH");
-        Assert.Contains("'op-0002' (redact_text)", warning.Message, StringComparison.Ordinal);
+        Warning warning = Assert.Single(result.Warnings!, static warning => warning.Code.Name == "OP_NO_EFFECT");
+        Assert.Contains("Operation op-0002 (redact_text)", warning.Message, StringComparison.Ordinal);
+        Assert.Equal("op-0002", warning.Details!["id"]!.GetValue<string>());
+        Assert.Equal("redact_text", warning.Details["op"]!.GetValue<string>());
+        Assert.Equal("no-match", warning.Details["reason"]!.GetValue<string>());
         Assert.DoesNotContain("op-0001", warning.Message, StringComparison.Ordinal);
         // Like a verification issue, the warning never repeats the pattern.
         Assert.DoesNotContain("4711", warning.Message + warning.Hint, StringComparison.Ordinal);
@@ -1868,7 +1871,7 @@ public sealed class PdfMutateTests
         });
 
         Assert.Equal(0, Assert.Single(edited.Applied).ItemsAffected);
-        Assert.Single(edited.Warnings!, static warning => warning.Code.Name == "REDACTION_NO_MATCH");
+        Assert.Single(edited.Warnings!, static warning => warning.Code.Name == "OP_NO_EFFECT");
     }
 
     /// <summary>

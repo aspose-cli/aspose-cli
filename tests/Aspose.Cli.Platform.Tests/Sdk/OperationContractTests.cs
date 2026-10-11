@@ -135,7 +135,7 @@ public sealed class OperationContractTests
     [InlineData("""{"op":"place","pages":"1","all":true,"tags":["draft","Final"]}""", "tags[1] must be a lowercase tag such as \"draft\" (pattern ^[a-z]+$)")]
     [InlineData("""{"op":"place","pages":"1","all":true,"labels":{"a":"x","a":"y"}}""", "labels.a is duplicated")]
     [InlineData("""{"op":"place","pages":"1","all":true,"labels":{"a":null}}""", "labels.a must not be null")]
-    [InlineData("""{"op":"place","pages":"1","all":true,"shade":"grey"}""", "shade must be one of: light, dark")]
+    [InlineData("""{"op":"place","pages":"1","all":true,"shade":"grey"}""", "shade does not accept 'grey'")]
     [InlineData("""{"op":"place","pages":"1"}""", "the operation must set exactly one of: path, all")]
     [InlineData("""{"op":"place","pages":"1","all":true,"path":"a"}""", "the operation must set exactly one of: path, all")]
     [InlineData("""{"op":"place","pages":"1","path":null}""", "path must not be null")]
@@ -223,7 +223,7 @@ public sealed class OperationContractTests
         Assert.Equal("""{"type":"string","minLength":1,"pattern":"\\S"}""", Schema()["$defs"]!["link"]!["properties"]!["path"]!.ToJsonString());
         string description = Schema()["description"]!.GetValue<string>();
         Assert.StartsWith("Test operations. Operations apply in order. Without --best-effort the batch is atomic", description, StringComparison.Ordinal);
-        Assert.EndsWith("still writes nothing.", description, StringComparison.Ordinal);
+        Assert.EndsWith("The bare array of operations is accepted as the document with only its ops.", description, StringComparison.Ordinal);
     }
 
     [Fact]

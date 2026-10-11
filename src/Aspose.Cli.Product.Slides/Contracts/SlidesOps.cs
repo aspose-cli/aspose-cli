@@ -15,7 +15,7 @@ public sealed record SlidesOpsBatch : BoundedOperationEnvelope<SlidesOp>;
 /// against the presentation as it was before the first operation, so content inserted earlier
 /// in the batch cannot be targeted, and a target deleted earlier fails the operation.
 /// </summary>
-[OperationVocabulary("ops", MaximumOperations = 256, JsonContext = typeof(SlidesOpsJsonContext))]
+[OperationVocabulary("ops", JsonContext = typeof(SlidesOpsJsonContext))]
 [JsonConverter(typeof(OperationJsonConverter<SlidesOp>))]
 public abstract partial record SlidesOp : BoundedOperation;
 

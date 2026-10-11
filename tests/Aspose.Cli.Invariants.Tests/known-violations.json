@@ -818,20 +818,6 @@
       "actual": "cells compare --compare: a banned name; what a compare compares is --content."
     },
     {
-      "case": "C-R10 | cells compare declared",
-      "invariant": "C-R10",
-      "rule": "C-R10",
-      "cause": "compare-passwords-have-no-stdin",
-      "actual": "cells compare --left-password: the secret has no --left-password-stdin.; cells compare --right-password: the secret has no --right-password-stdin."
-    },
-    {
-      "case": "C-R10 | words compare declared",
-      "invariant": "C-R10",
-      "rule": "C-R10",
-      "cause": "compare-passwords-have-no-stdin",
-      "actual": "words compare --left-password: the secret has no --left-password-stdin.; words compare --right-password: the secret has no --right-password-stdin."
-    },
-    {
       "case": "C-R13 | cells convert --out out.pdf without --to",
       "invariant": "C-R13",
       "rule": "C-R13",
@@ -1049,74 +1035,11 @@
       "actual": "words split writes files but has no --dry-run."
     },
     {
-      "case": "C-R10 | cells convert declared",
-      "invariant": "C-R10",
-      "rule": "C-R10",
-      "cause": "encrypt-secret-has-no-stdin",
-      "actual": "cells convert --encrypt: the secret has no --encrypt-stdin."
-    },
-    {
-      "case": "C-R10 | cells create declared",
-      "invariant": "C-R10",
-      "rule": "C-R10",
-      "cause": "encrypt-secret-has-no-stdin",
-      "actual": "cells create --encrypt: the secret has no --encrypt-stdin."
-    },
-    {
-      "case": "C-R10 | cells edit declared",
-      "invariant": "C-R10",
-      "rule": "C-R10",
-      "cause": "encrypt-secret-has-no-stdin",
-      "actual": "cells edit --encrypt: the secret has no --encrypt-stdin."
-    },
-    {
-      "case": "C-R10 | slides convert declared",
-      "invariant": "C-R10",
-      "rule": "C-R10",
-      "cause": "encrypt-secret-has-no-stdin",
-      "actual": "slides convert --encrypt: the secret has no --encrypt-stdin."
-    },
-    {
-      "case": "C-R10 | slides create declared",
-      "invariant": "C-R10",
-      "rule": "C-R10",
-      "cause": "encrypt-secret-has-no-stdin",
-      "actual": "slides create --encrypt: the secret has no --encrypt-stdin."
-    },
-    {
-      "case": "C-R10 | slides edit declared",
-      "invariant": "C-R10",
-      "rule": "C-R10",
-      "cause": "encrypt-secret-has-no-stdin",
-      "actual": "slides edit --encrypt: the secret has no --encrypt-stdin."
-    },
-    {
-      "case": "C-R10 | words convert declared",
-      "invariant": "C-R10",
-      "rule": "C-R10",
-      "cause": "encrypt-secret-has-no-stdin",
-      "actual": "words convert --encrypt: the secret has no --encrypt-stdin."
-    },
-    {
-      "case": "C-R10 | words create declared",
-      "invariant": "C-R10",
-      "rule": "C-R10",
-      "cause": "encrypt-secret-has-no-stdin",
-      "actual": "words create --encrypt: the secret has no --encrypt-stdin."
-    },
-    {
-      "case": "C-R10 | words edit declared",
-      "invariant": "C-R10",
-      "rule": "C-R10",
-      "cause": "encrypt-secret-has-no-stdin",
-      "actual": "words edit --encrypt: the secret has no --encrypt-stdin."
-    },
-    {
       "case": "C-R25 | error schema publishes the details dictionary",
       "invariant": "C-R25",
       "rule": "C-R25",
       "cause": "error-schema-publishes-no-details-dictionary",
-      "actual": "error.details publishes no key dictionary; the 63 keys of the dictionary have no description in the error schema"
+      "actual": "error.details publishes no key dictionary; the 62 keys of the dictionary have no description in the error schema"
     },
     {
       "case": "C-R28 | evaluation codes",
@@ -2026,7 +1949,7 @@
       "invariant": "C-R34",
       "rule": "C-R34",
       "cause": "help-usage-omits-required-options",
-      "actual": "cells convert: Usage leaves out the required --to; cells query search: Usage leaves out the required --pattern; pdf convert: Usage leaves out the required --to; pdf edit: Usage leaves out the required --ops; pdf extract: Usage leaves out th..."
+      "actual": "cells convert: Usage leaves out the required --to; cells query search: Usage leaves out the required --pattern; pdf convert: Usage leaves out the required --to; pdf extract: Usage leaves out the required --what; pdf merge: Usage leaves out ..."
     },
     {
       "case": "C-R25 | cells input over budget error details",
@@ -2207,109 +2130,11 @@
       "actual": "wrote parts/part-001.docx, parts/part-002.docx; expected parts/two.1.docx, parts/two.2.docx"
     },
     {
-      "case": "C-R27 | common warning codes",
-      "invariant": "C-R27",
-      "rule": "C-R27",
-      "cause": "no-effect-operations-warn-no-match",
-      "actual": "REPLACE_NO_MATCH: an operation without effect warns OP_NO_EFFECT, never *_NO_MATCH"
-    },
-    {
-      "case": "C-R27 | pdf warning codes",
-      "invariant": "C-R27",
-      "rule": "C-R27",
-      "cause": "no-effect-operations-warn-no-match",
-      "actual": "REDACTION_NO_MATCH: an operation without effect warns OP_NO_EFFECT, never *_NO_MATCH"
-    },
-    {
-      "case": "C-R27 | words warning codes",
-      "invariant": "C-R27",
-      "rule": "C-R27",
-      "cause": "no-effect-operations-warn-no-match",
-      "actual": "AUTHOR_NO_MATCH: an operation without effect warns OP_NO_EFFECT, never *_NO_MATCH"
-    },
-    {
       "case": "C-R26 | cells query range --sheet Sheet1 as Sehet1",
       "invariant": "C-R26",
       "rule": "C-R26",
       "cause": "not-found-message-not-must-be-one-of",
       "actual": "the message does not say 'Must be one of: ...': No sheet 'Sehet1' was found."
-    },
-    {
-      "case": "C-R18 | v2/common/not-found-details",
-      "invariant": "C-R18",
-      "rule": "C-R18",
-      "cause": "op-batch-index-reported",
-      "actual": "index: minimum 0, not 1"
-    },
-    {
-      "case": "C-R18 | v2/common/operation-outcome",
-      "invariant": "C-R18",
-      "rule": "C-R18",
-      "cause": "op-batch-index-reported",
-      "actual": "index: minimum 0, not 1"
-    },
-    {
-      "case": "C-R30 | cells applied[] has no index",
-      "invariant": "C-R30",
-      "rule": "C-R30",
-      "cause": "op-batch-index-reported",
-      "actual": "every applied[] entry carries index"
-    },
-    {
-      "case": "C-R30 | pdf applied[] has no index",
-      "invariant": "C-R30",
-      "rule": "C-R30",
-      "cause": "op-batch-index-reported",
-      "actual": "every applied[] entry carries index"
-    },
-    {
-      "case": "C-R30 | slides applied[] has no index",
-      "invariant": "C-R30",
-      "rule": "C-R30",
-      "cause": "op-batch-index-reported",
-      "actual": "every applied[] entry carries index"
-    },
-    {
-      "case": "C-R30 | v2/common/operation-outcome index",
-      "invariant": "C-R30",
-      "rule": "C-R30",
-      "cause": "op-batch-index-reported",
-      "actual": "applied[] has index; an outcome names its op by id"
-    },
-    {
-      "case": "C-R30 | words applied[] has no index",
-      "invariant": "C-R30",
-      "rule": "C-R30",
-      "cause": "op-batch-index-reported",
-      "actual": "every applied[] entry carries index"
-    },
-    {
-      "case": "C-R26 | cells op set_page_setup orientation portrait as protrait",
-      "invariant": "C-R26",
-      "rule": "C-R26",
-      "cause": "op-enum-message-not-must-be-one-of",
-      "actual": "the message does not say 'Must be one of: ...': Operation 0 (set_page_setup) is invalid: orientation must be one of: portrait, landscape"
-    },
-    {
-      "case": "C-R26 | pdf op add_page_numbers position top-left as tpo-left",
-      "invariant": "C-R26",
-      "rule": "C-R26",
-      "cause": "op-enum-message-not-must-be-one-of",
-      "actual": "the message does not say 'Must be one of: ...': Operation 0 (add_page_numbers) is invalid: position must be one of: top-left, top-center, top-right, bottom-left, bottom-center, bottom-right"
-    },
-    {
-      "case": "C-R26 | slides op delete_shape placeholder title as titlee",
-      "invariant": "C-R26",
-      "rule": "C-R26",
-      "cause": "op-enum-message-not-must-be-one-of",
-      "actual": "the message does not say 'Must be one of: ...': Operation 0 (delete_shape) is invalid: placeholder must be one of: title, body, subtitle, footer"
-    },
-    {
-      "case": "C-R26 | words op add_section position start as startt",
-      "invariant": "C-R26",
-      "rule": "C-R26",
-      "cause": "op-enum-message-not-must-be-one-of",
-      "actual": "the message does not say 'Must be one of: ...': Operation 0 (add_section) is invalid: position must be one of: start, end, after"
     },
     {
       "case": "C-R30 | v2/common/operation-outcome error",
@@ -2480,139 +2305,6 @@
       "actual": "op update_fields is not <verb>_<noun> with a verb of the rule's table"
     },
     {
-      "case": "C-R22 | pdf declared",
-      "invariant": "C-R22",
-      "rule": "C-R22",
-      "cause": "operation-count-limit-per-product",
-      "actual": "pdf edit: maximumOperationCount is 256, not 10000."
-    },
-    {
-      "case": "C-R22 | slides declared",
-      "invariant": "C-R22",
-      "rule": "C-R22",
-      "cause": "operation-count-limit-per-product",
-      "actual": "slides edit: maximumOperationCount is 256, not 10000."
-    },
-    {
-      "case": "C-R22 | words declared",
-      "invariant": "C-R22",
-      "rule": "C-R22",
-      "cause": "operation-count-limit-per-product",
-      "actual": "words edit: maximumOperationCount is 256, not 10000."
-    },
-    {
-      "case": "C-R25 | cells several invalid operations error details",
-      "invariant": "C-R25",
-      "rule": "C-R25",
-      "cause": "operation-errors-name-the-batch-index",
-      "actual": "OPS_INVALID details.index is not in the details dictionary; OPS_INVALID details.errors[].index is not in the details dictionary"
-    },
-    {
-      "case": "C-R25 | cells unknown field error details",
-      "invariant": "C-R25",
-      "rule": "C-R25",
-      "cause": "operation-errors-name-the-batch-index",
-      "actual": "OPS_INVALID details.index is not in the details dictionary"
-    },
-    {
-      "case": "C-R25 | cells unknown op error details",
-      "invariant": "C-R25",
-      "rule": "C-R25",
-      "cause": "operation-errors-name-the-batch-index",
-      "actual": "OPS_INVALID details.index is not in the details dictionary"
-    },
-    {
-      "case": "C-R25 | pdf several invalid operations error details",
-      "invariant": "C-R25",
-      "rule": "C-R25",
-      "cause": "operation-errors-name-the-batch-index",
-      "actual": "OPS_INVALID details.index is not in the details dictionary; OPS_INVALID details.errors[].index is not in the details dictionary"
-    },
-    {
-      "case": "C-R25 | pdf unknown field error details",
-      "invariant": "C-R25",
-      "rule": "C-R25",
-      "cause": "operation-errors-name-the-batch-index",
-      "actual": "OPS_INVALID details.index is not in the details dictionary"
-    },
-    {
-      "case": "C-R25 | pdf unknown op error details",
-      "invariant": "C-R25",
-      "rule": "C-R25",
-      "cause": "operation-errors-name-the-batch-index",
-      "actual": "OPS_INVALID details.index is not in the details dictionary"
-    },
-    {
-      "case": "C-R25 | slides several invalid operations error details",
-      "invariant": "C-R25",
-      "rule": "C-R25",
-      "cause": "operation-errors-name-the-batch-index",
-      "actual": "OPS_INVALID details.index is not in the details dictionary; OPS_INVALID details.errors[].index is not in the details dictionary"
-    },
-    {
-      "case": "C-R25 | slides unknown field error details",
-      "invariant": "C-R25",
-      "rule": "C-R25",
-      "cause": "operation-errors-name-the-batch-index",
-      "actual": "OPS_INVALID details.index is not in the details dictionary"
-    },
-    {
-      "case": "C-R25 | slides unknown op error details",
-      "invariant": "C-R25",
-      "rule": "C-R25",
-      "cause": "operation-errors-name-the-batch-index",
-      "actual": "OPS_INVALID details.index is not in the details dictionary"
-    },
-    {
-      "case": "C-R25 | words several invalid operations error details",
-      "invariant": "C-R25",
-      "rule": "C-R25",
-      "cause": "operation-errors-name-the-batch-index",
-      "actual": "OPS_INVALID details.index is not in the details dictionary; OPS_INVALID details.errors[].index is not in the details dictionary"
-    },
-    {
-      "case": "C-R25 | words unknown field error details",
-      "invariant": "C-R25",
-      "rule": "C-R25",
-      "cause": "operation-errors-name-the-batch-index",
-      "actual": "OPS_INVALID details.index is not in the details dictionary"
-    },
-    {
-      "case": "C-R25 | words unknown op error details",
-      "invariant": "C-R25",
-      "rule": "C-R25",
-      "cause": "operation-errors-name-the-batch-index",
-      "actual": "OPS_INVALID details.index is not in the details dictionary"
-    },
-    {
-      "case": "C-R22 | cells edit --ops with a bare array",
-      "invariant": "C-R22",
-      "rule": "C-R22",
-      "cause": "ops-bare-array-rejected",
-      "actual": "exit 4 OPS_INVALID, expected 0: The operation document is invalid: the document must be an object"
-    },
-    {
-      "case": "C-R22 | pdf edit --ops with a bare array",
-      "invariant": "C-R22",
-      "rule": "C-R22",
-      "cause": "ops-bare-array-rejected",
-      "actual": "exit 4 OPS_INVALID, expected 0: The operation document is invalid: the document must be an object"
-    },
-    {
-      "case": "C-R22 | slides edit --ops with a bare array",
-      "invariant": "C-R22",
-      "rule": "C-R22",
-      "cause": "ops-bare-array-rejected",
-      "actual": "exit 4 OPS_INVALID, expected 0: The operation document is invalid: the document must be an object"
-    },
-    {
-      "case": "C-R22 | words edit --ops with a bare array",
-      "invariant": "C-R22",
-      "rule": "C-R22",
-      "cause": "ops-bare-array-rejected",
-      "actual": "exit 4 OPS_INVALID, expected 0: The operation document is invalid: the document must be an object"
-    },
-    {
       "case": "C-R20 | ops field format across products",
       "invariant": "C-R20",
       "rule": "C-R20",
@@ -2639,13 +2331,6 @@
       "rule": "C-R20",
       "cause": "ops-field-types-differ-across-products",
       "actual": "cells integer; pdf number"
-    },
-    {
-      "case": "same-name-option | --ops",
-      "invariant": "same-name-option",
-      "rule": "C-R07",
-      "cause": "ops-required-differs-by-product",
-      "actual": "--ops: 2 different required flags: optional (cells edit, words edit) | required (pdf edit, slides edit)"
     },
     {
       "case": "C-R14 | cells convert --out -",
@@ -3992,34 +3677,6 @@
       "actual": "Commands/ConvertCommand.cs: 'slides render' is written bare; quote it or write aspose-cli before it"
     },
     {
-      "case": "C-R10 | cells edit --ops with --password-stdin",
-      "invariant": "C-R10",
-      "rule": "C-R10",
-      "cause": "stdin-sources-not-exclusive",
-      "actual": "exit 4 OPS_INVALID, expected 2: The operation document is invalid: the document is not valid JSON: 'I' is an invalid start of a value. (line 1, byte 1); OPS_INVALID: The operation document is invalid: the document is not valid JSON: 'I' is ..."
-    },
-    {
-      "case": "C-R10 | pdf edit --ops with --password-stdin",
-      "invariant": "C-R10",
-      "rule": "C-R10",
-      "cause": "stdin-sources-not-exclusive",
-      "actual": "exit 4 OPS_INVALID, expected 2: The operation document is invalid: the document is not valid JSON: 'I' is an invalid start of a value. (line 1, byte 1); OPS_INVALID: The operation document is invalid: the document is not valid JSON: 'I' is ..."
-    },
-    {
-      "case": "C-R10 | slides edit --ops with --password-stdin",
-      "invariant": "C-R10",
-      "rule": "C-R10",
-      "cause": "stdin-sources-not-exclusive",
-      "actual": "exit 4 OPS_INVALID, expected 2: The operation document is invalid: the document is not valid JSON: 'I' is an invalid start of a value. (line 1, byte 1); OPS_INVALID: The operation document is invalid: the document is not valid JSON: 'I' is ..."
-    },
-    {
-      "case": "C-R10 | words edit --ops with --password-stdin",
-      "invariant": "C-R10",
-      "rule": "C-R10",
-      "cause": "stdin-sources-not-exclusive",
-      "actual": "exit 4 OPS_INVALID, expected 2: The operation document is invalid: the document is not valid JSON: 'I' is an invalid start of a value. (line 1, byte 1); OPS_INVALID: The operation document is invalid: the document is not valid JSON: 'I' is ..."
-    },
-    {
       "case": "C-R20 | v2/slides/ops#set_table_cell spelling",
       "invariant": "C-R20",
       "rule": "C-R20",
@@ -4138,62 +3795,6 @@
       "rule": "C-R33",
       "cause": "top-level-kind",
       "actual": "top-level kind"
-    },
-    {
-      "case": "C-R26 | cells op add_comment field sheet as sheett",
-      "invariant": "C-R26",
-      "rule": "C-R26",
-      "cause": "unknown-field-has-no-available",
-      "actual": "details.available is missing; the message does not say 'Must be one of: ...': Operation 0 (add_comment) is invalid: unknown field 'sheett'; add_comment accepts: op, id, sheet, cell, text, author"
-    },
-    {
-      "case": "C-R26 | pdf op add_attachment field path as pathh",
-      "invariant": "C-R26",
-      "rule": "C-R26",
-      "cause": "unknown-field-has-no-available",
-      "actual": "details.available is missing; the message does not say 'Must be one of: ...': Operation 0 (add_attachment) is invalid: unknown field 'pathh'; add_attachment accepts: op, id, path, name, description, mimeType"
-    },
-    {
-      "case": "C-R26 | slides op add_section field name as namee",
-      "invariant": "C-R26",
-      "rule": "C-R26",
-      "cause": "unknown-field-has-no-available",
-      "actual": "details.available is missing; the message does not say 'Must be one of: ...': Operation 0 (add_section) is invalid: unknown field 'namee'; add_section accepts: op, id, name, startSlide"
-    },
-    {
-      "case": "C-R26 | words op accept_revisions field author as atuhor",
-      "invariant": "C-R26",
-      "rule": "C-R26",
-      "cause": "unknown-field-has-no-available",
-      "actual": "details.available is missing; the message does not say 'Must be one of: ...': Operation 0 (accept_revisions) is invalid: unknown field 'atuhor'; accept_revisions accepts: op, id, author, revisions"
-    },
-    {
-      "case": "C-R26 | cells op add_comment as add_commentt",
-      "invariant": "C-R26",
-      "rule": "C-R26",
-      "cause": "unknown-op-message-not-must-be-one-of",
-      "actual": "the message does not say 'Must be one of: ...': Operation 0 is invalid: unknown op 'add_commentt'; valid ops: add_comment, add_conditional_format, add_sheet, add_sparkline, clear_conditional_formats, clear_ra..."
-    },
-    {
-      "case": "C-R26 | pdf op add_attachment as add_attachmentt",
-      "invariant": "C-R26",
-      "rule": "C-R26",
-      "cause": "unknown-op-message-not-must-be-one-of",
-      "actual": "the message does not say 'Must be one of: ...': Operation 0 is invalid: unknown op 'add_attachmentt'; valid ops: add_attachment, add_bookmark, add_footer_text, add_header_text, add_link, add_page_numbers, add..."
-    },
-    {
-      "case": "C-R26 | slides op add_section as add_sectionn",
-      "invariant": "C-R26",
-      "rule": "C-R26",
-      "cause": "unknown-op-message-not-must-be-one-of",
-      "actual": "the message does not say 'Must be one of: ...': Operation 0 is invalid: unknown op 'add_sectionn'; valid ops: add_section, add_slide, append_presentation, apply_layout, delete_shape, delete_slides, duplicate_..."
-    },
-    {
-      "case": "C-R26 | words op accept_revisions as accept_revisionss",
-      "invariant": "C-R26",
-      "rule": "C-R26",
-      "cause": "unknown-op-message-not-must-be-one-of",
-      "actual": "the message does not say 'Must be one of: ...': Operation 0 is invalid: unknown op 'accept_revisionss'; valid ops: accept_revisions, add_comment, add_section, add_watermark, append_document, apply_list, defin..."
     },
     {
       "case": "C-R25 | cells invalid option value error details",

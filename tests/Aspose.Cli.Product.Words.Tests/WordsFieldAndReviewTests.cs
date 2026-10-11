@@ -391,8 +391,10 @@ public sealed class WordsFieldAndReviewTests
         });
 
         Assert.All(result.Applied, static applied => Assert.Equal(0L, applied.ItemsAffected));
-        Warning[] warnings = [.. result.Warnings!.Where(static warning => warning.Code.Name == "AUTHOR_NO_MATCH")];
+        Warning[] warnings = [.. result.Warnings!.Where(static warning => warning.Code.Name == "OP_NO_EFFECT")];
         Assert.Equal(2, warnings.Length);
+        Assert.Equal(["op-0001", "op-0002"], warnings.Select(static warning => warning.Details!["id"]!.GetValue<string>()));
+        Assert.All(warnings, static warning => Assert.Equal("no-match", warning.Details!["reason"]!.GetValue<string>()));
         Assert.Contains("accept_revisions", warnings[0].Message, StringComparison.Ordinal);
         Assert.Contains("'Li (B)'", warnings[0].Hint, StringComparison.Ordinal);
         Assert.Contains("remove_comments", warnings[1].Message, StringComparison.Ordinal);

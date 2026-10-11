@@ -774,36 +774,41 @@ public static partial class CliErrors
     /// <summary>
     /// Input content names a resource the CLI does not let the document engine read: a network
     /// address, script, a compressed resource it cannot check, or a file outside the input's
-    /// directory. Nothing was written.
+    /// directory. Nothing was written. <c>details.reason</c> is <c>resource-refused</c>.
     /// </summary>
     /// <param name="message">What the input names and why it is refused.</param>
     /// <param name="hint">How to make the resource local and safe.</param>
     public static CliException ResourceRefused(string message, string hint) => CliException.Create(
         ErrorCodes.FeatureUnsupported,
         message,
-        hint: hint);
+        hint: hint,
+        details: new JsonObject { ["reason"] = "resource-refused" });
 
     /// <summary>
     /// Input content that the output cannot hold, such as a table larger than a slide table
-    /// may be. The caller has to restructure the content.
+    /// may be. The caller has to restructure the content. <c>details.reason</c> is
+    /// <c>content-too-large</c>.
     /// </summary>
     /// <param name="message">What the content is and the limit it exceeds.</param>
     /// <param name="hint">How to restructure the content.</param>
     public static CliException ContentUnsupported(string message, string hint) => CliException.Create(
         ErrorCodes.FeatureUnsupported,
         message,
-        hint: hint);
+        hint: hint,
+        details: new JsonObject { ["reason"] = "content-too-large" });
 
     /// <summary>
     /// The local environment a document engine reads, such as the font registry, holds
     /// something the engine cannot read, so every document would fail the same way.
+    /// <c>details.reason</c> is <c>environment</c>.
     /// </summary>
     /// <param name="message">What in the environment the engine cannot read.</param>
     /// <param name="hint">How to repair the environment.</param>
     public static CliException EnvironmentUnsupported(string message, string hint) => CliException.Create(
         ErrorCodes.FeatureUnsupported,
         message,
-        hint: hint);
+        hint: hint,
+        details: new JsonObject { ["reason"] = "environment" });
 
     public static CliException LicenseFileNotFound(string path, string source) => CliException.Create(
         ErrorCodes.LicenseFileNotFound,

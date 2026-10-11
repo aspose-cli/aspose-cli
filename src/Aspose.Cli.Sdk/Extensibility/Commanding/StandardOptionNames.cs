@@ -47,7 +47,7 @@ internal static class StandardOptionNames
     [
         Out, OutAlias, OutDir, Overwrite,
         Password, Password + EnvironmentSuffix, Password + StandardInputSuffix,
-        Encrypt, Encrypt + EnvironmentSuffix,
+        Encrypt, Encrypt + EnvironmentSuffix, Encrypt + StandardInputSuffix,
         FontDir,
         Ops, Set, InPlace, Backup, IfMatch, DryRun, BestEffort, Verify,
     ];

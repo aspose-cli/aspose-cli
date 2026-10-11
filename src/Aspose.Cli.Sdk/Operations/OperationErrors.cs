@@ -6,20 +6,24 @@ namespace Aspose.Cli.Sdk.Operations;
 
 /// <summary>
 /// The one shape of operation-document failures. Details always carry the operation's
-/// <c>index</c> when one operation is at fault, and its <c>op</c> name when the entry names a
-/// known operation, so an agent can fix exactly that entry.
+/// <c>id</c> when one operation is at fault, the same id its <c>applied[]</c> entry carries,
+/// and its <c>op</c> name when the entry names a known operation, so an agent can fix exactly
+/// that entry. The message names the operation the same way, such as
+/// <c>Operation op-0002 (set_values)</c>. A list of names the caller can choose from appears
+/// once, as <c>details.available</c>, and the message's last sentence names the same list.
 /// </summary>
 internal static class OperationErrors
 {
     /// <summary>
     /// Rejects the document as a whole. An unknown field, or another kind of value where an
-    /// object belongs, adds <c>allowedFields</c> and, when some are likely meant, <c>suggestions</c>.
+    /// object belongs, lists the fields the object accepts in <c>available</c> and, when some
+    /// are likely meant, names them in <c>suggestions</c>.
     /// </summary>
     internal static CliException Invalid(string reason, string hint, AllowedFieldsException? field = null)
     {
         var details = new JsonObject { ["reason"] = reason };
         AddAllowedFields(details, field);
-        return CliException.Create(ErrorCodes.OpsInvalid, $"The operation document is invalid: {reason}",
+        return CliException.Create(ErrorCodes.OpsInvalid, $"The operation document is invalid: {reason}{Listed(field?.Mistake)}",
             hint: field?.Mistake?.Hint(hint) ?? hint, details: details);
     }
 
@@ -30,14 +34,10 @@ internal static class OperationErrors
     /// as <c>suggestions</c>.
     /// </summary>
     internal static CliException InvalidAt(
-        int index, string? name, string reason, string hint, ErrorCode? cause = null,
+        string id, string? name, string reason, string hint, ErrorCode? cause = null,
         AllowedFieldsException? field = null, Mistake? value = null)
     {
-        var details = new JsonObject { ["index"] = index };
-        if (name is not null)
-        {
-            details["op"] = name;
-        }
+        JsonObject details = Identify(id, name);
         details["reason"] = reason;
         if (cause is not null)
         {
@@ -46,14 +46,14 @@ internal static class OperationErrors
         AddAllowedFields(details, field);
         value?.WriteTo(details);
         Mistake? mistake = value ?? field?.Mistake;
-        string subject = name is null ? $"Operation {index}" : $"Operation {index} ({name})";
-        return CliException.Create(ErrorCodes.OpsInvalid, $"{subject} is invalid: {reason}",
+        return CliException.Create(ErrorCodes.OpsInvalid, $"{Subject(id, name)} is invalid: {reason}{Listed(mistake)}",
             hint: mistake?.Hint(hint) ?? hint, details: details);
     }
 
     /// <summary>
     /// Rejects every invalid operation of a batch at once, so a caller fixes them in one pass.
-    /// The first failure leads; with more than one, <c>details.errors</c> lists the details of each.
+    /// With more than one, the first leads the details and <c>details.errors</c> lists the
+    /// details of each; the message counts them and quotes the first.
     /// </summary>
     internal static CliException InvalidAll(IReadOnlyList<CliException> failures)
     {
@@ -65,9 +65,9 @@ internal static class OperationErrors
 
         JsonObject details = first.Details!.DeepClone().AsObject();
         details["errors"] = new JsonArray([.. failures.Select(static failure => failure.Details!.DeepClone())]);
-        int more = failures.Count - 1;
-        string others = more == 1 ? "1 more operation is invalid" : $"{more} more operations are invalid";
-        return CliException.Create(ErrorCodes.OpsInvalid, $"{first.Message}; {others}, listed in details.errors",
+        return CliException.Create(
+            ErrorCodes.OpsInvalid,
+            $"{failures.Count} operations are invalid, each listed in details.errors; the first: {first.Message}",
             hint: first.Hint, details: details);
     }
 
@@ -75,17 +75,49 @@ internal static class OperationErrors
     /// Rejects an entry whose op names no operation of the vocabulary, listing the operations in
     /// <c>available</c> and, when some are likely meant, naming them in <c>suggestions</c>.
     /// </summary>
-    internal static CliException UnknownAt(int index, string reason, string hint, Mistake operation)
+    internal static CliException UnknownAt(string id, string reason, string hint, Mistake operation)
     {
-        var details = new JsonObject
-        {
-            ["index"] = index,
-            ["reason"] = reason,
-        };
+        JsonObject details = Identify(id, name: null);
+        details["reason"] = reason;
         operation.WriteTo(details);
-        return CliException.Create(ErrorCodes.OpsInvalid, $"Operation {index} is invalid: {reason}",
+        return CliException.Create(ErrorCodes.OpsInvalid, $"{Subject(id, name: null)} is invalid: {reason}{Listed(operation)}",
             hint: operation.Hint(hint), details: details);
     }
+
+    /// <summary>Keeps a domain failure's own code (for example SHEET_NOT_FOUND) and names the operation.</summary>
+    internal static CliException FailedAt(string id, string name, CliException cause)
+    {
+        JsonObject details = cause.Details?.DeepClone().AsObject() ?? [];
+        details["id"] = id;
+        details["op"] = name;
+        return CliException.Create(cause.Code, $"{Subject(id, name)} failed: {cause.Message}",
+            hint: cause.Hint, details: details, innerException: cause);
+    }
+
+    /// <summary>
+    /// An engine failure can leave the document half changed, so the batch stops in every mode
+    /// and publishes nothing; the message says so because best-effort otherwise continues.
+    /// </summary>
+    internal static CliException EngineFailedAt(string id, string name, EngineOpException failure) => EngineErrors.EngineFailed(
+        $"{Subject(id, name)} failed inside the document engine, so the batch stopped and nothing was written: {failure.Message}",
+        failure,
+        Identify(id, name));
+
+    private static string Subject(string id, string? name) => name is null ? $"Operation {id}" : $"Operation {id} ({name})";
+
+    private static JsonObject Identify(string id, string? name)
+    {
+        var details = new JsonObject { ["id"] = id };
+        if (name is not null)
+        {
+            details["op"] = name;
+        }
+
+        return details;
+    }
+
+    /// <summary>The sentence that names the choices of a mistake, after the reason; empty without one.</summary>
+    private static string Listed(Mistake? mistake) => mistake is null ? string.Empty : $". {mistake.MustBeOneOf()}";
 
     private static void AddAllowedFields(JsonObject details, AllowedFieldsException? field)
     {
@@ -94,26 +126,17 @@ internal static class OperationErrors
             return;
         }
 
-        details["allowedFields"] = new JsonArray([.. field.AllowedFields.Select(static item => (JsonNode)item)]);
-        field.Mistake?.WriteTo(details, maximumAvailable: 0);
-    }
+        if (field.Mistake is { } mistake)
+        {
+            mistake.WriteTo(details);
+            return;
+        }
 
-    /// <summary>Keeps a domain failure's own code (for example SHEET_NOT_FOUND) and adds its position.</summary>
-    internal static CliException FailedAt(int index, string name, CliException cause)
-    {
-        JsonObject details = cause.Details?.DeepClone().AsObject() ?? [];
-        details["index"] = index;
-        details["op"] = name;
-        return CliException.Create(cause.Code, $"Operation {index} ({name}) failed: {cause.Message}",
-            hint: cause.Hint, details: details, innerException: cause);
+        int listed = Math.Min(CliErrors.MaximumAvailableNames, field.AllowedFields.Count);
+        details["available"] = new JsonArray([.. field.AllowedFields.Take(listed).Select(static item => (JsonNode)item)]);
+        if (listed < field.AllowedFields.Count)
+        {
+            details["availableCount"] = field.AllowedFields.Count;
+        }
     }
-
-    /// <summary>
-    /// An engine failure can leave the document half changed, so the batch stops in every mode
-    /// and publishes nothing; the message says so because best-effort otherwise continues.
-    /// </summary>
-    internal static CliException EngineFailedAt(int index, string name, EngineOpException failure) => EngineErrors.EngineFailed(
-        $"Operation {index} ({name}) failed inside the document engine, so the batch stopped and nothing was written: {failure.Message}",
-        failure,
-        new JsonObject { ["index"] = index, ["op"] = name });
 }

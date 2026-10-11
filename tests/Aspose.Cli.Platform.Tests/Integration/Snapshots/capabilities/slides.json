@@ -36,8 +36,8 @@
         "command": "edit",
         "inputSchema": "v2/slides/ops",
         "operationSchema": "aspose-cli schema v2/slides/ops --operation <op>",
-        "contractFingerprint": "sha256:081a53f836cdf8671cc7751e4fe32863b28fc21b7cc49bb80f9602d80a2f296a",
-        "maximumOperationCount": 256,
+        "contractFingerprint": "sha256:24f09617bbd172ebea2e907212ed34cfb0f00f0a64ff7d9af50281236f676d09",
+        "maximumOperationCount": 10000,
         "ops": [
           "add_section",
           "add_slide",
@@ -672,6 +672,25 @@
             "description": "Name of an environment variable holding the password for the output presentation."
           },
           {
+            "name": "--encrypt-stdin",
+            "aliases": [],
+            "type": "boolean",
+            "minimumArity": 0,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": true,
+            "allowedValues": [
+              "false",
+              "true"
+            ],
+            "secret": true,
+            "valueSource": "stdin",
+            "inputKind": "none",
+            "description": "Read the password for the output presentation from the first line of stdin."
+          },
+          {
             "name": "--font-dir",
             "aliases": [],
             "type": "string[]",
@@ -880,6 +899,25 @@
             "description": "Name of an environment variable holding the password for the output presentation."
           },
           {
+            "name": "--encrypt-stdin",
+            "aliases": [],
+            "type": "boolean",
+            "minimumArity": 0,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": true,
+            "allowedValues": [
+              "false",
+              "true"
+            ],
+            "secret": true,
+            "valueSource": "stdin",
+            "inputKind": "none",
+            "description": "Read the password for the output presentation from the first line of stdin."
+          },
+          {
             "name": "--font-dir",
             "aliases": [],
             "type": "string[]",
@@ -1083,6 +1121,25 @@
             "description": "Name of an environment variable holding the password for the output presentation."
           },
           {
+            "name": "--encrypt-stdin",
+            "aliases": [],
+            "type": "boolean",
+            "minimumArity": 0,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": true,
+            "allowedValues": [
+              "false",
+              "true"
+            ],
+            "secret": true,
+            "valueSource": "stdin",
+            "inputKind": "none",
+            "description": "Read the password for the output presentation from the first line of stdin."
+          },
+          {
             "name": "--font-dir",
             "aliases": [],
             "type": "string[]",
@@ -1140,7 +1197,7 @@
             "type": "string",
             "minimumArity": 1,
             "maximumArity": 1,
-            "required": true,
+            "required": false,
             "recursive": false,
             "hidden": false,
             "hasDefault": false,
@@ -1148,7 +1205,7 @@
             "secret": false,
             "valueSource": "command-line",
             "inputKind": "json-source",
-            "description": "The ops JSON: a path to the document, '-' to read it from stdin, or the document itself when the value starts with { or [ (inline). To name a file whose name starts with '[', prefix it with ./ . Vocabulary: aspose-cli schema v2/slides/ops."
+            "description": "The ops JSON, an object with ops or the bare array of operations: a path to the document, '-' to read it from stdin, or the document itself when the value starts with { or [ (inline). To name a file whose name starts with '[', prefix it with ./ . At most 10000 operations. Vocabulary: aspose-cli schema v2/slides/ops."
           },
           {
             "name": "--out",
@@ -2621,7 +2678,7 @@
     "v2/slides/ops": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "$id": "https://schemas.aspose.com/aspose-cli/v2/slides/ops.schema.json",
-      "description": "The operation document of slides edit --ops. Every slide and shape target resolves against the presentation as it was before the first operation, so content inserted earlier in the batch cannot be targeted, and a target deleted earlier fails the operation. Operations apply in order. Without --best-effort the batch is atomic: if any operation fails, no file is written. With --best-effort the operations that succeed are kept and saved, each one that fails is reported, and the command exits 8 when any failed; an invalid document or a failure inside the document engine still writes nothing.",
+      "description": "The operation document of slides edit --ops. Every slide and shape target resolves against the presentation as it was before the first operation, so content inserted earlier in the batch cannot be targeted, and a target deleted earlier fails the operation. Operations apply in order. Without --best-effort the batch is atomic: if any operation fails, no file is written. With --best-effort the operations that succeed are kept and saved, each one that fails is reported, and the command exits 8 when any failed; an invalid document or a failure inside the document engine still writes nothing. The bare array of operations is accepted as the document with only its ops.",
       "type": "object",
       "required": [
         "ops"
@@ -2644,7 +2701,7 @@
           "description": "Operations applied in order.",
           "type": "array",
           "minItems": 1,
-          "maxItems": 256,
+          "maxItems": 10000,
           "items": {
             "oneOf": [
               {

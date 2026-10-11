@@ -19,10 +19,6 @@ public sealed record BoundedOperationOutcome
     [Pattern("^[A-Za-z][A-Za-z0-9._-]{0,63}$")]
     public required string Id { get; init; }
 
-    /// <summary>Zero-based position in the input batch.</summary>
-    [Minimum(0)]
-    public required int Index { get; init; }
-
     /// <summary>Product-owned operation id.</summary>
     public required string Op { get; init; }
 

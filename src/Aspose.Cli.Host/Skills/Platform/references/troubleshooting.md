@@ -103,7 +103,7 @@ aspose-cli capabilities --output-format json
   the new `source.fingerprint.sha256`.
 - `PASSWORD_REQUIRED`: no password was given. `PASSWORD_INVALID`: the given one
   failed. Ask the user; never guess. Pass it with `--password-env <VAR>` or
-  `--password-stdin`. A command that reads two documents, such as `compare`,
+  `--password-stdin` (one stdin option per command). A command that reads two documents, such as `compare`,
   names the one in `details.input` and its own option in the hint, for example
   `--right-password-env`. A protect or unprotect operation, such as
   `unprotect_sheet`, reads its password from the variable its `passwordEnv`
@@ -122,7 +122,7 @@ aspose-cli capabilities --output-format json
   `details.available` and the closest names in `details.suggestions`; a list
   longer than 50 names is cut there and `details.availableCount` gives the
   total.
-- `OPS_INVALID`: `details.index`, `details.op` and `details.reason` locate the
+- `OPS_INVALID`: `details.id`, `details.op` and `details.reason` locate the
   failing operation (`aspose-cli docs editing`).
 - `*_NOT_FOUND`: `details.available` and `details.suggestions` list what
   exists (`aspose-cli docs editing`). `PAGE_NOT_FOUND` reports

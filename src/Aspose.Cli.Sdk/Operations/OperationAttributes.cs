@@ -18,9 +18,6 @@ public sealed class OperationVocabularyAttribute(string schemaId) : Attribute
     /// <summary>The schema id of the operation document relative to the product.</summary>
     public string SchemaId { get; } = schemaId;
 
-    /// <summary>Largest accepted number of operations in one document.</summary>
-    public int MaximumOperations { get; set; }
-
     /// <summary>
     /// The source-generated <c>JsonSerializerContext</c> that lists every operation of the
     /// vocabulary with camelCase property names.
