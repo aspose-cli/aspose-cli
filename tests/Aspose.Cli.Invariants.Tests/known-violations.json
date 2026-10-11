@@ -1347,13 +1347,6 @@
       "actual": "pdf extract --to lists fdf, json, xfdf; convertFormats is docx, epub, html, jpeg, md, pdfa-1b, pdfa-2b, pdfa-3b, png, pptx, svg, tiff, txt, xlsx, xps."
     },
     {
-      "case": "C-R30 | pdf flatten_forms on a document without forms",
-      "invariant": "C-R30",
-      "rule": "C-R30",
-      "cause": "pdf-items-affected-not-from-snapshots",
-      "actual": "itemsAffected is 0 without an OP_NO_EFFECT warning"
-    },
-    {
       "case": "C-R33 | v2/pdf/form-result none",
       "invariant": "C-R33",
       "rule": "C-R33",
@@ -1478,13 +1471,6 @@
       "rule": "C-R21",
       "cause": "pdf-state-not-read-back",
       "actual": "custom: no read reports it"
-    },
-    {
-      "case": "C-R30 | pdf targets read <unit>/<address>",
-      "invariant": "C-R30",
-      "rule": "C-R30",
-      "cause": "pdf-targets-not-unit-address",
-      "actual": "targets outside <unit>/<address>: add_attachment pdf/attachment; add_bookmark pdf/bookmark/1; add_footer_text pdf/page/1; add_header_text pdf/page/1; add_link pdf/page/1; add_page_numbers pdf/page/1; add_stamp_image pdf/page/1; add_watermar..."
     },
     {
       "case": "C-R24 | pdf validate of a PDF that is not PDF/A",

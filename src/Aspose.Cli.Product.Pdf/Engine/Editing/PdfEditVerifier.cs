@@ -12,15 +12,17 @@ namespace Aspose.Cli.Product.Pdf.Engine.Editing;
 
 /// <summary>
 /// Records what each applied operation of a batch should leave in the output, then reads the
-/// staged output back and reports every expectation it does not meet. Only effects with a
+/// staged output back and reports every expectation it does not meet; the SDK runner records
+/// each applied operation and turns the read-back into the verification. Only effects with a
 /// reliable read-back are recorded: form field values, flattened fields, redacted text, bookmarks, document
 /// information, attachments and the page count. The batch is checked as a whole: an
 /// expectation a later operation supersedes (the same field, key or attachment set again, the
 /// outline or the pages renumbered) is dropped, and an operation is reported as checked only
 /// when every effect it recorded was read back.
 /// </summary>
-internal sealed class PdfEditVerifier
+internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
 {
+    private readonly Document _document;
     private readonly List<(string Id, string Op)> _recorded = [];
     private readonly HashSet<string> _incomplete = new(StringComparer.Ordinal);
     private readonly HashSet<string> _checked = new(StringComparer.Ordinal);
@@ -36,30 +38,23 @@ internal sealed class PdfEditVerifier
     private int _expectedPages;
     private int _expectedBookmarks;
 
+    /// <param name="document">The document the batch edits, which each record reads as the operation left it.</param>
     internal PdfEditVerifier(Document document)
     {
+        _document = document;
         _expectedPages = document.Pages.Count;
         _expectedBookmarks = PdfMutationSupport.CountOutline(document.Outlines);
     }
 
     /// <summary>
-    /// Records the effect of one operation that applied, against the document it left. It never
-    /// throws for the document's content: an effect it cannot record is left unchecked, so it
-    /// cannot turn an applied operation into a failed one.
+    /// Records the effect of one operation that applied, against the document it left. An effect
+    /// it cannot read throws, and the SDK leaves the operation unchecked.
     /// </summary>
-    internal void Record(PdfOp operation, string id, long affected, Document document)
+    public void Record(PdfOp operation, AppliedOperation applied)
     {
+        string id = operation.Id!;
         _recorded.Add((id, PdfOp.Catalog.NameOf(operation)));
-        try
-        {
-            RecordEffect(operation, id, affected, document);
-        }
-        catch (Exception exception) when (
-            exception.GetType().Assembly == typeof(Document).Assembly
-            || exception is InvalidOperationException or ArgumentException or IOException)
-        {
-            _incomplete.Add(id);
-        }
+        RecordEffect(operation, id, applied.ItemsAffected, _document);
     }
 
     private void RecordEffect(PdfOp operation, string id, long affected, Document document)
@@ -185,7 +180,7 @@ internal sealed class PdfEditVerifier
     }
 
     /// <summary>Reads the reopened output back against every recorded expectation.</summary>
-    internal PdfEditVerification Verify(Document output, LicenseState license, OperationDeadline? deadline)
+    internal VerificationFacts Verify(Document output, LicenseState license, OperationDeadline? deadline)
     {
         var issues = new List<VerificationIssue>();
         VerifyPages(output, issues);
@@ -195,15 +190,7 @@ internal sealed class PdfEditVerifier
         VerifyBookmarks(output, issues);
         VerifyMetadata(output, issues);
         VerifyAttachments(output, issues);
-        return new PdfEditVerification
-        {
-            Ok = issues.Count == 0,
-            Issues = issues,
-            CheckedOps = [.. _recorded
-                .Select(static item => item.Id)
-                .Where(id => _checked.Contains(id) && !_incomplete.Contains(id))
-                .Distinct(StringComparer.Ordinal)],
-        };
+        return new VerificationFacts(issues, [.. _checked.Where(id => !_incomplete.Contains(id))]);
     }
 
     private void VerifyPages(Document output, List<VerificationIssue> issues)

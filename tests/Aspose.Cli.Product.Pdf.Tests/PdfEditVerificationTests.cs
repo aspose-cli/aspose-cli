@@ -177,17 +177,16 @@ public sealed class PdfEditVerificationTests
     }
 
     [Fact]
-    public void Record_LeavesAnEffectItCannotRecordUncheckedInsteadOfThrowing()
+    public void Record_ThrowsForAnEffectItCannotRecord()
     {
         using var fixture = new PdfEngineFixture();
         using var document = new Document(CreateDocument(fixture));
         var verifier = new PdfEditVerifier(document);
 
-        // Bookmark 9 does not exist, so the new bookmark's index cannot be computed.
-        verifier.Record(new AddBookmarkOp { Title = "Orphan", Page = 1, Parent = "9" }, "op-0001", 1, document);
-        PdfEditVerification verification = verifier.Verify(document, fixture.LicenseState, deadline: null);
-
-        Assert.Empty(verification.CheckedOps);
+        // Bookmark 9 does not exist, so the new bookmark's index cannot be computed; the SDK
+        // runner then leaves the operation unchecked.
+        Assert.Throws<InvalidOperationException>(() => verifier.Record(
+            new AddBookmarkOp { Id = "op-0001", Title = "Orphan", Page = 1, Parent = "9" }, new AppliedOperation(1, [])));
     }
 
     [Fact]
@@ -203,14 +202,14 @@ public sealed class PdfEditVerificationTests
 
         using var document = new Document(input);
         var verifier = new PdfEditVerifier(document);
-        verifier.Record(new RedactTextOp { Pattern = "(a+)+$", Regex = true }, "op-0001", 0, document);
+        verifier.Record(new RedactTextOp { Id = "op-0001", Pattern = "(a+)+$", Regex = true }, new AppliedOperation(0, []));
 
-        PdfEditVerification verification = verifier.Verify(document, fixture.LicenseState, deadline: null);
+        VerificationFacts verification = verifier.Verify(document, fixture.LicenseState, deadline: null);
 
         VerificationIssue issue = Assert.Single(verification.Issues);
         Assert.Equal("PDF_VERIFICATION_INCOMPLETE", issue.Code);
         Assert.Equal("pdf/page/1", issue.Location);
-        Assert.Empty(verification.CheckedOps);
+        Assert.Empty(verification.Checked);
     }
 
     public static TheoryData<string> Unapplied =>
@@ -256,12 +255,11 @@ public sealed class PdfEditVerificationTests
             _ => throw new ArgumentOutOfRangeException(nameof(operation)),
         };
 
-        verifier.Record(op, "op-0001", affected, document);
-        PdfEditVerification verification = verifier.Verify(document, fixture.LicenseState, deadline: null);
+        verifier.Record(op with { Id = "op-0001" }, new AppliedOperation(affected, []));
+        VerificationFacts verification = verifier.Verify(document, fixture.LicenseState, deadline: null);
 
-        Assert.False(verification.Ok);
         Assert.Contains(verification.Issues, issue => issue.Code == code);
-        Assert.Equal(["op-0001"], verification.CheckedOps);
+        Assert.Equal(["op-0001"], verification.Checked);
     }
 
     [Fact]

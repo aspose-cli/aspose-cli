@@ -51,11 +51,22 @@ them. List every bookmark to delete in one `delete_bookmarks` operation, with
 indexes read from one `pdf inspect --detail outline`; list a parent without its
 children. Later operations of the batch see the renumbered outline; put
 `add_bookmark` operations that name a parent before the deletion, or reinspect
-and edit in a second batch. Each applied operation's `targets` name the
-bookmarks it added or deleted as `pdf/bookmark/<index>`, a deleted one by the
-index it had before the deletion; `"all": true` reports `pdf/bookmark`. An
-operation that changed more than 100 pages or bookmarks reports `pdf`, the
-document root, instead.
+and edit in a second batch.
+
+Each applied operation's `itemsAffected` counts the objects it changed and its
+`targets` name them: pages as `page/<n>`, bookmarks as `bookmark/<index>`, and
+`metadata/<key>`, `attachment/<name>`, `page-label/<start page>`,
+`field/<name>` and `security/encryption`. A deleted page or bookmark keeps the
+address it had before the deletion, and a deleted bookmark counts with each of
+its children. A page counts once however much changed on it, such as every
+match a redaction removed there. An operation that changed nothing reports 0
+and an `OP_NO_EFFECT` warning. Past 100 targets, an operation reports one range
+per unit that covers them, such as `page/1-150`.
+
+Aspose.PDF writes `creator`, `producer` and `modificationDate` into every PDF
+it saves, so no operation removes or sets them: `remove_metadata` leaves them
+out of its `targets` and warns `METADATA_REWRITTEN`, as does a `set_metadata`
+whose `custom` sets `Creator`, `Producer` or `ModDate`.
 
 Rectangles must lie within the visible page box. Reinspect geometry and review
 after changing crop, size or rotation, because later rectangles follow the new

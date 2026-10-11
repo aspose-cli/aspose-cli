@@ -6,15 +6,16 @@ namespace Aspose.Cli.Product.Pdf.Engine.Editing;
 
 /// <summary>
 /// Applies validated PDF operations to one document. Each operation has its handler in the
-/// page, content or document part of this class, and returns the number of items it changed.
+/// page, content or document part of this class; what it changed is the SDK's comparison of
+/// the snapshots <see cref="PdfSnapshots"/> takes around it.
 /// </summary>
-internal sealed partial class PdfMutationHandlers : IPdfOpHandler<long>
+internal sealed partial class PdfMutationHandlers : IPdfOpHandler<ValueTuple>
 {
     private readonly PdfDocumentLoader _loader;
     private readonly InputResourceScope _inputs;
     private readonly Document _document;
     private readonly IReadOnlyDictionary<string, Secret>? _secrets;
-    private readonly ISet<int> _touched;
+    private readonly PdfPageIdentities _pages;
     private readonly ISet<int> _textMoved;
 
     /// <summary>Creates the handlers of one operation.</summary>
@@ -22,21 +23,21 @@ internal sealed partial class PdfMutationHandlers : IPdfOpHandler<long>
     /// <param name="inputs">Reads and charges the files that operations read.</param>
     /// <param name="document">The document being edited.</param>
     /// <param name="secrets">The operations' secrets by environment variable name.</param>
-    /// <param name="touched">Receives the pages the operation changes.</param>
+    /// <param name="pages">The identities of the document's pages, which a moved page keeps.</param>
     /// <param name="textMoved">Receives the pages on which a redaction moved the remaining text.</param>
     internal PdfMutationHandlers(
         PdfDocumentLoader loader,
         InputResourceScope inputs,
         Document document,
         IReadOnlyDictionary<string, Secret>? secrets,
-        ISet<int> touched,
+        PdfPageIdentities pages,
         ISet<int> textMoved)
     {
         _loader = loader;
         _inputs = inputs;
         _document = document;
         _secrets = secrets;
-        _touched = touched;
+        _pages = pages;
         _textMoved = textMoved;
     }
 
@@ -44,16 +45,25 @@ internal sealed partial class PdfMutationHandlers : IPdfOpHandler<long>
     /// Applies one operation; an Aspose.PDF failure becomes an engine failure. A file the
     /// operation reads is opened through the SDK, which reports a file it cannot open.
     /// </summary>
-    internal long Run(PdfOp operation)
+    internal void Run(PdfOp operation)
     {
         try
         {
-            return operation.Accept(this);
+            Engine(() => operation.Accept(this));
+        }
+        finally { _inputs.ThrowIfFailed(); }
+    }
+
+    /// <summary>Calls Aspose.PDF; a failure inside it becomes an engine failure.</summary>
+    internal static T Engine<T>(Func<T> call)
+    {
+        try
+        {
+            return call();
         }
         catch (Exception exception) when (exception.GetType().Assembly.GetName().Name == "Aspose.PDF")
         {
             throw new EngineOpException(exception.Message, exception);
         }
-        finally { _inputs.ThrowIfFailed(); }
     }
 }

@@ -11,7 +11,7 @@ namespace Aspose.Cli.Product.Pdf.Engine.Editing;
 // Visible content, annotations and redaction.
 internal sealed partial class PdfMutationHandlers
 {
-    public long Apply(AddWatermarkTextOp operation)
+    public ValueTuple Apply(AddWatermarkTextOp operation)
     {
         IReadOnlyList<int> pages = ResolveOptional(_document, operation.Pages);
         foreach (int number in pages)
@@ -32,13 +32,12 @@ internal sealed partial class PdfMutationHandlers
             }
 
             _document.Pages[number].AddStamp(stamp);
-            _touched.Add(number);
         }
 
-        return pages.Count;
+        return default;
     }
 
-    public long Apply(AddWatermarkImageOp operation)
+    public ValueTuple Apply(AddWatermarkImageOp operation)
     {
         EnsureFile(operation.Path);
         IReadOnlyList<int> pages = ResolveOptional(_document, operation.Pages);
@@ -59,13 +58,12 @@ internal sealed partial class PdfMutationHandlers
                 VerticalAlignment = VerticalAlignment.Center,
             };
             _document.Pages[number].AddStamp(stamp);
-            _touched.Add(number);
         }
 
-        return pages.Count;
+        return default;
     }
 
-    public long Apply(AddPageNumbersOp operation)
+    public ValueTuple Apply(AddPageNumbersOp operation)
     {
         IReadOnlyList<int> pages = ResolveOptional(_document, operation.Pages);
         int ordinal = operation.Start;
@@ -75,20 +73,19 @@ internal sealed partial class PdfMutationHandlers
                 .Replace("{n}", ordinal.ToString(CultureInfo.InvariantCulture), StringComparison.Ordinal)
                 .Replace("{N}", _document.Pages.Count.ToString(CultureInfo.InvariantCulture), StringComparison.Ordinal);
             AddTextStamp(_document.Pages[number], text, operation.Position, operation.Font);
-            _touched.Add(number);
             ordinal++;
         }
 
-        return pages.Count;
+        return default;
     }
 
-    public long Apply(AddHeaderTextOp operation) =>
+    public ValueTuple Apply(AddHeaderTextOp operation) =>
         MarginText(operation.Text, operation.Pages, operation.Position, operation.Font);
 
-    public long Apply(AddFooterTextOp operation) =>
+    public ValueTuple Apply(AddFooterTextOp operation) =>
         MarginText(operation.Text, operation.Pages, operation.Position, operation.Font);
 
-    public long Apply(AddStampImageOp operation)
+    public ValueTuple Apply(AddStampImageOp operation)
     {
         Page page = PageAt(_document, operation.Page);
         EnsureFile(operation.Path);
@@ -102,11 +99,10 @@ internal sealed partial class PdfMutationHandlers
             Height = rectangle.Height,
         };
         page.AddStamp(stamp);
-        _touched.Add(operation.Page);
-        return 1;
+        return default;
     }
 
-    public long Apply(AddLinkOp operation)
+    public ValueTuple Apply(AddLinkOp operation)
     {
         Page page = PageAt(_document, operation.Page);
         var annotation = new LinkAnnotation(page, ToPdfRect(page, operation.Rect))
@@ -114,15 +110,13 @@ internal sealed partial class PdfMutationHandlers
             Action = new GoToURIAction(operation.Url),
         };
         page.Annotations.Add(annotation);
-        _touched.Add(operation.Page);
-        return 1;
+        return default;
     }
 
-    public long Apply(RedactTextOp operation)
+    public ValueTuple Apply(RedactTextOp operation)
     {
         IReadOnlyList<int> pages = ResolveOptional(_document, operation.Pages);
         PdfColor fill = ParseColor(operation.FillColor);
-        long count = 0;
         foreach (int number in pages)
         {
             Page page = _document.Pages[number];
@@ -140,23 +134,20 @@ internal sealed partial class PdfMutationHandlers
             foreach (TextFragment fragment in fragments.Reverse())
             {
                 Cover(page, fragment.Rectangle, fill).Redact();
-                count++;
             }
             NoteMovedText(number, page, before);
-            _touched.Add(number);
         }
 
-        return count;
+        return default;
     }
 
-    public long Apply(RedactAreaOp operation)
+    public ValueTuple Apply(RedactAreaOp operation)
     {
         Page page = PageAt(_document, operation.Page);
         ILookup<string, Point> before = TextRuns(page);
         Cover(page, ToPdfRect(page, operation.Rect), ParseColor(operation.FillColor)).Redact();
         NoteMovedText(operation.Page, page, before);
-        _touched.Add(operation.Page);
-        return 1;
+        return default;
     }
 
     /// <summary>
@@ -189,16 +180,15 @@ internal sealed partial class PdfMutationHandlers
             .ToLookup(static fragment => fragment.Text, static fragment => new Point(fragment.Rectangle.LLX, fragment.Rectangle.LLY));
     }
 
-    private long MarginText(string text, string? pageRange, string position, string? font)
+    private ValueTuple MarginText(string text, string? pageRange, string position, string? font)
     {
         IReadOnlyList<int> pages = ResolveOptional(_document, pageRange);
         foreach (int number in pages)
         {
             AddTextStamp(_document.Pages[number], text, position, font);
-            _touched.Add(number);
         }
 
-        return pages.Count;
+        return default;
     }
 
     private static void AddTextStamp(Page page, string text, string position, string? font)

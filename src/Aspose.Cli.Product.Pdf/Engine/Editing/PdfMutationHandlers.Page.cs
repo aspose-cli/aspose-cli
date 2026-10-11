@@ -8,7 +8,7 @@ namespace Aspose.Cli.Product.Pdf.Engine.Editing;
 // Page structure and page geometry.
 internal sealed partial class PdfMutationHandlers
 {
-    public long Apply(RotatePagesOp operation)
+    public ValueTuple Apply(RotatePagesOp operation)
     {
         IReadOnlyList<int> pages = Resolve(_document, operation.Pages);
         Rotation rotation = operation.Angle switch
@@ -22,13 +22,12 @@ internal sealed partial class PdfMutationHandlers
         foreach (int number in pages)
         {
             _document.Pages[number].Rotate = rotation;
-            _touched.Add(number);
         }
 
-        return pages.Count;
+        return default;
     }
 
-    public long Apply(DeletePagesOp operation)
+    public ValueTuple Apply(DeletePagesOp operation)
     {
         int[] pages = Resolve(_document, operation.Pages).ToArray();
         if (pages.Length == _document.Pages.Count)
@@ -37,10 +36,10 @@ internal sealed partial class PdfMutationHandlers
         }
 
         _document.Pages.Delete(pages);
-        return pages.Length;
+        return default;
     }
 
-    public long Apply(MovePagesOp operation)
+    public ValueTuple Apply(MovePagesOp operation)
     {
         int[] pages = Resolve(_document, operation.Pages).ToArray();
         EnsureInsertionPosition(_document, operation.To);
@@ -48,6 +47,7 @@ internal sealed partial class PdfMutationHandlers
         // The SDK has no page move: the pages are copied and the originals deleted, and the
         // navigation that targeted the originals is pointed at the copies.
         var navigation = PdfNavigationRetarget.Capture(_document, pages);
+        Page[] originals = [.. pages.Select(page => _document.Pages[page])];
         using Document selected = Select(_document, pages);
         int before = pages.Count(page => page < operation.To);
         _document.Pages.Delete(pages);
@@ -56,12 +56,12 @@ internal sealed partial class PdfMutationHandlers
         navigation.Retarget(_document, page => Array.IndexOf(pages, page) is var moved and >= 0
             ? at + moved
             : Renumber(page, pages, at));
-        for (int index = 0; index < pages.Length; index++)
+        for (int index = 0; index < originals.Length; index++)
         {
-            _touched.Add(at + index);
+            _pages.Carry(originals[index], _document.Pages[at + index]);
         }
 
-        return pages.Length;
+        return default;
     }
 
     /// <summary>The new number of a page that stayed while <paramref name="moved"/> moved to <paramref name="at"/>.</summary>
@@ -71,7 +71,7 @@ internal sealed partial class PdfMutationHandlers
         return remaining >= at ? remaining + moved.Length : remaining;
     }
 
-    public long Apply(InsertPagesFromOp operation)
+    public ValueTuple Apply(InsertPagesFromOp operation)
     {
         EnsureInsertionPosition(_document, operation.At);
 
@@ -82,12 +82,7 @@ internal sealed partial class PdfMutationHandlers
             : Resolve(source.Document, operation.Pages);
         using Document selected = Select(source.Document, pages);
         _document.Pages.Insert(operation.At, selected.Pages.ToArray());
-        for (int index = 0; index < pages.Count; index++)
-        {
-            _touched.Add(operation.At + index);
-        }
-
-        return pages.Count;
+        return default;
     }
 
     // The source's password comes from the operation's passwordEnv, not a command option.
@@ -103,18 +98,17 @@ internal sealed partial class PdfMutationHandlers
         }
     }
 
-    public long Apply(InsertBlankPageOp operation)
+    public ValueTuple Apply(InsertBlankPageOp operation)
     {
         EnsureInsertionPosition(_document, operation.At);
 
         Page page = _document.Pages.Insert(operation.At);
         (double width, double height) = PdfPageSizes.Dimensions(operation.Size);
         page.SetPageSize(width, height);
-        _touched.Add(operation.At);
-        return 1;
+        return default;
     }
 
-    public long Apply(CropPagesOp operation)
+    public ValueTuple Apply(CropPagesOp operation)
     {
         IReadOnlyList<int> pages = Resolve(_document, operation.Pages);
         foreach (int number in pages)
@@ -130,13 +124,12 @@ internal sealed partial class PdfMutationHandlers
                 page.CropBox = rectangle;
             }
 
-            _touched.Add(number);
         }
 
-        return pages.Count;
+        return default;
     }
 
-    public long Apply(SetPageSizeOp operation)
+    public ValueTuple Apply(SetPageSizeOp operation)
     {
         (double width, double height) = PdfPageSizes.Dimensions(operation.Size);
         IReadOnlyList<int> pages = Resolve(_document, operation.Pages);
@@ -152,9 +145,8 @@ internal sealed partial class PdfMutationHandlers
                 page.SetPageSize(width, height);
             }
 
-            _touched.Add(number);
         }
 
-        return pages.Count;
+        return default;
     }
 }
