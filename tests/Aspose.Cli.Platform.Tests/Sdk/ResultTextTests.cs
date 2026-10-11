@@ -83,10 +83,10 @@ public sealed class ResultTextTests
 
     [Theory]
     [InlineData(TableFormat.Plain, false, "\nfonts:\n")]
-    [InlineData(TableFormat.Plain, true, "\nfonts:\nnone\n")]
+    [InlineData(TableFormat.Plain, true, "\nfonts:\n-\n")]
     [InlineData(TableFormat.Markdown, false, "\n### fonts\n\n")]
-    [InlineData(TableFormat.Markdown, true, "\n### fonts\n\nnone\n")]
-    public void Section_WritesTheHeadingForTheFormatAndNoneWhenEmpty(TableFormat format, bool empty, string expected)
+    [InlineData(TableFormat.Markdown, true, "\n### fonts\n\n-\n")]
+    public void Section_WritesTheHeadingForTheFormatAndTheMissingMarkWhenEmpty(TableFormat format, bool empty, string expected)
     {
         bool writeContent = true;
         string text = Render(surface => writeContent = ResultText.Section(surface, "fonts", empty), format);
@@ -104,7 +104,7 @@ public sealed class ResultTextTests
     }
 
     [Fact]
-    public void Table_WritesOneRowPerItemUnderTheHeadingAndNoneWhenEmpty()
+    public void Table_WritesOneRowPerItemUnderTheHeadingAndTheMissingMarkWhenEmpty()
     {
         string rows = Render(surface => ResultText.Table(
             surface, "names", new[] { ("Total", "=B9"), ("Rate", "=0.2") }, ["name", "refers to"], static name => [name.Item1, name.Item2]));
@@ -112,7 +112,7 @@ public sealed class ResultTextTests
             surface, "names", Array.Empty<(string, string)>(), ["name", "refers to"], static name => [name.Item1, name.Item2]));
 
         Assert.Equal(["names:", "name   refers to", "Total  =B9", "Rate   =0.2"], Lines(rows));
-        Assert.Equal(["names:", "none"], Lines(empty));
+        Assert.Equal(["names:", "-"], Lines(empty));
     }
 
     [Fact]
@@ -123,16 +123,48 @@ public sealed class ResultTextTests
     }
 
     [Fact]
-    public void Properties_KeepsTheMapOrderOrSortsByNameAndSpellsMissingValues()
+    public void Properties_SortsByNameUnderNameAndValueColumnsAndSpellsMissingValues()
     {
         var properties = new Dictionary<string, string?> { ["Title"] = "Plan", ["Author"] = null };
 
-        string kept = Render(surface => ResultText.Properties(surface, "metadata", properties, nameColumn: "property"));
-        string sorted = Render(surface => ResultText.Properties(surface, "properties", properties, missing: "-", sortByName: true));
+        string text = Render(surface => ResultText.Properties(surface, "metadata", properties));
 
-        Assert.Equal(["metadata:", "property  value", "Title     Plan", "Author"], Lines(kept).Select(static line => line.TrimEnd()));
-        Assert.Equal(["properties:", "name    value", "Author  -", "Title   Plan"], Lines(sorted).Select(static line => line.TrimEnd()));
+        Assert.Equal(["metadata:", "name    value", "Author  -", "Title   Plan"], Lines(text).Select(static line => line.TrimEnd()));
         Assert.Empty(Render(surface => ResultText.Properties(surface, "properties", null)));
+    }
+
+    [Fact]
+    public void Table_SpellsACellWithoutAValueAsTheMissingMark()
+    {
+        string text = Render(surface => ResultText.Table(
+            surface, "attachments", new[] { ("a.txt", (string?)null), ("b.png", "") }, ["name", "type"], static item => [item.Item1, item.Item2]));
+
+        Assert.Equal(["attachments:", "name   type", "a.txt  -", "b.png  -"], Lines(text));
+    }
+
+    [Fact]
+    public void Files_WritesOneCountLineAndOneLinePerFile()
+    {
+        string text = Render(surface => ResultText.Files(
+            surface,
+            "rendered",
+            "page",
+            [
+                new ProducedFile("page 1", "out.1.png", "png", 2_048),
+                new ProducedFile(null, "out.2.png", null, 10, "192 dpi"),
+            ]));
+
+        Assert.Equal(
+            ["rendered 2 page(s)", "  page 1: out.1.png (png, 2,048 bytes)", "  out.2.png (10 bytes, 192 dpi)"],
+            Lines(text));
+    }
+
+    [Fact]
+    public void Touched_ListsTheChangedPartsAndWritesNothingWithoutThem()
+    {
+        Assert.Equal(["pages touched: 1, 3"], Lines(Render(surface => ResultText.Touched(surface, "pages", new[] { 1, 3 }))));
+        Assert.Empty(Render(surface => ResultText.Touched<int>(surface, "pages", [])));
+        Assert.Empty(Render(surface => ResultText.Touched<int>(surface, "pages", null)));
     }
 
     [Fact]
@@ -150,20 +182,39 @@ public sealed class ResultTextTests
     public void Points_KeepsAtMostTwoDecimals(double value, string expected) =>
         Assert.Equal(expected, TableText.Points(value));
 
-    [Theory]
-    [InlineData(true, false, "  FIELD_STALE [block 4]: 1 field needs an update")]
-    [InlineData(false, false, "  FIELD_STALE: 1 field needs an update")]
-    [InlineData(true, true, "  FIELD_STALE [block 4]: 1 field needs an update|    hint: Update the fields.")]
-    public void Verification_WritesTheOutcomeEvidenceAndTheRequestedIssueParts(bool locations, bool hints, string expected)
+    [Fact]
+    public void Verification_WritesTheOutcomeTheCheckedOpsTheEvidenceAndEveryIssueWithItsLocationAndHint()
     {
-        VerificationIssue[] issues =
-        [
-            new() { Code = "FIELD_STALE", Message = "1 field needs an update", Location = "block 4", Hint = "Update the fields." },
-        ];
+        var verification = new TestVerification
+        {
+            Ok = false,
+            CheckedOps = ["op-0001", "title"],
+            Issues =
+            [
+                VerificationIssue.From(new Warning(new WarningCode("FIELD_STALE"), "1 field needs an update") { Location = "block 4", Hint = "Update the fields." }),
+                VerificationIssue.From(new Warning(new WarningCode("COUNT_CHANGED"), "The count changed.")),
+            ],
+        };
 
-        string text = Render(surface => ResultText.Verification(surface, ok: false, issues, "; 1 direct", locations, hints));
+        string text = Render(surface => ResultText.Verification(surface, verification, "1 direct"));
 
-        Assert.Equal(["verification: needs attention; 1 direct", .. expected.Split('|')], Lines(text));
+        Assert.Equal(
+            [
+                "verification: needs attention; checked ops: op-0001, title; 1 direct",
+                "  FIELD_STALE [block 4]: 1 field needs an update",
+                "    hint: Update the fields.",
+                "  COUNT_CHANGED: The count changed.",
+            ],
+            Lines(text));
+    }
+
+    [Fact]
+    public void Verification_SpellsNoCheckedOpsAsTheMissingMarkAndWritesNothingWithoutAVerification()
+    {
+        string text = Render(surface => ResultText.Verification(surface, new TestVerification { Ok = true, CheckedOps = [], Issues = [] }));
+
+        Assert.Equal(["verification: ok; checked ops: -"], Lines(text));
+        Assert.Empty(Render(surface => ResultText.Verification(surface, null)));
     }
 
     private static string Render(Action<TableSurface> render, TableFormat format = TableFormat.Plain)
@@ -176,3 +227,5 @@ public sealed class ResultTextTests
     private static string[] Lines(string text) =>
         text.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
 }
+
+internal sealed record TestVerification : EditVerification;

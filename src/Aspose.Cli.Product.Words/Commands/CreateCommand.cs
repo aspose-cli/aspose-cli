@@ -1,5 +1,6 @@
 using System.CommandLine;
 using Aspose.Cli.Sdk.Errors;
+using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.Extensibility.Output;
 using Aspose.Cli.Sdk.IO;
 
@@ -59,6 +60,11 @@ internal static class CreateCommand
             [
                 "words create report.docx --markdown report.md --template brand.docx --title \"Quarterly report\"",
                 "words create letter.docx --template letter.dotx",
+            ],
+            Links =
+            [
+                CommandHelpLink.Docs(WordsModule.Manifest, "report-from-markdown", "a report from Markdown and a template"),
+                CommandHelpLink.Docs(WordsModule.Manifest, "document-standards", "professional document construction"),
             ],
         };
     }

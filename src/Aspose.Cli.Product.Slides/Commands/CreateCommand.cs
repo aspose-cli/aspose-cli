@@ -1,4 +1,5 @@
 using System.CommandLine;
+using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.Extensibility.Commanding;
 using Aspose.Cli.Sdk.Extensibility.Output;
 using Aspose.Cli.Sdk.IO;
@@ -11,7 +12,7 @@ internal static class CreateCommand
     {
         var markdown = new Option<string?>("--from-markdown") { Description = "Markdown outline to author." }.WithInput(InputKind.File);
         var template = new Option<string?>("--template") { Description = "Presentation whose masters, layouts and theme are reused." }.WithInput(InputKind.File);
-        var size = new Option<string?>("--size") { Description = "16x9 or 4x3; template size is preserved when omitted." }.WithInput(InputKind.None);
+        var size = new Option<string?>("--size") { Description = "Slide size; the template size is kept when omitted." }.WithInput(InputKind.None);
         size.AcceptOnlyFromAmong("16x9", "4x3");
         return new(
             "create",
@@ -38,10 +39,21 @@ internal static class CreateCommand
                     EncryptPassword = encryptPassword,
                 };
             },
-            Table);
+            Table)
+        {
+            Examples =
+            [
+                "slides create deck.pptx --from-markdown outline.md --template brand.pptx",
+                "slides create blank.pptx --size 4x3",
+            ],
+            Links =
+            [
+                CommandHelpLink.Docs(SlidesModule.Manifest, "deck-from-outline", "a deck from a Markdown outline"),
+                CommandHelpLink.Docs(SlidesModule.Manifest, "outline-authoring", "the outline grammar"),
+            ],
+        };
     }
 
     internal static void Table(SlidesCreateResult result, TableSurface surface) =>
-        surface.Out.WriteLine(
-            $"created {result.Output.Path} ({result.SlideCount} slide(s), {TableText.Bytes(result.Output.SizeBytes)})");
+        ResultText.Produced(surface, result.Output, $"{result.SlideCount} slide(s)");
 }

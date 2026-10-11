@@ -42,8 +42,8 @@ internal static class CommonRenderers
                 table.AddRow(
                     product.Product,
                     product.Mode,
-                    product.Source ?? "-",
-                    product.Problem ?? "-");
+                    product.Source,
+                    product.Problem);
             }
 
             table.WriteTo(surface.Out, surface.Format);
@@ -119,7 +119,7 @@ internal static class CommonRenderers
             var table = new TextTable("command", "description");
             foreach (CommandCapabilitiesSummary command in product.Commands)
             {
-                table.AddRow($"{product.Id} {command.Command}", command.Description ?? "-");
+                table.AddRow($"{product.Id} {command.Command}", command.Description);
             }
 
             table.WriteTo(surface.Out, surface.Format);
@@ -203,16 +203,16 @@ internal static class CommonRenderers
         var table = new TextTable("product", "default font", "kind", "location");
         foreach (ProductFonts product in fonts.Products)
         {
-            string name = product.Product ?? "-";
+            string? name = product.Product;
             string fallback = product.DefaultFont ?? "(engine fallback)";
             if (product.Sources.Count == 0)
             {
-                table.AddRow(name, fallback, "(platform defaults)", "-");
+                table.AddRow(name, fallback, "(platform defaults)", null);
             }
 
             foreach (FontSource source in product.Sources)
             {
-                table.AddRow(name, fallback, source.Kind, source.Location ?? "-");
+                table.AddRow(name, fallback, source.Kind, source.Location);
             }
         }
 
@@ -229,7 +229,7 @@ internal static class CommonRenderers
         var table = new TextTable("font", "available", "substituted by");
         foreach (FontAvailability font in check.Fonts)
         {
-            table.AddRow(font.Name, TableText.YesNo(font.Available), font.SubstitutedBy ?? "-");
+            table.AddRow(font.Name, TableText.YesNo(font.Available), font.SubstitutedBy);
         }
 
         table.WriteTo(surface.Out, surface.Format);
@@ -332,7 +332,7 @@ internal static class CommonRenderers
                 session.Id,
                 session.Product,
                 TableText.Int(session.Pid),
-                session.Revision?.ToString(System.Globalization.CultureInfo.InvariantCulture) ?? "-",
+                session.Revision?.ToString(System.Globalization.CultureInfo.InvariantCulture),
                 session.View,
                 session.File,
                 session.Url);

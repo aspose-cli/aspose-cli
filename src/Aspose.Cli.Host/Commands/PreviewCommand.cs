@@ -61,10 +61,7 @@ internal static class PreviewCommand
                 "no file was given",
                 $"Run '{DistributionInfo.CommandName} preview open <file>'.");
         }
-        int port = parse.GetValue(symbols.Port);
-        OptionGuards.EnsureInRange(
-            "--port", port, 0, MaxPort,
-            "Pass --port 0 for a system-assigned port, or a port from 1 to 65535.");
+        int port = parse.GetInRange(symbols.Port, "Pass --port 0 for a system-assigned port, or a port from 1 to 65535.");
         string input = context.Paths.ResolveInput(requested);
         string view = parse.GetValue(symbols.View) ?? AutoView;
         StandardInvocation standard = symbols.Standard.Bind(
@@ -185,7 +182,7 @@ internal static class PreviewCommand
             {
                 Description = "Loopback port; 0 chooses a free port.",
                 DefaultValueFactory = _ => 0,
-            };
+            }.InRange(0, MaxPort);
             var product = new Option<string?>("--product")
             {
                 Description = "Product that reads the file; by default, the one whose format the file's content matches.",

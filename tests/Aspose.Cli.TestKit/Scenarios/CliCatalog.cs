@@ -108,7 +108,8 @@ public sealed class CliCatalog
         option["hidden"]!.GetValue<bool>(),
         option["secret"]!.GetValue<bool>(),
         option["valueSource"]!.GetValue<string>(),
-        Strings(option["allowedValues"]));
+        Strings(option["allowedValues"]),
+        option["recursive"]!.GetValue<bool>());
 
     private static CliArgument ReadArgument(JsonNode argument) => new(
         argument["inputKind"]?.GetValue<string>(),
@@ -161,7 +162,10 @@ public sealed record CliCommand(
     public override string ToString() => Words.Length == 0 ? "aspose-cli" : Words;
 }
 
-/// <summary>One option of a command; a hidden one is left out of help and suggestions.</summary>
+/// <summary>
+/// One option of a command; a hidden one is left out of help and suggestions, and a recursive one
+/// is taken by every command below its own.
+/// </summary>
 public sealed record CliOption(
     string Name,
     string Type,
@@ -169,7 +173,8 @@ public sealed record CliOption(
     bool Hidden,
     bool Secret,
     string ValueSource,
-    IReadOnlyList<string> AllowedValues);
+    IReadOnlyList<string> AllowedValues,
+    bool Recursive);
 
 /// <summary>One positional argument of a command.</summary>
 public sealed record CliArgument(string? InputKind, int MaximumArity, bool Required);

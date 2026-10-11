@@ -670,7 +670,7 @@
             ],
             "secret": false,
             "valueSource": "command-line",
-            "description": "What to compare: values, or formulas (values + formulas)."
+            "description": "What to compare; formulas adds the formula text to the cell results."
           },
           {
             "name": "--left-password",
@@ -734,7 +734,7 @@
             "allowedValues": [],
             "secret": false,
             "valueSource": "command-line",
-            "description": "Maximum differing cells to list across the entire workbook (1-1000000)."
+            "description": "Maximum differing cells to list across the entire workbook. Range: 1-1000000."
           },
           {
             "name": "--right-password",
@@ -1647,7 +1647,7 @@
             "allowedValues": [],
             "secret": false,
             "valueSource": "command-line",
-            "description": "Number of preview rows per sheet (1-100)."
+            "description": "Number of preview rows per sheet. Range: 1-100."
           },
           {
             "name": "--sample",
@@ -1715,7 +1715,7 @@
             "allowedValues": [],
             "secret": false,
             "valueSource": "command-line",
-            "description": "Cell budget per call (1-1000000)."
+            "description": "Cell budget per call. Range: 1-1000000."
           },
           {
             "name": "--password",
@@ -1813,7 +1813,7 @@
             ],
             "secret": false,
             "valueSource": "command-line",
-            "description": "Projection scope: values, formulas (adds f), styles (adds styleId + pool), full."
+            "description": "Projection scope: formulas adds f; the style scope adds styleId and the style pool."
           },
           {
             "name": "--sheet",
@@ -1887,7 +1887,7 @@
             "allowedValues": [],
             "secret": false,
             "valueSource": "command-line",
-            "description": "Maximum returned hits (1-10000)."
+            "description": "Maximum returned hits. Range: 1-10000."
           },
           {
             "name": "--password",
@@ -1989,7 +1989,7 @@
             ],
             "secret": false,
             "valueSource": "command-line",
-            "description": "Where to search: values, formulas or both."
+            "description": "Where to search: the cell results, the formula text or both."
           },
           {
             "name": "--sheet",
@@ -2079,7 +2079,7 @@
             "allowedValues": [],
             "secret": false,
             "valueSource": "command-line",
-            "description": "Raster resolution (36-1200); ignored for vector formats."
+            "description": "Raster resolution; ignored for vector formats. Range: 36-1200."
           },
           {
             "name": "--dry-run",
@@ -2246,7 +2246,7 @@
             ],
             "secret": false,
             "valueSource": "command-line",
-            "description": "Image format: png, jpeg or svg. Default: the --out extension's format, else png."
+            "description": "Image format. Default: the --out extension's format, else png."
           }
         ],
         "arguments": [
@@ -2997,8 +2997,8 @@
           "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/backup.schema.json"
         },
         "verification": {
-          "description": "Post-edit diff, formula, and render evidence produced by --verify.",
-          "$ref": "#/$defs/editVerification"
+          "description": "Present with --verify: the staged workbook compared cell by cell with the input, and scanned for formula errors.",
+          "$ref": "#/$defs/cellsEditVerification"
         },
         "license": {
           "description": "License mode the engine ran under; omitted when it ran licensed.",
@@ -3126,24 +3126,39 @@
             }
           ]
         },
-        "editVerification": {
+        "cellsEditVerification": {
           "description": "Post-edit evidence produced by cells edit --verify.",
           "type": "object",
           "required": [
             "ok",
+            "issues",
+            "checkedOps",
             "requestedTargets",
             "directChanges",
             "formulaResultChanges",
             "otherChanges",
             "formulaErrors",
-            "truncated",
-            "issues"
+            "truncated"
           ],
           "additionalProperties": false,
           "properties": {
             "ok": {
-              "description": "true when diffing and formula checks completed without a verification issue.",
+              "description": "Whether the verification found no issue.",
               "type": "boolean"
+            },
+            "issues": {
+              "description": "The problems found, empty when ok is true.",
+              "type": "array",
+              "items": {
+                "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/verification-issue.schema.json"
+              }
+            },
+            "checkedOps": {
+              "description": "In batch order, the ids of the operations whose effect the verification read back from the staged output; an operation left out was not checked.",
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
             },
             "requestedTargets": {
               "description": "Targets requested by the operations in this invocation.",
@@ -3183,13 +3198,6 @@
             "truncated": {
               "description": "true when the edit changed more than 1000 cells, so the change lists hold only the first 1000; the checks behind ok still cover every cell.",
               "type": "boolean"
-            },
-            "issues": {
-              "description": "Verification problems, empty when ok is true; an edit artifact is preserved when this list is non-empty.",
-              "type": "array",
-              "items": {
-                "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/verification-issue.schema.json"
-              }
             }
           }
         },

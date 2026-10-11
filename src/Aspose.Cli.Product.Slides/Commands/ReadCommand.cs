@@ -11,7 +11,7 @@ internal static class ReadCommand
         var slides = new PartRangeOption("slide", "the first 10 slides");
         var scope = new Option<string>("--scope")
         {
-            Description = "Projection scope: text, shapes or full.",
+            Description = "Projection scope: how much of each slide to return.",
             DefaultValueFactory = _ => PresentationReadScopes.Shapes,
         }.WithInput(InputKind.None);
         scope.AcceptOnlyFromAmong([.. PresentationReadScopes.All]);

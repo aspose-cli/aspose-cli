@@ -598,7 +598,7 @@ public sealed record WordsEditResult() : EngineResultEnvelope("edit-result", 2),
     public IReadOnlyList<int>? PagesTouched { get; init; }
 
     /// <summary>The checks run on the written document after reopening it.</summary>
-    public WordsVerification? Verification { get; init; }
+    public WordsEditVerification? Verification { get; init; }
 
     /// <inheritdoc />
     [JsonIgnore]
@@ -606,15 +606,13 @@ public sealed record WordsEditResult() : EngineResultEnvelope("edit-result", 2),
         || Verification is { Ok: false };
 }
 
-/// <summary>Post-edit verification evidence.</summary>
-public sealed record WordsVerification
+/// <summary>
+/// Post-edit verification evidence: the written document reopened, its field count, revision
+/// count and protection compared with the edited document, and its content compared with the
+/// input's.
+/// </summary>
+public sealed record WordsEditVerification : EditVerification
 {
-    /// <summary>Whether the written document passed every check.</summary>
-    public required bool Ok { get; init; }
-
-    /// <summary>What the checks found.</summary>
-    public required IReadOnlyList<VerificationIssue> Issues { get; init; }
-
     /// <summary>Whether the written document's content differs from the input's once both accept every tracked change.</summary>
     public bool? SemanticChangesDetected { get; init; }
 

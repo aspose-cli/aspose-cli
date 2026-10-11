@@ -1,6 +1,7 @@
 using System.CommandLine;
 using System.Globalization;
 using Aspose.Cli.Sdk.Errors;
+using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.Extensibility.Output;
 using Aspose.Cli.Sdk.IO;
 
@@ -76,14 +77,25 @@ internal static class SignCommand
                     Contact = parse.GetValue(contact),
                 };
             },
-            Table);
+            Table)
+        {
+            Examples =
+            [
+                "pdf sign contract.pdf --certificate signer.pfx --certificate-password-env PDF_SIGNING_PASSWORD",
+                "pdf sign contract.pdf --certificate signer.pfx --certificate-password-env PDF_SIGNING_PASSWORD --visible --page 2 --reason Approved --out signed.pdf",
+            ],
+            Links =
+            [
+                CommandHelpLink.Docs(PdfModule.Manifest, "forms-security", "signatures, permissions and encryption"),
+            ],
+        };
     }
 
     internal static void Table(PdfSignResult result, TableSurface surface)
     {
-        surface.Out.WriteLine($"signed: {result.Output.Path} ({TableText.Bytes(result.Output.SizeBytes)})");
+        ResultText.Produced(surface, result.Output, "signed");
         surface.Out.WriteLine($"  field: {result.Signature.Name}");
-        surface.Out.WriteLine($"  valid: {result.Signature.Valid?.ToString().ToLowerInvariant() ?? "unknown"}");
+        surface.Out.WriteLine($"  valid: {(result.Signature.Valid is bool valid ? TableText.YesNo(valid) : TableText.Missing)}");
         surface.Out.WriteLine($"  appearance: {(result.Visible ? $"visible on page {result.Page}" : "invisible")}");
     }
 

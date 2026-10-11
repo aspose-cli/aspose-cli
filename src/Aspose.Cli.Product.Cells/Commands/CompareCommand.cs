@@ -1,4 +1,5 @@
 using System.CommandLine;
+using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.Extensibility.Output;
 
 namespace Aspose.Cli.Product.Cells.Commands;
@@ -19,15 +20,15 @@ internal static class CompareCommand
     {
         var compare = new Option<string>("--compare")
         {
-            Description = "What to compare: values, or formulas (values + formulas).",
+            Description = "What to compare; formulas adds the formula text to the cell results.",
             DefaultValueFactory = _ => CompareFormulas,
         }.WithInput(InputKind.None);
         compare.AcceptOnlyFromAmong(CompareValues, CompareFormulas);
         var maxDiffsOption = new Option<int>("--max-diffs")
         {
-            Description = $"Maximum differing cells to list across the entire workbook ({MinMaxDiffs}-{MaxMaxDiffs}).",
+            Description = "Maximum differing cells to list across the entire workbook.",
             DefaultValueFactory = _ => 1000,
-        };
+        }.InRange(MinMaxDiffs, MaxMaxDiffs);
         return new(
             "compare",
             "Compare stored workbook values and optional formula text; dates use raw serial numbers.",
@@ -39,9 +40,7 @@ internal static class CompareCommand
             [compare, maxDiffsOption],
             (parse, standard) =>
             {
-                int maxDiffs = parse.GetValue(maxDiffsOption);
-                OptionGuards.EnsureInRange("--max-diffs", maxDiffs, MinMaxDiffs, MaxMaxDiffs,
-                    "Lower the budget, or narrow the comparison to the sheets that matter.");
+                int maxDiffs = parse.GetInRange(maxDiffsOption, "Lower the budget, or narrow the comparison to the sheets that matter.");
                 return new DiffRequest
                 {
                     Left = standard.Input,
@@ -58,6 +57,10 @@ internal static class CompareCommand
             [
                 "cells compare old.xlsx new.xlsx --output-format json",
                 "cells compare old.xlsx new.xlsx --compare values --max-diffs 50",
+            ],
+            Links =
+            [
+                CommandHelpLink.Docs(CellsModule.Manifest, "verification", "comparing a workbook before and after a change"),
             ],
         };
     }
@@ -81,7 +84,7 @@ internal static class CompareCommand
             var table = new TextTable("sheet", "status", "cells");
             foreach (SheetDiff sheet in sheets)
             {
-                table.AddRow(sheet.Name, sheet.From is null ? sheet.Status : $"renamed from {sheet.From}", sheet.Cells is { } changed ? TableText.Int(changed.Count) : "-");
+                table.AddRow(sheet.Name, sheet.From is null ? sheet.Status : $"renamed from {sheet.From}", sheet.Cells is { } changed ? TableText.Int(changed.Count) : null);
             }
 
             table.WriteTo(surface.Out, surface.Format);

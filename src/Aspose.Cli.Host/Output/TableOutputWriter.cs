@@ -119,8 +119,8 @@ internal sealed class TableOutputWriter : IOutputWriter
                     continue;
                 }
 
-                string target = item["target"]?.GetValue<string>() ?? "(unknown)";
-                string status = item["status"]?.GetValue<string>() ?? "unknown";
+                string target = item["target"]?.GetValue<string>() ?? TableText.Missing;
+                string status = item["status"]?.GetValue<string>() ?? TableText.Missing;
                 bool content = item["contentVerified"]?.GetValue<bool>() ?? false;
                 bool metadata = item["metadataVerified"]?.GetValue<bool>() ?? false;
                 output.WriteLine(

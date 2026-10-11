@@ -106,6 +106,6 @@ public sealed partial class RenderDpiContractTests : IDisposable
 
     private static void Succeeds(CliResult result) => Assert.True(result.ExitCode == 0, result.StdErr);
 
-    [GeneratedRegex(@"\((?<min>\d+)-(?<max>\d+)")]
+    [GeneratedRegex(@"Range: (?<min>\d+)-(?<max>\d+)\.")]
     private static partial Regex StatedRange();
 }

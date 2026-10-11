@@ -1,5 +1,4 @@
 using System.CommandLine;
-using System.Globalization;
 using Aspose.Cli.Sdk.Errors;
 
 namespace Aspose.Cli.Sdk.Extensibility.Commanding;
@@ -25,11 +24,9 @@ public sealed class MaxCharactersOption
         ArgumentException.ThrowIfNullOrWhiteSpace(what);
         _maxCharacters = new Option<int>(Name)
         {
-            Description = string.Create(
-                CultureInfo.InvariantCulture,
-                $"Maximum characters returned, counting {what}. Range 1-{ReadContinuation.MaximumCharacters}."),
+            Description = $"Maximum characters returned, counting {what}.",
             DefaultValueFactory = _ => DefaultCharacters,
-        };
+        }.InRange(1, ReadContinuation.MaximumCharacters);
         Options = [_maxCharacters];
     }
 
@@ -41,10 +38,6 @@ public sealed class MaxCharactersOption
     public int Read(ParseResult parse)
     {
         ArgumentNullException.ThrowIfNull(parse);
-        int characters = parse.GetValue(_maxCharacters);
-        OptionGuards.EnsureInRange(
-            Name, characters, 1, ReadContinuation.MaximumCharacters,
-            "Use a positive bounded character budget.");
-        return characters;
+        return parse.GetInRange(_maxCharacters, "Use a positive bounded character budget.");
     }
 }

@@ -1,3 +1,4 @@
+using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.Extensibility.Output;
 
 namespace Aspose.Cli.Product.Words.Commands;
@@ -39,15 +40,16 @@ internal static class RenderCommand
                 "words render contract.docx --pages 1-2 --out review.png",
                 "words render contract.docx --dpi 192 --out review.png",
             ],
+            Links =
+            [
+                CommandHelpLink.Docs(WordsModule.Manifest, "verification", "read-back, semantic and visual verification"),
+            ],
         };
     }
 
     internal static void Table(WordsRenderResult result, TableSurface surface)
     {
-        surface.Out.WriteLine($"rendered {result.Outputs.Count} page(s)");
-        foreach (PageOutput page in result.Outputs)
-        {
-            surface.Out.WriteLine($"  page {page.Page}: {page.Output.Path} ({TableText.Bytes(page.Output.SizeBytes)})");
-        }
+        ResultText.Files(surface, "rendered", "page", [.. result.Outputs.Select(static page =>
+            new ProducedFile($"page {page.Page}", page.Output.Path, page.Output.Format, page.Output.SizeBytes))]);
     }
 }

@@ -588,21 +588,11 @@ public sealed record PdfEditResult() : EngineResultEnvelope("edit-result", 2), I
         || Verification is { Ok: false };
 }
 
-/// <summary>What <c>--verify</c> read back from the staged output.</summary>
-public sealed record PdfEditVerification
-{
-    /// <summary>Whether every effect read back as the operations recorded it.</summary>
-    public required bool Ok { get; init; }
-
-    /// <summary>Each difference found.</summary>
-    public required IReadOnlyList<VerificationIssue> Issues { get; init; }
-
-    /// <summary>
-    /// In batch order, the ids of the operations whose every recorded effect was read back; an
-    /// operation left out was not fully checked.
-    /// </summary>
-    public required IReadOnlyList<string> CheckedOps { get; init; }
-}
+/// <summary>
+/// What <c>--verify</c> read back from the staged output: the effect of each form, redaction,
+/// bookmark, metadata, attachment and page operation.
+/// </summary>
+public sealed record PdfEditVerification : EditVerification;
 
 /// <summary>The form fields <c>pdf query forms</c> lists.</summary>
 public sealed record PdfFormResult() : EngineResultEnvelope("form-result", 2)

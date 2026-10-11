@@ -1,5 +1,6 @@
 using System.CommandLine;
 using Aspose.Cli.Sdk.Errors;
+using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.Extensibility.Commanding;
 using Aspose.Cli.Sdk.Extensibility.Output;
 using Aspose.Cli.Sdk.IO;
@@ -12,7 +13,7 @@ internal static class RenderCommand
     {
         var slides = new PartSelectionOptions("slide");
         var dpi = new DpiOption();
-        var width = new Option<int?>("--width") { Description = "Exact raster width in pixels (64-20000); replaces --dpi." };
+        var width = new Option<int?>("--width") { Description = "Exact raster width in pixels; replaces --dpi." }.InRange(64, 20_000);
         return new(
             "render",
             "Render one or more slides for visual verification.",
@@ -29,15 +30,10 @@ internal static class RenderCommand
                 PageRange? selection = slides.Read(parse);
                 int resolution = dpi.Read(parse);
                 bool explicitDpi = dpi.IsExplicit(parse);
-                int? pixelWidth = parse.GetValue(width);
+                int? pixelWidth = parse.GetInRange(width);
                 if (explicitDpi && pixelWidth is not null)
                 {
                     throw CliErrors.Usage(["Choose --dpi or --width, not both."]);
-                }
-
-                if (pixelWidth is not null)
-                {
-                    OptionGuards.EnsureInRange("--width", pixelWidth.Value, 64, 20_000, "Use 64-20000 pixels.");
                 }
 
                 ResolvedOutput output = standard.Output;
@@ -56,16 +52,23 @@ internal static class RenderCommand
                     Password = standard.InputPassword,
                 };
             },
-            Table);
+            Table)
+        {
+            Examples =
+            [
+                "slides render deck.pptx --slides 1-3 --out slide.png",
+                "slides render deck.pptx --slides 2 --width 1920 --out hero.png",
+            ],
+            Links =
+            [
+                CommandHelpLink.Docs(SlidesModule.Manifest, "verification", "slide read-back and visual review"),
+            ],
+        };
     }
 
     internal static void Table(SlidesRenderResult result, TableSurface surface)
     {
-        foreach (SlideRenderOutput item in result.Outputs)
-        {
-            surface.Out.WriteLine(
-                $"rendered slide {item.Slide} [{item.SlideId}] to {item.Output.Path} "
-                + $"({item.Output.Format}, {TableText.Bytes(item.Output.SizeBytes)})");
-        }
+        ResultText.Files(surface, "rendered", "slide", [.. result.Outputs.Select(static item =>
+            new ProducedFile($"slide {item.Slide} [{item.SlideId}]", item.Output.Path, item.Output.Format, item.Output.SizeBytes))]);
     }
 }

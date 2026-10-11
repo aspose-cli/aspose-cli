@@ -25,12 +25,6 @@ public static class VerificationIssues
                 nameof(descriptor));
         }
 
-        return new VerificationIssue
-        {
-            Code = descriptor.Code,
-            Message = message,
-            Location = location,
-            Hint = hint,
-        };
+        return new VerificationIssue(descriptor.Code, message, location, hint);
     }
 }

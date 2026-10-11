@@ -79,15 +79,8 @@ internal static class EditCommand
     internal static void Table(WordsEditResult result, TableSurface surface)
     {
         ResultText.Edit(surface, result.DryRun, result.Output, result.Applied, result.Backup);
-        if (result.PagesTouched is { Count: > 0 } pages)
-        {
-            surface.Out.WriteLine($"pages touched: {string.Join(", ", pages)}");
-        }
-
-        if (result.Verification is { } verification)
-        {
-            ResultText.Verification(surface, verification.Ok, verification.Issues, locations: false);
-        }
+        ResultText.Touched(surface, "pages", result.PagesTouched);
+        ResultText.Verification(surface, result.Verification);
     }
 
     private static WordsOp ParseSet(string value)

@@ -1,3 +1,4 @@
+using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.Extensibility.Commanding;
 using Aspose.Cli.Sdk.Extensibility.Output;
 
@@ -33,14 +34,21 @@ internal static class EditCommand
                     EncryptPassword = encryptPassword,
                 };
             },
-            Table);
+            Table,
+            examples:
+            [
+                "slides edit deck.pptx --ops deck-ops.json --out revised.pptx",
+                "slides edit deck.pptx --in-place --backup --ops deck-ops.json",
+            ],
+            links:
+            [
+                CommandHelpLink.Docs(SlidesModule.Manifest, "editing", "atomic presentation operations"),
+                CommandHelpLink.Schema<SlidesOp>("the operation JSON schema"),
+            ]);
 
     internal static void Table(SlidesEditResult result, TableSurface surface)
     {
         ResultText.Edit(surface, result.DryRun, result.Output, result.Applied, result.Backup);
-        if (result.SlidesTouched is { Count: > 0 } slides)
-        {
-            surface.Out.WriteLine($"slide ids touched: {string.Join(", ", slides)}");
-        }
+        ResultText.Touched(surface, "slide ids", result.SlidesTouched);
     }
 }

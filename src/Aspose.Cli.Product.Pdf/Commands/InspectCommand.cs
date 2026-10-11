@@ -1,4 +1,5 @@
 using System.Globalization;
+using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.Extensibility.Output;
 
 namespace Aspose.Cli.Product.Pdf.Commands;
@@ -29,7 +30,19 @@ internal static class InspectCommand
                 Details = detail.Read(parse),
                 Password = standard.InputPassword,
             },
-            Table);
+            Table)
+        {
+            Examples =
+            [
+                "pdf inspect report.pdf --output-format json",
+                "pdf inspect report.pdf --sample --detail outline fonts permissions",
+            ],
+            Links =
+            [
+                CommandHelpLink.Docs(PdfModule.Manifest, "overview", "what each PDF command is for"),
+                new("aspose-cli docs reading", "reading every product within bounded windows"),
+            ],
+        };
     }
 
     internal static void Table(PdfInfoResult result, TableSurface surface)
@@ -38,7 +51,7 @@ internal static class InspectCommand
         ResultText.Input(surface, result.Input);
         surface.Out.WriteLine(
             $"pages: {pdf.PageCount}   version: {pdf.Version}   encrypted: {TableText.YesNo(pdf.Encrypted)}   "
-            + $"tagged: {TableText.YesNo(pdf.Tagged)}   PDF/A declared: {pdf.PdfaProfile ?? "no"}");
+            + $"tagged: {TableText.YesNo(pdf.Tagged)}   PDF/A declared: {pdf.PdfaProfile ?? TableText.Missing}");
         surface.Out.WriteLine(
             $"form: {pdf.FormType}   attachments: {pdf.AttachmentCount}   signed: {TableText.YesNo(pdf.Signed)}   "
             + $"password access: {pdf.PasswordType}");
@@ -87,7 +100,7 @@ internal static class InspectCommand
             [
                 item.Index,
                 new string(' ', 2 * (item.Level - 1)) + item.Title,
-                item.Page?.ToString(CultureInfo.InvariantCulture) ?? string.Empty,
+                item.Page?.ToString(CultureInfo.InvariantCulture),
             ]);
 
         if (result.Forms is { } forms)
@@ -100,8 +113,8 @@ internal static class InspectCommand
             static attachment =>
             [
                 attachment.Name,
-                attachment.MimeType ?? string.Empty,
-                attachment.SizeBytes is long size ? TableText.Bytes(size) : string.Empty,
+                attachment.MimeType,
+                attachment.SizeBytes is long size ? TableText.Bytes(size) : null,
             ]);
         ResultText.Table(surface, "fonts", result.Fonts, ["font", "embedded", "subset"],
             static font => [font.Name, TableText.YesNo(font.Embedded), TableText.YesNo(font.Subset)]);
@@ -124,10 +137,10 @@ internal static class InspectCommand
             [
                 signature.Name,
                 TableText.YesNo(signature.Signed),
-                signature.Valid is bool valid ? TableText.YesNo(valid) : string.Empty,
+                signature.Valid is bool valid ? TableText.YesNo(valid) : null,
             ]);
         ResultText.List(surface, "layers", result.Layers);
 
-        ResultText.Properties(surface, "metadata", result.Metadata, nameColumn: "property");
+        ResultText.Properties(surface, "metadata", result.Metadata);
     }
 }

@@ -1,4 +1,5 @@
 using System.CommandLine;
+using Aspose.Cli.Sdk.Extensibility;
 
 namespace Aspose.Cli.Product.Pdf.Commands;
 
@@ -14,7 +15,7 @@ internal static class MergeCommand
         var bookmarks = new Option<string>("--bookmarks")
         {
             DefaultValueFactory = _ => "preserve",
-            Description = "preserve or drop input bookmarks.",
+            Description = "Whether the merged PDF keeps the bookmarks of its inputs.",
         }.WithInput(InputKind.None);
         bookmarks.AcceptOnlyFromAmong("preserve", "drop");
         return new(
@@ -39,6 +40,17 @@ internal static class MergeCommand
                     EncryptPassword = standard.EncryptPassword(),
                 };
             },
-            PdfText.Written);
+            PdfText.Written)
+        {
+            Examples =
+            [
+                "pdf merge cover.pdf report.pdf --out combined.pdf",
+                "pdf merge part1.pdf part2.pdf part3.pdf --bookmarks drop --out combined.pdf",
+            ],
+            Links =
+            [
+                CommandHelpLink.Docs(PdfModule.Manifest, "assemble-review-report", "building a PDF from several sources"),
+            ],
+        };
     }
 }

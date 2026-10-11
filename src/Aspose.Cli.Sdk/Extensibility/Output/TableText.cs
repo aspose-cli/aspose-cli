@@ -8,6 +8,9 @@ namespace Aspose.Cli.Sdk.Extensibility.Output;
 /// </summary>
 public static class TableText
 {
+    /// <summary>The one spelling of a value that is absent, in a table cell or a <c>name: value</c> line.</summary>
+    public const string Missing = "-";
+
     /// <summary>Formats a byte count using invariant grouping.</summary>
     public static string Bytes(long bytes) => string.Create(CultureInfo.InvariantCulture, $"{bytes:N0} bytes");
 

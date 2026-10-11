@@ -11,7 +11,7 @@ public sealed class SlidesInfoTableTests
     [Theory]
     [InlineData(TableFormat.Plain, "")]
     [InlineData(TableFormat.Markdown, "### ")]
-    public void Info_ShowsEveryRequestedDetailUnderItsHeadingAndNoneWhenEmpty(TableFormat format, string heading)
+    public void Info_ShowsEveryRequestedDetailUnderItsHeadingAndTheMissingMarkWhenEmpty(TableFormat format, string heading)
     {
         var result = new PresentationInfoResult
         {
@@ -47,6 +47,6 @@ public sealed class SlidesInfoTableTests
             Assert.Contains(value, text, StringComparison.Ordinal);
         }
 
-        Assert.EndsWith($"\n{heading}properties{colon}\n{(heading.Length == 0 ? string.Empty : "\n")}none\n", text, StringComparison.Ordinal);
+        Assert.EndsWith($"\n{heading}properties{colon}\n{(heading.Length == 0 ? string.Empty : "\n")}-\n", text, StringComparison.Ordinal);
     }
 }

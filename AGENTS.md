@@ -68,7 +68,7 @@ the fixed distribution identity; the generated projections and the solution come
 | D7 | Truthful results: affected counts, targets, pages, no match | Planned: the SDK snapshots before and after each operation, reports `OP_NO_EFFECT` for zero, and runs `--verify` as one step | Planned: handlers count nothing; invariant "affected > 0 iff the output changed" |
 | D8 | Input loading: recognition, passwords, corruption | The SDK load result and error translation; a product supplies the engine call and an exception classifier | `InputLoadingOwnershipTests` |
 | D9 | Read and write vocabulary | Planned: one object model per product, where the fields an operation writes are a subset of the read result with the same names and meanings | Planned: a generated operation-to-read field map and the invariant "read back what was written" |
-| D10 | Human-readable output | SDK `ResultText` section helpers | `TableRendererCoverageTests`, `ProductRendererCoverageTests` |
+| D10 | Human-readable output | SDK `ResultText`: sections, produced files, touched parts and the verification; a missing value is `-` | `ResultTextTests`, the product renderer golden tests, `TableRendererCoverageTests`, `ProductRendererCoverageTests` |
 | D11 | Structure | Three places per command paired on the menu; acyclic SDK layers; one-way product layers | `SdkLayeringTests` (SDK); analyzer `APCLI009` (product layers) |
 
 ## Gates
@@ -108,7 +108,9 @@ weaken a check or remove a supported operation to make a test pass.
   the assembly's JSON context; a shared block publishes itself with `[SchemaId]`. Ids are relative
   to the owner: `v2/common/` for the SDK and Host, `v2/<product>/` for a product. `required`,
   nullability, `[OneOfBy]` and `[OpenEnum]` state the shape. `APCLI013` rejects
-  a record it cannot describe.
+  a record it cannot describe. An edit's `verification` derives from the SDK `EditVerification`
+  core (`ok`, `issues`, `checkedOps`) and declares only the product's evidence; a
+  `VerificationIssue` is built only from a warning or a verification diagnostic.
 - **JSON input** defaults are tested through the production source-generated serializer,
   including omitted fields and explicit `false`, `0` and `null`. It
   [does not preserve init-only initializers](https://github.com/dotnet/runtime/issues/84484), so an
@@ -126,7 +128,8 @@ weaken a check or remove a supported operation to make a test pass.
   `SampleOption`, `DetailOption`, the render options) exists only for options with the same name
   and meaning across commands; any other option is a plain `new Option<T>`, and `SameNameOptions`
   checks that same-named options agree. A description does not restate a default the parser
-  applies.
+  applies, nor the values its label lists; a bounded integer option declares its bounds with
+  `InRange`, which states them as `Range: MIN-MAX.`, and is read with `GetInRange`.
 - **Targets** in an operation outcome are capped at `BoundedOperationOutcome.MaximumTargets`. An
   operation that lists more reports its product's degenerate form instead: the document root
   address, or range addresses that cover every changed part (Words reports `blocks/<ranges>` and

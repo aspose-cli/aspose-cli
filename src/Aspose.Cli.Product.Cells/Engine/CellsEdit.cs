@@ -59,7 +59,7 @@ internal static class CellsEdit
         }
 
         WorkbookStagedSave? saved = null;
-        EditVerification? verification = null;
+        CellsEditVerification? verification = null;
         if (transaction is not null)
         {
             // A batch that chose the active sheet keeps it; any other keeps the input's.
@@ -84,7 +84,7 @@ internal static class CellsEdit
             {
                 // Verification reports the warnings that make the output incomplete as issues.
                 verification = new CellsEditVerifier(session.Loader, session.Budgets).Verify(saved!.Candidate, baseline!.Path, filePath,
-                    request.Password, savePlan.OutputPassword, batch, warnings);
+                    request.Password, savePlan.OutputPassword, batch, applied, warnings);
             }
             transaction.Commit();
         }

@@ -1,4 +1,5 @@
 using System.CommandLine;
+using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.Extensibility.Output;
 
 namespace Aspose.Cli.Product.Cells.Commands;
@@ -16,9 +17,9 @@ internal static class InspectCommand
         var sample = new SampleOption($"display values of the first --preview-rows rows and up to {SheetInfo.PreviewColumns} columns of each sheet, from A1");
         var previewRows = new Option<int>("--preview-rows")
         {
-            Description = $"Number of preview rows per sheet (1-{MaxPreviewRows}).",
+            Description = "Number of preview rows per sheet.",
             DefaultValueFactory = _ => 5,
-        };
+        }.InRange(1, MaxPreviewRows);
         var detail = new DetailOption(InfoDetails.All, new Dictionary<string, string>
         {
             [InfoDetails.Names] = "defined names",
@@ -32,9 +33,7 @@ internal static class InspectCommand
             [.. sample.Options, previewRows, .. detail.Options],
             (parse, standard) =>
             {
-                int rows = parse.GetValue(previewRows);
-                OptionGuards.EnsureInRange("--preview-rows", rows, 1, MaxPreviewRows,
-                    "Pass a smaller sample size; previews are meant to be cheap to read.");
+                int rows = parse.GetInRange(previewRows, "Pass a smaller sample size; previews are meant to be cheap to read.");
                 return new InfoRequest
                 {
                     Input = standard.Input,
@@ -51,24 +50,29 @@ internal static class InspectCommand
                 "cells inspect book.xlsx --output-format json",
                 "cells inspect book.xlsx --detail charts names --sample",
             ],
+            Links =
+            [
+                CommandHelpLink.Docs(CellsModule.Manifest, "overview", "what each Cells command is for"),
+                new("aspose-cli docs reading", "reading every product within bounded windows"),
+            ],
         };
     }
 
     internal static void Table(WorkbookInfoResult info, TableSurface surface)
     {
         WorkbookSummary workbook = info.Workbook;
-        surface.Out.WriteLine($"{workbook.Name} ({info.Input.Format}, {TableText.Bytes(info.Input.SizeBytes)})");
+        ResultText.Input(surface, info.Input);
         surface.Out.WriteLine(
             $"sheets: {workbook.SheetCount}   vba: {TableText.YesNo(workbook.HasVba)}   defined names: {workbook.DefinedNameCount}   encrypted: {TableText.YesNo(info.Input.Encrypted == true)}   structure protected: {TableText.YesNo(workbook.StructureProtected)}");
         surface.Out.WriteLine();
 
-        var table = new TextTable("name", "position", "used range", "rows", "cols", "hidden", "protected", "charts", "pivots");
+        var table = new TextTable("name", "position", "used range", "rows", "columns", "hidden", "protected", "charts", "pivots");
         foreach (SheetInfo sheet in workbook.Sheets)
         {
             table.AddRow(
                 sheet.Name,
                 TableText.Int(sheet.Position),
-                sheet.UsedRange ?? "-",
+                sheet.UsedRange,
                 TableText.Int(sheet.RowCount),
                 TableText.Int(sheet.ColumnCount),
                 TableText.YesNo(sheet.Hidden),
@@ -90,7 +94,7 @@ internal static class InspectCommand
             surface.Out.WriteLine($"preview {sheet.Name}:");
             foreach (IReadOnlyList<string?> row in preview)
             {
-                surface.Out.WriteLine("  " + string.Join(" | ", row.Select(static value => value ?? string.Empty)));
+                surface.Out.WriteLine("  " + string.Join(" | ", row.Select(static value => string.IsNullOrEmpty(value) ? TableText.Missing : value)));
             }
         }
 
@@ -118,24 +122,24 @@ internal static class InspectCommand
             static layout =>
             [
                 layout.Sheet,
-                layout.FreezePanes ?? "-",
+                layout.FreezePanes,
                 Groups(layout.RowGroups, static group => (Span: $"{group.From}:{group.To}", group.Level, group.Collapsed)),
                 Groups(layout.ColumnGroups, static group => (Span: $"{group.From}:{group.To}", group.Level, group.Collapsed)),
-                layout.AutoFilter ?? "-",
-                layout.PrintArea ?? "-",
-                string.Join(' ', new[] { layout.TitleRows, layout.TitleColumns }.OfType<string>().DefaultIfEmpty("-")),
+                layout.AutoFilter,
+                layout.PrintArea,
+                string.Join(' ', new[] { layout.TitleRows, layout.TitleColumns }.OfType<string>()),
                 layout.Orientation + (layout.Scale is { } scale
                     ? $" {scale}%"
                     : $" fit {layout.FitToWidth}x{layout.FitToHeight}"),
-                layout.Header ?? "-",
-                layout.Footer ?? "-",
+                layout.Header,
+                layout.Footer,
             ]);
     }
 
     // Outline groups as "2:20 L1, 3:4 L2 collapsed".
-    private static string Groups<T>(IReadOnlyList<T>? groups, Func<T, (string Span, int Level, bool Collapsed)> describe) =>
+    private static string? Groups<T>(IReadOnlyList<T>? groups, Func<T, (string Span, int Level, bool Collapsed)> describe) =>
         groups is null
-            ? "-"
+            ? null
             : string.Join(", ", groups.Select(describe).Select(static group =>
                 $"{group.Span} L{group.Level}{(group.Collapsed ? " collapsed" : string.Empty)}"));
 }

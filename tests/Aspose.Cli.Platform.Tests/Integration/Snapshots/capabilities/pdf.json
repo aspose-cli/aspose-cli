@@ -827,7 +827,7 @@
             ],
             "secret": false,
             "valueSource": "command-line",
-            "description": "A3, A4, Letter or Legal."
+            "description": "Page size of the new PDF."
           }
         ],
         "arguments": [
@@ -1318,7 +1318,7 @@
             ],
             "secret": false,
             "valueSource": "command-line",
-            "description": "Form export format: json, fdf or xfdf; only with --what forms. Default: the --out extension's."
+            "description": "Form export format; only with --what forms. Default: the --out extension's."
           },
           {
             "name": "--what",
@@ -1339,7 +1339,7 @@
             ],
             "secret": false,
             "valueSource": "command-line",
-            "description": "images, attachments, text, tables or forms."
+            "description": "What to extract; forms exports the form data to one file."
           }
         ],
         "arguments": [
@@ -1497,7 +1497,7 @@
             ],
             "secret": false,
             "valueSource": "command-line",
-            "description": "preserve or drop input bookmarks."
+            "description": "Whether the merged PDF keeps the bookmarks of its inputs."
           },
           {
             "name": "--dry-run",
@@ -1769,7 +1769,7 @@
             "allowedValues": [],
             "secret": false,
             "valueSource": "command-line",
-            "description": "Maximum characters returned, counting the text of the returned pages. Range 1-10000000."
+            "description": "Maximum characters returned, counting the text of the returned pages. Range: 1-10000000."
           },
           {
             "name": "--mode",
@@ -1788,7 +1788,7 @@
             ],
             "secret": false,
             "valueSource": "command-line",
-            "description": "Text projection: plain or layout."
+            "description": "Text projection: whether the text keeps the spacing of the page."
           },
           {
             "name": "--pages",
@@ -1910,7 +1910,7 @@
             "allowedValues": [],
             "secret": false,
             "valueSource": "command-line",
-            "description": "Maximum returned hits (1-10000)."
+            "description": "Maximum returned hits. Range: 1-10000."
           },
           {
             "name": "--pages",
@@ -2063,7 +2063,7 @@
             "allowedValues": [],
             "secret": false,
             "valueSource": "command-line",
-            "description": "Raster resolution (36-1200); ignored for vector formats."
+            "description": "Raster resolution; ignored for vector formats. Range: 36-1200."
           },
           {
             "name": "--dry-run",
@@ -2112,7 +2112,7 @@
             "allowedValues": [],
             "secret": false,
             "valueSource": "command-line",
-            "description": "Draw a labelled coordinate grid with a line every <grid> points (10-500) on png or jpeg output, measured from the top-left corner as redact_area takes them."
+            "description": "Draw a labelled coordinate grid with a line every <grid> points on png or jpeg output, measured from the top-left corner as redact_area takes them. Range: 10-500."
           },
           {
             "name": "--out",
@@ -2230,7 +2230,7 @@
             ],
             "secret": false,
             "valueSource": "command-line",
-            "description": "Image format: png, jpeg or svg. Default: the --out extension's format, else png."
+            "description": "Image format. Default: the --out extension's format, else png."
           }
         ],
         "arguments": [
@@ -2540,7 +2540,7 @@
             ],
             "secret": false,
             "valueSource": "command-line",
-            "description": "How to divide the document: pages, one part per page, per --every pages or per group; bookmarks, one part per top-level bookmark."
+            "description": "How to divide the document: one part per top-level bookmark; one part per page, per --every N of them or per --groups group."
           },
           {
             "name": "--dry-run",
@@ -2825,7 +2825,7 @@
             ],
             "secret": false,
             "valueSource": "command-line",
-            "description": "pdfa-1b, pdfa-2b or pdfa-3b."
+            "description": "PDF/A profile to validate against."
           }
         ],
         "arguments": [
@@ -3141,7 +3141,7 @@
       },
       "$defs": {
         "pdfEditVerification": {
-          "description": "What --verify read back from the staged output.",
+          "description": "What --verify read back from the staged output: the effect of each form, redaction, bookmark, metadata, attachment and page operation.",
           "type": "object",
           "required": [
             "ok",
@@ -3151,18 +3151,18 @@
           "additionalProperties": false,
           "properties": {
             "ok": {
-              "description": "Whether every effect read back as the operations recorded it.",
+              "description": "Whether the verification found no issue.",
               "type": "boolean"
             },
             "issues": {
-              "description": "Each difference found.",
+              "description": "The problems found, empty when ok is true.",
               "type": "array",
               "items": {
                 "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/verification-issue.schema.json"
               }
             },
             "checkedOps": {
-              "description": "In batch order, the ids of the operations whose every recorded effect was read back; an operation left out was not fully checked.",
+              "description": "In batch order, the ids of the operations whose effect the verification read back from the staged output; an operation left out was not checked.",
               "type": "array",
               "items": {
                 "type": "string"

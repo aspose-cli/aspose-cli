@@ -69,13 +69,13 @@ internal static class PdfRender
                 "Render the page with --to png or --to jpeg to draw a coordinate grid.");
         }
 
-        if (spacing is < PdfGridOverlay.MinimumSpacing or > PdfGridOverlay.MaximumSpacing)
+        if (spacing is < PdfRenderRequest.MinimumGrid or > PdfRenderRequest.MaximumGrid)
         {
             throw CliErrors.OptionInvalid(
                 "--grid",
                 string.Create(
                     CultureInfo.InvariantCulture,
-                    $"must be between {PdfGridOverlay.MinimumSpacing} and {PdfGridOverlay.MaximumSpacing} points"),
+                    $"must be between {PdfRenderRequest.MinimumGrid} and {PdfRenderRequest.MaximumGrid} points"),
                 "Choose a spacing such as --grid 50.");
         }
 

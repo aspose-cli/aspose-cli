@@ -9,6 +9,9 @@ The delivery checklist, the review protocol and font checks are in
 `verification`:
 
 - `ok` and `issues`;
+- `checkedOps`, the ids of the operations whose effect these checks read back:
+  those that add, update or remove fields, set protection or accept or reject
+  revisions, and with `--track-changes` every applied operation;
 - `semanticChangesDetected`, from a comparison of private copies with
   revisions accepted, so the saved document keeps its revisions;
 - `fieldCount`, `revisionCount` and `protection`, each checked against the

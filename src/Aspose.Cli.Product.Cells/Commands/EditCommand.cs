@@ -80,15 +80,12 @@ internal static class EditCommand
     internal static void Table(EditResult edit, TableSurface surface)
     {
         ResultText.Edit(surface, edit.DryRun, edit.Output, edit.Applied, edit.Backup);
-        if (edit.Verification is { } verification)
-        {
-            ResultText.Verification(
-                surface,
-                verification.Ok,
-                verification.Issues,
-                $"; {verification.DirectChanges.Count} direct, "
-                + $"{verification.FormulaResultChanges.Count} formula-result, "
-                + $"{verification.FormulaErrors.Count} formula error(s)");
-        }
+        ResultText.Verification(
+            surface,
+            edit.Verification,
+            edit.Verification is { } verification
+                ? $"{verification.DirectChanges.Count} direct, {verification.FormulaResultChanges.Count} formula-result, "
+                    + $"{verification.FormulaErrors.Count} formula error(s)"
+                : null);
     }
 }

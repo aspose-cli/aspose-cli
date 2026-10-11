@@ -27,7 +27,7 @@ public sealed class WordsRendererGoldenTests
             1        landscape    841.89 x 595.28 pt  36/36/36/36 pt
             section  location  kind     paragraphs
             0        header    primary  Quarterly report | Draft
-            0        footer    first····
+            0        footer    first    -
 
             outline:
             block  level  heading
@@ -38,7 +38,7 @@ public sealed class WordsRendererGoldenTests
             Normal, Heading 1
 
             bookmarks:
-            none
+            -
 
             fonts:
             Calibri, Times New Roman
@@ -96,7 +96,7 @@ public sealed class WordsRendererGoldenTests
             | section | location | kind | paragraphs |
             | --- | --- | --- | --- |
             | 0 | header | primary | Quarterly report \| Draft |
-            | 0 | footer | first |  |
+            | 0 | footer | first | - |
 
             ### outline
 
@@ -111,7 +111,7 @@ public sealed class WordsRendererGoldenTests
 
             ### bookmarks
 
-            none
+            -
 
             ### fonts
 
@@ -163,7 +163,7 @@ public sealed class WordsRendererGoldenTests
     }
 
     [Fact]
-    public void Info_WithEmptyDetails_SaysNoneUnderEachHeading()
+    public void Info_WithEmptyDetails_SaysMissingUnderEachHeading()
     {
         DocumentInfoResult result = Info() with
         {
@@ -180,37 +180,37 @@ public sealed class WordsRendererGoldenTests
             revisions: 1   protection: none   signed: no   macros: yes
 
             sections:
-            none
+            -
 
             outline:
-            none
+            -
 
             styles:
-            none
+            -
 
             bookmarks:
-            none
+            -
 
             fonts:
-            none
+            -
 
             fields:
-            none
+            -
 
             comments:
-            none
+            -
 
             revisions:
-            none
+            -
 
             images:
-            none
+            -
 
             tables:
-            none
+            -
 
             properties:
-            none
+            -
             """,
             text);
     }
@@ -253,7 +253,7 @@ public sealed class WordsRendererGoldenTests
             report.docx (scope body, 12 blocks in the document)
             block  type       section  style      text
             0      paragraph  0        Heading 1  Summary
-            1      paragraph  0        -··········
+            1      paragraph  0        -          -
             2      table      0        -          [3x2 table]
             """,
             text);
@@ -272,12 +272,13 @@ public sealed class WordsRendererGoldenTests
                 new BoundedOperationOutcome { Id = "op-0001", Op = "set_text", Status = OpStatuses.Ok, ItemsAffected = 2 },
             ],
             PagesTouched = [1, 3],
-            Verification = new WordsVerification
+            Verification = new WordsEditVerification
             {
                 Ok = false,
+                CheckedOps = [],
                 Issues =
                 [
-                    new VerificationIssue { Code = "FIELD_STALE", Message = "1 field needs an update", Location = "block 4" },
+                    VerificationIssue.From(new Warning(new WarningCode("FIELD_STALE"), "1 field needs an update") { Location = "block 4", Hint = "Update the fields." }),
                 ],
             },
         };
@@ -289,8 +290,9 @@ public sealed class WordsRendererGoldenTests
             wrote out.docx (docx, 11,000 bytes, 1 of 1 op(s) applied)
               [op-0001] set_text: ok (2 item(s))
             pages touched: 1, 3
-            verification: needs attention
-              FIELD_STALE: 1 field needs an update
+            verification: needs attention; checked ops: -
+              FIELD_STALE [block 4]: 1 field needs an update
+                hint: Update the fields.
             """,
             text);
     }

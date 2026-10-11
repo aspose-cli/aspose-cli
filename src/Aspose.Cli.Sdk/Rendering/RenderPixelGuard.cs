@@ -18,19 +18,6 @@ public static class RenderPixelGuard
     /// <summary>Resolution used when a command does not choose one.</summary>
     public const int DefaultDpi = 192;
 
-    /// <summary>Rejects a raster resolution outside the shared range.</summary>
-    /// <exception cref="CliException"><c>OPTION_INVALID</c> naming <c>--dpi</c>.</exception>
-    public static void EnsureDpi(int dpi)
-    {
-        if (dpi is < MinimumDpi or > MaximumDpi)
-        {
-            throw CliErrors.OptionInvalid(
-                "--dpi",
-                $"value must be between {MinimumDpi} and {MaximumDpi}",
-                $"Use {MinimumDpi}-{MaximumDpi} DPI; {DefaultDpi} gives crisp text.");
-        }
-    }
-
     /// <summary>
     /// Rejects one raster image whose bitmap would exceed the ledger's pixel budget, before
     /// the engine allocates it.

@@ -39,8 +39,11 @@ public sealed record EditResult() : EngineResultEnvelope("edit-result", 2), IPar
     /// <summary>Stable safety backup used for an in-place mutation, when requested.</summary>
     public BackupInfo? Backup { get; init; }
 
-    /// <summary>Post-edit diff, formula, and render evidence produced by <c>--verify</c>.</summary>
-    public EditVerification? Verification { get; init; }
+    /// <summary>
+    /// Present with <c>--verify</c>: the staged workbook compared cell by cell with the input, and
+    /// scanned for formula errors.
+    /// </summary>
+    public CellsEditVerification? Verification { get; init; }
 
     /// <summary>Whether any op failed (best-effort mode). Not serialized.</summary>
     [JsonIgnore]

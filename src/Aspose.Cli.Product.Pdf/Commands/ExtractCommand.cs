@@ -14,7 +14,7 @@ internal static class ExtractCommand
 {
     public static CommandDefinition<IPdfExtractRequest, ResultEnvelope> Create()
     {
-        var what = new Option<string>("--what") { Required = true, Description = "images, attachments, text, tables or forms." }.WithInput(InputKind.None);
+        var what = new Option<string>("--what") { Required = true, Description = "What to extract; forms exports the form data to one file." }.WithInput(InputKind.None);
         what.AcceptOnlyFromAmong([.. PdfExtractKinds.All, "forms"]);
         var pages = new PartRangeOption("page", "every page", onlyWith: "--what images, text or tables");
         var bom = new Option<bool>("--bom")
@@ -32,7 +32,7 @@ internal static class ExtractCommand
                     "Form-data output file; only with --what forms. Default extension follows --to.",
                     "Safe extraction directory; required unless --what forms."),
                 Target = TargetFormat.Among(
-                    "Form export format: json, fdf or xfdf; only with --what forms. Default: the --out extension's.",
+                    "Form export format; only with --what forms. Default: the --out extension's.",
                     PdfFormats.FormData),
             },
             [what, .. pages.Options, bom],
@@ -100,20 +100,26 @@ internal static class ExtractCommand
                 ProductOutputDefinition.Create<PdfExtractResult>(Table),
                 ProductOutputDefinition.Create<PdfFormExportResult>(Table),
             ],
+            Examples =
+            [
+                "pdf extract report.pdf --what images --out-dir images",
+                "pdf extract report.pdf --what tables --pages 2-4 --bom --out-dir tables",
+                "pdf extract form.pdf --what forms --out form.json",
+            ],
+            Links =
+            [
+                CommandHelpLink.Docs(PdfModule.Manifest, "overview", "what each PDF command is for"),
+                CommandHelpLink.Docs(PdfModule.Manifest, "forms-security", "form data export and import"),
+            ],
         };
     }
 
     internal static void Table(PdfExtractResult result, TableSurface surface)
     {
-        surface.Out.WriteLine($"extracted {result.Items.Count} {result.What} item(s)");
-        foreach (PdfExtractedItem item in result.Items)
-        {
-            string page = item.Page.HasValue ? $" page {item.Page.Value}" : string.Empty;
-            surface.Out.WriteLine($"  {item.Path} ({item.Kind}{page}, {TableText.Bytes(item.SizeBytes)})");
-        }
+        ResultText.Files(surface, "extracted", $"{result.What} item", [.. result.Items.Select(static item =>
+            new ProducedFile(item.Page is { } page ? $"page {page}" : null, item.Path, item.Kind, item.SizeBytes))]);
     }
 
     internal static void Table(PdfFormExportResult result, TableSurface surface) =>
-        surface.Out.WriteLine(
-            $"exported form data: {result.Output.Path} ({result.Output.Format}, {TableText.Bytes(result.Output.SizeBytes)})");
+        ResultText.Produced(surface, result.Output, "form data");
 }

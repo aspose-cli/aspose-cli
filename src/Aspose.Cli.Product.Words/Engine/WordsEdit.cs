@@ -1,3 +1,4 @@
+using System.Collections.Frozen;
 using System.Runtime.ExceptionServices;
 using Aspose.Cli.Product.Words.Engine.Editing;
 using Aspose.Cli.Product.Words.Engine.Mapping;
@@ -21,6 +22,12 @@ namespace Aspose.Cli.Product.Words.Engine;
 /// </summary>
 internal static class WordsEdit
 {
+    /// <summary>The operations whose effect is a field, protection or revision count the verification compares.</summary>
+    private static readonly FrozenSet<string> StateOps = FrozenSet.Create(
+        StringComparer.Ordinal,
+        "insert_toc", "insert_hyperlink", "insert_field", "set_page_numbers", "update_fields", "mail_merge",
+        "protect", "unprotect", "accept_revisions", "reject_revisions");
+
     /// <summary>Applies a validated operation batch and commits it atomically.</summary>
     internal static WordsEditResult Run(WordsSession session, WordsEditRequest request)
     {
@@ -66,12 +73,13 @@ internal static class WordsEdit
         session.Loader.EnsureWithinBudgets(loaded.Document, loaded.Resources);
         WordsSavePipeline.RemoveMacrosUnlessKept(loaded.Document, format);
 
-        (OutputInfo? output, BackupInfo? backup, WordsVerification? verification) =
+        (OutputInfo? output, BackupInfo? backup, WordsEditVerification? verification) =
             Persist(
                 session,
                 loaded.Document,
                 request,
                 baseline,
+                VerifiedOps(outcomes, request.TrackChanges),
                 precondition,
                 loaded.Resources,
                 written,
@@ -182,11 +190,12 @@ internal static class WordsEdit
     private static (
         OutputInfo? Output,
         BackupInfo? Backup,
-        WordsVerification? Verification) Persist(
+        WordsEditVerification? Verification) Persist(
         WordsSession session,
         Document document,
         WordsEditRequest request,
         Document? baseline,
+        IReadOnlyList<string> checkedOps,
         FileWritePrecondition precondition,
         LocalDocumentResourceLoader resources,
         FormatDescriptor written,
@@ -196,7 +205,7 @@ internal static class WordsEdit
         string format = written.Id;
         OutputInfo? output = null;
         BackupInfo? backup = null;
-        WordsVerification? verification = null;
+        WordsEditVerification? verification = null;
         if (!request.Options.DryRun)
         {
             using OutputSet<Document> transaction = session.Outputs.BeginSet([request.Output.Directory], "words-edit");
@@ -223,7 +232,8 @@ internal static class WordsEdit
                 var expected = new ExpectedDocumentState(
                     document.Range.Fields.Count,
                     document.Revisions.Count,
-                    WordsProtection.ToMode(document.ProtectionType));
+                    WordsProtection.ToMode(document.ProtectionType),
+                    checkedOps);
                 verification = write.Read(
                     candidate => Verify(session, candidate, format, outputPassword, baseline!, expected));
             }
@@ -308,7 +318,7 @@ internal static class WordsEdit
     /// finds no body change is evidence, not a fault: whether an operation did
     /// anything is already answered, authoritatively, by its own outcome.
     /// </summary>
-    private static WordsVerification Verify(
+    private static WordsEditVerification Verify(
         WordsSession session,
         string candidatePath,
         string format,
@@ -360,10 +370,11 @@ internal static class WordsEdit
         comparisonBaseline.Cleanup();
         comparisonOutput.Cleanup();
 
-        return new WordsVerification
+        return new WordsEditVerification
         {
             Ok = issues.Count == 0,
             Issues = issues,
+            CheckedOps = expected.CheckedOps,
             SemanticChangesDetected = semanticChanges,
             FieldCount = fieldCount,
             RevisionCount = revisionCount,
@@ -422,5 +433,19 @@ internal static class WordsEdit
         return EnvelopeParts.CombineWarnings(extra);
     }
 
-    private sealed record ExpectedDocumentState(int FieldCount, int RevisionCount, string Protection);
+    private sealed record ExpectedDocumentState(int FieldCount, int RevisionCount, string Protection, IReadOnlyList<string> CheckedOps);
+
+    /// <summary>
+    /// The ids, in batch order, of the applied operations whose effect verification reads back:
+    /// it compares the field count, the revision count and the protection of the reopened output
+    /// with the edited document, so it checks the operations that add, update or remove fields,
+    /// set protection or accept and reject revisions, and with tracked changes every operation,
+    /// whose revisions it counts.
+    /// </summary>
+    private static IReadOnlyList<string> VerifiedOps(IReadOnlyList<BoundedOperationOutcome> outcomes, bool trackChanges) =>
+    [
+        .. outcomes
+            .Where(outcome => outcome.Status == OpStatuses.Ok && (trackChanges || StateOps.Contains(outcome.Op)))
+            .Select(static outcome => outcome.Id),
+    ];
 }

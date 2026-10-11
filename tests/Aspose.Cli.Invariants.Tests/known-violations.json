@@ -871,62 +871,6 @@
       "actual": "cells format md has the aliases markdown."
     },
     {
-      "case": "C-R34 | app open",
-      "invariant": "C-R34",
-      "rule": "C-R34",
-      "cause": "help-examples-and-links-not-declared",
-      "actual": "has 0 examples; at least 2; has no Learn more"
-    },
-    {
-      "case": "C-R34 | app status",
-      "invariant": "C-R34",
-      "rule": "C-R34",
-      "cause": "help-examples-and-links-not-declared",
-      "actual": "has 0 examples; at least 2; has no Learn more"
-    },
-    {
-      "case": "C-R34 | app stop",
-      "invariant": "C-R34",
-      "rule": "C-R34",
-      "cause": "help-examples-and-links-not-declared",
-      "actual": "has 0 examples; at least 2; has no Learn more"
-    },
-    {
-      "case": "C-R34 | capabilities",
-      "invariant": "C-R34",
-      "rule": "C-R34",
-      "cause": "help-examples-and-links-not-declared",
-      "actual": "has no Learn more"
-    },
-    {
-      "case": "C-R34 | cells compare",
-      "invariant": "C-R34",
-      "rule": "C-R34",
-      "cause": "help-examples-and-links-not-declared",
-      "actual": "has no Learn more"
-    },
-    {
-      "case": "C-R34 | cells convert",
-      "invariant": "C-R34",
-      "rule": "C-R34",
-      "cause": "help-examples-and-links-not-declared",
-      "actual": "has no Learn more"
-    },
-    {
-      "case": "C-R34 | cells create",
-      "invariant": "C-R34",
-      "rule": "C-R34",
-      "cause": "help-examples-and-links-not-declared",
-      "actual": "has 1 example; at least 2; has no Learn more"
-    },
-    {
-      "case": "C-R34 | cells inspect",
-      "invariant": "C-R34",
-      "rule": "C-R34",
-      "cause": "help-examples-and-links-not-declared",
-      "actual": "has no Learn more"
-    },
-    {
       "case": "C-R34 | cells query range",
       "invariant": "C-R34",
       "rule": "C-R34",
@@ -939,111 +883,6 @@
       "rule": "C-R34",
       "cause": "help-examples-and-links-not-declared",
       "actual": "has no Learn more"
-    },
-    {
-      "case": "C-R34 | cells render",
-      "invariant": "C-R34",
-      "rule": "C-R34",
-      "cause": "help-examples-and-links-not-declared",
-      "actual": "has no Learn more"
-    },
-    {
-      "case": "C-R34 | docs",
-      "invariant": "C-R34",
-      "rule": "C-R34",
-      "cause": "help-examples-and-links-not-declared",
-      "actual": "has 1 example; at least 2; has no Learn more"
-    },
-    {
-      "case": "C-R34 | doctor",
-      "invariant": "C-R34",
-      "rule": "C-R34",
-      "cause": "help-examples-and-links-not-declared",
-      "actual": "has 1 example; at least 2; has no Learn more"
-    },
-    {
-      "case": "C-R34 | fonts check",
-      "invariant": "C-R34",
-      "rule": "C-R34",
-      "cause": "help-examples-and-links-not-declared",
-      "actual": "has 0 examples; at least 2; has no Learn more"
-    },
-    {
-      "case": "C-R34 | fonts list",
-      "invariant": "C-R34",
-      "rule": "C-R34",
-      "cause": "help-examples-and-links-not-declared",
-      "actual": "has 0 examples; at least 2; has no Learn more"
-    },
-    {
-      "case": "C-R34 | license install",
-      "invariant": "C-R34",
-      "rule": "C-R34",
-      "cause": "help-examples-and-links-not-declared",
-      "actual": "has 0 examples; at least 2; has no Learn more"
-    },
-    {
-      "case": "C-R34 | license remove",
-      "invariant": "C-R34",
-      "rule": "C-R34",
-      "cause": "help-examples-and-links-not-declared",
-      "actual": "has 0 examples; at least 2; has no Learn more"
-    },
-    {
-      "case": "C-R34 | license status",
-      "invariant": "C-R34",
-      "rule": "C-R34",
-      "cause": "help-examples-and-links-not-declared",
-      "actual": "has 0 examples; at least 2; has no Learn more"
-    },
-    {
-      "case": "C-R34 | mcp serve",
-      "invariant": "C-R34",
-      "rule": "C-R34",
-      "cause": "help-examples-and-links-not-declared",
-      "actual": "has 0 examples; at least 2; has no Learn more"
-    },
-    {
-      "case": "C-R34 | pdf convert",
-      "invariant": "C-R34",
-      "rule": "C-R34",
-      "cause": "help-examples-and-links-not-declared",
-      "actual": "has 0 examples; at least 2; has no Learn more"
-    },
-    {
-      "case": "C-R34 | pdf create",
-      "invariant": "C-R34",
-      "rule": "C-R34",
-      "cause": "help-examples-and-links-not-declared",
-      "actual": "has 0 examples; at least 2; has no Learn more"
-    },
-    {
-      "case": "C-R34 | pdf edit",
-      "invariant": "C-R34",
-      "rule": "C-R34",
-      "cause": "help-examples-and-links-not-declared",
-      "actual": "has 0 examples; at least 2; has no Learn more"
-    },
-    {
-      "case": "C-R34 | pdf extract",
-      "invariant": "C-R34",
-      "rule": "C-R34",
-      "cause": "help-examples-and-links-not-declared",
-      "actual": "has 0 examples; at least 2; has no Learn more"
-    },
-    {
-      "case": "C-R34 | pdf inspect",
-      "invariant": "C-R34",
-      "rule": "C-R34",
-      "cause": "help-examples-and-links-not-declared",
-      "actual": "has 0 examples; at least 2; has no Learn more"
-    },
-    {
-      "case": "C-R34 | pdf merge",
-      "invariant": "C-R34",
-      "rule": "C-R34",
-      "cause": "help-examples-and-links-not-declared",
-      "actual": "has 0 examples; at least 2; has no Learn more"
     },
     {
       "case": "C-R34 | pdf query forms",
@@ -1067,111 +906,6 @@
       "actual": "has 0 examples; at least 2; has no Learn more"
     },
     {
-      "case": "C-R34 | pdf render",
-      "invariant": "C-R34",
-      "rule": "C-R34",
-      "cause": "help-examples-and-links-not-declared",
-      "actual": "has 0 examples; at least 2; has no Learn more"
-    },
-    {
-      "case": "C-R34 | pdf sign",
-      "invariant": "C-R34",
-      "rule": "C-R34",
-      "cause": "help-examples-and-links-not-declared",
-      "actual": "has 0 examples; at least 2; has no Learn more"
-    },
-    {
-      "case": "C-R34 | pdf split",
-      "invariant": "C-R34",
-      "rule": "C-R34",
-      "cause": "help-examples-and-links-not-declared",
-      "actual": "has no Learn more"
-    },
-    {
-      "case": "C-R34 | pdf validate",
-      "invariant": "C-R34",
-      "rule": "C-R34",
-      "cause": "help-examples-and-links-not-declared",
-      "actual": "has 0 examples; at least 2; has no Learn more"
-    },
-    {
-      "case": "C-R34 | preview open",
-      "invariant": "C-R34",
-      "rule": "C-R34",
-      "cause": "help-examples-and-links-not-declared",
-      "actual": "has 0 examples; at least 2; has no Learn more"
-    },
-    {
-      "case": "C-R34 | preview status",
-      "invariant": "C-R34",
-      "rule": "C-R34",
-      "cause": "help-examples-and-links-not-declared",
-      "actual": "has 0 examples; at least 2; has no Learn more"
-    },
-    {
-      "case": "C-R34 | preview stop",
-      "invariant": "C-R34",
-      "rule": "C-R34",
-      "cause": "help-examples-and-links-not-declared",
-      "actual": "has 0 examples; at least 2; has no Learn more"
-    },
-    {
-      "case": "C-R34 | schema",
-      "invariant": "C-R34",
-      "rule": "C-R34",
-      "cause": "help-examples-and-links-not-declared",
-      "actual": "has 1 example; at least 2; has no Learn more"
-    },
-    {
-      "case": "C-R34 | skill install",
-      "invariant": "C-R34",
-      "rule": "C-R34",
-      "cause": "help-examples-and-links-not-declared",
-      "actual": "has 0 examples; at least 2; has no Learn more"
-    },
-    {
-      "case": "C-R34 | skill list",
-      "invariant": "C-R34",
-      "rule": "C-R34",
-      "cause": "help-examples-and-links-not-declared",
-      "actual": "has 0 examples; at least 2; has no Learn more"
-    },
-    {
-      "case": "C-R34 | slides convert",
-      "invariant": "C-R34",
-      "rule": "C-R34",
-      "cause": "help-examples-and-links-not-declared",
-      "actual": "has 0 examples; at least 2; has no Learn more"
-    },
-    {
-      "case": "C-R34 | slides create",
-      "invariant": "C-R34",
-      "rule": "C-R34",
-      "cause": "help-examples-and-links-not-declared",
-      "actual": "has 0 examples; at least 2; has no Learn more"
-    },
-    {
-      "case": "C-R34 | slides edit",
-      "invariant": "C-R34",
-      "rule": "C-R34",
-      "cause": "help-examples-and-links-not-declared",
-      "actual": "has 0 examples; at least 2; has no Learn more"
-    },
-    {
-      "case": "C-R34 | slides extract",
-      "invariant": "C-R34",
-      "rule": "C-R34",
-      "cause": "help-examples-and-links-not-declared",
-      "actual": "has 0 examples; at least 2; has no Learn more"
-    },
-    {
-      "case": "C-R34 | slides inspect",
-      "invariant": "C-R34",
-      "rule": "C-R34",
-      "cause": "help-examples-and-links-not-declared",
-      "actual": "has 0 examples; at least 2; has no Learn more"
-    },
-    {
       "case": "C-R34 | slides query search",
       "invariant": "C-R34",
       "rule": "C-R34",
@@ -1186,62 +920,6 @@
       "actual": "has 0 examples; at least 2; has no Learn more"
     },
     {
-      "case": "C-R34 | slides render",
-      "invariant": "C-R34",
-      "rule": "C-R34",
-      "cause": "help-examples-and-links-not-declared",
-      "actual": "has 0 examples; at least 2; has no Learn more"
-    },
-    {
-      "case": "C-R34 | update check",
-      "invariant": "C-R34",
-      "rule": "C-R34",
-      "cause": "help-examples-and-links-not-declared",
-      "actual": "has 0 examples; at least 2; has no Learn more"
-    },
-    {
-      "case": "C-R34 | update install",
-      "invariant": "C-R34",
-      "rule": "C-R34",
-      "cause": "help-examples-and-links-not-declared",
-      "actual": "has 0 examples; at least 2; has no Learn more"
-    },
-    {
-      "case": "C-R34 | words compare",
-      "invariant": "C-R34",
-      "rule": "C-R34",
-      "cause": "help-examples-and-links-not-declared",
-      "actual": "has no Learn more"
-    },
-    {
-      "case": "C-R34 | words convert",
-      "invariant": "C-R34",
-      "rule": "C-R34",
-      "cause": "help-examples-and-links-not-declared",
-      "actual": "has no Learn more"
-    },
-    {
-      "case": "C-R34 | words create",
-      "invariant": "C-R34",
-      "rule": "C-R34",
-      "cause": "help-examples-and-links-not-declared",
-      "actual": "has no Learn more"
-    },
-    {
-      "case": "C-R34 | words extract",
-      "invariant": "C-R34",
-      "rule": "C-R34",
-      "cause": "help-examples-and-links-not-declared",
-      "actual": "has no Learn more"
-    },
-    {
-      "case": "C-R34 | words inspect",
-      "invariant": "C-R34",
-      "rule": "C-R34",
-      "cause": "help-examples-and-links-not-declared",
-      "actual": "has no Learn more"
-    },
-    {
       "case": "C-R34 | words query blocks",
       "invariant": "C-R34",
       "rule": "C-R34",
@@ -1254,41 +932,6 @@
       "rule": "C-R34",
       "cause": "help-examples-and-links-not-declared",
       "actual": "has no Learn more"
-    },
-    {
-      "case": "C-R34 | words render",
-      "invariant": "C-R34",
-      "rule": "C-R34",
-      "cause": "help-examples-and-links-not-declared",
-      "actual": "has no Learn more"
-    },
-    {
-      "case": "C-R34 | words split",
-      "invariant": "C-R34",
-      "rule": "C-R34",
-      "cause": "help-examples-and-links-not-declared",
-      "actual": "has no Learn more"
-    },
-    {
-      "case": "C-R34 | value lists",
-      "invariant": "C-R34",
-      "rule": "C-R34",
-      "cause": "help-lists-allowed-values-twice",
-      "actual": "global --output-format: lists its values in <compact|json|markdown|table> and again in its description; global --license-mode: lists its values in <auto|evaluation> and again in its description; cells compare --compare: lists its values in ..."
-    },
-    {
-      "case": "C-R34 | global options folded",
-      "invariant": "C-R34",
-      "rule": "C-R34",
-      "cause": "help-repeats-global-options",
-      "actual": "app open: lists 9 global options one by one; app status: lists 9 global options one by one; app stop: lists 9 global options one by one; capabilities: lists 9 global options one by one; cells compare: lists 9 global options one by one; cell..."
-    },
-    {
-      "case": "C-R34 | usage lists required options",
-      "invariant": "C-R34",
-      "rule": "C-R34",
-      "cause": "help-usage-omits-required-options",
-      "actual": "cells query search: Usage leaves out the required --pattern; pdf extract: Usage leaves out the required --what; pdf merge: Usage leaves out the required --out; pdf query search: Usage leaves out the required --pattern; pdf sign: Usage leave..."
     },
     {
       "case": "C-R08 | cells inspect",
@@ -2236,20 +1879,6 @@
       "actual": "blockData.type: a variant named type, not kind"
     },
     {
-      "case": "C-R29 | cells edit",
-      "invariant": "C-R29",
-      "rule": "C-R29",
-      "cause": "verification-without-checked-ops",
-      "actual": "v2/cells/edit-result verification does not require checkedOps"
-    },
-    {
-      "case": "C-R29 | words edit",
-      "invariant": "C-R29",
-      "rule": "C-R29",
-      "cause": "verification-without-checked-ops",
-      "actual": "v2/words/edit-result verification does not require checkedOps"
-    },
-    {
       "case": "C-R19 | words add_watermark applied twice",
       "invariant": "C-R19",
       "rule": "C-R19",
@@ -2289,7 +1918,7 @@
       "invariant": "C-R17",
       "rule": "C-R17",
       "cause": "words-enum-values-camel-case",
-      "actual": "wordsVerification.protection: enum values readOnly, trackedChanges are not lowercase kebab-case"
+      "actual": "wordsEditVerification.protection: enum values readOnly, trackedChanges are not lowercase kebab-case"
     },
     {
       "case": "C-R17 | v2/words/ops#append_document",
@@ -2380,7 +2009,7 @@
       "invariant": "C-R33",
       "rule": "C-R33",
       "cause": "words-protection-none",
-      "actual": "wordsVerification.protection: \"none\" as a value; omit the field instead"
+      "actual": "wordsEditVerification.protection: \"none\" as a value; omit the field instead"
     },
     {
       "case": "C-R21 | v2/words/ops#insert_break",

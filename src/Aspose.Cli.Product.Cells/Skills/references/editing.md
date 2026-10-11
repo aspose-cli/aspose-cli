@@ -308,7 +308,10 @@ rules. Their results state `output.encrypted`, and `cells inspect` reports
 
 `cells edit --verify` compares a temporary snapshot of the input with the staged
 output before publishing and reports `verification` with `directChanges`,
-`formulaResultChanges`, `otherChanges`, `formulaErrors` and `issues`. Formula
+`formulaResultChanges`, `otherChanges`, `formulaErrors` and `issues`.
+`checkedOps` lists the operations whose changes the comparison read back: those
+that write cell values or formulas, or add, remove or rename a sheet, on a named
+sheet among the first 16 targets of the batch. Formula
 errors, sheet loss, grid truncation, imported formulas whose results changed
 (`EXTERNAL_LINK_CACHE_MISSING`) or an incomplete scan keep the edited file
 and exit 8 with `verification.ok: false`. Issue codes: `FORMULA_ERRORS` (the

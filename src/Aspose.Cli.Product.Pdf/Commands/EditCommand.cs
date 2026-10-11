@@ -1,3 +1,4 @@
+using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.Extensibility.Output;
 
 namespace Aspose.Cli.Product.Pdf.Commands;
@@ -31,25 +32,23 @@ internal static class EditCommand
                 OpSecrets = edit.Secrets,
                 EncryptPassword = standard.EncryptPassword(),
             },
-            Table);
+            Table,
+            examples:
+            [
+                "pdf edit report.pdf --ops ops.json --out reviewed.pdf --verify",
+                "pdf edit report.pdf --in-place --backup --ops ops.json --best-effort",
+            ],
+            links:
+            [
+                CommandHelpLink.Docs(PdfModule.Manifest, "editing", "fixed-layout operations and safe mutation"),
+                CommandHelpLink.Schema<PdfOp>("the operation JSON schema"),
+                CommandHelpLink.Docs(PdfModule.Manifest, "verification", "what --verify reads back"),
+            ]);
 
     internal static void Table(PdfEditResult result, TableSurface surface)
     {
         ResultText.Edit(surface, result.DryRun, result.Output, result.Applied, result.Backup);
-        if (result.PagesTouched is { Count: > 0 } pages)
-        {
-            surface.Out.WriteLine($"pages touched: {string.Join(", ", pages)}");
-        }
-
-        if (result.Verification is { } verification)
-        {
-            ResultText.Verification(
-                surface,
-                verification.Ok,
-                verification.Issues,
-                $" ({verification.CheckedOps.Count} operation(s) read back: "
-                + $"{(verification.CheckedOps.Count == 0 ? "none" : string.Join(", ", verification.CheckedOps))})",
-                hints: true);
-        }
+        ResultText.Touched(surface, "pages", result.PagesTouched);
+        ResultText.Verification(surface, result.Verification);
     }
 }

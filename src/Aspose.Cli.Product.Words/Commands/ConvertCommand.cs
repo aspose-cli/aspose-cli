@@ -1,4 +1,5 @@
 using Aspose.Cli.Sdk.Errors;
+using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.Extensibility.Output;
 using Aspose.Cli.Sdk.IO;
 
@@ -48,6 +49,10 @@ internal static class ConvertCommand
                 "words convert contract.docx --to pdf",
                 "words convert contract.docx --to pdf --pages 1-3 --out excerpt.pdf",
                 "words convert contract.docx --to pdf --font-dir fonts",
+            ],
+            Links =
+            [
+                CommandHelpLink.Docs(WordsModule.Manifest, "overview", "what each Words command is for"),
             ],
         };
     }

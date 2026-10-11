@@ -1,4 +1,5 @@
 using System.CommandLine;
+using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.Extensibility.Commanding;
 using Aspose.Cli.Sdk.Extensibility.Output;
 
@@ -8,7 +9,7 @@ internal static class ExtractCommand
 {
     public static CommandDefinition<PresentationExtractRequest, SlidesExtractResult> Create()
     {
-        var what = new Option<string>("--what") { Required = true, Description = "media, notes or text." }.WithInput(InputKind.None);
+        var what = new Option<string>("--what") { Required = true, Description = "What to extract; media includes audio and video." }.WithInput(InputKind.None);
         what.AcceptOnlyFromAmong([.. PresentationExtractKinds.All]);
         var slides = new PartRangeOption("slide", "every slide");
         return new(
@@ -31,15 +32,23 @@ internal static class ExtractCommand
                     Password = standard.InputPassword,
                 };
             },
-            Table);
+            Table)
+        {
+            Examples =
+            [
+                "slides extract deck.pptx --what notes --out-dir notes",
+                "slides extract deck.pptx --what media --slides 2-4 --out-dir media",
+            ],
+            Links =
+            [
+                CommandHelpLink.Docs(SlidesModule.Manifest, "overview", "what each Slides command is for"),
+            ],
+        };
     }
 
     internal static void Table(SlidesExtractResult result, TableSurface surface)
     {
-        surface.Out.WriteLine($"extracted {result.Items.Count} {result.What} item(s)");
-        foreach (SlidesExtractedItem item in result.Items)
-        {
-            surface.Out.WriteLine($"{item.Path} ({item.Kind}, {TableText.Bytes(item.SizeBytes)})");
-        }
+        ResultText.Files(surface, "extracted", $"{result.What} item", [.. result.Items.Select(static item =>
+            new ProducedFile(null, item.Path, item.Kind, item.SizeBytes))]);
     }
 }

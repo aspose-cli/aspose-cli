@@ -1,5 +1,6 @@
 using System.CommandLine;
 using Aspose.Cli.Sdk.Errors;
+using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.Extensibility.Output;
 using Aspose.Cli.Sdk.IO;
 
@@ -89,6 +90,11 @@ internal static class ConvertCommand
                 "cells convert book.xlsx --to csv --bom --out for-excel.csv",
                 "cells convert book.xlsx --out report.pdf",
                 "cells convert book.xlsx --to pdf --font-dir fonts --out report.pdf",
+            ],
+            Links =
+            [
+                CommandHelpLink.Docs(CellsModule.Manifest, "report-from-csv", "importing CSV into a workbook"),
+                CommandHelpLink.Docs(CellsModule.Manifest, "overview", "what each Cells command is for"),
             ],
         };
     }

@@ -1,4 +1,5 @@
 using System.Globalization;
+using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.Extensibility.Commanding;
 using Aspose.Cli.Sdk.Extensibility.Output;
 
@@ -27,7 +28,19 @@ internal static class InspectCommand
                 Details = detail.Read(parse),
                 Password = standard.InputPassword,
             },
-            Table);
+            Table)
+        {
+            Examples =
+            [
+                "slides inspect deck.pptx --output-format json",
+                "slides inspect deck.pptx --sample --detail layouts notes",
+            ],
+            Links =
+            [
+                CommandHelpLink.Docs(SlidesModule.Manifest, "overview", "what each Slides command is for"),
+                new("aspose-cli docs reading", "reading every product within bounded windows"),
+            ],
+        };
     }
 
     internal static void Table(PresentationInfoResult result, TableSurface surface)
@@ -47,8 +60,8 @@ internal static class InspectCommand
             table.AddRow(
                 TableText.Int(slide.Slide),
                 slide.SlideId.ToString(CultureInfo.InvariantCulture),
-                slide.Title ?? slide.Name ?? string.Empty,
-                slide.Layout ?? string.Empty,
+                slide.Title ?? slide.Name,
+                slide.Layout,
                 TableText.Int(slide.ShapeCount),
                 string.Join(", ", new[]
                 {
@@ -70,9 +83,9 @@ internal static class InspectCommand
         ResultText.Table(surface, "masters", result.Masters, ["name", "slides"],
             static master => [master.Name, TableText.Int(master.SlideCount)]);
         ResultText.Table(surface, "layouts", result.Layouts, ["name", "master", "slides"],
-            static layout => [layout.Name, layout.Master ?? string.Empty, TableText.Int(layout.SlideCount)]);
+            static layout => [layout.Name, layout.Master, TableText.Int(layout.SlideCount)]);
         ResultText.Table(surface, "media", result.Media, ["index", "type", "content type", "size"],
-            static item => [TableText.Int(item.Index), item.Type, item.ContentType ?? string.Empty, TableText.Bytes(item.SizeBytes)]);
+            static item => [TableText.Int(item.Index), item.Type, item.ContentType, TableText.Bytes(item.SizeBytes)]);
         ResultText.Table(surface, "notes", result.Notes, ["slide", "present", "characters"],
             static note => [TableText.Int(note.Slide), TableText.YesNo(note.Present), TableText.Int(note.CharacterCount)]);
         ResultText.Table(surface, "comments", result.Comments, ["slide", "author", "text"],

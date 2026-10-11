@@ -1,3 +1,4 @@
+using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.Extensibility.Output;
 using Aspose.Cli.Sdk.IO;
 
@@ -30,7 +31,20 @@ internal static class ConvertCommand
                     Password = standard.InputPassword,
                 };
             },
-            Table);
+            Table)
+        {
+            Examples =
+            [
+                "pdf convert report.pdf --out report.docx",
+                "pdf convert report.pdf --to pdfa-2b --out archive.pdf",
+                "pdf convert report.pdf --pages 1-3 --out summary.md",
+            ],
+            Links =
+            [
+                CommandHelpLink.Docs(PdfModule.Manifest, "pdf-standards", "PDF/A conversion and standards"),
+                CommandHelpLink.Docs(PdfModule.Manifest, "overview", "what each PDF command is for"),
+            ],
+        };
     }
 
     internal static void Table(PdfConvertResult result, TableSurface surface)

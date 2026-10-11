@@ -110,6 +110,23 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
     }
 
     [Fact]
+    public void VerificationChecksTheOperationsWhoseCellsItDiffs()
+    {
+        string source = _fixture.CreateSalesWorkbook("verify-checked-ops.xlsx");
+        EditResult result = CellsEdit.Run(_fixture.Session,
+            new EditRequest
+            {
+                Input = source,
+                Batch = ParseOps("""{"ops":[{"op":"set_values","sheet":"Data","range":"A20","values":[[1]]},{"op":"set_active_sheet","sheet":"Data"},{"id":"total","op":"set_formula","sheet":"Data","range":"B20","formula":"=A20*2"}]}"""),
+                Output = TestOutput.At(_fixture.Temp.File("verify-checked-ops.out.xlsx")),
+                Verify = true,
+            });
+
+        Assert.True(result.Verification!.Ok);
+        Assert.Equal(["op-0001", "total"], result.Verification.CheckedOps);
+    }
+
+    [Fact]
     public void VerificationReportsAFormulaErrorAtItsCell()
     {
         string source = _fixture.CreateSalesWorkbook("verify-formula-error.xlsx");
@@ -156,7 +173,7 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
         EditResult result = CellsEdit.Run(_fixture.Session,
             new EditRequest { Input = source, Batch = ParseOps("""{"ops":[{"op":"set_formula","sheet":"Second","range":"B1:B1001","formula":"=1/0"}]}"""), Output = TestOutput.At(_fixture.Temp.File("verify-formula-errors-capped.out.xlsx")), Verify = true });
 
-        EditVerification verification = result.Verification!;
+        CellsEditVerification verification = result.Verification!;
         Assert.Equal(1000, verification.FormulaErrors.Count);
         VerificationIssue capped = Assert.Single(verification.Issues, issue => issue.Code == "LIST_TRUNCATED");
         Assert.Equal("verification.formulaErrors", capped.Location);
@@ -196,7 +213,7 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
         EditResult result = CellsEdit.Run(_fixture.Session,
             new EditRequest { Input = source, Batch = ParseOps("""{"ops":[{"op":"set_values","sheet":"Data","range":"A5","values":[["West",900],["North",700]]}]}"""), Output = TestOutput.At(_fixture.Temp.File("verify-anchored-matrix.out.xlsx")), Verify = true });
 
-        EditVerification verification = result.Verification!;
+        CellsEditVerification verification = result.Verification!;
         Assert.Equal(["A5", "B5", "A6", "B6"], verification.DirectChanges.Select(static change => change.Cell));
         Assert.Empty(verification.OtherChanges);
         Assert.Equal("A5:B6", Assert.Single(verification.RequestedTargets).Range);
@@ -210,7 +227,7 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
         EditResult result = CellsEdit.Run(_fixture.Session,
             new EditRequest { Input = source, Batch = ParseOps("""{"ops":[{"op":"set_values","sheet":"Second","range":"A1","values":[["before"]]},{"op":"rename_sheet","sheet":"Second","to":"Notes"},{"op":"set_values","sheet":"Notes","range":"B1","values":[["after"]]}]}"""), Output = TestOutput.At(_fixture.Temp.File("verify-renamed.out.xlsx")), Verify = true });
 
-        EditVerification verification = result.Verification!;
+        CellsEditVerification verification = result.Verification!;
         Assert.Equal(["Notes!A1", "Notes!B1"], verification.DirectChanges.Select(static change => $"{change.Sheet}!{change.Cell}"));
         VerificationOtherChange renamed = Assert.Single(verification.OtherChanges);
         Assert.Equal(("Notes", "renamed"), (renamed.Sheet, renamed.Status));

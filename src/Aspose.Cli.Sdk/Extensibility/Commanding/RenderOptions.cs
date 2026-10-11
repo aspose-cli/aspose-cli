@@ -9,11 +9,11 @@ namespace Aspose.Cli.Sdk.Extensibility.Commanding;
 /// <summary>The one <c>--dpi</c> option: the shared range and default of every raster output.</summary>
 public sealed class DpiOption
 {
-    private readonly Option<int> _dpi = new("--dpi")
+    private readonly Option<int> _dpi = new Option<int>("--dpi")
     {
-        Description = $"Raster resolution ({RenderPixelGuard.MinimumDpi}-{RenderPixelGuard.MaximumDpi}); ignored for vector formats.",
+        Description = "Raster resolution; ignored for vector formats.",
         DefaultValueFactory = _ => RenderPixelGuard.DefaultDpi,
-    };
+    }.InRange(RenderPixelGuard.MinimumDpi, RenderPixelGuard.MaximumDpi);
 
     /// <summary>Creates the option.</summary>
     public DpiOption() => Options = [_dpi];
@@ -33,9 +33,9 @@ public sealed class DpiOption
     public int Read(ParseResult parse)
     {
         ArgumentNullException.ThrowIfNull(parse);
-        int dpi = parse.GetValue(_dpi);
-        RenderPixelGuard.EnsureDpi(dpi);
-        return dpi;
+        return parse.GetInRange(
+            _dpi,
+            string.Create(CultureInfo.InvariantCulture, $"Use {RenderPixelGuard.MinimumDpi}-{RenderPixelGuard.MaximumDpi} DPI; {RenderPixelGuard.DefaultDpi} gives crisp text."));
     }
 }
 
