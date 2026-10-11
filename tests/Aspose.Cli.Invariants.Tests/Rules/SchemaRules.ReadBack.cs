@@ -136,7 +136,8 @@ internal static partial class ContractRules
         Unread("pdf add_footer_text", "text", "position", "font");
         Unread("pdf add_stamp_image", "rect");
         Unread("pdf add_link", "rect", "url");
-        Unread("pdf set_metadata", "title", "author", "subject", "keywords", "custom");
+        Read("pdf set_metadata", $"{PdfInfo}#/metadata", "title", "author", "subject", "keywords");
+        Unread("pdf set_metadata", "custom");
 
         Read("slides set_shape_style.style", $"{SlidesRead}#slideTextRunData", SlidesShapeStyleRead);
         Unread("slides set_shape_style.style", SlidesShapeStyleUnread);
@@ -165,7 +166,7 @@ internal static partial class ContractRules
         Unread("slides update_chart_data", "categories", "series");
         Unread("slides set_footer", "text", "showNumber", "showDate");
         Unread("slides set_background", "color", "imagePath");
-        Unread("slides set_properties", "title", "author", "subject", "keywords", "company");
+        Read("slides set_properties", $"{SlidesInfo}#/properties", "title", "author", "subject", "keywords", "company");
 
         Read("words format_text", $"{WordsRead}#runData", "bold", "italic", "size", "color", "font", "latinFont", "eastAsianFont");
         Unread("words format_text", "underline", "highlight");
@@ -196,7 +197,8 @@ internal static partial class ContractRules
         Unread("words insert_toc", "maxLevel");
         Unread("words apply_list", "kind", "level");
         Unread("words set_default_font", "font", "latinFont", "eastAsianFont", "size");
-        Unread("words set_properties", "title", "author", "subject", "keywords", "custom");
+        Read("words set_properties", $"{WordsInfo}#/properties", "title", "author", "subject", "keywords");
+        Unread("words set_properties", "custom");
         Unread("words format_table", "keepTogether", "allowRowBreakAcrossPages", "headerRowCount", "keepWithNext");
         Unread("words set_page_numbers", "location", "alignment", "format", "start");
         return fields;
@@ -378,7 +380,11 @@ internal static partial class ContractRules
             {
                 (schemaId, node) = PublishedSchema.Resolve(schemaId, items);
             }
-            node = node["properties"]?[segment] as JsonObject;
+            // A dictionary, such as a document's properties (no properties, only additionalProperties),
+            // reads every key as its values.
+            node = node["properties"] is null && node["additionalProperties"] is JsonObject values
+                ? values
+                : node["properties"]?[segment] as JsonObject;
         }
         return node is null ? null : (schemaId, node);
     }

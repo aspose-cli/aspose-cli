@@ -337,6 +337,16 @@
       "actual": "commandArgumentCapabilities.inputKind: \"none\" as a value; omit the field instead; commandOptionCapabilities.inputKind: \"none\" as a value; omit the field instead"
     },
     {
+      "case": "C-R19 | cells add_comment applied twice",
+      "invariant": "C-R19",
+      "rule": "C-R19",
+      "cause": "cells-add-comment-replaces",
+      "modes": [
+        "licensed"
+      ],
+      "actual": "applied twice, it leaves the same package parts and the same inspect and read results as applied once: the second replaces the first"
+    },
+    {
       "case": "C-R17 | v2/cells/ops#conditionalRule",
       "invariant": "C-R17",
       "rule": "C-R17",
@@ -473,6 +483,306 @@
       "actual": "workbookSummary.hasVba: the other products name this fact hasMacros"
     },
     {
+      "case": "C-R30 | cells add_comment",
+      "invariant": "C-R30",
+      "rule": "C-R30",
+      "cause": "cells-items-affected-not-from-snapshots",
+      "actual": "itemsAffected is 0 without an OP_NO_EFFECT warning"
+    },
+    {
+      "case": "C-R30 | cells clear_range on an empty range",
+      "invariant": "C-R30",
+      "rule": "C-R30",
+      "cause": "cells-items-affected-not-from-snapshots",
+      "modes": [
+        "licensed"
+      ],
+      "actual": "itemsAffected is above 0 but the output has the same package parts and the same inspect and read results as the input"
+    },
+    {
+      "case": "C-R30 | cells clear_validation on an empty range",
+      "invariant": "C-R30",
+      "rule": "C-R30",
+      "cause": "cells-items-affected-not-from-snapshots",
+      "modes": [
+        "licensed"
+      ],
+      "actual": "itemsAffected is above 0 but the output has the same package parts and the same inspect and read results as the input"
+    },
+    {
+      "case": "C-R30 | cells create_chart",
+      "invariant": "C-R30",
+      "rule": "C-R30",
+      "cause": "cells-items-affected-not-from-snapshots",
+      "actual": "itemsAffected is 0 without an OP_NO_EFFECT warning"
+    },
+    {
+      "case": "C-R30 | cells create_pivot",
+      "invariant": "C-R30",
+      "rule": "C-R30",
+      "cause": "cells-items-affected-not-from-snapshots",
+      "actual": "itemsAffected is 0 without an OP_NO_EFFECT warning"
+    },
+    {
+      "case": "C-R30 | cells define_name",
+      "invariant": "C-R30",
+      "rule": "C-R30",
+      "cause": "cells-items-affected-not-from-snapshots",
+      "actual": "itemsAffected is 0 without an OP_NO_EFFECT warning"
+    },
+    {
+      "case": "C-R30 | cells delete_chart",
+      "invariant": "C-R30",
+      "rule": "C-R30",
+      "cause": "cells-items-affected-not-from-snapshots",
+      "actual": "itemsAffected is 0 without an OP_NO_EFFECT warning"
+    },
+    {
+      "case": "C-R30 | cells delete_columns",
+      "invariant": "C-R30",
+      "rule": "C-R30",
+      "cause": "cells-items-affected-not-from-snapshots",
+      "actual": "itemsAffected is 0 without an OP_NO_EFFECT warning"
+    },
+    {
+      "case": "C-R30 | cells delete_comment",
+      "invariant": "C-R30",
+      "rule": "C-R30",
+      "cause": "cells-items-affected-not-from-snapshots",
+      "actual": "itemsAffected is 0 without an OP_NO_EFFECT warning"
+    },
+    {
+      "case": "C-R30 | cells delete_name",
+      "invariant": "C-R30",
+      "rule": "C-R30",
+      "cause": "cells-items-affected-not-from-snapshots",
+      "actual": "itemsAffected is 0 without an OP_NO_EFFECT warning"
+    },
+    {
+      "case": "C-R30 | cells delete_rows",
+      "invariant": "C-R30",
+      "rule": "C-R30",
+      "cause": "cells-items-affected-not-from-snapshots",
+      "actual": "itemsAffected is 0 without an OP_NO_EFFECT warning"
+    },
+    {
+      "case": "C-R30 | cells delete_sheet",
+      "invariant": "C-R30",
+      "rule": "C-R30",
+      "cause": "cells-items-affected-not-from-snapshots",
+      "actual": "itemsAffected is 0 without an OP_NO_EFFECT warning"
+    },
+    {
+      "case": "C-R30 | cells edit_comment",
+      "invariant": "C-R30",
+      "rule": "C-R30",
+      "cause": "cells-items-affected-not-from-snapshots",
+      "actual": "itemsAffected is 0 without an OP_NO_EFFECT warning"
+    },
+    {
+      "case": "C-R30 | cells freeze_panes",
+      "invariant": "C-R30",
+      "rule": "C-R30",
+      "cause": "cells-items-affected-not-from-snapshots",
+      "actual": "itemsAffected is 0 without an OP_NO_EFFECT warning"
+    },
+    {
+      "case": "C-R30 | cells group_columns",
+      "invariant": "C-R30",
+      "rule": "C-R30",
+      "cause": "cells-items-affected-not-from-snapshots",
+      "actual": "itemsAffected is 0 without an OP_NO_EFFECT warning"
+    },
+    {
+      "case": "C-R30 | cells group_rows",
+      "invariant": "C-R30",
+      "rule": "C-R30",
+      "cause": "cells-items-affected-not-from-snapshots",
+      "actual": "itemsAffected is 0 without an OP_NO_EFFECT warning"
+    },
+    {
+      "case": "C-R30 | cells insert_columns",
+      "invariant": "C-R30",
+      "rule": "C-R30",
+      "cause": "cells-items-affected-not-from-snapshots",
+      "actual": "itemsAffected is 0 without an OP_NO_EFFECT warning"
+    },
+    {
+      "case": "C-R30 | cells insert_image",
+      "invariant": "C-R30",
+      "rule": "C-R30",
+      "cause": "cells-items-affected-not-from-snapshots",
+      "actual": "itemsAffected is 0 without an OP_NO_EFFECT warning"
+    },
+    {
+      "case": "C-R30 | cells insert_rows",
+      "invariant": "C-R30",
+      "rule": "C-R30",
+      "cause": "cells-items-affected-not-from-snapshots",
+      "actual": "itemsAffected is 0 without an OP_NO_EFFECT warning"
+    },
+    {
+      "case": "C-R30 | cells move_sheet",
+      "invariant": "C-R30",
+      "rule": "C-R30",
+      "cause": "cells-items-affected-not-from-snapshots",
+      "actual": "itemsAffected is 0 without an OP_NO_EFFECT warning"
+    },
+    {
+      "case": "C-R30 | cells protect_sheet",
+      "invariant": "C-R30",
+      "rule": "C-R30",
+      "cause": "cells-items-affected-not-from-snapshots",
+      "actual": "itemsAffected is 0 without an OP_NO_EFFECT warning"
+    },
+    {
+      "case": "C-R30 | cells protect_workbook",
+      "invariant": "C-R30",
+      "rule": "C-R30",
+      "cause": "cells-items-affected-not-from-snapshots",
+      "actual": "itemsAffected is 0 without an OP_NO_EFFECT warning"
+    },
+    {
+      "case": "C-R30 | cells refresh_pivot",
+      "invariant": "C-R30",
+      "rule": "C-R30",
+      "cause": "cells-items-affected-not-from-snapshots",
+      "actual": "itemsAffected is 0 without an OP_NO_EFFECT warning"
+    },
+    {
+      "case": "C-R30 | cells remove_hyperlink",
+      "invariant": "C-R30",
+      "rule": "C-R30",
+      "cause": "cells-items-affected-not-from-snapshots",
+      "actual": "itemsAffected is 0 without an OP_NO_EFFECT warning"
+    },
+    {
+      "case": "C-R30 | cells rename_sheet",
+      "invariant": "C-R30",
+      "rule": "C-R30",
+      "cause": "cells-items-affected-not-from-snapshots",
+      "actual": "itemsAffected is 0 without an OP_NO_EFFECT warning"
+    },
+    {
+      "case": "C-R30 | cells resize_columns",
+      "invariant": "C-R30",
+      "rule": "C-R30",
+      "cause": "cells-items-affected-not-from-snapshots",
+      "actual": "itemsAffected is 0 without an OP_NO_EFFECT warning"
+    },
+    {
+      "case": "C-R30 | cells resize_rows",
+      "invariant": "C-R30",
+      "rule": "C-R30",
+      "cause": "cells-items-affected-not-from-snapshots",
+      "actual": "itemsAffected is 0 without an OP_NO_EFFECT warning"
+    },
+    {
+      "case": "C-R30 | cells set_active_sheet",
+      "invariant": "C-R30",
+      "rule": "C-R30",
+      "cause": "cells-items-affected-not-from-snapshots",
+      "actual": "itemsAffected is 0 without an OP_NO_EFFECT warning"
+    },
+    {
+      "case": "C-R30 | cells set_autofilter",
+      "invariant": "C-R30",
+      "rule": "C-R30",
+      "cause": "cells-items-affected-not-from-snapshots",
+      "actual": "itemsAffected is 0 without an OP_NO_EFFECT warning"
+    },
+    {
+      "case": "C-R30 | cells set_default_font",
+      "invariant": "C-R30",
+      "rule": "C-R30",
+      "cause": "cells-items-affected-not-from-snapshots",
+      "actual": "itemsAffected is 0 without an OP_NO_EFFECT warning"
+    },
+    {
+      "case": "C-R30 | cells set_hyperlink",
+      "invariant": "C-R30",
+      "rule": "C-R30",
+      "cause": "cells-items-affected-not-from-snapshots",
+      "actual": "itemsAffected is 0 without an OP_NO_EFFECT warning"
+    },
+    {
+      "case": "C-R30 | cells set_page_setup",
+      "invariant": "C-R30",
+      "rule": "C-R30",
+      "cause": "cells-items-affected-not-from-snapshots",
+      "actual": "itemsAffected is 0 without an OP_NO_EFFECT warning"
+    },
+    {
+      "case": "C-R30 | cells set_page_setup on a scale",
+      "invariant": "C-R30",
+      "rule": "C-R30",
+      "cause": "cells-items-affected-not-from-snapshots",
+      "actual": "itemsAffected is 0 without an OP_NO_EFFECT warning"
+    },
+    {
+      "case": "C-R30 | cells set_print_area",
+      "invariant": "C-R30",
+      "rule": "C-R30",
+      "cause": "cells-items-affected-not-from-snapshots",
+      "actual": "itemsAffected is 0 without an OP_NO_EFFECT warning"
+    },
+    {
+      "case": "C-R30 | cells set_sheet_view",
+      "invariant": "C-R30",
+      "rule": "C-R30",
+      "cause": "cells-items-affected-not-from-snapshots",
+      "actual": "itemsAffected is 0 without an OP_NO_EFFECT warning"
+    },
+    {
+      "case": "C-R30 | cells set_sheet_visibility",
+      "invariant": "C-R30",
+      "rule": "C-R30",
+      "cause": "cells-items-affected-not-from-snapshots",
+      "actual": "itemsAffected is 0 without an OP_NO_EFFECT warning"
+    },
+    {
+      "case": "C-R30 | cells set_tab_color",
+      "invariant": "C-R30",
+      "rule": "C-R30",
+      "cause": "cells-items-affected-not-from-snapshots",
+      "actual": "itemsAffected is 0 without an OP_NO_EFFECT warning"
+    },
+    {
+      "case": "C-R30 | cells ungroup_columns",
+      "invariant": "C-R30",
+      "rule": "C-R30",
+      "cause": "cells-items-affected-not-from-snapshots",
+      "actual": "itemsAffected is 0 without an OP_NO_EFFECT warning"
+    },
+    {
+      "case": "C-R30 | cells ungroup_rows",
+      "invariant": "C-R30",
+      "rule": "C-R30",
+      "cause": "cells-items-affected-not-from-snapshots",
+      "actual": "itemsAffected is 0 without an OP_NO_EFFECT warning"
+    },
+    {
+      "case": "C-R30 | cells unprotect_sheet",
+      "invariant": "C-R30",
+      "rule": "C-R30",
+      "cause": "cells-items-affected-not-from-snapshots",
+      "actual": "itemsAffected is 0 without an OP_NO_EFFECT warning"
+    },
+    {
+      "case": "C-R30 | cells unprotect_workbook",
+      "invariant": "C-R30",
+      "rule": "C-R30",
+      "cause": "cells-items-affected-not-from-snapshots",
+      "actual": "itemsAffected is 0 without an OP_NO_EFFECT warning"
+    },
+    {
+      "case": "C-R30 | cells update_chart",
+      "invariant": "C-R30",
+      "rule": "C-R30",
+      "cause": "cells-items-affected-not-from-snapshots",
+      "actual": "itemsAffected is 0 without an OP_NO_EFFECT warning"
+    },
+    {
       "case": "C-R21 | v2/cells/ops#set_page_setup",
       "invariant": "C-R21",
       "rule": "C-R21",
@@ -564,6 +874,13 @@
       "actual": "range: read back as printArea"
     },
     {
+      "case": "C-R15 | cells query range --range A1:B3 --max-cells 1",
+      "invariant": "C-R15",
+      "rule": "C-R15",
+      "cause": "cells-read-refuses-over-budget-range",
+      "actual": "exit 4 RANGE_TOO_LARGE, expected 0: The request covers 6 cells which exceeds the limit of 1.; window.truncated is missing, expected true; window.next is missing; window.unit is missing, expected \"cell\""
+    },
+    {
       "case": "C-R20 | v2/cells/ops field at",
       "invariant": "C-R20",
       "rule": "C-R20",
@@ -583,6 +900,13 @@
       "rule": "C-R20",
       "cause": "cells-row-and-cell-fields-share-names",
       "actual": "integer in group_rows, resize_rows, ungroup_rows; string in copy_range, group_columns, import_range and 3 more"
+    },
+    {
+      "case": "C-R19 | cells set_validation applied twice",
+      "invariant": "C-R19",
+      "rule": "C-R19",
+      "cause": "cells-set-validation-appends",
+      "actual": "applied twice, it leaves another state than applied once, from cells inspect: workbook.validations"
     },
     {
       "case": "C-R18 | v2/cells/ops#add_sheet",
@@ -786,6 +1110,13 @@
       "rule": "C-R20",
       "cause": "cells-style-has-three-types",
       "actual": "enum in set_borders; object{bg,bold,color,font,hAlign,indent,italic,locked,numberFormat,size,strikethrough,underline,vAlign,wrap} in format_range; object{bg,bold,color,italic,numberFormat,strikethrough,underline} in add_conditional_format; ..."
+    },
+    {
+      "case": "C-R30 | cells targets read <unit>/<address>",
+      "invariant": "C-R30",
+      "rule": "C-R30",
+      "cause": "cells-targets-not-unit-address",
+      "actual": "targets outside <unit>/<address>: add_comment Sheet1!A1; add_conditional_format Sheet1!B2:B3; add_sheet Extra; add_sparkline Sheet1!C2; format_range Sheet1!A1:B1; set_autofilter Sheet1!A1:B3; set_borders Sheet1!A1:B3; set_formula Sheet1!C2;..."
     },
     {
       "case": "C-R10 | pdf sign declared",
@@ -2118,6 +2449,13 @@
       "actual": "license install writes files but has no --overwrite.; license install writes files but has no --dry-run."
     },
     {
+      "case": "C-R11 | license remove declared",
+      "invariant": "C-R11",
+      "rule": "C-R11",
+      "cause": "install-commands-have-no-overwrite-or-dry-run",
+      "actual": "license remove writes files but has no --dry-run."
+    },
+    {
       "case": "C-R11 | skill install declared",
       "invariant": "C-R11",
       "rule": "C-R11",
@@ -2188,6 +2526,65 @@
       "actual": "zoom: measured in percent; name it *Percent"
     },
     {
+      "case": "C-R12 | pdf convert --to png",
+      "invariant": "C-R12",
+      "rule": "C-R12",
+      "cause": "multi-file-output-naming",
+      "actual": "wrote page.p1.png, page.p2.png; expected page.1.png, page.2.png"
+    },
+    {
+      "case": "C-R12 | pdf render --all-pages",
+      "invariant": "C-R12",
+      "rule": "C-R12",
+      "cause": "multi-file-output-naming",
+      "actual": "wrote page.p1.png, page.p2.png; expected page.1.png, page.2.png"
+    },
+    {
+      "case": "C-R12 | pdf split --every 1",
+      "invariant": "C-R12",
+      "rule": "C-R12",
+      "cause": "multi-file-output-naming",
+      "actual": "wrote parts/two.001.pdf, parts/two.002.pdf; expected parts/two.1.pdf, parts/two.2.pdf"
+    },
+    {
+      "case": "C-R12 | pdf split --every 1 of ten pages",
+      "invariant": "C-R12",
+      "rule": "C-R12",
+      "cause": "multi-file-output-naming",
+      "modes": [
+        "licensed"
+      ],
+      "actual": "wrote parts/ten.001.pdf, parts/ten.002.pdf, parts/ten.003.pdf, parts/ten.004.pdf, parts/ten.005.pdf, parts/ten.006.pdf, parts/ten.007.pdf, parts/ten.008.pdf, parts/ten.009.pdf, parts/ten.010.pdf; expected parts/ten.01.pdf, parts/ten.02.pdf,..."
+    },
+    {
+      "case": "C-R12 | slides convert --to png",
+      "invariant": "C-R12",
+      "rule": "C-R12",
+      "cause": "multi-file-output-naming",
+      "actual": "wrote page.s1.png, page.s2.png; expected page.1.png, page.2.png"
+    },
+    {
+      "case": "C-R12 | slides render --all-slides",
+      "invariant": "C-R12",
+      "rule": "C-R12",
+      "cause": "multi-file-output-naming",
+      "actual": "wrote page.s1.png, page.s2.png; expected page.1.png, page.2.png"
+    },
+    {
+      "case": "C-R12 | words render --all-pages",
+      "invariant": "C-R12",
+      "rule": "C-R12",
+      "cause": "multi-file-output-naming",
+      "actual": "wrote page.p1.png, page.p2.png; expected page.1.png, page.2.png"
+    },
+    {
+      "case": "C-R12 | words split --by pages",
+      "invariant": "C-R12",
+      "rule": "C-R12",
+      "cause": "multi-file-output-naming",
+      "actual": "wrote parts/part-001.docx, parts/part-002.docx; expected parts/two.1.docx, parts/two.2.docx"
+    },
+    {
       "case": "C-R27 | common warning codes",
       "invariant": "C-R27",
       "rule": "C-R27",
@@ -2230,11 +2627,39 @@
       "actual": "index: minimum 0, not 1"
     },
     {
+      "case": "C-R30 | cells applied[] has no index",
+      "invariant": "C-R30",
+      "rule": "C-R30",
+      "cause": "op-batch-index-reported",
+      "actual": "every applied[] entry carries index"
+    },
+    {
+      "case": "C-R30 | pdf applied[] has no index",
+      "invariant": "C-R30",
+      "rule": "C-R30",
+      "cause": "op-batch-index-reported",
+      "actual": "every applied[] entry carries index"
+    },
+    {
+      "case": "C-R30 | slides applied[] has no index",
+      "invariant": "C-R30",
+      "rule": "C-R30",
+      "cause": "op-batch-index-reported",
+      "actual": "every applied[] entry carries index"
+    },
+    {
       "case": "C-R30 | v2/common/operation-outcome index",
       "invariant": "C-R30",
       "rule": "C-R30",
       "cause": "op-batch-index-reported",
       "actual": "applied[] has index; an outcome names its op by id"
+    },
+    {
+      "case": "C-R30 | words applied[] has no index",
+      "invariant": "C-R30",
+      "rule": "C-R30",
+      "cause": "op-batch-index-reported",
+      "actual": "every applied[] entry carries index"
     },
     {
       "case": "C-R26 | cells op set_page_setup orientation portrait as protrait",
@@ -2874,6 +3299,27 @@
       "actual": "size: a page size is named pageSize"
     },
     {
+      "case": "C-R21 | pdf insert_blank_page reads back",
+      "invariant": "C-R21",
+      "rule": "C-R21",
+      "cause": "page-size-read-as-width-and-height-points",
+      "actual": "size \"Letter\" does not read back as widthPoints in pdf inspect"
+    },
+    {
+      "case": "C-R21 | pdf set_page_size reads back",
+      "invariant": "C-R21",
+      "rule": "C-R21",
+      "cause": "page-size-read-as-width-and-height-points",
+      "actual": "size \"Letter\" does not read back as widthPoints in pdf inspect"
+    },
+    {
+      "case": "C-R21 | slides set_slide_size reads back",
+      "invariant": "C-R21",
+      "rule": "C-R21",
+      "cause": "page-size-read-as-width-and-height-points",
+      "actual": "size \"4x3\" does not read back as widthPoints in slides inspect"
+    },
+    {
       "case": "C-R21 | v2/pdf/ops#insert_blank_page",
       "invariant": "C-R21",
       "rule": "C-R21",
@@ -2907,6 +3353,20 @@
       "rule": "C-R21",
       "cause": "page-size-read-as-width-and-height-points",
       "actual": "setup.size: read back as widthPoints; setup.size: writes enum(a3,a4,a5,legal,letter), reads number; setup.columnCount: no read reports it"
+    },
+    {
+      "case": "C-R21 | words add_section reads back",
+      "invariant": "C-R21",
+      "rule": "C-R21",
+      "cause": "page-size-read-as-width-and-height-points",
+      "actual": "pageSetup.size \"letter\" does not read back as widthPoints in words inspect"
+    },
+    {
+      "case": "C-R21 | words set_page_setup reads back",
+      "invariant": "C-R21",
+      "rule": "C-R21",
+      "cause": "page-size-read-as-width-and-height-points",
+      "actual": "setup.size \"letter\" does not read back as widthPoints in words inspect"
     },
     {
       "case": "C-R26 | cells inspect --detail charts as cahrts",
@@ -3028,6 +3488,13 @@
       "actual": "pdf extract --to lists fdf, json, xfdf; convertFormats is docx, epub, html, jpeg, md, pdfa-1b, pdfa-2b, pdfa-3b, png, pptx, svg, tiff, txt, xlsx, xps."
     },
     {
+      "case": "C-R30 | pdf flatten_forms on a document without forms",
+      "invariant": "C-R30",
+      "rule": "C-R30",
+      "cause": "pdf-items-affected-not-from-snapshots",
+      "actual": "itemsAffected is 0 without an OP_NO_EFFECT warning"
+    },
+    {
       "case": "C-R33 | v2/pdf/form-result none",
       "invariant": "C-R33",
       "rule": "C-R33",
@@ -3068,6 +3535,13 @@
       "rule": "C-R15",
       "cause": "pdf-query-forms-has-no-budget",
       "actual": "pdf query forms reads content but has no --max-<unit> budget."
+    },
+    {
+      "case": "C-R21 | pdf crop_pages reads back",
+      "invariant": "C-R21",
+      "rule": "C-R21",
+      "cause": "pdf-read-names-differ-from-op-fields",
+      "actual": "rect {\"x\":10,\"y\":10,\"width\":500,\"height\":700} does not read back as cropBox in pdf inspect"
     },
     {
       "case": "C-R21 | v2/pdf/ops#crop_pages",
@@ -3158,7 +3632,14 @@
       "invariant": "C-R21",
       "rule": "C-R21",
       "cause": "pdf-state-not-read-back",
-      "actual": "title: no read reports it; author: no read reports it; subject: no read reports it; keywords: no read reports it; custom: no read reports it"
+      "actual": "custom: no read reports it"
+    },
+    {
+      "case": "C-R30 | pdf targets read <unit>/<address>",
+      "invariant": "C-R30",
+      "rule": "C-R30",
+      "cause": "pdf-targets-not-unit-address",
+      "actual": "targets outside <unit>/<address>: add_attachment pdf/attachment; add_bookmark pdf/bookmark/1; add_footer_text pdf/page/1; add_header_text pdf/page/1; add_link pdf/page/1; add_page_numbers pdf/page/1; add_stamp_image pdf/page/1; add_watermar..."
     },
     {
       "case": "C-R24 | pdf validate of a PDF that is not PDF/A",
@@ -3840,13 +4321,6 @@
       "actual": "text: no read reports it; showNumber: no read reports it; showDate: no read reports it"
     },
     {
-      "case": "C-R21 | v2/slides/ops#set_properties",
-      "invariant": "C-R21",
-      "rule": "C-R21",
-      "cause": "slides-state-not-read-back",
-      "actual": "title: no read reports it; author: no read reports it; subject: no read reports it; keywords: no read reports it; company: no read reports it"
-    },
-    {
       "case": "C-R21 | v2/slides/ops#set_shape_style",
       "invariant": "C-R21",
       "rule": "C-R21",
@@ -3873,6 +4347,13 @@
       "rule": "C-R21",
       "cause": "slides-state-not-read-back",
       "actual": "categories: no read reports it; series: no read reports it"
+    },
+    {
+      "case": "C-R30 | slides targets read <unit>/<address>",
+      "invariant": "C-R30",
+      "rule": "C-R30",
+      "cause": "slides-targets-not-unit-address",
+      "actual": "targets outside <unit>/<address>: set_properties presentation"
     },
     {
       "case": "C-R20 | v2/cells/ops#import_range secrets",
@@ -4352,6 +4833,13 @@
       "actual": "v2/words/edit-result verification does not require checkedOps"
     },
     {
+      "case": "C-R19 | words add_watermark applied twice",
+      "invariant": "C-R19",
+      "rule": "C-R19",
+      "cause": "words-add-watermark-replaces",
+      "actual": "applied twice, it leaves the same package parts and the same inspect and read results as applied once: the second replaces the first"
+    },
+    {
       "case": "C-R08 | words create",
       "invariant": "C-R08",
       "rule": "C-R08",
@@ -4434,6 +4922,20 @@
       "rule": "C-R20",
       "cause": "words-field-types-disagree",
       "actual": "array of object{listLevel,style,text} in insert_paragraphs; array of string in set_footer, set_header"
+    },
+    {
+      "case": "C-R30 | words remove_watermark on a document without a watermark",
+      "invariant": "C-R30",
+      "rule": "C-R30",
+      "cause": "words-items-affected-not-from-snapshots",
+      "actual": "itemsAffected is above 0 but the output has the same package parts and the same inspect and read results as the input"
+    },
+    {
+      "case": "C-R30 | words update_fields",
+      "invariant": "C-R30",
+      "rule": "C-R30",
+      "cause": "words-items-affected-not-from-snapshots",
+      "actual": "itemsAffected is above 0 but the output has the same package parts and the same inspect and read results as the input"
     },
     {
       "case": "C-R18 | v2/words/ops#apply_list",
@@ -4573,7 +5075,28 @@
       "invariant": "C-R21",
       "rule": "C-R21",
       "cause": "words-state-not-read-back",
-      "actual": "title: no read reports it; author: no read reports it; subject: no read reports it; keywords: no read reports it; custom: no read reports it"
+      "actual": "custom: no read reports it"
+    },
+    {
+      "case": "C-R21 | words insert_image reads back",
+      "invariant": "C-R21",
+      "rule": "C-R21",
+      "cause": "words-state-not-read-back",
+      "actual": "width 50 does not read back as width in words query blocks"
+    },
+    {
+      "case": "C-R21 | words insert_table reads back",
+      "invariant": "C-R21",
+      "rule": "C-R21",
+      "cause": "words-state-not-read-back",
+      "actual": "style \"Table Normal\" does not read back as style in words inspect"
+    },
+    {
+      "case": "C-R30 | words targets read <unit>/<address>",
+      "invariant": "C-R30",
+      "rule": "C-R30",
+      "cause": "words-targets-not-unit-address",
+      "actual": "targets outside <unit>/<address>: add_section document; add_watermark document; set_default_font document; set_footer document; set_header document; set_page_numbers document; set_page_setup document; set_properties document"
     }
   ]
 }

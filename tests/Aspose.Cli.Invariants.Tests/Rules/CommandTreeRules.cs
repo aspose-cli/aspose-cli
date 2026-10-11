@@ -308,7 +308,9 @@ internal static partial class ContractRules
     {
         foreach (TreeCommand command in CommandTree.Of(catalog).Where(static command => !command.Hidden && Writes(command)))
         {
-            yield return Check("C-R11", $"{command} declared", () => new[] { "--overwrite", "--dry-run" }
+            // A removal replaces nothing, so it needs --dry-run but no --overwrite.
+            string[] required = RemovesInstalled(command) ? ["--dry-run"] : ["--overwrite", "--dry-run"];
+            yield return Check("C-R11", $"{command} declared", () => required
                 .Where(name => !command.Has(name))
                 .Select(name => $"{command} writes files but has no {name}."));
         }
@@ -316,11 +318,14 @@ internal static partial class ContractRules
 
     /// <summary>
     /// A command that writes files: it names an output (<c>--out</c>, <c>--out-dir</c>), creates
-    /// the file its argument names (a product's <c>create</c>) or installs into a directory
-    /// (a service's <c>install</c>).
+    /// the file its argument names (a product's <c>create</c>), or installs into or removes from
+    /// an installation directory (a service's <c>install</c> or <c>remove</c>). C-R11 holds each to
+    /// <c>--dry-run</c>, declared here and run in <c>OperationBehaviorRules.cs</c>.
     /// </summary>
-    private static bool Writes(TreeCommand command) =>
-        command.Has("--out") || command.Has("--out-dir") || command.ProductVerb == "create" || command.Product is null && command.Verb == "install";
+    internal static bool Writes(TreeCommand command) =>
+        command.Has("--out") || command.Has("--out-dir") || command.ProductVerb == "create" || command.Product is null && command.Verb is "install" or "remove";
+
+    private static bool RemovesInstalled(TreeCommand command) => command.Product is null && command.Verb == "remove";
 
     // ----- C-R12 (declared): --out or --out-dir, never both ---------------------------------------
 

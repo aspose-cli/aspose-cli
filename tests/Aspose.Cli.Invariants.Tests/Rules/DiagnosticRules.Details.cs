@@ -342,31 +342,15 @@ internal static partial class ContractRules
     /// <summary>Seeds a workspace, runs the sample's setup and then the sample itself.</summary>
     private static (CliResult Result, string? SetupFailure) RunSample(DetailsSample sample)
     {
-        using var workspace = new TempWorkspace();
-        ScenarioLicense.Project(workspace.Path);
-        foreach ((string relative, ScenarioFile file) in sample.Invocation.Files)
-        {
-            string target = workspace.File(relative);
-            Directory.CreateDirectory(Path.GetDirectoryName(target)!);
-            File.WriteAllBytes(target, file switch
-            {
-                { Fixture: { } fixture } => ScenarioFixtures.Read(fixture),
-                { Text: { } text } => Encoding.UTF8.GetBytes(text),
-                _ => throw new InvalidOperationException($"Seed file '{relative}' has no source."),
-            });
-        }
-        var environment = CliEnvironment.Evaluation(
-            Path.GetDirectoryName(workspace.ConfigDirectory)!,
-            sample.Invocation.Env.ToDictionary(static pair => pair.Key, static pair => (string?)pair.Value));
-        var process = new CliProcess(CliRunner.ExecutablePath, environment);
+        using var workspace = new RuleWorkspace(sample.Invocation);
         foreach (string[] setup in sample.Setup)
         {
-            CliResult prepared = process.Run(workspace.Path, string.Empty, [.. setup, "--output", "json"]);
+            CliResult prepared = workspace.Execute([.. setup, "--output", "json"]);
             if (prepared.ExitCode != 0)
             {
                 return (prepared, $"'{string.Join(' ', setup)}' exited {prepared.ExitCode}");
             }
         }
-        return (process.Run(workspace.Path, string.Empty, [.. sample.Invocation.Args, "--output", "json"]), null);
+        return (workspace.Run("--output", "json"), null);
     }
 }

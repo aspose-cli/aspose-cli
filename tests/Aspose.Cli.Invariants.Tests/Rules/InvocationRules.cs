@@ -45,7 +45,7 @@ internal static partial class ContractRules
         }
     }
 
-    private static IEnumerable<string> R03Problems(InvocationSession session, string output, string[] subcommands)
+    private static IEnumerable<string> R03Problems(RuleWorkspace session, string output, string[] subcommands)
     {
         string help = Normalize(session.Run("--help").StdOut);
         CliResult table = session.Run(output, "table");
@@ -787,7 +787,7 @@ internal static partial class ContractRules
         });
     }
 
-    private static IEnumerable<string> R35HelpProblems(InvocationSession session, string output)
+    private static IEnumerable<string> R35HelpProblems(RuleWorkspace session, string output)
     {
         CliResult help = session.Run("--help");
         if (help.ExitCode != 0)
@@ -832,7 +832,7 @@ internal static partial class ContractRules
         }
     }
 
-    private static IEnumerable<string> R37Problems(InvocationSession session, string output, string format)
+    private static IEnumerable<string> R37Problems(RuleWorkspace session, string output, string format)
     {
         CliResult plain = session.Run(output, format);
         CliResult quiet = session.Run(output, format, "--quiet");
