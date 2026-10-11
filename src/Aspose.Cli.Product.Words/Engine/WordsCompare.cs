@@ -1,4 +1,5 @@
 using Aspose.Cli.Product.Words.Engine.Mapping;
+using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Results;
@@ -44,11 +45,12 @@ internal static class WordsCompare
         string? format = null;
         if (request.Output is { } redline)
         {
-            format = redline.Keeping(leftLoaded.FormatId).Id;
+            FormatDescriptor written = redline.Keeping(leftLoaded.FormatId);
+            format = written.Id;
             SaveOptions options = WordsSavePipeline.Options(format);
             WordsSavePipeline.RemoveMacrosUnlessKept(compared, format);
-            long size = session.Outputs.Write(redline.Path, redline.Overwrite, compared, temp => compared.Save(temp, options));
-            output = BuildOutput(redline.Path, format, size);
+            PublishedFile file = session.Outputs.Write(redline.Path, redline.Overwrite, compared, temp => compared.Save(temp, options));
+            output = FileObjects.Output(file, written, encrypted: false);
         }
 
         return new WordsCompareResult

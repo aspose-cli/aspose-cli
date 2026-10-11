@@ -41,7 +41,7 @@ internal static class PdfInfoProjection
 
         var result = new PdfInfoResult
         {
-            Source = Source(path, includeFingerprint: true),
+            Input = Source(path, loaded),
             Pdf = new PdfSummary
             {
                 PageCount = document.Pages.Count,
@@ -74,13 +74,7 @@ internal static class PdfInfoProjection
         return result with { Pdf = result.Pdf with { Tagged = IsTagged(document) } };
     }
 
-    public static SourceInfo Source(string path, bool includeFingerprint = false) => new()
-    {
-        Path = Path.GetFullPath(path),
-        Format = "pdf",
-        SizeBytes = new FileInfo(path).Length,
-        Fingerprint = includeFingerprint ? FileFingerprints.Capture(path) : null,
-    };
+    public static InputInfo Source(string path, LoadedPdf loaded) => FileObjects.Input(path, "pdf", loaded.Encrypted);
 
     private static string Version(string version) =>
         version.Replace("v_", string.Empty, StringComparison.Ordinal).Replace('_', '.');

@@ -1,3 +1,4 @@
+using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Rendering;
 using Aspose.Cli.Sdk.Results;
@@ -21,7 +22,7 @@ internal static class SlidesExport
         List<Warning> warnings = BuildConvertWarnings(state, loaded, request.Output.Format.Id);
         return new SlidesConvertResult
         {
-            Input = Source(request.Input, loaded.FormatId),
+            Input = Source(request.Input, loaded),
             Outputs = outputs,
             Slides = request.Slides?.Text,
             License = EnvelopeParts.License(state),
@@ -50,7 +51,9 @@ internal static class SlidesExport
         else
         {
             SaveFormat format = SlidesEngineFormats.SaveFormatOf(request.Output.Format.Id);
-            return session.Outputs.Write(request.Output, presentation, temp =>
+            // An editable format keeps the source's encryption unless --encrypt replaces it.
+            bool encrypted = request.EncryptPassword is not null || presentation.ProtectionManager.IsEncrypted;
+            return session.Outputs.Write(request.Output, presentation, encrypted, temp =>
             {
                 Save(temp);
                 loaded.Resources.ThrowIfFailed();
@@ -106,7 +109,7 @@ internal static class SlidesExport
         IReadOnlyList<SlideRenderOutput> outputs = RenderImages(session, loaded, request, slides, "slides-render");
         return new SlidesRenderResult
         {
-            Input = Source(request.Input, loaded.FormatId),
+            Input = Source(request.Input, loaded),
             Outputs = outputs,
             Dpi = request.Output.Format.Id == "svg" || request.Width is not null
                 ? null
@@ -163,17 +166,12 @@ internal static class SlidesExport
         }
 
         loaded.Resources.ThrowIfFailed();
-        IReadOnlyList<long> sizes = transaction.Commit();
+        IReadOnlyList<PublishedFile> files = transaction.Commit();
         return targets.Select((target, index) => new SlideRenderOutput
         {
             Slide = target.Number,
             SlideId = target.SlideId,
-            Output = new OutputInfo
-            {
-                Path = target.Path,
-                Format = request.Output.Format.Id,
-                SizeBytes = sizes[index],
-            },
+            Output = FileObjects.Output(files[index], request.Output.Format, encrypted: false),
         }).ToArray();
     }
 }

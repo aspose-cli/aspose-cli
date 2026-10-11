@@ -2397,7 +2397,7 @@
         },
         "input": {
           "description": "The converted presentation.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/source.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
         },
         "outputs": {
           "description": "The written files: one per slide for an image format, otherwise one, with any companion files the format needs.",
@@ -2457,11 +2457,11 @@
         },
         "template": {
           "description": "The template the presentation was built from; omitted without --template.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/source.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
         },
         "markdown": {
           "description": "The Markdown outline the slides were filled from; omitted without --from-markdown.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/source.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
         },
         "license": {
           "description": "License mode the engine ran under.",
@@ -2500,7 +2500,7 @@
         },
         "input": {
           "description": "The edited presentation.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/source.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
         },
         "output": {
           "description": "The written presentation; omitted for a dry run.",
@@ -2567,7 +2567,7 @@
         },
         "input": {
           "description": "The presentation extracted from.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/source.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
         },
         "what": {
           "description": "What was extracted.",
@@ -4444,7 +4444,7 @@
         "schema",
         "schemaVersion",
         "kind",
-        "source",
+        "input",
         "presentation",
         "slides"
       ],
@@ -4462,9 +4462,9 @@
           "description": "The kind of document inspected, always presentation.",
           "const": "presentation"
         },
-        "source": {
+        "input": {
           "description": "The inspected presentation.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/source.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
         },
         "presentation": {
           "description": "Presentation-level counts and slide geometry.",
@@ -4849,7 +4849,7 @@
         "schema",
         "schemaVersion",
         "kind",
-        "source",
+        "input",
         "scope",
         "slideCount",
         "slides",
@@ -4869,9 +4869,9 @@
           "description": "The kind of document read, always presentation.",
           "const": "presentation"
         },
-        "source": {
+        "input": {
           "description": "The presentation read.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/source.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
         },
         "scope": {
           "description": "How much of each slide was projected: text the text blocks, shapes every shape with its text and geometry, full also text runs, notes and comments.",
@@ -5160,7 +5160,7 @@
         },
         "input": {
           "description": "The rendered presentation.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/source.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
         },
         "outputs": {
           "description": "The rendered slides in presentation order.",
@@ -5231,7 +5231,7 @@
       "required": [
         "schema",
         "schemaVersion",
-        "source",
+        "input",
         "pattern",
         "scope",
         "hits",
@@ -5247,9 +5247,9 @@
           "description": "Version of this result contract.",
           "const": 2
         },
-        "source": {
+        "input": {
           "description": "The searched presentation.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/source.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
         },
         "pattern": {
           "description": "The searched pattern as given.",

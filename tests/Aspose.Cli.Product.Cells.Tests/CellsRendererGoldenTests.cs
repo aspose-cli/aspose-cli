@@ -203,7 +203,7 @@ public sealed class CellsRendererGoldenTests
     {
         var result = new WorkbookReadResult
         {
-            Source = new SourceInfo { Path = "book.xlsx", Format = "xlsx", SizeBytes = 2_048 },
+            Input = new InputInfo { Path = "book.xlsx", Format = "xlsx", SizeBytes = 2_048, Fingerprint = new FileFingerprint { Sha256 = new string('0', 64) }, Encrypted = false },
             Window = new ResultWindow { Unit = "cell", Returned = 4, Truncated = false },
             Scope = ReadScopes.Values,
             Sheet = new SheetProjection
@@ -237,8 +237,8 @@ public sealed class CellsRendererGoldenTests
     {
         var result = new EditResult
         {
-            Input = new SourceInfo { Path = "book.xlsx", Format = "xlsx", SizeBytes = 2_048 },
-            Output = new OutputInfo { Path = "out.xlsx", Format = "xlsx", SizeBytes = 4_096 },
+            Input = new InputInfo { Path = "book.xlsx", Format = "xlsx", SizeBytes = 2_048, Fingerprint = new FileFingerprint { Sha256 = new string('0', 64) }, Encrypted = false },
+            Output = new OutputInfo { Path = "out.xlsx", Format = "xlsx", SizeBytes = 4_096, Fingerprint = new FileFingerprint { Sha256 = new string('0', 64) } },
             DryRun = false,
             Recalculated = true,
             Applied =
@@ -294,7 +294,7 @@ public sealed class CellsRendererGoldenTests
     {
         var result = new EditResult
         {
-            Input = new SourceInfo { Path = "book.xlsx", Format = "xlsx", SizeBytes = 2_048 },
+            Input = new InputInfo { Path = "book.xlsx", Format = "xlsx", SizeBytes = 2_048, Fingerprint = new FileFingerprint { Sha256 = new string('0', 64) }, Encrypted = false },
             DryRun = true,
             Recalculated = false,
             Applied = [new BoundedOperationOutcome { Id = "op-0001", Op = "set_values", Status = OpStatuses.Ok, ItemsAffected = 1 }],
@@ -312,7 +312,7 @@ public sealed class CellsRendererGoldenTests
 
     private static WorkbookInfoResult Info() => new()
     {
-        Source = new SourceInfo { Path = @"C:\data\report.xlsx", Format = "xlsx", SizeBytes = 1_234_567 },
+        Input = new InputInfo { Path = @"C:\data\report.xlsx", Format = "xlsx", SizeBytes = 1_234_567, Fingerprint = new FileFingerprint { Sha256 = new string('0', 64) }, Encrypted = false },
         Workbook = new WorkbookSummary
         {
             Name = "report.xlsx",
@@ -343,7 +343,7 @@ public sealed class CellsRendererGoldenTests
         WorkbookInfoResult info = Info();
         return info with
         {
-            Source = info.Source with { Encrypted = true },
+            Input = info.Input with { Encrypted = true },
             Workbook = info.Workbook with
             {
                 DefinedNames = [new DefinedNameInfo { Name = "Rate", RefersTo = "=Data!$B$2" }],

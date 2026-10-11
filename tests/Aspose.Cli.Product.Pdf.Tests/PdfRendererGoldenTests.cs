@@ -195,8 +195,8 @@ public sealed class PdfRendererGoldenTests
     {
         var result = new PdfEditResult
         {
-            Input = new SourceInfo { Path = "in.pdf", Format = "pdf", SizeBytes = 20_000 },
-            Output = new OutputInfo { Path = "in.pdf", Format = "pdf", SizeBytes = 21_500 },
+            Input = new InputInfo { Path = "in.pdf", Format = "pdf", SizeBytes = 20_000, Fingerprint = new FileFingerprint { Sha256 = new string('0', 64) }, Encrypted = false },
+            Output = new OutputInfo { Path = "in.pdf", Format = "pdf", SizeBytes = 21_500, Fingerprint = new FileFingerprint { Sha256 = new string('0', 64) } },
             DryRun = false,
             Applied =
             [
@@ -243,7 +243,7 @@ public sealed class PdfRendererGoldenTests
     {
         var result = new PdfEditResult
         {
-            Input = new SourceInfo { Path = "in.pdf", Format = "pdf", SizeBytes = 20_000 },
+            Input = new InputInfo { Path = "in.pdf", Format = "pdf", SizeBytes = 20_000, Fingerprint = new FileFingerprint { Sha256 = new string('0', 64) }, Encrypted = false },
             DryRun = true,
             Applied = [new BoundedOperationOutcome { Id = "op-0001", Op = "rotate_pages", Status = OpStatuses.Ok, ItemsAffected = 2 }],
             Verification = new PdfEditVerification { Ok = true, CheckedOps = [], Issues = [] },
@@ -262,7 +262,7 @@ public sealed class PdfRendererGoldenTests
 
     private static PdfInfoResult Info() => new()
     {
-        Source = new SourceInfo { Path = @"C:\docs\in.pdf", Format = "pdf", SizeBytes = 20_000 },
+        Input = new InputInfo { Path = @"C:\docs\in.pdf", Format = "pdf", SizeBytes = 20_000, Fingerprint = new FileFingerprint { Sha256 = new string('0', 64) }, Encrypted = false },
         Pdf = new PdfSummary
         {
             PageCount = 3,

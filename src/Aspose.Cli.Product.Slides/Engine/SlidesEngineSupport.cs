@@ -500,13 +500,8 @@ internal static class SlidesEngineSupport
         return warnings.Count == 0 ? null : warnings;
     }
 
-    internal static SourceInfo Source(string path, string format) => new()
-    {
-        Path = Path.GetFullPath(path),
-        Format = format,
-        SizeBytes = new FileInfo(path).Length,
-        Fingerprint = FileFingerprints.Capture(path),
-    };
+    internal static InputInfo Source(string path, LoadedPresentation loaded) =>
+        FileObjects.Input(path, loaded.FormatId, loaded.Encrypted);
 
     internal static string? EmptyToNull(string? value) =>
         string.IsNullOrWhiteSpace(value) ? null : value.Trim();

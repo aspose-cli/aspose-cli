@@ -100,7 +100,7 @@ aspose-cli capabilities --output-format json
   budget; `--max-input-bytes` raises the size limit up to its hard maximum.
 - `INPUT_CHANGED`: the file no longer matches `--if-match` or `ifMatch`, or
   changed while it was read. Read it again, review what changed, and retry with
-  the new `source.fingerprint.sha256`.
+  the new `input.fingerprint.sha256`.
 - `PASSWORD_REQUIRED`: no password was given. `PASSWORD_INVALID`: the given one
   failed. Ask the user; never guess. Pass it with `--password-env <VAR>` or
   `--password-stdin` (one stdin option per command). A command that reads two documents, such as `compare`,

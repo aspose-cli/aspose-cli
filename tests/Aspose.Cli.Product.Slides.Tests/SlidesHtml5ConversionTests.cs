@@ -30,7 +30,11 @@ public sealed class SlidesHtml5ConversionTests
             ["animation.js", "deck.html", "effects.js", "master.css", "navigation.js", "pres.css"],
             published);
         Assert.Equal(published.Length, outputs.Count);
-        // The scripts and style sheets are no HTML5 decks: they carry no format.
-        Assert.All(outputs.Skip(1), static output => Assert.Null(output!["format"]));
+        // The scripts and style sheets are no HTML5 decks: each names its extension, with its fingerprint.
+        Assert.All(outputs.Skip(1), static output =>
+        {
+            Assert.Equal(Path.GetExtension(output!["path"]!.GetValue<string>()).TrimStart('.'), output["format"]!.GetValue<string>());
+            Assert.Equal(64, output["fingerprint"]!["sha256"]!.GetValue<string>().Length);
+        });
     }
 }

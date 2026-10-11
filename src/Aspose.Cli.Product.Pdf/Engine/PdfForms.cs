@@ -1,3 +1,4 @@
+using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Results;
 using Aspose.Pdf;
@@ -24,7 +25,7 @@ internal static class PdfForms
             .ToArray();
         return new PdfFormResult
         {
-            Input = PdfInfoProjection.Source(filePath),
+            Input = PdfInfoProjection.Source(filePath, loaded),
             Type = form.HasXfa ? PdfFormKinds.Xfa : form.Count > 0 ? PdfFormKinds.Acro : PdfFormKinds.None,
             ReadOnly = form.HasXfa,
             Fields = fields,
@@ -135,7 +136,7 @@ internal static class PdfForms
         LicenseState state = session.Outputs.License;
         using LoadedPdf loaded = session.Loader.Open(filePath, request.Password);
         EnsureAcroForm(loaded.Document);
-        long size = session.Outputs.Write(request.Output.Path, request.Output.Overwrite, null, temp =>
+        PublishedFile written = session.Outputs.Write(request.Output.Path, request.Output.Overwrite, null, temp =>
         {
             var facade = new Aspose.Pdf.Facades.Form(loaded.Document);
             using FileStream stream = File.Create(temp);
@@ -149,8 +150,8 @@ internal static class PdfForms
         });
         return new PdfFormExportResult
         {
-            Input = PdfInfoProjection.Source(filePath),
-            Output = BuildOutput(request.Output.Path, request.Output.Format.Id, size),
+            Input = PdfInfoProjection.Source(filePath, loaded),
+            Output = FileObjects.Output(written, request.Output.Format, encrypted: false),
             License = EnvelopeParts.License(state),
         };
     }

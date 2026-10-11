@@ -224,7 +224,7 @@ public static partial class CliErrors
         string observedSha256) => CliException.Create(
         ErrorCodes.InputChanged,
         $"Input no longer matches the requested fingerprint: {path}",
-        hint: "Inspect the current file, review intervening changes, and retry with its new source.fingerprint.sha256 value.",
+        hint: "Inspect the current file, review intervening changes, and retry with its new input.fingerprint.sha256 value.",
         details: new JsonObject
         {
             ["path"] = path,
@@ -400,6 +400,31 @@ public static partial class CliErrors
         hint: "Pass --out a path that does not exist yet, not even as an empty directory: the command publishes its "
             + "output as one new directory and never overwrites.",
         details: new JsonObject { ["path"] = path });
+
+    /// <summary>
+    /// A product view that <c>review</c> cannot render as evidence, because its parts are no
+    /// images, such as the Cells <c>workbook</c> view; <c>preview open</c> shows it.
+    /// </summary>
+    /// <param name="view">The requested view.</param>
+    /// <param name="product">The product that reads the file.</param>
+    /// <param name="reviewViews">The product's views that review can render.</param>
+    public static CliException ViewNotReviewable(string view, string product, IReadOnlyList<string> reviewViews)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(view);
+        ArgumentException.ThrowIfNullOrWhiteSpace(product);
+        ArgumentNullException.ThrowIfNull(reviewViews);
+        return CliException.Create(
+            ErrorCodes.FeatureUnsupported,
+            $"Review cannot use the '{view}' view of {product}: its parts are not images.",
+            hint: $"Use {string.Join(" or ", reviewViews.Select(static item => "--view " + item))}, or show the '{view}' view with '{DistributionInfo.CommandName} preview open'.",
+            details: new JsonObject
+            {
+                ["option"] = "--view",
+                ["feature"] = $"review --view {view}",
+                ["product"] = product,
+                ["available"] = Strings(reviewViews),
+            });
+    }
 
     /// <summary>
     /// An output that the CLI manages, such as an installed Skill, holds content it did not

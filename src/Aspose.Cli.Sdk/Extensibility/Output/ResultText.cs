@@ -4,28 +4,25 @@ using Aspose.Cli.Sdk.Contracts;
 namespace Aspose.Cli.Sdk.Extensibility.Output;
 
 /// <summary>
-/// Human-readable lines for the result parts every product shares: source titles, produced
+/// Human-readable lines for the result parts every product shares: input titles, produced
 /// files, detail sections, safety backups, bounded-edit outcomes and their verification. Products add only their own
 /// evidence.
 /// </summary>
 public static class ResultText
 {
     /// <summary>Writes the title line of an info result: <c>PATH (FORMAT, N bytes)</c>.</summary>
-    public static void Source(TableSurface surface, SourceInfo source)
+    public static void Input(TableSurface surface, InputInfo input)
     {
-        ArgumentNullException.ThrowIfNull(source);
-        surface.Out.WriteLine($"{source.Path} ({source.Format}, {TableText.Bytes(source.SizeBytes)})");
+        ArgumentNullException.ThrowIfNull(input);
+        surface.Out.WriteLine($"{input.Path} ({input.Format}, {TableText.Bytes(input.SizeBytes)})");
     }
 
-    /// <summary>
-    /// Writes <c>wrote PATH (FORMAT, N bytes[, detail])</c>; a companion file without a format
-    /// reads <c>(companion, N bytes)</c>.
-    /// </summary>
+    /// <summary>Writes <c>wrote PATH (FORMAT, N bytes[, detail])</c>.</summary>
     public static void Produced(TableSurface surface, OutputInfo output, string? detail = null)
     {
         ArgumentNullException.ThrowIfNull(output);
         string suffix = detail is null ? string.Empty : $", {detail}";
-        surface.Out.WriteLine($"wrote {output.Path} ({output.Format ?? "companion"}, {TableText.Bytes(output.SizeBytes)}{suffix})");
+        surface.Out.WriteLine($"wrote {output.Path} ({output.Format}, {TableText.Bytes(output.SizeBytes)}{suffix})");
     }
 
     /// <summary>

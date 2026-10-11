@@ -248,41 +248,38 @@ public sealed class ResultSchemaSetTests
     }
 
     [Fact]
-    public void AlwaysPresentMembers_AreRequiredWhereTheMemberStatesThem()
+    public void AnOutputItem_InheritsTheFlatFileFactsOfTheSdk()
     {
-        ResultRecord page = new()
+        ResultRecord item = new()
         {
-            Type = typeof(SamplePage),
-            Description = "A page.",
+            Type = typeof(SamplePageFile),
+            Description = "A page's file.",
+            Base = typeof(OutputItem),
             Properties =
             [
-                new() { Name = "number", Description = "N.", Value = new() { Kind = ResultValueKind.Integer }, Required = true },
-                new() { Name = "label", Description = "L.", Value = new() { Kind = ResultValueKind.String } },
+                new() { Name = "page", Description = "P.", Value = new() { Kind = ResultValueKind.Integer }, Required = true, Order = -1 },
             ],
         };
-        static ResultRecord Root(string[] pagePresent) => new()
+        ResultRecord root = new()
         {
             Type = typeof(SampleBlock),
-            SchemaId = "root",
+            SchemaId = "files",
             Properties =
             [
-                new() { Name = "page", Description = "P.", Value = new() { Kind = ResultValueKind.Record, Record = typeof(SamplePage) }, AlwaysPresent = pagePresent },
                 new()
                 {
-                    Name = "pages",
-                    Description = "Ps.",
-                    Value = new() { Kind = ResultValueKind.Array, Items = new() { Kind = ResultValueKind.Record, Record = typeof(SamplePage) } },
-                    AlwaysPresent = pagePresent,
+                    Name = "outputs",
+                    Description = "Os.",
+                    Value = new() { Kind = ResultValueKind.Array, Items = new() { Kind = ResultValueKind.Record, Record = typeof(SamplePageFile) } },
+                    Required = true,
                 },
             ],
         };
 
-        Assert.True(new ResultSchemaSet("test", [Root(["label"]), page], common: null).TryRead("v2/test/root", out string? document));
-        JsonObject schema = JsonNode.Parse(document)!.AsObject();
-        Assert.Equal("#/$defs/samplePage", schema["properties"]!["page"]!["$ref"]!.GetValue<string>());
-        Assert.Equal(["label"], schema["properties"]!["page"]!["required"]!.AsArray().Select(static name => name!.GetValue<string>()));
-        Assert.Equal("#/$defs/samplePage", schema["properties"]!["pages"]!["items"]!["$ref"]!.GetValue<string>());
-        Assert.Equal(["label"], schema["properties"]!["pages"]!["items"]!["required"]!.AsArray().Select(static name => name!.GetValue<string>()));
+        Assert.True(new ResultSchemaSet("test", [root, item], SdkSchemaCatalog.Schemas).TryRead("v2/test/files", out string? document));
+        JsonObject page = JsonNode.Parse(document)!["$defs"]!["samplePageFile"]!.AsObject();
+        Assert.Equal(["page", "path", "format", "sizeBytes", "fingerprint"], page["required"]!.AsArray().Select(static name => name!.GetValue<string>()));
+        Assert.Equal(["page", "path", "format", "sizeBytes", "fingerprint"], page["properties"]!.AsObject().Select(static pair => pair.Key));
     }
 
     [Fact]
@@ -359,6 +356,19 @@ public sealed record SampleBlock
 
     /// <summary>Free-form details.</summary>
     public JsonObject? Details { get; init; }
+}
+
+/// <summary>The file of one page, a sample item of a flat outputs list.</summary>
+public sealed record SamplePageFile : OutputItem
+{
+    /// <summary>Describes the page's file.</summary>
+    public SamplePageFile(OutputInfo file)
+        : base(file)
+    {
+    }
+
+    /// <summary>The 1-based page number.</summary>
+    public required int Page { get; init; }
 }
 
 /// <summary>One page of a sample block.</summary>

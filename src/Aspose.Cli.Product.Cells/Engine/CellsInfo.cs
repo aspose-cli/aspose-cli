@@ -24,7 +24,7 @@ internal static class CellsInfo
 
         return new WorkbookInfoResult
         {
-            Source = BuildSource(request.Input, loaded) with { Encrypted = loaded.IsEncrypted },
+            Input = BuildSource(request.Input, loaded),
             Workbook = summary,
             License = EnvelopeParts.License(licenseState),
             // Info is read-only, so no evaluation watermark — but an honest count

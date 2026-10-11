@@ -43,7 +43,7 @@ internal static class SlidesRead
         bool truncated = selectionTruncated || defaultWindowTruncated || slides.Any(static slide => slide.ContentTruncated);
         return new PresentationReadResult
         {
-            Source = Source(request.Input, loaded.FormatId),
+            Input = Source(request.Input, loaded),
             Scope = request.Scope,
             SlideCount = presentation.Slides.Count,
             Slides = slides,

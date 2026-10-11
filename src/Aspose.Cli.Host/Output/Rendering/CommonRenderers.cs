@@ -225,8 +225,8 @@ internal static class CommonRenderers
     public static void Render(FontCheckResult check, TableSurface surface)
     {
         surface.Out.WriteLine(check.AllAvailable
-            ? $"{check.Source.Path}: all fonts available"
-            : $"{check.Source.Path}: some fonts substituted");
+            ? $"{check.Input.Path}: all fonts available"
+            : $"{check.Input.Path}: some fonts substituted");
         surface.Out.WriteLine();
 
         var table = new TextTable("font", "available", "substituted by");
@@ -300,8 +300,8 @@ internal static class CommonRenderers
         surface.Out.WriteLine($"review:  {review.OutputDirectory}");
         surface.Out.WriteLine($"product: {review.Product}");
         surface.Out.WriteLine($"view:    {review.View}");
-        surface.Out.WriteLine($"source:  {review.SourceFormat}, encrypted: {TableText.YesNo(review.SourceEncrypted)}");
-        surface.Out.WriteLine($"index:   {review.Index}");
+        surface.Out.WriteLine($"input:   {review.Input.Path} ({review.Input.Format}, encrypted: {TableText.YesNo(review.Input.Encrypted)})");
+        surface.Out.WriteLine($"index:   {review.IndexPath}");
         surface.Out.WriteLine($"manifest:{review.Manifest}");
         surface.Out.WriteLine(
             $"evidence:{review.Coverage.ReportedItemCount}/{review.Coverage.DiscoveredItemCount} artifacts");

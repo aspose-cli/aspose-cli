@@ -2659,17 +2659,11 @@
         },
         "input": {
           "description": "The converted input file.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/source.schema.json",
-          "required": [
-            "fingerprint"
-          ]
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
         },
         "output": {
           "description": "The produced output file.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/output.schema.json",
-          "required": [
-            "format"
-          ]
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/output.schema.json"
         },
         "sheet": {
           "description": "Sheet the conversion was limited to, when --sheet was given.",
@@ -2711,11 +2705,7 @@
         },
         "output": {
           "description": "The produced file.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/output.schema.json",
-          "required": [
-            "format",
-            "fingerprint"
-          ]
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/output.schema.json"
         },
         "sheets": {
           "description": "Sheet names of a newly created workbook.",
@@ -2764,17 +2754,11 @@
         },
         "left": {
           "description": "The left (baseline) file.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/source.schema.json",
-          "required": [
-            "fingerprint"
-          ]
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
         },
         "right": {
           "description": "The right (candidate) file.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/source.schema.json",
-          "required": [
-            "fingerprint"
-          ]
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
         },
         "identical": {
           "description": "True when the two workbooks are equal within the compared scope.",
@@ -3010,18 +2994,11 @@
         },
         "input": {
           "description": "The workbook that was edited.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/source.schema.json",
-          "required": [
-            "fingerprint"
-          ]
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
         },
         "output": {
           "description": "The produced file; omitted for dry runs.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/output.schema.json",
-          "required": [
-            "format",
-            "fingerprint"
-          ]
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/output.schema.json"
         },
         "dryRun": {
           "description": "true when nothing was written (--dry-run).",
@@ -6255,17 +6232,11 @@
         },
         "input": {
           "description": "The rendered input file.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/source.schema.json",
-          "required": [
-            "fingerprint"
-          ]
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
         },
         "output": {
           "description": "The produced image file.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/output.schema.json",
-          "required": [
-            "format"
-          ]
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/output.schema.json"
         },
         "sheet": {
           "description": "Name of the rendered sheet.",
@@ -6336,7 +6307,7 @@
       "required": [
         "schema",
         "schemaVersion",
-        "source",
+        "input",
         "pattern",
         "hits",
         "window"
@@ -6351,12 +6322,9 @@
           "description": "Version of this result contract.",
           "const": 2
         },
-        "source": {
+        "input": {
           "description": "The searched file.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/source.schema.json",
-          "required": [
-            "fingerprint"
-          ]
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
         },
         "pattern": {
           "description": "The pattern that was searched for (echoed back).",
@@ -6425,7 +6393,7 @@
         "schema",
         "schemaVersion",
         "kind",
-        "source",
+        "input",
         "workbook"
       ],
       "additionalProperties": false,
@@ -6442,12 +6410,9 @@
           "description": "Document kind discriminator; always workbook for cells.",
           "const": "workbook"
         },
-        "source": {
+        "input": {
           "description": "The inspected file.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/source.schema.json",
-          "required": [
-            "fingerprint"
-          ]
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
         },
         "workbook": {
           "description": "Workbook-level summary.",
@@ -6989,7 +6954,7 @@
         "schema",
         "schemaVersion",
         "kind",
-        "source",
+        "input",
         "scope",
         "sheet",
         "window"
@@ -7008,12 +6973,9 @@
           "description": "Document kind discriminator; always workbook for cells.",
           "const": "workbook"
         },
-        "source": {
+        "input": {
           "description": "The projected file.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/source.schema.json",
-          "required": [
-            "fingerprint"
-          ]
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
         },
         "scope": {
           "description": "The scope that was projected.",

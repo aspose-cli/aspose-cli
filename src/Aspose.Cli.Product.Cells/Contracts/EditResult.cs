@@ -14,12 +14,10 @@ public sealed record EditResult() : EngineResultEnvelope("edit-result", 2), IPar
 {
     /// <summary>The workbook that was edited.</summary>
     [JsonPropertyOrder(-50)]
-    [AlwaysPresent("fingerprint")]
-    public required SourceInfo Input { get; init; }
+    public required InputInfo Input { get; init; }
 
     /// <summary>The produced file; omitted for dry runs.</summary>
     [JsonPropertyOrder(-49)]
-    [AlwaysPresent("format", "fingerprint")]
     public OutputInfo? Output { get; init; }
 
     /// <summary><c>true</c> when nothing was written (<c>--dry-run</c>).</summary>
@@ -71,7 +69,6 @@ public sealed record CreateResult() : EngineResultEnvelope("create-result", 2)
 {
     /// <summary>The produced file.</summary>
     [JsonPropertyOrder(-49)]
-    [AlwaysPresent("format", "fingerprint")]
     public required OutputInfo Output { get; init; }
 
     /// <summary>Sheet names of a newly created workbook.</summary>

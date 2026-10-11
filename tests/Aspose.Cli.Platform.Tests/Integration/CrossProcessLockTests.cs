@@ -47,7 +47,7 @@ public sealed class CrossProcessLockTests
         using var workspace = new TempWorkspace();
         Assert.Equal(0, workspace.Run("cells", "create", "book.xlsx", "--sheets", "Data").ExitCode);
         string fingerprint = JsonNode.Parse(workspace.Run("cells", "inspect", "book.xlsx", "--output-format", "json").StdOut)!
-            ["source"]!["fingerprint"]!["sha256"]!.GetValue<string>();
+            ["input"]!["fingerprint"]!["sha256"]!.GetValue<string>();
 
         CliResult[] results = await Task.WhenAll(new[] { "first", "second" }.Select(value => Task.Run(() =>
             workspace.Run("cells", "edit", "book.xlsx", "--in-place", "--if-match", fingerprint,

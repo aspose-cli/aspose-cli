@@ -13,24 +13,29 @@ public sealed class SafeFileWriter
 
     internal ResourceBudgetLedger ResourceBudgets => _resourceBudgets;
 
-    public long Write(string targetPath, bool overwrite, Action<string> writeToTemp) =>
-        Write(targetPath, overwrite, backupPath: null, writeToTemp).SizeBytes;
+    /// <summary>Publishes one file atomically and returns its facts.</summary>
+    public PublishedFile Write(string targetPath, bool overwrite, Action<string> writeToTemp) =>
+        Write(targetPath, overwrite, backupPath: null, writeToTemp).Published;
 
     /// <summary>
     /// Publishes a resolved output atomically and describes every file published, the output
     /// first. A format with companion files publishes them beside the output as one set; a
-    /// companion is described without a format.
+    /// companion is described by its extension.
     /// </summary>
+    /// <param name="output">The resolved output.</param>
+    /// <param name="encrypted">Whether the written output carries a password.</param>
+    /// <param name="writeToTemp">Writes the staged output.</param>
     /// <exception cref="CliException">
     /// <c>OUTPUT_PUBLICATION_FAILED</c> when the engine writes a directory beside the output,
     /// which is never published; nothing is.
     /// </exception>
-    public IReadOnlyList<OutputInfo> Write(ResolvedOutput output, Action<string> writeToTemp)
+    public IReadOnlyList<OutputInfo> Write(ResolvedOutput output, bool encrypted, Action<string> writeToTemp)
     {
         ArgumentNullException.ThrowIfNull(output);
         if (!output.Format.CompanionFiles)
         {
-            return [Describe(output.Path, output.Format.Id, Write(output.Path, output.Overwrite, output.BackupPath, writeToTemp).SizeBytes)];
+            PublishedFile written = Write(output.Path, output.Overwrite, output.BackupPath, writeToTemp).Published;
+            return [FileObjects.Output(written, output.Format, encrypted)];
         }
 
         using var transaction = new AtomicOutputSetWriter(this, output.Directory, "write");
@@ -44,13 +49,12 @@ public sealed class SafeFileWriter
             throw CliErrors.OutputUnwritable(output.Path, "the staged output could not be written", exception, "write");
         }
 
-        IReadOnlyList<long> sizes = transaction.Commit();
+        _ = transaction.Commit();
         // A companion, such as a script of an HTML5 deck, is no document of the output's format.
-        return [.. staged.Select((file, index) => Describe(file.TargetPath, index == 0 ? output.Format.Id : null, sizes[index]))];
+        return [.. staged.Select((file, index) => index == 0
+            ? FileObjects.Output(file.Published, output.Format, encrypted)
+            : FileObjects.Companion(file.Published))];
     }
-
-    private static OutputInfo Describe(string path, string? format, long size) =>
-        new() { Path = path, Format = format, SizeBytes = size };
 
     public SafeWriteResult Write(string targetPath, bool overwrite, string? backupPath, Action<string> writeToTemp) =>
         Write(targetPath, overwrite, backupPath, inputPrecondition: null, writeToTemp);
@@ -76,6 +80,7 @@ public sealed class SafeFileWriter
         return new SafeWriteResult(staged.SizeBytes, staged.Backup)
         {
             PublishedSnapshot = staged.Snapshot,
+            Published = staged.Published,
         };
     }
 
@@ -87,5 +92,8 @@ public sealed class SafeFileWriter
 public sealed record SafeWriteResult(long SizeBytes, BackupInfo? Backup)
 {
     internal FilePublicationSnapshot PublishedSnapshot { get; init; } = FilePublicationSnapshot.Missing;
+
+    /// <summary>The facts of the published file.</summary>
+    public PublishedFile Published { get; init; } = null!;
     public FileFingerprint Fingerprint => new() { Sha256 = PublishedSnapshot.Sha256!.ToLowerInvariant() };
 }

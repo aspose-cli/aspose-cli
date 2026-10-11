@@ -41,7 +41,7 @@ internal static class ReadCommand
 
     internal static void Table(PdfReadResult result, TableSurface surface)
     {
-        surface.Out.WriteLine($"{result.Source.Path}: {result.PageCount} page(s) ({result.Mode})");
+        surface.Out.WriteLine($"{result.Input.Path}: {result.PageCount} page(s) ({result.Mode})");
         foreach (PdfPageText page in result.Pages)
         {
             surface.Out.WriteLine();

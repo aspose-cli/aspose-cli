@@ -2812,17 +2812,14 @@
         },
         "input": {
           "description": "The converted PDF.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/source.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
         },
         "outputs": {
           "description": "The files written: one, or one per page for an image format.",
           "type": "array",
           "minItems": 1,
           "items": {
-            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/output.schema.json",
-            "required": [
-              "format"
-            ]
+            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/output.schema.json"
           }
         },
         "pages": {
@@ -2866,18 +2863,11 @@
         },
         "input": {
           "description": "The PDF edited.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/source.schema.json",
-          "required": [
-            "fingerprint"
-          ]
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
         },
         "output": {
           "description": "The PDF written; absent for a dry run, which writes nothing.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/output.schema.json",
-          "required": [
-            "format",
-            "fingerprint"
-          ]
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/output.schema.json"
         },
         "dryRun": {
           "description": "Whether the batch was only checked and applied in memory (--dry-run).",
@@ -2975,7 +2965,7 @@
         },
         "input": {
           "description": "The PDF extracted from.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/source.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
         },
         "what": {
           "description": "What was extracted, as --what named it.",
@@ -3113,14 +3103,11 @@
         },
         "input": {
           "description": "The PDF whose form data was exported.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/source.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
         },
         "output": {
           "description": "The form-data file written: JSON, FDF or XFDF.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/output.schema.json",
-          "required": [
-            "format"
-          ]
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/output.schema.json"
         },
         "license": {
           "description": "License mode the engine ran under.",
@@ -3160,7 +3147,7 @@
         },
         "input": {
           "description": "The PDF read.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/source.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
         },
         "type": {
           "description": "The kind of form: none, an AcroForm or an XFA form.",
@@ -4494,7 +4481,7 @@
         "schema",
         "schemaVersion",
         "kind",
-        "source",
+        "input",
         "pdf"
       ],
       "additionalProperties": false,
@@ -4511,12 +4498,9 @@
           "description": "The kind of document described: always pdf.",
           "const": "pdf"
         },
-        "source": {
+        "input": {
           "description": "The inspected PDF.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/source.schema.json",
-          "required": [
-            "fingerprint"
-          ]
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
         },
         "pdf": {
           "description": "The document summary every inspection reports.",
@@ -5031,7 +5015,7 @@
         "schema",
         "schemaVersion",
         "kind",
-        "source",
+        "input",
         "mode",
         "pageCount",
         "pages",
@@ -5051,9 +5035,9 @@
           "description": "The kind of document read: always pdf.",
           "const": "pdf"
         },
-        "source": {
+        "input": {
           "description": "The PDF read.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/source.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
         },
         "mode": {
           "description": "How the text was extracted: plain reading order, or layout, which keeps the page's spacing.",
@@ -5151,7 +5135,7 @@
         },
         "input": {
           "description": "The rendered PDF.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/source.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
         },
         "outputs": {
           "description": "Each written image, in page order.",
@@ -5199,10 +5183,7 @@
             },
             "output": {
               "description": "The image written for the page.",
-              "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/output.schema.json",
-              "required": [
-                "format"
-              ]
+              "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/output.schema.json"
             }
           }
         },
@@ -5248,7 +5229,7 @@
       "required": [
         "schema",
         "schemaVersion",
-        "source",
+        "input",
         "pattern",
         "hits",
         "window"
@@ -5263,9 +5244,9 @@
           "description": "Version of this result contract.",
           "const": 2
         },
-        "source": {
+        "input": {
           "description": "The PDF searched.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/source.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
         },
         "pattern": {
           "description": "The text or regular expression searched for.",
@@ -5389,14 +5370,11 @@
         },
         "input": {
           "description": "The PDF signed.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/source.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
         },
         "output": {
           "description": "The signed PDF written.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/output.schema.json",
-          "required": [
-            "format"
-          ]
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/output.schema.json"
         },
         "signature": {
           "description": "The signature field as the saved file reports it.",
@@ -5507,7 +5485,7 @@
         },
         "input": {
           "description": "The PDF split.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/source.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
         },
         "outputs": {
           "description": "Each part written, in order.",
@@ -5554,10 +5532,7 @@
             },
             "output": {
               "description": "The PDF written for the part.",
-              "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/output.schema.json",
-              "required": [
-                "format"
-              ]
+              "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/output.schema.json"
             }
           }
         }
@@ -5588,7 +5563,7 @@
         },
         "input": {
           "description": "The PDF checked.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/source.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
         },
         "profile": {
           "description": "The PDF/A profile checked against.",
@@ -5655,16 +5630,13 @@
         },
         "output": {
           "description": "The PDF written.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/output.schema.json",
-          "required": [
-            "format"
-          ]
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/output.schema.json"
         },
         "inputs": {
           "description": "The documents merged, in order; absent for create.",
           "type": "array",
           "items": {
-            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/source.schema.json"
+            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
           }
         },
         "license": {

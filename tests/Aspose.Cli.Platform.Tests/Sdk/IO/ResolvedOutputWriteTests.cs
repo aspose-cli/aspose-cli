@@ -18,18 +18,19 @@ public sealed class ResolvedOutputWriteTests
         var writer = new SafeFileWriter(TestBudgets.Create());
         var output = new ResolvedOutput(Page with { CompanionFiles = true }, temp.File("deck.html"));
 
-        IReadOnlyList<OutputInfo> published = writer.Write(output, WriteDeck);
+        IReadOnlyList<OutputInfo> published = writer.Write(output, encrypted: false, WriteDeck);
 
         Assert.Equal([temp.File("deck.html"), temp.File("app.js"), temp.File("style.css")], published.Select(static file => file.Path));
-        // A companion file is no document of the format: it carries no format of its own.
-        Assert.Equal(["page", null, null], published.Select(static file => file.Format));
+        // A companion file is no document of the format: its format is its extension.
+        Assert.Equal(["page", "js", "css"], published.Select(static file => file.Format));
+        Assert.All(published, file => Assert.Equal(FileFingerprints.Capture(file.Path), file.Fingerprint));
         Assert.Equal("<html>", File.ReadAllText(temp.File("deck.html")));
         Assert.Equal("script", File.ReadAllText(temp.File("app.js")));
         Assert.Equal(["app.js", "deck.html", "style.css"], Directory.GetFileSystemEntries(temp.Path).Select(Path.GetFileName).Order(StringComparer.Ordinal));
 
-        CliException exists = Assert.Throws<CliException>(() => writer.Write(output, WriteDeck));
+        CliException exists = Assert.Throws<CliException>(() => writer.Write(output, encrypted: false, WriteDeck));
         Assert.Equal(ErrorCodes.OutputExists, exists.Code);
-        Assert.Equal(3, writer.Write(new ResolvedOutput(output.Format, output.Path, overwrite: true), WriteDeck).Count);
+        Assert.Equal(3, writer.Write(new ResolvedOutput(output.Format, output.Path, overwrite: true), encrypted: false, WriteDeck).Count);
     }
 
     [Fact]
@@ -40,7 +41,7 @@ public sealed class ResolvedOutputWriteTests
         var writer = new SafeFileWriter(TestBudgets.Create());
 
         CliException exists = Assert.Throws<CliException>(() =>
-            writer.Write(new ResolvedOutput(Page with { CompanionFiles = true }, temp.File("deck.html")), WriteDeck));
+            writer.Write(new ResolvedOutput(Page with { CompanionFiles = true }, temp.File("deck.html")), encrypted: false, WriteDeck));
 
         Assert.Equal(ErrorCodes.OutputExists, exists.Code);
         Assert.Equal(["style.css"], Directory.GetFileSystemEntries(temp.Path).Select(Path.GetFileName));
@@ -59,6 +60,7 @@ public sealed class ResolvedOutputWriteTests
 
         CliException refused = Assert.Throws<CliException>(() => writer.Write(
             new ResolvedOutput(Page with { CompanionFiles = true }, temp.File("deck.html")),
+            encrypted: false,
             path =>
             {
                 WriteDeck(path);
@@ -79,6 +81,7 @@ public sealed class ResolvedOutputWriteTests
 
         IReadOnlyList<OutputInfo> published = writer.Write(
             new ResolvedOutput(Page, temp.File("page.html")),
+            encrypted: false,
             path => File.WriteAllText(path, "<html>"));
 
         OutputInfo file = Assert.Single(published);

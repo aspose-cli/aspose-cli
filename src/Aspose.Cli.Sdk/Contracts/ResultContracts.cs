@@ -55,20 +55,6 @@ public sealed class OpenEnumAttribute(string pattern) : Attribute
 }
 
 /// <summary>
-/// Requires members of a shared record, by wire name, that are optional where the record declares
-/// them but always present where this member holds it: on a member that holds a record, or an
-/// array of records, it names that record's members, such as the <c>fingerprint</c> of an edited
-/// source.
-/// </summary>
-/// <param name="members">The wire names of the members that are always present.</param>
-[AttributeUsage(AttributeTargets.Property)]
-public sealed class AlwaysPresentAttribute(params string[] members) : Attribute
-{
-    /// <summary>The wire names of the members that are always present.</summary>
-    public IReadOnlyList<string> Members { get; } = members;
-}
-
-/// <summary>
 /// Implemented by generated code on every JSON context that lists a result record, so the
 /// catalog reaches the records that the context's assembly describes without reflection.
 /// </summary>
@@ -160,9 +146,6 @@ public sealed class ResultProperty
 
     /// <summary>The cases of a member whose type another member decides (see <see cref="OneOfByAttribute"/>).</summary>
     public IReadOnlyList<OneOfByAttribute> Cases { get; init; } = [];
-
-    /// <summary>The members of the held record that are always present here (see <see cref="AlwaysPresentAttribute"/>).</summary>
-    public IReadOnlyList<string> AlwaysPresent { get; init; } = [];
 
     /// <summary>
     /// Whether the member is the record's extension data: its entries are written as members of

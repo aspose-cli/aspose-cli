@@ -29,7 +29,7 @@ Fields a read returns use the edit vocabulary: a value read under a name is
 written back by the operation field of the same name
 (`aspose-cli docs editing`).
 
-Every `inspect`, read and search result reports `source.fingerprint.sha256`.
+Every `inspect`, read and search result reports `input.fingerprint.sha256`.
 Pass it to the next edit as `--if-match` so the edit fails with
 `INPUT_CHANGED` if the file changed in between.
 

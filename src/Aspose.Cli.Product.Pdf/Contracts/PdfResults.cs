@@ -17,8 +17,7 @@ public sealed record PdfInfoResult() : EngineResultEnvelope("pdf-info", 2)
 
     /// <summary>The inspected PDF.</summary>
     [JsonPropertyOrder(-49)]
-    [AlwaysPresent("fingerprint")]
-    public required SourceInfo Source { get; init; }
+    public required InputInfo Input { get; init; }
 
     /// <summary>The document summary every inspection reports.</summary>
     public required PdfSummary Pdf { get; init; }
@@ -343,7 +342,7 @@ public sealed record PdfReadResult() : WindowedResultEnvelope("pdf-read", 2)
 
     /// <summary>The PDF read.</summary>
     [JsonPropertyOrder(-49)]
-    public required SourceInfo Source { get; init; }
+    public required InputInfo Input { get; init; }
 
     /// <summary>How the text was extracted: <c>plain</c> reading order, or <c>layout</c>, which keeps the page's spacing.</summary>
     [AllowedValues(typeof(PdfReadModes))]
@@ -384,12 +383,11 @@ public sealed record PdfConvertResult() : EngineResultEnvelope("convert-result",
 {
     /// <summary>The converted PDF.</summary>
     [JsonPropertyOrder(-50)]
-    public required SourceInfo Input { get; init; }
+    public required InputInfo Input { get; init; }
 
     /// <summary>The files written: one, or one per page for an image format.</summary>
     [JsonPropertyOrder(-49)]
     [MinItems(1)]
-    [AlwaysPresent("format")]
     public required IReadOnlyList<OutputInfo> Outputs { get; init; }
 
     /// <summary>The page range converted, as <c>--pages</c> gave it; absent when every page was.</summary>
@@ -401,7 +399,7 @@ public sealed record PdfRenderResult() : EngineResultEnvelope("render-result", 2
 {
     /// <summary>The rendered PDF.</summary>
     [JsonPropertyOrder(-50)]
-    public required SourceInfo Input { get; init; }
+    public required InputInfo Input { get; init; }
 
     /// <summary>Each written image, in page order.</summary>
     public required IReadOnlyList<PdfPageOutput> Outputs { get; init; }
@@ -445,7 +443,6 @@ public sealed record PdfPageOutput
     public required int Page { get; init; }
 
     /// <summary>The image written for the page.</summary>
-    [AlwaysPresent("format")]
     public required OutputInfo Output { get; init; }
 }
 
@@ -459,11 +456,10 @@ public sealed record PdfWriteResult() : EngineResultEnvelope("write-result", 2)
 
     /// <summary>The PDF written.</summary>
     [JsonPropertyOrder(-49)]
-    [AlwaysPresent("format")]
     public required OutputInfo Output { get; init; }
 
     /// <summary>The documents merged, in order; absent for <c>create</c>.</summary>
-    public IReadOnlyList<SourceInfo>? Inputs { get; init; }
+    public IReadOnlyList<InputInfo>? Inputs { get; init; }
 }
 
 /// <summary>Result of <c>pdf split</c>, which writes every part or none.</summary>
@@ -471,7 +467,7 @@ public sealed record PdfSplitResult() : EngineResultEnvelope("split-result", 2)
 {
     /// <summary>The PDF split.</summary>
     [JsonPropertyOrder(-50)]
-    public required SourceInfo Input { get; init; }
+    public required InputInfo Input { get; init; }
 
     /// <summary>Each part written, in order.</summary>
     public required IReadOnlyList<PdfSplitOutput> Outputs { get; init; }
@@ -491,7 +487,6 @@ public sealed record PdfSplitOutput
     public string? Bookmark { get; init; }
 
     /// <summary>The PDF written for the part.</summary>
-    [AlwaysPresent("format")]
     public required OutputInfo Output { get; init; }
 }
 
@@ -500,7 +495,7 @@ public sealed record PdfExtractResult() : EngineResultEnvelope("extract-result",
 {
     /// <summary>The PDF extracted from.</summary>
     [JsonPropertyOrder(-50)]
-    public required SourceInfo Input { get; init; }
+    public required InputInfo Input { get; init; }
 
     /// <summary>What was extracted, as <c>--what</c> named it.</summary>
     [AllowedValues("images", "attachments", "text", "tables")]
@@ -563,12 +558,10 @@ public sealed record PdfEditResult() : EngineResultEnvelope("edit-result", 2), I
 {
     /// <summary>The PDF edited.</summary>
     [JsonPropertyOrder(-50)]
-    [AlwaysPresent("fingerprint")]
-    public required SourceInfo Input { get; init; }
+    public required InputInfo Input { get; init; }
 
     /// <summary>The PDF written; absent for a dry run, which writes nothing.</summary>
     [JsonPropertyOrder(-49)]
-    [AlwaysPresent("format", "fingerprint")]
     public OutputInfo? Output { get; init; }
 
     /// <summary>Whether the batch was only checked and applied in memory (<c>--dry-run</c>).</summary>
@@ -617,7 +610,7 @@ public sealed record PdfFormResult() : EngineResultEnvelope("form-result", 2)
 {
     /// <summary>The PDF read.</summary>
     [JsonPropertyOrder(-50)]
-    public required SourceInfo Input { get; init; }
+    public required InputInfo Input { get; init; }
 
     /// <summary>The kind of form: none, an AcroForm or an XFA form.</summary>
     [AllowedValues(typeof(PdfFormKinds))]
@@ -714,11 +707,10 @@ public sealed record PdfFormExportResult() : EngineResultEnvelope("form-export-r
 {
     /// <summary>The PDF whose form data was exported.</summary>
     [JsonPropertyOrder(-50)]
-    public required SourceInfo Input { get; init; }
+    public required InputInfo Input { get; init; }
 
     /// <summary>The form-data file written: JSON, FDF or XFDF.</summary>
     [JsonPropertyOrder(-49)]
-    [AlwaysPresent("format")]
     public required OutputInfo Output { get; init; }
 }
 
@@ -727,7 +719,7 @@ public sealed record PdfSearchResult() : WindowedResultEnvelope("search-result",
 {
     /// <summary>The PDF searched.</summary>
     [JsonPropertyOrder(-50)]
-    public required SourceInfo Source { get; init; }
+    public required InputInfo Input { get; init; }
 
     /// <summary>The text or regular expression searched for.</summary>
     public required string Pattern { get; init; }
@@ -767,7 +759,7 @@ public sealed record PdfValidateResult() : EngineResultEnvelope("validate-result
 {
     /// <summary>The PDF checked.</summary>
     [JsonPropertyOrder(-50)]
-    public required SourceInfo Input { get; init; }
+    public required InputInfo Input { get; init; }
 
     /// <summary>The PDF/A profile checked against.</summary>
     [AllowedValues("pdfa-1b", "pdfa-2b", "pdfa-3b")]
@@ -786,11 +778,10 @@ public sealed record PdfSignResult() : EngineResultEnvelope("sign-result", 2)
 {
     /// <summary>The PDF signed.</summary>
     [JsonPropertyOrder(-50)]
-    public required SourceInfo Input { get; init; }
+    public required InputInfo Input { get; init; }
 
     /// <summary>The signed PDF written.</summary>
     [JsonPropertyOrder(-49)]
-    [AlwaysPresent("format")]
     public required OutputInfo Output { get; init; }
 
     /// <summary>The signature field as the saved file reports it.</summary>

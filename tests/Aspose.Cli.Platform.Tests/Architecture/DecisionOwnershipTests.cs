@@ -118,6 +118,39 @@ public sealed partial class DecisionOwnershipTests
             "Whether a format can carry a password is declared once, on its format descriptor, not in a product list:");
     }
 
+    [Fact]
+    public void D1_FileObjects_ComeOnlyFromTheSdkFactory()
+    {
+        string factory = Path.Combine(SdkRoot, "IO", "FileObjects.cs");
+        string[] violations = [.. Sources.Value
+            .Where(file => !string.Equals(file.Path, factory, StringComparison.OrdinalIgnoreCase))
+            .SelectMany(file => file.Root.DescendantNodes()
+                .Where(static node => node switch
+                {
+                    ObjectCreationExpressionSyntax creation => IsFileObject(creation.Type),
+                    ImplicitObjectCreationExpressionSyntax creation => CreatedType(creation) is { } type && IsFileObject(type),
+                    _ => false,
+                })
+                .Select(node => file.At(node, node.ToString().Split('\n')[0].Trim())))];
+
+        AssertNone(violations,
+            "The input and output file objects a result reports come only from the SDK's FileObjects factory, which makes paths absolute and fingerprints every file:");
+
+        static bool IsFileObject(TypeSyntax type) => LastIdentifier(type) is "InputInfo" or "OutputInfo";
+
+        // The type a target-typed new() creates, where the declaration beside it names it.
+        static TypeSyntax? CreatedType(ImplicitObjectCreationExpressionSyntax creation) => creation.Parent switch
+        {
+            ArrowExpressionClauseSyntax { Parent: MethodDeclarationSyntax method } => method.ReturnType,
+            ArrowExpressionClauseSyntax { Parent: PropertyDeclarationSyntax property } => property.Type,
+            ArrowExpressionClauseSyntax { Parent: LocalFunctionStatementSyntax function } => function.ReturnType,
+            ReturnStatementSyntax statement => statement.FirstAncestorOrSelf<MethodDeclarationSyntax>()?.ReturnType,
+            EqualsValueClauseSyntax { Parent: VariableDeclaratorSyntax { Parent: VariableDeclarationSyntax declaration } } => declaration.Type,
+            EqualsValueClauseSyntax { Parent: PropertyDeclarationSyntax property } => property.Type,
+            _ => null,
+        };
+    }
+
     // -- D2 Capabilities ---------------------------------------------------------------------
 
     [Theory]

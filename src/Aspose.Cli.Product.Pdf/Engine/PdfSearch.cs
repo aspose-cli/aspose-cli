@@ -80,7 +80,7 @@ internal static class PdfSearch
 
         return new PdfSearchResult
         {
-            Source = PdfInfoProjection.Source(filePath),
+            Input = PdfInfoProjection.Source(filePath, loaded),
             Pattern = text.Pattern,
             Hits = hits.Hits,
             Window = hits.Window(),

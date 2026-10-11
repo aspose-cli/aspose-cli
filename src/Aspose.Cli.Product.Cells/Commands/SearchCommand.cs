@@ -66,7 +66,7 @@ internal static class SearchCommand
 
     internal static void Table(SearchResult search, TableSurface surface)
     {
-        surface.Out.WriteLine($"{search.Hits.Count} hit(s) for '{search.Pattern}' in {search.Source.Path}");
+        surface.Out.WriteLine($"{search.Hits.Count} hit(s) for '{search.Pattern}' in {search.Input.Path}");
 
         if (search.Hits.Count > 0)
         {

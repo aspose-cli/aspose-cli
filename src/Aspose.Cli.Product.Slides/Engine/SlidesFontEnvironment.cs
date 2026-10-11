@@ -104,12 +104,7 @@ internal sealed class SlidesFontEnvironment : IFontEnvironment
             .ToArray();
         return new FontCheckResult
         {
-            Source = new SourceInfo
-            {
-                Path = filePath,
-                Format = loaded.FormatId,
-                SizeBytes = new FileInfo(filePath).Length,
-            },
+            Input = SlidesEngineSupport.Source(filePath, loaded),
             AllAvailable = fonts.All(static font => font.Available),
             Fonts = fonts,
             License = EnvelopeParts.License(state),

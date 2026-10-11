@@ -84,7 +84,7 @@ internal sealed partial class WordsFontEnvironment : IFontEnvironment
 
         return new FontCheckResult
         {
-            Source = InfoProjection.Source(filePath, loaded),
+            Input = InfoProjection.Source(filePath, loaded),
             AllAvailable = fonts.All(static font => font.Available),
             Fonts = fonts,
             License = EnvelopeParts.License(state),

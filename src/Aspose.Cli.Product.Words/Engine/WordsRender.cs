@@ -1,6 +1,7 @@
 using System.Globalization;
 using Aspose.Cli.Product.Words.Engine.Mapping;
 using Aspose.Cli.Sdk.Errors;
+using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Rendering;
 using Aspose.Cli.Sdk.Results;
@@ -35,8 +36,8 @@ internal static class WordsRender
             long height = (long)Math.Ceiling(info.HeightInPoints / 72d * request.Dpi);
             RenderPixelGuard.EnsureFits(session.Budgets, width, height, request.Dpi, RenderHint);
             SaveOptions options = WordsSavePipeline.Options(request.Output.Format.Id, pages: [page], dpi: request.Dpi);
-            long size = transaction.Stage(path, request.Output.Overwrite, loaded.Document, temp => loaded.Document.Save(temp, options), rendering: true, pages: [page]).SizeBytes;
-            outputs.Add(new PageOutput { Page = page, Output = BuildOutput(path, request.Output.Format.Id, size) });
+            StagedOutput staged = transaction.Stage(path, request.Output.Overwrite, loaded.Document, temp => loaded.Document.Save(temp, options), rendering: true, pages: [page]);
+            outputs.Add(new PageOutput { Page = page, Output = FileObjects.Output(staged.Published, request.Output.Format, encrypted: false) });
         }
 
         loaded.Resources.ThrowIfFailed();

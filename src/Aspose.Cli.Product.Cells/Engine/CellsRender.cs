@@ -24,7 +24,7 @@ internal static class CellsRender
         LicenseState licenseState = session.Outputs.License;
         using LoadedWorkbook loaded = session.Loader.Open(request.Input, request.Password);
         Workbook workbook = loaded.Workbook;
-        SourceInfo input = BuildSource(request.Input, loaded);
+        InputInfo input = BuildSource(request.Input, loaded);
 
         if (request.AllSheets || (request.SheetName is null && request.Range is null))
         {
@@ -52,18 +52,13 @@ internal static class CellsRender
         }
 
         using OutputSet<Workbook> transaction = session.Outputs.BeginSet([request.Output.Directory], "cells-render");
-        long sizeBytes = StageSheet(session.Budgets, transaction, sheet, request, renderedRange, request.Output.Path).SizeBytes;
+        StagedOutput staged = StageSheet(session.Budgets, transaction, sheet, request, renderedRange, request.Output.Path);
         transaction.Commit();
 
         return new RenderResult
         {
             Input = input,
-            Output = new OutputInfo
-            {
-                Path = request.Output.Path,
-                Format = request.Output.Format.Id,
-                SizeBytes = sizeBytes,
-            },
+            Output = FileObjects.Output(staged.Published, request.Output.Format, encrypted: false),
             Sheet = sheet.Name,
             Range = renderedRange,
             Dpi = isRaster ? request.Dpi : null,
@@ -156,7 +151,7 @@ internal static class CellsRender
     /// workbook shows nothing else.
     /// </summary>
     private static RenderResult RenderAllSheets(
-        CellsSession session, Workbook workbook, SourceInfo input, RenderRequest request, LicenseState licenseState, LoadedWorkbook loaded)
+        CellsSession session, Workbook workbook, InputInfo input, RenderRequest request, LicenseState licenseState, LoadedWorkbook loaded)
     {
         var candidates = new List<Worksheet>();
         foreach (Worksheet sheet in workbook.Worksheets)
@@ -186,6 +181,7 @@ internal static class CellsRender
 
         using OutputSet<Workbook> transaction = session.Outputs.BeginSet([request.Output.Directory], "cells-render");
         var rendered = new List<SheetRenderOutput>();
+        StagedOutput? first = null;
         var skipped = new List<string>();
         CliException? firstSkip = null;
 
@@ -194,12 +190,13 @@ internal static class CellsRender
             Worksheet sheet = candidates[i];
             try
             {
-                long sizeBytes = StageSheet(session.Budgets, transaction, sheet, request, printArea: null, outputPaths[i]).SizeBytes;
+                StagedOutput staged = StageSheet(session.Budgets, transaction, sheet, request, printArea: null, outputPaths[i]);
+                first ??= staged;
                 rendered.Add(new SheetRenderOutput
                 {
                     Sheet = sheet.Name,
                     Path = outputPaths[i],
-                    SizeBytes = sizeBytes,
+                    SizeBytes = staged.SizeBytes,
                 });
             }
             catch (CliException ex) when (
@@ -227,12 +224,7 @@ internal static class CellsRender
         return new RenderResult
         {
             Input = input,
-            Output = new OutputInfo
-            {
-                Path = rendered[0].Path,
-                Format = request.Output.Format.Id,
-                SizeBytes = rendered[0].SizeBytes,
-            },
+            Output = FileObjects.Output(first!.Published, request.Output.Format, encrypted: false),
             Sheet = rendered[0].Sheet,
             Dpi = CellsEngineFormats.IsRaster(request.Output.Format.Id) ? request.Dpi : null,
             Outputs = rendered,

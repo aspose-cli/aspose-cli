@@ -80,6 +80,47 @@ public sealed class ReviewViewManifestTests
         Assert.Equal("words", JsonNode.Parse(selected.StdOut)!["product"]!.GetValue<string>());
     }
 
+    [Fact]
+    public void Review_ReportsTheReviewedFileAsAnInputObject_AndTheIndexPath()
+    {
+        using var workspace = new TempWorkspace();
+        CreateSample(workspace, "book.xlsx");
+
+        CliResult reviewed = workspace.Run("review", "book.xlsx", "--out", "evidence", "--output-format", "json");
+
+        Assert.True(reviewed.ExitCode == 0, reviewed.StdErr);
+        JsonObject result = JsonNode.Parse(reviewed.StdOut)!.AsObject();
+        JsonObject input = result["input"]!.AsObject();
+        string book = workspace.File("book.xlsx");
+        Assert.Equal(["path", "format", "sizeBytes", "fingerprint", "encrypted"], input.Select(static pair => pair.Key));
+        Assert.Equal(book, input["path"]!.GetValue<string>());
+        Assert.Equal("xlsx", input["format"]!.GetValue<string>());
+        Assert.Equal(new FileInfo(book).Length, input["sizeBytes"]!.GetValue<long>());
+        Assert.Equal(Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(book))).ToLowerInvariant(), input["fingerprint"]!["sha256"]!.GetValue<string>());
+        Assert.False(input["encrypted"]!.GetValue<bool>());
+        Assert.Equal(workspace.File(Path.Combine("evidence", "index.html")), result["indexPath"]!.GetValue<string>());
+        Assert.False(result.ContainsKey("index"));
+        Assert.False(result.ContainsKey("sourceFormat"));
+    }
+
+    [Fact]
+    public void Review_RefusesAViewWithoutImages_AndPointsAtOneWithImages()
+    {
+        using var workspace = new TempWorkspace();
+        CreateSample(workspace, "book.xlsx");
+        CreateSample(workspace, "doc.pdf");
+
+        CliResult workbook = workspace.Run("review", "book.xlsx", "--view", "workbook", "--out", "evidence", "--output-format", "json");
+        CliResult foreign = workspace.Run("review", "doc.pdf", "--view", "workbook", "--out", "other", "--output-format", "json");
+
+        JsonNode error = JsonNode.Parse(workbook.StdErr)!["error"]!;
+        Assert.Equal("FEATURE_UNSUPPORTED", error["code"]!.GetValue<string>());
+        Assert.Contains("--view sheets", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.Equal(["sheets"], error["details"]!["available"]!.AsArray().Select(static item => item!.GetValue<string>()));
+        Assert.False(Directory.Exists(workspace.File("evidence")));
+        Assert.Equal("OPTION_INVALID", JsonNode.Parse(foreign.StdErr)!["error"]!["code"]!.GetValue<string>());
+    }
+
     private static void CreateSample(TempWorkspace workspace, string file)
     {
         switch (Path.GetExtension(file))

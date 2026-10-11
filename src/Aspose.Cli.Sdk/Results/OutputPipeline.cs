@@ -238,25 +238,30 @@ public sealed class OutputPipeline<TDocument> : OutputPipeline
     /// <param name="write">Writes the staged file.</param>
     /// <param name="rendering">Whether the file shows <paramref name="document"/>, as page images and page text do, rather than keeping a copy of it.</param>
     /// <param name="pages">The pages (or slides) of <paramref name="document"/> a rendering shows, numbered from 1; null for all of them.</param>
-    public long Write(string targetPath, bool overwrite, TDocument? document, Action<string> write, bool rendering = false,
+    /// <returns>The facts of the published file.</returns>
+    public PublishedFile Write(string targetPath, bool overwrite, TDocument? document, Action<string> write, bool rendering = false,
         IEnumerable<int>? pages = null)
     {
         var inspector = new Inspector(_profile, document, FormatOf(targetPath), rendering);
         inspector.Shows(pages);
-        long size = Writer.Write(targetPath, overwrite, inspector.After(write));
+        PublishedFile published = Writer.Write(targetPath, overwrite, inspector.After(write));
         Record(inspector.Result);
-        return size;
+        return published;
     }
 
     /// <summary>
     /// Publishes <paramref name="document"/> to a resolved output, with the companion files its
     /// format writes beside it, and describes every file published.
     /// </summary>
-    public IReadOnlyList<OutputInfo> Write(ResolvedOutput output, TDocument document, Action<string> write)
+    /// <param name="output">The resolved output.</param>
+    /// <param name="document">The document the output holds.</param>
+    /// <param name="encrypted">Whether the written output carries a password.</param>
+    /// <param name="write">Writes the staged output.</param>
+    public IReadOnlyList<OutputInfo> Write(ResolvedOutput output, TDocument document, bool encrypted, Action<string> write)
     {
         ArgumentNullException.ThrowIfNull(output);
         var inspector = new Inspector(_profile, document, output.Format.Id, rendering: false);
-        IReadOnlyList<OutputInfo> written = Writer.Write(output, inspector.After(write));
+        IReadOnlyList<OutputInfo> written = Writer.Write(output, encrypted, inspector.After(write));
         Record(inspector.Result);
         return written;
     }
@@ -367,7 +372,7 @@ public sealed class OutputSet<TDocument> : IDisposable
     private readonly IEvaluationProfile<TDocument> _profile;
     private readonly AtomicOutputSetWriter _transaction;
     private readonly List<OutputPipeline<TDocument>.Inspector> _documents = [];
-    private int _staged;
+    private readonly List<StagedOutput> _staged = [];
 
     internal OutputSet(OutputPipeline<TDocument> pipeline, IEvaluationProfile<TDocument> profile, AtomicOutputSetWriter transaction)
     {
@@ -410,28 +415,28 @@ public sealed class OutputSet<TDocument> : IDisposable
 
         StagedOutput staged = _transaction.Stage(targetPath, overwrite, backupPath, inputPrecondition,
             inspector?.After(write) ?? write, verify);
-        _staged++;
+        _staged.Add(staged);
         return staged;
     }
 
     /// <summary>
-    /// Publishes every staged output and returns their sizes in stage order. A failed commit is
+    /// Publishes every staged output and returns their facts in stage order. A failed commit is
     /// recovered and reported as a stable publication error.
     /// </summary>
-    public IReadOnlyList<long> Commit()
+    public IReadOnlyList<PublishedFile> Commit()
     {
-        IReadOnlyList<long> sizes = _transaction.Commit();
+        _ = _transaction.Commit();
         foreach (OutputPipeline<TDocument>.Inspector inspector in _documents)
         {
             _pipeline.Record(inspector.Result);
         }
 
-        for (int index = _documents.Count; index < _staged; index++)
+        for (int index = _documents.Count; index < _staged.Count; index++)
         {
             _pipeline.Record(null);
         }
 
-        return sizes;
+        return [.. _staged.Select(static staged => staged.Published)];
     }
 
     /// <inheritdoc />

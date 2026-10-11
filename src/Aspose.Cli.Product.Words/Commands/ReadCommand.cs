@@ -53,7 +53,7 @@ internal static class ReadCommand
 
     internal static void Table(DocumentReadResult result, TableSurface surface)
     {
-        surface.Out.WriteLine($"{result.Source.Path} (scope {result.Scope}, {result.BlockCount} blocks in the document)");
+        surface.Out.WriteLine($"{result.Input.Path} (scope {result.Scope}, {result.BlockCount} blocks in the document)");
         var table = new TextTable("block", "type", "section", "style", "text");
         foreach (BlockData block in result.Blocks)
         {

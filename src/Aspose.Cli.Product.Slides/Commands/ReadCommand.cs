@@ -45,7 +45,7 @@ internal static class ReadCommand
 
     internal static void Table(PresentationReadResult result, TableSurface surface)
     {
-        surface.Out.WriteLine($"{result.Source.Path}: {result.SlideCount} slide(s) ({result.Scope})");
+        surface.Out.WriteLine($"{result.Input.Path}: {result.SlideCount} slide(s) ({result.Scope})");
         foreach (SlideData slide in result.Slides)
         {
             surface.Out.WriteLine();

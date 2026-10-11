@@ -12,14 +12,14 @@ public sealed record ReviewResult() : EngineResultEnvelope("review", 2), IPartia
     [Pattern("^[a-z0-9][a-z0-9-]*$")]
     public required string Product { get; init; }
 
-    /// <summary>Absolute path of the reviewed document.</summary>
-    public required string Input { get; init; }
+    /// <summary>The reviewed document.</summary>
+    public required InputInfo Input { get; init; }
 
     /// <summary>Absolute path of the new evidence directory.</summary>
     public required string OutputDirectory { get; init; }
 
     /// <summary>Absolute path of the bundle's <c>index.html</c>, which shows the evidence to people.</summary>
-    public required string Index { get; init; }
+    public required string IndexPath { get; init; }
 
     /// <summary>Absolute path of the bundle's <c>review.json</c> manifest.</summary>
     public required string Manifest { get; init; }
@@ -27,17 +27,6 @@ public sealed record ReviewResult() : EngineResultEnvelope("review", 2), IPartia
     /// <summary>View the evidence was rendered in.</summary>
     [MinLength(1)]
     public required string View { get; init; }
-
-    /// <summary>Detected format id of the reviewed document.</summary>
-    [MinLength(1)]
-    public required string SourceFormat { get; init; }
-
-    /// <summary>Size of the reviewed document in bytes.</summary>
-    [Minimum(0)]
-    public required long SourceSizeBytes { get; init; }
-
-    /// <summary>Whether the reviewed document is encrypted.</summary>
-    public required bool SourceEncrypted { get; init; }
 
     /// <summary>Whether the rendered evidence must be looked at, because the findings alone cannot judge the document.</summary>
     public required bool VisualInspectionRequired { get; init; }

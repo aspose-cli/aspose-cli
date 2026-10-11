@@ -153,7 +153,7 @@ public sealed class ReviewViewerBrowserTests(ITestOutputHelper output)
                 ],
             });
 
-        await OpenInBrowser("review-findings", result.Index, async page =>
+        await OpenInBrowser("review-findings", result.IndexPath, async page =>
         {
             await Expect(page.Locator(".av-panel")).ToBeVisibleAsync();
             await Expect(page.Locator(".av-finding[data-severity='error']")).ToContainTextAsync("TEXT_OVERFLOW");
@@ -186,7 +186,7 @@ public sealed class ReviewViewerBrowserTests(ITestOutputHelper output)
             [new ViewPart { Id = "book", Label = "Book", File = "book.html", Kind = ViewPartKinds.Html }],
             new ProductReviewAssessment());
 
-        await OpenInBrowser("review-html", result.Index, async page =>
+        await OpenInBrowser("review-html", result.IndexPath, async page =>
         {
             ILocator frame = page.Locator(".av-stage .av-part[data-kind='html'] iframe");
             await Expect(page.FrameLocator(".av-stage iframe").Locator("body")).ToHaveTextAsync("Region");
@@ -217,9 +217,12 @@ public sealed class ReviewViewerBrowserTests(ITestOutputHelper output)
         string layout,
         Action<IViewArtifactSink> writeParts,
         ViewPart[] parts,
-        ProductReviewAssessment assessment) =>
-        ReviewEvidenceWriter.Write(
-            temp.File("source.test"),
+        ProductReviewAssessment assessment)
+    {
+        string source = temp.File("source.test");
+        File.WriteAllText(source, "source");
+        return ReviewEvidenceWriter.Write(
+            source,
             "test",
             temp.File("review"),
             maxItems: 4,
@@ -244,6 +247,7 @@ public sealed class ReviewViewerBrowserTests(ITestOutputHelper output)
             _ => assessment,
             LicenseState.NotApplicable,
             new ContractJsonSerializer([]), Aspose.Cli.Sdk.Tests.TestBudgets.Create());
+    }
 
     private async Task ReviewInBrowser(
         string name,

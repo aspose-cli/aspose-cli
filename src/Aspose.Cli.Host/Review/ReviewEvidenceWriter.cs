@@ -169,14 +169,11 @@ internal static class ReviewEvidenceWriter
         return new ReviewResult
         {
             Product = productId,
-            Input = source,
+            Input = FileObjects.Input(source, manifest.SourceFormat, manifest.SourceEncrypted),
             OutputDirectory = target,
-            Index = Path.Combine(target, "index.html"),
+            IndexPath = Path.Combine(target, "index.html"),
             Manifest = Path.Combine(target, "review.json"),
             View = manifest.View,
-            SourceFormat = manifest.SourceFormat,
-            SourceSizeBytes = manifest.SourceSizeBytes,
-            SourceEncrypted = manifest.SourceEncrypted,
             VisualInspectionRequired = visualInspectionRequired,
             Coverage = new ReviewCoverage
             {

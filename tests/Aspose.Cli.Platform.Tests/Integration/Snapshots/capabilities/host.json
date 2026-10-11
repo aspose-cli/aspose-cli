@@ -1912,7 +1912,7 @@
       "required": [
         "schema",
         "schemaVersion",
-        "source",
+        "input",
         "allAvailable",
         "fonts"
       ],
@@ -1926,9 +1926,9 @@
           "description": "Version of this result contract.",
           "const": 2
         },
-        "source": {
+        "input": {
           "description": "The document that was checked.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/source.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
         },
         "allAvailable": {
           "description": "true when every used font is available — no substitution.",
@@ -2047,6 +2047,43 @@
               "type": "string"
             }
           }
+        }
+      }
+    },
+    "v2/common/input": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "$id": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json",
+      "description": "Describes a file a command read.",
+      "type": "object",
+      "required": [
+        "path",
+        "format",
+        "sizeBytes",
+        "fingerprint",
+        "encrypted"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "description": "Absolute path of the file.",
+          "type": "string"
+        },
+        "format": {
+          "description": "Detected format id, e.g. xlsx.",
+          "type": "string"
+        },
+        "sizeBytes": {
+          "description": "File size in bytes.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "fingerprint": {
+          "description": "SHA-256 identity of the file as it was read.",
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/file-fingerprint.schema.json"
+        },
+        "encrypted": {
+          "description": "true when the file is encrypted and opens only with its password.",
+          "type": "boolean"
         }
       }
     },
@@ -2322,11 +2359,13 @@
     "v2/common/output": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "$id": "https://schemas.aspose.com/aspose-cli/v2/common/output.schema.json",
-      "description": "Describes a file an operation produced.",
+      "description": "Describes a file a command produced.",
       "type": "object",
       "required": [
         "path",
-        "sizeBytes"
+        "format",
+        "sizeBytes",
+        "fingerprint"
       ],
       "additionalProperties": false,
       "properties": {
@@ -2335,7 +2374,7 @@
           "type": "string"
         },
         "format": {
-          "description": "Format id of the produced file, e.g. pdf; omitted for a companion file the engine writes beside it, such as a script of an HTML5 deck.",
+          "description": "Format id of the produced file, e.g. pdf; for a companion file the engine writes beside it, such as a script of an HTML5 deck, the companion's file extension.",
           "type": "string"
         },
         "sizeBytes": {
@@ -2344,12 +2383,47 @@
           "minimum": 0
         },
         "fingerprint": {
-          "description": "SHA-256 identity when the owning workflow captured one.",
+          "description": "SHA-256 identity of the published file.",
           "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/file-fingerprint.schema.json"
         },
         "encrypted": {
-          "description": "true when the produced file is encrypted and opens only with its password, false when it is not; omitted when the owning workflow does not report it.",
+          "description": "true when the produced file is encrypted and opens only with its password; omitted when its format cannot carry a password.",
           "type": "boolean"
+        }
+      }
+    },
+    "v2/common/page-size": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "$id": "https://schemas.aspose.com/aspose-cli/v2/common/page-size.schema.json",
+      "description": "The size of a page in points (72 per inch) as a read reports it: both dimensions, and the preset they match in either orientation. An operation that sets a page size takes a preset or both dimensions under the same names.",
+      "type": "object",
+      "required": [
+        "width",
+        "height"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "preset": {
+          "description": "The preset the dimensions match; omitted when they match none.",
+          "type": "string",
+          "enum": [
+            "a3",
+            "a4",
+            "a5",
+            "letter",
+            "legal",
+            "tabloid"
+          ]
+        },
+        "width": {
+          "description": "The page width in points.",
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "height": {
+          "description": "The page height in points.",
+          "type": "number",
+          "exclusiveMinimum": 0
         }
       }
     },
@@ -2571,12 +2645,9 @@
         "product",
         "input",
         "outputDirectory",
-        "index",
+        "indexPath",
         "manifest",
         "view",
-        "sourceFormat",
-        "sourceSizeBytes",
-        "sourceEncrypted",
         "visualInspectionRequired",
         "coverage",
         "artifacts",
@@ -2598,14 +2669,14 @@
           "pattern": "^[a-z0-9][a-z0-9-]*$"
         },
         "input": {
-          "description": "Absolute path of the reviewed document.",
-          "type": "string"
+          "description": "The reviewed document.",
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
         },
         "outputDirectory": {
           "description": "Absolute path of the new evidence directory.",
           "type": "string"
         },
-        "index": {
+        "indexPath": {
           "description": "Absolute path of the bundle's index.html, which shows the evidence to people.",
           "type": "string"
         },
@@ -2617,20 +2688,6 @@
           "description": "View the evidence was rendered in.",
           "type": "string",
           "minLength": 1
-        },
-        "sourceFormat": {
-          "description": "Detected format id of the reviewed document.",
-          "type": "string",
-          "minLength": 1
-        },
-        "sourceSizeBytes": {
-          "description": "Size of the reviewed document in bytes.",
-          "type": "integer",
-          "minimum": 0
-        },
-        "sourceEncrypted": {
-          "description": "Whether the reviewed document is encrypted.",
-          "type": "boolean"
         },
         "visualInspectionRequired": {
           "description": "Whether the rendered evidence must be looked at, because the findings alone cannot judge the document.",
@@ -3041,41 +3098,6 @@
               }
             }
           }
-        }
-      }
-    },
-    "v2/common/source": {
-      "$schema": "https://json-schema.org/draft/2020-12/schema",
-      "$id": "https://schemas.aspose.com/aspose-cli/v2/common/source.schema.json",
-      "description": "Describes the input file an operation ran against.",
-      "type": "object",
-      "required": [
-        "path",
-        "format",
-        "sizeBytes"
-      ],
-      "additionalProperties": false,
-      "properties": {
-        "path": {
-          "description": "Absolute path of the file.",
-          "type": "string"
-        },
-        "format": {
-          "description": "Detected format id, e.g. xlsx.",
-          "type": "string"
-        },
-        "sizeBytes": {
-          "description": "File size in bytes.",
-          "type": "integer",
-          "minimum": 0
-        },
-        "fingerprint": {
-          "description": "SHA-256 identity when the owning workflow captured one.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/file-fingerprint.schema.json"
-        },
-        "encrypted": {
-          "description": "true when the file is encrypted and opens only with its password, false when it is not; omitted when the owning workflow does not report it.",
-          "type": "boolean"
         }
       }
     },
@@ -4801,12 +4823,13 @@
             "auto",
             "pages",
             "sheets",
-            "slides"
+            "slides",
+            "workbook"
           ],
           "secret": false,
           "valueSource": "command-line",
           "inputKind": "none",
-          "description": "Product view; auto uses the product's own view."
+          "description": "Product view; auto uses the product's own view. Review renders only views of images, so it refuses workbook."
         }
       ],
       "arguments": [

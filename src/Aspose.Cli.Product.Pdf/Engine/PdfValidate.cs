@@ -23,7 +23,7 @@ internal static class PdfValidate
         IReadOnlyList<PdfComplianceProblem> problems = PdfComplianceLog.Parse(log);
         return new PdfValidateResult
         {
-            Input = PdfInfoProjection.Source(filePath),
+            Input = PdfInfoProjection.Source(filePath, loaded),
             Profile = request.Profile.ToLowerInvariant(),
             Valid = valid,
             Issues = problems.Take(ListedIssues).Select(static problem => problem.ToString()).ToArray(),

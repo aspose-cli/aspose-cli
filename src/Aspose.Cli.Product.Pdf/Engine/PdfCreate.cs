@@ -6,7 +6,6 @@ using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Results;
 using Aspose.Pdf;
 using Aspose.Pdf.Text;
-using static Aspose.Cli.Product.Pdf.Engine.PdfEngineSupport;
 
 namespace Aspose.Cli.Product.Pdf.Engine;
 
@@ -56,7 +55,7 @@ internal static class PdfCreate
             document.Info.Subject = string.Empty;
         }
 
-        long size = session.Outputs.Write(request.Output.Path, request.Output.Overwrite, document, path =>
+        PublishedFile written = session.Outputs.Write(request.Output.Path, request.Output.Overwrite, document, path =>
         {
             try { document.Save(path); }
             finally { resources?.ThrowIfFailed(); }
@@ -71,7 +70,7 @@ internal static class PdfCreate
         return new PdfWriteResult
         {
             Action = "create",
-            Output = BuildOutput(request.Output.Path, "pdf", size),
+            Output = FileObjects.Output(written, request.Output.Format, document.IsEncrypted),
             Inputs = CreationInputs(request),
             License = EnvelopeParts.License(state),
             Warnings = warnings.Count == 0 ? null : warnings,
@@ -343,16 +342,11 @@ internal static class PdfCreate
         }
     }
 
-    private static IReadOnlyList<SourceInfo> CreationInputs(NewPdfRequest request)
+    private static IReadOnlyList<InputInfo> CreationInputs(NewPdfRequest request)
     {
         IEnumerable<string> paths = request.ImagePaths
             ?? (request.HtmlPath is not null ? [request.HtmlPath] : [request.TextPath!]);
-        return paths.Select(path => new SourceInfo
-        {
-            Path = Path.GetFullPath(path),
-            Format = Path.GetExtension(path).TrimStart('.').ToLowerInvariant(),
-            SizeBytes = new FileInfo(path).Length,
-        }).ToArray();
+        return paths.Select(static path => FileObjects.Input(path, Path.GetExtension(path).TrimStart('.').ToLowerInvariant(), encrypted: false)).ToArray();
     }
 
     /// <summary>Checks every creation input and returns the HTML input's bytes, if any, and the images' bytes.</summary>

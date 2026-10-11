@@ -41,7 +41,7 @@ public sealed class McpProtocolTests
                 JsonNode result = await server.Execute(args);
                 AssertSuccess(result);
                 Assert.Equal(Path.Combine(work, "input.csv"),
-                    JsonNode.Parse(result["result"]!["structuredContent"]!["stdout"]!.GetValue<string>())!["source"]!["path"]!.GetValue<string>());
+                    JsonNode.Parse(result["result"]!["structuredContent"]!["stdout"]!.GetValue<string>())!["input"]!["path"]!.GetValue<string>());
             }
         }
 

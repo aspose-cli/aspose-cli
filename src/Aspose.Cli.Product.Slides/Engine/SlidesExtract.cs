@@ -58,7 +58,7 @@ internal static class SlidesExtract
         guard.Commit();
         return new SlidesExtractResult
         {
-            Input = Source(request.Input, loaded.FormatId),
+            Input = Source(request.Input, loaded),
             What = request.What,
             Items = items,
             License = EnvelopeParts.License(state),

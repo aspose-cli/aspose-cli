@@ -6,11 +6,10 @@ using Xunit;
 namespace Aspose.Cli.Product.Pdf.Tests;
 
 /// <summary>
-/// The input a PDF result describes (<c>source</c> or <c>input</c>) is the shared source record,
-/// whose optional <c>encrypted</c> states whether the file opens only with its password. The PDF
-/// result schemas refused that member, so a result that reported it broke its own schema. Against
-/// the real engine: when a result reports <c>encrypted</c> it is the truth, and every PDF result
-/// schema accepts the boolean truth there and refuses any other type.
+/// The <c>input</c> a PDF result describes is the shared input record, whose <c>encrypted</c>
+/// states whether the file opens only with its password. Against the real engine: every result
+/// reports it, it is the truth, and every PDF result schema accepts the boolean truth there and
+/// refuses any other type.
 /// </summary>
 public sealed class PdfSourceEncryptedContractTests : IDisposable
 {
@@ -83,22 +82,22 @@ public sealed class PdfSourceEncryptedContractTests : IDisposable
     private static void Check(string name, JsonObject result, bool encrypted, List<string> problems)
     {
         string id = PublishedSchemas.IdOf(result["schema"]!.GetValue<string>());
-        string? member = result["source"] is JsonObject ? "source" : result["input"] is JsonObject ? "input" : null;
-        if (member is null)
+        const string member = "input";
+        if (result[member] is not JsonObject input)
         {
-            problems.Add($"{name}: {id} describes its input neither as source nor as input");
+            problems.Add($"{name}: {id} does not describe its input as input");
             return;
         }
 
-        if (result[member]!["encrypted"] is JsonNode reported
-            && (reported.GetValueKind() is not (JsonValueKind.True or JsonValueKind.False) || reported.GetValue<bool>() != encrypted))
+        if (input["encrypted"] is not JsonNode reported
+            || reported.GetValueKind() is not (JsonValueKind.True or JsonValueKind.False) || reported.GetValue<bool>() != encrypted)
         {
-            problems.Add($"{name}: {member}.encrypted is {reported.ToJsonString()} for a file that is {(encrypted ? "" : "not ")}encrypted");
+            problems.Add($"{name}: {member}.encrypted is {input["encrypted"]?.ToJsonString() ?? "missing"} for a file that is {(encrypted ? "" : "not ")}encrypted");
         }
 
         if (!IsValid(id, result, member, JsonValue.Create(encrypted)))
         {
-            problems.Add($"{name}: {id} refuses {member}.encrypted {(encrypted ? "true" : "false")}, which the shared source record carries");
+            problems.Add($"{name}: {id} refuses {member}.encrypted {(encrypted ? "true" : "false")}, which the shared input record carries");
         }
 
         if (IsValid(id, result, member, JsonValue.Create("yes")))

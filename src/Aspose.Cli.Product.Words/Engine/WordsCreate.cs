@@ -19,11 +19,11 @@ internal static class WordsCreate
         string formatId = request.Output.Format.Id;
         SaveOptions options = WordsSavePipeline.Options(formatId, request.EncryptPassword);
         WordsSavePipeline.RemoveMacrosUnlessKept(created.Document, formatId);
-        long size = session.Outputs.Write(request.Output.Path, request.Output.Overwrite, created.Document, temp => created.Save(temp, options));
+        PublishedFile written = session.Outputs.Write(request.Output.Path, request.Output.Overwrite, created.Document, temp => created.Save(temp, options));
 
         return new WordsCreateResult
         {
-            Output = BuildOutput(request.Output.Path, formatId, size),
+            Output = FileObjects.Output(written, request.Output.Format, encrypted: request.EncryptPassword is not null),
             License = EnvelopeParts.License(state),
             Warnings = CreationWarnings(created, formatId),
         };

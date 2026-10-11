@@ -66,7 +66,7 @@ public sealed class CellsMutationBoundaryTests
             () => inspect = workspace.RunWithEnv(environment, "cells", "inspect", "edited.xlsx", "--password-env", changePassword ? "NEW_PASSWORD" : "OLD_PASSWORD", "--output-format", "json"),
             () => unopened = workspace.Run("cells", "inspect", "edited.xlsx", "--output-format", "json"));
         Assert.True(inspect.ExitCode == 0, inspect.StdErr);
-        Assert.True(JsonNode.Parse(inspect.StdOut)!["source"]!["encrypted"]!.GetValue<bool>());
+        Assert.True(JsonNode.Parse(inspect.StdOut)!["input"]!["encrypted"]!.GetValue<bool>());
         Assert.NotEqual(0, unopened.ExitCode);
         Assert.DoesNotContain("test-password", edit.StdOut + edit.StdErr, StringComparison.Ordinal);
     }
@@ -82,7 +82,8 @@ public sealed class CellsMutationBoundaryTests
             "--set", "Data!A1=7", "--out", "result.csv", "--output-format", "json");
         Assert.True(result.ExitCode == 0, result.StdErr);
         Assert.Contains("WORKBOOK_ENCRYPTION_REMOVED", result.StdOut, StringComparison.Ordinal);
-        Assert.False(JsonNode.Parse(result.StdOut)!["output"]!["encrypted"]!.GetValue<bool>());
+        // A CSV cannot carry a password, so the output reports no encryption state.
+        Assert.Null(JsonNode.Parse(result.StdOut)!["output"]!["encrypted"]);
         Assert.DoesNotContain("test-export-secret", result.StdOut + result.StdErr, StringComparison.Ordinal);
     }
 

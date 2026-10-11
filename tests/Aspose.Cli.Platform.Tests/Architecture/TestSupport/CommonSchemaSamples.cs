@@ -209,7 +209,7 @@ internal static class CommonSchemaSamples
 
     public static FontCheckResult FontCheck { get; } = new()
     {
-        Source = new SourceInfo { Path = "D:/data/sample.bin", Format = "bin", SizeBytes = 24576 },
+        Input = new InputInfo { Path = "D:/data/sample.bin", Format = "bin", SizeBytes = 24576, Fingerprint = new FileFingerprint { Sha256 = new string('0', 64) }, Encrypted = false },
         AllAvailable = false,
         Fonts =
         [
@@ -265,14 +265,18 @@ internal static class CommonSchemaSamples
     public static ReviewResult Review { get; } = new()
     {
         Product = "synthetic",
-        Input = "D:/data/sample.bin",
+        Input = new InputInfo
+        {
+            Path = "D:/data/sample.bin",
+            Format = "bin",
+            SizeBytes = 4096,
+            Fingerprint = new FileFingerprint { Sha256 = new string('0', 64) },
+            Encrypted = false,
+        },
         OutputDirectory = "D:/data/sample.review",
-        Index = "D:/data/sample.review/index.html",
+        IndexPath = "D:/data/sample.review/index.html",
         Manifest = "D:/data/sample.review/review.json",
         View = "default",
-        SourceFormat = "bin",
-        SourceSizeBytes = 4096,
-        SourceEncrypted = false,
         VisualInspectionRequired = true,
         Coverage = new ReviewCoverage
         {

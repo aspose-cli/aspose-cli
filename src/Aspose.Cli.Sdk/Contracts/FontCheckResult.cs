@@ -12,7 +12,7 @@ public sealed record FontCheckResult() : EngineResultEnvelope("font-check", 2)
 {
     /// <summary>The document that was checked.</summary>
     [JsonPropertyOrder(-50)]
-    public required SourceInfo Source { get; init; }
+    public required InputInfo Input { get; init; }
 
     /// <summary><c>true</c> when every used font is available — no substitution.</summary>
     [JsonPropertyOrder(-49)]

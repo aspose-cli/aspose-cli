@@ -28,6 +28,8 @@ public sealed class WordsSplitExtractCliTests : IDisposable
         JsonArray outputs = JsonNode.Parse(split.StdOut)!["outputs"]!.AsArray();
         Assert.Equal(["section-1", "section-2"], outputs.Select(static output => output!["source"]!.GetValue<string>()));
         Assert.All(outputs, static output => Assert.True(File.Exists(output!["output"]!["path"]!.GetValue<string>())));
+        // A docx part can carry a password, so each part states that it has none.
+        Assert.All(outputs, static output => Assert.False(output!["output"]!["encrypted"]!.GetValue<bool>()));
     }
 
     [Category(TestCategory.Slow)]

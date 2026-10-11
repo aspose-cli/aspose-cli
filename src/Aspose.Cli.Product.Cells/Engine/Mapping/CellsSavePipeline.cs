@@ -43,7 +43,7 @@ internal sealed class CellsSavePipeline(OutputPipeline<Workbook> outputs, CellsW
                 using LoadedWorkbook reopened = loader.OpenPublishedCandidate(path, plan.OutputPassword);
                 _ = reopened.Workbook.Worksheets.Count;
             } : null);
-        return new WorkbookStagedSave(candidate, plan.FormatId, truncated,
+        return new WorkbookStagedSave(candidate, output, truncated,
             BuildBrokenFormulaWarning(refsBefore, CountRefFormulas(workbook), plan.FormatId), sheetsDropped)
         { Encrypted = plan.Encrypts };
     }
@@ -63,7 +63,7 @@ internal sealed class CellsSavePipeline(OutputPipeline<Workbook> outputs, CellsW
     /// Publishes a file saved from <paramref name="workbook"/>, or from the one sheet of it that
     /// <paramref name="singleSheet"/> names, which carries no evaluation mark of the workbook's.
     /// </summary>
-    internal long Write(
+    internal PublishedFile Write(
         string outputPath,
         bool overwrite,
         Workbook workbook,
@@ -176,13 +176,13 @@ internal sealed class CellsSavePipeline(OutputPipeline<Workbook> outputs, CellsW
         };
 }
 
-internal sealed record WorkbookStagedSave(StagedOutput Candidate, string Format,
+internal sealed record WorkbookStagedSave(StagedOutput Candidate, ResolvedOutput Target,
     Warning? Truncated, Warning? FormulasBroken, Warning? SheetsDropped)
 {
     /// <summary>Whether the save encrypted the output with a password.</summary>
     internal bool Encrypted { get; init; }
 
-    internal OutputInfo Output => new()
-    { Path = Candidate.TargetPath, Format = Format, SizeBytes = Candidate.SizeBytes, Fingerprint = Candidate.Fingerprint, Encrypted = Encrypted };
+    /// <summary>The published output; read it once the save is committed.</summary>
+    internal OutputInfo Output => FileObjects.Output(Candidate.Published, Target.Format, Encrypted);
     internal BackupInfo? Backup => Candidate.Backup;
 }

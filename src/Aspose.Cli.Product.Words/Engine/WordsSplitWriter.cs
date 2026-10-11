@@ -11,6 +11,9 @@ namespace Aspose.Cli.Product.Words.Engine;
 /// </summary>
 internal sealed class WordsSplitWriter : IDisposable
 {
+    /// <summary>The format every part is written in.</summary>
+    private static readonly FormatDescriptor Docx = WordsFormats.Definitions.Named(FormatUse.Convert, "docx")!;
+
     private readonly ResolvedDirectory _output;
     private readonly string _stem;
     private readonly OutputSet<Document> _transaction;
@@ -45,22 +48,12 @@ internal sealed class WordsSplitWriter : IDisposable
 
     public IReadOnlyList<SplitOutput> Commit()
     {
-        IReadOnlyList<long> sizes = _transaction.Commit();
-        for (int index = 0; index < _parts.Count; index++)
-        {
-            _parts[index].Size = sizes[index];
-        }
-
-        return _parts.Select(static part => new SplitOutput
+        IReadOnlyList<PublishedFile> files = _transaction.Commit();
+        return _parts.Select((part, index) => new SplitOutput
         {
             Index = part.Index,
             Source = part.Source,
-            Output = new OutputInfo
-            {
-                Path = part.Target,
-                Format = "docx",
-                SizeBytes = part.Size,
-            },
+            Output = FileObjects.Output(files[index], Docx, encrypted: false),
         }).ToArray();
     }
 
@@ -71,6 +64,5 @@ internal sealed class WordsSplitWriter : IDisposable
         public int Index { get; } = index;
         public string Source { get; } = source;
         public string Target { get; } = target;
-        public long Size { get; set; }
     }
 }

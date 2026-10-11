@@ -19,9 +19,9 @@ internal static class SlidesEdit
         LicenseState state = session.Outputs.License;
         FileWritePrecondition precondition = FileWritePrecondition.Capture(filePath);
         using LoadedPresentation loaded = session.Loader.Open(filePath, request.Password);
-        SourceInfo input = Source(filePath, loaded.FormatId);
-        FileFingerprints.EnsureUnchanged(filePath, precondition.Fingerprint, input.Fingerprint!);
-        FileFingerprints.EnsureMatch(filePath, request.Options.IfMatch, input.Fingerprint!);
+        InputInfo input = Source(filePath, loaded);
+        FileFingerprints.EnsureUnchanged(filePath, precondition.Fingerprint, input.Fingerprint);
+        FileFingerprints.EnsureMatch(filePath, request.Options.IfMatch, input.Fingerprint);
         Presentation presentation = loaded.Presentation;
         IReadOnlyList<SlidesMutationHandlers.ResolvedSlidesOp> resolved = SlidesMutationHandlers.ResolveBatch(presentation, batch);
         var touched = new HashSet<uint>();
@@ -126,14 +126,9 @@ internal static class SlidesEdit
                 },
                 backupPath: request.Output.BackupPath,
                 inputPrecondition: precondition);
-            output = new OutputInfo
-            {
-                Path = request.Output.Path,
-                Format = format,
-                SizeBytes = write.SizeBytes,
-            };
             backup = write.Backup;
             transaction.Commit();
+            output = FileObjects.Output(write.Published, request.Output.Format, presentation.ProtectionManager.IsEncrypted);
         }
 
         return new EditPublication(output, backup);

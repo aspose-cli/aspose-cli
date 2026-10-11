@@ -3,7 +3,6 @@ using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Results;
 using Aspose.Pdf;
-using static Aspose.Cli.Product.Pdf.Engine.PdfEngineSupport;
 
 namespace Aspose.Cli.Product.Pdf.Engine;
 
@@ -22,7 +21,7 @@ internal static class PdfEdit
         FileWritePrecondition precondition = FileWritePrecondition.Capture(filePath);
         using InputResourceScope operationInputs = session.Budgets.Inputs.CreateScope();
         using LoadedPdf loaded = session.Loader.Open(filePath, request.Password);
-        SourceInfo input = PdfInfoProjection.Source(filePath, includeFingerprint: true);
+        InputInfo input = PdfInfoProjection.Source(filePath, loaded);
         FileFingerprints.EnsureUnchanged(filePath, precondition.Fingerprint, input.Fingerprint!);
         FileFingerprints.EnsureMatch(filePath, request.Options.IfMatch, input.Fingerprint!);
         bool signatures = loaded.Document.Form.SignaturesExist;
@@ -220,10 +219,6 @@ internal static class PdfEdit
                 },
                 backupPath: request.Output.BackupPath,
                 inputPrecondition: precondition);
-            output = BuildOutput(request.Output.Path, "pdf", write.SizeBytes) with
-            {
-                Fingerprint = write.Fingerprint,
-            };
             backup = write.Backup;
             if (verifier is not null)
             {
@@ -236,6 +231,7 @@ internal static class PdfEdit
             }
 
             transaction.Commit();
+            output = FileObjects.Output(write.Published, request.Output.Format, encrypted: outputPassword is not null);
         }
 
         return new Publication(output, backup, verification);

@@ -42,7 +42,7 @@ public sealed class PdfReviewAndInfoTests
 
         JsonNode review = Review(workspace, input);
 
-        Assert.False(review["sourceEncrypted"]!.GetValue<bool>());
+        Assert.False(review["input"]!["encrypted"]!.GetValue<bool>());
         JsonNode finding = Assert.Single(
             review["findings"]!.AsArray(),
             static item => item!["code"]!.GetValue<string>() == "PDF_PAGE_SIZE_UNUSUAL")!;
@@ -66,7 +66,7 @@ public sealed class PdfReviewAndInfoTests
             new Dictionary<string, string?> { ["ASPOSE_CLI_TEST_PASSWORD"] = "reader" },
             "review", input, "--out", workspace.File("review"), "--password-env", "ASPOSE_CLI_TEST_PASSWORD", "--output-format", "json");
 
-        Assert.True(review.Json()["sourceEncrypted"]!.GetValue<bool>());
+        Assert.True(review.Json()["input"]!["encrypted"]!.GetValue<bool>());
     }
 
     [Fact]
