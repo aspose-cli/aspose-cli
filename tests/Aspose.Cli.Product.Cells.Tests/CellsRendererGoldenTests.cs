@@ -1,4 +1,5 @@
 using Aspose.Cli.Product.Cells.Commands;
+using Aspose.Cli.Sdk.Diagnostics;
 using Aspose.Cli.Sdk.Extensibility.Output;
 using Xunit;
 
@@ -17,15 +18,15 @@ public sealed class CellsRendererGoldenTests
 
         RenderedText.Equal(
             """
-            report.xlsx (xlsx, 1,234,567 bytes)
+            C:\data\report.xlsx (xlsx, 1,234,567 bytes)
             sheets: 2   vba: no   defined names: 1   encrypted: yes   structure protected: yes
 
-            name         position  used range  rows  cols  hidden  protected  charts  pivots
-            Data         0         A1:C9       9     3     no      yes        1       0
-            Empty sheet  1         -           0     0     yes     no         0       0
+            name         position  used range  rows  columns  hidden  protected  charts  pivots
+            Data         0         A1:C9       9     3        no      yes        1       0
+            Empty sheet  1         -           0     0        yes     no         0       0
 
             preview Data:
-              Region | Sales |·
+              Region | Sales | -
               North | 1,200 | x
 
             names:
@@ -33,7 +34,7 @@ public sealed class CellsRendererGoldenTests
             Rate  =Data!$B$2
 
             formula errors:
-            none
+            -
 
             validations:
             sheet  range  type
@@ -67,16 +68,16 @@ public sealed class CellsRendererGoldenTests
 
         RenderedText.Equal(
             """
-            report.xlsx (xlsx, 1,234,567 bytes)
+            C:\data\report.xlsx (xlsx, 1,234,567 bytes)
             sheets: 2   vba: no   defined names: 1   encrypted: yes   structure protected: yes
 
-            | name | position | used range | rows | cols | hidden | protected | charts | pivots |
+            | name | position | used range | rows | columns | hidden | protected | charts | pivots |
             | --- | --- | --- | --- | --- | --- | --- | --- | --- |
             | Data | 0 | A1:C9 | 9 | 3 | no | yes | 1 | 0 |
             | Empty sheet | 1 | - | 0 | 0 | yes | no | 0 | 0 |
 
             preview Data:
-              Region | Sales |·
+              Region | Sales | -
               North | 1,200 | x
 
             ### names
@@ -87,7 +88,7 @@ public sealed class CellsRendererGoldenTests
 
             ### formula errors
 
-            none
+            -
 
             ### validations
 
@@ -125,7 +126,7 @@ public sealed class CellsRendererGoldenTests
     }
 
     [Fact]
-    public void Info_WithEmptyDetails_SaysNoneUnderEachHeading()
+    public void Info_WithEmptyDetails_SaysMissingUnderEachHeading()
     {
         WorkbookInfoResult result = Info() with
         {
@@ -139,40 +140,40 @@ public sealed class CellsRendererGoldenTests
 
         RenderedText.Equal(
             """
-            report.xlsx (xlsx, 1,234,567 bytes)
+            C:\data\report.xlsx (xlsx, 1,234,567 bytes)
             sheets: 2   vba: no   defined names: 1   encrypted: no   structure protected: yes
 
-            name         position  used range  rows  cols  hidden  protected  charts  pivots
-            Data         0         A1:C9       9     3     no      yes        1       0
-            Empty sheet  1         -           0     0     yes     no         0       0
+            name         position  used range  rows  columns  hidden  protected  charts  pivots
+            Data         0         A1:C9       9     3        no      yes        1       0
+            Empty sheet  1         -           0     0        yes     no         0       0
 
             preview Data:
-              Region | Sales |·
+              Region | Sales | -
               North | 1,200 | x
 
             names:
-            none
+            -
 
             formula errors:
-            none
+            -
 
             validations:
-            none
+            -
 
             fonts:
-            none
+            -
 
             tables:
-            none
+            -
 
             charts:
-            none
+            -
 
             pivots:
-            none
+            -
 
             layouts:
-            none
+            -
             """,
             text);
     }
@@ -184,15 +185,15 @@ public sealed class CellsRendererGoldenTests
 
         RenderedText.Equal(
             """
-            report.xlsx (xlsx, 1,234,567 bytes)
+            C:\data\report.xlsx (xlsx, 1,234,567 bytes)
             sheets: 2   vba: no   defined names: 1   encrypted: no   structure protected: yes
 
-            name         position  used range  rows  cols  hidden  protected  charts  pivots
-            Data         0         A1:C9       9     3     no      yes        1       0
-            Empty sheet  1         -           0     0     yes     no         0       0
+            name         position  used range  rows  columns  hidden  protected  charts  pivots
+            Data         0         A1:C9       9     3        no      yes        1       0
+            Empty sheet  1         -           0     0        yes     no         0       0
 
             preview Data:
-              Region | Sales |·
+              Region | Sales | -
               North | 1,200 | x
             """,
             text);
@@ -227,7 +228,7 @@ public sealed class CellsRendererGoldenTests
             Data B2:C3 (used A1:C9)
                B       C
             2  Region  1.5
-            3  TRUE····
+            3  TRUE    -
             """,
             text);
     }
@@ -255,9 +256,10 @@ public sealed class CellsRendererGoldenTests
                 Path = "book.backup.xlsx", Created = true, SizeBytes = 2_048,
                 LastWriteUtc = DateTimeOffset.UnixEpoch, HoldsReplacedVersion = true,
             },
-            Verification = new EditVerification
+            Verification = new CellsEditVerification
             {
                 Ok = false,
+                CheckedOps = ["op-0001"],
                 RequestedTargets = [],
                 DirectChanges = [new VerifiedCellChange { Sheet = "Data", Cell = "A1" }],
                 FormulaResultChanges = [],
@@ -266,8 +268,8 @@ public sealed class CellsRendererGoldenTests
                 Truncated = false,
                 Issues =
                 [
-                    new VerificationIssue { Code = "FORMULA_ERROR", Message = "C7 evaluates to #REF!", Location = "Data!C7" },
-                    new VerificationIssue { Code = "RENDER_SKIPPED", Message = "no render was requested" },
+                    VerificationIssues.Of(CellsDiagnostics.FormulaErrors, "C7 evaluates to #REF!", "Data!C7", "Fix the cell."),
+                    VerificationIssue.From(new Warning(new WarningCode("RENDER_SKIPPED"), "no render was requested")),
                 ],
             },
         };
@@ -282,8 +284,9 @@ public sealed class CellsRendererGoldenTests
                   OPS_INVALID: sheet 'Missing' does not exist
                   hint: Inspect the sheets first.
             backup: book.backup.xlsx (created)
-            verification: needs attention; 1 direct, 0 formula-result, 1 formula error(s)
-              FORMULA_ERROR [Data!C7]: C7 evaluates to #REF!
+            verification: needs attention; checked ops: op-0001; 1 direct, 0 formula-result, 1 formula error(s)
+              FORMULA_ERRORS [Data!C7]: C7 evaluates to #REF!
+                hint: Fix the cell.
               RENDER_SKIPPED: no render was requested
             """,
             text);

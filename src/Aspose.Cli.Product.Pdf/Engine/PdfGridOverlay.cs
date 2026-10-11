@@ -11,9 +11,6 @@ namespace Aspose.Cli.Product.Pdf.Engine;
 /// </summary>
 internal static class PdfGridOverlay
 {
-    internal const int MinimumSpacing = 10;
-    internal const int MaximumSpacing = 500;
-
     private static readonly SKColor MinorLine = new(0, 90, 255, 80);
     private static readonly SKColor MajorLine = new(0, 90, 255, 150);
     private static readonly SKColor LabelText = new(0, 50, 160, 255);

@@ -864,7 +864,7 @@
             ],
             "secret": false,
             "valueSource": "command-line",
-            "description": "Unit a change is marked in: word, or char for Chinese or Japanese text."
+            "description": "Unit a change is marked in; use the character unit for Chinese or Japanese text."
           },
           {
             "name": "--ignore-formatting",
@@ -1970,7 +1970,7 @@
             ],
             "secret": false,
             "valueSource": "command-line",
-            "description": "images, comments, text (the visible block text, one line per paragraph or table row) or tables (one CSV file per body table)."
+            "description": "What to extract; tables writes one CSV file per body table."
           }
         ],
         "arguments": [
@@ -2167,7 +2167,7 @@
             "allowedValues": [],
             "secret": false,
             "valueSource": "command-line",
-            "description": "Maximum projected blocks."
+            "description": "Maximum projected blocks. Range: 1-100000."
           },
           {
             "name": "--max-chars",
@@ -2183,7 +2183,7 @@
             "allowedValues": [],
             "secret": false,
             "valueSource": "command-line",
-            "description": "Maximum characters returned, counting the text of the returned blocks, including repeated text and run projections. Range 1-10000000."
+            "description": "Maximum characters returned, counting the text of the returned blocks, including repeated text and run projections. Range: 1-10000000."
           },
           {
             "name": "--password",
@@ -2251,7 +2251,7 @@
             ],
             "secret": false,
             "valueSource": "command-line",
-            "description": "Projection: text, full or outline."
+            "description": "Projection: how much of each block to return."
           },
           {
             "name": "--section",
@@ -2325,7 +2325,7 @@
             "allowedValues": [],
             "secret": false,
             "valueSource": "command-line",
-            "description": "Maximum returned hits (1-10000)."
+            "description": "Maximum returned hits. Range: 1-10000."
           },
           {
             "name": "--password",
@@ -2485,7 +2485,7 @@
             "allowedValues": [],
             "secret": false,
             "valueSource": "command-line",
-            "description": "Raster resolution (36-1200); ignored for vector formats."
+            "description": "Raster resolution; ignored for vector formats. Range: 36-1200."
           },
           {
             "name": "--dry-run",
@@ -2637,7 +2637,7 @@
             ],
             "secret": false,
             "valueSource": "command-line",
-            "description": "Image format: png, jpeg or svg. Default: the --out extension's format, else png."
+            "description": "Image format. Default: the --out extension's format, else png."
           }
         ],
         "arguments": [
@@ -2680,7 +2680,7 @@
             ],
             "secret": false,
             "valueSource": "command-line",
-            "description": "How to divide the document: sections, one part per section; heading1, one part per Heading 1 after a leading part for any blocks before the first; pages, one part per page, per --every pages or per group."
+            "description": "How to divide the document: one part per Heading 1, after a leading part for any blocks before the first; one part per page or per --every N of them; one part per section."
           },
           {
             "name": "--dry-run",
@@ -4313,7 +4313,7 @@
         },
         "verification": {
           "description": "The checks run on the written document after reopening it.",
-          "$ref": "#/$defs/wordsVerification"
+          "$ref": "#/$defs/wordsEditVerification"
         },
         "license": {
           "description": "License mode the engine ran under; omitted when it ran licensed.",
@@ -4328,24 +4328,32 @@
         }
       },
       "$defs": {
-        "wordsVerification": {
-          "description": "Post-edit verification evidence.",
+        "wordsEditVerification": {
+          "description": "Post-edit verification evidence: the written document reopened, its field count, revision count and protection compared with the edited document, and its content compared with the input's.",
           "type": "object",
           "required": [
             "ok",
-            "issues"
+            "issues",
+            "checkedOps"
           ],
           "additionalProperties": false,
           "properties": {
             "ok": {
-              "description": "Whether the written document passed every check.",
+              "description": "Whether the verification found no issue.",
               "type": "boolean"
             },
             "issues": {
-              "description": "What the checks found.",
+              "description": "The problems found, empty when ok is true.",
               "type": "array",
               "items": {
                 "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/verification-issue.schema.json"
+              }
+            },
+            "checkedOps": {
+              "description": "In batch order, the ids of the operations whose effect the verification read back from the staged output; an operation left out was not checked.",
+              "type": "array",
+              "items": {
+                "type": "string"
               }
             },
             "semanticChangesDetected": {

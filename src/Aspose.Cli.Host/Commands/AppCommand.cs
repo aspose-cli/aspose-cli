@@ -62,9 +62,7 @@ internal static class AppCommand
         StartOptions options,
         Func<GlobalValues, ViewerAppRequest> page)
     {
-        int port = parseResult.GetValue(options.Port);
-        OptionGuards.EnsureInRange("--port", port, 0, 65535,
-            "Pass --port 0 for a free port, or a port between 1 and 65535.");
+        int port = parseResult.GetInRange(options.Port, "Pass --port 0 for a free port, or a port between 1 and 65535.");
         bool openBrowser = !parseResult.GetValue(options.NoOpen);
         if (parseResult.GetValue(options.Foreground))
         {
@@ -192,7 +190,7 @@ internal static class AppCommand
                 {
                     Description = "Loopback port; 0 chooses a free port.",
                     DefaultValueFactory = _ => 0,
-                },
+                }.InRange(0, 65535),
                 new Option<bool>("--no-open")
                 {
                     Description = "Start or activate the App without opening a browser.",

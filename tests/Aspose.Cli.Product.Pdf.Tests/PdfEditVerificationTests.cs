@@ -152,7 +152,7 @@ public sealed class PdfEditVerificationTests
 
         using var writer = new StringWriter();
         Commands.EditCommand.Table(result, new Sdk.Extensibility.Output.TableSurface(writer, Sdk.Extensibility.Output.TableFormat.Plain));
-        Assert.Contains("verification: ok (1 operation(s) read back: op-0001)", writer.ToString(), StringComparison.Ordinal);
+        Assert.Contains("verification: ok; checked ops: op-0001", writer.ToString(), StringComparison.Ordinal);
     }
 
     [Fact]

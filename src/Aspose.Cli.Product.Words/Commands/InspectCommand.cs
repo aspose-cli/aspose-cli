@@ -1,3 +1,4 @@
+using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.Extensibility.Output;
 
 namespace Aspose.Cli.Product.Words.Commands;
@@ -34,6 +35,11 @@ internal static class InspectCommand
                 "words inspect contract.docx --output-format json",
                 "words inspect contract.docx --detail outline sections fields bookmarks --sample",
             ],
+            Links =
+            [
+                CommandHelpLink.Docs(WordsModule.Manifest, "overview", "what each Words command is for"),
+                new("aspose-cli docs reading", "reading every product within bounded windows"),
+            ],
         };
     }
 
@@ -61,7 +67,7 @@ internal static class InspectCommand
         ResultText.List(surface, "bookmarks", result.Bookmarks);
         ResultText.List(surface, "fonts", result.Fonts);
         ResultText.Table(surface, "fields", result.Fields, ["block", "type", "code", "result"],
-            static field => [WordsText.Block(field.Block), field.Type, field.Code ?? "-", field.Result ?? "-"]);
+            static field => [WordsText.Block(field.Block), field.Type, field.Code, field.Result]);
         ResultText.Table(surface, "comments", result.Comments, ["block", "author", "text"],
             static comment => [WordsText.Block(comment.Block), comment.Author, comment.Text]);
         ResultText.Table(surface, "revisions", result.Revisions, ["revision", "block", "type", "author", "date", "text"],
@@ -71,14 +77,14 @@ internal static class InspectCommand
                 WordsText.Block(revision.Block),
                 revision.Type,
                 revision.Author,
-                revision.Date ?? "-",
-                revision.Text ?? "-",
+                revision.Date,
+                revision.Text,
             ]);
         ResultText.Table(surface, "images", result.Images, ["block", "name", "size"],
-            static image => [WordsText.Block(image.Block), image.Name ?? "-", $"{TableText.Points(image.Width)} x {TableText.Points(image.Height)} pt"]);
+            static image => [WordsText.Block(image.Block), image.Name, $"{TableText.Points(image.Width)} x {TableText.Points(image.Height)} pt"]);
         ResultText.Table(surface, "tables", result.Tables, ["block", "rows", "columns", "style"],
-            static item => [TableText.Int(item.Block), TableText.Int(item.RowCount), TableText.Int(item.ColumnCount), item.Style ?? "-"]);
-        ResultText.Properties(surface, "properties", result.Properties, missing: "-", sortByName: true);
+            static item => [TableText.Int(item.Block), TableText.Int(item.RowCount), TableText.Int(item.ColumnCount), item.Style]);
+        ResultText.Properties(surface, "properties", result.Properties);
     }
 
     // Page setup, then the header and footer paragraphs of every section that has any.

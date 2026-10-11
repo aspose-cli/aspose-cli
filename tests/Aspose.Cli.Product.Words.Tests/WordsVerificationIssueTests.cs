@@ -81,6 +81,43 @@ public sealed class WordsVerificationIssueTests
         Assert.Contains("save to docx", issue.Hint, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void Verify_ChecksTheOperationsWhoseFieldsProtectionOrRevisionsItCompares()
+    {
+        using var fixture = new WordsFixture();
+        WordsEditResult result = WordsEdit.Run(
+            fixture.Session,
+            new WordsEditRequest
+            {
+                Input = fixture.CreateReport(),
+                Batch = new WordsOpsBatch { Ops = [new ReplaceTextOp { Find = "twelve", Replace = "ten" }, new ProtectOp { Id = "lock", Mode = "readOnly" }] },
+                Output = TestOutput.At(fixture.Temp.File("checked.docx")),
+                Verify = true,
+            });
+
+        Assert.True(result.Verification!.Ok);
+        Assert.Equal(["lock"], result.Verification.CheckedOps);
+    }
+
+    [Fact]
+    public void Verify_WithTrackedChanges_ChecksEveryAppliedOperation()
+    {
+        using var fixture = new WordsFixture();
+        WordsEditResult result = WordsEdit.Run(
+            fixture.Session,
+            new WordsEditRequest
+            {
+                Input = fixture.CreateReport(),
+                Batch = ReplaceTwelve,
+                Output = TestOutput.At(fixture.Temp.File("checked-tracked.docx")),
+                Verify = true,
+                TrackChanges = true,
+                Author = "Reviewer",
+            });
+
+        Assert.Equal(["op-0001"], result.Verification!.CheckedOps);
+    }
+
     /// <summary>
     /// No realistic edit loses this state through a Word-format save, so the hint is checked
     /// directly: advising a Word format again would send the caller round the same loop.

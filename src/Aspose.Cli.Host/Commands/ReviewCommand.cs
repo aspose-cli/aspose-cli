@@ -33,7 +33,7 @@ internal static class ReviewCommand
         {
             Description = "Maximum visual units rendered and listed in review.json.",
             DefaultValueFactory = _ => ReviewEvidenceWriter.DefaultMaxItems,
-        };
+        }.InRange(1, ReviewEvidenceWriter.MaximumMaxItems);
         var product = new Option<string?>("--product")
         {
             Description = "Product that reads the file; by default, the one whose format the file's content matches.",
@@ -44,7 +44,7 @@ internal static class ReviewCommand
                 .ToArray());
         var view = new Option<string>("--view")
         {
-            Description = "Product view; auto uses the product's own view. Review renders only views of images, so it refuses workbook.",
+            Description = "Product view; auto uses the product's own view. Review renders only views made of images and refuses any other.",
             DefaultValueFactory = _ => AutoView,
         }.WithInput(InputKind.None);
         // The values are those of preview open; a view without images is refused when it runs.
@@ -88,13 +88,7 @@ internal static class ReviewCommand
                 throw CliErrors.OutputIsStandardStream("--out", directory: true);
             }
 
-            int maximum = parse.GetValue(maxItems);
-            OptionGuards.EnsureInRange(
-                "--max-items",
-                maximum,
-                1,
-                ReviewEvidenceWriter.MaximumMaxItems,
-                $"Pass a value from 1 to {ReviewEvidenceWriter.MaximumMaxItems}.");
+            int maximum = parse.GetInRange(maxItems);
             string input = invocation.Input;
             ProductDefinition definition = catalog
                 .ResolveExistingFile(

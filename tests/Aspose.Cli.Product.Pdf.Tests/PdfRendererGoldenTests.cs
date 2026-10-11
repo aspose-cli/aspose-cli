@@ -29,7 +29,7 @@ public sealed class PdfRendererGoldenTests
             outline:
             index  title    page
             1      Intro    1
-            1.1      Scope··
+            1.1      Scope  -
 
             forms:
             acroform: 4 field(s), read-only
@@ -37,7 +37,7 @@ public sealed class PdfRendererGoldenTests
             attachments:
             name         type      size
             data.csv     text/csv  1,234 bytes
-            unknown.bin············
+            unknown.bin  -         -
 
             fonts:
             font            embedded  subset
@@ -51,16 +51,16 @@ public sealed class PdfRendererGoldenTests
             signatures:
             field       signed  valid
             Signature1  yes     yes
-            Signature2  no······
+            Signature2  no      -
 
             layers:
             Background, Notes
 
             metadata:
-            property  value
-            Title     Report
-            Author····
-            Creator   Writer
+            name     value
+            Author   -
+            Creator  Writer
+            Title    Report
             """,
             text);
     }
@@ -87,7 +87,7 @@ public sealed class PdfRendererGoldenTests
             | index | title | page |
             | --- | --- | --- |
             | 1 | Intro | 1 |
-            | 1.1 |   Scope |  |
+            | 1.1 |   Scope | - |
 
             ### forms
 
@@ -98,7 +98,7 @@ public sealed class PdfRendererGoldenTests
             | name | type | size |
             | --- | --- | --- |
             | data.csv | text/csv | 1,234 bytes |
-            | unknown.bin |  |  |
+            | unknown.bin | - | - |
 
             ### fonts
 
@@ -117,7 +117,7 @@ public sealed class PdfRendererGoldenTests
             | field | signed | valid |
             | --- | --- | --- |
             | Signature1 | yes | yes |
-            | Signature2 | no |  |
+            | Signature2 | no | - |
 
             ### layers
 
@@ -125,17 +125,17 @@ public sealed class PdfRendererGoldenTests
 
             ### metadata
 
-            | property | value |
+            | name | value |
             | --- | --- |
-            | Title | Report |
-            | Author |  |
+            | Author | - |
             | Creator | Writer |
+            | Title | Report |
             """,
             text);
     }
 
     [Fact]
-    public void Info_WithEmptyDetails_SaysNoneUnderEachHeading()
+    public void Info_WithEmptyDetails_SaysMissingUnderEachHeading()
     {
         PdfInfoResult result = Info() with
         {
@@ -148,27 +148,27 @@ public sealed class PdfRendererGoldenTests
         RenderedText.Equal(
             """
             C:\docs\in.pdf (pdf, 20,000 bytes)
-            pages: 3   version: 1.7   encrypted: no   tagged: yes   PDF/A declared: no
+            pages: 3   version: 1.7   encrypted: no   tagged: yes   PDF/A declared: -
             form: acroform   attachments: 1   signed: yes   password access: none
             page sizes: 612 x 792 pt (2), 595.28 x 841.89 pt (1)
 
             outline:
-            none
+            -
 
             attachments:
-            none
+            -
 
             fonts:
-            none
+            -
 
             signatures:
-            none
+            -
 
             layers:
-            none
+            -
 
             metadata:
-            none
+            -
             """,
             text);
     }
@@ -184,7 +184,7 @@ public sealed class PdfRendererGoldenTests
         RenderedText.Equal(
             """
             C:\docs\in.pdf (pdf, 20,000 bytes)
-            pages: 3   version: 1.7   encrypted: no   tagged: yes   PDF/A declared: no
+            pages: 3   version: 1.7   encrypted: no   tagged: yes   PDF/A declared: -
             form: acroform   attachments: 1   signed: yes   password access: none
             """,
             text);
@@ -215,8 +215,8 @@ public sealed class PdfRendererGoldenTests
                 CheckedOps = ["stamp"],
                 Issues =
                 [
-                    new VerificationIssue { Code = "TEXT_NOT_FOUND", Message = "the stamp text was not read back", Location = "page 2", Hint = "Check the font." },
-                    new VerificationIssue { Code = "REDACTION_PARTIAL", Message = "1 match remains" },
+                    VerificationIssue.From(new Warning(new WarningCode("TEXT_NOT_FOUND"), "the stamp text was not read back") { Location = "page 2", Hint = "Check the font." }),
+                    VerificationIssue.From(new Warning(new WarningCode("REDACTION_PARTIAL"), "1 match remains")),
                 ],
             },
         };
@@ -230,7 +230,7 @@ public sealed class PdfRendererGoldenTests
               [op-0002] redact: ok (4 item(s))
             backup: in.backup.pdf (kept existing)
             pages touched: 2
-            verification: needs attention (1 operation(s) read back: stamp)
+            verification: needs attention; checked ops: stamp
               TEXT_NOT_FOUND [page 2]: the stamp text was not read back
                 hint: Check the font.
               REDACTION_PARTIAL: 1 match remains
@@ -255,7 +255,7 @@ public sealed class PdfRendererGoldenTests
             """
             dry run: 1 of 1 op(s) applied; nothing was written
               [op-0001] rotate_pages: ok (2 item(s))
-            verification: ok (0 operation(s) read back: none)
+            verification: ok; checked ops: -
             """,
             text);
     }

@@ -3,18 +3,7 @@ Description:
   PDF automation with page, security and fixed-layout semantics.
 
 Usage:
-  aspose-cli pdf [command] [options]
-
-Options:
-  -h, --help                                     Show help and usage information
-  --output-format <compact|json|markdown|table>  Output format: json (contract envelopes), compact (the same JSON on one line), table (human text) or markdown. Default: table on a terminal, json when redirected.
-  -q, --quiet                                    Suppress warnings and notices on stderr (errors still print).
-  -v, --verbose                                  Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
-  --license <license>                            Path to an Aspose license file; overrides every other license source.
-  --license-mode <auto|evaluation>               auto (default) resolves the license sources in order; evaluation reads none of them and runs this command in evaluation mode. Cannot be combined with --license.
-  --workdir <workdir>                            Base directory for relative paths. Default: the current directory.
-  --timeout <timeout>                            Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
-  --max-input-bytes <max-input-bytes>            Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
+  aspose-cli pdf [command]
 
 Commands:
   inspect <file>   Show PDF structure, security state and metadata.
@@ -28,6 +17,9 @@ Commands:
   edit <file>      Apply one validated, atomic PDF operation batch.
   validate <file>  Validate a PDF against a PDF/A profile.
   sign <file>      Apply a PKCS#7 signature and verify the saved signature field.
+
+Global options:
+  -h/--help, --output-format, -q/--quiet, -v/--verbose, --license, --license-mode, --workdir, --timeout, --max-input-bytes (see aspose-cli --help)
 
 Examples:
   aspose-cli pdf inspect report.pdf --sample --detail permissions forms signatures
@@ -52,24 +44,27 @@ Arguments:
   <file>  PDF document to open.
 
 Options:
-  --to <to>                                      Target PDF export format. Default: the --out extension's format. Values: docx, epub, html, jpeg, md, pdfa-1b, pdfa-2b, pdfa-3b, png, pptx, svg, tiff, txt, xlsx, xps.
-  --pages <pages>                                Pages to process: 1-based numbers and ranges such as 1-3,7,9-, or all. Default: every page.
-  -o, --out <out>                                Output path; defaults to a sibling using the target extension.
-  --overwrite                                    Replace the output file if it already exists.
-  --dry-run                                      Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds.
-  --password <password>                          Password for the PDF. Discouraged: visible in the process list; prefer --password-env.
-  --password-env <password-env>                  Name of an environment variable holding the password for the PDF.
-  --password-stdin                               Read the password for the PDF from the first line of stdin.
-  --font-dir <font-dir>                          Local font directory searched in addition to the system fonts; repeat for more.
-  -h, --help                                     Show help and usage information
-  --output-format <compact|json|markdown|table>  Output format: json (contract envelopes), compact (the same JSON on one line), table (human text) or markdown. Default: table on a terminal, json when redirected.
-  -q, --quiet                                    Suppress warnings and notices on stderr (errors still print).
-  -v, --verbose                                  Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
-  --license <license>                            Path to an Aspose license file; overrides every other license source.
-  --license-mode <auto|evaluation>               auto (default) resolves the license sources in order; evaluation reads none of them and runs this command in evaluation mode. Cannot be combined with --license.
-  --workdir <workdir>                            Base directory for relative paths. Default: the current directory.
-  --timeout <timeout>                            Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
-  --max-input-bytes <max-input-bytes>            Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
+  --to <to>                      Target PDF export format. Default: the --out extension's format. Values: docx, epub, html, jpeg, md, pdfa-1b, pdfa-2b, pdfa-3b, png, pptx, svg, tiff, txt, xlsx, xps.
+  --pages <pages>                Pages to process: 1-based numbers and ranges such as 1-3,7,9-, or all. Default: every page.
+  -o, --out <out>                Output path; defaults to a sibling using the target extension.
+  --overwrite                    Replace the output file if it already exists.
+  --dry-run                      Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds.
+  --password <password>          Password for the PDF. Discouraged: visible in the process list; prefer --password-env.
+  --password-env <password-env>  Name of an environment variable holding the password for the PDF.
+  --password-stdin               Read the password for the PDF from the first line of stdin.
+  --font-dir <font-dir>          Local font directory searched in addition to the system fonts; repeat for more.
+
+Global options:
+  -h/--help, --output-format, -q/--quiet, -v/--verbose, --license, --license-mode, --workdir, --timeout, --max-input-bytes (see aspose-cli --help)
+
+Examples:
+  aspose-cli pdf convert report.pdf --out report.docx
+  aspose-cli pdf convert report.pdf --to pdfa-2b --out archive.pdf
+  aspose-cli pdf convert report.pdf --pages 1-3 --out summary.md
+
+Learn more:
+  aspose-cli docs pdf/pdf-standards  PDF/A conversion and standards
+  aspose-cli docs pdf/overview       what each PDF command is for
 
 
 ## aspose-cli pdf create --help
@@ -83,27 +78,29 @@ Arguments:
   <file>  PDF path to create.
 
 Options:
-  --from-images <from-images>                    One or more image files, one per page in the image's orientation, scaled without distortion.
-  --from-html <from-html>                        HTML input file.
-  --allow-network-resources                      Let the HTML importer request the network resources trusted --from-html input names; the result lists every address. Local references stay beneath the HTML directory.
-  --from-text <from-text>                        UTF-8 text or Markdown input file.
-  --page-size <A3|A4|Legal|Letter>               A3, A4, Letter or Legal. [default: A4]
-  --margins <margins>                            One value or top,right,bottom,left in points. [default: 36]
-  --overwrite                                    Replace the output file if it already exists.
-  --dry-run                                      Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds.
-  --encrypt <encrypt>                            Password for the output PDF. Discouraged: visible in the process list; prefer --encrypt-env.
-  --encrypt-env <encrypt-env>                    Name of an environment variable holding the password for the output PDF.
-  --encrypt-stdin                                Read the password for the output PDF from the first line of stdin.
-  --font-dir <font-dir>                          Local font directory searched in addition to the system fonts; repeat for more.
-  -h, --help                                     Show help and usage information
-  --output-format <compact|json|markdown|table>  Output format: json (contract envelopes), compact (the same JSON on one line), table (human text) or markdown. Default: table on a terminal, json when redirected.
-  -q, --quiet                                    Suppress warnings and notices on stderr (errors still print).
-  -v, --verbose                                  Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
-  --license <license>                            Path to an Aspose license file; overrides every other license source.
-  --license-mode <auto|evaluation>               auto (default) resolves the license sources in order; evaluation reads none of them and runs this command in evaluation mode. Cannot be combined with --license.
-  --workdir <workdir>                            Base directory for relative paths. Default: the current directory.
-  --timeout <timeout>                            Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
-  --max-input-bytes <max-input-bytes>            Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
+  --from-images <from-images>       One or more image files, one per page in the image's orientation, scaled without distortion.
+  --from-html <from-html>           HTML input file.
+  --allow-network-resources         Let the HTML importer request the network resources trusted --from-html input names; the result lists every address. Local references stay beneath the HTML directory.
+  --from-text <from-text>           UTF-8 text or Markdown input file.
+  --page-size <A3|A4|Legal|Letter>  Page size of the new PDF. [default: A4]
+  --margins <margins>               One value or top,right,bottom,left in points. [default: 36]
+  --overwrite                       Replace the output file if it already exists.
+  --dry-run                         Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds.
+  --encrypt <encrypt>               Password for the output PDF. Discouraged: visible in the process list; prefer --encrypt-env.
+  --encrypt-env <encrypt-env>       Name of an environment variable holding the password for the output PDF.
+  --encrypt-stdin                   Read the password for the output PDF from the first line of stdin.
+  --font-dir <font-dir>             Local font directory searched in addition to the system fonts; repeat for more.
+
+Global options:
+  -h/--help, --output-format, -q/--quiet, -v/--verbose, --license, --license-mode, --workdir, --timeout, --max-input-bytes (see aspose-cli --help)
+
+Examples:
+  aspose-cli pdf create scans.pdf --from-images page1.png page2.png
+  aspose-cli pdf create notes.pdf --from-text notes.md --page-size Letter --margins 54
+
+Learn more:
+  aspose-cli docs pdf/assemble-review-report  building a PDF from several sources
+  aspose-cli docs pdf/overview                what each PDF command is for
 
 
 ## aspose-cli pdf edit --help
@@ -117,31 +114,34 @@ Arguments:
   <file>  PDF document to open.
 
 Options:
-  --ops <ops>                                    The ops JSON, an object with ops or the bare array of operations: a path to the document, '-' to read it from stdin, or the document itself when the value starts with { or [ (inline). To name a file whose name starts with '[', prefix it with ./ . At most 10000 operations. Vocabulary: aspose-cli schema v2/pdf/ops.
-  --if-match <if-match>                          Require the current input SHA-256 fingerprint before editing.
-  --best-effort                                  Keep successful operations, report failures, and exit 8.
-  --verify                                       Read the staged output back and check the effect of each form, redaction, bookmark, metadata, attachment and page operation.
-  -o, --out <out>                                Output path. Default: the input path with '.out' inserted before the extension.
-  --overwrite                                    Replace the output file if it already exists.
-  --in-place                                     Modify the input file itself atomically.
-  --backup                                       Create a non-overwriting backup before an in-place write.
-  --dry-run                                      Check the input, the output and the operations, and apply the operations in memory, without writing any file. A dry run that succeeds does not guarantee that the edit succeeds.
-  --password <password>                          Password for the PDF. Discouraged: visible in the process list; prefer --password-env.
-  --password-env <password-env>                  Name of an environment variable holding the password for the PDF.
-  --password-stdin                               Read the password for the PDF from the first line of stdin.
-  --encrypt <encrypt>                            Password for the output PDF. Discouraged: visible in the process list; prefer --encrypt-env.
-  --encrypt-env <encrypt-env>                    Name of an environment variable holding the password for the output PDF.
-  --encrypt-stdin                                Read the password for the output PDF from the first line of stdin.
-  --font-dir <font-dir>                          Local font directory searched in addition to the system fonts; repeat for more.
-  -h, --help                                     Show help and usage information
-  --output-format <compact|json|markdown|table>  Output format: json (contract envelopes), compact (the same JSON on one line), table (human text) or markdown. Default: table on a terminal, json when redirected.
-  -q, --quiet                                    Suppress warnings and notices on stderr (errors still print).
-  -v, --verbose                                  Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
-  --license <license>                            Path to an Aspose license file; overrides every other license source.
-  --license-mode <auto|evaluation>               auto (default) resolves the license sources in order; evaluation reads none of them and runs this command in evaluation mode. Cannot be combined with --license.
-  --workdir <workdir>                            Base directory for relative paths. Default: the current directory.
-  --timeout <timeout>                            Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
-  --max-input-bytes <max-input-bytes>            Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
+  --ops <ops>                    The ops JSON, an object with ops or the bare array of operations: a path to the document, '-' to read it from stdin, or the document itself when the value starts with { or [ (inline). To name a file whose name starts with '[', prefix it with ./ . At most 10000 operations. Vocabulary: aspose-cli schema v2/pdf/ops.
+  --if-match <if-match>          Require the current input SHA-256 fingerprint before editing.
+  --best-effort                  Keep successful operations, report failures, and exit 8.
+  --verify                       Read the staged output back and check the effect of each form, redaction, bookmark, metadata, attachment and page operation.
+  -o, --out <out>                Output path. Default: the input path with '.out' inserted before the extension.
+  --overwrite                    Replace the output file if it already exists.
+  --in-place                     Modify the input file itself atomically.
+  --backup                       Create a non-overwriting backup before an in-place write.
+  --dry-run                      Check the input, the output and the operations, and apply the operations in memory, without writing any file. A dry run that succeeds does not guarantee that the edit succeeds.
+  --password <password>          Password for the PDF. Discouraged: visible in the process list; prefer --password-env.
+  --password-env <password-env>  Name of an environment variable holding the password for the PDF.
+  --password-stdin               Read the password for the PDF from the first line of stdin.
+  --encrypt <encrypt>            Password for the output PDF. Discouraged: visible in the process list; prefer --encrypt-env.
+  --encrypt-env <encrypt-env>    Name of an environment variable holding the password for the output PDF.
+  --encrypt-stdin                Read the password for the output PDF from the first line of stdin.
+  --font-dir <font-dir>          Local font directory searched in addition to the system fonts; repeat for more.
+
+Global options:
+  -h/--help, --output-format, -q/--quiet, -v/--verbose, --license, --license-mode, --workdir, --timeout, --max-input-bytes (see aspose-cli --help)
+
+Examples:
+  aspose-cli pdf edit report.pdf --ops ops.json --out reviewed.pdf --verify
+  aspose-cli pdf edit report.pdf --in-place --backup --ops ops.json --best-effort
+
+Learn more:
+  aspose-cli docs pdf/editing       fixed-layout operations and safe mutation
+  aspose-cli schema v2/pdf/ops      the operation JSON schema
+  aspose-cli docs pdf/verification  what --verify reads back
 
 
 ## aspose-cli pdf extract --help
@@ -149,14 +149,14 @@ Description:
   Extract bounded PDF assets, text, tables or form data.
 
 Usage:
-  aspose-cli pdf extract <file> [options]
+  aspose-cli pdf extract <file> --what <what> [options]
 
 Arguments:
   <file>  PDF document to open.
 
 Options:
-  --to <fdf|json|xfdf>                                      Form export format: json, fdf or xfdf; only with --what forms. Default: the --out extension's.
-  --what <attachments|forms|images|tables|text> (REQUIRED)  images, attachments, text, tables or forms.
+  --to <fdf|json|xfdf>                                      Form export format; only with --what forms. Default: the --out extension's.
+  --what <attachments|forms|images|tables|text> (REQUIRED)  What to extract; forms exports the form data to one file.
   --pages <pages>                                           Pages to process: 1-based numbers and ranges such as 1-3,7,9-, or all. Default: every page. Only with --what images, text or tables.
   --bom                                                     Start each table's CSV with a UTF-8 byte order mark, so Excel reads its non-English text correctly; only with --what tables. Default: UTF-8 without one.
   --out-dir <out-dir>                                       Safe extraction directory; required unless --what forms.
@@ -166,15 +166,18 @@ Options:
   --password <password>                                     Password for the PDF. Discouraged: visible in the process list; prefer --password-env.
   --password-env <password-env>                             Name of an environment variable holding the password for the PDF.
   --password-stdin                                          Read the password for the PDF from the first line of stdin.
-  -h, --help                                                Show help and usage information
-  --output-format <compact|json|markdown|table>             Output format: json (contract envelopes), compact (the same JSON on one line), table (human text) or markdown. Default: table on a terminal, json when redirected.
-  -q, --quiet                                               Suppress warnings and notices on stderr (errors still print).
-  -v, --verbose                                             Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
-  --license <license>                                       Path to an Aspose license file; overrides every other license source.
-  --license-mode <auto|evaluation>                          auto (default) resolves the license sources in order; evaluation reads none of them and runs this command in evaluation mode. Cannot be combined with --license.
-  --workdir <workdir>                                       Base directory for relative paths. Default: the current directory.
-  --timeout <timeout>                                       Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
-  --max-input-bytes <max-input-bytes>                       Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
+
+Global options:
+  -h/--help, --output-format, -q/--quiet, -v/--verbose, --license, --license-mode, --workdir, --timeout, --max-input-bytes (see aspose-cli --help)
+
+Examples:
+  aspose-cli pdf extract report.pdf --what images --out-dir images
+  aspose-cli pdf extract report.pdf --what tables --pages 2-4 --bom --out-dir tables
+  aspose-cli pdf extract form.pdf --what forms --out form.json
+
+Learn more:
+  aspose-cli docs pdf/overview        what each PDF command is for
+  aspose-cli docs pdf/forms-security  form data export and import
 
 
 ## aspose-cli pdf inspect --help
@@ -188,20 +191,22 @@ Arguments:
   <file>  PDF document to open.
 
 Options:
-  --sample                                       Include a bounded sample: the size and rotation of each page, up to 20 pages. Default: off.
-  --detail <detail>                              Extra sections to include; repeat for more. outline: bookmarks, up to 200; forms: form type and field count; layers: optional content layer names; metadata: document information such as title and author. Values: attachments, fonts, forms, layers, metadata, outline, permissions, signatures.
-  --password <password>                          Password for the PDF. Discouraged: visible in the process list; prefer --password-env.
-  --password-env <password-env>                  Name of an environment variable holding the password for the PDF.
-  --password-stdin                               Read the password for the PDF from the first line of stdin.
-  -h, --help                                     Show help and usage information
-  --output-format <compact|json|markdown|table>  Output format: json (contract envelopes), compact (the same JSON on one line), table (human text) or markdown. Default: table on a terminal, json when redirected.
-  -q, --quiet                                    Suppress warnings and notices on stderr (errors still print).
-  -v, --verbose                                  Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
-  --license <license>                            Path to an Aspose license file; overrides every other license source.
-  --license-mode <auto|evaluation>               auto (default) resolves the license sources in order; evaluation reads none of them and runs this command in evaluation mode. Cannot be combined with --license.
-  --workdir <workdir>                            Base directory for relative paths. Default: the current directory.
-  --timeout <timeout>                            Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
-  --max-input-bytes <max-input-bytes>            Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
+  --sample                       Include a bounded sample: the size and rotation of each page, up to 20 pages. Default: off.
+  --detail <detail>              Extra sections to include; repeat for more. outline: bookmarks, up to 200; forms: form type and field count; layers: optional content layer names; metadata: document information such as title and author. Values: attachments, fonts, forms, layers, metadata, outline, permissions, signatures.
+  --password <password>          Password for the PDF. Discouraged: visible in the process list; prefer --password-env.
+  --password-env <password-env>  Name of an environment variable holding the password for the PDF.
+  --password-stdin               Read the password for the PDF from the first line of stdin.
+
+Global options:
+  -h/--help, --output-format, -q/--quiet, -v/--verbose, --license, --license-mode, --workdir, --timeout, --max-input-bytes (see aspose-cli --help)
+
+Examples:
+  aspose-cli pdf inspect report.pdf --output-format json
+  aspose-cli pdf inspect report.pdf --sample --detail outline fonts permissions
+
+Learn more:
+  aspose-cli docs pdf/overview  what each PDF command is for
+  aspose-cli docs reading       reading every product within bounded windows
 
 
 ## aspose-cli pdf merge --help
@@ -209,31 +214,32 @@ Description:
   Merge PDF inputs in order.
 
 Usage:
-  aspose-cli pdf merge <files>... [options]
+  aspose-cli pdf merge <files>... --out <out> [options]
 
 Arguments:
   <files>  Two or more PDF inputs in merge order.
 
 Options:
-  --bookmarks <drop|preserve>                    preserve or drop input bookmarks. [default: preserve]
-  -o, --out <out> (REQUIRED)                     Merged PDF output path.
-  --overwrite                                    Replace the output file if it already exists.
-  --dry-run                                      Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds.
-  --password <password>                          Password for all input PDFs. Discouraged: visible in the process list; prefer --password-env.
-  --password-env <password-env>                  Name of an environment variable holding the password for all input PDFs.
-  --password-stdin                               Read the password for all input PDFs from the first line of stdin.
-  --encrypt <encrypt>                            Password for the output PDF. Discouraged: visible in the process list; prefer --encrypt-env.
-  --encrypt-env <encrypt-env>                    Name of an environment variable holding the password for the output PDF.
-  --encrypt-stdin                                Read the password for the output PDF from the first line of stdin.
-  -h, --help                                     Show help and usage information
-  --output-format <compact|json|markdown|table>  Output format: json (contract envelopes), compact (the same JSON on one line), table (human text) or markdown. Default: table on a terminal, json when redirected.
-  -q, --quiet                                    Suppress warnings and notices on stderr (errors still print).
-  -v, --verbose                                  Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
-  --license <license>                            Path to an Aspose license file; overrides every other license source.
-  --license-mode <auto|evaluation>               auto (default) resolves the license sources in order; evaluation reads none of them and runs this command in evaluation mode. Cannot be combined with --license.
-  --workdir <workdir>                            Base directory for relative paths. Default: the current directory.
-  --timeout <timeout>                            Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
-  --max-input-bytes <max-input-bytes>            Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
+  --bookmarks <drop|preserve>    Whether the merged PDF keeps the bookmarks of its inputs. [default: preserve]
+  -o, --out <out> (REQUIRED)     Merged PDF output path.
+  --overwrite                    Replace the output file if it already exists.
+  --dry-run                      Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds.
+  --password <password>          Password for all input PDFs. Discouraged: visible in the process list; prefer --password-env.
+  --password-env <password-env>  Name of an environment variable holding the password for all input PDFs.
+  --password-stdin               Read the password for all input PDFs from the first line of stdin.
+  --encrypt <encrypt>            Password for the output PDF. Discouraged: visible in the process list; prefer --encrypt-env.
+  --encrypt-env <encrypt-env>    Name of an environment variable holding the password for the output PDF.
+  --encrypt-stdin                Read the password for the output PDF from the first line of stdin.
+
+Global options:
+  -h/--help, --output-format, -q/--quiet, -v/--verbose, --license, --license-mode, --workdir, --timeout, --max-input-bytes (see aspose-cli --help)
+
+Examples:
+  aspose-cli pdf merge cover.pdf report.pdf --out combined.pdf
+  aspose-cli pdf merge part1.pdf part2.pdf part3.pdf --bookmarks drop --out combined.pdf
+
+Learn more:
+  aspose-cli docs pdf/assemble-review-report  building a PDF from several sources
 
 
 ## aspose-cli pdf query --help
@@ -241,23 +247,15 @@ Description:
   Query bounded PDF pages, forms or text matches.
 
 Usage:
-  aspose-cli pdf query [command] [options]
-
-Options:
-  -h, --help                                     Show help and usage information
-  --output-format <compact|json|markdown|table>  Output format: json (contract envelopes), compact (the same JSON on one line), table (human text) or markdown. Default: table on a terminal, json when redirected.
-  -q, --quiet                                    Suppress warnings and notices on stderr (errors still print).
-  -v, --verbose                                  Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
-  --license <license>                            Path to an Aspose license file; overrides every other license source.
-  --license-mode <auto|evaluation>               auto (default) resolves the license sources in order; evaluation reads none of them and runs this command in evaluation mode. Cannot be combined with --license.
-  --workdir <workdir>                            Base directory for relative paths. Default: the current directory.
-  --timeout <timeout>                            Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
-  --max-input-bytes <max-input-bytes>            Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
+  aspose-cli pdf query [command]
 
 Commands:
   pages <file>   Read a bounded page-text window.
   forms <file>   List PDF form fields and current values.
   search <file>  Search PDF text and return page rectangles.
+
+Global options:
+  -h/--help, --output-format, -q/--quiet, -v/--verbose, --license, --license-mode, --workdir, --timeout, --max-input-bytes (see aspose-cli --help)
 
 
 ## aspose-cli pdf query forms --help
@@ -271,18 +269,12 @@ Arguments:
   <file>  PDF document to open.
 
 Options:
-  --password <password>                          Password for the PDF. Discouraged: visible in the process list; prefer --password-env.
-  --password-env <password-env>                  Name of an environment variable holding the password for the PDF.
-  --password-stdin                               Read the password for the PDF from the first line of stdin.
-  -h, --help                                     Show help and usage information
-  --output-format <compact|json|markdown|table>  Output format: json (contract envelopes), compact (the same JSON on one line), table (human text) or markdown. Default: table on a terminal, json when redirected.
-  -q, --quiet                                    Suppress warnings and notices on stderr (errors still print).
-  -v, --verbose                                  Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
-  --license <license>                            Path to an Aspose license file; overrides every other license source.
-  --license-mode <auto|evaluation>               auto (default) resolves the license sources in order; evaluation reads none of them and runs this command in evaluation mode. Cannot be combined with --license.
-  --workdir <workdir>                            Base directory for relative paths. Default: the current directory.
-  --timeout <timeout>                            Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
-  --max-input-bytes <max-input-bytes>            Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
+  --password <password>          Password for the PDF. Discouraged: visible in the process list; prefer --password-env.
+  --password-env <password-env>  Name of an environment variable holding the password for the PDF.
+  --password-stdin               Read the password for the PDF from the first line of stdin.
+
+Global options:
+  -h/--help, --output-format, -q/--quiet, -v/--verbose, --license, --license-mode, --workdir, --timeout, --max-input-bytes (see aspose-cli --help)
 
 
 ## aspose-cli pdf query pages --help
@@ -296,21 +288,15 @@ Arguments:
   <file>  PDF document to open.
 
 Options:
-  --pages <pages>                                Pages to process: 1-based numbers and ranges such as 1-3,7,9-, or all. Default: every page.
-  --mode <layout|plain>                          Text projection: plain or layout. [default: plain]
-  --max-chars <max-chars>                        Maximum characters returned, counting the text of the returned pages. Range 1-10000000. [default: 20000]
-  --password <password>                          Password for the PDF. Discouraged: visible in the process list; prefer --password-env.
-  --password-env <password-env>                  Name of an environment variable holding the password for the PDF.
-  --password-stdin                               Read the password for the PDF from the first line of stdin.
-  -h, --help                                     Show help and usage information
-  --output-format <compact|json|markdown|table>  Output format: json (contract envelopes), compact (the same JSON on one line), table (human text) or markdown. Default: table on a terminal, json when redirected.
-  -q, --quiet                                    Suppress warnings and notices on stderr (errors still print).
-  -v, --verbose                                  Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
-  --license <license>                            Path to an Aspose license file; overrides every other license source.
-  --license-mode <auto|evaluation>               auto (default) resolves the license sources in order; evaluation reads none of them and runs this command in evaluation mode. Cannot be combined with --license.
-  --workdir <workdir>                            Base directory for relative paths. Default: the current directory.
-  --timeout <timeout>                            Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
-  --max-input-bytes <max-input-bytes>            Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
+  --pages <pages>                Pages to process: 1-based numbers and ranges such as 1-3,7,9-, or all. Default: every page.
+  --mode <layout|plain>          Text projection: whether the text keeps the spacing of the page. [default: plain]
+  --max-chars <max-chars>        Maximum characters returned, counting the text of the returned pages. Range: 1-10000000. [default: 20000]
+  --password <password>          Password for the PDF. Discouraged: visible in the process list; prefer --password-env.
+  --password-env <password-env>  Name of an environment variable holding the password for the PDF.
+  --password-stdin               Read the password for the PDF from the first line of stdin.
+
+Global options:
+  -h/--help, --output-format, -q/--quiet, -v/--verbose, --license, --license-mode, --workdir, --timeout, --max-input-bytes (see aspose-cli --help)
 
 
 ## aspose-cli pdf query search --help
@@ -318,30 +304,24 @@ Description:
   Search PDF text and return page rectangles.
 
 Usage:
-  aspose-cli pdf query search <file> [options]
+  aspose-cli pdf query search <file> --pattern <pattern> [options]
 
 Arguments:
   <file>  PDF document to open.
 
 Options:
-  --pattern <pattern> (REQUIRED)                 Text to find, or a regular expression with --regex.
-  --regex                                        Treat the pattern as a culture-invariant regular expression with a one-second budget.
-  --case-sensitive                               Match letter case exactly.
-  --max-hits <max-hits>                          Maximum returned hits (1-10000). [default: 100]
-  --skip <skip>                                  Matches to pass over before the returned hits; a truncated search's window.next sets it. [default: 0]
-  --pages <pages>                                Pages to process: 1-based numbers and ranges such as 1-3,7,9-, or all. Default: every page.
-  --password <password>                          Password for the PDF. Discouraged: visible in the process list; prefer --password-env.
-  --password-env <password-env>                  Name of an environment variable holding the password for the PDF.
-  --password-stdin                               Read the password for the PDF from the first line of stdin.
-  -h, --help                                     Show help and usage information
-  --output-format <compact|json|markdown|table>  Output format: json (contract envelopes), compact (the same JSON on one line), table (human text) or markdown. Default: table on a terminal, json when redirected.
-  -q, --quiet                                    Suppress warnings and notices on stderr (errors still print).
-  -v, --verbose                                  Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
-  --license <license>                            Path to an Aspose license file; overrides every other license source.
-  --license-mode <auto|evaluation>               auto (default) resolves the license sources in order; evaluation reads none of them and runs this command in evaluation mode. Cannot be combined with --license.
-  --workdir <workdir>                            Base directory for relative paths. Default: the current directory.
-  --timeout <timeout>                            Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
-  --max-input-bytes <max-input-bytes>            Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
+  --pattern <pattern> (REQUIRED)  Text to find, or a regular expression with --regex.
+  --regex                         Treat the pattern as a culture-invariant regular expression with a one-second budget.
+  --case-sensitive                Match letter case exactly.
+  --max-hits <max-hits>           Maximum returned hits. Range: 1-10000. [default: 100]
+  --skip <skip>                   Matches to pass over before the returned hits; a truncated search's window.next sets it. [default: 0]
+  --pages <pages>                 Pages to process: 1-based numbers and ranges such as 1-3,7,9-, or all. Default: every page.
+  --password <password>           Password for the PDF. Discouraged: visible in the process list; prefer --password-env.
+  --password-env <password-env>   Name of an environment variable holding the password for the PDF.
+  --password-stdin                Read the password for the PDF from the first line of stdin.
+
+Global options:
+  -h/--help, --output-format, -q/--quiet, -v/--verbose, --license, --license-mode, --workdir, --timeout, --max-input-bytes (see aspose-cli --help)
 
 
 ## aspose-cli pdf render --help
@@ -355,26 +335,28 @@ Arguments:
   <file>  PDF document to open.
 
 Options:
-  --to <jpeg|png|svg>                            Image format: png, jpeg or svg. Default: the --out extension's format, else png.
-  --pages <pages>                                Pages to process: 1-based numbers and ranges such as 1-3,7,9-, or all. Default: every page; at most 20 per run.
-  --dpi <dpi>                                    Raster resolution (36-1200); ignored for vector formats. [default: 192]
-  --grid <grid>                                  Draw a labelled coordinate grid with a line every <grid> points (10-500) on png or jpeg output, measured from the top-left corner as redact_area takes them.
-  -o, --out <out>                                Output path; several pages write <stem>.<page>.<ext> beside it.
-  --overwrite                                    Replace the output file if it already exists.
-  --dry-run                                      Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds.
-  --password <password>                          Password for the PDF. Discouraged: visible in the process list; prefer --password-env.
-  --password-env <password-env>                  Name of an environment variable holding the password for the PDF.
-  --password-stdin                               Read the password for the PDF from the first line of stdin.
-  --font-dir <font-dir>                          Local font directory searched in addition to the system fonts; repeat for more.
-  -h, --help                                     Show help and usage information
-  --output-format <compact|json|markdown|table>  Output format: json (contract envelopes), compact (the same JSON on one line), table (human text) or markdown. Default: table on a terminal, json when redirected.
-  -q, --quiet                                    Suppress warnings and notices on stderr (errors still print).
-  -v, --verbose                                  Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
-  --license <license>                            Path to an Aspose license file; overrides every other license source.
-  --license-mode <auto|evaluation>               auto (default) resolves the license sources in order; evaluation reads none of them and runs this command in evaluation mode. Cannot be combined with --license.
-  --workdir <workdir>                            Base directory for relative paths. Default: the current directory.
-  --timeout <timeout>                            Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
-  --max-input-bytes <max-input-bytes>            Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
+  --to <jpeg|png|svg>            Image format. Default: the --out extension's format, else png.
+  --pages <pages>                Pages to process: 1-based numbers and ranges such as 1-3,7,9-, or all. Default: every page; at most 20 per run.
+  --dpi <dpi>                    Raster resolution; ignored for vector formats. Range: 36-1200. [default: 192]
+  --grid <grid>                  Draw a labelled coordinate grid with a line every <grid> points on png or jpeg output, measured from the top-left corner as redact_area takes them. Range: 10-500.
+  -o, --out <out>                Output path; several pages write <stem>.<page>.<ext> beside it.
+  --overwrite                    Replace the output file if it already exists.
+  --dry-run                      Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds.
+  --password <password>          Password for the PDF. Discouraged: visible in the process list; prefer --password-env.
+  --password-env <password-env>  Name of an environment variable holding the password for the PDF.
+  --password-stdin               Read the password for the PDF from the first line of stdin.
+  --font-dir <font-dir>          Local font directory searched in addition to the system fonts; repeat for more.
+
+Global options:
+  -h/--help, --output-format, -q/--quiet, -v/--verbose, --license, --license-mode, --workdir, --timeout, --max-input-bytes (see aspose-cli --help)
+
+Examples:
+  aspose-cli pdf render report.pdf --pages 1-2 --out page.png
+  aspose-cli pdf render report.pdf --pages 3 --grid 50 --out grid.png
+
+Learn more:
+  aspose-cli docs pdf/verification  read-back, rendering and PDF/A evidence
+  aspose-cli docs pdf/editing       the page coordinates redact_area takes
 
 
 ## aspose-cli pdf sign --help
@@ -382,7 +364,7 @@ Description:
   Apply a PKCS#7 signature and verify the saved signature field.
 
 Usage:
-  aspose-cli pdf sign <file> [options]
+  aspose-cli pdf sign <file> --certificate <certificate> --certificate-password-env <certificate-password-env> [options]
 
 Arguments:
   <file>  PDF document to open.
@@ -403,15 +385,16 @@ Options:
   --password-env <password-env>                                     Name of an environment variable holding the password for the input PDF.
   --password-stdin                                                  Read the password for the input PDF from the first line of stdin.
   --font-dir <font-dir>                                             Local font directory searched in addition to the system fonts; repeat for more.
-  -h, --help                                                        Show help and usage information
-  --output-format <compact|json|markdown|table>                     Output format: json (contract envelopes), compact (the same JSON on one line), table (human text) or markdown. Default: table on a terminal, json when redirected.
-  -q, --quiet                                                       Suppress warnings and notices on stderr (errors still print).
-  -v, --verbose                                                     Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
-  --license <license>                                               Path to an Aspose license file; overrides every other license source.
-  --license-mode <auto|evaluation>                                  auto (default) resolves the license sources in order; evaluation reads none of them and runs this command in evaluation mode. Cannot be combined with --license.
-  --workdir <workdir>                                               Base directory for relative paths. Default: the current directory.
-  --timeout <timeout>                                               Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
-  --max-input-bytes <max-input-bytes>                               Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
+
+Global options:
+  -h/--help, --output-format, -q/--quiet, -v/--verbose, --license, --license-mode, --workdir, --timeout, --max-input-bytes (see aspose-cli --help)
+
+Examples:
+  aspose-cli pdf sign contract.pdf --certificate signer.pfx --certificate-password-env PDF_SIGNING_PASSWORD
+  aspose-cli pdf sign contract.pdf --certificate signer.pfx --certificate-password-env PDF_SIGNING_PASSWORD --visible --page 2 --reason Approved --out signed.pdf
+
+Learn more:
+  aspose-cli docs pdf/forms-security  signatures, permissions and encryption
 
 
 ## aspose-cli pdf split --help
@@ -419,39 +402,36 @@ Description:
   Split a PDF into an atomic output set.
 
 Usage:
-  aspose-cli pdf split <file> [options]
+  aspose-cli pdf split <file> --by <by> --out-dir <out-dir> [options]
 
 Arguments:
   <file>  PDF document to open.
 
 Options:
-  --by <bookmarks|pages> (REQUIRED)              How to divide the document: pages, one part per page, per --every pages or per group; bookmarks, one part per top-level bookmark.
-  --every <every>                                Pages per part with --by pages. Default: 1.
-  --groups <groups>                              Page groups with --by pages, one part each, such as --groups 1-3 4-6.
-  --pages <pages>                                Pages to process: 1-based numbers and ranges such as 1-3,7,9-, or all. Default: every page. Only with --by pages.
-  --out-dir <out-dir> (REQUIRED)                 Directory that receives the parts, named <stem>.<n>.pdf.
-  --overwrite                                    Replace the output file if it already exists.
-  --dry-run                                      Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds.
-  --password <password>                          Password for the PDF. Discouraged: visible in the process list; prefer --password-env.
-  --password-env <password-env>                  Name of an environment variable holding the password for the PDF.
-  --password-stdin                               Read the password for the PDF from the first line of stdin.
-  --encrypt <encrypt>                            Password for every output PDF. Discouraged: visible in the process list; prefer --encrypt-env.
-  --encrypt-env <encrypt-env>                    Name of an environment variable holding the password for every output PDF.
-  --encrypt-stdin                                Read the password for every output PDF from the first line of stdin.
-  -h, --help                                     Show help and usage information
-  --output-format <compact|json|markdown|table>  Output format: json (contract envelopes), compact (the same JSON on one line), table (human text) or markdown. Default: table on a terminal, json when redirected.
-  -q, --quiet                                    Suppress warnings and notices on stderr (errors still print).
-  -v, --verbose                                  Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
-  --license <license>                            Path to an Aspose license file; overrides every other license source.
-  --license-mode <auto|evaluation>               auto (default) resolves the license sources in order; evaluation reads none of them and runs this command in evaluation mode. Cannot be combined with --license.
-  --workdir <workdir>                            Base directory for relative paths. Default: the current directory.
-  --timeout <timeout>                            Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
-  --max-input-bytes <max-input-bytes>            Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
+  --by <bookmarks|pages> (REQUIRED)  How to divide the document: one part per top-level bookmark; one part per page, per --every N of them or per --groups group.
+  --every <every>                    Pages per part with --by pages. Default: 1.
+  --groups <groups>                  Page groups with --by pages, one part each, such as --groups 1-3 4-6.
+  --pages <pages>                    Pages to process: 1-based numbers and ranges such as 1-3,7,9-, or all. Default: every page. Only with --by pages.
+  --out-dir <out-dir> (REQUIRED)     Directory that receives the parts, named <stem>.<n>.pdf.
+  --overwrite                        Replace the output file if it already exists.
+  --dry-run                          Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds.
+  --password <password>              Password for the PDF. Discouraged: visible in the process list; prefer --password-env.
+  --password-env <password-env>      Name of an environment variable holding the password for the PDF.
+  --password-stdin                   Read the password for the PDF from the first line of stdin.
+  --encrypt <encrypt>                Password for every output PDF. Discouraged: visible in the process list; prefer --encrypt-env.
+  --encrypt-env <encrypt-env>        Name of an environment variable holding the password for every output PDF.
+  --encrypt-stdin                    Read the password for every output PDF from the first line of stdin.
+
+Global options:
+  -h/--help, --output-format, -q/--quiet, -v/--verbose, --license, --license-mode, --workdir, --timeout, --max-input-bytes (see aspose-cli --help)
 
 Examples:
   aspose-cli pdf split report.pdf --by pages --every 2 --out-dir parts
   aspose-cli pdf split report.pdf --by pages --groups 1-3 4-6 --out-dir parts
   aspose-cli pdf split report.pdf --by bookmarks --out-dir chapters
+
+Learn more:
+  aspose-cli docs pdf/assemble-review-report  dividing and assembling PDFs
 
 
 ## aspose-cli pdf validate --help
@@ -459,24 +439,25 @@ Description:
   Validate a PDF against a PDF/A profile.
 
 Usage:
-  aspose-cli pdf validate <file> [options]
+  aspose-cli pdf validate <file> --profile <profile> [options]
 
 Arguments:
   <file>  PDF document to open.
 
 Options:
-  --profile <pdfa-1b|pdfa-2b|pdfa-3b> (REQUIRED)  pdfa-1b, pdfa-2b or pdfa-3b.
+  --profile <pdfa-1b|pdfa-2b|pdfa-3b> (REQUIRED)  PDF/A profile to validate against.
   --password <password>                           Password for the PDF. Discouraged: visible in the process list; prefer --password-env.
   --password-env <password-env>                   Name of an environment variable holding the password for the PDF.
   --password-stdin                                Read the password for the PDF from the first line of stdin.
-  -h, --help                                      Show help and usage information
-  --output-format <compact|json|markdown|table>   Output format: json (contract envelopes), compact (the same JSON on one line), table (human text) or markdown. Default: table on a terminal, json when redirected.
-  -q, --quiet                                     Suppress warnings and notices on stderr (errors still print).
-  -v, --verbose                                   Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
-  --license <license>                             Path to an Aspose license file; overrides every other license source.
-  --license-mode <auto|evaluation>                auto (default) resolves the license sources in order; evaluation reads none of them and runs this command in evaluation mode. Cannot be combined with --license.
-  --workdir <workdir>                             Base directory for relative paths. Default: the current directory.
-  --timeout <timeout>                             Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
-  --max-input-bytes <max-input-bytes>             Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
+
+Global options:
+  -h/--help, --output-format, -q/--quiet, -v/--verbose, --license, --license-mode, --workdir, --timeout, --max-input-bytes (see aspose-cli --help)
+
+Examples:
+  aspose-cli pdf validate archive.pdf --profile pdfa-2b
+  aspose-cli pdf validate archive.pdf --profile pdfa-1b --output-format json
+
+Learn more:
+  aspose-cli docs pdf/pdf-standards  PDF/A profiles and conformance
 
 

@@ -11,7 +11,7 @@ public sealed class WordsRenderersTests
     [Theory]
     [InlineData(TableFormat.Plain, "styles:", "bookmarks:")]
     [InlineData(TableFormat.Markdown, "### styles", "### bookmarks")]
-    public void Info_ShowsEveryRequestedDetailUnderItsHeadingAndNoneWhenEmpty(
+    public void Info_ShowsEveryRequestedDetailUnderItsHeadingAndTheMissingMarkWhenEmpty(
         TableFormat format,
         string styles,
         string bookmarks)
@@ -35,7 +35,7 @@ public sealed class WordsRenderersTests
         string text = writer.ToString().Replace(Environment.NewLine, "\n", StringComparison.Ordinal);
         string gap = format == TableFormat.Markdown ? "\n\n" : "\n";
         Assert.Contains($"\n{styles}{gap}Normal, Heading 1\n", text, StringComparison.Ordinal);
-        Assert.EndsWith($"\n{bookmarks}{gap}none\n", text, StringComparison.Ordinal);
+        Assert.EndsWith($"\n{bookmarks}{gap}-\n", text, StringComparison.Ordinal);
         Assert.DoesNotContain("fonts", text, StringComparison.Ordinal);
     }
 }

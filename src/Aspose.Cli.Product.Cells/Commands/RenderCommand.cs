@@ -1,6 +1,7 @@
 using System.CommandLine;
 using Aspose.Cli.Sdk.Addressing;
 using Aspose.Cli.Sdk.Errors;
+using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.Extensibility.Output;
 using Aspose.Cli.Sdk.IO;
 
@@ -81,6 +82,11 @@ internal static class RenderCommand
                 "cells render book.xlsx --sheet Dashboard --out dashboard.png",
                 "cells render book.xlsx --all-sheets --out check.png",
             ],
+            Links =
+            [
+                CommandHelpLink.Docs(CellsModule.Manifest, "verification", "the spreadsheet delivery verification protocol"),
+                CommandHelpLink.Docs(CellsModule.Manifest, "preview", "previewing a workbook while it changes"),
+            ],
         };
     }
 
@@ -90,12 +96,9 @@ internal static class RenderCommand
         {
             // The --all-sheets shape: the per-sheet list IS the result, so a
             // human sees every produced file, not just the first-sheet summary.
-            string dpi = render.Dpi is { } value ? $", {TableText.Int(value)} dpi" : string.Empty;
-            surface.Out.WriteLine($"rendered {TableText.Int(outputs.Count)} sheet(s) ({render.Output.Format}{dpi})");
-            foreach (SheetRenderOutput output in outputs)
-            {
-                surface.Out.WriteLine($"  {output.Sheet}: {output.Path} ({TableText.Bytes(output.SizeBytes)})");
-            }
+            string? dpi = render.Dpi is { } value ? TableText.Int(value) + " dpi" : null;
+            ResultText.Files(surface, "rendered", "sheet", [.. outputs.Select(output =>
+                new ProducedFile(output.Sheet, output.Path, render.Output.Format, output.SizeBytes, dpi))]);
 
             return;
         }

@@ -1,5 +1,6 @@
 using System.CommandLine;
 using Aspose.Cli.Sdk.Errors;
+using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.Extensibility.Output;
 using Aspose.Cli.Sdk.IO;
 
@@ -37,7 +38,15 @@ internal static class CreateCommand
             },
             Table)
         {
-            Examples = ["cells create book.xlsx --sheets \"Data,Summary\""],
+            Examples =
+            [
+                "cells create book.xlsx --sheets \"Data,Summary\"",
+                "cells create budget.xlsx --overwrite",
+            ],
+            Links =
+            [
+                CommandHelpLink.Docs(CellsModule.Manifest, "workbook-standards", "professional workbook construction guidance"),
+            ],
         };
     }
 

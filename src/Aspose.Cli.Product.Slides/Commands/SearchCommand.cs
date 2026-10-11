@@ -9,7 +9,7 @@ internal static class SearchCommand
     public static CommandDefinition<PresentationSearchRequest, SlidesSearchResult> Create()
     {
         var search = new SearchOptions(new SearchScopeGrammar(
-            "Search scope: shapes, notes, or all.",
+            "Search scope: the shape text, the speaker notes or both.",
             PresentationSearchScopes.Values,
             PresentationSearchScopes.All));
         return new(
@@ -39,7 +39,7 @@ internal static class SearchCommand
                 TableText.Int(hit.Slide),
                 hit.SlideId.ToString(CultureInfo.InvariantCulture),
                 hit.Scope,
-                hit.ShapeName ?? hit.ShapeId?.ToString(CultureInfo.InvariantCulture) ?? string.Empty,
+                hit.ShapeName ?? hit.ShapeId?.ToString(CultureInfo.InvariantCulture),
                 TableText.Int(hit.Start),
                 hit.Text);
         }

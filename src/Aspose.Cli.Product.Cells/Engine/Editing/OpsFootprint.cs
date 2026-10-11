@@ -54,6 +54,41 @@ internal static class OpsFootprint
     }
 
     /// <summary>
+    /// The ids, in batch order, of the operations whose changes verification reads back: each
+    /// applied operation that writes cell values or formulas or adds, removes or renames a sheet,
+    /// which the diff of the staged output compares, and whose target names a sheet and is one of
+    /// the <paramref name="footprint"/> targets, so the diff lists its cells as direct changes.
+    /// Formatting, view, object and workbook-level operations, an operation on the active sheet
+    /// and one beyond the sixteen targets are not checked.
+    /// </summary>
+    /// <param name="batch">The ops batch that was applied.</param>
+    /// <param name="footprint">The targets <see cref="Collect"/> returned for the batch.</param>
+    /// <param name="applied">The ids of the operations that were applied.</param>
+    internal static IReadOnlyList<string> Checked(
+        CellsOpsBatch batch,
+        IReadOnlyList<CellsEditTarget> footprint,
+        IReadOnlySet<string> applied)
+    {
+        ArgumentNullException.ThrowIfNull(batch);
+        var diffed = new HashSet<(string? Sheet, string? Range)>(
+            footprint.Select(static target => (Fold(target.Sheet), Fold(target.Range))));
+        return
+        [
+            .. batch.Ops
+                .Where(op => op.Id is { } id && applied.Contains(id) && Diffed(op)
+                    && TargetOf(op) is { Sheet: not null } target
+                    && diffed.Contains((Fold(target.Sheet), Fold(target.Range))))
+                .Select(static op => op.Id!),
+        ];
+    }
+
+    /// <summary>Whether the verification diff, which compares cell values, formulas and sheets, sees what the operation does.</summary>
+    private static bool Diffed(CellsOp op) =>
+        op is SetValuesOp or SetFormulaOp or ClearRangeOp or SortRangeOp or RemoveDuplicatesOp
+            or CopyRangeOp or ImportRangeOp or InsertRowsOp or DeleteRowsOp or InsertColumnsOp or DeleteColumnsOp
+            or AddSheetOp or ImportSheetOp or RenameSheetOp or DeleteSheetOp;
+
+    /// <summary>
     /// Cells an operation writes, charged against the cells budget before it runs: the
     /// target range, or the source range of a copy.
     /// </summary>

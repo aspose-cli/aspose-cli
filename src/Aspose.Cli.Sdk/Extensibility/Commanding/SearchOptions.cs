@@ -58,9 +58,9 @@ public sealed class SearchOptions
         };
         _maxHits = new Option<int>(MaxHitsOption)
         {
-            Description = $"Maximum returned hits (1-{MaximumHits}).",
+            Description = "Maximum returned hits.",
             DefaultValueFactory = _ => DefaultMaxHits,
-        };
+        }.InRange(1, MaximumHits);
         _skip = new Option<int>(SkipOption)
         {
             Description = "Matches to pass over before the returned hits; a truncated search's window.next sets it.",
@@ -122,13 +122,7 @@ public sealed class SearchOptions
     public SearchQuery Read(ParseResult parse)
     {
         ArgumentNullException.ThrowIfNull(parse);
-        int maxHits = parse.GetValue(_maxHits);
-        OptionGuards.EnsureInRange(
-            MaxHitsOption,
-            maxHits,
-            1,
-            MaximumHits,
-            "Keep the hit budget modest and narrow the search instead.");
+        int maxHits = parse.GetInRange(_maxHits, "Keep the hit budget modest and narrow the search instead.");
         int skip = parse.GetValue(_skip);
         OptionGuards.EnsureInRange(
             SkipOption,

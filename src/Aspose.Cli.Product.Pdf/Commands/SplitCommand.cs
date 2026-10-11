@@ -1,3 +1,4 @@
+using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.Extensibility.Output;
 
 namespace Aspose.Cli.Product.Pdf.Commands;
@@ -33,17 +34,21 @@ internal static class SplitCommand
                 "pdf split report.pdf --by pages --groups 1-3 4-6 --out-dir parts",
                 "pdf split report.pdf --by bookmarks --out-dir chapters",
             ],
+            Links =
+            [
+                CommandHelpLink.Docs(PdfModule.Manifest, "assemble-review-report", "dividing and assembling PDFs"),
+            ],
         };
     }
 
     internal static void Table(PdfSplitResult result, TableSurface surface)
     {
-        surface.Out.WriteLine($"wrote {result.Outputs.Count} PDF part(s)");
-        foreach (PdfSplitOutput output in result.Outputs)
-        {
-            string bookmark = output.Bookmark is null ? string.Empty : $" [{output.Bookmark}]";
-            surface.Out.WriteLine(
-                $"  {output.Index}: pages {output.Pages}{bookmark} -> {output.Output.Path} ({TableText.Bytes(output.Output.SizeBytes)})");
-        }
+        ResultText.Files(surface, "wrote", "part", [.. result.Outputs.Select(static output =>
+            new ProducedFile(
+                $"part {output.Index}",
+                output.Output.Path,
+                output.Output.Format,
+                output.Output.SizeBytes,
+                $"pages {output.Pages}{(output.Bookmark is null ? string.Empty : $" [{output.Bookmark}]")}"))]);
     }
 }

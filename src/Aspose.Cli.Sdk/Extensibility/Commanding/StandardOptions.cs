@@ -94,18 +94,17 @@ public sealed class TargetFormat
     /// <c>--out</c> extension names the format, and otherwise <paramref name="defaultFormat"/>.
     /// The option has no parser default, since the extension decides first; its help is the
     /// standard wording, such as
-    /// <c>Image format: png, jpeg or svg. Default: the --out extension's format, else png.</c>
+    /// <c>Image format. Default: the --out extension's format, else png.</c>; the help lists the
+    /// formats once, in the option's label.
     /// </summary>
     /// <param name="formats">The product's format declarations; those with the render use are offered.</param>
     /// <param name="defaultFormat">The render format id used when nothing else names one.</param>
     public static TargetFormat Render(IReadOnlyList<FormatDescriptor> formats, string defaultFormat = "png")
     {
         ArgumentNullException.ThrowIfNull(formats);
-        IReadOnlyList<string> ids = [.. formats.IdsFor(FormatUse.Render)];
-        string listed = ids.Count < 2 ? string.Concat(ids) : $"{string.Join(", ", ids.Take(ids.Count - 1))} or {ids[^1]}";
         return new(
             FormatUse.Render,
-            $"Image format: {listed}. Default: the {StandardOptionNames.Out} extension's format, else {defaultFormat}.",
+            $"Image format. Default: the {StandardOptionNames.Out} extension's format, else {defaultFormat}.",
             formats,
             defaultFormat,
             required: false);

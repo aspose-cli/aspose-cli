@@ -33,8 +33,8 @@ internal sealed class GlobalOptions
     {
         OutputFormat = new Option<string?>(GlobalOptionNames.OutputFormat)
         {
-            Description = "Output format: json (contract envelopes), compact (the same JSON on one line), " +
-                          "table (human text) or markdown. Default: table on a terminal, json when redirected.",
+            Description = "How results print: the contract envelope, indented or on one line, or human text. "
+                + "Default: human text on a terminal, the indented envelope when redirected.",
             Recursive = true,
         }.WithInput(InputKind.None);
         OutputFormat.AcceptOnlyFromAmong([.. OutputModes.Keys]);
@@ -58,8 +58,8 @@ internal sealed class GlobalOptions
         }.WithInput(InputKind.None);
         LicenseMode = new Option<string?>(GlobalOptionNames.LicenseMode)
         {
-            Description = "auto (default) resolves the license sources in order; evaluation reads none of them "
-                + "and runs this command in evaluation mode. Cannot be combined with --license.",
+            Description = "evaluation reads no license source and runs this command in evaluation mode; by default "
+                + "the license sources are resolved in order. Cannot be combined with --license.",
             Recursive = true,
         }.WithInput(InputKind.None);
         LicenseMode.AcceptOnlyFromAmong(AutoLicenseMode, EvaluationLicenseMode);
@@ -79,9 +79,9 @@ internal sealed class GlobalOptions
         MaxInputBytes = new Option<long?>(GlobalOptionNames.MaxInputBytes)
         {
             Description =
-                $"Maximum bytes admitted for one input before product runtime initialization (default {InputSizeGuard.DefaultMaxBytes}; hard maximum {InputSizeGuard.MaximumBytes}).",
+                $"Maximum bytes admitted for one input before product runtime initialization. Default: {InputSizeGuard.DefaultMaxBytes}.",
             Recursive = true,
-        };
+        }.InRange(1, InputSizeGuard.MaximumBytes);
     }
 
     public Option<string?> OutputFormat { get; }
@@ -152,7 +152,9 @@ internal sealed class GlobalOptions
         string? licensePath = evaluationRequested ? null
             : explicitLicense is null ? inherited?.LicensePath
             : Path.GetFullPath(explicitLicense, workDirectory);
-        long? requestedInputBytes = parseResult.GetValue(MaxInputBytes);
+        long? requestedInputBytes = parseResult.GetInRange(
+            MaxInputBytes,
+            "Use the default for ordinary files, or choose a positive byte limit within the advertised range.");
         if (inherited is not null && requestedInputBytes > inherited.MaxInputBytes)
         {
             throw CliErrors.OptionInvalid("--max-input-bytes",
@@ -277,22 +279,8 @@ internal sealed class GlobalOptions
         value is not null && OutputModes.TryGetValue(value, out OutputMode mode) ? mode
         : Console.IsOutputRedirected ? OutputMode.Json : OutputMode.Table;
 
-    private static long ResolveMaxInputBytes(long? requested)
-    {
-        if (requested is null)
-        {
-            return InputSizeGuard.ResolveMaxBytes(
-                Environment.GetEnvironmentVariable);
-        }
-        if (requested is <= 0 or > InputSizeGuard.MaximumBytes)
-        {
-            throw CliErrors.OptionInvalid(
-                "--max-input-bytes",
-                $"value must be between 1 and {InputSizeGuard.MaximumBytes}",
-                "Use the default for ordinary files, or choose a positive byte limit within the advertised hard maximum.");
-        }
-        return requested.Value;
-    }
+    private static long ResolveMaxInputBytes(long? requested) =>
+        requested ?? InputSizeGuard.ResolveMaxBytes(Environment.GetEnvironmentVariable);
 }
 
 /// <summary>Resolved global option values for one invocation.</summary>

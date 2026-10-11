@@ -1,6 +1,7 @@
 using System.CommandLine;
 using System.Globalization;
 using Aspose.Cli.Sdk.Errors;
+using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.IO;
 
 namespace Aspose.Cli.Product.Pdf.Commands;
@@ -20,7 +21,7 @@ internal static class CreateCommand
             Description = "Let the HTML importer request the network resources trusted --from-html input names; the result lists every address. Local references stay beneath the HTML directory.",
         };
         var text = new Option<string?>("--from-text") { Description = "UTF-8 text or Markdown input file." }.WithInput(InputKind.File);
-        var pageSize = new Option<string>("--page-size") { DefaultValueFactory = _ => "A4", Description = "A3, A4, Letter or Legal." }.WithInput(InputKind.None);
+        var pageSize = new Option<string>("--page-size") { DefaultValueFactory = _ => "A4", Description = "Page size of the new PDF." }.WithInput(InputKind.None);
         pageSize.AcceptOnlyFromAmong([.. PdfPageSizes.Names]);
         var margins = new Option<string>("--margins") { DefaultValueFactory = _ => "36", Description = "One value or top,right,bottom,left in points." }.WithInput(InputKind.None);
         return new(
@@ -63,7 +64,19 @@ internal static class CreateCommand
                     Margins = ParseMargins(parse.GetValue(margins) ?? "36"),
                 };
             },
-            PdfText.Written);
+            PdfText.Written)
+        {
+            Examples =
+            [
+                "pdf create scans.pdf --from-images page1.png page2.png",
+                "pdf create notes.pdf --from-text notes.md --page-size Letter --margins 54",
+            ],
+            Links =
+            [
+                CommandHelpLink.Docs(PdfModule.Manifest, "assemble-review-report", "building a PDF from several sources"),
+                CommandHelpLink.Docs(PdfModule.Manifest, "overview", "what each PDF command is for"),
+            ],
+        };
     }
 
     private static PdfMargins ParseMargins(string text)

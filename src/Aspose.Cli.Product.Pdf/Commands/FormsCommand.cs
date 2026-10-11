@@ -26,11 +26,11 @@ internal static class FormsCommand
             table.AddRow(
                 field.Name,
                 field.Type,
-                field.Value ?? string.Empty,
-                field.OnValue ?? string.Empty,
+                field.Value,
+                field.OnValue,
                 string.Join(", ", field.States ?? field.Options ?? []),
-                field.Page?.ToString(CultureInfo.InvariantCulture) ?? string.Empty,
-                field.Rect is { } rect ? PdfText.Rectangle(rect) : string.Empty,
+                field.Page?.ToString(CultureInfo.InvariantCulture),
+                field.Rect is { } rect ? PdfText.Rectangle(rect) : null,
                 string.Join(", ", new[]
                 {
                     field.ReadOnly ? "read-only" : null,

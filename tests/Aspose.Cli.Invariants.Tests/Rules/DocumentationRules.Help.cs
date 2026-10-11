@@ -7,8 +7,9 @@ namespace Aspose.Cli.Invariants.Tests;
 /// <summary>
 /// C-R34: the <c>--help</c> of every visible leaf command has a
 /// Description, a Usage that lists the required options, its Arguments, its own Options with the
-/// global ones folded into one line, at least two Examples and Learn more, and lists the values
-/// of an option once. What one command's help metadata decides is a case of that command; what
+/// global ones folded into one <c>Global options:</c> line that names each of them, at least two
+/// Examples and Learn more, and lists the values of an option once: its description names at most
+/// one of the values its label lists. What one command's help metadata decides is a case of that command; what
 /// the help layout decides for every command (required options in Usage, the global options, a
 /// value list beside a description that repeats it) is one case each. The help is read from the
 /// committed help snapshots, which <c>CliContractTests</c> keeps equal to what the CLI prints.
@@ -26,6 +27,11 @@ internal static partial class ContractRules
                 && !command.Subcommands.Any(name => !catalog.Command($"{command.Words} {name}").Hidden)),
         ];
         HashSet<string> global = [.. catalog.Command(string.Empty).Options.Select(static option => option.Name)];
+        string[] folded = [.. catalog.Command(string.Empty).Options.Where(static option => option.Recursive && !option.Hidden).Select(static option => option.Name)];
+        CliCommand[] groups =
+        [
+            .. catalog.Commands.Where(command => !command.Hidden && command.Words.Length > 0 && !leaves.Contains(command)),
+        ];
 
         foreach (CliCommand command in leaves)
         {
@@ -35,16 +41,39 @@ internal static partial class ContractRules
             .SelectMany(static pair => pair.Command.Options.Where(static option => option.Required && !option.Hidden)
                 .Where(option => !pair.Help.Usage.Contains(option.Name, StringComparison.Ordinal))
                 .Select(option => $"{pair.Command.Words}: Usage leaves out the required {option.Name}")));
-        yield return Check("C-R34", "global options folded", () => help.Value.All(leaves)
-            .Select(pair => (pair.Command, Count: pair.Help.Options.Count(row => row.Names.Any(global.Contains))))
-            .Where(static item => item.Count > 1)
-            .Select(static item => $"{item.Command.Words}: lists {item.Count} global options one by one"));
+        yield return Check("C-R34", "global options folded", () => help.Value.All([.. leaves, .. groups])
+            .SelectMany(pair => GlobalOptions(pair.Command, pair.Help, global, folded)));
         yield return Check("C-R34", "value lists", () => help.Value.All(leaves)
             .SelectMany(pair => pair.Help.Options.Where(static row => row.RepeatsValues)
                 .Select(row => row.Names.Any(global.Contains)
                     ? $"global {row.Names[^1]}: lists its values in <{row.Placeholder}> and again in its description"
                     : $"{pair.Command.Words} {row.Names[^1]}: lists its values in <{row.Placeholder}> and again in its description"))
             .Distinct(StringComparer.Ordinal));
+    }
+
+    /// <summary>
+    /// The global options of a command's help list none one by one, and its one
+    /// <c>Global options:</c> line names every visible global option the command takes.
+    /// </summary>
+    private static IEnumerable<string> GlobalOptions(CliCommand command, Help help, HashSet<string> global, string[] folded)
+    {
+        int listed = help.Options.Count(row => row.Names.Any(global.Contains));
+        if (listed > 0)
+        {
+            yield return $"{command.Words}: lists {listed} global option{(listed == 1 ? string.Empty : "s")} one by one";
+        }
+
+        if (!help.Sections.TryGetValue("Global options", out List<string>? lines) || lines.Count != 1)
+        {
+            yield return $"{command.Words}: has no one-line Global options";
+            yield break;
+        }
+
+        HashSet<string> named = [.. OptionName().Matches(lines[0]).Select(static match => match.Value)];
+        foreach (string name in folded.Where(name => !named.Contains(name)))
+        {
+            yield return $"{command.Words}: Global options leaves out {name}";
+        }
     }
 
     private static IEnumerable<string> HelpSections(CliCommand command, Help help)
@@ -84,10 +113,14 @@ internal static partial class ContractRules
     /// <summary>One row of the Options section: its names, its value placeholder and its description.</summary>
     private sealed record HelpOption(string[] Names, string? Placeholder, string Description)
     {
-        /// <summary>The placeholder lists the allowed values and the description names each of them again.</summary>
+        /// <summary>
+        /// The placeholder lists the allowed values and the description, without the default the
+        /// help appends, names two or more of them again. Naming one value to explain it, such as
+        /// "auto uses the product's own view", is not a list.
+        /// </summary>
         public bool RepeatsValues =>
             Placeholder?.Split('|') is { Length: > 1 } values
-            && values.All(value => Regex.IsMatch(Description, $@"(?<![\w-]){Regex.Escape(value)}(?![\w-])"));
+            && values.Count(value => Regex.IsMatch(DefaultSuffix().Replace(Description, string.Empty), $@"(?<![\w-]){Regex.Escape(value)}(?![\w-])")) > 1;
     }
 
     /// <summary>A help text split into its sections, each a list of its lines.</summary>
@@ -169,6 +202,14 @@ internal static partial class ContractRules
 
     [GeneratedRegex(@"^## aspose-cli(?<words>(?: [^ ]+)*?) --help$")]
     private static partial Regex SnapshotHeading();
+
+    /// <summary>The <c>[default: VALUE]</c> the help appends to a description.</summary>
+    [GeneratedRegex(@"\s*\[default: [^\]]*\]$")]
+    private static partial Regex DefaultSuffix();
+
+    /// <summary>An option name in a line, such as <c>--quiet</c> in <c>-q/--quiet</c>.</summary>
+    [GeneratedRegex(@"(?<![\w-])--?[A-Za-z][\w-]*")]
+    private static partial Regex OptionName();
 
     [GeneratedRegex(@"^(?<name>[A-Z][A-Za-z ]*):$")]
     private static partial Regex HelpHeading();

@@ -42,7 +42,7 @@ public sealed class SplitOptions
         _by = new Option<string>(ByOption)
         {
             Required = true,
-            Description = "How to divide the document: " + string.Join("; ", divisions.Select(Describe)) + ".",
+            Description = "How to divide the document: " + string.Join("; ", divisions.OrderBy(SplitPlan.Spell, StringComparer.Ordinal).Select(division => "one part " + Describe(division, groups))) + ".",
         }.WithInput(InputKind.None);
         _by.AcceptOnlyFromAmong([.. divisions.Select(SplitPlan.Spell)]);
         var options = new List<Option> { _by };
@@ -128,12 +128,14 @@ public sealed class SplitOptions
         return new SplitPlan(by, every, null, _pages!.ReadRange(parse));
     }
 
-    private static string Describe(SplitBy division) => division switch
+    private static string Describe(SplitBy division, bool groups) => division switch
     {
-        SplitBy.Pages => "pages, one part per page, per --every pages or per group",
-        SplitBy.Bookmarks => "bookmarks, one part per top-level bookmark",
-        SplitBy.Sections => "sections, one part per section",
-        SplitBy.Heading1 => "heading1, one part per Heading 1 after a leading part for any blocks before the first",
+        // Each division is told by what it divides at, in the order of the values the label lists,
+        // so the values are listed once, in the label; only the options the product takes are named.
+        SplitBy.Pages => groups ? $"per page, per {EveryOption} N of them or per {GroupsOption} group" : $"per page or per {EveryOption} N of them",
+        SplitBy.Bookmarks => "per top-level bookmark",
+        SplitBy.Sections => "per section",
+        SplitBy.Heading1 => "per Heading 1, after a leading part for any blocks before the first",
         _ => throw new ArgumentOutOfRangeException(nameof(division)),
     };
 }

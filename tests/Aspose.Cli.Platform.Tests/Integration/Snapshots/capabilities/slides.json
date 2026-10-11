@@ -999,7 +999,7 @@
             ],
             "secret": false,
             "valueSource": "command-line",
-            "description": "16x9 or 4x3; template size is preserved when omitted."
+            "description": "Slide size; the template size is kept when omitted."
           },
           {
             "name": "--template",
@@ -1451,7 +1451,7 @@
             ],
             "secret": false,
             "valueSource": "command-line",
-            "description": "media, notes or text."
+            "description": "What to extract; media includes audio and video."
           }
         ],
         "arguments": [
@@ -1634,7 +1634,7 @@
             "allowedValues": [],
             "secret": false,
             "valueSource": "command-line",
-            "description": "Maximum returned hits (1-10000)."
+            "description": "Maximum returned hits. Range: 1-10000."
           },
           {
             "name": "--password",
@@ -1736,7 +1736,7 @@
             ],
             "secret": false,
             "valueSource": "command-line",
-            "description": "Search scope: shapes, notes, or all."
+            "description": "Search scope: the shape text, the speaker notes or both."
           },
           {
             "name": "--skip",
@@ -1792,7 +1792,7 @@
             "allowedValues": [],
             "secret": false,
             "valueSource": "command-line",
-            "description": "Maximum characters returned, counting every returned title, text, run, note and comment, repeats included. Range 1-10000000."
+            "description": "Maximum characters returned, counting every returned title, text, run, note and comment, repeats included. Range: 1-10000000."
           },
           {
             "name": "--notes",
@@ -1879,7 +1879,7 @@
             ],
             "secret": false,
             "valueSource": "command-line",
-            "description": "Projection scope: text, shapes or full."
+            "description": "Projection scope: how much of each slide to return."
           },
           {
             "name": "--slides",
@@ -1934,7 +1934,7 @@
             "allowedValues": [],
             "secret": false,
             "valueSource": "command-line",
-            "description": "Raster resolution (36-1200); ignored for vector formats."
+            "description": "Raster resolution; ignored for vector formats. Range: 36-1200."
           },
           {
             "name": "--dry-run",
@@ -2086,7 +2086,7 @@
             ],
             "secret": false,
             "valueSource": "command-line",
-            "description": "Image format: png, jpeg or svg. Default: the --out extension's format, else png."
+            "description": "Image format. Default: the --out extension's format, else png."
           },
           {
             "name": "--width",
@@ -2101,7 +2101,7 @@
             "allowedValues": [],
             "secret": false,
             "valueSource": "command-line",
-            "description": "Exact raster width in pixels (64-20000); replaces --dpi."
+            "description": "Exact raster width in pixels; replaces --dpi. Range: 64-20000."
           }
         ],
         "arguments": [

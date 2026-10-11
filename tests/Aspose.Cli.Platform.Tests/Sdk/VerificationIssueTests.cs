@@ -56,14 +56,19 @@ public sealed class VerificationIssueTests
         VerificationIssue issue = VerificationIssue.From(warning);
 
         Assert.Equal(
-            new VerificationIssue
-            {
-                Code = "TEST_WARNING",
-                Message = "A bounded warning.",
-                Location = "page:2",
-                Hint = "Inspect the affected item.",
-            },
-            issue);
+            ("TEST_WARNING", "A bounded warning.", "page:2", "Inspect the affected item."),
+            (issue.Code, issue.Message, issue.Location, issue.Hint));
+    }
+
+    [Fact]
+    public void Issue_CanBeBuiltOnlyFromADeclaredCode()
+    {
+        Type type = typeof(VerificationIssue);
+
+        Assert.DoesNotContain(type.GetConstructors(), static constructor => constructor.IsPublic || constructor.IsFamily || constructor.IsFamilyOrAssembly);
+        Assert.All(
+            type.GetProperties(),
+            static property => Assert.True(property.SetMethod is null, $"{property.Name} has a setter, so a caller could change the issue."));
     }
 
     [Fact]

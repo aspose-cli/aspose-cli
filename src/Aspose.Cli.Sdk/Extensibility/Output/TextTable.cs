@@ -31,8 +31,11 @@ public sealed class TextTable
         _headers = headers;
     }
 
-    /// <summary>Adds one row whose cell count must match the headers.</summary>
-    public void AddRow(params string[] cells)
+    /// <summary>
+    /// Adds one row whose cell count must match the headers; a cell without a value
+    /// (<see langword="null"/> or empty) is written as <see cref="TableText.Missing"/>.
+    /// </summary>
+    public void AddRow(params string?[] cells)
     {
         ArgumentNullException.ThrowIfNull(cells);
         if (cells.Length != _headers.Length)
@@ -41,7 +44,7 @@ public sealed class TextTable
                 $"Row has {cells.Length} cells but the table has {_headers.Length} columns.", nameof(cells));
         }
 
-        _rows.Add(cells);
+        _rows.Add([.. cells.Select(static cell => string.IsNullOrEmpty(cell) ? TableText.Missing : cell)]);
     }
 
     /// <summary>Writes the complete table in the selected deterministic format.</summary>

@@ -22,8 +22,8 @@ public sealed class SlidesRendererGoldenTests
             masters: 1   layouts: 11   sections: 2   comments: 1   media: 1   macros: no
             slide  id   title    layout       shapes  flags
             1      256  Welcome  Title Slide  2       notes, 1 comment(s)
-            2      257  Slide 2               0       hidden
-            3      258                        5·······
+            2      257  Slide 2  -            0       hidden
+            3      258  -        -            5       -
 
             sections:
             name   id    start slide
@@ -37,12 +37,12 @@ public sealed class SlidesRendererGoldenTests
             layouts:
             name         master        slides
             Title Slide  Office Theme  1
-            Orphan                     0
+            Orphan       -             0
 
             media:
             index  type   content type  size
             0      image  image/png     2,048 bytes
-            1      audio                1,048,576 bytes
+            1      audio  -             1,048,576 bytes
 
             notes:
             slide  present  characters
@@ -57,9 +57,9 @@ public sealed class SlidesRendererGoldenTests
 
             properties:
             name     value
-            Title    Deck
-            Author···
+            Author   -
             Company  Aspose
+            Title    Deck
             """,
             text);
     }
@@ -77,8 +77,8 @@ public sealed class SlidesRendererGoldenTests
             | slide | id | title | layout | shapes | flags |
             | --- | --- | --- | --- | --- | --- |
             | 1 | 256 | Welcome | Title Slide | 2 | notes, 1 comment(s) |
-            | 2 | 257 | Slide 2 |  | 0 | hidden |
-            | 3 | 258 |  |  | 5 |  |
+            | 2 | 257 | Slide 2 | - | 0 | hidden |
+            | 3 | 258 | - | - | 5 | - |
 
             ### sections
 
@@ -98,14 +98,14 @@ public sealed class SlidesRendererGoldenTests
             | name | master | slides |
             | --- | --- | --- |
             | Title Slide | Office Theme | 1 |
-            | Orphan |  | 0 |
+            | Orphan | - | 0 |
 
             ### media
 
             | index | type | content type | size |
             | --- | --- | --- | --- |
             | 0 | image | image/png | 2,048 bytes |
-            | 1 | audio |  | 1,048,576 bytes |
+            | 1 | audio | - | 1,048,576 bytes |
 
             ### notes
 
@@ -127,15 +127,15 @@ public sealed class SlidesRendererGoldenTests
 
             | name | value |
             | --- | --- |
-            | Title | Deck |
-            | Author |  |
+            | Author | - |
             | Company | Aspose |
+            | Title | Deck |
             """,
             text);
     }
 
     [Fact]
-    public void Info_WithEmptyDetails_SaysNoneUnderEachHeading()
+    public void Info_WithEmptyDetails_SaysMissingUnderEachHeading()
     {
         PresentationInfoResult result = Info() with
         {
@@ -152,32 +152,32 @@ public sealed class SlidesRendererGoldenTests
             masters: 1   layouts: 11   sections: 2   comments: 1   media: 1   macros: no
             slide  id   title    layout       shapes  flags
             1      256  Welcome  Title Slide  2       notes, 1 comment(s)
-            2      257  Slide 2               0       hidden
-            3      258                        5·······
+            2      257  Slide 2  -            0       hidden
+            3      258  -        -            5       -
 
             sections:
-            none
+            -
 
             masters:
-            none
+            -
 
             layouts:
-            none
+            -
 
             media:
-            none
+            -
 
             notes:
-            none
+            -
 
             comments:
-            none
+            -
 
             fonts:
-            none
+            -
 
             properties:
-            none
+            -
             """,
             text);
     }
@@ -194,8 +194,8 @@ public sealed class SlidesRendererGoldenTests
             masters: 1   layouts: 11   sections: 2   comments: 1   media: 1   macros: no
             slide  id   title    layout       shapes  flags
             1      256  Welcome  Title Slide  2       notes, 1 comment(s)
-            2      257  Slide 2               0       hidden
-            3      258                        5·······
+            2      257  Slide 2  -            0       hidden
+            3      258  -        -            5       -
             """,
             text);
     }

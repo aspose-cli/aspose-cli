@@ -10,7 +10,7 @@ internal static class ReadCommand
         var pages = new PartRangeOption("page", "every page");
         var mode = new Option<string>("--mode")
         {
-            Description = "Text projection: plain or layout.",
+            Description = "Text projection: whether the text keeps the spacing of the page.",
             DefaultValueFactory = _ => PdfReadModes.Plain,
         }.WithInput(InputKind.None);
         mode.AcceptOnlyFromAmong([.. PdfReadModes.All]);

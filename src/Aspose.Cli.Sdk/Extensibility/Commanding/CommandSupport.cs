@@ -1,13 +1,79 @@
 using System.CommandLine;
+using System.Globalization;
+using System.Runtime.CompilerServices;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
 
 namespace Aspose.Cli.Sdk.Extensibility.Commanding;
 
-/// <summary>Reusable validation for numeric product-command options.</summary>
+/// <summary>
+/// Reusable validation for numeric command options. A bounded integer option declares its bounds
+/// once with <see cref="InRange{T}(Option{T}, long, long)"/>, which states them in its help in
+/// the one wording <see cref="RangeText"/> gives, and is read with <c>GetInRange</c>, which
+/// enforces them.
+/// </summary>
 public static class OptionGuards
 {
+    private static readonly ConditionalWeakTable<Option, Bounds> Declared = new();
+
+    /// <summary>The one wording of an option's bounds in its description: <c>Range: MIN-MAX.</c></summary>
+    public static string RangeText(long minimum, long maximum) =>
+        string.Create(CultureInfo.InvariantCulture, $"Range: {minimum}-{maximum}.");
+
+    /// <summary>
+    /// Declares the inclusive bounds of an integer option: its description ends with
+    /// <see cref="RangeText"/>, and <c>GetInRange</c> rejects a value outside them.
+    /// </summary>
+    /// <returns>The same option.</returns>
+    public static Option<T> InRange<T>(this Option<T> option, long minimum, long maximum)
+    {
+        ArgumentNullException.ThrowIfNull(option);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(minimum, maximum);
+        string range = RangeText(minimum, maximum);
+        option.Description = string.IsNullOrEmpty(option.Description) ? range : $"{option.Description} {range}";
+        Declared.AddOrUpdate(option, new Bounds(minimum, maximum));
+        return option;
+    }
+
+    /// <summary>Reads an option declared with <see cref="InRange{T}"/>.</summary>
+    /// <exception cref="CliException"><c>OPTION_INVALID</c> outside the declared bounds.</exception>
+    public static int GetInRange(this ParseResult parse, Option<int> option, string? hint = null)
+    {
+        ArgumentNullException.ThrowIfNull(parse);
+        int value = parse.GetValue(option);
+        Ensure(option, value, hint);
+        return value;
+    }
+
+    /// <summary>Reads an optional option declared with <see cref="InRange{T}"/>; an absent value is null.</summary>
+    /// <exception cref="CliException"><c>OPTION_INVALID</c> outside the declared bounds.</exception>
+    public static int? GetInRange(this ParseResult parse, Option<int?> option, string? hint = null)
+    {
+        ArgumentNullException.ThrowIfNull(parse);
+        int? value = parse.GetValue(option);
+        if (value is { } present)
+        {
+            Ensure(option, present, hint);
+        }
+
+        return value;
+    }
+
+    /// <summary>Reads an optional option declared with <see cref="InRange{T}"/>; an absent value is null.</summary>
+    /// <exception cref="CliException"><c>OPTION_INVALID</c> outside the declared bounds.</exception>
+    public static long? GetInRange(this ParseResult parse, Option<long?> option, string? hint = null)
+    {
+        ArgumentNullException.ThrowIfNull(parse);
+        long? value = parse.GetValue(option);
+        if (value is { } present)
+        {
+            Ensure(option, present, hint);
+        }
+
+        return value;
+    }
+
     /// <summary>Rejects an integer outside the inclusive range.</summary>
     public static void EnsureInRange(
         string option,
@@ -24,6 +90,24 @@ public static class OptionGuards
                 hint);
         }
     }
+
+    private static void Ensure(Option option, long value, string? hint)
+    {
+        if (!Declared.TryGetValue(option, out Bounds? bounds))
+        {
+            throw new InvalidOperationException($"Option {option.Name} declares no range; declare it with InRange.");
+        }
+
+        if (value < bounds.Minimum || value > bounds.Maximum)
+        {
+            throw CliErrors.OptionInvalid(
+                option.Name,
+                string.Create(CultureInfo.InvariantCulture, $"value must be between {bounds.Minimum} and {bounds.Maximum}"),
+                hint ?? string.Create(CultureInfo.InvariantCulture, $"Pass a value from {bounds.Minimum} to {bounds.Maximum}."));
+        }
+    }
+
+    private sealed record Bounds(long Minimum, long Maximum);
 }
 
 /// <summary>The transport selected by a JSON source value.</summary>

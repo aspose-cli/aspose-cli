@@ -18,6 +18,7 @@ internal sealed class ResultContractWriter(Compilation compilation, Action<Locat
     private const string Sdk = "global::" + Contracts;
     private const string ResultEnvelope = Contracts + "ResultEnvelope";
     private const string OutputItem = Contracts + "OutputItem";
+    private const string EditVerification = Contracts + "EditVerification";
     private const string Json = "System.Text.Json.Serialization.";
     private static readonly string[] CaseTypes = ["null", "string", "number", "integer", "boolean"];
     private readonly INamedTypeSymbol? _constraint = compilation.GetTypeByMetadataName(Contracts + "ValueConstraintAttribute");
@@ -58,8 +59,8 @@ internal sealed class ResultContractWriter(Compilation compilation, Action<Locat
             return [];
         }
 
-        // The envelope bases and the output item base are described where they are declared, so
-        // the records of another assembly can inherit them.
+        // The envelope bases, the output item and the edit verification core are described where
+        // they are declared, so the records of another assembly can inherit them.
         foreach (INamedTypeSymbol type in declared.Where(IsInheritable))
         {
             Enqueue(type);
@@ -145,9 +146,12 @@ internal sealed class ResultContractWriter(Compilation compilation, Action<Locat
         type.IsAbstract && type.ContainingNamespace.ToDisplayString() + "." == Contracts
         && (type.ToDisplayString() == ResultEnvelope || AnalyzerTypes.Inherits(type, ResultEnvelope));
 
-    /// <summary>Whether records of another assembly may derive from <paramref name="type"/>: an SDK envelope base or the SDK's output item.</summary>
+    /// <summary>
+    /// Whether records of another assembly may derive from <paramref name="type"/>: an SDK envelope
+    /// base, the SDK's output item or the SDK's edit verification core.
+    /// </summary>
     private static bool IsInheritable(INamedTypeSymbol type) =>
-        IsEnvelope(type) || (type.IsAbstract && type.ToDisplayString() == OutputItem);
+        IsEnvelope(type) || (type.IsAbstract && type.ToDisplayString() is OutputItem or EditVerification);
 
     private void Enqueue(INamedTypeSymbol type)
     {
@@ -179,7 +183,7 @@ internal sealed class ResultContractWriter(Compilation compilation, Action<Locat
             }
             else if (!IsInheritable(baseType))
             {
-                Report(type, $"Result record '{type.Name}' derives from '{baseType.Name}' of another assembly; only the SDK's envelope bases and OutputItem can be inherited across assemblies.");
+                Report(type, $"Result record '{type.Name}' derives from '{baseType.Name}' of another assembly; only the SDK's envelope bases, OutputItem and EditVerification can be inherited across assemblies.");
             }
 
             code.Append(", Base = typeof(").Append(TypeName(baseType)).Append(')');

@@ -11,12 +11,12 @@ internal static class ReadCommand
         var section = new Option<int?>("--section") { Description = "Read one 1-based section; with --blocks, only its blocks in that range." };
         var scope = new Option<string>("--scope")
         {
-            Description = "Projection: text, full or outline.",
+            Description = "Projection: how much of each block to return.",
             DefaultValueFactory = _ => "text",
         }.WithInput(InputKind.None);
         scope.AcceptOnlyFromAmong([.. DocumentReadScopes.All]);
         var maxChars = new MaxCharactersOption("the text of the returned blocks, including repeated text and run projections");
-        var maxBlocks = new Option<int>("--max-blocks") { DefaultValueFactory = _ => 200, Description = "Maximum projected blocks." };
+        var maxBlocks = new Option<int>("--max-blocks") { DefaultValueFactory = _ => 200, Description = "Maximum projected blocks." }.InRange(1, 100_000);
         return new(
             "blocks",
             "Read a bounded, stable window of document blocks.",
@@ -26,8 +26,7 @@ internal static class ReadCommand
             {
                 string? range = parse.GetValue(blocks);
                 int characters = maxChars.Read(parse);
-                int count = parse.GetValue(maxBlocks);
-                OptionGuards.EnsureInRange("--max-blocks", count, 1, 100_000, "Use a positive bounded block budget.");
+                int count = parse.GetInRange(maxBlocks, "Use a positive bounded block budget.");
                 return new DocumentReadRequest
                 {
                     Input = standard.Input,
@@ -57,7 +56,7 @@ internal static class ReadCommand
         var table = new TextTable("block", "type", "section", "style", "text");
         foreach (BlockData block in result.Blocks)
         {
-            table.AddRow(TableText.Int(block.Block), block.Type, TableText.Int(block.Section), block.Style ?? "-", block.Text ?? $"[{block.RowCount}x{block.ColumnCount} table]");
+            table.AddRow(TableText.Int(block.Block), block.Type, TableText.Int(block.Section), block.Style, block.Text ?? $"[{block.RowCount}x{block.ColumnCount} table]");
         }
 
         table.WriteTo(surface.Out, surface.Format);

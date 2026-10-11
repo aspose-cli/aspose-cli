@@ -34,15 +34,15 @@ internal static class ReadCommand
         var scanOption = new Option<string?>(ScanContinuation.ScanOption) { Hidden = true }.WithInput(InputKind.None);
         var scopeOption = new Option<string>("--scope")
         {
-            Description = "Projection scope: values, formulas (adds f), styles (adds styleId + pool), full.",
+            Description = "Projection scope: formulas adds f; the style scope adds styleId and the style pool.",
             DefaultValueFactory = _ => ReadScopes.Values,
         }.WithInput(InputKind.None);
         scopeOption.AcceptOnlyFromAmong(ReadScopes.Values, ReadScopes.Formulas, ReadScopes.Styles, ReadScopes.Full);
         var maxCellsOption = new Option<int>("--max-cells")
         {
-            Description = $"Cell budget per call ({MinMaxCells}-{MaxMaxCells}).",
+            Description = "Cell budget per call.",
             DefaultValueFactory = _ => 10_000,
-        };
+        }.InRange(MinMaxCells, MaxMaxCells);
         return new(
             "range",
             "Read cell data of one sheet as a windowed projection.",
@@ -50,9 +50,7 @@ internal static class ReadCommand
             [sheet, rangeOption, scanOption, scopeOption, maxCellsOption],
             (parse, standard) =>
             {
-                int maxCells = parse.GetValue(maxCellsOption);
-                OptionGuards.EnsureInRange("--max-cells", maxCells, MinMaxCells, MaxMaxCells,
-                    "Keep the budget modest; page through large sheets with each window.next command instead.");
+                int maxCells = parse.GetInRange(maxCellsOption, "Keep the budget modest; page through large sheets with each window.next command instead.");
                 string scope = parse.GetValue(scopeOption) ?? ReadScopes.Values;
                 (string? sheetName, RangeRef? range) = SheetRangeInput.Resolve(
                     parse.GetValue(sheet), parse.GetValue(rangeOption));
@@ -130,7 +128,7 @@ internal static class ReadCommand
             var table = new TextTable(headers);
             for (int row = 0; row < cells.Count; row++)
             {
-                string[] line = new string[range.ColumnCount + 1];
+                string?[] line = new string?[range.ColumnCount + 1];
                 line[0] = TableText.Int(range.Start.Row + row + 1);
                 for (int column = 0; column < cells[row].Count; column++)
                 {
@@ -148,12 +146,12 @@ internal static class ReadCommand
         }
     }
 
-    private static string FormatCellValue(CellData cell) => cell.V switch
+    private static string? FormatCellValue(CellData cell) => cell.V switch
     {
-        null => string.Empty,
+        null => null,
         bool value => value ? "TRUE" : "FALSE",
         double value => value.ToString(CultureInfo.InvariantCulture),
         string value => value,
-        var value => Convert.ToString(value, CultureInfo.InvariantCulture) ?? string.Empty,
+        var value => Convert.ToString(value, CultureInfo.InvariantCulture),
     };
 }

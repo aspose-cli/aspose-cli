@@ -1,11 +1,8 @@
 namespace Aspose.Cli.Product.Cells.Contracts;
 
 /// <summary>Post-edit evidence produced by <c>cells edit --verify</c>.</summary>
-public sealed record EditVerification
+public sealed record CellsEditVerification : EditVerification
 {
-    /// <summary><c>true</c> when diffing and formula checks completed without a verification issue.</summary>
-    public required bool Ok { get; init; }
-
     /// <summary>Targets requested by the operations in this invocation.</summary>
     public required IReadOnlyList<VerificationTarget> RequestedTargets { get; init; }
 
@@ -26,9 +23,6 @@ public sealed record EditVerification
     /// first 1000; the checks behind <c>ok</c> still cover every cell.
     /// </summary>
     public required bool Truncated { get; init; }
-
-    /// <summary>Verification problems, empty when <c>ok</c> is true; an edit artifact is preserved when this list is non-empty.</summary>
-    public required IReadOnlyList<VerificationIssue> Issues { get; init; }
 }
 
 /// <summary>An operation target included in post-edit verification.</summary>

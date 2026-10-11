@@ -1,5 +1,6 @@
 using System.CommandLine;
 using Aspose.Cli.Sdk.Errors;
+using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.Extensibility.Output;
 
 namespace Aspose.Cli.Product.Words.Commands;
@@ -11,7 +12,7 @@ internal static class CompareCommand
         var ignoreFormatting = new Option<bool>("--ignore-formatting") { Description = "Ignore formatting-only changes." };
         var granularity = new Option<string>("--granularity")
         {
-            Description = "Unit a change is marked in: word, or char for Chinese or Japanese text.",
+            Description = "Unit a change is marked in; use the character unit for Chinese or Japanese text.",
             DefaultValueFactory = _ => WordsCompareRequest.DefaultGranularity,
         }.WithInput(InputKind.None);
         granularity.AcceptOnlyFromAmong("word", "char");
@@ -57,6 +58,10 @@ internal static class CompareCommand
                 "words compare original.docx changed.docx --output-format json",
                 "words compare original.docx changed.docx --out redline.docx --author \"Legal Review\"",
             ],
+            Links =
+            [
+                CommandHelpLink.Docs(WordsModule.Manifest, "revisions", "tracked changes and redlines"),
+            ],
         };
     }
 
@@ -69,7 +74,7 @@ internal static class CompareCommand
             var table = new TextTable("type", "sample");
             foreach (RevisionSample sample in result.Samples)
             {
-                table.AddRow(sample.Type, sample.Text ?? string.Empty);
+                table.AddRow(sample.Type, sample.Text);
             }
 
             table.WriteTo(surface.Out, surface.Format);
@@ -77,7 +82,7 @@ internal static class CompareCommand
 
         if (result.Output is { } output)
         {
-            surface.Out.WriteLine($"redline: {output.Path}");
+            ResultText.Produced(surface, output, "redline");
         }
     }
 }

@@ -44,6 +44,17 @@ public sealed class SplitOptionsTests
     }
 
     [Fact]
+    public void ByDescription_NamesOnlyTheOptionsTheProductTakes()
+    {
+        (SplitOptions pdf, _) = Create([SplitBy.Pages, SplitBy.Bookmarks], groups: true);
+        (SplitOptions words, _) = Create([SplitBy.Sections, SplitBy.Heading1, SplitBy.Pages]);
+
+        Assert.Contains("one part per page, per --every N of them or per --groups group", pdf.Options[0].Description, StringComparison.Ordinal);
+        Assert.Contains("one part per page or per --every N of them;", words.Options[0].Description, StringComparison.Ordinal);
+        Assert.DoesNotContain("--groups", words.Options[0].Description, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Options_RefuseGroupsWithoutPagesAndRepeatedDivisions()
     {
         Assert.Throws<ArgumentException>(() => new SplitOptions([SplitBy.Bookmarks], groups: true));

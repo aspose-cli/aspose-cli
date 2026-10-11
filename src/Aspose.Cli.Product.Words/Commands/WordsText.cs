@@ -6,5 +6,5 @@ namespace Aspose.Cli.Product.Words.Commands;
 internal static class WordsText
 {
     /// <summary>A block number; an item without a body block, such as one in a header, shows a dash.</summary>
-    public static string Block(int? block) => block is { } value ? TableText.Int(value) : "-";
+    public static string Block(int? block) => block is { } value ? TableText.Int(value) : TableText.Missing;
 }

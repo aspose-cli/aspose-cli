@@ -24,7 +24,7 @@ internal static class ViewerServiceCommand
         {
             Description = "Loopback port; 0 chooses a free port.",
             DefaultValueFactory = _ => 0,
-        };
+        }.InRange(0, 65535);
         var command = new Command(
             ViewerServiceCommands.CommandName,
             "Host the local viewer service.")
@@ -41,7 +41,7 @@ internal static class ViewerServiceCommand
                 globals,
                 values => ViewerServiceHosting.Start(
                     values,
-                    parse.GetValue(port),
+                    parse.GetInRange(port),
                     catalog,
                     capabilities));
         });

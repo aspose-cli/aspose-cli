@@ -1,4 +1,5 @@
 using System.CommandLine;
+using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.Extensibility.Output;
 
 namespace Aspose.Cli.Product.Pdf.Commands;
@@ -7,7 +8,7 @@ internal static class ValidateCommand
 {
     public static CommandDefinition<PdfValidateRequest, PdfValidateResult> Create()
     {
-        var profile = new Option<string>("--profile") { Required = true, Description = "pdfa-1b, pdfa-2b or pdfa-3b." }.WithInput(InputKind.None);
+        var profile = new Option<string>("--profile") { Required = true, Description = "PDF/A profile to validate against." }.WithInput(InputKind.None);
         profile.AcceptOnlyFromAmong("pdfa-1b", "pdfa-2b", "pdfa-3b");
         return new(
             "validate",
@@ -20,7 +21,18 @@ internal static class ValidateCommand
                 Profile = parse.GetRequiredValue(profile),
                 Password = standard.InputPassword,
             },
-            Table);
+            Table)
+        {
+            Examples =
+            [
+                "pdf validate archive.pdf --profile pdfa-2b",
+                "pdf validate archive.pdf --profile pdfa-1b --output-format json",
+            ],
+            Links =
+            [
+                CommandHelpLink.Docs(PdfModule.Manifest, "pdf-standards", "PDF/A profiles and conformance"),
+            ],
+        };
     }
 
     internal static void Table(PdfValidateResult result, TableSurface surface)

@@ -11,15 +11,16 @@ internal sealed class CellsEditVerifier(CellsWorkbookLoader loader, ResourceBudg
 {
     private const int MaxDiffs = 1000;
 
-    internal EditVerification Verify(StagedOutput staged,
+    internal CellsEditVerification Verify(StagedOutput staged,
         string baselinePath, string originalPath, Secret? inputPassword, Secret? outputPassword,
-        CellsOpsBatch batch, IReadOnlyList<Warning>? sourceWarnings) =>
+        CellsOpsBatch batch, IReadOnlyList<BoundedOperationOutcome> applied, IReadOnlyList<Warning>? sourceWarnings) =>
         staged.Read(candidate => VerifyCandidate(candidate, baselinePath,
-            originalPath, inputPassword, outputPassword, batch, sourceWarnings));
+            originalPath, inputPassword, outputPassword, batch, applied, sourceWarnings));
 
-    private EditVerification VerifyCandidate(string candidatePath,
+    private CellsEditVerification VerifyCandidate(string candidatePath,
         string baselinePath, string originalPath, Secret? inputPassword,
-        Secret? outputPassword, CellsOpsBatch batch, IReadOnlyList<Warning>? sourceWarnings)
+        Secret? outputPassword, CellsOpsBatch batch, IReadOnlyList<BoundedOperationOutcome> applied,
+        IReadOnlyList<Warning>? sourceWarnings)
     {
         using LoadedWorkbook baseline = loader.OpenPublishedCandidate(baselinePath, inputPassword, originalPath);
         using LoadedWorkbook candidate = loader.OpenPublishedCandidate(candidatePath, outputPassword);
@@ -60,9 +61,13 @@ internal sealed class CellsEditVerifier(CellsWorkbookLoader loader, ResourceBudg
                         ? " #NAME? means a formula names a function or name the workbook does not know. " + CellOps.EnglishFormulaHint
                         : "")));
         }
-        return new EditVerification
+        return new CellsEditVerification
         {
             Ok = issues.Count == 0,
+            CheckedOps = OpsFootprint.Checked(batch, footprint, applied
+                .Where(static outcome => outcome.Status == OpStatuses.Ok)
+                .Select(static outcome => outcome.Id)
+                .ToHashSet(StringComparer.Ordinal)),
             RequestedTargets = footprint.Select(static target => new VerificationTarget { Sheet = target.Sheet, Range = target.Range }).ToArray(),
             DirectChanges = direct, FormulaResultChanges = formulaResults, OtherChanges = other,
             FormulaErrors = errors,

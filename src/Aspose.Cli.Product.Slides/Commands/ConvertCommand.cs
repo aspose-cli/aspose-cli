@@ -1,3 +1,4 @@
+using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.Extensibility.Commanding;
 using Aspose.Cli.Sdk.Extensibility.Output;
 using Aspose.Cli.Sdk.IO;
@@ -35,7 +36,19 @@ internal static class ConvertCommand
                     EncryptPassword = encryptPassword,
                 };
             },
-            Table);
+            Table)
+        {
+            Examples =
+            [
+                "slides convert deck.pptx --out deck.pdf",
+                "slides convert deck.pptx --slides 1-3 --out handout.pdf",
+                "slides convert deck.pptx --to png --slides 2 --out slide.png",
+            ],
+            Links =
+            [
+                CommandHelpLink.Docs(SlidesModule.Manifest, "overview", "what each Slides command is for"),
+            ],
+        };
     }
 
     internal static void Table(SlidesConvertResult result, TableSurface surface)

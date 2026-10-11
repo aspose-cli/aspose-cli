@@ -3810,7 +3810,7 @@
           ],
           "secret": false,
           "valueSource": "command-line",
-          "description": "auto (default) resolves the license sources in order; evaluation reads none of them and runs this command in evaluation mode. Cannot be combined with --license."
+          "description": "evaluation reads no license source and runs this command in evaluation mode; by default the license sources are resolved in order. Cannot be combined with --license."
         },
         {
           "name": "--max-input-bytes",
@@ -3825,7 +3825,7 @@
           "allowedValues": [],
           "secret": false,
           "valueSource": "command-line",
-          "description": "Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296)."
+          "description": "Maximum bytes admitted for one input before product runtime initialization. Default: 1073741824. Range: 1-4294967296."
         },
         {
           "name": "--output-format",
@@ -3845,7 +3845,7 @@
           ],
           "secret": false,
           "valueSource": "command-line",
-          "description": "Output format: json (contract envelopes), compact (the same JSON on one line), table (human text) or markdown. Default: table on a terminal, json when redirected."
+          "description": "How results print: the contract envelope, indented or on one line, or human text. Default: human text on a terminal, the indented envelope when redirected."
         },
         {
           "name": "--quiet",
@@ -3967,7 +3967,7 @@
           "allowedValues": [],
           "secret": false,
           "valueSource": "command-line",
-          "description": "Loopback port; 0 chooses a free port."
+          "description": "Loopback port; 0 chooses a free port. Range: 0-65535."
         }
       ],
       "arguments": []
@@ -4040,7 +4040,7 @@
           "allowedValues": [],
           "secret": false,
           "valueSource": "command-line",
-          "description": "Loopback port; 0 chooses a free port."
+          "description": "Loopback port; 0 chooses a free port. Range: 0-65535."
         },
         {
           "name": "--welcome",
@@ -4602,7 +4602,7 @@
           "allowedValues": [],
           "secret": false,
           "valueSource": "command-line",
-          "description": "Loopback port; 0 chooses a free port."
+          "description": "Loopback port; 0 chooses a free port. Range: 0-65535."
         },
         {
           "name": "--product",
@@ -4863,7 +4863,7 @@
           "allowedValues": [],
           "secret": false,
           "valueSource": "command-line",
-          "description": "Maximum visual units rendered and listed in review.json."
+          "description": "Maximum visual units rendered and listed in review.json. Range: 1-8192."
         },
         {
           "name": "--out",
@@ -4989,7 +4989,7 @@
           ],
           "secret": false,
           "valueSource": "command-line",
-          "description": "Product view; auto uses the product's own view. Review renders only views of images, so it refuses workbook."
+          "description": "Product view; auto uses the product's own view. Review renders only views made of images and refuses any other."
         }
       ],
       "arguments": [
