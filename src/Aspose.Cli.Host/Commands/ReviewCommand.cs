@@ -22,8 +22,13 @@ internal static class ReviewCommand
     {
         var output = new Option<string?>("--out", "-o")
         {
-            Description = "New evidence directory; defaults to <filename>.review beside the source.",
+            Description = "Evidence directory; defaults to <filename>.review beside the source.",
         }.WithInput(InputKind.None);
+        var overwrite = new Option<bool>("--overwrite")
+        {
+            Description = "Replace the evidence directory if it already exists.",
+        };
+        Option<bool> dryRun = StandardOptions.DryRunOption();
         var maxItems = new Option<int>("--max-items")
         {
             Description = "Maximum visual units rendered and listed in review.json.",
@@ -72,11 +77,17 @@ internal static class ReviewCommand
         Command command = standard.CreateCommand(
             "review",
             "Create a portable static evidence directory for visual inspection.",
-            [output, maxItems, product, view, codes]);
+            [output, overwrite, dryRun, maxItems, product, view, codes]);
         command.SetAction(parse => executor.Run(parse, globals, context =>
         {
             StandardInvocation invocation = standard.Bind(
                 parse, context.Paths, context.ResourceBudgets.Inputs, context.ReadEnvironment);
+            string? requestedOutput = parse.GetValue(output);
+            if (requestedOutput == "-")
+            {
+                throw CliErrors.OutputIsStandardStream("--out", directory: true);
+            }
+
             int maximum = parse.GetValue(maxItems);
             OptionGuards.EnsureInRange(
                 "--max-items",
@@ -111,9 +122,16 @@ internal static class ReviewCommand
                     $"Use {string.Join(", ", views.ReviewViews)}.");
             }
             IReadOnlyList<string>? selectedCodes = SelectedCodes(parse.GetValue(codes), definition);
-            string target = parse.GetValue(output) is { } requestedOutput
+            string target = requestedOutput is not null
                 ? context.Paths.ResolveOutput(requestedOutput)
                 : input + ".review";
+            bool replace = parse.GetValue(overwrite);
+            ReviewEvidenceWriter.EnsureTarget(target, replace, input);
+            if (parse.GetValue(dryRun))
+            {
+                return DryRunResult.Of([DryRunChecks.Input, DryRunChecks.Output], [target]);
+            }
+
             ProductBinding binding = context.Activate(definition);
             using IDisposable fontScope = binding.UseFonts(invocation.FontDirectories);
             LicenseState license = binding.LicenseGate.EnsureApplied();
@@ -139,7 +157,8 @@ internal static class ReviewCommand
                 selectedCodes,
                 // The evidence shows what the engine draws, so the product's write pipeline
                 // discloses it in review.json and index.html as in the command's output.
-                result => (ReviewResult)binding.Publishing.DiscloseRendered(result));
+                result => (ReviewResult)binding.Publishing.DiscloseRendered(result),
+                replace);
         }));
         return command;
     }

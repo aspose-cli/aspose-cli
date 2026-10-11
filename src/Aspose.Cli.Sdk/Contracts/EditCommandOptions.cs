@@ -11,4 +11,13 @@ public sealed record EditCommandOptions
 
     /// <summary>Keep successful operations and report failures as a partial result.</summary>
     public bool BestEffort { get; init; }
+
+    /// <summary>
+    /// What an edit's dry run checked, which its result reports as <c>checked</c>: the input, the
+    /// output, the operations and, applying them in memory, their targets; null when the edit is
+    /// no dry run.
+    /// </summary>
+    public IReadOnlyList<string>? Checked => DryRun
+        ? [DryRunChecks.Input, DryRunChecks.Output, DryRunChecks.Ops, DryRunChecks.Targets]
+        : null;
 }

@@ -23,6 +23,10 @@ public sealed record EditResult() : EngineResultEnvelope("edit-result", 2), IPar
     /// <summary><c>true</c> when nothing was written (<c>--dry-run</c>).</summary>
     public required bool DryRun { get; init; }
 
+    /// <summary>What the dry run checked, in a fixed order; omitted when the edit was written.</summary>
+    [MinItems(1), UniqueItems, AllowedValues(typeof(DryRunChecks))]
+    public IReadOnlyList<string>? Checked { get; init; }
+
     /// <summary>
     /// <c>true</c> when formulas were recalculated before saving: a calculation runs after the
     /// complete batch unless <c>--no-recalc</c> is given, and this is true when it succeeded.

@@ -18,7 +18,8 @@ namespace Aspose.Cli.Sdk.Extensibility.Commanding;
 /// depend on the product: the host admits the declared input files and activates the product;
 /// at most one option may read standard input (<c>OPTION_INVALID</c> otherwise); the input documents are resolved (a missing one is <c>FILE_NOT_FOUND</c>); then
 /// <c>--font-dir</c> is validated before any secret or standard input is read; then <c>bind</c> runs, the
-/// product's usage checks first and then the inputs and secrets it reads; then the font scope is
+/// product's usage checks first and then the inputs and secrets it reads; a <c>--dry-run</c> of a
+/// command other than an edit stops here with a <see cref="DryRunResult"/>; then the font scope is
 /// entered; then the product guard runs around the handler; then <see cref="Finish"/>; then the
 /// write pipeline discloses evaluation output. A password error about one of two input documents
 /// is restated with that document's own option. The font scope ends after the result is complete.
@@ -167,6 +168,13 @@ public sealed class CommandDefinition<TRequest, TResult>
             invocation.ResolveDocuments();
             FontSearchProfile? fonts = invocation.UsesFonts ? invocation.FontDirectories : null;
             TRequest request = _bind(parse, invocation);
+            if (invocation.DryRun && _traits.Output?.Kind != OutputKind.Mutation)
+            {
+                // Everything a dry run checks is resolved by now; an edit alone goes on to apply
+                // its operations in memory.
+                return invocation.DryRunResult();
+            }
+
             using IDisposable? fontScope = fonts is null ? null : scope.Binding.UseFonts(fonts);
             TSession session = ((ProductBinding<TSession>)scope.Binding).Session;
             TResult result = context.Guarded(handler, session, request);

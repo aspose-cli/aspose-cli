@@ -249,6 +249,188 @@ public sealed class AtomicNewDirectoryWriterTests
     }
 
     [Fact]
+    public void Commit_ReplaceSwapsTheExistingDirectoryForTheCandidateAndDeletesIt()
+    {
+        using var temp = new TempDirectory();
+        string target = Existing(temp);
+        using (var output = new AtomicNewDirectoryWriter(TestBudgets.Create(), target, "test", replace: true))
+        {
+            Write(output, "data.txt", "replacement");
+            output.Commit();
+        }
+        Assert.Equal("replacement", File.ReadAllText(Path.Combine(target, "data.txt")));
+        Assert.False(File.Exists(Path.Combine(target, "old.txt")));
+        Assert.False(Directory.Exists(Path.Combine(target, "parts")));
+        Assert.Empty(Directory.EnumerateDirectories(temp.Path, ".aspose-publication-*"));
+    }
+
+    [Fact]
+    public void Commit_ReplaceOfAnAbsentTargetPublishesANewDirectory()
+    {
+        using var temp = new TempDirectory();
+        string target = temp.File("result");
+        using (var output = new AtomicNewDirectoryWriter(TestBudgets.Create(), target, "test", replace: true))
+        {
+            Write(output, "data.txt", "new");
+            output.Commit();
+        }
+        Assert.Equal("new", File.ReadAllText(Path.Combine(target, "data.txt")));
+        Assert.Empty(Directory.EnumerateDirectories(temp.Path, ".aspose-publication-*"));
+    }
+
+    [Fact]
+    public void Constructor_WithoutReplaceRefusesAnExistingDirectory()
+    {
+        using var temp = new TempDirectory();
+        string target = Existing(temp);
+        CliException error = Assert.Throws<CliException>(() => new AtomicNewDirectoryWriter(TestBudgets.Create(), target, "test"));
+        Assert.Equal(ErrorCodes.OutputExists, error.Code);
+        AssertPrevious(target);
+    }
+
+    [Fact]
+    public void Constructor_ReplaceRefusesAFileAtTheTarget()
+    {
+        using var temp = new TempDirectory();
+        string target = temp.File("result");
+        File.WriteAllText(target, "a file");
+        Assert.Throws<CliException>(() => new AtomicNewDirectoryWriter(TestBudgets.Create(), target, "test", replace: true));
+        Assert.Equal("a file", File.ReadAllText(target));
+    }
+
+    [Fact]
+    public void Commit_ReplaceThatFailsAfterMovingThePreviousDirectoryPutsItBack()
+    {
+        using var temp = new TempDirectory();
+        string target = Existing(temp);
+        var faults = new Faults(point =>
+        {
+            if (point is { Kind: PublicationFaultKind.Publish, EntryIndex: 1 })
+            {
+                Assert.False(Directory.Exists(target));
+                throw new IOException("after the previous directory moved");
+            }
+        });
+        using (var output = new AtomicNewDirectoryWriter(TestBudgets.Create(), target, "test", faults, replace: true))
+        {
+            Write(output, "data.txt", "replacement");
+            Assert.Throws<IOException>(output.Commit);
+        }
+        AssertPrevious(target);
+        Assert.Empty(Directory.EnumerateDirectories(temp.Path, ".aspose-publication-*"));
+    }
+
+    [Fact]
+    public void RecoverPending_PutsBackAPreviousDirectoryAnInterruptedReplaceLeftInItsTransaction()
+    {
+        using var temp = new TempDirectory();
+        string target = Existing(temp);
+        // Another owner takes the emptied target, so neither the candidate nor the previous
+        // directory can move there and the publication stops with the previous one displaced.
+        var faults = new Faults(point =>
+        {
+            if (point is { Kind: PublicationFaultKind.Publish, EntryIndex: 1 })
+            {
+                Directory.CreateDirectory(target);
+            }
+        });
+        string transaction;
+        using (var output = new AtomicNewDirectoryWriter(TestBudgets.Create(), target, "test", faults, replace: true))
+        {
+            Write(output, "data.txt", "replacement");
+            Assert.Throws<IOException>(output.Commit);
+            transaction = Path.GetDirectoryName(output.StagingDirectory)!;
+        }
+        Assert.True(Directory.Exists(Path.Combine(transaction, "previous")));
+        Directory.Delete(target);
+        AbandonJournal(transaction, PublicationTransactionState.Publishing);
+        Assert.Equal(1, AtomicOutputSetWriter.RecoverPending(temp.Path));
+        AssertPrevious(target);
+        Assert.False(Directory.Exists(transaction));
+    }
+
+    [Fact]
+    public void RecoverPending_DeletesThePreviousDirectoryOfACommittedReplace()
+    {
+        using var temp = new TempDirectory();
+        string target = Existing(temp);
+        // The cleanup after the commit fails, so the previous directory stays in the transaction.
+        var faults = new Faults(point =>
+        {
+            if (point.Kind == PublicationFaultKind.Cleanup) { throw new IOException("cleanup fault"); }
+        });
+        string transaction;
+        using (var output = new AtomicNewDirectoryWriter(TestBudgets.Create(), target, "test", faults, replace: true))
+        {
+            Write(output, "data.txt", "replacement");
+            output.Commit();
+            transaction = Path.GetDirectoryName(output.StagingDirectory)!;
+        }
+        Assert.True(Directory.Exists(Path.Combine(transaction, "previous")));
+        AbandonJournal(transaction, PublicationTransactionState.Committed);
+        Assert.Equal(1, AtomicOutputSetWriter.RecoverPending(temp.Path));
+        Assert.Equal("replacement", File.ReadAllText(Path.Combine(target, "data.txt")));
+        Assert.False(File.Exists(Path.Combine(target, "old.txt")));
+        Assert.False(Directory.Exists(transaction));
+    }
+
+    [Fact]
+    public void Worker_ReplaceIsCarriedOutByTheParentThatPublishes()
+    {
+        using var temp = new TempDirectory();
+        string target = Existing(temp);
+        string workerRoot = UserStorage.CreateTemporaryDirectory("worker");
+        try
+        {
+            string manifest = Path.Combine(workerRoot, WorkerOutputSession.ManifestName);
+            var worker = new WorkerOutputSession(workerRoot, manifest);
+            using OperationDeadline deadline = OperationDeadline.Start(null);
+            using (var output = new AtomicNewDirectoryWriter(new ResourceBudgetLedger(deadline, outputSession: worker), target, "test", replace: true))
+            {
+                Write(output, "data.txt", "replacement");
+                output.Commit();
+            }
+            worker.SealForPublication();
+            AssertPrevious(target);
+            WorkerOutputPublisher.Publish(manifest, TestBudgets.Create());
+            Assert.Equal("replacement", File.ReadAllText(Path.Combine(target, "data.txt")));
+            Assert.False(File.Exists(Path.Combine(target, "old.txt")));
+            Assert.Empty(Directory.EnumerateDirectories(temp.Path, ".aspose-publication-*"));
+        }
+        finally { UserStorage.TryDeleteTree(workerRoot); }
+    }
+
+    // A directory an earlier publication left at the target: a file and a nested one.
+    private static string Existing(TempDirectory temp)
+    {
+        string target = temp.File("result");
+        Directory.CreateDirectory(Path.Combine(target, "parts"));
+        File.WriteAllText(Path.Combine(target, "old.txt"), "old");
+        File.WriteAllText(Path.Combine(target, "parts", "page.txt"), "old page");
+        return target;
+    }
+
+    private static void AssertPrevious(string target)
+    {
+        Assert.Equal("old", File.ReadAllText(Path.Combine(target, "old.txt")));
+        Assert.Equal("old page", File.ReadAllText(Path.Combine(target, "parts", "page.txt")));
+        Assert.False(File.Exists(Path.Combine(target, "data.txt")));
+    }
+
+    // Rewrites a publication's journal as one whose owner process is gone, which recovery takes over.
+    private static void AbandonJournal(string transaction, PublicationTransactionState expected)
+    {
+        string journalPath = Path.Combine(transaction, AtomicPublicationPlan.JournalName);
+        PublicationJournal current = PublicationJournal.Read(journalPath);
+        Assert.Equal(expected, current.State);
+        new PublicationJournal
+        {
+            Operation = current.Operation, State = current.State, OwnerProcessId = int.MaxValue,
+            OwnerProcessStartUtcTicks = 1, DirectoryOutput = current.DirectoryOutput,
+        }.Write(journalPath);
+    }
+
+    [Fact]
     public void Commit_RejectsALinkWithoutDeletingItsTarget()
     {
         using var temp = new TempDirectory();

@@ -44,8 +44,10 @@ instead of the user's folder.
    point you at likely defects; they do not replace looking. Check clipping,
    overlap, missing glyphs, contrast, charts against their data, and page or
    slide order.
-4. Fix, then review again into a new directory: an existing `--out` fails
-   with `OUTPUT_EXISTS`, because evidence is never overwritten.
+4. Fix, then review again into a new directory, or pass `--overwrite` to
+   replace the earlier evidence: an existing `--out` otherwise fails with
+   `OUTPUT_EXISTS`, and `--overwrite` replaces only an empty directory or one
+   holding `review.json`.
 5. Stop after three rounds and report what remains.
 
 `review` exits 8, with the evidence still written, when coverage is incomplete

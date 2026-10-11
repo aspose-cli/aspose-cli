@@ -10,6 +10,7 @@ namespace Aspose.Cli.Sdk.Extensibility.Commanding;
 public partial class StandardInvocation
 {
     private ResolvedOutput? _output;
+    private ResolvedDirectory? _directoryOutput;
 
     /// <summary>
     /// The file the command publishes, resolved once. Its format is the one <c>--to</c> names
@@ -92,8 +93,36 @@ public partial class StandardInvocation
     /// <c>--overwrite</c>.
     /// </summary>
     /// <exception cref="CliException"><c>OPTION_INVALID</c> when it is missing or a file occupies the path.</exception>
-    public ResolvedDirectory DirectoryOutput =>
+    public ResolvedDirectory DirectoryOutput => _directoryOutput ??=
         new(Declared(_options.OutputDirectory, "output directory").ResolveRequired(_parse, Paths), Overwrite);
+
+    /// <summary>
+    /// Whether the caller asked for a dry run (<c>--dry-run</c>): the command checks its command
+    /// line and the files it names, then stops before it runs. An edit still applies its
+    /// operations in memory; every other command returns <see cref="DryRunResult"/> instead.
+    /// </summary>
+    public bool DryRun => _options.DryRun is { } dryRun && _parse.GetValue(dryRun);
+
+    /// <summary>
+    /// The result of a dry run of a command that is not an edit: what it resolved, which are
+    /// its inputs and its output, and the paths and format it would write.
+    /// </summary>
+    internal DryRunResult DryRunResult()
+    {
+        var checks = new List<string>();
+        if (_inputChecked)
+        {
+            checks.Add(DryRunChecks.Input);
+        }
+
+        string[] paths = _output is { } file ? [file.Path] : _directoryOutput is { } directory ? [directory.Path] : [];
+        if (paths.Length > 0)
+        {
+            checks.Add(DryRunChecks.Output);
+        }
+
+        return Contracts.DryRunResult.Of(checks, paths, _output?.Format.Id);
+    }
 
     /// <summary>Whether the caller named the format with <c>--to</c>.</summary>
     public bool TargetRequested => _options.To is { } to && _parse.GetResult(to) is { Implicit: false };
@@ -167,11 +196,8 @@ public partial class StandardInvocation
         }
 
         string[] ids = [.. writes.Select(static format => format.Id)];
-        throw CliErrors.OptionInvalid(
-            StandardOptionNames.To,
-            "the output format is not named",
-            $"Pass {StandardOptionNames.To} {string.Join(", ", ids)}, or name an {StandardOptionNames.Out} with one of their extensions.",
-            Mistake.Of(string.Empty, ids));
+        throw CliErrors.Usage([$"Name the output format: give {StandardOptionNames.To} ({string.Join(", ", ids)}), "
+            + $"or an {StandardOptionNames.Out} whose extension names one of them."]);
     }
 
     // The formats among those written that declare the file's extension, in declared order.

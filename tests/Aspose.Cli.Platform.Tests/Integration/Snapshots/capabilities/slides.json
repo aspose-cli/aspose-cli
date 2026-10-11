@@ -632,6 +632,25 @@
         "hidden": false,
         "options": [
           {
+            "name": "--dry-run",
+            "aliases": [],
+            "type": "boolean",
+            "minimumArity": 0,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": true,
+            "default": "false",
+            "allowedValues": [
+              "false",
+              "true"
+            ],
+            "secret": false,
+            "valueSource": "command-line",
+            "description": "Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds."
+          },
+          {
             "name": "--encrypt",
             "aliases": [],
             "type": "string",
@@ -799,7 +818,7 @@
             "type": "string",
             "minimumArity": 1,
             "maximumArity": 1,
-            "required": true,
+            "required": false,
             "recursive": false,
             "hidden": false,
             "hasDefault": false,
@@ -821,7 +840,7 @@
             ],
             "secret": false,
             "valueSource": "command-line",
-            "description": "Target presentation export format. PNG and JPEG use 192 DPI; use slides render for custom dimensions."
+            "description": "Target presentation export format. PNG and JPEG use 192 DPI; use slides render for custom dimensions. Default: the --out extension's format."
           }
         ],
         "arguments": [
@@ -847,6 +866,25 @@
         "description": "Create a blank, template-based or Markdown-authored presentation.",
         "hidden": false,
         "options": [
+          {
+            "name": "--dry-run",
+            "aliases": [],
+            "type": "boolean",
+            "minimumArity": 0,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": true,
+            "default": "false",
+            "allowedValues": [
+              "false",
+              "true"
+            ],
+            "secret": false,
+            "valueSource": "command-line",
+            "description": "Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds."
+          },
           {
             "name": "--encrypt",
             "aliases": [],
@@ -1057,7 +1095,7 @@
             ],
             "secret": false,
             "valueSource": "command-line",
-            "description": "Resolve and apply operations in memory without writing."
+            "description": "Check the input, the output and the operations, and apply the operations in memory, without writing any file. A dry run that succeeds does not guarantee that the edit succeeds."
           },
           {
             "name": "--encrypt",
@@ -1280,6 +1318,25 @@
         "description": "Extract bounded presentation media, notes or text.",
         "hidden": false,
         "options": [
+          {
+            "name": "--dry-run",
+            "aliases": [],
+            "type": "boolean",
+            "minimumArity": 0,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": true,
+            "default": "false",
+            "allowedValues": [
+              "false",
+              "true"
+            ],
+            "secret": false,
+            "valueSource": "command-line",
+            "description": "Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds."
+          },
           {
             "name": "--out-dir",
             "aliases": [],
@@ -1880,6 +1937,25 @@
             "description": "Raster resolution (36-1200); ignored for vector formats."
           },
           {
+            "name": "--dry-run",
+            "aliases": [],
+            "type": "boolean",
+            "minimumArity": 0,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": true,
+            "default": "false",
+            "allowedValues": [
+              "false",
+              "true"
+            ],
+            "secret": false,
+            "valueSource": "command-line",
+            "description": "Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds."
+          },
+          {
             "name": "--font-dir",
             "aliases": [],
             "type": "string[]",
@@ -2431,6 +2507,21 @@
         "dryRun": {
           "description": "Whether the batch was only checked, without writing anything.",
           "type": "boolean"
+        },
+        "checked": {
+          "description": "What the dry run checked, in a fixed order; omitted when the edit was written.",
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "enum": [
+              "input",
+              "output",
+              "ops",
+              "targets"
+            ]
+          }
         },
         "applied": {
           "description": "The outcome of every operation, in batch order.",

@@ -1,0 +1,70 @@
+{
+  "name": "review --overwrite replaces only empty or earlier evidence, in a worker too, and never the input or its folder",
+  "files": {
+    "input.pdf": { "fixture": "pdf.pdf" },
+    "evidence/review.json": { "text": "{}" },
+    "evidence/stale.txt": { "text": "from an earlier review" },
+    "worker-evidence/review.json": { "text": "{}" },
+    "worker-evidence/stale.txt": { "text": "from an earlier review" },
+    "notes/notes.txt": { "text": "not evidence" },
+    "docs/report.pdf": { "fixture": "pdf.pdf" }
+  },
+  "steps": [
+    {
+      "args": ["review", "input.pdf", "--out", "evidence"],
+      "expect": {
+        "error": "OUTPUT_EXISTS",
+        "files": { "nothingWritten": true }
+      }
+    },
+    {
+      "args": ["review", "input.pdf", "--out", "notes", "--overwrite"],
+      "expect": {
+        "error": "OUTPUT_EXISTS",
+        "json": [{ "path": "error.hint", "contains": "review.json" }],
+        "files": { "nothingWritten": true }
+      }
+    },
+    {
+      "args": ["review", "docs/report.pdf", "--out", "docs", "--overwrite"],
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "files": { "nothingWritten": true }
+      }
+    },
+    {
+      "args": ["review", "docs/report.pdf", "--out", "docs/report.pdf", "--overwrite"],
+      "expect": {
+        "exitCode": 2,
+        "error": "OPTION_INVALID",
+        "files": { "nothingWritten": true }
+      }
+    },
+    {
+      "args": ["review", "input.pdf", "--out", "evidence", "--overwrite", "--dry-run"],
+      "expect": {
+        "exitCode": 0,
+        "json": [
+          { "path": "dryRun", "equals": true },
+          { "path": "checked", "equals": ["input", "output"] }
+        ],
+        "files": { "nothingWritten": true, "nothingInstalled": true }
+      }
+    },
+    {
+      "args": ["review", "input.pdf", "--out", "evidence", "--overwrite"],
+      "expect": {
+        "exitCode": 0,
+        "files": { "present": ["evidence/review.json", "evidence/index.html"], "absent": ["evidence/stale.txt"] }
+      }
+    },
+    {
+      "args": ["review", "input.pdf", "--out", "worker-evidence", "--overwrite", "--timeout", "300"],
+      "expect": {
+        "exitCode": 0,
+        "files": { "present": ["worker-evidence/review.json", "worker-evidence/index.html"], "absent": ["worker-evidence/stale.txt"] }
+      }
+    }
+  ]
+}

@@ -87,7 +87,11 @@ internal static class LicenseManager
         CompositionRoot.Create(context.Catalog, context.Globals, resourceBudgets: context.ResourceBudgets,
             licenseChanges: changes);
 
-    internal static bool Remove(CommandContext context, string? productId)
+    internal static bool Remove(CommandContext context, string? productId) =>
+        LicenseInstaller.RemoveMany(context.ResourceBudgets, RemovalPaths(context, productId)).Count > 0;
+
+    /// <summary>The saved user license files a removal for <paramref name="productId"/> deletes when they exist.</summary>
+    internal static string[] RemovalPaths(CommandContext context, string? productId)
     {
         bool sharedOnly = string.Equals(productId, "shared", StringComparison.Ordinal);
         ProductDefinition[] products = Select(context.Catalog, sharedOnly ? null : productId);
@@ -99,8 +103,18 @@ internal static class LicenseManager
         {
             paths = paths.Prepend(LicenseResolver.SharedUserLicensePath(context.ProductActivation.ConfigDirectory));
         }
-        return LicenseInstaller.RemoveMany(context.ResourceBudgets, paths).Count > 0;
+        return [.. paths];
     }
+
+    /// <summary>
+    /// The user license files an installation for <paramref name="productId"/> may write: one per
+    /// selected product; the installation writes those of the products the license is valid for.
+    /// </summary>
+    internal static string[] InstallationPaths(CommandContext context, string? productId) =>
+    [
+        .. Select(context.Catalog, productId).Select(product =>
+            LicenseResolver.UserLicensePath(context.ProductActivation.ConfigDirectory, product.Manifest.Id)),
+    ];
 
     private static ProductLicenseStatus Inspect(CommandContext context, ProductDefinition product, ILicenseGate gate)
     {

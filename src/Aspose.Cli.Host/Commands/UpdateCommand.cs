@@ -32,9 +32,12 @@ internal static class UpdateCommand
     {
         var command = new Command("install", "Install a newer release after checking its archive against the release manifest.");
         Argument<string> feed = Feed();
+        Option<bool> dryRun = StandardOptions.DryRunOption();
         command.Arguments.Add(feed);
-        command.SetAction(parse => executor.RunHandoff(parse, globals, context =>
-            UpdateInstaller.Install(host, context, parse.GetValue(feed)!)));
+        command.Options.Add(dryRun);
+        command.SetAction(parse => executor.RunHandoff(parse, globals, context => parse.GetValue(dryRun)
+            ? UpdateInstaller.DryRun(context, parse.GetValue(feed)!)
+            : UpdateInstaller.Install(host, context, parse.GetValue(feed)!)));
         return command.WithInvocationPolicy(new CommandInvocationPolicy(Execution: CommandExecutionOwnership.ParentHandoff));
     }
 

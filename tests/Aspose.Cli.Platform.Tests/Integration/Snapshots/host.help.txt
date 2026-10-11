@@ -337,6 +337,7 @@ Arguments:
 
 Options:
   --product <cells|pdf|slides|words>             Install only for this product instead of detecting compatible products.
+  --dry-run                                      Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds.
   -h, --help                                     Show help and usage information
   --output-format <compact|json|markdown|table>  Output format: json (contract envelopes), compact (the same JSON on one line), table (human text) or markdown. Default: table on a terminal, json when redirected.
   -q, --quiet                                    Suppress warnings and notices on stderr (errors still print).
@@ -357,6 +358,7 @@ Usage:
 
 Options:
   --product <cells|pdf|slides|words>             Remove only this product's saved user license.
+  --dry-run                                      Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds.
   -h, --help                                     Show help and usage information
   --output-format <compact|json|markdown|table>  Output format: json (contract envelopes), compact (the same JSON on one line), table (human text) or markdown. Default: table on a terminal, json when redirected.
   -q, --quiet                                    Suppress warnings and notices on stderr (errors still print).
@@ -545,7 +547,9 @@ Arguments:
   <file>  Source file to review; its content decides which product reads it.
 
 Options:
-  -o, --out <out>                                New evidence directory; defaults to <filename>.review beside the source.
+  -o, --out <out>                                Evidence directory; defaults to <filename>.review beside the source.
+  --overwrite                                    Replace the evidence directory if it already exists.
+  --dry-run                                      Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds.
   --max-items <max-items>                        Maximum visual units rendered and listed in review.json. [default: 256]
   --product <cells|pdf|slides|words>             Product that reads the file; by default, the one whose format the file's content matches.
   --view <auto|pages|sheets|slides|workbook>     Product view; auto uses the product's own view. Review renders only views of images, so it refuses workbook. [default: auto]
@@ -641,6 +645,7 @@ Options:
   --user                                         Install for the current user instead of the project.
   --dir <dir>                                    Project root used without --user. Default: current working directory.
   --target <target>                              Advanced: explicit parent directory; the selected Skill folder is created there.
+  --dry-run                                      Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds.
   -h, --help                                     Show help and usage information
   --output-format <compact|json|markdown|table>  Output format: json (contract envelopes), compact (the same JSON on one line), table (human text) or markdown. Default: table on a terminal, json when redirected.
   -q, --quiet                                    Suppress warnings and notices on stderr (errors still print).
@@ -729,6 +734,7 @@ Arguments:
   <feed>  RELEASE-MANIFEST.json, as a local path or an HTTPS URL. [default: https://github.com/aspose-cli/aspose-cli/releases/latest/download/RELEASE-MANIFEST.json]
 
 Options:
+  --dry-run                                      Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds.
   -h, --help                                     Show help and usage information
   --output-format <compact|json|markdown|table>  Output format: json (contract envelopes), compact (the same JSON on one line), table (human text) or markdown. Default: table on a terminal, json when redirected.
   -q, --quiet                                    Suppress warnings and notices on stderr (errors still print).

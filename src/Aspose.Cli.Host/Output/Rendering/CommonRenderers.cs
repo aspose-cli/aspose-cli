@@ -257,6 +257,15 @@ internal static class CommonRenderers
         }
     }
 
+    public static void Render(DryRunResult dryRun, TableSurface surface)
+    {
+        surface.Out.WriteLine($"dry run: checked {string.Join(", ", dryRun.Checked)}; nothing was written");
+        foreach (string path in dryRun.Paths ?? [])
+        {
+            surface.Out.WriteLine(dryRun.Format is { } format ? $"path: {path} ({format})" : $"path: {path}");
+        }
+    }
+
     public static void Render(SkillInstallResult skill, TableSurface surface) =>
         surface.Out.WriteLine($"installed {skill.Skill} to {skill.Target} ({skill.FileCount} files)");
 

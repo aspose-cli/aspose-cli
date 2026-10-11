@@ -76,6 +76,8 @@ internal static class SkillCommandGroup
         install.Options.Add(userOption);
         install.Options.Add(dirOption);
         install.Options.Add(targetOption);
+        Option<bool> dryRun = StandardOptions.DryRunOption();
+        install.Options.Add(dryRun);
 
         install.SetAction(parseResult => executor.Run(parseResult, globals, context =>
         {
@@ -105,9 +107,10 @@ internal static class SkillCommandGroup
                     parseResult.GetValue(userOption),
                     parseResult.GetValue(dirOption),
                     context.Paths.BaseDirectory);
-            return package.InstallInto(
-                context.ResourceBudgets,
-                Path.Combine(parent, package.Name));
+            string directory = Path.Combine(parent, package.Name);
+            return parseResult.GetValue(dryRun)
+                ? DryRunResult.Of([DryRunChecks.Output], [package.CheckInstallTarget(directory)])
+                : package.InstallInto(context.ResourceBudgets, directory);
         }));
 
         return install;

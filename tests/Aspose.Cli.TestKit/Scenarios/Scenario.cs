@@ -146,6 +146,13 @@ public sealed record ScenarioFiles
 
     /// <summary>When true, the step creates, changes and deletes no file at all.</summary>
     public bool? NothingWritten { get; init; }
+
+    /// <summary>
+    /// When true, the step creates, changes and deletes no file in the user configuration
+    /// directory or in the CLI's installation directory, which <see cref="NothingWritten"/>
+    /// judges too: the places an installing command writes.
+    /// </summary>
+    public bool? NothingInstalled { get; init; }
 }
 
 /// <summary>

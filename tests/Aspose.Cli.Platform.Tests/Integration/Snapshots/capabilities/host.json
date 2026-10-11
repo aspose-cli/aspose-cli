@@ -1798,6 +1798,71 @@
         }
       }
     },
+    "v2/common/dry-run-result": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "$id": "https://schemas.aspose.com/aspose-cli/v2/common/dry-run-result.schema.json",
+      "description": "Result of --dry-run on a command that writes files, other than an edit, which applies its operations in memory and reports them in its own result: the command line and the files it names were checked, and nothing ran or was written. A dry run that succeeds does not guarantee that the command succeeds.",
+      "type": "object",
+      "required": [
+        "schema",
+        "schemaVersion",
+        "dryRun",
+        "checked"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "schema": {
+          "description": "URI of the JSON schema this result conforms to.",
+          "const": "https://schemas.aspose.com/aspose-cli/v2/common/dry-run-result.schema.json"
+        },
+        "schemaVersion": {
+          "description": "Version of this result contract.",
+          "const": 2
+        },
+        "dryRun": {
+          "description": "Always true: the command ran nothing and wrote no file.",
+          "type": "boolean",
+          "enum": [
+            true
+          ]
+        },
+        "checked": {
+          "description": "What the dry run checked, in a fixed order.",
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "enum": [
+              "input",
+              "output",
+              "ops",
+              "targets"
+            ]
+          }
+        },
+        "paths": {
+          "description": "The absolute paths the command would write, replace or delete: an output file, beside which a command that writes several parts numbers them, or a directory it writes into. Omitted when the command would write nothing, such as a compare without an output.",
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          }
+        },
+        "format": {
+          "description": "The format id the command would write its output file in; omitted for a directory.",
+          "type": "string",
+          "minLength": 1
+        },
+        "warnings": {
+          "description": "Warnings the agent is expected to act on (for example EVALUATION_MODE: tell the user about the evaluation watermark). Omitted when empty.",
+          "type": "array",
+          "items": {
+            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
+          }
+        }
+      }
+    },
     "v2/common/error": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "$id": "https://schemas.aspose.com/aspose-cli/v2/common/error.schema.json",
@@ -4259,6 +4324,25 @@
       "hidden": false,
       "options": [
         {
+          "name": "--dry-run",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hidden": false,
+          "hasDefault": true,
+          "default": "false",
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds."
+        },
+        {
           "name": "--product",
           "aliases": [],
           "type": "string",
@@ -4301,6 +4385,25 @@
       "description": "Remove saved user licenses; env and project sources are left untouched.",
       "hidden": false,
       "options": [
+        {
+          "name": "--dry-run",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hidden": false,
+          "hasDefault": true,
+          "default": "false",
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds."
+        },
         {
           "name": "--product",
           "aliases": [],
@@ -4713,6 +4816,25 @@
           "description": "Report only findings of this check (a code from capabilities review.checks); repeat for several. Errors of other checks then do not fail the review."
         },
         {
+          "name": "--dry-run",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hidden": false,
+          "hasDefault": true,
+          "default": "false",
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds."
+        },
+        {
           "name": "--font-dir",
           "aliases": [],
           "type": "string[]",
@@ -4758,7 +4880,26 @@
           "allowedValues": [],
           "secret": false,
           "valueSource": "command-line",
-          "description": "New evidence directory; defaults to <filename>.review beside the source."
+          "description": "Evidence directory; defaults to <filename>.review beside the source."
+        },
+        {
+          "name": "--overwrite",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hidden": false,
+          "hasDefault": true,
+          "default": "false",
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Replace the evidence directory if it already exists."
         },
         {
           "name": "--password",
@@ -4937,6 +5078,25 @@
           "description": "Project root used without --user. Default: current working directory."
         },
         {
+          "name": "--dry-run",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hidden": false,
+          "hasDefault": true,
+          "default": "false",
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds."
+        },
+        {
           "name": "--host",
           "aliases": [],
           "type": "string",
@@ -5084,7 +5244,27 @@
       "aliases": [],
       "description": "Install a newer release after checking its archive against the release manifest.",
       "hidden": false,
-      "options": [],
+      "options": [
+        {
+          "name": "--dry-run",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hidden": false,
+          "hasDefault": true,
+          "default": "false",
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds."
+        }
+      ],
       "arguments": [
         {
           "name": "feed",

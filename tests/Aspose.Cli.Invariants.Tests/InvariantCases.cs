@@ -376,9 +376,11 @@ internal static class InvariantCases
         }
     }
 
+    // An edit's dry run beside its real runs, each mode of its mutation output; C-R11 runs the
+    // dry run of every other writing command.
     private static IEnumerable<InvariantCase> DryRunCases(CliCommand command)
     {
-        if (!command.Has("--dry-run") || command.Product is not { } product)
+        if (!command.Has("--dry-run") || !command.Has("--in-place") || command.Product is not { } product)
         {
             yield break;
         }

@@ -75,6 +75,10 @@ public sealed class CommonSchemaContractTests
             Assert.Equal(
                 UriPrefix + id + ".schema.json",
                 document["$id"]?.GetValue<string>());
+            if (document["properties"]?["schemaVersion"] is { } version)
+            {
+                Assert.True(version["const"]?.GetValue<int>() == 2, $"{id} states schemaVersion {version["const"]}, not the 2 of its v2 id.");
+            }
         }
     }
 

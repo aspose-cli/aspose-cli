@@ -195,6 +195,25 @@ internal sealed record BundledSkill(
         return output.ToArray();
     }
 
+    /// <summary>
+    /// Checks what <see cref="InstallInto"/> checks before it writes: the target is absent, empty
+    /// or a Skill this CLI installed, under no link; returns the absolute target.
+    /// </summary>
+    public string CheckInstallTarget(string directory)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(directory);
+        string target = Path.GetFullPath(directory);
+        string parent = Path.GetDirectoryName(target)
+            ?? throw ManagedSkillConflict(target, "the target has no parent directory");
+        if (Directory.Exists(parent))
+        {
+            EnsureNoReparsePoint(parent);
+        }
+
+        ValidateExistingTarget(target);
+        return target;
+    }
+
     public SkillInstallResult InstallInto(
         ResourceBudgetLedger resourceBudgets,
         string directory)

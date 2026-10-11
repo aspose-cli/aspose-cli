@@ -87,7 +87,7 @@ internal static class ConvertCommand
                 "cells convert erp-export.csv --to xlsx --encoding gb18030",
                 "cells convert partner-orders.csv --to xlsx --culture de-DE",
                 "cells convert book.xlsx --to csv --bom --out for-excel.csv",
-                "cells convert book.xlsx --to pdf --out report.pdf",
+                "cells convert book.xlsx --out report.pdf",
                 "cells convert book.xlsx --to pdf --font-dir fonts --out report.pdf",
             ],
         };

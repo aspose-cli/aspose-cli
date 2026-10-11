@@ -5,8 +5,12 @@ using Aspose.Cli.Sdk.Errors;
 namespace Aspose.Cli.Sdk.IO;
 
 /// <summary>
-/// Publishes one new immutable directory with complete-or-absent visibility.
-/// The caller owns the candidate contents; replacement and mixed file/directory output sets are unsupported.
+/// Publishes one immutable directory with complete-or-absent visibility: a new one, or, in
+/// replacement mode, one that replaces the directory at the target. A replaced directory is
+/// moved into the publication's transaction directory before the candidate takes its place and
+/// is deleted only after that rename commits; until then the journal lets a failed or abandoned
+/// publication put it back. The caller owns the candidate contents; mixed file/directory output
+/// sets are unsupported.
 /// </summary>
 public sealed class AtomicNewDirectoryWriter : IDisposable
 {
@@ -19,15 +23,25 @@ public sealed class AtomicNewDirectoryWriter : IDisposable
     private readonly string _anchor;
     private readonly FilePhysicalIdentity? _anchorIdentity;
     private readonly PublicationJournal _journal;
+    private readonly bool _replace;
     private NewDirectoryOutput? _output;
     private bool _completed;
     private bool _disposed;
 
-    public AtomicNewDirectoryWriter(ResourceBudgetLedger budgets, string targetDirectory, string operation)
-        : this(budgets, targetDirectory, operation, NoPublicationFaultInjector.Instance) { }
+    /// <summary>Starts the publication of a directory at <paramref name="targetDirectory"/>.</summary>
+    /// <param name="budgets">The invocation's budgets; in a worker, its output session retains the candidate for the parent.</param>
+    /// <param name="targetDirectory">The directory to publish.</param>
+    /// <param name="operation">The operation the journal names.</param>
+    /// <param name="replace">
+    /// Whether the publication replaces a directory that exists at the target (<c>--overwrite</c>);
+    /// otherwise an existing target is refused with <c>OUTPUT_EXISTS</c>. A file at the target is
+    /// refused either way.
+    /// </param>
+    public AtomicNewDirectoryWriter(ResourceBudgetLedger budgets, string targetDirectory, string operation, bool replace = false)
+        : this(budgets, targetDirectory, operation, NoPublicationFaultInjector.Instance, replace) { }
 
     internal AtomicNewDirectoryWriter(ResourceBudgetLedger budgets, string targetDirectory, string operation,
-        IPublicationFaultInjector faults)
+        IPublicationFaultInjector faults, bool replace = false)
     {
         _budgets = budgets ?? throw new ArgumentNullException(nameof(budgets));
         ArgumentException.ThrowIfNullOrWhiteSpace(operation);
@@ -36,7 +50,9 @@ public sealed class AtomicNewDirectoryWriter : IDisposable
         budgets.ThrowIfFailed();
         budgets.Deadline.ThrowIfExpired("directory-start");
         TargetDirectory = Path.TrimEndingDirectorySeparator(Path.GetFullPath(targetDirectory));
-        NewDirectoryPublication.EnsureAbsent(TargetDirectory);
+        _replace = replace;
+        if (replace) { OutputPathValidator.EnsureSafeDirectory(TargetDirectory); }
+        else { NewDirectoryPublication.EnsureAbsent(TargetDirectory); }
         string parent = Path.GetDirectoryName(TargetDirectory)
             ?? throw CliErrors.OutputUnwritable(TargetDirectory, "the directory has no parent");
         _anchor = parent;
@@ -58,6 +74,9 @@ public sealed class AtomicNewDirectoryWriter : IDisposable
     public string TargetDirectory { get; }
     public string StagingDirectory { get; }
 
+    // Where a replaced directory waits, inside the transaction, until the replacement commits.
+    private string PreviousDirectory => NewDirectoryPublication.PreviousPath(_transaction);
+
     /// <summary>Seals the candidate and either retains it for the parent or publishes it once.</summary>
     public void Commit()
     {
@@ -68,7 +87,7 @@ public sealed class AtomicNewDirectoryWriter : IDisposable
         NewDirectoryPublication.EnsureAnchor(_transaction, _transactionIdentity);
         NewDirectoryPublication.EnsureAnchor(StagingDirectory, _candidateIdentity);
         DirectoryTreeSnapshot tree = NewDirectoryPublication.Capture(StagingDirectory, _budgets);
-        _output = new NewDirectoryOutput(TargetDirectory, StagingDirectory, _anchor, _anchorIdentity, _transactionIdentity, tree);
+        _output = new NewDirectoryOutput(TargetDirectory, StagingDirectory, _anchor, _anchorIdentity, _transactionIdentity, tree, _replace);
         _budgets.Consume(ResourceBudgetKinds.OutputSetEntries, 1, "items", "directory-seal");
         _budgets.Consume(ResourceBudgetKinds.OutputSetDirectories, tree.Directories.Count + _parents.Declared.Count(), "items", "directory-seal");
         _budgets.Consume(ResourceBudgetKinds.OutputBytes, tree.Files.Sum(file => file.Snapshot.Length), "bytes", "directory-seal");
@@ -87,17 +106,44 @@ public sealed class AtomicNewDirectoryWriter : IDisposable
             Path.GetDirectoryName(TargetDirectory)!, [Path.GetDirectoryName(TargetDirectory)!], _budgets.Deadline);
         NewDirectoryPublication.EnsureAnchor(_anchor, _anchorIdentity);
         lease.EnsureDirectoryUnchanged();
-        NewDirectoryPublication.EnsureAbsent(TargetDirectory);
+        DirectoryTreeSnapshot? previous = _replace ? CapturePrevious() : null;
+        if (previous is null) { NewDirectoryPublication.EnsureAbsent(TargetDirectory); }
         NewDirectoryPublication.ValidateTree(StagingDirectory, tree, _budgets.Deadline);
+        if (previous is not null)
+        {
+            // The journal names the replaced tree before it moves, so recovery can put it back.
+            _output = _output with { Previous = previous };
+            _journal.DirectoryOutput = _output;
+            _budgets.EnsureWithin(ResourceBudgetKinds.PublicationMetadataBytes,
+                _journal.EnsureLifecycleCapacity(JournalPath), "bytes", "directory-seal");
+        }
+
         Persist(PublicationTransactionState.Publishing);
         _faults.Hit(new PublicationFaultPoint(PublicationFaultKind.Publish, 0, TargetDirectory));
         _budgets.Deadline.ThrowIfExpired("directory-rename");
         NewDirectoryPublication.EnsureAnchor(_anchor, _anchorIdentity);
         lease.EnsureDirectoryUnchanged();
-        NewDirectoryPublication.EnsureAbsent(TargetDirectory);
+        if (previous is null) { NewDirectoryPublication.EnsureAbsent(TargetDirectory); }
+        else { NewDirectoryPublication.ValidateTree(TargetDirectory, previous, _budgets.Deadline); }
         NewDirectoryPublication.ValidateTree(StagingDirectory, tree, _budgets.Deadline);
         _budgets.Deadline.ThrowIfExpired("directory-rename");
-        Directory.Move(StagingDirectory, TargetDirectory);
+        try
+        {
+            if (previous is not null)
+            {
+                Directory.Move(TargetDirectory, PreviousDirectory);
+                _faults.Hit(new PublicationFaultPoint(PublicationFaultKind.Publish, 1, TargetDirectory));
+            }
+
+            Directory.Move(StagingDirectory, TargetDirectory);
+        }
+        catch when (previous is not null)
+        {
+            // The candidate did not take the target's place, so the replaced directory returns.
+            TryRestorePrevious();
+            throw;
+        }
+
         // Rename is the commit point: later cancellation or journal/cleanup failure cannot undo success.
         _completed = true;
         FilePublicationInheritance.TryReset(TargetDirectory);
@@ -109,6 +155,34 @@ public sealed class AtomicNewDirectoryWriter : IDisposable
     }
 
     private string JournalPath => Path.Combine(_transaction, AtomicPublicationPlan.JournalName);
+
+    // The directory the candidate replaces, or null when the target does not exist.
+    private DirectoryTreeSnapshot? CapturePrevious()
+    {
+        if (!Directory.Exists(TargetDirectory)) { return null; }
+        try { return NewDirectoryPublication.Capture(TargetDirectory, deadline: _budgets.Deadline); }
+        catch (InvalidDataException error)
+        {
+            throw CliErrors.OutputUnwritable(TargetDirectory, $"the existing directory cannot be replaced: {error.Message}", error);
+        }
+    }
+
+    // Moves a replaced directory back to the target the candidate did not take; false when it stays displaced.
+    private bool TryRestorePrevious()
+    {
+        if (!Directory.Exists(PreviousDirectory)) { return true; }
+        try
+        {
+            if (Directory.Exists(TargetDirectory) || File.Exists(TargetDirectory)) { return false; }
+            Directory.Move(PreviousDirectory, TargetDirectory);
+            return true;
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            Trace.TraceWarning("A replaced directory stays in its publication transaction for recovery ({0}).", error.GetType().Name);
+            return false;
+        }
+    }
 
     private void Persist(PublicationTransactionState state)
     {
@@ -130,12 +204,19 @@ public sealed class AtomicNewDirectoryWriter : IDisposable
         try
         {
             _faults.Hit(new PublicationFaultPoint(PublicationFaultKind.Cleanup, -1, _transaction));
+            // A replaced directory that cannot return keeps the candidate and the journal, so
+            // recovery finds the publication as it stopped and puts the directory back.
+            if (!_completed && !TryRestorePrevious()) { return; }
             if (Directory.Exists(StagingDirectory))
             {
                 NewDirectoryPublication.EnsureAnchor(_transaction, _transactionIdentity);
                 NewDirectoryPublication.EnsureAnchor(StagingDirectory, _candidateIdentity);
                 DirectoryTreeSnapshot tree = _output?.Tree ?? NewDirectoryPublication.Capture(StagingDirectory);
                 NewDirectoryPublication.DeleteTree(StagingDirectory, tree);
+            }
+            if (_completed && _output?.Previous is { } previous && Directory.Exists(PreviousDirectory))
+            {
+                NewDirectoryPublication.DeleteTree(PreviousDirectory, previous);
             }
             NewDirectoryPublication.DeleteTransaction(_transaction, _transactionIdentity);
         }
@@ -148,14 +229,23 @@ internal sealed record DirectoryOutputFile(string Path, FilePublicationSnapshot 
 internal sealed record DirectoryOutputDirectory(string Path, FilePhysicalIdentity? Identity);
 internal sealed record DirectoryTreeSnapshot(
     IReadOnlyList<DirectoryOutputFile> Files, IReadOnlyList<DirectoryOutputDirectory> Directories);
+/// <summary>
+/// One directory publication: the candidate tree staged for the target and, when it replaces a
+/// directory (<see cref="Replace"/>), the tree it replaces (<see cref="Previous"/>), recorded
+/// before that directory moves into the transaction.
+/// </summary>
 internal sealed record NewDirectoryOutput(string Target, string Staged, string ParentAnchor,
-    FilePhysicalIdentity? ParentIdentity, FilePhysicalIdentity? TransactionIdentity, DirectoryTreeSnapshot Tree);
+    FilePhysicalIdentity? ParentIdentity, FilePhysicalIdentity? TransactionIdentity, DirectoryTreeSnapshot Tree,
+    bool Replace = false, DirectoryTreeSnapshot? Previous = null);
 
 /// <summary>Bounded tree validation shared by directory production, worker transport and recovery.</summary>
 internal static class NewDirectoryPublication
 {
     internal const int MaximumFiles = PublicationLimits.MaximumDirectoryFiles;
     private static StringComparer Comparer => WorkerManifestStore.PathComparer;
+
+    /// <summary>Where a replaced directory waits inside its publication transaction.</summary>
+    internal static string PreviousPath(string transaction) => Path.Combine(transaction, "previous");
 
     internal static DirectoryTreeSnapshot Capture(string root, ResourceBudgetLedger? budgets = null, OperationDeadline? deadline = null)
     {
@@ -231,6 +321,12 @@ internal static class NewDirectoryPublication
             dirs.Add(directory.Path);
         }
         if (!dirs.Contains(".")) { throw new InvalidDataException("The directory output root is missing."); }
+        if (output.Previous is { } previous && (!output.Replace || previous.Files is null || previous.Directories is null
+            || previous.Files.Count > MaximumFiles || previous.Directories.Count is < 1 or > PublicationLimits.MaximumDirectories
+            || previous.Directories.Any(static directory => directory is null || !SafeRelative(directory.Path, allowRoot: true))
+            || previous.Files.Any(static file => file is null || !SafeRelative(file.Path, allowRoot: false)
+                || file.Snapshot is null || !file.Snapshot.Exists || !file.Snapshot.IsStructurallyValid())))
+        { throw new InvalidDataException("Invalid replaced directory tree."); }
         foreach (DirectoryOutputFile file in output.Tree.Files)
         {
             if (file is null || !SafeRelative(file.Path, allowRoot: false) || !paths.Add(file.Path)
@@ -365,11 +461,24 @@ internal static class NewDirectoryPublication
         { throw new InvalidDataException("The directory publication journal changed before recovery."); }
         EnsureAnchor(output.ParentAnchor, output.ParentIdentity);
         FilePhysicalIdentity? identity = output.TransactionIdentity;
-        if (Directory.Exists(output.Staged)) { DeleteTree(output.Staged, output.Tree); }
+        string previous = PreviousPath(transaction);
+        if (Directory.Exists(output.Staged))
+        {
+            if (output.Previous is { } replaced && Directory.Exists(previous))
+            {
+                // The replaced directory moved out but the candidate never took its place: it returns.
+                ValidateTree(previous, replaced, deadline);
+                if (Directory.Exists(output.Target) || File.Exists(output.Target))
+                { throw new IOException("The target of an interrupted replacement is occupied; the replaced directory was preserved."); }
+                Directory.Move(previous, output.Target);
+            }
+            DeleteTree(output.Staged, output.Tree);
+        }
         else if (journal.State is PublicationTransactionState.Publishing or PublicationTransactionState.Committed)
         {
             // A missing candidate with the exact original tree at the target proves rename committed.
             ValidateTree(output.Target, output.Tree, deadline);
+            if (output.Previous is { } replaced && Directory.Exists(previous)) { DeleteTree(previous, replaced); }
         }
         DeleteTransaction(transaction, identity);
         return true;

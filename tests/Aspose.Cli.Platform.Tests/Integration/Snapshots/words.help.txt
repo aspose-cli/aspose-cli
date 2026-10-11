@@ -54,6 +54,7 @@ Options:
   --author <author>                              Author of the redline's revisions; default: Aspose CLI.
   -o, --out <out>                                Optional redline output; its extension selects the format, such as .docx or .pdf.
   --overwrite                                    Replace the output file if it already exists.
+  --dry-run                                      Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds.
   --left-password <left-password>                Password for the original document. Discouraged: visible in the process list; prefer --left-password-env.
   --left-password-env <left-password-env>        Name of an environment variable holding the password for the original document.
   --left-password-stdin                          Read the password for the original document from the first line of stdin.
@@ -87,10 +88,11 @@ Arguments:
   <file>  Document to open.
 
 Options:
-  --to <to> (REQUIRED)                           Target document format. Values: azw3, doc, docm, docx, dot, dotm, dotx, epub, flatopc, html, html-fixed, md, mhtml, mobi, odt, openxps, ott, pcl, pdf, ps, rtf, txt, wordml, xps.
+  --to <to>                                      Target document format. Default: the --out extension's format. Values: azw3, doc, docm, docx, dot, dotm, dotx, epub, flatopc, html, html-fixed, md, mhtml, mobi, odt, openxps, ott, pcl, pdf, ps, rtf, txt, wordml, xps.
   --pages <pages>                                Pages to process: 1-based numbers and ranges such as 1-3,7,9-, or all. Default: every page. Only with fixed-page targets.
   -o, --out <out>                                Output path; defaults to a sibling using the target extension.
   --overwrite                                    Replace the output file if it already exists.
+  --dry-run                                      Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds.
   --password <password>                          Password for the document. Discouraged: visible in the process list; prefer --password-env.
   --password-env <password-env>                  Name of an environment variable holding the password for the document.
   --password-stdin                               Read the password for the document from the first line of stdin.
@@ -131,6 +133,7 @@ Options:
   --template <template>                          Document whose styles, page setup, headers and footers the new document uses; its body is replaced by --markdown or --text content.
   --title <title>                                Set the built-in title property.
   --overwrite                                    Replace the output file if it already exists.
+  --dry-run                                      Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds.
   --encrypt <encrypt>                            Password for the output document. Discouraged: visible in the process list; prefer --encrypt-env.
   --encrypt-env <encrypt-env>                    Name of an environment variable holding the password for the output document.
   --encrypt-stdin                                Read the password for the output document from the first line of stdin.
@@ -164,7 +167,6 @@ Options:
   --ops <ops>                                    The ops JSON, an object with ops or the bare array of operations: a path to the document, '-' to read it from stdin, or the document itself when the value starts with { or [ (inline). To name a file whose name starts with '[', prefix it with ./ . At most 10000 operations. Vocabulary: aspose-cli schema v2/words/ops.
   --set <set>                                    Replace a bookmark's text as bookmark:NAME=TEXT; repeatable, applied after the --ops document. Example: --set "bookmark:ClientName=Contoso Ltd.".
   --if-match <if-match>                          Require the current input SHA-256 fingerprint before editing.
-  --dry-run                                      Resolve and apply operations in memory without writing.
   --best-effort                                  Keep successful operations, report failures, and exit 8.
   --verify                                       Compare the staged document after save and reopen to report semantic verification.
   --track-changes                                Track this batch as revisions.
@@ -173,6 +175,7 @@ Options:
   --overwrite                                    Replace the output file if it already exists.
   --in-place                                     Modify the input file itself atomically.
   --backup                                       Create a non-overwriting backup before an in-place write.
+  --dry-run                                      Check the input, the output and the operations, and apply the operations in memory, without writing any file. A dry run that succeeds does not guarantee that the edit succeeds.
   --password <password>                          Password for the document. Discouraged: visible in the process list; prefer --password-env.
   --password-env <password-env>                  Name of an environment variable holding the password for the document.
   --password-stdin                               Read the password for the document from the first line of stdin.
@@ -213,6 +216,7 @@ Options:
   --what <comments|images|tables|text> (REQUIRED)  images, comments, text (the visible block text, one line per paragraph or table row) or tables (one CSV file per body table).
   --out-dir <out-dir> (REQUIRED)                   Safe extraction directory.
   --overwrite                                      Replace the output file if it already exists.
+  --dry-run                                        Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds.
   --password <password>                            Password for the document. Discouraged: visible in the process list; prefer --password-env.
   --password-env <password-env>                    Name of an environment variable holding the password for the document.
   --password-stdin                                 Read the password for the document from the first line of stdin.
@@ -372,6 +376,7 @@ Options:
   --dpi <dpi>                                    Raster resolution (36-1200); ignored for vector formats. [default: 192]
   -o, --out <out>                                Output path; several pages write <stem>.<page>.<ext> beside it.
   --overwrite                                    Replace the output file if it already exists.
+  --dry-run                                      Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds.
   --password <password>                          Password for the document. Discouraged: visible in the process list; prefer --password-env.
   --password-env <password-env>                  Name of an environment variable holding the password for the document.
   --password-stdin                               Read the password for the document from the first line of stdin.
@@ -407,6 +412,7 @@ Options:
   --pages <pages>                                Pages to process: 1-based numbers and ranges such as 1-3,7,9-, or all. Default: every page. Only with --by pages.
   --out-dir <out-dir> (REQUIRED)                 Directory that receives the parts, named <stem>.<n>.docx.
   --overwrite                                    Replace the output file if it already exists.
+  --dry-run                                      Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds.
   --password <password>                          Password for the document. Discouraged: visible in the process list; prefer --password-env.
   --password-env <password-env>                  Name of an environment variable holding the password for the document.
   --password-stdin                               Read the password for the document from the first line of stdin.

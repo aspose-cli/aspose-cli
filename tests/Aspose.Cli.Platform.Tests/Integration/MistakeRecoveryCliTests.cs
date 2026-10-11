@@ -118,6 +118,9 @@ public sealed class MistakeRecoveryCliTests : IDisposable
     }
 
     [Theory]
+    [InlineData("words convert a.docx --out m3.docz", ".docx")]
+    [InlineData("pdf convert a.pdf --out t3.dox", ".docx")]
+    [InlineData("cells convert a.xlsx --out b.xslx", ".xlsx")]
     [InlineData("cells edit a.xlsx --set Sheet1!A1=5 --out b.xslx", ".xlsx")]
     public void MistypedOutputExtension_SuggestsTheExtensionMeant(string commandLine, string suggestion)
     {

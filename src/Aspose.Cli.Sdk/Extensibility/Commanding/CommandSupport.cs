@@ -190,9 +190,26 @@ internal sealed class OutputFileOption
         IReadOnlyList<string?> inputPaths)
     {
         ArgumentNullException.ThrowIfNull(paths);
+        RefuseStandardStream(output, parameter);
         string resolved = paths.ResolveOutput(output);
         EnsureNotInput(resolved, parameter, inPlaceAvailable, inputPaths);
         return resolved;
+    }
+
+    /// <summary>
+    /// Refuses an output named <c>-</c>: <c>-</c> names standard input only, and every output
+    /// is a file or a directory, never standard output.
+    /// </summary>
+    /// <param name="output">The output as given.</param>
+    /// <param name="parameter">The option or argument that names it.</param>
+    /// <param name="directory">Whether the output is a directory.</param>
+    /// <exception cref="CliException"><c>OPTION_INVALID</c> for <c>-</c>.</exception>
+    internal static void RefuseStandardStream(string output, string parameter, bool directory = false)
+    {
+        if (output == "-")
+        {
+            throw CliErrors.OutputIsStandardStream(parameter, directory);
+        }
     }
 
     /// <summary>Rejects a resolved output, named by the caller or derived, that is one of the inputs.</summary>

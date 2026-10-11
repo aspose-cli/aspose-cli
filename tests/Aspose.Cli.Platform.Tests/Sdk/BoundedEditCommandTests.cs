@@ -360,8 +360,8 @@ public sealed class BoundedEditCommandTests : IDisposable
 
         Assert.Equal(
             [
-                "--ops", "--if-match", "--dry-run", "--best-effort", "--verify", "--fast",
-                "--out", "--overwrite", "--in-place", "--backup",
+                "--ops", "--if-match", "--best-effort", "--verify", "--fast",
+                "--out", "--overwrite", "--in-place", "--backup", "--dry-run",
                 "--password", "--password-env", "--password-stdin", "--encrypt", "--encrypt-env", "--encrypt-stdin", "--font-dir",
             ],
             command.Options.Select(static option => option.Name));

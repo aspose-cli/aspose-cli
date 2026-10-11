@@ -308,17 +308,14 @@ internal static class UpdateClient
                 ?? UserStorage.CreateTemporaryDirectory("update-feed");
             try
             {
-                if (!Path.IsPathRooted(feed) && Uri.TryCreate(feed, UriKind.Absolute, out var uri))
+                (Uri? uri, string? path) = Locate(feed, baseDirectory);
+                if (uri is not null)
                 {
-                    ValidateHttpsFeedUri(uri);
                     string manifest = Path.Combine(root, ReleaseManifest.FileName);
                     Download(uri, manifest, MaximumManifestBytes, budgets.Deadline);
                     return new FeedFiles(manifest, root, uri, budgets.Deadline);
                 }
-                string path = Path.GetFullPath(feed, baseDirectory);
-                if (Directory.Exists(path)) { path = Path.Combine(path, ReleaseManifest.FileName); }
-                EnsureLocal(path);
-                return new FeedFiles(path, root, null, budgets.Deadline);
+                return new FeedFiles(path!, root, null, budgets.Deadline);
             }
             catch { DeleteTree(root); throw; }
         }
@@ -409,6 +406,23 @@ internal static class UpdateClient
             }
         }
 
+        /// <summary>
+        /// The feed's manifest: an HTTPS URL, checked for its form only, or a local manifest file
+        /// (a directory names the manifest in it), checked to exist on a fixed local disk.
+        /// </summary>
+        internal static (Uri? Uri, string? Path) Locate(string feed, string baseDirectory)
+        {
+            if (!Path.IsPathRooted(feed) && Uri.TryCreate(feed, UriKind.Absolute, out var uri))
+            {
+                ValidateHttpsFeedUri(uri);
+                return (uri, null);
+            }
+            string path = Path.GetFullPath(feed, baseDirectory);
+            if (Directory.Exists(path)) { path = Path.Combine(path, ReleaseManifest.FileName); }
+            EnsureLocal(path);
+            return (null, path);
+        }
+
         private static void EnsureLocal(string path)
         {
             string full = Path.GetFullPath(path);
@@ -446,6 +460,9 @@ internal static class UpdateClient
             }
         }
     }
+
+    /// <summary>Checks a feed without reading it: an HTTPS URL's form, or that a local manifest exists.</summary>
+    internal static void CheckFeed(string feed, string baseDirectory) => _ = FeedFiles.Locate(feed, baseDirectory);
 
     internal static void ValidateHttpsFeedUri(Uri uri)
     {

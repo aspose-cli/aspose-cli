@@ -787,209 +787,6 @@
       "actual": "cells compare --compare: a banned name; what a compare compares is --content."
     },
     {
-      "case": "C-R13 | cells convert --out out.pdf without --to",
-      "invariant": "C-R13",
-      "rule": "C-R13",
-      "cause": "convert-requires-to",
-      "actual": "exit 2 USAGE_ERROR, expected 0: Option '--to' is required.; out.pdf does not exist"
-    },
-    {
-      "case": "C-R13 | cells convert declared",
-      "invariant": "C-R13",
-      "rule": "C-R13",
-      "cause": "convert-requires-to",
-      "actual": "cells convert --to is required; the --out extension implies it."
-    },
-    {
-      "case": "C-R13 | pdf convert --out out.docx without --to",
-      "invariant": "C-R13",
-      "rule": "C-R13",
-      "cause": "convert-requires-to",
-      "actual": "exit 2 USAGE_ERROR, expected 0: Option '--to' is required.; out.docx does not exist"
-    },
-    {
-      "case": "C-R13 | pdf convert declared",
-      "invariant": "C-R13",
-      "rule": "C-R13",
-      "cause": "convert-requires-to",
-      "actual": "pdf convert --to is required; the --out extension implies it."
-    },
-    {
-      "case": "C-R13 | slides convert --out out.pdf without --to",
-      "invariant": "C-R13",
-      "rule": "C-R13",
-      "cause": "convert-requires-to",
-      "actual": "exit 2 USAGE_ERROR, expected 0: Option '--to' is required.; out.pdf does not exist"
-    },
-    {
-      "case": "C-R13 | slides convert declared",
-      "invariant": "C-R13",
-      "rule": "C-R13",
-      "cause": "convert-requires-to",
-      "actual": "slides convert --to is required; the --out extension implies it."
-    },
-    {
-      "case": "C-R13 | words convert --out out.pdf without --to",
-      "invariant": "C-R13",
-      "rule": "C-R13",
-      "cause": "convert-requires-to",
-      "actual": "exit 2 USAGE_ERROR, expected 0: Option '--to' is required.; out.pdf does not exist"
-    },
-    {
-      "case": "C-R13 | words convert declared",
-      "invariant": "C-R13",
-      "rule": "C-R13",
-      "cause": "convert-requires-to",
-      "actual": "words convert --to is required; the --out extension implies it."
-    },
-    {
-      "case": "same-name-option | --to",
-      "invariant": "same-name-option",
-      "rule": "C-R07",
-      "cause": "convert-requires-to",
-      "actual": "--to: 2 different required flags: required (cells convert, pdf convert, slides convert, words convert) | optional (cells render, pdf extract, pdf render, slides render, words render)"
-    },
-    {
-      "case": "C-R11 | cells convert declared",
-      "invariant": "C-R11",
-      "rule": "C-R11",
-      "cause": "dry-run-only-on-edit",
-      "actual": "cells convert writes files but has no --dry-run."
-    },
-    {
-      "case": "C-R11 | cells create declared",
-      "invariant": "C-R11",
-      "rule": "C-R11",
-      "cause": "dry-run-only-on-edit",
-      "actual": "cells create writes files but has no --dry-run."
-    },
-    {
-      "case": "C-R11 | cells render declared",
-      "invariant": "C-R11",
-      "rule": "C-R11",
-      "cause": "dry-run-only-on-edit",
-      "actual": "cells render writes files but has no --dry-run."
-    },
-    {
-      "case": "C-R11 | pdf convert declared",
-      "invariant": "C-R11",
-      "rule": "C-R11",
-      "cause": "dry-run-only-on-edit",
-      "actual": "pdf convert writes files but has no --dry-run."
-    },
-    {
-      "case": "C-R11 | pdf create declared",
-      "invariant": "C-R11",
-      "rule": "C-R11",
-      "cause": "dry-run-only-on-edit",
-      "actual": "pdf create writes files but has no --dry-run."
-    },
-    {
-      "case": "C-R11 | pdf extract declared",
-      "invariant": "C-R11",
-      "rule": "C-R11",
-      "cause": "dry-run-only-on-edit",
-      "actual": "pdf extract writes files but has no --dry-run."
-    },
-    {
-      "case": "C-R11 | pdf merge declared",
-      "invariant": "C-R11",
-      "rule": "C-R11",
-      "cause": "dry-run-only-on-edit",
-      "actual": "pdf merge writes files but has no --dry-run."
-    },
-    {
-      "case": "C-R11 | pdf render declared",
-      "invariant": "C-R11",
-      "rule": "C-R11",
-      "cause": "dry-run-only-on-edit",
-      "actual": "pdf render writes files but has no --dry-run."
-    },
-    {
-      "case": "C-R11 | pdf sign declared",
-      "invariant": "C-R11",
-      "rule": "C-R11",
-      "cause": "dry-run-only-on-edit",
-      "actual": "pdf sign writes files but has no --dry-run."
-    },
-    {
-      "case": "C-R11 | pdf split declared",
-      "invariant": "C-R11",
-      "rule": "C-R11",
-      "cause": "dry-run-only-on-edit",
-      "actual": "pdf split writes files but has no --dry-run."
-    },
-    {
-      "case": "C-R11 | slides convert declared",
-      "invariant": "C-R11",
-      "rule": "C-R11",
-      "cause": "dry-run-only-on-edit",
-      "actual": "slides convert writes files but has no --dry-run."
-    },
-    {
-      "case": "C-R11 | slides create declared",
-      "invariant": "C-R11",
-      "rule": "C-R11",
-      "cause": "dry-run-only-on-edit",
-      "actual": "slides create writes files but has no --dry-run."
-    },
-    {
-      "case": "C-R11 | slides extract declared",
-      "invariant": "C-R11",
-      "rule": "C-R11",
-      "cause": "dry-run-only-on-edit",
-      "actual": "slides extract writes files but has no --dry-run."
-    },
-    {
-      "case": "C-R11 | slides render declared",
-      "invariant": "C-R11",
-      "rule": "C-R11",
-      "cause": "dry-run-only-on-edit",
-      "actual": "slides render writes files but has no --dry-run."
-    },
-    {
-      "case": "C-R11 | words compare declared",
-      "invariant": "C-R11",
-      "rule": "C-R11",
-      "cause": "dry-run-only-on-edit",
-      "actual": "words compare writes files but has no --dry-run."
-    },
-    {
-      "case": "C-R11 | words convert declared",
-      "invariant": "C-R11",
-      "rule": "C-R11",
-      "cause": "dry-run-only-on-edit",
-      "actual": "words convert writes files but has no --dry-run."
-    },
-    {
-      "case": "C-R11 | words create declared",
-      "invariant": "C-R11",
-      "rule": "C-R11",
-      "cause": "dry-run-only-on-edit",
-      "actual": "words create writes files but has no --dry-run."
-    },
-    {
-      "case": "C-R11 | words extract declared",
-      "invariant": "C-R11",
-      "rule": "C-R11",
-      "cause": "dry-run-only-on-edit",
-      "actual": "words extract writes files but has no --dry-run."
-    },
-    {
-      "case": "C-R11 | words render declared",
-      "invariant": "C-R11",
-      "rule": "C-R11",
-      "cause": "dry-run-only-on-edit",
-      "actual": "words render writes files but has no --dry-run."
-    },
-    {
-      "case": "C-R11 | words split declared",
-      "invariant": "C-R11",
-      "rule": "C-R11",
-      "cause": "dry-run-only-on-edit",
-      "actual": "words split writes files but has no --dry-run."
-    },
-    {
       "case": "C-R20 | v2/cells/ops#conditionalStyle fixednames",
       "invariant": "C-R20",
       "rule": "C-R20",
@@ -1491,7 +1288,7 @@
       "invariant": "C-R34",
       "rule": "C-R34",
       "cause": "help-usage-omits-required-options",
-      "actual": "cells convert: Usage leaves out the required --to; cells query search: Usage leaves out the required --pattern; pdf convert: Usage leaves out the required --to; pdf extract: Usage leaves out the required --what; pdf merge: Usage leaves out ..."
+      "actual": "cells query search: Usage leaves out the required --pattern; pdf extract: Usage leaves out the required --what; pdf merge: Usage leaves out the required --out; pdf query search: Usage leaves out the required --pattern; pdf sign: Usage leave..."
     },
     {
       "case": "C-R08 | cells inspect",
@@ -1499,34 +1296,6 @@
       "rule": "C-R08",
       "cause": "inspect-preview-not-sample",
       "actual": "cells inspect --preview-rows: a banned name; a sample is --sample or --sample-rows."
-    },
-    {
-      "case": "C-R11 | license install declared",
-      "invariant": "C-R11",
-      "rule": "C-R11",
-      "cause": "install-commands-have-no-overwrite-or-dry-run",
-      "actual": "license install writes files but has no --overwrite.; license install writes files but has no --dry-run."
-    },
-    {
-      "case": "C-R11 | license remove declared",
-      "invariant": "C-R11",
-      "rule": "C-R11",
-      "cause": "install-commands-have-no-overwrite-or-dry-run",
-      "actual": "license remove writes files but has no --dry-run."
-    },
-    {
-      "case": "C-R11 | skill install declared",
-      "invariant": "C-R11",
-      "rule": "C-R11",
-      "cause": "install-commands-have-no-overwrite-or-dry-run",
-      "actual": "skill install writes files but has no --overwrite.; skill install writes files but has no --dry-run."
-    },
-    {
-      "case": "C-R11 | update install declared",
-      "invariant": "C-R11",
-      "rule": "C-R11",
-      "cause": "install-commands-have-no-overwrite-or-dry-run",
-      "actual": "update install writes files but has no --overwrite.; update install writes files but has no --dry-run."
     },
     {
       "case": "C-R20 | v2/cells/ops field height",
@@ -1767,111 +1536,6 @@
       "actual": "cells integer; pdf number"
     },
     {
-      "case": "C-R14 | cells convert --out -",
-      "invariant": "C-R14",
-      "rule": "C-R14",
-      "cause": "out-dash-not-refused",
-      "actual": "USAGE_ERROR: --to xlsx contradicts --out '-': it has no extension, and a xlsx output needs one; use .xlsx., expected OPTION_INVALID"
-    },
-    {
-      "case": "C-R14 | cells edit --out -",
-      "invariant": "C-R14",
-      "rule": "C-R14",
-      "cause": "out-dash-not-refused",
-      "actual": "USAGE_ERROR: --out '-' has no extension, which names the format aspose-cli cells edit writes; use .xlsx, .xltx, .xlsm, .xltm, .xlsb, .xls, .ods, .csv, .txt, .tsv, .html, .htm, .mhtml., expected OPTION_INVALID; error.hint is \"Give --out one ..."
-    },
-    {
-      "case": "C-R14 | cells render --out -",
-      "invariant": "C-R14",
-      "rule": "C-R14",
-      "cause": "out-dash-not-refused",
-      "actual": "USAGE_ERROR: --out '-' has no extension, which names the format aspose-cli cells render writes; use .png, .jpg, .jpeg, .svg., expected OPTION_INVALID; error.hint is \"Give --out one of these extensions.\", expected it to contain \"name a file\""
-    },
-    {
-      "case": "C-R14 | pdf convert --out -",
-      "invariant": "C-R14",
-      "rule": "C-R14",
-      "cause": "out-dash-not-refused",
-      "actual": "USAGE_ERROR: --to docx contradicts --out '-': it has no extension, and a docx output needs one; use .docx., expected OPTION_INVALID"
-    },
-    {
-      "case": "C-R14 | pdf edit --out -",
-      "invariant": "C-R14",
-      "rule": "C-R14",
-      "cause": "out-dash-not-refused",
-      "actual": "USAGE_ERROR: --out '-' has no extension, which names the format aspose-cli pdf edit writes; use .pdf., expected OPTION_INVALID; error.hint is \"Give --out one of these extensions.\", expected it to contain \"name a file\""
-    },
-    {
-      "case": "C-R14 | pdf merge --out -",
-      "invariant": "C-R14",
-      "rule": "C-R14",
-      "cause": "out-dash-not-refused",
-      "actual": "USAGE_ERROR: --out '-' has no extension, which names the format aspose-cli pdf merge writes; use .pdf., expected OPTION_INVALID; error.hint is \"Give --out one of these extensions.\", expected it to contain \"name a file\""
-    },
-    {
-      "case": "C-R14 | pdf render --out -",
-      "invariant": "C-R14",
-      "rule": "C-R14",
-      "cause": "out-dash-not-refused",
-      "actual": "USAGE_ERROR: --out '-' has no extension, which names the format aspose-cli pdf render writes; use .png, .jpg, .jpeg, .svg., expected OPTION_INVALID; error.hint is \"Give --out one of these extensions.\", expected it to contain \"name a file\""
-    },
-    {
-      "case": "C-R14 | pdf sign --out -",
-      "invariant": "C-R14",
-      "rule": "C-R14",
-      "cause": "out-dash-not-refused",
-      "actual": "USAGE_ERROR: --out '-' has no extension, which names the format aspose-cli pdf sign writes; use .pdf., expected OPTION_INVALID; error.hint is \"Give --out one of these extensions.\", expected it to contain \"name a file\""
-    },
-    {
-      "case": "C-R14 | slides convert --out -",
-      "invariant": "C-R14",
-      "rule": "C-R14",
-      "cause": "out-dash-not-refused",
-      "actual": "USAGE_ERROR: --to pptx contradicts --out '-': it has no extension, and a pptx output needs one; use .pptx., expected OPTION_INVALID"
-    },
-    {
-      "case": "C-R14 | slides edit --out -",
-      "invariant": "C-R14",
-      "rule": "C-R14",
-      "cause": "out-dash-not-refused",
-      "actual": "USAGE_ERROR: --out '-' has no extension, which names the format aspose-cli slides edit writes; use .pptx, .pptm., expected OPTION_INVALID; error.hint is \"Give --out one of these extensions.\", expected it to contain \"name a file\""
-    },
-    {
-      "case": "C-R14 | slides render --out -",
-      "invariant": "C-R14",
-      "rule": "C-R14",
-      "cause": "out-dash-not-refused",
-      "actual": "USAGE_ERROR: --out '-' has no extension, which names the format aspose-cli slides render writes; use .png, .jpg, .jpeg, .svg., expected OPTION_INVALID; error.hint is \"Give --out one of these extensions.\", expected it to contain \"name a file..."
-    },
-    {
-      "case": "C-R14 | words compare --out -",
-      "invariant": "C-R14",
-      "rule": "C-R14",
-      "cause": "out-dash-not-refused",
-      "actual": "USAGE_ERROR: --out '-' has no extension, which names the format aspose-cli words compare writes; use .doc, .dot, .docx, .docm, .dotx, .dotm, .xml, .rtf, .pdf, .xps, .oxps, .ps, .pcl, .html, .htm, .mhtml, .epub, .mobi, .azw3, .odt, .ott, .tx..."
-    },
-    {
-      "case": "C-R14 | words convert --out -",
-      "invariant": "C-R14",
-      "rule": "C-R14",
-      "cause": "out-dash-not-refused",
-      "actual": "USAGE_ERROR: --to docx contradicts --out '-': it has no extension, and a docx output needs one; use .docx., expected OPTION_INVALID"
-    },
-    {
-      "case": "C-R14 | words edit --out -",
-      "invariant": "C-R14",
-      "rule": "C-R14",
-      "cause": "out-dash-not-refused",
-      "actual": "USAGE_ERROR: --out '-' has no extension, which names the format aspose-cli words edit writes; use .doc, .dot, .docx, .docm, .dotx, .dotm, .xml, .rtf, .pdf, .xps, .oxps, .ps, .pcl, .html, .htm, .mhtml, .epub, .mobi, .azw3, .odt, .ott, .txt, ..."
-    },
-    {
-      "case": "C-R14 | words render --out -",
-      "invariant": "C-R14",
-      "rule": "C-R14",
-      "cause": "out-dash-not-refused",
-      "actual": "USAGE_ERROR: --out '-' has no extension, which names the format aspose-cli words render writes; use .png, .jpg, .jpeg, .svg., expected OPTION_INVALID; error.hint is \"Give --out one of these extensions.\", expected it to contain \"name a file\""
-    },
-    {
       "case": "C-R31 | v2/cells/render-result outputs",
       "invariant": "C-R31",
       "rule": "C-R31",
@@ -2024,13 +1688,6 @@
       "rule": "C-R12",
       "cause": "pdf-extract-has-out-and-out-dir",
       "actual": "pdf extract has both --out and --out-dir."
-    },
-    {
-      "case": "C-R14 | pdf extract --out -",
-      "invariant": "C-R14",
-      "rule": "C-R14",
-      "cause": "pdf-extract-has-out-and-out-dir",
-      "actual": "error.hint is \"Name the directory that receives the attachments with --out-dir instead.\", expected it to contain \"name a file\""
     },
     {
       "case": "same-name-option | --out-dir",
@@ -2269,20 +1926,6 @@
       "rule": "C-R08",
       "cause": "render-all-option-not-selection-all",
       "actual": "cells render --all-sheets: a banned name; a selection takes the value all, such as --pages all."
-    },
-    {
-      "case": "C-R14 | review --out -",
-      "invariant": "C-R14",
-      "rule": "C-R14",
-      "cause": "review-out-dash-is-a-directory",
-      "actual": "exit 0, expected 2; no error (exit 0), expected OPTION_INVALID; error.hint is missing, expected it to contain \"name a file\""
-    },
-    {
-      "case": "C-R11 | review declared",
-      "invariant": "C-R11",
-      "rule": "C-R11",
-      "cause": "review-output-has-no-overwrite-or-dry-run",
-      "actual": "review writes files but has no --overwrite.; review writes files but has no --dry-run."
     },
     {
       "case": "C-R32 | v2/cells/search-result hits",

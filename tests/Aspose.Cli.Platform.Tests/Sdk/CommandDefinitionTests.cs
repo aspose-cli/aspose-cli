@@ -59,7 +59,7 @@ public sealed class CommandDefinitionTests : IDisposable
         Assert.Equal(["file"], command.Arguments.Select(static argument => argument.Name));
         Assert.Equal(InputKind.File, command.Arguments[0].GetParameterMetadata().InputKind);
         Assert.Equal(
-            ["--mode", "--out", "--overwrite", "--password", "--password-env", "--password-stdin", "--encrypt", "--encrypt-env", "--encrypt-stdin", "--font-dir"],
+            ["--mode", "--out", "--overwrite", "--dry-run", "--password", "--password-env", "--password-stdin", "--encrypt", "--encrypt-env", "--encrypt-stdin", "--font-dir"],
             command.Options.Select(static option => option.Name));
         Assert.Equal("Password for the report. Discouraged: visible in the process list; prefer --password-env.",
             command.Options.Single(static option => option.Name == "--password").Description);
@@ -140,14 +140,73 @@ public sealed class CommandDefinitionTests : IDisposable
             new CommandTraits { Output = OutputTarget.CreatedFile("File to create.", Out) },
             (_, standard) => Result(standard.CreatedPath + "|" + standard.Overwrite));
 
-        Assert.Equal(["--mode", "--out-dir", "--overwrite", "--password", "--password-env", "--password-stdin"],
+        Assert.Equal(["--mode", "--out-dir", "--overwrite", "--dry-run", "--password", "--password-env", "--password-stdin"],
             directory.Options.Select(static option => option.Name));
         Assert.NotEmpty(directory.Parse(["report.test"]).Errors);
         Assert.Equal(_temp.File("parts") + "|True", Run(directory, "report.test", "--out-dir", "parts", "--overwrite"));
         Assert.Equal(["file"], created.Arguments.Select(static argument => argument.Name));
         Assert.Equal(InputKind.None, created.Arguments[0].GetParameterMetadata().InputKind);
-        Assert.Equal(["--mode", "--overwrite"], created.Options.Select(static option => option.Name));
+        Assert.Equal(["--mode", "--overwrite", "--dry-run"], created.Options.Select(static option => option.Name));
         Assert.Equal(_temp.File("new.test") + "|False", Run(created, "new.test"));
+    }
+
+    [Fact]
+    public void DryRun_BindsTheCommandLineThenStopsBeforeTheHandlerAndSaysWhatItChecked()
+    {
+        bool handled = false;
+        Command file = Product(
+            Definition("run", "Runs.", new CommandTraits { Input = Report, Output = OutputTarget.File("Output path.", Out), UsesFonts = true },
+                [Mode()], (_, standard) => Result(standard.Output.Path)),
+            (_, request) => { handled = true; return request; }).Subcommands.Single();
+        Command directory = Create(
+            new CommandTraits { Input = Report, Output = OutputTarget.Directory("Parts.") },
+            (_, standard) => Result(standard.DirectoryOutput.Path));
+
+        Assert.Equal(StandardOptions.DryRunOption().Description, file.Options.Single(static option => option.Name == "--dry-run").Description);
+        DryRunResult checkedFile = DryRun(file, "report.test", "--out", "copy.out", "--dry-run");
+        Assert.False(handled);
+        Assert.Equal(0, _engine.ScopesEntered);
+        Assert.True(checkedFile.DryRun);
+        Assert.Equal([DryRunChecks.Input, DryRunChecks.Output], checkedFile.Checked);
+        Assert.Equal([_temp.File("copy.out")], checkedFile.Paths);
+        Assert.Equal("out", checkedFile.Format);
+        DryRunResult checkedDirectory = DryRun(directory, "report.test", "--out-dir", "parts", "--dry-run");
+        Assert.Equal([_temp.File("parts")], checkedDirectory.Paths);
+        Assert.Null(checkedDirectory.Format);
+        Assert.Equal(["other.test", "report.test"], Directory.EnumerateFileSystemEntries(_temp.Path).Select(Path.GetFileName).Order());
+
+        // A mistake the real run would make is the dry run's too.
+        Assert.Equal(ErrorCodes.FileNotFound, RunFailing(file, "missing.test", "--dry-run").Code);
+    }
+
+    [Fact]
+    public void Output_NamedDashIsRefused_DashNamesStandardInputOnly()
+    {
+        Command file = Create(
+            new CommandTraits { Input = Report, Output = OutputTarget.File("Output path.", Out) },
+            (_, standard) => Result(standard.Output.Path));
+        Command directory = Create(
+            new CommandTraits { Input = Report, Output = OutputTarget.Directory("Parts.") },
+            (_, standard) => Result(standard.DirectoryOutput.Path));
+        Command created = Create(
+            new CommandTraits { Output = OutputTarget.CreatedFile("File to create.", Out) },
+            (_, standard) => Result(standard.Output.Path));
+
+        foreach ((Command command, string[] arguments, string parameter) in new[]
+        {
+            (file, new[] { "report.test", "--out", "-" }, "--out"),
+            (directory, new[] { "report.test", "--out-dir", "-" }, "--out-dir"),
+            (created, new[] { "-" }, "file"),
+        })
+        {
+            CliException error = RunFailing(command, arguments);
+            Assert.Equal(ErrorCodes.OptionInvalid, error.Code);
+            Assert.Equal(parameter, error.Details![parameter.StartsWith('-') ? "option" : "argument"]!.GetValue<string>());
+            Assert.Contains("`-` is not supported", error.Hint, StringComparison.Ordinal);
+        }
+
+        Assert.False(File.Exists(_temp.File("-")));
+        Assert.False(Directory.Exists(_temp.File("-")));
     }
 
     [Fact]
@@ -206,7 +265,7 @@ public sealed class CommandDefinitionTests : IDisposable
             (_, standard) => Result(standard.RequestedOutputPath() + "|" + standard.InputPassword?.Reveal()));
 
         Assert.Equal(["files"], command.Arguments.Select(static argument => argument.Name));
-        Assert.Equal(["--mode", "--out", "--overwrite", "--password", "--password-env", "--password-stdin"],
+        Assert.Equal(["--mode", "--out", "--overwrite", "--dry-run", "--password", "--password-env", "--password-stdin"],
             command.Options.Select(static option => option.Name));
         Assert.NotEmpty(command.Parse(["report.test", "other.test"]).Errors);
         Assert.Equal(_temp.File("merged.test") + "|a", Run(command, "report.test", "other.test", "--out", "merged.test", "--password-env", "LEFT"));
@@ -231,7 +290,7 @@ public sealed class CommandDefinitionTests : IDisposable
                 ? directory
                 : standard.Output.Path + "|" + standard.Output.Overwrite));
 
-        Assert.Equal(["--to", "--mode", "--out-dir", "--out", "--overwrite", "--password", "--password-env", "--password-stdin"],
+        Assert.Equal(["--to", "--mode", "--out-dir", "--out", "--overwrite", "--dry-run", "--password", "--password-env", "--password-stdin"],
             command.Options.Select(static option => option.Name));
         Assert.Equal(_temp.File("parts"), Run(command, "report.test", "--out-dir", "parts"));
         Assert.Equal(_temp.File("report.form") + "|False", Run(command, "report.test"));
@@ -275,7 +334,7 @@ public sealed class CommandDefinitionTests : IDisposable
         };
         Command command = Create(traits, (_, standard) => Result(standard.Output.Format.Id + "|" + Path.GetFileName(standard.Output.Path)));
 
-        Assert.Equal(["--to", "--mode", "--out", "--overwrite", "--password", "--password-env", "--password-stdin"],
+        Assert.Equal(["--to", "--mode", "--out", "--overwrite", "--dry-run", "--password", "--password-env", "--password-stdin"],
             command.Options.Select(static option => option.Name));
         Assert.Equal("png|report.png", Run(command, "report.test"));
         Assert.Equal("svg|page.SVG", Run(command, "report.test", "--out", "page.SVG"));
@@ -309,7 +368,7 @@ public sealed class CommandDefinitionTests : IDisposable
     }
 
     [Fact]
-    public void Output_ConvertsToARequiredFormatNamedByItsIdOrAliasUnderOneOfItsExtensions()
+    public void Output_ConvertsToAFormatNamedByItsIdOrAliasOrByTheOutputExtension()
     {
         FormatDescriptor[] formats =
         [
@@ -331,7 +390,12 @@ public sealed class CommandDefinitionTests : IDisposable
         Assert.Equal("docx|report.docx", Run(command, "report.test", "--to", "DOCX"));
         Assert.Equal("md|page.markdown", Run(command, "report.test", "--to", "md", "--out", "page.markdown"));
         Assert.Equal("csv|rows.txt", Run(command, "report.test", "--to", "csv", "--out", "rows.txt"));
-        Assert.NotEmpty(command.Parse(["report.test"]).Errors);
+        Assert.Equal("md|page.markdown", Run(command, "report.test", "--out", "page.markdown"));
+        Assert.Equal("csv|rows.txt", Run(command, "report.test", "--out", "rows.txt"));
+        Assert.False(command.Options.Single(static option => option.Name == "--to").Required);
+        CliException unnamed = RunFailing(command, "report.test");
+        Assert.Equal(ErrorCodes.UsageError, unnamed.Code);
+        Assert.Contains("give --to (docx, md, csv)", unnamed.Message, StringComparison.Ordinal);
         Assert.NotEmpty(command.Parse(["report.test", "--to", "png"]).Errors);
         foreach (string output in new[] { "page.docx", "page.png", "page.mdown", "page" })
         {
@@ -656,6 +720,14 @@ public sealed class CommandDefinitionTests : IDisposable
         Assert.Empty(parse.Errors);
         parse.Invoke();
         return Assert.IsType<CliException>(_runner.Error);
+    }
+
+    private DryRunResult DryRun(Command command, params string[] arguments)
+    {
+        _runner.Error = null;
+        Assert.Equal(0, command.Parse(arguments).Invoke());
+        Assert.Null(_runner.Error);
+        return Assert.IsType<DryRunResult>(_runner.Result);
     }
 
     private static TestResult Result(string? value = null) => new(value);
