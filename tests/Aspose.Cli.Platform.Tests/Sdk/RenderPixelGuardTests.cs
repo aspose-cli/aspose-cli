@@ -57,7 +57,11 @@ public sealed class RenderPixelGuardTests
         Assert.Equal(ResourceBudgetDefaults.RasterPixels, limit);
         Assert.Equal(ErrorCodes.RenderTooLarge, error.Code);
         Assert.Equal("Shrink it.", error.Hint);
-        Assert.Equal(limit, error.Details?["maxPixels"]?.GetValue<long>());
+        Assert.Equal(limit, error.Details?["limit"]?.GetValue<long>());
+        Assert.Equal(limit * 2, error.Details?["actual"]?.GetValue<long>());
+        Assert.Equal("pixels", error.Details?["unit"]?.GetValue<string>());
+        Assert.False(error.Details!.ContainsKey("dpi"), "A render without a resolution leaves dpi out instead of stating null.");
+        Assert.False(error.Details.ContainsKey("maxPixels"));
     }
 
     [Fact]

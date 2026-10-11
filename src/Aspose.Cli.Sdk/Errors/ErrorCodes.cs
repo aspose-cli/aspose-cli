@@ -19,7 +19,7 @@ public static partial class ErrorCodes
     // -- Input file problems (exit 3) ----------------------------------------
 
     /// <summary>The input file does not exist.</summary>
-    public static readonly ErrorCode FileNotFound = new("FILE_NOT_FOUND", ExitCode.InputError);
+    public static readonly ErrorCode FileNotFound = ErrorCode.FileNotFound("FILE_NOT_FOUND", ExitCode.InputError);
 
     /// <summary>The input file is opened exclusively by another process.</summary>
     public static readonly ErrorCode FileLocked = new("FILE_LOCKED", ExitCode.InputError);
@@ -63,9 +63,10 @@ public static partial class ErrorCodes
     /// <summary>
     /// The engine failed while rasterizing selected content. The input can
     /// still be structurally valid; this remains distinct from INTERNAL,
-    /// which is reserved for CLI defects.
+    /// which is reserved for CLI defects. Content the engine cannot render is
+    /// unsupported content, so it exits as a format error (6).
     /// </summary>
-    public static readonly ErrorCode RenderFailed = new("RENDER_FAILED", ExitCode.ValidationError);
+    public static readonly ErrorCode RenderFailed = new("RENDER_FAILED", ExitCode.FormatError);
 
     /// <summary>An ops batch could not be parsed, validated or applied.</summary>
     public static readonly ErrorCode OpsInvalid = new("OPS_INVALID", ExitCode.ValidationError);
@@ -124,7 +125,7 @@ public static partial class ErrorCodes
     // -- License problems (exit 7) -------------------------------------------
 
     /// <summary>A license was configured but points to a missing file.</summary>
-    public static readonly ErrorCode LicenseFileNotFound = new("LICENSE_FILE_NOT_FOUND", ExitCode.LicenseError);
+    public static readonly ErrorCode LicenseFileNotFound = ErrorCode.FileNotFound("LICENSE_FILE_NOT_FOUND", ExitCode.LicenseError);
 
     /// <summary>The configured license file was rejected by the engine.</summary>
     public static readonly ErrorCode LicenseInvalid = new("LICENSE_INVALID", ExitCode.LicenseError);

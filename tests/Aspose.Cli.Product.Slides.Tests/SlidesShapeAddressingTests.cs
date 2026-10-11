@@ -142,7 +142,7 @@ public sealed class SlidesShapeAddressingTests
         });
 
         Assert.Equal(["failed", "ok"], result.Applied.Select(static operation => operation.Status));
-        OpError error = result.Applied[0].Error!;
+        ErrorPayload error = result.Applied[0].Error!;
         Assert.Equal(SlidesDiagnostics.LayoutNotFound.Name, error.Code);
         Assert.Equal("Title Onyl", (string?)error.Details!["requested"]);
         Assert.Equal("Title Only", (string?)error.Details["suggestions"]![0]);

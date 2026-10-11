@@ -48,7 +48,7 @@ project by default or for the user with `--user`.
 ## App, Preview and MCP
 
 ```powershell
-aspose-cli app --welcome
+aspose-cli app open --welcome
 aspose-cli preview open document.pdf
 aspose-cli mcp serve
 ```

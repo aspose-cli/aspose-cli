@@ -17,28 +17,13 @@ internal static class AppCommand
         Func<CapabilitiesResult> capabilities,
         GlobalOptions globals)
     {
-        var welcomeOption = new Option<bool>("--welcome")
-        {
-            Description = "Open the first-run workspace guide.",
-        };
-        var routeOption = new Option<string?>("--route") { Hidden = true }.WithInput(InputKind.None);
         var app = new Command("app", "Open the local file workspace in a browser.");
-        StartOptions home = StartOptions.AddTo(app);
-        app.Options.Add(welcomeOption);
-        app.Options.Add(routeOption);
-        app.SetAction(parseResult => Start(executor, catalog, capabilities, globals, parseResult, home, _ => new ViewerAppRequest
-        {
-            Route = parseResult.GetValue(routeOption)
-                ?? (parseResult.GetValue(welcomeOption) ? AppRoutes.Welcome : AppRoutes.Home),
-        }));
-
         app.Subcommands.Add(CreateOpen(executor, catalog, capabilities, globals));
         app.Subcommands.Add(CreateStatus(executor, globals));
         app.Subcommands.Add(CreateStop(executor, globals));
 
-        // The App is one shared workspace that follows the configured license.
-        return app.WithInvocationPolicy(new CommandInvocationPolicy(
-            Execution: CommandExecutionOwnership.Service, RefusesEvaluationRequest: true));
+        // The App lives in the shared viewer service, which its commands start, query or stop.
+        return app.WithInvocationPolicy(new CommandInvocationPolicy(Execution: CommandExecutionOwnership.Service));
     }
 
     private static Command CreateOpen(
@@ -49,18 +34,22 @@ internal static class AppCommand
     {
         var fileArgument = new Argument<string?>("file")
         {
-            Description = "File to open in the local App.",
+            Description = "File to open in the local App; without one the App opens on its home page.",
             Arity = ArgumentArity.ZeroOrOne,
         }.WithInput(InputKind.File);
-        var open = new Command("open", "Open a file in the local App.");
-        open.Arguments.Add(fileArgument);
-        StartOptions options = StartOptions.AddTo(open);
-        open.SetAction(parseResult => Start(executor, catalog, capabilities, globals, parseResult, options, values => new ViewerAppRequest
+        var welcomeOption = new Option<bool>("--welcome")
         {
-            Route = AppRoutes.Preview,
-            File = ResolveFile(parseResult.GetValue(fileArgument), values),
-        }));
-        return open;
+            Description = "Open the first-run workspace guide instead of a file.",
+        };
+        var open = new Command("open", "Start or activate the local App and open a file, its home page or its guide.");
+        open.Arguments.Add(fileArgument);
+        open.Options.Add(welcomeOption);
+        StartOptions options = StartOptions.AddTo(open);
+        open.SetAction(parseResult => Start(executor, catalog, capabilities, globals, parseResult, options, values =>
+            Page(parseResult.GetValue(fileArgument), parseResult.GetValue(welcomeOption), values)));
+
+        // The App is one shared workspace that follows the configured license.
+        return open.WithInvocationPolicy(new CommandInvocationPolicy(RefusesEvaluationRequest: true));
     }
 
     /// <summary>Starts or activates the App and lands on the page <paramref name="page"/> chooses.</summary>
@@ -164,23 +153,32 @@ internal static class AppCommand
     private static int? PortOf(string url) =>
         Uri.TryCreate(url, UriKind.Absolute, out Uri? parsed) ? parsed.Port : null;
 
-    private static string ResolveFile(string? value, GlobalValues globals)
+    /// <summary>
+    /// The page <c>app open</c> lands on: the file it names, else the guide with
+    /// <c>--welcome</c>, else the home page.
+    /// </summary>
+    private static ViewerAppRequest Page(string? file, bool welcome, GlobalValues globals)
     {
-        if (value is not { Length: > 0 })
+        if (file is not { Length: > 0 })
+        {
+            return new ViewerAppRequest { Route = welcome ? AppRoutes.Welcome : AppRoutes.Home };
+        }
+
+        if (welcome)
         {
             throw CliErrors.OptionInvalid(
-                "file",
-                "no file was given",
-                $"Run '{DistributionInfo.CommandName} app open <file>'.");
+                "--welcome",
+                "it opens the workspace guide, not a file",
+                $"Run '{DistributionInfo.CommandName} app open {file}' to open the file, or '{DistributionInfo.CommandName} app open --welcome' for the guide.");
         }
 
         string baseDirectory = globals.WorkDir is null
             ? Directory.GetCurrentDirectory()
             : Path.GetFullPath(globals.WorkDir);
-        return Path.GetFullPath(value, baseDirectory);
+        return new ViewerAppRequest { Route = AppRoutes.Preview, File = Path.GetFullPath(file, baseDirectory) };
     }
 
-    /// <summary>The options that start or activate the App, one set for each command that does.</summary>
+    /// <summary>The options that start or activate the App.</summary>
     private sealed record StartOptions(Option<bool> Foreground, Option<int> Port, Option<bool> NoOpen)
     {
         public static StartOptions AddTo(Command command)

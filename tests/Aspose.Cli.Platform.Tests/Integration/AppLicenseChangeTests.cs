@@ -46,7 +46,7 @@ public sealed class AppLicenseChangeTests
 
     private static JsonNode Start(TempWorkspace workspace)
     {
-        CliResult result = workspace.Run("app", "--no-open", "--output-format", "json");
+        CliResult result = workspace.Run("app", "open", "--no-open", "--output-format", "json");
         Assert.True(result.ExitCode == 0, result.StdErr);
         Assert.Empty(result.StdErr);
         return JsonNode.Parse(result.StdOut)!;

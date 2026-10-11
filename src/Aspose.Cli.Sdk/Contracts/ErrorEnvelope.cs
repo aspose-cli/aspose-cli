@@ -36,10 +36,15 @@ public sealed record ErrorEnvelope
 /// Error details designed for agent self-correction: the <see cref="Message"/>
 /// states the fact, <see cref="Details"/> carries structured context (often
 /// including the valid alternatives), and <see cref="Hint"/> tells the caller
-/// the most likely fix.
+/// the most likely fix. The error envelope and a failed operation of a best-effort batch carry
+/// the same object.
 /// </summary>
+[SchemaId(Id)]
 public sealed record ErrorPayload
 {
+    /// <summary>The relative id the error payload schema is published under.</summary>
+    public const string Id = "error-payload";
+
     /// <summary>Stable SCREAMING_SNAKE_CASE error code, e.g. <c>SHEET_NOT_FOUND</c>.</summary>
     [Pattern("^[A-Z][A-Z0-9_]*$")]
     public required string Code { get; init; }
@@ -47,7 +52,11 @@ public sealed record ErrorPayload
     /// <summary>Human-readable description of what went wrong.</summary>
     public required string Message { get; init; }
 
-    /// <summary>Structured context, e.g. <c>{"requested": "Salez", "available": ["Sales"]}</c>.</summary>
+    /// <summary>
+    /// Structured context, e.g. <c>{"requested": "Salez", "available": ["Sales"]}</c>. Its keys
+    /// come from one dictionary, each described here; no value is null.
+    /// </summary>
+    [ErrorDetails]
     public JsonObject? Details { get; init; }
 
     /// <summary>Recommended next action for the caller.</summary>

@@ -144,5 +144,5 @@ it would without a license, except that
 deliverable. The option applies to one command (and to every call an MCP
 server started with it runs, unless a call chooses otherwise); it cannot be
 combined with `--license`. `preview open` opens such a document as its own, never
-reusing a licensed one. `license install`, `license remove` and `app` refuse
+reusing a licensed one. `license install`, `license remove` and `app open` refuse
 it, because their effect outlives the command.

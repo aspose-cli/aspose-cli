@@ -186,7 +186,7 @@ public sealed class BoundedEditCommandTests : IDisposable
 
         Assert.Equal(ErrorCodes.OptionInvalid, error.Code);
         Assert.Equal("--out", error.Details!["option"]!.GetValue<string>());
-        Assert.Equal("file", argument.Details!["option"]!.GetValue<string>());
+        Assert.Equal("file", argument.Details!["argument"]!.GetValue<string>());
         Assert.Null(output.Resolve(command.Parse([]), paths, _input, other));
         Assert.Equal(_temp.File("merged.test"), output.Resolve(
             command.Parse(["--out", "merged.test"]), paths, _input, other));

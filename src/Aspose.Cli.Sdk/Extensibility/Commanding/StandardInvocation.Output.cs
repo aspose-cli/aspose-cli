@@ -201,7 +201,8 @@ public partial class StandardInvocation
         string problem = extension.Length > 1
             ? $"its {extension} extension is not a {format.Id} extension"
             : $"it has no extension, and a {format.Id} output needs one";
-        string other = Writing(writes, output) is [var named, ..]
+        FormatDescriptor? named = Writing(writes, output) is [var first, ..] ? first : null;
+        string other = named is not null
             ? $", or pass {StandardOptionNames.To} {named.Id} to write {named.Id}"
             : string.Empty;
         return CliErrors.OutputExtensionInvalid(
@@ -210,6 +211,7 @@ public partial class StandardInvocation
             $"{StandardOptionNames.To} {format.Id} contradicts {parameter} '{output}':",
             problem,
             format.Extensions,
+            mistyped: extension.Length > 1 && named is null,
             $"Give {parameter} the {string.Join(" or ", format.Extensions)} extension, {CorrectedPaths(output, format)}{other}.",
             new JsonObject { ["format"] = format.Id });
     }
@@ -247,7 +249,7 @@ public partial class StandardInvocation
         (string Format, string Command)? producer = extension.Length > 1 ? Producer(extension) : null;
         string problem = (extension.Length > 1, producer) switch
         {
-            (true, { } other) => $"asks for {other.Format}, which {command} does not write",
+            (true, { } other) => $"has the {extension} extension of {other.Format}, which {command} does not write",
             (true, null) => $"has the {extension} extension, which names no format {command} writes",
             _ => $"has no extension, which names the format {command} writes",
         };
@@ -261,12 +263,9 @@ public partial class StandardInvocation
             derived ? $"The input '{output}', whose name the output keeps without {parameter}," : $"{parameter} '{output}'",
             problem,
             extensions,
+            mistyped: extension.Length > 1 && producer is null,
             producer is { } line ? $"{fix}, then run '{line.Command}' for {line.Format}." : fix + ".",
-            new JsonObject
-            {
-                ["requested"] = producer?.Format,
-                ["supported"] = new JsonArray([.. writes.Select(static format => JsonValue.Create(format.Id))]),
-            });
+            producer is { } named ? new JsonObject { ["format"] = named.Format } : []);
     }
 
     /// <summary>

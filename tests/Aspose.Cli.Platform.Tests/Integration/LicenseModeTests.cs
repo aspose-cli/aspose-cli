@@ -87,7 +87,7 @@ public sealed class LicenseModeTests : IDisposable
     [Theory]
     [InlineData("license", "install", "any.lic")]
     [InlineData("license", "remove")]
-    [InlineData("app", "--no-open")]
+    [InlineData("app", "open", "--no-open")]
     public void EvaluationMode_IsRefusedByCommandsWhoseEffectOutlivesThem(params string[] command)
     {
         // The refusal needs no file, so a missing one is not reported first.

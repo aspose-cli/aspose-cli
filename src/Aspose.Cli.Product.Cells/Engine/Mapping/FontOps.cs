@@ -11,7 +11,7 @@ namespace Aspose.Cli.Product.Cells.Engine.Mapping;
 internal static class FontOps
 {
     /// <summary>The engine's font environment: default fallback plus the scanned sources.</summary>
-    public static FontListResult BuildFontList() => new()
+    public static EngineFonts BuildFontList() => new()
     {
         DefaultFont = FontConfigs.DefaultFontName,
         Sources = FontConfigs.GetFontSources().Select(ToSource).ToArray(),
@@ -69,9 +69,9 @@ internal static class FontOps
 
     private static FontSource ToSource(FontSourceBase source) => source switch
     {
-        FolderFontSource folder => new FontSource { Type = "folder", Location = folder.FolderPath },
-        FileFontSource file => new FontSource { Type = "file", Location = file.FilePath },
-        _ => new FontSource { Type = "memory" },
+        FolderFontSource folder => new FontSource { Kind = "folder", Location = folder.FolderPath },
+        FileFontSource file => new FontSource { Kind = "file", Location = file.FilePath },
+        _ => new FontSource { Kind = "memory" },
     };
 
     // A configured substitute wins; otherwise fall back to the engine default

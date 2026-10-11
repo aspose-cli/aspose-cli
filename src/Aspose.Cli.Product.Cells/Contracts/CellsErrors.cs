@@ -21,8 +21,8 @@ public static class CellsErrors
         new JsonObject
         {
             ["format"] = format,
-            ["requestedSheet"] = requestedSheet,
-            ["firstSheet"] = firstSheet,
+            ["requested"] = requestedSheet,
+            ["available"] = new JsonArray(firstSheet),
         });
 
     /// <summary>The evaluation engine refuses to open more files in this process.</summary>
@@ -46,8 +46,9 @@ public static class CellsErrors
         hint: suggestion,
         details: new JsonObject
         {
-            ["requestedCells"] = requestedCells,
-            ["maxCells"] = maxCells,
+            ["actual"] = requestedCells,
+            ["limit"] = maxCells,
+            ["unit"] = "cells",
         });
 
     internal static CliException RenderEmpty(string sheetName) => new(

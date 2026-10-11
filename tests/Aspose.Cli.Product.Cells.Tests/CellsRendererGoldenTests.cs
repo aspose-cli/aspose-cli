@@ -247,7 +247,7 @@ public sealed class CellsRendererGoldenTests
                 new BoundedOperationOutcome
                 {
                     Id = "total", Op = "set_formula", Status = OpStatuses.Failed, ItemsAffected = 0,
-                    Error = new OpError { Code = "OPS_INVALID", Message = "sheet 'Missing' does not exist", Hint = "Inspect the sheets first." },
+                    Error = new ErrorPayload { Code = "OPS_INVALID", Message = "sheet 'Missing' does not exist", Hint = "Inspect the sheets first." },
                 },
             ],
             Backup = new BackupInfo

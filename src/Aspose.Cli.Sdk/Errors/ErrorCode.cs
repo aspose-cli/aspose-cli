@@ -24,5 +24,12 @@ public sealed record ErrorCode(string Name, ExitCode ExitCode)
     public static ErrorCode NotFound(string name) =>
         new(name, ExitCode.ValidationError) { DetailsSchemaId = NotFoundDetails.CatalogId };
 
+    /// <summary>
+    /// Declares the code for a file that does not exist, such as an input or a license file. Its
+    /// details are the not-found details of a file, built only by the SDK's file factories.
+    /// </summary>
+    internal static ErrorCode FileNotFound(string name, ExitCode exitCode) =>
+        new(name, exitCode) { DetailsSchemaId = NotFoundDetails.CatalogId };
+
     public override string ToString() => Name;
 }

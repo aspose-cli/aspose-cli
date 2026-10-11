@@ -127,13 +127,7 @@ public static class BoundedOperationRunner
                 Status = OpStatuses.Failed,
                 ItemsAffected = 0,
                 Targets = Bounded(operation, name, attemptedTargets(operation, index), degenerateTargets),
-                Error = new OpError
-                {
-                    Code = rejection.Code.Name,
-                    Message = rejection.Message,
-                    Hint = rejection.Hint ?? BestEffortHint,
-                    Details = rejection.Details,
-                },
+                Error = rejection.ToEnvelope().Error with { Hint = rejection.Hint ?? BestEffortHint },
             });
         }
 

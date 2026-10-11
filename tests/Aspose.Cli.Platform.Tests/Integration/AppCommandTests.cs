@@ -41,6 +41,7 @@ public sealed class AppCommandTests : IDisposable
         {
             CliResult started = _workspace.Run(
                 "app",
+                "open",
                 "--no-open",
                 "--output-format",
                 "json");
@@ -166,8 +167,8 @@ public sealed class AppCommandTests : IDisposable
 
             foreach ((string[] arguments, string route, string path) in new[]
             {
-                (new[] { "app", "--welcome", "--no-open", "--output-format", "json" }, "welcome", "/"),
-                (new[] { "app", "--no-open", "--output-format", "json" }, "home", "/home"),
+                (new[] { "app", "open", "--welcome", "--no-open", "--output-format", "json" }, "welcome", "/"),
+                (new[] { "app", "open", "--no-open", "--output-format", "json" }, "home", "/home"),
             })
             {
                 CliResult activated = _workspace.Run(arguments);
@@ -206,6 +207,7 @@ public sealed class AppCommandTests : IDisposable
 
         CliResult result = _workspace.Run(
             "app",
+            "open",
             "--foreground",
             "--port",
             port.ToString(System.Globalization.CultureInfo.InvariantCulture),

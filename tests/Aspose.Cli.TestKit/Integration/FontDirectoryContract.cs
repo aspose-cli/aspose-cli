@@ -87,7 +87,7 @@ public static class FontDirectoryContract
             .ToArray();
     }
 
-    /// <summary>A result on stdout: complete (0), or partial (8) when review reports an error finding.</summary>
+    /// <summary>A result on stdout: complete (0), or partial (8) when review reports an error finding or a checked font is missing.</summary>
     private static JsonNode Succeed(CliResult result)
     {
         Assert.True(result.ExitCode is 0 or 8, $"exit {result.ExitCode}: {result.StdErr}");

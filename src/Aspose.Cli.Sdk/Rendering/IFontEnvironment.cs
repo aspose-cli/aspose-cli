@@ -11,7 +11,7 @@ namespace Aspose.Cli.Sdk.Rendering;
 public interface IFontEnvironment
 {
     /// <summary>Reports the engine's font environment: the sources it scans and the default fallback.</summary>
-    FontListResult ListFonts();
+    EngineFonts ListFonts();
 
     /// <summary>Reports whether a document's fonts are available here, and what they substitute to.</summary>
     FontCheckResult CheckFonts(string filePath, FontCheckRequest request);
@@ -24,6 +24,16 @@ public interface IFontEnvironment
     /// and each one restores the engine's previous fonts when it ends.
     /// </summary>
     IDisposable UseFonts(FontSearchProfile profile);
+}
+
+/// <summary>An engine's font environment, which <c>fonts list</c> reports for its product.</summary>
+public sealed record EngineFonts
+{
+    /// <summary>The font substituted for any unavailable font, or null when the engine has no configured default.</summary>
+    public string? DefaultFont { get; init; }
+
+    /// <summary>The font sources the engine scans, in configured order; empty for the platform defaults.</summary>
+    public required IReadOnlyList<FontSource> Sources { get; init; }
 }
 
 /// <summary>Options of <c>aspose-cli fonts check</c>.</summary>

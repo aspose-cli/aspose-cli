@@ -200,19 +200,20 @@ internal static class CommonRenderers
 
     public static void Render(FontListResult fonts, TableSurface surface)
     {
-        surface.Out.WriteLine($"default font: {fonts.DefaultFont ?? "(engine fallback)"}");
-        surface.Out.WriteLine();
-
-        if (fonts.Sources.Count == 0)
+        var table = new TextTable("product", "default font", "kind", "location");
+        foreach (ProductFonts product in fonts.Products)
         {
-            surface.Out.WriteLine("sources: (engine platform defaults)");
-            return;
-        }
+            string name = product.Product ?? "-";
+            string fallback = product.DefaultFont ?? "(engine fallback)";
+            if (product.Sources.Count == 0)
+            {
+                table.AddRow(name, fallback, "(platform defaults)", "-");
+            }
 
-        var table = new TextTable("type", "location");
-        foreach (FontSource source in fonts.Sources)
-        {
-            table.AddRow(source.Type, source.Location ?? "-");
+            foreach (FontSource source in product.Sources)
+            {
+                table.AddRow(name, fallback, source.Kind, source.Location ?? "-");
+            }
         }
 
         table.WriteTo(surface.Out, surface.Format);

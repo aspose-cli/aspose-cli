@@ -212,7 +212,7 @@ internal static class WordsAnchorResolver
                 + $"address it with {{\"block\": {closest.Index}}} or a \"find\" text it contains.";
         }
 
-        return CliErrors.NotFound(WordsDiagnostics.AnchorNotFound, subject, needle, available, hint);
+        return CliErrors.TextNotFound(WordsDiagnostics.AnchorNotFound, subject, needle, available, hint);
     }
 
     // The first block that contains the longest leading part of the text, at least half of it.

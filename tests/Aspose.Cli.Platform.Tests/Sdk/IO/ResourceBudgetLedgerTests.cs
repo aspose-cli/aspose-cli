@@ -35,8 +35,10 @@ public sealed class ResourceBudgetLedgerTests
                 CliException error = Assert.Throws<CliException>(
                     () => budgets.AdmitFile(path));
                 Assert.Equal(ErrorCodes.FileTooLarge, error.Code);
-                Assert.Equal(9L, error.Details!["sizeBytes"]!.GetValue<long>());
-                Assert.Equal(8L, error.Details["limitBytes"]!.GetValue<long>());
+                Assert.Equal(9L, error.Details!["actual"]!.GetValue<long>());
+                Assert.Equal(8L, error.Details["limit"]!.GetValue<long>());
+                Assert.Equal("bytes", error.Details["unit"]!.GetValue<string>());
+                Assert.Null(error.Details["sizeBytes"]);
             }
         }
         finally
@@ -61,7 +63,7 @@ public sealed class ResourceBudgetLedgerTests
             CliException changed = Assert.Throws<CliException>(() => InputSizeGuard.Ensure(budgets, within));
 
             Assert.Equal(ErrorCodes.FileTooLarge, tooLarge.Code);
-            Assert.Equal(8L, tooLarge.Details!["limitBytes"]!.GetValue<long>());
+            Assert.Equal(8L, tooLarge.Details!["limit"]!.GetValue<long>());
             Assert.Equal(ErrorCodes.InputChanged, changed.Code);
         }
         finally

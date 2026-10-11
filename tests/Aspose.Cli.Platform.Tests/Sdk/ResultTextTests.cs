@@ -19,7 +19,7 @@ public sealed class ResultTextTests
                 Op = "delete_block",
                 Status = OpStatuses.Failed,
                 ItemsAffected = 0,
-                Error = new OpError { Code = "OPS_INVALID", Message = "block 9 does not exist", Hint = "Read the blocks first." },
+                Error = new ErrorPayload { Code = "OPS_INVALID", Message = "block 9 does not exist", Hint = "Read the blocks first." },
             },
         ];
 

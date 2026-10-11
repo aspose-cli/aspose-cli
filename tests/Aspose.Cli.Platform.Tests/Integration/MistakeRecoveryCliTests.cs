@@ -51,9 +51,9 @@ public sealed class MistakeRecoveryCliTests : IDisposable
     }
 
     [Theory]
-    [InlineData("cells edit a.xlsx --set Sheet1!A1=5 --out x.pdf", "--out", "use .xlsx,", "aspose-cli cells convert <that file> --to pdf")]
-    [InlineData("slides edit a.pptx --ops ops.json --out x.pdf", "--out", "use .pptx,", "aspose-cli slides convert <that file> --to pdf")]
-    [InlineData("slides create x.ppt --from-markdown deck.md", "file", "use .pptx,", "aspose-cli slides convert <that file> --to ppt")]
+    [InlineData("cells edit a.xlsx --set Sheet1!A1=5 --out x.pdf", "--out", "Must be one of: .xlsx,", "then run 'aspose-cli cells convert <that file> --to pdf' for pdf")]
+    [InlineData("slides edit a.pptx --ops ops.json --out x.pdf", "--out", "Must be one of: .pptx,", "then run 'aspose-cli slides convert <that file> --to pdf' for pdf")]
+    [InlineData("slides create x.ppt --from-markdown deck.md", "file", "Must be one of: .pptx,", "then run 'aspose-cli slides convert <that file> --to ppt' for ppt")]
     public void OutputFormatTheCommandCannotWrite_PointsToTheCommandThatWritesIt(
         string commandLine, string option, string writes, string producer)
     {
@@ -68,12 +68,14 @@ public sealed class MistakeRecoveryCliTests : IDisposable
         Assert.Equal(2, result.ExitCode);
         JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
         Assert.Equal("USAGE_ERROR", error["code"]!.GetValue<string>());
-        Assert.Equal(option, error["details"]!["option"]!.GetValue<string>());
+        // A positional argument such as file is details.argument; an option is details.option.
+        Assert.Equal(option, error["details"]![option.StartsWith('-') ? "option" : "argument"]!.GetValue<string>());
         Assert.StartsWith($"{option} '", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
-        Assert.Contains($"which aspose-cli {arguments[0]} {arguments[1]} does not write; {writes}", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
-        // The command writes its own formats, never the one asked for.
-        Assert.DoesNotContain(error["details"]!["requested"]!.GetValue<string>(), error["details"]!["supported"]!.AsArray().Select(static id => id!.GetValue<string>()));
-        Assert.Contains($"then run '{producer}'", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.Contains($"which aspose-cli {arguments[0]} {arguments[1]} does not write. {writes}", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
+        // The extension names a format another command writes, so it is no mistake to correct.
+        Assert.NotNull(error["details"]!["format"]);
+        Assert.Null(error["details"]!["suggestions"]);
+        Assert.Contains(producer, error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
         Assert.False(File.Exists(_workspace.File(arguments[1] == "create" ? arguments[2] : "x.pdf")));
     }
 
@@ -88,9 +90,10 @@ public sealed class MistakeRecoveryCliTests : IDisposable
         JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
         Assert.Equal("USAGE_ERROR", error["code"]!.GetValue<string>());
         Assert.Equal(
-            ["xlsx", "xltx", "xlsm", "xltm", "xlsb", "xls", "ods", "csv", "tsv", "html", "mhtml"],
-            error["details"]!["supported"]!.AsArray().Select(static id => id!.GetValue<string>()));
-        Assert.EndsWith("use .xlsx, .xltx, .xlsm, .xltm, .xlsb, .xls, .ods, .csv, .txt, .tsv, .html, .htm, .mhtml.",error["message"]!.GetValue<string>(), StringComparison.Ordinal);
+            [".xlsx", ".xltx", ".xlsm", ".xltm", ".xlsb", ".xls", ".ods", ".csv", ".txt", ".tsv", ".html", ".htm", ".mhtml"],
+            error["details"]!["available"]!.AsArray().Select(static extension => extension!.GetValue<string>()));
+        Assert.Null(error["details"]!["supported"]);
+        Assert.EndsWith("Must be one of: .xlsx, .xltx, .xlsm, .xltm, .xlsb, .xls, .ods, .csv, .txt, .tsv, .html, .htm, .mhtml.", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
         Assert.DoesNotContain(".pdf", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
         Assert.Contains("then run 'aspose-cli cells render <that file> --to png'", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
     }
@@ -115,6 +118,25 @@ public sealed class MistakeRecoveryCliTests : IDisposable
     }
 
     [Theory]
+    [InlineData("cells edit a.xlsx --set Sheet1!A1=5 --out b.xslx", ".xlsx")]
+    public void MistypedOutputExtension_SuggestsTheExtensionMeant(string commandLine, string suggestion)
+    {
+        File.WriteAllText(_workspace.File("a.docx"), "not a document");
+        File.WriteAllText(_workspace.File("a.pdf"), "not a document");
+        File.WriteAllText(_workspace.File("a.xlsx"), "not a document");
+
+        CliResult result = _workspace.Run([.. commandLine.Split(' '), "--output-format", "json"]);
+
+        Assert.Equal(2, result.ExitCode);
+        JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
+        Assert.Equal("USAGE_ERROR", error["code"]!.GetValue<string>());
+        Assert.Contains(suggestion, error["details"]!["suggestions"]!.AsArray().Select(static extension => extension!.GetValue<string>()));
+        Assert.Contains(suggestion, error["details"]!["available"]!.AsArray().Select(static extension => extension!.GetValue<string>()));
+        Assert.StartsWith("Did you mean ", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.Contains($"'{suggestion}'", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
+    }
+
+    [Theory]
     [InlineData("slides edit a.pptx --ops ops.json --out noext", "noext")]
     [InlineData("slides edit a.pptx --ops ops.json --out dotonly.", "dotonly")]
     [InlineData("slides create noext --from-markdown deck.md", "noext")]
@@ -135,8 +157,8 @@ public sealed class MistakeRecoveryCliTests : IDisposable
         JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
         Assert.Equal("USAGE_ERROR", error["code"]!.GetValue<string>());
         Assert.Contains("has no extension", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
-        Assert.Null(error["details"]!["requested"]);
-        Assert.NotEmpty(error["details"]!["extensions"]!.AsArray());
+        Assert.Null(error["details"]!["suggestions"]);
+        Assert.NotEmpty(error["details"]!["available"]!.AsArray());
         Assert.False(File.Exists(_workspace.File(output)));
     }
 }

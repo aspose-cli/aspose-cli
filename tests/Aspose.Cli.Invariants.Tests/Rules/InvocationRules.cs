@@ -551,7 +551,8 @@ internal static partial class ContractRules
     /// One misspelling of each kind of name per product: a command, an option, an option value
     /// (the first one of <c>inspect</c>, which the parser checks, and <c>--to</c>, which the
     /// command checks itself), an operation, an operation field and an operation enum value; a top-level command; and a
-    /// target name, a cells sheet. The <c>unknown-*</c> and <c>invalid-enum</c> invariants already
+    /// target name, a cells sheet, and the positional names of <c>capabilities</c> (a product)
+    /// and <c>docs</c> (a topic). The <c>unknown-*</c> and <c>invalid-enum</c> invariants already
     /// check the exit code, the error code and that <c>details.suggestions</c> holds the intended
     /// name; this rule adds that <c>details.available</c> lists at most 50 names and
     /// <c>details.suggestions</c> is present, the hint starts with "Did you mean", and the message
@@ -605,6 +606,14 @@ internal static partial class ContractRules
         string rootTypo = InvariantCases.Typo(first, commands);
         yield return R26Case(output, $"command {first} as {rootTypo}", InvariantCases.Platform,
             new Invocation([rootTypo]), first, suggests: false);
+        string[] products = [.. catalog.Products.Select(static product => product.Id)];
+        string productTypo = InvariantCases.Typo(first, products);
+        yield return R26Case(output, $"capabilities product {first} as {productTypo}", InvariantCases.Platform,
+            new Invocation(["capabilities", productTypo]), first, suggests: true);
+        // editing is the platform guide every build ships (aspose-cli docs lists the topics).
+        const string Topic = "editing";
+        yield return R26Case(output, $"docs topic {Topic} as {InvariantCases.Typo(Topic, [Topic])}", InvariantCases.Platform,
+            new Invocation(["docs", InvariantCases.Typo(Topic, [Topic])]), Topic, suggests: true);
         if (catalog.Commands.FirstOrDefault(static command => !command.Hidden && command.Product == "cells" && command.Has("--sheet") && !command.Has("--out")
             && command.Arguments.Any(static argument => argument.Required && argument.InputKind == "file")) is { } sheets)
         {

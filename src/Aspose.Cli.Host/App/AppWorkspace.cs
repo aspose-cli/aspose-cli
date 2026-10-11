@@ -92,7 +92,7 @@ internal sealed class AppWorkspace
         string? path = _preferences.ResolveRecent(id);
         if (path is null)
         {
-            throw CliErrors.FileNotFound("recent file");
+            throw CliErrors.RecentFileNotFound(id);
         }
         OpenPath(path, uploadedCopy: false);
     }

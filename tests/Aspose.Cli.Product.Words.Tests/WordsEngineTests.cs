@@ -169,7 +169,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
 
         WordsEditResult result = Run();
         Assert.Equal([OpStatuses.Ok, OpStatuses.Failed, OpStatuses.Ok], result.Applied.Select(static applied => applied.Status));
-        OpError failure = result.Applied[1].Error!;
+        ErrorPayload failure = result.Applied[1].Error!;
         Assert.Equal(WordsDiagnostics.BlockNotFound.Name, failure.Code);
         Assert.Equal("op-0002", failure.Details!["id"]!.GetValue<string>());
         Assert.Equal("delete_blocks", failure.Details["op"]!.GetValue<string>());

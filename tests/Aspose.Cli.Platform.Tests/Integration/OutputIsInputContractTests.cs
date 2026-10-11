@@ -46,7 +46,7 @@ public sealed class OutputIsInputContractTests
         Assert.True(result.ExitCode == 2, $"exit {result.ExitCode}: {result.StdErr}");
         JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
         Assert.Equal("OPTION_INVALID", error["code"]!.GetValue<string>());
-        Assert.Equal(parameter, error["details"]!["option"]!.GetValue<string>());
+        Assert.Equal(parameter, error["details"]![parameter.StartsWith('-') ? "option" : "argument"]!.GetValue<string>());
         Assert.All(inputs, input => Assert.Equal("input", File.ReadAllText(workspace.File(input))));
     }
 }

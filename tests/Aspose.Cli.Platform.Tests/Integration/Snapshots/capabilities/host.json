@@ -1820,41 +1820,224 @@
         },
         "error": {
           "description": "The error details.",
-          "$ref": "#/$defs/errorPayload"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/error-payload.schema.json"
         }
-      },
-      "$defs": {
-        "errorPayload": {
-          "description": "Error details designed for agent self-correction: the message states the fact, details carries structured context (often including the valid alternatives), and hint tells the caller the most likely fix.",
+      }
+    },
+    "v2/common/error-payload": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "$id": "https://schemas.aspose.com/aspose-cli/v2/common/error-payload.schema.json",
+      "description": "Error details designed for agent self-correction: the message states the fact, details carries structured context (often including the valid alternatives), and hint tells the caller the most likely fix. The error envelope and a failed operation of a best-effort batch carry the same object.",
+      "type": "object",
+      "required": [
+        "code",
+        "message"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "description": "Stable SCREAMING_SNAKE_CASE error code, e.g. SHEET_NOT_FOUND.",
+          "type": "string",
+          "pattern": "^[A-Z][A-Z0-9_]*$"
+        },
+        "message": {
+          "description": "Human-readable description of what went wrong.",
+          "type": "string"
+        },
+        "details": {
+          "description": "Structured context, e.g. {\"requested\": \"Salez\", \"available\": [\"Sales\"]}. Its keys come from one dictionary, each described here; no value is null.",
           "type": "object",
-          "required": [
-            "code",
-            "message"
-          ],
           "additionalProperties": false,
           "properties": {
-            "code": {
-              "description": "Stable SCREAMING_SNAKE_CASE error code, e.g. SHEET_NOT_FOUND.",
-              "type": "string",
-              "pattern": "^[A-Z][A-Z0-9_]*$"
+            "actual": {
+              "description": "The measured amount of a budget, in unit."
             },
-            "message": {
-              "description": "Human-readable description of what went wrong.",
-              "type": "string"
+            "actualExists": {
+              "description": "Whether the output existed when publication found it changed."
             },
-            "details": {
-              "description": "Structured context, e.g. {\"requested\": \"Salez\", \"available\": [\"Sales\"]}.",
-              "type": "object"
+            "actualSha256": {
+              "description": "The SHA-256 of the output publication found."
             },
-            "hint": {
-              "description": "Recommended next action for the caller.",
-              "type": "string"
+            "actualSizeBytes": {
+              "description": "The size of the output publication found."
             },
-            "docs": {
-              "description": "Topic name for aspose-cli docs <topic> with background details.",
-              "type": "string"
+            "argument": {
+              "description": "The positional argument the error is about, such as file."
+            },
+            "available": {
+              "description": "The names or values that exist or are accepted, at most 50."
+            },
+            "availableCount": {
+              "description": "How many names or values exist or are accepted."
+            },
+            "cause": {
+              "description": "Why an operation field was refused."
+            },
+            "declared": {
+              "description": "The product the command or extension declares."
+            },
+            "detected": {
+              "description": "The products whose formats the content matches."
+            },
+            "diagnosticId": {
+              "description": "The host diagnostic id of a startup or process failure."
+            },
+            "directory": {
+              "description": "The directory the error is about."
+            },
+            "dpi": {
+              "description": "The resolution of a render, in dots per inch."
+            },
+            "engineMessage": {
+              "description": "The document engine's own message."
+            },
+            "errors": {
+              "description": "Every problem, when there are several."
+            },
+            "expectedBytes": {
+              "description": "The size an input had when it was admitted."
+            },
+            "expectedExists": {
+              "description": "Whether the output existed when the command read it."
+            },
+            "expectedSha256": {
+              "description": "The SHA-256 the file had when the command read it."
+            },
+            "expectedSizeBytes": {
+              "description": "The size the output had when the command read it."
+            },
+            "extension": {
+              "description": "The file extension the error is about."
+            },
+            "feature": {
+              "description": "The feature the product or format does not support."
+            },
+            "feed": {
+              "description": "The release feed the update read."
+            },
+            "field": {
+              "description": "The operation field the error is about."
+            },
+            "format": {
+              "description": "The format id the error is about."
+            },
+            "height": {
+              "description": "The height of a render, in pixels."
+            },
+            "id": {
+              "description": "The id of the failing operation, as its applied[] entry states it."
+            },
+            "limit": {
+              "description": "The budget's limit, in unit."
+            },
+            "line": {
+              "description": "The line of a text input the error is about."
+            },
+            "observedBytes": {
+              "description": "The size an input had when it was read again."
+            },
+            "observedSha256": {
+              "description": "The SHA-256 an input had when it was read again."
+            },
+            "offset": {
+              "description": "The byte offset of the problem in an input."
+            },
+            "op": {
+              "description": "The op name of the failing operation."
+            },
+            "operation": {
+              "description": "The product feature the error is about."
+            },
+            "option": {
+              "description": "The option the error is about, such as --pages."
+            },
+            "originalError": {
+              "description": "The error that stopped a publication: its code and details."
+            },
+            "path": {
+              "description": "The absolute path of the file the error is about."
+            },
+            "phase": {
+              "description": "The stage of processing that failed."
+            },
+            "pid": {
+              "description": "The id of the process the error is about."
+            },
+            "port": {
+              "description": "The loopback port the error is about."
+            },
+            "problems": {
+              "description": "The problems the engine reported."
+            },
+            "product": {
+              "description": "The product the error is about."
+            },
+            "profile": {
+              "description": "The conformance profile the error is about."
+            },
+            "quiescenceConfirmed": {
+              "description": "Whether the stopped worker was confirmed to have ended."
+            },
+            "range": {
+              "description": "The range or selection as the caller wrote it."
+            },
+            "reason": {
+              "description": "Why the value or file was refused."
+            },
+            "recoveryComplete": {
+              "description": "Whether every publication target was restored."
+            },
+            "requested": {
+              "description": "The name, number, value or path as the caller wrote it."
+            },
+            "resource": {
+              "description": "The budget's resource kind."
+            },
+            "sample": {
+              "description": "An excerpt of the input the error is about."
+            },
+            "sheet": {
+              "description": "The worksheet the error is about."
+            },
+            "source": {
+              "description": "The source of a value, such as a variable or file."
+            },
+            "stage": {
+              "description": "The stage of the worker that failed."
+            },
+            "subject": {
+              "description": "What was looked up, such as sheet, page or file."
+            },
+            "suggestions": {
+              "description": "The accepted names closest to the request, best first."
+            },
+            "target": {
+              "description": "The target the error is about."
+            },
+            "targets": {
+              "description": "The publication targets and their state."
+            },
+            "timeoutSeconds": {
+              "description": "The timeout that elapsed, in seconds."
+            },
+            "unit": {
+              "description": "The unit of a budget's limit and actual."
+            },
+            "variable": {
+              "description": "The environment variable the error is about."
+            },
+            "width": {
+              "description": "The width of a render, in pixels."
             }
           }
+        },
+        "hint": {
+          "description": "Recommended next action for the caller.",
+          "type": "string"
+        },
+        "docs": {
+          "description": "Topic name for aspose-cli docs <topic> with background details.",
+          "type": "string"
         }
       }
     },
@@ -1878,7 +2061,7 @@
     "v2/common/font-check": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "$id": "https://schemas.aspose.com/aspose-cli/v2/common/font-check.schema.json",
-      "description": "Result of aspose-cli fonts check <file>: whether the fonts a document uses are available on this machine and, if not, what they will be substituted with. This is the rendering-fidelity diagnostic that a product listing of the used fonts cannot give.",
+      "description": "Result of aspose-cli fonts check <file>: whether the fonts a document uses are available on this machine and, if not, what they will be substituted with. This is the rendering-fidelity diagnostic that a product listing of the used fonts cannot give. A document with a font that is not available here exits 8.",
       "type": "object",
       "required": [
         "schema",
@@ -1953,12 +2136,12 @@
     "v2/common/font-list": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "$id": "https://schemas.aspose.com/aspose-cli/v2/common/font-list.schema.json",
-      "description": "Result of aspose-cli fonts list: the engine's font environment — the default fallback font and the sources it scans. Answers \"where does this build look for fonts, and what does it fall back to\" so a \"renders wrong on the server\" problem (P-5) can be traced to font configuration.",
+      "description": "Result of aspose-cli fonts list: the font environment of each product engine — the default fallback font and the sources it scans. Answers \"where does this build look for fonts, and what does it fall back to\" so a \"renders wrong on the server\" problem (P-5) can be traced to font configuration.",
       "type": "object",
       "required": [
         "schema",
         "schemaVersion",
-        "sources"
+        "products"
       ],
       "additionalProperties": false,
       "properties": {
@@ -1970,15 +2153,11 @@
           "description": "Version of this result contract.",
           "const": 2
         },
-        "defaultFont": {
-          "description": "The font substituted for any unavailable font when rendering; omitted when the engine exposes no configured default (it then uses an internal fallback).",
-          "type": "string"
-        },
-        "sources": {
-          "description": "The font sources the engine scans, in configured order. Empty means the engine uses its platform defaults (typically the OS font folders).",
+        "products": {
+          "description": "One entry per product, in catalog order: every product with font diagnostics, or only the one --product names.",
           "type": "array",
           "items": {
-            "$ref": "#/$defs/fontSource"
+            "$ref": "#/$defs/productFonts"
           }
         },
         "license": {
@@ -1998,11 +2177,11 @@
           "description": "One place the engine looks for fonts.",
           "type": "object",
           "required": [
-            "type"
+            "kind"
           ],
           "additionalProperties": false,
           "properties": {
-            "type": {
+            "kind": {
               "description": "Source kind: folder, file, memory, system or other.",
               "type": "string",
               "enum": [
@@ -2016,6 +2195,32 @@
             "location": {
               "description": "Filesystem location; omitted for in-memory sources.",
               "type": "string"
+            }
+          }
+        },
+        "productFonts": {
+          "description": "The font environment of one product engine.",
+          "type": "object",
+          "required": [
+            "product",
+            "sources"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "product": {
+              "description": "The product whose font engine this is.",
+              "type": "string"
+            },
+            "defaultFont": {
+              "description": "The font substituted for any unavailable font when rendering; omitted when the engine exposes no configured default (it then uses an internal fallback).",
+              "type": "string"
+            },
+            "sources": {
+              "description": "The font sources the engine scans, in configured order. Empty means the engine uses its platform defaults (typically the OS font folders).",
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/fontSource"
+              }
             }
           }
         }
@@ -2185,12 +2390,11 @@
     "v2/common/not-found-details": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "$id": "https://schemas.aspose.com/aspose-cli/v2/common/not-found-details.schema.json",
-      "description": "Details of an error whose code names a target the document does not contain. They state what was requested and what exists, so the caller can correct the request without another inspection. Operation errors add the operation's id and op.",
+      "description": "Details of an error whose code names a target that does not exist: a part the document does not contain, or a file. They state what was requested and what exists, so the caller can correct the request without another inspection. Operation errors add the operation's id and op.",
       "type": "object",
       "required": [
         "subject",
-        "requested",
-        "availableCount"
+        "requested"
       ],
       "additionalProperties": false,
       "properties": {
@@ -2199,13 +2403,21 @@
           "type": "string"
         },
         "requested": {
-          "description": "The name, number or range as the caller wrote it.",
+          "description": "The name, number, range or path as the caller wrote it.",
           "type": "string"
         },
         "availableCount": {
-          "description": "How many targets of this kind the document contains.",
+          "description": "How many targets of this kind the document contains; present for a target in a document.",
           "type": "integer",
           "minimum": 0
+        },
+        "path": {
+          "description": "The absolute path of the missing file; present for a file.",
+          "type": "string"
+        },
+        "source": {
+          "description": "Where the missing file was configured, such as an environment variable; present when a setting names it.",
+          "type": "string"
         },
         "available": {
           "description": "The names that exist, in document order; present for named targets and truncated to 50 when availableCount is larger.",
@@ -2279,38 +2491,8 @@
           }
         },
         "error": {
-          "description": "Failure details; present only when status is failed.",
-          "$ref": "#/$defs/opError"
-        }
-      },
-      "$defs": {
-        "opError": {
-          "description": "An operation failure reported by a best-effort batch.",
-          "type": "object",
-          "required": [
-            "code",
-            "message",
-            "hint"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "code": {
-              "description": "Stable machine-readable error code.",
-              "type": "string"
-            },
-            "message": {
-              "description": "Human-readable failure description.",
-              "type": "string"
-            },
-            "hint": {
-              "description": "Actionable recovery guidance for the failed operation.",
-              "type": "string"
-            },
-            "details": {
-              "description": "Structured context from the error, such as the names a not-found target could have been; the same object a failing batch would report in its error envelope.",
-              "type": "object"
-            }
-          }
+          "description": "The error that stopped the operation, as an error envelope states it; present only when status is failed.",
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/error-payload.schema.json"
         }
       }
     },
@@ -3731,102 +3913,14 @@
       "aliases": [],
       "description": "Open the local file workspace in a browser.",
       "hidden": false,
-      "options": [
-        {
-          "name": "--foreground",
-          "aliases": [],
-          "type": "boolean",
-          "minimumArity": 0,
-          "maximumArity": 1,
-          "required": false,
-          "recursive": false,
-          "hidden": false,
-          "hasDefault": true,
-          "default": "false",
-          "allowedValues": [
-            "false",
-            "true"
-          ],
-          "secret": false,
-          "valueSource": "command-line",
-          "description": "Keep the App in this process for debugging, containers and tests."
-        },
-        {
-          "name": "--no-open",
-          "aliases": [],
-          "type": "boolean",
-          "minimumArity": 0,
-          "maximumArity": 1,
-          "required": false,
-          "recursive": false,
-          "hidden": false,
-          "hasDefault": true,
-          "default": "false",
-          "allowedValues": [
-            "false",
-            "true"
-          ],
-          "secret": false,
-          "valueSource": "command-line",
-          "description": "Start or activate the App without opening a browser."
-        },
-        {
-          "name": "--port",
-          "aliases": [],
-          "type": "integer",
-          "minimumArity": 1,
-          "maximumArity": 1,
-          "required": false,
-          "recursive": false,
-          "hidden": false,
-          "hasDefault": true,
-          "default": "0",
-          "allowedValues": [],
-          "secret": false,
-          "valueSource": "command-line",
-          "description": "Loopback port; 0 chooses a free port."
-        },
-        {
-          "name": "--route",
-          "aliases": [],
-          "type": "string",
-          "minimumArity": 1,
-          "maximumArity": 1,
-          "required": false,
-          "recursive": false,
-          "hidden": true,
-          "hasDefault": false,
-          "allowedValues": [],
-          "secret": false,
-          "valueSource": "command-line"
-        },
-        {
-          "name": "--welcome",
-          "aliases": [],
-          "type": "boolean",
-          "minimumArity": 0,
-          "maximumArity": 1,
-          "required": false,
-          "recursive": false,
-          "hidden": false,
-          "hasDefault": true,
-          "default": "false",
-          "allowedValues": [
-            "false",
-            "true"
-          ],
-          "secret": false,
-          "valueSource": "command-line",
-          "description": "Open the first-run workspace guide."
-        }
-      ],
+      "options": [],
       "arguments": []
     },
     {
       "path": "aspose-cli app open",
       "name": "open",
       "aliases": [],
-      "description": "Open a file in the local App.",
+      "description": "Start or activate the local App and open a file, its home page or its guide.",
       "hidden": false,
       "options": [
         {
@@ -3882,6 +3976,25 @@
           "secret": false,
           "valueSource": "command-line",
           "description": "Loopback port; 0 chooses a free port."
+        },
+        {
+          "name": "--welcome",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hidden": false,
+          "hasDefault": true,
+          "default": "false",
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "description": "Open the first-run workspace guide instead of a file."
         }
       ],
       "arguments": [
@@ -3896,7 +4009,7 @@
           "required": false,
           "hasDefault": false,
           "allowedValues": [],
-          "description": "File to open in the local App."
+          "description": "File to open in the local App; without one the App opens on its home page."
         }
       ]
     },
@@ -4103,7 +4216,7 @@
       "path": "aspose-cli fonts list",
       "name": "list",
       "aliases": [],
-      "description": "List the engine's font sources and its default fallback font.",
+      "description": "List each engine's font sources and its default fallback font.",
       "hidden": false,
       "options": [
         {
@@ -4115,8 +4228,7 @@
           "required": false,
           "recursive": false,
           "hidden": false,
-          "hasDefault": true,
-          "default": "cells",
+          "hasDefault": false,
           "allowedValues": [
             "cells",
             "pdf",
@@ -4125,7 +4237,7 @@
           ],
           "secret": false,
           "valueSource": "command-line",
-          "description": "Product font engine to inspect."
+          "description": "Product whose font engine to list; every product's when omitted."
         }
       ],
       "arguments": []
@@ -5171,7 +5283,7 @@
       "severity": "error",
       "exitCode": 3,
       "category": "input",
-      "detailsSchemaId": "v2/common/diagnostic-details"
+      "detailsSchemaId": "v2/common/not-found-details"
     },
     {
       "code": "FILE_TOO_LARGE",
@@ -5243,7 +5355,7 @@
       "severity": "error",
       "exitCode": 7,
       "category": "license",
-      "detailsSchemaId": "v2/common/diagnostic-details"
+      "detailsSchemaId": "v2/common/not-found-details"
     },
     {
       "code": "LICENSE_INVALID",
@@ -5420,8 +5532,8 @@
       "code": "RENDER_FAILED",
       "owner": "common",
       "severity": "error",
-      "exitCode": 4,
-      "category": "validation",
+      "exitCode": 6,
+      "category": "format",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {

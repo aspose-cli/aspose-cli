@@ -24,11 +24,11 @@ internal sealed class SlidesFontEnvironment : IFontEnvironment
     }
 
     /// <inheritdoc />
-    public FontListResult ListFonts() =>
-        new FontListResult
+    public EngineFonts ListFonts() =>
+        new EngineFonts
         {
             Sources = FontsLoader.GetFontFolders()
-                .Select(static folder => new FontSource { Type = "folder", Location = folder })
+                .Select(static folder => new FontSource { Kind = "folder", Location = folder })
                 .ToArray(),
         };
 

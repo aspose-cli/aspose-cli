@@ -22,7 +22,7 @@ internal sealed class PdfFontEnvironment : IFontEnvironment
     }
 
     /// <inheritdoc />
-    public FontListResult ListFonts() => new()
+    public EngineFonts ListFonts() => new()
     {
         Sources = FontRepository.Sources.Select(ToContract).ToArray(),
     };
@@ -88,9 +88,9 @@ internal sealed class PdfFontEnvironment : IFontEnvironment
 
     private static Aspose.Cli.Sdk.Contracts.FontSource ToContract(Aspose.Pdf.Text.FontSource source) => source switch
     {
-        FolderFontSource folder => new Aspose.Cli.Sdk.Contracts.FontSource { Type = "folder", Location = folder.FolderPath },
-        SystemFontSource => new Aspose.Cli.Sdk.Contracts.FontSource { Type = "system" },
-        _ => new Aspose.Cli.Sdk.Contracts.FontSource { Type = "other" },
+        FolderFontSource folder => new Aspose.Cli.Sdk.Contracts.FontSource { Kind = "folder", Location = folder.FolderPath },
+        SystemFontSource => new Aspose.Cli.Sdk.Contracts.FontSource { Kind = "system" },
+        _ => new Aspose.Cli.Sdk.Contracts.FontSource { Kind = "other" },
     };
 
     private sealed record UsedFont(string Name, bool Available);

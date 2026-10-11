@@ -2,6 +2,7 @@ using System.CommandLine;
 using System.Globalization;
 using System.Text;
 using Aspose.Cli.Host.Invocation;
+using Aspose.Cli.Host.Output;
 
 namespace Aspose.Cli.Host;
 
@@ -28,6 +29,13 @@ public static class CliHost
             return ProcessFailureBoundary.Run(host, args, arguments =>
             {
                 ParsedInvocation invocation = host.Parser.Parse(arguments);
+                if (invocation.LacksCommand
+                    && host.Parser.ResolveErrorOutput(arguments).OutputFormat is OutputMode.Table or OutputMode.Markdown)
+                {
+                    // A group run without a command answers with its help, before the error.
+                    host.Parser.WriteHelp(arguments, Console.Error);
+                }
+
                 invocation.EnsureValid();
                 StartupLicenseNotice.Write(host, invocation, Console.Error);
                 return TimeoutWorkerSupervisor.Run(host, arguments, invocation,
@@ -74,7 +82,7 @@ public static class CliHost
 
         if (args.Length == 0)
         {
-            return ["app"];
+            return ["app", "open"];
         }
 
         return args.Length == 1

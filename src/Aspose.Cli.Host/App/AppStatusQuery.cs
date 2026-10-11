@@ -139,7 +139,7 @@ internal sealed class AppStatusQuery
             // while; the gate keeps a warm-up and the first status from starting the same child twice.
             try
             {
-                FontListResult fonts = _cli.Fonts(product.Manifest.Id);
+                ProductFonts fonts = _cli.Fonts(product.Manifest.Id);
                 string fallback =
                     fonts.DefaultFont ?? "engine default";
                 return new AppDiagnosticView(

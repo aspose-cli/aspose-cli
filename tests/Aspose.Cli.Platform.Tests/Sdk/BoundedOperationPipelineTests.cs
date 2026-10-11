@@ -266,7 +266,7 @@ public sealed class BoundedOperationPipelineTests
             throw CliErrors.NotFoundAt(ErrorCodes.PageNotFound, "page", "4", 3);
 
         CliException error = Assert.Throws<CliException>(() => Run(batch, bestEffort: false, missingPage));
-        OpError recorded = Run(batch, bestEffort: true, missingPage)[0].Error!;
+        ErrorPayload recorded = Run(batch, bestEffort: true, missingPage)[0].Error!;
 
         Assert.Equal(ErrorCodes.PageNotFound, error.Code);
         Assert.Equal("op-0001", error.Details!["id"]!.GetValue<string>());
@@ -334,7 +334,7 @@ public sealed class BoundedOperationPipelineTests
 
         if (bestEffort)
         {
-            OpError recorded = Run(batch, bestEffort: true, Apply)[1].Error!;
+            ErrorPayload recorded = Run(batch, bestEffort: true, Apply)[1].Error!;
             Assert.Equal(ErrorCodes.FileNotFound.Name, recorded.Code);
             Assert.Equal(missing, recorded.Details!["path"]!.GetValue<string>());
             return;

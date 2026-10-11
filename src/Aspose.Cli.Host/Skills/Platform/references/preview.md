@@ -55,5 +55,5 @@ already saved in a file; regenerate the file with the license
 
 ## The App
 
-`aspose-cli app` opens the same viewer inside a browser workspace for people
+`aspose-cli app open` opens the same viewer inside a browser workspace for people
 who prefer a guided setup; see `aspose-cli docs app`.

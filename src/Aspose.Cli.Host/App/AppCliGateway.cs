@@ -132,7 +132,7 @@ internal sealed class AppCliGateway
     /// for <see cref="FontFailureRetryInterval"/> only, so a transient one
     /// (a timeout) is asked again when Settings is reopened.
     /// </summary>
-    public FontListResult Fonts(string productId)
+    public ProductFonts Fonts(string productId)
     {
         int generation;
         lock (_gate)
@@ -149,7 +149,7 @@ internal sealed class AppCliGateway
         {
             answer = new FontAnswer(Read(
                 ["fonts", "list", "--product", productId],
-                SdkJsonContext.Default.FontListResult), null, _clock.GetUtcNow());
+                SdkJsonContext.Default.FontListResult).Products.Single(), null, _clock.GetUtcNow());
         }
         catch (CliException failure)
         {
@@ -163,7 +163,7 @@ internal sealed class AppCliGateway
         return answer.Result ?? throw answer.Failure!;
     }
 
-    private sealed record FontAnswer(FontListResult? Result, CliException? Failure, DateTimeOffset At);
+    private sealed record FontAnswer(ProductFonts? Result, CliException? Failure, DateTimeOffset At);
 
     /// <summary>Forgets every font answer; the caller holds <see cref="_gate"/>.</summary>
     private void ClearFonts()
