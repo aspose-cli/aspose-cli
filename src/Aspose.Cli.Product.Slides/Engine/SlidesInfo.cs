@@ -27,7 +27,7 @@ internal static class SlidesInfo
 
         return new PresentationInfoResult
         {
-            Source = Source(request.Input, loaded.FormatId),
+            Input = Source(request.Input, loaded),
             Presentation = new PresentationSummary
             {
                 SlideCount = presentation.Slides.Count,

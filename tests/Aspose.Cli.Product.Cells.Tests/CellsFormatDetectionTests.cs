@@ -30,7 +30,7 @@ public sealed class CellsFormatDetectionTests(CellsFixture fixture) : IClassFixt
 
         WorkbookInfoResult result = CellsInfo.Run(fixture.Session, new InfoRequest { Input = path });
 
-        Assert.Equal("excel2", result.Source.Format);
+        Assert.Equal("excel2", result.Input.Format);
     }
 
     [Fact]
@@ -40,8 +40,8 @@ public sealed class CellsFormatDetectionTests(CellsFixture fixture) : IClassFixt
 
         WorkbookInfoResult result = CellsInfo.Run(fixture.Session, new InfoRequest { Input = path, Password = new Secret("secret") });
 
-        Assert.Equal("xlsx", result.Source.Format);
-        Assert.True(result.Source.Encrypted);
+        Assert.Equal("xlsx", result.Input.Format);
+        Assert.True(result.Input.Encrypted);
     }
 
     [Fact]
@@ -59,7 +59,7 @@ public sealed class CellsFormatDetectionTests(CellsFixture fixture) : IClassFixt
 
         WorkbookInfoResult result = CellsInfo.Run(fixture.Session, new InfoRequest { Input = path });
 
-        Assert.Equal("html", result.Source.Format);
+        Assert.Equal("html", result.Input.Format);
     }
 
     private string SaveWorkbook(string fileName, SaveFormat format)

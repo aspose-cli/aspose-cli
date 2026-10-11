@@ -37,7 +37,7 @@
       "args": ["fonts", "check", "notes.txt"],
       "expect": {
         "exitCode": 0,
-        "json": [{ "path": "source.format", "equals": "txt" }],
+        "json": [{ "path": "input.format", "equals": "txt" }],
         "files": { "unchanged": ["notes.txt"] }
       }
     }

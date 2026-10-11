@@ -56,7 +56,7 @@ internal static class PdfRead
 
         return new PdfReadResult
         {
-            Source = PdfInfoProjection.Source(filePath),
+            Input = PdfInfoProjection.Source(filePath, loaded),
             Mode = request.Mode,
             PageCount = loaded.Document.Pages.Count,
             Pages = pages,

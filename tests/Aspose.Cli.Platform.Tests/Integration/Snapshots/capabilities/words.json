@@ -3226,11 +3226,11 @@
         },
         "left": {
           "description": "The original document.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/source.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
         },
         "right": {
           "description": "The changed document.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/source.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
         },
         "identical": {
           "description": "Whether the comparison found no revisions.",
@@ -3347,7 +3347,7 @@
         },
         "input": {
           "description": "The converted document.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/source.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
         },
         "output": {
           "description": "The written file.",
@@ -3416,7 +3416,7 @@
         "schema",
         "schemaVersion",
         "kind",
-        "source",
+        "input",
         "document"
       ],
       "additionalProperties": false,
@@ -3433,9 +3433,9 @@
           "description": "The kind of file inspected: always document.",
           "const": "document"
         },
-        "source": {
+        "input": {
           "description": "The inspected document.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/source.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
         },
         "document": {
           "description": "The summary every inspect returns, whatever details it asks for.",
@@ -3967,7 +3967,7 @@
         "schema",
         "schemaVersion",
         "kind",
-        "source",
+        "input",
         "scope",
         "blockCount",
         "blocks",
@@ -3987,9 +3987,9 @@
           "description": "The kind of file read: always document.",
           "const": "document"
         },
-        "source": {
+        "input": {
           "description": "The document read.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/source.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
         },
         "scope": {
           "description": "The projection, as --scope chose it.",
@@ -4280,7 +4280,7 @@
         },
         "input": {
           "description": "The edited document.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/source.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
         },
         "output": {
           "description": "The written document; absent for a dry run.",
@@ -4400,7 +4400,7 @@
         },
         "input": {
           "description": "The document extracted from.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/source.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
         },
         "what": {
           "description": "What was extracted, as --what named it.",
@@ -6292,7 +6292,7 @@
         },
         "input": {
           "description": "The rendered document.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/source.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
         },
         "outputs": {
           "description": "One written image per rendered page, in page order.",
@@ -6351,7 +6351,7 @@
       "required": [
         "schema",
         "schemaVersion",
-        "source",
+        "input",
         "pattern",
         "hits",
         "window"
@@ -6366,9 +6366,9 @@
           "description": "Version of this result contract.",
           "const": 2
         },
-        "source": {
+        "input": {
           "description": "The searched document.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/source.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
         },
         "pattern": {
           "description": "The text or regular expression searched for.",
@@ -6476,7 +6476,7 @@
         },
         "input": {
           "description": "The split document.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/source.schema.json"
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
         },
         "outputs": {
           "description": "The written parts, in document order.",

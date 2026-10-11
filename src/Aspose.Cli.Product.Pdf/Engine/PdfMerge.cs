@@ -1,4 +1,5 @@
 using Aspose.Cli.Sdk.Errors;
+using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Results;
 using Aspose.Pdf;
@@ -28,7 +29,7 @@ internal static class PdfMerge
         }
 
         LicenseState state = session.Outputs.License;
-        var inputs = new List<SourceInfo>(request.InputPaths.Count);
+        var inputs = new List<InputInfo>(request.InputPaths.Count);
         using var merged = new Document();
         int bookmarks = 0;
         int brokenInputLinks = 0;
@@ -66,14 +67,14 @@ internal static class PdfMerge
                 warnings.Add(portfolio);
             }
 
-            inputs.Add(PdfInfoProjection.Source(path));
+            inputs.Add(PdfInfoProjection.Source(path, loaded));
         }
 
         var navigation = new PdfNavigationCensus(
             bookmarks,
             Math.Max(0, PdfNavigationCensus.Unresolved(merged).Links - brokenInputLinks),
             namedDestinations);
-        long size = session.Outputs.Write(request.Output.Path, request.Output.Overwrite, merged, merged.Save);
+        PublishedFile written = session.Outputs.Write(request.Output.Path, request.Output.Overwrite, merged, merged.Save);
         if (navigation.ToWarning(
                 "lost their exact target: merged bookmarks open their page at Fit zoom, and named destinations are not carried into the merged document",
                 "Re-create location-sensitive bookmarks (add_bookmark) and links (add_link) on the merged PDF.")
@@ -85,7 +86,7 @@ internal static class PdfMerge
         return new PdfWriteResult
         {
             Action = "merge",
-            Output = BuildOutput(request.Output.Path, "pdf", size),
+            Output = FileObjects.Output(written, request.Output.Format, merged.IsEncrypted),
             Inputs = inputs,
             License = EnvelopeParts.License(state),
             Warnings = warnings.Count == 0 ? null : warnings,

@@ -417,7 +417,7 @@ public sealed class PdfEngineTests
         });
 
         Assert.Equal("pdf", result.Kind);
-        Assert.Equal("pdf", result.Source.Format);
+        Assert.Equal("pdf", result.Input.Format);
         Assert.Equal(2, result.Pdf.PageCount);
         Assert.Equal("none", result.Pdf.FormType);
         Assert.Equal(2, result.Pdf.DistinctPageSizes.Count);

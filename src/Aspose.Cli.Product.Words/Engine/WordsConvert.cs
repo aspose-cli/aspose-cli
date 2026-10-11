@@ -1,4 +1,5 @@
 using Aspose.Cli.Product.Words.Engine.Mapping;
+using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Results;
 using Aspose.Words.Saving;
@@ -17,7 +18,7 @@ internal static class WordsConvert
         IReadOnlyList<int>? pages = request.Pages?.Resolve(loaded.Document.PageCount);
         SaveOptions options = WordsSavePipeline.Options(request.Output.Format.Id, request.EncryptPassword, pages);
         WordsSavePipeline.RemoveMacrosUnlessKept(loaded.Document, request.Output.Format.Id);
-        long size = session.Outputs.Write(request.Output.Path, request.Output.Overwrite, loaded.Document, temp =>
+        PublishedFile written = session.Outputs.Write(request.Output.Path, request.Output.Overwrite, loaded.Document, temp =>
         {
             try { loaded.Document.Save(temp, options); }
             finally { loaded.Resources.ThrowIfFailed(); }
@@ -26,7 +27,7 @@ internal static class WordsConvert
         return new WordsConvertResult
         {
             Input = InfoProjection.Source(request.Input, loaded),
-            Output = BuildOutput(request.Output.Path, request.Output.Format.Id, size),
+            Output = FileObjects.Output(written, request.Output.Format, encrypted: request.EncryptPassword is not null),
             Pages = request.Pages?.Text,
             License = EnvelopeParts.License(state),
             Warnings = warnings,

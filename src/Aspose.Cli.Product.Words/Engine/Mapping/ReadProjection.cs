@@ -57,7 +57,7 @@ internal static class ReadProjection
 
         return new DocumentReadResult
         {
-            Source = InfoProjection.Source(path, loaded),
+            Input = InfoProjection.Source(path, loaded),
             Scope = request.Scope,
             Blocks = blocks,
             BlockCount = index.Count,

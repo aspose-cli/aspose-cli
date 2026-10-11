@@ -740,8 +740,8 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
         Assert.Equal(ErrorCodes.PasswordRequired, missing.Code);
         Assert.Equal(ErrorCodes.PasswordInvalid, wrong.Code);
         Assert.True(opened.Document.BlockCount > 0);
-        Assert.True(opened.Source.Encrypted);
-        Assert.False(WordsInspect.Run(_fixture.Session, new DocumentInfoRequest { Input = _fixture.CreateReport("plain-report.docx") }).Source.Encrypted);
+        Assert.True(opened.Input.Encrypted);
+        Assert.False(WordsInspect.Run(_fixture.Session, new DocumentInfoRequest { Input = _fixture.CreateReport("plain-report.docx") }).Input.Encrypted);
         Assert.True(FileFormatUtil.DetectFileFormat(output).IsEncrypted);
         var reopened = new Document(output, new LoadOptions { Password = outputPassword });
         Assert.Contains("Encrypted portable document", reopened.GetText(), StringComparison.Ordinal);

@@ -1,3 +1,4 @@
+using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Results;
 using Aspose.Slides;
@@ -33,7 +34,7 @@ internal static class SlidesCreate
         }
 
         Encrypt(presentation, request.EncryptPassword);
-        long size = session.Outputs.Write(
+        PublishedFile written = session.Outputs.Write(
             request.Output.Path,
             request.Output.Overwrite,
             presentation,
@@ -44,24 +45,14 @@ internal static class SlidesCreate
             });
         return new SlidesCreateResult
         {
-            Output = new OutputInfo
-            {
-                Path = request.Output.Path,
-                Format = format,
-                SizeBytes = size,
-            },
+            Output = FileObjects.Output(written, request.Output.Format, presentation.ProtectionManager.IsEncrypted),
             SlideCount = presentation.Slides.Count,
             Template = request.TemplatePath is null
                 ? null
-                : Source(request.TemplatePath, template.FormatId),
+                : Source(request.TemplatePath, template),
             Markdown = request.MarkdownPath is null
                 ? null
-                : new SourceInfo
-                {
-                    Path = request.MarkdownPath,
-                    Format = "md",
-                    SizeBytes = new FileInfo(request.MarkdownPath).Length,
-                },
+                : FileObjects.Input(request.MarkdownPath, "md", encrypted: false),
             License = EnvelopeParts.License(state),
             Warnings = authoring.Count == 0
                 ? WrittenWarnings(state, template, textRead: false)

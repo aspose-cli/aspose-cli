@@ -108,6 +108,9 @@ internal sealed class PdfDocumentLoader(
 internal sealed record LoadedPdf(Document Document, PasswordType PasswordType, bool HasOpenPassword, Stream Source)
     : IDisposable
 {
+    /// <summary>Whether the file is encrypted, as it was opened; a later decryption does not change it.</summary>
+    public bool Encrypted { get; } = Document.IsEncrypted;
+
     public void Dispose()
     {
         Document.Dispose();

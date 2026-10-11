@@ -32,7 +32,7 @@ internal static class InfoProjection
 
         return new DocumentInfoResult
         {
-            Source = Source(path, loaded),
+            Input = Source(path, loaded),
             Document = new DocumentSummary
             {
                 SectionCount = document.Sections.Count,
@@ -68,14 +68,8 @@ internal static class InfoProjection
         };
     }
 
-    public static SourceInfo Source(string path, LoadedDocument loaded) => new()
-    {
-        Path = Path.GetFullPath(path),
-        Format = loaded.FormatId,
-        SizeBytes = new FileInfo(path).Length,
-        Fingerprint = FileFingerprints.Capture(path),
-        Encrypted = loaded.Format.IsEncrypted,
-    };
+    public static InputInfo Source(string path, LoadedDocument loaded) =>
+        FileObjects.Input(path, loaded.FormatId, loaded.Format.IsEncrypted);
 
     private static IReadOnlyList<SectionData> Sections(Document document, bool evaluation) =>
         document.Sections.Cast<Section>().Select((section, index) => new SectionData

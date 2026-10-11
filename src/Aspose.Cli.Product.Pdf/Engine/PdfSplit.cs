@@ -1,4 +1,5 @@
 using Aspose.Cli.Sdk.Errors;
+using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Results;
 using Aspose.Pdf;
@@ -51,7 +52,7 @@ internal static class PdfSplit
             targets.Add((part, target));
         }
 
-        IReadOnlyList<long> sizes = writer.Commit();
+        IReadOnlyList<PublishedFile> files = writer.Commit();
         List<Warning> warnings = [];
         if (PortfolioNotKept(loaded.Document, input: null) is { } portfolio)
         {
@@ -67,13 +68,13 @@ internal static class PdfSplit
         }
         return new PdfSplitResult
         {
-            Input = PdfInfoProjection.Source(filePath),
+            Input = PdfInfoProjection.Source(filePath, loaded),
             Outputs = targets.Select((item, index) => new PdfSplitOutput
             {
                 Index = item.Part.Index,
                 Pages = Aspose.Cli.Sdk.Addressing.PageRange.Describe(item.Part.Pages) ?? string.Empty,
                 Bookmark = item.Part.Bookmark,
-                Output = BuildOutput(item.Path, "pdf", sizes[index]),
+                Output = FileObjects.Output(files[index], PdfFormats.Document[0], encrypted: false),
             }).ToArray(),
             License = EnvelopeParts.License(state),
             Warnings = warnings.Count == 0 ? null : warnings,

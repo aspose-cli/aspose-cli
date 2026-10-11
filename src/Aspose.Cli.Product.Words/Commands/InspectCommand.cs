@@ -40,7 +40,7 @@ internal static class InspectCommand
     internal static void Table(DocumentInfoResult result, TableSurface surface)
     {
         DocumentSummary document = result.Document;
-        ResultText.Source(surface, result.Source);
+        ResultText.Input(surface, result.Input);
         surface.Out.WriteLine(
             $"sections: {document.SectionCount}   blocks: {document.BlockCount} "
             + $"({document.ParagraphCount} paragraphs, {document.TableCount} tables)   "

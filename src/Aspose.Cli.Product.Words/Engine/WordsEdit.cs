@@ -43,9 +43,9 @@ internal static class WordsEdit
             throw CliErrors.OptionInvalid("--verify", $"format '{format}' cannot be reopened as a document",
                 "Use a reloadable document output when requesting semantic verification.");
         }
-        SourceInfo input = InfoProjection.Source(request.Input, loaded);
-        FileFingerprints.EnsureUnchanged(request.Input, precondition.Fingerprint, input.Fingerprint!);
-        FileFingerprints.EnsureMatch(request.Input, request.Options.IfMatch, input.Fingerprint!);
+        InputInfo input = InfoProjection.Source(request.Input, loaded);
+        FileFingerprints.EnsureUnchanged(request.Input, precondition.Fingerprint, input.Fingerprint);
+        FileFingerprints.EnsureMatch(request.Input, request.Options.IfMatch, input.Fingerprint);
         Node[] blocksBefore = BodyBlocks(loaded.Document).ToArray();
         var blocks = new DocumentBlockIndex(loaded.Document, loaded.Evaluation);
         IReadOnlyList<ResolvedWordsOp> resolved = WordsAnchorResolver.Resolve(loaded.Document, blocks, batch);
@@ -74,7 +74,7 @@ internal static class WordsEdit
                 baseline,
                 precondition,
                 loaded.Resources,
-                format,
+                written,
                 saveOptions,
                 outputPassword,
                 loaded.Evaluation && !loaded.EvaluationInputTruncated && !loaded.ImportedInputTruncated);
@@ -207,11 +207,12 @@ internal static class WordsEdit
         Document? baseline,
         FileWritePrecondition precondition,
         LocalDocumentResourceLoader resources,
-        string format,
+        FormatDescriptor written,
         SaveOptions saveOptions,
         Secret? outputPassword,
         bool detectTruncation)
     {
+        string format = written.Id;
         OutputInfo? output = null;
         BackupInfo? backup = null;
         WordsVerification? verification = null;
@@ -239,7 +240,6 @@ internal static class WordsEdit
                 },
                 backupPath: request.Output.BackupPath,
                 inputPrecondition: precondition);
-            output = new OutputInfo { Path = request.Output.Path, Format = format, SizeBytes = write.SizeBytes };
             backup = write.Backup;
 
             if (request.Verify)
@@ -252,6 +252,7 @@ internal static class WordsEdit
                     candidate => Verify(session, candidate, format, outputPassword, baseline!, expected, truncation));
             }
             transaction.Commit();
+            output = FileObjects.Output(write.Published, written, encrypted: outputPassword is not null);
         }
         return (output, backup, verification, truncation);
     }

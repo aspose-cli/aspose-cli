@@ -71,7 +71,7 @@ internal static class TestBindings
 
         public FontCheckResult CheckFonts(string filePath, FontCheckRequest request) => new()
         {
-            Source = new SourceInfo { Path = filePath, Format = "test", SizeBytes = 0 },
+            Input = new InputInfo { Path = filePath, Format = "test", SizeBytes = 0, Fingerprint = new FileFingerprint { Sha256 = new string('0', 64) }, Encrypted = false },
             AllAvailable = true,
             Fonts = [],
         };

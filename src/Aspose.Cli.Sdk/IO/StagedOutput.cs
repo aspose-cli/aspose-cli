@@ -14,6 +14,9 @@ public sealed class StagedOutput
     public long SizeBytes => _entry.Size;
     public FileFingerprint Fingerprint => new() { Sha256 = _entry.StagedSnapshot.Sha256!.ToLowerInvariant() };
 
+    /// <summary>The facts of the file this output publishes.</summary>
+    public PublishedFile Published => new(TargetPath, SizeBytes, Fingerprint);
+
     internal FilePublicationSnapshot Snapshot => _entry.StagedSnapshot;
     /// <summary>
     /// The requested safety backup: the one this publication creates, or the existing one it

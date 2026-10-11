@@ -17,6 +17,7 @@ internal sealed class ResultContractWriter(Compilation compilation, Action<Locat
     private const string Contracts = OperationContractGenerator.Contracts;
     private const string Sdk = "global::" + Contracts;
     private const string ResultEnvelope = Contracts + "ResultEnvelope";
+    private const string OutputItem = Contracts + "OutputItem";
     private const string Json = "System.Text.Json.Serialization.";
     private static readonly string[] CaseTypes = ["null", "string", "number", "integer", "boolean"];
     private readonly INamedTypeSymbol? _constraint = compilation.GetTypeByMetadataName(Contracts + "ValueConstraintAttribute");
@@ -57,9 +58,9 @@ internal sealed class ResultContractWriter(Compilation compilation, Action<Locat
             return [];
         }
 
-        // The envelope bases are described where they are declared, so the results of another
-        // assembly can inherit them.
-        foreach (INamedTypeSymbol type in declared.Where(IsEnvelope))
+        // The envelope bases and the output item base are described where they are declared, so
+        // the records of another assembly can inherit them.
+        foreach (INamedTypeSymbol type in declared.Where(IsInheritable))
         {
             Enqueue(type);
         }
@@ -144,6 +145,10 @@ internal sealed class ResultContractWriter(Compilation compilation, Action<Locat
         type.IsAbstract && type.ContainingNamespace.ToDisplayString() + "." == Contracts
         && (type.ToDisplayString() == ResultEnvelope || AnalyzerTypes.Inherits(type, ResultEnvelope));
 
+    /// <summary>Whether records of another assembly may derive from <paramref name="type"/>: an SDK envelope base or the SDK's output item.</summary>
+    private static bool IsInheritable(INamedTypeSymbol type) =>
+        IsEnvelope(type) || (type.IsAbstract && type.ToDisplayString() == OutputItem);
+
     private void Enqueue(INamedTypeSymbol type)
     {
         if (Records.Add(type))
@@ -172,9 +177,9 @@ internal sealed class ResultContractWriter(Compilation compilation, Action<Locat
             {
                 Enqueue(baseType);
             }
-            else if (!IsEnvelope(baseType))
+            else if (!IsInheritable(baseType))
             {
-                Report(type, $"Result record '{type.Name}' derives from '{baseType.Name}' of another assembly; only the SDK's envelope bases can be inherited across assemblies.");
+                Report(type, $"Result record '{type.Name}' derives from '{baseType.Name}' of another assembly; only the SDK's envelope bases and OutputItem can be inherited across assemblies.");
             }
 
             code.Append(", Base = typeof(").Append(TypeName(baseType)).Append(')');
@@ -211,13 +216,6 @@ internal sealed class ResultContractWriter(Compilation compilation, Action<Locat
     /// <summary>Whether a member is extension data, which writes members its record does not declare.</summary>
     private static bool IsExtension(IPropertySymbol property) =>
         Find(property, Json + "JsonExtensionDataAttribute") is not null;
-
-    /// <summary>Whether a member is a required member of its record's schema.</summary>
-    private static bool IsRequired(IPropertySymbol property) =>
-        property.NullableAnnotation != NullableAnnotation.Annotated
-        && property.Type.OriginalDefinition.SpecialType != SpecialType.System_Nullable_T
-        && IgnoreCondition(property) is null
-        && !IsExtension(property);
 
     /// <summary>The <c>[JsonIgnore]</c> condition of a property, or null when it has none.</summary>
     private static string? IgnoreCondition(IPropertySymbol property) =>
@@ -312,42 +310,9 @@ internal sealed class ResultContractWriter(Compilation compilation, Action<Locat
             code.Append(", Cases = [").Append(string.Join(", ", cases.Select(attribute => ContractTypes.Constraint(attribute, property, 0, Report)))).Append(']');
         }
 
-        if (AlwaysPresent(property) is { } present)
-        {
-            if (levels[levels.Count - 1] != "Record" || levels.Take(levels.Count - 1).Any(static level => level != "Array"))
-            {
-                Invalid(property, "[AlwaysPresent] names members of the record the member holds, so the member must hold a record or an array of records");
-            }
-            else if (Scalar(type) is INamedTypeSymbol held)
-            {
-                foreach (string name in AlwaysPresentNames(property))
-                {
-                    if (!AllProperties(held).Any(member => WireName(member) == name && !IsRequired(member) && !IsExtension(member)))
-                    {
-                        Invalid(property, $"[AlwaysPresent] names '{name}', which is not an optional member of {held.Name}");
-                    }
-                }
-            }
-
-            code.Append(", AlwaysPresent = ").Append(present);
-        }
-
         return code.Append(" }").ToString();
     }
 
-    /// <summary>The wire names an <c>[AlwaysPresent]</c> declares, as a collection expression, or null.</summary>
-    private static string? AlwaysPresent(ISymbol symbol) =>
-        Find(symbol, Contracts + "AlwaysPresentAttribute") is not null
-            ? "[" + string.Join(", ", AlwaysPresentNames(symbol).Select(Literal)) + "]"
-            : null;
-
-    /// <summary>The wire names an <c>[AlwaysPresent]</c> declares.</summary>
-    private static IEnumerable<string> AlwaysPresentNames(ISymbol symbol) =>
-        Find(symbol, Contracts + "AlwaysPresentAttribute") is { } attribute
-            ? attribute.ConstructorArguments.SelectMany(static argument =>
-                argument.Kind == TypedConstantKind.Array ? argument.Values : ImmutableArray.Create(argument))
-                .Select(static value => value.Value as string ?? string.Empty)
-            : [];
 
     /// <summary>Whether a member without its own summary is described by the record its schema references.</summary>
     private bool DescribedByRecord(ITypeSymbol type) =>

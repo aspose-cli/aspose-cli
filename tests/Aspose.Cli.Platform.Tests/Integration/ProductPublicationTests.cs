@@ -32,7 +32,52 @@ public sealed class ProductPublicationTests
             edited.Succeeded();
             Assert.True(File.Exists(output));
             Assert.Equal([output], Directory.GetFiles(workspace.File("."), "edited.*").Select(Path.GetFullPath));
+            AssertDescribesThePublishedFile(JsonNode.Parse(edited.StdOut)!["output"]!);
         }
+    }
+
+    /// <summary>
+    /// A supervised worker hands its outputs to the parent, which publishes them after the worker
+    /// has reported them; the reported size and fingerprint are still those of the published files,
+    /// for one written file, a page per file and a deck with its companion files.
+    /// </summary>
+    [Category(TestCategory.Slow)]
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ReportedOutputsDescribeThePublishedFilesInBothExecutionModes(bool supervised)
+    {
+        using var workspace = new TempWorkspace();
+        string[] timeout = supervised ? ["--timeout", "60"] : [];
+        string document = CreateInput(workspace, "words", "docx", ["--text", "source.txt"]);
+        string deck = CreateInput(workspace, "slides", "pptx", ["--from-markdown", "source.md"]);
+
+        CliResult converted = workspace.Run(["words", "convert", document, "--to", "pdf", "--out", workspace.File("converted.pdf"),
+            "--output-format", "json", .. timeout]);
+        CliResult pages = workspace.Run(["pdf", "convert", workspace.File("converted.pdf"), "--to", "png", "--out", workspace.File("page.png"),
+            "--output-format", "json", .. timeout]);
+        CliResult site = workspace.Run(["slides", "convert", deck, "--to", "html5", "--out", workspace.File(Path.Combine("site", "deck.html")),
+            "--output-format", "json", .. timeout]);
+
+        converted.Succeeded();
+        pages.Succeeded();
+        site.Succeeded();
+        AssertDescribesThePublishedFile(JsonNode.Parse(converted.StdOut)!["output"]!);
+        Assert.All(JsonNode.Parse(pages.StdOut)!["outputs"]!.AsArray(), static output => AssertDescribesThePublishedFile(output!));
+        JsonArray files = JsonNode.Parse(site.StdOut)!["outputs"]!.AsArray();
+        Assert.True(files.Count > 1, "The HTML5 deck is published with its companion files.");
+        Assert.All(files, static output => AssertDescribesThePublishedFile(output!));
+    }
+
+    /// <summary>Checks that a reported file object states the path, size and SHA-256 of the file on disk.</summary>
+    private static void AssertDescribesThePublishedFile(JsonNode file)
+    {
+        string path = file["path"]!.GetValue<string>();
+        Assert.True(File.Exists(path), path);
+        Assert.Equal(new FileInfo(path).Length, file["sizeBytes"]!.GetValue<long>());
+        Assert.Equal(
+            Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(path))).ToLowerInvariant(),
+            file["fingerprint"]!["sha256"]!.GetValue<string>());
     }
 
     [Category(TestCategory.Slow)]

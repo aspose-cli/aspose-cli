@@ -43,7 +43,7 @@ internal static class PdfExtract
         guard.Commit();
         return new PdfExtractResult
         {
-            Input = PdfInfoProjection.Source(filePath),
+            Input = PdfInfoProjection.Source(filePath, loaded),
             What = request.What,
             Items = items,
             License = EnvelopeParts.License(state),

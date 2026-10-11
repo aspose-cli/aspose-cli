@@ -1,9 +1,9 @@
 using System.Globalization;
 using Aspose.Cli.Sdk.Errors;
+using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Results;
 using Aspose.Pdf;
-using static Aspose.Cli.Product.Pdf.Engine.PdfEngineSupport;
 
 namespace Aspose.Cli.Product.Pdf.Engine;
 
@@ -38,14 +38,14 @@ internal static class PdfRender
             staged.Add((pageNumber, path));
         }
 
-        IReadOnlyList<long> sizes = writer.Commit();
+        IReadOnlyList<PublishedFile> files = writer.Commit();
         return new PdfRenderResult
         {
-            Input = PdfInfoProjection.Source(filePath),
+            Input = PdfInfoProjection.Source(filePath, loaded),
             Outputs = staged.Select((item, index) => new PdfPageOutput
             {
                 Page = item.Page,
-                Output = BuildOutput(item.Path, request.Output.Format.Id, sizes[index]),
+                Output = FileObjects.Output(files[index], request.Output.Format, encrypted: false),
             }).ToArray(),
             Dpi = PdfEngineFormats.IsRaster(request.Output.Format.Id) ? request.Dpi : null,
             Grid = grid,

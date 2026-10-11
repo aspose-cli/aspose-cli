@@ -110,7 +110,7 @@
     var review = data.review;
     show(document.body, {
       product: review.product,
-      file: baseName(review.input),
+      file: baseName(review.input.path),
       license: review.license ? review.license.mode : null,
       view: data.view,
       review: review,

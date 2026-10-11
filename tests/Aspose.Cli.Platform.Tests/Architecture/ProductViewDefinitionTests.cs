@@ -100,11 +100,13 @@ public sealed class ProductViewDefinitionTests
 
         public FontCheckResult CheckFonts(string filePath, FontCheckRequest request) => new()
         {
-            Source = new SourceInfo
+            Input = new InputInfo
             {
                 Path = filePath,
                 Format = "test",
                 SizeBytes = 0,
+                Fingerprint = new FileFingerprint { Sha256 = new string('0', 64) },
+                Encrypted = false,
             },
             AllAvailable = false,
             Fonts = [new FontAvailability { Name = "Missing", Available = false }],

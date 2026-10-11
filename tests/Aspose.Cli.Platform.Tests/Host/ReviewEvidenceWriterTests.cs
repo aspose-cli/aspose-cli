@@ -162,7 +162,7 @@ public sealed class ReviewEvidenceWriterTests
         string output = temp.File("review");
 
         Assert.Throws<InvalidOperationException>(() => ReviewEvidenceWriter.Write(
-            temp.File("source.test"),
+            Source(temp),
             "test",
             output,
             maxItems: 4,
@@ -193,7 +193,7 @@ public sealed class ReviewEvidenceWriterTests
         string output = temp.File("review");
 
         Assert.Throws<InvalidDataException>(() => ReviewEvidenceWriter.Write(
-            temp.File("source.test"),
+            Source(temp),
             "test",
             output,
             maxItems: 4,
@@ -233,7 +233,7 @@ public sealed class ReviewEvidenceWriterTests
 
         ReviewResult result = Write(temp, temp.File("review"), 4, 2, ["page-1.png", "page-2.png"]);
 
-        string html = File.ReadAllText(result.Index);
+        string html = File.ReadAllText(result.IndexPath);
         JsonNode document = ViewerData(html);
         Assert.True(JsonNode.DeepEquals(
             JsonNode.Parse(File.ReadAllText(Path.Combine(result.OutputDirectory, "artifacts", "view.json"))),
@@ -252,7 +252,7 @@ public sealed class ReviewEvidenceWriterTests
         using var temp = new TempDirectory();
 
         ReviewResult result = ReviewEvidenceWriter.Write(
-            temp.File("source.test"), "test", temp.File("review"), 1, true, Presentation,
+            Source(temp), "test", temp.File("review"), 1, true, Presentation,
             artifacts =>
             {
                 artifacts.Write("page.png", static stream => stream.Write(PngHeader));
@@ -261,8 +261,8 @@ public sealed class ReviewEvidenceWriterTests
             static _ => new ProductReviewAssessment(), LicenseState.NotApplicable,
             new ContractJsonSerializer([]), Aspose.Cli.Sdk.Tests.TestBudgets.Create());
 
-        Assert.Equal(encrypted, result.SourceEncrypted);
-        Assert.Equal(encrypted, JsonNode.Parse(File.ReadAllText(result.Manifest))!["sourceEncrypted"]!.GetValue<bool>());
+        Assert.Equal(encrypted, result.Input.Encrypted);
+        Assert.Equal(encrypted, JsonNode.Parse(File.ReadAllText(result.Manifest))!["input"]!["encrypted"]!.GetValue<bool>());
     }
 
     [Fact]
@@ -272,7 +272,7 @@ public sealed class ReviewEvidenceWriterTests
         const string label = "</script><script>window.injected = true;</script><!--";
 
         ReviewResult result = ReviewEvidenceWriter.Write(
-            temp.File("source.test"),
+            Source(temp),
             "test",
             temp.File("review"),
             maxItems: 4,
@@ -288,7 +288,7 @@ public sealed class ReviewEvidenceWriterTests
             LicenseState.NotApplicable,
             new ContractJsonSerializer([]), Aspose.Cli.Sdk.Tests.TestBudgets.Create());
 
-        string html = File.ReadAllText(result.Index);
+        string html = File.ReadAllText(result.IndexPath);
         Assert.DoesNotContain(label, html, StringComparison.Ordinal);
         Assert.Equal(label, ViewerData(html)["view"]!["parts"]![0]!["label"]!.GetValue<string>());
     }
@@ -305,10 +305,11 @@ public sealed class ReviewEvidenceWriterTests
             using var deadline = Aspose.Cli.Sdk.IO.OperationDeadline.Start(null);
             var budgets = new Aspose.Cli.Sdk.IO.ResourceBudgetLedger(deadline, outputSession: worker);
             string target = temp.File("review");
-            ReviewEvidenceWriter.Write(temp.File("source.test"), "test", target, 1, true, Presentation,
+            string source = Source(temp);
+            ReviewEvidenceWriter.Write(source, "test", target, 1, true, Presentation,
                 artifacts => { artifacts.Write("page.png", stream => stream.Write(PngHeader)); return Manifest(1, ["page.png"]); },
                 _ => new ProductReviewAssessment(), LicenseState.NotApplicable, new ContractJsonSerializer([]), budgets);
-            Assert.Empty(Directory.EnumerateFileSystemEntries(temp.Path));
+            Assert.Equal([source], Directory.EnumerateFileSystemEntries(temp.Path));
             worker.SealForPublication();
             WorkerOutputPublisher.Publish(manifest, Aspose.Cli.Sdk.Tests.TestBudgets.Create());
             Assert.True(File.Exists(Path.Combine(target, "index.html")));
@@ -324,12 +325,13 @@ public sealed class ReviewEvidenceWriterTests
         using var temp = new TempDirectory();
         using var cancellation = new CancellationTokenSource();
         using var deadline = Aspose.Cli.Sdk.IO.OperationDeadline.Start(null, cancellation.Token);
+        string source = Source(temp);
         Assert.Throws<OperationCanceledException>(() => ReviewEvidenceWriter.Write(
-            temp.File("source.test"), "test", temp.File("review"), 1, true, Presentation,
+            source, "test", temp.File("review"), 1, true, Presentation,
             artifacts => { artifacts.Write("page.png", stream => stream.Write(PngHeader)); return Manifest(1, ["page.png"]); },
             _ => { cancellation.Cancel(); return new ProductReviewAssessment(); },
             LicenseState.NotApplicable, new ContractJsonSerializer([]), new Aspose.Cli.Sdk.IO.ResourceBudgetLedger(deadline)));
-        Assert.Empty(Directory.EnumerateFileSystemEntries(temp.Path));
+        Assert.Equal([source], Directory.EnumerateFileSystemEntries(temp.Path));
     }
     private static JsonNode ViewerData(string html)
     {
@@ -350,7 +352,7 @@ public sealed class ReviewEvidenceWriterTests
         string[] files,
         ProductReviewAssessment? assessment = null) =>
         ReviewEvidenceWriter.Write(
-            temp.File("source.test"),
+            Source(temp),
             "test",
             output,
             maxItems,
@@ -367,6 +369,14 @@ public sealed class ReviewEvidenceWriterTests
             _ => assessment ?? new ProductReviewAssessment(),
             LicenseState.NotApplicable,
             new ContractJsonSerializer([]), Aspose.Cli.Sdk.Tests.TestBudgets.Create());
+
+    /// <summary>The reviewed file, which a review describes from the file itself.</summary>
+    private static string Source(TempDirectory temp)
+    {
+        string path = temp.File("source.test");
+        File.WriteAllText(path, "source");
+        return path;
+    }
 
     private static ViewManifest Manifest(int totalPartCount, string[] files) => new()
     {
@@ -387,7 +397,7 @@ public sealed class ReviewEvidenceWriterTests
     };
 
     private static string[] GalleryPaths(ReviewResult result) =>
-        Regex.Matches(File.ReadAllText(result.Index), "<img[^>]+src=\"([^\"]+)\"",
+        Regex.Matches(File.ReadAllText(result.IndexPath), "<img[^>]+src=\"([^\"]+)\"",
                 RegexOptions.CultureInvariant, TimeSpan.FromSeconds(1))
             .Select(static match => WebUtility.HtmlDecode(match.Groups[1].Value)).ToArray();
 }

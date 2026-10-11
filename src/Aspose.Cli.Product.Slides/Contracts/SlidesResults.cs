@@ -15,7 +15,7 @@ public sealed record PresentationInfoResult() : EngineResultEnvelope("presentati
 
     /// <summary>The inspected presentation.</summary>
     [JsonPropertyOrder(-49)]
-    public required SourceInfo Source { get; init; }
+    public required InputInfo Input { get; init; }
 
     /// <summary>Presentation-level counts and slide geometry.</summary>
     public required PresentationSummary Presentation { get; init; }
@@ -244,7 +244,7 @@ public sealed record PresentationReadResult() : WindowedResultEnvelope("presenta
 
     /// <summary>The presentation read.</summary>
     [JsonPropertyOrder(-49)]
-    public required SourceInfo Source { get; init; }
+    public required InputInfo Input { get; init; }
 
     /// <summary>
     /// How much of each slide was projected: <c>text</c> the text blocks, <c>shapes</c> every
@@ -422,7 +422,7 @@ public sealed record SlidesConvertResult() : EngineResultEnvelope("convert-resul
 {
     /// <summary>The converted presentation.</summary>
     [JsonPropertyOrder(-50)]
-    public required SourceInfo Input { get; init; }
+    public required InputInfo Input { get; init; }
 
     /// <summary>The written files: one per slide for an image format, otherwise one, with any companion files the format needs.</summary>
     [JsonPropertyOrder(-49)]
@@ -439,7 +439,7 @@ public sealed record SlidesRenderResult() : EngineResultEnvelope("render-result"
 {
     /// <summary>The rendered presentation.</summary>
     [JsonPropertyOrder(-50)]
-    public required SourceInfo Input { get; init; }
+    public required InputInfo Input { get; init; }
 
     /// <summary>The rendered slides in presentation order.</summary>
     [MinItems(1)]
@@ -483,10 +483,10 @@ public sealed record SlidesCreateResult() : EngineResultEnvelope("create-result"
     public required int SlideCount { get; init; }
 
     /// <summary>The template the presentation was built from; omitted without <c>--template</c>.</summary>
-    public SourceInfo? Template { get; init; }
+    public InputInfo? Template { get; init; }
 
     /// <summary>The Markdown outline the slides were filled from; omitted without <c>--from-markdown</c>.</summary>
-    public SourceInfo? Markdown { get; init; }
+    public InputInfo? Markdown { get; init; }
 }
 
 /// <summary>Result of <c>slides extract</c>: the files written for the extracted content.</summary>
@@ -494,7 +494,7 @@ public sealed record SlidesExtractResult() : EngineResultEnvelope("extract-resul
 {
     /// <summary>The presentation extracted from.</summary>
     [JsonPropertyOrder(-50)]
-    public required SourceInfo Input { get; init; }
+    public required InputInfo Input { get; init; }
 
     /// <summary>What was extracted.</summary>
     [AllowedValues(typeof(PresentationExtractKinds))]
@@ -545,7 +545,7 @@ public sealed record SlidesEditResult() : EngineResultEnvelope("edit-result", 2)
 {
     /// <summary>The edited presentation.</summary>
     [JsonPropertyOrder(-50)]
-    public required SourceInfo Input { get; init; }
+    public required InputInfo Input { get; init; }
 
     /// <summary>The written presentation; omitted for a dry run.</summary>
     public OutputInfo? Output { get; init; }
@@ -574,7 +574,7 @@ public sealed record SlidesSearchResult() : WindowedResultEnvelope("search-resul
 {
     /// <summary>The searched presentation.</summary>
     [JsonPropertyOrder(-50)]
-    public required SourceInfo Source { get; init; }
+    public required InputInfo Input { get; init; }
 
     /// <summary>The searched pattern as given.</summary>
     public required string Pattern { get; init; }

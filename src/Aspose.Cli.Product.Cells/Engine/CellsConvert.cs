@@ -1,5 +1,6 @@
 using Aspose.Cells;
 using Aspose.Cli.Product.Cells.Engine.Mapping;
+using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Results;
 using static Aspose.Cli.Product.Cells.Engine.CellsEngineSupport;
@@ -22,7 +23,7 @@ internal static class CellsConvert
 
         // Capture before saving: Workbook.FileFormat mutates to the target
         // format once the workbook is saved.
-        SourceInfo input = BuildSource(request.Input, loaded);
+        InputInfo input = BuildSource(request.Input, loaded);
         // The imported rows come over as they are; say which of them are not table data.
         IReadOnlyList<Warning> textLayout = TextTableLayout.Warnings(loaded, session.Budgets);
 
@@ -74,7 +75,7 @@ internal static class CellsConvert
             request.EncryptPassword, loaded.IsEncrypted ? request.Password : null, selectedSheet, request.ByteOrderMark);
         loaded.RestoreActiveSheet(savePlan);
         Warning? sheetsDropped = savePlan.DetectSheetLoss(workbook);
-        long sizeBytes = saver.Write(request.Output.Path, request.Output.Overwrite, workbook, singleSheet: selectedSheet is not null,
+        PublishedFile written = saver.Write(request.Output.Path, request.Output.Overwrite, workbook, singleSheet: selectedSheet is not null,
             path => saver.Produce(workbook, savePlan, path));
         Warning? formulasBroken = saver.BuildBrokenFormulaWarning(
             refsBefore,
@@ -84,13 +85,7 @@ internal static class CellsConvert
         return new ConvertResult
         {
             Input = input,
-            Output = new OutputInfo
-            {
-                Path = request.Output.Path,
-                Format = request.Output.Format.Id,
-                SizeBytes = sizeBytes,
-                Encrypted = savePlan.Encrypts,
-            },
+            Output = FileObjects.Output(written, request.Output.Format, savePlan.Encrypts),
             Sheet = resolvedSheetName,
             License = EnvelopeParts.License(licenseState),
             // Only a text export without --sheet writes one sheet chosen by default; the other

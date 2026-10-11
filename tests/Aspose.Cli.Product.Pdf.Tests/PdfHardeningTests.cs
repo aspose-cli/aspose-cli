@@ -170,7 +170,7 @@ public sealed class PdfHardeningTests
         var result = PdfInfo.Run(fixture.Session, new PdfInfoRequest { Input = input });
 
         Assert.Equal(2, result.Pdf.PageCount);
-        Assert.Equal("pdf", result.Source.Format);
+        Assert.Equal("pdf", result.Input.Format);
     }
 
     [Fact]

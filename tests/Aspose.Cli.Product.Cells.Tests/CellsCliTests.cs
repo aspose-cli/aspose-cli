@@ -20,7 +20,7 @@ public sealed class CellsCliTests : IDisposable
         CliResult inspected = _workspace.Run(
             "cells", "inspect", "book.xlsx", "--output-format", "json");
         Assert.True(inspected.ExitCode == 0, inspected.StdErr);
-        string fingerprint = JsonNode.Parse(inspected.StdOut)!["source"]![
+        string fingerprint = JsonNode.Parse(inspected.StdOut)!["input"]![
             "fingerprint"]!["sha256"]!.GetValue<string>();
         File.WriteAllText(
             _workspace.File("ops.json"),
@@ -500,7 +500,7 @@ public sealed class CellsCliTests : IDisposable
         Assert.Equal("PASSWORD_REQUIRED", JsonNode.Parse(locked.StdErr)!["error"]!["code"]!.GetValue<string>());
         Assert.True(opened.ExitCode == 0, opened.StdErr);
         Assert.Equal("cells", JsonNode.Parse(opened.StdOut)!["product"]!.GetValue<string>());
-        Assert.True(JsonNode.Parse(opened.StdOut)!["sourceEncrypted"]!.GetValue<bool>());
+        Assert.True(JsonNode.Parse(opened.StdOut)!["input"]!["encrypted"]!.GetValue<bool>());
     }
 
     [Fact]
@@ -522,7 +522,7 @@ public sealed class CellsCliTests : IDisposable
         Assert.True(JsonNode.Parse(converted.StdOut)!["output"]!["encrypted"]!.GetValue<bool>());
         Assert.Equal("PASSWORD_REQUIRED", JsonNode.Parse(locked.StdErr)!["error"]!["code"]!.GetValue<string>());
         Assert.True(opened.ExitCode == 0, opened.StdErr);
-        Assert.True(JsonNode.Parse(opened.StdOut)!["source"]!["encrypted"]!.GetValue<bool>());
+        Assert.True(JsonNode.Parse(opened.StdOut)!["input"]!["encrypted"]!.GetValue<bool>());
         JsonNode error = JsonNode.Parse(refused.StdErr)!["error"]!;
         Assert.Equal("OPTION_INVALID", error["code"]!.GetValue<string>());
         Assert.Equal("--encrypt-env", error["details"]!["option"]!.GetValue<string>());

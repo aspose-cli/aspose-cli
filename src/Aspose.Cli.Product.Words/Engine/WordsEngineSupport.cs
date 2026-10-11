@@ -164,6 +164,4 @@ internal static class WordsEngineSupport
     internal static IReadOnlyList<Warning>? CompareWarnings(LoadedDocument left, LoadedDocument right) =>
         EnvelopeParts.CombineWarnings(InputWarnings(left), InputWarnings(right));
 
-    internal static OutputInfo BuildOutput(string path, string format, long size) =>
-        new() { Path = path, Format = format, SizeBytes = size };
 }

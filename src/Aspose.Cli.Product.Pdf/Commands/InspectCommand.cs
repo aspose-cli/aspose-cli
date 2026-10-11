@@ -35,7 +35,7 @@ internal static class InspectCommand
     internal static void Table(PdfInfoResult result, TableSurface surface)
     {
         PdfSummary pdf = result.Pdf;
-        ResultText.Source(surface, result.Source);
+        ResultText.Input(surface, result.Input);
         surface.Out.WriteLine(
             $"pages: {pdf.PageCount}   version: {pdf.Version}   encrypted: {TableText.YesNo(pdf.Encrypted)}   "
             + $"tagged: {TableText.YesNo(pdf.Tagged)}   PDF/A declared: {pdf.PdfaProfile ?? "no"}");

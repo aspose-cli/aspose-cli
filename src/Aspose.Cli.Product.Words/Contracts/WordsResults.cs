@@ -12,7 +12,7 @@ public sealed record DocumentInfoResult() : EngineResultEnvelope("document-info"
 
     /// <summary>The inspected document.</summary>
     [JsonPropertyOrder(-49)]
-    public required SourceInfo Source { get; init; }
+    public required InputInfo Input { get; init; }
 
     /// <summary>The summary every inspect returns, whatever details it asks for.</summary>
     public required DocumentSummary Document { get; init; }
@@ -350,7 +350,7 @@ public sealed record DocumentReadResult() : WindowedResultEnvelope("document-rea
 
     /// <summary>The document read.</summary>
     [JsonPropertyOrder(-49)]
-    public required SourceInfo Source { get; init; }
+    public required InputInfo Input { get; init; }
 
     /// <summary>The projection, as <c>--scope</c> chose it.</summary>
     [AllowedValues(typeof(DocumentReadScopes))]
@@ -523,7 +523,7 @@ public sealed record WordsConvertResult() : EngineResultEnvelope("convert-result
 {
     /// <summary>The converted document.</summary>
     [JsonPropertyOrder(-50)]
-    public required SourceInfo Input { get; init; }
+    public required InputInfo Input { get; init; }
 
     /// <summary>The written file.</summary>
     [JsonPropertyOrder(-49)]
@@ -538,7 +538,7 @@ public sealed record WordsRenderResult() : EngineResultEnvelope("render-result",
 {
     /// <summary>The rendered document.</summary>
     [JsonPropertyOrder(-50)]
-    public required SourceInfo Input { get; init; }
+    public required InputInfo Input { get; init; }
 
     /// <summary>One written image per rendered page, in page order.</summary>
     [MinItems(1)]
@@ -577,7 +577,7 @@ public sealed record WordsEditResult() : EngineResultEnvelope("edit-result", 2),
 {
     /// <summary>The edited document.</summary>
     [JsonPropertyOrder(-50)]
-    public required SourceInfo Input { get; init; }
+    public required InputInfo Input { get; init; }
 
     /// <summary>The written document; absent for a dry run.</summary>
     [JsonPropertyOrder(-49)]
@@ -645,10 +645,10 @@ public sealed record WordsVerification
 public sealed record WordsCompareResult() : EngineResultEnvelope("compare-result", 2)
 {
     /// <summary>The original document.</summary>
-    public required SourceInfo Left { get; init; }
+    public required InputInfo Left { get; init; }
 
     /// <summary>The changed document.</summary>
-    public required SourceInfo Right { get; init; }
+    public required InputInfo Right { get; init; }
 
     /// <summary>Whether the comparison found no revisions.</summary>
     public required bool Identical { get; init; }
@@ -702,7 +702,7 @@ public sealed record WordsSearchResult() : WindowedResultEnvelope("search-result
 {
     /// <summary>The searched document.</summary>
     [JsonPropertyOrder(-50)]
-    public required SourceInfo Source { get; init; }
+    public required InputInfo Input { get; init; }
 
     /// <summary>The text or regular expression searched for.</summary>
     [JsonPropertyOrder(-49)]
@@ -747,7 +747,7 @@ public sealed record WordsSearchHit
 public sealed record WordsSplitResult() : EngineResultEnvelope("split-result", 2)
 {
     /// <summary>The split document.</summary>
-    public required SourceInfo Input { get; init; }
+    public required InputInfo Input { get; init; }
 
     /// <summary>The written parts, in document order.</summary>
     public required IReadOnlyList<SplitOutput> Outputs { get; init; }
@@ -771,7 +771,7 @@ public sealed record SplitOutput
 public sealed record WordsExtractResult() : EngineResultEnvelope("extract-result", 2)
 {
     /// <summary>The document extracted from.</summary>
-    public required SourceInfo Input { get; init; }
+    public required InputInfo Input { get; init; }
 
     /// <summary>What was extracted, as <c>--what</c> named it.</summary>
     [AllowedValues(typeof(WordsExtractTargets))]

@@ -19,9 +19,11 @@ public sealed class SafeFileWriterTests : IDisposable
     {
         string target = _temp.File("out.txt");
 
-        long size = _writer.Write(target, overwrite: false, temp => File.WriteAllText(temp, "hello"));
+        PublishedFile published = _writer.Write(target, overwrite: false, temp => File.WriteAllText(temp, "hello"));
 
-        Assert.Equal(5, size);
+        Assert.Equal(5, published.SizeBytes);
+        Assert.Equal(target, published.Path);
+        Assert.Equal(FileFingerprints.Capture(target), published.Fingerprint);
         Assert.Equal("hello", File.ReadAllText(target));
     }
 

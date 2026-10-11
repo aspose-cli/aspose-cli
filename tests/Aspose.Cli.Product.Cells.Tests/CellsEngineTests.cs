@@ -342,8 +342,8 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
         WorkbookInfoResult result = CellsInfo.Run(_fixture.Session, new InfoRequest { Input = path });
 
         Assert.Equal("workbook", result.Kind);
-        Assert.Equal("xlsx", result.Source.Format);
-        Assert.True(result.Source.SizeBytes > 0);
+        Assert.Equal("xlsx", result.Input.Format);
+        Assert.True(result.Input.SizeBytes > 0);
 
         SheetInfo data = FindSheet(result, "Data");
         Assert.Equal("A1:C3", data.UsedRange);

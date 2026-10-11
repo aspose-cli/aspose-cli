@@ -33,7 +33,7 @@ internal static class InspectCommand
     internal static void Table(PresentationInfoResult result, TableSurface surface)
     {
         PresentationSummary presentation = result.Presentation;
-        ResultText.Source(surface, result.Source);
+        ResultText.Input(surface, result.Input);
         surface.Out.WriteLine(
             $"slides: {presentation.SlideCount}   size: {TableText.Points(presentation.WidthPoints)} x {TableText.Points(presentation.HeightPoints)} pt   "
             + $"orientation: {presentation.Orientation}");

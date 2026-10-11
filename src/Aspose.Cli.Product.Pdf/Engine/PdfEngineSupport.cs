@@ -261,13 +261,6 @@ internal static class PdfEngineSupport
         });
     }
 
-    internal static OutputInfo BuildOutput(string path, string format, long size) => new()
-    {
-        Path = Path.GetFullPath(path),
-        Format = format,
-        SizeBytes = size,
-    };
-
     internal static Rectangle ToPdfRect(Page page, PdfRectInput rect)
     {
         Rectangle box = page.GetPageRect(considerRotation: true);

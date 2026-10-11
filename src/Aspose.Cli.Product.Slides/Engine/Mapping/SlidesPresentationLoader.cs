@@ -161,6 +161,9 @@ internal sealed class SlidesPresentationLoader(
 internal sealed record LoadedPresentation(Presentation Presentation, string FormatId, SlidesResourcePolicy Resources)
     : IDisposable
 {
+    /// <summary>Whether the file is encrypted, as it was opened; a later encryption does not change it.</summary>
+    public bool Encrypted { get; } = Presentation.ProtectionManager.IsEncrypted;
+
     /// <summary>The charts whose implicit automatic title an output draws over the plot.</summary>
     public IReadOnlyList<(int Slide, string Chart)> ImplicitTitleCharts { get; init; } = [];
 

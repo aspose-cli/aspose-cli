@@ -12,7 +12,7 @@
     },
     {
       "args": ["words", "inspect", "flat.xml"],
-      "expect": { "exitCode": 0, "json": [{ "path": "source.format", "equals": "flatopc" }] }
+      "expect": { "exitCode": 0, "json": [{ "path": "input.format", "equals": "flatopc" }] }
     }
   ]
 }

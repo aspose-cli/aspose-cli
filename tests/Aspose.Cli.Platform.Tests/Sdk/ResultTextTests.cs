@@ -9,7 +9,7 @@ public sealed class ResultTextTests
     [Fact]
     public void Edit_PrintsEveryBestEffortFailureWithItsHintAndTheBackup()
     {
-        var output = new OutputInfo { Path = "out.docx", Format = "docx", SizeBytes = 1_024 };
+        var output = new OutputInfo { Path = "out.docx", Format = "docx", SizeBytes = 1_024, Fingerprint = new FileFingerprint { Sha256 = new string('0', 64) } };
         BoundedOperationOutcome[] applied =
         [
             new() { Id = "op-0001", Op = "set_text", Status = OpStatuses.Ok, ItemsAffected = 2 },
@@ -47,11 +47,11 @@ public sealed class ResultTextTests
     }
 
     [Fact]
-    public void Produced_NamesACompanionFileWithoutAFormat()
+    public void Produced_NamesACompanionFileByItsExtension()
     {
-        string text = Render(surface => ResultText.Produced(surface, new OutputInfo { Path = "pres.css", Format = null, SizeBytes = 10 }));
+        string text = Render(surface => ResultText.Produced(surface, new OutputInfo { Path = "pres.css", Format = "css", SizeBytes = 10, Fingerprint = new FileFingerprint { Sha256 = new string('0', 64) } }));
 
-        Assert.Equal("wrote pres.css (companion, 10 bytes)", Lines(text)[0]);
+        Assert.Equal("wrote pres.css (css, 10 bytes)", Lines(text)[0]);
     }
 
     [Fact]
@@ -136,9 +136,9 @@ public sealed class ResultTextTests
     }
 
     [Fact]
-    public void Source_WritesThePathFormatAndSize()
+    public void Input_WritesThePathFormatAndSize()
     {
-        string text = Render(surface => ResultText.Source(surface, new SourceInfo { Path = "in.pdf", Format = "pdf", SizeBytes = 20_000 }));
+        string text = Render(surface => ResultText.Input(surface, new InputInfo { Path = "in.pdf", Format = "pdf", SizeBytes = 20_000, Fingerprint = new FileFingerprint { Sha256 = new string('0', 64) }, Encrypted = false }));
 
         Assert.Equal(["in.pdf (pdf, 20,000 bytes)"], Lines(text));
     }

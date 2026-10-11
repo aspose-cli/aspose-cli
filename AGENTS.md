@@ -59,7 +59,7 @@ the fixed distribution identity; the generated projections and the solution come
 
 | # | Decision | Owner | Enforced by |
 |---|---|---|---|
-| D1 | Output: path, written format, overwrite, encryption, part names, staging | The SDK resolves a `ResolvedOutput` for the product; the format is resolved once: the format `--to` names, else the one among the command's writable formats that the `--out` extension declares, else the edited input's format, the `--to` default or the command's only format | `DecisionOwnershipTests` D1: no raw output path string in requests, no format from an extension, no product-built `FORMAT_UNSUPPORTED`, resolver or protectable-format list |
+| D1 | Output: path, written format, overwrite, encryption, part names, staging, the file objects a result reports | The SDK resolves a `ResolvedOutput` for the product; the format is resolved once: the format `--to` names, else the one among the command's writable formats that the `--out` extension declares, else the edited input's format, the `--to` default or the command's only format. SDK `FileObjects` alone builds the `input` and `output` objects: absolute path, size and fingerprint from the file or its publication | `DecisionOwnershipTests` D1: no raw output path string in requests, no format from an extension, no product-built `FORMAT_UNSUPPORTED`, resolver, protectable-format list or file object |
 | D2 | Format capabilities | Each product declares its formats once in its Contracts `*Formats.Definitions`, passed to `.Formats(...)` on the module; its `*EngineFormats` maps every declared id to the engine | `CellsEngineFormatTests`, `PdfEngineFormatTests`, `SlidesEngineFormatsTests`, `WordsEngineFormatsTests`: every declared format has an engine mapping; `DecisionOwnershipTests` D2 |
 | D3 | Mistake suggestions | SDK `Mistake` alone writes `details.suggestions[]` and the "did you mean" text | `DecisionOwnershipTests` D3; invariants |
 | D4 | Error construction | SDK error factories alone build shared codes | `DecisionOwnershipTests` D4; `FreeTextErrorFactoryTests` |
@@ -107,7 +107,7 @@ weaken a check or remove a supported operation to make a test pass.
   `EngineResultEnvelope` (adds `license`) or `WindowedResultEnvelope` (adds `window`), listed in
   the assembly's JSON context; a shared block publishes itself with `[SchemaId]`. Ids are relative
   to the owner: `v2/common/` for the SDK and Host, `v2/<product>/` for a product. `required`,
-  nullability, `[AlwaysPresent]`, `[OneOfBy]` and `[OpenEnum]` state the shape. `APCLI013` rejects
+  nullability, `[OneOfBy]` and `[OpenEnum]` state the shape. `APCLI013` rejects
   a record it cannot describe.
 - **JSON input** defaults are tested through the production source-generated serializer,
   including omitted fields and explicit `false`, `0` and `null`. It

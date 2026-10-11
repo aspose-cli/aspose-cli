@@ -64,7 +64,7 @@ internal sealed class PdfFontEnvironment : IFontEnvironment
             .ToArray();
         return new FontCheckResult
         {
-            Source = PdfInfoProjection.Source(filePath),
+            Input = PdfInfoProjection.Source(filePath, loaded),
             AllAvailable = fonts.All(static font => font.Available),
             Fonts = fonts,
             License = EnvelopeParts.License(state),

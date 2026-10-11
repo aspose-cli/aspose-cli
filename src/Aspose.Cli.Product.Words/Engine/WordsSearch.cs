@@ -31,7 +31,7 @@ internal static class WordsSearch
 
         return new WordsSearchResult
         {
-            Source = InfoProjection.Source(request.Input, loaded),
+            Input = InfoProjection.Source(request.Input, loaded),
             Pattern = query.Text.Pattern,
             Hits = hits.Hits,
             Window = hits.Window(),

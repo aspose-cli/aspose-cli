@@ -70,7 +70,7 @@ internal static class SlidesSearch
 
         return new SlidesSearchResult
         {
-            Source = Source(request.Input, loaded.FormatId),
+            Input = Source(request.Input, loaded),
             Pattern = text.Pattern,
             Scope = scope,
             Hits = hits.Hits,

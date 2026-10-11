@@ -74,13 +74,8 @@ internal static class PdfSign
         transaction.Commit();
         return new PdfSignResult
         {
-            Input = PdfInfoProjection.Source(filePath),
-            Output = new OutputInfo
-            {
-                Path = Path.GetFullPath(request.Output.Path),
-                Format = "pdf",
-                SizeBytes = write.SizeBytes,
-            },
+            Input = PdfInfoProjection.Source(filePath, loaded),
+            Output = FileObjects.Output(write.Published, request.Output.Format, loaded.Document.IsEncrypted),
             Signature = signed,
             Visible = request.Visible,
             Page = request.Page,

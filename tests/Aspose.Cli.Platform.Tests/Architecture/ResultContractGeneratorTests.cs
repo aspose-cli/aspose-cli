@@ -178,53 +178,38 @@ public sealed class ResultContractGeneratorTests
     }
 
     [Fact]
-    public void AlwaysPresentMembers_AreCarriedOnTheMember()
+    public void OutputItemOfTheSdk_IsInheritedByAProductItem()
     {
         GeneratorDriverRunResult result = Run(
             """
-            /// <summary>A read.</summary>
-            public sealed record ReadResult() : ResultEnvelope("read-result", 2)
+            /// <summary>The pages rendered.</summary>
+            public sealed record RenderResult() : ResultEnvelope("render-result", 2)
             {
-                /// <summary>The file read.</summary>
-                [AlwaysPresent("fingerprint")]
-                public required SourceInfo Source { get; init; }
-
-                /// <summary>The names read.</summary>
-                [AlwaysPresent("fingerprint")]
-                public IReadOnlyDictionary<string, SourceInfo>? Names { get; init; }
+                /// <summary>One file per page.</summary>
+                public required IReadOnlyList<PageFile> Outputs { get; init; }
             }
 
-            [JsonSerializable(typeof(ReadResult))]
-            internal sealed partial class ProductJsonContext : JsonSerializerContext;
-            """);
-
-        Diagnostic error = Assert.Single(result.Diagnostics, static diagnostic => diagnostic.Id == "APCLI013");
-        Assert.Contains("'ReadResult.Names'", error.GetMessage(), StringComparison.Ordinal);
-        Assert.Contains("must hold a record or an array of records", error.GetMessage(), StringComparison.Ordinal);
-
-        result = Run(
-            """
-            /// <summary>A read.</summary>
-            public sealed record ReadResult() : ResultEnvelope("read-result", 2)
+            /// <summary>One rendered page.</summary>
+            public sealed record PageFile : OutputItem
             {
-                /// <summary>The file read.</summary>
-                [AlwaysPresent("fingerprint")]
-                public required SourceInfo Source { get; init; }
+                /// <summary>Describes the page's file.</summary>
+                public PageFile(OutputInfo file)
+                    : base(file)
+                {
+                }
 
-                /// <summary>The files written.</summary>
-                [AlwaysPresent("format")]
-                public required IReadOnlyList<OutputInfo> Outputs { get; init; }
+                /// <summary>The 1-based page number.</summary>
+                [JsonPropertyOrder(-1)]
+                public required int Page { get; init; }
             }
 
-            [JsonSerializable(typeof(ReadResult))]
+            [JsonSerializable(typeof(RenderResult))]
             internal sealed partial class ProductJsonContext : JsonSerializerContext;
             """);
 
         Assert.Empty(result.Diagnostics.Where(static diagnostic => diagnostic.Id == "APCLI013"));
         string source = Assert.Single(Assert.Single(result.Results).GeneratedSources).SourceText.ToString();
-        Assert.Contains("SchemaId = \"read-result\", SchemaVersion = 2, Properties = [", source, StringComparison.Ordinal);
-        Assert.Contains("Record = typeof(global::Aspose.Cli.Sdk.Contracts.SourceInfo) }, Required = true, AlwaysPresent = [\"fingerprint\"] }", source, StringComparison.Ordinal);
-        Assert.Contains("Record = typeof(global::Aspose.Cli.Sdk.Contracts.OutputInfo) } }, Required = true, AlwaysPresent = [\"format\"] }", source, StringComparison.Ordinal);
+        Assert.Contains("Type = typeof(global::Sample.PageFile), Description = \"One rendered page.\", Base = typeof(global::Aspose.Cli.Sdk.Contracts.OutputItem)", source, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -306,10 +291,6 @@ public sealed class ResultContractGeneratorTests
 
                 /// <summary>A cell.</summary>
                 public BadCell? Cell { get; init; }
-
-                /// <summary>A file, with members it cannot keep present.</summary>
-                [AlwaysPresent("fingerprint", "path", "missing")]
-                public SourceInfo? Source { get; init; }
 
                 /// <summary>Open members beside an inherited one.</summary>
                 public OpenBag? Bag { get; init; }
@@ -393,9 +374,6 @@ public sealed class ResultContractGeneratorTests
         Assert.Contains(reported, static item => item.Message.Contains("'BrokenResult.Text': [Minimum] applies to Integer or Number values", StringComparison.Ordinal) && item.At.StartsWith("Minimum", StringComparison.Ordinal));
         Assert.Contains(reported, static item => item.Message.Contains("'BadCell.V': [OneOfBy] cases must cover each allowed value of 't' exactly once: empty, number, string, error", StringComparison.Ordinal) && item.At == "V");
         Assert.Contains(reported, static item => item.Message.Contains("'BadCell.V': [OneOfBy] Type must be one of: null, string, number, integer, boolean", StringComparison.Ordinal) && item.At == "V");
-        Assert.Contains(reported, static item => item.Message.Contains("'BrokenResult.Source': [AlwaysPresent] names 'path', which is not an optional member of SourceInfo", StringComparison.Ordinal) && item.At == "Source");
-        Assert.Contains(reported, static item => item.Message.Contains("'BrokenResult.Source': [AlwaysPresent] names 'missing', which is not an optional member of SourceInfo", StringComparison.Ordinal) && item.At == "Source");
-        Assert.DoesNotContain(reported, static item => item.Message.Contains("names 'fingerprint'", StringComparison.Ordinal));
         Assert.Contains(reported, static item => item.Message.Contains("'OpenBag.Extra': extension data must be the record's only member", StringComparison.Ordinal) && item.At == "Extra");
         Assert.Contains(reported, static item => item.Message.Contains("'TwoCaseCell.W': only one member of a record may depend on a discriminator", StringComparison.Ordinal) && item.At == "W");
         Assert.Contains(reported, static item => item.Message.Contains("Result records 'BrokenResult' and 'TwinResult' both publish the schema 'broken-result'", StringComparison.Ordinal) && item.At == "TwinResult");

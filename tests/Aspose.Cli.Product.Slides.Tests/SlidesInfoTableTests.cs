@@ -15,7 +15,7 @@ public sealed class SlidesInfoTableTests
     {
         var result = new PresentationInfoResult
         {
-            Source = new SourceInfo { Path = "deck.pptx", Format = "pptx", SizeBytes = 10 },
+            Input = new InputInfo { Path = "deck.pptx", Format = "pptx", SizeBytes = 10, Fingerprint = new FileFingerprint { Sha256 = new string('0', 64) }, Encrypted = false },
             Presentation = new PresentationSummary
             {
                 SlideCount = 1, WidthPoints = 720, HeightPoints = 540, Orientation = "landscape",

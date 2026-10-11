@@ -43,7 +43,7 @@ internal static class PdfConvert
 
         return new PdfConvertResult
         {
-            Input = PdfInfoProjection.Source(filePath),
+            Input = PdfInfoProjection.Source(filePath, loaded),
             Outputs = outputs,
             Pages = request.Pages?.Text,
             License = EnvelopeParts.License(state),
@@ -72,7 +72,7 @@ internal static class PdfConvert
         }
 
         SaveFormat format = PdfEngineFormats.Save(request.Output.Format.Id);
-        long size = session.Outputs.Write(
+        PublishedFile written = session.Outputs.Write(
             request.Output.Path,
             request.Output.Overwrite,
             selected,
@@ -92,7 +92,7 @@ internal static class PdfConvert
                     selected.Save(temp, format);
                 }
             });
-        return BuildOutput(request.Output.Path, request.Output.Format.Id, size);
+        return FileObjects.Output(written, request.Output.Format, encrypted: false);
     }
 
     /// <summary>
@@ -147,9 +147,9 @@ internal static class PdfConvert
 
     private static OutputInfo ConvertText(PdfSession session, Document source, IReadOnlyList<int> pages, PdfConvertRequest request)
     {
-        long size = session.Outputs.Write(request.Output.Path, request.Output.Overwrite, source, temp =>
+        PublishedFile written = session.Outputs.Write(request.Output.Path, request.Output.Overwrite, source, temp =>
             File.WriteAllText(temp, DocumentText(source, pages), new UTF8Encoding(encoderShouldEmitUTF8Identifier: false)), rendering: true, pages: pages);
-        return BuildOutput(request.Output.Path, "txt", size);
+        return FileObjects.Output(written, request.Output.Format, encrypted: false);
     }
 
     /// <summary>
@@ -188,7 +188,7 @@ internal static class PdfConvert
             .ToArray();
         int bookmarks = Editing.PdfMutationSupport.CountOutline(document.Outlines);
         int changed = 0;
-        long size = session.Outputs.Write(request.Output.Path, request.Output.Overwrite, document, temp =>
+        PublishedFile written = session.Outputs.Write(request.Output.Path, request.Output.Overwrite, document, temp =>
         {
             using var log = new MemoryStream();
             PdfComplianceLog.EnsureConverted(
@@ -243,7 +243,7 @@ internal static class PdfConvert
             });
         }
 
-        return BuildOutput(request.Output.Path, profile, size);
+        return FileObjects.Output(written, request.Output.Format, encrypted: false);
     }
 
     /// <summary>
@@ -315,9 +315,7 @@ internal static class PdfConvert
             }, rendering: true, pages: [pageNumber]);
         }
 
-        IReadOnlyList<long> sizes = writer.Commit();
-        return paths.Select((path, index) =>
-            BuildOutput(path, request.Output.Format.Id, sizes[index])).ToArray();
+        return [.. writer.Commit().Select(file => FileObjects.Output(file, request.Output.Format, encrypted: false))];
     }
 
     private static OutputInfo ConvertTiff(
@@ -332,12 +330,12 @@ internal static class PdfConvert
         }
 
         using Document selected = Select(source, pages);
-        long size = session.Outputs.Write(request.Output.Path, request.Output.Overwrite, selected, temp =>
+        PublishedFile written = session.Outputs.Write(request.Output.Path, request.Output.Overwrite, selected, temp =>
         {
             using FileStream stream = File.Create(temp);
             var device = new TiffDevice(new Resolution(RenderPixelGuard.DefaultDpi), new TiffSettings());
             device.Process(selected, 1, selected.Pages.Count, stream);
         }, rendering: true);
-        return BuildOutput(request.Output.Path, "tiff", size);
+        return FileObjects.Output(written, request.Output.Format, encrypted: false);
     }
 }
