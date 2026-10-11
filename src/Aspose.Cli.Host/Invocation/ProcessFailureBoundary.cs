@@ -20,7 +20,7 @@ internal static class ProcessFailureBoundary
 
     private static int _unhandledHandlerInstalled;
 
-    private static (OutputMode Output, bool Quiet) ResolveErrorOutput(
+    private static (OutputMode OutputFormat, bool Quiet) ResolveErrorOutput(
         HostContext host, IReadOnlyList<string> args)
     {
         try { return host.Parser.ResolveErrorOutput(args); }

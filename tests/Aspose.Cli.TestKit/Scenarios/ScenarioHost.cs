@@ -19,7 +19,7 @@ internal static class ScenarioHost
 
     public static JsonNode Capabilities()
     {
-        CliResult result = Workspace.Value.Run("capabilities", "--output", "json");
+        CliResult result = Workspace.Value.Run("capabilities", "--output-format", "json");
         return result.ExitCode == 0
             ? JsonNode.Parse(result.StdOut)!
             : throw new InvalidOperationException($"The CLI capabilities could not be read: {result.StdErr}");

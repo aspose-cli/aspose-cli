@@ -27,7 +27,7 @@ public sealed class LicenseModeTests : IDisposable
         string[] timeout = supervised ? ["--timeout", "60"] : [];
 
         CliResult configured = _workspace.Run(
-            ["words", "create", "configured.docx", "--markdown", "brief.md", "--output", "json", .. timeout]);
+            ["words", "create", "configured.docx", "--markdown", "brief.md", "--output-format", "json", .. timeout]);
         Assert.Equal(7, configured.ExitCode);
         Assert.Equal("LICENSE_INVALID", Error(configured)["code"]!.GetValue<string>());
 
@@ -36,7 +36,7 @@ public sealed class LicenseModeTests : IDisposable
         Assert.Contains(requested["warnings"]!.AsArray(), warning => warning!["code"]!.GetValue<string>() == "EVAL_MODE");
 
         JsonNode status = _workspace.Run(
-            "license", "status", "--product", "words", "--license-mode", "evaluation", "--output", "json").Json();
+            "license", "status", "--product", "words", "--license-mode", "evaluation", "--output-format", "json").Json();
         JsonNode words = Assert.Single(status["products"]!.AsArray())!;
         Assert.Equal("evaluation", words["mode"]!.GetValue<string>());
         Assert.Equal("requested", words["source"]!.GetValue<string>());
@@ -49,7 +49,7 @@ public sealed class LicenseModeTests : IDisposable
         ProjectLicense(File.ReadAllBytes(TestLicense.Path!));
 
         JsonNode licensed = _workspace.Run(
-            "words", "create", "licensed.docx", "--markdown", "brief.md", "--output", "json").Json();
+            "words", "create", "licensed.docx", "--markdown", "brief.md", "--output-format", "json").Json();
         JsonNode requested = Create("requested.docx", []);
 
         Assert.Equal("licensed", licensed["license"]!["mode"]!.GetValue<string>());
@@ -62,7 +62,7 @@ public sealed class LicenseModeTests : IDisposable
     [Fact]
     public void Doctor_SaysTheEvaluationModeWasRequested()
     {
-        JsonNode doctor = _workspace.Run("doctor", "--license-mode", "evaluation", "--output", "json").Json();
+        JsonNode doctor = _workspace.Run("doctor", "--license-mode", "evaluation", "--output-format", "json").Json();
 
         JsonNode license = Assert.Single(
             doctor["checks"]!.AsArray(), check => check!["name"]!.GetValue<string>() == "license")!;
@@ -75,7 +75,7 @@ public sealed class LicenseModeTests : IDisposable
     {
         CliResult result = _workspace.Run(
             "words", "create", "brief.docx", "--markdown", "brief.md",
-            "--license", "any.lic", "--license-mode", "evaluation", "--output", "json");
+            "--license", "any.lic", "--license-mode", "evaluation", "--output-format", "json");
 
         Assert.Equal(2, result.ExitCode);
         JsonNode error = Error(result);
@@ -91,7 +91,7 @@ public sealed class LicenseModeTests : IDisposable
     public void EvaluationMode_IsRefusedByCommandsWhoseEffectOutlivesThem(params string[] command)
     {
         // The refusal needs no file, so a missing one is not reported first.
-        CliResult result = _workspace.Run([.. command, "--license-mode", "evaluation", "--output", "json"]);
+        CliResult result = _workspace.Run([.. command, "--license-mode", "evaluation", "--output-format", "json"]);
 
         Assert.Equal(2, result.ExitCode);
         JsonNode error = Error(result);
@@ -102,7 +102,7 @@ public sealed class LicenseModeTests : IDisposable
     private JsonNode Create(string output, string[] options)
     {
         CliResult result = _workspace.Run(
-            ["words", "create", output, "--markdown", "brief.md", "--license-mode", "evaluation", "--output", "json", .. options]);
+            ["words", "create", output, "--markdown", "brief.md", "--license-mode", "evaluation", "--output-format", "json", .. options]);
         Assert.True(result.ExitCode == 0, result.StdErr);
         JsonNode created = JsonNode.Parse(result.StdOut)!;
         // The disclosure says the evaluation was asked for, not that a license is missing.

@@ -11,7 +11,7 @@ public sealed class StartupLicenseNoticeTests
     {
         using var workspace = new TempWorkspace();
         // The notice does not depend on which human format is chosen; the other tests use table.
-        CliResult result = workspace.Run("--help", "--output", "markdown");
+        CliResult result = workspace.Run("--help", "--output-format", "markdown");
 
         Assert.Equal(0, result.ExitCode);
         Assert.Contains("Usage:", result.StdOut);
@@ -27,7 +27,7 @@ public sealed class StartupLicenseNoticeTests
     public void ProductHelp_ReportsOnlyTheSelectedNativeEngine(string product)
     {
         using var workspace = new TempWorkspace();
-        CliResult result = workspace.Run(product, "--help", "--output", "table");
+        CliResult result = workspace.Run(product, "--help", "--output-format", "table");
 
         Assert.Equal(0, result.ExitCode);
         Assert.Equal($"license: {product}=evaluation", result.StdErr.Trim());
@@ -39,7 +39,7 @@ public sealed class StartupLicenseNoticeTests
     {
         using var workspace = new TempWorkspace();
         File.WriteAllText(workspace.File("invalid.lic"), "<License>not a signed Aspose license</License>");
-        CliResult result = workspace.Run("words", "--help", "--license", "invalid.lic", "--output", "table");
+        CliResult result = workspace.Run("words", "--help", "--license", "invalid.lic", "--output-format", "table");
 
         Assert.Equal(0, result.ExitCode);
         Assert.StartsWith("license: words=invalid", result.StdErr);
@@ -53,7 +53,7 @@ public sealed class StartupLicenseNoticeTests
     public void MissingExplicitLicense_ReportsInvalidWithoutHidingHelp()
     {
         using var workspace = new TempWorkspace();
-        CliResult result = workspace.Run("words", "--help", "--license", "missing.lic", "--output", "table");
+        CliResult result = workspace.Run("words", "--help", "--license", "missing.lic", "--output-format", "table");
 
         Assert.Equal(0, result.ExitCode);
         Assert.StartsWith("license: words=invalid", result.StdErr);
@@ -65,7 +65,7 @@ public sealed class StartupLicenseNoticeTests
     public void RequestedEvaluation_IsMarkedAsRequested()
     {
         using var workspace = new TempWorkspace();
-        CliResult result = workspace.Run("words", "--help", "--license-mode", "evaluation", "--output", "table");
+        CliResult result = workspace.Run("words", "--help", "--license-mode", "evaluation", "--output-format", "table");
 
         Assert.Equal(0, result.ExitCode);
         Assert.Equal("license: words=evaluation (requested)", result.StdErr.Trim());
@@ -75,7 +75,7 @@ public sealed class StartupLicenseNoticeTests
     public void Quiet_SuppressesTheStartupNotice()
     {
         using var workspace = new TempWorkspace();
-        CliResult result = workspace.Run("--help", "--output", "table", "--quiet");
+        CliResult result = workspace.Run("--help", "--output-format", "table", "--quiet");
 
         Assert.Equal(0, result.ExitCode);
         Assert.Empty(result.StdErr);
@@ -86,12 +86,12 @@ public sealed class StartupLicenseNoticeTests
     public void Json_SuccessAndFailureKeepTheirSingleDocumentContracts()
     {
         using var workspace = new TempWorkspace();
-        CliResult success = workspace.Run("capabilities", "--output", "json");
+        CliResult success = workspace.Run("capabilities", "--output-format", "json");
         Assert.Equal(0, success.ExitCode);
         Assert.Empty(success.StdErr);
         Assert.NotNull(JsonNode.Parse(success.StdOut)!["schema"]);
 
-        CliResult failure = workspace.Run("unknown-startup-command", "--output", "json");
+        CliResult failure = workspace.Run("unknown-startup-command", "--output-format", "json");
         Assert.NotEqual(0, failure.ExitCode);
         Assert.Empty(failure.StdOut);
         Assert.Equal("USAGE_ERROR", JsonNode.Parse(failure.StdErr)!["error"]!["code"]!.GetValue<string>());
@@ -112,7 +112,7 @@ public sealed class StartupLicenseNoticeTests
     public void RawSchema_HumanModeKeepsStdoutParseable()
     {
         using var workspace = new TempWorkspace();
-        CliResult result = workspace.Run("schema", "v2/common/license-status", "--output", "table");
+        CliResult result = workspace.Run("schema", "v2/common/license-status", "--output-format", "table");
 
         Assert.Equal(0, result.ExitCode);
         Assert.NotNull(JsonNode.Parse(result.StdOut)!["$schema"]);
@@ -123,7 +123,7 @@ public sealed class StartupLicenseNoticeTests
     public void Verbose_HumanModePreservesJsonlDiagnostics()
     {
         using var workspace = new TempWorkspace();
-        CliResult result = workspace.Run("capabilities", "--output", "table", "--verbose");
+        CliResult result = workspace.Run("capabilities", "--output-format", "table", "--verbose");
 
         Assert.Equal(0, result.ExitCode);
         string line = Assert.Single(Lines(result.StdErr));
@@ -136,7 +136,7 @@ public sealed class StartupLicenseNoticeTests
         using var workspace = new TempWorkspace();
         File.WriteAllText(workspace.File("source.md"), "# Project delivery\n\nApproved client scope.\n");
         CliResult result = workspace.Run("words", "create", "brief.docx", "--markdown", "source.md",
-            "--timeout", "30", "--output", "table");
+            "--timeout", "30", "--output-format", "table");
 
         Assert.Equal(0, result.ExitCode);
         Assert.True(File.Exists(workspace.File("brief.docx")));
@@ -152,7 +152,7 @@ public sealed class StartupLicenseNoticeTests
     public void InternalAndProtocolEntrypoints_DoNotAddStartupNoise(params string[] entrypoint)
     {
         using var workspace = new TempWorkspace();
-        CliResult result = workspace.Run([.. entrypoint, "--help", "--output", "table"]);
+        CliResult result = workspace.Run([.. entrypoint, "--help", "--output-format", "table"]);
 
         Assert.Equal(0, result.ExitCode);
         Assert.Empty(result.StdErr);

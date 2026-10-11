@@ -46,8 +46,8 @@ public static class FontDirectoryContract
         string ambient = label + "-ambient.pdf";
         string fonts = label + "-fonts.pdf";
 
-        Succeed(workspace.Run([.. command(ambient), "--output", "json"]));
-        Succeed(workspace.Run([.. command(fonts), "--font-dir", "fonts", "--output", "json"]));
+        Succeed(workspace.Run([.. command(ambient), "--output-format", "json"]));
+        Succeed(workspace.Run([.. command(fonts), "--font-dir", "fonts", "--output-format", "json"]));
 
         Assert.False(EmbedsFixture(workspace, ambient));
         Assert.True(EmbedsFixture(workspace, fonts));
@@ -57,14 +57,14 @@ public static class FontDirectoryContract
     public static bool EmbedsFixture(TempWorkspace workspace, string pdf)
     {
         ArgumentNullException.ThrowIfNull(workspace);
-        JsonNode result = Succeed(workspace.Run(["fonts", "check", pdf, "--output", "json"]));
+        JsonNode result = Succeed(workspace.Run(["fonts", "check", pdf, "--output-format", "json"]));
         return result["fonts"]!.AsArray().Any(static font =>
             IsFixture(font!["name"]!.GetValue<string>()) && font["available"]!.GetValue<bool>());
     }
 
     private static bool FixtureAvailable(TempWorkspace workspace, string[] args)
     {
-        JsonNode result = Succeed(workspace.Run([.. args, "--output", "json"]));
+        JsonNode result = Succeed(workspace.Run([.. args, "--output-format", "json"]));
         JsonNode font = Assert.Single(
             result["fonts"]!.AsArray(),
             font => IsFixture(font!["name"]!.GetValue<string>()))!;
@@ -78,7 +78,7 @@ public static class FontDirectoryContract
         params string[] extra)
     {
         JsonNode result = Succeed(workspace.Run(
-            ["review", fileName, "--out", output, "--output", "json", .. extra]));
+            ["review", fileName, "--out", output, "--output-format", "json", .. extra]));
         return result["findings"]!.AsArray()
             .Select(static finding => finding!["code"]!.GetValue<string>())
             .ToArray();

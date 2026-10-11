@@ -20,7 +20,7 @@ public sealed class CellsAlternativeExtensionTests : IDisposable
     {
         File.WriteAllText(_workspace.File("rows.csv"), "name,qty\nalpha,3\n");
 
-        CliResult converted = _workspace.Run("cells", "convert", "rows.csv", "--to", format, "--out", "data.txt", "--output", "json");
+        CliResult converted = _workspace.Run("cells", "convert", "rows.csv", "--to", format, "--out", "data.txt", "--output-format", "json");
 
         Assert.True(converted.ExitCode == 0, converted.StdErr);
         JsonNode output = JsonNode.Parse(converted.StdOut)!["output"]!;
@@ -34,7 +34,7 @@ public sealed class CellsAlternativeExtensionTests : IDisposable
     {
         File.WriteAllText(_workspace.File("rows.txt"), "name;qty\nalpha;3\n");
 
-        CliResult converted = _workspace.Run("cells", "convert", "rows.txt", "--to", "csv", "--out", "rows.csv", "--output", "json");
+        CliResult converted = _workspace.Run("cells", "convert", "rows.txt", "--to", "csv", "--out", "rows.csv", "--output-format", "json");
 
         Assert.True(converted.ExitCode == 0, converted.StdErr);
         Assert.Contains("alpha,3", File.ReadAllLines(_workspace.File("rows.csv")));

@@ -77,8 +77,8 @@ public sealed record ScenarioFile
 public sealed record ScenarioStep
 {
     /// <summary>
-    /// The arguments after <c>aspose-cli</c>. <c>--output json</c> is appended unless they already
-    /// choose an output with <c>--output</c> or <c>-f</c>.
+    /// The arguments after <c>aspose-cli</c>. <c>--output-format json</c> is appended unless they already
+    /// choose an output with <c>--output-format</c>.
     /// </summary>
     public required IReadOnlyList<string> Args { get; init; }
 

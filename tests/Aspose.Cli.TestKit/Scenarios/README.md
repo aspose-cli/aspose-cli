@@ -51,7 +51,7 @@ one-operation document for the product's `edit --ops`; `markdown` and `text` are
 
 | Field | Meaning |
 | --- | --- |
-| `args` | The arguments after `aspose-cli`; `--output json` is appended unless they choose an output |
+| `args` | The arguments after `aspose-cli`; `--output-format json` is appended unless they choose an output |
 | `env` | Extra environment variables, for `*-env` options |
 | `stdin` | Standard input, for `--password-stdin` or `--ops -`; empty when omitted |
 | `expect` | What the step must produce; optional |
@@ -71,7 +71,7 @@ one-operation document for the product's `edit --ops`; `markdown` and `text` are
 ## Contract checks
 
 Every step is also checked, whatever it expects, against the CLI's own catalog
-(`CliCatalog`, read from the live `capabilities --output json`):
+(`CliCatalog`, read from the live `capabilities --output-format json`):
 
 - `no-internal-error`: it never ends with `INTERNAL_ERROR` or that code's exit code;
 - `error-envelope`: a failure leaves stdout empty and writes exactly one JSON error envelope to

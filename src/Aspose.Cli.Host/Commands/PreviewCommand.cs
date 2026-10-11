@@ -42,7 +42,7 @@ internal static class PreviewCommand
         Command open = symbols.Standard.CreateCommand(
             "open",
             "Open a file in the local viewer and follow every change.",
-            [file, symbols.Port, symbols.Product, symbols.View, symbols.Open, symbols.Effect]);
+            [file, symbols.Port, symbols.Product, symbols.View, symbols.NoOpen, symbols.Effect]);
         open.SetAction(parse => executor.Run(parse, globals, context =>
             Start(parse, context, file, symbols)));
         return open;
@@ -88,7 +88,7 @@ internal static class PreviewCommand
             },
             port,
             context.Deadline);
-        if (parse.GetValue(symbols.Open))
+        if (!parse.GetValue(symbols.NoOpen))
         {
             BrowserLauncher.Open(opened.Document.Url);
         }
@@ -174,7 +174,7 @@ internal static class PreviewCommand
         Option<int> Port,
         Option<string?> Product,
         Option<string> View,
-        Option<bool> Open,
+        Option<bool> NoOpen,
         Option<string?> Effect,
         StandardOptions Standard)
     {
@@ -204,7 +204,7 @@ internal static class PreviewCommand
                     .Distinct(StringComparer.Ordinal)
                     .Order(StringComparer.Ordinal)
                     .ToArray());
-            var open = new Option<bool>("--open") { Description = "Open the viewer in the default browser." };
+            var noOpen = new Option<bool>("--no-open") { Description = "Do not open the viewer in the default browser." };
             var effect = new Option<string?>("--fx")
             {
                 Description = "Presentation effect for live demonstrations (for example 'demo').",
@@ -213,7 +213,7 @@ internal static class PreviewCommand
                 port,
                 product,
                 view,
-                open,
+                noOpen,
                 effect,
                 new StandardOptions(new CommandTraits { PasswordSubject = "the file", UsesFonts = true }));
         }

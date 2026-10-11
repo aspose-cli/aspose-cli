@@ -15,7 +15,7 @@ public sealed class CellsMutationBoundaryTests
 
         CliResult edited = workspace.Run("cells", "edit", "source.xlsx", "--ops",
             """{"ops":[{"op":"set_formula","sheet":"Data","range":"A1","formula":"=REPT(\"x\",40)"},{"op":"resize_columns","sheet":"Data","from":"A"}]}""",
-            "--out", "edited.xlsx", "--output", "json");
+            "--out", "edited.xlsx", "--output-format", "json");
 
         Assert.True(edited.ExitCode == 0, edited.StdErr);
         using var workbook = new Workbook(workspace.File("edited.xlsx"));
@@ -37,7 +37,7 @@ public sealed class CellsMutationBoundaryTests
         string operations = System.Text.Json.JsonSerializer.Serialize(new
         { ops = new[] { new { op = "insert_image", sheet = "Data", at = "A1", path = workspace.File("large.png") } } });
         var args = new List<string> { "cells", "edit", "source.xlsx", "--ops", operations,
-            "--out", "result.xlsx", "--max-input-bytes", "16384", "--output", "json" };
+            "--out", "result.xlsx", "--max-input-bytes", "16384", "--output-format", "json" };
         if (bestEffort) { args.Add("--best-effort"); }
         if (supervised) { args.AddRange(["--timeout", "60"]); }
         CliResult edited = workspace.Run(args.ToArray());
@@ -53,9 +53,9 @@ public sealed class CellsMutationBoundaryTests
     {
         using var workspace = new TempWorkspace();
         var environment = new Dictionary<string, string?> { ["OLD_PASSWORD"] = "old-test-password", ["NEW_PASSWORD"] = "new-test-password" };
-        CliResult create = workspace.RunWithEnv(environment, "cells", "create", "secret.xlsx", "--sheets", "Data", "--encrypt-env", "OLD_PASSWORD", "--output", "json");
+        CliResult create = workspace.RunWithEnv(environment, "cells", "create", "secret.xlsx", "--sheets", "Data", "--encrypt-env", "OLD_PASSWORD", "--output-format", "json");
         Assert.True(create.ExitCode == 0, create.StdErr);
-        var arguments = new List<string> { "cells", "edit", "secret.xlsx", "--password-env", "OLD_PASSWORD", "--set", "Data!A1=7", "--out", "edited.xlsx", "--timeout", "60", "--output", "json" };
+        var arguments = new List<string> { "cells", "edit", "secret.xlsx", "--password-env", "OLD_PASSWORD", "--set", "Data!A1=7", "--out", "edited.xlsx", "--timeout", "60", "--output-format", "json" };
         if (changePassword) { arguments.AddRange(["--encrypt-env", "NEW_PASSWORD"]); }
         CliResult edit = workspace.RunWithEnv(environment, arguments.ToArray());
         Assert.True(edit.ExitCode == 0, edit.StdErr);
@@ -63,8 +63,8 @@ public sealed class CellsMutationBoundaryTests
         // Both reads of the output run at once: with its password, and without one.
         CliResult inspect = null!, unopened = null!;
         Parallel.Invoke(
-            () => inspect = workspace.RunWithEnv(environment, "cells", "inspect", "edited.xlsx", "--password-env", changePassword ? "NEW_PASSWORD" : "OLD_PASSWORD", "--output", "json"),
-            () => unopened = workspace.Run("cells", "inspect", "edited.xlsx", "--output", "json"));
+            () => inspect = workspace.RunWithEnv(environment, "cells", "inspect", "edited.xlsx", "--password-env", changePassword ? "NEW_PASSWORD" : "OLD_PASSWORD", "--output-format", "json"),
+            () => unopened = workspace.Run("cells", "inspect", "edited.xlsx", "--output-format", "json"));
         Assert.True(inspect.ExitCode == 0, inspect.StdErr);
         Assert.True(JsonNode.Parse(inspect.StdOut)!["source"]!["encrypted"]!.GetValue<bool>());
         Assert.NotEqual(0, unopened.ExitCode);
@@ -77,9 +77,9 @@ public sealed class CellsMutationBoundaryTests
         using var workspace = new TempWorkspace();
         var environment = new Dictionary<string, string?> { ["EXPORT_PASSWORD"] = "test-export-secret" };
         Assert.Equal(0, workspace.RunWithEnv(environment, "cells", "create", "source.xlsx", "--sheets", "Data",
-            "--encrypt-env", "EXPORT_PASSWORD", "--output", "json").ExitCode);
+            "--encrypt-env", "EXPORT_PASSWORD", "--output-format", "json").ExitCode);
         CliResult result = workspace.RunWithEnv(environment, "cells", "edit", "source.xlsx", "--password-env", "EXPORT_PASSWORD",
-            "--set", "Data!A1=7", "--out", "result.csv", "--output", "json");
+            "--set", "Data!A1=7", "--out", "result.csv", "--output-format", "json");
         Assert.True(result.ExitCode == 0, result.StdErr);
         Assert.Contains("WORKBOOK_ENCRYPTION_REMOVED", result.StdOut, StringComparison.Ordinal);
         Assert.False(JsonNode.Parse(result.StdOut)!["output"]!["encrypted"]!.GetValue<bool>());
@@ -99,11 +99,11 @@ public sealed class CellsMutationBoundaryTests
             workbook.Worksheets[0].Pictures.Add(1, 1, picture);
             workbook.Save(workspace.File("source.xlsx"));
         }
-        CliResult edit = workspace.Run("cells", "edit", "source.xlsx", "--set", "Data!A1=changed", "--out", "edited.html", "--output", "json");
+        CliResult edit = workspace.Run("cells", "edit", "source.xlsx", "--set", "Data!A1=changed", "--out", "edited.html", "--output-format", "json");
         Assert.True(edit.ExitCode == 0, edit.StdErr);
         Assert.Contains("data:image", File.ReadAllText(workspace.File("edited.html")), StringComparison.OrdinalIgnoreCase);
-        Assert.True(workspace.Run("cells", "inspect", "edited.html", "--output", "json").ExitCode == 0);
-        CliResult next = workspace.Run("cells", "edit", "source.xlsx", "--set", "Data!A1=next", "--out", "next.xlsx", "--output", "json");
+        Assert.True(workspace.Run("cells", "inspect", "edited.html", "--output-format", "json").ExitCode == 0);
+        CliResult next = workspace.Run("cells", "edit", "source.xlsx", "--set", "Data!A1=next", "--out", "next.xlsx", "--output-format", "json");
         Assert.True(next.ExitCode == 0, next.StdErr);
         Assert.Empty(Directory.EnumerateDirectories(Path.GetDirectoryName(workspace.File("source.xlsx"))!, ".aspose-publication-*"));
     }
@@ -115,7 +115,7 @@ public sealed class CellsMutationBoundaryTests
     {
         using var workspace = new TempWorkspace();
         Assert.Equal(0, workspace.Run("cells", "create", "source.xlsx", "--sheets", "Data").ExitCode);
-        var args = new List<string> { "cells", "edit", "source.xlsx", "--set", "Data!A1==1/0", "--verify", "--timeout", "60", "--output", "json" };
+        var args = new List<string> { "cells", "edit", "source.xlsx", "--set", "Data!A1==1/0", "--verify", "--timeout", "60", "--output-format", "json" };
         args.AddRange(inPlace ? ["--in-place"] : ["--out", "edited.xlsx"]);
         CliResult edited = workspace.Run(args.ToArray());
         Assert.True(edited.ExitCode == 8, edited.StdErr + edited.StdOut);

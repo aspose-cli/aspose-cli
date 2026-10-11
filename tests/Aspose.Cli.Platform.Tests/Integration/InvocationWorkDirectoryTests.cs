@@ -17,12 +17,12 @@ public sealed class InvocationWorkDirectoryTests
         File.WriteAllText(Path.Combine(nested, "input.csv"), "Name,Value\nA,42\n");
         string[] options = timed ? ["--timeout", "30"] : [];
         CliResult converted = workspace.Run(["cells", "convert", "input.csv", "--to", "xlsx", "--out", "result.xlsx",
-            "--workdir", "relative work", "--output", "json", .. options]);
+            "--workdir", "relative work", "--output-format", "json", .. options]);
         Assert.True(converted.ExitCode == 0, converted.StdErr);
         Assert.True(File.Exists(Path.Combine(nested, "result.xlsx")));
         Assert.False(Directory.Exists(Path.Combine(nested, "relative work")));
         CliResult license = workspace.Run(["cells", "inspect", "input.csv", "--license", "missing.lic",
-            "--workdir", "relative work", "--output", "json", .. options]);
+            "--workdir", "relative work", "--output-format", "json", .. options]);
         JsonNode error = JsonNode.Parse(license.StdErr)!["error"]!;
         Assert.Equal("LICENSE_FILE_NOT_FOUND", error["code"]!.GetValue<string>());
         Assert.Equal(Path.Combine(nested, "missing.lic"), error["details"]!["path"]!.GetValue<string>());
@@ -38,7 +38,7 @@ public sealed class InvocationWorkDirectoryTests
         File.WriteAllText(Path.Combine(selected, "input.csv"), "Name,Value\nA,42\n");
         await using var server = await McpTestServer.Start(temp.Path, work);
         JsonNode reply = await server.Execute(["cells", "convert", "input.csv", "--to", "xlsx", "--out", "result.xlsx",
-            "--workdir", "child", "--output", "json"]);
+            "--workdir", "child", "--output-format", "json"]);
         McpTestServer.AssertSuccess(reply);
         Assert.True(File.Exists(Path.Combine(selected, "result.xlsx")));
         Assert.False(Directory.Exists(Path.Combine(selected, "child")));

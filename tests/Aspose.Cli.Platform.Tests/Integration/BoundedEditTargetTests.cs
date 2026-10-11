@@ -31,7 +31,7 @@ public sealed partial class BoundedEditTargetTests
             ScenarioLicense.Project(workspace.Path);
             (string input, JsonArray ops) = prepare(workspace);
             File.WriteAllText(workspace.File("ops.json"), new JsonObject { ["ops"] = ops }.ToJsonString());
-            CliResult result = workspace.Run(product, "edit", input, "--ops", "ops.json", "--dry-run", "--output", "json");
+            CliResult result = workspace.Run(product, "edit", input, "--ops", "ops.json", "--dry-run", "--output-format", "json");
             Assert.True(result.ExitCode == 0, $"{product} edit: {result.StdErr}");
             JsonArray applied = JsonNode.Parse(result.StdOut)!["applied"]!.AsArray();
             JsonNode atBound = applied[^2]!;
@@ -120,7 +120,7 @@ public sealed partial class BoundedEditTargetTests
     private static string Create(TempWorkspace workspace, string product, string input, string option, string markdown)
     {
         File.WriteAllText(workspace.File("source.md"), markdown);
-        CliResult created = workspace.Run(product, "create", input, option, "source.md", "--output", "json");
+        CliResult created = workspace.Run(product, "create", input, option, "source.md", "--output-format", "json");
         Assert.True(created.ExitCode == 0, $"{product} create: {created.StdErr}");
         return input;
     }

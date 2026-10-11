@@ -9,9 +9,17 @@ namespace Aspose.Cli.Host.Invocation;
 /// </summary>
 internal static class OptionCompletions
 {
+    private static readonly string[] BooleanValues = ["false", "true"];
+
     /// <summary>The option's completion values, in ordinal order; none when they cannot be read.</summary>
     internal static IReadOnlyList<string> Read(Option option)
     {
+        // The parser completes a boolean with bool.ToString(); the contract spells it in lowercase.
+        if (option.ValueType == typeof(bool) || option.ValueType == typeof(bool?))
+        {
+            return BooleanValues;
+        }
+
         try
         {
             return Values(option.GetCompletions(CompletionContext.Empty));

@@ -886,7 +886,7 @@
           "additionalProperties": false,
           "properties": {
             "name": {
-              "description": "The option's name, e.g. --output.",
+              "description": "The option's name, e.g. --output-format.",
               "type": "string"
             },
             "aliases": {
@@ -3187,7 +3187,7 @@
     "v2/common/version": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "$id": "https://schemas.aspose.com/aspose-cli/v2/common/version.schema.json",
-      "description": "Result of aspose-cli --version --output json: the build identity alone, so a caller can read the version without the full capabilities document.",
+      "description": "Result of aspose-cli --version --output-format json: the build identity alone, so a caller can read the version without the full capabilities document.",
       "type": "object",
       "required": [
         "schema",
@@ -3534,16 +3534,13 @@
       "path": "aspose-cli",
       "name": "aspose-cli",
       "aliases": [],
-      "description": "Aspose CLI — high-fidelity file automation for people, scripts, and AI agents. Structured commands support --output json for stable, machine-readable results; explicit schema and docs documents remain raw.",
+      "description": "Aspose CLI — high-fidelity file automation for people, scripts, and AI agents. Structured commands support --output-format json for stable, machine-readable results; explicit schema and docs documents remain raw.",
       "hidden": false,
       "options": [
         {
           "name": "--help",
           "aliases": [
-            "-?",
-            "-h",
-            "/?",
-            "/h"
+            "-h"
           ],
           "type": "Void",
           "minimumArity": 0,
@@ -3610,10 +3607,8 @@
           "description": "Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296)."
         },
         {
-          "name": "--output",
-          "aliases": [
-            "-f"
-          ],
+          "name": "--output-format",
+          "aliases": [],
           "type": "string",
           "minimumArity": 1,
           "maximumArity": 1,
@@ -3646,8 +3641,8 @@
           "hasDefault": true,
           "default": "false",
           "allowedValues": [
-            "False",
-            "True"
+            "false",
+            "true"
           ],
           "secret": false,
           "valueSource": "command-line",
@@ -3684,8 +3679,8 @@
           "hasDefault": true,
           "default": "false",
           "allowedValues": [
-            "False",
-            "True"
+            "false",
+            "true"
           ],
           "secret": false,
           "valueSource": "command-line",
@@ -3782,8 +3777,8 @@
           "hasDefault": true,
           "default": "false",
           "allowedValues": [
-            "False",
-            "True"
+            "false",
+            "true"
           ],
           "secret": false,
           "valueSource": "command-line",
@@ -3802,8 +3797,8 @@
           "hasDefault": true,
           "default": "false",
           "allowedValues": [
-            "False",
-            "True"
+            "false",
+            "true"
           ],
           "secret": false,
           "valueSource": "command-line",
@@ -3854,8 +3849,8 @@
           "hasDefault": true,
           "default": "false",
           "allowedValues": [
-            "False",
-            "True"
+            "false",
+            "true"
           ],
           "secret": false,
           "valueSource": "command-line",
@@ -3884,8 +3879,8 @@
           "hasDefault": true,
           "default": "false",
           "allowedValues": [
-            "False",
-            "True"
+            "false",
+            "true"
           ],
           "secret": false,
           "valueSource": "command-line",
@@ -3904,8 +3899,8 @@
           "hasDefault": true,
           "default": "false",
           "allowedValues": [
-            "False",
-            "True"
+            "false",
+            "true"
           ],
           "secret": false,
           "valueSource": "command-line",
@@ -3983,8 +3978,8 @@
           "hasDefault": true,
           "default": "false",
           "allowedValues": [
-            "False",
-            "True"
+            "false",
+            "true"
           ],
           "secret": false,
           "valueSource": "command-line",
@@ -4128,8 +4123,8 @@
           "hidden": false,
           "hasDefault": true,
           "allowedValues": [
-            "False",
-            "True"
+            "false",
+            "true"
           ],
           "secret": true,
           "valueSource": "stdin",
@@ -4368,7 +4363,7 @@
           "description": "Presentation effect for live demonstrations (for example 'demo')."
         },
         {
-          "name": "--open",
+          "name": "--no-open",
           "aliases": [],
           "type": "boolean",
           "minimumArity": 0,
@@ -4379,13 +4374,13 @@
           "hasDefault": true,
           "default": "false",
           "allowedValues": [
-            "False",
-            "True"
+            "false",
+            "true"
           ],
           "secret": false,
           "valueSource": "command-line",
           "inputKind": "none",
-          "description": "Open the viewer in the default browser."
+          "description": "Do not open the viewer in the default browser."
         },
         {
           "name": "--password",
@@ -4430,8 +4425,8 @@
           "hidden": false,
           "hasDefault": true,
           "allowedValues": [
-            "False",
-            "True"
+            "false",
+            "true"
           ],
           "secret": true,
           "valueSource": "stdin",
@@ -4558,8 +4553,8 @@
           "hasDefault": true,
           "default": "false",
           "allowedValues": [
-            "False",
-            "True"
+            "false",
+            "true"
           ],
           "secret": false,
           "valueSource": "command-line",
@@ -4764,8 +4759,8 @@
           "hidden": false,
           "hasDefault": true,
           "allowedValues": [
-            "False",
-            "True"
+            "false",
+            "true"
           ],
           "secret": true,
           "valueSource": "stdin",
@@ -4902,7 +4897,7 @@
           "secret": false,
           "valueSource": "command-line",
           "inputKind": "none",
-          "description": "Project root used with --scope project. Default: current working directory."
+          "description": "Project root used without --user. Default: current working directory."
         },
         {
           "name": "--host",
@@ -4925,26 +4920,6 @@
           "description": "Agent host whose standard skills directory should be used."
         },
         {
-          "name": "--scope",
-          "aliases": [],
-          "type": "string",
-          "minimumArity": 1,
-          "maximumArity": 1,
-          "required": false,
-          "recursive": false,
-          "hidden": false,
-          "hasDefault": true,
-          "default": "project",
-          "allowedValues": [
-            "project",
-            "user"
-          ],
-          "secret": false,
-          "valueSource": "command-line",
-          "inputKind": "none",
-          "description": "Install for the current project or the current user."
-        },
-        {
           "name": "--target",
           "aliases": [],
           "type": "string",
@@ -4959,6 +4934,26 @@
           "valueSource": "command-line",
           "inputKind": "none",
           "description": "Advanced: explicit parent directory; the selected Skill folder is created there."
+        },
+        {
+          "name": "--user",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hidden": false,
+          "hasDefault": true,
+          "default": "false",
+          "allowedValues": [
+            "false",
+            "true"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "inputKind": "none",
+          "description": "Install for the current user instead of the project."
         }
       ],
       "arguments": [
@@ -4996,8 +4991,8 @@
       "arguments": []
     },
     {
-      "path": "aspose-cli update _prepare",
-      "name": "_prepare",
+      "path": "aspose-cli update __prepare",
+      "name": "__prepare",
       "aliases": [],
       "description": "Prepare a verified update for its owning parent.",
       "hidden": true,

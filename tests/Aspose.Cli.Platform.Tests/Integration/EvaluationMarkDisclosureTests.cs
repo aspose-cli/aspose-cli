@@ -69,7 +69,7 @@ public sealed class EvaluationMarkDisclosureTests
     }
 
     private static JsonNode Edit(TempWorkspace workspace, string product, string input, string output, params string[] extra) =>
-        workspace.Run([product, "edit", input, "--ops", "ops.json", "--out", output, "--output", "json", .. extra]).Json();
+        workspace.Run([product, "edit", input, "--ops", "ops.json", "--out", output, "--output-format", "json", .. extra]).Json();
 
     private static string[] Codes(JsonNode result) =>
         [.. (result["warnings"] as JsonArray ?? []).Select(static warning => warning?["code"]?.GetValue<string>()).OfType<string>()];

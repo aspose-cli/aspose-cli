@@ -104,9 +104,9 @@ public static partial class ScenarioRunner
     }
 
     private static string[] WithJsonOutput(IReadOnlyList<string> args) =>
-        args.Any(static arg => arg is "--output" or "-f" || arg.StartsWith("--output=", StringComparison.Ordinal))
+        args.Any(static arg => arg is "--output-format" || arg.StartsWith("--output-format=", StringComparison.Ordinal))
             ? [.. args]
-            : [.. args, "--output", "json"];
+            : [.. args, "--output-format", "json"];
 
     private static void CheckExpectation(
         ScenarioExpectation expect,
@@ -247,7 +247,7 @@ public static partial class ScenarioRunner
                 }
                 continue;
             }
-            CliResult inspect = Execute(workspace, [reader, "inspect", path, "--output", "json"], env: null, stdin: null);
+            CliResult inspect = Execute(workspace, [reader, "inspect", path, "--output-format", "json"], env: null, stdin: null);
             if (inspect.ExitCode != 0)
             {
                 JsonNode? failure = ErrorOf(inspect.StdErr);

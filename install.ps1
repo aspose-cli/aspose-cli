@@ -442,7 +442,7 @@ function Write-LicenseSummary {
     param([Parameter(Mandatory)][string] $Executable)
     $licensed = @()
     try {
-        $status = Invoke-CliChildProcess $Executable @('license', 'status', '--output', 'json')
+        $status = Invoke-CliChildProcess $Executable @('license', 'status', '--output-format', 'json')
         if ($status.ExitCode -eq 0) {
             $licensed = @(($status.StdOut | ConvertFrom-Json).products |
                 Where-Object { [string]$_.mode -ceq 'licensed' } |
@@ -747,7 +747,7 @@ function Get-InventorySnapshot {
 
 function Invoke-Capabilities {
     param([Parameter(Mandatory)][string] $Executable)
-    $result = Invoke-CliChildProcess $Executable @('capabilities','--output','json')
+    $result = Invoke-CliChildProcess $Executable @('capabilities','--output-format','json')
     if ($result.ExitCode -ne 0) { throw "Executable capability validation failed with exit code $($result.ExitCode): $(Get-ChildProcessDiagnostic $result)" }
     $json = $result.StdOut
     if ($json.Length -gt 16MB) { throw 'Executable capabilities output exceeds 16 MiB.' }
@@ -2043,7 +2043,7 @@ function Install-Release {
             if (-not (Test-Path -LiteralPath $resolvedLicense -PathType Leaf)) { throw "License file is missing: $resolvedLicense" }
             $licenseArguments = @('license','install',$resolvedLicense)
             if ($LicenseProduct) { $licenseArguments += @('--product',$LicenseProduct) }
-            $licenseArguments += @('--output','json')
+            $licenseArguments += @('--output-format','json')
             [IO.Directory]::CreateDirectory($licenseStage) | Out-Null
             $configurationVariable = $script:EnvironmentVariablePrefix + 'CONFIG_DIR'
             $previousConfig = [Environment]::GetEnvironmentVariable($configurationVariable,'Process')
@@ -2062,7 +2062,7 @@ function Install-Release {
             $serviceExecutable = Join-Path $stage $script:ExecutableName
             # One service holds the App and every open document, so one stop ends
             # everything that could still be using the installation.
-            $stopResult = Invoke-CliChildProcess $serviceExecutable @('preview','stop','--all','--output','json')
+            $stopResult = Invoke-CliChildProcess $serviceExecutable @('preview','stop','--all','--output-format','json')
             if ($stopResult.ExitCode -ne 0) { throw "Existing local service could not be stopped safely with exit code $($stopResult.ExitCode): $(Get-ChildProcessDiagnostic $stopResult)" }
             $rechecked = Get-ManagedInstallState $installRoot
             if ($rechecked.Snapshot -cne $existingState.Snapshot) { throw 'Existing installation changed while services were stopping.' }
@@ -2103,7 +2103,7 @@ function Install-Release {
 
         $installedSkills = 0
         if (-not $skipSkills) {
-            $skillListResult = Invoke-CliChildProcess $installExecutable @('skill','list','--output','json')
+            $skillListResult = Invoke-CliChildProcess $installExecutable @('skill','list','--output-format','json')
             if ($skillListResult.ExitCode -ne 0) { throw "Bundled Skills could not be listed: $(Get-ChildProcessDiagnostic $skillListResult)" }
             $skillList = $skillListResult.StdOut | ConvertFrom-Json
             $skillTargets = @(
@@ -2112,7 +2112,7 @@ function Install-Release {
                 }
                 else {
                     Get-DetectedSkillHosts | ForEach-Object {
-                    [pscustomobject]@{ Name = $_; Arguments = @('--host',$_,'--scope','user') }
+                    [pscustomobject]@{ Name = $_; Arguments = @('--host',$_,'--user') }
                     }
                 }
             )
@@ -2121,7 +2121,7 @@ function Install-Release {
             if ($skillTargets.Count -ne 0) {
                 foreach ($skill in @($skillList.skills)) {
                     if ($skill.name -cnotin $script:AllowedSkills) { throw "Executable reported unknown Skill '$($skill.name)'." }
-                    $probeResult = Invoke-CliChildProcess $installExecutable @('skill','install',[string]$skill.name,'--target',$skillStageParent,'--output','json')
+                    $probeResult = Invoke-CliChildProcess $installExecutable @('skill','install',[string]$skill.name,'--target',$skillStageParent,'--output-format','json')
                     if ($probeResult.ExitCode -ne 0) { throw "Skill '$($skill.name)' could not be staged: $(Get-ChildProcessDiagnostic $probeResult)" }
                     $probeTarget = Join-Path $skillStageParent $skill.name
                     $expectedSkills.Add([string]$skill.name, (Get-SkillState $probeTarget $skill.name))
@@ -2157,7 +2157,7 @@ function Install-Release {
                         Copy-Item -LiteralPath $paths.Target -Destination $paths.Backup -Recurse
                     }
                     [void](Get-SkillTransactionPaths $hostName $customSkillsRoot ([string]$skill.name) $transactionId)
-                    $skillArguments = @('skill','install',[string]$skill.name) + @($skillTarget.Arguments) + @('--output','json')
+                    $skillArguments = @('skill','install',[string]$skill.name) + @($skillTarget.Arguments) + @('--output-format','json')
                     $skillResult = Invoke-CliChildProcess $installExecutable $skillArguments
                     if ($skillResult.ExitCode -ne 0) { throw "Skill '$($skill.name)' installation failed: $(Get-ChildProcessDiagnostic $skillResult)" }
                     $paths = Get-SkillTransactionPaths $hostName $customSkillsRoot ([string]$skill.name) $transactionId
@@ -2291,7 +2291,7 @@ function Uninstall-Installation {
             # executable is the only one available to stop it; no package is involved here.
             $stopFailure = $null
             try {
-                $stopResult = Invoke-CliChildProcess $executable @('preview','stop','--all','--output','json')
+                $stopResult = Invoke-CliChildProcess $executable @('preview','stop','--all','--output-format','json')
                 if ($stopResult.ExitCode -ne 0) { $stopFailure = "exit code $($stopResult.ExitCode): $(Get-ChildProcessDiagnostic $stopResult)" }
             }
             catch { $stopFailure = $_.Exception.Message }

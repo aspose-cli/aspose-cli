@@ -8,7 +8,7 @@ product.
 ## Status
 
 ```powershell
-aspose-cli license status --output json
+aspose-cli license status --output-format json
 ```
 
 `products[]` has one entry per product (`--product <id>` selects one):
@@ -115,7 +115,7 @@ retry unchanged input.
   four pages, which every evaluation save of Aspose.PDF stamps; a notice only
   on a later page, as in a PDF merged from a clean and a marked one, is not
   reported, so `review` the whole file.
-- Detect evaluation from the JSON `warnings` array. With `--output table`,
+- Detect evaluation from the JSON `warnings` array. With `--output-format table`,
   `--quiet` hides the `EVAL_MODE` line together with the stderr license status
   line.
 - Installing a license does not clean files already produced. Regenerate the
@@ -131,8 +131,8 @@ one, so the command runs in evaluation mode while every configured license
 stays in place:
 
 ```powershell
-aspose-cli words convert report.docx --to pdf --out eval-check.pdf --license-mode evaluation --output json
-aspose-cli license status --license-mode evaluation --output json
+aspose-cli words convert report.docx --to pdf --out eval-check.pdf --license-mode evaluation --output-format json
+aspose-cli license status --license-mode evaluation --output-format json
 ```
 
 The result reports `license.mode: "evaluation"`, the `EVAL_MODE` warning and,

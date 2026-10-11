@@ -19,7 +19,7 @@ public sealed class AppPreferencesHttpTests
         File.WriteAllText(input, "Heading,Value\nA,42\n");
         try
         {
-            CliResult start = workspace.Run("app", "open", input, "--no-open", "--output", "json");
+            CliResult start = workspace.Run("app", "open", input, "--no-open", "--output-format", "json");
             Assert.True(start.ExitCode == 0, start.StdErr);
             var url = new Uri(JsonNode.Parse(start.StdOut)!["url"]!.GetValue<string>());
             using var client = new HttpClient(new HttpClientHandler { UseCookies = false })
@@ -56,7 +56,7 @@ public sealed class AppPreferencesHttpTests
             Assert.Null(retried["code"]);
             Assert.NotEqual(oldPreview, await PreviewUrl(client));
         }
-        finally { _ = workspace.Run("app", "stop", "--output", "json"); }
+        finally { _ = workspace.Run("app", "stop", "--output-format", "json"); }
     }
 
     /// <summary>Where the App says the open document is being served.</summary>

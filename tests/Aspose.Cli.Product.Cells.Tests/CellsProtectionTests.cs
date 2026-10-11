@@ -18,7 +18,7 @@ public sealed class CellsProtectionTests(CellsProtectionTests.ProtectedBook book
     {
         Assert.DoesNotContain(Warnings(book.Created), static warning => Code(warning) == "PROTECTION_NOT_ENFORCED");
 
-        JsonNode workbook = book.Workspace.Run("cells", "inspect", "book.xlsx", "--output", "json").Json()["workbook"]!;
+        JsonNode workbook = book.Workspace.Run("cells", "inspect", "book.xlsx", "--output-format", "json").Json()["workbook"]!;
 
         Assert.True(workbook["structureProtected"]!.GetValue<bool>());
         Assert.False(workbook["structurePasswordProtected"]!.GetValue<bool>());
@@ -56,7 +56,7 @@ public sealed class CellsProtectionTests(CellsProtectionTests.ProtectedBook book
         _ = Unenforced(book.Edit("form.xlsx", """{"op":"format_range","sheet":"Data","range":"A1:A2","style":{"locked":false}}"""));
 
         JsonNode EditForm(string output, string ops) => book.Workspace.Run(
-            "cells", "edit", "form.xlsx", "--out", output, "--output", "json", "--ops", $$"""{"ops":[{{ops}}]}""").Json();
+            "cells", "edit", "form.xlsx", "--out", output, "--output-format", "json", "--ops", $$"""{"ops":[{{ops}}]}""").Json();
 
         Assert.DoesNotContain(
             Warnings(EditForm("filled.xlsx",
@@ -166,7 +166,7 @@ public sealed class CellsProtectionTests(CellsProtectionTests.ProtectedBook book
             string[] target = output is null ? ["--in-place"] : ["--out", output];
             return Workspace.RunWithEnv(
                 new Dictionary<string, string?> { [PasswordVariable] = "sheet-secret", [OtherPasswordVariable] = "other-secret" },
-                ["cells", "edit", "book.xlsx", .. target, "--output", "json", "--ops", $$"""{"ops":[{{ops}}]}"""]);
+                ["cells", "edit", "book.xlsx", .. target, "--output-format", "json", "--ops", $$"""{"ops":[{{ops}}]}"""]);
         }
 
         public void Dispose() => Workspace.Dispose();

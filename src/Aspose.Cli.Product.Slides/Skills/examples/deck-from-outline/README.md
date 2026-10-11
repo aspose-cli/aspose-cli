@@ -4,9 +4,9 @@ Copy this Skill to a fresh writable directory, then change into
 examples/deck-from-outline. [notes.md](notes.md) contains a synthetic quarterly update.
 
 ```powershell
-aspose-cli slides create qbr.pptx --from-markdown notes.md --output json
-aspose-cli slides inspect qbr.pptx --preview --detail layouts fonts notes --output json
-aspose-cli review qbr.pptx --out qbr.review --output json
+aspose-cli slides create qbr.pptx --from-markdown notes.md --output-format json
+aspose-cli slides inspect qbr.pptx --sample --detail layouts fonts notes --output-format json
+aspose-cli review qbr.pptx --out qbr.review --output-format json
 ```
 
 The result has three slides: Quarterly update, Highlights and Next steps.

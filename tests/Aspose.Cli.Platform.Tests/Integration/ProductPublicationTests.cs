@@ -27,7 +27,7 @@ public sealed class ProductPublicationTests
             string input = CreateInput(workspace, product, extension, sourceOptions);
             string output = workspace.File("edited." + extension);
             CliResult edited = workspace.Run([product, "edit", input, "--ops", ops, "--out", output,
-                "--output", "json", "--max-input-bytes", new FileInfo(input).Length.ToString(),
+                "--output-format", "json", "--max-input-bytes", new FileInfo(input).Length.ToString(),
                 .. (supervised ? new[] { "--timeout", "30" } : Array.Empty<string>())]);
             edited.Succeeded();
             Assert.True(File.Exists(output));
@@ -45,7 +45,7 @@ public sealed class ProductPublicationTests
         string input = CreateInput(workspace, "words", "docx", ["--text", "source.txt"]);
         CliResult edited = workspace.Run(["words", "edit", input,
             "--ops", """{"ops":[{"op":"set_text","at":{"find":"Anchor"},"text":"Edited"}]}""",
-            "--out", workspace.File("edited.docx"), "--verify", "--output", "json",
+            "--out", workspace.File("edited.docx"), "--verify", "--output-format", "json",
             .. (supervised ? new[] { "--timeout", "30" } : Array.Empty<string>())]);
         edited.Succeeded();
         JsonNode verification = JsonNode.Parse(edited.StdOut)!["verification"]!;
@@ -62,7 +62,7 @@ public sealed class ProductPublicationTests
         workspace.Run("cells", "create", "input.xlsx", "--sheets", "First,Second").Succeeded();
         workspace.Run("cells", "edit", "input.xlsx", "--set", "First!A1=1", "--set", "Second!A1=2", "--in-place").Succeeded();
         File.WriteAllText(workspace.File("render.Second.png"), "existing second sheet");
-        CliResult result = workspace.Run(["cells", "render", "input.xlsx", "--all-sheets", "--out", "render.png", "--output", "json",
+        CliResult result = workspace.Run(["cells", "render", "input.xlsx", "--all-sheets", "--out", "render.png", "--output-format", "json",
             .. (supervised ? new[] { "--timeout", "30" } : Array.Empty<string>())]);
         Assert.Equal(5, result.ExitCode);
         Assert.False(File.Exists(workspace.File("render.First.png")));
@@ -84,7 +84,7 @@ public sealed class ProductPublicationTests
             ["pdf", "sign", input,
              "--certificate", CreateCertificate(workspace, certificatePassword),
              "--certificate-password-env", "ASPOSE_CLI_TEST_CERT_PASSWORD",
-             "--out", output, "--output", "json",
+             "--out", output, "--output-format", "json",
              .. (supervised ? new[] { "--timeout", "60" } : Array.Empty<string>())]);
 
         signed.Succeeded();
@@ -102,7 +102,7 @@ public sealed class ProductPublicationTests
         string target = workspace.File("skills");
 
         CliResult installed = workspace.Run(["skill", "install", "aspose-cli-pdf",
-            "--target", target, "--output", "json", "--timeout", "60"]);
+            "--target", target, "--output-format", "json", "--timeout", "60"]);
 
         installed.Succeeded();
         string tree = Path.Combine(target, "aspose-cli-pdf");

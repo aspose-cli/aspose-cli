@@ -32,7 +32,8 @@ internal sealed class Invocation
     /// creates has the product's own extension, an option with allowed values takes the product's
     /// own format when it allows it (a convert keeps its format) and the first value otherwise,
     /// and the few required free-form options take a fixed valid value. An edit gets the
-    /// product's valid operation document and a create its source text.
+    /// product's valid operation document and a create its source text. A command that opens a
+    /// browser by default gets <c>--no-open</c>.
     /// </summary>
     /// <param name="command">The command to invoke.</param>
     /// <param name="omit">An option the caller supplies itself.</param>
@@ -63,6 +64,11 @@ internal sealed class Invocation
         foreach (CliOption option in command.Options.Where(option => option.Name != omit && (option.Required || IsImplied(command, option))))
         {
             invocation.Fill(command, product, extension, option);
+        }
+        if (command.Has("--no-open"))
+        {
+            // A test never opens the user's browser.
+            invocation.Args.Add("--no-open");
         }
         return invocation;
     }

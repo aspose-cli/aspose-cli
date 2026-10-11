@@ -66,7 +66,7 @@ public sealed class PdfImageInputTests
         Write(workspace, "cut.png", CutPng);
 
         CliResult edited = workspace.Run("pdf", "edit", "source.pdf", "--ops",
-            """{"ops":[{"op":"add_watermark_image","path":"cut.png"}]}""", "--out", "out.pdf", "--output", "json");
+            """{"ops":[{"op":"add_watermark_image","path":"cut.png"}]}""", "--out", "out.pdf", "--output-format", "json");
 
         Assert.Equal(4, edited.ExitCode);
         JsonNode error = JsonNode.Parse(edited.StdErr)!["error"]!;
@@ -84,7 +84,7 @@ public sealed class PdfImageInputTests
         Write(workspace, "good.png", ResourceHttpServer.Image);
         string bad = Write(workspace, "scan.png", kind == "text" ? Encoding.UTF8.GetBytes("not an image") : CutPng);
 
-        CliResult created = workspace.Run("pdf", "create", "scan.pdf", "--from-images", "good.png", "scan.png", "--output", "json");
+        CliResult created = workspace.Run("pdf", "create", "scan.pdf", "--from-images", "good.png", "scan.png", "--output-format", "json");
 
         AssertCorruptImage(created, bad);
         Assert.False(File.Exists(workspace.File("scan.pdf")));
@@ -102,7 +102,7 @@ public sealed class PdfImageInputTests
         Write(workspace, "logo.png", ResourceHttpServer.Image);
         Write(workspace, "report.md", Encoding.UTF8.GetBytes("# Report\n\n" + reference + "\n"));
 
-        CliResult created = workspace.Run("pdf", "create", "report.pdf", "--from-text", "report.md", "--output", "json");
+        CliResult created = workspace.Run("pdf", "create", "report.pdf", "--from-text", "report.md", "--output-format", "json");
 
         AssertCorruptImage(created, bad);
         Assert.False(File.Exists(workspace.File("report.pdf")));
@@ -124,7 +124,7 @@ public sealed class PdfImageInputTests
         using var workspace = new TempWorkspace();
         Write(workspace, "scan.bin", Dicom());
 
-        CliResult created = workspace.Run("pdf", "create", "scan.pdf", "--from-images", "scan.bin", "--output", "json");
+        CliResult created = workspace.Run("pdf", "create", "scan.pdf", "--from-images", "scan.bin", "--output-format", "json");
 
         Assert.True(created.ExitCode == 0, created.StdErr);
         using var document = new Aspose.Pdf.Document(workspace.File("scan.pdf"));
@@ -141,7 +141,7 @@ public sealed class PdfImageInputTests
         using var workspace = new TempWorkspace();
         Write(workspace, name, name.EndsWith(".tif", StringComparison.Ordinal) ? Tiff() : Emf());
 
-        CliResult created = workspace.Run("pdf", "create", "out.pdf", "--from-images", name, "--output", "json");
+        CliResult created = workspace.Run("pdf", "create", "out.pdf", "--from-images", name, "--output-format", "json");
 
         Assert.True(created.ExitCode == 0, created.StdErr);
         using var document = new Aspose.Pdf.Document(workspace.File("out.pdf"));

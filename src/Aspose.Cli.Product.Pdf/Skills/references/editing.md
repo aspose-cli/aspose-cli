@@ -9,8 +9,8 @@ operation's fields, types, defaults and allowed values with
 `aspose-cli schema v2/pdf/ops --operation <op>`.
 
 ```powershell
-aspose-cli schema v2/pdf/ops --operation add_page_numbers --output json
-aspose-cli pdf edit report.pdf --ops report-ops.json --out report.review.pdf --verify --output json
+aspose-cli schema v2/pdf/ops --operation add_page_numbers --output-format json
+aspose-cli pdf edit report.pdf --ops report-ops.json --out report.review.pdf --verify --output-format json
 ```
 
 ## Operations by task
@@ -161,10 +161,10 @@ rectangle from a gridded render, never by eye:
    `review` the output.
 
 ```powershell
-aspose-cli pdf query pages scan.pdf --output json
-aspose-cli pdf render scan.pdf --pages 2 --grid 50 --dpi 150 --out scan.grid.png --output json
-aspose-cli pdf edit scan.pdf --ops redact-ops.json --out scan.redacted.pdf --output json
-aspose-cli pdf render scan.redacted.pdf --pages 2 --grid 50 --dpi 200 --out scan.redacted.grid.png --output json
+aspose-cli pdf query pages scan.pdf --output-format json
+aspose-cli pdf render scan.pdf --pages 2 --grid 50 --dpi 150 --out scan.grid.png --output-format json
+aspose-cli pdf edit scan.pdf --ops redact-ops.json --out scan.redacted.pdf --output-format json
+aspose-cli pdf render scan.redacted.pdf --pages 2 --grid 50 --dpi 200 --out scan.redacted.grid.png --output-format json
 ```
 
 The grid exists only in the rendered image; the PDF is never changed.

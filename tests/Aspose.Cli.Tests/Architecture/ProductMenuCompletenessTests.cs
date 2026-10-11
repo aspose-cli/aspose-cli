@@ -119,7 +119,7 @@ public sealed class ProductMenuCompletenessTests : IDisposable
     /// <summary>How often each command name occurs below the product's group in the built tree.</summary>
     private Dictionary<string, int> TreeNodeNames(string product)
     {
-        CliResult result = _workspace.Run("capabilities", product, "--output", "json");
+        CliResult result = _workspace.Run("capabilities", product, "--output-format", "json");
         Assert.True(result.ExitCode == 0, $"capabilities {product} exited {result.ExitCode}: {result.StdErr}");
         JsonNode entry = Assert.Single(JsonNode.Parse(result.StdOut)!["products"]!.AsArray())!;
         var names = new Dictionary<string, int>(StringComparer.Ordinal);

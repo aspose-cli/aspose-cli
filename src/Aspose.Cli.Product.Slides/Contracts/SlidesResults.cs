@@ -116,12 +116,12 @@ public sealed record SlideInfo
     /// <summary>The name of the slide's layout; omitted when it has none.</summary>
     public string? Layout { get; init; }
 
-    /// <summary>The slide's title text; only with <c>--preview</c>, and omitted when the slide has no title.</summary>
+    /// <summary>The slide's title text; only with <c>--sample</c>, and omitted when the slide has no title.</summary>
     public string? Title { get; init; }
 
     /// <summary>
     /// The slide's shape text joined by <c> · </c>, at most 240 characters; only with
-    /// <c>--preview</c>, and omitted when the slide has no text.
+    /// <c>--sample</c>, and omitted when the slide has no text.
     /// </summary>
     [MaxLength(PreviewTextLength)]
     public string? PreviewText { get; init; }

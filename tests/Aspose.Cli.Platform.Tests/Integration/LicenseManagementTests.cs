@@ -15,7 +15,7 @@ public sealed class LicenseManagementTests
         string invalid = workspace.File(".aspose/licenses/pdf.lic");
         Directory.CreateDirectory(Path.GetDirectoryName(invalid)!);
         File.WriteAllText(invalid, "not a license");
-        CliResult result = workspace.Run("license", "status", "--output", "json");
+        CliResult result = workspace.Run("license", "status", "--output-format", "json");
         Assert.Equal(0, result.ExitCode);
         JsonNode status = JsonNode.Parse(result.StdOut)!;
         Assert.Null(status["mode"]);
@@ -36,7 +36,7 @@ public sealed class LicenseManagementTests
         using var workspace = new TempWorkspace();
         File.WriteAllText(workspace.File("input.csv"), "Name,Value\nA,42\n");
 
-        CliResult result = workspace.Run("cells", "inspect", "input.csv", "--license", value, "--output", "json");
+        CliResult result = workspace.Run("cells", "inspect", "input.csv", "--license", value, "--output-format", "json");
 
         Assert.Equal(2, result.ExitCode);
         JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
@@ -53,7 +53,7 @@ public sealed class LicenseManagementTests
         string directory = workspace.File("licenses");
         Directory.CreateDirectory(directory);
 
-        CliResult result = workspace.Run("cells", "inspect", "input.csv", "--license", "licenses", "--output", "json");
+        CliResult result = workspace.Run("cells", "inspect", "input.csv", "--license", "licenses", "--output-format", "json");
 
         Assert.Equal(7, result.ExitCode);
         JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
@@ -70,7 +70,7 @@ public sealed class LicenseManagementTests
         string foreign = Path.Combine(workspace.ConfigDirectory, "notes.txt");
         File.WriteAllText(foreign, "user data");
 
-        CliResult result = workspace.Run("preview", "status", "--output", "json");
+        CliResult result = workspace.Run("preview", "status", "--output-format", "json");
 
         Assert.Equal(2, result.ExitCode);
         Assert.Contains("OPTION_INVALID", result.StdErr, StringComparison.Ordinal);
@@ -85,14 +85,14 @@ public sealed class LicenseManagementTests
         string source = TestLicense.Path!;
         string sourceHash = FileHashes.Sha256(source);
         DateTime sourceTime = File.GetLastWriteTimeUtc(source);
-        CliResult selected = workspace.Run("license", "install", source, "--product", "words", "--timeout", "20", "--output", "json");
+        CliResult selected = workspace.Run("license", "install", source, "--product", "words", "--timeout", "20", "--output-format", "json");
         Assert.True(selected.ExitCode == 0, selected.StdErr);
         JsonNode selectedStatus = JsonNode.Parse(selected.StdOut)!;
         Assert.All(selectedStatus["products"]!.AsArray(), product =>
             Assert.Equal(product!["product"]!.GetValue<string>() == "words" ? "licensed" : "evaluation",
                 product["mode"]!.GetValue<string>()));
 
-        CliResult installed = workspace.Run("license", "install", source, "--timeout", "20", "--output", "json");
+        CliResult installed = workspace.Run("license", "install", source, "--timeout", "20", "--output-format", "json");
         Assert.True(installed.ExitCode == 0, installed.StdErr);
         Assert.All(JsonNode.Parse(installed.StdOut)!["products"]!.AsArray(), product =>
         {
@@ -105,12 +105,12 @@ public sealed class LicenseManagementTests
 
         string invalid = workspace.File("invalid.lic");
         File.WriteAllText(invalid, "not a license", Encoding.UTF8);
-        CliResult rejected = workspace.Run("license", "install", invalid, "--timeout", "20", "--output", "json");
+        CliResult rejected = workspace.Run("license", "install", invalid, "--timeout", "20", "--output-format", "json");
         Assert.Equal(7, rejected.ExitCode);
         Assert.All(Directory.GetFiles(Path.Combine(workspace.ConfigDirectory, "licenses")), path =>
             Assert.Equal(sourceHash, FileHashes.Sha256(path)));
 
-        CliResult removed = workspace.Run("license", "remove", "--timeout", "20", "--output", "json");
+        CliResult removed = workspace.Run("license", "remove", "--timeout", "20", "--output-format", "json");
         Assert.True(removed.ExitCode == 0, removed.StdErr);
         Assert.All(JsonNode.Parse(removed.StdOut)!["products"]!.AsArray(), product =>
         {
@@ -118,6 +118,6 @@ public sealed class LicenseManagementTests
             Assert.False(product["userLicenseInstalled"]!.GetValue<bool>());
         });
         Assert.Empty(Directory.GetFiles(Path.Combine(workspace.ConfigDirectory, "licenses"), "*.lic"));
-        Assert.Equal(0, workspace.Run("license", "remove", "--output", "json").ExitCode);
+        Assert.Equal(0, workspace.Run("license", "remove", "--output-format", "json").ExitCode);
     }
 }

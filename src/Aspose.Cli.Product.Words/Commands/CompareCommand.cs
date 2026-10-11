@@ -54,7 +54,7 @@ internal static class CompareCommand
         {
             Examples =
             [
-                "words compare original.docx changed.docx --output json",
+                "words compare original.docx changed.docx --output-format json",
                 "words compare original.docx changed.docx --out redline.docx --author \"Legal Review\"",
             ],
         };

@@ -104,19 +104,19 @@ public static class ScenarioFixtures
         switch (product)
         {
             case "cells":
-                Require(workspace.Run("cells", "create", file, "--output", "json"));
+                Require(workspace.Run("cells", "create", file, "--output-format", "json"));
                 File.WriteAllText(workspace.File("ops.json"),
                     $$"""{"ops":[{"op":"set_values","sheet":"Sheet1","range":"A1","values":[["Item","Amount"],["{{SampleText}}",1],["Second row",2]]}]}""");
-                Require(workspace.Run("cells", "edit", file, "--ops", "ops.json", "--in-place", "--output", "json"));
+                Require(workspace.Run("cells", "edit", file, "--ops", "ops.json", "--in-place", "--output-format", "json"));
                 break;
             case "pdf":
-                Require(workspace.Run("pdf", "create", file, "--from-text", "source.txt", "--output", "json"));
+                Require(workspace.Run("pdf", "create", file, "--from-text", "source.txt", "--output-format", "json"));
                 break;
             case "slides":
-                Require(workspace.Run("slides", "create", file, "--from-markdown", "source.md", "--output", "json"));
+                Require(workspace.Run("slides", "create", file, "--from-markdown", "source.md", "--output-format", "json"));
                 break;
             case "words":
-                Require(workspace.Run("words", "create", file, "--markdown", "source.md", "--output", "json"));
+                Require(workspace.Run("words", "create", file, "--markdown", "source.md", "--output-format", "json"));
                 break;
         }
         return File.ReadAllBytes(workspace.File(file));
@@ -128,7 +128,7 @@ public static class ScenarioFixtures
         ScenarioLicense.Project(workspace.Path);
         string source = "seed." + primary;
         File.WriteAllBytes(workspace.File(source), Read($"{product}.{primary}"));
-        JsonNode result = Require(workspace.Run(product, "convert", source, "--to", format, "--output", "json"));
+        JsonNode result = Require(workspace.Run(product, "convert", source, "--to", format, "--output-format", "json"));
         string path = (result["output"]?["path"] ?? result["outputs"]![0]!["path"])!.GetValue<string>();
         return File.ReadAllBytes(path);
     }
@@ -146,8 +146,8 @@ public static class ScenarioFixtures
         File.WriteAllBytes(workspace.File(source), Read($"{product}.{primary}"));
         var environment = new Dictionary<string, string?>(StringComparer.Ordinal) { [PasswordVariable] = Password };
         string[] args = product == "pdf"
-            ? ["pdf", "edit", source, "--ops", "ops.json", "--out", target, "--output", "json"]
-            : [product, "convert", source, "--to", primary, "--out", target, "--encrypt-env", PasswordVariable, "--output", "json"];
+            ? ["pdf", "edit", source, "--ops", "ops.json", "--out", target, "--output-format", "json"]
+            : [product, "convert", source, "--to", primary, "--out", target, "--encrypt-env", PasswordVariable, "--output-format", "json"];
         if (product == "pdf")
         {
             File.WriteAllText(workspace.File("ops.json"),

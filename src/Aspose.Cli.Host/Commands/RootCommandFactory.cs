@@ -10,7 +10,7 @@ internal static class RootCommandFactory
 {
     /// <summary>
     /// Builds the command tree and hands back the global options, so the entry
-    /// point can read <c>--output</c>/<c>--quiet</c> when rendering a parse error.
+    /// point can read <c>--output-format</c>/<c>--quiet</c> when rendering a parse error.
     /// </summary>
     public static RootCommand Create(
         HostContext host,
@@ -25,7 +25,7 @@ internal static class RootCommandFactory
 
         var root = new RootCommand(
             "Aspose CLI — high-fidelity file automation for people, scripts, and AI agents. " +
-            "Structured commands support --output json for stable, machine-readable results; explicit schema and docs documents remain raw.");
+            "Structured commands support --output-format json for stable, machine-readable results; explicit schema and docs documents remain raw.");
         globals.AddTo(root);
         VersionOutput.Attach(root, executor, globals, catalog);
 

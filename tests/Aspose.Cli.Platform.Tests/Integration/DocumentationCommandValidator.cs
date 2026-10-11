@@ -27,7 +27,7 @@ internal sealed class DocumentationCommandValidator
 
     public static DocumentationCommandValidator Read(TempWorkspace workspace)
     {
-        CliResult capabilities = workspace.Run("capabilities", "--output", "json");
+        CliResult capabilities = workspace.Run("capabilities", "--output-format", "json");
         CliResult topics = workspace.Run("docs");
         Assert.True(capabilities.ExitCode == 0, capabilities.StdErr);
         Assert.True(topics.ExitCode == 0, topics.StdErr);

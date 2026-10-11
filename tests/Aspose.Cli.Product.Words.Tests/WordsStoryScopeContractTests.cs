@@ -49,7 +49,7 @@ public sealed class WordsStoryScopeContractTests : IDisposable
             () => _ = PublishedSchemas.Ids,
             () => inspected = _workspace.Run(
                 "words", "inspect", "stories.docx", "--detail", "fields", "--detail", "images",
-                "--license", TestLicense.Path!, "--output", "json"));
+                "--license", TestLicense.Path!, "--output-format", "json"));
 
         Assert.True(inspected.ExitCode == 0, inspected.StdErr);
         JsonObject result = JsonNode.Parse(inspected.StdOut)!.AsObject();

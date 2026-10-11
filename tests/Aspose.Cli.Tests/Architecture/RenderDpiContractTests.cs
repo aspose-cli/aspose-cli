@@ -22,9 +22,9 @@ public sealed partial class RenderDpiContractTests : IDisposable
         File.WriteAllText(_workspace.File("table.csv"), "a,b\n1,2\n");
         File.WriteAllText(_workspace.File("text.txt"), "Dpi range.\n");
         File.WriteAllText(_workspace.File("outline.md"), "# Dpi range\n");
-        Succeeds(_workspace.Run("pdf", "create", "document.pdf", "--from-text", "text.txt", "--output", "json"));
-        Succeeds(_workspace.Run("words", "create", "document.docx", "--markdown", "outline.md", "--output", "json"));
-        Succeeds(_workspace.Run("slides", "create", "deck.pptx", "--output", "json"));
+        Succeeds(_workspace.Run("pdf", "create", "document.pdf", "--from-text", "text.txt", "--output-format", "json"));
+        Succeeds(_workspace.Run("words", "create", "document.docx", "--markdown", "outline.md", "--output-format", "json"));
+        Succeeds(_workspace.Run("slides", "create", "deck.pptx", "--output-format", "json"));
         var inputs = new Dictionary<string, string>(StringComparer.Ordinal)
         {
             ["cells"] = "table.csv",
@@ -33,7 +33,7 @@ public sealed partial class RenderDpiContractTests : IDisposable
             ["slides"] = "deck.pptx",
         };
 
-        CliResult capabilities = _workspace.Run("capabilities", "--output", "json");
+        CliResult capabilities = _workspace.Run("capabilities", "--output-format", "json");
         Succeeds(capabilities);
         var problems = new List<string>();
         foreach ((string product, string input) in inputs)
@@ -49,7 +49,7 @@ public sealed partial class RenderDpiContractTests : IDisposable
             Assert.True(_workspace.Run(product, "render", "--help").StdOut.Contains($"{minimum}-{maximum}", StringComparison.Ordinal),
                 $"{product} render --help does not state the --dpi range {minimum}-{maximum}");
 
-            CliResult lowest = _workspace.Run(product, "render", input, "--out", $"{product}-low.png", "--dpi", Text(minimum), "--output", "json");
+            CliResult lowest = _workspace.Run(product, "render", input, "--out", $"{product}-low.png", "--dpi", Text(minimum), "--output-format", "json");
             if (lowest.ExitCode != 0)
             {
                 problems.Add($"{product} render refuses --dpi {minimum}, the stated minimum: {lowest.StdErr}");
@@ -61,7 +61,7 @@ public sealed partial class RenderDpiContractTests : IDisposable
 
             foreach (int outside in new[] { minimum - 1, maximum + 1 })
             {
-                CliResult refused = _workspace.Run(product, "render", input, "--out", $"{product}-out.png", "--dpi", Text(outside), "--output", "json");
+                CliResult refused = _workspace.Run(product, "render", input, "--out", $"{product}-out.png", "--dpi", Text(outside), "--output-format", "json");
                 if (refused.ExitCode != 2 || JsonNode.Parse(refused.StdErr)?["error"]?["code"]?.GetValue<string>() != "OPTION_INVALID")
                 {
                     problems.Add($"{product} render accepts --dpi {outside}, outside the stated {minimum}-{maximum}: exit {refused.ExitCode}");

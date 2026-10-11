@@ -123,7 +123,7 @@ weaken a check or remove a supported operation to make a test pass.
   `StandardOptionNames` are the reserved names (`APCLI008`). Products define commands with
   `CommandDefinition` or `EditDefinition`, paired with their handlers on the product menu
   (`APCLI011` forbids `StandardOptions`). An SDK option type (`PartRangeOption`,
-  `PreviewOption`, `DetailOption`, the render options) exists only for options with the same name
+  `SampleOption`, `DetailOption`, the render options) exists only for options with the same name
   and meaning across commands; any other option is a plain `new Option<T>`, and `SameNameOptions`
   checks that same-named options agree. A description does not restate a default the parser
   applies.

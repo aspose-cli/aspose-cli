@@ -14,7 +14,7 @@ public sealed class WordsCliTests : IDisposable
         File.WriteAllText(_workspace.File("source.md"), "# Contract\n\nClause.\n");
         Assert.Equal(0, _workspace.Run("words", "create", "contract.docx", "--markdown", "source.md").ExitCode);
 
-        CliResult refused = _workspace.Run("words", "convert", "contract.docx", "--to", "html", "--pages", "1", "--out", "contract.html", "--output", "json");
+        CliResult refused = _workspace.Run("words", "convert", "contract.docx", "--to", "html", "--pages", "1", "--out", "contract.html", "--output-format", "json");
 
         Assert.Equal(2, refused.ExitCode);
         JsonNode error = JsonNode.Parse(refused.StdErr)!["error"]!;
@@ -46,9 +46,9 @@ public sealed class WordsCliTests : IDisposable
         CliResult edited = _workspace.RunWithInput(
             operations,
             "words", "edit", "contract.docx", "--ops", "-",
-            "--in-place", "--verify", "--output", "json");
+            "--in-place", "--verify", "--output-format", "json");
         CliResult read = _workspace.Run(
-            "words", "query", "blocks", "contract.docx", "--blocks", "2", "--output", "json");
+            "words", "query", "blocks", "contract.docx", "--blocks", "2", "--output-format", "json");
 
         Assert.True(edited.ExitCode == 0, edited.StdErr);
         Assert.True(JsonNode.Parse(edited.StdOut)!["verification"]!["ok"]!.GetValue<bool>());
@@ -81,7 +81,7 @@ public sealed class WordsCliTests : IDisposable
 
         CliResult reviewed = _workspace.Run(
             "review", "list-style.docx", "--out", "evidence",
-            "--max-items", "10", "--output", "json");
+            "--max-items", "10", "--output-format", "json");
 
         Assert.True(reviewed.ExitCode == 0, reviewed.StdErr);
         Assert.DoesNotContain("HOST-COMMAND-0001", reviewed.StdErr, StringComparison.Ordinal);
@@ -103,8 +103,8 @@ public sealed class WordsCliTests : IDisposable
         document.Save(_workspace.File("contract.pdf"), SaveFormat.Docx);
 
         CliResult converted = _workspace.Run(
-            "words", "convert", "contract.pdf", "--to", "docx", "--out", "contract.docx", "--output", "json");
-        CliResult reviewed = _workspace.Run("review", "contract.pdf", "--out", "evidence", "--output", "json");
+            "words", "convert", "contract.pdf", "--to", "docx", "--out", "contract.docx", "--output-format", "json");
+        CliResult reviewed = _workspace.Run("review", "contract.pdf", "--out", "evidence", "--output-format", "json");
 
         Assert.True(converted.ExitCode == 0, converted.StdErr);
         Assert.Equal("docx", JsonNode.Parse(converted.StdOut)!["input"]!["format"]!.GetValue<string>());
@@ -133,7 +133,7 @@ public sealed class WordsCliTests : IDisposable
         document.Save(_workspace.File("findings.docx"));
 
         CliResult reviewed = _workspace.Run(
-            "review", "findings.docx", "--out", "evidence", "--output", "json");
+            "review", "findings.docx", "--out", "evidence", "--output-format", "json");
 
         Assert.True(reviewed.ExitCode is 0 or 8, reviewed.StdErr);
         JsonArray findings = JsonNode.Parse(reviewed.StdOut)!["findings"]!.AsArray();
@@ -156,7 +156,7 @@ public sealed class WordsCliTests : IDisposable
             findings.Single(static finding => finding!["code"]!.GetValue<string>() == "WORDS_REVISIONS_PRESENT")!["hint"]!.GetValue<string>());
 
         CliResult filtered = _workspace.Run(
-            "review", "findings.docx", "--out", "filtered", "--code", "WORDS_TEXT_TOO_SMALL", "--output", "json");
+            "review", "findings.docx", "--out", "filtered", "--code", "WORDS_TEXT_TOO_SMALL", "--output-format", "json");
 
         Assert.True(filtered.ExitCode is 0 or 8, filtered.StdErr);
         JsonNode result = JsonNode.Parse(filtered.StdOut)!;
@@ -186,7 +186,7 @@ public sealed class WordsCliTests : IDisposable
         CliResult result = _workspace.RunWithInput(
             $$"""{ "ops": [ { "op": "mail_merge", "inline": [{{records}}] } ] }""",
             "words", "edit", "letter.docx", "--ops", "-", "--out", "letters.docx",
-            "--verify", "--license-mode", "evaluation", "--output", "json");
+            "--verify", "--license-mode", "evaluation", "--output-format", "json");
 
         JsonNode edited = JsonNode.Parse(result.StdOut)!;
         JsonNode warning = edited["warnings"]!.AsArray()
@@ -208,8 +208,8 @@ public sealed class WordsCliTests : IDisposable
 
         CliResult reviewed = _workspace.RunWithEnv(
             new Dictionary<string, string?> { ["REVIEW_PASSWORD"] = "review-secret" },
-            "review", "secret.docx", "--password-env", "REVIEW_PASSWORD", "--output", "json");
-        CliResult locked = _workspace.Run("review", "secret.docx", "--out", "locked.review", "--output", "json");
+            "review", "secret.docx", "--password-env", "REVIEW_PASSWORD", "--output-format", "json");
+        CliResult locked = _workspace.Run("review", "secret.docx", "--out", "locked.review", "--output-format", "json");
 
         Assert.True(reviewed.ExitCode == 0, reviewed.StdErr + reviewed.StdOut);
         Assert.True(File.Exists(Path.Combine(_workspace.File("secret.docx.review"), "review.json")));
@@ -222,7 +222,7 @@ public sealed class WordsCliTests : IDisposable
         File.WriteAllBytes(_workspace.File("template.docx"), []);
 
         CliResult result = _workspace.Run(
-            "words", "create", "out.docx", "--blank", "--template", "template.docx", "--output", "json");
+            "words", "create", "out.docx", "--blank", "--template", "template.docx", "--output-format", "json");
 
         Assert.Equal(2, result.ExitCode);
         Assert.False(File.Exists(_workspace.File("out.docx")));
@@ -238,20 +238,20 @@ public sealed class WordsCliTests : IDisposable
         CliResult spread = null!, section = null!;
         Parallel.Invoke(
             () => spread = _workspace.Run(
-                "words", "query", "blocks", "notes.docx", "--blocks", "1,3,5", "--max-blocks", "1", "--output", "json"),
+                "words", "query", "blocks", "notes.docx", "--blocks", "1,3,5", "--max-blocks", "1", "--output-format", "json"),
             () => section = _workspace.Run(
-                "words", "query", "blocks", "notes.docx", "--section", "1", "--blocks", "2-3", "--max-blocks", "1", "--output", "json"));
+                "words", "query", "blocks", "notes.docx", "--section", "1", "--blocks", "2-3", "--max-blocks", "1", "--output-format", "json"));
 
         Assert.True(spread.ExitCode == 0, spread.StdErr);
         Assert.EndsWith(
-            " --blocks 3,5 --scope text --max-chars 20000 --max-blocks 1 --output json",
+            " --blocks 3,5 --scope text --max-chars 20000 --max-blocks 1 --output-format json",
             JsonNode.Parse(spread.StdOut)!["window"]!["next"]!.GetValue<string>(),
             StringComparison.Ordinal);
         Assert.True(section.ExitCode == 0, section.StdErr);
         JsonNode read = JsonNode.Parse(section.StdOut)!;
         Assert.Equal(2, Assert.Single(read["blocks"]!.AsArray())!["block"]!.GetValue<int>());
         Assert.EndsWith(
-            " --blocks 3 --section 1 --scope text --max-chars 20000 --max-blocks 1 --output json",
+            " --blocks 3 --section 1 --scope text --max-chars 20000 --max-blocks 1 --output-format json",
             read["window"]!["next"]!.GetValue<string>(),
             StringComparison.Ordinal);
     }
@@ -263,7 +263,7 @@ public sealed class WordsCliTests : IDisposable
         Assert.Equal(0, _workspace.Run("words", "create", "notes.docx", "--markdown", "source.md").ExitCode);
 
         CliResult first = _workspace.Run(
-            "words", "query", "search", "notes.docx", "--pattern", "needle", "--max-hits", "2", "--output", "json");
+            "words", "query", "search", "notes.docx", "--pattern", "needle", "--max-hits", "2", "--output-format", "json");
 
         Assert.True(first.ExitCode == 0, first.StdErr);
         JsonNode page = JsonNode.Parse(first.StdOut)!;
@@ -273,7 +273,7 @@ public sealed class WordsCliTests : IDisposable
         Assert.Equal(2, window["returned"]!.GetValue<int>());
         Assert.True(window["truncated"]!.GetValue<bool>());
         string next = window["next"]!.GetValue<string>();
-        Assert.EndsWith(" --pattern needle --scope body --max-hits 2 --skip 2 --output json", next, StringComparison.Ordinal);
+        Assert.EndsWith(" --pattern needle --scope body --max-hits 2 --skip 2 --output-format json", next, StringComparison.Ordinal);
 
         CliResult second = _workspace.RunCommandLine(next);
 
@@ -292,7 +292,7 @@ public sealed class WordsCliTests : IDisposable
 
         CliResult edited = _workspace.RunWithInput(
             "not json",
-            "words", "edit", "contract.docx", "--ops", "-", "--set", "Client=Contoso", "--output", "json");
+            "words", "edit", "contract.docx", "--ops", "-", "--set", "Client=Contoso", "--output-format", "json");
 
         Assert.Equal(2, edited.ExitCode);
         JsonNode error = JsonNode.Parse(edited.StdErr)!["error"]!;
@@ -308,7 +308,7 @@ public sealed class WordsCliTests : IDisposable
 
         CliResult edited = _workspace.RunWithInput(
             "not json",
-            "words", "edit", "contract.docx", "--ops", "-", "--track-changes", "--output", "json");
+            "words", "edit", "contract.docx", "--ops", "-", "--track-changes", "--output-format", "json");
 
         Assert.Equal(2, edited.ExitCode);
         JsonNode error = JsonNode.Parse(edited.StdErr)!["error"]!;
@@ -325,7 +325,7 @@ public sealed class WordsCliTests : IDisposable
         File.WriteAllBytes(_workspace.File("malformed.docx"), bytes);
         string[] execution = supervised ? ["--timeout", "30"] : [];
         CliResult inspected = _workspace.Run(
-            ["words", "inspect", "malformed.docx", "--output", "json", .. execution]);
+            ["words", "inspect", "malformed.docx", "--output-format", "json", .. execution]);
         Assert.Equal(3, inspected.ExitCode);
         Assert.Equal(string.Empty, inspected.StdOut);
         Assert.Equal("FILE_CORRUPT", JsonNode.Parse(inspected.StdErr)!["error"]!["code"]!.GetValue<string>());
@@ -334,7 +334,7 @@ public sealed class WordsCliTests : IDisposable
         File.WriteAllBytes(_workspace.File("retained.pdf"), retained);
         CliResult converted = _workspace.Run(
             ["words", "convert", "malformed.docx", "--to", "pdf", "--out", "retained.pdf",
-                "--overwrite", "--output", "json", .. execution]);
+                "--overwrite", "--output-format", "json", .. execution]);
         Assert.Equal(3, converted.ExitCode);
         Assert.Equal(string.Empty, converted.StdOut);
         Assert.Equal("FILE_CORRUPT", JsonNode.Parse(converted.StdErr)!["error"]!["code"]!.GetValue<string>());
@@ -355,7 +355,7 @@ public sealed class WordsCliTests : IDisposable
         }
 
         string[] option = granularity is null ? [] : ["--granularity", granularity];
-        CliResult compared = _workspace.Run(["words", "compare", "left.docx", "right.docx", "--output", "json", .. option]);
+        CliResult compared = _workspace.Run(["words", "compare", "left.docx", "right.docx", "--output-format", "json", .. option]);
 
         Assert.True(compared.ExitCode == 0, compared.StdErr);
         Assert.Equal(

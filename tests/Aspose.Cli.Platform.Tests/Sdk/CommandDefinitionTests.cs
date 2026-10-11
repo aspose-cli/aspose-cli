@@ -515,7 +515,7 @@ public sealed class CommandDefinitionTests : IDisposable
         string literal = Run(root, "run", "report.test", "--password", "secret")!;
 
         Assert.StartsWith("aspose-cli run ", fromVariable, StringComparison.Ordinal);
-        Assert.EndsWith("report.test\" --password-env LEFT --output json", fromVariable, StringComparison.Ordinal);
+        Assert.EndsWith("report.test\" --password-env LEFT --output-format json", fromVariable, StringComparison.Ordinal);
         Assert.DoesNotContain("secret", literal, StringComparison.Ordinal);
         Assert.DoesNotContain("--password", literal, StringComparison.Ordinal);
     }

@@ -27,12 +27,12 @@ public sealed class AppCommandTests : IDisposable
             workbook,
             "--sheets",
             "Data",
-            "--output",
+            "--output-format",
             "json");
         Assert.Equal(0, created.ExitCode);
         CliResult discovered = _workspace.Run(
             "capabilities",
-            "--output",
+            "--output-format",
             "json");
         Assert.Equal(0, discovered.ExitCode);
         JsonNode capabilities = Parse(discovered.StdOut);
@@ -42,7 +42,7 @@ public sealed class AppCommandTests : IDisposable
             CliResult started = _workspace.Run(
                 "app",
                 "--no-open",
-                "--output",
+                "--output-format",
                 "json");
             Assert.Equal(0, started.ExitCode);
             JsonNode startedJson = Parse(started.StdOut);
@@ -77,7 +77,7 @@ public sealed class AppCommandTests : IDisposable
                 "app",
                 "open", workbook,
                 "--no-open",
-                "--output",
+                "--output-format",
                 "json");
             Assert.Equal(0, opened.ExitCode);
             JsonNode openedJson = Parse(opened.StdOut);
@@ -170,8 +170,8 @@ public sealed class AppCommandTests : IDisposable
 
             foreach ((string[] arguments, string route, string path) in new[]
             {
-                (new[] { "app", "--welcome", "--no-open", "--output", "json" }, "welcome", "/"),
-                (new[] { "app", "--no-open", "--output", "json" }, "home", "/home"),
+                (new[] { "app", "--welcome", "--no-open", "--output-format", "json" }, "welcome", "/"),
+                (new[] { "app", "--no-open", "--output-format", "json" }, "home", "/home"),
             })
             {
                 CliResult activated = _workspace.Run(arguments);
@@ -182,7 +182,7 @@ public sealed class AppCommandTests : IDisposable
                 var activeUri = new Uri(active["url"]!.GetValue<string>());
                 Assert.Equal(launchUri.Port, activeUri.Port);
                 Assert.Equal(path, activeUri.AbsolutePath);
-                CliResult activeStatus = _workspace.Run("app", "status", "--output", "json");
+                CliResult activeStatus = _workspace.Run("app", "status", "--output-format", "json");
                 Assert.Equal(0, activeStatus.ExitCode);
                 Assert.Equal(route, Parse(activeStatus.StdOut)["route"]!.GetValue<string>());
                 using HttpResponseMessage activePage = await client.GetAsync(activeUri);
@@ -194,7 +194,7 @@ public sealed class AppCommandTests : IDisposable
             CliResult stopped = _workspace.Run(
                 "app",
                 "stop",
-                "--output",
+                "--output-format",
                 "json");
             Assert.True(stopped.ExitCode == 0, stopped.StdErr);
             Assert.False(Parse(stopped.StdOut)["running"]!.GetValue<bool>());
@@ -214,7 +214,7 @@ public sealed class AppCommandTests : IDisposable
             "--port",
             port.ToString(System.Globalization.CultureInfo.InvariantCulture),
             "--no-open",
-            "--output",
+            "--output-format",
             "json");
 
         Assert.Equal(5, result.ExitCode);

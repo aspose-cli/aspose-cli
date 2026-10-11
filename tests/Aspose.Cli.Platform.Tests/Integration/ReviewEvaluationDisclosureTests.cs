@@ -47,7 +47,7 @@ public sealed class ReviewEvaluationDisclosureTests : IDisposable
 
     private JsonNode Run(params string[] args)
     {
-        CliResult result = _workspace.Run([.. args, "--output", "json"]);
+        CliResult result = _workspace.Run([.. args, "--output-format", "json"]);
         Assert.True(result.ExitCode == 0, result.StdErr);
         return JsonNode.Parse(result.StdOut)!;
     }

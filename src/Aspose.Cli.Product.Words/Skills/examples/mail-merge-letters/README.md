@@ -6,10 +6,10 @@ FirstName, LastName and Balance merge fields. [recipients.csv](recipients.csv)
 contains two fictional recipients; [merge-ops.json](merge-ops.json) fills them.
 
 ```powershell
-aspose-cli words convert letter-template.rtf --to docx --out letter-template.docx --output json
-aspose-cli words edit letter-template.docx --ops merge-ops.json --out letters.docx --verify --output json
-aspose-cli words query blocks letters.docx --blocks 1- --scope text --output json
-aspose-cli review letters.docx --out letters.review --output json
+aspose-cli words convert letter-template.rtf --to docx --out letter-template.docx --output-format json
+aspose-cli words edit letter-template.docx --ops merge-ops.json --out letters.docx --verify --output-format json
+aspose-cli words query blocks letters.docx --blocks 1- --scope text --output-format json
+aspose-cli review letters.docx --out letters.review --output-format json
 ```
 
 The result holds one letter per recipient, Ava Stone and Noah Chen, each in

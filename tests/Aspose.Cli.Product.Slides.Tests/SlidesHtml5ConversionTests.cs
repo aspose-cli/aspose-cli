@@ -14,12 +14,12 @@ public sealed class SlidesHtml5ConversionTests
     {
         using var workspace = new TempWorkspace();
         File.WriteAllText(workspace.File("outline.md"), "# Quarterly review\n\nGrowth and retention");
-        CliResult created = workspace.Run("slides", "create", "deck.pptx", "--from-markdown", "outline.md", "--output", "json");
+        CliResult created = workspace.Run("slides", "create", "deck.pptx", "--from-markdown", "outline.md", "--output-format", "json");
         Assert.True(created.ExitCode == 0, created.StdErr);
         Directory.CreateDirectory(workspace.File("site"));
 
         CliResult converted = workspace.Run(
-            "slides", "convert", "deck.pptx", "--to", "html5", "--out", Path.Combine("site", "deck.html"), "--output", "json");
+            "slides", "convert", "deck.pptx", "--to", "html5", "--out", Path.Combine("site", "deck.html"), "--output-format", "json");
 
         Assert.True(converted.ExitCode == 0, converted.StdErr);
         JsonArray outputs = JsonNode.Parse(converted.StdOut)!["outputs"]!.AsArray();

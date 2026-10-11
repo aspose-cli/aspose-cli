@@ -65,9 +65,9 @@ shows no images.
 ## Reading
 
 ```powershell
-aspose-cli words inspect input.docx --detail outline sections fields bookmarks comments --output json
-aspose-cli words query blocks input.docx --blocks 1- --max-blocks 30 --scope full --output json
-aspose-cli words query search input.docx --pattern "notice period" --scope all --output json
+aspose-cli words inspect input.docx --detail outline sections fields bookmarks comments --output-format json
+aspose-cli words query blocks input.docx --blocks 1- --max-blocks 30 --scope full --output-format json
+aspose-cli words query search input.docx --pattern "notice period" --scope all --output-format json
 ```
 
 `--blocks 1- --max-blocks 30` reads the first 30 blocks, or all of a shorter
@@ -96,7 +96,7 @@ written as it is, so Excel evaluates a cell that starts with `=`, `+`, `-` or
    Design below).
 
    ```powershell
-   aspose-cli words create report.docx --markdown report.md --template brand.docx --title "Quarterly Report" --output json
+   aspose-cli words create report.docx --markdown report.md --template brand.docx --title "Quarterly Report" --output-format json
    ```
 
 2. **Existing document:** inspect structure and revision state, then read only
@@ -105,7 +105,7 @@ written as it is, so Excel evaluates a cell that starts with `=`, `+`, `-` or
    add `--track-changes --author "Name"` when the change must stay reviewable.
 
    ```powershell
-   aspose-cli words edit input.docx --ops ops.json --out output.docx --verify --output json
+   aspose-cli words edit input.docx --ops ops.json --out output.docx --verify --output-format json
    ```
 
    Filling a template's `{{placeholder}}` text: `replace_text` covers only the

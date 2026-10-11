@@ -102,7 +102,7 @@ public sealed class ViewerServiceHttpTests : IDisposable
 
         Assert.Equal(1, hello["revision"]!.GetValue<int>());
         _workspace.Run("cells", "edit", "book.xlsx", "--in-place",
-            "--set", "Second!A1=Changed", "--output", "json").Succeeded();
+            "--set", "Second!A1=Changed", "--output-format", "json").Succeeded();
 
         JsonNode update = await events.Next("update");
         Assert.Equal(2, update["revision"]!.GetValue<int>());
@@ -182,9 +182,9 @@ public sealed class ViewerServiceHttpTests : IDisposable
 
     private LiveDocument OpenWorkbook(string? view = null)
     {
-        _workspace.Run("cells", "create", "book.xlsx", "--sheets", "First,Second", "--output", "json").Succeeded();
+        _workspace.Run("cells", "create", "book.xlsx", "--sheets", "First,Second", "--output-format", "json").Succeeded();
         _workspace.Run("cells", "edit", "book.xlsx", "--in-place",
-            "--set", "First!A1=Region", "--set", "Second!A1=Raw", "--output", "json").Succeeded();
+            "--set", "First!A1=Region", "--set", "Second!A1=Raw", "--output-format", "json").Succeeded();
         return _documents.Open(_workspace.File("book.xlsx"), new LiveDocumentOptions { View = view }, ViewerDocuments.PreviewHolder);
     }
 

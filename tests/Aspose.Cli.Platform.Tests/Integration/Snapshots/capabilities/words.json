@@ -486,9 +486,7 @@
           ".jpeg",
           ".jpg"
         ],
-        "aliases": [
-          "jpg"
-        ],
+        "aliases": [],
         "uses": [
           "render"
         ],
@@ -872,8 +870,8 @@
             "hasDefault": true,
             "default": "false",
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": false,
             "valueSource": "command-line",
@@ -942,8 +940,8 @@
             "hasDefault": true,
             "default": "false",
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": false,
             "valueSource": "command-line",
@@ -1097,8 +1095,8 @@
             "hasDefault": true,
             "default": "false",
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": false,
             "valueSource": "command-line",
@@ -1164,8 +1162,8 @@
             "hidden": false,
             "hasDefault": true,
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": true,
             "valueSource": "stdin",
@@ -1249,8 +1247,8 @@
             "hasDefault": true,
             "default": "false",
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": false,
             "valueSource": "command-line",
@@ -1333,8 +1331,8 @@
             "hasDefault": true,
             "default": "false",
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": false,
             "valueSource": "command-line",
@@ -1441,8 +1439,8 @@
             "hasDefault": true,
             "default": "false",
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": false,
             "valueSource": "command-line",
@@ -1461,8 +1459,8 @@
             "hasDefault": true,
             "default": "false",
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": false,
             "valueSource": "command-line",
@@ -1481,8 +1479,8 @@
             "hasDefault": true,
             "default": "false",
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": false,
             "valueSource": "command-line",
@@ -1565,8 +1563,8 @@
             "hasDefault": true,
             "default": "false",
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": false,
             "valueSource": "command-line",
@@ -1619,8 +1617,8 @@
             "hasDefault": true,
             "default": "false",
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": false,
             "valueSource": "command-line",
@@ -1670,8 +1668,8 @@
             "hidden": false,
             "hasDefault": true,
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": true,
             "valueSource": "stdin",
@@ -1706,8 +1704,8 @@
             "hasDefault": true,
             "default": "false",
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": false,
             "valueSource": "command-line",
@@ -1726,8 +1724,8 @@
             "hasDefault": true,
             "default": "false",
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": false,
             "valueSource": "command-line",
@@ -1786,8 +1784,8 @@
             "hasDefault": true,
             "default": "false",
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": false,
             "valueSource": "command-line",
@@ -1837,8 +1835,8 @@
             "hidden": false,
             "hasDefault": true,
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": true,
             "valueSource": "stdin",
@@ -1977,8 +1975,8 @@
             "hidden": false,
             "hasDefault": true,
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": true,
             "valueSource": "stdin",
@@ -1986,7 +1984,7 @@
             "description": "Read the password for the document from the first line of stdin."
           },
           {
-            "name": "--preview",
+            "name": "--sample",
             "aliases": [],
             "type": "boolean",
             "minimumArity": 0,
@@ -1997,13 +1995,13 @@
             "hasDefault": true,
             "default": "false",
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": false,
             "valueSource": "command-line",
             "inputKind": "none",
-            "description": "Include a bounded preview: the heading outline, as with --detail outline. Default: off."
+            "description": "Include a bounded sample: the heading outline, as with --detail outline. Default: off."
           }
         ],
         "arguments": [
@@ -2131,8 +2129,8 @@
             "hidden": false,
             "hasDefault": true,
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": true,
             "valueSource": "stdin",
@@ -2212,8 +2210,8 @@
             "hasDefault": true,
             "default": "false",
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": false,
             "valueSource": "command-line",
@@ -2280,8 +2278,8 @@
             "hidden": false,
             "hasDefault": true,
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": true,
             "valueSource": "stdin",
@@ -2316,8 +2314,8 @@
             "hasDefault": true,
             "default": "false",
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": false,
             "valueSource": "command-line",
@@ -2400,8 +2398,8 @@
             "hasDefault": true,
             "default": "false",
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": false,
             "valueSource": "command-line",
@@ -2471,8 +2469,8 @@
             "hasDefault": true,
             "default": "false",
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": false,
             "valueSource": "command-line",
@@ -2538,8 +2536,8 @@
             "hidden": false,
             "hasDefault": true,
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": true,
             "valueSource": "stdin",
@@ -2654,8 +2652,8 @@
             "hasDefault": true,
             "default": "false",
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": false,
             "valueSource": "command-line",
@@ -2721,8 +2719,8 @@
             "hidden": false,
             "hasDefault": true,
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": true,
             "valueSource": "stdin",

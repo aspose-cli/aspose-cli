@@ -331,9 +331,7 @@
           ".jpeg",
           ".jpg"
         ],
-        "aliases": [
-          "jpg"
-        ],
+        "aliases": [],
         "uses": [
           "render"
         ],
@@ -813,8 +811,8 @@
             "hasDefault": true,
             "default": "false",
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": false,
             "valueSource": "command-line",
@@ -931,8 +929,8 @@
             "hasDefault": true,
             "default": "false",
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": false,
             "valueSource": "command-line",
@@ -982,8 +980,8 @@
             "hidden": false,
             "hasDefault": true,
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": true,
             "valueSource": "stdin",
@@ -1106,8 +1104,8 @@
             "hasDefault": true,
             "default": "false",
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": false,
             "valueSource": "command-line",
@@ -1166,8 +1164,8 @@
             "hasDefault": true,
             "default": "false",
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": false,
             "valueSource": "command-line",
@@ -1186,8 +1184,8 @@
             "hasDefault": true,
             "default": "false",
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": false,
             "valueSource": "command-line",
@@ -1206,8 +1204,8 @@
             "hasDefault": true,
             "default": "false",
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": false,
             "valueSource": "command-line",
@@ -1290,8 +1288,8 @@
             "hasDefault": true,
             "default": "false",
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": false,
             "valueSource": "command-line",
@@ -1310,8 +1308,8 @@
             "hasDefault": true,
             "default": "false",
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": false,
             "valueSource": "command-line",
@@ -1364,8 +1362,8 @@
             "hasDefault": true,
             "default": "false",
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": false,
             "valueSource": "command-line",
@@ -1415,8 +1413,8 @@
             "hidden": false,
             "hasDefault": true,
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": true,
             "valueSource": "stdin",
@@ -1451,8 +1449,8 @@
             "hasDefault": true,
             "default": "false",
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": false,
             "valueSource": "command-line",
@@ -1551,33 +1549,13 @@
             "hidden": false,
             "hasDefault": true,
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": true,
             "valueSource": "stdin",
             "inputKind": "none",
             "description": "Read the password for the workbook from the first line of stdin."
-          },
-          {
-            "name": "--preview",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "false",
-            "allowedValues": [
-              "False",
-              "True"
-            ],
-            "secret": false,
-            "valueSource": "command-line",
-            "inputKind": "none",
-            "description": "Include a bounded preview: display values of the first --preview-rows rows and up to 20 columns of each sheet, from A1. Default: off."
           },
           {
             "name": "--preview-rows",
@@ -1595,6 +1573,26 @@
             "valueSource": "command-line",
             "inputKind": "none",
             "description": "Number of preview rows per sheet (1-100)."
+          },
+          {
+            "name": "--sample",
+            "aliases": [],
+            "type": "boolean",
+            "minimumArity": 0,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": true,
+            "default": "false",
+            "allowedValues": [
+              "false",
+              "true"
+            ],
+            "secret": false,
+            "valueSource": "command-line",
+            "inputKind": "none",
+            "description": "Include a bounded sample: display values of the first --preview-rows rows and up to 20 columns of each sheet, from A1. Default: off."
           }
         ],
         "arguments": [
@@ -1689,8 +1687,8 @@
             "hidden": false,
             "hasDefault": true,
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": true,
             "valueSource": "stdin",
@@ -1802,8 +1800,8 @@
             "hasDefault": true,
             "default": "false",
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": false,
             "valueSource": "command-line",
@@ -1870,8 +1868,8 @@
             "hidden": false,
             "hasDefault": true,
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": true,
             "valueSource": "stdin",
@@ -1906,8 +1904,8 @@
             "hasDefault": true,
             "default": "false",
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": false,
             "valueSource": "command-line",
@@ -2004,8 +2002,8 @@
             "hasDefault": true,
             "default": "false",
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": false,
             "valueSource": "command-line",
@@ -2075,8 +2073,8 @@
             "hasDefault": true,
             "default": "false",
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": false,
             "valueSource": "command-line",
@@ -2126,8 +2124,8 @@
             "hidden": false,
             "hasDefault": true,
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": true,
             "valueSource": "stdin",
@@ -6616,7 +6614,7 @@
               "minimum": 0
             },
             "preview": {
-              "description": "Optional sample of display values (first rows of the used range), present only when --preview was requested. Row-major; a null entry is an empty cell.",
+              "description": "Optional sample of display values (first rows of the used range), present only when --sample was requested. Row-major; a null entry is an empty cell.",
               "type": "array",
               "items": {
                 "type": "array",

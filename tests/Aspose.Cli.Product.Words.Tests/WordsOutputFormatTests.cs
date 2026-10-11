@@ -22,7 +22,7 @@ public sealed class WordsOutputFormatTests
 
         CliResult edited = workspace.Run(
             "words", "edit", Path.GetFileName(input), "--ops", "{\"ops\":[{\"op\":\"update_fields\"}]}",
-            "--out", output, "--output", "json");
+            "--out", output, "--output-format", "json");
 
         Assert.True(edited.ExitCode == 0, edited.StdErr);
         Assert.Equal(expected, System.Text.Json.Nodes.JsonNode.Parse(edited.StdOut)!["output"]!["format"]!.GetValue<string>());
@@ -56,7 +56,7 @@ public sealed class WordsOutputFormatTests
         builder.Write("Clause one.");
         document.Save(workspace.File("source.docx"));
 
-        CliResult converted = workspace.Run("words", "convert", "source.docx", "--to", "md", "--out", "notes.markdown", "--output", "json");
+        CliResult converted = workspace.Run("words", "convert", "source.docx", "--to", "md", "--out", "notes.markdown", "--output-format", "json");
 
         Assert.True(converted.ExitCode == 0, converted.StdErr);
         Assert.Equal("md", System.Text.Json.Nodes.JsonNode.Parse(converted.StdOut)!["output"]!["format"]!.GetValue<string>());
@@ -99,7 +99,7 @@ public sealed class WordsOutputFormatTests
 
         CliResult edited = workspace.Run(
             "words", "edit", "report.xml", "--ops", "{\"ops\":[{\"op\":\"replace_text\",\"find\":\"twelve\",\"replace\":\"ten\"}]}",
-            "--in-place", "--output", "json");
+            "--in-place", "--output-format", "json");
 
         Assert.True(edited.ExitCode == 0, edited.StdErr);
         Assert.Equal("wordml", System.Text.Json.Nodes.JsonNode.Parse(edited.StdOut)!["output"]!["format"]!.GetValue<string>());

@@ -22,8 +22,8 @@ images.
 Read every changed range back:
 
 ```
-aspose-cli cells query range book.xlsx --sheet Sales --range E2:E6 --scope values --output json
-aspose-cli cells query range book.xlsx --sheet Sales --range E2:E6 --scope formulas --output json
+aspose-cli cells query range book.xlsx --sheet Sales --range E2:E6 --scope values --output-format json
+aspose-cli cells query range book.xlsx --sheet Sales --range E2:E6 --scope formulas --output-format json
 ```
 
 - A formula has two faces: `--scope formulas` adds its text (`f`), `--scope
@@ -40,7 +40,7 @@ aspose-cli cells query range book.xlsx --sheet Sales --range E2:E6 --scope formu
 chart plotting the wrong block. Only a render can:
 
 ```
-aspose-cli review book.xlsx --out book.review-1 --output json
+aspose-cli review book.xlsx --out book.review-1 --output-format json
 aspose-cli cells render book.xlsx --sheet Sales --range A1:G20 --out zoom.png
 ```
 
@@ -102,8 +102,8 @@ While looking, check for:
 ## Tier 3: semantic
 
 ```
-aspose-cli cells inspect book.xlsx --detail errors --output json
-aspose-cli cells query search book.xlsx --pattern "TBD|TODO|xxx|\{\{" --regex --output json
+aspose-cli cells inspect book.xlsx --detail errors --output-format json
+aspose-cli cells query search book.xlsx --pattern "TBD|TODO|xxx|\{\{" --regex --output-format json
 ```
 
 `workbook.formulaErrors` must be empty; guard a division that can meet zero
@@ -117,7 +117,7 @@ what they should roughly be.
 ## Tier 4: session diff
 
 ```
-aspose-cli cells compare book.backup.xlsx book.xlsx --output json
+aspose-cli cells compare book.backup.xlsx book.xlsx --output-format json
 ```
 
 - It compares stored cell values and formula text only (`--compare values`

@@ -20,15 +20,15 @@ top-left origin against the visible, rotated page box.
 2. Inspect structure and security, then read only the pages you need:
 
    ```powershell
-   aspose-cli pdf inspect input.pdf --preview --detail metadata permissions forms signatures attachments outline fonts --output json
-   aspose-cli pdf query pages input.pdf --pages 1-5 --mode layout --output json
+   aspose-cli pdf inspect input.pdf --sample --detail metadata permissions forms signatures attachments outline fonts --output-format json
+   aspose-cli pdf query pages input.pdf --pages 1-5 --mode layout --output-format json
    ```
 
 3. Put all related changes in one `pdf edit` batch with `--verify`
    ([editing](references/editing.md)):
 
    ```powershell
-   aspose-cli pdf edit input.pdf --ops ops.json --out output.pdf --verify --output json
+   aspose-cli pdf edit input.pdf --ops ops.json --out output.pdf --verify --output-format json
    ```
 
 4. Convert to PDF/A, then validate the file you deliver; a later edit can break
@@ -64,7 +64,7 @@ both a width and a height takes the proportions of its viewBox.
 
 ## Preview and licensing
 
-`aspose-cli preview open report.pdf --open` shows the `pages` view: pages, thumbnails,
+`aspose-cli preview open report.pdf` shows the `pages` view: pages, thumbnails,
 the size of the page in view, zoom and a mark on what a change touched
 (`aspose-cli docs preview`). Without a PDF license, output is watermarked and
 results carry `EVAL_MODE`; `review` reports such pages as

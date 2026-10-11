@@ -16,13 +16,13 @@ recipes.
 Run these once per session:
 
 ```powershell
-aspose-cli --version --output json
-aspose-cli doctor --output json
-aspose-cli license status --output json
-aspose-cli capabilities --summary --output json
+aspose-cli --version --output-format json
+aspose-cli doctor --output-format json
+aspose-cli license status --output-format json
+aspose-cli capabilities --summary --output-format json
 ```
 
-- `--version --output json` reports `cliVersion`, `sourceRevision`,
+- `--version --output-format json` reports `cliVersion`, `sourceRevision`,
   `buildDirty` and each product's `enginePins`, the same values as
   `capabilities`; plain `--version` prints only the version text.
 - `doctor` reports `ok` and one entry per check (`cli`, `runtime`,
@@ -88,7 +88,7 @@ override the choice.
 10. **Serialize writes to one file.** Parallel reads are safe; concurrent
     writes to the same file are not.
 
-Pass `--output json` (indented) or `--output compact` (the same JSON on one
+Pass `--output-format json` (indented) or `--output-format compact` (the same JSON on one
 line) whenever you parse a result. Every result names its `schema`;
 `aspose-cli schema <id>` prints that JSON Schema.
 

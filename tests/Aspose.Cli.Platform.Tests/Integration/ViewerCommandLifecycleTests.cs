@@ -47,7 +47,7 @@ public sealed class ViewerCommandLifecycleTests
             }
 
             JsonNode discovered = Assert.Single(
-                workspace.Run("preview", "status", id, "--output", "json").Json()["sessions"]!.AsArray())!;
+                workspace.Run("preview", "status", id, "--output-format", "json").Json()["sessions"]!.AsArray())!;
             Assert.Equal(url, discovered["url"]!.GetValue<string>());
 
             JsonNode again = Start(workspace, "book.xlsx");
@@ -69,19 +69,19 @@ public sealed class ViewerCommandLifecycleTests
             // One service, one process: only the document changes.
             Assert.Equal(first["pid"]!.GetValue<int>(), other["pid"]!.GetValue<int>());
             Assert.NotEqual(url, other["url"]!.GetValue<string>());
-            JsonNode status = workspace.Run("preview", "status", "--output", "json").Json();
+            JsonNode status = workspace.Run("preview", "status", "--output-format", "json").Json();
             Assert.Equal(2, status["sessions"]!.AsArray().Count);
 
-            JsonNode stoppedOne = workspace.Run("preview", "stop", id, "--output", "json").Json();
+            JsonNode stoppedOne = workspace.Run("preview", "stop", id, "--output-format", "json").Json();
             Assert.Equal(id, Assert.Single(stoppedOne["stopped"]!.AsArray())!.GetValue<string>());
-            JsonNode stoppedAll = workspace.Run("preview", "stop", "--all", "--output", "json").Json();
+            JsonNode stoppedAll = workspace.Run("preview", "stop", "--all", "--output-format", "json").Json();
             Assert.Single(stoppedAll["stopped"]!.AsArray());
             Assert.Empty(stoppedAll["sessions"]!.AsArray());
-            Assert.Empty(workspace.Run("preview", "status", "--output", "json").Json()["sessions"]!.AsArray());
+            Assert.Empty(workspace.Run("preview", "status", "--output-format", "json").Json()["sessions"]!.AsArray());
         }
         finally
         {
-            workspace.Run("preview", "stop", "--all", "--output", "json");
+            workspace.Run("preview", "stop", "--all", "--output-format", "json");
         }
     }
 
@@ -91,7 +91,7 @@ public sealed class ViewerCommandLifecycleTests
         using var workspace = new TempWorkspace();
         using var documents = new TempDirectory();
         string book = documents.File("book.xlsx");
-        workspace.Run("cells", "create", book, "--sheets", "Data", "--output", "json").Succeeded();
+        workspace.Run("cells", "create", book, "--sheets", "Data", "--output-format", "json").Succeeded();
         string moved = workspace.Path + "-moved";
         try
         {
@@ -108,7 +108,7 @@ public sealed class ViewerCommandLifecycleTests
             {
                 Directory.Move(moved, workspace.Path);
             }
-            workspace.Run("preview", "stop", "--all", "--output", "json");
+            workspace.Run("preview", "stop", "--all", "--output-format", "json");
         }
     }
 
@@ -119,7 +119,7 @@ public sealed class ViewerCommandLifecycleTests
         File.WriteAllText(workspace.File("broken.docx"), "not a document");
         try
         {
-            CliResult result = workspace.Run("preview", "open", "broken.docx", "--output", "json");
+            CliResult result = workspace.Run("preview", "open", "broken.docx", "--no-open", "--output-format", "json");
 
             Assert.NotEqual(0, result.ExitCode);
             JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
@@ -128,19 +128,19 @@ public sealed class ViewerCommandLifecycleTests
         }
         finally
         {
-            workspace.Run("preview", "stop", "--all", "--output", "json");
+            workspace.Run("preview", "stop", "--all", "--output-format", "json");
         }
     }
 
     private static JsonNode Start(TempWorkspace workspace, string file) =>
-        workspace.Run("preview", "open", file, "--output", "json").Json();
+        workspace.Run("preview", "open", file, "--no-open", "--output-format", "json").Json();
 
     private static void CreateWorkbook(TempWorkspace workspace, string file) =>
-        workspace.Run("cells", "create", file, "--sheets", "Data", "--output", "json").Succeeded();
+        workspace.Run("cells", "create", file, "--sheets", "Data", "--output-format", "json").Succeeded();
 
     private static void CreateDocument(TempWorkspace workspace, string file)
     {
         File.WriteAllText(workspace.File("report.md"), "# Report\n\nOne paragraph.\n");
-        workspace.Run("words", "create", file, "--markdown", "report.md", "--output", "json").Succeeded();
+        workspace.Run("words", "create", file, "--markdown", "report.md", "--output-format", "json").Succeeded();
     }
 }

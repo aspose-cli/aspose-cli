@@ -43,7 +43,7 @@ internal static partial class ContractRules
         Dictionary<string, string?> variables = invocation.Env.ToDictionary(static pair => pair.Key, static pair => (string?)pair.Value);
         var environment = CliEnvironment.Evaluation(Path.GetDirectoryName(workspace.ConfigDirectory)!, variables);
         CliResult result = new CliProcess(CliRunner.ExecutablePath, environment)
-            .Run(workspace.Path, string.Empty, [.. invocation.Args, "--output", "json"]);
+            .Run(workspace.Path, string.Empty, [.. invocation.Args, "--output-format", "json"]);
         if (result.ExitCode != 0 || JsonNode.Parse(result.StdOut) is not JsonObject document)
         {
             return [$"the sample exited {result.ExitCode} without a result"];

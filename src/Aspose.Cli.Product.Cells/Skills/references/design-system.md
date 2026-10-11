@@ -19,8 +19,8 @@ Two regimes:
 Detection is two cheap reads:
 
 ```sh
-aspose-cli cells inspect book.xlsx --detail fonts --output json
-aspose-cli cells query range book.xlsx --sheet Data --range A1:I3 --scope styles --output json
+aspose-cli cells inspect book.xlsx --detail fonts --output-format json
+aspose-cli cells query range book.xlsx --sheet Data --range A1:I3 --scope styles --output-format json
 ```
 
 `--scope styles` maps each cell to a deduplicated `styles` pool — sample the
@@ -437,9 +437,9 @@ one depends on it:
    review again until every box below ticks, for at most three rounds.
 
 ```sh
-aspose-cli review book.xlsx --out scratch/book.review-1 --output json
+aspose-cli review book.xlsx --out scratch/book.review-1 --output-format json
 aspose-cli cells render book.xlsx --sheet Data --range A1:I12 --out scratch/data.png --overwrite
-aspose-cli cells inspect book.xlsx --detail errors --output json
+aspose-cli cells inspect book.xlsx --detail errors --output-format json
 ```
 
 Self-grade against this checklist while looking at the PNGs:

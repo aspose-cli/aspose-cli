@@ -74,8 +74,8 @@ public sealed class RenderFormatTests
                 (string product, string? output, _) = cases[index];
                 string input = $"input.{ScenarioFixtures.PrimaryFormat(product)}";
                 string[] arguments = output is null
-                    ? [product, "render", input, "--output", "json"]
-                    : [product, "render", input, "--out", output, "--output", "json"];
+                    ? [product, "render", input, "--output-format", "json"]
+                    : [product, "render", input, "--out", output, "--output-format", "json"];
                 runs[index] = (arguments, workspaces[product].Run(arguments));
             });
 

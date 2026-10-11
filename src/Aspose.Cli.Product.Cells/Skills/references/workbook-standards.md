@@ -78,7 +78,7 @@ owe: `convert` coerces ISO-8601 dates into real datetimes *and* applies
 ```sh
 printf 'id,opened,amount\n1,2026-03-02,1200\n' > tickets.csv
 aspose-cli cells convert tickets.csv --to xlsx
-aspose-cli cells query range tickets.xlsx --sheet tickets --range B2 --scope full --output json
+aspose-cli cells query range tickets.xlsx --sheet tickets --range B2 --scope full --output-format json
 # -> {"v":"2026-03-02","t":"datetime"}, style numberFormat "yyyy-mm-dd"
 ```
 
@@ -137,7 +137,7 @@ workbook whose first batch sets Calibri still declares both) — that is a
 leftover, not a stray cell:
 
 ```sh
-aspose-cli cells inspect book.xlsx --detail fonts --output json   # workbook.fonts -> ["Arial","Calibri"]
+aspose-cli cells inspect book.xlsx --detail fonts --output-format json   # workbook.fonts -> ["Arial","Calibri"]
 ```
 
 ## Formulas, not hardcodes

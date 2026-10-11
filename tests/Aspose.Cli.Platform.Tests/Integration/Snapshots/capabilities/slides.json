@@ -264,9 +264,7 @@
           ".jpeg",
           ".jpg"
         ],
-        "aliases": [
-          "jpg"
-        ],
+        "aliases": [],
         "uses": [
           "convert",
           "render"
@@ -719,8 +717,8 @@
             "hasDefault": true,
             "default": "false",
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": false,
             "valueSource": "command-line",
@@ -770,8 +768,8 @@
             "hidden": false,
             "hasDefault": true,
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": true,
             "valueSource": "stdin",
@@ -925,8 +923,8 @@
             "hasDefault": true,
             "default": "false",
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": false,
             "valueSource": "command-line",
@@ -1004,8 +1002,8 @@
             "hasDefault": true,
             "default": "false",
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": false,
             "valueSource": "command-line",
@@ -1024,8 +1022,8 @@
             "hasDefault": true,
             "default": "false",
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": false,
             "valueSource": "command-line",
@@ -1044,8 +1042,8 @@
             "hasDefault": true,
             "default": "false",
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": false,
             "valueSource": "command-line",
@@ -1128,8 +1126,8 @@
             "hasDefault": true,
             "default": "false",
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": false,
             "valueSource": "command-line",
@@ -1182,8 +1180,8 @@
             "hasDefault": true,
             "default": "false",
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": false,
             "valueSource": "command-line",
@@ -1233,8 +1231,8 @@
             "hidden": false,
             "hasDefault": true,
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": true,
             "valueSource": "stdin",
@@ -1293,8 +1291,8 @@
             "hasDefault": true,
             "default": "false",
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": false,
             "valueSource": "command-line",
@@ -1344,8 +1342,8 @@
             "hidden": false,
             "hasDefault": true,
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": true,
             "valueSource": "stdin",
@@ -1480,8 +1478,8 @@
             "hidden": false,
             "hasDefault": true,
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": true,
             "valueSource": "stdin",
@@ -1489,7 +1487,7 @@
             "description": "Read the password for the presentation from the first line of stdin."
           },
           {
-            "name": "--preview",
+            "name": "--sample",
             "aliases": [],
             "type": "boolean",
             "minimumArity": 0,
@@ -1500,13 +1498,13 @@
             "hasDefault": true,
             "default": "false",
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": false,
             "valueSource": "command-line",
             "inputKind": "none",
-            "description": "Include a bounded preview: each slide's title and up to 240 characters of its text. Default: off."
+            "description": "Include a bounded sample: each slide's title and up to 240 characters of its text. Default: off."
           }
         ],
         "arguments": [
@@ -1553,8 +1551,8 @@
             "hasDefault": true,
             "default": "false",
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": false,
             "valueSource": "command-line",
@@ -1621,8 +1619,8 @@
             "hidden": false,
             "hasDefault": true,
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": true,
             "valueSource": "stdin",
@@ -1657,8 +1655,8 @@
             "hasDefault": true,
             "default": "false",
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": false,
             "valueSource": "command-line",
@@ -1756,8 +1754,8 @@
             "hasDefault": true,
             "default": "false",
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": false,
             "valueSource": "command-line",
@@ -1807,8 +1805,8 @@
             "hidden": false,
             "hasDefault": true,
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": true,
             "valueSource": "stdin",
@@ -1888,8 +1886,8 @@
             "hasDefault": true,
             "default": "false",
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": false,
             "valueSource": "command-line",
@@ -1959,8 +1957,8 @@
             "hasDefault": true,
             "default": "false",
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": false,
             "valueSource": "command-line",
@@ -2010,8 +2008,8 @@
             "hidden": false,
             "hasDefault": true,
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": true,
             "valueSource": "stdin",
@@ -4775,11 +4773,11 @@
               "type": "string"
             },
             "title": {
-              "description": "The slide's title text; only with --preview, and omitted when the slide has no title.",
+              "description": "The slide's title text; only with --sample, and omitted when the slide has no title.",
               "type": "string"
             },
             "previewText": {
-              "description": "The slide's shape text joined by · , at most 240 characters; only with --preview, and omitted when the slide has no text.",
+              "description": "The slide's shape text joined by · , at most 240 characters; only with --sample, and omitted when the slide has no text.",
               "type": "string",
               "maxLength": 240
             },

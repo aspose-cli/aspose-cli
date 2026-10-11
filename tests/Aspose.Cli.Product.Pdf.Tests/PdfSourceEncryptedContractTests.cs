@@ -35,8 +35,8 @@ public sealed class PdfSourceEncryptedContractTests : IDisposable
         File.WriteAllText(
             _workspace.File("encrypt.json"),
             $$"""{"ops":[{"op":"encrypt","userPasswordEnv":"{{UserPassword}}","ownerPasswordEnv":"{{OwnerPassword}}"}]}""");
-        Succeeds(_workspace.Run("pdf", "create", "plain.pdf", "--from-text", "text.txt", "--license", license, "--output", "json"));
-        Succeeds(_workspace.RunWithEnv(passwords, "pdf", "edit", "plain.pdf", "--ops", "encrypt.json", "--out", "locked.pdf", "--license", license, "--output", "json"));
+        Succeeds(_workspace.Run("pdf", "create", "plain.pdf", "--from-text", "text.txt", "--license", license, "--output-format", "json"));
+        Succeeds(_workspace.RunWithEnv(passwords, "pdf", "edit", "plain.pdf", "--ops", "encrypt.json", "--out", "locked.pdf", "--license", license, "--output-format", "json"));
 
         // The runs are independent, so they run at once, beside the load of the published schemas.
         (string Name, bool Encrypted, CliResult Result)[] runs = [];
@@ -52,7 +52,7 @@ public sealed class PdfSourceEncryptedContractTests : IDisposable
                         run.Encrypted,
                         _workspace.RunWithEnv(
                             passwords,
-                            [.. run.Command, "--license", license, "--output", "json", .. run.Encrypted ? new[] { "--password-env", UserPassword } : []]))),
+                            [.. run.Command, "--license", license, "--output-format", "json", .. run.Encrypted ? new[] { "--password-env", UserPassword } : []]))),
             ]);
 
         var problems = new List<string>();

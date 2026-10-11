@@ -336,7 +336,7 @@ public sealed partial class SkillNameTests(DocumentationContractFixture fixture)
 
     private JsonNode Capabilities()
     {
-        CliResult result = _workspace.Run("capabilities", "--output", "json");
+        CliResult result = _workspace.Run("capabilities", "--output-format", "json");
         Assert.True(result.ExitCode == 0, result.StdErr);
         return JsonNode.Parse(result.StdOut)!;
     }

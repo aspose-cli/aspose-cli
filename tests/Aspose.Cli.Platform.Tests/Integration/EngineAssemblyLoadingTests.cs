@@ -75,7 +75,7 @@ public sealed class EngineAssemblyLoadingTests : IDisposable
     public void CatalogCommandTreeHelpAndCapabilities_LoadNoEngine()
     {
         var offenders = new List<string>();
-        (CliResult capabilities, _) = Probe(offenders, "capabilities", "--output", "json");
+        (CliResult capabilities, _) = Probe(offenders, "capabilities", "--output-format", "json");
         Assert.True(capabilities.ExitCode == 0, capabilities.StdErr);
         JsonNode document = JsonNode.Parse(capabilities.StdOut)!;
 
@@ -97,13 +97,13 @@ public sealed class EngineAssemblyLoadingTests : IDisposable
             .Select(static product => product!["id"]!.GetValue<string>())
             .ToArray();
         Assert.NotEmpty(products);
-        Probe(offenders, "capabilities", "--summary", "--output", "json");
+        Probe(offenders, "capabilities", "--summary", "--output-format", "json");
         foreach (string product in products)
         {
-            (CliResult described, _) = Probe(offenders, "capabilities", product, "--output", "json");
+            (CliResult described, _) = Probe(offenders, "capabilities", product, "--output-format", "json");
             Assert.True(described.ExitCode == 0, described.StdErr);
         }
-        Probe(offenders, "--version", "--output", "json");
+        Probe(offenders, "--version", "--output-format", "json");
 
         Assert.True(
             offenders.Count == 0,
@@ -124,7 +124,7 @@ public sealed class EngineAssemblyLoadingTests : IDisposable
         File.WriteAllText(_workspace.File("control.txt"), "Control");
         var offenders = new List<string>();
 
-        (CliResult result, string[] loaded) = Probe(offenders, [.. args, "--output", "json"]);
+        (CliResult result, string[] loaded) = Probe(offenders, [.. args, "--output-format", "json"]);
 
         Assert.True(result.ExitCode == 0, $"{string.Join(' ', args)} exited {result.ExitCode}: {result.StdErr}");
         Assert.Contains(engine, loaded, StringComparer.OrdinalIgnoreCase);

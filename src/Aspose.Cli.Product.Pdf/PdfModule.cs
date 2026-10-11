@@ -52,8 +52,8 @@ public sealed class PdfModule : IProductModule
 
     private static CommandHelp Help() => new(
         [
-            "pdf inspect report.pdf --preview --detail permissions forms signatures",
-            "pdf query pages report.pdf --pages 1-5 --mode layout --output json",
+            "pdf inspect report.pdf --sample --detail permissions forms signatures",
+            "pdf query pages report.pdf --pages 1-5 --mode layout --output-format json",
             "pdf edit report.pdf --ops ops.json --out reviewed.pdf",
             "pdf sign reviewed.pdf --certificate signer.pfx --certificate-password-env PDF_SIGNING_PASSWORD --out approved.pdf",
         ],

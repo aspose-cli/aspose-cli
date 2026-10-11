@@ -32,8 +32,7 @@ public static class CellsFormats
         FormatDescriptor.Declare("md", FormatUse.Convert, null, 14, null, false, ".md", ".markdown")
             with { Aliases = ["markdown"] },
         FormatDescriptor.Declare("png", FormatUse.Render, null, null, 0, false, ".png"),
-        FormatDescriptor.Declare("jpeg", FormatUse.Render, null, null, 1, false, ".jpg", ".jpeg")
-            with { Aliases = ["jpg"] },
+        FormatDescriptor.Declare("jpeg", FormatUse.Render, null, null, 1, false, ".jpg", ".jpeg"),
         FormatDescriptor.Declare("svg", FormatUse.Render, null, null, 2, false, ".svg"),
     ], CellsFormatRecognition.Rules);
 

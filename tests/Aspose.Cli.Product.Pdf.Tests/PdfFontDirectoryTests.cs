@@ -49,10 +49,10 @@ public sealed class PdfFontDirectoryTests
         FontFixtures.WriteUniqueFont(workspace.File("fonts"));
         string watermark = $$"""{"ops":[{"op":"add_watermark_text","text":"Draft","font":"{{FontFixtures.UniqueFamily}}"}]}""";
 
-        CliResult ambientConvert = workspace.Run("pdf", "convert", "fixture.pdf", "--to", "pdfa-2b", "--out", "ambient-a.pdf", "--output", "json");
-        CliResult fontsConvert = workspace.Run("pdf", "convert", "fixture.pdf", "--to", "pdfa-2b", "--out", "fonts-a.pdf", "--font-dir", "fonts", "--output", "json");
-        CliResult ambientEdit = workspace.Run("pdf", "edit", "fixture.pdf", "--ops", watermark, "--out", "ambient-edit.pdf", "--output", "json");
-        CliResult fontsEdit = workspace.Run("pdf", "edit", "fixture.pdf", "--ops", watermark, "--out", "fonts-edit.pdf", "--font-dir", "fonts", "--output", "json");
+        CliResult ambientConvert = workspace.Run("pdf", "convert", "fixture.pdf", "--to", "pdfa-2b", "--out", "ambient-a.pdf", "--output-format", "json");
+        CliResult fontsConvert = workspace.Run("pdf", "convert", "fixture.pdf", "--to", "pdfa-2b", "--out", "fonts-a.pdf", "--font-dir", "fonts", "--output-format", "json");
+        CliResult ambientEdit = workspace.Run("pdf", "edit", "fixture.pdf", "--ops", watermark, "--out", "ambient-edit.pdf", "--output-format", "json");
+        CliResult fontsEdit = workspace.Run("pdf", "edit", "fixture.pdf", "--ops", watermark, "--out", "fonts-edit.pdf", "--font-dir", "fonts", "--output-format", "json");
 
         Assert.NotEqual(0, ambientConvert.ExitCode);
         Assert.Contains("AsposeCLIFixtureSans", ambientConvert.StdErr, StringComparison.Ordinal);

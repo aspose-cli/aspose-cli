@@ -116,7 +116,7 @@ internal sealed class ViewerServiceClient
             start.ArgumentList.Add(requestedPort.ToString(System.Globalization.CultureInfo.InvariantCulture));
         }
         start.ArgumentList.Add("--quiet");
-        start.ArgumentList.Add("--output");
+        start.ArgumentList.Add("--output-format");
         start.ArgumentList.Add("json");
         start.WorkingDirectory = SelfProcessLauncher.ServiceWorkingDirectory;
         string workDirectory = Path.GetFullPath(globals.WorkDir ?? Directory.GetCurrentDirectory());

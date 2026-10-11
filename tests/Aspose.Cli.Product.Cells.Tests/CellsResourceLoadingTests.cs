@@ -149,7 +149,7 @@ public sealed class CellsResourceLoadingTests
         await using var server = new ResourceHttpServer();
         File.WriteAllText(workspace.File("input.html"),
             $"<html><body><table><tr><td>Old value</td></tr></table><img src='{server.Url}/image.png'></body></html>");
-        CliResult inspected = workspace.Run("cells", "inspect", "input.html", "--output", "json");
+        CliResult inspected = workspace.Run("cells", "inspect", "input.html", "--output-format", "json");
         Assert.True(inspected.ExitCode == 0, inspected.StdErr);
         string sheet = System.Text.Json.Nodes.JsonNode.Parse(inspected.StdOut)!["workbook"]!["sheets"]![0]!["name"]!.GetValue<string>();
         string ops = System.Text.Json.JsonSerializer.Serialize(new
@@ -157,7 +157,7 @@ public sealed class CellsResourceLoadingTests
             ops = new[] { new { op = "set_values", sheet, range = "A1", values = new[] { new[] { "New value" } } } },
         });
         CliResult edited = workspace.Run("cells", "edit", "input.html", "--ops", ops,
-            "--out", "edited.xlsx", "--verify", "--output", "json");
+            "--out", "edited.xlsx", "--verify", "--output-format", "json");
         Assert.Equal(8, edited.ExitCode);
         var verification = System.Text.Json.Nodes.JsonNode.Parse(edited.StdOut)!["verification"]!;
         Assert.False(verification["ok"]!.GetValue<bool>());
@@ -196,7 +196,7 @@ public sealed class CellsResourceLoadingTests
             ops = new[] { new { op = "insert_image", sheet = "Data", at = "B2", path = workspace.File(name) } },
         });
 
-        CliResult edited = workspace.Run("cells", "edit", "source.xlsx", "--ops", ops, "--out", "result.xlsx", "--output", "json");
+        CliResult edited = workspace.Run("cells", "edit", "source.xlsx", "--ops", ops, "--out", "result.xlsx", "--output-format", "json");
 
         if (refused)
         {

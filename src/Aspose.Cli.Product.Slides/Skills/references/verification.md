@@ -6,9 +6,9 @@ This page covers what is specific to presentations.
 ## Content
 
 ```powershell
-aspose-cli slides inspect deck.revised.pptx --preview --detail layouts fonts notes sections properties --output json
-aspose-cli slides query slides deck.revised.pptx --slides 1- --scope full --notes --output json
-aspose-cli slides query search deck.revised.pptx --pattern TODO --scope all --output json
+aspose-cli slides inspect deck.revised.pptx --sample --detail layouts fonts notes sections properties --output-format json
+aspose-cli slides query slides deck.revised.pptx --slides 1- --scope full --notes --output-format json
+aspose-cli slides query search deck.revised.pptx --pattern TODO --scope all --output-format json
 ```
 
 `--max-chars` bounds all returned title, text, run, note and comment text; addressing and
@@ -22,7 +22,7 @@ and column by column, and each chart as its type, its title and a table of its v
 per category and one column per series:
 
 ```powershell
-aspose-cli slides convert deck.revised.pptx --to md --slides 4-6 --out deck.revised.md --output json
+aspose-cli slides convert deck.revised.pptx --to md --slides 4-6 --out deck.revised.md --output-format json
 ```
 
 Compare these values with the ones the batch wrote before you report them. In evaluation mode
@@ -33,7 +33,7 @@ axis ranges, labels and clipping.
 ## Appearance
 
 ```powershell
-aspose-cli review deck.revised.pptx --out deck.review-1 --output json
+aspose-cli review deck.revised.pptx --out deck.review-1 --output-format json
 ```
 
 The Slides checks (`SLIDES_*` in `capabilities` under `review.checks`) flag shapes outside the
@@ -58,7 +58,7 @@ slide in its `location`.
 After fixing one kind of finding, a later round can focus on it while you still open every image:
 
 ```powershell
-aspose-cli review deck.revised.pptx --out deck.review-2 --code SLIDES_SHAPE_OUTSIDE_SLIDE --code SLIDES_TEXT_TOO_SMALL --output json
+aspose-cli review deck.revised.pptx --out deck.review-2 --code SLIDES_SHAPE_OUTSIDE_SLIDE --code SLIDES_TEXT_TOO_SMALL --output-format json
 ```
 
 Checks do not see everything. In every image, look at title hierarchy, text in rotated shapes,

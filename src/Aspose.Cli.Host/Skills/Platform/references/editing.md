@@ -9,7 +9,7 @@ The ops document is a JSON object with an `ops` array; each entry names its
 The generated schema is the only field reference. Ask it instead of guessing:
 
 ```powershell
-aspose-cli capabilities pdf edit --output json
+aspose-cli capabilities pdf edit --output-format json
 aspose-cli schema v2/pdf/ops --operation encrypt
 aspose-cli schema v2/pdf/ops
 ```

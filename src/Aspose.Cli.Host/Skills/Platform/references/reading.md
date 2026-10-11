@@ -5,7 +5,7 @@ that answers the question; never dump a whole document.
 
 ## Output formats
 
-`--output` selects `json` (indented contract envelopes), `compact` (the same
+`--output-format` selects `json` (indented contract envelopes), `compact` (the same
 JSON on one line, fewer tokens), `table` (human text) or `markdown`. The
 default is `table` on a terminal and `json` when stdout is redirected. Parse
 `json` or `compact`. Results go to stdout; an error envelope goes to stderr.
@@ -16,7 +16,7 @@ can be diffed.
 
 | Rung | Command | Answers |
 |------|---------|---------|
-| 1. Structure | `<product> inspect` | Counts, names, ids, properties; `--detail <kinds...>` adds lists, `--preview` adds a sample |
+| 1. Structure | `<product> inspect` | Counts, names, ids, properties; `--detail <kinds...>` adds lists, `--sample` adds a sample |
 | 2. Window | `cells query range`, `pdf query pages`, `slides query slides`, `words query blocks` | The content of a selected range, pages, slides or blocks |
 | 3. Search | `<product> query search` | Where a pattern occurs, with `--regex` and `--case-sensitive` |
 | 4. Look | `review`, `<product> render` | What data cannot show: layout, clipping, overlap, charts |
@@ -42,7 +42,7 @@ Every bounded read and search reports `window` after its payload:
   "unit": "hit",
   "returned": 2,
   "truncated": true,
-  "next": "aspose-cli cells query search \"C:\\work\\book.xlsx\" --pattern x --scope values --max-hits 2 --skip 2 --output json"
+  "next": "aspose-cli cells query search \"C:\\work\\book.xlsx\" --pattern x --scope values --max-hits 2 --skip 2 --output-format json"
 }
 ```
 

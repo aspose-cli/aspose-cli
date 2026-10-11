@@ -14,7 +14,7 @@ namespace Aspose.Cli.Invariants.Tests;
 /// <summary>
 /// Runs operation samples and compares documents for the behavior rules. A document's state is
 /// what the product's own commands say about it: <c>inspect</c> with every <c>--detail</c> section
-/// and <c>--preview</c>, and every read command (each sheet of a workbook) with its fullest scope,
+/// and <c>--sample</c>, and every read command (each sheet of a workbook) with its fullest scope,
 /// without the envelope, the file identity and timestamps. Two documents differ when their states
 /// differ, when their package parts differ (Office formats, relationship order and the saved time
 /// aside) or, for other formats, when their rendered pages differ.
@@ -195,9 +195,9 @@ internal static partial class OperationRuns
             args.Add("--detail");
             args.AddRange(detail.AllowedValues);
         }
-        if (command.Has("--preview"))
+        if (command.Has("--sample"))
         {
-            args.Add("--preview");
+            args.Add("--sample");
         }
         if (command.Option("--scope") is { } scope && scope.AllowedValues.Contains("full"))
         {

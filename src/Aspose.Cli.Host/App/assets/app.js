@@ -456,7 +456,7 @@
         card.append(node(
           'div',
           'skill-line',
-          'aspose-cli skill install ' + skill.name + ' --host codex --scope project'));
+          'aspose-cli skill install ' + skill.name + ' --host codex'));
       }
       root.append(card);
     });
@@ -546,7 +546,7 @@
       var command = node('div', 'agent-command');
       command.append(
         node('strong', '', skill.product ? (product ? product.name : skill.product) : 'Platform'),
-        node('span', '', 'aspose-cli skill install ' + skill.name + ' --host codex --scope project'));
+        node('span', '', 'aspose-cli skill install ' + skill.name + ' --host codex'));
       root.append(command);
     });
   }

@@ -26,7 +26,7 @@ public sealed class PdfAuxiliaryInputTests
         string ops = JsonSerializer.Serialize(new { ops = new[] { new
         { op = "add_attachment", path = workspace.File("attachment.bin") } } });
         var args = new List<string> { "pdf", "edit", "source.pdf", "--ops", ops, "--out", "result.pdf",
-            "--max-input-bytes", limit.ToString(CultureInfo.InvariantCulture), "--output", "json" };
+            "--max-input-bytes", limit.ToString(CultureInfo.InvariantCulture), "--output-format", "json" };
         if (bestEffort) { args.AddRange(["--best-effort", "--timeout", "60"]); }
         CliResult result = workspace.Run(args.ToArray());
         Assert.NotEqual(0, result.ExitCode);
@@ -49,7 +49,7 @@ public sealed class PdfAuxiliaryInputTests
         string path = absolute ? workspace.File("vendor-bank.csv") : "vendor-bank.csv";
         string ops = JsonSerializer.Serialize(new { ops = new[] { new { op = "add_attachment", path } } });
 
-        CliResult result = workspace.Run("pdf", "edit", "source.pdf", "--ops", ops, "--out", "result.pdf", "--output", "json");
+        CliResult result = workspace.Run("pdf", "edit", "source.pdf", "--ops", ops, "--out", "result.pdf", "--output-format", "json");
 
         Assert.True(result.ExitCode == 0, result.StdErr);
         using var output = new Document(workspace.File("result.pdf"));

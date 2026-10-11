@@ -58,7 +58,7 @@ internal static class SearchCommand
             },
             Examples =
             [
-                "cells query search book.xlsx --pattern TODO --output json",
+                "cells query search book.xlsx --pattern TODO --output-format json",
                 "cells query search book.xlsx --pattern SUM --scope formulas --max-hits 10",
             ],
         };

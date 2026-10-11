@@ -40,13 +40,13 @@ public sealed class AppLicenseChangeTests
         }
         finally
         {
-            Assert.Equal(0, workspace.Run("app", "stop", "--output", "json").ExitCode);
+            Assert.Equal(0, workspace.Run("app", "stop", "--output-format", "json").ExitCode);
         }
     }
 
     private static JsonNode Start(TempWorkspace workspace)
     {
-        CliResult result = workspace.Run("app", "--no-open", "--output", "json");
+        CliResult result = workspace.Run("app", "--no-open", "--output-format", "json");
         Assert.True(result.ExitCode == 0, result.StdErr);
         Assert.Empty(result.StdErr);
         return JsonNode.Parse(result.StdOut)!;

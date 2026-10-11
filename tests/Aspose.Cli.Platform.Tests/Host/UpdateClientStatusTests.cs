@@ -99,7 +99,7 @@ public sealed class UpdateClientStatusTests : IDisposable
         using var workspace = new TempWorkspace();
 
         CliResult result = workspace.Run(
-            "update", "check", $"https://127.0.0.1:{port}/RELEASE-MANIFEST.json", "--output", "json");
+            "update", "check", $"https://127.0.0.1:{port}/RELEASE-MANIFEST.json", "--output-format", "json");
 
         Assert.NotEqual(0, result.ExitCode);
         Assert.NotEqual(130, result.ExitCode);

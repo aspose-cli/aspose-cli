@@ -14,7 +14,7 @@ outputs keep revisions is in [editing](editing.md#save-and-verify).
 the reviewer change?" needs no accepted or rejected copies:
 
 ```powershell
-aspose-cli words inspect contract.docx --detail revisions --output json
+aspose-cli words inspect contract.docx --detail revisions --output-format json
 ```
 
 ```json
@@ -83,7 +83,7 @@ A decision by number fails with `OPS_INVALID` before anything changes when:
 `words compare` refuses inputs that already contain revisions (`DOCUMENT_HAS_REVISIONS`); list them with `--detail revisions` above. To compare anyway, make reviewed copies first, explicitly accept or reject revisions there, then compare:
 
 ```powershell
-aspose-cli words compare original.docx changed.docx --out redline.docx --author "Legal Review" --output json
+aspose-cli words compare original.docx changed.docx --out redline.docx --author "Legal Review" --output-format json
 ```
 
 The redline's revisions are attributed to `--author`, or to `Aspose CLI`

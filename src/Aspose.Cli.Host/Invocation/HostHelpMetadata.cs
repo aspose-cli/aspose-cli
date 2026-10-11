@@ -10,14 +10,14 @@ internal static class HostHelpMetadata
         root.WithExamples(
             [
                 "app",
-                "capabilities --output json",
+                "capabilities --output-format json",
                 "review <file> --max-items 50",
                 "schema",
             ],
             [
                 new("aspose-cli docs", "offline documentation bundled in this binary"),
                 new("aspose-cli schema", "the available JSON Schema identifiers"),
-                new("aspose-cli capabilities --output json", "verbs, formats and operations as data"),
+                new("aspose-cli capabilities --output-format json", "verbs, formats and operations as data"),
             ]);
         Find(root, "app").WithExamples(
             [
@@ -25,45 +25,46 @@ internal static class HostHelpMetadata
                 "app open <file>",
                 "app --welcome",
                 "app --foreground --port 4680",
-                "app status --output json",
+                "app status --output-format json",
             ],
             [new("aspose-cli docs app", "welcome, files, preview, settings and lifecycle")]);
         Find(root, "preview").WithExamples(
             [
-                "preview open <file> --open --output json",
-                "preview status --output json",
-                "preview stop --all --output json",
+                "preview open <file> --output-format json",
+                "preview status --output-format json",
+                "preview stop --all --output-format json",
             ]);
         Find(root, "review").WithExamples(
             [
                 "review <file>",
-                "review <file> --out evidence --max-items 50 --output json",
+                "review <file> --out evidence --max-items 50 --output-format json",
             ],
             [new("aspose-cli docs verification", "the delivery checklist, the review protocol and filtering by check code")]);
         FindOptional(root, "license")?.WithExamples(
             [
-                "license status --output json",
+                "license status --output-format json",
                 "license install Aspose.Total.lic",
             ]);
         Find(root, "doctor").WithExamples(
-            ["doctor --output json"]);
+            ["doctor --output-format json"]);
         if (FindOptional(root, "fonts") is { } fonts)
         {
             fonts.WithExamples(
-                ["fonts list --output json"]);
+                ["fonts list --output-format json"]);
         }
         Find(root, "docs").WithExamples(["docs"]);
         Find(root, "schema").WithExamples(["schema"]);
         Find(root, "capabilities").WithExamples(
             [
-                "capabilities --output json",
-                "capabilities <product> --output json",
-                "capabilities <product> <verb> --output json",
+                "capabilities --output-format json",
+                "capabilities <product> --output-format json",
+                "capabilities <product> <verb> --output-format json",
             ]);
         Find(root, "skill").WithExamples(
             [
                 "skill list",
-                "skill install <skill> --host codex --scope project",
+                "skill install <skill> --host codex",
+                "skill install <skill> --host claude-code --user",
             ]);
     }
 

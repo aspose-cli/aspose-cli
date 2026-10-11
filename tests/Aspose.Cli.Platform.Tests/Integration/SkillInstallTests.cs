@@ -21,7 +21,7 @@ public sealed class SkillInstallTests : IDisposable
         for (int pass = 0; pass < 2; pass++)
         {
             CliResult installed = _workspace.Run(
-                "skill", "install", skill, "--target", target, "--output", "json");
+                "skill", "install", skill, "--target", target, "--output-format", "json");
             Assert.True(installed.ExitCode == 0, installed.StdErr);
             Assert.True(File.Exists(_workspace.File(Path.Combine(target, skill, "SKILL.md"))));
         }
@@ -32,7 +32,7 @@ public sealed class SkillInstallTests : IDisposable
     {
         DocumentationCommandValidator commands = DocumentationCommandValidator.Read(_workspace);
 
-        CliResult listed = _workspace.Run("skill", "list", "--output", "json");
+        CliResult listed = _workspace.Run("skill", "list", "--output-format", "json");
         Assert.Equal(0, listed.ExitCode);
         string[] skills = Parse(listed.StdOut)["skills"]!
             .AsArray()
@@ -45,7 +45,7 @@ public sealed class SkillInstallTests : IDisposable
             string target = "contract-" + skill;
             CliResult installed = _workspace.Run(
                 "skill", "install", skill, "--target", target,
-                "--output", "json");
+                "--output-format", "json");
             Assert.True(installed.ExitCode == 0, installed.StdErr);
 
             string root = _workspace.File(Path.Combine(target, skill));
@@ -110,7 +110,7 @@ public sealed class SkillInstallTests : IDisposable
 
         CliResult result = _workspace.Run(
             "skill", "install", skill, "--host", host,
-            "--scope", "project", "--dir", "proj", "--output", "json");
+            "--dir", "proj", "--output-format", "json");
 
         Assert.Equal(0, result.ExitCode);
         Assert.True(File.Exists(_workspace.File(
@@ -120,7 +120,7 @@ public sealed class SkillInstallTests : IDisposable
     [Fact]
     public void SkillList_ReportsAllSupportedHosts()
     {
-        CliResult result = _workspace.Run("skill", "list", "--output", "json");
+        CliResult result = _workspace.Run("skill", "list", "--output-format", "json");
 
         Assert.Equal(0, result.ExitCode);
         JsonArray skills = Parse(result.StdOut)["skills"]!.AsArray();
@@ -133,7 +133,7 @@ public sealed class SkillInstallTests : IDisposable
         string skill = FirstSkill();
         string parent = "managed-skill";
         CliResult first = _workspace.Run(
-            "skill", "install", skill, "--target", parent, "--output", "json");
+            "skill", "install", skill, "--target", parent, "--output-format", "json");
         Assert.Equal(0, first.ExitCode);
 
         string root = _workspace.File(Path.Combine(parent, skill));
@@ -162,7 +162,7 @@ public sealed class SkillInstallTests : IDisposable
         File.WriteAllText(manifestPath, unrecognized.ToJsonString());
 
         CliResult refused = _workspace.Run(
-            "skill", "install", skill, "--target", parent, "--output", "json");
+            "skill", "install", skill, "--target", parent, "--output-format", "json");
         Assert.NotEqual(0, refused.ExitCode);
         Assert.Equal(unrecognized.ToJsonString(), File.ReadAllText(manifestPath));
     }
@@ -175,7 +175,7 @@ public sealed class SkillInstallTests : IDisposable
         string skill = FirstSkill();
         string parent = "custom-skill-" + addUnknownFile;
         CliResult first = _workspace.Run(
-            "skill", "install", skill, "--target", parent, "--output", "json");
+            "skill", "install", skill, "--target", parent, "--output-format", "json");
         Assert.Equal(0, first.ExitCode);
 
         string root = _workspace.File(Path.Combine(parent, skill));
@@ -193,7 +193,7 @@ public sealed class SkillInstallTests : IDisposable
         string before = File.ReadAllText(changed);
 
         CliResult second = _workspace.Run(
-            "skill", "install", skill, "--target", parent, "--output", "json");
+            "skill", "install", skill, "--target", parent, "--output-format", "json");
         Assert.Equal(5, second.ExitCode);
         Assert.Equal("OUTPUT_EXISTS", Parse(second.StdErr)["error"]!["code"]!.GetValue<string>());
         Assert.Equal(before, File.ReadAllText(changed));
@@ -216,7 +216,7 @@ public sealed class SkillInstallTests : IDisposable
                 (File.GetAttributes(junction) & FileAttributes.ReparsePoint) != 0);
             CliResult result = _workspace.Run(
                 "skill", "install", skill, "--target", "junction-parent",
-                "--output", "json");
+                "--output-format", "json");
 
             Assert.Equal(5, result.ExitCode);
             JsonNode error = Parse(result.StdErr)["error"]!;
@@ -241,7 +241,7 @@ public sealed class SkillInstallTests : IDisposable
     public void Install_RequiresAnExplicitSkill()
     {
         CliResult result = _workspace.Run(
-            "skill", "install", "--target", "installed", "--output", "json");
+            "skill", "install", "--target", "installed", "--output-format", "json");
 
         Assert.Equal(2, result.ExitCode);
         Assert.Equal(string.Empty, result.StdOut);
@@ -251,7 +251,7 @@ public sealed class SkillInstallTests : IDisposable
 
     private string FirstSkill()
     {
-        CliResult result = _workspace.Run("skill", "list", "--output", "json");
+        CliResult result = _workspace.Run("skill", "list", "--output-format", "json");
         Assert.Equal(0, result.ExitCode);
         return Parse(result.StdOut)["skills"]![0]!["name"]!.GetValue<string>();
     }

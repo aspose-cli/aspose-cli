@@ -13,7 +13,7 @@ internal static class InspectCommand
 
     public static CommandDefinition<InfoRequest, WorkbookInfoResult> Create()
     {
-        var preview = new PreviewOption($"display values of the first --preview-rows rows and up to {SheetInfo.PreviewColumns} columns of each sheet, from A1");
+        var sample = new SampleOption($"display values of the first --preview-rows rows and up to {SheetInfo.PreviewColumns} columns of each sheet, from A1");
         var previewRows = new Option<int>("--preview-rows")
         {
             Description = $"Number of preview rows per sheet (1-{MaxPreviewRows}).",
@@ -29,7 +29,7 @@ internal static class InspectCommand
             "inspect",
             "Show structure and metadata of a workbook.",
             new CommandTraits { Input = CellsInputs.Workbook("Workbook to inspect (xlsx, xlsm, xlsb, xls, ods, csv, ...).") },
-            [.. preview.Options, previewRows, .. detail.Options],
+            [.. sample.Options, previewRows, .. detail.Options],
             (parse, standard) =>
             {
                 int rows = parse.GetValue(previewRows);
@@ -38,7 +38,7 @@ internal static class InspectCommand
                 return new InfoRequest
                 {
                     Input = standard.Input,
-                    IncludePreview = preview.Read(parse),
+                    IncludePreview = sample.Read(parse),
                     PreviewRows = rows,
                     Details = detail.Read(parse),
                     Password = standard.InputPassword,
@@ -48,8 +48,8 @@ internal static class InspectCommand
         {
             Examples =
             [
-                "cells inspect book.xlsx --output json",
-                "cells inspect book.xlsx --detail charts names --preview",
+                "cells inspect book.xlsx --output-format json",
+                "cells inspect book.xlsx --detail charts names --sample",
             ],
         };
     }

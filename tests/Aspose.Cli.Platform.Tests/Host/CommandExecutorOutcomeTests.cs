@@ -21,7 +21,7 @@ public sealed class CommandExecutorOutcomeTests
                 new ProductPreviewStatusResult { Sessions = [] },
                 static (_, _) => WaitOutcome.DeadlineExpired,
                 static () => { }))),
-            "hosted-test", "--timeout", "30", "--output", "json");
+            "hosted-test", "--timeout", "30", "--output-format", "json");
 
         Assert.Equal((int)ExitCode.OperationTimeout, outcome.ExitCode);
         Assert.NotNull(JsonNode.Parse(outcome.StdOut)!["sessions"]);
@@ -35,7 +35,7 @@ public sealed class CommandExecutorOutcomeTests
         Outcome outcome = Invoke((executor, globals) => new Command("cancel-test")
             .WithAction(parse => executor.RunLightweight(parse, globals,
                 static (_, _) => throw new TaskCanceledException("an SDK call gave up"))),
-            "cancel-test", "--output", "json");
+            "cancel-test", "--output-format", "json");
 
         Assert.Equal((int)ExitCode.Internal, outcome.ExitCode);
         Assert.Empty(outcome.StdOut);

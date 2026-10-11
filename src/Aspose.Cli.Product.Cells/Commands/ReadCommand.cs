@@ -94,8 +94,8 @@ internal static class ReadCommand
             },
             Examples =
             [
-                "cells query range book.xlsx --range Sales!A1:D10 --scope values --output json",
-                "cells query range book.xlsx --sheet Sales --scope formulas --output json",
+                "cells query range book.xlsx --range Sales!A1:D10 --scope values --output-format json",
+                "cells query range book.xlsx --sheet Sales --scope formulas --output-format json",
             ],
         };
     }

@@ -47,7 +47,7 @@ public sealed class CellsModule : IProductModule
             .Build();
 
     private static CommandHelp Help() => new(
-        ["cells inspect book.xlsx --output json"],
+        ["cells inspect book.xlsx --output-format json"],
         [
             CommandHelpLink.Docs(Manifest, "editing", "the edit-operation vocabulary and recipes"),
             CommandHelpLink.Docs(Manifest, "workbook-standards", "professional workbook construction guidance"),

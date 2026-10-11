@@ -5,20 +5,20 @@ the file. It is a review aid for people; agents verify with reads and
 `review` evidence (`aspose-cli docs verification`).
 
 ```text
-aspose-cli preview open <file> --open --output json
+aspose-cli preview open <file> --output-format json
 ```
 
 The result carries `id`, `product`, `url`, `pid`, `file`, `view`, `reused`
 and the `license` mode the document rendered under. Content detection selects
 the product; `--product` overrides it and `--view` picks another of the
 product's views (`capabilities` lists them under `products[].preview.views`).
-`--open` launches the default browser unless `ASPOSE_CLI_NO_OPEN=1` is set.
+It opens the default browser unless `--no-open` is given or `ASPOSE_CLI_NO_OPEN=1` is set.
 
 ## Lifecycle
 
 ```powershell
-aspose-cli preview status --output json
-aspose-cli preview stop --all --output json
+aspose-cli preview status --output-format json
+aspose-cli preview stop --all --output-format json
 ```
 
 `preview status <id>` and `preview stop <id>` address one document. `status`

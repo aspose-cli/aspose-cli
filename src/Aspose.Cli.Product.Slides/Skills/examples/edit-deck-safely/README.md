@@ -5,11 +5,11 @@ examples/edit-deck-safely. [deck.md](deck.md) creates a synthetic source present
 [deck-ops.json](deck-ops.json) updates its second slide.
 
 ```powershell
-aspose-cli slides create deck.pptx --from-markdown deck.md --output json
-aspose-cli slides query slides deck.pptx --slides 2 --scope shapes --output json
-aspose-cli slides edit deck.pptx --ops deck-ops.json --out deck.revised.pptx --output json
-aspose-cli slides query slides deck.revised.pptx --slides 2 --scope full --notes --output json
-aspose-cli review deck.revised.pptx --out deck.review --output json
+aspose-cli slides create deck.pptx --from-markdown deck.md --output-format json
+aspose-cli slides query slides deck.pptx --slides 2 --scope shapes --output-format json
+aspose-cli slides edit deck.pptx --ops deck-ops.json --out deck.revised.pptx --output-format json
+aspose-cli slides query slides deck.revised.pptx --slides 2 --scope full --notes --output-format json
+aspose-cli review deck.revised.pptx --out deck.review --output-format json
 ```
 
 The shape read shows the second slide's `title` and `body` placeholders, which the operations

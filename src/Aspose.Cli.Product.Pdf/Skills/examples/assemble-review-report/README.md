@@ -11,16 +11,16 @@ watermark with [assemble-ops.json](assemble-ops.json), fills the cover form with
 it and reviews it.
 
 ```powershell
-aspose-cli pdf create cover.pdf --from-html cover.html --output json
-aspose-cli pdf create body.pdf --from-text body.md --output json
-aspose-cli pdf query forms cover.pdf --output json
-aspose-cli pdf merge cover.pdf body.pdf --out assembled.pdf --output json
-aspose-cli pdf edit assembled.pdf --ops assemble-ops.json --out review.pdf --output json
-aspose-cli pdf edit review.pdf --ops cover-values.json --out review.filled.pdf --output json
-aspose-cli pdf convert review.filled.pdf --to pdfa-2b --out review.archive.pdf --output json
-aspose-cli pdf validate review.archive.pdf --profile pdfa-2b --output json
-aspose-cli pdf query pages review.archive.pdf --output json
-aspose-cli review review.archive.pdf --out review.archive.review --output json
+aspose-cli pdf create cover.pdf --from-html cover.html --output-format json
+aspose-cli pdf create body.pdf --from-text body.md --output-format json
+aspose-cli pdf query forms cover.pdf --output-format json
+aspose-cli pdf merge cover.pdf body.pdf --out assembled.pdf --output-format json
+aspose-cli pdf edit assembled.pdf --ops assemble-ops.json --out review.pdf --output-format json
+aspose-cli pdf edit review.pdf --ops cover-values.json --out review.filled.pdf --output-format json
+aspose-cli pdf convert review.filled.pdf --to pdfa-2b --out review.archive.pdf --output-format json
+aspose-cli pdf validate review.archive.pdf --profile pdfa-2b --output-format json
+aspose-cli pdf query pages review.archive.pdf --output-format json
+aspose-cli review review.archive.pdf --out review.archive.review --output-format json
 ```
 
 With your own documents, read the field names from `pdf query forms` and adjust

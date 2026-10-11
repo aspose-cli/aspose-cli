@@ -223,9 +223,9 @@ internal static class InvariantCases
 
     private static IEnumerable<InvariantCase> InvalidEnumCases(CliCommand command)
     {
-        // An invalid --output would change the output the checks read, so it is left out.
+        // An invalid --output-format would change the output the checks read, so it is left out.
         foreach (CliOption option in command.Options.Where(static option =>
-            option.AllowedValues.Count > 0 && option.Type != "boolean" && option.Name != "--output"))
+            option.AllowedValues.Count > 0 && option.Type != "boolean" && option.Name != "--output-format"))
         {
             string value = option.AllowedValues[0];
             string typo = Typo(value, option.AllowedValues);

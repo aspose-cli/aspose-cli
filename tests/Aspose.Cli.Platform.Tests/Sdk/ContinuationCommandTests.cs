@@ -20,7 +20,7 @@ public sealed class ContinuationCommandTests
 
         Assert.Equal(
             DistributionInfo.CommandName
-                + " pdf query pages \"C:\\My Files\\report \\$1.pdf\" --pages 4-9,12 --notes --max-chars 20000 --output json",
+                + " pdf query pages \"C:\\My Files\\report \\$1.pdf\" --pages 4-9,12 --notes --max-chars 20000 --output-format json",
             command);
     }
 

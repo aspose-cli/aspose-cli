@@ -45,9 +45,9 @@ count as remaining redacted text.
 ## Content
 
 ```powershell
-aspose-cli pdf inspect report.final.pdf --detail metadata permissions forms signatures attachments outline fonts --output json
-aspose-cli pdf query pages report.final.pdf --pages 1-5 --mode layout --output json
-aspose-cli pdf query search report.final.pdf --pattern DRAFT --output json
+aspose-cli pdf inspect report.final.pdf --detail metadata permissions forms signatures attachments outline fonts --output-format json
+aspose-cli pdf query pages report.final.pdf --pages 1-5 --mode layout --output-format json
+aspose-cli pdf query search report.final.pdf --pattern DRAFT --output-format json
 ```
 
 Choose page ranges from the inspected page count and compare the text with the
@@ -74,7 +74,7 @@ Require `valid: true` from `pdf validate` for archival output
 ## Appearance
 
 ```powershell
-aspose-cli review report.final.pdf --out report.review-1 --output json
+aspose-cli review report.final.pdf --out report.review-1 --output-format json
 ```
 
 Check page order and size, crop and rotation, clipping, images, tables, headers
@@ -114,5 +114,5 @@ PDF review findings worth acting on:
   image that fills its width or height ([scanned pages](editing.md#scanned-pages)).
 
 ```powershell
-aspose-cli fonts check report.pdf --font-dir fonts --output json
+aspose-cli fonts check report.pdf --font-dir fonts --output-format json
 ```

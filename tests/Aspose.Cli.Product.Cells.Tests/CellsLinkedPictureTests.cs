@@ -34,7 +34,7 @@ public sealed class CellsLinkedPictureTests
         Assert.Equal(ResourceHttpServer.Image, expected.Data);
 
         CliResult result = workspace.Run("cells", "convert", input, "--to", "xlsx",
-            "--out", "converted.xlsx", "--output", "json");
+            "--out", "converted.xlsx", "--output-format", "json");
         Assert.True(result.ExitCode == 0, result.StdErr);
         Assert.DoesNotContain(WarningCodes.RemoteResourcesBlocked.Name, result.StdOut, StringComparison.Ordinal);
         using var after = new Workbook(workspace.File("converted.xlsx"));

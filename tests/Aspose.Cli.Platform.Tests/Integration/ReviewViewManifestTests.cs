@@ -26,7 +26,7 @@ public sealed class ReviewViewManifestTests
         using var workspace = new TempWorkspace();
         CreateSample(workspace, file);
 
-        CliResult reviewed = workspace.Run("review", file, "--out", "evidence", "--output", "json");
+        CliResult reviewed = workspace.Run("review", file, "--out", "evidence", "--output-format", "json");
 
         Assert.True(reviewed.ExitCode == 0, reviewed.StdErr);
         JsonNode result = JsonNode.Parse(reviewed.StdOut)!;
@@ -67,7 +67,7 @@ public sealed class ReviewViewManifestTests
         CreateSample(workspace, "doc.docx");
         File.Move(workspace.File("doc.docx"), workspace.File("renamed.pdf"));
 
-        CliResult generic = workspace.Run("review", "renamed.pdf", "--out", "generic", "--output", "json");
+        CliResult generic = workspace.Run("review", "renamed.pdf", "--out", "generic", "--output-format", "json");
         Assert.Equal(6, generic.ExitCode);
         JsonNode error = JsonNode.Parse(generic.StdErr)!["error"]!;
         Assert.Equal("FORMAT_MISMATCH", error["code"]!.GetValue<string>());
@@ -75,7 +75,7 @@ public sealed class ReviewViewManifestTests
         Assert.Contains("--product words", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
 
         CliResult selected = workspace.Run(
-            "review", "renamed.pdf", "--product", "words", "--out", "selected", "--output", "json");
+            "review", "renamed.pdf", "--product", "words", "--out", "selected", "--output-format", "json");
         Assert.True(selected.ExitCode == 0, selected.StdErr);
         Assert.Equal("words", JsonNode.Parse(selected.StdOut)!["product"]!.GetValue<string>());
     }
@@ -85,18 +85,18 @@ public sealed class ReviewViewManifestTests
         switch (Path.GetExtension(file))
         {
             case ".xlsx":
-                workspace.Run("cells", "create", file, "--sheets", "Data", "--output", "json").Succeeded();
-                workspace.Run("cells", "edit", file, "--in-place", "--set", "Data!A1=Hello", "--output", "json").Succeeded();
+                workspace.Run("cells", "create", file, "--sheets", "Data", "--output-format", "json").Succeeded();
+                workspace.Run("cells", "edit", file, "--in-place", "--set", "Data!A1=Hello", "--output-format", "json").Succeeded();
                 break;
             case ".pptx":
-                workspace.Run("slides", "create", file, "--output", "json").Succeeded();
+                workspace.Run("slides", "create", file, "--output-format", "json").Succeeded();
                 break;
             default:
                 File.WriteAllText(workspace.File("doc.md"), "# Title\n\nFirst paragraph.\n");
-                workspace.Run("words", "create", "doc.docx", "--markdown", "doc.md", "--output", "json").Succeeded();
+                workspace.Run("words", "create", "doc.docx", "--markdown", "doc.md", "--output-format", "json").Succeeded();
                 if (file.EndsWith(".pdf", StringComparison.Ordinal))
                 {
-                    workspace.Run("words", "convert", "doc.docx", "--to", "pdf", "--out", file, "--output", "json").Succeeded();
+                    workspace.Run("words", "convert", "doc.docx", "--to", "pdf", "--out", file, "--output-format", "json").Succeeded();
                 }
                 break;
         }

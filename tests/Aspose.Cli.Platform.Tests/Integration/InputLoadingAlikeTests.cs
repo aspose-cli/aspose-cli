@@ -34,7 +34,7 @@ public sealed class InputLoadingAlikeTests
             (string product, string fixture) = LegacyInputs[index];
             string input = $"{fixture.Replace('.', '-')}.{ScenarioFixtures.PrimaryFormat(product)}";
             File.WriteAllBytes(workspace.File(input), ScenarioFixtures.Read(fixture));
-            CliResult result = workspace.Run(product, "inspect", input, "--output", "json");
+            CliResult result = workspace.Run(product, "inspect", input, "--output-format", "json");
             string code = result.ExitCode == 0
                 ? "(opened)"
                 : JsonNode.Parse(result.StdErr)?["error"]?["code"]?.GetValue<string>() ?? $"(exit {result.ExitCode})";

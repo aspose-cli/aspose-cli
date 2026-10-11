@@ -14,17 +14,17 @@ public sealed class StartupLicenseMcpTests
         string work = temp.File("work");
         Directory.CreateDirectory(work);
         File.WriteAllText(Path.Combine(work, "source.md"), "# Client project\n\nConfirmed delivery scope.\n");
-        McpTestServer server = await McpTestServer.Start(temp.Path, work, options: ["--output", "table"]);
+        McpTestServer server = await McpTestServer.Start(temp.Path, work, options: ["--output-format", "table"]);
         try
         {
-            JsonNode schema = await server.Execute(["schema", "v2/common/license-status", "--output", "table"]);
+            JsonNode schema = await server.Execute(["schema", "v2/common/license-status", "--output-format", "table"]);
             AssertSuccess(schema);
             JsonNode schemaExecution = schema["result"]!["structuredContent"]!;
             Assert.Empty(schemaExecution["stderr"]!.GetValue<string>());
             Assert.NotNull(JsonNode.Parse(schemaExecution["stdout"]!.GetValue<string>())!["$schema"]);
 
             JsonNode created = await server.Execute(["words", "create", "brief.docx", "--markdown", "source.md",
-                "--timeout", "15", "--output", "table"]);
+                "--timeout", "15", "--output-format", "table"]);
             AssertSuccess(created);
             Assert.True(File.Exists(Path.Combine(work, "brief.docx")));
             JsonNode createdExecution = created["result"]!["structuredContent"]!;

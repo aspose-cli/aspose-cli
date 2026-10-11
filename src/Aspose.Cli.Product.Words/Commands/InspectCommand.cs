@@ -13,17 +13,17 @@ internal static class InspectCommand
 
     public static CommandDefinition<DocumentInfoRequest, DocumentInfoResult> Create()
     {
-        var preview = new PreviewOption("the heading outline, as with --detail outline");
+        var sample = new SampleOption("the heading outline, as with --detail outline");
         var detail = new DetailOption(InfoDetails.All, DetailNotes);
         return new(
             "inspect",
             "Show document structure, safety state and metadata.",
             new CommandTraits { Input = WordsInputs.Document, UsesFonts = true },
-            [.. preview.Options, .. detail.Options],
+            [.. sample.Options, .. detail.Options],
             (parse, standard) => new DocumentInfoRequest
             {
                 Input = standard.Input,
-                IncludePreview = preview.Read(parse),
+                IncludePreview = sample.Read(parse),
                 Details = detail.Read(parse),
                 Password = standard.InputPassword,
             },
@@ -31,8 +31,8 @@ internal static class InspectCommand
         {
             Examples =
             [
-                "words inspect contract.docx --output json",
-                "words inspect contract.docx --detail outline sections fields bookmarks --preview",
+                "words inspect contract.docx --output-format json",
+                "words inspect contract.docx --detail outline sections fields bookmarks --sample",
             ],
         };
     }

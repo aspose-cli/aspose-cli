@@ -43,7 +43,7 @@ public sealed class PdfReviewEvidenceMemoryTests : IDisposable
         ProcessStartInfo start = _workspace.StartInfo();
         foreach (string argument in new[]
         {
-            "review", "long.pdf", "--out", "evidence", "--license", TestLicense.Path!, "--output", "json", "--quiet",
+            "review", "long.pdf", "--out", "evidence", "--license", TestLicense.Path!, "--output-format", "json", "--quiet",
         })
         {
             start.ArgumentList.Add(argument);

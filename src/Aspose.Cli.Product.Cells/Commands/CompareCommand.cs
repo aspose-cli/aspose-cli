@@ -56,7 +56,7 @@ internal static class CompareCommand
         {
             Examples =
             [
-                "cells compare old.xlsx new.xlsx --output json",
+                "cells compare old.xlsx new.xlsx --output-format json",
                 "cells compare old.xlsx new.xlsx --compare values --max-diffs 50",
             ],
         };

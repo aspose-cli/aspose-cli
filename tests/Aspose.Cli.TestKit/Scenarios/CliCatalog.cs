@@ -5,7 +5,7 @@ namespace Aspose.Cli.TestKit.Scenarios;
 
 /// <summary>
 /// The machine-readable contract of the CLI under test: its commands, options, products and
-/// diagnostics, read once per test process from the live <c>capabilities --output json</c>,
+/// diagnostics, read once per test process from the live <c>capabilities --output-format json</c>,
 /// never from a hand-written list.
 /// </summary>
 public sealed class CliCatalog

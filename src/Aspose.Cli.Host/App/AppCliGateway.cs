@@ -243,7 +243,7 @@ internal sealed class AppCliGateway
         {
             start.ArgumentList.Add(argument);
         }
-        start.ArgumentList.Add("--output");
+        start.ArgumentList.Add("--output-format");
         start.ArgumentList.Add("json");
         start.ArgumentList.Add("--quiet");
 

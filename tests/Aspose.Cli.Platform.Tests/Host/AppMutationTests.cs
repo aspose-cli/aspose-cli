@@ -99,7 +99,7 @@ public sealed class AppMutationTests
             // before this App started.
             string sessions = Directory.CreateDirectory(Path.Combine(UserStorage.TemporaryRoot(), "app")).FullName;
             var existing = Directory.GetDirectories(sessions).ToHashSet(StringComparer.OrdinalIgnoreCase);
-            CliResult started = _workspace.Run("app", "open", Original, "--no-open", "--output", "json");
+            CliResult started = _workspace.Run("app", "open", Original, "--no-open", "--output-format", "json");
             Assert.True(started.ExitCode == 0, started.StdErr);
             JsonNode result = JsonNode.Parse(started.StdOut)!;
             Url = new Uri(result["url"]!.GetValue<string>());
@@ -176,7 +176,7 @@ public sealed class AppMutationTests
         {
             try
             {
-                _workspace.Run("app", "stop", "--output", "json");
+                _workspace.Run("app", "stop", "--output-format", "json");
                 _client.Dispose();
                 // The App keeps files it does not own, which some tests plant in its session; a
                 // directory still held by the exiting App is left, as the lookup above tolerates.

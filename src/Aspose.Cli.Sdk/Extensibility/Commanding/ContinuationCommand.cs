@@ -63,8 +63,8 @@ public sealed class ContinuationCommand
         return this;
     }
 
-    /// <summary>Returns the command line, ending with <c>--output json</c>.</summary>
-    public override string ToString() => string.Join(' ', _tokens.Append("--output").Append("json"));
+    /// <summary>Returns the command line, ending with <c>--output-format json</c>.</summary>
+    public override string ToString() => string.Join(' ', _tokens.Append("--output-format").Append("json"));
 
     /// <summary>
     /// Leaves a token bare when it holds only characters no common shell treats specially;

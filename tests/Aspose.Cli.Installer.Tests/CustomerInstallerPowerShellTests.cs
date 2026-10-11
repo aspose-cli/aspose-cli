@@ -509,7 +509,7 @@ public sealed partial class CustomerInstallerPowerShellTests : IDisposable, ICla
         string parent = Path.Combine(_root, "skill ownership");
         PowerShellResult installed = RunExecutable(
             Path.Combine(_package.Path, "aspose-cli.exe"),
-            ["skill", "install", "aspose-cli-cells", "--target", parent, "--output", "json"]);
+            ["skill", "install", "aspose-cli-cells", "--target", parent, "--output-format", "json"]);
         Assert.True(installed.ExitCode == 0, installed.StdErr);
 
         string root = Path.Combine(parent, "aspose-cli-cells");

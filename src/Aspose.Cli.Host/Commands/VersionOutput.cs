@@ -7,11 +7,11 @@ using Aspose.Cli.Sdk.Contracts;
 namespace Aspose.Cli.Host.Commands;
 
 /// <summary>
-/// Extends the parser's built-in <c>--version</c> so that <c>--version --output &lt;mode&gt;</c>
+/// Extends the parser's built-in <c>--version</c> so that <c>--version --output-format &lt;mode&gt;</c>
 /// answers with a <see cref="VersionResult"/> through the ordinary result writer. Plain
 /// <c>--version</c> keeps the parser's own action and output, and every other companion token
 /// keeps the parser's own usage error: the built-in validator is skipped only when the one
-/// other option is <c>--output</c>.
+/// other option is <c>--output-format</c>.
 /// </summary>
 internal static class VersionOutput
 {
@@ -31,7 +31,7 @@ internal static class VersionOutput
         version.Validators.Clear();
         version.Validators.Add(result =>
         {
-            if (!OnlyWithOutput(result, globals.Output))
+            if (!OnlyWithOutput(result, globals.OutputFormat))
             {
                 foreach (Action<OptionResult> validate in builtIn)
                 {
@@ -47,7 +47,7 @@ internal static class VersionOutput
     }
 
     // The parser skips the other options' validation while a terminating option such as
-    // --version is present, so the --output value is checked here: an unknown mode keeps
+    // --version is present, so the --output-format value is checked here: an unknown mode keeps
     // the built-in usage error.
     private static bool OnlyWithOutput(OptionResult result, Option output) =>
         result.Parent is CommandResult parent
@@ -81,7 +81,7 @@ internal static class VersionOutput
         public override bool ClearsParseErrors => plain.ClearsParseErrors;
 
         public override int Invoke(ParseResult parseResult) =>
-            parseResult.GetResult(globals.Output) is null
+            parseResult.GetResult(globals.OutputFormat) is null
                 ? plain.Invoke(parseResult)
                 : executor.RunLightweight(
                     parseResult,

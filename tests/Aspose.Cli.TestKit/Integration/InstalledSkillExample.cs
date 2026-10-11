@@ -11,7 +11,7 @@ public static class InstalledSkillExample
     public static InstalledSkillExampleResult Run(TempWorkspace workspace, string skill, string example)
     {
         string target = workspace.File("installed");
-        CliResult install = workspace.Run("skill", "install", skill, "--target", target, "--output", "json");
+        CliResult install = workspace.Run("skill", "install", skill, "--target", target, "--output-format", "json");
         Assert.True(install.ExitCode == 0, install.StdErr);
         string directory = System.IO.Path.Combine(target, skill, "examples", example);
         string markdown = System.IO.File.ReadAllText(System.IO.Path.Combine(directory, "README.md"));
