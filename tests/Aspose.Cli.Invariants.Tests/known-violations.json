@@ -767,6 +767,13 @@
       "actual": "pdf sign --certificate-password: the secret has no --certificate-password-stdin."
     },
     {
+      "case": "C-R38 | src/Aspose.Cli.Product.Cells",
+      "invariant": "C-R38",
+      "rule": "C-R38",
+      "cause": "comment-names-removed-data-option",
+      "actual": "Contracts/JsonValueMatrix.cs: '--data' is no option of any command"
+    },
+    {
       "case": "C-R08 | cells compare",
       "invariant": "C-R08",
       "rule": "C-R08",
@@ -1423,6 +1430,426 @@
       "rule": "C-R36",
       "cause": "format-ids-have-aliases",
       "actual": "words format jpeg has the aliases jpg."
+    },
+    {
+      "case": "C-R34 | app open",
+      "invariant": "C-R34",
+      "rule": "C-R34",
+      "cause": "help-examples-and-links-not-declared",
+      "actual": "has 0 examples; at least 2; has no Learn more"
+    },
+    {
+      "case": "C-R34 | app status",
+      "invariant": "C-R34",
+      "rule": "C-R34",
+      "cause": "help-examples-and-links-not-declared",
+      "actual": "has 0 examples; at least 2; has no Learn more"
+    },
+    {
+      "case": "C-R34 | app stop",
+      "invariant": "C-R34",
+      "rule": "C-R34",
+      "cause": "help-examples-and-links-not-declared",
+      "actual": "has 0 examples; at least 2; has no Learn more"
+    },
+    {
+      "case": "C-R34 | capabilities",
+      "invariant": "C-R34",
+      "rule": "C-R34",
+      "cause": "help-examples-and-links-not-declared",
+      "actual": "has no Learn more"
+    },
+    {
+      "case": "C-R34 | cells compare",
+      "invariant": "C-R34",
+      "rule": "C-R34",
+      "cause": "help-examples-and-links-not-declared",
+      "actual": "has no Learn more"
+    },
+    {
+      "case": "C-R34 | cells convert",
+      "invariant": "C-R34",
+      "rule": "C-R34",
+      "cause": "help-examples-and-links-not-declared",
+      "actual": "has no Learn more"
+    },
+    {
+      "case": "C-R34 | cells create",
+      "invariant": "C-R34",
+      "rule": "C-R34",
+      "cause": "help-examples-and-links-not-declared",
+      "actual": "has 1 example; at least 2; has no Learn more"
+    },
+    {
+      "case": "C-R34 | cells inspect",
+      "invariant": "C-R34",
+      "rule": "C-R34",
+      "cause": "help-examples-and-links-not-declared",
+      "actual": "has no Learn more"
+    },
+    {
+      "case": "C-R34 | cells query range",
+      "invariant": "C-R34",
+      "rule": "C-R34",
+      "cause": "help-examples-and-links-not-declared",
+      "actual": "has no Learn more"
+    },
+    {
+      "case": "C-R34 | cells query search",
+      "invariant": "C-R34",
+      "rule": "C-R34",
+      "cause": "help-examples-and-links-not-declared",
+      "actual": "has no Learn more"
+    },
+    {
+      "case": "C-R34 | cells render",
+      "invariant": "C-R34",
+      "rule": "C-R34",
+      "cause": "help-examples-and-links-not-declared",
+      "actual": "has no Learn more"
+    },
+    {
+      "case": "C-R34 | docs",
+      "invariant": "C-R34",
+      "rule": "C-R34",
+      "cause": "help-examples-and-links-not-declared",
+      "actual": "has 1 example; at least 2; has no Learn more"
+    },
+    {
+      "case": "C-R34 | doctor",
+      "invariant": "C-R34",
+      "rule": "C-R34",
+      "cause": "help-examples-and-links-not-declared",
+      "actual": "has 1 example; at least 2; has no Learn more"
+    },
+    {
+      "case": "C-R34 | fonts check",
+      "invariant": "C-R34",
+      "rule": "C-R34",
+      "cause": "help-examples-and-links-not-declared",
+      "actual": "has 0 examples; at least 2; has no Learn more"
+    },
+    {
+      "case": "C-R34 | fonts list",
+      "invariant": "C-R34",
+      "rule": "C-R34",
+      "cause": "help-examples-and-links-not-declared",
+      "actual": "has 0 examples; at least 2; has no Learn more"
+    },
+    {
+      "case": "C-R34 | license install",
+      "invariant": "C-R34",
+      "rule": "C-R34",
+      "cause": "help-examples-and-links-not-declared",
+      "actual": "has 0 examples; at least 2; has no Learn more"
+    },
+    {
+      "case": "C-R34 | license remove",
+      "invariant": "C-R34",
+      "rule": "C-R34",
+      "cause": "help-examples-and-links-not-declared",
+      "actual": "has 0 examples; at least 2; has no Learn more"
+    },
+    {
+      "case": "C-R34 | license status",
+      "invariant": "C-R34",
+      "rule": "C-R34",
+      "cause": "help-examples-and-links-not-declared",
+      "actual": "has 0 examples; at least 2; has no Learn more"
+    },
+    {
+      "case": "C-R34 | mcp serve",
+      "invariant": "C-R34",
+      "rule": "C-R34",
+      "cause": "help-examples-and-links-not-declared",
+      "actual": "has 0 examples; at least 2; has no Learn more"
+    },
+    {
+      "case": "C-R34 | pdf convert",
+      "invariant": "C-R34",
+      "rule": "C-R34",
+      "cause": "help-examples-and-links-not-declared",
+      "actual": "has 0 examples; at least 2; has no Learn more"
+    },
+    {
+      "case": "C-R34 | pdf create",
+      "invariant": "C-R34",
+      "rule": "C-R34",
+      "cause": "help-examples-and-links-not-declared",
+      "actual": "has 0 examples; at least 2; has no Learn more"
+    },
+    {
+      "case": "C-R34 | pdf edit",
+      "invariant": "C-R34",
+      "rule": "C-R34",
+      "cause": "help-examples-and-links-not-declared",
+      "actual": "has 0 examples; at least 2; has no Learn more"
+    },
+    {
+      "case": "C-R34 | pdf extract",
+      "invariant": "C-R34",
+      "rule": "C-R34",
+      "cause": "help-examples-and-links-not-declared",
+      "actual": "has 0 examples; at least 2; has no Learn more"
+    },
+    {
+      "case": "C-R34 | pdf inspect",
+      "invariant": "C-R34",
+      "rule": "C-R34",
+      "cause": "help-examples-and-links-not-declared",
+      "actual": "has 0 examples; at least 2; has no Learn more"
+    },
+    {
+      "case": "C-R34 | pdf merge",
+      "invariant": "C-R34",
+      "rule": "C-R34",
+      "cause": "help-examples-and-links-not-declared",
+      "actual": "has 0 examples; at least 2; has no Learn more"
+    },
+    {
+      "case": "C-R34 | pdf query forms",
+      "invariant": "C-R34",
+      "rule": "C-R34",
+      "cause": "help-examples-and-links-not-declared",
+      "actual": "has 0 examples; at least 2; has no Learn more"
+    },
+    {
+      "case": "C-R34 | pdf query pages",
+      "invariant": "C-R34",
+      "rule": "C-R34",
+      "cause": "help-examples-and-links-not-declared",
+      "actual": "has 0 examples; at least 2; has no Learn more"
+    },
+    {
+      "case": "C-R34 | pdf query search",
+      "invariant": "C-R34",
+      "rule": "C-R34",
+      "cause": "help-examples-and-links-not-declared",
+      "actual": "has 0 examples; at least 2; has no Learn more"
+    },
+    {
+      "case": "C-R34 | pdf render",
+      "invariant": "C-R34",
+      "rule": "C-R34",
+      "cause": "help-examples-and-links-not-declared",
+      "actual": "has 0 examples; at least 2; has no Learn more"
+    },
+    {
+      "case": "C-R34 | pdf sign",
+      "invariant": "C-R34",
+      "rule": "C-R34",
+      "cause": "help-examples-and-links-not-declared",
+      "actual": "has 0 examples; at least 2; has no Learn more"
+    },
+    {
+      "case": "C-R34 | pdf split",
+      "invariant": "C-R34",
+      "rule": "C-R34",
+      "cause": "help-examples-and-links-not-declared",
+      "actual": "has 0 examples; at least 2; has no Learn more"
+    },
+    {
+      "case": "C-R34 | pdf validate",
+      "invariant": "C-R34",
+      "rule": "C-R34",
+      "cause": "help-examples-and-links-not-declared",
+      "actual": "has 0 examples; at least 2; has no Learn more"
+    },
+    {
+      "case": "C-R34 | preview open",
+      "invariant": "C-R34",
+      "rule": "C-R34",
+      "cause": "help-examples-and-links-not-declared",
+      "actual": "has 0 examples; at least 2; has no Learn more"
+    },
+    {
+      "case": "C-R34 | preview status",
+      "invariant": "C-R34",
+      "rule": "C-R34",
+      "cause": "help-examples-and-links-not-declared",
+      "actual": "has 0 examples; at least 2; has no Learn more"
+    },
+    {
+      "case": "C-R34 | preview stop",
+      "invariant": "C-R34",
+      "rule": "C-R34",
+      "cause": "help-examples-and-links-not-declared",
+      "actual": "has 0 examples; at least 2; has no Learn more"
+    },
+    {
+      "case": "C-R34 | schema",
+      "invariant": "C-R34",
+      "rule": "C-R34",
+      "cause": "help-examples-and-links-not-declared",
+      "actual": "has 1 example; at least 2; has no Learn more"
+    },
+    {
+      "case": "C-R34 | skill install",
+      "invariant": "C-R34",
+      "rule": "C-R34",
+      "cause": "help-examples-and-links-not-declared",
+      "actual": "has 0 examples; at least 2; has no Learn more"
+    },
+    {
+      "case": "C-R34 | skill list",
+      "invariant": "C-R34",
+      "rule": "C-R34",
+      "cause": "help-examples-and-links-not-declared",
+      "actual": "has 0 examples; at least 2; has no Learn more"
+    },
+    {
+      "case": "C-R34 | slides convert",
+      "invariant": "C-R34",
+      "rule": "C-R34",
+      "cause": "help-examples-and-links-not-declared",
+      "actual": "has 0 examples; at least 2; has no Learn more"
+    },
+    {
+      "case": "C-R34 | slides create",
+      "invariant": "C-R34",
+      "rule": "C-R34",
+      "cause": "help-examples-and-links-not-declared",
+      "actual": "has 0 examples; at least 2; has no Learn more"
+    },
+    {
+      "case": "C-R34 | slides edit",
+      "invariant": "C-R34",
+      "rule": "C-R34",
+      "cause": "help-examples-and-links-not-declared",
+      "actual": "has 0 examples; at least 2; has no Learn more"
+    },
+    {
+      "case": "C-R34 | slides extract",
+      "invariant": "C-R34",
+      "rule": "C-R34",
+      "cause": "help-examples-and-links-not-declared",
+      "actual": "has 0 examples; at least 2; has no Learn more"
+    },
+    {
+      "case": "C-R34 | slides inspect",
+      "invariant": "C-R34",
+      "rule": "C-R34",
+      "cause": "help-examples-and-links-not-declared",
+      "actual": "has 0 examples; at least 2; has no Learn more"
+    },
+    {
+      "case": "C-R34 | slides query search",
+      "invariant": "C-R34",
+      "rule": "C-R34",
+      "cause": "help-examples-and-links-not-declared",
+      "actual": "has 0 examples; at least 2; has no Learn more"
+    },
+    {
+      "case": "C-R34 | slides query slides",
+      "invariant": "C-R34",
+      "rule": "C-R34",
+      "cause": "help-examples-and-links-not-declared",
+      "actual": "has 0 examples; at least 2; has no Learn more"
+    },
+    {
+      "case": "C-R34 | slides render",
+      "invariant": "C-R34",
+      "rule": "C-R34",
+      "cause": "help-examples-and-links-not-declared",
+      "actual": "has 0 examples; at least 2; has no Learn more"
+    },
+    {
+      "case": "C-R34 | update check",
+      "invariant": "C-R34",
+      "rule": "C-R34",
+      "cause": "help-examples-and-links-not-declared",
+      "actual": "has 0 examples; at least 2; has no Learn more"
+    },
+    {
+      "case": "C-R34 | update install",
+      "invariant": "C-R34",
+      "rule": "C-R34",
+      "cause": "help-examples-and-links-not-declared",
+      "actual": "has 0 examples; at least 2; has no Learn more"
+    },
+    {
+      "case": "C-R34 | words compare",
+      "invariant": "C-R34",
+      "rule": "C-R34",
+      "cause": "help-examples-and-links-not-declared",
+      "actual": "has no Learn more"
+    },
+    {
+      "case": "C-R34 | words convert",
+      "invariant": "C-R34",
+      "rule": "C-R34",
+      "cause": "help-examples-and-links-not-declared",
+      "actual": "has no Learn more"
+    },
+    {
+      "case": "C-R34 | words create",
+      "invariant": "C-R34",
+      "rule": "C-R34",
+      "cause": "help-examples-and-links-not-declared",
+      "actual": "has no Learn more"
+    },
+    {
+      "case": "C-R34 | words extract",
+      "invariant": "C-R34",
+      "rule": "C-R34",
+      "cause": "help-examples-and-links-not-declared",
+      "actual": "has no Learn more"
+    },
+    {
+      "case": "C-R34 | words inspect",
+      "invariant": "C-R34",
+      "rule": "C-R34",
+      "cause": "help-examples-and-links-not-declared",
+      "actual": "has no Learn more"
+    },
+    {
+      "case": "C-R34 | words query blocks",
+      "invariant": "C-R34",
+      "rule": "C-R34",
+      "cause": "help-examples-and-links-not-declared",
+      "actual": "has no Learn more"
+    },
+    {
+      "case": "C-R34 | words query search",
+      "invariant": "C-R34",
+      "rule": "C-R34",
+      "cause": "help-examples-and-links-not-declared",
+      "actual": "has no Learn more"
+    },
+    {
+      "case": "C-R34 | words render",
+      "invariant": "C-R34",
+      "rule": "C-R34",
+      "cause": "help-examples-and-links-not-declared",
+      "actual": "has no Learn more"
+    },
+    {
+      "case": "C-R34 | words split",
+      "invariant": "C-R34",
+      "rule": "C-R34",
+      "cause": "help-examples-and-links-not-declared",
+      "actual": "has no Learn more"
+    },
+    {
+      "case": "C-R34 | value lists",
+      "invariant": "C-R34",
+      "rule": "C-R34",
+      "cause": "help-lists-allowed-values-twice",
+      "actual": "global --output: lists its values in <compact|json|markdown|table> and again in its description; global --license-mode: lists its values in <auto|evaluation> and again in its description; cells compare --compare: lists its values in <formul..."
+    },
+    {
+      "case": "C-R34 | global options folded",
+      "invariant": "C-R34",
+      "rule": "C-R34",
+      "cause": "help-repeats-global-options",
+      "actual": "app open: lists 9 global options one by one; app status: lists 9 global options one by one; app stop: lists 9 global options one by one; capabilities: lists 9 global options one by one; cells compare: lists 9 global options one by one; cell..."
+    },
+    {
+      "case": "C-R34 | usage lists required options",
+      "invariant": "C-R34",
+      "rule": "C-R34",
+      "cause": "help-usage-omits-required-options",
+      "actual": "cells convert: Usage leaves out the required --to; cells query search: Usage leaves out the required --pattern; pdf convert: Usage leaves out the required --to; pdf edit: Usage leaves out the required --ops; pdf extract: Usage leaves out th..."
     },
     {
       "case": "C-R25 | cells input over budget error details",
@@ -2349,6 +2776,13 @@
       "actual": "words query: 'query' is not a product verb (inspect, read, search, create, edit, convert, render, compare, extract, split, merge, sign, validate)."
     },
     {
+      "case": "C-R04 | cells query range budget hint",
+      "invariant": "C-R04",
+      "rule": "C-R04",
+      "cause": "range-too-large-hint-names-scan-range",
+      "actual": "the RANGE_TOO_LARGE hint names the hidden option --scan-range"
+    },
+    {
       "case": "C-R31 | v2/cells/search-result names",
       "invariant": "C-R31",
       "rule": "C-R31",
@@ -2657,6 +3091,13 @@
       "actual": "presentationSectionInfo.startSlide: minimum 0, not 1"
     },
     {
+      "case": "C-R38 | src/Aspose.Cli.Product.Slides",
+      "invariant": "C-R38",
+      "rule": "C-R38",
+      "cause": "slides-extract-hint-names-out-for-out-dir",
+      "actual": "Engine/SlidesInfo.cs: 'slides extract' has no option '--out'"
+    },
+    {
       "case": "C-R18 | v2/slides/ops#slidesParagraphInput",
       "invariant": "C-R18",
       "rule": "C-R18",
@@ -2774,6 +3215,27 @@
       "rule": "C-R20",
       "cause": "source-password-named-password-env",
       "actual": "passwordEnv: the source file's password is named sourcePasswordEnv"
+    },
+    {
+      "case": "C-R38 | src/Aspose.Cli.Product.Cells bare commands",
+      "invariant": "C-R38",
+      "rule": "C-R38",
+      "cause": "source-writes-commands-bare",
+      "actual": "Engine/Mapping/RowShifts.cs: 'cells edit' is written bare; quote it or write aspose-cli before it"
+    },
+    {
+      "case": "C-R38 | src/Aspose.Cli.Product.Pdf bare commands",
+      "invariant": "C-R38",
+      "rule": "C-R38",
+      "cause": "source-writes-commands-bare",
+      "actual": "Contracts/PdfOps.cs: 'pdf inspect' is written bare; quote it or write aspose-cli before it"
+    },
+    {
+      "case": "C-R38 | src/Aspose.Cli.Product.Slides bare commands",
+      "invariant": "C-R38",
+      "rule": "C-R38",
+      "cause": "source-writes-commands-bare",
+      "actual": "Commands/ConvertCommand.cs: 'slides render' is written bare; quote it or write aspose-cli before it"
     },
     {
       "case": "C-R20 | v2/slides/ops#set_table_cell spelling",

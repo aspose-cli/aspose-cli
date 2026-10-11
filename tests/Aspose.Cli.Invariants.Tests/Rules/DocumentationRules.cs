@@ -1,17 +1,6 @@
-using Aspose.Cli.TestKit.Scenarios;
-
 namespace Aspose.Cli.Invariants.Tests;
 
-// Help text and the names written in sources and documentation.
-internal static partial class ContractRules
-{
-    private static IEnumerable<InvariantCase> R34(CliCatalog catalog)
-    {
-        yield break;
-    }
-
-    private static IEnumerable<InvariantCase> R38(CliCatalog catalog)
-    {
-        yield break;
-    }
-}
+// Help text and the names written in sources and documentation: C-R34 in DocumentationRules.Help.cs;
+// C-R38, and the hidden names of C-R04, in DocumentationRules.Names.cs over the sources that
+// DocumentationRules.Sources.cs reads.
+internal static partial class ContractRules;

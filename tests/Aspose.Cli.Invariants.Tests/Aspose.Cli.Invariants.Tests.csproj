@@ -4,4 +4,15 @@
     <Description>Invariants generated from capabilities and the ops schemas, the known violations, and the declarative scenarios, run against the real CLI.</Description>
   </PropertyGroup>
 
+  <!-- Repository files outside the projects that these tests read; scripts/test.ps1 runs this project when one changes.
+       The contract rules read the help snapshots (C-R34) and the README (C-R04). -->
+  <ItemGroup>
+    <RepositoryInput Include="..\..\README.md" />
+    <RepositoryInput Include="..\Aspose.Cli.Platform.Tests\Integration\Snapshots\cells.help.txt" />
+    <RepositoryInput Include="..\Aspose.Cli.Platform.Tests\Integration\Snapshots\host.help.txt" />
+    <RepositoryInput Include="..\Aspose.Cli.Platform.Tests\Integration\Snapshots\pdf.help.txt" />
+    <RepositoryInput Include="..\Aspose.Cli.Platform.Tests\Integration\Snapshots\slides.help.txt" />
+    <RepositoryInput Include="..\Aspose.Cli.Platform.Tests\Integration\Snapshots\words.help.txt" />
+  </ItemGroup>
+
 </Project>
