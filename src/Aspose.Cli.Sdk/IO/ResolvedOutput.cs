@@ -1,5 +1,3 @@
-using System.Globalization;
-
 namespace Aspose.Cli.Sdk.IO;
 
 /// <summary>
@@ -7,7 +5,7 @@ namespace Aspose.Cli.Sdk.IO;
 /// its format, its absolute path, whether an existing file may be replaced and, for an edit, the
 /// in-place mode and its backup. The path always carries one of the format's extensions. A
 /// product writes the output as given and names the files of an output written in parts with
-/// <see cref="Part(string, int, int)"/> or <see cref="Part(string)"/>.
+/// <see cref="Parts(IReadOnlyList{int})"/> or <see cref="Part(string)"/>.
 /// </summary>
 public sealed record ResolvedOutput
 {
@@ -73,17 +71,21 @@ public sealed record ResolvedOutput
     internal IReadOnlyList<FormatDescriptor> Alternatives => _alternatives;
 
     /// <summary>
-    /// The path of the part numbered <paramref name="number"/> of an output written in
-    /// <paramref name="parts"/> parts: the output itself for a single part, and otherwise a file
-    /// beside it with the product's part marker and the number before the extension, as
-    /// <c>report.p3.png</c> for marker <c>p</c>.
+    /// The paths of an output written in parts numbered <paramref name="numbers"/>, such as the
+    /// page numbers rendered: the output itself for a single part, and otherwise one file per
+    /// number beside it, <c>&lt;stem&gt;.&lt;n&gt;.&lt;ext&gt;</c> with <c>n</c> padded to the digits of
+    /// the highest number, as <c>report.09.png</c> through <c>report.12.png</c>.
     /// </summary>
-    public string Part(string marker, int number, int parts)
+    public IReadOnlyList<string> Parts(IReadOnlyList<int> numbers)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(marker);
-        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(number);
-        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(parts);
-        return parts == 1 ? Path : Part(string.Create(CultureInfo.InvariantCulture, $"{marker}{number}"));
+        ArgumentNullException.ThrowIfNull(numbers);
+        if (numbers.Count == 1)
+        {
+            ArgumentOutOfRangeException.ThrowIfNegativeOrZero(numbers[0], nameof(numbers));
+            return [Path];
+        }
+
+        return PartNames.Numbered(numbers).Select(Part).ToArray();
     }
 
     /// <summary>

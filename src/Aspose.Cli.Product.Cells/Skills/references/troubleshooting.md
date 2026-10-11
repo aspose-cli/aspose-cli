@@ -23,7 +23,7 @@ to workbooks.
 | code | meaning |
 |------|---------|
 | `SHEETS_DROPPED` | The output format holds one worksheet; it names the sheet kept. |
-| `SHEETS_SKIPPED` | `render --all-sheets` could not render some sheets; render one alone with `--sheet` for its error. |
+| `SHEETS_SKIPPED` | A `render` of every sheet could not render some of them; render one alone with `--sheet` for its error. |
 | `DATA_TRUNCATED` | The target grid (for example xls, 65,536 rows) is smaller than the data; save to xlsx, xlsb or ods. |
 | `FORMULAS_BROKEN` | Formulas that referenced cells beyond the target grid became `#REF!`; save to xlsx or xlsb. |
 | `FORMULAS_CALCULATED_ON_OPEN` | The workbook asks to be calculated when opened and some formula results shown differ from the stored ones, usually because a tool wrote formulas without results. The values shown are the engine's, as Excel shows them; `cells edit` stores them. |
@@ -70,7 +70,7 @@ handle these effects:
   `EVAL_MODE` message names the warning sheets the output carries and which
   of them is active.
 - When a workbook's active sheet is such a warning sheet, every command that
-  defaults to the active sheet (`query range` or `render` without `--sheet`,
+  defaults to the active sheet (`query range` without `--sheet`,
   `convert` to CSV, TSV or Markdown without `--sheet`, an operation without
   `"sheet"`, the workbook preview) uses the first other sheet instead,
   preferring a visible one, and warns `ACTIVE_SHEET_SKIPPED` with the skipped

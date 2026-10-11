@@ -53,7 +53,7 @@ Arguments:
 
 Options:
   --to <to> (REQUIRED)                           Target PDF export format. Values: docx, epub, html, jpeg, md, pdfa-1b, pdfa-2b, pdfa-3b, png, pptx, svg, tiff, txt, xlsx, xps.
-  --pages <pages>                                Pages to process, as 1-based numbers and ranges such as 1-3,7,9-. Default: every page.
+  --pages <pages>                                Pages to process: 1-based numbers and ranges such as 1-3,7,9-, or all. Default: every page.
   -o, --out <out>                                Output path; defaults to a sibling using the target extension.
   --overwrite                                    Replace the output file if it already exists.
   --password <password>                          Password for the PDF. Discouraged: visible in the process list; prefer --password-env.
@@ -149,7 +149,7 @@ Arguments:
 Options:
   --to <fdf|json|xfdf>                                      Form export format: json, fdf or xfdf; only with --what forms. Default: the --out extension's.
   --what <attachments|forms|images|tables|text> (REQUIRED)  images, attachments, text, tables or forms.
-  --pages <pages>                                           Pages to process, as 1-based numbers and ranges such as 1-3,7,9-. Default: every page. Only with --what images, text or tables.
+  --pages <pages>                                           Pages to process: 1-based numbers and ranges such as 1-3,7,9-, or all. Default: every page. Only with --what images, text or tables.
   --bom                                                     Start each table's CSV with a UTF-8 byte order mark, so Excel reads its non-English text correctly; only with --what tables. Default: UTF-8 without one.
   --out-dir <out-dir>                                       Safe extraction directory; required unless --what forms.
   -o, --out <out>                                           Form-data output file; only with --what forms. Default extension follows --to.
@@ -283,7 +283,7 @@ Arguments:
   <file>  PDF document to open.
 
 Options:
-  --pages <pages>                                Pages to process, as 1-based numbers and ranges such as 1-3,7,9-. Default: every page.
+  --pages <pages>                                Pages to process: 1-based numbers and ranges such as 1-3,7,9-, or all. Default: every page.
   --mode <layout|plain>                          Text projection: plain or layout. [default: plain]
   --max-chars <max-chars>                        Maximum characters returned, counting the text of the returned pages. Range 1-10000000. [default: 20000]
   --password <password>                          Password for the PDF. Discouraged: visible in the process list; prefer --password-env.
@@ -316,7 +316,7 @@ Options:
   --case-sensitive                               Match letter case exactly.
   --max-hits <max-hits>                          Maximum returned hits (1-10000). [default: 100]
   --skip <skip>                                  Matches to pass over before the returned hits; a truncated search's window.next sets it. [default: 0]
-  --pages <pages>                                Pages to process, as 1-based numbers and ranges such as 1-3,7,9-. Default: every page.
+  --pages <pages>                                Pages to process: 1-based numbers and ranges such as 1-3,7,9-, or all. Default: every page.
   --password <password>                          Password for the PDF. Discouraged: visible in the process list; prefer --password-env.
   --password-env <password-env>                  Name of an environment variable holding the password for the PDF.
   --password-stdin                               Read the password for the PDF from the first line of stdin.
@@ -343,11 +343,10 @@ Arguments:
 
 Options:
   --to <jpeg|png|svg>                            Image format: png, jpeg or svg. Default: the --out extension's format, else png.
-  --pages <pages>                                Pages to process, as 1-based numbers and ranges such as 1-3,7,9-. Default: page 1.
-  --all-pages                                    Render every page.
+  --pages <pages>                                Pages to process: 1-based numbers and ranges such as 1-3,7,9-, or all. Default: every page; at most 20 per run.
   --dpi <dpi>                                    Raster resolution (36-1200); ignored for vector formats. [default: 192]
   --grid <grid>                                  Draw a labelled coordinate grid with a line every <grid> points (10-500) on png or jpeg output, measured from the top-left corner as redact_area takes them.
-  -o, --out <out>                                Output path; multi-page output adds .pN before the extension.
+  -o, --out <out>                                Output path; several pages write <stem>.<page>.<ext> beside it.
   --overwrite                                    Replace the output file if it already exists.
   --password <password>                          Password for the PDF. Discouraged: visible in the process list; prefer --password-env.
   --password-env <password-env>                  Name of an environment variable holding the password for the PDF.
@@ -411,10 +410,11 @@ Arguments:
   <file>  PDF document to open.
 
 Options:
-  --pages <pages>                                One or more page groups, for example --pages 1-3 4-6.
-  --every <every>                                Pages per output part.
-  --by-bookmarks                                 Split at top-level bookmark destinations.
-  --out-dir <out-dir> (REQUIRED)                 Directory that receives the parts.
+  --by <bookmarks|pages> (REQUIRED)              How to divide the document: pages, one part per page, per --every pages or per group; bookmarks, one part per top-level bookmark.
+  --every <every>                                Pages per part with --by pages. Default: 1.
+  --groups <groups>                              Page groups with --by pages, one part each, such as --groups 1-3 4-6.
+  --pages <pages>                                Pages to process: 1-based numbers and ranges such as 1-3,7,9-, or all. Default: every page. Only with --by pages.
+  --out-dir <out-dir> (REQUIRED)                 Directory that receives the parts, named <stem>.<n>.pdf.
   --overwrite                                    Replace the output file if it already exists.
   --password <password>                          Password for the PDF. Discouraged: visible in the process list; prefer --password-env.
   --password-env <password-env>                  Name of an environment variable holding the password for the PDF.
@@ -428,6 +428,11 @@ Options:
   --workdir <workdir>                            Base directory for relative paths. Default: the current directory.
   --timeout <timeout>                            Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
   --max-input-bytes <max-input-bytes>            Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
+
+Examples:
+  aspose-cli pdf split report.pdf --by pages --every 2 --out-dir parts
+  aspose-cli pdf split report.pdf --by pages --groups 1-3 4-6 --out-dir parts
+  aspose-cli pdf split report.pdf --by bookmarks --out-dir chapters
 
 
 ## aspose-cli pdf validate --help

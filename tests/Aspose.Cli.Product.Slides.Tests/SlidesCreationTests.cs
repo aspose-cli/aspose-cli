@@ -122,10 +122,10 @@ public sealed class SlidesCreationTests
 
         CliException render = Assert.Throws<CliException>(() => SlidesExport.Render(
             fixture.Session,
-            new PresentationRenderRequest { Input = input, Output = TestOutput.At(fixture.File("slide.png"), format: "png") }));
+            new PresentationRenderRequest { Input = input, Output = TestOutput.At(fixture.File("slide.png"), format: "png"), Slides = PageRange.Parse("1") }));
         CliException all = Assert.Throws<CliException>(() => SlidesExport.Render(
             fixture.Session,
-            new PresentationRenderRequest { Input = input, Output = TestOutput.At(fixture.File("all.png"), format: "png"), AllSlides = true }));
+            new PresentationRenderRequest { Input = input, Output = TestOutput.At(fixture.File("all.png"), format: "png") }));
         CliException convert = Assert.Throws<CliException>(() => SlidesExport.Convert(
             fixture.Session,
             new PresentationConvertRequest { Input = input, Output = TestOutput.At(fixture.File("converted.png"), format: "png") }));

@@ -1,5 +1,6 @@
 using System.Globalization;
 using Aspose.Cli.Product.Words.Engine.Mapping;
+using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Rendering;
 using Aspose.Cli.Sdk.Results;
@@ -14,9 +15,6 @@ namespace Aspose.Cli.Product.Words.Engine;
 /// <summary>Serves <c>words render</c> and the page view of review and live display.</summary>
 internal static class WordsRender
 {
-    /// <summary>Marks the page number in a multi-page output name: <c>report.p3.png</c>.</summary>
-    private const string PagePart = "p";
-
     private const int CssDpi = 96;
     private const int EvidenceDpi = 150;
     private const string RenderHint = "Render fewer or smaller pages, or lower --dpi.";
@@ -26,18 +24,16 @@ internal static class WordsRender
     {
         LicenseState state = session.Outputs.License;
         using LoadedDocument loaded = session.Loader.Open(request.Input, request.Password);
-        IReadOnlyList<int> pages = request.AllPages
-            ? Enumerable.Range(1, loaded.Document.PageCount).ToArray()
-            : request.Pages?.Resolve(loaded.Document.PageCount) ?? [1];
+        IReadOnlyList<int> pages = RenderSelection.Resolve(request.Pages, loaded.Document.PageCount, ErrorCodes.PageNotFound, "page");
+        IReadOnlyList<string> paths = request.Output.Parts(pages);
         using OutputSet<Document> transaction = session.Outputs.BeginSet([request.Output.Directory], "words-render");
         var outputs = new List<PageOutput>(pages.Count);
-        foreach (int page in pages)
+        foreach ((int page, string path) in pages.Zip(paths))
         {
             PageInfo info = loaded.Document.GetPageInfo(page - 1);
             long width = (long)Math.Ceiling(info.WidthInPoints / 72d * request.Dpi);
             long height = (long)Math.Ceiling(info.HeightInPoints / 72d * request.Dpi);
             RenderPixelGuard.EnsureFits(session.Budgets, width, height, request.Dpi, RenderHint);
-            string path = request.Output.Part(PagePart, page, pages.Count);
             SaveOptions options = WordsSavePipeline.Options(request.Output.Format.Id, pages: [page], dpi: request.Dpi);
             long size = transaction.Stage(path, request.Output.Overwrite, loaded.Document, temp => loaded.Document.Save(temp, options), rendering: true, pages: [page]).SizeBytes;
             outputs.Add(new PageOutput { Page = page, Output = BuildOutput(path, request.Output.Format.Id, size) });

@@ -319,6 +319,60 @@ public sealed class CellsCliTests : IDisposable
         Assert.EndsWith("sheet-0001.png", evidence, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// A render without <c>--sheet</c> or <c>--range</c> draws every visible sheet, each as
+    /// <c>&lt;stem&gt;.&lt;sheet&gt;.&lt;ext&gt;</c> beside <c>--out</c>, and a workbook of one sheet as
+    /// <c>--out</c> itself.
+    /// </summary>
+    [Category(TestCategory.Slow)]
+    [Fact]
+    public void Render_DrawsEveryVisibleSheetByDefault()
+    {
+        File.WriteAllText(_workspace.File("ops.json"), """
+            {"ops":[
+              {"op":"set_values","sheet":"One","range":"A1","values":[["one"]]},
+              {"op":"set_values","sheet":"Two","range":"A1","values":[["two"]]}]}
+            """);
+        Assert.Equal(0, _workspace.Run("cells", "create", "book.xlsx", "--sheets", "One,Two", "--output-format", "json").ExitCode);
+        Assert.Equal(0, _workspace.Run("cells", "edit", "book.xlsx", "--ops", "ops.json", "--in-place", "--output-format", "json").ExitCode);
+        Directory.CreateDirectory(_workspace.File("every"));
+
+        JsonNode every = _workspace.Run("cells", "render", "book.xlsx", "--out", "every/book.png", "--output-format", "json").Json();
+
+        string[] sheets = [.. every["outputs"]!.AsArray().Select(static output => output!["sheet"]!.GetValue<string>())];
+        // An evaluation save adds warning sheets, which the default leaves out.
+        Assert.Equal(["One", "Two"], sheets);
+        Assert.Equal(["book.One.png", "book.Two.png"], Directory.GetFiles(_workspace.File("every")).Select(Path.GetFileName).Order(StringComparer.Ordinal));
+
+        string names = string.Join(",", Enumerable.Range(1, 21).Select(static sheet => $"S{sheet}"));
+        Assert.Equal(0, _workspace.Run("cells", "create", "wide.xlsx", "--sheets", names, "--output-format", "json").ExitCode);
+        CliResult wide = _workspace.Run("cells", "render", "wide.xlsx", "--out", "wide/wide.png", "--output-format", "json");
+        Assert.Equal(2, wide.ExitCode);
+        JsonNode error = JsonNode.Parse(wide.StdErr)!["error"]!;
+        Assert.Equal("USAGE_ERROR", error["code"]!.GetValue<string>());
+        Assert.Equal("--sheet", error["details"]!["option"]!.GetValue<string>());
+        Assert.Equal(20, error["details"]!["limit"]!.GetValue<int>());
+        Assert.False(Directory.Exists(_workspace.File("wide")));
+    }
+
+    /// <summary>
+    /// A default render of a workbook of one sheet, besides any warning sheets an evaluation save
+    /// added, writes <c>--out</c> itself.
+    /// </summary>
+    [Fact]
+    public void Render_ByDefaultWritesTheOutItselfForOneSheet()
+    {
+        File.WriteAllText(_workspace.File("ops.json"), """{"ops":[{"op":"set_values","sheet":"Only","range":"A1","values":[["only"]]}]}""");
+        Assert.Equal(0, _workspace.Run("cells", "create", "only.xlsx", "--sheets", "Only", "--output-format", "json").ExitCode);
+        Assert.Equal(0, _workspace.Run("cells", "edit", "only.xlsx", "--ops", "ops.json", "--in-place", "--output-format", "json").ExitCode);
+        Directory.CreateDirectory(_workspace.File("single"));
+
+        JsonNode single = _workspace.Run("cells", "render", "only.xlsx", "--out", "single/only.png", "--output-format", "json").Json();
+
+        Assert.Equal(["only.png"], Directory.GetFiles(_workspace.File("single")).Select(Path.GetFileName));
+        Assert.Equal("Only", Assert.Single(single["outputs"]!.AsArray())!["sheet"]!.GetValue<string>());
+    }
+
     /// <summary>The one warning of <paramref name="result"/> with <paramref name="code"/>.</summary>
     private static JsonNode Warning(JsonNode result, string code) =>
         Assert.Single(result["warnings"]!.AsArray(), warning => warning!["code"]!.GetValue<string>() == code)!;
@@ -360,8 +414,9 @@ public sealed class CellsCliTests : IDisposable
         JsonNode skipped = Warning(read, "ACTIVE_SHEET_SKIPPED");
         Assert.Equal("Evaluation Warning (1)", skipped["location"]!.GetValue<string>());
         Assert.Contains("uses 'One'", skipped["message"]!.GetValue<string>(), StringComparison.Ordinal);
+        // A render covers every visible sheet by default, so it skips no active sheet.
         Assert.Equal("One", rendered["sheet"]!.GetValue<string>());
-        _ = Warning(rendered, "ACTIVE_SHEET_SKIPPED");
+        AssertNoSkippedSheet(rendered);
         AssertNoSkippedSheet(renderedAll);
         Assert.StartsWith("one", File.ReadAllText(_workspace.File("book.csv")), StringComparison.Ordinal);
         _ = Warning(csv, "ACTIVE_SHEET_SKIPPED");

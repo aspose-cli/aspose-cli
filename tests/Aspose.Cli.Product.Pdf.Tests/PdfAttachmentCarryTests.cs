@@ -77,7 +77,7 @@ public sealed class PdfAttachmentCarryTests : IDisposable
         {
             Input = input,
             Output = new ResolvedDirectory(fixture.File("parts")),
-            Every = 1,
+            Plan = new Sdk.Addressing.SplitPlan(Sdk.Addressing.SplitBy.Pages, 1, null, null),
         });
 
         Assert.Equal(3, result.Outputs.Count);
@@ -112,7 +112,7 @@ public sealed class PdfAttachmentCarryTests : IDisposable
         {
             Input = portfolio,
             Output = new ResolvedDirectory(fixture.File("parts")),
-            Every = 1,
+            Plan = new Sdk.Addressing.SplitPlan(Sdk.Addressing.SplitBy.Pages, 1, null, null),
         });
 
         Assert.Equal([Entry("a.csv", First), Entry("b.csv", Second)], Attachments(merged));
@@ -150,7 +150,7 @@ public sealed class PdfAttachmentCarryTests : IDisposable
         {
             Input = annotated,
             Output = new ResolvedDirectory(fixture.File("parts")),
-            PageGroups = [Sdk.Addressing.PageRange.Parse("2")],
+            Plan = new Sdk.Addressing.SplitPlan(Sdk.Addressing.SplitBy.Pages, null, [Sdk.Addressing.PageRange.Parse("2")], null),
         });
 
         Assert.Equal(First, AnnotationFile(merged, page: 3));
@@ -176,7 +176,7 @@ public sealed class PdfAttachmentCarryTests : IDisposable
         {
             Input = first,
             Output = new ResolvedDirectory(fixture.File("parts")),
-            Every = 1,
+            Plan = new Sdk.Addressing.SplitPlan(Sdk.Addressing.SplitBy.Pages, 1, null, null),
         });
 
         Assert.Null(merge.Warnings);
@@ -234,7 +234,7 @@ public sealed class PdfAttachmentCarryTests : IDisposable
         {
             Input = input,
             Output = new ResolvedDirectory(fixture.File("parts")),
-            Every = 1,
+            Plan = new Sdk.Addressing.SplitPlan(Sdk.Addressing.SplitBy.Pages, 1, null, null),
         });
 
         Assert.Equal(expected, Attachments(merged));
@@ -292,7 +292,7 @@ public sealed class PdfAttachmentCarryTests : IDisposable
         {
             Input = input,
             Output = new ResolvedDirectory(fixture.File("parts")),
-            Every = 1,
+            Plan = new Sdk.Addressing.SplitPlan(Sdk.Addressing.SplitBy.Pages, 1, null, null),
             Password = password,
         });
 

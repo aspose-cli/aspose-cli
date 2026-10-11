@@ -45,8 +45,8 @@ public sealed record PresentationRenderRequest
     public required string Input { get; init; }
     /// <summary>The resolved output: its format, path and overwrite permission.</summary>
     public required ResolvedOutput Output { get; init; }
+    /// <summary>The slides to render, or null for every slide.</summary>
     public PageRange? Slides { get; init; }
-    public bool AllSlides { get; init; }
     public int? Dpi { get; init; }
     public int? Width { get; init; }
     public Secret? Password { get; init; }

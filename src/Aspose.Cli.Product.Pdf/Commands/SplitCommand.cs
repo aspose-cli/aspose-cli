@@ -1,4 +1,3 @@
-using System.CommandLine;
 using Aspose.Cli.Sdk.Extensibility.Output;
 
 namespace Aspose.Cli.Product.Pdf.Commands;
@@ -7,36 +6,32 @@ internal static class SplitCommand
 {
     public static CommandDefinition<PdfSplitRequest, PdfSplitResult> Create()
     {
-        var pages = new Option<string[]>("--pages")
-        {
-            Description = "One or more page groups, for example --pages 1-3 4-6.",
-            AllowMultipleArgumentsPerToken = true,
-        }.WithInput(InputKind.None);
-        var every = new Option<int?>("--every") { Description = "Pages per output part." };
-        var bookmarks = new Option<bool>("--by-bookmarks") { Description = "Split at top-level bookmark destinations." };
+        var split = new SplitOptions([SplitBy.Pages, SplitBy.Bookmarks], groups: true);
         return new(
             "split",
             "Split a PDF into an atomic output set.",
             new CommandTraits
             {
                 Input = PdfInputs.Document,
-                Output = OutputTarget.Directory("Directory that receives the parts."),
+                Output = OutputTarget.Directory("Directory that receives the parts, named <stem>.<n>.pdf."),
             },
-            [pages, every, bookmarks],
-            (parse, standard) =>
+            [.. split.Options],
+            (parse, standard) => new PdfSplitRequest
             {
-                string[] groupTexts = parse.GetValue(pages) ?? [];
-                return new PdfSplitRequest
-                {
-                    Input = standard.Input,
-                    PageGroups = groupTexts.Length == 0 ? null : groupTexts.Select(PageRange.Parse).ToArray(),
-                    Every = parse.GetValue(every),
-                    ByBookmarks = parse.GetValue(bookmarks),
-                    Output = standard.DirectoryOutput,
-                    Password = standard.InputPassword,
-                };
+                Input = standard.Input,
+                Plan = split.Read(parse),
+                Output = standard.DirectoryOutput,
+                Password = standard.InputPassword,
             },
-            Table);
+            Table)
+        {
+            Examples =
+            [
+                "pdf split report.pdf --by pages --every 2 --out-dir parts",
+                "pdf split report.pdf --by pages --groups 1-3 4-6 --out-dir parts",
+                "pdf split report.pdf --by bookmarks --out-dir chapters",
+            ],
+        };
     }
 
     internal static void Table(PdfSplitResult result, TableSurface surface)

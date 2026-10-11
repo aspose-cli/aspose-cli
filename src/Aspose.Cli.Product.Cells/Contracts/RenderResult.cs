@@ -30,15 +30,15 @@ public sealed record RenderResult() : EngineResultEnvelope("render-result", 2)
     public int? Dpi { get; init; }
 
     /// <summary>
-    /// Per-sheet output files of an <c>--all-sheets</c> render, in workbook
-    /// order. Omitted for a single-sheet render. When present, <c>output</c> and
+    /// Per-sheet output files of a render of every visible sheet, the default or
+    /// <c>--all-sheets</c>, in workbook order. Omitted for a render of a named sheet or a range. When present, <c>output</c> and
     /// <c>sheet</c> describe the first rendered sheet — a stable summary for
     /// single-output consumers.
     /// </summary>
     public IReadOnlyList<SheetRenderOutput>? Outputs { get; init; }
 }
 
-/// <summary>One rendered sheet of an <c>--all-sheets</c> render.</summary>
+/// <summary>One rendered sheet of a render of every visible sheet.</summary>
 public sealed record SheetRenderOutput
 {
     /// <summary>Name of the rendered sheet.</summary>

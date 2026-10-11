@@ -21,22 +21,21 @@ internal static class RenderCommand
             new CommandTraits
             {
                 Input = PdfInputs.Document,
-                Output = OutputTarget.File("Output path; multi-page output adds .pN before the extension."),
+                Output = OutputTarget.File("Output path; several pages write <stem>.<page>.<ext> beside it."),
                 UsesFonts = true,
                 Target = TargetFormat.Render(PdfFormats.Definitions),
             },
             [.. pages.Options, .. dpi.Options, grid],
             (parse, standard) =>
             {
-                PartSelection selection = pages.Read(parse);
+                PageRange? selection = pages.Read(parse);
                 int resolution = dpi.Read(parse);
                 ResolvedOutput output = standard.Output;
                 return new PdfRenderRequest
                 {
                     Input = standard.Input,
                     Output = output,
-                    Pages = selection.Range,
-                    AllPages = selection.All,
+                    Pages = selection,
                     Dpi = resolution,
                     Grid = parse.GetValue(grid),
                     Password = standard.InputPassword,

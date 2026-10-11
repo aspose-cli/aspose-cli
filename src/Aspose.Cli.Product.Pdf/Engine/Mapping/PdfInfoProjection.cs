@@ -36,7 +36,7 @@ internal static class PdfInfoProjection
                 "outline",
                 PdfInfoResult.OutlineLimit,
                 total,
-                "Split at top-level bookmarks with 'aspose-cli pdf split --by-bookmarks' and inspect each part's outline."));
+                "Split at top-level bookmarks with 'aspose-cli pdf split --by bookmarks' and inspect each part's outline."));
         }
 
         var result = new PdfInfoResult

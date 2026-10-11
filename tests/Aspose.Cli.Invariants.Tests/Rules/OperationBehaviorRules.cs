@@ -85,7 +85,8 @@ internal static partial class ContractRules
     /// <summary>
     /// Every render, split and image convert of a product writes <c>&lt;stem&gt;.&lt;n&gt;.&lt;ext&gt;</c>,
     /// <c>n</c> padded to the digits of the file count, or <c>&lt;stem&gt;.&lt;sheet&gt;.&lt;ext&gt;</c>
-    /// per sheet, and a render of one unit writes <c>--out</c> itself. The stem is the <c>--out</c>
+    /// per sheet, and a render of one unit writes <c>--out</c> itself. A render without an
+    /// <c>--all-&lt;units&gt;</c> option renders every unit by default. The stem is the <c>--out</c>
     /// file's, or the input's in an <c>--out-dir</c>.
     /// </summary>
     private static IEnumerable<InvariantCase> R12Run(CliCatalog catalog)
@@ -102,13 +103,24 @@ internal static partial class ContractRules
                         [.. render.Tokens, "<two>", all.Name, .. image, "--out", "page.png"],
                         static names => [.. names.Select(static name => $"page.{name}.png")], perSheet: all.Name == "--all-sheets");
                 }
+                else
+                {
+                    yield return OutputNames(product, $"{render} of every unit by default", units: 2,
+                        [.. render.Tokens, "<two>", .. image, "--out", "page.png"],
+                        static names => [.. names.Select(static name => $"page.{name}.png")]);
+                }
+                // The seed document may hold more than one unit, so a selection names the first.
+                string[] first = render.Options.FirstOrDefault(static option => option.Name is "--pages" or "--slides") is { } selection
+                    ? [selection.Name, "1"]
+                    : [];
                 yield return OutputNames(product, $"{render} one unit", units: 1,
-                    [.. render.Tokens, "<one>", .. image, "--out", "page.png"], static _ => ["page.png"]);
+                    [.. render.Tokens, "<one>", .. first, .. image, "--out", "page.png"], static _ => ["page.png"]);
             }
             if (catalog.Commands.FirstOrDefault(command => command.Words == $"{product} split") is { } split)
             {
-                string[] parting = split.Has("--every") ? ["--every", "1"]
-                    : split.Option("--by") is { } by && by.AllowedValues.Contains("pages") ? ["--by", "pages"] : [];
+                string[] parting = split.Option("--by") is { } by && by.AllowedValues.Contains("pages")
+                    ? ["--by", "pages", .. split.Has("--every") ? new[] { "--every", "1" } : []]
+                    : [];
                 yield return OutputNames(product, $"{split} {string.Join(' ', parting)}", units: 2,
                     [.. split.Tokens, "<two>", .. parting, "--out-dir", "parts"],
                     names => [.. names.Select(name => $"parts/two.{name}.{extension}")]);

@@ -73,9 +73,12 @@ public sealed class RenderFormatTests
             {
                 (string product, string? output, _) = cases[index];
                 string input = $"input.{ScenarioFixtures.PrimaryFormat(product)}";
+                // A render writes every unit by default and a fixture may hold several, so it
+                // selects the first, whose image is the output itself.
+                string[] first = product switch { "slides" => ["--slides", "1"], "cells" => [], _ => ["--pages", "1"] };
                 string[] arguments = output is null
-                    ? [product, "render", input, "--output-format", "json"]
-                    : [product, "render", input, "--out", output, "--output-format", "json"];
+                    ? [product, "render", input, .. first, "--output-format", "json"]
+                    : [product, "render", input, .. first, "--out", output, "--output-format", "json"];
                 runs[index] = (arguments, workspaces[product].Run(arguments));
             });
 

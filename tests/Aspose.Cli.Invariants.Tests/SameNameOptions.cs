@@ -51,6 +51,8 @@ internal static class SameNameOptions
     /// </summary>
     public static IReadOnlyList<SameNameExemption> Exemptions { get; } =
     [
+        new("--by", OptionAspect.AllowedValues,
+            "C-R07: each split divides at its own product's boundaries, a subset of pages, bookmarks, sections and heading1."),
         new("--detail", OptionAspect.AllowedValues,
             "C-R07: each product's inspect lists its own sections. Kept on purpose: slides media covers audio and video, "
             + "so it stays apart from the images of words."),

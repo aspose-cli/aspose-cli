@@ -22,7 +22,7 @@ public sealed class WordsSplitExtractCliTests : IDisposable
     {
         WriteDocument();
 
-        CliResult split = _workspace.Run("words", "split", "report.docx", "--by", "section", "--out-dir", "parts", "--output-format", "json");
+        CliResult split = _workspace.Run("words", "split", "report.docx", "--by", "sections", "--out-dir", "parts", "--output-format", "json");
 
         Assert.True(split.ExitCode == 0, split.StdErr);
         JsonArray outputs = JsonNode.Parse(split.StdOut)!["outputs"]!.AsArray();

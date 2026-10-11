@@ -14,12 +14,12 @@ public sealed class WordsOutputTransactionTests
         using var workspace = new TempWorkspace();
         string input = fixture.CreateTwoSectionDocument();
         string output = workspace.File("page.png");
-        File.WriteAllText(workspace.File("page.p2.png"), "existing second page");
+        File.WriteAllText(workspace.File("page.2.png"), "existing second page");
         CliResult result = workspace.Run(["words", "render", input, "--pages", "1-2", "--out", output, "--dpi", "36", "--output-format", "json",
             .. (supervised ? new[] { "--timeout", "30" } : Array.Empty<string>())]);
         Assert.Equal(5, result.ExitCode);
         Assert.Equal(string.Empty, result.StdOut);
-        Assert.False(File.Exists(workspace.File("page.p1.png")));
-        Assert.Equal("existing second page", File.ReadAllText(workspace.File("page.p2.png")));
+        Assert.False(File.Exists(workspace.File("page.1.png")));
+        Assert.Equal("existing second page", File.ReadAllText(workspace.File("page.2.png")));
     }
 }

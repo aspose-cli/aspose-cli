@@ -148,13 +148,12 @@ public sealed class SlidesHardeningTests
                 {
                     Input = input,
                     Output = TestOutput.At(output, format: "png"),
-                    AllSlides = true,
                     Dpi = 1200,
                 }));
 
         Assert.Equal(ErrorCodes.RenderTooLarge, error.Code);
         Assert.False(File.Exists(output));
-        Assert.Empty(Directory.GetFiles(fixture.Temp.Path, "too-large.s*.png"));
+        Assert.Empty(Directory.GetFiles(fixture.Temp.Path, "too-large.*.png"));
     }
 
     [Fact]

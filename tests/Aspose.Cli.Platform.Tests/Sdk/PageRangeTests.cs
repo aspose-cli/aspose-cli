@@ -37,4 +37,75 @@ public sealed class PageRangeTests
         Assert.Equal(ErrorCodes.PageNotFound, none.Code);
         Assert.Contains("no page", none.Hint, StringComparison.Ordinal);
     }
+
+    [Fact]
+    public void All_SelectsEveryPart()
+    {
+        PageRange all = PageRange.Parse("all");
+
+        Assert.Same(PageRange.All, all);
+        Assert.Equal("1-", all.Text);
+        Assert.Equal([1, 2, 3], all.Resolve(3));
+        Assert.Same(PageRange.All, PageRange.ParseOption("--pages", " all "));
+    }
+
+    [Theory]
+    [InlineData("3-x", "'x' is not a positive 1-based number")]
+    [InlineData("", "the selection is empty")]
+    [InlineData("1,,2", "an empty segment was found")]
+    [InlineData("4-2", "segment '4-2' ends before it starts")]
+    [InlineData("ALL", "'ALL' is not a positive 1-based number")]
+    public void ParseOption_ReportsAMalformedValueAsAnOptionMistake(string text, string reason)
+    {
+        CliException error = Assert.Throws<CliException>(() => PageRange.ParseOption("--slides", text));
+
+        Assert.Equal(ErrorCodes.OptionInvalid, error.Code);
+        Assert.Equal(ExitCode.Usage, error.Code.ExitCode);
+        Assert.Equal("--slides", error.Details!["option"]!.GetValue<string>());
+        Assert.Contains(reason, error.Message, StringComparison.Ordinal);
+        Assert.Contains("all", error.Hint, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Parse_ReportsAMalformedOperationFieldAsAnOperationMistakeWithItsReason()
+    {
+        CliException error = Assert.Throws<CliException>(() => PageRange.Parse("1-x"));
+
+        Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
+        Assert.Equal("'x' is not a positive 1-based number", error.Details!["reason"]!.GetValue<string>());
+    }
+
+    [Fact]
+    public void ErrorCodes_NoLongerDeclareAPageRangeCode() =>
+        Assert.DoesNotContain(ErrorCodes.All, static code => code.Name == "PAGE_RANGE_INVALID");
+
+    [Fact]
+    public void RenderSelection_DefaultsToEveryPart() =>
+        Assert.Equal([1, 2, 3], RenderSelection.Resolve(null, 3, ErrorCodes.PageNotFound, "page"));
+
+    [Fact]
+    public void RenderSelection_RefusesMoreThanTwentyPartsAsAUsageMistake()
+    {
+        Assert.Equal(20, RenderSelection.Resolve(null, 20, ErrorCodes.PageNotFound, "page").Count);
+
+        CliException error = Assert.Throws<CliException>(
+            () => RenderSelection.Resolve(PageRange.Parse("2-"), 22, ErrorCodes.PageNotFound, "slide"));
+
+        Assert.Equal(ErrorCodes.UsageError, error.Code);
+        Assert.Equal(ExitCode.Usage, error.Code.ExitCode);
+        Assert.Equal("--slides", error.Details!["option"]!.GetValue<string>());
+        Assert.Equal(20, error.Details["limit"]!.GetValue<int>());
+        Assert.Equal(21, error.Details["actual"]!.GetValue<int>());
+        Assert.Null(error.Details["errors"]);
+        Assert.Contains("--slides 1-20", error.Hint, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void RenderSelection_ReportsAPartPastTheCountBeforeTheLimit()
+    {
+        CliException error = Assert.Throws<CliException>(
+            () => RenderSelection.Resolve(PageRange.Parse("30"), 25, ErrorCodes.PageNotFound, "page"));
+
+        Assert.Equal(ErrorCodes.PageNotFound, error.Code);
+    }
 }

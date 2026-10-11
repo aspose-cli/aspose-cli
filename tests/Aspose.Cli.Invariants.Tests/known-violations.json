@@ -1746,7 +1746,7 @@
       "invariant": "C-R34",
       "rule": "C-R34",
       "cause": "help-examples-and-links-not-declared",
-      "actual": "has 0 examples; at least 2; has no Learn more"
+      "actual": "has no Learn more"
     },
     {
       "case": "C-R34 | pdf validate",
@@ -2069,65 +2069,6 @@
       "rule": "C-R20",
       "cause": "measure-names-without-unit",
       "actual": "zoom: measured in percent; name it *Percent"
-    },
-    {
-      "case": "C-R12 | pdf convert --to png",
-      "invariant": "C-R12",
-      "rule": "C-R12",
-      "cause": "multi-file-output-naming",
-      "actual": "wrote page.p1.png, page.p2.png; expected page.1.png, page.2.png"
-    },
-    {
-      "case": "C-R12 | pdf render --all-pages",
-      "invariant": "C-R12",
-      "rule": "C-R12",
-      "cause": "multi-file-output-naming",
-      "actual": "wrote page.p1.png, page.p2.png; expected page.1.png, page.2.png"
-    },
-    {
-      "case": "C-R12 | pdf split --every 1",
-      "invariant": "C-R12",
-      "rule": "C-R12",
-      "cause": "multi-file-output-naming",
-      "actual": "wrote parts/two.001.pdf, parts/two.002.pdf; expected parts/two.1.pdf, parts/two.2.pdf"
-    },
-    {
-      "case": "C-R12 | pdf split --every 1 of ten pages",
-      "invariant": "C-R12",
-      "rule": "C-R12",
-      "cause": "multi-file-output-naming",
-      "modes": [
-        "licensed"
-      ],
-      "actual": "wrote parts/ten.001.pdf, parts/ten.002.pdf, parts/ten.003.pdf, parts/ten.004.pdf, parts/ten.005.pdf, parts/ten.006.pdf, parts/ten.007.pdf, parts/ten.008.pdf, parts/ten.009.pdf, parts/ten.010.pdf; expected parts/ten.01.pdf, parts/ten.02.pdf,..."
-    },
-    {
-      "case": "C-R12 | slides convert --to png",
-      "invariant": "C-R12",
-      "rule": "C-R12",
-      "cause": "multi-file-output-naming",
-      "actual": "wrote page.s1.png, page.s2.png; expected page.1.png, page.2.png"
-    },
-    {
-      "case": "C-R12 | slides render --all-slides",
-      "invariant": "C-R12",
-      "rule": "C-R12",
-      "cause": "multi-file-output-naming",
-      "actual": "wrote page.s1.png, page.s2.png; expected page.1.png, page.2.png"
-    },
-    {
-      "case": "C-R12 | words render --all-pages",
-      "invariant": "C-R12",
-      "rule": "C-R12",
-      "cause": "multi-file-output-naming",
-      "actual": "wrote page.p1.png, page.p2.png; expected page.1.png, page.2.png"
-    },
-    {
-      "case": "C-R12 | words split --by pages",
-      "invariant": "C-R12",
-      "rule": "C-R12",
-      "cause": "multi-file-output-naming",
-      "actual": "wrote parts/part-001.docx, parts/part-002.docx; expected parts/two.1.docx, parts/two.2.docx"
     },
     {
       "case": "C-R26 | cells query range --sheet Sheet1 as Sehet1",
@@ -2844,20 +2785,6 @@
       "actual": "angle: read back as rotation"
     },
     {
-      "case": "same-name-option | --pages",
-      "invariant": "same-name-option",
-      "rule": "C-R07",
-      "cause": "pdf-split-pages-takes-groups",
-      "actual": "--pages: 2 different types or arities: string 1..1 (pdf convert, pdf extract, pdf query pages, pdf query search, pdf render, words convert, words render, words split) | string[] 1..100000 (pdf split)"
-    },
-    {
-      "case": "C-R08 | pdf split",
-      "invariant": "C-R08",
-      "rule": "C-R08",
-      "cause": "pdf-split-strategy-not-by",
-      "actual": "pdf split --by-bookmarks: a banned name; a split strategy is --by."
-    },
-    {
       "case": "C-R21 | v2/pdf/ops#add_attachment",
       "invariant": "C-R21",
       "rule": "C-R21",
@@ -3187,27 +3114,6 @@
       "actual": "cells render --all-sheets: a banned name; a selection takes the value all, such as --pages all."
     },
     {
-      "case": "C-R08 | pdf render",
-      "invariant": "C-R08",
-      "rule": "C-R08",
-      "cause": "render-all-option-not-selection-all",
-      "actual": "pdf render --all-pages: a banned name; a selection takes the value all, such as --pages all."
-    },
-    {
-      "case": "C-R08 | slides render",
-      "invariant": "C-R08",
-      "rule": "C-R08",
-      "cause": "render-all-option-not-selection-all",
-      "actual": "slides render --all-slides: a banned name; a selection takes the value all, such as --pages all."
-    },
-    {
-      "case": "C-R08 | words render",
-      "invariant": "C-R08",
-      "rule": "C-R08",
-      "cause": "render-all-option-not-selection-all",
-      "actual": "words render --all-pages: a banned name; a selection takes the value all, such as --pages all."
-    },
-    {
       "case": "C-R24 | unsupported format or content errors exit 6",
       "invariant": "C-R24",
       "rule": "C-R24",
@@ -3262,202 +3168,6 @@
       "rule": "C-R32",
       "cause": "search-hit-text-named-snippet-or-value",
       "actual": "hits[] does not require text (it has snippet)"
-    },
-    {
-      "case": "C-R16 | pdf convert --pages all",
-      "invariant": "C-R16",
-      "rule": "C-R16",
-      "cause": "selection-all-unsupported",
-      "actual": "exit 4 PAGE_RANGE_INVALID, expected 0: Invalid item range 'all': 'all' is not a positive 1-based number."
-    },
-    {
-      "case": "C-R16 | pdf extract --pages all",
-      "invariant": "C-R16",
-      "rule": "C-R16",
-      "cause": "selection-all-unsupported",
-      "actual": "exit 4 PAGE_RANGE_INVALID, expected 0: Invalid item range 'all': 'all' is not a positive 1-based number."
-    },
-    {
-      "case": "C-R16 | pdf query pages --pages all",
-      "invariant": "C-R16",
-      "rule": "C-R16",
-      "cause": "selection-all-unsupported",
-      "actual": "exit 4 PAGE_RANGE_INVALID, expected 0: Invalid item range 'all': 'all' is not a positive 1-based number."
-    },
-    {
-      "case": "C-R16 | pdf query search --pages all",
-      "invariant": "C-R16",
-      "rule": "C-R16",
-      "cause": "selection-all-unsupported",
-      "actual": "exit 4 PAGE_RANGE_INVALID, expected 0: Invalid item range 'all': 'all' is not a positive 1-based number."
-    },
-    {
-      "case": "C-R16 | pdf render --pages all",
-      "invariant": "C-R16",
-      "rule": "C-R16",
-      "cause": "selection-all-unsupported",
-      "actual": "exit 4 PAGE_RANGE_INVALID, expected 0: Invalid item range 'all': 'all' is not a positive 1-based number."
-    },
-    {
-      "case": "C-R16 | pdf split --pages all",
-      "invariant": "C-R16",
-      "rule": "C-R16",
-      "cause": "selection-all-unsupported",
-      "actual": "exit 4 PAGE_RANGE_INVALID, expected 0: Invalid item range 'all': 'all' is not a positive 1-based number."
-    },
-    {
-      "case": "C-R16 | slides convert --slides all",
-      "invariant": "C-R16",
-      "rule": "C-R16",
-      "cause": "selection-all-unsupported",
-      "actual": "exit 4 PAGE_RANGE_INVALID, expected 0: Invalid item range 'all': 'all' is not a positive 1-based number."
-    },
-    {
-      "case": "C-R16 | slides extract --slides all",
-      "invariant": "C-R16",
-      "rule": "C-R16",
-      "cause": "selection-all-unsupported",
-      "actual": "exit 4 PAGE_RANGE_INVALID, expected 0: Invalid item range 'all': 'all' is not a positive 1-based number."
-    },
-    {
-      "case": "C-R16 | slides query slides --slides all",
-      "invariant": "C-R16",
-      "rule": "C-R16",
-      "cause": "selection-all-unsupported",
-      "actual": "exit 4 PAGE_RANGE_INVALID, expected 0: Invalid item range 'all': 'all' is not a positive 1-based number."
-    },
-    {
-      "case": "C-R16 | slides render --slides all",
-      "invariant": "C-R16",
-      "rule": "C-R16",
-      "cause": "selection-all-unsupported",
-      "actual": "exit 4 PAGE_RANGE_INVALID, expected 0: Invalid item range 'all': 'all' is not a positive 1-based number."
-    },
-    {
-      "case": "C-R16 | words convert --pages all",
-      "invariant": "C-R16",
-      "rule": "C-R16",
-      "cause": "selection-all-unsupported",
-      "actual": "exit 4 PAGE_RANGE_INVALID, expected 0: Invalid item range 'all': 'all' is not a positive 1-based number."
-    },
-    {
-      "case": "C-R16 | words query blocks --blocks all",
-      "invariant": "C-R16",
-      "rule": "C-R16",
-      "cause": "selection-all-unsupported",
-      "actual": "exit 4 PAGE_RANGE_INVALID, expected 0: Invalid item range 'all': 'all' is not a positive 1-based number."
-    },
-    {
-      "case": "C-R16 | words render --pages all",
-      "invariant": "C-R16",
-      "rule": "C-R16",
-      "cause": "selection-all-unsupported",
-      "actual": "exit 4 PAGE_RANGE_INVALID, expected 0: Invalid item range 'all': 'all' is not a positive 1-based number."
-    },
-    {
-      "case": "C-R16 | words split --pages all",
-      "invariant": "C-R16",
-      "rule": "C-R16",
-      "cause": "selection-all-unsupported",
-      "actual": "exit 4 PAGE_RANGE_INVALID, expected 0: Invalid item range 'all': 'all' is not a positive 1-based number."
-    },
-    {
-      "case": "C-R16 | pdf convert --pages 1-x",
-      "invariant": "C-R16",
-      "rule": "C-R16",
-      "cause": "selection-syntax-error-is-not-option-invalid",
-      "actual": "exit 4 PAGE_RANGE_INVALID, expected 2: Invalid item range '1-x': 'x' is not a positive 1-based number.; PAGE_RANGE_INVALID: Invalid item range '1-x': 'x' is not a positive 1-based number., expected OPTION_INVALID"
-    },
-    {
-      "case": "C-R16 | pdf extract --pages 1-x",
-      "invariant": "C-R16",
-      "rule": "C-R16",
-      "cause": "selection-syntax-error-is-not-option-invalid",
-      "actual": "exit 4 PAGE_RANGE_INVALID, expected 2: Invalid item range '1-x': 'x' is not a positive 1-based number.; PAGE_RANGE_INVALID: Invalid item range '1-x': 'x' is not a positive 1-based number., expected OPTION_INVALID"
-    },
-    {
-      "case": "C-R16 | pdf query pages --pages 1-x",
-      "invariant": "C-R16",
-      "rule": "C-R16",
-      "cause": "selection-syntax-error-is-not-option-invalid",
-      "actual": "exit 4 PAGE_RANGE_INVALID, expected 2: Invalid item range '1-x': 'x' is not a positive 1-based number.; PAGE_RANGE_INVALID: Invalid item range '1-x': 'x' is not a positive 1-based number., expected OPTION_INVALID"
-    },
-    {
-      "case": "C-R16 | pdf query search --pages 1-x",
-      "invariant": "C-R16",
-      "rule": "C-R16",
-      "cause": "selection-syntax-error-is-not-option-invalid",
-      "actual": "exit 4 PAGE_RANGE_INVALID, expected 2: Invalid item range '1-x': 'x' is not a positive 1-based number.; PAGE_RANGE_INVALID: Invalid item range '1-x': 'x' is not a positive 1-based number., expected OPTION_INVALID"
-    },
-    {
-      "case": "C-R16 | pdf render --pages 1-x",
-      "invariant": "C-R16",
-      "rule": "C-R16",
-      "cause": "selection-syntax-error-is-not-option-invalid",
-      "actual": "exit 4 PAGE_RANGE_INVALID, expected 2: Invalid item range '1-x': 'x' is not a positive 1-based number.; PAGE_RANGE_INVALID: Invalid item range '1-x': 'x' is not a positive 1-based number., expected OPTION_INVALID"
-    },
-    {
-      "case": "C-R16 | pdf split --pages 1-x",
-      "invariant": "C-R16",
-      "rule": "C-R16",
-      "cause": "selection-syntax-error-is-not-option-invalid",
-      "actual": "exit 4 PAGE_RANGE_INVALID, expected 2: Invalid item range '1-x': 'x' is not a positive 1-based number.; PAGE_RANGE_INVALID: Invalid item range '1-x': 'x' is not a positive 1-based number., expected OPTION_INVALID"
-    },
-    {
-      "case": "C-R16 | slides convert --slides 1-x",
-      "invariant": "C-R16",
-      "rule": "C-R16",
-      "cause": "selection-syntax-error-is-not-option-invalid",
-      "actual": "exit 4 PAGE_RANGE_INVALID, expected 2: Invalid item range '1-x': 'x' is not a positive 1-based number.; PAGE_RANGE_INVALID: Invalid item range '1-x': 'x' is not a positive 1-based number., expected OPTION_INVALID"
-    },
-    {
-      "case": "C-R16 | slides extract --slides 1-x",
-      "invariant": "C-R16",
-      "rule": "C-R16",
-      "cause": "selection-syntax-error-is-not-option-invalid",
-      "actual": "exit 4 PAGE_RANGE_INVALID, expected 2: Invalid item range '1-x': 'x' is not a positive 1-based number.; PAGE_RANGE_INVALID: Invalid item range '1-x': 'x' is not a positive 1-based number., expected OPTION_INVALID"
-    },
-    {
-      "case": "C-R16 | slides query slides --slides 1-x",
-      "invariant": "C-R16",
-      "rule": "C-R16",
-      "cause": "selection-syntax-error-is-not-option-invalid",
-      "actual": "exit 4 PAGE_RANGE_INVALID, expected 2: Invalid item range '1-x': 'x' is not a positive 1-based number.; PAGE_RANGE_INVALID: Invalid item range '1-x': 'x' is not a positive 1-based number., expected OPTION_INVALID"
-    },
-    {
-      "case": "C-R16 | slides render --slides 1-x",
-      "invariant": "C-R16",
-      "rule": "C-R16",
-      "cause": "selection-syntax-error-is-not-option-invalid",
-      "actual": "exit 4 PAGE_RANGE_INVALID, expected 2: Invalid item range '1-x': 'x' is not a positive 1-based number.; PAGE_RANGE_INVALID: Invalid item range '1-x': 'x' is not a positive 1-based number., expected OPTION_INVALID"
-    },
-    {
-      "case": "C-R16 | words convert --pages 1-x",
-      "invariant": "C-R16",
-      "rule": "C-R16",
-      "cause": "selection-syntax-error-is-not-option-invalid",
-      "actual": "exit 4 PAGE_RANGE_INVALID, expected 2: Invalid item range '1-x': 'x' is not a positive 1-based number.; PAGE_RANGE_INVALID: Invalid item range '1-x': 'x' is not a positive 1-based number., expected OPTION_INVALID"
-    },
-    {
-      "case": "C-R16 | words query blocks --blocks 1-x",
-      "invariant": "C-R16",
-      "rule": "C-R16",
-      "cause": "selection-syntax-error-is-not-option-invalid",
-      "actual": "exit 4 PAGE_RANGE_INVALID, expected 2: Invalid item range '1-x': 'x' is not a positive 1-based number.; PAGE_RANGE_INVALID: Invalid item range '1-x': 'x' is not a positive 1-based number., expected OPTION_INVALID"
-    },
-    {
-      "case": "C-R16 | words render --pages 1-x",
-      "invariant": "C-R16",
-      "rule": "C-R16",
-      "cause": "selection-syntax-error-is-not-option-invalid",
-      "actual": "exit 4 PAGE_RANGE_INVALID, expected 2: Invalid item range '1-x': 'x' is not a positive 1-based number.; PAGE_RANGE_INVALID: Invalid item range '1-x': 'x' is not a positive 1-based number., expected OPTION_INVALID"
-    },
-    {
-      "case": "C-R16 | words split --pages 1-x",
-      "invariant": "C-R16",
-      "rule": "C-R16",
-      "cause": "selection-syntax-error-is-not-option-invalid",
-      "actual": "exit 4 PAGE_RANGE_INVALID, expected 2: Invalid item range '1-x': 'x' is not a positive 1-based number.; PAGE_RANGE_INVALID: Invalid item range '1-x': 'x' is not a positive 1-based number., expected OPTION_INVALID"
     },
     {
       "case": "C-R28 | cells review check codes",

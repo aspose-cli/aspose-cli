@@ -305,16 +305,14 @@ internal static class PdfConvert
     {
         string outputDirectory = request.Output.Directory;
         using OutputSet<Document> writer = session.Outputs.BeginSet([outputDirectory], "pdf-convert");
-        var paths = new List<string>(pages.Count);
-        foreach (int pageNumber in pages)
+        IReadOnlyList<string> paths = request.Output.Parts(pages);
+        foreach ((int pageNumber, string path) in pages.Zip(paths))
         {
-            string path = request.Output.Part(PdfRaster.PagePart, pageNumber, pages.Count);
             writer.Stage(path, request.Output.Overwrite, document, temp =>
             {
                 using FileStream stream = File.Create(temp);
                 PdfRaster.RenderPage(session.Budgets, document, pageNumber, request.Output.Format.Id, RenderPixelGuard.DefaultDpi, stream);
             }, rendering: true, pages: [pageNumber]);
-            paths.Add(path);
         }
 
         IReadOnlyList<long> sizes = writer.Commit();

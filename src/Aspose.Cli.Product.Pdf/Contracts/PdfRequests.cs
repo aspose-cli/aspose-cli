@@ -43,8 +43,8 @@ public sealed record PdfRenderRequest
     public required string Input { get; init; }
     /// <summary>The resolved output: its format, path and overwrite permission.</summary>
     public required ResolvedOutput Output { get; init; }
+    /// <summary>The pages to render, or null for every page.</summary>
     public PageRange? Pages { get; init; }
-    public bool AllPages { get; init; }
     public int Dpi { get; init; } = RenderPixelGuard.DefaultDpi;
 
     /// <summary>Spacing in points of a coordinate grid drawn on raster output, or null for none.</summary>
@@ -90,9 +90,8 @@ public sealed record PdfSplitRequest
 {
     /// <summary>The PDF to open.</summary>
     public required string Input { get; init; }
-    public IReadOnlyList<PageRange>? PageGroups { get; init; }
-    public int? Every { get; init; }
-    public bool ByBookmarks { get; init; }
+    /// <summary>How the PDF is divided: by pages, in runs or explicit groups, or at bookmarks.</summary>
+    public required SplitPlan Plan { get; init; }
     /// <summary>The resolved directory that receives the files.</summary>
     public required ResolvedDirectory Output { get; init; }
     public Secret? Password { get; init; }

@@ -38,7 +38,7 @@ with `code`, `message` and `hint`, and on stderr in table output.
 | 1 | Internal defect | `INTERNAL_ERROR` |
 | 2 | Usage | `USAGE_ERROR`, `OPTION_INVALID` |
 | 3 | Input file | `FILE_NOT_FOUND`, `FILE_LOCKED`, `FILE_CORRUPT`, `PASSWORD_REQUIRED`, `INPUT_CHANGED` |
-| 4 | Validation | `OPS_INVALID`, `*_NOT_FOUND`, `PAGE_RANGE_INVALID`, `RENDER_TOO_LARGE` |
+| 4 | Validation | `OPS_INVALID`, `*_NOT_FOUND`, `RENDER_TOO_LARGE` |
 | 5 | Output | `OUTPUT_EXISTS`, `OUTPUT_UNWRITABLE`, `OUTPUT_CONFLICT` |
 | 6 | Format | `FORMAT_UNSUPPORTED`, `FORMAT_MISMATCH`, `FEATURE_UNSUPPORTED` |
 | 7 | License | `LICENSE_FILE_NOT_FOUND`, `LICENSE_INVALID`, `EVALUATION_LIMIT` |
@@ -127,7 +127,8 @@ aspose-cli capabilities --output-format json
 - `*_NOT_FOUND`: `details.available` and `details.suggestions` list what
   exists (`aspose-cli docs editing`). `PAGE_NOT_FOUND` reports
   `details.availableCount`.
-- `PAGE_RANGE_INVALID`: use 1-based ranges such as `1-3,7,9-`.
+- `OPTION_INVALID` on a selection such as `--pages`: use 1-based ranges such as
+  `1-3,7,9-`, or `all`.
 - `RENDER_TOO_LARGE`: the image would have too many pixels; lower `--dpi` or
   render less.
 - `RENDER_FAILED`: the engine failed while rasterizing; the input can still be

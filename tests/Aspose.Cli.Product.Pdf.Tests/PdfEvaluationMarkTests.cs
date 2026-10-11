@@ -28,13 +28,13 @@ public sealed class PdfEvaluationMarkTests
         PdfSplitResult marked = fixture.Disclosed(session => PdfSplit.Run(session, new PdfSplitRequest
         {
             Input = input,
-            PageGroups = [PageRange.Parse("1")],
+            Plan = new Sdk.Addressing.SplitPlan(Sdk.Addressing.SplitBy.Pages, null, [PageRange.Parse("1")], null),
             Output = new ResolvedDirectory(fixture.File("marked-part")),
         }));
         PdfSplitResult clean = fixture.Disclosed(session => PdfSplit.Run(session, new PdfSplitRequest
         {
             Input = input,
-            PageGroups = [PageRange.Parse("2")],
+            Plan = new Sdk.Addressing.SplitPlan(Sdk.Addressing.SplitBy.Pages, null, [PageRange.Parse("2")], null),
             Output = new ResolvedDirectory(fixture.File("clean-part")),
         }));
         PdfConvertResult tiff = fixture.Disclosed(session => PdfConvert.Run(session, new PdfConvertRequest
