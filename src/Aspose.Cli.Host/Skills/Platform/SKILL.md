@@ -7,9 +7,32 @@ description: Start here for any document task with the local Aspose CLI (aspose-
 
 `aspose-cli` reads, edits, converts, renders and reviews spreadsheets, PDF
 documents, presentations and word-processing documents on the local machine
-with the Aspose engines, without Office or Python. This Skill holds what every
-product shares. Each product Skill holds its own commands, operations and
+with the Aspose engines, without Office or Python. This Skill holds how to work
+with every product. Each product Skill holds its own commands, operations and
 recipes.
+
+## Ask the CLI, not this Skill
+
+The CLI describes itself, and its answer is the truth about this build. The
+Skills do not repeat it:
+
+| Question | Ask |
+|----------|-----|
+| Which commands, options, option values and defaults exist | `aspose-cli <command> --help`, `aspose-cli capabilities <product> <command>` |
+| Which formats a product loads, converts and renders | `aspose-cli capabilities --summary` |
+| Which edit operations exist and what fields they take | `aspose-cli schema v2/<product>/ops --operation <op>` |
+| What a result field means | `aspose-cli schema <id>`, with the id the result names in `schema` |
+| Which error and warning codes exist, and each code's exit code | `capabilities`, under `diagnostics` |
+| What an error's `details` keys mean | `aspose-cli schema v2/common/error-payload` |
+| Resource budgets and the operation batch limit | `capabilities`, under `resourceBudgets`, and `capabilities <product> edit` |
+| A product's commands, recipes and checks | `aspose-cli docs <product>/overview` |
+
+A mistyped command, option, value, operation or field fails with the valid
+names in `details.available` and the likely ones in `details.suggestions`;
+read them instead of guessing again. A command that only groups others, such
+as `aspose-cli pdf`, run without one exits 2: with JSON output (the default
+when stdout is redirected) it is a `USAGE_ERROR` that lists its commands in
+`details.available`, and with human output it prints its help to stderr.
 
 ## Session start
 
@@ -22,27 +45,13 @@ aspose-cli license status --output-format json
 aspose-cli capabilities --summary --output-format json
 ```
 
-- `--version --output-format json` reports `cliVersion`, `sourceRevision`,
-  `buildDirty` and each product's `enginePins`, the same values as
-  `capabilities`; plain `--version` prints only the version text.
-- `doctor` reports `ok` and one entry per check (`cli`, `runtime`,
-  `resource-budgets`, `license`, `output`). A `license` check of `warn` means
-  at least one product runs in evaluation mode. A check of `fail` makes `ok`
-  false and the command exit 8 after printing its result.
-- `license status` reports each product's `mode` (`licensed`, `evaluation`,
-  `invalid`) and effective `source`; see `aspose-cli docs licensing`.
-- `capabilities --summary` is the short first look at what this build can
-  do: each product's commands with one-line descriptions, its load, convert
-  and render formats and its edit operation names.
-- `capabilities` is the machine-readable truth about this build: products,
-  verbs, formats, edit operations and their schema command, review checks,
-  every command and option, and every error and warning code with its exit
-  code (`diagnostics`). Read it selectively:
-  `aspose-cli capabilities <product> <command>` gives one command's options
-  and operations, and `aspose-cli capabilities <product>` one product.
-
-When unsure about a command, option, operation or field, ask the CLI
-(`--help`, `capabilities`, `schema`, `docs`) instead of guessing.
+- `doctor` checks the runtime, budgets, licenses and output folder; `ok`
+  false means a check failed, and the command then exits 8.
+- `license status` says which products run licensed and which in evaluation
+  mode (`aspose-cli docs licensing`).
+- `capabilities --summary` is the short first look: each product's commands,
+  formats and operation names. Narrow the full `capabilities` with a product
+  and a command instead of reading all of it.
 
 ## Pick the product
 
@@ -54,10 +63,9 @@ When unsure about a command, option, operation or field, ask the CLI
 | Word processing: DOCX, DOC, RTF, ODT, Markdown, HTML | `aspose-cli-words` | `aspose-cli docs words/overview` |
 
 Read the product overview before the first command on that document type.
-`capabilities --summary` lists each product's load, convert and render
-formats. The product-neutral commands `review`, `preview open` and `fonts check`
-choose the product from the file's content; `review` and `preview open` accept `--product` to
-override the choice.
+The product-neutral commands `review`, `preview open` and `fonts check`
+choose the product from the file's content; `review` and `preview open` accept
+`--product` to override the choice.
 
 ## Golden rules
 
@@ -67,21 +75,21 @@ override the choice.
 2. **Inspect before editing.** Start with `<product> inspect`, then read
    bounded windows (`aspose-cli docs reading`).
 3. **One validated batch.** Put all related changes in one `edit --ops`
-   document. Batches are atomic by default; `--dry-run` validates without
-   writing (`aspose-cli docs editing`).
+   document. Batches are atomic by default (`aspose-cli docs editing`).
 4. **Protect the user's file.** Write to `--out`, or use `--in-place --backup`
    when replacing the input is intended; pass the fingerprint you read as
    `--if-match`. Existing outputs are replaced only with `--overwrite`.
-   Every command that writes files takes `--dry-run`: it checks the input,
-   the output and the options and writes nothing, which does not guarantee
-   that the real run succeeds.
+   Every command that writes files takes `--dry-run`: it checks the request,
+   writes nothing and lists what it checked in `checked`; a dry run that
+   passes does not guarantee that the real run succeeds.
 5. **Report engine values.** Numbers and text you report come from a read-back
    after the edit, not from your own arithmetic or memory.
 6. **Verify before delivery.** A clean exit code is not done: read changes
    back, run `review`, and open every image it lists
    (`aspose-cli docs verification`).
-7. **Disclose evaluation mode.** Any `EVALUATION_MODE` or `EVALUATION_INPUT_MARKED` warning
-   means the delivered file carries evaluation marks; tell the user
+7. **Disclose evaluation mode.** An `EVALUATION_MODE` or `EVALUATION_INPUT_MARKED`
+   warning means the delivered file carries evaluation marks, and
+   `EVALUATION_INPUT_TRUNCATED` that the result is incomplete; tell the user
    (`aspose-cli docs licensing`).
 8. **Recover from the error envelope.** Read `error.hint` and `error.details`
    first; never retry unchanged input in a loop
@@ -92,21 +100,21 @@ override the choice.
 10. **Serialize writes to one file.** Parallel reads are safe; concurrent
     writes to the same file are not.
 
-Pass `--output-format json` (indented) or `--output-format compact` (the same JSON on one
-line) whenever you parse a result. Every result names its `schema`;
-`aspose-cli schema <id>` prints that JSON Schema.
+Pass `--output-format json` (indented) or `--output-format compact` (the same
+JSON on one line) whenever you parse a result. Every result names its
+`schema`; `aspose-cli schema <id>` prints that JSON Schema.
 
 ## Routing
 
 | Task | Read |
 |------|------|
 | Read a document within budgets: windows, `window.next`, search paging | `aspose-cli docs reading` |
-| Edit with an ops batch: fields, outputs, backups, secrets, not-found recovery | `aspose-cli docs editing` |
+| Edit with an ops batch: outcomes, outputs, backups, secrets, not-found recovery | `aspose-cli docs editing` |
 | The delivery checklist, the review protocol, review checks, fonts | `aspose-cli docs verification` |
 | Show a document to a person in the live viewer | `aspose-cli docs preview` |
 | The browser App: welcome, files, preview, settings | `aspose-cli docs app` |
 | License sources, status, install, evaluation disclosure | `aspose-cli docs licensing` |
-| The error envelope, exit codes, shared error codes | `aspose-cli docs troubleshooting` |
+| The error envelope, exit codes, recovering from errors | `aspose-cli docs troubleshooting` |
 | Product commands, operations, recipes and product checks | `aspose-cli docs <product>/overview` |
 
 `aspose-cli docs` lists every topic. Install a product Skill for an agent host

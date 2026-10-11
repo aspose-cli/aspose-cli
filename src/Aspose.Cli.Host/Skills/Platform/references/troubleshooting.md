@@ -1,12 +1,13 @@
 # Troubleshooting
 
 Errors are built for self-correction. Read `error.hint` first, then
-`error.details`; do not retry unchanged input in a loop. Product error codes
-are in the product Skill.
+`error.details`; do not retry unchanged input in a loop. Product errors and
+their recovery are in the product Skill.
 
 ## The error envelope
 
-A failed command writes one JSON envelope to stderr and exits non-zero:
+A failed command writes one JSON envelope to stderr, leaves stdout empty and
+exits non-zero:
 
 ```json
 {
@@ -21,35 +22,38 @@ A failed command writes one JSON envelope to stderr and exits non-zero:
 }
 ```
 
-- `code` is stable; branch on it, never on `message`.
-- `details` carries structured context: paths, the valid alternatives, the
-  failing operation's `id` and `op`. Its keys and their meanings are listed in
-  `aspose-cli schema v2/common/error-payload`; `errors` appears only when there
-  are several problems.
+- `code` is stable; branch on it, never on `message`. `capabilities` lists
+  every error and warning code of this build under `diagnostics`, with its
+  category and exit code.
+- `details` carries structured context: the resolved path, the option or
+  argument at fault, the valid alternatives (`available`, `suggestions`), the
+  failing operation's `id` and `op`. `aspose-cli schema v2/common/error-payload`
+  describes every key; `errors` appears only when there are several problems.
 - `hint` is the most likely next action; `docs`, when present, names a topic
   for `aspose-cli docs <topic>`.
 
 Warnings do not fail a command. They appear in the result's `warnings` array
-with `code`, `message` and `hint`, and on stderr in table output.
+with a `code`, `message` and, when there is one, `hint` and `details`, and on
+stderr in human output. A warning with `affectsCompleteness: true` leaves the
+output or its evidence incomplete; report it.
 
 ## Exit codes
 
-| Exit | Category | Typical codes |
-|------|----------|---------------|
-| 0 | Success | |
-| 1 | Internal defect | `INTERNAL_ERROR` |
-| 2 | Usage | `USAGE_ERROR`, `OPTION_INVALID` |
-| 3 | Input file | `FILE_NOT_FOUND`, `FILE_LOCKED`, `FILE_CORRUPT`, `PASSWORD_REQUIRED`, `INPUT_CHANGED` |
-| 4 | Validation | `OPS_INVALID`, `*_NOT_FOUND`, `RENDER_TOO_LARGE` |
-| 5 | Output | `OUTPUT_EXISTS`, `OUTPUT_UNWRITABLE`, `OUTPUT_CONFLICT` |
-| 6 | Format | `FORMAT_UNSUPPORTED`, `FORMAT_MISMATCH`, `FEATURE_UNSUPPORTED`, `RENDER_FAILED` |
-| 7 | License | `LICENSE_FILE_NOT_FOUND`, `LICENSE_INVALID`, `EVALUATION_LIMIT` |
-| 8 | Partial | a `--best-effort` failure, a failed review, a missing font in `fonts check`, `OUTPUT_PUBLICATION_PARTIAL` |
-| 9 | Timeout | `OPERATION_TIMEOUT` |
-| 130 | Cancelled | Ctrl+C, with or without --timeout: the work stops, nothing is published, its staging is removed and no error is written |
+Branch on the exit code first, then on the code in the envelope:
 
-`capabilities --output-format json` lists every error and warning code of this build
-with its owner, severity and exit code under `diagnostics`.
+- 0: the command succeeded. Its warnings can still need action.
+- 8: the command finished and printed its result, but the result did not pass
+  or is incomplete: a failed operation under `--best-effort`, failed
+  verification, a failed review, a missing font in `fonts check`, a failed
+  `doctor` check. Read the result; it says what failed.
+- 130: the command was cancelled with Ctrl+C, with or without --timeout. The
+  work stops, nothing is published, its staging is removed and no error is
+  written.
+- Any other non-zero exit comes with an error envelope; its code's category
+  and exit code are listed in `capabilities`. Usage errors (exit 2) are fixed
+  on the command line, input errors (exit 3) in the input file or its
+  password, and `OPERATION_TIMEOUT` (exit 9) by a longer `--timeout` or a
+  smaller request.
 
 ## Diagnosis
 
@@ -65,139 +69,78 @@ aspose-cli capabilities --output-format json
 - `aspose-cli fonts check <file>` explains most rendering and layout
   surprises (`aspose-cli docs verification`).
 
-## Shared codes
+## Recovering from common errors
 
-**Usage (exit 2)**
+**The command line.**
 
-- `USAGE_ERROR`: the command line cannot run as written. An unknown command,
-  option or option value lists what exists in `details.available` and names
-  the closest ones in its hint and `details.suggestions`, a command by its
-  full path such as `pdf inspect`; a token starting with `--`
-  is never taken as a file argument, so pass such a file name after a `--`
-  token, which ends the options. A command that only groups others, run
-  without one, prints its help and lists its commands in `details.available`.
-  An output whose extension is not one of its
-  format's is refused before anything is read; `details.option` names the
-  option, or `details.argument` the positional argument, and the message lists
-  the extensions to use. That covers
-  a `convert` or `render` `--out` with no extension or one that contradicts
-  `--to`, such as `--to pdf --out a.docx`, and an `edit` or `create` output
-  that names a format the command does not write, such as `--out report.pdf`,
-  whose hint names the product command that writes it: write the command's
-  own format first, then run that `convert` or `render`. Without `--to`, a
-  `convert` or `render` writes the format its `--out` extension names; a
-  `convert` with neither is a `USAGE_ERROR`. `-` names standard input only:
-  `--out -` is `OPTION_INVALID`, so name a file.
-
-**Input (exit 3)**
-
-- `FILE_NOT_FOUND`: relative paths resolve against `--workdir`, or the current
-  directory; `details.path` is the resolved path.
-- `FILE_LOCKED`: another application holds the file exclusively. Ask the user
-  to close it and retry the same command; nothing was written.
-- `FILE_ACCESS_DENIED`: the process may not read the file.
-- `FILE_CORRUPT`: the content is not a readable document of that type, nor one
-  another product reads; `details.path` names the file and `details.reason`
-  says what is wrong. Renaming a file does not change its format. A legacy
-  binary file (`.doc`, `.xls`, `.ppt`) and an encrypted Office Open XML file
-  share one container signature, so a legacy file renamed to `.docx`, `.xlsx`
-  or `.pptx` reaches that extension's product and fails there, with
-  `FILE_CORRUPT` or with `FORMAT_MISMATCH` naming the products that signature
-  could belong to.
-- `FILE_TOO_LARGE`, `INPUT_BUDGET_EXCEEDED`: the input exceeds a resource
-  budget; `--max-input-bytes` raises the size limit up to its hard maximum.
-- `INPUT_CHANGED`: the file no longer matches `--if-match` or `ifMatch`, or
-  changed while it was read. Read it again, review what changed, and retry with
-  the new `input.fingerprint.sha256`.
-- `PASSWORD_REQUIRED`: no password was given. `PASSWORD_INVALID`: the given one
-  failed. Ask the user; never guess. Pass it with `--password-env <VAR>` or
-  `--password-stdin` (one stdin option per command). A command that reads two documents, such as `compare`,
-  names its argument in `details.argument` and its own option in the hint, for example
-  `--right-password-env`. A protect or unprotect operation, such as
-  `unprotect_sheet`, reads its password from the variable its `passwordEnv`
-  field names; its error names the protected part in `details.target` and that
-  field in `details.field`.
-
-**Usage and validation (exit 2 and 4)**
-
-- `OPTION_INVALID`: an option or argument value is invalid here;
-  `details.option` names the option, `details.argument` the positional
-  argument. An `--out` that resolves to the input is refused: use `--in-place`. A
-  `*-env` option, such as `--password-env`, whose variable is not set or is
-  empty names that variable in `details.variable`; an operation's `*Env` field
-  reports it with the same words as `OPS_INVALID`. `capabilities` with an
-  unknown product or command names its positional argument in
-  `details.argument` (`product` or `command`) and lists what exists in
-  `details.available` and the closest names in `details.suggestions`; a list
-  longer than 50 names is cut there and `details.availableCount` gives the
-  total.
-- `OPS_INVALID`: `details.id`, `details.op` and `details.reason` locate the
-  failing operation (`aspose-cli docs editing`).
-- `*_NOT_FOUND`: `details.available` and `details.suggestions` list what
-  exists (`aspose-cli docs editing`). `PAGE_NOT_FOUND` reports
+- An unknown command, option, value, operation or field lists what exists in
+  `details.available` and the closest names in `details.suggestions`; the
+  hint names a command by its full path, such as `pdf inspect`. A command that
+  only groups others, run without one, is a `USAGE_ERROR` that lists its
+  commands in `details.available`; with human output it prints its help to
+  stderr instead.
+- A token starting with `--` is never taken as a file argument; pass such a
+  file name after a `--` token, which ends the options.
+- `-` names standard input only: `--out -` is refused, so name a file. An
+  `--out` that resolves to the input is refused too: use `--in-place`.
+- An output whose extension is not one of its format's is refused before
+  anything is read, listing the accepted extensions in `details.available`
+  and, for a mistyped one such as `.docz`, the closest in
+  `details.suggestions`. `convert` and `render` write the format their `--out`
+  extension names when `--to` is absent; a `convert` with neither is refused.
+  An output that names another format, such as `--out report.pdf`, has a hint
+  naming the command that writes it: an `edit` or `create` writes its own
+  format first, to convert or render after; a `render` points to the
+  `convert` of the same input.
+- A selection such as `--pages` takes 1-based ranges such as `1-3,7,9-`, or
+  `all`; a number past the end fails with the product's not-found code and
   `details.availableCount`.
-- `OPTION_INVALID` on a selection such as `--pages`: use 1-based ranges such as
-  `1-3,7,9-`, or `all`.
-- `RENDER_TOO_LARGE`: the image would have too many pixels; lower `--dpi` or
-  render less.
 
-**Output (exit 5)**
+**The input file.**
 
-- `OUTPUT_EXISTS`: pass `--overwrite` deliberately or choose another path.
-  Commands that write several files refuse the whole run when one exists;
-  `--overwrite` replaces only the files the command writes.
-  `review --overwrite` replaces only an empty directory or earlier evidence
-  (a directory with `review.json`).
-- `OUTPUT_UNWRITABLE`: the operating system refused the write. A file open in
-  another application usually reads fine but fails the final in-place replace;
-  ask the user to close it. The input and any backup are untouched.
-- `OUTPUT_CONFLICT`: the output changed while the command ran and was not
-  overwritten.
+- A relative path resolves against `--workdir`, or the current directory;
+  `details.path` is the resolved path.
+- A file another application holds (`FILE_LOCKED`): ask the user to close it
+  and retry the same command; nothing was written.
+- A file that is not a readable document of its type (`FILE_CORRUPT`):
+  renaming a file does not change its format. When the extension disagrees
+  with the content (`FORMAT_MISMATCH`), `details.detected` names the product
+  the content looks like and the hint names its command: use it, rename the
+  file, or pass `--product <id>` to `review` or `preview open`. When several
+  products or readings fit (`FORMAT_AMBIGUOUS`), pass what the hint names.
+- A password that is missing or wrong (`PASSWORD_REQUIRED`,
+  `PASSWORD_INVALID`): ask the user; never guess. Pass it with
+  `--password-env <VAR>` or `--password-stdin`. A command that reads two
+  documents, such as `compare`, names the argument in `details.argument` and
+  its own option in the hint; an operation that needs a password names its
+  `*Env` field in `details.field`.
+- The file changed since you read it (`INPUT_CHANGED`): read it again, review
+  what changed, and retry with the new `input.fingerprint.sha256`.
+- An input over a resource budget: the message and `details` give the limit;
+  `--max-input-bytes` raises the size limit up to its hard maximum,
+  and a smaller selection helps the others.
 
-**Format (exit 6)**
+**The output.**
 
-- `FORMAT_UNSUPPORTED`: `capabilities` lists the formats each product loads,
-  converts and renders.
-- `FORMAT_MISMATCH`: the extension disagrees with the content, such as a Word
-  document renamed to `.pdf`; check the real file type. `details.path` names the
-  file and `details.detected` the product the content looks like, whose command
-  a product command's hint names: use it, rename the file, or pass
-  `--product <id>` to `review` or `preview open`, which then lets that engine read it.
-  A damaged file of a format the command reads, such as a PDF given to
-  `words convert`, stays `FILE_CORRUPT`. A product command reads its input by
-  content, so a file of its own product under another extension, such as that
-  Word document given to `words convert`, opens without this error; the result's
-  `input.format` names the real format.
-- `FORMAT_AMBIGUOUS`: the input can be read more than one way. Several products
-  recognize it (pass `--product`), or a text input's numbers depend on its
-  culture (the hint names the option that reads it).
+- An output that exists (`OUTPUT_EXISTS`): pass `--overwrite` deliberately or
+  choose another path. Commands that write several files refuse the whole run
+  when one exists; `--overwrite` replaces only the files the command writes.
+- A write the operating system refused (`OUTPUT_UNWRITABLE`): a file open in
+  another application usually reads fine but fails the final in-place
+  replace; ask the user to close it. The input and any backup are untouched.
+
+**The engine.**
+
 - `FEATURE_UNSUPPORTED`: this build cannot perform the request on this input;
-  the message names what.
-- `RENDER_FAILED`: the engine failed while rasterizing content it can otherwise
-  read; the input can still be valid. Reduce the selection or check fonts.
-
-**Timeout (exit 9)**
-
-- `OPERATION_TIMEOUT`: `--timeout <seconds>` expired. Supervised work was
-  stopped and staged outputs were recovered before the exit. With
-  `details.phase` `regex`, a regular expression you supplied exceeded its own
-  execution budget, which `--timeout` does not raise: simplify the expression
-  or search a narrower part of the document.
-
-## Shared warnings
-
-- `EVALUATION_MODE`, `EVALUATION_INPUT_TRUNCATED`, `EVALUATION_INPUT_MARKED`: evaluation mode,
-  now or in an earlier save of the input; disclose it (`aspose-cli docs licensing`).
-- `BACKUP_PREDATES_EDIT`: an in-place edit kept an existing backup that holds an
-  earlier version than the file it replaced; the replaced version has no backup.
-- `LIST_TRUNCATED`: a list in the result was capped; its hint names the command
-  that reads the rest.
-- `LOSSY_CONVERSION`: the target format cannot hold everything the source
-  had; tell the user what was lost.
-- `REMOTE_RESOURCES_BLOCKED`: an external resource was left out of the output;
-  review the incomplete result.
-- `SIGNATURE_INVALIDATED`: the change invalidated a digital signature; re-sign
-  the reviewed output.
+  the message names what. Do not retry it.
+- `RENDER_FAILED`: the engine failed while rasterizing content it can
+  otherwise read; the input can still be valid. Reduce the selection or check
+  fonts. `RENDER_TOO_LARGE`: lower `--dpi` or render less.
+- `OPERATION_TIMEOUT` with `details.phase` `regex`: a regular expression you
+  supplied exceeded its own budget, which `--timeout` does not raise; simplify
+  it or search a narrower part of the document.
+- Evaluation codes (`EVALUATION_LIMIT` and the `EVALUATION_*` warnings): see
+  `aspose-cli docs licensing`.
 
 ## Windows PowerShell
 

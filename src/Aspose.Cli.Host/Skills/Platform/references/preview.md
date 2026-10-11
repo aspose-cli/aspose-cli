@@ -8,11 +8,12 @@ the file. It is a review aid for people; agents verify with reads and
 aspose-cli preview open <file> --output-format json
 ```
 
-The result carries `id`, `product`, `url`, `pid`, `file`, `view`, `reused`
-and, when the document rendered without a license, its `license` mode. Content detection selects
-the product; `--product` overrides it and `--view` picks another of the
-product's views (`capabilities` lists them under `products[].preview.views`).
-It opens the default browser unless `--no-open` is given or `ASPOSE_CLI_NO_OPEN=1` is set.
+It opens the viewer in the default browser; pass `--no-open` when no browser
+should appear, such as in automation, and hand the result's `url` to the
+person. Content detection selects the product; `--product` overrides it and
+`--view` picks another of the product's views (`capabilities` lists them
+under `products[].preview.views`). `aspose-cli schema v2/common/preview-session`
+describes the result.
 
 ## Lifecycle
 
@@ -21,11 +22,9 @@ aspose-cli preview status --output-format json
 aspose-cli preview stop --all --output-format json
 ```
 
-`preview status <id>` and `preview stop <id>` address one document. `status`
-lists each open document in `sessions[]`, with the same `id`, `product`,
-`url`, `file` and `view` as the start result and its current `revision`;
-`stop` names the closed documents in `stopped[]` and those still open in
-`sessions[]`; `stop --all` closes every document and ends the service.
+`preview status <id>` and `preview stop <id>` address one document, by the
+`id` that `preview open` returned; `status` without an id lists every open
+document, and `stop --all` closes every document and ends the service.
 
 ## The viewer service
 
@@ -46,14 +45,16 @@ lists each open document in `sessions[]`, with the same `id`, `product`,
 
 ## Licensing
 
-Each document keeps the license it was opened with. Installing or removing a
-license recycles the renderer behind the service, so the next render applies
-it while open documents stay on screen. A license the engine refuses fails
-that document alone. Licensing a preview does not remove evaluation marks
-already saved in a file; regenerate the file with the license
+Each document keeps the license it was opened with; the result of a document
+opened without a license carries its `license` mode, and a licensed one
+omits `license`. Installing or
+removing a license recycles the renderer behind the service, so the next
+render applies it while open documents stay on screen. A license the engine
+refuses fails that document alone. Licensing a preview does not remove
+evaluation marks already saved in a file; regenerate the file with the license
 (`aspose-cli docs licensing`).
 
 ## The App
 
-`aspose-cli app open` opens the same viewer inside a browser workspace for people
-who prefer a guided setup; see `aspose-cli docs app`.
+`aspose-cli app open` opens the same viewer inside a browser workspace for
+people who prefer a guided setup; see `aspose-cli docs app`.
