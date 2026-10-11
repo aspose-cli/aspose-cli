@@ -330,6 +330,41 @@
       "actual": "words split: boolean options that do not publish false, true: --overwrite, --password-stdin."
     },
     {
+      "case": "C-R33 | v2/common/capabilities none",
+      "invariant": "C-R33",
+      "rule": "C-R33",
+      "cause": "capabilities-input-kind-none",
+      "actual": "commandArgumentCapabilities.inputKind: \"none\" as a value; omit the field instead; commandOptionCapabilities.inputKind: \"none\" as a value; omit the field instead"
+    },
+    {
+      "case": "C-R17 | v2/cells/ops#conditionalRule",
+      "invariant": "C-R17",
+      "rule": "C-R17",
+      "cause": "cells-enum-values-camel-case",
+      "actual": "kind: enum values cellValue, colorScale, dataBar, topBottom, iconSet are not lowercase kebab-case; operator: enum values notBetween, notEqual, greaterThan, lessThan, greaterOrEqual, lessOrEqual are not lowercase kebab-case; iconSet: enum va..."
+    },
+    {
+      "case": "C-R17 | v2/cells/ops#protect_sheet",
+      "invariant": "C-R17",
+      "rule": "C-R17",
+      "cause": "cells-enum-values-camel-case",
+      "actual": "allow[]: enum values formatCells, insertRows, insertColumns, deleteRows, deleteColumns, autoFilter are not lowercase kebab-case"
+    },
+    {
+      "case": "C-R17 | v2/cells/ops#set_validation",
+      "invariant": "C-R17",
+      "rule": "C-R17",
+      "cause": "cells-enum-values-camel-case",
+      "actual": "type: enum values wholeNumber, textLength are not lowercase kebab-case; operator: enum values notBetween, notEqual, greaterThan, lessThan, greaterOrEqual, lessOrEqual are not lowercase kebab-case"
+    },
+    {
+      "case": "C-R17 | v2/cells/workbook-info",
+      "invariant": "C-R17",
+      "rule": "C-R17",
+      "cause": "cells-enum-values-camel-case",
+      "actual": "validationInfo.type.anyOf[0]: enum values wholeNumber, textLength are not lowercase kebab-case"
+    },
+    {
       "case": "C-R25 | cells evaluation export of a later sheet error details",
       "invariant": "C-R25",
       "rule": "C-R25",
@@ -338,6 +373,111 @@
         "evaluation"
       ],
       "actual": "EVALUATION_LIMIT details.requestedSheet is not in the details dictionary; EVALUATION_LIMIT details.firstSheet is not in the details dictionary"
+    },
+    {
+      "case": "C-R20 | v2/cells/ops field bottom",
+      "invariant": "C-R20",
+      "rule": "C-R20",
+      "cause": "cells-field-types-disagree",
+      "actual": "boolean in conditionalRule; number in margins"
+    },
+    {
+      "case": "C-R20 | v2/cells/ops field footer",
+      "invariant": "C-R20",
+      "rule": "C-R20",
+      "cause": "cells-field-types-disagree",
+      "actual": "number in margins; string in set_page_setup"
+    },
+    {
+      "case": "C-R20 | v2/cells/ops field header",
+      "invariant": "C-R20",
+      "rule": "C-R20",
+      "cause": "cells-field-types-disagree",
+      "actual": "number in margins; string in set_page_setup"
+    },
+    {
+      "case": "C-R20 | v2/cells/ops field position",
+      "invariant": "C-R20",
+      "rule": "C-R20",
+      "cause": "cells-field-types-disagree",
+      "actual": "enum in chartLegend; integer in add_sheet, import_sheet, move_sheet"
+    },
+    {
+      "case": "C-R20 | v2/cells/ops field values",
+      "invariant": "C-R20",
+      "rule": "C-R20",
+      "cause": "cells-field-types-disagree",
+      "actual": "array of array of boolean/number/string in set_values; array of object{field,function,label,numberFormat} in create_pivot"
+    },
+    {
+      "case": "C-R20 | v2/cells/ops#copy_range ranges",
+      "invariant": "C-R20",
+      "rule": "C-R20",
+      "cause": "cells-from-to-ranges",
+      "actual": "to: to ends a from-to range; a range names its ends first and last"
+    },
+    {
+      "case": "C-R20 | v2/cells/ops#group_columns ranges",
+      "invariant": "C-R20",
+      "rule": "C-R20",
+      "cause": "cells-from-to-ranges",
+      "actual": "to: to ends a from-to range; a range names its ends first and last"
+    },
+    {
+      "case": "C-R20 | v2/cells/ops#group_rows ranges",
+      "invariant": "C-R20",
+      "rule": "C-R20",
+      "cause": "cells-from-to-ranges",
+      "actual": "to: to ends a from-to range; a range names its ends first and last"
+    },
+    {
+      "case": "C-R20 | v2/cells/ops#import_range ranges",
+      "invariant": "C-R20",
+      "rule": "C-R20",
+      "cause": "cells-from-to-ranges",
+      "actual": "to: to ends a from-to range; a range names its ends first and last"
+    },
+    {
+      "case": "C-R20 | v2/cells/ops#resize_columns ranges",
+      "invariant": "C-R20",
+      "rule": "C-R20",
+      "cause": "cells-from-to-ranges",
+      "actual": "to: to ends a from-to range; a range names its ends first and last"
+    },
+    {
+      "case": "C-R20 | v2/cells/ops#resize_rows ranges",
+      "invariant": "C-R20",
+      "rule": "C-R20",
+      "cause": "cells-from-to-ranges",
+      "actual": "to: to ends a from-to range; a range names its ends first and last"
+    },
+    {
+      "case": "C-R20 | v2/cells/ops#ungroup_columns ranges",
+      "invariant": "C-R20",
+      "rule": "C-R20",
+      "cause": "cells-from-to-ranges",
+      "actual": "to: to ends a from-to range; a range names its ends first and last"
+    },
+    {
+      "case": "C-R20 | v2/cells/ops#ungroup_rows ranges",
+      "invariant": "C-R20",
+      "rule": "C-R20",
+      "cause": "cells-from-to-ranges",
+      "actual": "to: to ends a from-to range; a range names its ends first and last"
+    },
+    {
+      "case": "C-R33 | v2/cells/workbook-info names",
+      "invariant": "C-R33",
+      "rule": "C-R33",
+      "cause": "cells-has-vba-not-has-macros",
+      "actual": "workbookSummary.hasVba: the other products name this fact hasMacros"
+    },
+    {
+      "case": "C-R21 | v2/cells/ops#set_page_setup",
+      "invariant": "C-R21",
+      "rule": "C-R21",
+      "cause": "cells-page-setup-paper-and-margins-unread",
+      "actual": "paperSize: no read reports it; margins: no read reports it"
     },
     {
       "case": "C-R28 | cells code names",
@@ -352,6 +492,272 @@
       "rule": "C-R25",
       "cause": "cells-range-budget-uses-its-own-keys",
       "actual": "RANGE_TOO_LARGE details.requestedCells is not in the details dictionary; RANGE_TOO_LARGE details.maxCells is not in the details dictionary"
+    },
+    {
+      "case": "C-R21 | v2/cells/ops#freeze_panes",
+      "invariant": "C-R21",
+      "rule": "C-R21",
+      "cause": "cells-read-names-differ-from-op-fields",
+      "actual": "cell: read back as freezePanes"
+    },
+    {
+      "case": "C-R21 | v2/cells/ops#group_columns",
+      "invariant": "C-R21",
+      "rule": "C-R21",
+      "cause": "cells-read-names-differ-from-op-fields",
+      "actual": "collapse: read back as collapsed"
+    },
+    {
+      "case": "C-R21 | v2/cells/ops#group_rows",
+      "invariant": "C-R21",
+      "rule": "C-R21",
+      "cause": "cells-read-names-differ-from-op-fields",
+      "actual": "collapse: read back as collapsed"
+    },
+    {
+      "case": "C-R21 | v2/cells/ops#rename_sheet",
+      "invariant": "C-R21",
+      "rule": "C-R21",
+      "cause": "cells-read-names-differ-from-op-fields",
+      "actual": "to: read back as name"
+    },
+    {
+      "case": "C-R21 | v2/cells/ops#set_autofilter",
+      "invariant": "C-R21",
+      "rule": "C-R21",
+      "cause": "cells-read-names-differ-from-op-fields",
+      "actual": "range: read back as autoFilter"
+    },
+    {
+      "case": "C-R21 | v2/cells/ops#set_print_area",
+      "invariant": "C-R21",
+      "rule": "C-R21",
+      "cause": "cells-read-names-differ-from-op-fields",
+      "actual": "range: read back as printArea"
+    },
+    {
+      "case": "C-R20 | v2/cells/ops field at",
+      "invariant": "C-R20",
+      "rule": "C-R20",
+      "cause": "cells-row-and-cell-fields-share-names",
+      "actual": "integer in delete_rows, insert_rows; string in create_chart, create_pivot, delete_columns and 2 more"
+    },
+    {
+      "case": "C-R20 | v2/cells/ops field from",
+      "invariant": "C-R20",
+      "rule": "C-R20",
+      "cause": "cells-row-and-cell-fields-share-names",
+      "actual": "integer in group_rows, resize_rows, ungroup_rows; string in copy_range, group_columns, import_range and 2 more"
+    },
+    {
+      "case": "C-R20 | v2/cells/ops field to",
+      "invariant": "C-R20",
+      "rule": "C-R20",
+      "cause": "cells-row-and-cell-fields-share-names",
+      "actual": "integer in group_rows, resize_rows, ungroup_rows; string in copy_range, group_columns, import_range and 3 more"
+    },
+    {
+      "case": "C-R18 | v2/cells/ops#add_sheet",
+      "invariant": "C-R18",
+      "rule": "C-R18",
+      "cause": "cells-sheet-and-chart-positions-zero-based",
+      "actual": "position: minimum 0, not 1"
+    },
+    {
+      "case": "C-R18 | v2/cells/ops#delete_chart",
+      "invariant": "C-R18",
+      "rule": "C-R18",
+      "cause": "cells-sheet-and-chart-positions-zero-based",
+      "actual": "index: minimum 0, not 1"
+    },
+    {
+      "case": "C-R18 | v2/cells/ops#import_sheet",
+      "invariant": "C-R18",
+      "rule": "C-R18",
+      "cause": "cells-sheet-and-chart-positions-zero-based",
+      "actual": "position: minimum 0, not 1"
+    },
+    {
+      "case": "C-R18 | v2/cells/ops#move_sheet",
+      "invariant": "C-R18",
+      "rule": "C-R18",
+      "cause": "cells-sheet-and-chart-positions-zero-based",
+      "actual": "position: minimum 0, not 1"
+    },
+    {
+      "case": "C-R18 | v2/cells/ops#update_chart",
+      "invariant": "C-R18",
+      "rule": "C-R18",
+      "cause": "cells-sheet-and-chart-positions-zero-based",
+      "actual": "index: minimum 0, not 1"
+    },
+    {
+      "case": "C-R18 | v2/cells/workbook-info",
+      "invariant": "C-R18",
+      "rule": "C-R18",
+      "cause": "cells-sheet-and-chart-positions-zero-based",
+      "actual": "chartInfo.index: minimum 0, not 1; sheetInfo.position: minimum 0, not 1"
+    },
+    {
+      "case": "C-R18 | v2/cells/workbook-read",
+      "invariant": "C-R18",
+      "rule": "C-R18",
+      "cause": "cells-sheet-and-chart-positions-zero-based",
+      "actual": "sheetProjection.position: minimum 0, not 1"
+    },
+    {
+      "case": "C-R21 | v2/cells/ops#add_comment",
+      "invariant": "C-R21",
+      "rule": "C-R21",
+      "cause": "cells-state-not-read-back",
+      "actual": "text: no read reports it; author: no read reports it"
+    },
+    {
+      "case": "C-R21 | v2/cells/ops#add_conditional_format",
+      "invariant": "C-R21",
+      "rule": "C-R21",
+      "cause": "cells-state-not-read-back",
+      "actual": "rule: no read reports it; style: no read reports it"
+    },
+    {
+      "case": "C-R21 | v2/cells/ops#add_sparkline",
+      "invariant": "C-R21",
+      "rule": "C-R21",
+      "cause": "cells-state-not-read-back",
+      "actual": "dataRange: no read reports it; location: no read reports it; type: no read reports it; color: no read reports it"
+    },
+    {
+      "case": "C-R21 | v2/cells/ops#create_chart",
+      "invariant": "C-R21",
+      "rule": "C-R21",
+      "cause": "cells-state-not-read-back",
+      "actual": "dataRange: no read reports it; title: no read reports it; seriesInRows: no read reports it; legend: no read reports it; axisTitles: no read reports it; seriesColors: no read reports it; dataLabels: no read reports it"
+    },
+    {
+      "case": "C-R21 | v2/cells/ops#create_pivot",
+      "invariant": "C-R21",
+      "rule": "C-R21",
+      "cause": "cells-state-not-read-back",
+      "actual": "sourceRange: no read reports it; rows: no read reports it; columns: no read reports it; values: no read reports it; captions: no read reports it"
+    },
+    {
+      "case": "C-R21 | v2/cells/ops#create_table",
+      "invariant": "C-R21",
+      "rule": "C-R21",
+      "cause": "cells-state-not-read-back",
+      "actual": "style: no read reports it; totalsRow: no read reports it"
+    },
+    {
+      "case": "C-R21 | v2/cells/ops#edit_comment",
+      "invariant": "C-R21",
+      "rule": "C-R21",
+      "cause": "cells-state-not-read-back",
+      "actual": "text: no read reports it; author: no read reports it"
+    },
+    {
+      "case": "C-R21 | v2/cells/ops#insert_image",
+      "invariant": "C-R21",
+      "rule": "C-R21",
+      "cause": "cells-state-not-read-back",
+      "actual": "width: no read reports it; height: no read reports it"
+    },
+    {
+      "case": "C-R21 | v2/cells/ops#protect_sheet",
+      "invariant": "C-R21",
+      "rule": "C-R21",
+      "cause": "cells-state-not-read-back",
+      "actual": "allow: no read reports it"
+    },
+    {
+      "case": "C-R21 | v2/cells/ops#resize_columns",
+      "invariant": "C-R21",
+      "rule": "C-R21",
+      "cause": "cells-state-not-read-back",
+      "actual": "width: no read reports it"
+    },
+    {
+      "case": "C-R21 | v2/cells/ops#resize_rows",
+      "invariant": "C-R21",
+      "rule": "C-R21",
+      "cause": "cells-state-not-read-back",
+      "actual": "height: no read reports it"
+    },
+    {
+      "case": "C-R21 | v2/cells/ops#set_borders",
+      "invariant": "C-R21",
+      "rule": "C-R21",
+      "cause": "cells-state-not-read-back",
+      "actual": "edges: no read reports it; style: no read reports it; color: no read reports it"
+    },
+    {
+      "case": "C-R21 | v2/cells/ops#set_default_font",
+      "invariant": "C-R21",
+      "rule": "C-R21",
+      "cause": "cells-state-not-read-back",
+      "actual": "font: no read reports it; size: no read reports it"
+    },
+    {
+      "case": "C-R21 | v2/cells/ops#set_hyperlink",
+      "invariant": "C-R21",
+      "rule": "C-R21",
+      "cause": "cells-state-not-read-back",
+      "actual": "url: no read reports it; target: no read reports it; display: no read reports it"
+    },
+    {
+      "case": "C-R21 | v2/cells/ops#set_sheet_view",
+      "invariant": "C-R21",
+      "rule": "C-R21",
+      "cause": "cells-state-not-read-back",
+      "actual": "gridlines: no read reports it; zoom: no read reports it; headings: no read reports it"
+    },
+    {
+      "case": "C-R21 | v2/cells/ops#set_tab_color",
+      "invariant": "C-R21",
+      "rule": "C-R21",
+      "cause": "cells-state-not-read-back",
+      "actual": "color: no read reports it"
+    },
+    {
+      "case": "C-R21 | v2/cells/ops#set_validation",
+      "invariant": "C-R21",
+      "rule": "C-R21",
+      "cause": "cells-state-not-read-back",
+      "actual": "operator: no read reports it; value1: no read reports it; value2: no read reports it; listItems: no read reports it; listSource: no read reports it; inputMessage: no read reports it; errorMessage: no read reports it; allowBlank: no read rep..."
+    },
+    {
+      "case": "C-R21 | v2/cells/ops#update_chart",
+      "invariant": "C-R21",
+      "rule": "C-R21",
+      "cause": "cells-state-not-read-back",
+      "actual": "title: no read reports it; dataRange: no read reports it; seriesInRows: no read reports it; legend: no read reports it; axisTitles: no read reports it; seriesColors: no read reports it; dataLabels: no read reports it"
+    },
+    {
+      "case": "C-R20 | v2/cells/ops#conditionalStyle spelling",
+      "invariant": "C-R20",
+      "rule": "C-R20",
+      "cause": "cells-style-abbreviated-names",
+      "actual": "bg: abbreviated name"
+    },
+    {
+      "case": "C-R20 | v2/cells/ops#styleData spelling",
+      "invariant": "C-R20",
+      "rule": "C-R20",
+      "cause": "cells-style-abbreviated-names",
+      "actual": "bg: abbreviated name; hAlign: abbreviated name; vAlign: abbreviated name"
+    },
+    {
+      "case": "C-R20 | v2/cells/workbook-read spelling",
+      "invariant": "C-R20",
+      "rule": "C-R20",
+      "cause": "cells-style-abbreviated-names",
+      "actual": "styleData.bg: abbreviated name; styleData.hAlign: abbreviated name; styleData.vAlign: abbreviated name"
+    },
+    {
+      "case": "C-R20 | v2/cells/ops field style",
+      "invariant": "C-R20",
+      "rule": "C-R20",
+      "cause": "cells-style-has-three-types",
+      "actual": "enum in set_borders; object{bg,bold,color,font,hAlign,indent,italic,locked,numberFormat,size,strikethrough,underline,vAlign,wrap} in format_range; object{bg,bold,color,italic,numberFormat,strikethrough,underline} in add_conditional_format; ..."
     },
     {
       "case": "C-R10 | pdf sign declared",
@@ -641,6 +1047,349 @@
       "actual": "FILE_NOT_FOUND has details v2/common/diagnostic-details, not v2/common/not-found-details; LICENSE_FILE_NOT_FOUND has details v2/common/diagnostic-details, not v2/common/not-found-details"
     },
     {
+      "case": "C-R31 | v2/cells/convert-result fields",
+      "invariant": "C-R31",
+      "rule": "C-R31",
+      "cause": "file-object-fields-optional",
+      "actual": "input: encrypted optional; output: fingerprint optional"
+    },
+    {
+      "case": "C-R31 | v2/cells/edit-result fields",
+      "invariant": "C-R31",
+      "rule": "C-R31",
+      "cause": "file-object-fields-optional",
+      "actual": "input: encrypted optional"
+    },
+    {
+      "case": "C-R31 | v2/cells/render-result fields",
+      "invariant": "C-R31",
+      "rule": "C-R31",
+      "cause": "file-object-fields-optional",
+      "actual": "input: encrypted optional; output: fingerprint optional"
+    },
+    {
+      "case": "C-R31 | v2/cells/search-result fields",
+      "invariant": "C-R31",
+      "rule": "C-R31",
+      "cause": "file-object-fields-optional",
+      "actual": "source: encrypted optional"
+    },
+    {
+      "case": "C-R31 | v2/cells/workbook-info fields",
+      "invariant": "C-R31",
+      "rule": "C-R31",
+      "cause": "file-object-fields-optional",
+      "actual": "source: encrypted optional"
+    },
+    {
+      "case": "C-R31 | v2/cells/workbook-read fields",
+      "invariant": "C-R31",
+      "rule": "C-R31",
+      "cause": "file-object-fields-optional",
+      "actual": "source: encrypted optional"
+    },
+    {
+      "case": "C-R31 | v2/common/font-check fields",
+      "invariant": "C-R31",
+      "rule": "C-R31",
+      "cause": "file-object-fields-optional",
+      "actual": "source: fingerprint, encrypted optional"
+    },
+    {
+      "case": "C-R31 | v2/pdf/convert-result fields",
+      "invariant": "C-R31",
+      "rule": "C-R31",
+      "cause": "file-object-fields-optional",
+      "actual": "input: fingerprint, encrypted optional"
+    },
+    {
+      "case": "C-R31 | v2/pdf/edit-result fields",
+      "invariant": "C-R31",
+      "rule": "C-R31",
+      "cause": "file-object-fields-optional",
+      "actual": "input: encrypted optional"
+    },
+    {
+      "case": "C-R31 | v2/pdf/extract-result fields",
+      "invariant": "C-R31",
+      "rule": "C-R31",
+      "cause": "file-object-fields-optional",
+      "actual": "input: fingerprint, encrypted optional"
+    },
+    {
+      "case": "C-R31 | v2/pdf/form-export-result fields",
+      "invariant": "C-R31",
+      "rule": "C-R31",
+      "cause": "file-object-fields-optional",
+      "actual": "input: fingerprint, encrypted optional; output: fingerprint optional"
+    },
+    {
+      "case": "C-R31 | v2/pdf/form-result fields",
+      "invariant": "C-R31",
+      "rule": "C-R31",
+      "cause": "file-object-fields-optional",
+      "actual": "input: fingerprint, encrypted optional"
+    },
+    {
+      "case": "C-R31 | v2/pdf/pdf-info fields",
+      "invariant": "C-R31",
+      "rule": "C-R31",
+      "cause": "file-object-fields-optional",
+      "actual": "source: encrypted optional"
+    },
+    {
+      "case": "C-R31 | v2/pdf/pdf-read fields",
+      "invariant": "C-R31",
+      "rule": "C-R31",
+      "cause": "file-object-fields-optional",
+      "actual": "source: fingerprint, encrypted optional"
+    },
+    {
+      "case": "C-R31 | v2/pdf/render-result fields",
+      "invariant": "C-R31",
+      "rule": "C-R31",
+      "cause": "file-object-fields-optional",
+      "actual": "input: fingerprint, encrypted optional; pdfPageOutput.output: fingerprint optional"
+    },
+    {
+      "case": "C-R31 | v2/pdf/search-result fields",
+      "invariant": "C-R31",
+      "rule": "C-R31",
+      "cause": "file-object-fields-optional",
+      "actual": "source: fingerprint, encrypted optional"
+    },
+    {
+      "case": "C-R31 | v2/pdf/sign-result fields",
+      "invariant": "C-R31",
+      "rule": "C-R31",
+      "cause": "file-object-fields-optional",
+      "actual": "input: fingerprint, encrypted optional; output: fingerprint optional"
+    },
+    {
+      "case": "C-R31 | v2/pdf/split-result fields",
+      "invariant": "C-R31",
+      "rule": "C-R31",
+      "cause": "file-object-fields-optional",
+      "actual": "input: fingerprint, encrypted optional; pdfSplitOutput.output: fingerprint optional"
+    },
+    {
+      "case": "C-R31 | v2/pdf/validate-result fields",
+      "invariant": "C-R31",
+      "rule": "C-R31",
+      "cause": "file-object-fields-optional",
+      "actual": "input: fingerprint, encrypted optional"
+    },
+    {
+      "case": "C-R31 | v2/pdf/write-result fields",
+      "invariant": "C-R31",
+      "rule": "C-R31",
+      "cause": "file-object-fields-optional",
+      "actual": "output: fingerprint optional"
+    },
+    {
+      "case": "C-R31 | v2/slides/convert-result fields",
+      "invariant": "C-R31",
+      "rule": "C-R31",
+      "cause": "file-object-fields-optional",
+      "actual": "input: fingerprint, encrypted optional"
+    },
+    {
+      "case": "C-R31 | v2/slides/create-result fields",
+      "invariant": "C-R31",
+      "rule": "C-R31",
+      "cause": "file-object-fields-optional",
+      "actual": "output: format, fingerprint optional"
+    },
+    {
+      "case": "C-R31 | v2/slides/edit-result fields",
+      "invariant": "C-R31",
+      "rule": "C-R31",
+      "cause": "file-object-fields-optional",
+      "actual": "input: fingerprint, encrypted optional; output: format, fingerprint optional"
+    },
+    {
+      "case": "C-R31 | v2/slides/extract-result fields",
+      "invariant": "C-R31",
+      "rule": "C-R31",
+      "cause": "file-object-fields-optional",
+      "actual": "input: fingerprint, encrypted optional"
+    },
+    {
+      "case": "C-R31 | v2/slides/presentation-info fields",
+      "invariant": "C-R31",
+      "rule": "C-R31",
+      "cause": "file-object-fields-optional",
+      "actual": "source: fingerprint, encrypted optional"
+    },
+    {
+      "case": "C-R31 | v2/slides/presentation-read fields",
+      "invariant": "C-R31",
+      "rule": "C-R31",
+      "cause": "file-object-fields-optional",
+      "actual": "source: fingerprint, encrypted optional"
+    },
+    {
+      "case": "C-R31 | v2/slides/render-result fields",
+      "invariant": "C-R31",
+      "rule": "C-R31",
+      "cause": "file-object-fields-optional",
+      "actual": "input: fingerprint, encrypted optional; slideRenderOutput.output: format, fingerprint optional"
+    },
+    {
+      "case": "C-R31 | v2/slides/search-result fields",
+      "invariant": "C-R31",
+      "rule": "C-R31",
+      "cause": "file-object-fields-optional",
+      "actual": "source: fingerprint, encrypted optional"
+    },
+    {
+      "case": "C-R31 | v2/words/compare-result fields",
+      "invariant": "C-R31",
+      "rule": "C-R31",
+      "cause": "file-object-fields-optional",
+      "actual": "left: fingerprint, encrypted optional; right: fingerprint, encrypted optional; output: format, fingerprint optional"
+    },
+    {
+      "case": "C-R31 | v2/words/convert-result fields",
+      "invariant": "C-R31",
+      "rule": "C-R31",
+      "cause": "file-object-fields-optional",
+      "actual": "input: fingerprint, encrypted optional; output: format, fingerprint optional"
+    },
+    {
+      "case": "C-R31 | v2/words/create-result fields",
+      "invariant": "C-R31",
+      "rule": "C-R31",
+      "cause": "file-object-fields-optional",
+      "actual": "output: format, fingerprint optional"
+    },
+    {
+      "case": "C-R31 | v2/words/document-info fields",
+      "invariant": "C-R31",
+      "rule": "C-R31",
+      "cause": "file-object-fields-optional",
+      "actual": "source: fingerprint, encrypted optional"
+    },
+    {
+      "case": "C-R31 | v2/words/document-read fields",
+      "invariant": "C-R31",
+      "rule": "C-R31",
+      "cause": "file-object-fields-optional",
+      "actual": "source: fingerprint, encrypted optional"
+    },
+    {
+      "case": "C-R31 | v2/words/edit-result fields",
+      "invariant": "C-R31",
+      "rule": "C-R31",
+      "cause": "file-object-fields-optional",
+      "actual": "input: fingerprint, encrypted optional; output: format, fingerprint optional"
+    },
+    {
+      "case": "C-R31 | v2/words/extract-result fields",
+      "invariant": "C-R31",
+      "rule": "C-R31",
+      "cause": "file-object-fields-optional",
+      "actual": "input: fingerprint, encrypted optional"
+    },
+    {
+      "case": "C-R31 | v2/words/render-result fields",
+      "invariant": "C-R31",
+      "rule": "C-R31",
+      "cause": "file-object-fields-optional",
+      "actual": "input: fingerprint, encrypted optional; pageOutput.output: format, fingerprint optional"
+    },
+    {
+      "case": "C-R31 | v2/words/search-result fields",
+      "invariant": "C-R31",
+      "rule": "C-R31",
+      "cause": "file-object-fields-optional",
+      "actual": "source: fingerprint, encrypted optional"
+    },
+    {
+      "case": "C-R31 | v2/words/split-result fields",
+      "invariant": "C-R31",
+      "rule": "C-R31",
+      "cause": "file-object-fields-optional",
+      "actual": "input: fingerprint, encrypted optional; splitOutput.output: format, fingerprint optional"
+    },
+    {
+      "case": "C-R20 | v2/cells/ops#conditionalStyle fixednames",
+      "invariant": "C-R20",
+      "rule": "C-R20",
+      "cause": "fill-not-named-fill-color",
+      "actual": "bg: a fill is named fillColor"
+    },
+    {
+      "case": "C-R20 | v2/cells/ops#set_default_font fixednames",
+      "invariant": "C-R20",
+      "rule": "C-R20",
+      "cause": "font-size-not-named-font-size",
+      "actual": "size: a font size is named fontSize"
+    },
+    {
+      "case": "C-R20 | v2/cells/ops#styleData fixednames",
+      "invariant": "C-R20",
+      "rule": "C-R20",
+      "cause": "font-size-not-named-font-size",
+      "actual": "size: a font size is named fontSize; bg: a fill is named fillColor"
+    },
+    {
+      "case": "C-R20 | v2/cells/workbook-read fixednames",
+      "invariant": "C-R20",
+      "rule": "C-R20",
+      "cause": "font-size-not-named-font-size",
+      "actual": "styleData.size: a font size is named fontSize; styleData.bg: a fill is named fillColor"
+    },
+    {
+      "case": "C-R20 | v2/pdf/ops#add_watermark_text fixednames",
+      "invariant": "C-R20",
+      "rule": "C-R20",
+      "cause": "font-size-not-named-font-size",
+      "actual": "size: a font size is named fontSize"
+    },
+    {
+      "case": "C-R20 | v2/slides/ops#slidesShapeStyleInput fixednames",
+      "invariant": "C-R20",
+      "rule": "C-R20",
+      "cause": "font-size-not-named-font-size",
+      "actual": "fill: a fill is named fillColor; size: a font size is named fontSize"
+    },
+    {
+      "case": "C-R20 | v2/slides/presentation-read fixednames",
+      "invariant": "C-R20",
+      "rule": "C-R20",
+      "cause": "font-size-not-named-font-size",
+      "actual": "slideTextRunData.size: a font size is named fontSize"
+    },
+    {
+      "case": "C-R20 | v2/words/document-read fixednames",
+      "invariant": "C-R20",
+      "rule": "C-R20",
+      "cause": "font-size-not-named-font-size",
+      "actual": "runData.size: a font size is named fontSize"
+    },
+    {
+      "case": "C-R20 | v2/words/ops#define_style fixednames",
+      "invariant": "C-R20",
+      "rule": "C-R20",
+      "cause": "font-size-not-named-font-size",
+      "actual": "size: a font size is named fontSize"
+    },
+    {
+      "case": "C-R20 | v2/words/ops#format_text fixednames",
+      "invariant": "C-R20",
+      "rule": "C-R20",
+      "cause": "font-size-not-named-font-size",
+      "actual": "size: a font size is named fontSize"
+    },
+    {
+      "case": "C-R20 | v2/words/ops#set_default_font fixednames",
+      "invariant": "C-R20",
+      "rule": "C-R20",
+      "cause": "font-size-not-named-font-size",
+      "actual": "size: a font size is named fontSize"
+    },
+    {
       "case": "same-name-option | --product",
       "invariant": "same-name-option",
       "rule": "C-R07",
@@ -760,6 +1509,55 @@
       "actual": "LICENSE_NOT_APPLICABLE exits 4; license errors exit 7"
     },
     {
+      "case": "C-R20 | v2/cells/ops field height",
+      "invariant": "C-R20",
+      "rule": "C-R20",
+      "cause": "measure-names-without-unit",
+      "actual": "integer in insert_image; number in resize_rows"
+    },
+    {
+      "case": "C-R20 | v2/cells/ops field width",
+      "invariant": "C-R20",
+      "rule": "C-R20",
+      "cause": "measure-names-without-unit",
+      "actual": "integer in insert_image; number in resize_columns"
+    },
+    {
+      "case": "C-R20 | v2/cells/ops#insert_image units",
+      "invariant": "C-R20",
+      "rule": "C-R20",
+      "cause": "measure-names-without-unit",
+      "actual": "height: measured in pixels; name it *Pixels; width: measured in pixels; name it *Pixels"
+    },
+    {
+      "case": "C-R20 | v2/cells/ops#margins units",
+      "invariant": "C-R20",
+      "rule": "C-R20",
+      "cause": "measure-names-without-unit",
+      "actual": "bottom: measured in inches; name it *Inches; footer: measured in inches; name it *Inches; header: measured in inches; name it *Inches; left: measured in inches; name it *Inches; right: measured in inches; name it *Inches; top: measured in i..."
+    },
+    {
+      "case": "C-R20 | v2/cells/ops#resize_columns units",
+      "invariant": "C-R20",
+      "rule": "C-R20",
+      "cause": "measure-names-without-unit",
+      "actual": "width: measured in characters; name it *Chars"
+    },
+    {
+      "case": "C-R20 | v2/cells/ops#set_page_setup units",
+      "invariant": "C-R20",
+      "rule": "C-R20",
+      "cause": "measure-names-without-unit",
+      "actual": "scale: measured in percent; name it *Percent"
+    },
+    {
+      "case": "C-R20 | v2/cells/ops#set_sheet_view units",
+      "invariant": "C-R20",
+      "rule": "C-R20",
+      "cause": "measure-names-without-unit",
+      "actual": "zoom: measured in percent; name it *Percent"
+    },
+    {
       "case": "C-R27 | common warning codes",
       "invariant": "C-R27",
       "rule": "C-R27",
@@ -779,6 +1577,195 @@
       "rule": "C-R27",
       "cause": "no-effect-operations-warn-no-match",
       "actual": "AUTHOR_NO_MATCH: an operation without effect warns OP_NO_EFFECT, never *_NO_MATCH"
+    },
+    {
+      "case": "C-R18 | v2/common/not-found-details",
+      "invariant": "C-R18",
+      "rule": "C-R18",
+      "cause": "op-batch-index-reported",
+      "actual": "index: minimum 0, not 1"
+    },
+    {
+      "case": "C-R18 | v2/common/operation-outcome",
+      "invariant": "C-R18",
+      "rule": "C-R18",
+      "cause": "op-batch-index-reported",
+      "actual": "index: minimum 0, not 1"
+    },
+    {
+      "case": "C-R30 | v2/common/operation-outcome index",
+      "invariant": "C-R30",
+      "rule": "C-R30",
+      "cause": "op-batch-index-reported",
+      "actual": "applied[] has index; an outcome names its op by id"
+    },
+    {
+      "case": "C-R30 | v2/common/operation-outcome error",
+      "invariant": "C-R30",
+      "rule": "C-R30",
+      "cause": "op-error-not-error-envelope",
+      "actual": "applied[].error defines its own error object instead of referencing v2/common/error; applied[].error requires hint, which the error envelope leaves optional"
+    },
+    {
+      "case": "C-R19 | v2/pdf/ops#decrypt",
+      "invariant": "C-R19",
+      "rule": "C-R19",
+      "cause": "op-name-without-noun",
+      "actual": "op decrypt is not <verb>_<noun> with a verb of the rule's table"
+    },
+    {
+      "case": "C-R19 | v2/pdf/ops#encrypt",
+      "invariant": "C-R19",
+      "rule": "C-R19",
+      "cause": "op-name-without-noun",
+      "actual": "op encrypt is not <verb>_<noun> with a verb of the rule's table"
+    },
+    {
+      "case": "C-R19 | v2/pdf/ops#optimize",
+      "invariant": "C-R19",
+      "rule": "C-R19",
+      "cause": "op-name-without-noun",
+      "actual": "op optimize is not <verb>_<noun> with a verb of the rule's table"
+    },
+    {
+      "case": "C-R19 | v2/words/ops#protect",
+      "invariant": "C-R19",
+      "rule": "C-R19",
+      "cause": "op-name-without-noun",
+      "actual": "op protect is not <verb>_<noun> with a verb of the rule's table"
+    },
+    {
+      "case": "C-R19 | v2/words/ops#unprotect",
+      "invariant": "C-R19",
+      "rule": "C-R19",
+      "cause": "op-name-without-noun",
+      "actual": "op unprotect is not <verb>_<noun> with a verb of the rule's table"
+    },
+    {
+      "case": "C-R19 | v2/slides/ops#append_presentation",
+      "invariant": "C-R19",
+      "rule": "C-R19",
+      "cause": "op-verb-append",
+      "actual": "op append_presentation is not <verb>_<noun> with a verb of the rule's table"
+    },
+    {
+      "case": "C-R19 | v2/words/ops#append_document",
+      "invariant": "C-R19",
+      "rule": "C-R19",
+      "cause": "op-verb-append",
+      "actual": "op append_document is not <verb>_<noun> with a verb of the rule's table"
+    },
+    {
+      "case": "C-R19 | v2/slides/ops#apply_layout",
+      "invariant": "C-R19",
+      "rule": "C-R19",
+      "cause": "op-verb-apply",
+      "actual": "op apply_layout is not <verb>_<noun> with a verb of the rule's table"
+    },
+    {
+      "case": "C-R19 | v2/words/ops#apply_list",
+      "invariant": "C-R19",
+      "rule": "C-R19",
+      "cause": "op-verb-apply",
+      "actual": "op apply_list is not <verb>_<noun> with a verb of the rule's table"
+    },
+    {
+      "case": "C-R19 | v2/cells/ops#create_chart",
+      "invariant": "C-R19",
+      "rule": "C-R19",
+      "cause": "op-verb-create",
+      "actual": "op create_chart is not <verb>_<noun> with a verb of the rule's table"
+    },
+    {
+      "case": "C-R19 | v2/cells/ops#create_pivot",
+      "invariant": "C-R19",
+      "rule": "C-R19",
+      "cause": "op-verb-create",
+      "actual": "op create_pivot is not <verb>_<noun> with a verb of the rule's table"
+    },
+    {
+      "case": "C-R19 | v2/cells/ops#create_table",
+      "invariant": "C-R19",
+      "rule": "C-R19",
+      "cause": "op-verb-create",
+      "actual": "op create_table is not <verb>_<noun> with a verb of the rule's table"
+    },
+    {
+      "case": "C-R19 | v2/slides/ops#duplicate_slide",
+      "invariant": "C-R19",
+      "rule": "C-R19",
+      "cause": "op-verb-duplicate",
+      "actual": "op duplicate_slide is not <verb>_<noun> with a verb of the rule's table"
+    },
+    {
+      "case": "C-R19 | v2/cells/ops#edit_comment",
+      "invariant": "C-R19",
+      "rule": "C-R19",
+      "cause": "op-verb-edit",
+      "actual": "op edit_comment is not <verb>_<noun> with a verb of the rule's table"
+    },
+    {
+      "case": "C-R19 | v2/cells/ops#remove_duplicates",
+      "invariant": "C-R19",
+      "rule": "C-R19",
+      "cause": "op-verb-remove",
+      "actual": "op remove_duplicates is not <verb>_<noun> with a verb of the rule's table"
+    },
+    {
+      "case": "C-R19 | v2/cells/ops#remove_hyperlink",
+      "invariant": "C-R19",
+      "rule": "C-R19",
+      "cause": "op-verb-remove",
+      "actual": "op remove_hyperlink is not <verb>_<noun> with a verb of the rule's table"
+    },
+    {
+      "case": "C-R19 | v2/pdf/ops#remove_attachment",
+      "invariant": "C-R19",
+      "rule": "C-R19",
+      "cause": "op-verb-remove",
+      "actual": "op remove_attachment is not <verb>_<noun> with a verb of the rule's table"
+    },
+    {
+      "case": "C-R19 | v2/pdf/ops#remove_metadata",
+      "invariant": "C-R19",
+      "rule": "C-R19",
+      "cause": "op-verb-remove",
+      "actual": "op remove_metadata is not <verb>_<noun> with a verb of the rule's table"
+    },
+    {
+      "case": "C-R19 | v2/words/ops#remove_comments",
+      "invariant": "C-R19",
+      "rule": "C-R19",
+      "cause": "op-verb-remove",
+      "actual": "op remove_comments is not <verb>_<noun> with a verb of the rule's table"
+    },
+    {
+      "case": "C-R19 | v2/words/ops#remove_watermark",
+      "invariant": "C-R19",
+      "rule": "C-R19",
+      "cause": "op-verb-remove",
+      "actual": "op remove_watermark is not <verb>_<noun> with a verb of the rule's table"
+    },
+    {
+      "case": "C-R19 | v2/cells/ops#update_chart",
+      "invariant": "C-R19",
+      "rule": "C-R19",
+      "cause": "op-verb-update",
+      "actual": "op update_chart is not <verb>_<noun> with a verb of the rule's table"
+    },
+    {
+      "case": "C-R19 | v2/slides/ops#update_chart_data",
+      "invariant": "C-R19",
+      "rule": "C-R19",
+      "cause": "op-verb-update",
+      "actual": "op update_chart_data is not <verb>_<noun> with a verb of the rule's table"
+    },
+    {
+      "case": "C-R19 | v2/words/ops#update_fields",
+      "invariant": "C-R19",
+      "rule": "C-R19",
+      "cause": "op-verb-update",
+      "actual": "op update_fields is not <verb>_<noun> with a verb of the rule's table"
     },
     {
       "case": "C-R08 | preview open",
@@ -900,6 +1887,34 @@
       "actual": "OPS_INVALID details.index is not in the details dictionary"
     },
     {
+      "case": "C-R20 | ops field format across products",
+      "invariant": "C-R20",
+      "rule": "C-R20",
+      "cause": "ops-field-types-differ-across-products",
+      "actual": "cells string; pdf string; words enum"
+    },
+    {
+      "case": "C-R20 | ops field location across products",
+      "invariant": "C-R20",
+      "rule": "C-R20",
+      "cause": "ops-field-types-differ-across-products",
+      "actual": "cells string; words enum"
+    },
+    {
+      "case": "C-R20 | ops field margins across products",
+      "invariant": "C-R20",
+      "rule": "C-R20",
+      "cause": "ops-field-types-differ-across-products",
+      "actual": "cells object{bottom,footer,header,left,right,top}; words object{bottom,left,right,top}"
+    },
+    {
+      "case": "C-R20 | ops field scale across products",
+      "invariant": "C-R20",
+      "rule": "C-R20",
+      "cause": "ops-field-types-differ-across-products",
+      "actual": "cells integer; pdf number"
+    },
+    {
       "case": "same-name-option | --ops",
       "invariant": "same-name-option",
       "rule": "C-R07",
@@ -970,6 +1985,132 @@
       "actual": "aspose-cli --output: a banned name; the output format is --output-format, one output file --out.; aspose-cli: the output format option is --output-format."
     },
     {
+      "case": "C-R31 | v2/cells/render-result outputs",
+      "invariant": "C-R31",
+      "rule": "C-R31",
+      "cause": "outputs-shapes-differ",
+      "actual": "outputs[]: lacks format, fingerprint"
+    },
+    {
+      "case": "C-R31 | v2/pdf/convert-result outputs",
+      "invariant": "C-R31",
+      "rule": "C-R31",
+      "cause": "outputs-shapes-differ",
+      "actual": "outputs[]: format, fingerprint optional"
+    },
+    {
+      "case": "C-R31 | v2/pdf/render-result outputs",
+      "invariant": "C-R31",
+      "rule": "C-R31",
+      "cause": "outputs-shapes-differ",
+      "actual": "outputs[]: lacks path, format, sizeBytes, fingerprint; outputs[]: not flat (output)"
+    },
+    {
+      "case": "C-R31 | v2/pdf/split-result outputs",
+      "invariant": "C-R31",
+      "rule": "C-R31",
+      "cause": "outputs-shapes-differ",
+      "actual": "outputs[]: lacks path, format, sizeBytes, fingerprint; outputs[]: not flat (output); outputs[]: index, pages, bookmark beside the file fields, not one unit field"
+    },
+    {
+      "case": "C-R31 | v2/slides/convert-result outputs",
+      "invariant": "C-R31",
+      "rule": "C-R31",
+      "cause": "outputs-shapes-differ",
+      "actual": "outputs[]: format, fingerprint optional"
+    },
+    {
+      "case": "C-R31 | v2/slides/render-result outputs",
+      "invariant": "C-R31",
+      "rule": "C-R31",
+      "cause": "outputs-shapes-differ",
+      "actual": "outputs[]: lacks path, format, sizeBytes, fingerprint; outputs[]: not flat (output); outputs[]: slide, slideId beside the file fields, not one unit field"
+    },
+    {
+      "case": "C-R31 | v2/words/render-result outputs",
+      "invariant": "C-R31",
+      "rule": "C-R31",
+      "cause": "outputs-shapes-differ",
+      "actual": "outputs[]: lacks path, format, sizeBytes, fingerprint; outputs[]: not flat (output)"
+    },
+    {
+      "case": "C-R31 | v2/words/split-result outputs",
+      "invariant": "C-R31",
+      "rule": "C-R31",
+      "cause": "outputs-shapes-differ",
+      "actual": "outputs[]: lacks path, format, sizeBytes, fingerprint; outputs[]: not flat (output); outputs[]: index, source beside the file fields, not one unit field"
+    },
+    {
+      "case": "C-R20 | v2/cells/ops#set_page_setup fixednames",
+      "invariant": "C-R20",
+      "rule": "C-R20",
+      "cause": "page-size-not-named-page-size",
+      "actual": "paperSize: a page size is named pageSize"
+    },
+    {
+      "case": "C-R20 | v2/pdf/ops#insert_blank_page fixednames",
+      "invariant": "C-R20",
+      "rule": "C-R20",
+      "cause": "page-size-not-named-page-size",
+      "actual": "size: a page size is named pageSize"
+    },
+    {
+      "case": "C-R20 | v2/pdf/ops#set_page_size fixednames",
+      "invariant": "C-R20",
+      "rule": "C-R20",
+      "cause": "page-size-not-named-page-size",
+      "actual": "size: a page size is named pageSize"
+    },
+    {
+      "case": "C-R20 | v2/slides/ops#set_slide_size fixednames",
+      "invariant": "C-R20",
+      "rule": "C-R20",
+      "cause": "page-size-not-named-page-size",
+      "actual": "size: a page size is named slideSize"
+    },
+    {
+      "case": "C-R20 | v2/words/ops#pageSetupInput fixednames",
+      "invariant": "C-R20",
+      "rule": "C-R20",
+      "cause": "page-size-not-named-page-size",
+      "actual": "size: a page size is named pageSize"
+    },
+    {
+      "case": "C-R21 | v2/pdf/ops#insert_blank_page",
+      "invariant": "C-R21",
+      "rule": "C-R21",
+      "cause": "page-size-read-as-width-and-height-points",
+      "actual": "size: read back as widthPoints; size: writes enum(A3,A4,Legal,Letter), reads number"
+    },
+    {
+      "case": "C-R21 | v2/pdf/ops#set_page_size",
+      "invariant": "C-R21",
+      "rule": "C-R21",
+      "cause": "page-size-read-as-width-and-height-points",
+      "actual": "size: read back as widthPoints; size: writes enum(A3,A4,Legal,Letter), reads number"
+    },
+    {
+      "case": "C-R21 | v2/slides/ops#set_slide_size",
+      "invariant": "C-R21",
+      "rule": "C-R21",
+      "cause": "page-size-read-as-width-and-height-points",
+      "actual": "size: read back as widthPoints; size: writes string, reads number"
+    },
+    {
+      "case": "C-R21 | v2/words/ops#add_section",
+      "invariant": "C-R21",
+      "rule": "C-R21",
+      "cause": "page-size-read-as-width-and-height-points",
+      "actual": "pageSetup.size: read back as widthPoints; pageSetup.size: writes enum(a3,a4,a5,legal,letter), reads number; pageSetup.columnCount: no read reports it"
+    },
+    {
+      "case": "C-R21 | v2/words/ops#set_page_setup",
+      "invariant": "C-R21",
+      "rule": "C-R21",
+      "cause": "page-size-read-as-width-and-height-points",
+      "actual": "setup.size: read back as widthPoints; setup.size: writes enum(a3,a4,a5,legal,letter), reads number; setup.columnCount: no read reports it"
+    },
+    {
       "case": "C-R12 | pdf extract declared",
       "invariant": "C-R12",
       "rule": "C-R12",
@@ -991,11 +2132,32 @@
       "actual": "pdf extract --to lists fdf, json, xfdf; convertFormats is docx, epub, html, jpeg, md, pdfa-1b, pdfa-2b, pdfa-3b, png, pptx, svg, tiff, txt, xlsx, xps."
     },
     {
+      "case": "C-R33 | v2/pdf/form-result none",
+      "invariant": "C-R33",
+      "rule": "C-R33",
+      "cause": "pdf-none-enum-values",
+      "actual": "type: \"none\" as a value; omit the field instead"
+    },
+    {
+      "case": "C-R33 | v2/pdf/pdf-info none",
+      "invariant": "C-R33",
+      "rule": "C-R33",
+      "cause": "pdf-none-enum-values",
+      "actual": "pdfFormSummary.type: \"none\" as a value; omit the field instead; pdfSummary.formType: \"none\" as a value; omit the field instead; pdfSummary.passwordType: \"none\" as a value; omit the field instead"
+    },
+    {
       "case": "C-R17 | pdf create values",
       "invariant": "C-R17",
       "rule": "C-R17",
       "cause": "pdf-page-size-values-not-kebab",
       "actual": "pdf create --page-size: values not in lowercase kebab case: A3, A4, Legal, Letter."
+    },
+    {
+      "case": "C-R17 | v2/pdf/ops#pageSize",
+      "invariant": "C-R17",
+      "rule": "C-R17",
+      "cause": "pdf-page-size-values-uppercase",
+      "actual": "the schema: enum values A3, A4, Letter, Legal are not lowercase kebab-case"
     },
     {
       "case": "C-R08 | pdf query pages",
@@ -1012,6 +2174,20 @@
       "actual": "pdf query forms reads content but has no --max-<unit> budget."
     },
     {
+      "case": "C-R21 | v2/pdf/ops#crop_pages",
+      "invariant": "C-R21",
+      "rule": "C-R21",
+      "cause": "pdf-read-names-differ-from-op-fields",
+      "actual": "rect: read back as cropBox; rect: writes object{height,width,x,y}, reads object{bottom,left,right,top}"
+    },
+    {
+      "case": "C-R21 | v2/pdf/ops#rotate_pages",
+      "invariant": "C-R21",
+      "rule": "C-R21",
+      "cause": "pdf-read-names-differ-from-op-fields",
+      "actual": "angle: read back as rotation"
+    },
+    {
       "case": "same-name-option | --pages",
       "invariant": "same-name-option",
       "rule": "C-R07",
@@ -1024,6 +2200,69 @@
       "rule": "C-R08",
       "cause": "pdf-split-strategy-not-by",
       "actual": "pdf split --by-bookmarks: a banned name; a split strategy is --by."
+    },
+    {
+      "case": "C-R21 | v2/pdf/ops#add_attachment",
+      "invariant": "C-R21",
+      "rule": "C-R21",
+      "cause": "pdf-state-not-read-back",
+      "actual": "description: no read reports it"
+    },
+    {
+      "case": "C-R21 | v2/pdf/ops#add_footer_text",
+      "invariant": "C-R21",
+      "rule": "C-R21",
+      "cause": "pdf-state-not-read-back",
+      "actual": "text: no read reports it; position: no read reports it; font: no read reports it"
+    },
+    {
+      "case": "C-R21 | v2/pdf/ops#add_header_text",
+      "invariant": "C-R21",
+      "rule": "C-R21",
+      "cause": "pdf-state-not-read-back",
+      "actual": "text: no read reports it; position: no read reports it; font: no read reports it"
+    },
+    {
+      "case": "C-R21 | v2/pdf/ops#add_link",
+      "invariant": "C-R21",
+      "rule": "C-R21",
+      "cause": "pdf-state-not-read-back",
+      "actual": "rect: no read reports it; url: no read reports it"
+    },
+    {
+      "case": "C-R21 | v2/pdf/ops#add_page_numbers",
+      "invariant": "C-R21",
+      "rule": "C-R21",
+      "cause": "pdf-state-not-read-back",
+      "actual": "format: no read reports it; position: no read reports it; start: no read reports it; font: no read reports it"
+    },
+    {
+      "case": "C-R21 | v2/pdf/ops#add_stamp_image",
+      "invariant": "C-R21",
+      "rule": "C-R21",
+      "cause": "pdf-state-not-read-back",
+      "actual": "rect: no read reports it"
+    },
+    {
+      "case": "C-R21 | v2/pdf/ops#add_watermark_image",
+      "invariant": "C-R21",
+      "rule": "C-R21",
+      "cause": "pdf-state-not-read-back",
+      "actual": "opacity: no read reports it; scale: no read reports it; layer: no read reports it"
+    },
+    {
+      "case": "C-R21 | v2/pdf/ops#add_watermark_text",
+      "invariant": "C-R21",
+      "rule": "C-R21",
+      "cause": "pdf-state-not-read-back",
+      "actual": "text: no read reports it; font: no read reports it; size: no read reports it; color: no read reports it; opacity: no read reports it; rotation: no read reports it; layer: no read reports it"
+    },
+    {
+      "case": "C-R21 | v2/pdf/ops#set_metadata",
+      "invariant": "C-R21",
+      "rule": "C-R21",
+      "cause": "pdf-state-not-read-back",
+      "actual": "title: no read reports it; author: no read reports it; subject: no read reports it; keywords: no read reports it; custom: no read reports it"
     },
     {
       "case": "C-R28 | pdf code names",
@@ -1110,6 +2349,153 @@
       "actual": "words query: 'query' is not a product verb (inspect, read, search, create, edit, convert, render, compare, extract, split, merge, sign, validate)."
     },
     {
+      "case": "C-R31 | v2/cells/search-result names",
+      "invariant": "C-R31",
+      "rule": "C-R31",
+      "cause": "read-file-named-source",
+      "actual": "source: the read file is named source, not input"
+    },
+    {
+      "case": "C-R31 | v2/cells/workbook-info names",
+      "invariant": "C-R31",
+      "rule": "C-R31",
+      "cause": "read-file-named-source",
+      "actual": "source: the read file is named source, not input"
+    },
+    {
+      "case": "C-R31 | v2/cells/workbook-read names",
+      "invariant": "C-R31",
+      "rule": "C-R31",
+      "cause": "read-file-named-source",
+      "actual": "source: the read file is named source, not input"
+    },
+    {
+      "case": "C-R31 | v2/common/font-check names",
+      "invariant": "C-R31",
+      "rule": "C-R31",
+      "cause": "read-file-named-source",
+      "actual": "source: the read file is named source, not input"
+    },
+    {
+      "case": "C-R31 | v2/pdf/pdf-info names",
+      "invariant": "C-R31",
+      "rule": "C-R31",
+      "cause": "read-file-named-source",
+      "actual": "source: the read file is named source, not input"
+    },
+    {
+      "case": "C-R31 | v2/pdf/pdf-read names",
+      "invariant": "C-R31",
+      "rule": "C-R31",
+      "cause": "read-file-named-source",
+      "actual": "source: the read file is named source, not input"
+    },
+    {
+      "case": "C-R31 | v2/pdf/search-result names",
+      "invariant": "C-R31",
+      "rule": "C-R31",
+      "cause": "read-file-named-source",
+      "actual": "source: the read file is named source, not input"
+    },
+    {
+      "case": "C-R31 | v2/slides/presentation-info names",
+      "invariant": "C-R31",
+      "rule": "C-R31",
+      "cause": "read-file-named-source",
+      "actual": "source: the read file is named source, not input"
+    },
+    {
+      "case": "C-R31 | v2/slides/presentation-read names",
+      "invariant": "C-R31",
+      "rule": "C-R31",
+      "cause": "read-file-named-source",
+      "actual": "source: the read file is named source, not input"
+    },
+    {
+      "case": "C-R31 | v2/slides/search-result names",
+      "invariant": "C-R31",
+      "rule": "C-R31",
+      "cause": "read-file-named-source",
+      "actual": "source: the read file is named source, not input"
+    },
+    {
+      "case": "C-R31 | v2/words/document-info names",
+      "invariant": "C-R31",
+      "rule": "C-R31",
+      "cause": "read-file-named-source",
+      "actual": "source: the read file is named source, not input"
+    },
+    {
+      "case": "C-R31 | v2/words/document-read names",
+      "invariant": "C-R31",
+      "rule": "C-R31",
+      "cause": "read-file-named-source",
+      "actual": "source: the read file is named source, not input"
+    },
+    {
+      "case": "C-R31 | v2/words/search-result names",
+      "invariant": "C-R31",
+      "rule": "C-R31",
+      "cause": "read-file-named-source",
+      "actual": "source: the read file is named source, not input"
+    },
+    {
+      "case": "C-R32 | v2/cells/search-result input",
+      "invariant": "C-R32",
+      "rule": "C-R32",
+      "cause": "read-file-named-source",
+      "actual": "does not require input"
+    },
+    {
+      "case": "C-R32 | v2/cells/workbook-read input",
+      "invariant": "C-R32",
+      "rule": "C-R32",
+      "cause": "read-file-named-source",
+      "actual": "does not require input"
+    },
+    {
+      "case": "C-R32 | v2/pdf/pdf-read input",
+      "invariant": "C-R32",
+      "rule": "C-R32",
+      "cause": "read-file-named-source",
+      "actual": "does not require input"
+    },
+    {
+      "case": "C-R32 | v2/pdf/search-result input",
+      "invariant": "C-R32",
+      "rule": "C-R32",
+      "cause": "read-file-named-source",
+      "actual": "does not require input"
+    },
+    {
+      "case": "C-R32 | v2/slides/presentation-read input",
+      "invariant": "C-R32",
+      "rule": "C-R32",
+      "cause": "read-file-named-source",
+      "actual": "does not require input"
+    },
+    {
+      "case": "C-R32 | v2/slides/search-result input",
+      "invariant": "C-R32",
+      "rule": "C-R32",
+      "cause": "read-file-named-source",
+      "actual": "does not require input"
+    },
+    {
+      "case": "C-R32 | v2/words/document-read input",
+      "invariant": "C-R32",
+      "rule": "C-R32",
+      "cause": "read-file-named-source",
+      "actual": "does not require input"
+    },
+    {
+      "case": "C-R32 | v2/words/search-result input",
+      "invariant": "C-R32",
+      "rule": "C-R32",
+      "cause": "read-file-named-source",
+      "actual": "does not require input"
+    },
+    {
       "case": "C-R28 | release and update codes belong to host",
       "invariant": "C-R28",
       "rule": "C-R28",
@@ -1159,6 +2545,13 @@
       "actual": "RENDER_TOO_LARGE details.maxPixels is not in the details dictionary; RENDER_TOO_LARGE details.dpi is null"
     },
     {
+      "case": "C-R31 | v2/common/review fields",
+      "invariant": "C-R31",
+      "rule": "C-R31",
+      "cause": "review-input-is-a-string",
+      "actual": "input: a string, not the file object"
+    },
+    {
       "case": "C-R11 | review declared",
       "invariant": "C-R11",
       "rule": "C-R11",
@@ -1171,6 +2564,27 @@
       "rule": "C-R06",
       "cause": "root-short-names-beyond-the-contract",
       "actual": "--help has the short name -?; the only short names are -o (--out), -q (--quiet), -v (--verbose) and -h (--help).; --help has the short name /?; the only short names are -o (--out), -q (--quiet), -v (--verbose) and -h (--help).; --help has t..."
+    },
+    {
+      "case": "C-R32 | v2/cells/search-result hits",
+      "invariant": "C-R32",
+      "rule": "C-R32",
+      "cause": "search-hit-text-named-snippet-or-value",
+      "actual": "hits[] does not require text (it has value)"
+    },
+    {
+      "case": "C-R32 | v2/pdf/search-result hits",
+      "invariant": "C-R32",
+      "rule": "C-R32",
+      "cause": "search-hit-text-named-snippet-or-value",
+      "actual": "hits[] does not require text (it has snippet)"
+    },
+    {
+      "case": "C-R32 | v2/words/search-result hits",
+      "invariant": "C-R32",
+      "rule": "C-R32",
+      "cause": "search-hit-text-named-snippet-or-value",
+      "actual": "hits[] does not require text (it has snippet)"
     },
     {
       "case": "C-R28 | cells review check codes",
@@ -1201,11 +2615,235 @@
       "actual": "review check FONTS_MISSING_OR_SUBSTITUTED does not begin with WORDS_; review check FONTS_NOT_CHECKED does not begin with WORDS_"
     },
     {
+      "case": "C-R20 | v2/pdf/ops field size",
+      "invariant": "C-R20",
+      "rule": "C-R20",
+      "cause": "size-names-font-and-page-size",
+      "actual": "enum in insert_blank_page, set_page_size; number in add_watermark_text"
+    },
+    {
+      "case": "C-R20 | v2/slides/ops field size",
+      "invariant": "C-R20",
+      "rule": "C-R20",
+      "cause": "size-names-font-and-page-size",
+      "actual": "number in slidesShapeStyleInput; string in set_slide_size"
+    },
+    {
+      "case": "C-R20 | v2/words/ops field size",
+      "invariant": "C-R20",
+      "rule": "C-R20",
+      "cause": "size-names-font-and-page-size",
+      "actual": "enum in pageSetupInput; number in define_style, format_text, set_default_font"
+    },
+    {
       "case": "C-R08 | slides create",
       "invariant": "C-R08",
       "rule": "C-R08",
       "cause": "slides-create-size-not-slide-size",
       "actual": "slides create --size: a banned name; a page size is --page-size, a slide size --slide-size."
+    },
+    {
+      "case": "C-R29 | slides edit",
+      "invariant": "C-R29",
+      "rule": "C-R29",
+      "cause": "slides-edit-without-verify",
+      "actual": "slides edit has no --verify; v2/slides/edit-result declares no verification"
+    },
+    {
+      "case": "C-R18 | v2/slides/presentation-info",
+      "invariant": "C-R18",
+      "rule": "C-R18",
+      "cause": "slides-empty-section-start-slide-zero",
+      "actual": "presentationSectionInfo.startSlide: minimum 0, not 1"
+    },
+    {
+      "case": "C-R18 | v2/slides/ops#slidesParagraphInput",
+      "invariant": "C-R18",
+      "rule": "C-R18",
+      "cause": "slides-paragraph-level-zero-based",
+      "actual": "level: minimum 0, not 1"
+    },
+    {
+      "case": "C-R21 | v2/slides/ops#set_notes",
+      "invariant": "C-R21",
+      "rule": "C-R21",
+      "cause": "slides-read-names-differ-from-op-fields",
+      "actual": "text: read back as notes"
+    },
+    {
+      "case": "C-R21 | v2/slides/ops#set_title",
+      "invariant": "C-R21",
+      "rule": "C-R21",
+      "cause": "slides-read-names-differ-from-op-fields",
+      "actual": "text: read back as title"
+    },
+    {
+      "case": "C-R21 | v2/slides/ops#insert_chart",
+      "invariant": "C-R21",
+      "rule": "C-R21",
+      "cause": "slides-state-not-read-back",
+      "actual": "kind: no read reports it; categories: no read reports it; series: no read reports it; title: no read reports it"
+    },
+    {
+      "case": "C-R21 | v2/slides/ops#insert_shape",
+      "invariant": "C-R21",
+      "rule": "C-R21",
+      "cause": "slides-state-not-read-back",
+      "actual": "kind: no read reports it; style.fill: no read reports it; style.line: no read reports it; style.latinFont: no read reports it"
+    },
+    {
+      "case": "C-R21 | v2/slides/ops#insert_table",
+      "invariant": "C-R21",
+      "rule": "C-R21",
+      "cause": "slides-state-not-read-back",
+      "actual": "rowCount: no read reports it; columnCount: no read reports it; data: no read reports it"
+    },
+    {
+      "case": "C-R21 | v2/slides/ops#set_background",
+      "invariant": "C-R21",
+      "rule": "C-R21",
+      "cause": "slides-state-not-read-back",
+      "actual": "color: no read reports it; imagePath: no read reports it"
+    },
+    {
+      "case": "C-R21 | v2/slides/ops#set_body",
+      "invariant": "C-R21",
+      "rule": "C-R21",
+      "cause": "slides-state-not-read-back",
+      "actual": "paragraphs.level: no read reports it; paragraphs.bullet: no read reports it"
+    },
+    {
+      "case": "C-R21 | v2/slides/ops#set_footer",
+      "invariant": "C-R21",
+      "rule": "C-R21",
+      "cause": "slides-state-not-read-back",
+      "actual": "text: no read reports it; showNumber: no read reports it; showDate: no read reports it"
+    },
+    {
+      "case": "C-R21 | v2/slides/ops#set_properties",
+      "invariant": "C-R21",
+      "rule": "C-R21",
+      "cause": "slides-state-not-read-back",
+      "actual": "title: no read reports it; author: no read reports it; subject: no read reports it; keywords: no read reports it; company: no read reports it"
+    },
+    {
+      "case": "C-R21 | v2/slides/ops#set_shape_style",
+      "invariant": "C-R21",
+      "rule": "C-R21",
+      "cause": "slides-state-not-read-back",
+      "actual": "style.fill: no read reports it; style.line: no read reports it; style.latinFont: no read reports it"
+    },
+    {
+      "case": "C-R21 | v2/slides/ops#set_table_cell",
+      "invariant": "C-R21",
+      "rule": "C-R21",
+      "cause": "slides-state-not-read-back",
+      "actual": "text: no read reports it"
+    },
+    {
+      "case": "C-R21 | v2/slides/ops#set_transition",
+      "invariant": "C-R21",
+      "rule": "C-R21",
+      "cause": "slides-state-not-read-back",
+      "actual": "kind: no read reports it; durationMs: no read reports it"
+    },
+    {
+      "case": "C-R21 | v2/slides/ops#update_chart_data",
+      "invariant": "C-R21",
+      "rule": "C-R21",
+      "cause": "slides-state-not-read-back",
+      "actual": "categories: no read reports it; series: no read reports it"
+    },
+    {
+      "case": "C-R20 | v2/cells/ops#import_range secrets",
+      "invariant": "C-R20",
+      "rule": "C-R20",
+      "cause": "source-password-named-password-env",
+      "actual": "passwordEnv: the source file's password is named sourcePasswordEnv"
+    },
+    {
+      "case": "C-R20 | v2/cells/ops#import_sheet secrets",
+      "invariant": "C-R20",
+      "rule": "C-R20",
+      "cause": "source-password-named-password-env",
+      "actual": "passwordEnv: the source file's password is named sourcePasswordEnv"
+    },
+    {
+      "case": "C-R20 | v2/pdf/ops#insert_pages_from secrets",
+      "invariant": "C-R20",
+      "rule": "C-R20",
+      "cause": "source-password-named-password-env",
+      "actual": "passwordEnv: the source file's password is named sourcePasswordEnv"
+    },
+    {
+      "case": "C-R20 | v2/slides/ops#set_table_cell spelling",
+      "invariant": "C-R20",
+      "rule": "C-R20",
+      "cause": "table-cell-col-abbreviated",
+      "actual": "col: abbreviated name"
+    },
+    {
+      "case": "C-R20 | v2/words/ops#set_table_cell spelling",
+      "invariant": "C-R20",
+      "rule": "C-R20",
+      "cause": "table-cell-col-abbreviated",
+      "actual": "col: abbreviated name"
+    },
+    {
+      "case": "C-R33 | v2/cells/workbook-info envelope",
+      "invariant": "C-R33",
+      "rule": "C-R33",
+      "cause": "top-level-kind",
+      "actual": "top-level kind"
+    },
+    {
+      "case": "C-R33 | v2/cells/workbook-read envelope",
+      "invariant": "C-R33",
+      "rule": "C-R33",
+      "cause": "top-level-kind",
+      "actual": "top-level kind"
+    },
+    {
+      "case": "C-R33 | v2/pdf/pdf-info envelope",
+      "invariant": "C-R33",
+      "rule": "C-R33",
+      "cause": "top-level-kind",
+      "actual": "top-level kind"
+    },
+    {
+      "case": "C-R33 | v2/pdf/pdf-read envelope",
+      "invariant": "C-R33",
+      "rule": "C-R33",
+      "cause": "top-level-kind",
+      "actual": "top-level kind"
+    },
+    {
+      "case": "C-R33 | v2/slides/presentation-info envelope",
+      "invariant": "C-R33",
+      "rule": "C-R33",
+      "cause": "top-level-kind",
+      "actual": "top-level kind"
+    },
+    {
+      "case": "C-R33 | v2/slides/presentation-read envelope",
+      "invariant": "C-R33",
+      "rule": "C-R33",
+      "cause": "top-level-kind",
+      "actual": "top-level kind"
+    },
+    {
+      "case": "C-R33 | v2/words/document-info envelope",
+      "invariant": "C-R33",
+      "rule": "C-R33",
+      "cause": "top-level-kind",
+      "actual": "top-level kind"
+    },
+    {
+      "case": "C-R33 | v2/words/document-read envelope",
+      "invariant": "C-R33",
+      "rule": "C-R33",
+      "cause": "top-level-kind",
+      "actual": "top-level kind"
     },
     {
       "case": "C-R04 | update _prepare",
@@ -1334,6 +2972,111 @@
       "actual": "USAGE_ERROR details.errors lists a single error"
     },
     {
+      "case": "C-R20 | v2/cells/ops#add_sparkline variants",
+      "invariant": "C-R20",
+      "rule": "C-R20",
+      "cause": "variant-field-named-type",
+      "actual": "type: a variant named type, not kind"
+    },
+    {
+      "case": "C-R20 | v2/cells/ops#create_chart variants",
+      "invariant": "C-R20",
+      "rule": "C-R20",
+      "cause": "variant-field-named-type",
+      "actual": "type: a variant named type, not kind"
+    },
+    {
+      "case": "C-R20 | v2/cells/ops#set_validation variants",
+      "invariant": "C-R20",
+      "rule": "C-R20",
+      "cause": "variant-field-named-type",
+      "actual": "type: a variant named type, not kind"
+    },
+    {
+      "case": "C-R20 | v2/cells/ops#update_chart variants",
+      "invariant": "C-R20",
+      "rule": "C-R20",
+      "cause": "variant-field-named-type",
+      "actual": "type: a variant named type, not kind"
+    },
+    {
+      "case": "C-R20 | v2/cells/workbook-info variants",
+      "invariant": "C-R20",
+      "rule": "C-R20",
+      "cause": "variant-field-named-type",
+      "actual": "chartInfo.type: a variant named type, not kind; validationInfo.type: a variant named type, not kind"
+    },
+    {
+      "case": "C-R20 | v2/common/font-list variants",
+      "invariant": "C-R20",
+      "rule": "C-R20",
+      "cause": "variant-field-named-type",
+      "actual": "fontSource.type: a variant named type, not kind"
+    },
+    {
+      "case": "C-R20 | v2/pdf/form-result variants",
+      "invariant": "C-R20",
+      "rule": "C-R20",
+      "cause": "variant-field-named-type",
+      "actual": "type: a variant named type, not kind; pdfFormField.type: a variant named type, not kind"
+    },
+    {
+      "case": "C-R20 | v2/pdf/pdf-info variants",
+      "invariant": "C-R20",
+      "rule": "C-R20",
+      "cause": "variant-field-named-type",
+      "actual": "pdfFormSummary.type: a variant named type, not kind"
+    },
+    {
+      "case": "C-R20 | v2/slides/presentation-info variants",
+      "invariant": "C-R20",
+      "rule": "C-R20",
+      "cause": "variant-field-named-type",
+      "actual": "presentationMediaInfo.type: a variant named type, not kind"
+    },
+    {
+      "case": "C-R20 | v2/slides/presentation-read variants",
+      "invariant": "C-R20",
+      "rule": "C-R20",
+      "cause": "variant-field-named-type",
+      "actual": "slideShapeData.type: a variant named type, not kind"
+    },
+    {
+      "case": "C-R20 | v2/words/compare-result variants",
+      "invariant": "C-R20",
+      "rule": "C-R20",
+      "cause": "variant-field-named-type",
+      "actual": "revisionSample.type: a variant named type, not kind"
+    },
+    {
+      "case": "C-R20 | v2/words/document-info variants",
+      "invariant": "C-R20",
+      "rule": "C-R20",
+      "cause": "variant-field-named-type",
+      "actual": "revisionData.type: a variant named type, not kind"
+    },
+    {
+      "case": "C-R20 | v2/words/document-read variants",
+      "invariant": "C-R20",
+      "rule": "C-R20",
+      "cause": "variant-field-named-type",
+      "actual": "blockData.type: a variant named type, not kind"
+    },
+    {
+      "case": "C-R29 | cells edit",
+      "invariant": "C-R29",
+      "rule": "C-R29",
+      "cause": "verification-without-checked-ops",
+      "actual": "v2/cells/edit-result verification does not require checkedOps"
+    },
+    {
+      "case": "C-R29 | words edit",
+      "invariant": "C-R29",
+      "rule": "C-R29",
+      "cause": "verification-without-checked-ops",
+      "actual": "v2/words/edit-result verification does not require checkedOps"
+    },
+    {
       "case": "C-R08 | words create",
       "invariant": "C-R08",
       "rule": "C-R08",
@@ -1341,11 +3084,221 @@
       "actual": "words create --blank: a banned name; a create without --from-<format> or --template is blank.; words create --markdown: a banned name; content read from another file is --from-<format>.; words create --text: a banned name; content read from..."
     },
     {
+      "case": "C-R17 | v2/words/compare-result",
+      "invariant": "C-R17",
+      "rule": "C-R17",
+      "cause": "words-enum-values-camel-case",
+      "actual": "revisionSample.type: enum values formatChange, styleDefinitionChange are not lowercase kebab-case"
+    },
+    {
+      "case": "C-R17 | v2/words/document-info",
+      "invariant": "C-R17",
+      "rule": "C-R17",
+      "cause": "words-enum-values-camel-case",
+      "actual": "documentSummary.protection: enum values readOnly, trackedChanges are not lowercase kebab-case; fieldData.scope: enum values headersFooters are not lowercase kebab-case; imageData.scope: enum values headersFooters are not lowercase kebab-cas..."
+    },
+    {
+      "case": "C-R17 | v2/words/document-read",
+      "invariant": "C-R17",
+      "rule": "C-R17",
+      "cause": "words-enum-values-camel-case",
+      "actual": "paragraphFormatData.lineSpacingRule: enum values atLeast are not lowercase kebab-case"
+    },
+    {
+      "case": "C-R17 | v2/words/edit-result",
+      "invariant": "C-R17",
+      "rule": "C-R17",
+      "cause": "words-enum-values-camel-case",
+      "actual": "wordsVerification.protection: enum values readOnly, trackedChanges are not lowercase kebab-case"
+    },
+    {
+      "case": "C-R17 | v2/words/ops#append_document",
+      "invariant": "C-R17",
+      "rule": "C-R17",
+      "cause": "words-enum-values-camel-case",
+      "actual": "importFormatMode: enum values keepSource, useDestination are not lowercase kebab-case"
+    },
+    {
+      "case": "C-R17 | v2/words/ops#protect",
+      "invariant": "C-R17",
+      "rule": "C-R17",
+      "cause": "words-enum-values-camel-case",
+      "actual": "mode: enum values readOnly, trackedChanges are not lowercase kebab-case"
+    },
+    {
+      "case": "C-R17 | v2/words/ops#replace_text",
+      "invariant": "C-R17",
+      "rule": "C-R17",
+      "cause": "words-enum-values-camel-case",
+      "actual": "scope: enum values headersFooters are not lowercase kebab-case"
+    },
+    {
+      "case": "C-R17 | v2/words/ops#set_page_numbers",
+      "invariant": "C-R17",
+      "rule": "C-R17",
+      "cause": "words-enum-values-camel-case",
+      "actual": "format: enum values upperRoman, lowerRoman, upperLetter, lowerLetter are not lowercase kebab-case"
+    },
+    {
+      "case": "C-R17 | v2/words/search-result",
+      "invariant": "C-R17",
+      "rule": "C-R17",
+      "cause": "words-enum-values-camel-case",
+      "actual": "wordsSearchHit.scope: enum values headersFooters are not lowercase kebab-case"
+    },
+    {
+      "case": "C-R20 | v2/words/ops field inline",
+      "invariant": "C-R20",
+      "rule": "C-R20",
+      "cause": "words-field-types-disagree",
+      "actual": "array of object in mail_merge; boolean in insert_image"
+    },
+    {
+      "case": "C-R20 | v2/words/ops field paragraphs",
+      "invariant": "C-R20",
+      "rule": "C-R20",
+      "cause": "words-field-types-disagree",
+      "actual": "array of object{listLevel,style,text} in insert_paragraphs; array of string in set_footer, set_header"
+    },
+    {
+      "case": "C-R18 | v2/words/ops#apply_list",
+      "invariant": "C-R18",
+      "rule": "C-R18",
+      "cause": "words-list-level-zero-based",
+      "actual": "level: minimum 0, not 1"
+    },
+    {
+      "case": "C-R18 | v2/words/ops#paragraphInput",
+      "invariant": "C-R18",
+      "rule": "C-R18",
+      "cause": "words-list-level-zero-based",
+      "actual": "listLevel: minimum 0, not 1"
+    },
+    {
+      "case": "C-R33 | v2/words/document-info none",
+      "invariant": "C-R33",
+      "rule": "C-R33",
+      "cause": "words-protection-none",
+      "actual": "documentSummary.protection: \"none\" as a value; omit the field instead"
+    },
+    {
+      "case": "C-R33 | v2/words/edit-result none",
+      "invariant": "C-R33",
+      "rule": "C-R33",
+      "cause": "words-protection-none",
+      "actual": "wordsVerification.protection: \"none\" as a value; omit the field instead"
+    },
+    {
+      "case": "C-R21 | v2/words/ops#insert_break",
+      "invariant": "C-R21",
+      "rule": "C-R21",
+      "cause": "words-read-names-differ-from-op-fields",
+      "actual": "kind: read back as breakAfter"
+    },
+    {
+      "case": "C-R21 | v2/words/ops#protect",
+      "invariant": "C-R21",
+      "rule": "C-R21",
+      "cause": "words-read-names-differ-from-op-fields",
+      "actual": "mode: read back as protection; mode: writes enum(comments,forms,readOnly,trackedChanges), reads enum(comments,forms,none,readOnly,trackedChanges)"
+    },
+    {
+      "case": "C-R33 | v2/words/document-info names",
+      "invariant": "C-R33",
+      "rule": "C-R33",
+      "cause": "words-revision-names-and-dates",
+      "actual": "documentSummary.revisionsPresent: a boolean says \"contains\" as has<Noun> and a state as an adjective; revisionData.date: a timestamp without format date-time"
+    },
+    {
       "case": "C-R17 | words query search values",
       "invariant": "C-R17",
       "rule": "C-R17",
       "cause": "words-search-scope-camel-case",
       "actual": "words query search --scope: values not in lowercase kebab case: headersFooters."
+    },
+    {
+      "case": "C-R21 | v2/words/ops#add_watermark",
+      "invariant": "C-R21",
+      "rule": "C-R21",
+      "cause": "words-state-not-read-back",
+      "actual": "text: no read reports it; imagePath: no read reports it; faded: no read reports it; color: no read reports it; font: no read reports it"
+    },
+    {
+      "case": "C-R21 | v2/words/ops#apply_list",
+      "invariant": "C-R21",
+      "rule": "C-R21",
+      "cause": "words-state-not-read-back",
+      "actual": "kind: no read reports it; level: no read reports it"
+    },
+    {
+      "case": "C-R21 | v2/words/ops#define_style",
+      "invariant": "C-R21",
+      "rule": "C-R21",
+      "cause": "words-state-not-read-back",
+      "actual": "basedOn: no read reports it; font: no read reports it; latinFont: no read reports it; eastAsianFont: no read reports it; size: no read reports it; bold: no read reports it; color: no read reports it; spaceBefore: no read reports it; spaceAf..."
+    },
+    {
+      "case": "C-R21 | v2/words/ops#format_table",
+      "invariant": "C-R21",
+      "rule": "C-R21",
+      "cause": "words-state-not-read-back",
+      "actual": "keepTogether: no read reports it; allowRowBreakAcrossPages: no read reports it; headerRowCount: no read reports it; keepWithNext: no read reports it"
+    },
+    {
+      "case": "C-R21 | v2/words/ops#format_text",
+      "invariant": "C-R21",
+      "rule": "C-R21",
+      "cause": "words-state-not-read-back",
+      "actual": "underline: no read reports it; highlight: no read reports it"
+    },
+    {
+      "case": "C-R21 | v2/words/ops#insert_hyperlink",
+      "invariant": "C-R21",
+      "rule": "C-R21",
+      "cause": "words-state-not-read-back",
+      "actual": "url: no read reports it"
+    },
+    {
+      "case": "C-R21 | v2/words/ops#insert_image",
+      "invariant": "C-R21",
+      "rule": "C-R21",
+      "cause": "words-state-not-read-back",
+      "actual": "inline: no read reports it"
+    },
+    {
+      "case": "C-R21 | v2/words/ops#insert_paragraphs",
+      "invariant": "C-R21",
+      "rule": "C-R21",
+      "cause": "words-state-not-read-back",
+      "actual": "paragraphs.listLevel: no read reports it"
+    },
+    {
+      "case": "C-R21 | v2/words/ops#insert_toc",
+      "invariant": "C-R21",
+      "rule": "C-R21",
+      "cause": "words-state-not-read-back",
+      "actual": "maxLevel: no read reports it"
+    },
+    {
+      "case": "C-R21 | v2/words/ops#set_default_font",
+      "invariant": "C-R21",
+      "rule": "C-R21",
+      "cause": "words-state-not-read-back",
+      "actual": "font: no read reports it; latinFont: no read reports it; eastAsianFont: no read reports it; size: no read reports it"
+    },
+    {
+      "case": "C-R21 | v2/words/ops#set_page_numbers",
+      "invariant": "C-R21",
+      "rule": "C-R21",
+      "cause": "words-state-not-read-back",
+      "actual": "location: no read reports it; alignment: no read reports it; format: no read reports it; start: no read reports it"
+    },
+    {
+      "case": "C-R21 | v2/words/ops#set_properties",
+      "invariant": "C-R21",
+      "rule": "C-R21",
+      "cause": "words-state-not-read-back",
+      "actual": "title: no read reports it; author: no read reports it; subject: no read reports it; keywords: no read reports it; custom: no read reports it"
     }
   ]
 }
