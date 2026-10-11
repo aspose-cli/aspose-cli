@@ -9,9 +9,11 @@ namespace Aspose.Cli.Product.Cells.Contracts;
 public sealed record DefineNameOp : CellsOp
 {
     /// <summary>The name, such as TaxRate.</summary>
+    [ReadBack("workbook-info.schema.json#/$defs/definedNameInfo/properties/name")]
     [Pattern(@"\S")] public required string Name { get; init; }
 
     /// <summary>The sheet-qualified range the name refers to, such as Config!$B$2.</summary>
+    [ReadBack("workbook-info.schema.json#/$defs/definedNameInfo/properties/refersTo")]
     [Pattern(@"\S")] public required string RefersTo { get; init; }
 }
 
@@ -19,5 +21,6 @@ public sealed record DefineNameOp : CellsOp
 [Operation("delete_name")]
 public sealed record DeleteNameOp : CellsOp
 {
+    [NotState]
     [Pattern(@"\S")] public required string Name { get; init; }
 }

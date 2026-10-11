@@ -17,9 +17,11 @@ public sealed record AddConditionalFormatOp : CellsOp
     /// <summary>The range to format, such as B2:B100.</summary>
     [A1Range] public required string Range { get; init; }
 
+    [NotReadBack]
     public required ConditionalRule Rule { get; init; }
 
     /// <summary>The style matching cells receive.</summary>
+    [NotReadBack]
     public ConditionalStyle? Style { get; init; }
 
     /// <inheritdoc />

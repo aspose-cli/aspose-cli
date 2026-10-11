@@ -11,9 +11,11 @@ public sealed record AddCommentOp : CellsOp
     /// <summary>The cell to annotate, such as B2.</summary>
     [A1Cell] public required string Cell { get; init; }
 
+    [NotReadBack]
     [MinLength(1)] public required string Text { get; init; }
 
     /// <summary>The comment author; the engine default when omitted.</summary>
+    [NotReadBack]
     public string? Author { get; init; }
 }
 
@@ -25,9 +27,11 @@ public sealed record EditCommentOp : CellsOp
     [A1Cell] public required string Cell { get; init; }
 
     /// <summary>The new comment text.</summary>
+    [NotReadBack]
     [MinLength(1)] public required string Text { get; init; }
 
     /// <summary>The new author; unchanged when omitted.</summary>
+    [NotReadBack]
     public string? Author { get; init; }
 }
 

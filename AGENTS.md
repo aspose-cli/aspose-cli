@@ -67,7 +67,7 @@ the fixed distribution identity; the generated projections and the solution come
 | D6 | Evaluation detection and disclosure | The SDK write pipeline resolves the license once and derives disclosure by comparing input and output marks; a product supplies only its evaluation-mark recognizer | `EvaluationOwnershipTests`; the evaluation invariant |
 | D7 | Truthful results: affected counts, targets, pages, no match | The SDK runner applies a batch through the product's `IOperationModel`: it snapshots the objects each operation can change before and after it and derives `itemsAffected`, `targets`, the pages touched and `OP_NO_EFFECT` for zero; with `--verify` it records each applied operation through the product's `IEditVerifier` and builds the verification core from the product's read-back (`AppliedBatch.Verified`). PDF applies its batches this way; Cells, Slides and Words still count in their handlers until their product tasks move them, after which `AppliedOperation` is constructed only by the SDK | `OperationSnapshotTests`, `BoundedOperationModelTests`; invariant C-R30: `itemsAffected` is 0 exactly when the result warns `OP_NO_EFFECT`, and above 0 only when the output changed |
 | D8 | Input loading: recognition, passwords, corruption | The SDK load result and error translation; a product supplies the engine call and an exception classifier | `InputLoadingOwnershipTests` |
-| D9 | Read and write vocabulary | Planned: one object model per product, where the fields an operation writes are a subset of the read result with the same names and meanings | Planned: a generated operation-to-read field map and the invariant "read back what was written" |
+| D9 | Read and write vocabulary | Each operation field declares whether it is state and where a read result reports it (`[ReadBack]`, `[NotReadBack]`, `[ReadBackByPosition]`, `[NotState]`, or the vocabulary's `Addresses`); the ops schema publishes it as the field's `x-readBack`. Planned: one object model per product, where the fields an operation writes are a subset of the read result with the same names and meanings | The operation generator (`APCLI012`) refuses an unclassified field; invariant C-R21 checks each declared read path's name and value domain and reads back what each sample wrote |
 | D10 | Human-readable output | SDK `ResultText`: sections, produced files, touched parts and the verification; a missing value is `-` | `ResultTextTests`, the product renderer golden tests, `TableRendererCoverageTests`, `ProductRendererCoverageTests` |
 | D11 | Structure | Three places per command paired on the menu; acyclic SDK layers; one-way product layers | `SdkLayeringTests` (SDK); analyzer `APCLI009` (product layers) |
 
@@ -102,7 +102,11 @@ weaken a check or remove a supported operation to make a test pass.
   defaults, `[InputPath]`, `[SecretEnv]`, constraint attributes and record rules
   (`[ExactlyOneOf]`, `[AtLeastOneOf]`, `[DependentRequired]`, `[PresentWhen]`, `[MinProperties]`),
   and a `Validated()` override, stated in its summary, for the rest. Summaries are the schema's
-  descriptions. `APCLI012` rejects an incomplete contract.
+  descriptions. Every field states its read-back (D9): `[ReadBack("<schema id>#<definition>/<property>")]`
+  for state a read reports, `[NotReadBack]` for state none reports yet, `[ReadBackByPosition]`,
+  or `[NotState]` for a selector, a source or a parameter; the vocabulary's `Addresses` names the
+  address fields, and a record field may classify the fields of its record instead.
+  `APCLI012` rejects an incomplete contract.
 - **Results** are records passing their relative schema id and version to `ResultEnvelope`,
   `EngineResultEnvelope` (adds `license`) or `WindowedResultEnvelope` (adds `window`), listed in
   the assembly's JSON context; a shared block publishes itself with `[SchemaId]`. Ids are relative

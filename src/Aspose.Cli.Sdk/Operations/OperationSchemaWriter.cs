@@ -67,6 +67,14 @@ internal sealed class OperationSchemaWriter
         + "exits 8 when any failed; an invalid document or a failure inside the document engine still writes nothing. "
         + "The bare array of operations is accepted as the document with only its ops.";
 
+    /// <summary>What every operation field's <c>x-readBack</c> means (see <see cref="ReadBackAttribute"/>).</summary>
+    private const string ReadBackSemantics =
+        "Each operation field's x-readBack says whether it is state the operation writes and where a read reports it: "
+        + "a read result's schema URI with a JSON Pointer to the property that reports the field, where a pointer ending in a "
+        + "dictionary's additionalProperties is the entry named after the field; " + ReadBackKinds.Unread + " for state no read reports yet; "
+        + ReadBackKinds.Position + " for state a read reports by position rather than by name, such as cell values; "
+        + ReadBackKinds.NotState + " for a selector, a source or a parameter of the action.";
+
     private static readonly JsonWriterOptions WriterOptions = new()
     {
         Indented = true,
@@ -78,8 +86,12 @@ internal sealed class OperationSchemaWriter
     private readonly SortedDictionary<string, JsonObject> _shared = new(StringComparer.Ordinal);
     private readonly Dictionary<string, Type> _records = new(StringComparer.Ordinal);
 
-    private OperationSchemaWriter()
+    // The operation schema's base URI, against which a field's read path resolves.
+    private readonly string _base;
+
+    private OperationSchemaWriter(string schemaId)
     {
+        _base = schemaId[..(schemaId.LastIndexOf('/') + 1)];
     }
 
     /// <summary>Writes the schema of one vocabulary.</summary>
@@ -92,7 +104,7 @@ internal sealed class OperationSchemaWriter
         string? description,
         IReadOnlyList<OperationRecord> operations)
     {
-        var writer = new OperationSchemaWriter();
+        var writer = new OperationSchemaWriter(schemaId);
         var definitions = new JsonObject
         {
             [IdDefinition] = new JsonObject
@@ -141,7 +153,7 @@ internal sealed class OperationSchemaWriter
         {
             ["$schema"] = Draft,
             ["$id"] = schemaId,
-            ["description"] = description is null ? BatchSemantics : $"{description} {BatchSemantics}",
+            ["description"] = description is null ? $"{BatchSemantics} {ReadBackSemantics}" : $"{description} {BatchSemantics} {ReadBackSemantics}",
         };
         root["type"] = "object";
         root["required"] = new JsonArray("ops");
@@ -232,6 +244,12 @@ internal sealed class OperationSchemaWriter
         if (property.Default is not null)
         {
             schema["default"] = JsonNode.Parse(property.Default);
+        }
+
+        if (property.ReadBack is not null)
+        {
+            // A read path is relative to this schema; it is published absolute, like a $ref to another schema.
+            schema["x-readBack"] = property.ReadBack.Contains('#', StringComparison.Ordinal) ? _base + property.ReadBack : property.ReadBack;
         }
 
         return schema;

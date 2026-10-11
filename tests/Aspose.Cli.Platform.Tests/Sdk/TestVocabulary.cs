@@ -16,7 +16,8 @@ public static class Shades
 }
 
 /// <summary>Test operations.</summary>
-[OperationVocabulary("ops", JsonContext = typeof(TestOpsJsonContext))]
+// The test vocabulary has no read results, so none of its fields is state.
+[OperationVocabulary("ops", JsonContext = typeof(TestOpsJsonContext), Addresses = new[] { "all", "box", "by", "cells", "colors", "count", "image", "labels", "mode", "pages", "passwordEnv", "path", "pinned", "rows", "shade", "shades", "style", "tags", "text", "to", "value" })]
 [JsonConverter(typeof(OperationJsonConverter<TestOp>))]
 public abstract partial record TestOp : BoundedOperation;
 

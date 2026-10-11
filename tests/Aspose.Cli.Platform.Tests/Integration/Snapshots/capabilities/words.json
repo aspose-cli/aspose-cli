@@ -48,7 +48,7 @@
         "command": "edit",
         "inputSchema": "v2/words/ops",
         "operationSchema": "aspose-cli schema v2/words/ops --operation <op>",
-        "contractFingerprint": "sha256:553f378c63b370bab95b8feebb0e2e8bdf02e20ee850662a02379a54778003d8",
+        "contractFingerprint": "sha256:2b98824d435e26c835c06b69d31e61402b139f89850262088c0cd9ed56737f32",
         "maximumOperationCount": 10000,
         "ops": [
           "accept_revisions",
@@ -4482,7 +4482,7 @@
     "v2/words/ops": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "$id": "https://schemas.aspose.com/aspose-cli/v2/words/ops.schema.json",
-      "description": "The operation document of words edit --ops. Every block address resolves against the document as it was before the first operation, so an insertion does not shift a later operation's anchor. Operations apply in order. Without --best-effort the batch is atomic: if any operation fails, no file is written. With --best-effort the operations that succeed are kept and saved, each one that fails is reported, and the command exits 8 when any failed; an invalid document or a failure inside the document engine still writes nothing. The bare array of operations is accepted as the document with only its ops.",
+      "description": "The operation document of words edit --ops. Every block address resolves against the document as it was before the first operation, so an insertion does not shift a later operation's anchor. Operations apply in order. Without --best-effort the batch is atomic: if any operation fails, no file is written. With --best-effort the operations that succeed are kept and saved, each one that fails is reported, and the command exits 8 when any failed; an invalid document or a failure inside the document engine still writes nothing. The bare array of operations is accepted as the document with only its ops. Each operation field's x-readBack says whether it is state the operation writes and where a read reports it: a read result's schema URI with a JSON Pointer to the property that reports the field, where a pointer ending in a dictionary's additionalProperties is the entry named after the field; unread for state no read reports yet; position for state a read reports by position rather than by name, such as cell values; not-state for a selector, a source or a parameter of the action.",
       "type": "object",
       "required": [
         "ops"
@@ -4649,7 +4649,8 @@
             "author": {
               "description": "The author whose revisions are decided; a name no revision has changes nothing and reports OP_NO_EFFECT.",
               "type": "string",
-              "minLength": 1
+              "minLength": 1,
+              "x-readBack": "not-state"
             },
             "revisions": {
               "description": "The 1-based revision numbers of the changes words inspect --detail revisions lists, numbered as the document was before the batch. Such a decision comes before every operation other than a revision decision, and lists together the changes that share a node and type, as its error names them.",
@@ -4658,7 +4659,8 @@
               "items": {
                 "type": "integer",
                 "minimum": 1
-              }
+              },
+              "x-readBack": "not-state"
             }
           }
         },
@@ -4680,14 +4682,17 @@
               "const": "add_comment"
             },
             "at": {
-              "$ref": "#/$defs/wordsTarget"
+              "$ref": "#/$defs/wordsTarget",
+              "x-readBack": "not-state"
             },
             "author": {
               "type": "string",
-              "minLength": 1
+              "minLength": 1,
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/document-info.schema.json#/$defs/commentData/properties/author"
             },
             "text": {
-              "type": "string"
+              "type": "string",
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/document-info.schema.json#/$defs/commentData/properties/text"
             }
           }
         },
@@ -4712,12 +4717,14 @@
                 "end",
                 "after"
               ],
-              "default": "end"
+              "default": "end",
+              "x-readBack": "not-state"
             },
             "after": {
               "description": "The 1-based section the new section follows; set exactly when position is after.",
               "type": "integer",
-              "minimum": 1
+              "minimum": 1,
+              "x-readBack": "not-state"
             },
             "pageSetup": {
               "description": "Page setup applied over the neighbouring section's.",
@@ -4769,27 +4776,32 @@
               "description": "The watermark text; Word holds at most 200 characters.",
               "type": "string",
               "minLength": 1,
-              "maxLength": 200
+              "maxLength": 200,
+              "x-readBack": "unread"
             },
             "imagePath": {
               "description": "The watermark image, relative to the working directory.",
               "type": "string",
               "minLength": 1,
-              "pattern": "\\S"
+              "pattern": "\\S",
+              "x-readBack": "unread"
             },
             "faded": {
               "description": "Semi-transparent text or a washed-out image.",
               "type": "boolean",
-              "default": true
+              "default": true,
+              "x-readBack": "unread"
             },
             "color": {
               "description": "A #RRGGBB or named text color.",
-              "type": "string"
+              "type": "string",
+              "x-readBack": "unread"
             },
             "font": {
               "description": "The text font; when omitted, East Asian text takes the default East Asian font of a Chinese, Japanese or Korean document, or else Microsoft YaHei.",
               "type": "string",
-              "minLength": 1
+              "minLength": 1,
+              "x-readBack": "unread"
             }
           },
           "allOf": [
@@ -4842,7 +4854,8 @@
               "description": "The document, relative to the working directory.",
               "type": "string",
               "minLength": 1,
-              "pattern": "\\S"
+              "pattern": "\\S",
+              "x-readBack": "not-state"
             },
             "importFormatMode": {
               "description": "Which definition a style both documents name takes: the appended document's (keepSource) or this document's (useDestination). Headers and footers are not styles and come with their sections either way.",
@@ -4851,7 +4864,8 @@
                 "keepSource",
                 "useDestination"
               ],
-              "default": "keepSource"
+              "default": "keepSource",
+              "x-readBack": "not-state"
             }
           }
         },
@@ -4872,20 +4886,23 @@
               "const": "apply_list"
             },
             "target": {
-              "$ref": "#/$defs/wordsTarget"
+              "$ref": "#/$defs/wordsTarget",
+              "x-readBack": "not-state"
             },
             "kind": {
               "type": "string",
               "enum": [
                 "bullet",
                 "number"
-              ]
+              ],
+              "x-readBack": "unread"
             },
             "level": {
               "type": "integer",
               "minimum": 0,
               "maximum": 8,
-              "default": 0
+              "default": 0,
+              "x-readBack": "unread"
             }
           }
         },
@@ -4906,48 +4923,58 @@
             },
             "name": {
               "type": "string",
-              "minLength": 1
+              "minLength": 1,
+              "x-readBack": "not-state"
             },
             "basedOn": {
               "type": "string",
-              "minLength": 1
+              "minLength": 1,
+              "x-readBack": "unread"
             },
             "font": {
               "description": "The font of Latin and East Asian text.",
               "type": "string",
-              "minLength": 1
+              "minLength": 1,
+              "x-readBack": "unread"
             },
             "latinFont": {
               "description": "The font of Latin text, in place of font's.",
               "type": "string",
-              "minLength": 1
+              "minLength": 1,
+              "x-readBack": "unread"
             },
             "eastAsianFont": {
               "description": "The font of Chinese, Japanese and Korean text, in place of font's.",
               "type": "string",
-              "minLength": 1
+              "minLength": 1,
+              "x-readBack": "unread"
             },
             "size": {
               "description": "The font size in points.",
               "type": "number",
-              "exclusiveMinimum": 0
+              "exclusiveMinimum": 0,
+              "x-readBack": "unread"
             },
             "bold": {
-              "type": "boolean"
+              "type": "boolean",
+              "x-readBack": "unread"
             },
             "color": {
               "description": "A #RRGGBB or named color.",
-              "type": "string"
+              "type": "string",
+              "x-readBack": "unread"
             },
             "spaceBefore": {
               "description": "Space before the paragraph, in points.",
               "type": "number",
-              "minimum": 0
+              "minimum": 0,
+              "x-readBack": "unread"
             },
             "spaceAfter": {
               "description": "Space after the paragraph, in points.",
               "type": "number",
-              "minimum": 0
+              "minimum": 0,
+              "x-readBack": "unread"
             }
           }
         },
@@ -4967,7 +4994,8 @@
               "const": "delete_blocks"
             },
             "target": {
-              "$ref": "#/$defs/wordsTarget"
+              "$ref": "#/$defs/wordsTarget",
+              "x-readBack": "not-state"
             }
           }
         },
@@ -4988,7 +5016,8 @@
             },
             "section": {
               "type": "integer",
-              "minimum": 1
+              "minimum": 1,
+              "x-readBack": "not-state"
             }
           }
         },
@@ -5008,24 +5037,29 @@
               "const": "format_table"
             },
             "at": {
-              "$ref": "#/$defs/wordsTarget"
+              "$ref": "#/$defs/wordsTarget",
+              "x-readBack": "not-state"
             },
             "keepTogether": {
               "description": "true keeps the whole table on one page when it fits: no row breaks across pages, and every paragraph keeps with the next except the last paragraph of each last-row cell. false clears keep-with-next on those same paragraphs and leaves the row setting.",
-              "type": "boolean"
+              "type": "boolean",
+              "x-readBack": "unread"
             },
             "allowRowBreakAcrossPages": {
               "description": "Whether the text of each row may split across a page break.",
-              "type": "boolean"
+              "type": "boolean",
+              "x-readBack": "unread"
             },
             "headerRowCount": {
               "description": "The first rows repeated as a heading on every page the table spans; 0 clears it. At most the table's row count.",
               "type": "integer",
-              "minimum": 0
+              "minimum": 0,
+              "x-readBack": "unread"
             },
             "keepWithNext": {
               "description": "Whether the last paragraph of each last-row cell keeps with the paragraph after the table, keeping the table with it.",
-              "type": "boolean"
+              "type": "boolean",
+              "x-readBack": "unread"
             }
           },
           "allOf": [
@@ -5071,44 +5105,54 @@
               "const": "format_text"
             },
             "target": {
-              "$ref": "#/$defs/wordsTarget"
+              "$ref": "#/$defs/wordsTarget",
+              "x-readBack": "not-state"
             },
             "bold": {
-              "type": "boolean"
+              "type": "boolean",
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/document-read.schema.json#/$defs/runData/properties/bold"
             },
             "italic": {
-              "type": "boolean"
+              "type": "boolean",
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/document-read.schema.json#/$defs/runData/properties/italic"
             },
             "underline": {
-              "type": "boolean"
+              "type": "boolean",
+              "x-readBack": "unread"
             },
             "size": {
               "description": "The font size in points.",
               "type": "number",
-              "exclusiveMinimum": 0
+              "exclusiveMinimum": 0,
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/document-read.schema.json#/$defs/runData/properties/size"
             },
             "color": {
               "description": "A #RRGGBB or named color.",
-              "type": "string"
+              "type": "string",
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/document-read.schema.json#/$defs/runData/properties/color"
             },
             "font": {
               "description": "The font of Latin and East Asian text.",
               "type": "string",
-              "minLength": 1
+              "minLength": 1,
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/document-read.schema.json#/$defs/runData/properties/font"
             },
             "latinFont": {
               "description": "The font of Latin text, in place of font's.",
               "type": "string",
-              "minLength": 1
+              "minLength": 1,
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/document-read.schema.json#/$defs/runData/properties/latinFont"
             },
             "eastAsianFont": {
               "description": "The font of Chinese, Japanese and Korean text, in place of font's.",
               "type": "string",
-              "minLength": 1
+              "minLength": 1,
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/document-read.schema.json#/$defs/runData/properties/eastAsianFont"
             },
             "highlight": {
               "description": "A #RRGGBB or named highlight color.",
-              "type": "string"
+              "type": "string",
+              "x-readBack": "unread"
             }
           }
         },
@@ -5129,11 +5173,13 @@
               "const": "insert_bookmark"
             },
             "at": {
-              "$ref": "#/$defs/wordsTarget"
+              "$ref": "#/$defs/wordsTarget",
+              "x-readBack": "not-state"
             },
             "name": {
               "type": "string",
-              "minLength": 1
+              "minLength": 1,
+              "x-readBack": "position"
             }
           }
         },
@@ -5155,17 +5201,20 @@
               "const": "insert_break"
             },
             "at": {
-              "$ref": "#/$defs/wordsTarget"
+              "$ref": "#/$defs/wordsTarget",
+              "x-readBack": "not-state"
             },
             "position": {
-              "$ref": "#/$defs/position"
+              "$ref": "#/$defs/position",
+              "x-readBack": "not-state"
             },
             "kind": {
               "type": "string",
               "enum": [
                 "page",
                 "section"
-              ]
+              ],
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/document-read.schema.json#/$defs/blockData/properties/breakAfter"
             }
           }
         },
@@ -5187,15 +5236,18 @@
               "const": "insert_field"
             },
             "at": {
-              "$ref": "#/$defs/wordsTarget"
+              "$ref": "#/$defs/wordsTarget",
+              "x-readBack": "not-state"
             },
             "position": {
-              "$ref": "#/$defs/position"
+              "$ref": "#/$defs/position",
+              "x-readBack": "not-state"
             },
             "code": {
               "description": "The field code, such as DATE.",
               "type": "string",
-              "minLength": 1
+              "minLength": 1,
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/document-info.schema.json#/$defs/fieldData/properties/code"
             }
           }
         },
@@ -5218,16 +5270,20 @@
               "const": "insert_hyperlink"
             },
             "at": {
-              "$ref": "#/$defs/wordsTarget"
+              "$ref": "#/$defs/wordsTarget",
+              "x-readBack": "not-state"
             },
             "position": {
-              "$ref": "#/$defs/position"
+              "$ref": "#/$defs/position",
+              "x-readBack": "not-state"
             },
             "text": {
-              "type": "string"
+              "type": "string",
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/document-read.schema.json#/$defs/runData/properties/text"
             },
             "url": {
-              "$ref": "#/$defs/webLink"
+              "$ref": "#/$defs/webLink",
+              "x-readBack": "unread"
             }
           }
         },
@@ -5249,31 +5305,37 @@
               "const": "insert_image"
             },
             "at": {
-              "$ref": "#/$defs/wordsTarget"
+              "$ref": "#/$defs/wordsTarget",
+              "x-readBack": "not-state"
             },
             "position": {
-              "$ref": "#/$defs/position"
+              "$ref": "#/$defs/position",
+              "x-readBack": "not-state"
             },
             "path": {
               "description": "The image, relative to the working directory.",
               "type": "string",
               "minLength": 1,
-              "pattern": "\\S"
+              "pattern": "\\S",
+              "x-readBack": "not-state"
             },
             "width": {
               "description": "The width in points; the image's own when omitted.",
               "type": "number",
-              "exclusiveMinimum": 0
+              "exclusiveMinimum": 0,
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/document-read.schema.json#/$defs/blockImageData/properties/width"
             },
             "height": {
               "description": "The height in points; the image's own when omitted.",
               "type": "number",
-              "exclusiveMinimum": 0
+              "exclusiveMinimum": 0,
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/document-read.schema.json#/$defs/blockImageData/properties/height"
             },
             "inline": {
               "description": "Whether the image sits in the text line rather than floating with square wrapping.",
               "type": "boolean",
-              "default": true
+              "default": true,
+              "x-readBack": "unread"
             }
           }
         },
@@ -5295,14 +5357,17 @@
               "const": "insert_markdown"
             },
             "at": {
-              "$ref": "#/$defs/wordsTarget"
+              "$ref": "#/$defs/wordsTarget",
+              "x-readBack": "not-state"
             },
             "position": {
-              "$ref": "#/$defs/position"
+              "$ref": "#/$defs/position",
+              "x-readBack": "not-state"
             },
             "markdown": {
               "type": "string",
-              "minLength": 1
+              "minLength": 1,
+              "x-readBack": "not-state"
             }
           }
         },
@@ -5324,10 +5389,12 @@
               "const": "insert_paragraphs"
             },
             "at": {
-              "$ref": "#/$defs/wordsTarget"
+              "$ref": "#/$defs/wordsTarget",
+              "x-readBack": "not-state"
             },
             "position": {
-              "$ref": "#/$defs/position"
+              "$ref": "#/$defs/position",
+              "x-readBack": "not-state"
             },
             "paragraphs": {
               "type": "array",
@@ -5357,21 +5424,25 @@
               "const": "insert_table"
             },
             "at": {
-              "$ref": "#/$defs/wordsTarget"
+              "$ref": "#/$defs/wordsTarget",
+              "x-readBack": "not-state"
             },
             "position": {
-              "$ref": "#/$defs/position"
+              "$ref": "#/$defs/position",
+              "x-readBack": "not-state"
             },
             "rowCount": {
               "type": "integer",
               "minimum": 1,
-              "maximum": 32767
+              "maximum": 32767,
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/document-read.schema.json#/$defs/blockData/properties/rowCount"
             },
             "columnCount": {
               "description": "The column count; Word allows at most 63.",
               "type": "integer",
               "minimum": 1,
-              "maximum": 63
+              "maximum": 63,
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/document-read.schema.json#/$defs/blockData/properties/columnCount"
             },
             "cells": {
               "description": "Cell text by row, then column; cells beyond it stay empty.",
@@ -5381,12 +5452,14 @@
                 "items": {
                   "type": "string"
                 }
-              }
+              },
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/document-read.schema.json#/$defs/blockData/properties/cells"
             },
             "style": {
               "description": "An existing table style.",
               "type": "string",
-              "minLength": 1
+              "minLength": 1,
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/document-info.schema.json#/$defs/tableData/properties/style"
             }
           }
         },
@@ -5407,17 +5480,20 @@
               "const": "insert_toc"
             },
             "at": {
-              "$ref": "#/$defs/wordsTarget"
+              "$ref": "#/$defs/wordsTarget",
+              "x-readBack": "not-state"
             },
             "position": {
-              "$ref": "#/$defs/position"
+              "$ref": "#/$defs/position",
+              "x-readBack": "not-state"
             },
             "maxLevel": {
               "description": "The deepest heading level listed.",
               "type": "integer",
               "minimum": 1,
               "maximum": 9,
-              "default": 3
+              "default": 3,
+              "x-readBack": "unread"
             }
           }
         },
@@ -5439,7 +5515,8 @@
               "description": "A JSON array of flat objects, or a CSV file with a header row, relative to the working directory; it must hold at least one row.",
               "type": "string",
               "minLength": 1,
-              "pattern": "\\S"
+              "pattern": "\\S",
+              "x-readBack": "not-state"
             },
             "inline": {
               "description": "Merge rows of field values by field name, read as a data file's are: a number or Boolean merges as its JSON text.",
@@ -5455,12 +5532,14 @@
                     "null"
                   ]
                 }
-              }
+              },
+              "x-readBack": "not-state"
             },
             "regions": {
               "description": "Whether the rows repeat the template's one TableStart/TableEnd region.",
               "type": "boolean",
-              "default": false
+              "default": false,
+              "x-readBack": "not-state"
             }
           },
           "allOf": [
@@ -5502,13 +5581,15 @@
                 "comments",
                 "trackedChanges",
                 "forms"
-              ]
+              ],
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/document-info.schema.json#/$defs/documentSummary/properties/protection"
             },
             "passwordEnv": {
               "description": "The environment variable that holds the protection password; no password when omitted.",
               "type": "string",
               "minLength": 1,
-              "pattern": "\\S"
+              "pattern": "\\S",
+              "x-readBack": "not-state"
             }
           }
         },
@@ -5529,7 +5610,8 @@
             "author": {
               "description": "The author whose revisions are decided; a name no revision has changes nothing and reports OP_NO_EFFECT.",
               "type": "string",
-              "minLength": 1
+              "minLength": 1,
+              "x-readBack": "not-state"
             },
             "revisions": {
               "description": "The 1-based revision numbers of the changes words inspect --detail revisions lists, numbered as the document was before the batch. Such a decision comes before every operation other than a revision decision, and lists together the changes that share a node and type, as its error names them.",
@@ -5538,7 +5620,8 @@
               "items": {
                 "type": "integer",
                 "minimum": 1
-              }
+              },
+              "x-readBack": "not-state"
             }
           }
         },
@@ -5559,7 +5642,8 @@
             "author": {
               "description": "The author whose comments are removed; a name no comment has changes nothing and reports OP_NO_EFFECT.",
               "type": "string",
-              "minLength": 1
+              "minLength": 1,
+              "x-readBack": "not-state"
             }
           }
         },
@@ -5595,12 +5679,14 @@
               "const": "repeat_table_row"
             },
             "at": {
-              "$ref": "#/$defs/wordsTarget"
+              "$ref": "#/$defs/wordsTarget",
+              "x-readBack": "not-state"
             },
             "row": {
               "description": "The 1-based template row; when omitted, the table's one row that contains a {{key}} placeholder.",
               "type": "integer",
-              "minimum": 1
+              "minimum": 1,
+              "x-readBack": "not-state"
             },
             "items": {
               "description": "Placeholder values by key, one object per row copy, read as a data file's are: a number or Boolean as its JSON text and null as empty text. An empty list removes the template row.",
@@ -5615,13 +5701,15 @@
                     "null"
                   ]
                 }
-              }
+              },
+              "x-readBack": "not-state"
             },
             "path": {
               "description": "A JSON array of flat objects, or a CSV file with a header row, relative to the working directory.",
               "type": "string",
               "minLength": 1,
-              "pattern": "\\S"
+              "pattern": "\\S",
+              "x-readBack": "not-state"
             }
           },
           "allOf": [
@@ -5659,24 +5747,29 @@
             },
             "find": {
               "type": "string",
-              "minLength": 1
+              "minLength": 1,
+              "x-readBack": "not-state"
             },
             "replace": {
               "description": "With regex, .NET substitutions such as $1 and ${name} apply; write $$ for a literal $.",
-              "type": "string"
+              "type": "string",
+              "x-readBack": "not-state"
             },
             "regex": {
               "description": "Whether find is a .NET regular expression rather than literal text.",
               "type": "boolean",
-              "default": false
+              "default": false,
+              "x-readBack": "not-state"
             },
             "matchCase": {
               "type": "boolean",
-              "default": false
+              "default": false,
+              "x-readBack": "not-state"
             },
             "wholeWord": {
               "type": "boolean",
-              "default": false
+              "default": false,
+              "x-readBack": "not-state"
             },
             "scope": {
               "description": "body is the main text without the comments and footnotes it anchors; footnotes include endnotes. Field codes and text a tracked change deletes are never replaced.",
@@ -5688,12 +5781,14 @@
                 "comments",
                 "all"
               ],
-              "default": "body"
+              "default": "body",
+              "x-readBack": "not-state"
             },
             "maxReplacementCount": {
               "description": "The most matches replaced; every match when omitted.",
               "type": "integer",
-              "minimum": 1
+              "minimum": 1,
+              "x-readBack": "not-state"
             }
           }
         },
@@ -5714,22 +5809,26 @@
             "font": {
               "description": "The font of Latin and East Asian text.",
               "type": "string",
-              "minLength": 1
+              "minLength": 1,
+              "x-readBack": "unread"
             },
             "latinFont": {
               "description": "The font of Latin text, in place of font's.",
               "type": "string",
-              "minLength": 1
+              "minLength": 1,
+              "x-readBack": "unread"
             },
             "eastAsianFont": {
               "description": "The font of Chinese, Japanese and Korean text, in place of font's.",
               "type": "string",
-              "minLength": 1
+              "minLength": 1,
+              "x-readBack": "unread"
             },
             "size": {
               "description": "The font size in points; sizes are kept when omitted.",
               "type": "number",
-              "exclusiveMinimum": 0
+              "exclusiveMinimum": 0,
+              "x-readBack": "unread"
             }
           },
           "allOf": [
@@ -5771,7 +5870,8 @@
             "section": {
               "description": "The 1-based section; every section when omitted.",
               "type": "integer",
-              "minimum": 1
+              "minimum": 1,
+              "x-readBack": "not-state"
             },
             "kind": {
               "description": "Which pages it shows on; first and even also turn on the section setting that shows it.",
@@ -5781,17 +5881,20 @@
                 "first",
                 "even"
               ],
-              "default": "primary"
+              "default": "primary",
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/document-info.schema.json#/$defs/headerFooterData/properties/kind"
             },
             "paragraphs": {
               "description": "Plain paragraphs, one per item, in the paragraph and character format of the first paragraph they replace, such as its alignment, or in Word's Header or Footer style when there is none.",
               "type": "array",
               "items": {
                 "type": "string"
-              }
+              },
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/document-info.schema.json#/$defs/headerFooterData/properties/paragraphs"
             },
             "markdown": {
-              "type": "string"
+              "type": "string",
+              "x-readBack": "not-state"
             }
           },
           "allOf": [
@@ -5828,7 +5931,8 @@
             "section": {
               "description": "The 1-based section; every section when omitted.",
               "type": "integer",
-              "minimum": 1
+              "minimum": 1,
+              "x-readBack": "not-state"
             },
             "kind": {
               "description": "Which pages it shows on; first and even also turn on the section setting that shows it.",
@@ -5838,17 +5942,20 @@
                 "first",
                 "even"
               ],
-              "default": "primary"
+              "default": "primary",
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/document-info.schema.json#/$defs/headerFooterData/properties/kind"
             },
             "paragraphs": {
               "description": "Plain paragraphs, one per item, in the paragraph and character format of the first paragraph they replace, such as its alignment, or in Word's Header or Footer style when there is none.",
               "type": "array",
               "items": {
                 "type": "string"
-              }
+              },
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/document-info.schema.json#/$defs/headerFooterData/properties/paragraphs"
             },
             "markdown": {
-              "type": "string"
+              "type": "string",
+              "x-readBack": "not-state"
             }
           },
           "allOf": [
@@ -5885,7 +5992,8 @@
             "section": {
               "description": "The 1-based section; every section when omitted.",
               "type": "integer",
-              "minimum": 1
+              "minimum": 1,
+              "x-readBack": "not-state"
             },
             "location": {
               "type": "string",
@@ -5893,7 +6001,8 @@
                 "header",
                 "footer"
               ],
-              "default": "footer"
+              "default": "footer",
+              "x-readBack": "unread"
             },
             "alignment": {
               "type": "string",
@@ -5902,7 +6011,8 @@
                 "center",
                 "right"
               ],
-              "default": "center"
+              "default": "center",
+              "x-readBack": "unread"
             },
             "format": {
               "type": "string",
@@ -5912,12 +6022,14 @@
                 "lowerRoman",
                 "upperLetter",
                 "lowerLetter"
-              ]
+              ],
+              "x-readBack": "unread"
             },
             "start": {
               "description": "The number of the section's first page; numbering continues when omitted.",
               "type": "integer",
-              "minimum": 0
+              "minimum": 0,
+              "x-readBack": "unread"
             }
           }
         },
@@ -5939,7 +6051,8 @@
             "section": {
               "description": "The 1-based section; every section when omitted.",
               "type": "integer",
-              "minimum": 1
+              "minimum": 1,
+              "x-readBack": "not-state"
             },
             "setup": {
               "$ref": "#/$defs/pageSetupInput"
@@ -5961,16 +6074,20 @@
               "const": "set_properties"
             },
             "title": {
-              "type": "string"
+              "type": "string",
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/document-info.schema.json#/properties/properties/additionalProperties"
             },
             "author": {
-              "type": "string"
+              "type": "string",
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/document-info.schema.json#/properties/properties/additionalProperties"
             },
             "subject": {
-              "type": "string"
+              "type": "string",
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/document-info.schema.json#/properties/properties/additionalProperties"
             },
             "keywords": {
-              "type": "string"
+              "type": "string",
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/document-info.schema.json#/properties/properties/additionalProperties"
             },
             "custom": {
               "description": "Custom properties by name; a null value removes the property.",
@@ -5980,7 +6097,8 @@
                   "string",
                   "null"
                 ]
-              }
+              },
+              "x-readBack": "unread"
             }
           }
         },
@@ -6001,11 +6119,13 @@
               "const": "set_style"
             },
             "target": {
-              "$ref": "#/$defs/wordsTarget"
+              "$ref": "#/$defs/wordsTarget",
+              "x-readBack": "not-state"
             },
             "style": {
               "type": "string",
-              "minLength": 1
+              "minLength": 1,
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/document-read.schema.json#/$defs/blockData/properties/style"
             }
           }
         },
@@ -6028,18 +6148,22 @@
               "const": "set_table_cell"
             },
             "at": {
-              "$ref": "#/$defs/wordsTarget"
+              "$ref": "#/$defs/wordsTarget",
+              "x-readBack": "not-state"
             },
             "row": {
               "type": "integer",
-              "minimum": 1
+              "minimum": 1,
+              "x-readBack": "not-state"
             },
             "col": {
               "type": "integer",
-              "minimum": 1
+              "minimum": 1,
+              "x-readBack": "not-state"
             },
             "text": {
-              "type": "string"
+              "type": "string",
+              "x-readBack": "position"
             }
           }
         },
@@ -6060,10 +6184,12 @@
               "const": "set_text"
             },
             "at": {
-              "$ref": "#/$defs/wordsTarget"
+              "$ref": "#/$defs/wordsTarget",
+              "x-readBack": "not-state"
             },
             "text": {
-              "type": "string"
+              "type": "string",
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/document-read.schema.json#/$defs/blockData/properties/text"
             }
           }
         },
@@ -6085,7 +6211,8 @@
               "description": "The environment variable that holds the protection password.",
               "type": "string",
               "minLength": 1,
-              "pattern": "\\S"
+              "pattern": "\\S",
+              "x-readBack": "not-state"
             }
           }
         },
@@ -6109,7 +6236,8 @@
                 "all",
                 "toc"
               ],
-              "default": "all"
+              "default": "all",
+              "x-readBack": "not-state"
             }
           }
         },
@@ -6149,21 +6277,25 @@
                 "a5",
                 "letter",
                 "legal"
-              ]
+              ],
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/document-info.schema.json#/$defs/sectionData/properties/widthPoints"
             },
             "orientation": {
               "type": "string",
               "enum": [
                 "portrait",
                 "landscape"
-              ]
+              ],
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/document-info.schema.json#/$defs/sectionData/properties/orientation"
             },
             "margins": {
-              "$ref": "#/$defs/marginInput"
+              "$ref": "#/$defs/marginInput",
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/document-info.schema.json#/$defs/sectionData/properties/margins"
             },
             "columnCount": {
               "type": "integer",
-              "minimum": 1
+              "minimum": 1,
+              "x-readBack": "unread"
             }
           }
         },
@@ -6181,18 +6313,21 @@
           "additionalProperties": false,
           "properties": {
             "text": {
-              "type": "string"
+              "type": "string",
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/document-read.schema.json#/$defs/blockData/properties/text"
             },
             "style": {
               "description": "An existing paragraph style. Without it, the paragraph continues the paragraph before the insertion point, or with listLevel the existing item at that level it joins, as Word's Enter does: its indents, spacing, alignment and the run format of its last text, or after a heading the heading style's next style.",
               "type": "string",
-              "minLength": 1
+              "minLength": 1,
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/document-read.schema.json#/$defs/blockData/properties/style"
             },
             "listLevel": {
               "description": "Makes the paragraph a list item at this level. When the anchor is a list item, it joins the anchor's list if that list defines the level, else the list of the nearest item at this level under the same parent, and without style continues that list's nearest existing item at this level, if any, with the indents it sets on itself. When the anchor is no list item, or no such list exists, it joins one new bullet list.",
               "type": "integer",
               "minimum": 0,
-              "maximum": 8
+              "maximum": 8,
+              "x-readBack": "unread"
             }
           }
         },

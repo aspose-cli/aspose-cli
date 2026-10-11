@@ -11,6 +11,7 @@ public sealed record InsertRowsOp : CellsOp
     /// <summary>The 1-based row to insert before.</summary>
     [Minimum(1)] public required int At { get; init; }
 
+    [NotState]
     [Minimum(1)] public int Count { get; init; } = 1;
 }
 
@@ -21,6 +22,7 @@ public sealed record DeleteRowsOp : CellsOp
     /// <summary>The 1-based first row to delete.</summary>
     [Minimum(1)] public required int At { get; init; }
 
+    [NotState]
     [Minimum(1)] public int Count { get; init; } = 1;
 }
 
@@ -31,6 +33,7 @@ public sealed record InsertColumnsOp : CellsOp
     /// <summary>The column to insert before, such as C.</summary>
     [A1Column] public required string At { get; init; }
 
+    [NotState]
     [Minimum(1)] public int Count { get; init; } = 1;
 }
 
@@ -41,6 +44,7 @@ public sealed record DeleteColumnsOp : CellsOp
     /// <summary>The first column to delete, such as C.</summary>
     [A1Column] public required string At { get; init; }
 
+    [NotState]
     [Minimum(1)] public int Count { get; init; } = 1;
 }
 
@@ -55,6 +59,7 @@ public sealed record ResizeRowsOp : CellsOp
     [Minimum(1)] public int? To { get; init; }
 
     /// <summary>The height in points; omitted auto-fits.</summary>
+    [NotReadBack]
     [Minimum(0)] public double? Height { get; init; }
 
     /// <inheritdoc />
@@ -72,6 +77,7 @@ public sealed record ResizeColumnsOp : CellsOp
     [A1Column] public string? To { get; init; }
 
     /// <summary>The width in characters; omitted auto-fits.</summary>
+    [NotReadBack]
     [Minimum(0)] public double? Width { get; init; }
 
     /// <inheritdoc />

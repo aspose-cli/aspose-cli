@@ -115,6 +115,13 @@ public sealed class OperationProperty
     /// <summary>The field names commonly written for this member (see <see cref="MistakenForAttribute"/>).</summary>
     public IReadOnlyList<string> MistakenFor { get; init; } = [];
 
+    /// <summary>
+    /// Where the state the member writes reads back (C-R21): a read path, or one of
+    /// <see cref="ReadBackKinds"/> (see <see cref="ReadBackAttribute"/>); null for a record member
+    /// classified field by field in its record.
+    /// </summary>
+    public string? ReadBack { get; init; }
+
     /// <summary>Reads the member from an instance of its record.</summary>
     public required Func<object, object?> Get { get; init; }
 }

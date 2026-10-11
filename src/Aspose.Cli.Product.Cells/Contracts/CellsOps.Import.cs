@@ -29,6 +29,7 @@ public sealed record ImportRangeOp : CellsOp
     /// and the number formats; all also keeps the formulas as written and the formatting, as
     /// copy_range does.
     /// </summary>
+    [NotState]
     [AllowedValues(typeof(ImportContents))] public string Content { get; init; } = ImportContents.Values;
 
     /// <summary>The environment variable that holds the source's open password, for an encrypted source.</summary>
@@ -70,9 +71,11 @@ public sealed record ImportSheetOp : CellsOp
     [InputPath, Pattern(@"\S")] public required string Path { get; init; }
 
     /// <summary>The name of the new sheet; the source sheet's name when omitted. A name this workbook already uses is refused.</summary>
+    [ReadBack("workbook-info.schema.json#/$defs/sheetInfo/properties/name")]
     [Pattern(@"\S")] public string? Name { get; init; }
 
     /// <summary>The zero-based position of the new sheet; appended when omitted.</summary>
+    [ReadBack("workbook-info.schema.json#/$defs/sheetInfo/properties/position")]
     [Minimum(0)] public int? Position { get; init; }
 
     /// <summary>The environment variable that holds the source's open password, for an encrypted source.</summary>

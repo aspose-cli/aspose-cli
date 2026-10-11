@@ -16,6 +16,7 @@ public sealed record SetValuesOp : CellsOp
     [A1Range] public required string Range { get; init; }
 
     /// <summary>The rows of values.</summary>
+    [ReadBackByPosition] // Reads back as the v of the compact cells (kept on purpose).
     [MinItems(1), MinItems(1, Depth = 1), JsonScalar] public required IReadOnlyList<IReadOnlyList<object?>> Values { get; init; }
 
     /// <inheritdoc />
@@ -45,6 +46,7 @@ public sealed record SetFormulaOp : CellsOp
     [A1Range] public required string Range { get; init; }
 
     /// <summary>The formula of the range's top-left cell in A1 notation, such as =SUM(B2:B10).</summary>
+    [ReadBackByPosition] // Reads back as the f of the compact cells (kept on purpose).
     [Pattern("^=")] public required string Formula { get; init; }
 }
 
@@ -56,6 +58,7 @@ public sealed record ClearRangeOp : CellsOp
     [A1Range] public required string Range { get; init; }
 
     /// <summary>What to clear: contents keeps the formatting, formats keeps the contents, all clears both.</summary>
+    [NotState]
     [AllowedValues(typeof(ClearTargets))] public string What { get; init; } = ClearTargets.Contents;
 }
 

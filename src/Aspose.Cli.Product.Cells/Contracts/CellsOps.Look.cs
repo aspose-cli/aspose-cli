@@ -14,9 +14,11 @@ namespace Aspose.Cli.Product.Cells.Contracts;
 public sealed record SetDefaultFontOp : CellsOp
 {
     /// <summary>The font family name, such as Calibri; surrounding spaces are removed.</summary>
+    [NotReadBack]
     [Pattern(@"\S")] public required string Font { get; init; }
 
     /// <summary>The font size in points; unchanged when omitted.</summary>
+    [NotReadBack]
     [Minimum(1), Maximum(409)] public double? Size { get; init; }
 
     /// <inheritdoc />
@@ -28,6 +30,7 @@ public sealed record SetDefaultFontOp : CellsOp
 public sealed record SetTabColorOp : CellsOp
 {
     /// <summary>The tab color; omitted removes it.</summary>
+    [NotReadBack]
     [HexColor] public string? Color { get; init; }
 }
 
@@ -41,11 +44,14 @@ public sealed record SetTabColorOp : CellsOp
 public sealed record SetSheetViewOp : CellsOp
 {
     /// <summary>Whether the on-screen gridlines show; unchanged when omitted.</summary>
+    [NotReadBack]
     public bool? Gridlines { get; init; }
 
     /// <summary>The zoom percentage; unchanged when omitted.</summary>
+    [NotReadBack]
     [Minimum(10), Maximum(400)] public int? Zoom { get; init; }
 
     /// <summary>Whether the row numbers and column letters show; unchanged when omitted.</summary>
+    [NotReadBack]
     public bool? Headings { get; init; }
 }

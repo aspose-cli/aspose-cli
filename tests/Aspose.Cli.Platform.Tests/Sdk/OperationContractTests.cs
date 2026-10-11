@@ -206,7 +206,7 @@ public sealed class OperationContractTests
         Assert.Equal("""["op","pages"]""", place["required"]!.ToJsonString());
         Assert.Equal("#/$defs/pages", place["properties"]!["pages"]!["$ref"]!.GetValue<string>());
         Assert.Equal("#/$defs/color", place["properties"]!["colors"]!["items"]!["$ref"]!.GetValue<string>());
-        Assert.Equal("""{"type":"array","maxItems":3,"items":{"type":"array","minItems":1,"maxItems":2,"items":{"type":"string"}}}""", place["properties"]!["rows"]!.ToJsonString());
+        Assert.Equal("""{"type":"array","maxItems":3,"items":{"type":"array","minItems":1,"maxItems":2,"items":{"type":"string"}},"x-readBack":"not-state"}""", place["properties"]!["rows"]!.ToJsonString());
         Assert.Equal("""["string","number","boolean","null"]""", place["properties"]!["cells"]!["items"]!["type"]!.ToJsonString());
         Assert.Equal("""["light","dark"]""", place["properties"]!["shade"]!["enum"]!.ToJsonString());
         Assert.Equal(0, place["properties"]!["count"]!["minimum"]!.GetValue<int>());
@@ -220,10 +220,11 @@ public sealed class OperationContractTests
             """[{"if":{"properties":{"mode":{"const":"relative"}},"required":["mode"]},"then":{"required":["by"]},"else":{"not":{"required":["by"]}}},"""
             + """{"if":{"properties":{"mode":{"const":"absolute"}}},"then":{"required":["to"]},"else":{"not":{"required":["to"]}}}]""",
             Schema()["$defs"]!["shift"]!["allOf"]!.ToJsonString());
-        Assert.Equal("""{"type":"string","minLength":1,"pattern":"\\S"}""", Schema()["$defs"]!["link"]!["properties"]!["path"]!.ToJsonString());
+        Assert.Equal("""{"type":"string","minLength":1,"pattern":"\\S","x-readBack":"not-state"}""", Schema()["$defs"]!["link"]!["properties"]!["path"]!.ToJsonString());
         string description = Schema()["description"]!.GetValue<string>();
         Assert.StartsWith("Test operations. Operations apply in order. Without --best-effort the batch is atomic", description, StringComparison.Ordinal);
-        Assert.EndsWith("The bare array of operations is accepted as the document with only its ops.", description, StringComparison.Ordinal);
+        Assert.Contains("The bare array of operations is accepted as the document with only its ops.", description, StringComparison.Ordinal);
+        Assert.EndsWith("not-state for a selector, a source or a parameter of the action.", description, StringComparison.Ordinal);
     }
 
     [Fact]
