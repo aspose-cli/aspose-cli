@@ -91,7 +91,8 @@ weaken a check or remove a supported operation to make a test pass.
   `.editorconfig` as errors; fix a violation rather than suppressing it. `src` projects write a
   documentation file, so documentation comments must be well formed.
 - **Skill operations.** Every operation a product Skill shows must parse and match the product's
-  ops schema.
+  ops schema, and every JSON document a Skill or the README shows matches the schema the CLI
+  serves.
 
 ## Contracts
 
@@ -132,6 +133,59 @@ weaken a check or remove a supported operation to make a test pass.
   the changed `section/...` targets, and `document` when it addressed no range or that list is
   still too long). `BoundedOperationRunner` throws `InvalidOperationException` when a product
   without a degenerate form exceeds the cap.
+
+## Contract conventions
+
+The command-line contract aims to let an agent guess right from the habits it already has: POSIX
+and GNU argument conventions, the Unix split of results on stdout and diagnostics on stderr, the
+shared vocabulary of git, kubectl and gh, and [clig.dev](https://clig.dev/). Follow the common
+practice, not an older tool that breaks it. The rules are numbered `C-Rnn`; their mechanical
+parts are checked by `tests/Aspose.Cli.Invariants.Tests/Rules`, which is their authority, and
+today's violations are entries in `known-violations.json` until a contract change clears them.
+This section holds only what a test cannot judge.
+
+- **Verbs mean one thing (C-R02).** A product verb does the same kind of work in every product:
+  `inspect` reports structure and the sections `--detail` selects, `read` a bounded content window,
+  and so on. A missing verb is a gap to fill, never a reason to give another verb a second meaning.
+- **Plural nouns (C-R19).** An operation whose noun is plural (`delete_rows`) acts on a set;
+  a singular noun acts on one object.
+- **Units in names (C-R20).** A field or option measured in anything but points names its unit
+  (`widthChars`, `scalePercent`, `durationMs`, `dpi`).
+- **One fact, one code (C-R28).** Two codes never name the same fact, and one code never covers
+  two. `ANCHOR_NOT_FOUND` (a heading or text that a search did not find) and `BLOCK_NOT_FOUND` (a
+  block number beyond the document) are different facts and stay separate.
+- **Skills claim only what is tested (C-R38).** What a Skill says about a result's meaning, such
+  as when `itemsAffected` is zero, has a behavior check behind it. A product Skill need not show
+  every command: help and capabilities list them all, and a Skill holds the product knowledge
+  they cannot give, so no check requires each command to appear in a Skill.
+
+Kept on purpose:
+
+- Commands are product first, `aspose-cli <product> <verb>`; the top level holds only the commands
+  that serve every product (C-R01).
+- `capabilities`, `schema` and `docs` stay three self-description entry points: the command tree,
+  the JSON Schemas and the guides (C-R01).
+- The positional argument of `create` is the file to create (C-R05).
+- `--set` keeps one address syntax per product, `SHEET!CELL=VALUE` in Cells and
+  `bookmark:NAME=TEXT` in Words, since each addresses that product's own model (C-R07).
+- `--author` means the same in both of its places, and `--port` keeps the two descriptions of its
+  two commands (C-R07).
+- The values of `--detail` and `--what` differ by product, and Slides `media` includes audio and
+  video where PDF and Words have `images`; the C-R07 exemptions state why.
+- `--grid` is PDF only and `--width` Slides only; which commands take `--font-dir` is decided by
+  `FontDirectoryOptionsTests` (C-R08).
+- `--timeout` takes seconds without a unit in its name, as command-line timeouts do (C-R20).
+- `--scan-range` stays hidden, only the carrier of `window.next` (C-R04).
+- In JSON mode warnings are part of the stdout envelope, and redirected output defaults to JSON
+  (C-R23).
+- `compare` exits 0 when the files differ; the differences are its result (C-R24).
+- Help and the version are `--help` and `--version` only; no `help` or `version` subcommand, and a
+  mistyped one gets a suggestion (C-R35, C-B14).
+- `capabilities` lists no `examples[]` or `errorDetailsKeys[]`: examples belong to help (C-R34),
+  and the error `details` keys are described once, in the error envelope schema (C-R25).
+- On an encrypted PDF input, `set_metadata` with text beyond Latin-1 and no later `encrypt` is
+  still refused rather than reported applied while the engine writes garbled text
+  ([PDF-ENCRYPTED-INFO-TEXT](KNOWN-ISSUES.md#pdf-encrypted-info-text), C-R30).
 
 ## Tests
 

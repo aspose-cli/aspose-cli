@@ -578,7 +578,7 @@ public abstract record RevisionDecisionOp : WordsOp
     [MinLength(1)] public string? Author { get; init; }
 
     /// <summary>
-    /// The 1-based revision numbers of the changes words inspect --detail revisions lists,
+    /// The 1-based revision numbers of the changes <c>words inspect --detail revisions</c> lists,
     /// numbered as the document was before the batch. Such a decision comes before every
     /// operation other than a revision decision, and lists together the changes that share a
     /// node and type, as its error names them.
