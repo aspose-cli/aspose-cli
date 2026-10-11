@@ -32,12 +32,16 @@ public sealed class WordsDisclosureTests
         source.Save(input, SaveFormat.Docx);
 
         ResourceBudgetLedger budgets = ProductTestBudgets.Create<WordsModule>();
-        var loader = new WordsDocumentLoader(budgets, new OutputPipeline<Document>(new FixedGate(state), new WordsEvaluationProfile(), new SafeFileWriter(budgets)));
+        var outputs = new OutputPipeline<Document>(new FixedGate(state), new WordsEvaluationProfile(), new SafeFileWriter(budgets));
+        var loader = new WordsDocumentLoader(budgets, outputs);
         using LoadedDocument loaded = loader.Open(input, null);
         var index = new DocumentBlockIndex(loaded.Document, loaded.Evaluation);
+        DocumentReadResult read = (DocumentReadResult)outputs.Disclose(
+            WordsRead.Run(WordsActivation.Session(outputs, budgets), new DocumentReadRequest { Input = input, Scope = "text" }));
 
         bool evaluation = state == LicenseState.Evaluation;
-        Assert.Equal(evaluation, loaded.EvaluationInputTruncated);
+        // The SDK discloses the truncation notice of an input read in evaluation mode only.
+        Assert.Equal(evaluation, read.Warnings?.Any(static warning => warning.Code == WarningCodes.EvaluationInputTruncated) == true);
         // Under evaluation the SDK may add its own banner; the quoted one is skipped only there.
         Assert.True(evaluation ? index.Count <= blocks : index.Count == blocks);
     }

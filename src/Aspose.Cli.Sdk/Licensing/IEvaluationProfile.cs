@@ -12,6 +12,30 @@ public interface IEvaluationProfile<in TDocument>
     where TDocument : class
 {
     /// <summary>
+    /// The engine whose evaluation mode the profile recognizes, which also names the license
+    /// that lifts its limits, such as <c>Aspose.PDF</c>. The SDK writes it into every evaluation
+    /// error and warning it builds from the profile's facts.
+    /// </summary>
+    string Engine { get; }
+
+    /// <summary>
+    /// What evaluation mode leaves out of a document it cuts short
+    /// (<see cref="EvaluationMarks.IsTruncated"/>), completing "<c>Aspose.X evaluation mode ...</c>",
+    /// such as <c>reads only the first 4 pages of a document</c>. The SDK writes the
+    /// <c>EVALUATION_INPUT_TRUNCATED</c> warning of a command that read such a document from it.
+    /// </summary>
+    string Truncation => "cuts the content of some documents short";
+
+    /// <summary>
+    /// The evaluation limit an exception of the engine reports, such as a page past the ones
+    /// evaluation mode shows; null for any other exception, and by default. Only the SDK calls
+    /// it, in evaluation mode, on an exception a command or a view let through, and reports the
+    /// limit as <c>EVALUATION_LIMIT</c>; a product never translates the exception itself.
+    /// </summary>
+    /// <param name="exception">The exception the engine threw.</param>
+    EvaluationLimitFact? RecognizeLimit(Exception exception) => null;
+
+    /// <summary>
     /// The evaluation marks a document carries, whoever wrote them: the marks evaluation mode
     /// adds when it opens or saves a document, and those an earlier save without a license
     /// left in the file. Inspecting never changes the document.
@@ -74,3 +98,21 @@ public sealed record EvaluationMarks(IReadOnlyList<string> Marks, bool IsTruncat
         return new EvaluationMarks([.. Marks.Union(other.Marks, StringComparer.Ordinal)], IsTruncated || other.IsTruncated);
     }
 }
+
+/// <summary>
+/// An evaluation limit of an engine, as its <see cref="IEvaluationProfile{TDocument}"/> recognizes
+/// it in the engine's exception. The SDK writes the <c>EVALUATION_LIMIT</c> error, its message,
+/// hint and details, from these facts and the profile's engine, the same way for every product.
+/// </summary>
+/// <param name="Allows">
+/// What evaluation mode allows, completing "<c>Aspose.X evaluation mode ...</c>", such as
+/// <c>reads only the first 4 pages of a document</c>.
+/// </param>
+/// <param name="Limit">The limit, in <paramref name="Unit"/>.</param>
+/// <param name="Unit">The unit of <paramref name="Limit"/>, such as <c>pages</c>.</param>
+/// <param name="Alternative">
+/// What any command can do without a license, completing "<c>Apply a license, or ...</c>", or
+/// null. A selection of fewer <paramref name="Unit"/> is not stated here: the SDK offers it only
+/// for a command whose selection option over that unit keeps the engine within the limit.
+/// </param>
+public sealed record EvaluationLimitFact(string Allows, int Limit, string Unit, string? Alternative = null);

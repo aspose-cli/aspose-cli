@@ -253,7 +253,6 @@ internal sealed partial class WordsMutationHandlers
     public long Apply(AppendDocumentOp operation)
     {
         using LoadedDocument loaded = _loader.Open(operation.Path, null);
-        _loaded.Imported(loaded);
         _outputs.Neutralize(loaded.Document);
 
         ImportFormatMode mode = operation.ImportFormatMode == "useDestination"

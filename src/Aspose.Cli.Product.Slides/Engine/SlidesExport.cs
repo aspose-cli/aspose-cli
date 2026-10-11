@@ -19,7 +19,7 @@ internal static class SlidesExport
             ? null
             : ResolveSlideRange(request.Slides, loaded.Presentation.Slides.Count);
         IReadOnlyList<OutputInfo> outputs = ConvertOutputs(session, loaded, request, slides);
-        List<Warning> warnings = BuildConvertWarnings(state, loaded, request.Output.Format.Id);
+        List<Warning> warnings = BuildConvertWarnings(loaded, request.Output.Format.Id);
         return new SlidesConvertResult
         {
             Input = Source(request.Input, loaded),
@@ -85,11 +85,10 @@ internal static class SlidesExport
     }
 
     private static List<Warning> BuildConvertWarnings(
-        LicenseState state,
         LoadedPresentation loaded,
         string targetFormatId)
     {
-        var warnings = WrittenWarnings(state, loaded, textRead: targetFormatId == "md")?.ToList() ?? [];
+        var warnings = WrittenWarnings(loaded)?.ToList() ?? [];
         if (targetFormatId is "html" or "html5" or "md")
         {
             warnings.Add(new Warning(WarningCodes.LossyConversion, $"Slides conversion to {targetFormatId} may not preserve every presentation feature.")
@@ -116,7 +115,7 @@ internal static class SlidesExport
                 : request.Dpi ?? RenderPixelGuard.DefaultDpi,
             Width = request.Output.Format.Id == "svg" ? null : request.Width,
             License = EnvelopeParts.License(state),
-            Warnings = WrittenWarnings(state, loaded, textRead: false),
+            Warnings = WrittenWarnings(loaded),
         };
     }
 

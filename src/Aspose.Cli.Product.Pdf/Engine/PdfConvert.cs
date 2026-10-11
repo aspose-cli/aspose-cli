@@ -26,8 +26,8 @@ internal static class PdfConvert
             PdfEngineWrite.PageImage => ConvertPages(session, loaded.Document, pages, request),
             PdfEngineWrite.Tiff => [ConvertTiff(session, loaded.Document, pages, request)],
             PdfEngineWrite.Text => [ConvertText(session, loaded.Document, pages, request)],
-            PdfEngineWrite.Archive => [ConvertPdfa(session, loaded.Document, pages, request, state, warnings)],
-            PdfEngineWrite.Document => [ConvertDocument(session, loaded.Document, pages, request, state, warnings)],
+            PdfEngineWrite.Archive => [ConvertPdfa(session, loaded.Document, pages, request, warnings)],
+            PdfEngineWrite.Document => [ConvertDocument(session, loaded.Document, pages, request, warnings)],
             _ => throw new InvalidOperationException($"'{target.Id}' is not a PDF convert format."),
         };
 
@@ -53,24 +53,23 @@ internal static class PdfConvert
 
     /// <summary>
     /// Converts the opened document itself, which this command never saves back, so the
-    /// document properties reach formats that carry them; a page copy, which evaluation mode
-    /// may need, has none.
+    /// document properties reach formats that carry them.
     /// </summary>
     private static OutputInfo ConvertDocument(
         PdfSession session,
         Document document,
         IReadOnlyList<int> pages,
         PdfConvertRequest request,
-        LicenseState state,
         List<Warning> warnings)
     {
-        using Document? copied = NarrowToSelection(document, pages, state, warnings, out PdfNavigationCensus degraded);
-        Document selected = copied ?? document;
+        PdfNavigationCensus degraded = DeleteUnselected(document, pages);
+        Document selected = document;
         if (UnselectedNavigation(degraded) is { } navigation)
         {
             warnings.Add(navigation);
         }
 
+        ReadEveryPage(document);
         SaveFormat format = PdfEngineFormats.Save(request.Output.Format.Id);
         PublishedFile written = session.Outputs.Write(
             request.Output.Path,
@@ -96,32 +95,18 @@ internal static class PdfConvert
     }
 
     /// <summary>
-    /// Narrows the opened document to the pages --pages selected, and counts the navigation
-    /// that led to the others. Evaluation mode cannot delete a page after the ones it shows,
-    /// so there the selected pages of a longer document are copied into a new document, which
-    /// is returned, and what the copy leaves behind is disclosed.
+    /// Reads every page a document export keeps. Aspose.PDF in evaluation mode exports only the
+    /// pages it shows to most document formats, without a sign, while its Markdown export, like
+    /// any read of a later page, throws: reading the pages first stops every document export at
+    /// the same evaluation limit, which the SDK reports, rather than writing the first pages as if
+    /// they were the document.
     /// </summary>
-    private static Document? NarrowToSelection(
-        Document document,
-        IReadOnlyList<int> pages,
-        LicenseState state,
-        List<Warning> warnings,
-        out PdfNavigationCensus degraded)
+    private static void ReadEveryPage(Document document)
     {
-        if (state == LicenseState.Evaluation
-            && document.Pages.Count > PdfEvaluation.VisiblePages
-            && pages.Count < document.Pages.Count)
+        for (int number = 1; number <= document.Pages.Count; number++)
         {
-            degraded = default;
-            warnings.Add(new Warning(WarningCodes.LossyConversion, $"Evaluation mode cannot remove the pages after page {PdfEvaluation.VisiblePages} from the document, so the selected pages were copied into a new one, which has none of the document's bookmarks, attachments and document properties, such as its title, author or subject.")
-            {
-                Hint = "Apply an Aspose.PDF license to keep them.",
-            });
-            return Select(document, pages);
+            _ = document.Pages[number];
         }
-
-        degraded = DeleteUnselected(document, pages);
-        return null;
     }
 
     /// <summary>
@@ -154,8 +139,7 @@ internal static class PdfConvert
 
     /// <summary>
     /// Converts the opened document itself, which this command never saves back, so the
-    /// outline, attachments, metadata and page labels reach the archive; a page copy carries
-    /// none of them, which evaluation mode discloses when it has to copy pages. The engine
+    /// outline, attachments, metadata and page labels reach the archive. The engine
     /// removes what the profile does not allow, and each removed attachment or bookmark is
     /// reported on its own.
     /// </summary>
@@ -164,7 +148,6 @@ internal static class PdfConvert
         Document opened,
         IReadOnlyList<int> pages,
         PdfConvertRequest request,
-        LicenseState state,
         List<Warning> warnings)
     {
         string profile = request.Output.Format.Id;
@@ -173,8 +156,8 @@ internal static class PdfConvert
 
         // Navigation is counted around the page deletion alone; a bookmark the conversion
         // removes is reported with the outline below.
-        using Document? copied = NarrowToSelection(opened, pages, state, warnings, out PdfNavigationCensus degraded);
-        Document document = copied ?? opened;
+        PdfNavigationCensus degraded = DeleteUnselected(opened, pages);
+        Document document = opened;
 
         // PDF/A forbids encryption; the engine cannot convert an encrypted document.
         if (document.IsEncrypted)

@@ -72,9 +72,9 @@ public sealed class SlidesHardeningTests
         PresentationInfoResult info = SlidesInfo.Run(
             fixture.Session,
             new PresentationInfoRequest { Input = input });
-        PresentationReadResult window = SlidesRead.Run(
-            fixture.Session,
-            new PresentationReadRequest { Input = input, Scope = PresentationReadScopes.Text });
+        PresentationReadResult window = fixture.Disclosed(session => SlidesRead.Run(
+            session,
+            new PresentationReadRequest { Input = input, Scope = PresentationReadScopes.Text }));
         SlidesRenderResult rendered = SlidesExport.Render(
             fixture.Session,
             new PresentationRenderRequest
@@ -109,17 +109,22 @@ public sealed class SlidesHardeningTests
         File.WriteAllText(markdown, "# A title longer than five characters\n\n- A bullet longer than five characters\n");
         bool evaluation = fixture.LicenseState == Sdk.Licensing.LicenseState.Evaluation;
 
-        Assert.Equal(evaluation, CutShort(SlidesRead.Run(fixture.Session, new PresentationReadRequest { Input = input, Scope = PresentationReadScopes.Text }).Warnings));
-        Assert.Equal(evaluation, CutShort(SlidesExtract.Run(fixture.Session, new PresentationExtractRequest { Input = input, Output = new ResolvedDirectory(fixture.File("text")), What = PresentationExtractKinds.Text }).Warnings));
-        Assert.Equal(evaluation, CutShort(SlidesExport.Convert(fixture.Session, new PresentationConvertRequest { Input = input, Output = TestOutput.At(fixture.File("cut-short.out.md"), format: "md") }).Warnings));
-        Assert.False(CutShort(SlidesExport.Convert(fixture.Session, new PresentationConvertRequest { Input = input, Output = TestOutput.At(fixture.File("cut-short.pdf"), format: "pdf") }).Warnings));
-        Assert.False(CutShort(SlidesCreate.Run(fixture.Session, new NewPresentationRequest { Output = TestOutput.At(fixture.File("created.pptx")), MarkdownPath = markdown }).Warnings));
-        Assert.False(CutShort(SlidesEdit.Run(fixture.Session, new PresentationEditRequest
+        // A read or a text extraction tells the SDK it read the text; a Markdown output carries the
+        // cut text, which the write pipeline's disclosure names; saved files keep the full text.
+        Assert.Equal(evaluation, CutShort(fixture.Disclosed(session => SlidesRead.Run(session, new PresentationReadRequest { Input = input, Scope = PresentationReadScopes.Text })).Warnings));
+        Assert.Equal(evaluation, CutShort(fixture.Disclosed(session => SlidesExtract.Run(session, new PresentationExtractRequest { Input = input, Output = new ResolvedDirectory(fixture.File("text")), What = PresentationExtractKinds.Text })).Warnings));
+        IReadOnlyList<Warning>? markdownOutput = fixture.Disclosed(session => SlidesExport.Convert(session, new PresentationConvertRequest { Input = input, Output = TestOutput.At(fixture.File("cut-short.out.md"), format: "md") })).Warnings;
+        Assert.False(CutShort(markdownOutput));
+        Assert.Equal(evaluation, markdownOutput?.Any(static warning => warning.Code == WarningCodes.EvaluationMode
+            && warning.Message.Contains("cut the content short", StringComparison.Ordinal)) == true);
+        Assert.False(CutShort(fixture.Disclosed(session => SlidesExport.Convert(session, new PresentationConvertRequest { Input = input, Output = TestOutput.At(fixture.File("cut-short.pdf"), format: "pdf") })).Warnings));
+        Assert.False(CutShort(fixture.Disclosed(session => SlidesCreate.Run(session, new NewPresentationRequest { Output = TestOutput.At(fixture.File("created.pptx")), MarkdownPath = markdown })).Warnings));
+        Assert.False(CutShort(fixture.Disclosed(session => SlidesEdit.Run(session, new PresentationEditRequest
         {
             Input = input,
             Batch = new SlidesOpsBatch { Ops = [new SlidesSetPropertiesOp { Title = "Briefing" }] },
             Output = TestOutput.At(fixture.File("edited.pptx")),
-        }).Warnings));
+        })).Warnings));
 
         static bool CutShort(IReadOnlyList<Warning>? warnings) =>
             warnings?.Any(static warning => warning.Code == WarningCodes.EvaluationInputTruncated) == true;

@@ -211,5 +211,28 @@ public sealed class SlidesCliWorkflowTests : IDisposable
         Assert.False(File.Exists(_workspace.File("all.pptx")));
     }
 
+    /// <summary>
+    /// A review in evaluation mode reads text evaluation mode cuts short through its view and
+    /// publishes a result: the input's truncation is disclosed once, not by both.
+    /// </summary>
+    [Fact]
+    public void EvaluationReview_DisclosesTheCutShortTextOnce()
+    {
+        using (var presentation = new Presentation())
+        {
+            ISlide slide = presentation.Slides[0];
+            slide.Shapes.AddAutoShape(ShapeType.Rectangle, 50, 50, 400, 80).TextFrame.Text = "A sentence much longer than five characters.";
+            slide.NotesSlideManager.AddNotesSlide().NotesTextFrame.Text = "Speaker notes long enough to be cut short.";
+            presentation.Save(_workspace.File("long.pptx"), SaveFormat.Pptx);
+        }
+
+        CliResult review = _workspace.Run("review", "long.pptx", "--license-mode", "evaluation", "--output-format", "json");
+
+        Assert.True(review.ExitCode is 0 or 8, review.StdErr);
+        Assert.Single(
+            JsonNode.Parse(review.StdOut)!["warnings"]!.AsArray(),
+            static warning => warning!["code"]!.GetValue<string>() == "EVALUATION_INPUT_TRUNCATED");
+    }
+
     public void Dispose() => _workspace.Dispose();
 }

@@ -75,7 +75,7 @@ public sealed class SlidesSkillExampleTests
         {
             JsonNode[] warnings = run.Outputs.SelectMany(result => result["warnings"]?.AsArray() ?? []).OfType<JsonNode>().ToArray();
             Assert.Contains(warnings, warning => warning["code"]!.GetValue<string>() == EnvelopeParts.EvaluationWatermark.Code.Name);
-            Assert.Contains(warnings, warning => warning["code"]!.GetValue<string>() == SlidesEngineSupport.EvaluationInputWarning.Code.Name);
+            Assert.Contains(warnings, warning => warning["code"]!.GetValue<string>() == WarningCodes.EvaluationInputTruncated.Name);
         }
         return evaluation;
     }

@@ -188,13 +188,14 @@ public sealed class WordsCliTests : IDisposable
             "words", "edit", "letter.docx", "--ops", "-", "--out", "letters.docx",
             "--verify", "--license-mode", "evaluation", "--output-format", "json");
 
+        // The input was whole, so the write pipeline's disclosure names the notice the output
+        // ends with; no product check says it a second time.
         JsonNode edited = JsonNode.Parse(result.StdOut)!;
-        JsonNode warning = edited["warnings"]!.AsArray()
-            .Single(static item => item!["code"]!.GetValue<string>() == "EVALUATION_INPUT_TRUNCATED")!;
-        Assert.Contains("only its first 4 section(s)", warning["message"]!.GetValue<string>(), StringComparison.Ordinal);
-        Assert.False(edited["verification"]!["ok"]!.GetValue<bool>());
-        Assert.Equal("OUTPUT_TRUNCATED", edited["verification"]!["issues"]![0]!["code"]!.GetValue<string>());
-        Assert.NotEqual(0, result.ExitCode);
+        JsonNode[] warnings = [.. edited["warnings"]!.AsArray().Select(static item => item!)];
+        JsonNode disclosure = warnings.Single(static item => item["code"]!.GetValue<string>() == "EVALUATION_MODE");
+        Assert.Contains("evaluation mode cut the content short", disclosure["message"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.DoesNotContain(warnings, static item => item["code"]!.GetValue<string>() == "EVALUATION_INPUT_TRUNCATED");
+        Assert.True(result.ExitCode == 0, result.StdErr);
         Assert.True(File.Exists(_workspace.File("letters.docx")));
     }
 

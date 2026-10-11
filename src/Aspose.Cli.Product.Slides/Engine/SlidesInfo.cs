@@ -15,6 +15,7 @@ internal static class SlidesInfo
     {
         LicenseState state = session.Outputs.License;
         using LoadedPresentation loaded = session.Loader.Open(request.Input, request.Password);
+        session.Outputs.ReadInput(loaded.Presentation);
         Presentation presentation = loaded.Presentation;
         bool Details(string name) => request.Details?.Contains(name, StringComparer.Ordinal) == true;
         IComment[] comments = Comments(presentation);
@@ -93,7 +94,7 @@ internal static class SlidesInfo
             Properties = Details(InfoDetails.Properties) ? Properties(presentation.DocumentProperties) : null,
             License = EnvelopeParts.License(state),
             Warnings = EnvelopeParts.CombineWarnings(
-                InputWarnings(state, loaded, textRead: true),
+                InputWarnings(loaded),
                 media is { Count: > MediaListLimit }
                     ?
                     [

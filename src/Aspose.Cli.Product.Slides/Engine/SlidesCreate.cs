@@ -55,8 +55,8 @@ internal static class SlidesCreate
                 : FileObjects.Input(request.MarkdownPath, "md", encrypted: false),
             License = EnvelopeParts.License(state),
             Warnings = authoring.Count == 0
-                ? WrittenWarnings(state, template, textRead: false)
-                : [.. WrittenWarnings(state, template, textRead: false) ?? [], .. authoring],
+                ? WrittenWarnings(template)
+                : [.. WrittenWarnings(template) ?? [], .. authoring],
         };
     }
 }

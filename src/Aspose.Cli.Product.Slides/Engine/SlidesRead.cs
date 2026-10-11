@@ -12,6 +12,7 @@ internal static class SlidesRead
     {
         LicenseState state = session.Outputs.License;
         using LoadedPresentation loaded = session.Loader.Open(request.Input, request.Password);
+        session.Outputs.ReadInput(loaded.Presentation);
         Presentation presentation = loaded.Presentation;
         IReadOnlyList<int> requested = request.Slides is null
             ? Enumerable.Range(1, Math.Min(10, presentation.Slides.Count)).ToArray()
@@ -55,7 +56,7 @@ internal static class SlidesRead
                 Truncated = truncated,
             },
             License = EnvelopeParts.License(state),
-            Warnings = InputWarnings(state, loaded, textRead: true),
+            Warnings = InputWarnings(loaded),
         };
     }
 }

@@ -182,6 +182,8 @@ public sealed class OutputPipelineTests
 
     private sealed class Profile : IEvaluationProfile<Document>
     {
+        public string Engine => "Aspose.Test";
+
         public EvaluationMarks Inspect(Document document) => new([.. document.Marks], document.Truncated);
 
         public void Neutralize(Document document) => document.Marks.Clear();
@@ -189,6 +191,8 @@ public sealed class OutputPipelineTests
 
     private sealed class ThrowingProfile : IEvaluationProfile<Document>
     {
+        public string Engine => "Aspose.Test";
+
         public EvaluationMarks Inspect(Document document) => throw new InvalidOperationException("The engine failed.");
     }
 

@@ -157,10 +157,10 @@ dropped macros (`MACROS_DROPPED`; `inspect` reports `document.hasMacros`
 before any conversion), removed encryption
 (`ENCRYPTION_REMOVED`) and lossy conversion. In evaluation mode,
 `EVALUATION_INPUT_TRUNCATED` means only part of an input, template or appended
-document was loaded, or that the edited document grew past what evaluation
-mode lays out and saves (about 200 paragraphs, as with a mail merge of many
-records): the output then keeps only its first sections, ends with the
-engine's truncation notice, and `--verify` reports `OUTPUT_TRUNCATED`. The
+document was loaded. When the edited document grows past what evaluation mode
+lays out and saves (about 200 paragraphs, as with a mail merge of many
+records), the output keeps only its first sections and ends with the engine's
+truncation notice, which the `EVALUATION_MODE` message names. Either way the
 result is incomplete whatever `itemsAffected` says. Evaluation marks saved
 into a file are reported by a licensed `review` as `WORDS_EVALUATION_MARKS`
 ([verification](references/verification.md)) and, when a licensed command's

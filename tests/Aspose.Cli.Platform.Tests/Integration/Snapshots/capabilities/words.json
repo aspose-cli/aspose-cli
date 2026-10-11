@@ -3158,13 +3158,6 @@
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
-      "code": "OUTPUT_TRUNCATED",
-      "owner": "words",
-      "severity": "warning",
-      "category": "verification",
-      "detailsSchemaId": "v2/common/diagnostic-details"
-    },
-    {
       "code": "PROTECTION_CHANGED",
       "owner": "words",
       "severity": "warning",

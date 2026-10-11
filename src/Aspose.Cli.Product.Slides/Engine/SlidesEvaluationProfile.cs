@@ -12,6 +12,10 @@ namespace Aspose.Cli.Product.Slides.Engine;
 /// </summary>
 internal sealed class SlidesEvaluationProfile : IEvaluationProfile<Presentation>
 {
+    public string Engine => "Aspose.Slides";
+
+    public string Truncation => "reads text longer than five characters as its first characters and a truncation notice";
+
     public EvaluationMarks Inspect(Presentation presentation) =>
         new(
             presentation.Slides.Any(static slide => slide.Shapes.Any(IsEvaluationWatermark))

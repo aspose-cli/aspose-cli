@@ -40,8 +40,8 @@ internal static class SlidesEdit
             SlidesTouched = touched.Count == 0 ? null : touched.Order().ToArray(),
             License = EnvelopeParts.License(state),
             Warnings = request.Options.DryRun
-                ? EnvelopeParts.CombineWarnings(InputWarnings(state, loaded, textRead: false), warnings)
-                : EnvelopeParts.CombineWarnings(WrittenWarnings(state, loaded, textRead: false), warnings, EnvelopeParts.BackupWarnings(publication.Backup)),
+                ? EnvelopeParts.CombineWarnings(InputWarnings(loaded), warnings)
+                : EnvelopeParts.CombineWarnings(WrittenWarnings(loaded), warnings, EnvelopeParts.BackupWarnings(publication.Backup)),
         };
     }
 

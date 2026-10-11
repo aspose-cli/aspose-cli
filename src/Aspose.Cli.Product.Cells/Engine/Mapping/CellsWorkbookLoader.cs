@@ -3,14 +3,17 @@ using System.Text;
 using Aspose.Cells;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
+using Aspose.Cli.Sdk.Licensing;
 
 namespace Aspose.Cli.Product.Cells.Engine.Mapping;
 
 /// <summary>
 /// Owns content-driven workbook detection, password application and guarded
-/// open policy. No query, rendering or mutation behavior belongs here.
+/// open policy. No query, rendering or mutation behavior belongs here. With the license state,
+/// a workbook opened in evaluation mode skips its active evaluation warning sheet; without one
+/// (font inspection, a licensed engine) it opens as stored.
 /// </summary>
-internal sealed class CellsWorkbookLoader(ResourceBudgetLedger resourceBudgets)
+internal sealed class CellsWorkbookLoader(ResourceBudgetLedger resourceBudgets, ILicenseState? license = null)
 {
     // Excel's limit on the length of a sheet name.
     private const int MaxSheetNameLength = 31;
@@ -74,7 +77,8 @@ internal sealed class CellsWorkbookLoader(ResourceBudgetLedger resourceBudgets)
     /// Opens a user input. A workbook that asks to be calculated when opened is calculated, as
     /// Excel does, unless <paramref name="calculateOnOpen"/> is false because the caller
     /// recalculates itself or was told not to. In evaluation mode an active evaluation warning
-    /// sheet gives way to the workbook's content (<see cref="CellsEvaluation.SkipActiveWarningSheet"/>).
+    /// sheet gives way to the workbook's content (<see cref="CellsEvaluation.SkipActiveWarningSheet"/>);
+    /// with a license a sheet of that name is the workbook's own and stays active.
     /// </summary>
     internal LoadedWorkbook Open(
         string path,
@@ -143,7 +147,9 @@ internal sealed class CellsWorkbookLoader(ResourceBudgetLedger resourceBudgets)
             }
             resources.ThrowIfFailed();
             Warning? calculated = calculateOnOpen ? CellsOpenCalculation.Apply(workbook, resourceBudgets) : null;
-            CellsEvaluation.SkippedWarningSheet? skipped = published ? null : CellsEvaluation.SkipActiveWarningSheet(workbook);
+            CellsEvaluation.SkippedWarningSheet? skipped = published || license?.IsEvaluation != true
+                ? null
+                : CellsEvaluation.SkipActiveWarningSheet(workbook);
             transferred = true;
             return new LoadedWorkbook(workbook, resources, plan.Encrypted)
             {
@@ -153,12 +159,11 @@ internal sealed class CellsWorkbookLoader(ResourceBudgetLedger resourceBudgets)
                 IsDelimitedText = plan.Separator is not null,
             };
         }
-        catch (Exception exception) when (exception is not CliException and not OperationCanceledException)
+        catch (Exception exception) when (exception is not CliException and not OperationCanceledException
+            && IsLoadFailure(exception))
         {
             resources.ThrowIfFailed();
-            throw exception is CellsException { Code: ExceptionType.License }
-                ? CellsErrors.EvaluationOpenLimit(path)
-                : Loading.Failure(exception, path, password);
+            throw Loading.Failure(exception, path, password);
         }
         finally
         {
@@ -169,6 +174,14 @@ internal sealed class CellsWorkbookLoader(ResourceBudgetLedger resourceBudgets)
             }
         }
     }
+
+    /// <summary>
+    /// Whether an exception the engine raised while opening a file is reported as that file's
+    /// load failure. In evaluation mode the refusal to open another file is no fault of this one,
+    /// so it passes on to the SDK, which reports the evaluation limit; with a license it is.
+    /// </summary>
+    internal bool IsLoadFailure(Exception exception) =>
+        !(license?.IsEvaluation == true && CellsEvaluationProfile.IsOpenLimit(exception));
 
     private LoadPlan ResolveLoadPlan(string path, TextImportOptions? textImport, bool published)
     {

@@ -1,4 +1,5 @@
 using Aspose.Cli.Sdk.Contracts;
+using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Licensing;
 
@@ -22,6 +23,7 @@ public abstract class OutputPipeline : ILicenseState
     private int _published;
     private EvaluationMarks _kept = EvaluationMarks.None;
     private EvaluationMarks _shown = EvaluationMarks.None;
+    private Warning? _inputTruncated;
     private Inspection? _view;
 
     private protected OutputPipeline(ILicenseGate licenseGate, SafeFileWriter writer)
@@ -75,41 +77,102 @@ public abstract class OutputPipeline : ILicenseState
     }
 
     /// <summary>
-    /// Adds the evaluation disclosure of what this invocation published to its result, before
-    /// the result's own warnings; returns the result unchanged when it published nothing.
+    /// Adds the evaluation disclosure of what this invocation published, and of an input it read
+    /// that evaluation mode cut short, to its result, before the result's own warnings; returns
+    /// the result unchanged when there is nothing to disclose.
     /// </summary>
     public ResultEnvelope Disclose(ResultEnvelope result)
     {
         ArgumentNullException.ThrowIfNull(result);
-        IReadOnlyList<Warning>? disclosure = Disclosure();
-        return disclosure is null
+        // A result that carries a disclosure already, such as a review whose view manifest
+        // carried the input's truncation, is not told twice.
+        Warning[] disclosure = [.. (Disclosure() ?? []).Where(warning =>
+            !(result.Warnings ?? []).Any(present => present.Code == warning.Code))];
+        return disclosure.Length == 0
             ? result
             : result with { Warnings = EnvelopeParts.CombineWarnings(disclosure, result.Warnings) };
     }
 
-    /// <summary>The disclosure of what this invocation published so far, or null.</summary>
+    /// <summary>
+    /// The disclosure of what this invocation published so far, and of an input it read that
+    /// evaluation mode cut short (<see cref="OutputPipeline{TDocument}.ReadInput"/>), or null.
+    /// </summary>
     internal IReadOnlyList<Warning>? Disclosure()
     {
         int published;
         EvaluationMarks kept;
         EvaluationMarks shown;
+        Warning? truncated;
         lock (_sync)
         {
-            (published, kept, shown) = (_published, _kept, _shown);
+            (published, kept, shown, truncated) = (_published, _kept, _shown, _inputTruncated);
         }
 
-        if (published == 0)
+        Warning? output = published == 0 ? null : License switch
         {
-            return null;
-        }
-
-        return License switch
-        {
-            LicenseState.Evaluation => [EvaluationDisclosure.Output(
-                _licenseGate.Resolution.Kind == LicenseSourceKind.EvaluationRequested, kept, shown)],
-            LicenseState.Licensed when kept.Any || shown.Any => [EvaluationDisclosure.InputMarked(kept, shown)],
+            LicenseState.Evaluation => EvaluationDisclosure.Output(
+                _licenseGate.Resolution.Kind == LicenseSourceKind.EvaluationRequested, kept, shown),
+            LicenseState.Licensed when kept.Any || shown.Any => EvaluationDisclosure.InputMarked(kept, shown),
             _ => null,
         };
+        Warning[] disclosure = [.. new[] { output, truncated }.OfType<Warning>()];
+        return disclosure.Length == 0 ? null : disclosure;
+    }
+
+    /// <summary>
+    /// The <c>EVALUATION_INPUT_TRUNCATED</c> warning for an input the invocation read so far
+    /// (<see cref="OutputPipeline{TDocument}.ReadInput"/>), or null; a view manifest carries it
+    /// as a command's result does.
+    /// </summary>
+    internal Warning? InputTruncation
+    {
+        get
+        {
+            lock (_sync)
+            {
+                return _inputTruncated;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Runs a command handler or a view call of the product, and reports an evaluation limit
+    /// the engine raised in it as <c>EVALUATION_LIMIT</c>: in evaluation mode, an exception that
+    /// is not already a CLI error and that the product's evaluation profile recognizes. This is
+    /// the one place that translates an engine's evaluation exception; the error keeps it as its
+    /// inner exception. Its hint offers a selection only when <paramref name="selection"/> names
+    /// one the command takes over the limit's unit, which keeps the engine from reading the
+    /// parts it leaves out.
+    /// </summary>
+    /// <param name="run">The handler or view call.</param>
+    /// <param name="selection">
+    /// The selection option of the command that narrows what the engine reads, for a unit such
+    /// as <c>pages</c>, such as <c>--pages</c>; null for none.
+    /// </param>
+    internal T ReportingEvaluationLimits<T>(Func<T> run, Func<string, string?>? selection = null)
+    {
+        ArgumentNullException.ThrowIfNull(run);
+        try
+        {
+            return run();
+        }
+        catch (Exception exception) when (exception is not CliException and not OperationCanceledException
+            && EvaluationLimitOf(exception, selection) is { } limit)
+        {
+            throw limit;
+        }
+    }
+
+    /// <summary>The <c>EVALUATION_LIMIT</c> error for an engine exception, or null when it reports no evaluation limit.</summary>
+    private protected abstract CliException? EvaluationLimitOf(Exception exception, Func<string, string?>? selection);
+
+    /// <summary>Keeps the <c>EVALUATION_INPUT_TRUNCATED</c> warning, once, for <see cref="Disclose"/>.</summary>
+    private protected void RecordInputTruncated(Warning warning)
+    {
+        lock (_sync)
+        {
+            _inputTruncated ??= warning;
+        }
     }
 
     /// <summary>
@@ -193,6 +256,22 @@ internal static class EvaluationDisclosure
         };
     }
 
+    /// <summary>
+    /// <c>EVALUATION_INPUT_TRUNCATED</c> for a result that read an input evaluation mode cut short,
+    /// in the words of the product's evaluation profile.
+    /// </summary>
+    /// <param name="engine">The engine, which also names the license, such as <c>Aspose.Words</c>.</param>
+    /// <param name="truncation">What evaluation mode leaves out, completing "Aspose.X evaluation mode ...".</param>
+    internal static Warning InputTruncated(string engine, string truncation) => new(
+        WarningCodes.EvaluationInputTruncated,
+        $"{engine} evaluation mode {truncation}, so this result does not hold all of the input's content.")
+    {
+        Hint = $"Do not treat the result as complete; apply an {engine} license and run the command again.",
+        Docs = "licensing",
+        // What a command covers stays complete, as a review's page images show the full content;
+        // the warning says the content it read is not.
+    };
+
     private static EvaluationMarks Beyond(EvaluationMarks shown, EvaluationMarks kept) =>
         new([.. shown.Marks.Except(kept.Marks, StringComparer.Ordinal)], shown.IsTruncated && !kept.IsTruncated);
 
@@ -230,6 +309,42 @@ public sealed class OutputPipeline<TDocument> : OutputPipeline
         : base(licenseGate, writer)
     {
         _profile = profile ?? throw new ArgumentNullException(nameof(profile));
+    }
+
+    /// <summary>
+    /// Records that the command read <paramref name="document"/>, one of its inputs, into its
+    /// result, as an inspect, a read, a search or a text extraction does. In evaluation mode,
+    /// when the product's evaluation profile finds the document cut short
+    /// (<see cref="EvaluationMarks.IsTruncated"/>), the result carries
+    /// <c>EVALUATION_INPUT_TRUNCATED</c>, which only the SDK writes; with a license it records
+    /// nothing, since a licensed load cuts nothing short.
+    /// </summary>
+    public void ReadInput(TDocument document)
+    {
+        ArgumentNullException.ThrowIfNull(document);
+        if (IsEvaluation && _profile.Inspect(document).IsTruncated)
+        {
+            RecordInputTruncated(EvaluationDisclosure.InputTruncated(_profile.Engine, _profile.Truncation));
+        }
+    }
+
+    private protected override CliException? EvaluationLimitOf(Exception exception, Func<string, string?>? selection)
+    {
+        if (_profile.RecognizeLimit(exception) is not { } limit || !IsEvaluation)
+        {
+            return null;
+        }
+
+        // A selection is offered only where the command takes one that keeps the engine within
+        // the limit; otherwise the hint names no way around it that would fail the same way.
+        string[] alternatives =
+        [
+            .. selection?.Invoke(limit.Unit) is { } option
+                ? new[] { string.Create(System.Globalization.CultureInfo.InvariantCulture, $"pass {option} 1-{limit.Limit}") }
+                : [],
+            .. limit.Alternative is { } alternative ? new[] { alternative } : [],
+        ];
+        return CliErrors.EngineEvaluationLimit(_profile.Engine, limit.Allows, limit.Limit, limit.Unit, alternatives, exception);
     }
 
     /// <summary>

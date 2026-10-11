@@ -655,7 +655,7 @@ public sealed record PdfFormField
 
     /// <summary>
     /// The page of the field's widget; absent when it has none or, in evaluation mode, lies
-    /// past the pages the engine shows, which EVALUATION_INPUT_TRUNCATED then names.
+    /// past the pages the engine shows, which EVALUATION_INPUT_TRUNCATED then discloses.
     /// </summary>
     [Minimum(1)]
     public int? Page { get; init; }

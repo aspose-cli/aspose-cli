@@ -12,7 +12,7 @@ internal static class CellsActivation
             ProductBuildMetadata.ProductId,
             ApplyLicense,
             new CellsEvaluationProfile(),
-            outputs => new CellsSession(outputs, context.ResourceBudgets, new CellsWorkbookLoader(context.ResourceBudgets)),
+            outputs => new CellsSession(outputs, context.ResourceBudgets, new CellsWorkbookLoader(context.ResourceBudgets, outputs)),
             outputs => new CellsFontEnvironment(outputs, context.ResourceBudgets));
 
     /// <summary>Applies a license snapshot to Aspose.Cells.</summary>

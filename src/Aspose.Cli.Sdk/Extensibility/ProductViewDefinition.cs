@@ -149,11 +149,16 @@ public sealed partial class ProductViewDefinition
                 $"Use {string.Join(", ", Views.Select(static view => view.Id))}.");
         }
         ArgumentOutOfRangeException.ThrowIfLessThan(request.MaxPartCount, 1);
-        ViewManifest manifest = _render(session, filePath, request, artifacts)
+        // An evaluation limit the engine raises is reported as a command's is.
+        ViewManifest manifest = binding.Publishing.ReportingEvaluationLimits(() => _render(session, filePath, request, artifacts))
             ?? throw new InvalidOperationException(
                 $"Product '{ProductId}' returned no view manifest.");
         Validate(manifest, request);
-        return manifest;
+        // The view discloses an input evaluation mode cut short as a command's result does.
+        return binding.Publishing.InputTruncation is { } truncated
+            && !(manifest.Warnings ?? []).Any(warning => warning.Code == truncated.Code)
+            ? manifest with { Warnings = [.. manifest.Warnings ?? [], truncated] }
+            : manifest;
     }
 
     /// <summary>Runs the product's review checks and the shared font check.</summary>
@@ -164,8 +169,9 @@ public sealed partial class ProductViewDefinition
         ViewManifest rendered)
     {
         ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(binding);
         ArgumentNullException.ThrowIfNull(rendered);
-        ProductReviewAssessment assessment = _assess(Session(binding), filePath, request, rendered)
+        ProductReviewAssessment assessment = binding.Publishing.ReportingEvaluationLimits(() => _assess(Session(binding), filePath, request, rendered))
             ?? throw new InvalidOperationException(
                 $"Product '{ProductId}' returned no review assessment.");
         EnsureDeclared(assessment.Findings);

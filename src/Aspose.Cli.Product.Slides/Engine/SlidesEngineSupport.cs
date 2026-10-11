@@ -1,6 +1,5 @@
 using System.Globalization;
 using Aspose.Cli.Sdk.IO;
-using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Rendering;
 using Aspose.Slides;
 using Aspose.Slides.Charts;
@@ -12,11 +11,6 @@ namespace Aspose.Cli.Product.Slides.Engine;
 internal static class SlidesEngineSupport
 {
     internal const string EvaluationTruncationMarker = "truncated due to evaluation version limitation";
-
-    internal static Warning EvaluationInputWarning { get; } = new(WarningCodes.EvaluationInputTruncated, "Aspose.Slides evaluation mode reads text longer than five characters as its first characters and a truncation notice, so the text in this result is not the presentation's text.")
-    {
-        Hint = "Check the text in rendered slide images, which show it in full, or apply a license and retry. Presentations, PDFs and images the CLI saves keep the full text.",
-    };
 
     internal static void RemoveUnselectedSlides(Presentation presentation, IReadOnlyList<int> slides)
     {
@@ -217,9 +211,13 @@ internal static class SlidesEngineSupport
         }
     }
 
-    /// <summary>Warnings about what a result read from the loaded presentation may be missing.</summary>
-    internal static IReadOnlyList<Warning>? InputWarnings(LicenseState state, LoadedPresentation loaded, bool textRead) =>
-        Warnings(state, loaded, output: false, textRead);
+    /// <summary>
+    /// Warnings about what a result read from the loaded presentation may be missing. A result
+    /// that reads the presentation's text tells the write pipeline
+    /// (<c>ReadInput</c>), which discloses the text evaluation mode cut short.
+    /// </summary>
+    internal static IReadOnlyList<Warning>? InputWarnings(LoadedPresentation loaded) =>
+        Warnings(loaded, output: false);
 
     /// <summary>
     /// Whether a shape is the watermark text box an evaluation save adds to every slide: a
@@ -464,21 +462,17 @@ internal static class SlidesEngineSupport
 
     /// <summary>
     /// The warnings of an output produced from the presentation; the write pipeline adds the
-    /// evaluation disclosure. Evaluation mode cuts text short only where it is read, so the
-    /// output warns of it only when the output holds text the CLI read, as extracted text and
-    /// Markdown do; saved presentations, PDFs and images keep the full text.
+    /// evaluation disclosure. Evaluation mode cuts text short only where it is read: the
+    /// pipeline finds it in a Markdown output (<see cref="SlidesEvaluationProfile"/>), and an
+    /// extraction of text tells the pipeline it read the presentation; saved presentations,
+    /// PDFs and images keep the full text.
     /// </summary>
-    internal static IReadOnlyList<Warning>? WrittenWarnings(LicenseState state, LoadedPresentation loaded, bool textRead) =>
-        Warnings(state, loaded, output: true, textRead);
+    internal static IReadOnlyList<Warning>? WrittenWarnings(LoadedPresentation loaded) =>
+        Warnings(loaded, output: true);
 
-    private static IReadOnlyList<Warning>? Warnings(LicenseState state, LoadedPresentation loaded, bool output, bool textRead)
+    private static IReadOnlyList<Warning>? Warnings(LoadedPresentation loaded, bool output)
     {
         var warnings = new List<Warning>();
-        if (textRead && state == LicenseState.Evaluation && EvaluationInputTruncated(loaded.Presentation))
-        {
-            warnings.Add(EvaluationInputWarning);
-        }
-
         if (loaded.Resources.Warning is { } omitted)
         {
             warnings.Add(omitted);

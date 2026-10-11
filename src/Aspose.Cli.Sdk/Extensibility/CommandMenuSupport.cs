@@ -1,5 +1,6 @@
 using System.CommandLine;
 using Aspose.Cli.Sdk.Operations;
+using Aspose.Cli.Sdk.Results;
 
 namespace Aspose.Cli.Sdk.Extensibility;
 
@@ -9,8 +10,9 @@ namespace Aspose.Cli.Sdk.Extensibility;
 public sealed record CommandHelp(IReadOnlyList<string> Examples, IReadOnlyList<CommandHelpLink> Links);
 
 /// <summary>
-/// Runs a product's own cross-cutting check around every engine call of its commands and views,
-/// such as translating an evaluation-mode limit, and returns what <paramref name="run"/> returns.
+/// Runs a product's own cross-cutting concern around every engine call of its commands and views,
+/// such as muting what the engine writes to the console, and returns what <paramref name="run"/>
+/// returns. An evaluation limit the engine raises is the SDK's to report, never a guard's.
 /// A lambda cannot be generic, so the value passes as an object; the SDK casts it back.
 /// </summary>
 /// <param name="session">The product's engine session.</param>
@@ -27,14 +29,22 @@ internal sealed record MenuContext<TSession>(
     Func<string, string?>? DetectFormat)
     where TSession : class
 {
-    /// <summary>Calls <paramref name="handler"/> inside the product guard.</summary>
+    /// <summary>
+    /// Calls <paramref name="handler"/> inside the product guard, and reports an evaluation limit
+    /// the engine raised in it through the product's write pipeline, the one translation of an
+    /// engine's evaluation exception (<see cref="OutputPipeline.ReportingEvaluationLimits"/>).
+    /// </summary>
     internal TResult Guarded<TRequest, TResult>(
         Func<TSession, TRequest, TResult> handler,
         TSession session,
-        TRequest request) =>
-        Guard is null
-            ? handler(session, request)
-            : (TResult)Guard(session, () => handler(session, request))!;
+        TRequest request,
+        OutputPipeline outputs,
+        Func<string, string?> selection) =>
+        outputs.ReportingEvaluationLimits(
+            () => Guard is null
+                ? handler(session, request)
+                : (TResult)Guard(session, () => handler(session, request))!,
+            selection);
 }
 
 /// <summary>One line of a product menu: a command, or a group of further lines.</summary>

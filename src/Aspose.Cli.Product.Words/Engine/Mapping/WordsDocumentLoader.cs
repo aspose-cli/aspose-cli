@@ -1,7 +1,7 @@
 using System.Text;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
-using Aspose.Cli.Sdk.Licensing;
+using Aspose.Cli.Sdk.Results;
 using Aspose.Words;
 using Aspose.Words.Loading;
 
@@ -28,16 +28,18 @@ internal sealed class WordsDocumentLoader
         Classify);
 
     private readonly ResourceBudgetLedger _resourceBudgets;
-    private readonly ILicenseState? _license;
+    private readonly OutputPipeline<Document>? _outputs;
 
     /// <summary>
-    /// Creates a loader. With the license state, loaded documents know whether evaluation mode
-    /// altered them; without one (font inspection) no evaluation artifacts are reported.
+    /// Creates a loader. With the write pipeline, loaded documents know whether evaluation mode
+    /// altered them, and the pipeline learns of each input the command read, which discloses
+    /// one evaluation mode cut short; without one (font inspection) no evaluation artifacts are
+    /// reported.
     /// </summary>
-    internal WordsDocumentLoader(ResourceBudgetLedger resourceBudgets, ILicenseState? license = null)
+    internal WordsDocumentLoader(ResourceBudgetLedger resourceBudgets, OutputPipeline<Document>? outputs = null)
     {
         _resourceBudgets = resourceBudgets ?? throw new ArgumentNullException(nameof(resourceBudgets));
-        _license = license;
+        _outputs = outputs;
     }
 
     /// <summary>
@@ -63,7 +65,9 @@ internal sealed class WordsDocumentLoader
     public LoadedDocument Open(string path, Secret? password, IWarningCallback? warnings = null)
     {
         InputSizeGuard.Ensure(_resourceBudgets, path);
-        return OpenCore(path, password, warnings);
+        LoadedDocument loaded = OpenCore(path, password, warnings);
+        _outputs?.ReadInput(loaded.Document);
+        return loaded;
     }
 
     // Generated candidates are bounded by publication, not a second user-input admission.
@@ -113,7 +117,7 @@ internal sealed class WordsDocumentLoader
             // A stream carries no name; FILENAME fields name the file, as a path load does.
             document.FieldOptions.FileName = path;
             return new LoadedDocument(document, detected, id, resources,
-                _license?.IsEvaluation == true);
+                _outputs?.IsEvaluation == true);
         }
         catch
         {
@@ -151,6 +155,7 @@ internal sealed class WordsDocumentLoader
         Document document = Load(options => new Document(input, options),
             LoadFormat.Markdown, owner.Resources, "inline Markdown", password: null, Loading, warnings: null, onDisk: false);
         owner.Retain(document);
+        _outputs?.ReadInput(document);
         return document;
     }
 
@@ -285,21 +290,7 @@ internal sealed record LoadedDocument(
 {
     private readonly List<Document> _imports = [];
 
-    /// <summary>Whether evaluation mode cut this document short while loading it.</summary>
-    public bool EvaluationInputTruncated { get; } = Evaluation && WordsEvaluation.IsTruncated(Document);
-
-    /// <summary>Whether evaluation mode cut short a document imported into this one.</summary>
-    public bool ImportedInputTruncated { get; private set; }
-
-    internal void Retain(Document document)
-    {
-        _imports.Add(document);
-        ImportedInputTruncated |= Evaluation && WordsEvaluation.IsTruncated(document);
-    }
-
-    /// <summary>Records content imported from another loaded document.</summary>
-    internal void Imported(LoadedDocument source) =>
-        ImportedInputTruncated |= source.EvaluationInputTruncated || source.ImportedInputTruncated;
+    internal void Retain(Document document) => _imports.Add(document);
 
     public int RemoteResourcesBlocked
     {

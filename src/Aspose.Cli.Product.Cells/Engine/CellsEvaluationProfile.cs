@@ -27,6 +27,22 @@ namespace Aspose.Cli.Product.Cells.Engine;
 /// </remarks>
 internal sealed class CellsEvaluationProfile : IEvaluationProfile<Workbook>
 {
+    // How many files Aspose.Cells evaluation mode opens in one process before it refuses more.
+    private const int OpenLimit = 100;
+
+    public string Engine => "Aspose.Cells";
+
+    /// <summary>
+    /// Evaluation mode refuses to open a file once its process has opened <see cref="OpenLimit"/>,
+    /// which only a long-lived process, such as a preview's render worker, reaches.
+    /// </summary>
+    public EvaluationLimitFact? RecognizeLimit(Exception exception) => IsOpenLimit(exception)
+        ? new EvaluationLimitFact($"opens at most {OpenLimit} files in one process", OpenLimit, "files", "run the command again in a new process")
+        : null;
+
+    /// <summary>Whether <paramref name="exception"/> is evaluation mode refusing to open another file.</summary>
+    internal static bool IsOpenLimit(Exception exception) => exception is CellsException { Code: ExceptionType.License };
+
     public EvaluationMarks Inspect(Workbook workbook) =>
         new([.. WarningSheets(workbook, visibleOnly: false).Select(sheet => sheet.Index == workbook.Worksheets.ActiveSheetIndex
             ? $"the evaluation warning sheet '{sheet.Name}', which is the active sheet"

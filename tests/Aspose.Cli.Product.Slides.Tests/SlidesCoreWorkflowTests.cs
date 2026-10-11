@@ -29,8 +29,22 @@ public sealed class SlidesCoreWorkflowTests
         string input = fixture.CreatePresentation("view.pptx", slides: 2, password);
         var artifacts = new MemoryArtifactSink();
 
-        ViewManifest manifest = SlidesView.Render(
-            fixture.Session,
+        // The SDK view definition renders through the product's adapter, as preview and review do,
+        // in evaluation mode as requested.
+        using var work = new TempDirectory();
+        ResourceBudgetLedger budgets = ProductTestBudgets.Create<SlidesModule>();
+        ProductBinding binding = SlidesActivation.Activate(new ProductActivationContext
+        {
+            WorkDirectory = work.Path,
+            LicensePath = null,
+            EvaluationRequested = true,
+            ConfigDirectory = work.Path,
+            EnvironmentVariable = static _ => null,
+            SafeFileWriter = new SafeFileWriter(budgets),
+            ResourceBudgets = budgets,
+        });
+        ViewManifest manifest = new SlidesModule().Define().View.Render(
+            binding,
             input,
             new ViewRenderRequest
             {
@@ -46,7 +60,8 @@ public sealed class SlidesCoreWorkflowTests
         Assert.Equal(new FileInfo(input).Length, manifest.SourceSizeBytes);
         Assert.True(manifest.SourceEncrypted);
         Assert.Equal(2, manifest.TotalPartCount);
-        // The evaluation watermark carries the SDK's truncation marker, so evaluation discloses possible truncation.
+        // The text the view read was cut short where the engine runs in evaluation mode, and the
+        // SDK discloses it in the manifest a preview shows.
         WarningCode[] expected = fixture.LicenseState == Aspose.Cli.Sdk.Licensing.LicenseState.Licensed
             ? []
             : [WarningCodes.EvaluationInputTruncated];

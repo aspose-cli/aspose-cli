@@ -10,18 +10,7 @@ namespace Aspose.Cli.Product.Pdf.Engine;
 /// <summary>Merges PDF inputs into one document: <c>pdf merge</c>.</summary>
 internal static class PdfMerge
 {
-    /// <summary>
-    /// Merges the inputs. Merging reads every page, so in evaluation mode it names that cause
-    /// and its own remedy for reading past the page limit, which the product guard keeps.
-    /// </summary>
-    internal static PdfWriteResult Run(PdfSession session, PdfMergeRequest request) =>
-        PdfEvaluation.Run(
-            session.Outputs,
-            () => Merge(session, request),
-            cause: "merging reads every page of the inputs, and together they have more",
-            remedy: $"merge inputs that have at most {PdfEvaluation.VisiblePages} pages together");
-
-    private static PdfWriteResult Merge(PdfSession session, PdfMergeRequest request)
+    internal static PdfWriteResult Run(PdfSession session, PdfMergeRequest request)
     {
         if (request.InputPaths.Count < 2)
         {
