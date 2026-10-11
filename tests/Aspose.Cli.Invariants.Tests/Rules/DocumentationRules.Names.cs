@@ -100,7 +100,7 @@ internal static partial class ContractRules
             string[] hidden = [.. HiddenOptions(catalog)];
             using var workspace = new TempWorkspace();
             File.WriteAllBytes(workspace.File("book.xlsx"), ScenarioFixtures.Read("cells.xlsx"));
-            CliResult result = workspace.Run("cells", "query", "range", "book.xlsx", "--range", "A1:Z100", "--max-cells", "10", "--output", "json");
+            CliResult result = workspace.Run("cells", "query", "range", "book.xlsx", "--range", "A1:Z100", "--max-cells", "10", "--output-format", "json");
             JsonNode? error = JsonNode.Parse(result.StdOut.Length > 0 ? result.StdOut : result.StdErr)?["error"];
             string text = $"{error?["message"]} {error?["hint"]}";
             return hidden.Where(name => OptionMention(name).IsMatch(text))

@@ -17,11 +17,11 @@ public sealed class PreviewLicenseLifecycleTests : IDisposable
     private readonly TempWorkspace _workspace = new();
 
     public PreviewLicenseLifecycleTests() =>
-        _workspace.Run("cells", "create", "book.xlsx", "--sheets", "Data", "--output", "json").Succeeded();
+        _workspace.Run("cells", "create", "book.xlsx", "--sheets", "Data", "--output-format", "json").Succeeded();
 
     public void Dispose()
     {
-        _workspace.Run("preview", "stop", "--all", "--output", "json");
+        _workspace.Run("preview", "stop", "--all", "--output-format", "json");
         _workspace.Dispose();
     }
 
@@ -36,7 +36,7 @@ public sealed class PreviewLicenseLifecycleTests : IDisposable
         foreach (string license in new[] { "invalid.lic", "missing.lic" })
         {
             CliResult refused = _workspace.Run(
-                "preview", "open", "book.xlsx", "--license", license, "--output", "json");
+                "preview", "open", "book.xlsx", "--no-open", "--license", license, "--output-format", "json");
 
             Assert.NotEqual(0, refused.ExitCode);
             Assert.True(string.IsNullOrWhiteSpace(refused.StdOut));
@@ -54,10 +54,10 @@ public sealed class PreviewLicenseLifecycleTests : IDisposable
     {
         using var license = new PrivateLicense();
         JsonNode evaluation = Start();
-        _workspace.Run("cells", "create", "second.xlsx", "--sheets", "Data", "--output", "json").Succeeded();
+        _workspace.Run("cells", "create", "second.xlsx", "--sheets", "Data", "--output-format", "json").Succeeded();
 
         JsonNode licensed = _workspace.Run(
-            "preview", "open", "second.xlsx", "--license", license.Path, "--output", "json").Json();
+            "preview", "open", "second.xlsx", "--no-open", "--license", license.Path, "--output-format", "json").Json();
 
         Assert.Equal("licensed", licensed["license"]!["mode"]!.GetValue<string>());
         Assert.Equal("evaluation", evaluation["license"]!["mode"]!.GetValue<string>());
@@ -74,9 +74,9 @@ public sealed class PreviewLicenseLifecycleTests : IDisposable
         JsonNode configured = Start();
 
         JsonNode requested = _workspace.Run(
-            "preview", "open", "book.xlsx", "--license-mode", "evaluation", "--output", "json").Json();
+            "preview", "open", "book.xlsx", "--no-open", "--license-mode", "evaluation", "--output-format", "json").Json();
         JsonNode again = _workspace.Run(
-            "preview", "open", "book.xlsx", "--license-mode", "evaluation", "--output", "json").Json();
+            "preview", "open", "book.xlsx", "--no-open", "--license-mode", "evaluation", "--output-format", "json").Json();
 
         Assert.Equal("evaluation", requested["license"]!["mode"]!.GetValue<string>());
         Assert.False(requested["reused"]!.GetValue<bool>());
@@ -93,12 +93,12 @@ public sealed class PreviewLicenseLifecycleTests : IDisposable
     {
         using var license = new PrivateLicense();
         JsonNode licensed = _workspace.Run(
-            "preview", "open", "book.xlsx", "--license", license.Path, "--output", "json").Json();
+            "preview", "open", "book.xlsx", "--no-open", "--license", license.Path, "--output-format", "json").Json();
 
         JsonNode requested = _workspace.Run(
-            "preview", "open", "book.xlsx", "--license-mode", "evaluation", "--output", "json").Json();
+            "preview", "open", "book.xlsx", "--no-open", "--license-mode", "evaluation", "--output-format", "json").Json();
         JsonNode relicensed = _workspace.Run(
-            "preview", "open", "book.xlsx", "--license", license.Path, "--output", "json").Json();
+            "preview", "open", "book.xlsx", "--no-open", "--license", license.Path, "--output-format", "json").Json();
 
         Assert.Equal("licensed", licensed["license"]!["mode"]!.GetValue<string>());
         Assert.Equal("evaluation", requested["license"]!["mode"]!.GetValue<string>());
@@ -109,10 +109,10 @@ public sealed class PreviewLicenseLifecycleTests : IDisposable
     }
 
     private JsonNode Start() =>
-        _workspace.Run("preview", "open", "book.xlsx", "--output", "json").Json();
+        _workspace.Run("preview", "open", "book.xlsx", "--no-open", "--output-format", "json").Json();
 
     private string[] DocumentIds() =>
-        _workspace.Run("preview", "status", "--output", "json").Json()["sessions"]!
+        _workspace.Run("preview", "status", "--output-format", "json").Json()["sessions"]!
             .AsArray()
             .Select(static session => session!["id"]!.GetValue<string>())
             .ToArray();

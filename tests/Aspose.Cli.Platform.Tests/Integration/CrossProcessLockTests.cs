@@ -22,7 +22,7 @@ public sealed class CrossProcessLockTests
         using var workspace = new TempWorkspace();
         Assert.Equal(0, workspace.Run("cells", "create", "book.xlsx", "--sheets", "Data").ExitCode);
         byte[] original = File.ReadAllBytes(workspace.File("book.xlsx"));
-        string[] edit = ["cells", "edit", "book.xlsx", "--in-place", "--set", "Data!A1=changed", "--output", "json"];
+        string[] edit = ["cells", "edit", "book.xlsx", "--in-place", "--set", "Data!A1=changed", "--output-format", "json"];
 
         CliResult blocked;
         using (PublicationDirectoryLease.Acquire(workspace.Path))
@@ -46,12 +46,12 @@ public sealed class CrossProcessLockTests
     {
         using var workspace = new TempWorkspace();
         Assert.Equal(0, workspace.Run("cells", "create", "book.xlsx", "--sheets", "Data").ExitCode);
-        string fingerprint = JsonNode.Parse(workspace.Run("cells", "inspect", "book.xlsx", "--output", "json").StdOut)!
+        string fingerprint = JsonNode.Parse(workspace.Run("cells", "inspect", "book.xlsx", "--output-format", "json").StdOut)!
             ["source"]!["fingerprint"]!["sha256"]!.GetValue<string>();
 
         CliResult[] results = await Task.WhenAll(new[] { "first", "second" }.Select(value => Task.Run(() =>
             workspace.Run("cells", "edit", "book.xlsx", "--in-place", "--if-match", fingerprint,
-                "--set", $"Data!A1={value}", "--output", "json"))));
+                "--set", $"Data!A1={value}", "--output-format", "json"))));
 
         CliResult winner = Assert.Single(results, static result => result.ExitCode == 0);
         CliResult loser = Assert.Single(results, static result => result.ExitCode != 0);
@@ -68,19 +68,19 @@ public sealed class CrossProcessLockTests
         using var workspace = new TempWorkspace();
         string target = workspace.File("skills");
         string reference = workspace.File("reference");
-        Assert.Equal(0, workspace.Run("skill", "install", Skill, "--target", reference, "--output", "json").ExitCode);
+        Assert.Equal(0, workspace.Run("skill", "install", Skill, "--target", reference, "--output-format", "json").ExitCode);
         string installed = Path.GetFullPath(Path.Combine(target, Skill));
 
         CliResult refused;
         using (LocalServiceOperationLock.Acquire("skill-install",
             OperatingSystem.IsWindows() ? installed.ToUpperInvariant() : installed, TimeSpan.FromSeconds(5)))
         {
-            refused = workspace.Run("skill", "install", Skill, "--target", target, "--output", "json");
+            refused = workspace.Run("skill", "install", Skill, "--target", target, "--output-format", "json");
         }
 
         Assert.Equal("OUTPUT_EXISTS", ErrorCode(refused));
         Assert.False(Directory.Exists(installed));
-        CliResult accepted = workspace.Run("skill", "install", Skill, "--target", target, "--output", "json");
+        CliResult accepted = workspace.Run("skill", "install", Skill, "--target", target, "--output-format", "json");
         Assert.True(accepted.ExitCode == 0, accepted.StdErr);
         Assert.Equal(Tree(Path.Combine(reference, Skill)), Tree(installed));
         // The released lock leaves no lock file beside the installed Skill.
@@ -93,10 +93,10 @@ public sealed class CrossProcessLockTests
         using var workspace = new TempWorkspace();
         string target = workspace.File("skills");
         string reference = workspace.File("reference");
-        Assert.Equal(0, workspace.Run("skill", "install", Skill, "--target", reference, "--output", "json").ExitCode);
+        Assert.Equal(0, workspace.Run("skill", "install", Skill, "--target", reference, "--output-format", "json").ExitCode);
 
         CliResult[] results = await Task.WhenAll(Enumerable.Range(0, 3).Select(_ => Task.Run(() =>
-            workspace.Run("skill", "install", Skill, "--target", target, "--output", "json"))));
+            workspace.Run("skill", "install", Skill, "--target", target, "--output-format", "json"))));
 
         // Serialized installs replace one another whole; one that cannot wait is refused.
         Assert.Contains(results, static result => result.ExitCode == 0);

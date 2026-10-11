@@ -13,7 +13,7 @@ namespace Aspose.Cli.Host.Updating;
 /// <summary>Owns the transfer from a terminable preparation worker to an independent installer.</summary>
 internal static class UpdateInstaller
 {
-    internal const string PreparationCommand = "_prepare";
+    internal const string PreparationCommand = "__prepare";
 
     internal static UpdateResult Install(HostContext host, CommandContext context, string feed)
     {
@@ -33,7 +33,7 @@ internal static class UpdateInstaller
         string target = Path.Combine(parent, DistributionInfo.Id + "-update-" + Guid.NewGuid().ToString("N"));
         string source = !Path.IsPathRooted(feed) && Uri.TryCreate(feed, UriKind.Absolute, out _)
             ? feed : Path.GetFullPath(feed, context.Paths.BaseDirectory);
-        string[] args = ["update", PreparationCommand, source, target, "--output", "json", "--quiet"];
+        string[] args = ["update", PreparationCommand, source, target, "--output-format", "json", "--quiet"];
         ParsedInvocation invocation = host.Parser.Parse(args);
         bool ownsPackage = false;
         bool handedOff = false;

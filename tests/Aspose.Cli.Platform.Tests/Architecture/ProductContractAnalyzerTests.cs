@@ -539,7 +539,7 @@ public sealed class ProductContractAnalyzerTests
             public sealed class Commands
             {
                 public System.CommandLine.Option<string> Create() =>
-                    new("--output");
+                    new("--output-format");
             }
             """);
 

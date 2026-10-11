@@ -25,7 +25,7 @@ Skill: start with `aspose-cli docs overview`.
    built-in 16:9 design.
 
    ```powershell
-   aspose-cli slides create deck.pptx --from-markdown outline.md --template brand.pptx --output json
+   aspose-cli slides create deck.pptx --from-markdown outline.md --template brand.pptx --output-format json
    ```
 
 3. **Existing deck:** inspect the structure, then read only the slides you need. A slide cut
@@ -33,15 +33,15 @@ Skill: start with `aspose-cli docs overview`.
    doubled budget when it alone exceeded the budget.
 
    ```powershell
-   aspose-cli slides inspect deck.pptx --preview --detail layouts fonts notes --output json
-   aspose-cli slides query slides deck.pptx --slides 1-5 --scope full --notes --output json
+   aspose-cli slides inspect deck.pptx --sample --detail layouts fonts notes --output-format json
+   aspose-cli slides query slides deck.pptx --slides 1-5 --scope full --notes --output-format json
    ```
 
 4. Put all related changes in one `slides edit` batch
    ([Slides editing](references/editing.md)):
 
    ```powershell
-   aspose-cli slides edit deck.pptx --ops deck-ops.json --out deck.revised.pptx --output json
+   aspose-cli slides edit deck.pptx --ops deck-ops.json --out deck.revised.pptx --output-format json
    ```
 
 5. Verify before delivery ([Slides verification](references/verification.md), then the

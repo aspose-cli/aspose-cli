@@ -74,7 +74,7 @@ public sealed class CellsOutputFormatTests : IClassFixture<CellsFixture>
     {
         using var workspace = new TempWorkspace();
 
-        CliResult created = workspace.Run("cells", "create", path, "--output", "json");
+        CliResult created = workspace.Run("cells", "create", path, "--output-format", "json");
 
         Assert.True(created.ExitCode == 0, created.StdErr);
         Assert.Equal(format, System.Text.Json.Nodes.JsonNode.Parse(created.StdOut)!["output"]!["format"]!.GetValue<string>());
@@ -87,7 +87,7 @@ public sealed class CellsOutputFormatTests : IClassFixture<CellsFixture>
     {
         using var workspace = new TempWorkspace();
 
-        CliResult refused = workspace.Run("cells", "create", path, "--output", "json");
+        CliResult refused = workspace.Run("cells", "create", path, "--output-format", "json");
 
         Assert.Equal(2, refused.ExitCode);
         Assert.Contains("\"USAGE_ERROR\"", refused.StdErr, StringComparison.Ordinal);

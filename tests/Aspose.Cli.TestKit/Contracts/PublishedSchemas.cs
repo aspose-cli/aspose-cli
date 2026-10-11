@@ -86,7 +86,7 @@ public static class PublishedSchemas
     private static PublishedSchemaSnapshot Read()
     {
         using var workspace = new TempWorkspace();
-        CliResult list = workspace.Run("schema", "--output", "json");
+        CliResult list = workspace.Run("schema", "--output-format", "json");
         if (list.ExitCode != 0)
         {
             throw new InvalidOperationException("aspose-cli schema failed: " + list.StdErr);

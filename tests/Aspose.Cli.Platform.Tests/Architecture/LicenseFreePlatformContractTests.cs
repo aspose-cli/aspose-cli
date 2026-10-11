@@ -42,7 +42,7 @@ public sealed class LicenseFreePlatformContractTests
         ParseResult licenseOptionParse = root.Parse(["doctor", "--license", "missing.lic"]);
         Assert.NotEmpty(licenseOptionParse.Errors);
 
-        InvocationResult schemaJson = Invoke(root, "schema", "--output", "json");
+        InvocationResult schemaJson = Invoke(root, "schema", "--output-format", "json");
         Assert.Equal(0, schemaJson.ExitCode);
         using (JsonDocument schema = JsonDocument.Parse(schemaJson.StandardOutput))
         {
@@ -56,9 +56,9 @@ public sealed class LicenseFreePlatformContractTests
                     .Select(item => item.GetString()));
         }
 
-        InvocationResult schemaTable = Invoke(root, "schema", "--output", "table");
+        InvocationResult schemaTable = Invoke(root, "schema", "--output-format", "table");
         Assert.Contains("v2/common/schema-list", schemaTable.StandardOutput, StringComparison.Ordinal);
-        InvocationResult schemaMarkdown = Invoke(root, "schema", "--output", "markdown");
+        InvocationResult schemaMarkdown = Invoke(root, "schema", "--output-format", "markdown");
         Assert.Contains("| id |", schemaMarkdown.StandardOutput, StringComparison.Ordinal);
 
         InvocationResult schemaRaw = Invoke(root, "schema", "v2/common/error");
@@ -68,7 +68,7 @@ public sealed class LicenseFreePlatformContractTests
             "https://schemas.aspose.com/aspose-cli/v2/common/error.schema.json",
             raw.RootElement.GetProperty("$id").GetString());
 
-        InvocationResult capabilities = Invoke(root, "capabilities", "--output", "json");
+        InvocationResult capabilities = Invoke(root, "capabilities", "--output-format", "json");
         Assert.Equal(0, capabilities.ExitCode);
         using (JsonDocument capabilityJson = JsonDocument.Parse(capabilities.StandardOutput))
         {
@@ -89,7 +89,7 @@ public sealed class LicenseFreePlatformContractTests
         InvocationResult doctor = Invoke(
             root,
             "doctor",
-            "--output",
+            "--output-format",
             "json");
         Assert.Equal(0, doctor.ExitCode);
         using JsonDocument doctorJson = JsonDocument.Parse(doctor.StandardOutput);
@@ -162,7 +162,7 @@ public sealed class LicenseFreePlatformContractTests
     private static string[] DiagnosticCodes(ProductCatalog catalog)
     {
         RootCommand root = RootCommandFactory.Create(new HostContext(catalog), out _);
-        InvocationResult capabilities = Invoke(root, "capabilities", "--output", "json");
+        InvocationResult capabilities = Invoke(root, "capabilities", "--output-format", "json");
         Assert.Equal(0, capabilities.ExitCode);
         using JsonDocument document = JsonDocument.Parse(capabilities.StandardOutput);
         return

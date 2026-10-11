@@ -30,7 +30,7 @@ public sealed class CellsImageInputTests
             },
         });
 
-        CliResult edited = workspace.Run("cells", "edit", "source.xlsx", "--ops", ops, "--out", "result.xlsx", "--output", "json");
+        CliResult edited = workspace.Run("cells", "edit", "source.xlsx", "--ops", ops, "--out", "result.xlsx", "--output-format", "json");
 
         Assert.True(edited.ExitCode == 4, edited.StdErr);
         JsonNode error = JsonNode.Parse(edited.StdErr)!["error"]!;

@@ -24,11 +24,11 @@ public sealed class PdfAttachmentCarryTests : IDisposable
         WriteDocument(_workspace.File("a.pdf"), pages: 1, ("a.csv", First));
         WriteDocument(_workspace.File("b.pdf"), pages: 1, ("b.csv", Second));
 
-        CliResult merge = _workspace.Run("pdf", "merge", "a.pdf", "b.pdf", "--out", "merged.pdf", "--output", "json");
+        CliResult merge = _workspace.Run("pdf", "merge", "a.pdf", "b.pdf", "--out", "merged.pdf", "--output-format", "json");
         Assert.True(merge.ExitCode == 0, merge.StdErr);
-        CliResult inspect = _workspace.Run("pdf", "inspect", "merged.pdf", "--detail", "attachments", "--output", "json");
+        CliResult inspect = _workspace.Run("pdf", "inspect", "merged.pdf", "--detail", "attachments", "--output-format", "json");
         CliResult extract = _workspace.Run(
-            "pdf", "extract", "merged.pdf", "--what", "attachments", "--out-dir", "files", "--output", "json");
+            "pdf", "extract", "merged.pdf", "--what", "attachments", "--out-dir", "files", "--output-format", "json");
 
         Assert.True(inspect.ExitCode == 0, inspect.StdErr);
         Assert.Equal(

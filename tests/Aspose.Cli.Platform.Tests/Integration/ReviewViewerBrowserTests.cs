@@ -45,7 +45,7 @@ public sealed class ReviewViewerBrowserTests(ITestOutputHelper output)
         ReviewInBrowser("pdf-thumbnails", "report.pdf", workspace =>
         {
             CreateReport(workspace);
-            workspace.Run("words", "convert", "report.docx", "--to", "pdf", "--out", "report.pdf", "--output", "json").Succeeded();
+            workspace.Run("words", "convert", "report.docx", "--to", "pdf", "--out", "report.pdf", "--output-format", "json").Succeeded();
         },
         async (page, view) =>
         {
@@ -200,7 +200,7 @@ public sealed class ReviewViewerBrowserTests(ITestOutputHelper output)
     {
         using var workspace = new TempWorkspace();
         CreateWorkbook(workspace);
-        workspace.Run("review", "book.xlsx", "--out", "evidence", "--output", "json").Succeeded();
+        workspace.Run("review", "book.xlsx", "--out", "evidence", "--output-format", "json").Succeeded();
         int parts = JsonNode.Parse(File.ReadAllText(
             workspace.File(Path.Combine("evidence", "artifacts", "view.json"))))!["parts"]!.AsArray().Count;
 
@@ -254,7 +254,7 @@ public sealed class ReviewViewerBrowserTests(ITestOutputHelper output)
     {
         using var workspace = new TempWorkspace();
         arrange(workspace);
-        workspace.Run("review", file, "--out", "evidence", "--output", "json").Succeeded();
+        workspace.Run("review", file, "--out", "evidence", "--output-format", "json").Succeeded();
         JsonNode view = JsonNode.Parse(File.ReadAllText(
             workspace.File(Path.Combine("evidence", "artifacts", "view.json"))))!;
         await OpenInBrowser(
@@ -322,7 +322,7 @@ public sealed class ReviewViewerBrowserTests(ITestOutputHelper output)
             Enumerable.Range(1, 4).Select(chapter =>
                 $"## Chapter {chapter} results\n\n"
                 + string.Concat(Enumerable.Repeat(paragraph + "\n\n", 5)))));
-        workspace.Run("words", "create", "report.docx", "--markdown", "report.md", "--output", "json").Succeeded();
+        workspace.Run("words", "create", "report.docx", "--markdown", "report.md", "--output-format", "json").Succeeded();
     }
 
     /// <summary>Three slides: the second carries speaker notes and the third is hidden.</summary>
@@ -331,7 +331,7 @@ public sealed class ReviewViewerBrowserTests(ITestOutputHelper output)
         File.WriteAllText(workspace.File("deck.md"), string.Concat(
             new[] { "Quarterly results", "Revenue by region", "Appendix" }
                 .Select(static title => $"# {title}\n\n- First point\n- Second point\n\n")));
-        workspace.Run("slides", "create", "deck.pptx", "--from-markdown", "deck.md", "--output", "json").Succeeded();
+        workspace.Run("slides", "create", "deck.pptx", "--from-markdown", "deck.md", "--output-format", "json").Succeeded();
         workspace.RunWithInput(
             """
             {"ops":[
@@ -339,15 +339,15 @@ public sealed class ReviewViewerBrowserTests(ITestOutputHelper output)
               {"op":"set_slide_hidden","slides":"3","hidden":true}
             ]}
             """,
-            "slides", "edit", "deck.pptx", "--ops", "-", "--in-place", "--output", "json").Succeeded();
+            "slides", "edit", "deck.pptx", "--ops", "-", "--in-place", "--output-format", "json").Succeeded();
     }
 
     private static void CreateWorkbook(TempWorkspace workspace)
     {
-        workspace.Run("cells", "create", "book.xlsx", "--sheets", "Summary,Data", "--output", "json").Succeeded();
+        workspace.Run("cells", "create", "book.xlsx", "--sheets", "Summary,Data", "--output-format", "json").Succeeded();
         workspace.Run("cells", "edit", "book.xlsx", "--in-place",
             "--set", "Summary!A1=Region", "--set", "Summary!B1=Revenue",
-            "--set", "Data!A1=Raw", "--set", "Data!B2=42", "--output", "json").Succeeded();
+            "--set", "Data!A1=Raw", "--set", "Data!B2=42", "--output-format", "json").Succeeded();
     }
 
     /// <summary>The index of the part that holds the first element matching the predicate.</summary>

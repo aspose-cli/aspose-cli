@@ -7,8 +7,8 @@ run `pdf validate --profile` on that output and require `valid: true`, because a
 completed validation can return `valid: false`.
 
 ```powershell
-aspose-cli pdf convert report.pdf --to pdfa-2b --out report.archive.pdf --output json
-aspose-cli pdf validate report.archive.pdf --profile pdfa-2b --output json
+aspose-cli pdf convert report.pdf --to pdfa-2b --out report.archive.pdf --output-format json
+aspose-cli pdf validate report.archive.pdf --profile pdfa-2b --output-format json
 ```
 
 Conversion keeps the document's parts the profile allows and changes or removes

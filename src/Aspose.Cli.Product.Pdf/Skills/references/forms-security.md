@@ -5,9 +5,9 @@
 Read the fields before filling, then read the result back:
 
 ```powershell
-aspose-cli pdf query forms cover.pdf --output json
-aspose-cli pdf edit cover.pdf --ops form-ops.json --out cover.filled.pdf --output json
-aspose-cli pdf extract cover.filled.pdf --what forms --to json --out form-result.json --output json
+aspose-cli pdf query forms cover.pdf --output-format json
+aspose-cli pdf edit cover.pdf --ops form-ops.json --out cover.filled.pdf --output-format json
+aspose-cli pdf extract cover.filled.pdf --what forms --to json --out form-result.json --output-format json
 ```
 
 `set_form_field` addresses an AcroForm field by its exact full name. Each field's
@@ -68,8 +68,8 @@ verification, with the PKCS#12 password in an environment variable that is
 already set:
 
 ```powershell
-aspose-cli pdf sign report.pdf --certificate signer.pfx --certificate-password-env PDF_SIGNING_PASSWORD --visible --page 1 --rect 36,36,180,60 --reason "Approved" --out report.signed.pdf --output json
-aspose-cli pdf inspect report.signed.pdf --detail signatures --output json
+aspose-cli pdf sign report.pdf --certificate signer.pfx --certificate-password-env PDF_SIGNING_PASSWORD --visible --page 1 --rect 36,36,180,60 --reason "Approved" --out report.signed.pdf --output-format json
+aspose-cli pdf inspect report.signed.pdf --detail signatures --output-format json
 ```
 
 Omit `--visible` for an invisible signature; `--rect` requires `--visible`.

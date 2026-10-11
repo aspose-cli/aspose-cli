@@ -8,7 +8,7 @@ internal static class InspectCommand
 {
     public static CommandDefinition<PresentationInfoRequest, PresentationInfoResult> Create()
     {
-        var preview = new PreviewOption($"each slide's title and up to {SlideInfo.PreviewTextLength} characters of its text");
+        var sample = new SampleOption($"each slide's title and up to {SlideInfo.PreviewTextLength} characters of its text");
         var detail = new DetailOption(
             InfoDetails.All,
             new Dictionary<string, string>(StringComparer.Ordinal)
@@ -19,11 +19,11 @@ internal static class InspectCommand
             "inspect",
             "Show presentation structure, stable slide ids and metadata.",
             new CommandTraits { Input = SlidesInputs.Presentation },
-            [.. preview.Options, .. detail.Options],
+            [.. sample.Options, .. detail.Options],
             (parse, standard) => new PresentationInfoRequest
             {
                 Input = standard.Input,
-                IncludePreview = preview.Read(parse),
+                IncludePreview = sample.Read(parse),
                 Details = detail.Read(parse),
                 Password = standard.InputPassword,
             },

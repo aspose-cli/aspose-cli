@@ -15,17 +15,17 @@ internal static class InspectCommand
 
     public static CommandDefinition<PdfInfoRequest, PdfInfoResult> Create()
     {
-        var preview = new PreviewOption($"the size and rotation of each page, up to {PdfInfoResult.PagePreviewLimit} pages");
+        var sample = new SampleOption($"the size and rotation of each page, up to {PdfInfoResult.PagePreviewLimit} pages");
         var detail = new DetailOption(InfoDetails.All, DetailNotes);
         return new(
             "inspect",
             "Show PDF structure, security state and metadata.",
             new CommandTraits { Input = PdfInputs.Document },
-            [.. preview.Options, .. detail.Options],
+            [.. sample.Options, .. detail.Options],
             (parse, standard) => new PdfInfoRequest
             {
                 Input = standard.Input,
-                IncludePreview = preview.Read(parse),
+                IncludePreview = sample.Read(parse),
                 Details = detail.Read(parse),
                 Password = standard.InputPassword,
             },

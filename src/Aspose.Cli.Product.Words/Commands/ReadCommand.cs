@@ -45,7 +45,7 @@ internal static class ReadCommand
                 result with { Window = result.Window with { Next = Next(standard.Continuation(), request, result) } },
             Examples =
             [
-                "words query blocks contract.docx --blocks 1-30 --scope full --output json",
+                "words query blocks contract.docx --blocks 1-30 --scope full --output-format json",
                 "words query blocks contract.docx --section 2 --scope text",
             ],
         };

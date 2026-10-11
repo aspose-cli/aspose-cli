@@ -18,7 +18,7 @@ public sealed class AppCliGatewayTests
         using var workspace = new TempWorkspace();
         string license = workspace.File("selected.lic");
         File.WriteAllText(license, "<License/>");
-        byte[] status = Encoding.UTF8.GetBytes(workspace.Run("license", "status", "--output", "json").StdOut);
+        byte[] status = Encoding.UTF8.GetBytes(workspace.Run("license", "status", "--output-format", "json").StdOut);
         int runs = 0;
         AppCliGateway gateway = Gateway(workspace, license, _ =>
         {
@@ -43,7 +43,7 @@ public sealed class AppCliGatewayTests
         using var workspace = new TempWorkspace();
         string license = workspace.File("selected.lic");
         File.WriteAllText(license, "<License/>");
-        byte[] status = Encoding.UTF8.GetBytes(workspace.Run("license", "status", "--output", "json").StdOut);
+        byte[] status = Encoding.UTF8.GetBytes(workspace.Run("license", "status", "--output-format", "json").StdOut);
         byte[] error = Encoding.UTF8.GetBytes(
             """{"error":{"code":"LICENSE_INVALID","message":"The license is invalid.","hint":"Repair it."}}""");
         int fontRuns = 0;
@@ -98,7 +98,7 @@ public sealed class AppCliGatewayTests
     public void Fonts_ReadUnderAnOldLicenseAreNotKeptAfterItChanges()
     {
         using var workspace = new TempWorkspace();
-        byte[] status = Encoding.UTF8.GetBytes(workspace.Run("license", "status", "--output", "json").StdOut);
+        byte[] status = Encoding.UTF8.GetBytes(workspace.Run("license", "status", "--output-format", "json").StdOut);
         byte[] error = Encoding.UTF8.GetBytes(
             """{"error":{"code":"LICENSE_INVALID","message":"The license is invalid.","hint":"Repair it."}}""");
         int fontRuns = 0;

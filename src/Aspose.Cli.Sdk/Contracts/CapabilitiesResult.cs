@@ -408,7 +408,7 @@ public sealed record CommandCapabilities
 /// <summary>One option accepted by a command.</summary>
 public sealed record CommandOptionCapabilities
 {
-    /// <summary>The option's name, e.g. <c>--output</c>.</summary>
+    /// <summary>The option's name, e.g. <c>--output-format</c>.</summary>
     public required string Name { get; init; }
 
     /// <summary>Other names the option answers to.</summary>

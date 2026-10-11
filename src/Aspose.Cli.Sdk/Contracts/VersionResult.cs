@@ -1,7 +1,7 @@
 namespace Aspose.Cli.Sdk.Contracts;
 
 /// <summary>
-/// Result of <c>aspose-cli --version --output json</c>: the build identity alone, so a caller
+/// Result of <c>aspose-cli --version --output-format json</c>: the build identity alone, so a caller
 /// can read the version without the full capabilities document.
 /// </summary>
 public sealed record VersionResult() : ResultEnvelope("version", 2)

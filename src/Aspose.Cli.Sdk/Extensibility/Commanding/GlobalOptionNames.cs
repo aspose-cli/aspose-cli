@@ -12,8 +12,7 @@ public
 #endif
 static class GlobalOptionNames
 {
-    public const string Output = "--output";
-    public const string OutputAlias = "-f";
+    public const string OutputFormat = "--output-format";
     public const string Quiet = "--quiet";
     public const string QuietAlias = "-q";
     public const string Verbose = "--verbose";
@@ -23,12 +22,15 @@ static class GlobalOptionNames
     public const string WorkDir = "--workdir";
     public const string Timeout = "--timeout";
     public const string MaxInputBytes = "--max-input-bytes";
+    public const string Help = "--help";
+    public const string HelpAlias = "-h";
+    public const string Version = "--version";
 
     /// <summary>Every name and alias a product option must not declare.</summary>
     public static readonly string[] Reserved =
     [
-        Output, OutputAlias, Quiet, QuietAlias, Verbose, VerboseAlias,
+        OutputFormat, Quiet, QuietAlias, Verbose, VerboseAlias,
         License, LicenseMode, WorkDir, Timeout, MaxInputBytes,
-        "--help", "-h", "-?", "/h", "/?", "--version",
+        Help, HelpAlias, Version,
     ];
 }

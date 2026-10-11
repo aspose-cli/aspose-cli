@@ -24,7 +24,7 @@ public sealed record PdfInfoResult() : EngineResultEnvelope("pdf-info", 2)
     public required PdfSummary Pdf { get; init; }
 
     /// <summary>
-    /// The first pages' geometry with <c>--preview</c>; a <c>LIST_TRUNCATED</c> warning names the
+    /// The first pages' geometry with <c>--sample</c>; a <c>LIST_TRUNCATED</c> warning names the
     /// page count when there are more.
     /// </summary>
     [MaxItems(PagePreviewLimit)]

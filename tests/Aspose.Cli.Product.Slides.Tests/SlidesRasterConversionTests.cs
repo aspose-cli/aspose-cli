@@ -83,7 +83,7 @@ public sealed class SlidesRasterConversionTests(SlidesRasterConversionTests.Crea
         using var workspace = new TempWorkspace();
         File.Copy(input, workspace.File("deck.pptx"));
 
-        CliResult refused = workspace.Run("slides", command, "deck.pptx", "--to", "png", "--out", "png", "--output", "json");
+        CliResult refused = workspace.Run("slides", command, "deck.pptx", "--to", "png", "--out", "png", "--output-format", "json");
 
         Assert.Equal(2, refused.ExitCode);
         JsonNode error = JsonNode.Parse(refused.StdErr)!["error"]!;
@@ -142,7 +142,7 @@ public sealed class SlidesRasterConversionTests(SlidesRasterConversionTests.Crea
         Directory.CreateDirectory(directory);
         string output = Path.Combine(directory, "edited.pptx");
         Assert.True(output.Length > 260);
-        CliResult edited = workspace.Run("slides", "edit", "deck.pptx", "--ops", "ops.json", "--out", output, "--output", "json");
+        CliResult edited = workspace.Run("slides", "edit", "deck.pptx", "--ops", "ops.json", "--out", output, "--output-format", "json");
         Assert.True(edited.ExitCode == 0, edited.StdErr);
         Assert.Equal(output, JsonNode.Parse(edited.StdOut)!["output"]!["path"]!.GetValue<string>());
         Assert.True(File.Exists(output));
@@ -157,7 +157,7 @@ public sealed class SlidesRasterConversionTests(SlidesRasterConversionTests.Crea
         Directory.CreateDirectory(directory);
         string output = Path.Combine(directory, "review");
         Assert.True(output.Length > 260);
-        CliResult reviewed = workspace.Run("review", "deck.pptx", "--out", output, "--max-items", "1", "--output", "json");
+        CliResult reviewed = workspace.Run("review", "deck.pptx", "--out", output, "--max-items", "1", "--output-format", "json");
         Assert.True(reviewed.ExitCode == 0, reviewed.StdErr);
         JsonNode manifest = JsonNode.Parse(reviewed.StdOut)!;
         string relativeImage = Assert.Single(manifest["artifacts"]!.AsArray(),
@@ -176,7 +176,7 @@ public sealed class SlidesRasterConversionTests(SlidesRasterConversionTests.Crea
         using var workspace = new TempWorkspace();
         created.CopyTo(workspace.File("deck.pptx"));
         string output = "slide" + SlidesFormats.Definitions.ExtensionFor(format);
-        CliResult converted = workspace.Run("slides", "convert", "deck.pptx", "--to", format, "--out", output, "--output", "json");
+        CliResult converted = workspace.Run("slides", "convert", "deck.pptx", "--to", format, "--out", output, "--output-format", "json");
         Assert.True(converted.ExitCode == 0, converted.StdErr);
         using IImage image = Images.FromFile(workspace.File(output));
         Assert.Equal(1920, image.Width);
@@ -195,7 +195,7 @@ public sealed class SlidesRasterConversionTests(SlidesRasterConversionTests.Crea
         public CreatedDeck() => _deck = new(() =>
         {
             File.WriteAllText(_workspace.File("outline.md"), "# Quarterly review\n\nGrowth and retention");
-            CliResult create = _workspace.Run("slides", "create", "deck.pptx", "--from-markdown", "outline.md", "--size", "16x9", "--output", "json");
+            CliResult create = _workspace.Run("slides", "create", "deck.pptx", "--from-markdown", "outline.md", "--size", "16x9", "--output-format", "json");
             Assert.True(create.ExitCode == 0, create.StdErr);
             return _workspace.File("deck.pptx");
         });

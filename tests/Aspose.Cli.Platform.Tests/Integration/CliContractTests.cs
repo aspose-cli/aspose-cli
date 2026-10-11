@@ -38,15 +38,14 @@ $", result.StdOut);
     }
 
     [Theory]
-    [InlineData("--version", "--output", "json")]
-    [InlineData("--output", "json", "--version")]
-    [InlineData("--version", "--output=json")]
-    [InlineData("-f", "json", "--version")]
+    [InlineData("--version", "--output-format", "json")]
+    [InlineData("--output-format", "json", "--version")]
+    [InlineData("--version", "--output-format=json")]
     public void VersionWithJsonOutput_ReportsTheCapabilitiesBuildIdentity(params string[] args)
     {
         CliResult plain = _workspace.Run("--version");
         CliResult result = _workspace.Run(args);
-        CliResult capabilities = _workspace.Run("capabilities", "--output", "json");
+        CliResult capabilities = _workspace.Run("capabilities", "--output-format", "json");
 
         Assert.Equal(0, result.ExitCode);
         Assert.Equal(string.Empty, result.StdErr);
@@ -66,9 +65,9 @@ $", result.StdOut);
     [Fact]
     public void VersionWithCompactOrTableOutput_UsesTheOrdinaryResultWriter()
     {
-        CliResult json = _workspace.Run("--version", "--output", "json");
-        CliResult compact = _workspace.Run("--version", "--output", "compact");
-        CliResult table = _workspace.Run("--version", "--output", "table");
+        CliResult json = _workspace.Run("--version", "--output-format", "json");
+        CliResult compact = _workspace.Run("--version", "--output-format", "compact");
+        CliResult table = _workspace.Run("--version", "--output-format", "table");
 
         Assert.Equal(0, compact.ExitCode);
         Assert.Single(compact.StdOut.Split('\n', StringSplitOptions.RemoveEmptyEntries));
@@ -82,10 +81,10 @@ $", result.StdOut);
 
     [Theory]
     [InlineData("--version", "--quiet")]
-    [InlineData("--version", "--output", "json", "--quiet")]
-    [InlineData("--version", "--output", "text")]
-    [InlineData("--version", "--output", "json", "--workdir", ".")]
-    [InlineData("--version", "--output", "json", "doctor")]
+    [InlineData("--version", "--output-format", "json", "--quiet")]
+    [InlineData("--version", "--output-format", "text")]
+    [InlineData("--version", "--output-format", "json", "--workdir", ".")]
+    [InlineData("--version", "--output-format", "json", "doctor")]
     public void VersionWithAnotherOption_StaysAUsageError(params string[] args)
     {
         CliResult result = _workspace.Run(args);
@@ -107,7 +106,7 @@ $", result.StdOut);
             ["slides"] = ("slides", ["slides"]),
             ["words"] = ("pages", ["pages"]),
         };
-        CliResult result = _workspace.Run("capabilities", "--output", "json");
+        CliResult result = _workspace.Run("capabilities", "--output-format", "json");
 
         Assert.Equal(0, result.ExitCode);
         JsonNode capabilities = Parse(result.StdOut);
@@ -178,8 +177,8 @@ $", result.StdOut);
     [Fact]
     public void Capabilities_ExposeTheCurrentDeterministicSourceRevision()
     {
-        CliResult first = _workspace.Run("capabilities", "--output", "json");
-        CliResult compact = _workspace.Run("capabilities", "--output", "compact");
+        CliResult first = _workspace.Run("capabilities", "--output-format", "json");
+        CliResult compact = _workspace.Run("capabilities", "--output-format", "compact");
 
         Assert.Equal(0, first.ExitCode);
         Assert.Equal(0, compact.ExitCode);
@@ -244,7 +243,7 @@ $", result.StdOut);
 
     private JsonNode NormalizedCapabilities()
     {
-        CliResult result = _workspace.Run("capabilities", "--output", "json");
+        CliResult result = _workspace.Run("capabilities", "--output-format", "json");
 
         Assert.Equal(0, result.ExitCode);
         return Parse(BuildIdentity.Replace(
@@ -254,7 +253,7 @@ $", result.StdOut);
 
     private JsonNode ProductCapabilities(string product)
     {
-        CliResult result = _workspace.Run("capabilities", product, "--output", "json");
+        CliResult result = _workspace.Run("capabilities", product, "--output-format", "json");
         Assert.True(result.ExitCode == 0, $"capabilities {product}: {result.StdErr}");
         return Parse(result.StdOut);
     }
@@ -273,7 +272,7 @@ $", result.StdOut);
     [Fact]
     public void CapabilitiesSummary_MatchesTheSnapshot()
     {
-        CliResult result = _workspace.Run("capabilities", "--summary", "--output", "json");
+        CliResult result = _workspace.Run("capabilities", "--summary", "--output-format", "json");
 
         Assert.Equal(0, result.ExitCode);
         string normalized = BuildIdentity.Replace(
@@ -285,8 +284,8 @@ $", result.StdOut);
     [Fact]
     public void CapabilitiesSummary_ProjectsTheCapabilitiesDocument()
     {
-        CliResult result = _workspace.Run("capabilities", "--summary", "--output", "json");
-        CliResult full = _workspace.Run("capabilities", "--output", "json");
+        CliResult result = _workspace.Run("capabilities", "--summary", "--output-format", "json");
+        CliResult full = _workspace.Run("capabilities", "--output-format", "json");
 
         Assert.Equal(0, result.ExitCode);
         AssertConformsTo(ResultEnvelope.SchemaUri("common", "capabilities-summary"), result.StdOut);
@@ -332,9 +331,9 @@ $", result.StdOut);
     [Fact]
     public void CapabilitiesSummary_SelectsOneProductButNoCommand()
     {
-        CliResult cells = _workspace.Run("capabilities", "cells", "--summary", "--output", "json");
-        CliResult command = _workspace.Run("capabilities", "cells", "edit", "--summary", "--output", "json");
-        CliResult unknown = _workspace.Run("capabilities", "missing", "--summary", "--output", "json");
+        CliResult cells = _workspace.Run("capabilities", "cells", "--summary", "--output-format", "json");
+        CliResult command = _workspace.Run("capabilities", "cells", "edit", "--summary", "--output-format", "json");
+        CliResult unknown = _workspace.Run("capabilities", "missing", "--summary", "--output-format", "json");
 
         Assert.Equal(0, cells.ExitCode);
         Assert.Equal("cells", Assert.Single(Parse(cells.StdOut)["products"]!.AsArray())!["id"]!.GetValue<string>());
@@ -352,7 +351,7 @@ $", result.StdOut);
     [MemberData(nameof(ProductIds))]
     public void ProductHelp_MatchesTheSnapshot(string product)
     {
-        CliResult capabilities = _workspace.Run("capabilities", product, "--output", "json");
+        CliResult capabilities = _workspace.Run("capabilities", product, "--output-format", "json");
         Assert.Equal(0, capabilities.ExitCode);
         IEnumerable<string[]> paths = Assert.Single(Parse(capabilities.StdOut)["products"]!.AsArray())!["commands"]!.AsArray()
             .Select(static command => command!["path"]!.GetValue<string>().Split(' '));
@@ -366,7 +365,7 @@ $", result.StdOut);
     [Fact]
     public void HostHelp_MatchesTheSnapshot()
     {
-        CliResult capabilities = _workspace.Run("capabilities", "--output", "json");
+        CliResult capabilities = _workspace.Run("capabilities", "--output-format", "json");
         Assert.Equal(0, capabilities.ExitCode);
         JsonNode json = Parse(capabilities.StdOut);
         HashSet<string> products = json["products"]!.AsArray()
@@ -431,13 +430,13 @@ $", result.StdOut);
         CliResult result = selection switch
         {
             "product" => _workspace.Run(
-                "capabilities", "cells", "--output", "json"),
+                "capabilities", "cells", "--output-format", "json"),
             "command" => _workspace.Run(
-                "capabilities", "cells", "edit", "--output", "json"),
+                "capabilities", "cells", "edit", "--output-format", "json"),
             "unknown-product" => _workspace.Run(
-                "capabilities", "missing", "--output", "json"),
+                "capabilities", "missing", "--output-format", "json"),
             "unknown-command" => _workspace.Run(
-                "capabilities", "cells", "missing", "--output", "json"),
+                "capabilities", "cells", "missing", "--output-format", "json"),
             _ => throw new ArgumentOutOfRangeException(nameof(selection)),
         };
 
@@ -508,7 +507,7 @@ $", result.StdOut);
     public void SchemaOperation_ReturnsExactViewAndUnknownIdsAreActionable()
     {
         CliResult capabilitiesResult = _workspace.Run(
-            "capabilities", "cells", "edit", "--output", "json");
+            "capabilities", "cells", "edit", "--output-format", "json");
         Assert.Equal(0, capabilitiesResult.ExitCode);
         JsonNode capabilities = Parse(capabilitiesResult.StdOut);
         JsonNode operation = capabilities["products"]![0]!["operations"]![0]!;
@@ -539,7 +538,7 @@ $", result.StdOut);
     [Fact]
     public void SchemaList_UsesEnvelopeAndHumanRenderers()
     {
-        CliResult json = _workspace.Run("schema", "--output", "json");
+        CliResult json = _workspace.Run("schema", "--output-format", "json");
         Assert.Equal(0, json.ExitCode);
         JsonNode list = Parse(json.StdOut);
         Assert.Equal(
@@ -554,12 +553,12 @@ $", result.StdOut);
                         .Order(StringComparer.Ordinal),
                     StringComparer.Ordinal));
 
-        CliResult table = _workspace.Run("schema", "--output", "table");
+        CliResult table = _workspace.Run("schema", "--output-format", "table");
         Assert.Equal(0, table.ExitCode);
         Assert.Contains("id", table.StdOut, StringComparison.Ordinal);
         Assert.Contains("v2/common/schema-list", table.StdOut, StringComparison.Ordinal);
 
-        CliResult markdown = _workspace.Run("schema", "--output", "markdown");
+        CliResult markdown = _workspace.Run("schema", "--output-format", "markdown");
         Assert.Equal(0, markdown.ExitCode);
         Assert.Contains("| id |", markdown.StdOut, StringComparison.Ordinal);
         Assert.Contains("v2/common/schema-list", markdown.StdOut, StringComparison.Ordinal);
@@ -568,7 +567,7 @@ $", result.StdOut);
     [Fact]
     public void LicenseStatus_ReflectsTheCompiledEngineContract()
     {
-        CliResult result = _workspace.Run("license", "status", "--output", "json");
+        CliResult result = _workspace.Run("license", "status", "--output-format", "json");
 
         Assert.Equal(0, result.ExitCode);
         JsonNode json = Parse(result.StdOut);
@@ -602,7 +601,7 @@ $", result.StdOut);
     [InlineData("preview sattus", "preview status", "'sattus' is not a command of 'aspose-cli preview'")]
     public void UnknownCommand_SuggestsTheClosestCommands(string commandLine, string suggestion, string message)
     {
-        CliResult result = _workspace.Run([.. commandLine.Split(' '), "--output", "json"]);
+        CliResult result = _workspace.Run([.. commandLine.Split(' '), "--output-format", "json"]);
 
         Assert.Equal(2, result.ExitCode);
         JsonNode error = Parse(result.StdErr)["error"]!;
@@ -635,7 +634,7 @@ $", result.StdOut);
     [InlineData("skill install --host calude-code", "claude-code")]
     public void UnknownValue_ListsTheAllowedValuesAndSuggestsTheClosest(string commandLine, string suggestion)
     {
-        CliResult result = _workspace.Run([.. commandLine.Split(' '), "--output", "json"]);
+        CliResult result = _workspace.Run([.. commandLine.Split(' '), "--output-format", "json"]);
 
         Assert.Equal(2, result.ExitCode);
         JsonNode error = Parse(result.StdErr)["error"]!;
@@ -646,12 +645,56 @@ $", result.StdOut);
     }
 
     [Theory]
+    [InlineData("-f json cells inspect a.xlsx", "-f")]
+    [InlineData("cells inspect a.xlsx --output json", "--output")]
+    [InlineData("cells inspect a.xlsx --output=json", "--output=json")]
+    [InlineData("-? cells", "-?")]
+    [InlineData("cells inspect a.xlsx /h", "/h")]
+    [InlineData("cells inspect a.xlsx --preview", "--preview")]
+    [InlineData("preview open a.xlsx --open", "--open")]
+    [InlineData("skill install aspose-cli-platform --host codex --scope user", "--scope")]
+    public void RemovedNames_AreUnknownOptions(string commandLine, string removed)
+    {
+        CliResult result = _workspace.Run(commandLine.Split(' '));
+
+        Assert.Equal(2, result.ExitCode);
+        JsonNode error = Parse(result.StdErr)["error"]!;
+        Assert.Equal("USAGE_ERROR", error["code"]!.GetValue<string>());
+        Assert.Contains($"'{removed}'", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("cells", "xlsx", "pdf")]
+    [InlineData("words", "docx", "pdf")]
+    public void OutputFormatGivenAFileFormat_SuggestsTo(string product, string extension, string format)
+    {
+        CliResult result = _workspace.Run(product, "convert", $"in.{extension}", "--out", $"out.{format}", "--output-format", format);
+
+        Assert.Equal(2, result.ExitCode);
+        JsonNode error = Parse(result.StdErr)["error"]!;
+        Assert.Equal("USAGE_ERROR", error["code"]!.GetValue<string>());
+        Assert.Equal($"--to {format}", error["details"]!["suggestions"]![0]!.GetValue<string>());
+        Assert.StartsWith($"Did you mean '--to {format}'?", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Capabilities_PublishBooleanValuesInLowercase()
+    {
+        CliResult result = _workspace.Run("capabilities", "--output-format", "json");
+
+        JsonNode quiet = Parse(result.StdOut)["commands"]!.AsArray()
+            .Single(item => item!["path"]!.GetValue<string>() == "aspose-cli")!["options"]!.AsArray()
+            .Single(item => item!["name"]!.GetValue<string>() == "--quiet")!;
+        Assert.Equal(["false", "true"], quiet["allowedValues"]!.AsArray().Select(static item => item!.GetValue<string>()));
+    }
+
+    [Theory]
     [InlineData("app", "--route", true)]
     [InlineData("cells query range", "--scan-range", true)]
     [InlineData("cells convert", "--out", false)]
     public void Capabilities_PublishWhetherAnOptionIsHidden(string command, string option, bool hidden)
     {
-        CliResult result = _workspace.Run("capabilities", "--output", "json");
+        CliResult result = _workspace.Run("capabilities", "--output-format", "json");
 
         JsonNode described = Parse(result.StdOut)["commands"]!.AsArray()
             .Single(item => item!["path"]!.GetValue<string>() == $"aspose-cli {command}")!["options"]!.AsArray()
@@ -664,7 +707,7 @@ $", result.StdOut);
     [InlineData("cells query range a.xlsx --sacn-range", "--scan-range")]
     public void UnknownOption_NeverSuggestsAHiddenOption(string commandLine, string hidden)
     {
-        CliResult result = _workspace.Run([.. commandLine.Split(' '), "--output", "json"]);
+        CliResult result = _workspace.Run([.. commandLine.Split(' '), "--output-format", "json"]);
 
         Assert.Equal(2, result.ExitCode);
         JsonNode error = Parse(result.StdErr)["error"]!;
@@ -675,7 +718,7 @@ $", result.StdOut);
     [Fact]
     public void UnknownOption_OfTheRootCommandSuggestsItsOwnOptions()
     {
-        CliResult result = _workspace.Run("--vresion", "--output", "json");
+        CliResult result = _workspace.Run("--vresion", "--output-format", "json");
 
         Assert.Equal(2, result.ExitCode);
         JsonNode error = Parse(result.StdErr)["error"]!;
@@ -688,7 +731,7 @@ $", result.StdOut);
     [InlineData("schema v2/pdf/ops --operation rotate_page", "rotate_pages")]
     public void UnknownName_ListsWhatExistsAndSuggestsTheClosest(string commandLine, string suggestion)
     {
-        CliResult result = _workspace.Run([.. commandLine.Split(' '), "--output", "json"]);
+        CliResult result = _workspace.Run([.. commandLine.Split(' '), "--output-format", "json"]);
 
         Assert.Equal(2, result.ExitCode);
         JsonNode error = Parse(result.StdErr)["error"]!;
@@ -715,7 +758,7 @@ $", result.StdOut);
     [Fact]
     public void Doctor_ReportsTheCurrentDevelopmentEnvironment()
     {
-        CliResult result = _workspace.Run("doctor", "--output", "json");
+        CliResult result = _workspace.Run("doctor", "--output-format", "json");
 
         Assert.Equal(0, result.ExitCode);
         JsonArray checks = Parse(result.StdOut)["checks"]!.AsArray();
@@ -739,7 +782,7 @@ $", result.StdOut);
             "license",
             "install",
             invalid,
-            "--output",
+            "--output-format",
             "json");
         Assert.Equal(7, install.ExitCode);
         Assert.Equal(
@@ -749,7 +792,7 @@ $", result.StdOut);
         CliResult remove = _workspace.Run(
             "license",
             "remove",
-            "--output",
+            "--output-format",
             "json");
         Assert.Equal(0, remove.ExitCode);
         Assert.All(Parse(remove.StdOut)["products"]!.AsArray(), product =>
@@ -763,7 +806,7 @@ $", result.StdOut);
             "doctor",
             "--timeout",
             "0",
-            "--output",
+            "--output-format",
             "json");
 
         Assert.Equal(2, result.ExitCode);
@@ -777,7 +820,7 @@ $", result.StdOut);
     {
         string manifest = WriteReleaseManifest(_workspace.File("feed"), "release.zip", 1, new string('a', 64));
 
-        CliResult result = _workspace.Run("update", "check", manifest, "--output", "json");
+        CliResult result = _workspace.Run("update", "check", manifest, "--output-format", "json");
 
         Assert.Equal(0, result.ExitCode);
         JsonNode update = Parse(result.StdOut);
@@ -793,7 +836,7 @@ $", result.StdOut);
         File.WriteAllText(Path.Combine(root, "release.zip"), "tampered", Encoding.UTF8);
         string manifest = WriteReleaseManifest(root, "release.zip", 8, new string('a', 64));
 
-        CliResult result = _workspace.Run("update", "install", manifest, "--output", "json");
+        CliResult result = _workspace.Run("update", "install", manifest, "--output-format", "json");
 
         Assert.Equal(5, result.ExitCode);
         Assert.Equal("RELEASE_VERIFICATION_FAILED", Parse(result.StdErr)["error"]!["code"]!.GetValue<string>());
@@ -816,7 +859,7 @@ $", result.StdOut);
         }
 
         string manifest = WriteReleaseManifest(root, "release.zip", new FileInfo(archive).Length, HashFile(archive));
-        CliResult result = _workspace.Run("update", "install", manifest, "--output", "json");
+        CliResult result = _workspace.Run("update", "install", manifest, "--output-format", "json");
 
         Assert.Equal(5, result.ExitCode);
         Assert.Equal("RELEASE_VERIFICATION_FAILED", Parse(result.StdErr)["error"]!["code"]!.GetValue<string>());

@@ -43,8 +43,8 @@ internal sealed class McpCommandRunner
     public Task<McpExecutionResult> RunCapabilitiesAsync(
         CancellationToken cancellationToken) =>
         RunCoreAsync(
-            ["capabilities", "--output", "json"],
-            _parser.Parse(["capabilities", "--output", "json"], _inherited),
+            ["capabilities", "--output-format", "json"],
+            _parser.Parse(["capabilities", "--output-format", "json"], _inherited),
             stdin: null,
             DefaultTimeoutSeconds,
             cancellationToken);

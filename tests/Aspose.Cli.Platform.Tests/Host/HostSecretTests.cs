@@ -61,7 +61,7 @@ public sealed class HostSecretTests : IDisposable
         File.WriteAllText(_workspace.File("content.txt"), "Encrypted preview fixture");
         CliResult created = _workspace.RunWithEnv(
             new Dictionary<string, string?> { [PasswordVariable] = Sentinel },
-            "words", "create", "secret.docx", "--text", "content.txt", "--encrypt-env", PasswordVariable, "--output", "json");
+            "words", "create", "secret.docx", "--text", "content.txt", "--encrypt-env", PasswordVariable, "--output-format", "json");
         Assert.True(created.ExitCode == 0, created.StdErr);
         using var supervisor = new RenderWorkerSupervisor(() => _workspace.StartInfo(), TimeSpan.FromMinutes(2));
 

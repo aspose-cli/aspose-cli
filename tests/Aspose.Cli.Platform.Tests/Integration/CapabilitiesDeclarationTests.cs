@@ -54,7 +54,7 @@ public sealed partial class CapabilitiesDeclarationTests : IDisposable
         string[] all = [.. capabilities["commands"]!.AsArray().Select(static command => command!["path"]!.GetValue<string>())];
         foreach (string product in capabilities["products"]!.AsArray().Select(static product => product!["id"]!.GetValue<string>()))
         {
-            CliResult result = _workspace.Run("capabilities", product, "--output", "json");
+            CliResult result = _workspace.Run("capabilities", product, "--output-format", "json");
             Assert.True(result.ExitCode == 0, result.StdErr);
             JsonNode selected = JsonNode.Parse(result.StdOut)!;
             string[] expected = [.. all.Where(path => path == "aspose-cli " + product || path.StartsWith("aspose-cli " + product + " ", StringComparison.Ordinal))];
@@ -113,7 +113,7 @@ public sealed partial class CapabilitiesDeclarationTests : IDisposable
 
     private JsonNode Capabilities()
     {
-        CliResult result = _workspace.Run("capabilities", "--output", "json");
+        CliResult result = _workspace.Run("capabilities", "--output-format", "json");
         Assert.True(result.ExitCode == 0, result.StdErr);
         return JsonNode.Parse(result.StdOut)!;
     }

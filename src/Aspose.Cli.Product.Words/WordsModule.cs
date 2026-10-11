@@ -49,7 +49,7 @@ public sealed class WordsModule : IProductModule
 
     private static CommandHelp Help() => new(
         [
-            "words inspect contract.docx --detail outline sections --preview",
+            "words inspect contract.docx --detail outline sections --sample",
             "words query blocks contract.docx --blocks 1-30 --scope full",
         ],
         [

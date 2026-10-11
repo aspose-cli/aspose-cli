@@ -5,11 +5,11 @@ examples/data-slides. [metrics.md](metrics.md) creates two synthetic slides;
 [data-ops.json](data-ops.json) adds a native column chart to the second slide.
 
 ```powershell
-aspose-cli slides create metrics.pptx --from-markdown metrics.md --output json
-aspose-cli slides edit metrics.pptx --ops data-ops.json --out metrics.review.pptx --output json
-aspose-cli slides query slides metrics.review.pptx --scope shapes --output json
-aspose-cli slides convert metrics.review.pptx --to md --slides 2 --out metrics.review.md --output json
-aspose-cli review metrics.review.pptx --out metrics.review --output json
+aspose-cli slides create metrics.pptx --from-markdown metrics.md --output-format json
+aspose-cli slides edit metrics.pptx --ops data-ops.json --out metrics.review.pptx --output-format json
+aspose-cli slides query slides metrics.review.pptx --scope shapes --output-format json
+aspose-cli slides convert metrics.review.pptx --to md --slides 2 --out metrics.review.md --output-format json
+aspose-cli review metrics.review.pptx --out metrics.review --output-format json
 ```
 
 The chart shows North, South, East and West revenue of 120, 90, 75 and 60

@@ -5,7 +5,7 @@ and live preview. Agents and scripts use the CLI commands, `preview` and
 `--license` instead.
 
 ```powershell
-aspose-cli app status --output json
+aspose-cli app status --output-format json
 ```
 
 ```text

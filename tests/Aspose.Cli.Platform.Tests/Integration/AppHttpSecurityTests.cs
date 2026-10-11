@@ -111,7 +111,7 @@ public sealed class AppHttpSecurityTests
         // Another configuration has its own service; it neither sees nor stops this one.
         using (var other = new TempWorkspace())
         {
-            CliResult stopped = other.Run("app", "stop", "--output", "json");
+            CliResult stopped = other.Run("app", "stop", "--output-format", "json");
             Assert.True(stopped.ExitCode == 0, stopped.StdErr);
         }
         Assert.Equal("first.csv", (await app.Status())["file"]!.GetValue<string>());

@@ -39,8 +39,8 @@ public sealed class GeneratedSchemaSourceTests : IDisposable
     {
         // The two listings are independent runs, so they go at the same time.
         CliResult[] runs = await Task.WhenAll(
-            Task.Run(() => _workspace.Run("schema", "--output", "json")),
-            Task.Run(() => _workspace.Run("capabilities", "--output", "json")));
+            Task.Run(() => _workspace.Run("schema", "--output-format", "json")),
+            Task.Run(() => _workspace.Run("capabilities", "--output-format", "json")));
         (CliResult listed, CliResult capabilities) = (runs[0], runs[1]);
         Assert.True(listed.ExitCode == 0, listed.StdErr);
         string[] served = [.. JsonNode.Parse(listed.StdOut)!["schemas"]!.AsArray().Select(static id => id!.GetValue<string>())];

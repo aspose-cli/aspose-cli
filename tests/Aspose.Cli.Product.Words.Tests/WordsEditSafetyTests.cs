@@ -224,16 +224,16 @@ public sealed class WordsEditSafetyTests
         File.WriteAllText(workspace.File("source.txt"), "Seed");
         File.WriteAllText(workspace.File("ops.json"), """{"ops":[{"op":"set_text","at":{"block":1},"text":"Safe"}]}""");
         var environment = new Dictionary<string, string?> { ["WORDS_EDIT_SECRET"] = OriginalPassword };
-        CliResult created = workspace.RunWithEnv(environment, "words", "create", "secret.docx", "--text", "source.txt", "--encrypt-env", "WORDS_EDIT_SECRET", "--output", "json");
+        CliResult created = workspace.RunWithEnv(environment, "words", "create", "secret.docx", "--text", "source.txt", "--encrypt-env", "WORDS_EDIT_SECRET", "--output-format", "json");
         Assert.True(created.ExitCode == 0, created.StdErr);
         byte[] original = File.ReadAllBytes(workspace.File("secret.docx"));
-        CliResult edited = workspace.RunWithEnv(environment, "words", "edit", "secret.docx", "--ops", "ops.json", "--password-env", "WORDS_EDIT_SECRET", "--in-place", "--backup", "--verify", "--output", "json");
+        CliResult edited = workspace.RunWithEnv(environment, "words", "edit", "secret.docx", "--ops", "ops.json", "--password-env", "WORDS_EDIT_SECRET", "--in-place", "--backup", "--verify", "--output-format", "json");
         Assert.True(edited.ExitCode == 0, edited.StdErr);
         Assert.True(FileFormatUtil.DetectFileFormat(workspace.File("secret.docx")).IsEncrypted);
         Assert.Equal(original, File.ReadAllBytes(workspace.File("secret.backup.docx")));
         Assert.NotNull(JsonNode.Parse(edited.StdOut)!["verification"]);
         Assert.DoesNotContain(OriginalPassword, created.StdOut + created.StdErr + edited.StdOut + edited.StdErr, StringComparison.Ordinal);
-        CliResult missing = workspace.Run("words", "inspect", "secret.docx", "--output", "json");
+        CliResult missing = workspace.Run("words", "inspect", "secret.docx", "--output-format", "json");
         Assert.NotEqual(0, missing.ExitCode);
         Assert.Equal("PASSWORD_REQUIRED", JsonNode.Parse(missing.StdErr)!["error"]!["code"]!.GetValue<string>());
     }

@@ -205,7 +205,7 @@ public sealed class PdfEngineTests
 
         CliResult created = workspace.Run(
             ["pdf", "create", output, "--from-images", image, "--page-size", pageSize, "--margins", margins,
-                "--timeout", "30", "--output", "json"]);
+                "--timeout", "30", "--output-format", "json"]);
 
         Assert.True(created.ExitCode == 0, created.StdOut + created.StdErr);
         double[] sides = margins.Split(',').Select(static side => double.Parse(side, System.Globalization.CultureInfo.InvariantCulture)).ToArray();
@@ -282,7 +282,7 @@ public sealed class PdfEngineTests
         PdfWriteResult created = PdfCreate.Run(fixture.Session, new NewPdfRequest { Output = TestOutput.At(fixture.File("scans.pdf")), ImagePaths = images });
 
         PdfReadResult read = PdfRead.Run(fixture.Session, new PdfReadRequest { Input = created.Output.Path });
-        CliResult review = workspace.Run(["review", created.Output.Path, "--out", workspace.File("review"), "--output", "json"]);
+        CliResult review = workspace.Run(["review", created.Output.Path, "--out", workspace.File("review"), "--output-format", "json"]);
 
         Assert.Equal([1, 2, 3, 4], read.ScannedPagesSuspected);
         Assert.Contains(read.Warnings!, static warning => warning.Code.Name == "SCANNED_PAGES_SUSPECTED");
@@ -309,7 +309,7 @@ public sealed class PdfEngineTests
         string merged = fixture.File("evaluation.pdf");
 
         CliResult created = workspace.Run(
-            ["pdf", "merge", scan, text, "--out", merged, "--license-mode", "evaluation", "--output", "json"]);
+            ["pdf", "merge", scan, text, "--out", merged, "--license-mode", "evaluation", "--output-format", "json"]);
         PdfReadResult read = PdfRead.Run(fixture.Session, new PdfReadRequest { Input = merged });
 
         Assert.True(created.ExitCode == 0, created.StdOut + created.StdErr);
@@ -790,7 +790,7 @@ public sealed class PdfEngineTests
         using var workspace = new TempWorkspace();
         File.Copy(input, workspace.File("input.pdf"));
 
-        CliResult refused = workspace.Run("pdf", command, "input.pdf", "--to", "png", "--out", "pages", "--output", "json");
+        CliResult refused = workspace.Run("pdf", command, "input.pdf", "--to", "png", "--out", "pages", "--output-format", "json");
 
         Assert.Equal(2, refused.ExitCode);
         Assert.Contains("\"USAGE_ERROR\"", refused.StdErr, StringComparison.Ordinal);

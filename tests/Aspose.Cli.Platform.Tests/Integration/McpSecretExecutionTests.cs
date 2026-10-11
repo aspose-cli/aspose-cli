@@ -21,7 +21,7 @@ public sealed class McpSecretExecutionTests
         };
         CliEnvironment.Evaluation(workspace.ConfigDirectory).Apply(start.Environment);
         foreach (string argument in new[] { "--timeout=1", "cells", "edit", "input.xlsx",
-            "--ops=-", "--out", "never.xlsx", "--output=json" })
+            "--ops=-", "--out", "never.xlsx", "--output-format=json" })
         {
             start.ArgumentList.Add(argument);
         }
@@ -60,7 +60,7 @@ public sealed class McpSecretExecutionTests
         await using var server = await starting;
         Assert.Equal(0, (await creating).ExitCode);
         string ops = $$"""{"ops":[{"op":"protect_sheet","sheet":"Data","passwordEnv":"{{Variable}}"}]}""";
-        string[] args = ["cells", "edit", "input.xlsx", "--ops", ops, "--out", "never.xlsx", "--output=json"];
+        string[] args = ["cells", "edit", "input.xlsx", "--ops", ops, "--out", "never.xlsx", "--output-format=json"];
         if (supervised) { args = ["--timeout=10", .. args]; }
         // The direct run and the MCP execution both refuse before writing, so they run at the same time.
         Task<CliResult> directRun = Task.Run(() => workspace.RunWithEnv(variables, args));
@@ -98,7 +98,7 @@ public sealed class McpSecretExecutionTests
             "pdf" => [product, "create", input, "--from-text", "content.txt"],
             _ => [product, "create", input, "--text", "content.txt"],
         };
-        CliResult created = workspace.Run([.. create, "--output", "json"]);
+        CliResult created = workspace.Run([.. create, "--output-format", "json"]);
         Assert.True(created.ExitCode == 0, created.StdErr);
         string ops = product switch
         {
@@ -148,7 +148,7 @@ public sealed class McpSecretExecutionTests
 
         string[] Arguments(int mode)
         {
-            string[] args = [product, "edit", input, "--ops=" + value, "--out", Output(mode), "--output=json"];
+            string[] args = [product, "edit", input, "--ops=" + value, "--out", Output(mode), "--output-format=json"];
             return mode % 2 == 1 ? ["--timeout=15", .. args] : args;
         }
 
@@ -163,8 +163,8 @@ public sealed class McpSecretExecutionTests
             if (product == "pdf")
             {
                 AssertSuccess(await server.Execute(
-                    ["pdf", "inspect", output, "--password-env", "USER_PASSWORD", "--output=json"]));
-                JsonNode locked = await server.Execute(["pdf", "inspect", output, "--output=json"]);
+                    ["pdf", "inspect", output, "--password-env", "USER_PASSWORD", "--output-format=json"]));
+                JsonNode locked = await server.Execute(["pdf", "inspect", output, "--output-format=json"]);
                 Assert.Equal("PASSWORD_REQUIRED", JsonNode.Parse(locked["result"]!["structuredContent"]!["stderr"]!.GetValue<string>())!["error"]!["code"]!.GetValue<string>());
             }
             else
@@ -173,7 +173,7 @@ public sealed class McpSecretExecutionTests
                     ? $$"""{"ops":[{"op":"unprotect_sheet","sheet":"Data","passwordEnv":"{{Variable}}"}]}"""
                     : $$"""{"ops":[{"op":"unprotect","passwordEnv":"{{Variable}}"}]}""";
                 AssertSuccess(await server.Execute([product, "edit", output, "--ops", unprotect,
-                    "--out", $"checked-{mode}.{extension}", "--dry-run", "--output=json"]));
+                    "--out", $"checked-{mode}.{extension}", "--dry-run", "--output-format=json"]));
             }
         }
     }
@@ -199,7 +199,7 @@ public sealed class McpSecretExecutionTests
         string input = "input." + extension;
         CliResult created = workspace.Run([product, "create", input, .. create]);
         Assert.True(created.ExitCode == 0, created.StdErr);
-        string[] edit = [product, "edit", input, "--ops", ops, "--out", "result." + extension, "--output=json"];
+        string[] edit = [product, "edit", input, "--ops", ops, "--out", "result." + extension, "--output-format=json"];
 
         // Neither run publishes an output, so they run at the same time.
         CliResult[] runs = await Task.WhenAll(
@@ -232,7 +232,7 @@ public sealed class McpSecretExecutionTests
         string name = "MISSING_" + Guid.NewGuid().ToString("N");
         string ops = $$"""{"ops":[{"op":"protect_sheet","sheet":"Data","passwordEnv":"{{name}}"},{"op":"set_values","sheet":"Data","range":"A1","values":[[42]]}]}""";
         string[] args = ["cells", "edit", "input.xlsx", "--ops", ops, "--out", "partial.xlsx",
-            "--best-effort", "--dry-run", "--output=json"];
+            "--best-effort", "--dry-run", "--output-format=json"];
         if (supervised) { args = ["--timeout=10", .. args]; }
         JsonNode reply = await server.Execute(args);
         JsonNode result = reply["result"]!["structuredContent"]!;

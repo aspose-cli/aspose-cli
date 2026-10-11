@@ -24,7 +24,7 @@ public sealed class ConfigurationOwnershipTests
         string output = workspace.File("rejected.xlsx");
 
         CliResult result = workspace.Run(
-            "cells", "create", output, "--output", "json");
+            "cells", "create", output, "--output-format", "json");
 
         Assert.True(result.ExitCode == 2, result.StdErr);
         using JsonDocument error = JsonDocument.Parse(result.StdErr);
@@ -58,7 +58,7 @@ public sealed class ConfigurationOwnershipTests
         }
         string output = workspace.File("accepted.xlsx");
 
-        CliResult result = workspace.Run("cells", "create", output, "--output", "json");
+        CliResult result = workspace.Run("cells", "create", output, "--output-format", "json");
 
         Assert.True(result.ExitCode == 0, result.StdErr);
         Assert.True(File.Exists(output));

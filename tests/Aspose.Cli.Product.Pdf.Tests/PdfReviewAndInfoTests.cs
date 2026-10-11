@@ -64,7 +64,7 @@ public sealed class PdfReviewAndInfoTests
 
         CliResult review = workspace.RunWithEnv(
             new Dictionary<string, string?> { ["ASPOSE_CLI_TEST_PASSWORD"] = "reader" },
-            "review", input, "--out", workspace.File("review"), "--password-env", "ASPOSE_CLI_TEST_PASSWORD", "--output", "json");
+            "review", input, "--out", workspace.File("review"), "--password-env", "ASPOSE_CLI_TEST_PASSWORD", "--output-format", "json");
 
         Assert.True(review.Json()["sourceEncrypted"]!.GetValue<bool>());
     }
@@ -330,7 +330,7 @@ public sealed class PdfReviewAndInfoTests
         };
         foreach (string[] command in commands)
         {
-            CliResult created = workspace.Run([.. command, "--license-mode", "evaluation", "--output", "json"]);
+            CliResult created = workspace.Run([.. command, "--license-mode", "evaluation", "--output-format", "json"]);
             Assert.True(created.ExitCode == 0, created.StdErr);
         }
 
@@ -380,7 +380,7 @@ public sealed class PdfReviewAndInfoTests
     }
 
     private static JsonNode Review(TempWorkspace workspace, string path) =>
-        workspace.Run(["review", path, "--out", workspace.File("review"), "--output", "json"]).Json();
+        workspace.Run(["review", path, "--out", workspace.File("review"), "--output-format", "json"]).Json();
 
     [Fact]
     public void Review_DeclaresEveryCheckItsAssessmentReports()

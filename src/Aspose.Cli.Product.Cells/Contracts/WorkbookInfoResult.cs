@@ -354,7 +354,7 @@ public sealed record SheetInfo
 
     /// <summary>
     /// Optional sample of display values (first rows of the used range),
-    /// present only when <c>--preview</c> was requested. Row-major; a null
+    /// present only when <c>--sample</c> was requested. Row-major; a null
     /// entry is an empty cell.
     /// </summary>
     public IReadOnlyList<IReadOnlyList<string?>>? Preview { get; init; }

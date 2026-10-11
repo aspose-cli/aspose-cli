@@ -45,7 +45,7 @@ public sealed class UpdateHandoffTests
             """;
         string feed = Feed(workspace, script);
         var start = StartInfo(workspace, scratch,
-            ["update", "install", feed, "--output", "json", .. timed ? new[] { "--timeout", "20" } : Array.Empty<string>()]);
+            ["update", "install", feed, "--output-format", "json", .. timed ? new[] { "--timeout", "20" } : Array.Empty<string>()]);
         using Process cli = Process.Start(start)!;
         Task<string> stdout = cli.StandardOutput.ReadToEndAsync();
         Task<string> stderr = cli.StandardError.ReadToEndAsync();
@@ -96,7 +96,7 @@ public sealed class UpdateHandoffTests
         using var stopAccepting = new CancellationTokenSource();
         Task<TcpClient> accepted = server.AcceptTcpClientAsync(stopAccepting.Token).AsTask();
         var start = StartInfo(workspace, scratch,
-            ["update", "install", $"https://127.0.0.1:{port}/RELEASE-MANIFEST.json", "--timeout", "3", "--output", "json"]);
+            ["update", "install", $"https://127.0.0.1:{port}/RELEASE-MANIFEST.json", "--timeout", "3", "--output-format", "json"]);
         using Process cli = Process.Start(start)!;
         Task<string> stdout = cli.StandardOutput.ReadToEndAsync();
         Task<string> stderr = cli.StandardError.ReadToEndAsync();
@@ -124,12 +124,12 @@ public sealed class UpdateHandoffTests
     public void Preparation_IsNotAPublicOrMcpExecutionEntry()
     {
         using var workspace = new TempWorkspace();
-        CliResult result = workspace.Run("update", "_prepare", "feed.json", workspace.File("package"), "--output", "json");
+        CliResult result = workspace.Run("update", "__prepare", "feed.json", workspace.File("package"), "--output-format", "json");
         Assert.Equal(2, result.ExitCode);
         Assert.False(Directory.Exists(workspace.File("package")));
         var runner = new Aspose.Cli.Host.Mcp.McpCommandRunner(ActualCommandTree.Host);
         Assert.Throws<Aspose.Cli.Host.Mcp.McpCommandException>(() => runner.EnsureAllowed(
-            ["update", "_prepare", "feed.json", "package"]));
+            ["update", "__prepare", "feed.json", "package"]));
     }
 
     private static async Task WaitForFile(string path)

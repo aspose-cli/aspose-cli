@@ -50,8 +50,8 @@ public sealed class SlidesModule : IProductModule
     private static CommandHelp Help() => new(
         [
             "slides create deck.pptx --from-markdown outline.md --template brand.pptx",
-            "slides inspect deck.pptx --preview --detail masters layouts fonts notes",
-            "slides query slides deck.pptx --slides 1-5 --scope full --notes --output json",
+            "slides inspect deck.pptx --sample --detail masters layouts fonts notes",
+            "slides query slides deck.pptx --slides 1-5 --scope full --notes --output-format json",
             "slides edit deck.pptx --ops deck-ops.json --out revised.pptx",
             "review revised.pptx --out revised.review",
         ],

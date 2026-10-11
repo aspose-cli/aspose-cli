@@ -24,7 +24,7 @@ public sealed class MistakeRecoveryCliTests : IDisposable
         File.WriteAllText(_workspace.File(file), "not a document");
         File.WriteAllText(_workspace.File("ops.json"), $$"""{"ops":[{{operation}}]}""");
 
-        CliResult result = _workspace.Run(product, "edit", file, "--ops", "ops.json", "--output", "json");
+        CliResult result = _workspace.Run(product, "edit", file, "--ops", "ops.json", "--output-format", "json");
 
         JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
         Assert.Equal("OPS_INVALID", error["code"]!.GetValue<string>());
@@ -39,10 +39,10 @@ public sealed class MistakeRecoveryCliTests : IDisposable
     public void CellsOperationMistake_SuggestsAnArrayOfNames(string operation, string suggestion)
     {
         File.WriteAllText(_workspace.File("ops.json"), $$"""{"ops":[{{operation}}]}""");
-        CliResult created = _workspace.Run("cells", "create", "a.xlsx", "--output", "json");
+        CliResult created = _workspace.Run("cells", "create", "a.xlsx", "--output-format", "json");
         Assert.Equal(0, created.ExitCode);
 
-        CliResult result = _workspace.Run("cells", "edit", "a.xlsx", "--ops", "ops.json", "--dry-run", "--output", "json");
+        CliResult result = _workspace.Run("cells", "edit", "a.xlsx", "--ops", "ops.json", "--dry-run", "--output-format", "json");
 
         JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
         Assert.Equal("OPS_INVALID", error["code"]!.GetValue<string>());
@@ -63,7 +63,7 @@ public sealed class MistakeRecoveryCliTests : IDisposable
         File.WriteAllText(_workspace.File("deck.md"), "# Title");
         string[] arguments = commandLine.Split(' ');
 
-        CliResult result = _workspace.Run([.. arguments, "--output", "json"]);
+        CliResult result = _workspace.Run([.. arguments, "--output-format", "json"]);
 
         Assert.Equal(2, result.ExitCode);
         JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
@@ -82,7 +82,7 @@ public sealed class MistakeRecoveryCliTests : IDisposable
     {
         File.WriteAllText(_workspace.File("a.xlsx"), "not a document");
 
-        CliResult result = _workspace.Run("cells", "edit", "a.xlsx", "--set", "Sheet1!A1=5", "--out", "x.png", "--output", "json");
+        CliResult result = _workspace.Run("cells", "edit", "a.xlsx", "--set", "Sheet1!A1=5", "--out", "x.png", "--output-format", "json");
 
         Assert.Equal(2, result.ExitCode);
         JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
@@ -104,9 +104,9 @@ public sealed class MistakeRecoveryCliTests : IDisposable
     [InlineData("cells query range a.xlsx --rnage Sheet1!A1", "error USAGE_ERROR: ", "Did you mean '--range'?")]
     public void TableOutput_AsksTheMistakesQuestionOnce(string commandLine, string error, string question)
     {
-        Assert.Equal(0, _workspace.Run("cells", "create", "a.xlsx", "--output", "json").ExitCode);
+        Assert.Equal(0, _workspace.Run("cells", "create", "a.xlsx", "--output-format", "json").ExitCode);
 
-        CliResult result = _workspace.Run([.. commandLine.Split(' '), "--output", "table"]);
+        CliResult result = _workspace.Run([.. commandLine.Split(' '), "--output-format", "table"]);
 
         Assert.NotEqual(0, result.ExitCode);
         Assert.Contains(error, result.StdErr, StringComparison.Ordinal);
@@ -129,7 +129,7 @@ public sealed class MistakeRecoveryCliTests : IDisposable
         File.WriteAllText(_workspace.File("words.json"), """{"ops":[{"op":"set_properties","title":"x"}]}""");
         File.WriteAllText(_workspace.File("deck.md"), "# Title");
 
-        CliResult result = _workspace.Run([.. commandLine.Split(' '), "--output", "json"]);
+        CliResult result = _workspace.Run([.. commandLine.Split(' '), "--output-format", "json"]);
 
         Assert.Equal(2, result.ExitCode);
         JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;

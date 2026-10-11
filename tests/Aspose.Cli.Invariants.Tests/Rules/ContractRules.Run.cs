@@ -92,7 +92,7 @@ internal sealed partial class RuleWorkspace : IDisposable
     /// <summary>Runs a command line with JSON output and reads the document it wrote.</summary>
     public RuleRun Json(params string[] args)
     {
-        CliResult result = Execute([.. args, "--output", "json"]);
+        CliResult result = Execute([.. args, "--output-format", "json"]);
         JsonNode? document = Parse(result.StdOut) ?? Parse(result.StdErr);
         string failure = document?["error"]?["message"]?.GetValue<string>() ?? result.StdErr;
         return new RuleRun(result.ExitCode, document, Stable(ScenarioContract.Excerpt(failure)));

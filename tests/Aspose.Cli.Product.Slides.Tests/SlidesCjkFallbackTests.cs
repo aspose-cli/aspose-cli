@@ -40,7 +40,7 @@ public sealed class SlidesCjkFallbackTests
             presentation.Save(workspace.File("deck.pptx"), Aspose.Slides.Export.SaveFormat.Pptx);
         }
 
-        CliResult result = workspace.Run("slides", "convert", "deck.pptx", "--to", "pdf", "--output", "json");
+        CliResult result = workspace.Run("slides", "convert", "deck.pptx", "--to", "pdf", "--output-format", "json");
 
         Assert.True(result.ExitCode == 0, result.StdErr);
         Assert.DoesNotContain("Updating of Inner rules", result.StdOut, StringComparison.Ordinal);

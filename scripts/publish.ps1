@@ -215,7 +215,7 @@ if ($customerPublish) {
     if ($LASTEXITCODE -ne 0) {
         throw "Published executable failed --version with exit code $LASTEXITCODE."
     }
-    $capabilitiesText = & $executable capabilities --output json
+    $capabilitiesText = & $executable capabilities --output-format json
     if ($LASTEXITCODE -ne 0) {
         throw "Published executable failed capabilities with exit code $LASTEXITCODE."
     }
@@ -228,7 +228,7 @@ if ($customerPublish) {
         [bool]$capabilities.buildDirty -ne [bool]$provenance.BuildDirty) {
         throw 'Published executable provenance does not match the captured repository provenance.'
     }
-    $skillsText = & $executable skill list --output json
+    $skillsText = & $executable skill list --output-format json
     if ($LASTEXITCODE -ne 0) {
         throw "Published executable failed skill discovery with exit code $LASTEXITCODE."
     }

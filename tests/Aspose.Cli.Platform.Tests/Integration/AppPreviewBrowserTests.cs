@@ -15,7 +15,7 @@ public sealed class AppPreviewBrowserTests(ITestOutputHelper output)
         {
             File.WriteAllText(ui.App.Workspace.File("words.txt"), "WORD_DOCUMENT");
             var created = ui.App.Workspace.Run("words", "create", "words.docx",
-                "--text", "words.txt", "--output", "json");
+                "--text", "words.txt", "--output-format", "json");
             Assert.True(created.ExitCode == 0, created.StdErr);
             ui.App.Open("words.docx");
             await ui.Poll();

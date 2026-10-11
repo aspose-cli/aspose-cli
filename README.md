@@ -11,12 +11,12 @@ in evaluation mode, and the CLI discloses every evaluation effect on its output.
 ## Quick start
 
 ```powershell
-aspose-cli capabilities --summary --output json
-aspose-cli doctor --output json
+aspose-cli capabilities --summary --output-format json
+aspose-cli doctor --output-format json
 aspose-cli skill list
 aspose-cli docs cells/editing
-aspose-cli skill install aspose-cli-platform --host codex --scope project
-aspose-cli skill install aspose-cli-cells --host codex --scope project
+aspose-cli skill install aspose-cli-platform --host codex
+aspose-cli skill install aspose-cli-cells --host codex
 ```
 
 The executable is the reference for what it supports: `capabilities` lists every command,
@@ -24,8 +24,8 @@ each product's operations and batch limits, the resource budgets and every diagn
 its exit code; `--help` describes each command, `schema` prints the JSON Schemas and `docs` the
 bundled guides. The Skill `aspose-cli-platform` teaches agents the rules every product shares,
 and `aspose-cli-cells`, `aspose-cli-pdf`, `aspose-cli-slides` and `aspose-cli-words` teach each
-product's workflows; `skill install` supports the `codex`, `claude-code` and `opencode` hosts at
-project or user scope.
+product's workflows; `skill install` supports the `codex`, `claude-code` and `opencode` hosts, in the
+project by default or for the user with `--user`.
 
 ## What you can rely on
 
@@ -49,7 +49,7 @@ project or user scope.
 
 ```powershell
 aspose-cli app --welcome
-aspose-cli preview open document.pdf --open
+aspose-cli preview open document.pdf
 aspose-cli mcp serve
 ```
 
@@ -61,7 +61,7 @@ what each may do.
 
 ```powershell
 aspose-cli license install Aspose.Total.lic
-aspose-cli license status --output json
+aspose-cli license status --output-format json
 ```
 
 A license comes from `--license`, an environment variable, a `.aspose` directory in the working

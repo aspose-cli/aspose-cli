@@ -19,12 +19,12 @@ public sealed class SlidesCliWorkflowTests : IDisposable
         CliResult info = null!, read = null!, convert = null!;
         Parallel.Invoke(
             () => info = _workspace.Run(
-                "slides", "inspect", "deck.pptx", "--output", "json"),
+                "slides", "inspect", "deck.pptx", "--output-format", "json"),
             () => read = _workspace.Run(
-                "slides", "query", "slides", "deck.pptx", "--slides", "1", "--output", "json"),
+                "slides", "query", "slides", "deck.pptx", "--slides", "1", "--output-format", "json"),
             () => convert = _workspace.Run(
                 "slides", "convert", "deck.pptx", "--to", "png",
-                "--slides", "1", "--out", "slide.png", "--output", "json"));
+                "--slides", "1", "--out", "slide.png", "--output-format", "json"));
 
         Assert.True(info.ExitCode == 0, info.StdErr);
         Assert.Equal(3, JsonNode.Parse(info.StdOut)!["presentation"]!["slideCount"]!.GetValue<int>());
@@ -67,7 +67,7 @@ public sealed class SlidesCliWorkflowTests : IDisposable
         }
 
         CliResult review = _workspace.Run(
-            "review", "deck.pptx", "--out", "evidence", "--code", "SLIDES_SHAPE_OUTSIDE_SLIDE", "--output", "json");
+            "review", "deck.pptx", "--out", "evidence", "--code", "SLIDES_SHAPE_OUTSIDE_SLIDE", "--output-format", "json");
 
         Assert.True(review.ExitCode == 0, review.StdErr);
         JsonNode finding = Assert.Single(JsonNode.Parse(review.StdOut)!["findings"]!.AsArray())!;
@@ -90,9 +90,9 @@ public sealed class SlidesCliWorkflowTests : IDisposable
 
         CliResult unlocked = _workspace.RunWithEnv(
             new Dictionary<string, string?> { ["DECK_PASSWORD"] = "secret" },
-            "review", "locked.pptx", "--password-env", "DECK_PASSWORD", "--out", "unlocked", "--output", "json");
+            "review", "locked.pptx", "--password-env", "DECK_PASSWORD", "--out", "unlocked", "--output-format", "json");
         CliResult locked = _workspace.Run(
-            "review", "locked.pptx", "--out", "locked", "--output", "json");
+            "review", "locked.pptx", "--out", "locked", "--output-format", "json");
 
         Assert.True(unlocked.ExitCode == 0, unlocked.StdOut + unlocked.StdErr);
         Assert.True(File.Exists(_workspace.File(Path.Combine("unlocked", "artifacts", "slide-0001.png"))));
@@ -117,9 +117,9 @@ public sealed class SlidesCliWorkflowTests : IDisposable
         }
 
         CliResult window = _workspace.Run(
-            "slides", "query", "slides", "four.pptx", "--slides", "1,2,4", "--max-chars", "20", "--output", "json");
+            "slides", "query", "slides", "four.pptx", "--slides", "1,2,4", "--max-chars", "20", "--output-format", "json");
         CliResult single = _workspace.Run(
-            "slides", "query", "slides", "four.pptx", "--max-chars", "4", "--notes", "--output", "json");
+            "slides", "query", "slides", "four.pptx", "--max-chars", "4", "--notes", "--output-format", "json");
 
         // Evaluation mode may add watermark text, so the cut point comes from the response.
         Assert.True(window.ExitCode == 0, window.StdErr);
@@ -131,12 +131,12 @@ public sealed class SlidesCliWorkflowTests : IDisposable
         int resume = Array.IndexOf(selection, last["slide"]!.GetValue<int>()) + (cut ? 0 : 1);
         int budget = cut && returned.Count == 1 ? 40 : 20;
         Assert.EndsWith(
-            $" --slides {Aspose.Cli.Sdk.Addressing.PageRange.Describe(selection[resume..])} --scope shapes --max-chars {budget} --output json",
+            $" --slides {Aspose.Cli.Sdk.Addressing.PageRange.Describe(selection[resume..])} --scope shapes --max-chars {budget} --output-format json",
             read["window"]!["next"]!.GetValue<string>(),
             StringComparison.Ordinal);
         Assert.True(single.ExitCode == 0, single.StdErr);
         Assert.EndsWith(
-            " --slides 1-4 --scope shapes --notes --max-chars 8 --output json",
+            " --slides 1-4 --scope shapes --notes --max-chars 8 --output-format json",
             JsonNode.Parse(single.StdOut)!["window"]!["next"]!.GetValue<string>(),
             StringComparison.Ordinal);
     }
@@ -150,10 +150,10 @@ public sealed class SlidesCliWorkflowTests : IDisposable
         CliResult all = null!, first = null!;
         Parallel.Invoke(
             () => all = _workspace.Run(
-                "slides", "query", "search", "deck.pptx", "--pattern", "Slide", "--scope", "shapes", "--output", "json"),
+                "slides", "query", "search", "deck.pptx", "--pattern", "Slide", "--scope", "shapes", "--output-format", "json"),
             () => first = _workspace.Run(
                 "slides", "query", "search", "deck.pptx", "--pattern", "Slide", "--scope", "shapes",
-                "--max-hits", "2", "--output", "json"));
+                "--max-hits", "2", "--output-format", "json"));
 
         Assert.True(all.ExitCode == 0, all.StdErr);
         Assert.True(first.ExitCode == 0, first.StdErr);
@@ -165,7 +165,7 @@ public sealed class SlidesCliWorkflowTests : IDisposable
         Assert.True(page["window"]!["truncated"]!.GetValue<bool>());
         string next = page["window"]!["next"]!.GetValue<string>();
         Assert.EndsWith(
-            " --pattern Slide --scope shapes --max-hits 2 --skip 2 --output json", next, StringComparison.Ordinal);
+            " --pattern Slide --scope shapes --max-hits 2 --skip 2 --output-format json", next, StringComparison.Ordinal);
 
         CliResult following = _workspace.RunCommandLine(next);
 
@@ -200,9 +200,9 @@ public sealed class SlidesCliWorkflowTests : IDisposable
         File.WriteAllText(_workspace.File("all.json"), """{"ops":[{"op":"replace_text","find":"Hi","replace":"Yo","scope":"all"}]}""");
 
         CliResult shapes = _workspace.Run("slides", "edit", "deck.pptx", "--ops", "shapes.json", "--out", "shapes.pptx",
-            "--license-mode", "evaluation", "--output", "json");
+            "--license-mode", "evaluation", "--output-format", "json");
         CliResult all = _workspace.Run("slides", "edit", "deck.pptx", "--ops", "all.json", "--out", "all.pptx",
-            "--license-mode", "evaluation", "--output", "json");
+            "--license-mode", "evaluation", "--output-format", "json");
 
         Assert.True(shapes.ExitCode == 0, shapes.StdErr);
         Assert.Equal(1, JsonNode.Parse(shapes.StdOut)!["applied"]![0]!["itemsAffected"]!.GetValue<long>());

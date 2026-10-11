@@ -27,7 +27,7 @@ public static class ResultSchemaCoverage
 /// <remarks>
 /// The result types are the product's published result schemas (<c>v2/&lt;product&gt;/…</c>
 /// except its <c>ops</c> input schema). A run counts when a test's <see cref="TempWorkspace"/>
-/// validated its <c>--output json</c> envelope, which <see cref="ResultSchemaCoverage"/> records.
+/// validated its <c>--output-format json</c> envelope, which <see cref="ResultSchemaCoverage"/> records.
 /// The check runs last in its test process (<see cref="ResultSchemaCoverageOrderer"/>) and only
 /// where every test of the project runs licensed, as the Full scope does: it is slow and needs a
 /// license, so a filtered or unlicensed run, which leaves producing tests out, skips it.
@@ -49,7 +49,7 @@ public abstract class ResultSchemaCoverageTests
 
         Assert.True(
             uncovered.Length == 0,
-            $"No real --output json run in this test process produced these {ProductId} result schemas: "
+            $"No real --output-format json run in this test process produced these {ProductId} result schemas: "
             + string.Join(", ", uncovered)
             + ". Add an integration test that runs a command producing each one through TempWorkspace, "
             + "or delete the result type no command produces. Covered: "

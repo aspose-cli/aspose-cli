@@ -95,7 +95,7 @@ public sealed class CellsPivotCaptionCliTests : IDisposable
         Edit(ChineseData);
 
         CliResult refused = _workspace.Run(
-            "cells", "edit", "report.xlsx", "--out", "report.out.xlsx", "--output", "json", "--ops",
+            "cells", "edit", "report.xlsx", "--out", "report.out.xlsx", "--output-format", "json", "--ops",
             $$"""{"ops":[{"op":"create_pivot","sheet":"Pivot","sourceRange":"Data!A1:D3","at":"A1","rows":["地区"],"values":{{values}},"captions":"{{captions}}"}]}""");
 
         JsonNode error = JsonNode.Parse(refused.StdErr)!["error"]!;
@@ -119,12 +119,12 @@ public sealed class CellsPivotCaptionCliTests : IDisposable
 
     private void Edit(params string[] operations) =>
         _workspace.Run(
-            "cells", "edit", "report.xlsx", "--in-place", "--output", "json", "--ops",
+            "cells", "edit", "report.xlsx", "--in-place", "--output-format", "json", "--ops",
             $$"""{"ops":[{{string.Join(",", operations)}}]}""").Succeeded();
 
     /// <summary>The Pivot sheet's cells in the range as display strings, empty for an empty cell.</summary>
     private string[][] Read(string range) =>
-        [.. _workspace.Run("cells", "query", "range", "report.xlsx", "--sheet", "Pivot", "--range", range, "--output", "json")
+        [.. _workspace.Run("cells", "query", "range", "report.xlsx", "--sheet", "Pivot", "--range", range, "--output-format", "json")
             .Json()["sheet"]!["cells"]!.AsArray()
             .Select(static row => row!.AsArray()
                 .Select(static cell => cell!["v"] is { } value ? value.ToString() : string.Empty)

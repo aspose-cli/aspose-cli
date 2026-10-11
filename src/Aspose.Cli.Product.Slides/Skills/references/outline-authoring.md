@@ -7,7 +7,7 @@ Only emphasis (bold, italic), code (a monospace font) and table column alignment
 are applied to the text itself.
 
 ```powershell
-aspose-cli slides create qbr.pptx --from-markdown notes.md --template brand.pptx --output json
+aspose-cli slides create qbr.pptx --from-markdown notes.md --template brand.pptx --output-format json
 ```
 
 | Markdown | Result |

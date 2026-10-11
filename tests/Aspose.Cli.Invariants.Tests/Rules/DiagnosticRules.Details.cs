@@ -345,12 +345,12 @@ internal static partial class ContractRules
         using var workspace = new RuleWorkspace(sample.Invocation);
         foreach (string[] setup in sample.Setup)
         {
-            CliResult prepared = workspace.Execute([.. setup, "--output", "json"]);
+            CliResult prepared = workspace.Execute([.. setup, "--output-format", "json"]);
             if (prepared.ExitCode != 0)
             {
                 return (prepared, $"'{string.Join(' ', setup)}' exited {prepared.ExitCode}");
             }
         }
-        return (workspace.Run("--output", "json"), null);
+        return (workspace.Run("--output-format", "json"), null);
     }
 }

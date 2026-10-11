@@ -236,14 +236,14 @@ public sealed class TempWorkspace : IDisposable
         {
             if (string.Equals(
                     args[index],
-                    "--output=json",
+                    "--output-format=json",
                     StringComparison.OrdinalIgnoreCase))
             {
                 return true;
             }
             if (string.Equals(
                     args[index],
-                    "--output",
+                    "--output-format",
                     StringComparison.OrdinalIgnoreCase)
                 && index + 1 < args.Count
                 && string.Equals(

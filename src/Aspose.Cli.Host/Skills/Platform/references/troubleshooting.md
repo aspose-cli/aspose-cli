@@ -46,15 +46,15 @@ with `code`, `message` and `hint`, and on stderr in table output.
 | 9 | Timeout | `OPERATION_TIMEOUT` |
 | 130 | Cancelled | Ctrl+C interrupted `update`, or a command run with `--timeout`, which supervises it in a worker; no error is written. Otherwise the operating system ends the process with its own code |
 
-`capabilities --output json` lists every error and warning code of this build
+`capabilities --output-format json` lists every error and warning code of this build
 with its owner, severity and exit code under `diagnostics`.
 
 ## Diagnosis
 
 ```powershell
-aspose-cli doctor --output json
-aspose-cli license status --output json
-aspose-cli capabilities --output json
+aspose-cli doctor --output-format json
+aspose-cli license status --output-format json
+aspose-cli capabilities --output-format json
 ```
 
 - `--verbose` writes structured JSONL diagnostics (timings, error codes) to

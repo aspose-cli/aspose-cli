@@ -97,7 +97,7 @@ internal static class AppLicenseChecks
 
     internal static JsonNode RunCli(AppTestSession app, params string[] arguments)
     {
-        CliResult result = app.Workspace.Run([.. arguments, "--output", "json"]);
+        CliResult result = app.Workspace.Run([.. arguments, "--output-format", "json"]);
         Assert.True(result.ExitCode == 0, result.StdErr);
         return JsonNode.Parse(result.StdOut)!;
     }

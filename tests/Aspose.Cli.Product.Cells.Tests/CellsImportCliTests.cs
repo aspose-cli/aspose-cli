@@ -26,7 +26,7 @@ public sealed class CellsImportCliTests : IClassFixture<CellsImportCliTests.Sour
         byte[] source = File.ReadAllBytes(_workspace.File("eu.xlsx"));
 
         JsonNode edited = _workspace.Run(
-            "cells", "edit", "report.xlsx", "--in-place", "--output", "json", "--ops",
+            "cells", "edit", "report.xlsx", "--in-place", "--output-format", "json", "--ops",
             """
             {"ops":[
               {"op":"import_range","sheet":"Report","path":"eu.xlsx","from":"Totals!A1:B5","to":"B2"},
@@ -41,7 +41,7 @@ public sealed class CellsImportCliTests : IClassFixture<CellsImportCliTests.Sour
         Assert.Equal(source, File.ReadAllBytes(_workspace.File("eu.xlsx")));
         JsonNode read = _workspace.Run(
             "cells", "query", "range", "report.xlsx", "--sheet", "Report", "--range", "A1:H6",
-            "--scope", "full", "--output", "json").Json();
+            "--scope", "full", "--output-format", "json").Json();
         JsonArray rows = read["sheet"]!["cells"]!.AsArray();
         JsonNode Cell(string address)
         {
@@ -73,7 +73,7 @@ public sealed class CellsImportCliTests : IClassFixture<CellsImportCliTests.Sour
         File.WriteAllText(_workspace.File("it.csv"), "Region,Sales\nIT,5\nES,7\n");
 
         _workspace.Run(
-            "cells", "edit", "report.xlsx", "--in-place", "--output", "json", "--ops",
+            "cells", "edit", "report.xlsx", "--in-place", "--output-format", "json", "--ops",
             """
             {"ops":[
               {"op":"import_sheet","sheet":"Rates","path":"eu.xlsx"},
@@ -82,7 +82,7 @@ public sealed class CellsImportCliTests : IClassFixture<CellsImportCliTests.Sour
             ]}
             """).Succeeded();
 
-        JsonArray sheets = _workspace.Run("cells", "inspect", "report.xlsx", "--output", "json")
+        JsonArray sheets = _workspace.Run("cells", "inspect", "report.xlsx", "--output-format", "json")
             .Json()["workbook"]!["sheets"]!.AsArray();
         string[] names = [.. sheets.Select(static sheet => sheet!["name"]!.GetValue<string>())];
         Assert.Equal("EU", names[0]);
@@ -90,19 +90,19 @@ public sealed class CellsImportCliTests : IClassFixture<CellsImportCliTests.Sour
         Assert.Contains("IT", names);
         JsonArray eu = _workspace.Run(
             "cells", "query", "range", "report.xlsx", "--sheet", "EU", "--range", "B4:B5",
-            "--scope", "formulas", "--output", "json").Json()["sheet"]!["cells"]!.AsArray();
+            "--scope", "formulas", "--output-format", "json").Json()["sheet"]!["cells"]!.AsArray();
         Assert.Equal("=SUM(B2:B3)", eu[0]![0]!["f"]!.GetValue<string>());
         // The imported Rates sheet is the one the formula now reads: 2000.5 * 2.
         Assert.Equal("=B4*Rates!A1", eu[1]![0]!["f"]!.GetValue<string>());
         Assert.Equal(4001, eu[1]![0]!["v"]!.GetValue<double>());
         JsonArray it = _workspace.Run(
-            "cells", "query", "range", "report.xlsx", "--sheet", "IT", "--range", "A3:B3", "--output", "json")
+            "cells", "query", "range", "report.xlsx", "--sheet", "IT", "--range", "A3:B3", "--output-format", "json")
             .Json()["sheet"]!["cells"]!.AsArray();
         Assert.Equal("ES", it[0]![0]!["v"]!.GetValue<string>());
         Assert.Equal(7, it[0]![1]!["v"]!.GetValue<double>());
 
         CliResult taken = _workspace.Run(
-            "cells", "edit", "report.xlsx", "--in-place", "--output", "json", "--ops",
+            "cells", "edit", "report.xlsx", "--in-place", "--output-format", "json", "--ops",
             """{"ops":[{"op":"import_sheet","sheet":"Totals","path":"eu.xlsx","name":"eu"}]}""");
         JsonNode error = JsonNode.Parse(taken.StdErr)!["error"]!;
         Assert.Equal("OPS_INVALID", error["code"]!.GetValue<string>());
@@ -115,7 +115,7 @@ public sealed class CellsImportCliTests : IClassFixture<CellsImportCliTests.Sour
     public void AMissingSourceSheet_ListsTheSourcesSheets(string operations)
     {
         CliResult missing = _workspace.Run(
-            "cells", "edit", "report.xlsx", "--out", "report.out.xlsx", "--output", "json", "--ops", operations);
+            "cells", "edit", "report.xlsx", "--out", "report.out.xlsx", "--output-format", "json", "--ops", operations);
 
         JsonNode error = JsonNode.Parse(missing.StdErr)!["error"]!;
         Assert.Equal("SHEET_NOT_FOUND", error["code"]!.GetValue<string>());
@@ -141,7 +141,7 @@ public sealed class CellsImportCliTests : IClassFixture<CellsImportCliTests.Sour
                 {
                     Workspace.Run("cells", "create", "eu.xlsx", "--sheets", "Notes,Totals,Rates").Succeeded();
                     Workspace.Run(
-                        "cells", "edit", "eu.xlsx", "--in-place", "--output", "json", "--ops",
+                        "cells", "edit", "eu.xlsx", "--in-place", "--output-format", "json", "--ops",
                         """
                         {"ops":[
                           {"op":"set_values","sheet":"Notes","range":"A1","values":[["first-sheet"]]},

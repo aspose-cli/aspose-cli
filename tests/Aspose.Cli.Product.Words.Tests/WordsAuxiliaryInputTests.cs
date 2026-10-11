@@ -26,7 +26,7 @@ public sealed class WordsAuxiliaryInputTests
         string ops = JsonSerializer.Serialize(new { ops = new[] { new
         { op = "insert_image", at = new { block = 1 }, position = "after", path = workspace.File("image.png") } } });
         var args = new List<string> { "words", "edit", "source.docx", "--ops", ops, "--out", "result.docx",
-            "--max-input-bytes", limit.ToString(CultureInfo.InvariantCulture), "--output", "json" };
+            "--max-input-bytes", limit.ToString(CultureInfo.InvariantCulture), "--output-format", "json" };
         if (bestEffort) { args.AddRange(["--best-effort", "--timeout", "60"]); }
         CliResult result = workspace.Run(args.ToArray());
         Assert.NotEqual(0, result.ExitCode);

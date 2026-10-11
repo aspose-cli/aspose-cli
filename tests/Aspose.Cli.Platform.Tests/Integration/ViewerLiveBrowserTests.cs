@@ -45,7 +45,7 @@ public sealed class ViewerLiveBrowserTests : IDisposable
         {
             File.WriteAllText(_workspace.File("report.md"), string.Join("\n\n",
                 Enumerable.Range(1, 120).Select(index => $"Paragraph {index} of the report.")));
-            _workspace.Run("words", "create", "report.docx", "--markdown", "report.md", "--output", "json").Succeeded();
+            _workspace.Run("words", "create", "report.docx", "--markdown", "report.md", "--output-format", "json").Succeeded();
             return _documents.Open(_workspace.File("report.docx"), new LiveDocumentOptions(), ViewerDocuments.PreviewHolder);
         },
         async (page, document) =>
@@ -57,7 +57,7 @@ public sealed class ViewerLiveBrowserTests : IDisposable
 
             _workspace.RunWithInput(
                 """{"ops":[{"op":"set_text","at":{"block":100},"text":"EDITED_PARAGRAPH"}]}""",
-                "words", "edit", "report.docx", "--ops", "-", "--in-place", "--output", "json").Succeeded();
+                "words", "edit", "report.docx", "--ops", "-", "--in-place", "--output-format", "json").Succeeded();
 
             await Expect(page.Locator(".av-part[data-changed='true']")).ToHaveCountAsync(1);
             await Expect(page.Locator(".av-status-note")).ToContainTextAsync("revision 2");
@@ -71,9 +71,9 @@ public sealed class ViewerLiveBrowserTests : IDisposable
     public Task Cells_AnEditLandsOnTheCellInTheProductGrid() =>
         InBrowser("cells-live", () =>
         {
-            _workspace.Run("cells", "create", "book.xlsx", "--sheets", "Data,Notes", "--output", "json").Succeeded();
+            _workspace.Run("cells", "create", "book.xlsx", "--sheets", "Data,Notes", "--output-format", "json").Succeeded();
             _workspace.Run("cells", "edit", "book.xlsx", "--in-place",
-                "--set", "Data!A1=Region", "--set", "Data!B1=Revenue", "--set", "Data!B2=120", "--output", "json").Succeeded();
+                "--set", "Data!A1=Region", "--set", "Data!B1=Revenue", "--set", "Data!B2=120", "--output-format", "json").Succeeded();
             return _documents.Open(_workspace.File("book.xlsx"), new LiveDocumentOptions(), ViewerDocuments.PreviewHolder);
         },
         async (page, _) =>
@@ -87,7 +87,7 @@ public sealed class ViewerLiveBrowserTests : IDisposable
             await RecordMarks(grid);
 
             _workspace.Run("cells", "edit", "book.xlsx", "--in-place",
-                "--set", "Data!B2=999", "--output", "json").Succeeded();
+                "--set", "Data!B2=999", "--output-format", "json").Succeeded();
 
             await Expect(grid.Locator("td[data-cell='B2']").First).ToContainTextAsync("999");
             // Replacing the exported content keeps the same frame.
@@ -102,7 +102,7 @@ public sealed class ViewerLiveBrowserTests : IDisposable
             await Expect(grid.Locator(".aspose-cell-changed")).ToHaveCountAsync(0);
             await RecordMarks(grid);
             _workspace.Run("cells", "edit", "book.xlsx", "--in-place",
-                "--set", "Data!D4=Later", "--output", "json").Succeeded();
+                "--set", "Data!D4=Later", "--output-format", "json").Succeeded();
 
             await Expect(grid.Locator("td[data-cell='D4']").First).ToContainTextAsync("Later");
             Assert.Equal(["D4"], await Marks(grid));
@@ -110,7 +110,7 @@ public sealed class ViewerLiveBrowserTests : IDisposable
             await RecordMarks(grid);
             _workspace.RunWithInput(
                 """{"ops":[{"op":"insert_rows","sheet":"Data","at":2},{"op":"set_values","sheet":"Data","range":"A2","values":[["Inserted"]]}]}""",
-                "cells", "edit", "book.xlsx", "--ops", "-", "--in-place", "--output", "json").Succeeded();
+                "cells", "edit", "book.xlsx", "--ops", "-", "--in-place", "--output-format", "json").Succeeded();
 
             await Expect(grid.Locator("td[data-cell='A2']").First).ToHaveTextAsync("Inserted");
             await Expect(grid.Locator("td[data-cell='B3']").First).ToContainTextAsync("999");
@@ -306,7 +306,7 @@ public sealed class ViewerLiveBrowserTests : IDisposable
         InBrowser("slides-live", () =>
         {
             File.WriteAllText(_workspace.File("deck.md"), "# First slide\n\n- One\n\n# Second slide\n\n- Two\n");
-            _workspace.Run("slides", "create", "deck.pptx", "--from-markdown", "deck.md", "--output", "json").Succeeded();
+            _workspace.Run("slides", "create", "deck.pptx", "--from-markdown", "deck.md", "--output-format", "json").Succeeded();
             return _documents.Open(_workspace.File("deck.pptx"), new LiveDocumentOptions(), ViewerDocuments.PreviewHolder);
         },
         async (page, document) =>

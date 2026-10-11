@@ -222,9 +222,7 @@
           ".jpeg",
           ".jpg"
         ],
-        "aliases": [
-          "jpg"
-        ],
+        "aliases": [],
         "uses": [
           "convert",
           "render"
@@ -492,8 +490,8 @@
             "hasDefault": true,
             "default": "false",
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": false,
             "valueSource": "command-line",
@@ -559,8 +557,8 @@
             "hidden": false,
             "hasDefault": true,
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": true,
             "valueSource": "stdin",
@@ -635,8 +633,8 @@
             "hasDefault": true,
             "default": "false",
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": false,
             "valueSource": "command-line",
@@ -736,8 +734,8 @@
             "hasDefault": true,
             "default": "false",
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": false,
             "valueSource": "command-line",
@@ -802,8 +800,8 @@
             "hasDefault": true,
             "default": "false",
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": false,
             "valueSource": "command-line",
@@ -822,8 +820,8 @@
             "hasDefault": true,
             "default": "false",
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": false,
             "valueSource": "command-line",
@@ -842,8 +840,8 @@
             "hasDefault": true,
             "default": "false",
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": false,
             "valueSource": "command-line",
@@ -894,8 +892,8 @@
             "hasDefault": true,
             "default": "false",
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": false,
             "valueSource": "command-line",
@@ -948,8 +946,8 @@
             "hasDefault": true,
             "default": "false",
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": false,
             "valueSource": "command-line",
@@ -999,8 +997,8 @@
             "hidden": false,
             "hasDefault": true,
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": true,
             "valueSource": "stdin",
@@ -1019,8 +1017,8 @@
             "hasDefault": true,
             "default": "false",
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": false,
             "valueSource": "command-line",
@@ -1063,8 +1061,8 @@
             "hasDefault": true,
             "default": "false",
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": false,
             "valueSource": "command-line",
@@ -1117,8 +1115,8 @@
             "hasDefault": true,
             "default": "false",
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": false,
             "valueSource": "command-line",
@@ -1184,8 +1182,8 @@
             "hidden": false,
             "hasDefault": true,
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": true,
             "valueSource": "stdin",
@@ -1326,8 +1324,8 @@
             "hidden": false,
             "hasDefault": true,
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": true,
             "valueSource": "stdin",
@@ -1335,7 +1333,7 @@
             "description": "Read the password for the PDF from the first line of stdin."
           },
           {
-            "name": "--preview",
+            "name": "--sample",
             "aliases": [],
             "type": "boolean",
             "minimumArity": 0,
@@ -1346,13 +1344,13 @@
             "hasDefault": true,
             "default": "false",
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": false,
             "valueSource": "command-line",
             "inputKind": "none",
-            "description": "Include a bounded preview: the size and rotation of each page, up to 20 pages. Default: off."
+            "description": "Include a bounded sample: the size and rotation of each page, up to 20 pages. Default: off."
           }
         ],
         "arguments": [
@@ -1428,8 +1426,8 @@
             "hasDefault": true,
             "default": "false",
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": false,
             "valueSource": "command-line",
@@ -1479,8 +1477,8 @@
             "hidden": false,
             "hasDefault": true,
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": true,
             "valueSource": "stdin",
@@ -1563,8 +1561,8 @@
             "hidden": false,
             "hasDefault": true,
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": true,
             "valueSource": "stdin",
@@ -1691,8 +1689,8 @@
             "hidden": false,
             "hasDefault": true,
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": true,
             "valueSource": "stdin",
@@ -1735,8 +1733,8 @@
             "hasDefault": true,
             "default": "false",
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": false,
             "valueSource": "command-line",
@@ -1819,8 +1817,8 @@
             "hidden": false,
             "hasDefault": true,
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": true,
             "valueSource": "stdin",
@@ -1855,8 +1853,8 @@
             "hasDefault": true,
             "default": "false",
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": false,
             "valueSource": "command-line",
@@ -1916,8 +1914,8 @@
             "hasDefault": true,
             "default": "false",
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": false,
             "valueSource": "command-line",
@@ -2003,8 +2001,8 @@
             "hasDefault": true,
             "default": "false",
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": false,
             "valueSource": "command-line",
@@ -2070,8 +2068,8 @@
             "hidden": false,
             "hasDefault": true,
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": true,
             "valueSource": "stdin",
@@ -2232,8 +2230,8 @@
             "hasDefault": true,
             "default": "false",
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": false,
             "valueSource": "command-line",
@@ -2300,8 +2298,8 @@
             "hidden": false,
             "hasDefault": true,
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": true,
             "valueSource": "stdin",
@@ -2352,8 +2350,8 @@
             "hasDefault": true,
             "default": "false",
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": false,
             "valueSource": "command-line",
@@ -2396,8 +2394,8 @@
             "hasDefault": true,
             "default": "false",
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": false,
             "valueSource": "command-line",
@@ -2448,8 +2446,8 @@
             "hasDefault": true,
             "default": "false",
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": false,
             "valueSource": "command-line",
@@ -2515,8 +2513,8 @@
             "hidden": false,
             "hasDefault": true,
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": true,
             "valueSource": "stdin",
@@ -2590,8 +2588,8 @@
             "hidden": false,
             "hasDefault": true,
             "allowedValues": [
-              "False",
-              "True"
+              "false",
+              "true"
             ],
             "secret": true,
             "valueSource": "stdin",
@@ -4537,7 +4535,7 @@
           "$ref": "#/$defs/pdfSummary"
         },
         "pages": {
-          "description": "The first pages' geometry with --preview; a LIST_TRUNCATED warning names the page count when there are more.",
+          "description": "The first pages' geometry with --sample; a LIST_TRUNCATED warning names the page count when there are more.",
           "type": "array",
           "maxItems": 20,
           "items": {

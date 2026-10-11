@@ -57,15 +57,13 @@ internal static class SkillCommandGroup
             Description = "Agent host whose standard skills directory should be used.",
         }.WithInput(InputKind.None);
         hostOption.AcceptOnlyFromAmong(Codex, ClaudeCode, OpenCode);
-        var scopeOption = new Option<string>("--scope")
+        var userOption = new Option<bool>("--user")
         {
-            Description = "Install for the current project or the current user.",
-            DefaultValueFactory = _ => "project",
-        }.WithInput(InputKind.None);
-        scopeOption.AcceptOnlyFromAmong("project", "user");
+            Description = "Install for the current user instead of the project.",
+        };
         var dirOption = new Option<string?>("--dir")
         {
-            Description = "Project root used with --scope project. Default: current working directory.",
+            Description = "Project root used without --user. Default: current working directory.",
         }.WithInput(InputKind.None);
         var targetOption = new Option<string?>("--target")
         {
@@ -75,7 +73,7 @@ internal static class SkillCommandGroup
         var install = new Command("install", "Install a bundled Agent Skill for Codex, Claude Code, or OpenCode.");
         install.Arguments.Add(skillArgument);
         install.Options.Add(hostOption);
-        install.Options.Add(scopeOption);
+        install.Options.Add(userOption);
         install.Options.Add(dirOption);
         install.Options.Add(targetOption);
 
@@ -104,7 +102,7 @@ internal static class SkillCommandGroup
                 ? context.Paths.ResolveOutput(explicitTarget)
                 : ResolveHostParent(
                     host!,
-                    parseResult.GetValue(scopeOption)!,
+                    parseResult.GetValue(userOption),
                     parseResult.GetValue(dirOption),
                     context.Paths.BaseDirectory);
             return package.InstallInto(
@@ -115,9 +113,8 @@ internal static class SkillCommandGroup
         return install;
     }
 
-    internal static string ResolveHostParent(string host, string scope, string? projectDirectory, string baseDirectory)
+    internal static string ResolveHostParent(string host, bool user, string? projectDirectory, string baseDirectory)
     {
-        bool user = string.Equals(scope, "user", StringComparison.Ordinal);
         string root = user
             ? Environment.GetFolderPath(Environment.SpecialFolder.UserProfile, Environment.SpecialFolderOption.DoNotVerify)
             : Path.GetFullPath(projectDirectory ?? baseDirectory, baseDirectory);

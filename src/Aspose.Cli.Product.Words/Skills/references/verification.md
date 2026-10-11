@@ -23,9 +23,9 @@ The delivery checklist, the review protocol and font checks are in
 ## Read-back
 
 ```powershell
-aspose-cli words inspect output.docx --detail outline fields comments --output json
-aspose-cli words query blocks output.docx --blocks 1- --max-blocks 30 --scope full --output json
-aspose-cli words compare baseline.docx output.docx --output json
+aspose-cli words inspect output.docx --detail outline fields comments --output-format json
+aspose-cli words query blocks output.docx --blocks 1- --max-blocks 30 --scope full --output-format json
+aspose-cli words compare baseline.docx output.docx --output-format json
 ```
 
 Read the blocks the batch reported in `applied[].targets`, and blocks that

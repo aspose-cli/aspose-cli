@@ -37,9 +37,9 @@ public sealed class DirectoryOutputContractTests
         File.WriteAllText(workspace.File("content.txt"), "Directory output fixture");
         File.WriteAllText(workspace.File("content.md"), "# Directory output fixture\n\n- One point\n");
         (string[] create, string[] publish) = Cases[command];
-        CliResult created = workspace.Run([.. create, "--output", "json"]);
+        CliResult created = workspace.Run([.. create, "--output-format", "json"]);
         Assert.True(created.ExitCode == 0, created.StdErr);
-        CliResult first = workspace.Run([.. publish, "--output", "json"]);
+        CliResult first = workspace.Run([.. publish, "--output-format", "json"]);
         Assert.True(first.ExitCode == 0, first.StdErr);
         string[] published = Directory.GetFiles(workspace.File("parts"));
         Assert.NotEmpty(published);
@@ -48,13 +48,13 @@ public sealed class DirectoryOutputContractTests
             File.WriteAllText(file, "kept");
         }
 
-        CliResult refused = workspace.Run([.. publish, "--output", "json"]);
+        CliResult refused = workspace.Run([.. publish, "--output-format", "json"]);
         Assert.True(refused.ExitCode != 0, refused.StdOut);
         Assert.Equal("OUTPUT_EXISTS", JsonNode.Parse(refused.StdErr)!["error"]!["code"]!.GetValue<string>());
         Assert.Equal(published.Order(), Directory.GetFiles(workspace.File("parts")).Order());
         Assert.All(published, static file => Assert.Equal("kept", File.ReadAllText(file)));
 
-        CliResult replaced = workspace.Run([.. publish, "--overwrite", "--output", "json"]);
+        CliResult replaced = workspace.Run([.. publish, "--overwrite", "--output-format", "json"]);
         Assert.True(replaced.ExitCode == 0, replaced.StdErr);
         Assert.Equal(published.Order(), Directory.GetFiles(workspace.File("parts")).Order());
         Assert.All(published, static file => Assert.NotEqual("kept", File.ReadAllText(file)));
@@ -77,9 +77,9 @@ public sealed class DirectoryOutputContractTests
         using var workspace = new TempWorkspace();
         File.WriteAllText(workspace.File("content.md"), "# First\n\nOne\n\n# Second\n\nTwo\n");
         (string[] create, string[] publish) = MultiFileCases[command];
-        CliResult created = workspace.Run([.. create, "--output", "json"]);
+        CliResult created = workspace.Run([.. create, "--output-format", "json"]);
         Assert.True(created.ExitCode == 0, created.StdErr);
-        CliResult first = workspace.Run([.. publish, "--output", "json"]);
+        CliResult first = workspace.Run([.. publish, "--output-format", "json"]);
         Assert.True(first.ExitCode == 0, first.StdErr);
         string[] published = [.. Directory.GetFiles(workspace.File("parts")).Order(StringComparer.Ordinal)];
         Assert.True(published.Length > 1, first.StdOut);
@@ -90,7 +90,7 @@ public sealed class DirectoryOutputContractTests
         }
 
         File.WriteAllText(kept, "kept");
-        CliResult refused = workspace.Run([.. publish, "--output", "json"]);
+        CliResult refused = workspace.Run([.. publish, "--output-format", "json"]);
         Assert.True(refused.ExitCode != 0, refused.StdOut);
         Assert.Equal("OUTPUT_EXISTS", JsonNode.Parse(refused.StdErr)!["error"]!["code"]!.GetValue<string>());
         Assert.Equal([kept], Directory.GetFileSystemEntries(workspace.File("parts")));

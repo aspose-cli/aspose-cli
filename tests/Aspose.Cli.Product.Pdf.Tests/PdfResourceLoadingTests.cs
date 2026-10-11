@@ -26,7 +26,7 @@ public sealed class PdfResourceLoadingTests
         string[] supervision = worker ? ["--timeout", "30"] : [];
 
         CliResult result = workspace.Run(
-            ["pdf", "create", output, "--from-html", input, "--output", "json", .. supervision]);
+            ["pdf", "create", output, "--from-html", input, "--output-format", "json", .. supervision]);
 
         Assert.True(result.ExitCode == 0, result.StdErr);
         JsonNode response = JsonNode.Parse(result.StdOut)!;
@@ -269,7 +269,7 @@ public sealed class PdfResourceLoadingTests
             """);
 
         CliResult result = workspace.Run(
-            ["pdf", "create", output, "--from-html", input, "--allow-network-resources", "--output", "json"]);
+            ["pdf", "create", output, "--from-html", input, "--allow-network-resources", "--output-format", "json"]);
 
         Assert.True(result.ExitCode == 0, result.StdErr);
         Assert.Equal(2, server.RequestCount);
@@ -340,7 +340,7 @@ public sealed class PdfResourceLoadingTests
 
         // The deadline leaves a loaded machine time to start the worker and reach the silent server.
         CliResult result = workspace.Run(
-            ["pdf", "create", output, "--from-html", input, "--allow-network-resources", "--timeout", "15", "--output", "json"]);
+            ["pdf", "create", output, "--from-html", input, "--allow-network-resources", "--timeout", "15", "--output-format", "json"]);
 
         watch.Stop();
         await stop.CancelAsync();

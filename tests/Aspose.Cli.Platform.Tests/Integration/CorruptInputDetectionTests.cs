@@ -22,11 +22,11 @@ public sealed class CorruptInputDetectionTests
     {
         using var workspace = new TempWorkspace();
         WriteWordDocumentNamedPdf(workspace);
-        string[] args = ["pdf", "inspect", "renamed.pdf", "--output", "json"];
+        string[] args = ["pdf", "inspect", "renamed.pdf", "--output-format", "json"];
         if (supervised) { args = ["--timeout", "60", .. args]; }
 
         CliResult inspected = workspace.Run(args);
-        CliResult reviewed = workspace.Run("review", "renamed.pdf", "--output", "json");
+        CliResult reviewed = workspace.Run("review", "renamed.pdf", "--output-format", "json");
 
         // The product command and generic routing report a renamed file the same way.
         foreach (CliResult result in new[] { inspected, reviewed })
@@ -93,7 +93,7 @@ public sealed class CorruptInputDetectionTests
         File.WriteAllText(workspace.File("broken.pdf"), "%PDF-1.7\n1 0 obj\n<< /Type /Catalog /Pages");
 
         CliResult converted = workspace.Run(
-            "words", "convert", "broken.pdf", "--to", "docx", "--out", "out.docx", "--output", "json");
+            "words", "convert", "broken.pdf", "--to", "docx", "--out", "out.docx", "--output-format", "json");
 
         // Words reads PDF, so a damaged PDF is its own corrupt input, not a renamed file.
         Assert.Equal(3, converted.ExitCode);
@@ -108,7 +108,7 @@ public sealed class CorruptInputDetectionTests
         using var workspace = new TempWorkspace();
         File.WriteAllText(workspace.File("noise.pdf"), "neither a PDF nor anything else");
 
-        CliResult inspected = workspace.Run("pdf", "inspect", "noise.pdf", "--output", "json");
+        CliResult inspected = workspace.Run("pdf", "inspect", "noise.pdf", "--output-format", "json");
 
         Assert.Equal(3, inspected.ExitCode);
         JsonNode error = JsonNode.Parse(inspected.StdErr)!["error"]!;
@@ -120,7 +120,7 @@ public sealed class CorruptInputDetectionTests
     private static void WriteWordDocumentNamedPdf(TempWorkspace workspace)
     {
         File.WriteAllText(workspace.File("doc.md"), "# Title\n\nFirst paragraph.\n");
-        workspace.Run("words", "create", "doc.docx", "--markdown", "doc.md", "--output", "json").Succeeded();
+        workspace.Run("words", "create", "doc.docx", "--markdown", "doc.md", "--output-format", "json").Succeeded();
         File.Move(workspace.File("doc.docx"), workspace.File("renamed.pdf"));
     }
 

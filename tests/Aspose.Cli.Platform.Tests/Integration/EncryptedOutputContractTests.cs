@@ -34,14 +34,14 @@ public sealed class EncryptedOutputContractTests
         (string[]? setup, string[] publish, string output, string format) = Cases[command];
         if (setup is not null)
         {
-            CliResult prepared = workspace.Run([.. setup, "--output", "json"]);
+            CliResult prepared = workspace.Run([.. setup, "--output-format", "json"]);
             Assert.True(prepared.ExitCode == 0, prepared.StdErr);
         }
 
         string[] before = Directory.GetFileSystemEntries(workspace.Path);
         CliResult refused = workspace.RunWithEnv(
             new Dictionary<string, string?> { [PasswordVariable] = "output-secret" },
-            [.. publish, "--encrypt-env", PasswordVariable, "--output", "json"]);
+            [.. publish, "--encrypt-env", PasswordVariable, "--output-format", "json"]);
 
         Assert.True(refused.ExitCode != 0, refused.StdOut);
         JsonNode error = JsonNode.Parse(refused.StdErr)!["error"]!;

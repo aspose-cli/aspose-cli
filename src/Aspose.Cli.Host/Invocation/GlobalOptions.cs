@@ -1,4 +1,5 @@
 using System.CommandLine;
+using System.CommandLine.Help;
 using Aspose.Cli.Host.LocalServices;
 using Aspose.Cli.Host.Output;
 using Aspose.Cli.Sdk.Errors;
@@ -8,7 +9,7 @@ namespace Aspose.Cli.Host.Invocation;
 
 /// <summary>
 /// The options available on every command. Defined once and added to the
-/// root as recursive options, so `--output json` works at any position.
+/// root as recursive options, so `--output-format json` works at any position.
 /// </summary>
 internal sealed class GlobalOptions
 {
@@ -18,7 +19,7 @@ internal sealed class GlobalOptions
     /// <summary>The <c>--license-mode</c> value that reads no license source.</summary>
     internal const string EvaluationLicenseMode = "evaluation";
 
-    /// <summary>The accepted <c>--output</c> values, in help order.</summary>
+    /// <summary>The accepted <c>--output-format</c> values, in help order.</summary>
     private static readonly IReadOnlyDictionary<string, OutputMode> OutputModes =
         new Dictionary<string, OutputMode>(StringComparer.Ordinal)
         {
@@ -31,13 +32,13 @@ internal sealed class GlobalOptions
     public GlobalOptions(bool licensingApplicable)
     {
         License = null;
-        Output = new Option<string?>(GlobalOptionNames.Output, GlobalOptionNames.OutputAlias)
+        OutputFormat = new Option<string?>(GlobalOptionNames.OutputFormat)
         {
             Description = "Output format: json (contract envelopes), compact (the same JSON on one line), " +
                           "table (human text) or markdown. Default: table on a terminal, json when redirected.",
             Recursive = true,
         }.WithInput(InputKind.None);
-        Output.AcceptOnlyFromAmong([.. OutputModes.Keys]);
+        OutputFormat.AcceptOnlyFromAmong([.. OutputModes.Keys]);
 
         Quiet = new Option<bool>(GlobalOptionNames.Quiet, GlobalOptionNames.QuietAlias)
         {
@@ -87,7 +88,7 @@ internal sealed class GlobalOptions
         };
     }
 
-    public Option<string?> Output { get; }
+    public Option<string?> OutputFormat { get; }
 
     public Option<bool> Quiet { get; }
 
@@ -103,9 +104,19 @@ internal sealed class GlobalOptions
 
     public Option<long?> MaxInputBytes { get; }
 
+    /// <summary>
+    /// Adds the global options to the root and keeps only <c>--help</c> and <c>-h</c> of the
+    /// parser's help spellings.
+    /// </summary>
     public void AddTo(RootCommand root)
     {
-        root.Options.Add(Output);
+        ArgumentNullException.ThrowIfNull(root);
+        HelpOption help = root.Options.OfType<HelpOption>().Single();
+        foreach (string alias in help.Aliases.Where(static alias => alias != GlobalOptionNames.HelpAlias).ToArray())
+        {
+            help.Aliases.Remove(alias);
+        }
+        root.Options.Add(OutputFormat);
         root.Options.Add(Quiet);
         root.Options.Add(Verbose);
         if (License is not null)
@@ -160,7 +171,7 @@ internal sealed class GlobalOptions
         }
         long maxInputBytes = ResolveMaxInputBytes(requestedInputBytes ?? inherited?.MaxInputBytes);
         var values = new GlobalValues(
-            MapOutput(parseResult.GetValue(Output)),
+            MapOutputFormat(parseResult.GetValue(OutputFormat)),
             parseResult.GetValue(Quiet),
             parseResult.GetValue(Verbose),
             licensePath,
@@ -192,21 +203,21 @@ internal sealed class GlobalOptions
     /// <summary>
     /// Best-effort read of the output mode and quiet flag for rendering a parse
     /// error. Parsing has already failed, so an option may be unreadable (e.g.
-    /// <c>--output</c> itself carried the bad value); fall back to the redirect
-    /// heuristic so a usage error still honors <c>--output json</c> when it can.
+    /// <c>--output-format</c> itself carried the bad value); fall back to the redirect
+    /// heuristic so a usage error still honors <c>--output-format json</c> when it can.
     /// </summary>
-    public (OutputMode Output, bool Quiet) ResolveForErrorReporting(ParseResult parseResult)
+    public (OutputMode OutputFormat, bool Quiet) ResolveForErrorReporting(ParseResult parseResult)
     {
         ArgumentNullException.ThrowIfNull(parseResult);
 
         OutputMode mode;
         try
         {
-            mode = MapOutput(parseResult.GetValue(Output));
+            mode = MapOutputFormat(parseResult.GetValue(OutputFormat));
         }
         catch (InvalidOperationException)
         {
-            mode = MapOutput(null);
+            mode = MapOutputFormat(null);
         }
 
         bool quiet;
@@ -226,7 +237,7 @@ internal sealed class GlobalOptions
     /// Resolves only non-secret output flags when composition failed before a
     /// <see cref="ParseResult"/> could reach the normal command boundary.
     /// </summary>
-    internal static (OutputMode Output, bool Quiet) ResolveForProcessFailure(
+    internal static (OutputMode OutputFormat, bool Quiet) ResolveForProcessFailure(
         IReadOnlyList<string> args)
     {
         ArgumentNullException.ThrowIfNull(args);
@@ -247,20 +258,16 @@ internal sealed class GlobalOptions
             }
 
             string? candidate = null;
-            if (argument is GlobalOptionNames.Output or GlobalOptionNames.OutputAlias)
+            if (argument == GlobalOptionNames.OutputFormat)
             {
                 if (index + 1 < args.Count)
                 {
                     candidate = args[++index];
                 }
             }
-            else if (argument.StartsWith(GlobalOptionNames.Output + "=", StringComparison.Ordinal))
+            else if (argument.StartsWith(GlobalOptionNames.OutputFormat + "=", StringComparison.Ordinal))
             {
-                candidate = argument[(GlobalOptionNames.Output.Length + 1)..];
-            }
-            else if (argument.StartsWith(GlobalOptionNames.OutputAlias + "=", StringComparison.Ordinal))
-            {
-                candidate = argument[(GlobalOptionNames.OutputAlias.Length + 1)..];
+                candidate = argument[(GlobalOptionNames.OutputFormat.Length + 1)..];
             }
 
             if (candidate is not null && OutputModes.ContainsKey(candidate))
@@ -269,14 +276,14 @@ internal sealed class GlobalOptions
             }
         }
 
-        return (MapOutput(output), quiet);
+        return (MapOutputFormat(output), quiet);
     }
 
-    /// <summary>Whether a value is one of the accepted <c>--output</c> modes.</summary>
+    /// <summary>Whether a value is one of the accepted <c>--output-format</c> modes.</summary>
     internal static bool IsOutputMode(string value) => OutputModes.ContainsKey(value);
 
     // Agents typically read the CLI through a pipe; humans get a table.
-    private static OutputMode MapOutput(string? value) =>
+    private static OutputMode MapOutputFormat(string? value) =>
         value is not null && OutputModes.TryGetValue(value, out OutputMode mode) ? mode
         : Console.IsOutputRedirected ? OutputMode.Json : OutputMode.Table;
 
@@ -300,7 +307,7 @@ internal sealed class GlobalOptions
 
 /// <summary>Resolved global option values for one invocation.</summary>
 internal sealed record GlobalValues(
-    OutputMode Output,
+    OutputMode OutputFormat,
     bool Quiet,
     bool Verbose,
     string? LicensePath,

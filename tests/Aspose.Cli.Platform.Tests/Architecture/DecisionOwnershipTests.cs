@@ -197,7 +197,7 @@ public sealed partial class DecisionOwnershipTests
     {
         using var workspace = new TempWorkspace();
 
-        CliResult result = workspace.Run("cells", "query", "range", "missing.xlsx", "--scan-rang", "A1", "--output", "json");
+        CliResult result = workspace.Run("cells", "query", "range", "missing.xlsx", "--scan-rang", "A1", "--output-format", "json");
 
         Assert.Equal(2, result.ExitCode);
         Assert.DoesNotContain("--scan-range", result.StdErr, StringComparison.Ordinal);

@@ -27,10 +27,10 @@ specific to workbooks.
 Structure first, then windows of one sheet:
 
 ```
-aspose-cli cells inspect book.xlsx --output compact
-aspose-cli cells inspect book.xlsx --preview --detail names errors --output json
-aspose-cli cells query range book.xlsx --sheet Sales --range A1:F50 --output json
-aspose-cli cells query search book.xlsx --pattern "Total" --output json
+aspose-cli cells inspect book.xlsx --output-format compact
+aspose-cli cells inspect book.xlsx --sample --detail names errors --output-format json
+aspose-cli cells query range book.xlsx --sheet Sales --range A1:F50 --output-format json
+aspose-cli cells query search book.xlsx --pattern "Total" --output-format json
 ```
 
 - `--detail` adds `names` (`workbook.definedNames`), `errors`
@@ -38,7 +38,7 @@ aspose-cli cells query search book.xlsx --pattern "Total" --output json
   `layout` (`workbook.layouts`: frozen panes, outline groups, AutoFilter,
   print area and titles, page setup other than paper size and margins),
   `fonts`, `tables`, `charts` and `pivots`.
-- `--preview` shows display values for layout only. `query range` and its `t`
+- `--sample` shows display values for layout only. `query range` and its `t`
   field (`string`, `number`, `boolean`, `datetime`, `error`, `empty`) are the
   type authority.
 - `--scope values` (default), `formulas` (adds `f`), `styles` (a
@@ -74,7 +74,7 @@ aspose-cli cells query search book.xlsx --pattern "Total" --output json
 ```
 
 ```
-aspose-cli cells edit book.xlsx --ops ops.json --in-place --backup --verify --output json
+aspose-cli cells edit book.xlsx --ops ops.json --in-place --backup --verify --output-format json
 aspose-cli cells edit book.xlsx --in-place --set "Sales!B3=42" --set "Sales!G2==E2*F2"
 aspose-cli schema v2/cells/ops --operation format_range
 ```
@@ -95,7 +95,7 @@ aspose-cli schema v2/cells/ops --operation format_range
 | tier | check |
 |------|-------|
 | values | `cells query range` every changed range |
-| visual | `aspose-cli review book.xlsx --out <new-dir> --output json`, then open every sheet image |
+| visual | `aspose-cli review book.xlsx --out <new-dir> --output-format json`, then open every sheet image |
 | widths | `cells render --sheet S --range A1:G20` |
 | semantic | `cells inspect --detail errors` reports no formula errors; `cells query search` finds no placeholders |
 | session | `cells compare book.backup.xlsx book.xlsx` lists only intended value and formula changes |

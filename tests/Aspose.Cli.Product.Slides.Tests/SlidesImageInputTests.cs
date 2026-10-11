@@ -64,7 +64,7 @@ public sealed class SlidesImageInputTests
         File.WriteAllBytes(workspace.File("chart.png"), png[..(png.Length / 2)]);
         File.WriteAllText(workspace.File("outline.md"), "# Results\n\n![Chart](chart.png)\n");
 
-        CliResult created = workspace.Run("slides", "create", "deck.pptx", "--from-markdown", "outline.md", "--output", "json");
+        CliResult created = workspace.Run("slides", "create", "deck.pptx", "--from-markdown", "outline.md", "--output-format", "json");
 
         Assert.True(created.ExitCode == 3, created.StdErr);
         JsonNode error = JsonNode.Parse(created.StdErr)!["error"]!;

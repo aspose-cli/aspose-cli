@@ -5,9 +5,9 @@ examples/report-from-markdown. The bundled
 [report.md](report.md) contains synthetic quarterly figures.
 
 ```powershell
-aspose-cli words create report.docx --markdown report.md --title "Quarterly Report" --output json
-aspose-cli words inspect report.docx --detail outline properties sections --output json
-aspose-cli review report.docx --out report.review --output json
+aspose-cli words create report.docx --markdown report.md --title "Quarterly Report" --output-format json
+aspose-cli words inspect report.docx --detail outline properties sections --output-format json
+aspose-cli review report.docx --out report.review --output-format json
 ```
 
 The document contains a Summary heading and a metrics table with a header

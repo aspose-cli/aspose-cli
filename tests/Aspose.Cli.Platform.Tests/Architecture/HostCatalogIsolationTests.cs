@@ -37,9 +37,9 @@ public sealed class HostCatalogIsolationTests
         Assert.True(capabilities.TryGetHelpMetadata(out CommandHelpMetadata? metadata));
         Assert.Equal(
         [
-            "aspose-cli capabilities --output json",
-            "aspose-cli capabilities <product> --output json",
-            "aspose-cli capabilities <product> <verb> --output json",
+            "aspose-cli capabilities --output-format json",
+            "aspose-cli capabilities <product> --output-format json",
+            "aspose-cli capabilities <product> <verb> --output-format json",
         ],
             metadata!.Examples);
 
@@ -49,7 +49,7 @@ public sealed class HostCatalogIsolationTests
         Assert.Equal(
         [
             "aspose-cli review <file>",
-            "aspose-cli review <file> --out evidence --max-items 50 --output json",
+            "aspose-cli review <file> --out evidence --max-items 50 --output-format json",
         ],
             metadata!.Examples);
     }

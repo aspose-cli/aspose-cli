@@ -116,22 +116,32 @@ internal sealed class ParsedInvocation
     {
         foreach (ParseError error in ParseResult.Errors)
         {
-            (IReadOnlyList<string> allowed, IReadOnlyList<Token> tokens) = error.SymbolResult switch
+            (Option? option, IReadOnlyList<string> allowed, IReadOnlyList<Token> tokens) = error.SymbolResult switch
             {
-                OptionResult option => (OptionCompletions.Read(option.Option), option.Tokens),
-                ArgumentResult { Parent: OptionResult option } argument => (OptionCompletions.Read(option.Option), argument.Tokens),
-                ArgumentResult argument => (OptionCompletions.Read(argument.Argument), argument.Tokens),
-                _ => ([], []),
+                OptionResult result => (result.Option, OptionCompletions.Read(result.Option), result.Tokens),
+                ArgumentResult { Parent: OptionResult result } argument => (result.Option, OptionCompletions.Read(result.Option), argument.Tokens),
+                ArgumentResult argument => (null, OptionCompletions.Read(argument.Argument), argument.Tokens),
+                _ => (null, [], []),
             };
             if (allowed.Count > 0
                 && tokens.Select(static token => token.Value).LastOrDefault(value => !allowed.Contains(value, StringComparer.Ordinal)) is { } value)
             {
-                return Mistake.Of(value, allowed);
+                return Mistake.Of(value, allowed, meant: option?.Name == GlobalOptionNames.OutputFormat ? TargetFormat(value) : null);
             }
         }
 
         return null;
     }
+
+    /// <summary>
+    /// A file format given to <c>--output-format</c>, which selects how results are printed:
+    /// <c>--to</c> with that format when the command writes it; null otherwise.
+    /// </summary>
+    private string? TargetFormat(string value) =>
+        Command.Options.FirstOrDefault(static option => option.Name == "--to") is { } to
+        && OptionCompletions.Read(to).Contains(value, StringComparer.Ordinal)
+            ? $"--to {value}"
+            : null;
 }
 
 /// <summary>One command tree for CLI execution, supervision and MCP authorization.</summary>
@@ -146,7 +156,7 @@ internal sealed class InvocationParser(RootCommand root, GlobalOptions globals)
     internal ParsedInvocation Parse(string[] args, GlobalValues? inherited = null) =>
         new(root.Parse(args, Configuration), globals, inherited);
 
-    internal (OutputMode Output, bool Quiet) ResolveErrorOutput(IReadOnlyList<string> args) =>
+    internal (OutputMode OutputFormat, bool Quiet) ResolveErrorOutput(IReadOnlyList<string> args) =>
         globals.ResolveForErrorReporting(root.Parse(args, Configuration));
 
     /// <summary>The host commands MCP <c>execute</c> may run, as command paths in tree order.</summary>

@@ -26,7 +26,7 @@ public sealed class InputAdmissionTests
         string[] command =
         [
             "--workdir", work, "--max-input-bytes=64",
-            "pdf", "create", "--from-text", "source.txt", name, "--output", "json",
+            "pdf", "create", "--from-text", "source.txt", name, "--output-format", "json",
         ];
 
         CliResult refused = workspace.Run(command);
@@ -40,7 +40,7 @@ public sealed class InputAdmissionTests
 
         CliResult tooLarge = workspace.Run(
             "--workdir", work, "pdf", "inspect", name,
-            "--max-input-bytes", "64", "--output", "json");
+            "--max-input-bytes", "64", "--output-format", "json");
         Assert.Equal(3, tooLarge.ExitCode);
         Assert.Equal("FILE_TOO_LARGE", JsonNode.Parse(tooLarge.StdErr)!["error"]!["code"]!.GetValue<string>());
         Assert.Equal(
@@ -63,7 +63,7 @@ public sealed class InputAdmissionTests
         {
             CliResult result = workspace.Run(
                 product, "create", sourceOption + "=" + (absolute ? source : Path.GetFileName(source)),
-                output, "--max-input-bytes", "64", "--output", "json");
+                output, "--max-input-bytes", "64", "--output-format", "json");
             Assert.Equal(3, result.ExitCode);
             Assert.Equal("FILE_TOO_LARGE", JsonNode.Parse(result.StdErr)!["error"]!["code"]!.GetValue<string>());
             Assert.False(File.Exists(output));
@@ -82,7 +82,7 @@ public sealed class InputAdmissionTests
         // The host tests cover every alias and the '=' spelling of an output option.
         CliResult result = workspace.Run(
             ["cells", "convert", "source.csv", "--to", "xlsx", "-o=result.xlsx",
-             "--overwrite", "--max-input-bytes", "64", "--output", "json"]);
+             "--overwrite", "--max-input-bytes", "64", "--output-format", "json"]);
 
         Assert.True(result.ExitCode == 0, result.StdErr);
         Assert.NotEqual(original, File.ReadAllBytes(output));

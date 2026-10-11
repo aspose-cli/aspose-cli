@@ -41,7 +41,7 @@ public sealed class OutputIsInputContractTests
         }
         (string[] arguments, string parameter) = Cases[shape];
 
-        CliResult result = workspace.Run([.. arguments, "--output", "json"]);
+        CliResult result = workspace.Run([.. arguments, "--output-format", "json"]);
 
         Assert.True(result.ExitCode == 2, $"exit {result.ExitCode}: {result.StdErr}");
         JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;

@@ -152,7 +152,7 @@ public sealed class TextTableLayoutTests : IDisposable
             "销售明细报表\n查询条件: 2026-01-01 至 2026-03-31\n日期,地区,产品,金额\n2026-01-05,北京,甲,100\n2026-01-06,上海,乙,200\n\n2026-02-01,广州,甲,300\n合计,,,600\n",
             new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
 
-        JsonNode[] warnings = LayoutWarnings(_workspace.Run("cells", "inspect", "erp.csv", "--output", "json").Json());
+        JsonNode[] warnings = LayoutWarnings(_workspace.Run("cells", "inspect", "erp.csv", "--output-format", "json").Json());
 
         Assert.Equal(3, warnings.Length);
         Assert.Contains("header is probably row 3; rows 1-2", Text(warnings[0], "message"), StringComparison.Ordinal);
@@ -166,11 +166,11 @@ public sealed class TextTableLayoutTests : IDisposable
         Assert.Equal("8:8", Text(warnings[2], "location"));
 
         JsonNode converted = _workspace.Run(
-            "cells", "convert", "erp.csv", "--to", "xlsx", "--out", "erp.xlsx", "--output", "json").Json();
+            "cells", "convert", "erp.csv", "--to", "xlsx", "--out", "erp.xlsx", "--output-format", "json").Json();
         Assert.Equal(3, LayoutWarnings(converted).Length);
         // The hinted command works as written on the converted workbook too.
         JsonNode header = _workspace.Run(
-            "cells", "query", "range", "erp.xlsx", "--sheet", "erp", "--range", "A3:D3", "--output", "json").Json();
+            "cells", "query", "range", "erp.xlsx", "--sheet", "erp", "--range", "A3:D3", "--output-format", "json").Json();
         Assert.Equal("日期", header["sheet"]!["cells"]![0]![0]!["v"]!.GetValue<string>());
     }
 
@@ -182,7 +182,7 @@ public sealed class TextTableLayoutTests : IDisposable
             new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
 
         JsonNode[] warnings = LayoutWarnings(_workspace.Run(
-            "cells", "convert", "preamble.csv", "--to", "xlsx", "--out", "preamble.xlsx", "--output", "json").Json());
+            "cells", "convert", "preamble.csv", "--to", "xlsx", "--out", "preamble.xlsx", "--output-format", "json").Json());
 
         // The empty row lies before the header, so it is part of the preamble, not of the table.
         JsonNode warning = Assert.Single(warnings);
@@ -196,7 +196,7 @@ public sealed class TextTableLayoutTests : IDisposable
     {
         File.WriteAllText(_workspace.File("clean.csv"), "Region,Sales\nIT,5\nES,7\n");
 
-        Assert.Empty(LayoutWarnings(_workspace.Run("cells", "inspect", "clean.csv", "--output", "json").Json()));
+        Assert.Empty(LayoutWarnings(_workspace.Run("cells", "inspect", "clean.csv", "--output-format", "json").Json()));
     }
 
     [Fact]
@@ -204,7 +204,7 @@ public sealed class TextTableLayoutTests : IDisposable
     {
         File.WriteAllText(_workspace.File("unnamed.csv"), "Name,Amount\nAnn,5,a,b,c\nBob,7,d,e,f\n");
 
-        Assert.Empty(LayoutWarnings(_workspace.Run("cells", "inspect", "unnamed.csv", "--output", "json").Json()));
+        Assert.Empty(LayoutWarnings(_workspace.Run("cells", "inspect", "unnamed.csv", "--output-format", "json").Json()));
     }
 
     public void Dispose() => _workspace.Dispose();

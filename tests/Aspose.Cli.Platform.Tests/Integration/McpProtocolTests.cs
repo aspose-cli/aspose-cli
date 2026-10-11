@@ -32,9 +32,9 @@ public sealed class McpProtocolTests
 
             string[][] variants =
             [
-                ["--max-input-bytes", "1048576", "--quiet=false", "-f", "json", "cells", "inspect", "input.csv"],
-                ["--max-input-bytes=1048576", "cells", "--verbose=false", "inspect", "input.csv", "--output=json"],
-                ["cells", "inspect", "input.csv", "-q=false", "-f=json", "--max-input-bytes=1048576"],
+                ["--max-input-bytes", "1048576", "--quiet=false", "--output-format", "json", "cells", "inspect", "input.csv"],
+                ["--max-input-bytes=1048576", "cells", "--verbose=false", "inspect", "input.csv", "--output-format=json"],
+                ["cells", "inspect", "input.csv", "-q=false", "--output-format=json", "--max-input-bytes=1048576"],
             ];
             foreach (string[] args in variants)
             {
@@ -48,12 +48,12 @@ public sealed class McpProtocolTests
         async Task Chain()
         {
             await using var server = await McpTestServer.Start(temp.Path, work);
-            AssertSuccess(await server.Execute(["cells", "create", "book.xlsx", "--sheets", "Data", "--output=json"]));
+            AssertSuccess(await server.Execute(["cells", "create", "book.xlsx", "--sheets", "Data", "--output-format=json"]));
             const string ops = """{"ops":[{"op":"set_values","sheet":"Data","range":"A1","values":[[42]]}]}""";
             AssertSuccess(await server.Execute(
-                ["cells", "edit", "book.xlsx", "--ops=-", "--in-place", "--output=json"], ops));
+                ["cells", "edit", "book.xlsx", "--ops=-", "--in-place", "--output-format=json"], ops));
             JsonNode queried = await server.Execute(
-                ["cells", "query", "range", "book.xlsx", "--sheet", "Data", "--range", "A1", "--output=json"]);
+                ["cells", "query", "range", "book.xlsx", "--sheet", "Data", "--range", "A1", "--output-format=json"]);
             AssertSuccess(queried);
             Assert.Equal(42, JsonNode.Parse(queried["result"]!["structuredContent"]!["stdout"]!.GetValue<string>())!["sheet"]!["cells"]![0]![0]!["v"]!.GetValue<int>());
         }
@@ -61,7 +61,7 @@ public sealed class McpProtocolTests
         async Task Refusals()
         {
             await using var server = await McpTestServer.Start(temp.Path, work);
-            JsonNode oversized = await server.Execute(["cells", "inspect", "Data", "--output=json"]);
+            JsonNode oversized = await server.Execute(["cells", "inspect", "Data", "--output-format=json"]);
             Assert.Equal("FILE_TOO_LARGE", JsonNode.Parse(oversized["result"]!["structuredContent"]!["stderr"]!.GetValue<string>())!["error"]!["code"]!.GetValue<string>());
 
             foreach (string[] args in new string[][]
@@ -96,7 +96,7 @@ public sealed class McpProtocolTests
         await using var server = await McpTestServer.Start(temp.Path, work, variables, ["--license", "selected.lic"]);
         foreach (bool supervised in new[] { false, true })
         {
-            string[] args = ["cells", "inspect", "input.csv", "--workdir", other, "--output=json"];
+            string[] args = ["cells", "inspect", "input.csv", "--workdir", other, "--output-format=json"];
             if (supervised) { args = ["--timeout=10", .. args]; }
             JsonNode inherited = Error(await server.Execute(args));
             Assert.Equal("LICENSE_INVALID", inherited["code"]!.GetValue<string>());
@@ -129,12 +129,12 @@ public sealed class McpProtocolTests
         async Task Calls(bool supervised)
         {
             await using var server = await McpTestServer.Start(temp.Path, work, variables, ["--license-mode", "evaluation"]);
-            string[] args = ["cells", "inspect", "input.csv", "--output=json"];
+            string[] args = ["cells", "inspect", "input.csv", "--output-format=json"];
             if (supervised) { args = ["--timeout=10", .. args]; }
             JsonNode inherited = reply(await server.Execute(args));
             Assert.Equal("evaluation", inherited["license"]!["mode"]!.GetValue<string>());
 
-            JsonNode status = reply(await server.Execute(["license", "status", "--product", "cells", "--output=json"]));
+            JsonNode status = reply(await server.Execute(["license", "status", "--product", "cells", "--output-format=json"]));
             Assert.Equal("requested", status["products"]![0]!["source"]!.GetValue<string>());
 
             JsonNode replaced = Error(await server.Execute([.. args, "--license-mode=auto"]));
@@ -162,7 +162,7 @@ public sealed class McpProtocolTests
         byte[] bytes = "PK\x03\x04invalid synthetic docx"u8.ToArray();
         File.WriteAllBytes(input, bytes);
         await using var server = await McpTestServer.Start(temp.Path, temp.Path);
-        string[] args = ["words", "inspect", "malformed.docx", "--output", "json"];
+        string[] args = ["words", "inspect", "malformed.docx", "--output-format", "json"];
         if (supervised) { args = ["--timeout", "15", .. args]; }
 
         JsonNode reply = await server.Execute(args);

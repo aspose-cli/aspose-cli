@@ -21,7 +21,7 @@ overview adds the checks specific to its documents.
 ## The review protocol
 
 ```text
-aspose-cli review <file> --out <new-dir> --output json
+aspose-cli review <file> --out <new-dir> --output-format json
 ```
 
 `review` renders the document into a new evidence directory: `index.html`
@@ -54,7 +54,7 @@ image you did not open; state the coverage you actually inspected.
 
 ## Review checks
 
-Findings come from declared checks. `aspose-cli capabilities --output json`
+Findings come from declared checks. `aspose-cli capabilities --output-format json`
 lists each product's checks under `products[].review.checks`, each with
 `code`, `severity` and `summary`; `aspose-cli capabilities <product>` narrows
 the list.
@@ -72,7 +72,7 @@ Missing fonts are substituted silently and change text metrics, line breaks
 and pagination.
 
 ```text
-aspose-cli fonts check <file> --output json
+aspose-cli fonts check <file> --output-format json
 ```
 
 `fonts check` reports `allAvailable` and, for each font the document uses,
