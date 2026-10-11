@@ -54,6 +54,8 @@ public sealed class PartSelectionOptions
         ArgumentException.ThrowIfNullOrWhiteSpace(part);
         _range = new PartRangeOption(part, string.Create(CultureInfo.InvariantCulture, $"every {part}; at most {RenderSelection.MaximumParts} per run"));
         Options = _range.Options;
+        // Several parts are numbered by part: the ones a closed selection names.
+        NumberedParts.Declare(Options[0], parse => Read(parse) is { Last: { } last } selection ? selection.Resolve(last) : null);
     }
 
     /// <summary>The option, for a product command's option list.</summary>

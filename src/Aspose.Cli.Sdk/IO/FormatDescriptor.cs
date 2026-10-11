@@ -139,6 +139,20 @@ public sealed record FormatDescriptor
     public bool Protectable { get; init; }
 
     /// <summary>
+    /// Whether a file of this format is an image, which shows a document rather than keeping a
+    /// copy of it, so the write pipeline never discloses it as one that lost the encryption of
+    /// its input. Every render format is an image; a product declares it for an image format it
+    /// only converts to, such as <c>tiff</c>.
+    /// </summary>
+    public bool Image
+    {
+        get => _image || Uses.HasFlag(FormatUse.Render);
+        init => _image = value;
+    }
+
+    private readonly bool _image;
+
+    /// <summary>
     /// Whether the engine writes companion files, such as scripts and style sheets, beside an
     /// output of this format; the SDK publishes them with the named file as one set.
     /// </summary>

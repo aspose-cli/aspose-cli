@@ -230,9 +230,10 @@ one should restart.
   when it is wrong; without `passwordEnv` it removes the restrictions whatever
   their password, so use it only when the user owns that decision.
 - An encrypted input needs `--password-env` to open, and `inspect` reports
-  it as `input.encrypted`. Its output keeps the
+  it as `input.encrypted`. Its edited or converted output, the parts of a
+  split and the redline of a comparison of it (as the original) keep the
   password when the output format supports encryption; `--encrypt-env`
-  replaces it. A format that cannot be encrypted produces
+  replaces it on `edit` and `convert`. A format that cannot be encrypted produces
   `ENCRYPTION_REMOVED`, and `--encrypt-env` with such a format is
   `OPTION_INVALID`. A read password for a plaintext input does not encrypt the
   output. A dry run does not report removed encryption.

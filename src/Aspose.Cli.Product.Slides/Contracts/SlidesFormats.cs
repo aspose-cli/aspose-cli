@@ -27,8 +27,8 @@ public static class SlidesFormats
         FormatDescriptor.Routed("html5", FormatUse.Convert, null, 7, null, ".html", ".htm") with { CompanionFiles = true },
         FormatDescriptor.Routed("png", FormatUse.Convert | FormatUse.Render, null, 8, 0, ".png"),
         FormatDescriptor.Routed("jpeg", FormatUse.Convert | FormatUse.Render, null, 9, 1, ".jpg", ".jpeg"),
-        FormatDescriptor.Routed("tiff", FormatUse.Convert, null, 10, null, ".tiff", ".tif"),
-        FormatDescriptor.Routed("gif", FormatUse.Convert, null, 11, null, ".gif"),
+        FormatDescriptor.Routed("tiff", FormatUse.Convert, null, 10, null, ".tiff", ".tif") with { Image = true },
+        FormatDescriptor.Routed("gif", FormatUse.Convert, null, 11, null, ".gif") with { Image = true },
         FormatDescriptor.Routed("svg", FormatUse.Convert | FormatUse.Render, null, 12, 2, ".svg"),
         FormatDescriptor.Routed("md", FormatUse.Convert, null, 13, null, ".md", ".markdown"),
     ], SlidesFormatRecognition.Rules);

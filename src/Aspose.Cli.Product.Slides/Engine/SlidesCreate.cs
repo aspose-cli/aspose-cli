@@ -42,7 +42,8 @@ internal static class SlidesCreate
             {
                 presentation.Save(temp, SlidesEngineFormats.SaveFormatOf(format));
                 template.Resources.ThrowIfFailed();
-            });
+            },
+            encrypted: presentation.ProtectionManager.IsEncrypted);
         return new SlidesCreateResult
         {
             Output = FileObjects.Output(written, request.Output.Format, presentation.ProtectionManager.IsEncrypted),

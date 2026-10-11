@@ -125,6 +125,13 @@ forms, such as `--password-env`, `--encrypt-env` and `--password-stdin`;
 `--password` and `--encrypt` are visible in the process list. Only one option
 reads stdin in one command.
 
+An output made from an encrypted input keeps its password when the output
+format can carry one, unless `--encrypt-env` replaces it; `output.encrypted`
+states whether the written file is encrypted. Any document, workbook,
+presentation or text output that does not keep an input's encryption warns
+`ENCRYPTION_REMOVED`; images and the files `extract` writes never do. Each
+product Skill says which of its outputs keep it.
+
 ## When a target is not found
 
 A not-found error (`SHEET_NOT_FOUND`, `PAGE_NOT_FOUND`, `BOOKMARK_NOT_FOUND`,

@@ -38,6 +38,7 @@ internal sealed class CellsSavePipeline(OutputPipeline<Workbook> outputs, CellsW
             path => Produce(workbook, plan, path),
             backupPath: output.BackupPath,
             inputPrecondition: inputPrecondition,
+            encrypted: plan.Encrypts,
             verify: verifyReopen ? path =>
             {
                 using LoadedWorkbook reopened = loader.OpenPublishedCandidate(path, plan.OutputPassword);
@@ -61,15 +62,17 @@ internal sealed class CellsSavePipeline(OutputPipeline<Workbook> outputs, CellsW
 
     /// <summary>
     /// Publishes a file saved from <paramref name="workbook"/>, or from the one sheet of it that
-    /// <paramref name="singleSheet"/> names, which carries no evaluation mark of the workbook's.
+    /// <paramref name="singleSheet"/> names, which carries no evaluation mark of the workbook's;
+    /// <paramref name="encrypted"/> says whether the file carries a password.
     /// </summary>
     internal PublishedFile Write(
         string outputPath,
         bool overwrite,
         Workbook workbook,
         bool singleSheet,
+        bool encrypted,
         Action<string> save) =>
-        _outputs.Write(outputPath, overwrite, singleSheet ? null : workbook, save);
+        _outputs.Write(outputPath, overwrite, singleSheet ? null : workbook, save, encrypted: encrypted);
 
     internal void NormalizeDatesForTextExport(Worksheet sheet)
     {

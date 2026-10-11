@@ -107,7 +107,7 @@ public sealed record PdfSummary
     /// <summary>
     /// The password this run opened the file with: <c>none</c> when it needed none (an unencrypted
     /// file, or one with only an owner password), <c>user</c> for the open password, <c>owner</c>
-    /// for the owner password. <c>permissions.hasOpenPassword</c> and <c>hasOwnerPassword</c> state
+    /// for the owner password, also when it is the open password too. <c>permissions.hasOpenPassword</c> and <c>hasOwnerPassword</c> state
     /// which passwords the file has.
     /// </summary>
     [AllowedValues("none", "user", "owner")]
@@ -278,7 +278,10 @@ public sealed record PdfPermissionInfo
     /// <summary>Whether the file needs a password to open.</summary>
     public required bool HasOpenPassword { get; init; }
 
-    /// <summary>Whether the file has an owner password, which lifts its permissions.</summary>
+    /// <summary>
+    /// Whether the file has an owner password, which lifts its permissions; it may also be the
+    /// open password, as <c>--encrypt</c> writes it.
+    /// </summary>
     public required bool HasOwnerPassword { get; init; }
 
     /// <summary>

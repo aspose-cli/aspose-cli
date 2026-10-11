@@ -196,9 +196,13 @@ public sealed class OutputTarget
     public static OutputTarget File(string description, IReadOnlyList<FormatDescriptor> writes, bool required = false, string? derivedMarker = null) =>
         new(OutputKind.File, Help(description), null, required, Declared(writes), derivedMarker);
 
-    /// <summary>A set of files in the directory named by the required <c>--out-dir</c>, beside <c>--overwrite</c>.</summary>
-    public static OutputTarget Directory(string description) =>
-        new(OutputKind.Directory, null, Help(description), required: true);
+    /// <summary>
+    /// A set of files in the directory named by the required <c>--out-dir</c>, beside
+    /// <c>--overwrite</c>, in one of <paramref name="writes"/> when the command declares them, as
+    /// a command that can encrypt its parts (<c>--encrypt</c>) must.
+    /// </summary>
+    public static OutputTarget Directory(string description, IReadOnlyList<FormatDescriptor>? writes = null) =>
+        new(OutputKind.Directory, null, Help(description), required: true, writes);
 
     /// <summary>
     /// Either a set of files in the directory named by <c>--out-dir</c> or one file named by
@@ -266,6 +270,9 @@ public sealed class StandardOptions
 
     // The target format of every --to option, so a command can find the commands that write a format.
     private static readonly ConditionalWeakTable<Option, TargetFormat> Targets = new();
+
+    // The common parameters of every command created here, so a command can find what another writes and protects.
+    private static readonly ConditionalWeakTable<Command, StandardOptions> Created = new();
 
     /// <summary>Maps the traits to their common parameters.</summary>
     /// <exception cref="ArgumentException">The traits contradict each other.</exception>
@@ -459,6 +466,7 @@ public sealed class StandardOptions
                 nameof(parameters));
         }
 
+        Created.AddOrUpdate(command, this);
         return command;
     }
 
@@ -542,6 +550,19 @@ public sealed class StandardOptions
         + "A dry run that succeeds does not guarantee that the edit succeeds.";
 
     private static Option<bool> CreateDryRun(string description) => new(StandardOptionNames.DryRun) { Description = description };
+
+    /// <summary>The common parameters of a command created here, or null for any other command.</summary>
+    internal static StandardOptions? Of(Command command) =>
+        Created.TryGetValue(command, out StandardOptions? options) ? options : null;
+
+    /// <summary>
+    /// The formats among those the command writes that can carry the password its
+    /// <c>--encrypt</c> options set; empty for a command without them.
+    /// </summary>
+    internal IReadOnlyList<FormatDescriptor> Protects =>
+        Encrypt is null || OutputTarget is null
+            ? []
+            : [.. (Target?.Offered ?? OutputTarget.Writes ?? []).Where(static format => format.Protectable)];
 
     /// <summary>The format a <c>--to</c> option created here chooses among, or null for any other option.</summary>
     internal static TargetFormat? TargetOf(Option option) =>

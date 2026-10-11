@@ -76,7 +76,7 @@ internal static class CellsConvert
         loaded.RestoreActiveSheet(savePlan);
         Warning? sheetsDropped = savePlan.DetectSheetLoss(workbook);
         PublishedFile written = saver.Write(request.Output.Path, request.Output.Overwrite, workbook, singleSheet: selectedSheet is not null,
-            path => saver.Produce(workbook, savePlan, path));
+            savePlan.Encrypts, path => saver.Produce(workbook, savePlan, path));
         Warning? formulasBroken = saver.BuildBrokenFormulaWarning(
             refsBefore,
             saver.CountRefFormulas(workbook),
@@ -91,7 +91,7 @@ internal static class CellsConvert
             // Only a text export without --sheet writes one sheet chosen by default; the other
             // formats write every sheet.
             Warnings = EnvelopeParts.CombineWarnings([loaded.Resources.CoverageWarning, loaded.CalculatedOnOpen,
-                loaded.SkippedSheetWarning(request.SheetName is null && savePlan.WritesActiveSheetOnly), sheetsDropped, dataTruncated, formulasBroken, savePlan.EncryptionWarning, chartsSplit,
+                loaded.SkippedSheetWarning(request.SheetName is null && savePlan.WritesActiveSheetOnly), sheetsDropped, dataTruncated, formulasBroken, chartsSplit,
                 .. textLayout]),
         };
     }

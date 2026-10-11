@@ -67,6 +67,9 @@ public sealed record NewPdfRequest
     public string? TextPath { get; init; }
     public string PageSize { get; init; } = "A4";
     public PdfMargins Margins { get; init; } = PdfMargins.Default;
+
+    /// <summary>The password the output opens with (<c>--encrypt</c>), or null to write it without one.</summary>
+    public Secret? EncryptPassword { get; init; }
 }
 
 /// <summary>Page margins in PDF points.</summary>
@@ -83,6 +86,9 @@ public sealed record PdfMergeRequest
     public required ResolvedOutput Output { get; init; }
     public bool PreserveBookmarks { get; init; } = true;
     public Secret? Password { get; init; }
+
+    /// <summary>The password the output opens with (<c>--encrypt</c>), or null to write it without one.</summary>
+    public Secret? EncryptPassword { get; init; }
 }
 
 /// <summary>Options for transactional PDF splitting.</summary>
@@ -95,6 +101,9 @@ public sealed record PdfSplitRequest
     /// <summary>The resolved directory that receives the files.</summary>
     public required ResolvedDirectory Output { get; init; }
     public Secret? Password { get; init; }
+
+    /// <summary>The password every part opens with (<c>--encrypt</c>), or null to write them without one.</summary>
+    public Secret? EncryptPassword { get; init; }
 }
 
 /// <summary>Options for bounded PDF extraction.</summary>
@@ -154,6 +163,12 @@ public sealed record PdfEditRequest
 
     /// <summary>The operations' secrets by the environment variable their <c>*Env</c> fields name.</summary>
     public IReadOnlyDictionary<string, Secret>? OpSecrets { get; init; }
+
+    /// <summary>
+    /// The password the output opens with (<c>--encrypt</c>), applied after the operations and
+    /// replacing any encryption they leave; null keeps what they leave.
+    /// </summary>
+    public Secret? EncryptPassword { get; init; }
 }
 
 public sealed record PdfFormReadRequest

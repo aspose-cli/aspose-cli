@@ -18,13 +18,15 @@ internal static class PdfSplit
         LicenseState state = session.Outputs.License;
         using LoadedPdf loaded = session.Loader.Open(filePath, request.Password);
         IReadOnlyList<SplitPart> parts = SplitParts(loaded.Document, request);
+        (PdfOutputPasswords? passwords, Warning? kept) =
+            PdfOutputEncryption.Kept(request.EncryptPassword, request.Password, [PdfInputSecurity.Of(loaded)]);
         string root = request.Output.Path;
         using OutputSet<Document> writer = session.Outputs.BeginSet([root], "pdf-split");
         IReadOnlyList<int> numbers = request.Plan.By == SplitBy.Pages
             ? request.Plan.PartNumbers([.. parts.Select(static part => part.Pages)])
             : [.. parts.Select(static part => part.Index)];
         IReadOnlyList<string> paths = request.Output.Parts(Path.GetFileNameWithoutExtension(filePath), "pdf", numbers);
-        var targets = new List<(SplitPart Part, string Path)>();
+        var targets = new List<(SplitPart Part, string Path, bool Encrypted)>();
         int bookmarks = 0;
         int links = 0;
         int namedDestinations = 0;
@@ -34,6 +36,7 @@ internal static class PdfSplit
             int[] pages = [.. part.Pages];
             // The part is the document the write pipeline inspects, so it lives until it is staged.
             using Document selected = Select(source, pages);
+            bool encrypted = PdfOutputEncryption.Encrypted(selected, passwords);
             writer.Stage(target, request.Output.Overwrite, selected, staged =>
             {
                 CopyPageLabels(source, selected, pages);
@@ -47,9 +50,9 @@ internal static class PdfSplit
                 namedDestinations += PdfNavigationCensus.NamedDestinationNames(source).Count(name =>
                     source.NamedDestinations[name] is ExplicitDestination destination
                     && pages.Contains(destination.PageNumber));
-                selected.Save(staged);
-            });
-            targets.Add((part, target));
+                PdfOutputEncryption.Save(selected, staged, passwords);
+            }, encrypted: encrypted);
+            targets.Add((part, target, encrypted));
         }
 
         IReadOnlyList<PublishedFile> files = writer.Commit();
@@ -57,6 +60,11 @@ internal static class PdfSplit
         if (PortfolioNotKept(loaded.Document, input: null) is { } portfolio)
         {
             warnings.Add(portfolio);
+        }
+
+        if (kept is not null)
+        {
+            warnings.Add(kept);
         }
 
         if (new PdfNavigationCensus(bookmarks, links, namedDestinations).ToWarning(
@@ -74,7 +82,7 @@ internal static class PdfSplit
                 Index = item.Part.Index,
                 Pages = Aspose.Cli.Sdk.Addressing.PageRange.Describe(item.Part.Pages) ?? string.Empty,
                 Bookmark = item.Part.Bookmark,
-                Output = FileObjects.Output(files[index], PdfFormats.Document[0], encrypted: false),
+                Output = FileObjects.Output(files[index], PdfFormats.Document[0], item.Encrypted),
             }).ToArray(),
             License = EnvelopeParts.License(state),
             Warnings = warnings.Count == 0 ? null : warnings,

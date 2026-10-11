@@ -451,10 +451,21 @@ public static partial class CliErrors
             ["quiescenceConfirmed"] = false,
         });
 
-    public static CliException OutputExists(string path) => CliException.Create(
+    /// <summary>An output file exists and the caller did not ask to replace it.</summary>
+    /// <param name="path">The file.</param>
+    /// <param name="parameter">The option or argument that names the output, such as <c>--out-dir</c>; null when it is not known.</param>
+    /// <param name="partsDependOnDocument">
+    /// Whether the file is one the command may write as a numbered part, which a dry run cannot
+    /// tell without reading how many parts the document has.
+    /// </param>
+    public static CliException OutputExists(string path, string? parameter = null, bool partsDependOnDocument = false) => CliException.Create(
         ErrorCodes.OutputExists,
-        $"Output file already exists: {path}",
-        hint: "Pass --overwrite to replace it, or choose a different path with --out.",
+        partsDependOnDocument
+            ? $"Output file already exists: {path}; the command may write it, since how many parts it writes, and so their names, depend on the document."
+            : $"Output file already exists: {path}",
+        hint: parameter is null
+            ? "Pass --overwrite to replace it, or choose a different output path."
+            : $"Pass --overwrite to replace it, or choose a different path with {parameter}.",
         details: new JsonObject { ["path"] = path });
 
     /// <summary>

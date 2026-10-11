@@ -1,5 +1,6 @@
 using System.CommandLine.Parsing;
 using System.Text.Json.Nodes;
+using System.Text.RegularExpressions;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
@@ -25,6 +26,9 @@ public partial class StandardInvocation
     /// <c>FILE_NOT_FOUND</c> for a missing input an output is derived from.
     /// </exception>
     public ResolvedOutput Output => _output ??= ResolveOutput();
+
+    /// <summary>The output file once the command resolved it, or null.</summary>
+    internal ResolvedOutput? ResolvedFile => _output;
 
     /// <summary>
     /// The password for <see cref="Output"/>, or null when none was given. A password for a
@@ -60,9 +64,16 @@ public partial class StandardInvocation
         return encrypt.Resolve(_parse, Inputs, ReadEnvironment);
     }
 
-    // The format an output is written in: the edited input's own among those its extension names.
+    // The format an output is written in: the edited input's own among those its extension names,
+    // or for a set of files in a directory every format the command declares for them.
     private FormatDescriptor[] WrittenFormats(Func<string?>? sourceFormat)
     {
+        OutputTarget target = Declared(_options.OutputTarget, "output");
+        if (target.Kind == OutputKind.Directory)
+        {
+            return [.. target.Writes ?? throw new InvalidOperationException("A directory output that can be encrypted declares the formats of its files.")];
+        }
+
         ResolvedOutput output = Output;
         if (output.Alternatives.Count < 2 || sourceFormat is null)
         {
@@ -105,8 +116,10 @@ public partial class StandardInvocation
 
     /// <summary>
     /// The result of a dry run of a command that is not an edit: what it resolved, which are
-    /// its inputs and its output, and the paths and format it would write.
+    /// its inputs and its output, and the paths and format it would write. Without
+    /// <c>--overwrite</c>, a file the run would replace is refused as the run refuses it.
     /// </summary>
+    /// <exception cref="CliException"><c>OUTPUT_EXISTS</c> for a file the run would or may replace.</exception>
     internal DryRunResult DryRunResult()
     {
         var checks = new List<string>();
@@ -115,13 +128,78 @@ public partial class StandardInvocation
             checks.Add(DryRunChecks.Input);
         }
 
-        string[] paths = _output is { } file ? [file.Path] : _directoryOutput is { } directory ? [directory.Path] : [];
+        (string[] paths, string? parameter, IEnumerable<(string Path, bool Possible)> written) = _output is { } file
+            ? Written(file)
+            : _directoryOutput is { } directory ? Written(directory) : ([], null, []);
         if (paths.Length > 0)
         {
             checks.Add(DryRunChecks.Output);
         }
 
+        bool overwrite = _output?.Overwrite ?? _directoryOutput?.Overwrite ?? true;
+        if (!overwrite && written.FirstOrDefault(static target => File.Exists(target.Path)) is { Path: not null } existing)
+        {
+            throw CliErrors.OutputExists(existing.Path, parameter, existing.Possible);
+        }
+
         return Contracts.DryRunResult.Of(checks, paths, _output?.Format.Id);
+    }
+
+    // The paths a dry run reports for an output file, and the files the run writes there: the
+    // parts a selection numbers, else, when the parts depend on the document, the file itself and
+    // the numbered (or, for other images, named) files beside it that the run may write.
+    private (string[] Paths, string? Parameter, IEnumerable<(string Path, bool Possible)> Written) Written(ResolvedOutput file)
+    {
+        string parameter = _options.CreatedFile?.Name ?? StandardOptionNames.Out;
+        string stem = Path.GetFileNameWithoutExtension(file.Path);
+        string extension = Path.GetExtension(file.Path);
+        IReadOnlyList<int>? numbers = NumberedParts.Of(_parse);
+        if (numbers is { Count: > 0 })
+        {
+            string[] parts = [.. file.Parts(numbers)];
+            return (parts, parameter, parts.Select(static part => (part, false)));
+        }
+
+        string? label = numbers is not null ? "[0-9]+" : file.Format.Image ? ".+" : null;
+        return label is null
+            ? ([file.Path], parameter, [(file.Path, false)])
+            : ([file.Path], parameter, Beside(file.Directory, $"{Regex.Escape(stem)}\\.{label}{Regex.Escape(extension)}").Prepend(file.Path).Select(static path => (path, true)));
+    }
+
+    // The files of a split the run writes in the directory: those its command line numbers, else
+    // the numbered files of the input there that it may write, whatever their extension when the
+    // command does not declare the format of its parts.
+    private (string[] Paths, string? Parameter, IEnumerable<(string Path, bool Possible)> Written) Written(ResolvedDirectory directory)
+    {
+        if (NumberedParts.Of(_parse) is not { } numbers || _input is null)
+        {
+            return ([directory.Path], StandardOptionNames.OutDir, []);
+        }
+
+        string stem = PartNames.SafeStem(Path.GetFileNameWithoutExtension(_input));
+        if (numbers.Count > 0 && Declared(_options.OutputTarget, "output").Writes is [var format, ..] && format.PreferredExtension is { } extension)
+        {
+            string[] parts = [.. directory.Parts(stem, extension, numbers)];
+            return (parts, StandardOptionNames.OutDir, parts.Select(static part => (part, false)));
+        }
+
+        string labels = numbers.Count > 0 ? $"({string.Join('|', PartNames.Numbered(numbers))})" : "[0-9]+";
+        return ([directory.Path], StandardOptionNames.OutDir,
+            Beside(directory.Path, $"{Regex.Escape(stem)}\\.{labels}\\.[^.]+").Select(static path => (path, true)));
+    }
+
+    // The files in a directory whose names match a pattern, ignoring case, in ordinal order.
+    private static IEnumerable<string> Beside(string directory, string name)
+    {
+        if (!Directory.Exists(directory))
+        {
+            return [];
+        }
+
+        var pattern = new Regex($"^{name}$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant, TimeSpan.FromSeconds(1));
+        return Directory.EnumerateFiles(directory)
+            .Where(path => pattern.IsMatch(Path.GetFileName(path)))
+            .Order(StringComparer.Ordinal);
     }
 
     /// <summary>Whether the caller named the format with <c>--to</c>.</summary>
@@ -272,9 +350,17 @@ public partial class StandardInvocation
     {
         string command = string.Join(' ', [DistributionInfo.CommandName, .. CommandPath()]);
         string extension = Path.GetExtension(output);
-        (string Format, string Command)? producer = extension.Length > 1 ? Producer(extension) : null;
+        // A command that writes only images shows its input rather than keeping a copy of it, so
+        // another format is written from the input; any other output is a document to convert after.
+        bool images = writes.All(static format => format.Image);
+        // An image command given its input's own extension was asked for what the input already is.
+        bool inputs = images && !derived && extension.Length > 1 && _options.Input is { } input
+            && _parse.GetValue(input) is { } given
+            && string.Equals(Path.GetExtension(given), extension, StringComparison.OrdinalIgnoreCase);
+        (string Format, string Command)? producer = extension.Length > 1 && !inputs ? Producer(extension, images && !derived ? output : null) : null;
         string problem = (extension.Length > 1, producer) switch
         {
+            _ when inputs => $"has the {extension} extension of its input, which already is that file; {command} writes only images",
             (true, { } other) => $"has the {extension} extension of {other.Format}, which {command} does not write",
             (true, null) => $"has the {extension} extension, which names no format {command} writes",
             _ => $"has no extension, which names the format {command} writes",
@@ -283,22 +369,31 @@ public partial class StandardInvocation
         string fix = derived
             ? $"Name the output with {parameter} and one of these extensions"
             : $"Give {parameter} one of these extensions";
+        string hint = producer switch
+        {
+            { } line when images && !derived => $"{fix}, or run '{line.Command}' for {line.Format}.",
+            { } line => $"{fix}, then run '{line.Command}' for {line.Format}.",
+            _ => fix + ".",
+        };
         return CliErrors.OutputExtensionInvalid(
             parameter,
             output,
             derived ? $"The input '{output}', whose name the output keeps without {parameter}," : $"{parameter} '{output}'",
             problem,
             extensions,
-            mistyped: extension.Length > 1 && producer is null,
-            producer is { } line ? $"{fix}, then run '{line.Command}' for {line.Format}." : fix + ".",
+            mistyped: extension.Length > 1 && producer is null && !inputs,
+            hint,
             producer is { } named ? new JsonObject { ["format"] = named.Format } : []);
     }
 
     /// <summary>
     /// The format an extension names among those the commands beside this one write through
-    /// their <c>--to</c>, and the command line that writes it from this command's output.
+    /// their <c>--to</c>, and the command line that writes it: from this command's output, or,
+    /// when <paramref name="output"/> is given, from this command's input straight to that output.
     /// </summary>
-    private (string Format, string Command)? Producer(string extension)
+    /// <param name="extension">The extension the output was given.</param>
+    /// <param name="output">The output as the caller gave it, for a command whose output is not a document to convert; otherwise null.</param>
+    private (string Format, string Command)? Producer(string extension, string? output)
     {
         if (_parse.CommandResult.Parent is not CommandResult parent)
         {
@@ -306,6 +401,10 @@ public partial class StandardInvocation
         }
 
         string[] path = CommandPath();
+        string[] source = output is not null && _options.Input is { } input && _parse.GetValue(input) is { } given
+            ? [Quoted(given)]
+            : ["<that file>"];
+        string[] target = output is null ? [] : [StandardOptionNames.Out, Quoted(output)];
         return parent.Command.Subcommands
             .Where(command => !command.Hidden && command != _parse.CommandResult.Command)
             .SelectMany(static command => command.Options
@@ -314,8 +413,11 @@ public partial class StandardInvocation
                 .Select(target => (Command: command.Name, Target: target)))
             .Select(sibling => sibling.Target.Offered.DeclaringExtension(extension) is [var format, ..]
                 ? ((string Format, string Command)?)(format.Id, string.Join(' ',
-                    [DistributionInfo.CommandName, .. path[..^1], sibling.Command, "<that file>", StandardOptionNames.To, format.Id]))
+                    [DistributionInfo.CommandName, .. path[..^1], sibling.Command, .. source, StandardOptionNames.To, format.Id, .. target]))
                 : null)
             .FirstOrDefault(static line => line is not null);
     }
+
+    // A path as a command line names it: quoted when it holds a space.
+    private static string Quoted(string path) => path.Contains(' ', StringComparison.Ordinal) ? $"\"{path}\"" : path;
 }

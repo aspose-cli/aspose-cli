@@ -116,6 +116,32 @@ public sealed class OperationCatalog<TOp>
             _schema);
     }
 
+    /// <summary>
+    /// The operation document that encrypts the edited document with the password the environment
+    /// variable <paramref name="variable"/> holds: the <see cref="EncryptsOutputAttribute"/>
+    /// operation with every secret field naming that variable. Null when the vocabulary has no
+    /// such operation, or it requires a field that is not a secret.
+    /// </summary>
+    internal string? EncryptingDocument(string variable)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(variable);
+        if (_byName.Values.Select(static operation => operation.Record).FirstOrDefault(static record => record.EncryptsOutput) is not { } record
+            || record.Properties.Any(static property => property.Required && !IsSecret(property)))
+        {
+            return null;
+        }
+
+        var operation = new JsonObject { ["op"] = record.Name };
+        foreach (OperationProperty property in record.Properties.Where(IsSecret))
+        {
+            operation[property.Name] = variable;
+        }
+
+        return new JsonObject { ["ops"] = new JsonArray(operation) }.ToJsonString();
+
+        static bool IsSecret(OperationProperty property) => property.Constraints.OfType<SecretEnvAttribute>().Any();
+    }
+
     /// <summary>Returns the wire name of an operation of this vocabulary.</summary>
     public string NameOf(TOp operation)
     {

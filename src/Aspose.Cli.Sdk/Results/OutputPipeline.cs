@@ -13,8 +13,10 @@ namespace Aspose.Cli.Sdk.Results;
 /// adds the disclosure to the result (<see cref="Disclose"/>): <c>EVALUATION_MODE</c> when evaluation
 /// mode produced an output, naming the evaluation marks it carries, and <c>EVALUATION_INPUT_MARKED</c>
 /// when a licensed output carries evaluation marks, which a licensed save never adds, so they come
-/// from its input. A command that publishes nothing, such as a dry run or a read, discloses
-/// nothing.
+/// from its input. It is also the sole owner of the <c>ENCRYPTION_REMOVED</c> warning: a product
+/// tells it whether each document it opened is encrypted (<see cref="Opened"/>) and whether each
+/// copy it publishes is, and the pipeline compares the two. A command that publishes nothing,
+/// such as a dry run or a read, discloses nothing.
 /// </summary>
 public abstract class OutputPipeline : ILicenseState
 {
@@ -25,6 +27,9 @@ public abstract class OutputPipeline : ILicenseState
     private EvaluationMarks _shown = EvaluationMarks.None;
     private Warning? _inputTruncated;
     private Inspection? _view;
+    private bool _encryptedInput;
+    private readonly SortedSet<string> _plainCopies = new(StringComparer.Ordinal);
+    private IReadOnlyList<FormatDescriptor> _formats = [];
 
     private protected OutputPipeline(ILicenseGate licenseGate, SafeFileWriter writer)
     {
@@ -47,6 +52,21 @@ public abstract class OutputPipeline : ILicenseState
     /// <param name="overwrite">Whether an existing file in the directory may be replaced (<c>--overwrite</c>).</param>
     public ExtractionGuard BeginExtraction(string root, bool overwrite) =>
         new(Writer.ResourceBudgets, root, overwrite) { Committed = () => Record(null) };
+
+    /// <summary>
+    /// Publishes one file an extraction writes, such as exported form data, which holds parts
+    /// of the opened documents rather than a copy of them, so it is never disclosed as one.
+    /// </summary>
+    /// <param name="targetPath">The output file.</param>
+    /// <param name="overwrite">Whether an existing file may be replaced.</param>
+    /// <param name="write">Writes the staged file.</param>
+    /// <returns>The facts of the published file.</returns>
+    public PublishedFile WriteExtracted(string targetPath, bool overwrite, Action<string> write)
+    {
+        PublishedFile published = Writer.Write(targetPath, overwrite, write);
+        Record(null);
+        return published;
+    }
 
     /// <summary>
     /// Records the files the host is about to publish from this product's renders, such as
@@ -77,20 +97,118 @@ public abstract class OutputPipeline : ILicenseState
     }
 
     /// <summary>
-    /// Adds the evaluation disclosure of what this invocation published, and of an input it read
-    /// that evaluation mode cut short, to its result, before the result's own warnings; returns
-    /// the result unchanged when there is nothing to disclose.
+    /// Records that the command opened a document whose content its outputs keep: the input it
+    /// edits, converts, merges, splits or compares, or a document an operation takes content
+    /// from. When one of them is encrypted, every copy the command publishes without encryption
+    /// is disclosed as <c>ENCRYPTION_REMOVED</c>.
     /// </summary>
-    public ResultEnvelope Disclose(ResultEnvelope result)
+    /// <param name="encrypted">Whether the document is encrypted, including a PDF with only an owner password.</param>
+    public void Opened(bool encrypted)
+    {
+        lock (_sync)
+        {
+            _encryptedInput |= encrypted;
+        }
+    }
+
+    /// <summary>
+    /// Adds the evaluation disclosure of what this invocation published, and of an input it read
+    /// that evaluation mode cut short, and the encryption it removed, to its result, before the
+    /// result's own warnings; returns the result unchanged when there is nothing to disclose.
+    /// </summary>
+    public ResultEnvelope Disclose(ResultEnvelope result) => DiscloseWith(result, protection: null);
+
+    /// <inheritdoc cref="Disclose(ResultEnvelope)"/>
+    /// <param name="result">The result.</param>
+    /// <param name="protection">
+    /// The hint of <c>ENCRYPTION_REMOVED</c> for the format ids of the unencrypted copies: the
+    /// ways the command's tree offers to protect them; null for the general advice.
+    /// </param>
+    internal ResultEnvelope DiscloseWith(ResultEnvelope result, Func<IReadOnlyList<string>, string>? protection)
     {
         ArgumentNullException.ThrowIfNull(result);
         // A result that carries a disclosure already, such as a review whose view manifest
         // carried the input's truncation, is not told twice.
-        Warning[] disclosure = [.. (Disclosure() ?? []).Where(warning =>
+        Warning[] disclosure = [.. (Disclosure() ?? []).Append(EncryptionRemoved(protection)).OfType<Warning>().Where(warning =>
             !(result.Warnings ?? []).Any(present => present.Code == warning.Code))];
         return disclosure.Length == 0
             ? result
             : result with { Warnings = EnvelopeParts.CombineWarnings(disclosure, result.Warnings) };
+    }
+
+    /// <summary>
+    /// <c>ENCRYPTION_REMOVED</c> when the command opened an encrypted document and published a
+    /// copy of it without encryption; otherwise null.
+    /// </summary>
+    /// <param name="protection">Writes the hint for the format ids of the unencrypted copies; null for the general advice.</param>
+    internal Warning? EncryptionRemoved(Func<IReadOnlyList<string>, string>? protection = null)
+    {
+        string[] formats;
+        lock (_sync)
+        {
+            if (!_encryptedInput || _plainCopies.Count == 0)
+            {
+                return null;
+            }
+
+            formats = [.. _plainCopies];
+        }
+
+        return new Warning(
+            WarningCodes.EncryptionRemoved,
+            $"The {string.Join(", ", formats.Select(static format => $"'{format}'"))} output is not encrypted, although an input it was made from is: it opens without a password.")
+        {
+            Hint = protection?.Invoke(formats) ?? "If the output must stay protected, write it in a format that can carry a password.",
+        };
+    }
+
+    /// <summary>
+    /// Declares the formats the product writes, as its definition declares them once
+    /// (<see cref="FormatDescriptor.Image"/>), by which a published file is told to be an image
+    /// or a copy.
+    /// </summary>
+    internal void Declare(IReadOnlyList<FormatDescriptor> formats)
+    {
+        ArgumentNullException.ThrowIfNull(formats);
+        lock (_sync)
+        {
+            _formats = formats;
+        }
+    }
+
+    /// <summary>
+    /// The published file at <paramref name="path"/>: its format among those the product
+    /// declares, named by its id, or its extension when none declares it.
+    /// </summary>
+    internal Copy CopyAt(string path, bool encrypted)
+    {
+        IReadOnlyList<FormatDescriptor> formats;
+        lock (_sync)
+        {
+            formats = _formats;
+        }
+
+        FormatDescriptor[] named = [.. formats.Where(format => format.Names(path))];
+        return named.Length == 0
+            ? new Copy(Path.GetExtension(path).TrimStart('.').ToLowerInvariant(), Image: false, encrypted)
+            : new Copy(named[0].Id, named.All(static format => format.Image), encrypted);
+    }
+
+    /// <summary>
+    /// Records a published file: a file in a format that keeps the content of the documents the
+    /// command opened is a copy, and an unencrypted copy is disclosed when an opened document
+    /// was encrypted. Its declared format alone decides, never how the product rendered it, so
+    /// an image is never disclosed; nor is what an extraction writes, which is not recorded here.
+    /// </summary>
+    internal void RecordCopy(Copy copy)
+    {
+        if (copy is { Encrypted: false, Image: false } plain)
+        {
+            lock (_sync)
+            {
+                _plainCopies.Add(plain.Format);
+            }
+        }
     }
 
     /// <summary>
@@ -204,6 +322,9 @@ public abstract class OutputPipeline : ILicenseState
     /// a copy of it, as page images and extracted page text do.
     /// </summary>
     internal sealed record Inspection(EvaluationMarks? Marks, bool Rendering);
+
+    /// <summary>A published file: its format id, whether that format is an image, and whether the file is encrypted.</summary>
+    internal sealed record Copy(string Format, bool Image, bool Encrypted);
 }
 
 /// <summary>The evaluation warnings the write pipeline adds to a result.</summary>
@@ -370,14 +491,21 @@ public sealed class OutputPipeline<TDocument> : OutputPipeline
     /// <param name="write">Writes the staged file.</param>
     /// <param name="rendering">Whether the file shows <paramref name="document"/>, as page images and page text do, rather than keeping a copy of it.</param>
     /// <param name="pages">The pages (or slides) of <paramref name="document"/> a rendering shows, numbered from 1; null for all of them.</param>
+    /// <param name="encrypted">
+    /// Whether the written file is encrypted. A file in a document, workbook or presentation
+    /// format is a copy of the documents the command opened, and an unencrypted copy of an
+    /// encrypted one is disclosed; an image or a data file never is.
+    /// </param>
     /// <returns>The facts of the published file.</returns>
     public PublishedFile Write(string targetPath, bool overwrite, TDocument? document, Action<string> write, bool rendering = false,
-        IEnumerable<int>? pages = null)
+        IEnumerable<int>? pages = null, bool encrypted = false)
     {
-        var inspector = new Inspector(_profile, document, FormatOf(targetPath), rendering);
+        string format = FormatOf(targetPath);
+        var inspector = new Inspector(_profile, document, format, rendering);
         inspector.Shows(pages);
         PublishedFile published = Writer.Write(targetPath, overwrite, inspector.After(write));
         Record(inspector.Result);
+        RecordCopy(CopyAt(targetPath, encrypted));
         return published;
     }
 
@@ -395,6 +523,7 @@ public sealed class OutputPipeline<TDocument> : OutputPipeline
         var inspector = new Inspector(_profile, document, output.Format.Id, rendering: false);
         IReadOnlyList<OutputInfo> written = Writer.Write(output, encrypted, inspector.After(write));
         Record(inspector.Result);
+        RecordCopy(new Copy(output.Format.Id, output.Format.Image, encrypted));
         return written;
     }
 
@@ -531,6 +660,7 @@ public sealed class OutputSet<TDocument> : IDisposable
     private readonly AtomicOutputSetWriter _transaction;
     private readonly List<OutputPipeline<TDocument>.Inspector> _documents = [];
     private readonly List<StagedOutput> _staged = [];
+    private readonly List<OutputPipeline.Copy> _copies = [];
 
     internal OutputSet(OutputPipeline<TDocument> pipeline, IEvaluationProfile<TDocument> profile, AtomicOutputSetWriter transaction)
     {
@@ -555,9 +685,14 @@ public sealed class OutputSet<TDocument> : IDisposable
     /// <param name="inputPrecondition">The input the output replaces, which must not change meanwhile.</param>
     /// <param name="verify">Checks the staged file before it is published.</param>
     /// <param name="pages">The pages (or slides) of <paramref name="document"/> a rendering shows, numbered from 1; null for all of them.</param>
+    /// <param name="encrypted">
+    /// Whether the written file is encrypted. A file in a document, workbook or presentation
+    /// format is a copy of the documents the command opened, and an unencrypted copy of an
+    /// encrypted one is disclosed; an image or a data file never is.
+    /// </param>
     public StagedOutput Stage(string targetPath, bool overwrite, TDocument? document, Action<string> write,
         bool rendering = false, string? backupPath = null, FileWritePrecondition? inputPrecondition = null,
-        Action<string>? verify = null, IEnumerable<int>? pages = null)
+        Action<string>? verify = null, IEnumerable<int>? pages = null, bool encrypted = false)
     {
         string format = OutputPipeline<TDocument>.FormatOf(targetPath);
         OutputPipeline<TDocument>.Inspector? inspector = document is null ? null
@@ -574,6 +709,7 @@ public sealed class OutputSet<TDocument> : IDisposable
         StagedOutput staged = _transaction.Stage(targetPath, overwrite, backupPath, inputPrecondition,
             inspector?.After(write) ?? write, verify);
         _staged.Add(staged);
+        _copies.Add(_pipeline.CopyAt(targetPath, encrypted));
         return staged;
     }
 
@@ -592,6 +728,11 @@ public sealed class OutputSet<TDocument> : IDisposable
         for (int index = _documents.Count; index < _staged.Count; index++)
         {
             _pipeline.Record(null);
+        }
+
+        foreach (OutputPipeline.Copy copy in _copies)
+        {
+            _pipeline.RecordCopy(copy);
         }
 
         return [.. _staged.Select(static staged => staged.Published)];

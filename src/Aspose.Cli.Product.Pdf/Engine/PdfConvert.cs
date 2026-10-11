@@ -63,7 +63,6 @@ internal static class PdfConvert
         List<Warning> warnings)
     {
         PdfNavigationCensus degraded = DeleteUnselected(document, pages);
-        Document selected = document;
         if (UnselectedNavigation(degraded) is { } navigation)
         {
             warnings.Add(navigation);
@@ -74,21 +73,21 @@ internal static class PdfConvert
         PublishedFile written = session.Outputs.Write(
             request.Output.Path,
             request.Output.Overwrite,
-            selected,
+            document,
             temp =>
             {
                 if (request.Output.Format.Id == "html")
                 {
                     // The HTML writer leaves <title> empty unless it is given the PDF title.
-                    selected.Save(temp, new HtmlSaveOptions
+                    document.Save(temp, new HtmlSaveOptions
                     {
                         PartsEmbeddingMode = HtmlSaveOptions.PartsEmbeddingModes.EmbedAllIntoHtml,
-                        Title = selected.Info.Title ?? string.Empty,
+                        Title = document.Info.Title ?? string.Empty,
                     });
                 }
                 else
                 {
-                    selected.Save(temp, format);
+                    document.Save(temp, format);
                 }
             });
         return FileObjects.Output(written, request.Output.Format, encrypted: false);

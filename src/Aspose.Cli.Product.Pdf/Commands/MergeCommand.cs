@@ -24,6 +24,7 @@ internal static class MergeCommand
             {
                 PasswordSubject = "all input PDFs",
                 Output = OutputTarget.File("Merged PDF output path.", PdfFormats.Document, required: true),
+                Encrypt = PdfInputs.EncryptedPdf,
             },
             [inputs, bookmarks],
             (parse, standard) =>
@@ -35,6 +36,7 @@ internal static class MergeCommand
                     Output = standard.Output,
                     PreserveBookmarks = parse.GetRequiredValue(bookmarks) == "preserve",
                     Password = standard.InputPassword,
+                    EncryptPassword = standard.EncryptPassword(),
                 };
             },
             PdfText.Written);

@@ -16,18 +16,21 @@ internal static class WordsConvert
         LicenseState state = session.Outputs.License;
         using LoadedDocument loaded = session.Loader.Open(request.Input, request.Password);
         IReadOnlyList<int>? pages = request.Pages?.Resolve(loaded.Document.PageCount);
-        SaveOptions options = WordsSavePipeline.Options(request.Output.Format.Id, request.EncryptPassword, pages);
+        // A format that can carry a password keeps the input's, unless --encrypt replaces it.
+        Secret? outputPassword = request.EncryptPassword
+            ?? (loaded.Format.IsEncrypted && request.Output.Format.Protectable ? request.Password : null);
+        SaveOptions options = WordsSavePipeline.Options(request.Output.Format.Id, outputPassword, pages);
         WordsSavePipeline.RemoveMacrosUnlessKept(loaded.Document, request.Output.Format.Id);
         PublishedFile written = session.Outputs.Write(request.Output.Path, request.Output.Overwrite, loaded.Document, temp =>
         {
             try { loaded.Document.Save(temp, options); }
             finally { loaded.Resources.ThrowIfFailed(); }
-        });
+        }, encrypted: outputPassword is not null);
         var warnings = WrittenWarnings(loaded, request.Output.Format.Id);
         return new WordsConvertResult
         {
             Input = InfoProjection.Source(request.Input, loaded),
-            Output = FileObjects.Output(written, request.Output.Format, encrypted: request.EncryptPassword is not null),
+            Output = FileObjects.Output(written, request.Output.Format, encrypted: outputPassword is not null),
             Pages = request.Pages?.Text,
             License = EnvelopeParts.License(state),
             Warnings = warnings,

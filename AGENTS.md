@@ -59,7 +59,7 @@ the fixed distribution identity; the generated projections and the solution come
 
 | # | Decision | Owner | Enforced by |
 |---|---|---|---|
-| D1 | Output: path, written format, overwrite, encryption, part names, staging, the file objects a result reports | The SDK resolves a `ResolvedOutput` for the product; the format is resolved once: the format `--to` names, else the one among the command's writable formats that the `--out` extension declares, else the edited input's format, the `--to` default or the command's only format. SDK `FileObjects` alone builds the `input` and `output` objects: absolute path, size and fingerprint from the file or its publication | `DecisionOwnershipTests` D1: no raw output path string in requests, no format from an extension, no product-built `FORMAT_UNSUPPORTED`, resolver, protectable-format list or file object |
+| D1 | Output: path, written format, overwrite, encryption, part names, staging, the file objects a result reports | The SDK resolves a `ResolvedOutput` for the product; the format is resolved once: the format `--to` names, else the one among the command's writable formats that the `--out` extension declares, else the edited input's format, the `--to` default or the command's only format. SDK `FileObjects` alone builds the `input` and `output` objects: absolute path, size and fingerprint from the file or its publication. The SDK write pipeline alone warns `ENCRYPTION_REMOVED`, comparing the encryption of the documents a product's loader opened with that of the copies it published; a declared image format (`FormatDescriptor.Image`, every render format) is never a copy | `DecisionOwnershipTests` D1: no raw output path string in requests, no format from an extension, no product-built `FORMAT_UNSUPPORTED`, resolver, protectable-format list or file object, and no `ENCRYPTION_REMOVED` outside the write pipeline |
 | D2 | Format capabilities | Each product declares its formats once in its Contracts `*Formats.Definitions`, passed to `.Formats(...)` on the module; its `*EngineFormats` maps every declared id to the engine | `CellsEngineFormatTests`, `PdfEngineFormatTests`, `SlidesEngineFormatsTests`, `WordsEngineFormatsTests`: every declared format has an engine mapping; `DecisionOwnershipTests` D2 |
 | D3 | Mistake suggestions | SDK `Mistake` alone writes `details.suggestions[]` and the "did you mean" text | `DecisionOwnershipTests` D3; invariants |
 | D4 | Error construction | SDK error factories alone build shared codes | `DecisionOwnershipTests` D4; `FreeTextErrorFactoryTests` |
@@ -183,8 +183,8 @@ Kept on purpose:
   mistyped one gets a suggestion (C-R35, C-B14).
 - `capabilities` lists no `examples[]` or `errorDetailsKeys[]`: examples belong to help (C-R34),
   and the error `details` keys are described once, in the error envelope schema (C-R25).
-- On an encrypted PDF input, `set_metadata` with text beyond Latin-1 and no later `encrypt` is
-  still refused rather than reported applied while the engine writes garbled text
+- On an encrypted PDF input, `set_metadata` with text beyond Latin-1 and no later `encrypt` or
+  `--encrypt-env` is still refused rather than reported applied while the engine writes garbled text
   ([PDF-ENCRYPTED-INFO-TEXT](KNOWN-ISSUES.md#pdf-encrypted-info-text), C-R30).
 
 ## Tests

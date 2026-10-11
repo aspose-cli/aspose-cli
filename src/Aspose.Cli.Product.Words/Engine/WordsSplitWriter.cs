@@ -18,12 +18,17 @@ internal sealed class WordsSplitWriter : IDisposable
     private readonly string _stem;
     private readonly OutputSet<Document> _transaction;
     private readonly List<StagedPart> _parts = [];
+    private readonly Secret? _password;
     private Dictionary<int, string> _paths = [];
 
-    /// <summary>Begins the set of parts of <paramref name="input"/>, named after its file name.</summary>
-    public WordsSplitWriter(OutputPipeline<Document> outputs, ResolvedDirectory output, string input)
+    /// <summary>
+    /// Begins the set of parts of <paramref name="input"/>, named after its file name, each
+    /// opening with <paramref name="password"/> when one is given.
+    /// </summary>
+    public WordsSplitWriter(OutputPipeline<Document> outputs, ResolvedDirectory output, string input, Secret? password)
     {
         _output = output;
+        _password = password;
         _stem = Path.GetFileNameWithoutExtension(input);
         _transaction = outputs.BeginSet([output.Path], "words-split");
     }
@@ -42,7 +47,8 @@ internal sealed class WordsSplitWriter : IDisposable
             target,
             _output.Overwrite,
             document,
-            staged => document.Save(staged, SaveFormat.Docx));
+            staged => document.Save(staged, WordsSavePipeline.Options(Docx.Id, _password)),
+            encrypted: _password is not null);
         _parts.Add(new StagedPart(index, source, target));
     }
 
@@ -53,7 +59,7 @@ internal sealed class WordsSplitWriter : IDisposable
         {
             Index = part.Index,
             Source = part.Source,
-            Output = FileObjects.Output(files[index], Docx, encrypted: false),
+            Output = FileObjects.Output(files[index], Docx, encrypted: _password is not null),
         }).ToArray();
     }
 

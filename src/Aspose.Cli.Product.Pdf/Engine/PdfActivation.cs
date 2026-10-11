@@ -11,7 +11,7 @@ internal static class PdfActivation
             ProductBuildMetadata.ProductId,
             ApplyLicense,
             new PdfEvaluationProfile(),
-            outputs => new PdfSession(outputs, context.ResourceBudgets, new PdfDocumentLoader(context.ResourceBudgets)),
+            outputs => new PdfSession(outputs, context.ResourceBudgets, new PdfDocumentLoader(context.ResourceBudgets, outputs)),
             outputs => new PdfFontEnvironment(outputs, context.ResourceBudgets));
 
     /// <summary>Applies a license snapshot to Aspose.PDF.</summary>

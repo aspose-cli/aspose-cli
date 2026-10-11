@@ -24,9 +24,11 @@ internal static class PdfMerge
         int brokenInputLinks = 0;
         int namedDestinations = 0;
         List<Warning> warnings = [];
+        var security = new List<PdfInputSecurity>(request.InputPaths.Count);
         foreach (string path in request.InputPaths)
         {
             using LoadedPdf loaded = session.Loader.Open(path, request.Password);
+            security.Add(PdfInputSecurity.Of(loaded));
             Document source = loaded.Document;
             brokenInputLinks += PdfNavigationCensus.Unresolved(source).Links;
             // The merged document carries no named destinations, so every working one is lost.
@@ -63,7 +65,14 @@ internal static class PdfMerge
             bookmarks,
             Math.Max(0, PdfNavigationCensus.Unresolved(merged).Links - brokenInputLinks),
             namedDestinations);
-        PublishedFile written = session.Outputs.Write(request.Output.Path, request.Output.Overwrite, merged, merged.Save);
+        (PdfOutputPasswords? passwords, Warning? kept) = PdfOutputEncryption.Kept(request.EncryptPassword, request.Password, security);
+        bool encrypted = PdfOutputEncryption.Encrypted(merged, passwords);
+        PublishedFile written = session.Outputs.Write(request.Output.Path, request.Output.Overwrite, merged,
+            path => PdfOutputEncryption.Save(merged, path, passwords), encrypted: encrypted);
+        if (kept is not null)
+        {
+            warnings.Add(kept);
+        }
         if (navigation.ToWarning(
                 "lost their exact target: merged bookmarks open their page at Fit zoom, and named destinations are not carried into the merged document",
                 "Re-create location-sensitive bookmarks (add_bookmark) and links (add_link) on the merged PDF.")
@@ -75,7 +84,7 @@ internal static class PdfMerge
         return new PdfWriteResult
         {
             Action = "merge",
-            Output = FileObjects.Output(written, request.Output.Format, merged.IsEncrypted),
+            Output = FileObjects.Output(written, request.Output.Format, encrypted),
             Inputs = inputs,
             License = EnvelopeParts.License(state),
             Warnings = warnings.Count == 0 ? null : warnings,

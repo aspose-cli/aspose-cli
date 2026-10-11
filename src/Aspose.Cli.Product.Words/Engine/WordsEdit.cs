@@ -79,14 +79,6 @@ internal static class WordsEdit
                 outputPassword);
         baseline?.Cleanup();
         var outputWarnings = new List<Warning>();
-        if (loaded.Format.IsEncrypted && outputPassword is null && !request.Options.DryRun)
-        {
-            outputWarnings.Add(new Warning(WarningCodes.EncryptionRemoved, $"The '{format}' output cannot retain the source document encryption.")
-            {
-                Hint = "Use an encryption-capable document output to keep password protection.",
-            });
-        }
-
         outputWarnings.AddRange(SaveWarnings(loaded, format));
 
         return new WordsEditResult
@@ -222,7 +214,8 @@ internal static class WordsEdit
                     }
                 },
                 backupPath: request.Output.BackupPath,
-                inputPrecondition: precondition);
+                inputPrecondition: precondition,
+                encrypted: outputPassword is not null);
             backup = write.Backup;
 
             if (request.Verify)

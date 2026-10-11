@@ -33,8 +33,8 @@ internal sealed class WordsDocumentLoader
     /// <summary>
     /// Creates a loader. With the write pipeline, loaded documents know whether evaluation mode
     /// altered them, and the pipeline learns of each input the command read, which discloses
-    /// one evaluation mode cut short; without one (font inspection) no evaluation artifacts are
-    /// reported.
+    /// one evaluation mode cut short, and whether it is encrypted; without one (font
+    /// inspection) no evaluation artifacts are reported.
     /// </summary>
     internal WordsDocumentLoader(ResourceBudgetLedger resourceBudgets, OutputPipeline<Document>? outputs = null)
     {
@@ -67,6 +67,7 @@ internal sealed class WordsDocumentLoader
         InputSizeGuard.Ensure(_resourceBudgets, path);
         LoadedDocument loaded = OpenCore(path, password, warnings);
         _outputs?.ReadInput(loaded.Document);
+        _outputs?.Opened(loaded.Format.IsEncrypted);
         return loaded;
     }
 

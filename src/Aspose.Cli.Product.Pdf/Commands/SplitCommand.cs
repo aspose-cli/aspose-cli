@@ -13,7 +13,8 @@ internal static class SplitCommand
             new CommandTraits
             {
                 Input = PdfInputs.Document,
-                Output = OutputTarget.Directory("Directory that receives the parts, named <stem>.<n>.pdf."),
+                Output = OutputTarget.Directory("Directory that receives the parts, named <stem>.<n>.pdf.", PdfFormats.Document),
+                Encrypt = new EncryptedOutput("every output PDF"),
             },
             [.. split.Options],
             (parse, standard) => new PdfSplitRequest
@@ -22,6 +23,7 @@ internal static class SplitCommand
                 Plan = split.Read(parse),
                 Output = standard.DirectoryOutput,
                 Password = standard.InputPassword,
+                EncryptPassword = standard.EncryptPassword(),
             },
             Table)
         {

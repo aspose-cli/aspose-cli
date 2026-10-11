@@ -18,7 +18,8 @@ internal static class WordsCreate
         string formatId = request.Output.Format.Id;
         SaveOptions options = WordsSavePipeline.Options(formatId, request.EncryptPassword);
         WordsSavePipeline.RemoveMacrosUnlessKept(created.Document, formatId);
-        PublishedFile written = session.Outputs.Write(request.Output.Path, request.Output.Overwrite, created.Document, temp => created.Save(temp, options));
+        PublishedFile written = session.Outputs.Write(request.Output.Path, request.Output.Overwrite, created.Document, temp => created.Save(temp, options),
+            encrypted: request.EncryptPassword is not null);
 
         return new WordsCreateResult
         {

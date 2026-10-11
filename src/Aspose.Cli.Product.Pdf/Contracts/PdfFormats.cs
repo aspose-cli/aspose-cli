@@ -9,7 +9,7 @@ public static class PdfFormats
     internal static readonly IReadOnlyList<FormatDescriptor> Definitions =
         FileFormatRecognition.AttachTo(
     [
-        FormatDescriptor.Routed("pdf", FormatUse.Input, 0, null, null, ".pdf"),
+        FormatDescriptor.Routed("pdf", FormatUse.Input, 0, null, null, ".pdf") with { Protectable = true },
         FormatDescriptor.Routed("docx", FormatUse.Convert, null, 0, null, ".docx"),
         FormatDescriptor.Routed("xlsx", FormatUse.Convert, null, 1, null, ".xlsx"),
         FormatDescriptor.Routed("pptx", FormatUse.Convert, null, 2, null, ".pptx"),
@@ -24,7 +24,7 @@ public static class PdfFormats
         FormatDescriptor.Routed("pdfa-3b", FormatUse.Convert, null, 11, null, ".pdf"),
         FormatDescriptor.Routed("png", FormatUse.Convert | FormatUse.Render, null, 12, 0, ".png"),
         FormatDescriptor.Routed("jpeg", FormatUse.Convert | FormatUse.Render, null, 13, 1, ".jpg", ".jpeg"),
-        FormatDescriptor.Routed("tiff", FormatUse.Convert, null, 14, null, ".tiff", ".tif"),
+        FormatDescriptor.Routed("tiff", FormatUse.Convert, null, 14, null, ".tiff", ".tif") with { Image = true },
     ], PdfFormatRecognition.Rules);
 
     /// <summary>
@@ -32,7 +32,7 @@ public static class PdfFormats
     /// --pages selects: a document export or a PDF/A archive keeps the selected pages by removing
     /// the others, which reads them, while page images and page text read only the pages they show.
     /// </summary>
-    internal static bool ConvertReadsEveryPage(FormatDescriptor format) => format.Id is not ("png" or "jpeg" or "tiff" or "txt");
+    internal static bool ConvertReadsEveryPage(FormatDescriptor format) => !format.Image && format.Id != "txt";
 
     /// <summary>The PDF document format, which create, merge, sign and edit write.</summary>
     internal static IReadOnlyList<FormatDescriptor> Document { get; } =

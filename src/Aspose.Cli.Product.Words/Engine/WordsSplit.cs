@@ -15,7 +15,9 @@ internal static class WordsSplit
     {
         LicenseState state = session.Outputs.License;
         using LoadedDocument loaded = session.Loader.Open(request.Input, request.Password);
-        using var writer = new WordsSplitWriter(session.Outputs, request.Output, request.Input);
+        // Every part keeps the input's password, as a converted copy does.
+        using var writer = new WordsSplitWriter(session.Outputs, request.Output, request.Input,
+            loaded.Format.IsEncrypted ? request.Password : null);
         switch (request.Plan.By)
         {
             case SplitBy.Sections:

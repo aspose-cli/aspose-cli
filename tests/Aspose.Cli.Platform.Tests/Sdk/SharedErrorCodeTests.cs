@@ -24,6 +24,17 @@ public sealed class SharedErrorCodeTests
     }
 
     /// <summary>
+    /// <c>OUTPUT_EXISTS</c> names the option that chooses another path only when it is known: a
+    /// publication, which may write a file or a directory's parts, names none.
+    /// </summary>
+    [Fact]
+    public void OutputExists_NamesOnlyTheOptionItKnows()
+    {
+        Assert.Equal("Pass --overwrite to replace it, or choose a different output path.", CliErrors.OutputExists("a.pdf").Hint);
+        Assert.Equal("Pass --overwrite to replace it, or choose a different path with --out-dir.", CliErrors.OutputExists("a.pdf", "--out-dir").Hint);
+    }
+
+    /// <summary>
     /// The free-text factories of <c>FEATURE_UNSUPPORTED</c> say which kind of refusal they are
     /// in <c>details.reason</c>, so a caller can tell them apart without reading the message.
     /// </summary>

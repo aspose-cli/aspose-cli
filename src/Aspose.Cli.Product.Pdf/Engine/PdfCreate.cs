@@ -55,11 +55,13 @@ internal static class PdfCreate
             document.Info.Subject = string.Empty;
         }
 
+        PdfOutputPasswords? passwords = PdfOutputEncryption.Requested(request.EncryptPassword);
+        bool encrypted = PdfOutputEncryption.Encrypted(document, passwords);
         PublishedFile written = session.Outputs.Write(request.Output.Path, request.Output.Overwrite, document, path =>
         {
-            try { document.Save(path); }
+            try { PdfOutputEncryption.Save(document, path, passwords); }
             finally { resources?.ThrowIfFailed(); }
-        });
+        }, encrypted: encrypted);
         var warnings = new List<Warning>();
         warnings.AddRange(resources?.Warnings ?? []);
         if (html is not null && FormLosses(document, html) is { } losses)
@@ -70,7 +72,7 @@ internal static class PdfCreate
         return new PdfWriteResult
         {
             Action = "create",
-            Output = FileObjects.Output(written, request.Output.Format, document.IsEncrypted),
+            Output = FileObjects.Output(written, request.Output.Format, encrypted),
             Inputs = CreationInputs(request),
             License = EnvelopeParts.License(state),
             Warnings = warnings.Count == 0 ? null : warnings,

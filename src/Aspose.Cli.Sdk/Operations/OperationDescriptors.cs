@@ -83,6 +83,9 @@ public sealed class OperationRecord
 
     /// <summary>The op names commonly written for this operation (see <see cref="MistakenForAttribute"/>).</summary>
     public IReadOnlyList<string> MistakenFor { get; init; } = [];
+
+    /// <summary>Whether the operation encrypts the published document (see <see cref="EncryptsOutputAttribute"/>).</summary>
+    public bool EncryptsOutput { get; init; }
 }
 
 /// <summary>One member of a contract record.</summary>

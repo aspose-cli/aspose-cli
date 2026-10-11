@@ -66,7 +66,9 @@ Details: [design system](references/design-system.md).
   output keeps them warns `EVALUATION_INPUT_MARKED`. A license does not remove them, so rebuild the deck
   with a license.
 - Only PPTX and PPTM outputs can carry a password; `--encrypt-env` with any other `create`,
-  `edit` or `convert` output is `OPTION_INVALID`.
+  `edit` or `convert` output is `OPTION_INVALID`. Without it, a PPTX or PPTM output of an
+  encrypted deck keeps its password, and any other document output is written without one and
+  warns `ENCRYPTION_REMOVED`; slide images do not warn.
 - `query` does not see chart content or separate table cells; read them back from a Markdown
   conversion ([charts and tables](references/verification.md#charts-and-tables)).
 

@@ -120,6 +120,12 @@ public sealed class CommandDefinition<TRequest, TResult>
     /// </summary>
     internal Func<string, ProductOperationCommand>? Operations { get; init; }
 
+    /// <summary>
+    /// For an edit, the operation document that encrypts the edited document with the password
+    /// a named environment variable holds, or null when its vocabulary has none.
+    /// </summary>
+    internal Func<string, string?>? EncryptingDocument { get; init; }
+
     /// <summary>Every renderer the definition declares.</summary>
     internal IEnumerable<ProductOutputDefinition> Outputs()
     {
@@ -141,6 +147,11 @@ public sealed class CommandDefinition<TRequest, TResult>
         var options = new StandardOptions(_traits);
         Command command = options.CreateCommand(Name, Description, _parameters);
         command.SetAction(parse => context.Run(parse, scope => Execute(options, parse, scope, context, handler)));
+        if (EncryptingDocument is { } encrypting)
+        {
+            ProtectionAdvice.Declare(command, encrypting);
+        }
+
         return Examples.Count == 0 && Links.Count == 0 ? command : command.WithExamples(Examples, Links);
     }
 
@@ -185,7 +196,7 @@ public sealed class CommandDefinition<TRequest, TResult>
             }
 
             // The write pipeline discloses evaluation output for every product command alike.
-            return scope.Binding.Publishing.Disclose(result);
+            return scope.Binding.Publishing.DiscloseWith(result, formats => ProtectionAdvice.Hint(parse, formats, invocation.ResolvedFile));
         }
         catch (CliException error) when (invocation.ForPairedInput(error) is var restated && restated != error)
         {
@@ -250,6 +261,7 @@ public static class EditDefinition
             Examples = examples ?? [],
             Links = links ?? [],
             Operations = TOp.Catalog.Describe,
+            EncryptingDocument = TOp.Catalog.EncryptingDocument,
         };
     }
 }
