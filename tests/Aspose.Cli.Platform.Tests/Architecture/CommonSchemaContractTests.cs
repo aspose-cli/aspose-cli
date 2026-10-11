@@ -98,7 +98,7 @@ public sealed class CommonSchemaContractTests
     [InlineData("licensed", true)]
     [InlineData("evaluation", true)]
     [InlineData("invalid", true)]
-    [InlineData("not-applicable", true)]
+    [InlineData("not-applicable", false)]
     [InlineData("unknown", false)]
     public void DoctorProducts_ValidateTheReportedLicenseMode(string mode, bool valid)
     {
@@ -271,9 +271,6 @@ public sealed class CommonSchemaContractTests
                         Id = "test",
                         Sdk = "Aspose.Test",
                         SdkVersion = "1.0.0",
-                        LicenseApplicable = true,
-                        LicenseRequired = false,
-                        SupportsFontDiagnostics = true,
                     },
                     AvailableEngines = ["test"],
                 })

@@ -6,10 +6,6 @@ namespace Aspose.Cli.Product.Words.Contracts;
 /// <summary>Structural information returned by <c>words inspect</c>.</summary>
 public sealed record DocumentInfoResult() : EngineResultEnvelope("document-info", 2)
 {
-    /// <summary>The kind of file inspected: always <c>document</c>.</summary>
-    [JsonPropertyOrder(-50)]
-    public string Kind { get; } = "document";
-
     /// <summary>The inspected document.</summary>
     [JsonPropertyOrder(-49)]
     public required InputInfo Input { get; init; }
@@ -344,10 +340,6 @@ public sealed record TableData
 /// </summary>
 public sealed record DocumentReadResult() : WindowedResultEnvelope("document-read", 2)
 {
-    /// <summary>The kind of file read: always <c>document</c>.</summary>
-    [JsonPropertyOrder(-50)]
-    public string Kind { get; } = "document";
-
     /// <summary>The document read.</summary>
     [JsonPropertyOrder(-49)]
     public required InputInfo Input { get; init; }

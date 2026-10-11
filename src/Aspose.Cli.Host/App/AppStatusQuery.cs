@@ -14,7 +14,6 @@ internal sealed class AppStatusQuery
     private readonly ProductCatalog _catalog;
     private readonly AppCliGateway _cli;
     private readonly AppDocumentSession _sessions;
-    private readonly string _experience;
     private readonly IReadOnlyList<AppProductView> _products;
     private readonly IReadOnlyList<AppSkillView> _skills;
     private readonly IReadOnlyList<string> _supportedExtensions;
@@ -37,10 +36,6 @@ internal sealed class AppStatusQuery
         _sessions = sessions;
         ArgumentNullException.ThrowIfNull(capabilities);
         CapabilitiesResult snapshot = capabilities();
-        _experience = snapshot.Products.All(
-            static product => product.Engine?.LicenseApplicable is false)
-            ? "license-free"
-            : "licensed";
         _skills = new SkillCatalog(catalog).All
             .Select(static skill => new AppSkillView(
                 skill.Name,
@@ -74,7 +69,6 @@ internal sealed class AppStatusQuery
         return new AppStatusView(
             VersionInfo.CliVersion,
             DistributionInfo.DisplayName,
-            _experience,
             route,
             settings.OnboardingCompleted,
             product.Manifest.Id,
@@ -122,16 +116,12 @@ internal sealed class AppStatusQuery
         diagnostics.AddRange(license.Products.Select(product =>
             new AppDiagnosticView(
                 $"License ({product.Name})",
-                !product.Applicable
-                    ? "ok"
-                    : product.Problem is not null
+                product.Problem is not null
                     ? "fail"
                     : product.Mode == LicenseModes.Licensed
                         ? "ok"
                         : "warn",
-                !product.Applicable
-                    ? "not applicable"
-                    : product.Mode == LicenseModes.Licensed
+                product.Mode == LicenseModes.Licensed
                     ? $"licensed ({product.Source})"
                     : "evaluation mode",
                 product.Hint)));
@@ -145,14 +135,6 @@ internal sealed class AppStatusQuery
     {
         lock (_fontDiagnosticGate)
         {
-            if (!product.Manifest.Engine.SupportsFontDiagnostics)
-            {
-                return new AppDiagnosticView(
-                    "Fonts",
-                    "warn",
-                    $"{product.Manifest.Id}: font diagnostics are not available",
-                    "Verify font availability and substitution on the target system when visual fidelity matters.");
-            }
             // The gateway keeps an answer until the license changes and a failure for a short
             // while; the gate keeps a warm-up and the first status from starting the same child twice.
             try

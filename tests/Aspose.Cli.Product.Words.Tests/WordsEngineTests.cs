@@ -664,18 +664,19 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
 
         Assert.True(HasHeader(pdf, [0x25, 0x50, 0x44, 0x46]));
         Assert.True(HasHeader(image, [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]));
-        string expectedMode = _fixture.LicenseState == LicenseState.Licensed
-            ? LicenseModes.Licensed
+        // A licensed result omits its license block.
+        string? expectedMode = _fixture.LicenseState == LicenseState.Licensed
+            ? null
             : LicenseModes.Evaluation;
         Assert.Equal(expectedMode, converted.License?.Mode);
         Assert.Equal(expectedMode, rendered.License?.Mode);
         bool evaluation = _fixture.LicenseState == LicenseState.Evaluation;
         Assert.Equal(
             evaluation,
-            converted.Warnings?.Any(warning => warning.Code == WarningCodes.EvalMode) == true);
+            converted.Warnings?.Any(warning => warning.Code == WarningCodes.EvaluationMode) == true);
         Assert.Equal(
             evaluation,
-            rendered.Warnings?.Any(warning => warning.Code == WarningCodes.EvalMode) == true);
+            rendered.Warnings?.Any(warning => warning.Code == WarningCodes.EvaluationMode) == true);
         Assert.Contains("Quarterly report", File.ReadAllText(extracted.Items[0].Path), StringComparison.Ordinal);
     }
 

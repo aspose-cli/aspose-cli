@@ -68,7 +68,7 @@ public sealed class WordsDisclosureTests
         }));
 
         Assert.Equal(1, edited.Applied[0].ItemsAffected);
-        Assert.Contains(edited.Warnings!, static warning => warning.Code == WarningCodes.EvalMode);
+        Assert.Contains(edited.Warnings!, static warning => warning.Code == WarningCodes.EvaluationMode);
     }
 
     [Fact]
@@ -125,13 +125,13 @@ public sealed class WordsDisclosureTests
             Output = TestOutput.At(fixture.Temp.File("edited.docx")),
         }));
 
-        // Without a license, opening the document adds the marks itself, and EVAL_MODE says so.
-        WarningCode expected = fixture.LicenseState == LicenseState.Licensed ? WarningCodes.EvalInputMarked : WarningCodes.EvalMode;
+        // Without a license, opening the document adds the marks itself, and EVALUATION_MODE says so.
+        WarningCode expected = fixture.LicenseState == LicenseState.Licensed ? WarningCodes.EvaluationInputMarked : WarningCodes.EvaluationMode;
         foreach (ResultEnvelope result in new ResultEnvelope[] { converted, edited })
         {
-            Warning disclosure = Assert.Single(result.Warnings!, static warning => warning.Code.Name.StartsWith("EVAL_", StringComparison.Ordinal));
+            Warning disclosure = Assert.Single(result.Warnings!, static warning => warning.Code.Name.StartsWith("EVALUATION_", StringComparison.Ordinal));
             Assert.Equal(expected, disclosure.Code);
-            if (expected == WarningCodes.EvalInputMarked)
+            if (expected == WarningCodes.EvaluationInputMarked)
             {
                 Assert.Contains("the evaluation banner", disclosure.Message, StringComparison.Ordinal);
                 Assert.Contains("the footer sentence", disclosure.Message, StringComparison.Ordinal);
@@ -608,7 +608,6 @@ public sealed class WordsDisclosureTests
     // Reports a fixed license state; the real gate has already applied the SDK license.
     private sealed class FixedGate(LicenseState state) : ILicenseGate
     {
-        public bool IsApplicable => true;
         public LicenseResolution Resolution => LicenseResolution.None;
         public string Identity => "fixed";
         public LicenseState EnsureApplied() => state;

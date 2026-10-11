@@ -9,7 +9,7 @@ aspose-cli preview open <file> --output-format json
 ```
 
 The result carries `id`, `product`, `url`, `pid`, `file`, `view`, `reused`
-and the `license` mode the document rendered under. Content detection selects
+and, when the document rendered without a license, its `license` mode. Content detection selects
 the product; `--product` overrides it and `--view` picks another of the
 product's views (`capabilities` lists them under `products[].preview.views`).
 It opens the default browser unless `--no-open` is given or `ASPOSE_CLI_NO_OPEN=1` is set.

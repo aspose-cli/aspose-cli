@@ -49,7 +49,7 @@ public sealed class SlidesCoreWorkflowTests
         // The evaluation watermark carries the SDK's truncation marker, so evaluation discloses possible truncation.
         WarningCode[] expected = fixture.LicenseState == Aspose.Cli.Sdk.Licensing.LicenseState.Licensed
             ? []
-            : [WarningCodes.EvalInputTruncated];
+            : [WarningCodes.EvaluationInputTruncated];
         Assert.Equal(expected, manifest.Warnings?.Select(static warning => warning.Code) ?? []);
         Assert.Equal(["slide-0001.png", "slide-0002.png"], artifacts.Paths);
         Assert.Equal(
@@ -138,7 +138,7 @@ public sealed class SlidesCoreWorkflowTests
         {
             Assert.Contains(
                 result.Warnings ?? [],
-                static warning => warning.Code == WarningCodes.EvalMode);
+                static warning => warning.Code == WarningCodes.EvaluationMode);
         }
     }
 

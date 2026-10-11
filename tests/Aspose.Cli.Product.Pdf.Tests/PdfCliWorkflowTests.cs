@@ -150,7 +150,7 @@ public sealed class PdfCliWorkflowTests : IDisposable
 
         JsonNode truncated = Assert.Single(
             inspect.Json()["warnings"]!.AsArray(),
-            static warning => warning!["code"]!.GetValue<string>() == "EVAL_INPUT_TRUNCATED")!;
+            static warning => warning!["code"]!.GetValue<string>() == "EVALUATION_INPUT_TRUNCATED")!;
         Assert.StartsWith("Evaluation mode shows only the first 4 of 6 pages", truncated["message"]!.GetValue<string>(), StringComparison.Ordinal);
         Assert.True(firstPages.ExitCode == 0, firstPages.StdErr);
         Assert.Equal(7, allPages.ExitCode);
@@ -214,7 +214,7 @@ public sealed class PdfCliWorkflowTests : IDisposable
             result["outline"]!.AsArray().Select(static item => item!["title"]!.GetValue<string>()));
         JsonNode truncated = Assert.Single(
             result["warnings"]!.AsArray(),
-            static warning => warning!["code"]!.GetValue<string>() == "EVAL_INPUT_TRUNCATED")!;
+            static warning => warning!["code"]!.GetValue<string>() == "EVALUATION_INPUT_TRUNCATED")!;
         Assert.Contains("bookmarks, attachments and the form field count are complete", truncated["message"]!.GetValue<string>(), StringComparison.Ordinal);
     }
 
@@ -274,7 +274,7 @@ public sealed class PdfCliWorkflowTests : IDisposable
         Assert.Equal(
             Enumerable.Range(1, count).Select(static number => $"file{number}.txt"),
             result["attachments"]!.AsArray().Select(static item => item!["name"]!.GetValue<string>()));
-        Assert.Contains(result["warnings"]!.AsArray(), static warning => warning!["code"]!.GetValue<string>() == "EVAL_INPUT_TRUNCATED");
+        Assert.Contains(result["warnings"]!.AsArray(), static warning => warning!["code"]!.GetValue<string>() == "EVALUATION_INPUT_TRUNCATED");
         JsonNode read = forms.Json();
         JsonArray fields = read["fields"]!.AsArray();
         Assert.Equal(
@@ -285,7 +285,7 @@ public sealed class PdfCliWorkflowTests : IDisposable
             all.Select(index => FieldPage(index) < 4 ? FieldPage(index) + 1 : (int?)null),
             fields.Select(static item => item!["page"]?.GetValue<int>()));
         JsonNode[] truncated = [.. (read["warnings"]?.AsArray() ?? []).Where(
-            static warning => warning!["code"]!.GetValue<string>() == "EVAL_INPUT_TRUNCATED")!];
+            static warning => warning!["code"]!.GetValue<string>() == "EVALUATION_INPUT_TRUNCATED")!];
         if (fieldsOnLaterPages)
         {
             Assert.Contains("of 6 pages, so these fields have no page: Field5, Field6.", Assert.Single(truncated)["message"]!.GetValue<string>(), StringComparison.Ordinal);

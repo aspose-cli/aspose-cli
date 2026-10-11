@@ -25,7 +25,8 @@ The top level adds `sharedUserLicenseInstalled` and `identity`, an opaque hash
 of the validated selection that is absent while any selected source is
 invalid. `license status` is diagnostic: it reports a broken source as
 `mode: "invalid"` and still exits 0, while document commands refuse that
-source with exit 7. Document results also carry `license.mode`.
+source with exit 7. A document result that ran without a license carries
+`license.mode: "evaluation"`; a licensed result omits `license`.
 
 ## Resolution order
 
@@ -78,13 +79,13 @@ retry unchanged input.
 ## Evaluation mode: what you must disclose
 
 - Output-producing commands (`create`, `edit`, `convert`, `render` and the
-  like) return an `EVAL_MODE` warning, and the produced file carries evaluation
+  like) return an `EVALUATION_MODE` warning, and the produced file carries evaluation
   watermarks or added evaluation content. Its message names the evaluation
   marks the CLI recognizes in the output, whether this save or an earlier one
   wrote them, such as a warning sheet or a notice row, and, for page images and
   page text, those of the source they show. The mark is in the file
   you deliver, so tell the user.
-- `EVAL_INPUT_TRUNCATED` means evaluation mode kept only part of the content,
+- `EVALUATION_INPUT_TRUNCATED` means evaluation mode kept only part of the content,
   so the result is incomplete: usually an input it loaded, and for some
   products (its Skill says which) an edited output it saved. On a read, the text you get back is the
   engine's replacement ("...text has been truncated due to evaluation version
@@ -97,15 +98,15 @@ retry unchanged input.
   nothing matched: Slides `replace_text` on text in its scope that evaluation
   mode reads cut short, and PDF commands that need a page after the fourth. A
   Words document that ends with the evaluation truncation notice is edited as
-  it loaded, with `EVAL_INPUT_TRUNCATED`: Aspose.Words does not say whether
+  it loaded, with `EVALUATION_INPUT_TRUNCATED`: Aspose.Words does not say whether
   this open cut it short or an earlier save without a license left the notice,
   so treat the result as incomplete. The marks evaluation mode adds when it
   opens a document never act as content: a Words document appended to another,
   or a mail-merge letter, loses its evaluation banner first.
-- Reads (`inspect`, `query`) add no marks and carry no `EVAL_MODE` warning;
+- Reads (`inspect`, `query`) add no marks and carry no `EVALUATION_MODE` warning;
   input, resource and engine limits still apply. A dry run publishes nothing
   and carries none either.
-- With a license, `EVAL_INPUT_MARKED` means the output keeps evaluation marks
+- With a license, `EVALUATION_INPUT_MARKED` means the output keeps evaluation marks
   that an earlier save without a license wrote into its input (a watermark, a
   banner, a warning sheet or slide box), or a page image or page text shows a
   source that carries them; its message lists them. A licensed
@@ -116,7 +117,7 @@ retry unchanged input.
   on a later page, as in a PDF merged from a clean and a marked one, is not
   reported, so `review` the whole file.
 - Detect evaluation from the JSON `warnings` array. With `--output-format table`,
-  `--quiet` hides the `EVAL_MODE` line together with the stderr license status
+  `--quiet` hides the `EVALUATION_MODE` line together with the stderr license status
   line.
 - Installing a license does not clean files already produced. Regenerate the
   deliverable from the original, unmarked inputs.
@@ -135,10 +136,10 @@ aspose-cli words convert report.docx --to pdf --out eval-check.pdf --license-mod
 aspose-cli license status --license-mode evaluation --output-format json
 ```
 
-The result reports `license.mode: "evaluation"`, the `EVAL_MODE` warning and,
-where evaluation mode changed what the result holds, `EVAL_INPUT_TRUNCATED`, as
+The result reports `license.mode: "evaluation"`, the `EVALUATION_MODE` warning and,
+where evaluation mode changed what the result holds, `EVALUATION_INPUT_TRUNCATED`, as
 it would without a license, except that
-`EVAL_MODE` names the request as the cause; `license status` names the source
+`EVALUATION_MODE` names the request as the cause; `license status` names the source
 `requested`, and `doctor` says the mode was requested. Write to a scratch output, never over a
 deliverable. The option applies to one command (and to every call an MCP
 server started with it runs, unless a call chooses otherwise); it cannot be

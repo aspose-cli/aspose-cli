@@ -281,18 +281,18 @@ public sealed class CellsCliTests : IDisposable
         Assert.True(converted.ExitCode == 0, converted.StdErr);
         JsonNode result = JsonNode.Parse(converted.StdOut)!;
         Assert.Equal("evaluation", result["license"]!["mode"]!.GetValue<string>());
-        Assert.False(string.IsNullOrWhiteSpace(Warning(result, "EVAL_MODE")["hint"]?.GetValue<string>()));
+        Assert.False(string.IsNullOrWhiteSpace(Warning(result, "EVALUATION_MODE")["hint"]?.GetValue<string>()));
         // Without --sheet the first sheet is exported, and the evaluation notice becomes its last row.
         Assert.Contains("Only worksheet 'Dashboard' was exported",
             Warning(result, "SHEETS_DROPPED")["message"]!.GetValue<string>(), StringComparison.Ordinal);
         Assert.StartsWith("Evaluation Only.", File.ReadAllLines(_workspace.File("first.csv"))[^1], StringComparison.Ordinal);
-        Assert.Contains("as the last row of the csv output", Warning(result, "EVAL_MODE")["message"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.Contains("as the last row of the csv output", Warning(result, "EVALUATION_MODE")["message"]!.GetValue<string>(), StringComparison.Ordinal);
         CliResult json = _workspace.Run("cells", "convert", "book.xlsx", "--to", "json", "--out", "book.json", "--output-format", "json");
         Assert.Contains("\"Evaluation Warning\"", File.ReadAllText(_workspace.File("book.json")), StringComparison.Ordinal);
-        Assert.Contains("\"watermark\"", Warning(json.Json(), "EVAL_MODE")["message"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.Contains("\"watermark\"", Warning(json.Json(), "EVALUATION_MODE")["message"]!.GetValue<string>(), StringComparison.Ordinal);
         CliResult edited = _workspace.Run("cells", "edit", "book.xlsx", "--out", "edited.tsv", "--set", "Dashboard!B1=1", "--output-format", "json");
         Assert.StartsWith("Evaluation Only.", File.ReadAllLines(_workspace.File("edited.tsv"))[^1], StringComparison.Ordinal);
-        Assert.Contains("as the last row of the tsv output", Warning(edited.Json(), "EVAL_MODE")["message"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.Contains("as the last row of the tsv output", Warning(edited.Json(), "EVALUATION_MODE")["message"]!.GetValue<string>(), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -378,7 +378,7 @@ public sealed class CellsCliTests : IDisposable
         Assert.Single(result["warnings"]!.AsArray(), warning => warning!["code"]!.GetValue<string>() == code)!;
 
     /// <summary>
-    /// An evaluation save adds a warning sheet and activates it; its EVAL_MODE says so, and later
+    /// An evaluation save adds a warning sheet and activates it; its EVALUATION_MODE says so, and later
     /// commands that default to the active sheet use the workbook's first sheet and say so, while
     /// commands that name their sheet or cover every sheet do not.
     /// </summary>
@@ -388,7 +388,7 @@ public sealed class CellsCliTests : IDisposable
     {
         JsonNode created = _workspace.Run("cells", "create", "book.xlsx", "--sheets", "One,Two", "--output-format", "json").Json();
         Assert.Contains("the evaluation warning sheet 'Evaluation Warning', which is the active sheet",
-            Warning(created, "EVAL_MODE")["message"]!.GetValue<string>(), StringComparison.Ordinal);
+            Warning(created, "EVALUATION_MODE")["message"]!.GetValue<string>(), StringComparison.Ordinal);
         File.WriteAllText(_workspace.File("ops.json"), """
             {"ops":[
               {"op":"set_values","sheet":"One","range":"A1","values":[["one"]]},
@@ -398,7 +398,7 @@ public sealed class CellsCliTests : IDisposable
 
         JsonNode edited = _workspace.Run("cells", "edit", "book.xlsx", "--ops", "ops.json", "--in-place", "--output-format", "json").Json();
         Assert.Contains("the evaluation warning sheet 'Evaluation Warning (1)', which is the active sheet",
-            Warning(edited, "EVAL_MODE")["message"]!.GetValue<string>(), StringComparison.Ordinal);
+            Warning(edited, "EVALUATION_MODE")["message"]!.GetValue<string>(), StringComparison.Ordinal);
         // Every operation named its sheet, so nothing defaulted to the active sheet.
         AssertNoSkippedSheet(edited);
 
@@ -420,14 +420,14 @@ public sealed class CellsCliTests : IDisposable
         AssertNoSkippedSheet(renderedAll);
         Assert.StartsWith("one", File.ReadAllText(_workspace.File("book.csv")), StringComparison.Ordinal);
         _ = Warning(csv, "ACTIVE_SHEET_SKIPPED");
-        _ = Warning(csv, "EVAL_MODE");
+        _ = Warning(csv, "EVALUATION_MODE");
         AssertNoSkippedSheet(pdf);
         Assert.True(new FileInfo(_workspace.File("book.pdf")).Length > 0);
         // The warning sheets earlier saves added print as pages of a whole-workbook PDF.
-        string pdfDisclosure = Warning(pdf, "EVAL_MODE")["message"]!.GetValue<string>();
+        string pdfDisclosure = Warning(pdf, "EVALUATION_MODE")["message"]!.GetValue<string>();
         Assert.Contains("the pages of the evaluation warning sheet 'Evaluation Warning'", pdfDisclosure, StringComparison.Ordinal);
         Assert.Contains("the pages of the evaluation warning sheet 'Evaluation Warning (1)'", pdfDisclosure, StringComparison.Ordinal);
-        Assert.DoesNotContain("evaluation warning sheet", Warning(chosenPdf, "EVAL_MODE")["message"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.DoesNotContain("evaluation warning sheet", Warning(chosenPdf, "EVALUATION_MODE")["message"]!.GetValue<string>(), StringComparison.Ordinal);
         Assert.Equal("Two", chosen["sheet"]!["name"]!.GetValue<string>());
         Assert.Equal("two", chosen["sheet"]!["cells"]![0]![0]!["v"]!.GetValue<string>());
         AssertNoSkippedSheet(chosen);

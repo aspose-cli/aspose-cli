@@ -82,7 +82,7 @@ internal static class CommandGrammar
             AllowedValues = OptionCompletions.Read(option),
             Secret = secret,
             ValueSource = metadata.ValueSource.ToContractName(),
-            InputKind = metadata.InputKind.ToContractName(),
+            InputKind = ContractName(metadata.InputKind),
             Description = option.Description,
         };
     }
@@ -100,11 +100,14 @@ internal static class CommandGrammar
                 ? ReadDefault(argument)
                 : null,
             AllowedValues = OptionCompletions.Read(argument),
-            InputKind = argument.GetParameterMetadata().InputKind.ToContractName(),
+            InputKind = ContractName(argument.GetParameterMetadata().InputKind),
             ValueSource = argument.GetParameterMetadata().ValueSource.ToContractName(),
             Secret = argument.GetParameterMetadata().Secret,
             Description = argument.Description,
         };
+
+    /// <summary>The contract name of what a value names; none when it names nothing to read, so capabilities omits it.</summary>
+    private static string? ContractName(InputKind kind) => kind == InputKind.None ? null : kind.ToContractName();
 
     private static string? ReadDefault(object symbol)
     {

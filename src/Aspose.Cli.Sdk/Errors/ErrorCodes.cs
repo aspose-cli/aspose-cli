@@ -82,9 +82,6 @@ public static partial class ErrorCodes
         new("PREVIEW_BUDGET_EXCEEDED", ExitCode.ValidationError);
     public static readonly ErrorCode UploadBudgetExceeded =
         new("UPLOAD_BUDGET_EXCEEDED", ExitCode.ValidationError);
-    /// <summary>The selected distribution or product does not use Aspose licensing.</summary>
-    public static readonly ErrorCode LicenseNotApplicable =
-        new("LICENSE_NOT_APPLICABLE", ExitCode.ValidationError) { LicenseSurface = true };
     // -- Output problems (exit 5) --------------------------------------------
 
     /// <summary>The output file already exists and --overwrite was not given.</summary>
@@ -98,13 +95,6 @@ public static partial class ErrorCodes
 
     /// <summary>A multi-file publication failed but verified recovery completed.</summary>
     public static readonly ErrorCode OutputPublicationFailed = new("OUTPUT_PUBLICATION_FAILED", ExitCode.OutputError);
-
-    public static readonly ErrorCode ReleaseVerificationFailed =
-        new("RELEASE_VERIFICATION_FAILED", ExitCode.OutputError);
-
-    /// <summary>The release feed could not be read, so nothing was verified or installed; retrying later can succeed.</summary>
-    public static readonly ErrorCode ReleaseFeedUnavailable =
-        new("RELEASE_FEED_UNAVAILABLE", ExitCode.OutputError);
 
     /// <summary>The requested live-preview port is already bound by another process.</summary>
     public static readonly ErrorCode LoopbackPortInUse = new("LOOPBACK_PORT_IN_USE", ExitCode.OutputError);
@@ -134,13 +124,13 @@ public static partial class ErrorCodes
     // -- License problems (exit 7) -------------------------------------------
 
     /// <summary>A license was configured but points to a missing file.</summary>
-    public static readonly ErrorCode LicenseFileNotFound = new("LICENSE_FILE_NOT_FOUND", ExitCode.LicenseError) { LicenseSurface = true };
+    public static readonly ErrorCode LicenseFileNotFound = new("LICENSE_FILE_NOT_FOUND", ExitCode.LicenseError);
 
     /// <summary>The configured license file was rejected by the engine.</summary>
-    public static readonly ErrorCode LicenseInvalid = new("LICENSE_INVALID", ExitCode.LicenseError) { LicenseSurface = true };
+    public static readonly ErrorCode LicenseInvalid = new("LICENSE_INVALID", ExitCode.LicenseError);
 
     /// <summary>An SDK evaluation restriction prevented the requested operation.</summary>
-    public static readonly ErrorCode EvaluationLimit = new("EVALUATION_LIMIT", ExitCode.LicenseError) { LicenseSurface = true };
+    public static readonly ErrorCode EvaluationLimit = new("EVALUATION_LIMIT", ExitCode.LicenseError);
 
     // -- Timeout (exit 9) ----------------------------------------------------
 
@@ -191,13 +181,10 @@ public static partial class ErrorCodes
         ExtractBudgetExceeded,
         PreviewBudgetExceeded,
         UploadBudgetExceeded,
-        LicenseNotApplicable,
         OutputExists,
         OutputUnwritable,
         OutputConflict,
         OutputPublicationFailed,
-        ReleaseVerificationFailed,
-        ReleaseFeedUnavailable,
         LoopbackPortInUse,
         LoopbackListenerUnavailable,
         AppBusy,

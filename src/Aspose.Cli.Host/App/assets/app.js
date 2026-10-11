@@ -211,20 +211,18 @@
   }
 
   function commercialState() {
-    var applicable = (status.license.products || []).filter(function (product) {
-      return product.applicable;
-    });
-    var licensed = applicable.filter(function (product) {
+    var products = status.license.products || [];
+    var licensed = products.filter(function (product) {
       return product.mode === 'licensed';
     }).length;
-    var broken = applicable.filter(function (product) {
+    var broken = products.filter(function (product) {
       return Boolean(product.problem);
     }).length;
     return {
-      products: applicable,
+      products: products,
       licensed: licensed,
       broken: broken,
-      complete: applicable.length > 0 && licensed === applicable.length
+      complete: products.length > 0 && licensed === products.length
     };
   }
 
@@ -233,7 +231,6 @@
       return;
     }
 
-    document.body.dataset.experience = status.experience;
     $('build-chip').textContent = status.displayName;
     setActivity(status.file ? 'Preview live' : 'Ready');
     $('file-input').accept = (status.supportedExtensions || []).join(',');
@@ -254,9 +251,6 @@
     bannerMount.replaceChildren();
     settingsMount.replaceChildren();
     previewMount.replaceChildren();
-    if (status.experience !== 'licensed') {
-      return;
-    }
 
     var state = commercialState();
     var banner = node('aside', 'license-banner');
@@ -286,8 +280,7 @@
     settingsMount.append(createLicenseSettings(state));
 
     var productLicense = currentProductLicense();
-    if (status.file && productLicense && productLicense.applicable
-        && productLicense.mode !== 'licensed') {
+    if (status.file && productLicense && productLicense.mode !== 'licensed') {
       var notice = node('div', 'preview-notice');
       notice.dataset.ui = 'evaluation-notice';
       notice.append(
@@ -340,43 +333,37 @@
     var broken = Boolean(product.problem);
     var badge = node(
       'span',
-      'chip ' + (!product.applicable || licensed ? '' : broken ? 'error' : 'warn'),
-      !product.applicable
-        ? 'Not applicable'
-        : licensed ? 'Licensed' : broken ? 'Needs attention' : 'Evaluation');
+      'chip ' + (licensed ? '' : broken ? 'error' : 'warn'),
+      licensed ? 'Licensed' : broken ? 'Needs attention' : 'Evaluation');
     header.append(node('h3', '', product.name), badge);
     card.append(header);
 
-    if (product.applicable) {
-      var details = node('dl', 'details');
-      appendDetail(details, 'Source', product.source || 'Not configured');
-      appendDetail(details, 'Stored at', product.path || 'None');
-      card.append(details);
-    }
+    var details = node('dl', 'details');
+    appendDetail(details, 'Source', product.source || 'Not configured');
+    appendDetail(details, 'Stored at', product.path || 'None');
+    card.append(details);
     if (broken) {
       card.append(node(
         'div',
         'inline-alert',
         product.problem + (product.hint ? ' ' + product.hint : '')));
     }
-    if (product.applicable) {
-      var actions = node('div', 'button-row');
-      var install = node(
-        'button',
-        'button secondary compact',
-        product.userLicenseInstalled ? 'Replace saved license' : 'Install for ' + product.name);
-      install.type = 'button';
-      install.dataset.licenseInstall = product.product;
-      actions.append(install);
-      if (product.userLicenseInstalled) {
-        var remove = node('button', 'button danger compact', 'Remove saved license');
-        remove.type = 'button';
-        remove.dataset.licenseRemove = product.product;
-        remove.dataset.licenseName = product.name;
-        actions.append(remove);
-      }
-      card.append(actions);
+    var actions = node('div', 'button-row');
+    var install = node(
+      'button',
+      'button secondary compact',
+      product.userLicenseInstalled ? 'Replace saved license' : 'Install for ' + product.name);
+    install.type = 'button';
+    install.dataset.licenseInstall = product.product;
+    actions.append(install);
+    if (product.userLicenseInstalled) {
+      var remove = node('button', 'button danger compact', 'Remove saved license');
+      remove.type = 'button';
+      remove.dataset.licenseRemove = product.product;
+      remove.dataset.licenseName = product.name;
+      actions.append(remove);
     }
+    card.append(actions);
     return card;
   }
 

@@ -22,7 +22,7 @@ public sealed class ProductInputAdmissionTests
         var inspect = new Command("inspect");
         inspect.Arguments.Add(new Argument<string>("file").WithInput(InputKind.File));
         root.Subcommands.Add(inspect);
-        var globals = new GlobalOptions(licensingApplicable: false);
+        var globals = new GlobalOptions();
         globals.AddTo(root);
         var parse = root.Parse(["--workdir", directory.Path, "inspect", absolute ? input : "large.bin"]);
         Assert.Empty(parse.Errors);
@@ -49,7 +49,7 @@ public sealed class ProductInputAdmissionTests
         var command = new Command("convert");
         command.Options.Add(new Option<string>("--out", "--target").WithInput(InputKind.None));
         root.Subcommands.Add(command);
-        var globals = new GlobalOptions(licensingApplicable: false);
+        var globals = new GlobalOptions();
         globals.AddTo(root);
         string[] option = equals ? [name + "=" + output] : [name, output];
         var parse = root.Parse(["convert", .. option]);

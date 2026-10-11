@@ -30,13 +30,10 @@ internal static class CommonRenderers
 
     public static void Render(LicenseStatusResult status, TableSurface surface)
     {
-        surface.Out.WriteLine($"applicable: {TableText.YesNo(status.Applicable)}");
         if (status.Products is { Count: > 0 } products)
         {
-            surface.Out.WriteLine();
             var table = new TextTable(
                 "product",
-                "applicable",
                 "mode",
                 "source",
                 "problem");
@@ -44,7 +41,6 @@ internal static class CommonRenderers
             {
                 table.AddRow(
                     product.Product,
-                    TableText.YesNo(product.Applicable),
                     product.Mode,
                     product.Source ?? "-",
                     product.Problem ?? "-");

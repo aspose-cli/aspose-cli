@@ -220,7 +220,7 @@ public sealed record ResourceBudgetCapabilities
         };
 }
 
-/// <summary>Public identity and licensing requirements of one product engine.</summary>
+/// <summary>Public identity of one product engine.</summary>
 public sealed record ProductEngineCapabilities
 {
     /// <summary>Engine id, as <c>availableEngines</c> lists it.</summary>
@@ -234,31 +234,6 @@ public sealed record ProductEngineCapabilities
     /// <summary>The engine SDK package version.</summary>
     [MinLength(1)]
     public required string SdkVersion { get; init; }
-
-    /// <summary>Whether an Aspose license changes what the engine produces.</summary>
-    public required bool LicenseApplicable { get; init; }
-
-    /// <summary>Whether the engine refuses to run without a license.</summary>
-    public required bool LicenseRequired { get; init; }
-
-    /// <summary>Whether <c>doctor</c> and <c>fonts</c> report the fonts the engine resolves.</summary>
-    public required bool SupportsFontDiagnostics { get; init; }
-
-    /// <summary>Creates the invariant descriptor used by a license-aware engine.</summary>
-    public static ProductEngineCapabilities LicenseAware(
-        string id,
-        string sdk,
-        string sdkVersion,
-        bool licenseRequired = false,
-        bool supportsFontDiagnostics = true) => new()
-        {
-            Id = id,
-            Sdk = sdk,
-            SdkVersion = sdkVersion,
-            LicenseApplicable = true,
-            LicenseRequired = licenseRequired,
-            SupportsFontDiagnostics = supportsFontDiagnostics,
-        };
 }
 
 /// <summary>Live-preview capabilities of one product.</summary>
@@ -450,9 +425,9 @@ public sealed record CommandOptionCapabilities
     [AllowedValues("command-line", "environment-variable-name", "stdin")]
     public required string ValueSource { get; init; }
 
-    /// <summary>What the value names: nothing to read, a file, or a JSON source.</summary>
-    [AllowedValues("none", "file", "json-source")]
-    public required string InputKind { get; init; }
+    /// <summary>What the value names: a file or a JSON source; omitted when it names nothing to read.</summary>
+    [AllowedValues("file", "json-source")]
+    public string? InputKind { get; init; }
 
     /// <summary>The option's help description.</summary>
     public string? Description { get; init; }
@@ -467,9 +442,9 @@ public sealed record CommandArgumentCapabilities
     /// <summary>The argument's value type, e.g. <c>string</c>.</summary>
     public required string Type { get; init; }
 
-    /// <summary>What the value names: nothing to read, a file, or a JSON source.</summary>
-    [AllowedValues("none", "file", "json-source")]
-    public required string InputKind { get; init; }
+    /// <summary>What the value names: a file or a JSON source; omitted when it names nothing to read.</summary>
+    [AllowedValues("file", "json-source")]
+    public string? InputKind { get; init; }
 
     /// <summary>Where the value comes from: the command line, the environment variable it names, or standard input.</summary>
     [AllowedValues("command-line", "environment-variable-name", "stdin")]

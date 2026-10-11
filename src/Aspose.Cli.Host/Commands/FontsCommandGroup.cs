@@ -1,7 +1,6 @@
 using System.CommandLine;
 using Aspose.Cli.Host.Catalog;
 using Aspose.Cli.Host.Invocation;
-using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Rendering;
 
 namespace Aspose.Cli.Host.Commands;
@@ -31,7 +30,7 @@ internal static class FontsCommandGroup
         ProductCatalog catalog,
         GlobalOptions globals)
     {
-        ProductDefinition[] providers = Providers(catalog);
+        IReadOnlyList<ProductDefinition> providers = catalog.Products;
         string? defaultProduct = providers.FirstOrDefault(product =>
                 product.Manifest.IsDefaultCandidate)?.Manifest.Id
             ?? providers.FirstOrDefault()?.Manifest.Id;
@@ -58,7 +57,7 @@ internal static class FontsCommandGroup
             string selected = parseResult.GetValue(product)!;
             ProductDefinition definition =
                 catalog.ResolveById(selected);
-            return context.Activate(definition).FontEnvironment!.ListFonts();
+            return context.Activate(definition).FontEnvironment.ListFonts();
         }));
 
         return list.WithInvocationPolicy(new CommandInvocationPolicy(McpAllowed: true));
@@ -86,19 +85,9 @@ internal static class FontsCommandGroup
                 path,
                 operation: "fonts",
                 cancellationToken: context.Deadline.Token);
-            if (!product.Manifest.Engine.SupportsFontDiagnostics)
-            {
-                throw CliErrors.FeatureUnsupported(
-                    "font diagnostics",
-                    product.Manifest.Id,
-                    Providers(catalog)
-                        .Select(static provider => provider.Manifest.Id)
-                        .ToArray());
-            }
             ProductBinding binding = context.Activate(product);
-            using IDisposable fontScope = FontProfiles.Use(
-                catalog, product, binding, invocation.FontDirectories);
-            return binding.FontEnvironment!.CheckFonts(
+            using IDisposable fontScope = binding.UseFonts(invocation.FontDirectories);
+            return binding.FontEnvironment.CheckFonts(
                 path,
                 new FontCheckRequest
                 {
@@ -108,9 +97,4 @@ internal static class FontsCommandGroup
 
         return check.WithInvocationPolicy(new CommandInvocationPolicy(McpAllowed: true));
     }
-
-    private static ProductDefinition[] Providers(ProductCatalog catalog) =>
-        catalog.Products
-            .Where(static product => product.Manifest.Engine.SupportsFontDiagnostics)
-            .ToArray();
 }

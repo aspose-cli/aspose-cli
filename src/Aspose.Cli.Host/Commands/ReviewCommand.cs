@@ -115,7 +115,7 @@ internal static class ReviewCommand
                 ? context.Paths.ResolveOutput(requestedOutput)
                 : input + ".review";
             ProductBinding binding = context.Activate(definition);
-            using IDisposable fontScope = FontProfiles.Use(catalog, definition, binding, invocation.FontDirectories);
+            using IDisposable fontScope = binding.UseFonts(invocation.FontDirectories);
             LicenseState license = binding.LicenseGate.EnsureApplied();
             var request = new ViewRenderRequest
             {
@@ -139,7 +139,7 @@ internal static class ReviewCommand
                 selectedCodes,
                 // The evidence shows what the engine draws, so the product's write pipeline
                 // discloses it in review.json and index.html as in the command's output.
-                result => binding.Publishing is { } publishing ? (ReviewResult)publishing.DiscloseRendered(result) : result);
+                result => (ReviewResult)binding.Publishing.DiscloseRendered(result));
         }));
         return command;
     }

@@ -18,10 +18,12 @@ public sealed class SlidesModule : IProductModule
                 ResourceBudgetCapabilities.Domain(SlidesBudgetDomains.Slides, 10_000, 50_000, "items", "post-load"),
                 ResourceBudgetCapabilities.Domain(SlidesBudgetDomains.Shapes, 1_000_000, 5_000_000, "items", "projection"),
             ],
-            Engine = ProductEngineCapabilities.LicenseAware(
-                "aspose",
-                ProductBuildMetadata.EngineName,
-                ProductBuildMetadata.SdkVersion),
+            Engine = new ProductEngineCapabilities
+            {
+                Id = "aspose",
+                Sdk = ProductBuildMetadata.EngineName,
+                SdkVersion = ProductBuildMetadata.SdkVersion,
+            },
             AvailableEngines = ["aspose"],
     };
 

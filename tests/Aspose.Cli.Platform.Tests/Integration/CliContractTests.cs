@@ -571,7 +571,7 @@ $", result.StdOut);
 
         Assert.Equal(0, result.ExitCode);
         JsonNode json = Parse(result.StdOut);
-        Assert.True(json["applicable"]!.GetValue<bool>());
+        Assert.Null(json["applicable"]);
         Assert.Null(json["mode"]);
         Assert.Null(json["source"]);
         Assert.Null(json["license"]);

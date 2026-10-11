@@ -23,7 +23,7 @@ internal static class UpdateInstaller
                 "Run the win-x64 distribution on Windows, or use update check for feed verification.");
         }
         string powerShell = WindowsPowerShell.TryResolve()
-            ?? throw CliErrors.ReleaseVerificationFailed("the trusted Windows PowerShell executable is unavailable");
+            ?? throw HostDiagnostics.ReleaseVerificationFailed("the trusted Windows PowerShell executable is unavailable");
         string statusPath = UpdateStatus.PathFor(AppContext.BaseDirectory);
         // Read the outcome of the previous run before this run replaces it.
         Warning? previous = UpdateStatus.ReadWarning(statusPath);
@@ -46,16 +46,16 @@ internal static class UpdateInstaller
             {
                 if (process.ExitCode == (int)ExitCode.Cancelled) { throw new OperationCanceledException(); }
                 throw LocalServiceChildError.TryRead(process.Stderr, process.ExitCode)
-                    ?? CliErrors.ReleaseVerificationFailed("the update preparation worker failed");
+                    ?? HostDiagnostics.ReleaseVerificationFailed("the update preparation worker failed");
             }
             ownsPackage = Directory.Exists(target);
             UpdateResult prepared = JsonSerializer.Deserialize(process.Stdout, SdkJsonContext.Default.UpdateResult)
-                ?? throw CliErrors.ReleaseVerificationFailed("the preparation worker returned no result");
+                ?? throw HostDiagnostics.ReleaseVerificationFailed("the preparation worker returned no result");
             if (prepared.CurrentVersion != VersionInfo.ArtifactVersion
                 || prepared.Feed != source || prepared.ProcessId is not null
                 || prepared.Status is not ("available" or "up-to-date")
                 || (prepared.Status == "available") != ownsPackage)
-            { throw CliErrors.ReleaseVerificationFailed("the preparation worker returned an inconsistent result"); }
+            { throw HostDiagnostics.ReleaseVerificationFailed("the preparation worker returned an inconsistent result"); }
             context.Deadline.ThrowIfExpired("update-handoff");
             if (!ownsPackage) { return prepared with { Feed = feed, Warnings = warnings }; }
             int pid = UpdateClient.HandoffToInstaller(powerShell, target, AppContext.BaseDirectory, statusPath, context.Deadline);

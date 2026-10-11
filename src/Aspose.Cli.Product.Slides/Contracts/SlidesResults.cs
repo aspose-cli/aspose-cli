@@ -9,10 +9,6 @@ namespace Aspose.Cli.Product.Slides.Contracts;
 /// </summary>
 public sealed record PresentationInfoResult() : EngineResultEnvelope("presentation-info", 2)
 {
-    /// <summary>The kind of document inspected, always <c>presentation</c>.</summary>
-    [JsonPropertyOrder(-50)]
-    public string Kind { get; } = "presentation";
-
     /// <summary>The inspected presentation.</summary>
     [JsonPropertyOrder(-49)]
     public required InputInfo Input { get; init; }
@@ -238,10 +234,6 @@ public sealed record PresentationSectionInfo
 /// <summary>Result of <c>slides query slides</c>: a window of slides with their content at the requested scope.</summary>
 public sealed record PresentationReadResult() : WindowedResultEnvelope("presentation-read", 2)
 {
-    /// <summary>The kind of document read, always <c>presentation</c>.</summary>
-    [JsonPropertyOrder(-50)]
-    public string Kind { get; } = "presentation";
-
     /// <summary>The presentation read.</summary>
     [JsonPropertyOrder(-49)]
     public required InputInfo Input { get; init; }

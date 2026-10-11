@@ -341,7 +341,6 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
 
         WorkbookInfoResult result = CellsInfo.Run(_fixture.Session, new InfoRequest { Input = path });
 
-        Assert.Equal("workbook", result.Kind);
         Assert.Equal("xlsx", result.Input.Format);
         Assert.True(result.Input.SizeBytes > 0);
 
@@ -530,7 +529,8 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
 
         WorkbookInfoResult result = CellsInfo.Run(_fixture.Session, new InfoRequest { Input = path });
 
-        Assert.Equal(LicenseModes.Licensed, result.License?.Mode);
+        // A licensed result omits its license block.
+        Assert.Null(result.License);
         // Read-only operations never carry the evaluation warning.
         Assert.Null(result.Warnings);
     }
@@ -584,7 +584,7 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
 
         // The sales fixture is multi-sheet, so a csv export also carries a
         // SHEETS_DROPPED warning; only the evaluation warning must be absent.
-        Assert.DoesNotContain(result.Warnings ?? [], static warning => warning.Code == WarningCodes.EvalMode);
+        Assert.DoesNotContain(result.Warnings ?? [], static warning => warning.Code == WarningCodes.EvaluationMode);
     }
 
     /// <summary>
@@ -694,7 +694,7 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
 
         string[] codes = [.. edited.Warnings!.Select(static warning => warning.Code.Name)];
         Assert.Equal(codes.Distinct(StringComparer.Ordinal), codes);
-        Assert.Contains(WarningCodes.EvalInputMarked.Name, codes);
+        Assert.Contains(WarningCodes.EvaluationInputMarked.Name, codes);
         Assert.Contains("ACTIVE_SHEET_SKIPPED", codes);
     }
 
@@ -722,9 +722,9 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
             Output = TestOutput.At(_fixture.Temp.File("unmarked-export.pdf"), format: "pdf"),
         }));
 
-        Warning notice = Assert.Single(marked.Warnings!, static warning => warning.Code == WarningCodes.EvalInputMarked);
+        Warning notice = Assert.Single(marked.Warnings!, static warning => warning.Code == WarningCodes.EvaluationInputMarked);
         Assert.Contains("the pages of the evaluation warning sheet 'Evaluation Warning'", notice.Message, StringComparison.Ordinal);
-        Assert.DoesNotContain(clean.Warnings ?? [], static warning => warning.Code == WarningCodes.EvalInputMarked);
+        Assert.DoesNotContain(clean.Warnings ?? [], static warning => warning.Code == WarningCodes.EvaluationInputMarked);
     }
 
     [Fact]

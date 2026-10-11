@@ -1,7 +1,7 @@
 using System.Text.Json;
+using Aspose.Cli.Host.Invocation;
 using Aspose.Cli.Sdk;
 using Aspose.Cli.Sdk.Contracts;
-using Aspose.Cli.Sdk.Errors;
 
 namespace Aspose.Cli.Host.Updating;
 
@@ -66,7 +66,7 @@ internal static class ReleaseManifest
             exception is JsonException or InvalidDataException or FormatException or KeyNotFoundException
                 or InvalidOperationException or IOException or UnauthorizedAccessException)
         {
-            throw CliErrors.ReleaseVerificationFailed($"the release manifest is invalid: {exception.Message}");
+            throw HostDiagnostics.ReleaseVerificationFailed($"the release manifest is invalid: {exception.Message}");
         }
     }
 

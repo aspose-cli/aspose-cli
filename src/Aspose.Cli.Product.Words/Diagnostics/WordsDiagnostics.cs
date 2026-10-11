@@ -13,7 +13,6 @@ internal static class WordsDiagnostics
     internal static readonly ErrorCode DocumentHasRevisions =
         new("DOCUMENT_HAS_REVISIONS", ExitCode.InputError);
 
-    internal static readonly WarningCode EncryptionRemoved = new("DOCUMENT_ENCRYPTION_REMOVED");
     internal static readonly WarningCode TrackedChangesPresent = new("TRACKED_CHANGES_PRESENT");
     internal static readonly WarningCode MacrosDropped = new("MACROS_DROPPED");
     internal static readonly WarningCode LayoutMayDiffer = new("LAYOUT_MAY_DIFFER");
@@ -33,7 +32,6 @@ internal static class WordsDiagnostics
         DiagnosticDescriptor.Error(RevisionNotFound),
         DiagnosticDescriptor.Error(MergeDataInvalid),
         DiagnosticDescriptor.Error(DocumentHasRevisions),
-        DiagnosticDescriptor.Warning(EncryptionRemoved),
         DiagnosticDescriptor.Warning(TrackedChangesPresent),
         DiagnosticDescriptor.Warning(MacrosDropped),
         DiagnosticDescriptor.Warning(LayoutMayDiffer),

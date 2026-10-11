@@ -190,7 +190,7 @@ public sealed class WordsCliTests : IDisposable
 
         JsonNode edited = JsonNode.Parse(result.StdOut)!;
         JsonNode warning = edited["warnings"]!.AsArray()
-            .Single(static item => item!["code"]!.GetValue<string>() == "EVAL_INPUT_TRUNCATED")!;
+            .Single(static item => item!["code"]!.GetValue<string>() == "EVALUATION_INPUT_TRUNCATED")!;
         Assert.Contains("only its first 4 section(s)", warning["message"]!.GetValue<string>(), StringComparison.Ordinal);
         Assert.False(edited["verification"]!["ok"]!.GetValue<bool>());
         Assert.Equal("OUTPUT_TRUNCATED", edited["verification"]!["issues"]![0]!["code"]!.GetValue<string>());

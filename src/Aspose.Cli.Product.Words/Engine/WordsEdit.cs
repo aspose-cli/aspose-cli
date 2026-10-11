@@ -82,7 +82,7 @@ internal static class WordsEdit
         var outputWarnings = new List<Warning>();
         if (loaded.Format.IsEncrypted && outputPassword is null && !request.Options.DryRun)
         {
-            outputWarnings.Add(new Warning(WordsDiagnostics.EncryptionRemoved, $"The '{format}' output cannot retain the source document encryption.")
+            outputWarnings.Add(new Warning(WarningCodes.EncryptionRemoved, $"The '{format}' output cannot retain the source document encryption.")
             {
                 Hint = "Use an encryption-capable document output to keep password protection.",
             });
@@ -91,7 +91,7 @@ internal static class WordsEdit
         outputWarnings.AddRange(SaveWarnings(loaded, format));
         if (truncation is not null)
         {
-            outputWarnings.Add(new Warning(WarningCodes.EvalInputTruncated, $"Aspose.Words evaluation mode cut the edited document short: {truncation}")
+            outputWarnings.Add(new Warning(WarningCodes.EvaluationInputTruncated, $"Aspose.Words evaluation mode cut the edited document short: {truncation}")
             {
                 Hint = "Do not deliver this output as complete; apply a license and retry.",
             });

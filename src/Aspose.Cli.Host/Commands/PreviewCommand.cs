@@ -101,7 +101,8 @@ internal static class PreviewCommand
             File = opened.Document.File,
             View = opened.Document.View,
             Reused = opened.Reused,
-            License = opened.Document.License is { Length: > 0 } mode
+            // A licensed preview omits the license block, as every licensed result does.
+            License = opened.Document.License is { Length: > 0 } mode && mode != LicenseModes.Licensed
                 ? new LicenseInfo { Mode = mode }
                 : null,
         };

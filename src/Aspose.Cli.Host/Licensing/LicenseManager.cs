@@ -24,7 +24,6 @@ internal static class LicenseManager
         Dictionary<string, ILicenseGate> gates = products.ToDictionary(
             product => product.Manifest.Id, product => context.Activate(product).LicenseGate, StringComparer.Ordinal);
         ProductLicenseStatus[] statuses = products.Select(product => Inspect(context, product, gates[product.Manifest.Id])).ToArray();
-        bool applicable = statuses.Any(static status => status.Applicable);
         string? identity = null;
         if (statuses.All(static status => status.Mode != LicenseModes.Invalid))
         {
@@ -37,17 +36,15 @@ internal static class LicenseManager
         }
         return new LicenseStatusResult
         {
-            Applicable = applicable,
             Products = Array.AsReadOnly(statuses),
             Identity = identity,
-            SharedUserLicenseInstalled = applicable && (context.ProductActivation.UserLicenseChanges?.IsSharedInstalled(context.ProductActivation.ConfigDirectory)
-                ?? File.Exists(LicenseResolver.SharedUserLicensePath(context.ProductActivation.ConfigDirectory))),
+            SharedUserLicenseInstalled = context.ProductActivation.UserLicenseChanges?.IsSharedInstalled(context.ProductActivation.ConfigDirectory)
+                ?? File.Exists(LicenseResolver.SharedUserLicensePath(context.ProductActivation.ConfigDirectory)),
         };
     }
 
     internal static LicenseStatusResult Install(CommandContext context, string sourcePath, string? productId)
     {
-        _ = RequireApplicable(context.Catalog, productId, "installation");
         LicenseStatusResult? result = null;
         LicenseInstaller.InstallMany(context.ResourceBudgets, sourcePath, snapshot =>
         {
@@ -78,7 +75,7 @@ internal static class LicenseManager
     internal static LicenseStatusResult RemoveAndReport(CommandContext context, string? productId)
     {
         bool sharedOnly = productId == "shared";
-        ProductDefinition[] products = RequireApplicable(context.Catalog, sharedOnly ? null : productId, "removal");
+        ProductDefinition[] products = Select(context.Catalog, sharedOnly ? null : productId);
         var changes = new UserLicenseChanges(sharedOnly ? [] : products.Select(product =>
             KeyValuePair.Create<string, string?>(product.Manifest.Id, null)), productId is null || sharedOnly);
         LicenseStatusResult result = Inspect(WithChanges(context, changes));
@@ -93,7 +90,7 @@ internal static class LicenseManager
     internal static bool Remove(CommandContext context, string? productId)
     {
         bool sharedOnly = string.Equals(productId, "shared", StringComparison.Ordinal);
-        ProductDefinition[] products = RequireApplicable(context.Catalog, sharedOnly ? null : productId, "removal");
+        ProductDefinition[] products = Select(context.Catalog, sharedOnly ? null : productId);
         IEnumerable<string> paths = sharedOnly
             ? []
             : products.Select(product => LicenseResolver.UserLicensePath(
@@ -105,9 +102,6 @@ internal static class LicenseManager
         return LicenseInstaller.RemoveMany(context.ResourceBudgets, paths).Count > 0;
     }
 
-    internal static void EnsureApplicable(ProductCatalog catalog, string? productId, string operation) =>
-        _ = RequireApplicable(catalog, productId, operation);
-
     private static ProductLicenseStatus Inspect(CommandContext context, ProductDefinition product, ILicenseGate gate)
     {
         CliException? error = null;
@@ -118,28 +112,14 @@ internal static class LicenseManager
         {
             Product = product.Manifest.Id,
             Name = product.Manifest.DisplayName,
-            Applicable = gate.IsApplicable,
             Mode = mode,
             Source = gate.Resolution.SourceLabel,
             Path = gate.Resolution.Path,
             Problem = error?.Message,
             Hint = error?.Hint,
-            UserLicenseInstalled = gate.IsApplicable && (context.ProductActivation.UserLicenseChanges?.IsProductInstalled(context.ProductActivation.ConfigDirectory, product.Manifest.Id)
-                ?? File.Exists(LicenseResolver.UserLicensePath(context.ProductActivation.ConfigDirectory, product.Manifest.Id))),
+            UserLicenseInstalled = context.ProductActivation.UserLicenseChanges?.IsProductInstalled(context.ProductActivation.ConfigDirectory, product.Manifest.Id)
+                ?? File.Exists(LicenseResolver.UserLicensePath(context.ProductActivation.ConfigDirectory, product.Manifest.Id)),
         };
-    }
-
-    private static ProductDefinition[] RequireApplicable(ProductCatalog catalog, string? productId, string operation)
-    {
-        ProductDefinition[] selected = Select(catalog, productId);
-        ProductDefinition[] applicable = selected.Where(static product => product.Manifest.Engine.LicenseApplicable).ToArray();
-        if (applicable.Length == 0)
-        {
-            throw CliErrors.LicenseNotApplicable(operation, productId,
-                catalog.Products.Where(static product => product.Manifest.Engine.LicenseApplicable)
-                    .Select(static product => product.Manifest.Id).ToArray());
-        }
-        return applicable;
     }
 
     private static ProductDefinition[] Select(ProductCatalog catalog, string? productId) =>

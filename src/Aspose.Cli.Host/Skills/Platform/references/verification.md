@@ -15,7 +15,7 @@ overview adds the checks specific to its documents.
     opened; coverage.complete is true, or the gap is reported
 [ ] Fonts: fonts check shows no missing font, or the substitution is reported
 [ ] Session diff: against the backup, only intended changes remain
-[ ] Evaluation: any EVAL_MODE or EVAL_INPUT_MARKED warning disclosed with the delivered file
+[ ] Evaluation: any EVALUATION_MODE or EVALUATION_INPUT_MARKED warning disclosed with the delivered file
 ```
 
 ## The review protocol
@@ -81,7 +81,7 @@ engine draws instead. It answers
 whether the declared font names are installed here, not whether every glyph
 renders: non-Latin text in a font without those glyphs can still pass, so the
 visual pass remains the proof. `review` reports a missing or substituted font
-as `FONTS_MISSING_OR_SUBSTITUTED`.
+with the product's check, such as `PDF_FONTS_MISSING_OR_SUBSTITUTED`.
 
 Fonts delivered beside the document reach the engine only through
 `--font-dir <dir>`, which adds to the system fonts and can repeat. Pass the

@@ -850,8 +850,7 @@ public abstract class ProductContractTests<TModule>
                         diagnostic.Severity,
                         diagnostic.ExitCode,
                         diagnostic.Category,
-                        diagnostic.DetailsSchemaId,
-                        diagnostic.LicenseSurface))
+                        diagnostic.DetailsSchemaId))
                     .Order(StringComparer.Ordinal)),
             string.Join(
                 "|",

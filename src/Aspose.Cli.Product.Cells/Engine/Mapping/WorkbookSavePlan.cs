@@ -37,7 +37,7 @@ internal sealed record WorkbookSavePlan(string FormatId, SaveFormat Format, Save
             _ => null,
         };
         Secret? password = encryptPassword ?? (encryptable ? inputPassword : null);
-        Warning? warning = inputPassword is not null && password is null ? new Warning(CellsDiagnostics.EncryptionRemoved, $"The '{formatId}' output cannot retain the source workbook encryption.")
+        Warning? warning = inputPassword is not null && password is null ? new Warning(WarningCodes.EncryptionRemoved, $"The '{formatId}' output cannot retain the source workbook encryption.")
         {
             Hint = "Use an encryption-capable spreadsheet output to keep password protection.",
         } : null;

@@ -9,8 +9,8 @@ namespace Aspose.Cli.Sdk.Results;
 /// disclosure. It resolves the product's license state once, publishes every output the product
 /// writes, and inspects each published document, once it is saved and before it is published,
 /// through the product's <see cref="IEvaluationProfile{TDocument}"/>. The command template then
-/// adds the disclosure to the result (<see cref="Disclose"/>): <c>EVAL_MODE</c> when evaluation
-/// mode produced an output, naming the evaluation marks it carries, and <c>EVAL_INPUT_MARKED</c>
+/// adds the disclosure to the result (<see cref="Disclose"/>): <c>EVALUATION_MODE</c> when evaluation
+/// mode produced an output, naming the evaluation marks it carries, and <c>EVALUATION_INPUT_MARKED</c>
 /// when a licensed output carries evaluation marks, which a licensed save never adds, so they come
 /// from its input. A command that publishes nothing, such as a dry run or a read, discloses
 /// nothing.
@@ -22,6 +22,7 @@ public abstract class OutputPipeline : ILicenseState
     private int _published;
     private EvaluationMarks _kept = EvaluationMarks.None;
     private EvaluationMarks _shown = EvaluationMarks.None;
+    private Inspection? _view;
 
     private protected OutputPipeline(ILicenseGate licenseGate, SafeFileWriter writer)
     {
@@ -49,12 +50,28 @@ public abstract class OutputPipeline : ILicenseState
     /// Records the files the host is about to publish from this product's renders, such as
     /// review evidence, which show what the engine draws, its evaluation watermark included, and
     /// adds the disclosure to the result those files carry, so the files and the command's
-    /// output say the same.
+    /// output say the same. The disclosure names the marks of the pages the product's view
+    /// rendering showed (<see cref="OutputPipeline{TDocument}.ShowsInView"/>), as a render's does.
     /// </summary>
     public ResultEnvelope DiscloseRendered(ResultEnvelope result)
     {
-        Record(null);
+        Inspection? view;
+        lock (_sync)
+        {
+            view = _view;
+        }
+
+        Record(view);
         return Disclose(result);
+    }
+
+    /// <summary>Keeps the marks of the latest view rendering, which <see cref="DiscloseRendered"/> discloses if the host publishes it.</summary>
+    private protected void RecordView(Inspection inspection)
+    {
+        lock (_sync)
+        {
+            _view = inspection;
+        }
     }
 
     /// <summary>
@@ -130,7 +147,7 @@ public abstract class OutputPipeline : ILicenseState
 internal static class EvaluationDisclosure
 {
     /// <summary>
-    /// <c>EVAL_MODE</c> for outputs evaluation mode produced, naming the marks the outputs keep
+    /// <c>EVALUATION_MODE</c> for outputs evaluation mode produced, naming the marks the outputs keep
     /// and those the rendered sources carry.
     /// </summary>
     internal static Warning Output(bool requested, EvaluationMarks kept, EvaluationMarks shown)
@@ -151,7 +168,7 @@ internal static class EvaluationDisclosure
     }
 
     /// <summary>
-    /// <c>EVAL_INPUT_MARKED</c> for licensed outputs that keep the evaluation marks of their
+    /// <c>EVALUATION_INPUT_MARKED</c> for licensed outputs that keep the evaluation marks of their
     /// input, or that render a source which carries them.
     /// </summary>
     internal static Warning InputMarked(EvaluationMarks kept, EvaluationMarks shown)
@@ -168,7 +185,7 @@ internal static class EvaluationDisclosure
         }
 
         sentences.Add("The license does not remove them.");
-        return new Warning(WarningCodes.EvalInputMarked, string.Join(" ", sentences))
+        return new Warning(WarningCodes.EvaluationInputMarked, string.Join(" ", sentences))
         {
             Hint = "Tell the user. Regenerate the deliverable from the original, unmarked inputs with a license; editing this file keeps the marks.",
             Docs = "licensing",
@@ -273,6 +290,25 @@ public sealed class OutputPipeline<TDocument> : OutputPipeline
     public OutputSet<TDocument> BeginSet(IEnumerable<string> targetDirectories, string operation) =>
         new(this, _profile, new AtomicOutputSetWriter(Writer, targetDirectories, operation));
 
+    /// <summary>
+    /// Records that a view rendering, such as review evidence or a live preview, showed
+    /// <paramref name="document"/>: its pages <paramref name="pages"/> as <paramref name="format"/>
+    /// parts, or the whole document when null. The document is inspected now, while the product
+    /// holds it open; nothing is published until the host publishes the rendering
+    /// (<see cref="OutputPipeline.DiscloseRendered"/>).
+    /// </summary>
+    /// <param name="document">The document the view shows.</param>
+    /// <param name="format">The format of the view's parts, such as <c>png</c>.</param>
+    /// <param name="pages">The pages (or slides) the view shows, numbered from 1; null for all of them.</param>
+    public void ShowsInView(TDocument document, string format, IEnumerable<int>? pages = null)
+    {
+        ArgumentNullException.ThrowIfNull(document);
+        ArgumentException.ThrowIfNullOrWhiteSpace(format);
+        var inspector = new Inspector(_profile, document, format, rendering: true);
+        inspector.Shows(pages);
+        RecordView(inspector.InspectNow());
+    }
+
     internal static string FormatOf(string targetPath) =>
         Path.GetExtension(targetPath).TrimStart('.').ToLowerInvariant();
 
@@ -323,6 +359,13 @@ public sealed class OutputPipeline<TDocument> : OutputPipeline
             {
                 _pages.UnionWith(pages);
             }
+        }
+
+        /// <summary>The marks the document shows now, with no save, as a view rendering shows it.</summary>
+        internal Inspection InspectNow()
+        {
+            _saved = true;
+            return Result!;
         }
 
         internal Action<string> After(Action<string> write)

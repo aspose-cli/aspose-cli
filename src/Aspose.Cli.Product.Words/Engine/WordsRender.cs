@@ -97,6 +97,7 @@ internal static class WordsRender
         }
 
         loaded.Resources.ThrowIfFailed();
+        session.Outputs.ShowsInView(document, "png", Enumerable.Range(1, count));
         return new ViewManifest
         {
             View = WordsViews.Pages,

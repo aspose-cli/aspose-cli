@@ -23,7 +23,6 @@ public sealed class LicenseGate : ILicenseGate
         _application = new Lazy<(LicenseState, string)>(Apply, LazyThreadSafetyMode.ExecutionAndPublication);
     }
 
-    public bool IsApplicable => true;
     public LicenseResolution Resolution { get; }
     public string Identity => _application.Value.Identity;
     public LicenseState EnsureApplied() => _application.Value.State;
@@ -94,13 +93,4 @@ public sealed class LicenseGate : ILicenseGate
         }
         return content;
     }
-}
-
-internal sealed class LicenseNotApplicableGate : ILicenseGate
-{
-    public static LicenseNotApplicableGate Instance { get; } = new();
-    public bool IsApplicable => false;
-    public LicenseResolution Resolution => LicenseResolution.None;
-    public string Identity => "not-applicable";
-    public LicenseState EnsureApplied() => LicenseState.NotApplicable;
 }

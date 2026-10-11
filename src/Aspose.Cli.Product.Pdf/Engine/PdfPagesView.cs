@@ -65,6 +65,7 @@ internal static class PdfPagesView
             });
         }
 
+        session.Outputs.ShowsInView(loaded.Document, "png", Enumerable.Range(1, count));
         return new ViewManifest
         {
             View = PdfViews.Pages,

@@ -463,30 +463,6 @@ public static partial class CliErrors
             innerException: exception);
     }
 
-    /// <summary>A release could not be verified, so nothing was installed.</summary>
-    public static CliException ReleaseVerificationFailed(string reason) => CliException.Create(
-        ErrorCodes.ReleaseVerificationFailed,
-        $"The release could not be verified: {reason}",
-        hint: "Retry from the official release. Do not bypass the archive check.",
-        details: new JsonObject { ["reason"] = reason });
-
-    /// <summary>The release feed could not be read; nothing was verified or installed.</summary>
-    /// <param name="feed">The feed, which carries no credentials, query or fragment.</param>
-    /// <param name="reason">Why it could not be read.</param>
-    public static CliException ReleaseFeedUnavailable(Uri feed, string reason)
-    {
-        ArgumentNullException.ThrowIfNull(feed);
-        return CliException.Create(
-            ErrorCodes.ReleaseFeedUnavailable,
-            $"The release feed could not be reached: {reason}",
-            hint: "Check the network connection, proxy settings (HTTPS_PROXY) and the feed URL, then retry. A downloaded release directory also works as a local feed path.",
-            details: new JsonObject
-            {
-                ["reason"] = reason,
-                ["feed"] = feed.AbsoluteUri,
-            });
-    }
-
     /// <summary>
     /// An explicit output resolves to an input document. Replacing the input is the in-place
     /// mode's job, which alone carries its backup and fingerprint precondition.
@@ -878,35 +854,6 @@ public static partial class CliErrors
         details: details,
         docs: "licensing",
         innerException: innerException);
-
-    /// <summary>Creates an error for a license operation with no applicable product.</summary>
-    public static CliException LicenseNotApplicable(
-        string operation,
-        string? product,
-        IReadOnlyList<string> available)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(operation);
-        ArgumentNullException.ThrowIfNull(available);
-        JsonArray values = Strings(available);
-
-        string subject = product is null
-            ? "this distribution"
-            : $"product '{product}'";
-        string hint = available.Count == 0
-            ? "Install Aspose CLI to configure an Aspose license."
-            : $"Choose a product that uses Aspose licensing: {string.Join(", ", available)}.";
-        return CliException.Create(
-            ErrorCodes.LicenseNotApplicable,
-            $"License {operation} is not applicable to {subject}.",
-            hint,
-            new JsonObject
-            {
-                ["operation"] = operation,
-                ["product"] = product,
-                ["available"] = values,
-            },
-            docs: "licensing");
-    }
 
     /// <summary>
     /// The error for a named target the document does not contain. The details list the names

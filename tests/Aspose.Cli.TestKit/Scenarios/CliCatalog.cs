@@ -111,7 +111,7 @@ public sealed class CliCatalog
         Strings(option["allowedValues"]));
 
     private static CliArgument ReadArgument(JsonNode argument) => new(
-        argument["inputKind"]!.GetValue<string>(),
+        argument["inputKind"]?.GetValue<string>(),
         argument["maximumArity"]!.GetValue<int>(),
         argument["required"]!.GetValue<bool>());
 
@@ -172,7 +172,7 @@ public sealed record CliOption(
     IReadOnlyList<string> AllowedValues);
 
 /// <summary>One positional argument of a command.</summary>
-public sealed record CliArgument(string InputKind, int MaximumArity, bool Required);
+public sealed record CliArgument(string? InputKind, int MaximumArity, bool Required);
 
 /// <summary>One product of the catalog.</summary>
 public sealed record CliProduct(

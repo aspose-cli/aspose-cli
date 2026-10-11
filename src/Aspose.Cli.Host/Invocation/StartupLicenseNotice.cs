@@ -6,7 +6,7 @@ using Aspose.Cli.Sdk.Licensing;
 
 namespace Aspose.Cli.Host.Invocation;
 
-/// <summary>Reports native-validated licenses once at the human CLI boundary.</summary>
+/// <summary>Reports the products that run without a valid license once at the human CLI boundary.</summary>
 internal static class StartupLicenseNotice
 {
     internal static void Write(
@@ -29,13 +29,14 @@ internal static class StartupLicenseNotice
         LicenseStatusResult status = LicenseManager.Inspect(
             CompositionRoot.Create(host.Catalog, globals),
             invocation.ProductId);
-        if (!status.Applicable)
+        // A licensed run says nothing: only a product that is not licensed is worth a notice.
+        ProductLicenseStatus[] products = [.. status.Products.Where(
+            static product => product.Mode != LicenseModes.Licensed)];
+        if (products.Length == 0)
         {
             return;
         }
 
-        IEnumerable<ProductLicenseStatus> products = status.Products.Where(
-            static product => product.Applicable);
         string summary = string.Join("; ", products.Select(
             static product => product.Source == LicenseResolution.RequestedSourceLabel
                 ? $"{product.Product}={product.Mode} (requested)"
@@ -45,5 +46,4 @@ internal static class StartupLicenseNotice
             : string.Empty;
         error.WriteLine($"license: {summary}{detail}");
     }
-
 }

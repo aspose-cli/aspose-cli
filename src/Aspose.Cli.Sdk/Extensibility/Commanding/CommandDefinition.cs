@@ -176,7 +176,7 @@ public sealed class CommandDefinition<TRequest, TResult>
             }
 
             // The write pipeline discloses evaluation output for every product command alike.
-            return scope.Binding.Publishing?.Disclose(result) ?? result;
+            return scope.Binding.Publishing.Disclose(result);
         }
         catch (CliException error) when (invocation.ForPairedInput(error) is var restated && restated != error)
         {

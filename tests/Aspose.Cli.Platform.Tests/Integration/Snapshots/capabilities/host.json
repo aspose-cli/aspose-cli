@@ -94,7 +94,7 @@
           "type": "string"
         },
         "warnings": {
-          "description": "Warnings the agent is expected to act on (for example EVAL_MODE: tell the user about the evaluation watermark). Omitted when empty.",
+          "description": "Warnings the agent is expected to act on (for example EVALUATION_MODE: tell the user about the evaluation watermark). Omitted when empty.",
           "type": "array",
           "items": {
             "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
@@ -112,7 +112,6 @@
         "schemaVersion",
         "version",
         "displayName",
-        "experience",
         "route",
         "onboardingCompleted",
         "product",
@@ -147,14 +146,6 @@
           "description": "The distribution's display name.",
           "type": "string",
           "minLength": 1
-        },
-        "experience": {
-          "description": "Whether every product is license-free or a license applies.",
-          "type": "string",
-          "enum": [
-            "license-free",
-            "licensed"
-          ]
         },
         "route": {
           "description": "The App route to show, e.g. home.",
@@ -723,7 +714,7 @@
           }
         },
         "warnings": {
-          "description": "Warnings the agent is expected to act on (for example EVAL_MODE: tell the user about the evaluation watermark). Omitted when empty.",
+          "description": "Warnings the agent is expected to act on (for example EVALUATION_MODE: tell the user about the evaluation watermark). Omitted when empty.",
           "type": "array",
           "items": {
             "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
@@ -737,7 +728,6 @@
           "required": [
             "name",
             "type",
-            "inputKind",
             "valueSource",
             "secret",
             "minimumArity",
@@ -757,10 +747,9 @@
               "type": "string"
             },
             "inputKind": {
-              "description": "What the value names: nothing to read, a file, or a JSON source.",
+              "description": "What the value names: a file or a JSON source; omitted when it names nothing to read.",
               "type": "string",
               "enum": [
-                "none",
                 "file",
                 "json-source"
               ]
@@ -880,8 +869,7 @@
             "hasDefault",
             "allowedValues",
             "secret",
-            "valueSource",
-            "inputKind"
+            "valueSource"
           ],
           "additionalProperties": false,
           "properties": {
@@ -951,10 +939,9 @@
               ]
             },
             "inputKind": {
-              "description": "What the value names: nothing to read, a file, or a JSON source.",
+              "description": "What the value names: a file or a JSON source; omitted when it names nothing to read.",
               "type": "string",
               "enum": [
-                "none",
                 "file",
                 "json-source"
               ]
@@ -1139,15 +1126,12 @@
           }
         },
         "productEngineCapabilities": {
-          "description": "Public identity and licensing requirements of one product engine.",
+          "description": "Public identity of one product engine.",
           "type": "object",
           "required": [
             "id",
             "sdk",
-            "sdkVersion",
-            "licenseApplicable",
-            "licenseRequired",
-            "supportsFontDiagnostics"
+            "sdkVersion"
           ],
           "additionalProperties": false,
           "properties": {
@@ -1165,18 +1149,6 @@
               "description": "The engine SDK package version.",
               "type": "string",
               "minLength": 1
-            },
-            "licenseApplicable": {
-              "description": "Whether an Aspose license changes what the engine produces.",
-              "type": "boolean"
-            },
-            "licenseRequired": {
-              "description": "Whether the engine refuses to run without a license.",
-              "type": "boolean"
-            },
-            "supportsFontDiagnostics": {
-              "description": "Whether doctor and fonts report the fonts the engine resolves.",
-              "type": "boolean"
             }
           }
         },
@@ -1575,7 +1547,7 @@
           }
         },
         "warnings": {
-          "description": "Warnings the agent is expected to act on (for example EVAL_MODE: tell the user about the evaluation watermark). Omitted when empty.",
+          "description": "Warnings the agent is expected to act on (for example EVALUATION_MODE: tell the user about the evaluation watermark). Omitted when empty.",
           "type": "array",
           "items": {
             "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
@@ -1754,7 +1726,7 @@
           }
         },
         "warnings": {
-          "description": "Warnings the agent is expected to act on (for example EVAL_MODE: tell the user about the evaluation watermark). Omitted when empty.",
+          "description": "Warnings the agent is expected to act on (for example EVALUATION_MODE: tell the user about the evaluation watermark). Omitted when empty.",
           "type": "array",
           "items": {
             "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
@@ -1815,8 +1787,7 @@
               "enum": [
                 "evaluation",
                 "licensed",
-                "invalid",
-                "not-applicable"
+                "invalid"
               ]
             },
             "engine": {
@@ -1942,11 +1913,11 @@
           }
         },
         "license": {
-          "description": "License mode the engine ran under.",
+          "description": "License mode the engine ran under; omitted when it ran licensed.",
           "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/license.schema.json"
         },
         "warnings": {
-          "description": "Warnings the agent is expected to act on (for example EVAL_MODE: tell the user about the evaluation watermark). Omitted when empty.",
+          "description": "Warnings the agent is expected to act on (for example EVALUATION_MODE: tell the user about the evaluation watermark). Omitted when empty.",
           "type": "array",
           "items": {
             "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
@@ -2011,11 +1982,11 @@
           }
         },
         "license": {
-          "description": "License mode the engine ran under.",
+          "description": "License mode the engine ran under; omitted when it ran licensed.",
           "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/license.schema.json"
         },
         "warnings": {
-          "description": "Warnings the agent is expected to act on (for example EVAL_MODE: tell the user about the evaluation watermark). Omitted when empty.",
+          "description": "Warnings the agent is expected to act on (for example EVALUATION_MODE: tell the user about the evaluation watermark). Omitted when empty.",
           "type": "array",
           "items": {
             "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
@@ -2090,7 +2061,7 @@
     "v2/common/license": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "$id": "https://schemas.aspose.com/aspose-cli/v2/common/license.schema.json",
-      "description": "License mode attached to results produced by engine operations.",
+      "description": "License mode attached to a result whose engine ran without a license; a licensed result omits it.",
       "type": "object",
       "required": [
         "mode"
@@ -2098,12 +2069,10 @@
       "additionalProperties": false,
       "properties": {
         "mode": {
-          "description": "The license mode: licensed, evaluation or not-applicable.",
+          "description": "The license mode: evaluation.",
           "type": "string",
           "enum": [
-            "evaluation",
-            "licensed",
-            "not-applicable"
+            "evaluation"
           ]
         }
       }
@@ -2116,7 +2085,6 @@
       "required": [
         "schema",
         "schemaVersion",
-        "applicable",
         "products",
         "sharedUserLicenseInstalled"
       ],
@@ -2129,10 +2097,6 @@
         "schemaVersion": {
           "description": "Version of this result contract.",
           "const": 2
-        },
-        "applicable": {
-          "description": "Whether a license changes what any selected product produces.",
-          "type": "boolean"
         },
         "products": {
           "description": "The license status of each selected product.",
@@ -2152,7 +2116,7 @@
           "pattern": "^[0-9a-f]{64}$"
         },
         "warnings": {
-          "description": "Warnings the agent is expected to act on (for example EVAL_MODE: tell the user about the evaluation watermark). Omitted when empty.",
+          "description": "Warnings the agent is expected to act on (for example EVALUATION_MODE: tell the user about the evaluation watermark). Omitted when empty.",
           "type": "array",
           "items": {
             "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
@@ -2166,7 +2130,6 @@
           "required": [
             "product",
             "name",
-            "applicable",
             "mode",
             "userLicenseInstalled"
           ],
@@ -2182,18 +2145,13 @@
               "type": "string",
               "minLength": 1
             },
-            "applicable": {
-              "description": "Whether a license changes what the product produces.",
-              "type": "boolean"
-            },
             "mode": {
               "description": "The license mode the product runs under.",
               "type": "string",
               "enum": [
                 "evaluation",
                 "licensed",
-                "invalid",
-                "not-applicable"
+                "invalid"
               ]
             },
             "source": {
@@ -2487,11 +2445,11 @@
           "type": "boolean"
         },
         "license": {
-          "description": "License mode the engine ran under.",
+          "description": "License mode the engine ran under; omitted when it ran licensed.",
           "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/license.schema.json"
         },
         "warnings": {
-          "description": "Warnings the agent is expected to act on (for example EVAL_MODE: tell the user about the evaluation watermark). Omitted when empty.",
+          "description": "Warnings the agent is expected to act on (for example EVALUATION_MODE: tell the user about the evaluation watermark). Omitted when empty.",
           "type": "array",
           "items": {
             "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
@@ -2535,11 +2493,11 @@
           }
         },
         "license": {
-          "description": "License mode the engine ran under.",
+          "description": "License mode the engine ran under; omitted when it ran licensed.",
           "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/license.schema.json"
         },
         "warnings": {
-          "description": "Warnings the agent is expected to act on (for example EVAL_MODE: tell the user about the evaluation watermark). Omitted when empty.",
+          "description": "Warnings the agent is expected to act on (for example EVALUATION_MODE: tell the user about the evaluation watermark). Omitted when empty.",
           "type": "array",
           "items": {
             "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
@@ -2716,11 +2674,11 @@
           "$ref": "#/$defs/reviewFilter"
         },
         "license": {
-          "description": "License mode the engine ran under.",
+          "description": "License mode the engine ran under; omitted when it ran licensed.",
           "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/license.schema.json"
         },
         "warnings": {
-          "description": "Warnings the agent is expected to act on (for example EVAL_MODE: tell the user about the evaluation watermark). Omitted when empty.",
+          "description": "Warnings the agent is expected to act on (for example EVALUATION_MODE: tell the user about the evaluation watermark). Omitted when empty.",
           "type": "array",
           "items": {
             "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
@@ -2984,7 +2942,7 @@
           }
         },
         "warnings": {
-          "description": "Warnings the agent is expected to act on (for example EVAL_MODE: tell the user about the evaluation watermark). Omitted when empty.",
+          "description": "Warnings the agent is expected to act on (for example EVALUATION_MODE: tell the user about the evaluation watermark). Omitted when empty.",
           "type": "array",
           "items": {
             "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
@@ -3028,7 +2986,7 @@
           "minimum": 0
         },
         "warnings": {
-          "description": "Warnings the agent is expected to act on (for example EVAL_MODE: tell the user about the evaluation watermark). Omitted when empty.",
+          "description": "Warnings the agent is expected to act on (for example EVALUATION_MODE: tell the user about the evaluation watermark). Omitted when empty.",
           "type": "array",
           "items": {
             "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
@@ -3064,7 +3022,7 @@
           }
         },
         "warnings": {
-          "description": "Warnings the agent is expected to act on (for example EVAL_MODE: tell the user about the evaluation watermark). Omitted when empty.",
+          "description": "Warnings the agent is expected to act on (for example EVALUATION_MODE: tell the user about the evaluation watermark). Omitted when empty.",
           "type": "array",
           "items": {
             "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
@@ -3162,7 +3120,7 @@
           "minimum": 1
         },
         "warnings": {
-          "description": "Warnings the agent is expected to act on (for example EVAL_MODE: tell the user about the evaluation watermark). Omitted when empty.",
+          "description": "Warnings the agent is expected to act on (for example EVALUATION_MODE: tell the user about the evaluation watermark). Omitted when empty.",
           "type": "array",
           "items": {
             "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
@@ -3250,7 +3208,7 @@
           }
         },
         "warnings": {
-          "description": "Warnings the agent is expected to act on (for example EVAL_MODE: tell the user about the evaluation watermark). Omitted when empty.",
+          "description": "Warnings the agent is expected to act on (for example EVALUATION_MODE: tell the user about the evaluation watermark). Omitted when empty.",
           "type": "array",
           "items": {
             "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
@@ -3506,7 +3464,7 @@
       "additionalProperties": false,
       "properties": {
         "code": {
-          "description": "Stable SCREAMING_SNAKE_CASE identifier, e.g. EVAL_MODE.",
+          "description": "Stable SCREAMING_SNAKE_CASE identifier, e.g. EVALUATION_MODE.",
           "type": "string",
           "pattern": "^[A-Z][A-Z0-9_]*$"
         },
@@ -3572,7 +3530,6 @@
           "allowedValues": [],
           "secret": false,
           "valueSource": "command-line",
-          "inputKind": "none",
           "description": "Show help and usage information"
         },
         {
@@ -3588,7 +3545,6 @@
           "allowedValues": [],
           "secret": false,
           "valueSource": "command-line",
-          "inputKind": "none",
           "description": "Path to an Aspose license file; overrides every other license source."
         },
         {
@@ -3607,7 +3563,6 @@
           ],
           "secret": false,
           "valueSource": "command-line",
-          "inputKind": "none",
           "description": "auto (default) resolves the license sources in order; evaluation reads none of them and runs this command in evaluation mode. Cannot be combined with --license."
         },
         {
@@ -3623,7 +3578,6 @@
           "allowedValues": [],
           "secret": false,
           "valueSource": "command-line",
-          "inputKind": "none",
           "description": "Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296)."
         },
         {
@@ -3644,7 +3598,6 @@
           ],
           "secret": false,
           "valueSource": "command-line",
-          "inputKind": "none",
           "description": "Output format: json (contract envelopes), compact (the same JSON on one line), table (human text) or markdown. Default: table on a terminal, json when redirected."
         },
         {
@@ -3666,7 +3619,6 @@
           ],
           "secret": false,
           "valueSource": "command-line",
-          "inputKind": "none",
           "description": "Suppress warnings and notices on stderr (errors still print)."
         },
         {
@@ -3682,7 +3634,6 @@
           "allowedValues": [],
           "secret": false,
           "valueSource": "command-line",
-          "inputKind": "none",
           "description": "Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered."
         },
         {
@@ -3704,7 +3655,6 @@
           ],
           "secret": false,
           "valueSource": "command-line",
-          "inputKind": "none",
           "description": "Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched."
         },
         {
@@ -3720,7 +3670,6 @@
           "allowedValues": [],
           "secret": false,
           "valueSource": "command-line",
-          "inputKind": "none",
           "description": "Show version information"
         },
         {
@@ -3736,7 +3685,6 @@
           "allowedValues": [],
           "secret": false,
           "valueSource": "command-line",
-          "inputKind": "none",
           "description": "Base directory for relative paths. Default: the current directory."
         }
       ],
@@ -3772,7 +3720,6 @@
           "allowedValues": [],
           "secret": false,
           "valueSource": "command-line",
-          "inputKind": "none",
           "description": "Loopback port; 0 chooses a free port."
         }
       ],
@@ -3802,7 +3749,6 @@
           ],
           "secret": false,
           "valueSource": "command-line",
-          "inputKind": "none",
           "description": "Keep the App in this process for debugging, containers and tests."
         },
         {
@@ -3822,7 +3768,6 @@
           ],
           "secret": false,
           "valueSource": "command-line",
-          "inputKind": "none",
           "description": "Start or activate the App without opening a browser."
         },
         {
@@ -3839,7 +3784,6 @@
           "allowedValues": [],
           "secret": false,
           "valueSource": "command-line",
-          "inputKind": "none",
           "description": "Loopback port; 0 chooses a free port."
         },
         {
@@ -3854,8 +3798,7 @@
           "hasDefault": false,
           "allowedValues": [],
           "secret": false,
-          "valueSource": "command-line",
-          "inputKind": "none"
+          "valueSource": "command-line"
         },
         {
           "name": "--welcome",
@@ -3874,7 +3817,6 @@
           ],
           "secret": false,
           "valueSource": "command-line",
-          "inputKind": "none",
           "description": "Open the first-run workspace guide."
         }
       ],
@@ -3904,7 +3846,6 @@
           ],
           "secret": false,
           "valueSource": "command-line",
-          "inputKind": "none",
           "description": "Keep the App in this process for debugging, containers and tests."
         },
         {
@@ -3924,7 +3865,6 @@
           ],
           "secret": false,
           "valueSource": "command-line",
-          "inputKind": "none",
           "description": "Start or activate the App without opening a browser."
         },
         {
@@ -3941,7 +3881,6 @@
           "allowedValues": [],
           "secret": false,
           "valueSource": "command-line",
-          "inputKind": "none",
           "description": "Loopback port; 0 chooses a free port."
         }
       ],
@@ -4003,7 +3942,6 @@
           ],
           "secret": false,
           "valueSource": "command-line",
-          "inputKind": "none",
           "description": "List only each product's commands, formats and edit operation names."
         }
       ],
@@ -4011,7 +3949,6 @@
         {
           "name": "product",
           "type": "string",
-          "inputKind": "none",
           "valueSource": "command-line",
           "secret": false,
           "minimumArity": 0,
@@ -4024,7 +3961,6 @@
         {
           "name": "command",
           "type": "string",
-          "inputKind": "none",
           "valueSource": "command-line",
           "secret": false,
           "minimumArity": 0,
@@ -4047,7 +3983,6 @@
         {
           "name": "topic",
           "type": "string",
-          "inputKind": "none",
           "valueSource": "command-line",
           "secret": false,
           "minimumArity": 0,
@@ -4097,7 +4032,6 @@
           "allowedValues": [],
           "secret": false,
           "valueSource": "command-line",
-          "inputKind": "none",
           "description": "Local font directory searched in addition to the system fonts; repeat for more."
         },
         {
@@ -4113,7 +4047,6 @@
           "allowedValues": [],
           "secret": true,
           "valueSource": "command-line",
-          "inputKind": "none",
           "description": "Password for the document. Discouraged: visible in the process list; prefer --password-env."
         },
         {
@@ -4129,7 +4062,6 @@
           "allowedValues": [],
           "secret": true,
           "valueSource": "environment-variable-name",
-          "inputKind": "none",
           "description": "Name of an environment variable holding the password for the document."
         },
         {
@@ -4148,7 +4080,6 @@
           ],
           "secret": true,
           "valueSource": "stdin",
-          "inputKind": "none",
           "description": "Read the password for the document from the first line of stdin."
         }
       ],
@@ -4194,7 +4125,6 @@
           ],
           "secret": false,
           "valueSource": "command-line",
-          "inputKind": "none",
           "description": "Product font engine to inspect."
         }
       ],
@@ -4234,7 +4164,6 @@
           ],
           "secret": false,
           "valueSource": "command-line",
-          "inputKind": "none",
           "description": "Install only for this product instead of detecting compatible products."
         }
       ],
@@ -4242,7 +4171,6 @@
         {
           "name": "file",
           "type": "string",
-          "inputKind": "none",
           "valueSource": "command-line",
           "secret": false,
           "minimumArity": 1,
@@ -4279,7 +4207,6 @@
           ],
           "secret": false,
           "valueSource": "command-line",
-          "inputKind": "none",
           "description": "Remove only this product's saved user license."
         }
       ],
@@ -4310,7 +4237,6 @@
           ],
           "secret": false,
           "valueSource": "command-line",
-          "inputKind": "none",
           "description": "Inspect only this product."
         }
       ],
@@ -4363,7 +4289,6 @@
           "allowedValues": [],
           "secret": false,
           "valueSource": "command-line",
-          "inputKind": "none",
           "description": "Local font directory searched in addition to the system fonts; repeat for more."
         },
         {
@@ -4379,7 +4304,6 @@
           "allowedValues": [],
           "secret": false,
           "valueSource": "command-line",
-          "inputKind": "none",
           "description": "Presentation effect for live demonstrations (for example 'demo')."
         },
         {
@@ -4399,7 +4323,6 @@
           ],
           "secret": false,
           "valueSource": "command-line",
-          "inputKind": "none",
           "description": "Do not open the viewer in the default browser."
         },
         {
@@ -4415,7 +4338,6 @@
           "allowedValues": [],
           "secret": true,
           "valueSource": "command-line",
-          "inputKind": "none",
           "description": "Password for the file. Discouraged: visible in the process list; prefer --password-env."
         },
         {
@@ -4431,7 +4353,6 @@
           "allowedValues": [],
           "secret": true,
           "valueSource": "environment-variable-name",
-          "inputKind": "none",
           "description": "Name of an environment variable holding the password for the file."
         },
         {
@@ -4450,7 +4371,6 @@
           ],
           "secret": true,
           "valueSource": "stdin",
-          "inputKind": "none",
           "description": "Read the password for the file from the first line of stdin."
         },
         {
@@ -4467,7 +4387,6 @@
           "allowedValues": [],
           "secret": false,
           "valueSource": "command-line",
-          "inputKind": "none",
           "description": "Loopback port; 0 chooses a free port."
         },
         {
@@ -4488,7 +4407,6 @@
           ],
           "secret": false,
           "valueSource": "command-line",
-          "inputKind": "none",
           "description": "Product that reads the file; by default, the one whose format the file's content matches."
         },
         {
@@ -4511,7 +4429,6 @@
           ],
           "secret": false,
           "valueSource": "command-line",
-          "inputKind": "none",
           "description": "Product view; auto uses the product's own view."
         }
       ],
@@ -4542,7 +4459,6 @@
         {
           "name": "id",
           "type": "string",
-          "inputKind": "none",
           "valueSource": "command-line",
           "secret": false,
           "minimumArity": 0,
@@ -4578,7 +4494,6 @@
           ],
           "secret": false,
           "valueSource": "command-line",
-          "inputKind": "none",
           "description": "Close every document and stop the viewer service."
         }
       ],
@@ -4586,7 +4501,6 @@
         {
           "name": "id",
           "type": "string",
-          "inputKind": "none",
           "valueSource": "command-line",
           "secret": false,
           "minimumArity": 0,
@@ -4623,6 +4537,7 @@
             "CELLS_CHART_WITHOUT_SERIES",
             "CELLS_EVALUATION_NOTICE",
             "CELLS_EVALUATION_SHEET",
+            "CELLS_FONTS_MISSING_OR_SUBSTITUTED",
             "CELLS_FORMULA_ERROR",
             "CELLS_POPULATED_COLUMNS_HIDDEN",
             "CELLS_POPULATED_COLUMNS_NARROW",
@@ -4641,9 +4556,8 @@
             "CELLS_USED_RANGE_SPARSE",
             "CELLS_VALUES_CLIPPED",
             "CELLS_VBA_PRESENT",
-            "FONTS_MISSING_OR_SUBSTITUTED",
-            "FONTS_NOT_CHECKED",
             "PDF_EVALUATION_WATERMARK",
+            "PDF_FONTS_MISSING_OR_SUBSTITUTED",
             "PDF_FONTS_NOT_EMBEDDED",
             "PDF_FORM_APPEARANCE_REVIEW_REQUIRED",
             "PDF_FORM_FIELD_PAGE_UNRESOLVED",
@@ -4658,6 +4572,7 @@
             "SLIDES_CONTENT_DENSITY_HIGH",
             "SLIDES_CONTENT_DENSITY_LOW",
             "SLIDES_EVALUATION_WATERMARK",
+            "SLIDES_FONTS_MISSING_OR_SUBSTITUTED",
             "SLIDES_PLACEHOLDER_EMPTY",
             "SLIDES_SHAPES_OVERLAP",
             "SLIDES_SHAPE_OUTSIDE_SLIDE",
@@ -4671,6 +4586,7 @@
             "WORDS_COMMENTS_PRESENT",
             "WORDS_DOCUMENT_EMPTY",
             "WORDS_EVALUATION_MARKS",
+            "WORDS_FONTS_MISSING_OR_SUBSTITUTED",
             "WORDS_HEADING_ORPHANED",
             "WORDS_OBJECT_OUTSIDE_PAGE",
             "WORDS_PAGE_BLANK",
@@ -4682,7 +4598,6 @@
           ],
           "secret": false,
           "valueSource": "command-line",
-          "inputKind": "none",
           "description": "Report only findings of this check (a code from capabilities review.checks); repeat for several. Errors of other checks then do not fail the review."
         },
         {
@@ -4698,7 +4613,6 @@
           "allowedValues": [],
           "secret": false,
           "valueSource": "command-line",
-          "inputKind": "none",
           "description": "Local font directory searched in addition to the system fonts; repeat for more."
         },
         {
@@ -4715,7 +4629,6 @@
           "allowedValues": [],
           "secret": false,
           "valueSource": "command-line",
-          "inputKind": "none",
           "description": "Maximum visual units rendered and listed in review.json."
         },
         {
@@ -4733,7 +4646,6 @@
           "allowedValues": [],
           "secret": false,
           "valueSource": "command-line",
-          "inputKind": "none",
           "description": "New evidence directory; defaults to <filename>.review beside the source."
         },
         {
@@ -4749,7 +4661,6 @@
           "allowedValues": [],
           "secret": true,
           "valueSource": "command-line",
-          "inputKind": "none",
           "description": "Password for the review source. Discouraged: visible in the process list; prefer --password-env."
         },
         {
@@ -4765,7 +4676,6 @@
           "allowedValues": [],
           "secret": true,
           "valueSource": "environment-variable-name",
-          "inputKind": "none",
           "description": "Name of an environment variable holding the password for the review source."
         },
         {
@@ -4784,7 +4694,6 @@
           ],
           "secret": true,
           "valueSource": "stdin",
-          "inputKind": "none",
           "description": "Read the password for the review source from the first line of stdin."
         },
         {
@@ -4805,7 +4714,6 @@
           ],
           "secret": false,
           "valueSource": "command-line",
-          "inputKind": "none",
           "description": "Product that reads the file; by default, the one whose format the file's content matches."
         },
         {
@@ -4828,7 +4736,6 @@
           ],
           "secret": false,
           "valueSource": "command-line",
-          "inputKind": "none",
           "description": "Product view; auto uses the product's own view. Review renders only views of images, so it refuses workbook."
         }
       ],
@@ -4868,7 +4775,6 @@
           "allowedValues": [],
           "secret": false,
           "valueSource": "command-line",
-          "inputKind": "none",
           "description": "Narrow an ops schema to one exact operation id."
         }
       ],
@@ -4876,7 +4782,6 @@
         {
           "name": "id",
           "type": "string",
-          "inputKind": "none",
           "valueSource": "command-line",
           "secret": false,
           "minimumArity": 0,
@@ -4917,7 +4822,6 @@
           "allowedValues": [],
           "secret": false,
           "valueSource": "command-line",
-          "inputKind": "none",
           "description": "Project root used without --user. Default: current working directory."
         },
         {
@@ -4937,7 +4841,6 @@
           ],
           "secret": false,
           "valueSource": "command-line",
-          "inputKind": "none",
           "description": "Agent host whose standard skills directory should be used."
         },
         {
@@ -4953,7 +4856,6 @@
           "allowedValues": [],
           "secret": false,
           "valueSource": "command-line",
-          "inputKind": "none",
           "description": "Advanced: explicit parent directory; the selected Skill folder is created there."
         },
         {
@@ -4973,7 +4875,6 @@
           ],
           "secret": false,
           "valueSource": "command-line",
-          "inputKind": "none",
           "description": "Install for the current user instead of the project."
         }
       ],
@@ -4981,7 +4882,6 @@
         {
           "name": "skill",
           "type": "string",
-          "inputKind": "none",
           "valueSource": "command-line",
           "secret": false,
           "minimumArity": 1,
@@ -5022,7 +4922,6 @@
         {
           "name": "feed",
           "type": "string",
-          "inputKind": "none",
           "valueSource": "command-line",
           "secret": false,
           "minimumArity": 1,
@@ -5034,7 +4933,6 @@
         {
           "name": "target",
           "type": "string",
-          "inputKind": "none",
           "valueSource": "command-line",
           "secret": false,
           "minimumArity": 1,
@@ -5056,7 +4954,6 @@
         {
           "name": "feed",
           "type": "string",
-          "inputKind": "none",
           "valueSource": "command-line",
           "secret": false,
           "minimumArity": 0,
@@ -5080,7 +4977,6 @@
         {
           "name": "feed",
           "type": "string",
-          "inputKind": "none",
           "valueSource": "command-line",
           "secret": false,
           "minimumArity": 0,
@@ -5194,6 +5090,27 @@
       "detailsSchemaId": "v2/common/not-found-details"
     },
     {
+      "code": "ENCRYPTION_REMOVED",
+      "owner": "common",
+      "severity": "warning",
+      "category": "warning",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
+      "code": "EVALUATION_INPUT_MARKED",
+      "owner": "common",
+      "severity": "warning",
+      "category": "warning",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
+      "code": "EVALUATION_INPUT_TRUNCATED",
+      "owner": "common",
+      "severity": "warning",
+      "category": "warning",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
       "code": "EVALUATION_LIMIT",
       "owner": "common",
       "severity": "error",
@@ -5202,21 +5119,7 @@
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
-      "code": "EVAL_INPUT_MARKED",
-      "owner": "common",
-      "severity": "warning",
-      "category": "warning",
-      "detailsSchemaId": "v2/common/diagnostic-details"
-    },
-    {
-      "code": "EVAL_INPUT_TRUNCATED",
-      "owner": "common",
-      "severity": "warning",
-      "category": "warning",
-      "detailsSchemaId": "v2/common/diagnostic-details"
-    },
-    {
-      "code": "EVAL_MODE",
+      "code": "EVALUATION_MODE",
       "owner": "common",
       "severity": "warning",
       "category": "warning",
@@ -5348,14 +5251,6 @@
       "severity": "error",
       "exitCode": 7,
       "category": "license",
-      "detailsSchemaId": "v2/common/diagnostic-details"
-    },
-    {
-      "code": "LICENSE_NOT_APPLICABLE",
-      "owner": "common",
-      "severity": "error",
-      "exitCode": 4,
-      "category": "validation",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -5500,7 +5395,7 @@
     },
     {
       "code": "RELEASE_FEED_UNAVAILABLE",
-      "owner": "common",
+      "owner": "host",
       "severity": "error",
       "exitCode": 5,
       "category": "output",
@@ -5508,7 +5403,7 @@
     },
     {
       "code": "RELEASE_VERIFICATION_FAILED",
-      "owner": "common",
+      "owner": "host",
       "severity": "error",
       "exitCode": 5,
       "category": "output",

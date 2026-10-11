@@ -117,10 +117,7 @@
     "engine": {
       "id": "aspose",
       "sdk": "Aspose.Cells",
-      "sdkVersion": "<build>",
-      "licenseApplicable": true,
-      "licenseRequired": false,
-      "supportsFontDiagnostics": true
+      "sdkVersion": "<build>"
     },
     "availableEngines": [
       "aspose"
@@ -174,6 +171,11 @@
           "code": "CELLS_EVALUATION_SHEET",
           "severity": "warning",
           "summary": "A worksheet is the evaluation warning sheet that a save without a license added; a licensed re-save keeps it and the other evaluation marks."
+        },
+        {
+          "code": "CELLS_FONTS_MISSING_OR_SUBSTITUTED",
+          "severity": "error",
+          "summary": "A font the document uses is unavailable or substituted, so the rendering may differ from the author's."
         },
         {
           "code": "CELLS_FORMULA_ERROR",
@@ -264,16 +266,6 @@
           "code": "CELLS_VBA_PRESENT",
           "severity": "warning",
           "summary": "The workbook contains VBA, which static images do not exercise."
-        },
-        {
-          "code": "FONTS_MISSING_OR_SUBSTITUTED",
-          "severity": "error",
-          "summary": "A font the document uses is unavailable or substituted, so the rendering may differ from the author's."
-        },
-        {
-          "code": "FONTS_NOT_CHECKED",
-          "severity": "warning",
-          "summary": "The product engine exposes no font diagnostics, so the fonts the document uses were not checked."
         }
       ]
     },
@@ -678,7 +670,6 @@
             ],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "What to compare: values, or formulas (values + formulas)."
           },
           {
@@ -694,7 +685,6 @@
             "allowedValues": [],
             "secret": true,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Password for the baseline file. Discouraged: visible in the process list; prefer --left-password-env."
           },
           {
@@ -710,7 +700,6 @@
             "allowedValues": [],
             "secret": true,
             "valueSource": "environment-variable-name",
-            "inputKind": "none",
             "description": "Name of an environment variable holding the password for the baseline file."
           },
           {
@@ -729,7 +718,6 @@
             ],
             "secret": true,
             "valueSource": "stdin",
-            "inputKind": "none",
             "description": "Read the password for the baseline file from the first line of stdin."
           },
           {
@@ -746,7 +734,6 @@
             "allowedValues": [],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Maximum differing cells to list across the entire workbook (1-1000000)."
           },
           {
@@ -762,7 +749,6 @@
             "allowedValues": [],
             "secret": true,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Password for the candidate file. Discouraged: visible in the process list; prefer --right-password-env."
           },
           {
@@ -778,7 +764,6 @@
             "allowedValues": [],
             "secret": true,
             "valueSource": "environment-variable-name",
-            "inputKind": "none",
             "description": "Name of an environment variable holding the password for the candidate file."
           },
           {
@@ -797,7 +782,6 @@
             ],
             "secret": true,
             "valueSource": "stdin",
-            "inputKind": "none",
             "description": "Read the password for the candidate file from the first line of stdin."
           }
         ],
@@ -854,7 +838,6 @@
             ],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Start a CSV or TSV output with a UTF-8 byte order mark, so Excel reads its non-English text correctly. Default: UTF-8 without one."
           },
           {
@@ -870,7 +853,6 @@
             "allowedValues": [],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Culture whose number and date formats a CSV or TSV input uses, such as de-DE for '1.234,56'. Default: invariant formats (a decimal comma is refused)."
           },
           {
@@ -886,7 +868,6 @@
             "allowedValues": [],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Text encoding of a CSV or TSV input, such as gb18030, big5, shift_jis or windows-1252. Default: its byte order mark, else UTF-8 (other bytes are refused)."
           },
           {
@@ -902,7 +883,6 @@
             "allowedValues": [],
             "secret": true,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Password for the output file. Discouraged: visible in the process list; prefer --encrypt-env."
           },
           {
@@ -918,7 +898,6 @@
             "allowedValues": [],
             "secret": true,
             "valueSource": "environment-variable-name",
-            "inputKind": "none",
             "description": "Name of an environment variable holding the password for the output file."
           },
           {
@@ -937,7 +916,6 @@
             ],
             "secret": true,
             "valueSource": "stdin",
-            "inputKind": "none",
             "description": "Read the password for the output file from the first line of stdin."
           },
           {
@@ -953,7 +931,6 @@
             "allowedValues": [],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Local font directory searched in addition to the system fonts; repeat for more."
           },
           {
@@ -971,7 +948,6 @@
             "allowedValues": [],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Output path. Default: the input path with the target extension (with '.out' inserted when that would overwrite the input)."
           },
           {
@@ -991,7 +967,6 @@
             ],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Replace the output file if it already exists."
           },
           {
@@ -1007,7 +982,6 @@
             "allowedValues": [],
             "secret": true,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Password for the workbook. Discouraged: visible in the process list; prefer --password-env."
           },
           {
@@ -1023,7 +997,6 @@
             "allowedValues": [],
             "secret": true,
             "valueSource": "environment-variable-name",
-            "inputKind": "none",
             "description": "Name of an environment variable holding the password for the workbook."
           },
           {
@@ -1042,7 +1015,6 @@
             ],
             "secret": true,
             "valueSource": "stdin",
-            "inputKind": "none",
             "description": "Read the password for the workbook from the first line of stdin."
           },
           {
@@ -1058,7 +1030,6 @@
             "allowedValues": [],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Convert only this sheet (supported for csv, tsv, md, pdf)."
           },
           {
@@ -1090,7 +1061,6 @@
             ],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Target format: xlsx, xltx, xlsm, xltm, xlsb, xls, ods, csv, tsv, html, mhtml, pdf, xps, json, md."
           }
         ],
@@ -1130,7 +1100,6 @@
             "allowedValues": [],
             "secret": true,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Password for the output file. Discouraged: visible in the process list; prefer --encrypt-env."
           },
           {
@@ -1146,7 +1115,6 @@
             "allowedValues": [],
             "secret": true,
             "valueSource": "environment-variable-name",
-            "inputKind": "none",
             "description": "Name of an environment variable holding the password for the output file."
           },
           {
@@ -1165,7 +1133,6 @@
             ],
             "secret": true,
             "valueSource": "stdin",
-            "inputKind": "none",
             "description": "Read the password for the output file from the first line of stdin."
           },
           {
@@ -1185,7 +1152,6 @@
             ],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Replace the output file if it already exists."
           },
           {
@@ -1201,7 +1167,6 @@
             "allowedValues": [],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Comma-separated sheet names, e.g. \"Data,Summary\". Default: one sheet named Sheet1."
           }
         ],
@@ -1209,7 +1174,6 @@
           {
             "name": "file",
             "type": "string",
-            "inputKind": "none",
             "valueSource": "command-line",
             "secret": false,
             "minimumArity": 1,
@@ -1245,7 +1209,6 @@
             ],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Create a non-overwriting backup before an in-place write."
           },
           {
@@ -1265,7 +1228,6 @@
             ],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Keep successful operations, report failures, and exit 8."
           },
           {
@@ -1285,7 +1247,6 @@
             ],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Resolve and apply operations in memory without writing."
           },
           {
@@ -1301,7 +1262,6 @@
             "allowedValues": [],
             "secret": true,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Password for the output file. Discouraged: visible in the process list; prefer --encrypt-env."
           },
           {
@@ -1317,7 +1277,6 @@
             "allowedValues": [],
             "secret": true,
             "valueSource": "environment-variable-name",
-            "inputKind": "none",
             "description": "Name of an environment variable holding the password for the output file."
           },
           {
@@ -1336,7 +1295,6 @@
             ],
             "secret": true,
             "valueSource": "stdin",
-            "inputKind": "none",
             "description": "Read the password for the output file from the first line of stdin."
           },
           {
@@ -1352,7 +1310,6 @@
             "allowedValues": [],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Local font directory searched in addition to the system fonts; repeat for more."
           },
           {
@@ -1368,7 +1325,6 @@
             "allowedValues": [],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Require the current input SHA-256 fingerprint before editing."
           },
           {
@@ -1388,7 +1344,6 @@
             ],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Modify the input file itself atomically."
           },
           {
@@ -1408,7 +1363,6 @@
             ],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Skip the automatic formula recalculation after applying the ops."
           },
           {
@@ -1442,7 +1396,6 @@
             "allowedValues": [],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Output path. Default: the input path with '.out' inserted before the extension."
           },
           {
@@ -1462,7 +1415,6 @@
             ],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Replace the output file if it already exists."
           },
           {
@@ -1478,7 +1430,6 @@
             "allowedValues": [],
             "secret": true,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Password for the workbook. Discouraged: visible in the process list; prefer --password-env."
           },
           {
@@ -1494,7 +1445,6 @@
             "allowedValues": [],
             "secret": true,
             "valueSource": "environment-variable-name",
-            "inputKind": "none",
             "description": "Name of an environment variable holding the password for the workbook."
           },
           {
@@ -1513,7 +1463,6 @@
             ],
             "secret": true,
             "valueSource": "stdin",
-            "inputKind": "none",
             "description": "Read the password for the workbook from the first line of stdin."
           },
           {
@@ -1529,7 +1478,6 @@
             "allowedValues": [],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Set one cell as SHEET!CELL=VALUE; repeatable, applied after the --ops document. A VALUE starting with '=' is a formula; otherwise TRUE/FALSE and numbers are typed and anything else is text. Quote sheet names that need it: --set \"'My Sheet'!A1=5\". Example: --set \"Sales!B3=42\" --set \"Sales!G2==E2*F2\"."
           },
           {
@@ -1549,7 +1497,6 @@
             ],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Verify the staged output and report its cell changes and formula errors."
           }
         ],
@@ -1598,7 +1545,6 @@
             ],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Extra sections to include; repeat for more. names: defined names; errors: formula-error scan; layout: frozen panes, outline groups, filter, print area and page setup of each sheet."
           },
           {
@@ -1614,7 +1560,6 @@
             "allowedValues": [],
             "secret": true,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Password for the workbook. Discouraged: visible in the process list; prefer --password-env."
           },
           {
@@ -1630,7 +1575,6 @@
             "allowedValues": [],
             "secret": true,
             "valueSource": "environment-variable-name",
-            "inputKind": "none",
             "description": "Name of an environment variable holding the password for the workbook."
           },
           {
@@ -1649,7 +1593,6 @@
             ],
             "secret": true,
             "valueSource": "stdin",
-            "inputKind": "none",
             "description": "Read the password for the workbook from the first line of stdin."
           },
           {
@@ -1666,7 +1609,6 @@
             "allowedValues": [],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Number of preview rows per sheet (1-100)."
           },
           {
@@ -1686,7 +1628,6 @@
             ],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Include a bounded sample: display values of the first --preview-rows rows and up to 20 columns of each sheet, from A1. Default: off."
           }
         ],
@@ -1736,7 +1677,6 @@
             "allowedValues": [],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Cell budget per call (1-1000000)."
           },
           {
@@ -1752,7 +1692,6 @@
             "allowedValues": [],
             "secret": true,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Password for the workbook. Discouraged: visible in the process list; prefer --password-env."
           },
           {
@@ -1768,7 +1707,6 @@
             "allowedValues": [],
             "secret": true,
             "valueSource": "environment-variable-name",
-            "inputKind": "none",
             "description": "Name of an environment variable holding the password for the workbook."
           },
           {
@@ -1787,7 +1725,6 @@
             ],
             "secret": true,
             "valueSource": "stdin",
-            "inputKind": "none",
             "description": "Read the password for the workbook from the first line of stdin."
           },
           {
@@ -1803,7 +1740,6 @@
             "allowedValues": [],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Window to read, e.g. A1:F50 or Sales!A1:F50. Default: the used range, subject to --max-cells."
           },
           {
@@ -1818,8 +1754,7 @@
             "hasDefault": false,
             "allowedValues": [],
             "secret": false,
-            "valueSource": "command-line",
-            "inputKind": "none"
+            "valueSource": "command-line"
           },
           {
             "name": "--scope",
@@ -1840,7 +1775,6 @@
             ],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Projection scope: values, formulas (adds f), styles (adds styleId + pool), full."
           },
           {
@@ -1856,7 +1790,6 @@
             "allowedValues": [],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Sheet to read. Default: the active sheet."
           }
         ],
@@ -1900,7 +1833,6 @@
             ],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Match letter case exactly."
           },
           {
@@ -1917,7 +1849,6 @@
             "allowedValues": [],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Maximum returned hits (1-10000)."
           },
           {
@@ -1933,7 +1864,6 @@
             "allowedValues": [],
             "secret": true,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Password for the workbook. Discouraged: visible in the process list; prefer --password-env."
           },
           {
@@ -1949,7 +1879,6 @@
             "allowedValues": [],
             "secret": true,
             "valueSource": "environment-variable-name",
-            "inputKind": "none",
             "description": "Name of an environment variable holding the password for the workbook."
           },
           {
@@ -1968,7 +1897,6 @@
             ],
             "secret": true,
             "valueSource": "stdin",
-            "inputKind": "none",
             "description": "Read the password for the workbook from the first line of stdin."
           },
           {
@@ -1984,7 +1912,6 @@
             "allowedValues": [],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Text to find, or a regular expression with --regex."
           },
           {
@@ -2004,7 +1931,6 @@
             ],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Treat the pattern as a culture-invariant regular expression with a one-second budget."
           },
           {
@@ -2025,7 +1951,6 @@
             ],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Where to search: values, formulas or both."
           },
           {
@@ -2041,7 +1966,6 @@
             "allowedValues": [],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Restrict to one sheet. Default: all sheets."
           },
           {
@@ -2058,7 +1982,6 @@
             "allowedValues": [],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Matches to pass over before the returned hits; a truncated search's window.next sets it."
           }
         ],
@@ -2102,7 +2025,6 @@
             ],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Render every visible sheet, one image per sheet named <out-base>.<Sheet><ext>."
           },
           {
@@ -2119,7 +2041,6 @@
             "allowedValues": [],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Raster resolution (36-1200); ignored for vector formats."
           },
           {
@@ -2135,7 +2056,6 @@
             "allowedValues": [],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Local font directory searched in addition to the system fonts; repeat for more."
           },
           {
@@ -2153,7 +2073,6 @@
             "allowedValues": [],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Output path. Default: the input path with the image extension. Several sheets write <stem>.<sheet>.<ext> beside it."
           },
           {
@@ -2173,7 +2092,6 @@
             ],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Replace the output file if it already exists."
           },
           {
@@ -2189,7 +2107,6 @@
             "allowedValues": [],
             "secret": true,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Password for the workbook. Discouraged: visible in the process list; prefer --password-env."
           },
           {
@@ -2205,7 +2122,6 @@
             "allowedValues": [],
             "secret": true,
             "valueSource": "environment-variable-name",
-            "inputKind": "none",
             "description": "Name of an environment variable holding the password for the workbook."
           },
           {
@@ -2224,7 +2140,6 @@
             ],
             "secret": true,
             "valueSource": "stdin",
-            "inputKind": "none",
             "description": "Read the password for the workbook from the first line of stdin."
           },
           {
@@ -2240,7 +2155,6 @@
             "allowedValues": [],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Render only this range, e.g. A1:G20 or Sales!A1:G20."
           },
           {
@@ -2256,7 +2170,6 @@
             "allowedValues": [],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Sheet to render. Default: every visible sheet, at most 20 per run."
           },
           {
@@ -2276,7 +2189,6 @@
             ],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Image format: png, jpeg or svg. Default: the --out extension's format, else png."
           }
         ],
@@ -2626,13 +2538,6 @@
       "severity": "warning",
       "category": "warning",
       "detailsSchemaId": "v2/common/diagnostic-details"
-    },
-    {
-      "code": "WORKBOOK_ENCRYPTION_REMOVED",
-      "owner": "cells",
-      "severity": "warning",
-      "category": "warning",
-      "detailsSchemaId": "v2/common/diagnostic-details"
     }
   ],
   "schemas": {
@@ -2670,11 +2575,11 @@
           "type": "string"
         },
         "license": {
-          "description": "License mode the engine ran under.",
+          "description": "License mode the engine ran under; omitted when it ran licensed.",
           "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/license.schema.json"
         },
         "warnings": {
-          "description": "Warnings the agent is expected to act on (for example EVAL_MODE: tell the user about the evaluation watermark). Omitted when empty.",
+          "description": "Warnings the agent is expected to act on (for example EVALUATION_MODE: tell the user about the evaluation watermark). Omitted when empty.",
           "type": "array",
           "items": {
             "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
@@ -2717,11 +2622,11 @@
           }
         },
         "license": {
-          "description": "License mode the engine ran under.",
+          "description": "License mode the engine ran under; omitted when it ran licensed.",
           "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/license.schema.json"
         },
         "warnings": {
-          "description": "Warnings the agent is expected to act on (for example EVAL_MODE: tell the user about the evaluation watermark). Omitted when empty.",
+          "description": "Warnings the agent is expected to act on (for example EVALUATION_MODE: tell the user about the evaluation watermark). Omitted when empty.",
           "type": "array",
           "items": {
             "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
@@ -2776,11 +2681,11 @@
           }
         },
         "license": {
-          "description": "License mode the engine ran under.",
+          "description": "License mode the engine ran under; omitted when it ran licensed.",
           "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/license.schema.json"
         },
         "warnings": {
-          "description": "Warnings the agent is expected to act on (for example EVAL_MODE: tell the user about the evaluation watermark). Omitted when empty.",
+          "description": "Warnings the agent is expected to act on (for example EVALUATION_MODE: tell the user about the evaluation watermark). Omitted when empty.",
           "type": "array",
           "items": {
             "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
@@ -3024,11 +2929,11 @@
           "$ref": "#/$defs/editVerification"
         },
         "license": {
-          "description": "License mode the engine ran under.",
+          "description": "License mode the engine ran under; omitted when it ran licensed.",
           "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/license.schema.json"
         },
         "warnings": {
-          "description": "Warnings the agent is expected to act on (for example EVAL_MODE: tell the user about the evaluation watermark). Omitted when empty.",
+          "description": "Warnings the agent is expected to act on (for example EVALUATION_MODE: tell the user about the evaluation watermark). Omitted when empty.",
           "type": "array",
           "items": {
             "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
@@ -6260,11 +6165,11 @@
           }
         },
         "license": {
-          "description": "License mode the engine ran under.",
+          "description": "License mode the engine ran under; omitted when it ran licensed.",
           "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/license.schema.json"
         },
         "warnings": {
-          "description": "Warnings the agent is expected to act on (for example EVAL_MODE: tell the user about the evaluation watermark). Omitted when empty.",
+          "description": "Warnings the agent is expected to act on (for example EVALUATION_MODE: tell the user about the evaluation watermark). Omitted when empty.",
           "type": "array",
           "items": {
             "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
@@ -6342,11 +6247,11 @@
           "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/result-window.schema.json"
         },
         "license": {
-          "description": "License mode the engine ran under.",
+          "description": "License mode the engine ran under; omitted when it ran licensed.",
           "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/license.schema.json"
         },
         "warnings": {
-          "description": "Warnings the agent is expected to act on (for example EVAL_MODE: tell the user about the evaluation watermark). Omitted when empty.",
+          "description": "Warnings the agent is expected to act on (for example EVALUATION_MODE: tell the user about the evaluation watermark). Omitted when empty.",
           "type": "array",
           "items": {
             "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
@@ -6392,7 +6297,6 @@
       "required": [
         "schema",
         "schemaVersion",
-        "kind",
         "input",
         "workbook"
       ],
@@ -6406,10 +6310,6 @@
           "description": "Version of this result contract.",
           "const": 2
         },
-        "kind": {
-          "description": "Document kind discriminator; always workbook for cells.",
-          "const": "workbook"
-        },
         "input": {
           "description": "The inspected file.",
           "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
@@ -6419,11 +6319,11 @@
           "$ref": "#/$defs/workbookSummary"
         },
         "license": {
-          "description": "License mode the engine ran under.",
+          "description": "License mode the engine ran under; omitted when it ran licensed.",
           "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/license.schema.json"
         },
         "warnings": {
-          "description": "Warnings the agent is expected to act on (for example EVAL_MODE: tell the user about the evaluation watermark). Omitted when empty.",
+          "description": "Warnings the agent is expected to act on (for example EVALUATION_MODE: tell the user about the evaluation watermark). Omitted when empty.",
           "type": "array",
           "items": {
             "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
@@ -6953,7 +6853,6 @@
       "required": [
         "schema",
         "schemaVersion",
-        "kind",
         "input",
         "scope",
         "sheet",
@@ -6968,10 +6867,6 @@
         "schemaVersion": {
           "description": "Version of this result contract.",
           "const": 2
-        },
-        "kind": {
-          "description": "Document kind discriminator; always workbook for cells.",
-          "const": "workbook"
         },
         "input": {
           "description": "The projected file.",
@@ -7003,11 +6898,11 @@
           "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/result-window.schema.json"
         },
         "license": {
-          "description": "License mode the engine ran under.",
+          "description": "License mode the engine ran under; omitted when it ran licensed.",
           "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/license.schema.json"
         },
         "warnings": {
-          "description": "Warnings the agent is expected to act on (for example EVAL_MODE: tell the user about the evaluation watermark). Omitted when empty.",
+          "description": "Warnings the agent is expected to act on (for example EVALUATION_MODE: tell the user about the evaluation watermark). Omitted when empty.",
           "type": "array",
           "items": {
             "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"

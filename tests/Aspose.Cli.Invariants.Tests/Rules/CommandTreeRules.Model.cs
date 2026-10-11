@@ -59,7 +59,8 @@ internal sealed record TreeOption(JsonNode Node)
 
     public string ValueSource => Node["valueSource"]!.GetValue<string>();
 
-    public string InputKind => Node["inputKind"]!.GetValue<string>();
+    /// <summary>What the value names, <c>file</c> or <c>json-source</c>; null when it names nothing to read.</summary>
+    public string? InputKind => Node["inputKind"]?.GetValue<string>();
 
     public string Description => Node["description"]?.GetValue<string>() ?? string.Empty;
 
@@ -71,7 +72,8 @@ internal sealed record TreeArgument(JsonNode Node)
 {
     public string Name => Node["name"]!.GetValue<string>();
 
-    public string InputKind => Node["inputKind"]!.GetValue<string>();
+    /// <summary>What the value names, <c>file</c> or <c>json-source</c>; null when it names nothing to read.</summary>
+    public string? InputKind => Node["inputKind"]?.GetValue<string>();
 
     public int MaximumArity => Node["maximumArity"]!.GetValue<int>();
 

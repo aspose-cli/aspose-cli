@@ -3,8 +3,8 @@ using System.Text.Json.Serialization;
 namespace Aspose.Cli.Sdk.Contracts;
 
 /// <summary>
-/// Base of a result whose command runs a product engine, which states the license mode the
-/// engine ran under. A result whose command never runs an engine, such as
+/// Base of a result whose command runs a product engine, which states the license mode when the
+/// engine ran without a license. A result whose command never runs an engine, such as
 /// <c>capabilities</c>, derives from <see cref="ResultEnvelope"/> and carries no license.
 /// </summary>
 public abstract record EngineResultEnvelope : ResultEnvelope
@@ -18,7 +18,7 @@ public abstract record EngineResultEnvelope : ResultEnvelope
     {
     }
 
-    /// <summary>License mode the engine ran under.</summary>
+    /// <summary>License mode the engine ran under; omitted when it ran licensed.</summary>
     [JsonPropertyOrder(900)]
     public LicenseInfo? License { get; init; }
 }

@@ -73,7 +73,7 @@ internal static class PdfEvaluation
     internal static Warning FieldsWithoutPage(int pages, IEnumerable<string> names) =>
         Truncated(pages, $"these fields have no page: {string.Join(", ", names)}", affectsCompleteness: false);
 
-    private static Warning Truncated(int pages, string consequence, bool affectsCompleteness) => new(WarningCodes.EvalInputTruncated, string.Create(
+    private static Warning Truncated(int pages, string consequence, bool affectsCompleteness) => new(WarningCodes.EvaluationInputTruncated, string.Create(
             CultureInfo.InvariantCulture,
             $"Evaluation mode shows only the first {VisiblePages} of {pages} pages, so {consequence}."))
     {

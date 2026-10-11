@@ -31,7 +31,6 @@ internal static class ProductLicenseGateFactory
 
     private sealed class UnavailableLicenseGate(CliException error) : ILicenseGate
     {
-        public bool IsApplicable => true;
         public LicenseResolution Resolution => LicenseResolution.None;
         public string Identity => throw error;
         public LicenseState EnsureApplied() => throw error;

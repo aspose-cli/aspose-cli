@@ -11,7 +11,7 @@ internal sealed record CommonSchemaSample(string Schema, object Value);
 /// <summary>Canonical samples for SDK and Host-owned result families.</summary>
 internal static class CommonSchemaSamples
 {
-    public static LicenseInfo Licensed { get; } = new() { Mode = LicenseModes.Licensed };
+    public static LicenseInfo Evaluation { get; } = new() { Mode = LicenseModes.Evaluation };
 
     public static ErrorEnvelope Error { get; } = new()
     {
@@ -77,9 +77,6 @@ internal static class CommonSchemaSamples
                     Id = "test",
                     Sdk = "Aspose.Test",
                     SdkVersion = "1.0.0",
-                    LicenseApplicable = true,
-                    LicenseRequired = false,
-                    SupportsFontDiagnostics = false,
                 },
             },
         ],
@@ -145,10 +142,9 @@ internal static class CommonSchemaSamples
 
     public static LicenseStatusResult LicenseStatus { get; } = new()
     {
-        Applicable = true,
         Products = [new ProductLicenseStatus
         {
-            Product = "cells", Name = "Cells", Applicable = true, Mode = LicenseModes.Evaluation,
+            Product = "cells", Name = "Cells", Mode = LicenseModes.Evaluation,
         }],
     };
 
@@ -216,7 +212,7 @@ internal static class CommonSchemaSamples
             new FontAvailability { Name = "Calibri", Available = true },
             new FontAvailability { Name = "Custom Sans", Available = false, SubstitutedBy = "Calibri" },
         ],
-        License = Licensed,
+        License = Evaluation,
     };
 
     public static ProductPreviewStartResult ProductPreviewStart { get; } = new()

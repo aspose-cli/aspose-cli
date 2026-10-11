@@ -25,7 +25,6 @@ internal static class CellsDiagnostics
     internal static readonly WarningCode DataTruncated = new("DATA_TRUNCATED");
     internal static readonly WarningCode MhtmlResourceCoverageUnverified = new("MHTML_RESOURCE_COVERAGE_UNVERIFIED");
     internal static readonly WarningCode FormulasBroken = new("FORMULAS_BROKEN");
-    internal static readonly WarningCode EncryptionRemoved = new("WORKBOOK_ENCRYPTION_REMOVED");
     internal static readonly WarningCode FormulasCalculatedOnOpen = new("FORMULAS_CALCULATED_ON_OPEN");
     internal static readonly WarningCode SheetPartiallyRendered = new("CELLS_SHEET_PARTIALLY_RENDERED");
     /// <summary>The active sheet is an evaluation warning sheet, so a command that names no sheet used another one.</summary>
@@ -73,7 +72,6 @@ internal static class CellsDiagnostics
         DiagnosticDescriptor.Warning(SheetsSkipped),
         DiagnosticDescriptor.Warning(DataTruncated),
         DiagnosticDescriptor.Warning(FormulasBroken),
-        DiagnosticDescriptor.Warning(EncryptionRemoved),
         DiagnosticDescriptor.Warning(FormulasCalculatedOnOpen),
         DiagnosticDescriptor.Warning(SheetPartiallyRendered),
         DiagnosticDescriptor.Warning(ActiveSheetSkipped),

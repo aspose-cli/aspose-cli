@@ -35,6 +35,7 @@ internal static class CellsView
         if (request.View == CellsViews.Workbook)
         {
             WorkbookGridExporter.Export(workbook, artifacts, session.Budgets, workbookFile);
+            session.Outputs.ShowsInView(workbook, "html");
             return new ViewManifest
             {
                 View = CellsViews.Workbook,
@@ -84,6 +85,7 @@ internal static class CellsView
             });
         }
 
+        session.Outputs.ShowsInView(workbook, "png");
         return new ViewManifest
         {
             View = CellsViews.Sheets,

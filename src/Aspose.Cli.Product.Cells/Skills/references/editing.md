@@ -298,7 +298,7 @@ show in renders and reads; give the location column a header.
 `cells convert` for other formats. HTML output embeds its images. Editing an
 encrypted workbook keeps its password in xlsx, xltx, xlsm, xltm, xlsb, xls and ods output;
 `--encrypt-env` changes it. Other outputs cannot be encrypted: they drop the
-encryption with a `WORKBOOK_ENCRYPTION_REMOVED` warning, and `--encrypt-env`
+encryption with an `ENCRYPTION_REMOVED` warning, and `--encrypt-env`
 on them is `OPTION_INVALID`. A single-sheet output of a multi-sheet workbook
 reports `SHEETS_DROPPED`. `cells create` and `cells convert` follow the same
 rules. Their results state `output.encrypted`, and `cells inspect` reports

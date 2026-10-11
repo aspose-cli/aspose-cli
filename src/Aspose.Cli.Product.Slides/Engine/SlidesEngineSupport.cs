@@ -13,7 +13,7 @@ internal static class SlidesEngineSupport
 {
     internal const string EvaluationTruncationMarker = "truncated due to evaluation version limitation";
 
-    internal static Warning EvaluationInputWarning { get; } = new(WarningCodes.EvalInputTruncated, "Aspose.Slides evaluation mode reads text longer than five characters as its first characters and a truncation notice, so the text in this result is not the presentation's text.")
+    internal static Warning EvaluationInputWarning { get; } = new(WarningCodes.EvaluationInputTruncated, "Aspose.Slides evaluation mode reads text longer than five characters as its first characters and a truncation notice, so the text in this result is not the presentation's text.")
     {
         Hint = "Check the text in rendered slide images, which show it in full, or apply a license and retry. Presentations, PDFs and images the CLI saves keep the full text.",
     };

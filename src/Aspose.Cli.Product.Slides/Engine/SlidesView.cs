@@ -63,6 +63,7 @@ internal static class SlidesView
             });
         }
 
+        session.Outputs.ShowsInView(presentation, "png", Enumerable.Range(1, count));
         return new ViewManifest
         {
             View = SlidesViews.Slides,

@@ -50,7 +50,7 @@ public abstract partial record ResultEnvelope
 
     /// <summary>
     /// Warnings the agent is expected to act on (for example
-    /// <c>EVAL_MODE</c>: tell the user about the evaluation watermark).
+    /// <c>EVALUATION_MODE</c>: tell the user about the evaluation watermark).
     /// Omitted when empty.
     /// </summary>
     [JsonPropertyOrder(901)]

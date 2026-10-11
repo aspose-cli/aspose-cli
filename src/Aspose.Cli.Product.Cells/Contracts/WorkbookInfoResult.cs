@@ -9,22 +9,12 @@ namespace Aspose.Cli.Product.Cells.Contracts;
 /// </summary>
 public sealed record WorkbookInfoResult() : EngineResultEnvelope("workbook-info", 2)
 {
-    /// <summary>Document kind discriminator; always <c>workbook</c> for cells.</summary>
-    [JsonPropertyOrder(-50)]
-    public string Kind { get; } = DocumentKinds.Workbook;
-
     /// <summary>The inspected file.</summary>
     [JsonPropertyOrder(-49)]
     public required InputInfo Input { get; init; }
 
     /// <summary>Workbook-level summary.</summary>
     public required WorkbookSummary Workbook { get; init; }
-}
-
-/// <summary>Well-known values of the <c>kind</c> discriminator.</summary>
-public static class DocumentKinds
-{
-    public const string Workbook = "workbook";
 }
 
 /// <summary>Structural summary of a workbook.</summary>

@@ -11,10 +11,6 @@ public sealed record PdfInfoResult() : EngineResultEnvelope("pdf-info", 2)
     /// <summary>The most bookmarks <see cref="Outline"/> lists.</summary>
     public const int OutlineLimit = 200;
 
-    /// <summary>The kind of document described: always <c>pdf</c>.</summary>
-    [JsonPropertyOrder(-50)]
-    public string Kind { get; } = "pdf";
-
     /// <summary>The inspected PDF.</summary>
     [JsonPropertyOrder(-49)]
     public required InputInfo Input { get; init; }
@@ -336,10 +332,6 @@ public sealed record PdfSignatureInfo
 /// <summary>Windowed page text returned by <c>pdf query pages</c>.</summary>
 public sealed record PdfReadResult() : WindowedResultEnvelope("pdf-read", 2)
 {
-    /// <summary>The kind of document read: always <c>pdf</c>.</summary>
-    [JsonPropertyOrder(-50)]
-    public string Kind { get; } = "pdf";
-
     /// <summary>The PDF read.</summary>
     [JsonPropertyOrder(-49)]
     public required InputInfo Input { get; init; }
@@ -659,7 +651,7 @@ public sealed record PdfFormField
 
     /// <summary>
     /// The page of the field's widget; absent when it has none or, in evaluation mode, lies
-    /// past the pages the engine shows, which EVAL_INPUT_TRUNCATED then names.
+    /// past the pages the engine shows, which EVALUATION_INPUT_TRUNCATED then names.
     /// </summary>
     [Minimum(1)]
     public int? Page { get; init; }

@@ -29,9 +29,8 @@ internal sealed class GlobalOptions
             ["markdown"] = OutputMode.Markdown,
         };
 
-    public GlobalOptions(bool licensingApplicable)
+    public GlobalOptions()
     {
-        License = null;
         OutputFormat = new Option<string?>(GlobalOptionNames.OutputFormat)
         {
             Description = "Output format: json (contract envelopes), compact (the same JSON on one line), " +
@@ -52,21 +51,18 @@ internal sealed class GlobalOptions
             Recursive = true,
         };
 
-        if (licensingApplicable)
+        License = new Option<string?>(GlobalOptionNames.License)
         {
-            License = new Option<string?>(GlobalOptionNames.License)
-            {
-                Description = "Path to an Aspose license file; overrides every other license source.",
-                Recursive = true,
-            }.WithInput(InputKind.None);
-            LicenseMode = new Option<string?>(GlobalOptionNames.LicenseMode)
-            {
-                Description = "auto (default) resolves the license sources in order; evaluation reads none of them "
-                    + "and runs this command in evaluation mode. Cannot be combined with --license.",
-                Recursive = true,
-            }.WithInput(InputKind.None);
-            LicenseMode.AcceptOnlyFromAmong(AutoLicenseMode, EvaluationLicenseMode);
-        }
+            Description = "Path to an Aspose license file; overrides every other license source.",
+            Recursive = true,
+        }.WithInput(InputKind.None);
+        LicenseMode = new Option<string?>(GlobalOptionNames.LicenseMode)
+        {
+            Description = "auto (default) resolves the license sources in order; evaluation reads none of them "
+                + "and runs this command in evaluation mode. Cannot be combined with --license.",
+            Recursive = true,
+        }.WithInput(InputKind.None);
+        LicenseMode.AcceptOnlyFromAmong(AutoLicenseMode, EvaluationLicenseMode);
 
         WorkDir = new Option<string?>(GlobalOptionNames.WorkDir)
         {
@@ -94,9 +90,9 @@ internal sealed class GlobalOptions
 
     public Option<bool> Verbose { get; }
 
-    public Option<string?>? License { get; }
+    public Option<string?> License { get; }
 
-    public Option<string?>? LicenseMode { get; }
+    public Option<string?> LicenseMode { get; }
 
     public Option<string?> WorkDir { get; }
 
@@ -119,14 +115,8 @@ internal sealed class GlobalOptions
         root.Options.Add(OutputFormat);
         root.Options.Add(Quiet);
         root.Options.Add(Verbose);
-        if (License is not null)
-        {
-            root.Options.Add(License);
-        }
-        if (LicenseMode is not null)
-        {
-            root.Options.Add(LicenseMode);
-        }
+        root.Options.Add(License);
+        root.Options.Add(LicenseMode);
         root.Options.Add(WorkDir);
         root.Options.Add(Timeout);
         root.Options.Add(MaxInputBytes);
@@ -140,7 +130,7 @@ internal sealed class GlobalOptions
         inherited ??= InvocationInputs.Current?.Inherited;
         string baseDirectory = inherited?.WorkDir ?? Directory.GetCurrentDirectory();
         string workDirectory = Path.GetFullPath(parseResult.GetValue(WorkDir) ?? baseDirectory, baseDirectory);
-        string? explicitLicense = License is null ? null : parseResult.GetValue(License);
+        string? explicitLicense = parseResult.GetValue(License);
         if (explicitLicense is not null && string.IsNullOrWhiteSpace(explicitLicense))
         {
             // An empty path would otherwise resolve to the work directory.
@@ -148,7 +138,7 @@ internal sealed class GlobalOptions
                 "the value is empty",
                 "Pass the path of an Aspose license file, or omit --license to use the other license sources.");
         }
-        string? requestedMode = LicenseMode is null ? null : parseResult.GetValue(LicenseMode);
+        string? requestedMode = parseResult.GetValue(LicenseMode);
         if (requestedMode == EvaluationLicenseMode && explicitLicense is not null)
         {
             throw CliErrors.OptionInvalid(GlobalOptionNames.LicenseMode,

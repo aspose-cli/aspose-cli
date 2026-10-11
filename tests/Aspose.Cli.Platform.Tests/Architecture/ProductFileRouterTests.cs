@@ -318,9 +318,6 @@ public sealed class ProductFileRouterTests
                         Id = "aspose",
                         Sdk = "Aspose.Test",
                         SdkVersion = "1.0.0",
-                        LicenseApplicable = true,
-                        LicenseRequired = false,
-                        SupportsFontDiagnostics = true,
                     },
                     AvailableEngines = ["aspose"],
                 })
@@ -741,9 +738,6 @@ public sealed class ProductFileRouterTests
                     Id = "aspose",
                     Sdk = "Aspose.Test",
                     SdkVersion = "1.0.0",
-                    LicenseApplicable = true,
-                    LicenseRequired = false,
-                    SupportsFontDiagnostics = true,
                 },
                 AvailableEngines = ["aspose"],
             })
@@ -808,9 +802,6 @@ public sealed class ProductFileRouterTests
             Id = "aspose",
             Sdk = "Aspose.Test",
             SdkVersion = "1.0.0",
-            LicenseApplicable = true,
-            LicenseRequired = false,
-            SupportsFontDiagnostics = true,
         },
         AvailableEngines = ["aspose"],
     };

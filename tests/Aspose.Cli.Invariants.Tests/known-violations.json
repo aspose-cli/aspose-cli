@@ -8,13 +8,6 @@
       "actual": "app has subcommands but declares its own option --foreground.; app has subcommands but declares its own option --no-open.; app has subcommands but declares its own option --port.; app has subcommands but declares its own option --route.; ap..."
     },
     {
-      "case": "C-R33 | v2/common/capabilities none",
-      "invariant": "C-R33",
-      "rule": "C-R33",
-      "cause": "capabilities-input-kind-none",
-      "actual": "commandArgumentCapabilities.inputKind: \"none\" as a value; omit the field instead; commandOptionCapabilities.inputKind: \"none\" as a value; omit the field instead"
-    },
-    {
       "case": "C-R19 | cells add_comment applied twice",
       "invariant": "C-R19",
       "rule": "C-R19",
@@ -888,13 +881,6 @@
       "actual": "exit -1073741510, expected 130"
     },
     {
-      "case": "C-R24 | doctor with a missing license file",
-      "invariant": "C-R24",
-      "rule": "C-R24",
-      "cause": "doctor-failure-exits-0",
-      "actual": "exit 0, expected 8"
-    },
-    {
       "case": "C-R11 | cells convert declared",
       "invariant": "C-R11",
       "rule": "C-R11",
@@ -1040,13 +1026,6 @@
       "rule": "C-R25",
       "cause": "error-schema-publishes-no-details-dictionary",
       "actual": "error.details publishes no key dictionary; the 62 keys of the dictionary have no description in the error schema"
-    },
-    {
-      "case": "C-R28 | evaluation codes",
-      "invariant": "C-R28",
-      "rule": "C-R28",
-      "cause": "evaluation-warnings-use-the-eval-prefix",
-      "actual": "EVAL_INPUT_MARKED: evaluation codes are EVALUATION_*, as EVALUATION_LIMIT; EVAL_INPUT_TRUNCATED: evaluation codes are EVALUATION_*, as EVALUATION_LIMIT; EVAL_MODE: evaluation codes are EVALUATION_*, as EVALUATION_LIMIT"
     },
     {
       "case": "C-R28 | common not-found details",
@@ -1747,13 +1726,6 @@
       "rule": "C-R11",
       "cause": "install-commands-have-no-overwrite-or-dry-run",
       "actual": "update install writes files but has no --overwrite.; update install writes files but has no --dry-run."
-    },
-    {
-      "case": "C-R24 | license errors exit 7",
-      "invariant": "C-R24",
-      "rule": "C-R24",
-      "cause": "license-not-applicable-exits-as-validation",
-      "actual": "LICENSE_NOT_APPLICABLE exits 4; license errors exit 7"
     },
     {
       "case": "C-R20 | v2/cells/ops field height",
@@ -2666,13 +2638,6 @@
       "actual": "the RANGE_TOO_LARGE hint names the hidden option --scan-range"
     },
     {
-      "case": "C-R28 | release and update codes belong to host",
-      "invariant": "C-R28",
-      "rule": "C-R28",
-      "cause": "release-codes-owned-by-common",
-      "actual": "RELEASE_FEED_UNAVAILABLE is owned by common, not host; RELEASE_VERIFICATION_FAILED is owned by common, not host"
-    },
-    {
       "case": "C-R08 | cells render",
       "invariant": "C-R08",
       "rule": "C-R08",
@@ -2727,34 +2692,6 @@
       "rule": "C-R32",
       "cause": "search-hit-text-named-snippet-or-value",
       "actual": "hits[] does not require text (it has snippet)"
-    },
-    {
-      "case": "C-R28 | cells review check codes",
-      "invariant": "C-R28",
-      "rule": "C-R28",
-      "cause": "shared-font-review-checks-have-no-product-prefix",
-      "actual": "review check FONTS_MISSING_OR_SUBSTITUTED does not begin with CELLS_; review check FONTS_NOT_CHECKED does not begin with CELLS_"
-    },
-    {
-      "case": "C-R28 | pdf review check codes",
-      "invariant": "C-R28",
-      "rule": "C-R28",
-      "cause": "shared-font-review-checks-have-no-product-prefix",
-      "actual": "review check FONTS_MISSING_OR_SUBSTITUTED does not begin with PDF_; review check FONTS_NOT_CHECKED does not begin with PDF_"
-    },
-    {
-      "case": "C-R28 | slides review check codes",
-      "invariant": "C-R28",
-      "rule": "C-R28",
-      "cause": "shared-font-review-checks-have-no-product-prefix",
-      "actual": "review check FONTS_MISSING_OR_SUBSTITUTED does not begin with SLIDES_; review check FONTS_NOT_CHECKED does not begin with SLIDES_"
-    },
-    {
-      "case": "C-R28 | words review check codes",
-      "invariant": "C-R28",
-      "rule": "C-R28",
-      "cause": "shared-font-review-checks-have-no-product-prefix",
-      "actual": "review check FONTS_MISSING_OR_SUBSTITUTED does not begin with WORDS_; review check FONTS_NOT_CHECKED does not begin with WORDS_"
     },
     {
       "case": "C-R20 | v2/pdf/ops field size",
@@ -2958,112 +2895,6 @@
       "rule": "C-R20",
       "cause": "table-cell-col-abbreviated",
       "actual": "col: abbreviated name"
-    },
-    {
-      "case": "C-R23 | cells inspect succeeds in table mode",
-      "invariant": "C-R23",
-      "rule": "C-R23",
-      "cause": "table-mode-prints-license-line",
-      "modes": [
-        "licensed"
-      ],
-      "actual": "stderr is not empty: license: cells=licensed"
-    },
-    {
-      "case": "C-R23 | doctor succeeds in table mode",
-      "invariant": "C-R23",
-      "rule": "C-R23",
-      "cause": "table-mode-prints-license-line",
-      "modes": [
-        "licensed"
-      ],
-      "actual": "stderr is not empty: license: cells=licensed; pdf=licensed; slides=licensed; words=licensed"
-    },
-    {
-      "case": "C-R23 | pdf inspect succeeds in table mode",
-      "invariant": "C-R23",
-      "rule": "C-R23",
-      "cause": "table-mode-prints-license-line",
-      "modes": [
-        "licensed"
-      ],
-      "actual": "stderr is not empty: license: pdf=licensed"
-    },
-    {
-      "case": "C-R23 | slides inspect succeeds in table mode",
-      "invariant": "C-R23",
-      "rule": "C-R23",
-      "cause": "table-mode-prints-license-line",
-      "modes": [
-        "licensed"
-      ],
-      "actual": "stderr is not empty: license: slides=licensed"
-    },
-    {
-      "case": "C-R23 | words inspect succeeds in table mode",
-      "invariant": "C-R23",
-      "rule": "C-R23",
-      "cause": "table-mode-prints-license-line",
-      "modes": [
-        "licensed"
-      ],
-      "actual": "stderr is not empty: license: words=licensed"
-    },
-    {
-      "case": "C-R33 | v2/cells/workbook-info envelope",
-      "invariant": "C-R33",
-      "rule": "C-R33",
-      "cause": "top-level-kind",
-      "actual": "top-level kind"
-    },
-    {
-      "case": "C-R33 | v2/cells/workbook-read envelope",
-      "invariant": "C-R33",
-      "rule": "C-R33",
-      "cause": "top-level-kind",
-      "actual": "top-level kind"
-    },
-    {
-      "case": "C-R33 | v2/pdf/pdf-info envelope",
-      "invariant": "C-R33",
-      "rule": "C-R33",
-      "cause": "top-level-kind",
-      "actual": "top-level kind"
-    },
-    {
-      "case": "C-R33 | v2/pdf/pdf-read envelope",
-      "invariant": "C-R33",
-      "rule": "C-R33",
-      "cause": "top-level-kind",
-      "actual": "top-level kind"
-    },
-    {
-      "case": "C-R33 | v2/slides/presentation-info envelope",
-      "invariant": "C-R33",
-      "rule": "C-R33",
-      "cause": "top-level-kind",
-      "actual": "top-level kind"
-    },
-    {
-      "case": "C-R33 | v2/slides/presentation-read envelope",
-      "invariant": "C-R33",
-      "rule": "C-R33",
-      "cause": "top-level-kind",
-      "actual": "top-level kind"
-    },
-    {
-      "case": "C-R33 | v2/words/document-info envelope",
-      "invariant": "C-R33",
-      "rule": "C-R33",
-      "cause": "top-level-kind",
-      "actual": "top-level kind"
-    },
-    {
-      "case": "C-R33 | v2/words/document-read envelope",
-      "invariant": "C-R33",
-      "rule": "C-R33",
-      "cause": "top-level-kind",
-      "actual": "top-level kind"
     },
     {
       "case": "C-R25 | cells invalid option value error details",

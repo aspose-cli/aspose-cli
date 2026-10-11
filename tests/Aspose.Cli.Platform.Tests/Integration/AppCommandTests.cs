@@ -113,12 +113,8 @@ public sealed class AppCommandTests : IDisposable
             Assert.Equal(
                 Aspose.Cli.Sdk.DistributionInfo.DisplayName,
                 statusJson["displayName"]!.GetValue<string>());
-            Assert.Equal(
-                "licensed",
-                statusJson["experience"]!.GetValue<string>());
-            Assert.True(
-                statusJson["license"]!["applicable"]!
-                    .GetValue<bool>());
+            Assert.Null(statusJson["experience"]);
+            Assert.Null(statusJson["license"]!["applicable"]);
             AssertAppProductsMatchCapabilities(
                 statusJson["products"]!.AsArray(),
                 capabilities["products"]!.AsArray());

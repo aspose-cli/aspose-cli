@@ -130,11 +130,6 @@ internal sealed class AppRequestHandler
     private async Task<(HttpStatusCode Status, object Body, bool Stop)> HandleMutation(
         string path, HttpListenerRequest request, CancellationToken cancellationToken)
     {
-        if (!_host.LicenseManagementApplicable && path == "/api/license")
-        {
-            return (HttpStatusCode.NotFound, new AppApiResult(false, "NOT_FOUND",
-                "That local App operation does not exist in this build."), false);
-        }
         switch ((request.HttpMethod, path))
         {
             case ("POST", "/api/onboarding/continue"):

@@ -90,10 +90,7 @@ internal static class ViewRenderWorker
                 cancellationToken: context.Deadline.Token);
             ProductBinding binding = context.Activate(definition);
             string product = definition.Manifest.Id;
-            using IDisposable fontScope = FontProfiles.Use(
-                catalog,
-                definition,
-                binding,
+            using IDisposable fontScope = binding.UseFonts(
                 FontSearchProfile.Explicit(request.FontDirectories ?? []));
             string license = LicenseFingerprint.Of(binding.LicenseGate.Resolution);
             if (licenses.TryGetValue(product, out string? applied) && applied != license)

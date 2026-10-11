@@ -82,7 +82,7 @@ internal static class UpdateClient
             currentRevision);
         if (comparison < 0)
         {
-            throw CliErrors.ReleaseVerificationFailed(
+            throw HostDiagnostics.ReleaseVerificationFailed(
                 $"the feed version '{candidateVersion}' is older than the installed version '{currentVersion}'");
         }
         return comparison;
@@ -108,7 +108,7 @@ internal static class UpdateClient
             return 0;
         }
 
-        throw CliErrors.ReleaseVerificationFailed(
+        throw HostDiagnostics.ReleaseVerificationFailed(
             "the feed and installed versions have equal semantic precedence but different immutable identities; publish a higher semantic version");
     }
 
@@ -158,7 +158,7 @@ internal static class UpdateClient
 
             deadline?.ThrowIfExpired("update-installer-start");
             process = Process.Start(start)
-                ?? throw CliErrors.ReleaseVerificationFailed("the installer process could not be started");
+                ?? throw HostDiagnostics.ReleaseVerificationFailed("the installer process could not be started");
             started = true;
             return process.Id;
         }
@@ -181,7 +181,7 @@ internal static class UpdateClient
         using var zip = new ZipArchive(archive, ZipArchiveMode.Read, leaveOpen: true);
         if (zip.Entries.Count is 0 or > MaximumZipEntries)
         {
-            throw CliErrors.ReleaseVerificationFailed("the update archive has an invalid entry count");
+            throw HostDiagnostics.ReleaseVerificationFailed("the update archive has an invalid entry count");
         }
         var paths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         long total = 0;
@@ -193,7 +193,7 @@ internal static class UpdateClient
                 directory ? entry.FullName.TrimEnd('/') : entry.FullName);
             if (!paths.Add(relative))
             {
-                throw CliErrors.ReleaseVerificationFailed($"the update archive contains duplicate entry '{relative}'");
+                throw HostDiagnostics.ReleaseVerificationFailed($"the update archive contains duplicate entry '{relative}'");
             }
             if (directory)
             {
@@ -203,7 +203,7 @@ internal static class UpdateClient
             total = checked(total + entry.Length);
             if (total > MaximumArchiveBytes)
             {
-                throw CliErrors.ReleaseVerificationFailed("the update archive exceeds its decompressed size budget");
+                throw HostDiagnostics.ReleaseVerificationFailed("the update archive exceeds its decompressed size budget");
             }
             string destination = Path.Combine(root, relative);
             Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
@@ -215,7 +215,7 @@ internal static class UpdateClient
                 MaximumArchiveBytes - (total - entry.Length), deadline);
             if (copied != entry.Length)
             {
-                throw CliErrors.ReleaseVerificationFailed($"the update archive entry '{relative}' has an invalid decompressed size");
+                throw HostDiagnostics.ReleaseVerificationFailed($"the update archive entry '{relative}' has an invalid decompressed size");
             }
         }
 
@@ -223,7 +223,7 @@ internal static class UpdateClient
         {
             if (!File.Exists(Path.Combine(root, required)))
             {
-                throw CliErrors.ReleaseVerificationFailed($"the update archive is missing '{required}'");
+                throw HostDiagnostics.ReleaseVerificationFailed($"the update archive is missing '{required}'");
             }
         }
     }
@@ -244,7 +244,7 @@ internal static class UpdateClient
                 || reserved.Contains(segment.Split('.')[0].ToUpperInvariant(), StringComparer.Ordinal)
                 || segment.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0))
         {
-            throw CliErrors.ReleaseVerificationFailed($"the update archive contains an unsafe path '{value}'");
+            throw HostDiagnostics.ReleaseVerificationFailed($"the update archive contains an unsafe path '{value}'");
         }
         return normalized;
     }
@@ -264,7 +264,7 @@ internal static class UpdateClient
             total = checked(total + read);
             if (total > maximum)
             {
-                throw CliErrors.ReleaseVerificationFailed("the update archive decompressed beyond its safety budget");
+                throw HostDiagnostics.ReleaseVerificationFailed("the update archive decompressed beyond its safety budget");
             }
             output.WriteAsync(buffer.AsMemory(0, read), deadline.Token).AsTask().GetAwaiter().GetResult();
         }
@@ -350,7 +350,7 @@ internal static class UpdateClient
                 if (stream.Length != manifest.ArchiveSize || !string.Equals(
                     Convert.ToHexString(SHA256.HashDataAsync(stream, _deadline.Token).GetAwaiter().GetResult()),
                     manifest.ArchiveSha256, StringComparison.OrdinalIgnoreCase))
-                { throw CliErrors.ReleaseVerificationFailed("the downloaded archive does not match the size and SHA-256 of the release manifest"); }
+                { throw HostDiagnostics.ReleaseVerificationFailed("the downloaded archive does not match the size and SHA-256 of the release manifest"); }
                 _deadline.ThrowIfExpired("update-archive-verified");
                 stream.Position = 0;
                 return stream;
@@ -378,11 +378,11 @@ internal static class UpdateClient
                 using var response = client.GetAsync(uri, HttpCompletionOption.ResponseHeadersRead, deadline.Token).GetAwaiter().GetResult();
                 if (response.StatusCode != HttpStatusCode.OK)
                 {
-                    throw CliErrors.ReleaseFeedUnavailable(uri, $"the feed answered HTTP {(int)response.StatusCode}");
+                    throw HostDiagnostics.ReleaseFeedUnavailable(uri, $"the feed answered HTTP {(int)response.StatusCode}");
                 }
                 if (response.Content.Headers.ContentLength is > 0 and var length && length > maximum)
                 {
-                    throw CliErrors.ReleaseVerificationFailed($"the feed file exceeds its {maximum}-byte budget");
+                    throw HostDiagnostics.ReleaseVerificationFailed($"the feed file exceeds its {maximum}-byte budget");
                 }
                 try
                 {
@@ -394,18 +394,18 @@ internal static class UpdateClient
             }
             catch (HttpRequestException exception)
             {
-                throw CliErrors.ReleaseFeedUnavailable(uri, exception.Message);
+                throw HostDiagnostics.ReleaseFeedUnavailable(uri, exception.Message);
             }
             catch (IOException exception) when (!deadline.Token.IsCancellationRequested
                 && (exception is HttpIOException || exception.InnerException is System.Net.Sockets.SocketException))
             {
                 // The connection broke while the response body was being read.
-                throw CliErrors.ReleaseFeedUnavailable(uri, exception.Message);
+                throw HostDiagnostics.ReleaseFeedUnavailable(uri, exception.Message);
             }
             catch (OperationCanceledException) when (!deadline.Token.IsCancellationRequested)
             {
                 // Only the connection timeout cancels without the deadline or the caller.
-                throw CliErrors.ReleaseFeedUnavailable(uri, "the connection was not established within 30 seconds");
+                throw HostDiagnostics.ReleaseFeedUnavailable(uri, "the connection was not established within 30 seconds");
             }
         }
 
@@ -442,7 +442,7 @@ internal static class UpdateClient
             }
             if (!File.Exists(full))
             {
-                throw CliErrors.ReleaseVerificationFailed($"feed file not found: {full}");
+                throw HostDiagnostics.ReleaseVerificationFailed($"feed file not found: {full}");
             }
         }
     }
@@ -567,6 +567,6 @@ internal static class UpdateClient
                     || identifier.Any(static c => c is < '0' or > '9')));
 
         private static CliException Invalid(string value) =>
-            CliErrors.ReleaseVerificationFailed($"version '{value}' is not a supported semantic version");
+            HostDiagnostics.ReleaseVerificationFailed($"version '{value}' is not a supported semantic version");
     }
 }
