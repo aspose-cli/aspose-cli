@@ -72,6 +72,19 @@ public sealed class WordsInvariantTests
     public void HoldsExhaustively(string id) => KnownViolations.Verify(id);
 }
 
+/// <summary>The contract rules that the catalog, help and schemas answer without running a command.</summary>
+public sealed class ContractInvariantTests
+{
+    [Theory(SkipTestWithoutData = true)]
+    [MemberData(nameof(InvariantCases.Sample), InvariantCases.Contract, MemberType = typeof(InvariantCases))]
+    public void Holds(string id) => KnownViolations.Verify(id);
+
+    [Theory(SkipTestWithoutData = true)]
+    [Category(TestCategory.Slow)]
+    [MemberData(nameof(InvariantCases.Exhaustive), InvariantCases.Contract, MemberType = typeof(InvariantCases))]
+    public void HoldsExhaustively(string id) => KnownViolations.Verify(id);
+}
+
 /// <summary>Each product's own document converted to every declared format and rendered to every image format.</summary>
 public sealed class CellsFormatInvariantTests
 {
@@ -145,6 +158,13 @@ public sealed class WordsListedInvariantTests
     public void Holds(string id) => KnownViolations.Verify(id);
 }
 
+public sealed class ContractListedInvariantTests
+{
+    [Theory(SkipTestWithoutData = true)]
+    [MemberData(nameof(InvariantCases.Listed), InvariantCases.Contract, MemberType = typeof(InvariantCases))]
+    public void Holds(string id) => KnownViolations.Verify(id);
+}
+
 public sealed class FormatMatrixListedInvariantTests
 {
     [Theory(SkipTestWithoutData = true)]
@@ -153,8 +173,8 @@ public sealed class FormatMatrixListedInvariantTests
 }
 
 /// <summary>
-/// The known-violations list names only generated cases and known invariants, once each, with a
-/// root cause, grouped by cause.
+/// The known-violations list names only generated cases and known invariants, once each, with the
+/// contract rule and a root cause, grouped by cause.
 /// </summary>
 public sealed partial class KnownViolationsTests
 {
@@ -167,6 +187,8 @@ public sealed partial class KnownViolationsTests
         {
             Assert.True(InvariantCases.All.ContainsKey(entry.Case), $"{KnownViolations.FileName} names a case that is no longer generated: {entry.Case}");
             Assert.True(InvariantCases.Invariants.Contains(entry.Invariant), $"{entry.Case} names an unknown invariant '{entry.Invariant}'.");
+            Assert.True(entry.Rule == InvariantCases.RuleOf(entry.Invariant),
+                $"{entry.Case} must name the contract rule its invariant enforces, {InvariantCases.RuleOf(entry.Invariant)}.");
             Assert.True(entry.Cause is not null && CausePattern().IsMatch(entry.Cause),
                 $"{entry.Case} must name its root cause in kebab case, such as convert-foreign-extension.");
             Assert.True(entry.Modes is null || (entry.Modes.Count == 1 && modes.Contains(entry.Modes[0])),
