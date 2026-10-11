@@ -402,7 +402,7 @@ public sealed class SlidesMutationAndSecurityTests
         }));
 
         Assert.Equal(ErrorCodes.FeatureUnsupported, error.Code);
-        Assert.Equal(1, error.Details!["index"]!.GetValue<int>());
+        Assert.Equal("op-0002", error.Details!["id"]!.GetValue<string>());
         Assert.Equal("insert_image", error.Details["op"]!.GetValue<string>());
         Assert.False(File.Exists(output));
     }

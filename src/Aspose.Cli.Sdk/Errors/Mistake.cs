@@ -92,6 +92,18 @@ public sealed class Mistake
         Suggestions.Count == 0 ? string.Empty : $" (did you mean {(kind is null ? string.Empty : kind + " ")}{Listed()}?)";
 
     /// <summary>
+    /// The sentence that lists the names an error's <c>details.available</c> holds, such as
+    /// <c>Must be one of: light, dark</c>, so the message and the details list the same names.
+    /// When more exist than an error lists, a sentence before it says how many.
+    /// </summary>
+    public string MustBeOneOf()
+    {
+        int listed = Math.Min(CliErrors.MaximumAvailableNames, Available.Count);
+        string count = listed < Available.Count ? $"The first {listed} of {Available.Count} follow. " : string.Empty;
+        return $"{count}Must be one of: {string.Join(", ", Available.Take(listed))}";
+    }
+
+    /// <summary>
     /// Writes the mistake into error details: <c>available</c>, the first
     /// <paramref name="maximumAvailable"/> existing names (none when it is 0), and
     /// <c>suggestions</c>, an array present only when some name is close. Every error lists at

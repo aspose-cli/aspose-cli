@@ -15,7 +15,10 @@ public record BoundedOperationEnvelope<TOperation>
     /// <summary>Optional SHA-256 precondition copied from an input fingerprint.</summary>
     public string? IfMatch { get; init; }
 
-    /// <summary>Product-owned operations, executed in this order.</summary>
+    /// <summary>
+    /// Product-owned operations, executed in this order. A document may also be the bare array
+    /// of operations, which reads as a document with only this field.
+    /// </summary>
     public required IReadOnlyList<TOperation> Ops { get; init; }
 }
 
@@ -23,6 +26,12 @@ public record BoundedOperationEnvelope<TOperation>
 /// <summary>Product-neutral fields shared by every bounded operation.</summary>
 public abstract record BoundedOperation
 {
+    /// <summary>
+    /// The most operations one document holds, the same in every product; a product limits
+    /// what a batch may consume through its resource budgets, not through the operation count.
+    /// </summary>
+    public const int MaximumPerBatch = 10_000;
+
     /// <summary>Stable correlation ID; assigned deterministically when omitted.</summary>
     public string? Id { get; init; }
 

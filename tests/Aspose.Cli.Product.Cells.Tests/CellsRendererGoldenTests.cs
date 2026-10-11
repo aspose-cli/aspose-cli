@@ -243,10 +243,10 @@ public sealed class CellsRendererGoldenTests
             Recalculated = true,
             Applied =
             [
-                new BoundedOperationOutcome { Id = "op-0001", Index = 0, Op = "set_values", Status = OpStatuses.Ok, ItemsAffected = 3 },
+                new BoundedOperationOutcome { Id = "op-0001", Op = "set_values", Status = OpStatuses.Ok, ItemsAffected = 3 },
                 new BoundedOperationOutcome
                 {
-                    Id = "total", Index = 1, Op = "set_formula", Status = OpStatuses.Failed, ItemsAffected = 0,
+                    Id = "total", Op = "set_formula", Status = OpStatuses.Failed, ItemsAffected = 0,
                     Error = new OpError { Code = "OPS_INVALID", Message = "sheet 'Missing' does not exist", Hint = "Inspect the sheets first." },
                 },
             ],
@@ -277,8 +277,8 @@ public sealed class CellsRendererGoldenTests
         RenderedText.Equal(
             """
             wrote out.xlsx (xlsx, 4,096 bytes, 1 of 2 op(s) applied, 1 failed)
-              [op-0001/0] set_values: ok (3 item(s))
-              [total/1] set_formula: failed (0 item(s))
+              [op-0001] set_values: ok (3 item(s))
+              [total] set_formula: failed (0 item(s))
                   OPS_INVALID: sheet 'Missing' does not exist
                   hint: Inspect the sheets first.
             backup: book.backup.xlsx (created)
@@ -297,7 +297,7 @@ public sealed class CellsRendererGoldenTests
             Input = new SourceInfo { Path = "book.xlsx", Format = "xlsx", SizeBytes = 2_048 },
             DryRun = true,
             Recalculated = false,
-            Applied = [new BoundedOperationOutcome { Id = "op-0001", Index = 0, Op = "set_values", Status = OpStatuses.Ok, ItemsAffected = 1 }],
+            Applied = [new BoundedOperationOutcome { Id = "op-0001", Op = "set_values", Status = OpStatuses.Ok, ItemsAffected = 1 }],
         };
 
         string text = RenderedText.Of(surface => EditCommand.Table(result, surface), TableFormat.Plain);
@@ -305,7 +305,7 @@ public sealed class CellsRendererGoldenTests
         RenderedText.Equal(
             """
             dry run: 1 of 1 op(s) applied; nothing was written
-              [op-0001/0] set_values: ok (1 item(s))
+              [op-0001] set_values: ok (1 item(s))
             """,
             text);
     }

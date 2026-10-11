@@ -79,9 +79,11 @@ internal static class OperationContractValidator
         {
             if (constraint.Check(value) is { } reason)
             {
-                throw new OperationInvalidException(
-                    $"{path} {reason}",
-                    mistake: constraint is AllowedValuesAttribute allowed && value is string text ? Mistake.Of(text, allowed.Spelled) : null);
+                // A name among fixed values is a mistake: the operation error lists the values
+                // once, in details.available and the message, so the reason leaves them out.
+                throw constraint is AllowedValuesAttribute allowed && value is string text
+                    ? new OperationInvalidException($"{path} does not accept '{text}'", mistake: Mistake.Of(text, allowed.Spelled))
+                    : new OperationInvalidException($"{path} {reason}");
             }
         }
 

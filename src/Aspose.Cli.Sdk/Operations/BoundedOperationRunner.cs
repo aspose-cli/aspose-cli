@@ -67,6 +67,8 @@ public static class BoundedOperationRunner
         {
             TOp operation = operations[index];
             string name = catalog.NameOf(operation);
+            string id = operation.Id
+                ?? throw new ArgumentException("Every operation of a validated batch has an id.", nameof(operations));
             deadline?.ThrowIfExpired("operations");
             CliException rejection;
             try
@@ -74,8 +76,7 @@ public static class BoundedOperationRunner
                 AppliedOperation applied = apply(operation, index);
                 outcomes.Add(new BoundedOperationOutcome
                 {
-                    Id = operation.Id!,
-                    Index = index,
+                    Id = id,
                     Op = name,
                     Status = OpStatuses.Ok,
                     ItemsAffected = applied.ItemsAffected,
@@ -85,15 +86,15 @@ public static class BoundedOperationRunner
             }
             catch (OperationInvalidException invalid)
             {
-                rejection = OperationErrors.InvalidAt(index, name, invalid.Message, invalid.Hint ?? catalog.DefaultHint, value: invalid.Mistake);
+                rejection = OperationErrors.InvalidAt(id, name, invalid.Message, invalid.Hint ?? catalog.DefaultHint, value: invalid.Mistake);
             }
             catch (CliException failure) when (!failure.IsInvocationFailure)
             {
-                rejection = OperationErrors.FailedAt(index, name, failure);
+                rejection = OperationErrors.FailedAt(id, name, failure);
             }
             catch (EngineOpException failure)
             {
-                throw OperationErrors.EngineFailedAt(index, name, failure);
+                throw OperationErrors.EngineFailedAt(id, name, failure);
             }
             catch (Exception failure) when (failure is IOException or UnauthorizedAccessException)
             {
@@ -103,11 +104,11 @@ public static class BoundedOperationRunner
                 if (failure is FileNotFoundException { FileName: { Length: > 0 } file }
                     && Declares(catalog.InputPaths(operation), file))
                 {
-                    rejection = OperationErrors.FailedAt(index, name, CliErrors.FileNotFound(file));
+                    rejection = OperationErrors.FailedAt(id, name, CliErrors.FileNotFound(file));
                 }
                 else if (ExceptionOrigin.IsThirdParty(failure, own))
                 {
-                    throw OperationErrors.EngineFailedAt(index, name, new EngineOpException(failure.Message, failure));
+                    throw OperationErrors.EngineFailedAt(id, name, new EngineOpException(failure.Message, failure));
                 }
                 else
                 {
@@ -121,8 +122,7 @@ public static class BoundedOperationRunner
             }
             outcomes.Add(new BoundedOperationOutcome
             {
-                Id = operation.Id!,
-                Index = index,
+                Id = id,
                 Op = name,
                 Status = OpStatuses.Failed,
                 ItemsAffected = 0,

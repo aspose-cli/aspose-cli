@@ -319,7 +319,7 @@ public abstract class ProductContractTests<TModule>
             schema["properties"]!["applied"]!["items"]!["$ref"]!.GetValue<string>());
 
         Assert.Equal(
-            ["Error", "Id", "Index", "ItemsAffected", "Op", "Status", "Targets"],
+            ["Error", "Id", "ItemsAffected", "Op", "Status", "Targets"],
             typeof(BoundedOperationOutcome)
                 .GetProperties(BindingFlags.Public | BindingFlags.Instance)
                 .Select(static property => property.Name)

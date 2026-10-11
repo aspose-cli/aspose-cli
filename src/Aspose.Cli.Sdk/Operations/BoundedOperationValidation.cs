@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text.Json;
 using Aspose.Cli.Sdk.Contracts;
 
 namespace Aspose.Cli.Sdk.Operations;
@@ -82,6 +83,30 @@ internal static class BoundedOperationIds
 
             candidate = checked(candidate + 1);
         }
+    }
+
+    /// <summary>
+    /// The ids of the entries of an operation array as written, before any entry is read: the
+    /// <c>id</c> an entry states, else the id <see cref="Assign"/> gives it, so an error about an
+    /// entry the serializer could not read names it as its outcome would.
+    /// </summary>
+    public static IReadOnlyList<string> Of(JsonElement ops)
+    {
+        int count = ops.GetArrayLength();
+        var stated = new string?[count];
+        var used = new HashSet<string>(StringComparer.Ordinal);
+        for (int index = 0; index < count; index++)
+        {
+            if (ops[index] is { ValueKind: JsonValueKind.Object } entry
+                && entry.TryGetProperty("id", out JsonElement id) && id.ValueKind == JsonValueKind.String
+                && id.GetString() is { Length: > 0 } text)
+            {
+                stated[index] = text;
+                used.Add(text);
+            }
+        }
+
+        return [.. stated.Select((id, index) => id ?? Allocate(index, used))];
     }
 
     /// <summary>

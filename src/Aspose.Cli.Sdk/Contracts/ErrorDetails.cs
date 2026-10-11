@@ -24,16 +24,16 @@ public sealed record DiagnosticDetails
 /// <summary>
 /// Details of an error whose code names a target the document does not contain. They state what
 /// was requested and what exists, so the caller can correct the request without another
-/// inspection. Operation errors add the operation's index and op.
+/// inspection. Operation errors add the operation's id and op.
 /// </summary>
-[SchemaId(Id)]
+[SchemaId(SchemaName)]
 public sealed record NotFoundDetails
 {
     /// <summary>The relative id the record's schema is published under.</summary>
-    public const string Id = "not-found-details";
+    public const string SchemaName = "not-found-details";
 
     /// <summary>The schema id the diagnostic catalog names the record's schema by.</summary>
-    public static string CatalogId { get; } = ResultEnvelope.CatalogId("common", Id);
+    public static string CatalogId { get; } = ResultEnvelope.CatalogId("common", SchemaName);
 
     /// <summary>What was looked up, e.g. sheet, slide, bookmark or page.</summary>
     public required string Subject { get; init; }
@@ -55,8 +55,9 @@ public sealed record NotFoundDetails
     [MaxItems(3)]
     public IReadOnlyList<string>? Suggestions { get; init; }
 
-    /// <summary>The zero-based position of the failing operation in its batch; present only for an operation error.</summary>
-    public uint? Index { get; init; }
+    /// <summary>The id of the failing operation, as its applied[] entry states it; present only for an operation error.</summary>
+    [Pattern("^[A-Za-z][A-Za-z0-9._-]{0,63}$")]
+    public string? Id { get; init; }
 
     /// <summary>The failing operation's op name; present only for an operation error that states one.</summary>
     public string? Op { get; init; }

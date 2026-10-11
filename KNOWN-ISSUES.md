@@ -241,7 +241,7 @@ fails, delete the issue's section, the code that names it and the test, then upd
   `redact_text` verification, also match with up to two spaces, never a line break, wherever an
   East Asian character meets a character that is not East Asian, such as a digit or Latin letter.
   A `redact_text` operation that matches nothing
-  is named in a `REDACTION_NO_MATCH` warning.
+  is named in an `OP_NO_EFFECT` warning.
 - **Workaround:** in a regular expression, allow the gaps with ` *`.
 - **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
 

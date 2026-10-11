@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
+using Aspose.Cli.Sdk.Contracts;
 
 namespace Aspose.Cli.Sdk.Serialization;
 
@@ -63,7 +64,9 @@ internal static class JsonContractDiagnostics
     {
         if (value.ValueKind != JsonValueKind.Object)
         {
-            return path.Length == 0 || info.Properties.Count == 0
+            return path.Length == 0 && IsBatch(info.Type)
+                ? Expected(path, "an object with ops or the bare array of operations")
+                : path.Length == 0 || info.Properties.Count == 0
                 ? Expected(path, "an object")
                 : AllowedFieldsException.NotAnObject(path, [.. info.Properties.Select(static property => property.Name)]);
         }
@@ -187,7 +190,7 @@ internal static class JsonContractDiagnostics
         string[] missing = [.. info.Properties
             .Where(property => property.IsRequired && !Declares(value, property.Name, names))
             .Select(static property => property.Name)];
-        return AllowedFieldsException.UnknownField(path, name, path.Length == 0 ? "the document" : path, allowed, missing);
+        return AllowedFieldsException.UnknownField(path, name, allowed, missing);
     }
 
     /// <summary>Rejects an object that omits the required field <paramref name="field"/>, naming the values it takes when they are fixed.</summary>
@@ -196,6 +199,20 @@ internal static class JsonContractDiagnostics
 
     private static bool Declares(JsonElement value, string name, StringComparer names) =>
         value.EnumerateObject().Any(member => names.Equals(member.Name, name));
+
+    /// <summary>Whether the type is an operation document, which may also be the bare array of its operations.</summary>
+    private static bool IsBatch(Type type)
+    {
+        for (Type? current = type; current is not null; current = current.BaseType)
+        {
+            if (current.IsGenericType && current.GetGenericTypeDefinition() == typeof(BoundedOperationEnvelope<>))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
 
     private static JsonException Expected(string path, string kind) =>
         new(path.Length == 0 ? $"the document must be {kind}" : $"{path} must be {kind}");

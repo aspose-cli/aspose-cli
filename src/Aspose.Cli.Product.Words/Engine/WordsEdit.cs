@@ -1,3 +1,4 @@
+using System.Runtime.ExceptionServices;
 using Aspose.Cli.Product.Words.Engine.Editing;
 using Aspose.Cli.Product.Words.Engine.Mapping;
 using Aspose.Cli.Sdk.Diagnostics;
@@ -171,6 +172,11 @@ internal static class WordsEdit
             deadline: null,
             (_, index) =>
             {
+                if (resolved[index].Failure is { } failure)
+                {
+                    ExceptionDispatchInfo.Capture(failure).Throw();
+                }
+
                 // An operation without a block address, such as replace_text, names the
                 // original blocks that hold the nodes it changed.
                 var nodes = new List<Node>();

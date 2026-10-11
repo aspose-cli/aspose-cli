@@ -346,7 +346,7 @@ public sealed class StandardOptions
 
         if (traits.Encrypt is { } encrypt)
         {
-            Encrypt = new PasswordOptions(StandardOptionNames.Encrypt, encrypt.Subject, allowStdin: false);
+            Encrypt = new PasswordOptions(StandardOptionNames.Encrypt, encrypt.Subject);
         }
 
         OutputTarget = traits.Output;
@@ -465,7 +465,8 @@ public sealed class StandardOptions
         ArgumentNullException.ThrowIfNull(paths);
         ArgumentNullException.ThrowIfNull(inputs);
         ArgumentNullException.ThrowIfNull(readEnvironment);
-        return new StandardInvocation(this, parse, paths, inputs, readEnvironment, standardInputAvailable: true);
+        StandardInputSources.EnsureOne(parse);
+        return new StandardInvocation(this, parse, paths, inputs, readEnvironment);
     }
 
     private static void AddArgument(Command command, Argument? argument)
@@ -518,9 +519,8 @@ public sealed class StandardOptions
     internal static TargetFormat? TargetOf(Option option) =>
         Targets.TryGetValue(option, out TargetFormat? target) ? target : null;
 
-    // Two documents cannot share standard input, so neither password reads it.
     private static PasswordOptions PairedPassword(InputDocument document) =>
-        new($"--{document.Argument}-password", document.PasswordSubject, allowStdin: false);
+        new($"--{document.Argument}-password", document.PasswordSubject);
 }
 
 /// <summary>
@@ -529,8 +529,8 @@ public sealed class StandardOptions
 /// documents, secrets and outputs. The rules every command shares are enforced here: an output,
 /// whether named or derived from the input, never names a file that any of the command's file
 /// parameters or file-backed JSON sources names (a bounded edit also refuses one that its
-/// operations read), a password is refused for a format that cannot carry one before its secret
-/// is read, and standard input already carrying data is never read for a password.
+/// operations read), and a password is refused for a format that cannot carry one before its
+/// secret is read.
 /// </summary>
 public partial class StandardInvocation
 {
@@ -546,8 +546,7 @@ public partial class StandardInvocation
         ParseResult parse,
         PathResolver paths,
         InputSource inputs,
-        Func<string, string?> readEnvironment,
-        bool standardInputAvailable)
+        Func<string, string?> readEnvironment)
     {
         _options = options;
         _parse = parse;
@@ -555,7 +554,7 @@ public partial class StandardInvocation
         Inputs = inputs;
         ReadEnvironment = readEnvironment;
         _inputPassword = new(() => Declared(_options.InputPassword, "input document").Resolve(
-            _parse, Inputs, ReadEnvironment, standardInputAvailable));
+            _parse, Inputs, ReadEnvironment));
         _otherPassword = new(() => Declared(_options.OtherPassword, "second input document").Resolve(
             _parse, Inputs, ReadEnvironment));
     }

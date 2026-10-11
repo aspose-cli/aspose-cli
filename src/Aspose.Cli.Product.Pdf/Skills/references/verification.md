@@ -27,7 +27,7 @@ checked, even when part of its effect was.
 `PDF_VERIFICATION_INCOMPLETE` reports a page a `redact_text` pattern could not be
 checked on within its time budget; search that page with `pdf query search`.
 A `redact_text` pattern that matched nothing passes its check, and no check
-catches text a redaction moved under its cover; act on `REDACTION_NO_MATCH`,
+catches text a redaction moved under its cover; act on `OP_NO_EFFECT`,
 `REDACTION_TEXT_MOVED` and `PDF_TEXT_COVERED` ([redaction](editing.md#redaction)).
 
 The batch is checked as a whole: only the last value set for a field, entry or

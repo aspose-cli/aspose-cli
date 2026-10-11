@@ -56,8 +56,10 @@ Options:
   --overwrite                                    Replace the output file if it already exists.
   --left-password <left-password>                Password for the original document. Discouraged: visible in the process list; prefer --left-password-env.
   --left-password-env <left-password-env>        Name of an environment variable holding the password for the original document.
+  --left-password-stdin                          Read the password for the original document from the first line of stdin.
   --right-password <right-password>              Password for the changed document. Discouraged: visible in the process list; prefer --right-password-env.
   --right-password-env <right-password-env>      Name of an environment variable holding the password for the changed document.
+  --right-password-stdin                         Read the password for the changed document from the first line of stdin.
   --font-dir <font-dir>                          Local font directory searched in addition to the system fonts; repeat for more.
   -h, --help                                     Show help and usage information
   --output-format <compact|json|markdown|table>  Output format: json (contract envelopes), compact (the same JSON on one line), table (human text) or markdown. Default: table on a terminal, json when redirected.
@@ -94,6 +96,7 @@ Options:
   --password-stdin                               Read the password for the document from the first line of stdin.
   --encrypt <encrypt>                            Password for the output document. Discouraged: visible in the process list; prefer --encrypt-env.
   --encrypt-env <encrypt-env>                    Name of an environment variable holding the password for the output document.
+  --encrypt-stdin                                Read the password for the output document from the first line of stdin.
   --font-dir <font-dir>                          Local font directory searched in addition to the system fonts; repeat for more.
   -h, --help                                     Show help and usage information
   --output-format <compact|json|markdown|table>  Output format: json (contract envelopes), compact (the same JSON on one line), table (human text) or markdown. Default: table on a terminal, json when redirected.
@@ -130,6 +133,7 @@ Options:
   --overwrite                                    Replace the output file if it already exists.
   --encrypt <encrypt>                            Password for the output document. Discouraged: visible in the process list; prefer --encrypt-env.
   --encrypt-env <encrypt-env>                    Name of an environment variable holding the password for the output document.
+  --encrypt-stdin                                Read the password for the output document from the first line of stdin.
   --font-dir <font-dir>                          Local font directory searched in addition to the system fonts; repeat for more.
   -h, --help                                     Show help and usage information
   --output-format <compact|json|markdown|table>  Output format: json (contract envelopes), compact (the same JSON on one line), table (human text) or markdown. Default: table on a terminal, json when redirected.
@@ -157,7 +161,7 @@ Arguments:
   <file>  Document to edit.
 
 Options:
-  --ops <ops>                                    The ops JSON: a path to the document, '-' to read it from stdin, or the document itself when the value starts with { or [ (inline). To name a file whose name starts with '[', prefix it with ./ . Vocabulary: aspose-cli schema v2/words/ops.
+  --ops <ops>                                    The ops JSON, an object with ops or the bare array of operations: a path to the document, '-' to read it from stdin, or the document itself when the value starts with { or [ (inline). To name a file whose name starts with '[', prefix it with ./ . At most 10000 operations. Vocabulary: aspose-cli schema v2/words/ops.
   --set <set>                                    Replace a bookmark's text as bookmark:NAME=TEXT; repeatable, applied after the --ops document. Example: --set "bookmark:ClientName=Contoso Ltd.".
   --if-match <if-match>                          Require the current input SHA-256 fingerprint before editing.
   --dry-run                                      Resolve and apply operations in memory without writing.
@@ -174,6 +178,7 @@ Options:
   --password-stdin                               Read the password for the document from the first line of stdin.
   --encrypt <encrypt>                            Password for the output document. Discouraged: visible in the process list; prefer --encrypt-env.
   --encrypt-env <encrypt-env>                    Name of an environment variable holding the password for the output document.
+  --encrypt-stdin                                Read the password for the output document from the first line of stdin.
   --font-dir <font-dir>                          Local font directory searched in addition to the system fonts; repeat for more.
   -h, --help                                     Show help and usage information
   --output-format <compact|json|markdown|table>  Output format: json (contract envelopes), compact (the same JSON on one line), table (human text) or markdown. Default: table on a terminal, json when redirected.

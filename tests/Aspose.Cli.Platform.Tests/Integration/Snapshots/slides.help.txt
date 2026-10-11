@@ -58,6 +58,7 @@ Options:
   --password-stdin                               Read the password for the presentation from the first line of stdin.
   --encrypt <encrypt>                            Password for the output presentation. Discouraged: visible in the process list; prefer --encrypt-env.
   --encrypt-env <encrypt-env>                    Name of an environment variable holding the password for the output presentation.
+  --encrypt-stdin                                Read the password for the output presentation from the first line of stdin.
   --font-dir <font-dir>                          Local font directory searched in addition to the system fonts; repeat for more.
   -h, --help                                     Show help and usage information
   --output-format <compact|json|markdown|table>  Output format: json (contract envelopes), compact (the same JSON on one line), table (human text) or markdown. Default: table on a terminal, json when redirected.
@@ -87,6 +88,7 @@ Options:
   --overwrite                                    Replace the output file if it already exists.
   --encrypt <encrypt>                            Password for the output presentation. Discouraged: visible in the process list; prefer --encrypt-env.
   --encrypt-env <encrypt-env>                    Name of an environment variable holding the password for the output presentation.
+  --encrypt-stdin                                Read the password for the output presentation from the first line of stdin.
   --font-dir <font-dir>                          Local font directory searched in addition to the system fonts; repeat for more.
   -h, --help                                     Show help and usage information
   --output-format <compact|json|markdown|table>  Output format: json (contract envelopes), compact (the same JSON on one line), table (human text) or markdown. Default: table on a terminal, json when redirected.
@@ -110,7 +112,7 @@ Arguments:
   <file>  Presentation file path.
 
 Options:
-  --ops <ops> (REQUIRED)                         The ops JSON: a path to the document, '-' to read it from stdin, or the document itself when the value starts with { or [ (inline). To name a file whose name starts with '[', prefix it with ./ . Vocabulary: aspose-cli schema v2/slides/ops.
+  --ops <ops>                                    The ops JSON, an object with ops or the bare array of operations: a path to the document, '-' to read it from stdin, or the document itself when the value starts with { or [ (inline). To name a file whose name starts with '[', prefix it with ./ . At most 10000 operations. Vocabulary: aspose-cli schema v2/slides/ops.
   --if-match <if-match>                          Require the current input SHA-256 fingerprint before editing.
   --dry-run                                      Resolve and apply operations in memory without writing.
   --best-effort                                  Keep successful operations, report failures, and exit 8.
@@ -123,6 +125,7 @@ Options:
   --password-stdin                               Read the password for the presentation from the first line of stdin.
   --encrypt <encrypt>                            Password for the output presentation. Discouraged: visible in the process list; prefer --encrypt-env.
   --encrypt-env <encrypt-env>                    Name of an environment variable holding the password for the output presentation.
+  --encrypt-stdin                                Read the password for the output presentation from the first line of stdin.
   --font-dir <font-dir>                          Local font directory searched in addition to the system fonts; repeat for more.
   -h, --help                                     Show help and usage information
   --output-format <compact|json|markdown|table>  Output format: json (contract envelopes), compact (the same JSON on one line), table (human text) or markdown. Default: table on a terminal, json when redirected.

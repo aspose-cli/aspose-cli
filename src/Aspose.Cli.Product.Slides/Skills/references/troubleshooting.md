@@ -6,7 +6,7 @@ The error envelope, exit codes, not-found details and general diagnosis are shar
 - `LAYOUT_NOT_FOUND`: `slides inspect --detail layouts` lists layout names.
 - `CHART_DATA_INVALID`: the message names the cause; only a chart that cannot be updated in
   place needs `insert_chart` (Charts in [Slides editing](editing.md)).
-- `REPLACE_NO_MATCH`: `replace_text` found nothing in its `scope` and changed nothing. Run
+- `OP_NO_EFFECT` (`details.reason` `no-match`): `replace_text` found nothing in its `scope` and changed nothing. Run
   `slides query search` with the same pattern and scope; chart text and alternative text are
   never matched.
 - `REMOTE_RESOURCES_BLOCKED`: a linked picture, linked media file or external chart workbook

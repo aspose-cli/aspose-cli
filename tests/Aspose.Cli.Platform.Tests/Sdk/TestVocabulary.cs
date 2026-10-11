@@ -16,7 +16,7 @@ public static class Shades
 }
 
 /// <summary>Test operations.</summary>
-[OperationVocabulary("ops", MaximumOperations = 8, JsonContext = typeof(TestOpsJsonContext))]
+[OperationVocabulary("ops", JsonContext = typeof(TestOpsJsonContext))]
 [JsonConverter(typeof(OperationJsonConverter<TestOp>))]
 public abstract partial record TestOp : BoundedOperation;
 

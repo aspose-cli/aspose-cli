@@ -40,13 +40,15 @@ A PDF batch, for example:
 }
 ```
 
-- `ops` holds 1 or more entries, applied in order.
+- `ops` holds 1 to 10000 entries, applied in order. The bare array of
+  operations is accepted as the document with only its `ops`.
 - `id` is optional; results echo it, and `op-0001` style ids are assigned when
   omitted.
 - Optional top-level fields: `schema` (checked when present),
   `schemaVersion` (`2`) and `ifMatch` (the input's SHA-256 fingerprint).
 - `--ops` takes a file path, `-` for stdin, or the JSON itself when the value
-  starts with `{` or `[`. Write the document to a file and pass its path: in
+  starts with `{` or `[`. Only one option of a command reads stdin: `--ops -`
+  with a `--*-stdin` option is refused with `OPTION_INVALID`. Write the document to a file and pass its path: in
   PowerShell, inline JSON and piped text reach the CLI intact or not depending
   on the version and `$PSNativeCommandArgumentPassing` (`aspose-cli docs
   troubleshooting`, Windows PowerShell).
@@ -54,12 +56,14 @@ A PDF batch, for example:
 ## Atomic, best-effort and dry run
 
 - **Atomic (default).** If any operation fails, nothing is written. The error
-  carries `details.index` (zero-based), `details.op` and, for validation
-  failures, `details.reason` (such as `unknown field 'style.shiny'; style
-  accepts: ...`). An unknown field also lists the fields its operation,
-  nested object or top-level document accepts in `details.allowedFields`, an
-  unknown `op` lists the operations and a value outside a field's enum lists
-  its values in `details.available`. When some are likely meant,
+  carries `details.id` (the id its `applied[]` entry would have, assigned as
+  `op-0001` style when omitted), `details.op` and, for validation failures,
+  `details.reason` (such as `unknown field 'style.shiny'`); the message names
+  the operation the same way, such as `Operation op-0002 (set_values)`. An
+  unknown field lists the fields its operation, nested object or top-level
+  document accepts, an unknown `op` lists the operations and a value outside a
+  field's enum lists its values, each in `details.available` and in the
+  message's last sentence, `Must be one of: ...`. When some are likely meant,
   `details.suggestions` names up to three, best first, and the hint asks about
   them; an op suggestion prefers a close name whose operation accepts the
   fields the entry gives. When several entries fail the same
@@ -116,9 +120,10 @@ Operation fields whose names end in `Env` (such as `passwordEnv` or
 secret. Each named variable is read once. A missing or empty variable fails
 only the operation that names it, with `OPS_INVALID` naming the variable: an
 atomic batch writes nothing, `--best-effort` keeps the other operations and
-exits 8. Command options follow the same rule: prefer `--password-env`,
-`--encrypt-env` and `--password-stdin`; `--password` and `--encrypt` are
-visible in the process list.
+exits 8. Command options follow the same rule: prefer the `-env` and `-stdin`
+forms, such as `--password-env`, `--encrypt-env` and `--password-stdin`;
+`--password` and `--encrypt` are visible in the process list. Only one option
+reads stdin in one command.
 
 ## When a target is not found
 
@@ -134,7 +139,7 @@ inspection:
 | `details.available` | The existing names in document order, at most 50; present for named targets |
 | `details.suggestions` | Up to three existing names closest to the request, best first |
 
-Operation errors add `details.index` and `details.op`, and a best-effort
+Operation errors add `details.id` and `details.op`, and a best-effort
 failure keeps the same object in its `error.details`. A name that several
 targets share is refused with `OPS_INVALID` instead of picking one; address
 the target by its stable id or number.

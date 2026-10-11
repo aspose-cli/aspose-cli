@@ -71,7 +71,7 @@ public sealed class PdfImageInputTests
         Assert.Equal(4, edited.ExitCode);
         JsonNode error = JsonNode.Parse(edited.StdErr)!["error"]!;
         Assert.Equal("OPS_INVALID", error["code"]!.GetValue<string>());
-        Assert.Equal(0, error["details"]!["index"]!.GetValue<int>());
+        Assert.Equal("op-0001", error["details"]!["id"]!.GetValue<string>());
         Assert.False(File.Exists(workspace.File("out.pdf")));
     }
 
@@ -269,7 +269,7 @@ public sealed class PdfImageInputTests
     private static void AssertInvalidOperation(CliException error, int index, string op, string image)
     {
         Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
-        Assert.Equal(index, error.Details!["index"]!.GetValue<int>());
+        Assert.Equal($"op-{index + 1:D4}", error.Details!["id"]!.GetValue<string>());
         Assert.Equal(op, error.Details["op"]!.GetValue<string>());
         Assert.Contains(image, error.Message, StringComparison.Ordinal);
     }

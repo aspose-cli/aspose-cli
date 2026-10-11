@@ -65,15 +65,14 @@ public sealed record BoundedEditInvocation<TBatch>(
 /// execution semantics (<c>--if-match</c>, <c>--dry-run</c>, <c>--best-effort</c>,
 /// <c>--verify</c>), so every product accepts and rejects the same combinations. Its
 /// command, defined through <see cref="EditDefinition"/>, publishes the edited document as a
-/// mutation output (<c>--out</c>, <c>--overwrite</c>, <c>--in-place</c>, <c>--backup</c>),
-/// and its input password refuses standard input when the operation document comes from it.
+/// mutation output (<c>--out</c>, <c>--overwrite</c>, <c>--in-place</c>, <c>--backup</c>).
+/// <c>--ops</c> is optional only together with <c>--set</c>: an edit needs one of them.
 /// </summary>
 public sealed class BoundedEditCommand<TOp, TBatch>
     where TOp : BoundedOperation, IOperationVocabulary<TOp>
     where TBatch : BoundedOperationEnvelope<TOp>
 {
     private const string OpsOption = StandardOptionNames.Ops;
-    private const string StandardInputSource = "-";
     private readonly BoundedEditDefinition<TOp, TBatch> _definition;
     private readonly Option<string?> _ops;
     private readonly Option<string[]>? _set;
@@ -93,10 +92,10 @@ public sealed class BoundedEditCommand<TOp, TBatch>
         string schema = TOp.Catalog.SchemaCommandId;
         _ops = new Option<string?>(OpsOption)
         {
-            Required = definition.SetDirectives is null,
-            Description = "The ops JSON: a path to the document, '-' to read it from stdin, or the "
-                + "document itself when the value starts with { or [ (inline). To name a file "
-                + "whose name starts with '[', prefix it with ./ . "
+            Description = "The ops JSON, an object with ops or the bare array of operations: a path "
+                + "to the document, '-' to read it from stdin, or the document itself when the value "
+                + "starts with { or [ (inline). To name a file whose name starts with '[', prefix it "
+                + $"with ./ . At most {BoundedOperation.MaximumPerBatch} operations. "
                 + $"Vocabulary: {DistributionInfo.CommandName} schema {schema}.",
         }.WithInput(InputKind.JsonSource);
         if (definition.SetDirectives is { } grammar)
@@ -158,9 +157,6 @@ public sealed class BoundedEditCommand<TOp, TBatch>
         return [.. _options, .. parameters];
     }
 
-    /// <summary>Whether the operation document comes from standard input (<c>--ops -</c>).</summary>
-    internal bool TakesStandardInput(ParseResult parse) => parse.GetValue(_ops) == StandardInputSource;
-
     /// <summary>Whether <c>--verify</c> was requested; false when the product has no verification.</summary>
     public bool IsVerifyRequested(ParseResult parse)
     {
@@ -181,7 +177,9 @@ public sealed class BoundedEditCommand<TOp, TBatch>
         string[] directives = _set is null ? [] : parse.GetValue(_set) ?? [];
         if (source is null && directives.Length == 0)
         {
-            throw CliErrors.Usage([$"Give {OpsOption} (an ops JSON document), --set, or both."]);
+            throw CliErrors.Usage([_set is null
+                ? $"Give {OpsOption} (an ops JSON document)."
+                : $"Give {OpsOption} (an ops JSON document), {StandardOptionNames.Set}, or both."]);
         }
 
         bool verify = IsVerifyRequested(parse);
@@ -270,7 +268,9 @@ public sealed class BoundedEditCommand<TOp, TBatch>
         string text = JsonInputSource.Read(source, paths, inputs, OpsOption);
         try
         {
-            return TOp.Catalog.Parse<TBatch>(text, _definition.Contracts);
+            // A document read from stdin is never quoted back: stdin may hold something else.
+            return TOp.Catalog.Parse<TBatch>(text, _definition.Contracts,
+                quotesContent: JsonInputSource.Classify(source, OpsOption) != JsonSourceKind.StandardInput);
         }
         catch (CliException exception) when (
             exception.Code == ErrorCodes.OpsInvalid

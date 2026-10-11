@@ -269,7 +269,7 @@ public sealed class WordsRendererGoldenTests
             DryRun = false,
             Applied =
             [
-                new BoundedOperationOutcome { Id = "op-0001", Index = 0, Op = "set_text", Status = OpStatuses.Ok, ItemsAffected = 2 },
+                new BoundedOperationOutcome { Id = "op-0001", Op = "set_text", Status = OpStatuses.Ok, ItemsAffected = 2 },
             ],
             PagesTouched = [1, 3],
             Verification = new WordsVerification
@@ -287,7 +287,7 @@ public sealed class WordsRendererGoldenTests
         RenderedText.Equal(
             """
             wrote out.docx (docx, 11,000 bytes, 1 of 1 op(s) applied)
-              [op-0001/0] set_text: ok (2 item(s))
+              [op-0001] set_text: ok (2 item(s))
             pages touched: 1, 3
             verification: needs attention
               FIELD_STALE: 1 field needs an update

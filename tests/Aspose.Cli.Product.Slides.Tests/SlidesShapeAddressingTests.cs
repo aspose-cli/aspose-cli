@@ -65,7 +65,7 @@ public sealed class SlidesShapeAddressingTests
 
         Assert.Equal(SlidesDiagnostics.ShapeNotFound, error.Code);
         Assert.Contains("'shapeId'", error.Hint!, StringComparison.Ordinal);
-        Assert.Equal(0, (int)error.Details!["index"]!);
+        Assert.Equal("op-0001", (string)error.Details!["id"]!);
         Assert.Equal("title 2", (string?)error.Details["requested"]);
         Assert.Contains("Title 2", error.Details["available"]!.AsArray().Select(static name => (string?)name));
         Assert.Equal("Title 2", (string?)error.Details["suggestions"]![0]);

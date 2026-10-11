@@ -217,7 +217,7 @@ public sealed class CellsValueAndObjectTests : IClassFixture<CellsFixture>
             "table-taken.out.xlsx"));
 
         Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
-        Assert.Equal(1, error.Details!["index"]!.GetValue<int>());
+        Assert.Equal("op-0002", error.Details!["id"]!.GetValue<string>());
         Assert.False(File.Exists(output));
     }
 

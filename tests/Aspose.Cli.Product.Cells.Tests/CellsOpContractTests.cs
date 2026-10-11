@@ -110,7 +110,7 @@ public sealed class CellsOpContractTests : IClassFixture<CellsFixture>
         CliException error = Assert.Throws<CliException>(() => Parse("""{"ops":[{"op":"merge_cells","range":"B2:A"}]}"""));
 
         Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
-        Assert.Equal(0, error.Details!["index"]!.GetValue<int>());
+        Assert.Equal("op-0001", error.Details!["id"]!.GetValue<string>());
         Assert.Equal("merge_cells", error.Details["op"]!.GetValue<string>());
         Assert.StartsWith("range must be an A1 cell or range on the operation's sheet, such as B2 or B2:D10: ", error.Details["reason"]!.GetValue<string>(), StringComparison.Ordinal);
     }

@@ -37,7 +37,6 @@ internal sealed class VocabularyWriter(
     {
         AttributeData declaration = Find(vocabulary, OperationContractGenerator.Operations + "OperationVocabularyAttribute")!;
         string schemaId = SchemaId(declaration);
-        int maximum = Named(declaration, "MaximumOperations") is int value ? value : 0;
         INamedTypeSymbol? context = Named(declaration, "JsonContext") as INamedTypeSymbol;
         if (!vocabulary.IsAbstract || !vocabulary.IsRecord || vocabulary.ContainingType is not null
             || !BaseTypes(vocabulary).Any(static type => type.ToDisplayString() == BoundedOperation)
@@ -48,9 +47,9 @@ internal sealed class VocabularyWriter(
             Report(vocabulary, $"Vocabulary '{vocabulary.Name}' must be a top-level abstract partial record that derives from BoundedOperation.");
         }
 
-        if (schemaId.Length == 0 || maximum < 1)
+        if (schemaId.Length == 0)
         {
-            Report(vocabulary, $"Vocabulary '{vocabulary.Name}' must name a relative schema id, such as 'ops', and a positive MaximumOperations.");
+            Report(vocabulary, $"Vocabulary '{vocabulary.Name}' must name a relative schema id, such as 'ops'.");
         }
 
         CheckJsonContext(context);
@@ -67,7 +66,7 @@ internal sealed class VocabularyWriter(
         }
 
         string[] descriptors = [.. ordered.Select(operation => Operation(operation.Name, operation.Type))];
-        return _failed ? null : Source(schemaId, maximum, context!, ordered, descriptors);
+        return _failed ? null : Source(schemaId, context!, ordered, descriptors);
     }
 
     /// <summary>The relative schema id as a C# literal, or empty when the declaration names none.</summary>
@@ -491,7 +490,6 @@ internal sealed class VocabularyWriter(
 
     private string Source(
         string schemaId,
-        int maximum,
         INamedTypeSymbol context,
         (string Name, INamedTypeSymbol Type)[] ordered,
         string[] descriptors)
@@ -518,7 +516,7 @@ internal sealed class VocabularyWriter(
             .Append($"partial record {vocabulary.Name} : {Sdk}IOperationVocabulary<{self}>\n{{\n")
             .Append("    /// <summary>The vocabulary's operations, generated from their records.</summary>\n")
             .Append($"    public static {Sdk}OperationCatalog<{self}> Catalog {{ get; }} = new(\n")
-            .Append($"        {schemaId},\n        {maximum},\n        {description},\n")
+            .Append($"        {schemaId},\n        {description},\n")
             .Append($"        {TypeName(context)}.Default,\n        CreateOperations());\n\n")
             .Append("    /// <summary>Calls the handler method of this operation.</summary>\n")
             .Append($"    public TResult Accept<TResult>({handler}<TResult> handler) => this switch\n    {{\n");

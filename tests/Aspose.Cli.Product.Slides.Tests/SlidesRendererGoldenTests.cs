@@ -252,7 +252,7 @@ public sealed class SlidesRendererGoldenTests
             Input = new SourceInfo { Path = "deck.pptx", Format = "pptx", SizeBytes = 50_000 },
             Output = new OutputInfo { Path = "out.pptx", Format = "pptx", SizeBytes = 52_000 },
             DryRun = false,
-            Applied = [new BoundedOperationOutcome { Id = "op-0001", Index = 0, Op = "set_text", Status = OpStatuses.Ok, ItemsAffected = 1 }],
+            Applied = [new BoundedOperationOutcome { Id = "op-0001", Op = "set_text", Status = OpStatuses.Ok, ItemsAffected = 1 }],
             SlidesTouched = [256, 258],
         };
 
@@ -261,7 +261,7 @@ public sealed class SlidesRendererGoldenTests
         RenderedText.Equal(
             """
             wrote out.pptx (pptx, 52,000 bytes, 1 of 1 op(s) applied)
-              [op-0001/0] set_text: ok (1 item(s))
+              [op-0001] set_text: ok (1 item(s))
             slide ids touched: 256, 258
             """,
             text);

@@ -19,8 +19,6 @@ internal static class WordsDiagnostics
     internal static readonly WarningCode LayoutMayDiffer = new("LAYOUT_MAY_DIFFER");
     internal static readonly WarningCode LinkedImagesSkipped = new("LINKED_IMAGES_SKIPPED");
     internal static readonly WarningCode MergeValueMissing = new("MERGE_VALUE_MISSING");
-    /// <summary>A review operation named an author whose revisions or comments the document does not hold, so it changed nothing.</summary>
-    internal static readonly WarningCode AuthorNoMatch = new("AUTHOR_NO_MATCH");
 
     internal static readonly DiagnosticDescriptor FieldCountChanged = DiagnosticDescriptor.Verification("FIELD_COUNT_CHANGED");
     internal static readonly DiagnosticDescriptor RevisionCountChanged = DiagnosticDescriptor.Verification("REVISION_COUNT_CHANGED");
@@ -41,7 +39,6 @@ internal static class WordsDiagnostics
         DiagnosticDescriptor.Warning(LayoutMayDiffer),
         DiagnosticDescriptor.Warning(LinkedImagesSkipped),
         DiagnosticDescriptor.Warning(MergeValueMissing),
-        DiagnosticDescriptor.Warning(AuthorNoMatch),
         FieldCountChanged,
         RevisionCountChanged,
         ProtectionChanged,

@@ -59,7 +59,7 @@ public sealed class CommandDefinitionTests : IDisposable
         Assert.Equal(["file"], command.Arguments.Select(static argument => argument.Name));
         Assert.Equal(InputKind.File, command.Arguments[0].GetParameterMetadata().InputKind);
         Assert.Equal(
-            ["--mode", "--out", "--overwrite", "--password", "--password-env", "--password-stdin", "--encrypt", "--encrypt-env", "--font-dir"],
+            ["--mode", "--out", "--overwrite", "--password", "--password-env", "--password-stdin", "--encrypt", "--encrypt-env", "--encrypt-stdin", "--font-dir"],
             command.Options.Select(static option => option.Name));
         Assert.Equal("Password for the report. Discouraged: visible in the process list; prefer --password-env.",
             command.Options.Single(static option => option.Name == "--password").Description);
@@ -82,7 +82,7 @@ public sealed class CommandDefinitionTests : IDisposable
 
         Assert.Equal(["left", "right"], command.Arguments.Select(static argument => argument.Name));
         Assert.Equal(
-            ["--mode", "--left-password", "--left-password-env", "--right-password", "--right-password-env"],
+            ["--mode", "--left-password", "--left-password-env", "--left-password-stdin", "--right-password", "--right-password-env", "--right-password-stdin"],
             command.Options.Select(static option => option.Name));
         Assert.Equal(
             _temp.File("report.test") + "|" + _temp.File("other.test"),
@@ -464,21 +464,22 @@ public sealed class CommandDefinitionTests : IDisposable
     }
 
     [Fact]
-    public void InputPassword_RefusesStandardInputThatCarriesTheCommandData()
+    public void StandardInput_IsReadByOneOptionAtMost()
     {
+        FormatDescriptor[] writes =
+        [
+            FormatDescriptor.Declare("secure", FormatUse.Convert, null, 0, null, false, ".secure") with { Protectable = true },
+        ];
         Command command = Create(
-            "run",
-            "Runs.",
-            new CommandTraits { Input = Report },
-            [],
-            standardInputTaken: static _ => true,
+            new CommandTraits { Input = Report, Output = OutputTarget.File("Output path.", writes), Encrypt = Encrypted },
             (_, standard) => Result(standard.InputPassword?.Reveal()));
 
-        CliException error = RunFailing(command, "report.test", "--password-stdin");
+        CliException error = RunFailing(command, "report.test", "--out", "out.secure", "--password-stdin", "--encrypt-stdin");
 
         Assert.Equal(ErrorCodes.OptionInvalid, error.Code);
-        Assert.Equal("--password-stdin", error.Details!["option"]!.GetValue<string>());
-        Assert.Equal("a", Run(command, "report.test", "--password-env", "LEFT"));
+        Assert.Equal("--encrypt-stdin", error.Details!["option"]!.GetValue<string>());
+        Assert.Contains("--password-stdin reads it", error.Message, StringComparison.Ordinal);
+        Assert.Equal("a", Run(command, "report.test", "--out", "out.secure", "--password-env", "LEFT"));
     }
 
     [Fact]
@@ -525,7 +526,7 @@ public sealed class CommandDefinitionTests : IDisposable
     {
         string fonts = Directory.CreateDirectory(_temp.File("fonts")).FullName;
         Command command = Product(Definition(
-                "run", "Runs.", new CommandTraits { Input = Report, UsesFonts = true }, [], null, static (_, _) => Result()),
+                "run", "Runs.", new CommandTraits { Input = Report, UsesFonts = true }, [], static (_, _) => Result()),
             static (engine, _) => Result(engine.ActiveDirectories()))
             .Subcommands.Single();
 
@@ -613,17 +614,8 @@ public sealed class CommandDefinitionTests : IDisposable
         CommandTraits traits,
         IReadOnlyList<Symbol> parameters,
         Func<ParseResult, StandardInvocation, TestResult> bind) =>
-        Create(name, description, traits, parameters, standardInputTaken: null, bind);
-
-    // One command of a product menu whose handler returns what the binding made of the command line.
-    private Command Create(
-        string name,
-        string description,
-        CommandTraits traits,
-        IReadOnlyList<Symbol> parameters,
-        Func<ParseResult, bool>? standardInputTaken,
-        Func<ParseResult, StandardInvocation, TestResult> bind) =>
-        Product(Definition(name, description, traits, parameters, standardInputTaken, bind), static (_, request) => request)
+        // One command of a product menu whose handler returns what the binding made of the command line.
+        Product(Definition(name, description, traits, parameters, bind), static (_, request) => request)
             .Subcommands.Single();
 
     private static Func<CommandDefinition<TestResult, TestResult>> Definition(
@@ -631,10 +623,9 @@ public sealed class CommandDefinitionTests : IDisposable
         string description,
         CommandTraits traits,
         IReadOnlyList<Symbol> parameters,
-        Func<ParseResult, bool>? standardInputTaken,
         Func<ParseResult, StandardInvocation, TestResult> bind) =>
         () => new CommandDefinition<TestResult, TestResult>(
-            name, description, traits, parameters, standardInputTaken, bind, NoTable);
+            name, description, traits, parameters, bind, NoTable);
 
     private Command Product(
         Func<CommandDefinition<TestResult, TestResult>> definition,

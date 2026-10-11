@@ -145,7 +145,7 @@ public sealed class CellsCliTests : IDisposable
 
         Assert.Equal(8, edited.ExitCode);
         Assert.Contains("1 of 2 op(s) applied, 1 failed", edited.StdOut, StringComparison.Ordinal);
-        Assert.Contains("[op-0002/1] set_values: failed", edited.StdOut, StringComparison.Ordinal);
+        Assert.Contains("[op-0002] set_values: failed", edited.StdOut, StringComparison.Ordinal);
         Assert.Contains("      SHEET_NOT_FOUND: ", edited.StdOut, StringComparison.Ordinal);
         Assert.Contains("      hint: ", edited.StdOut, StringComparison.Ordinal);
     }
@@ -214,14 +214,13 @@ public sealed class CellsCliTests : IDisposable
         Assert.Equal(4, renamed.ExitCode);
         JsonNode rename = JsonNode.Parse(renamed.StdErr)!["error"]!;
         Assert.Equal("OPS_INVALID", rename["code"]!.GetValue<string>());
-        Assert.Equal("unknown field 'name'; rename_sheet accepts: op, id, sheet, to",
-            rename["details"]!["reason"]!.GetValue<string>());
+        Assert.Equal("unknown field 'name'", rename["details"]!["reason"]!.GetValue<string>());
         Assert.Equal(["op", "id", "sheet", "to"],
-            rename["details"]!["allowedFields"]!.AsArray().Select(static item => item!.GetValue<string>()));
+            rename["details"]!["available"]!.AsArray().Select(static item => item!.GetValue<string>()));
         Assert.Equal(["to"], rename["details"]!["suggestions"]!.AsArray().Select(static item => item!.GetValue<string>()));
         JsonNode sort = JsonNode.Parse(sorted.StdErr)!["error"]!["details"]!;
-        Assert.Equal("unknown field 'by[0].direction'; by[0] accepts: column, order",
-            sort["reason"]!.GetValue<string>());
+        Assert.Equal("unknown field 'by[0].direction'", sort["reason"]!.GetValue<string>());
+        Assert.Equal(["column", "order"], sort["available"]!.AsArray().Select(static item => item!.GetValue<string>()));
         Assert.Null(sort["suggestions"]);
     }
 

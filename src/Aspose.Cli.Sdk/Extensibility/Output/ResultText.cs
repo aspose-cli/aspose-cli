@@ -202,7 +202,7 @@ public static class ResultText
         {
             surface.Out.WriteLine(string.Create(
                 CultureInfo.InvariantCulture,
-                $"  [{op.Id}/{op.Index}] {op.Op}: {op.Status} ({op.ItemsAffected} item(s))"));
+                $"  [{op.Id}] {op.Op}: {op.Status} ({op.ItemsAffected} item(s))"));
             if (op.Error is { } error)
             {
                 surface.Out.WriteLine($"      {error.Code}: {error.Message}");

@@ -10,7 +10,7 @@
       "expect": {
         "error": "OPS_INVALID",
         "json": [
-          { "path": "error.details.index", "equals": 1 },
+          { "path": "error.details.id", "equals": "op-0002" },
           { "path": "error.details.op", "equals": "format_text" },
           { "path": "error.details.reason", "contains": "deleted by an earlier operation" }
         ],

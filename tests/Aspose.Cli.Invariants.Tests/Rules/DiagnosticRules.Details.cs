@@ -26,7 +26,6 @@ internal static partial class ContractRules
         ["actualExists"] = "Whether the output existed when publication found it changed.",
         ["actualSha256"] = "The SHA-256 of the output publication found.",
         ["actualSizeBytes"] = "The size of the output publication found.",
-        ["allowedFields"] = "The fields the operation accepts.",
         ["argument"] = "The positional argument the error is about.",
         ["available"] = "The names or values that exist or are accepted, at most 50.",
         ["availableCount"] = "How many names or values exist or are accepted.",

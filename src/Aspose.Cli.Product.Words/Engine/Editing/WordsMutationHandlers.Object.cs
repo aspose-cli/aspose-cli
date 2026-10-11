@@ -284,14 +284,15 @@ internal sealed partial class WordsMutationHandlers
     }
 
     /// <summary>
-    /// The <c>AUTHOR_NO_MATCH</c> warning of a review operation whose author has no
+    /// The <c>OP_NO_EFFECT</c> warning of a review operation whose author has no
     /// <paramref name="items"/> in the document, naming the closest of the
     /// <paramref name="authors"/> it has.
     /// </summary>
     private Warning AuthorNoMatch(string author, string items, IReadOnlyCollection<string> authors)
     {
         string listed = string.Join(", ", authors.Select(static name => $"'{name}'"));
-        return new Warning(WordsDiagnostics.AuthorNoMatch, $"{WordsOp.Catalog.NameOf(_resolved.Op)} changed nothing: the document has no {items} by '{author}'.")
+        return WordsOp.Catalog.NoEffect(_resolved.Op, NoEffectReasons.NoMatch,
+            $"Operation {_resolved.Op.Id} ({WordsOp.Catalog.NameOf(_resolved.Op)}) changed nothing: the document has no {items} by '{author}'.") with
         {
             Hint = authors.Count == 0
                 ? $"The document has no {items}s; check 'words inspect --detail revisions comments'."

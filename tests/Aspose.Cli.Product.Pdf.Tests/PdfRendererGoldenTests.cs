@@ -200,8 +200,8 @@ public sealed class PdfRendererGoldenTests
             DryRun = false,
             Applied =
             [
-                new BoundedOperationOutcome { Id = "stamp", Index = 0, Op = "add_text", Status = OpStatuses.Ok, ItemsAffected = 1 },
-                new BoundedOperationOutcome { Id = "op-0002", Index = 1, Op = "redact", Status = OpStatuses.Ok, ItemsAffected = 4 },
+                new BoundedOperationOutcome { Id = "stamp", Op = "add_text", Status = OpStatuses.Ok, ItemsAffected = 1 },
+                new BoundedOperationOutcome { Id = "op-0002", Op = "redact", Status = OpStatuses.Ok, ItemsAffected = 4 },
             ],
             Backup = new BackupInfo
             {
@@ -226,8 +226,8 @@ public sealed class PdfRendererGoldenTests
         RenderedText.Equal(
             """
             wrote in.pdf (pdf, 21,500 bytes, 2 of 2 op(s) applied)
-              [stamp/0] add_text: ok (1 item(s))
-              [op-0002/1] redact: ok (4 item(s))
+              [stamp] add_text: ok (1 item(s))
+              [op-0002] redact: ok (4 item(s))
             backup: in.backup.pdf (kept existing)
             pages touched: 2
             verification: needs attention (1 operation(s) read back: stamp)
@@ -245,7 +245,7 @@ public sealed class PdfRendererGoldenTests
         {
             Input = new SourceInfo { Path = "in.pdf", Format = "pdf", SizeBytes = 20_000 },
             DryRun = true,
-            Applied = [new BoundedOperationOutcome { Id = "op-0001", Index = 0, Op = "rotate_pages", Status = OpStatuses.Ok, ItemsAffected = 2 }],
+            Applied = [new BoundedOperationOutcome { Id = "op-0001", Op = "rotate_pages", Status = OpStatuses.Ok, ItemsAffected = 2 }],
             Verification = new PdfEditVerification { Ok = true, CheckedOps = [], Issues = [] },
         };
 
@@ -254,7 +254,7 @@ public sealed class PdfRendererGoldenTests
         RenderedText.Equal(
             """
             dry run: 1 of 1 op(s) applied; nothing was written
-              [op-0001/0] rotate_pages: ok (2 item(s))
+              [op-0001] rotate_pages: ok (2 item(s))
             verification: ok (0 operation(s) read back: none)
             """,
             text);

@@ -1,6 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.Json.Serialization.Metadata;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
@@ -30,24 +31,20 @@ public sealed class OperationCatalog<TOp>
     /// The schema id of the operation document relative to the vocabulary's owner, such as
     /// <c>ops</c>: the product whose assembly declares the vocabulary.
     /// </param>
-    /// <param name="maximumOperationCount">Largest accepted number of operations in one document.</param>
     /// <param name="description">The vocabulary's description, published on the schema.</param>
     /// <param name="contracts">Source-generated JSON metadata for every operation record.</param>
     /// <param name="operations">The operation descriptors.</param>
     public OperationCatalog(
         string schemaId,
-        int maximumOperationCount,
         string? description,
         IJsonTypeInfoResolver contracts,
         IReadOnlyList<OperationDescriptor> operations)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(schemaId);
-        ArgumentOutOfRangeException.ThrowIfLessThan(maximumOperationCount, 1);
         ArgumentNullException.ThrowIfNull(contracts);
         ArgumentNullException.ThrowIfNull(operations);
         string owner = ResultEnvelope.OwnerOf(typeof(TOp).Assembly);
         SchemaId = ResultEnvelope.SchemaUri(owner, schemaId);
-        MaximumOperationCount = maximumOperationCount;
         Contracts = contracts;
         SchemaCommandId = ResultSchemaSet.Id(owner, schemaId);
         DefaultHint = $"Fix the named operation; '{DistributionInfo.CommandName} schema {SchemaCommandId}' documents every operation.";
@@ -80,14 +77,14 @@ public sealed class OperationCatalog<TOp>
         }
 
         OperationRecord[] records = [.. ordered.Select(static operation => operation.Record)];
-        _schema = new GeneratedOperationSchema(() => OperationSchemaWriter.Write(SchemaId, MaximumOperationCount, description, records), Names);
+        _schema = new GeneratedOperationSchema(() => OperationSchemaWriter.Write(SchemaId, description, records), Names);
     }
 
     /// <summary>The canonical URI of the operation document's schema, which a document may state as its <c>schema</c>.</summary>
     public string SchemaId { get; }
 
-    /// <summary>Largest accepted number of operations in one document.</summary>
-    public int MaximumOperationCount { get; }
+    /// <summary>Largest accepted number of operations in one document, <see cref="BoundedOperation.MaximumPerBatch"/>.</summary>
+    public int MaximumOperationCount => BoundedOperation.MaximumPerBatch;
 
     /// <summary>Wire names in published order.</summary>
     public IReadOnlyList<string> Names { get; }
@@ -127,23 +124,39 @@ public sealed class OperationCatalog<TOp>
     }
 
     /// <summary>
-    /// The <c>OPS_INVALID</c> failure of the operation at <paramref name="index"/> for a rule a
-    /// product checks against the document before the batch runs, such as two operations that
-    /// change the same object. Its details name the operation as the catalog's own checks do.
+    /// The <c>OP_NO_EFFECT</c> warning of an operation that applied but changed nothing; its
+    /// details name the operation by <c>id</c> and <c>op</c>, as its outcome does, and give
+    /// <paramref name="reason"/>.
     /// </summary>
-    /// <param name="index">The operation's zero-based position in the batch.</param>
-    /// <param name="operation">The operation at fault.</param>
-    /// <param name="rejection">The rule it breaks, with its own hint, if any.</param>
-    public CliException Invalid(int index, TOp operation, OperationInvalidException rejection)
+    /// <param name="operation">The operation, with the id the batch gave it.</param>
+    /// <param name="reason">Why it changed nothing, one of <see cref="NoEffectReasons"/>.</param>
+    /// <param name="message">What the operation did not find; it never repeats a value the caller may keep private, such as find text.</param>
+    public Warning NoEffect(TOp operation, string reason, string message)
     {
-        ArgumentNullException.ThrowIfNull(rejection);
-        return OperationErrors.InvalidAt(
-            index, NameOf(operation), rejection.Message, rejection.Hint ?? DefaultHint, value: rejection.Mistake);
+        ArgumentException.ThrowIfNullOrWhiteSpace(reason);
+        string id = operation?.Id ?? throw new ArgumentException("The operation has no id; warn about operations of a prepared batch.", nameof(operation));
+        return new Warning(WarningCodes.OpNoEffect, message)
+        {
+            Details = new JsonObject { ["id"] = id, ["op"] = NameOf(operation), ["reason"] = reason },
+        };
     }
 
-    /// <summary>Parses, validates and identifies an operation document.</summary>
-    /// <exception cref="CliException"><c>OPS_INVALID</c>, with the index of the first failing operation and, when several fail, each in <c>details.errors</c>.</exception>
+    /// <summary>
+    /// Parses, validates and identifies an operation document: an object with <c>ops</c>, or
+    /// the bare array of operations.
+    /// </summary>
+    /// <exception cref="CliException"><c>OPS_INVALID</c>, with the id of the first failing operation and, when several fail, each in <c>details.errors</c>.</exception>
     public TBatch Parse<TBatch>(string json, ProductJsonDefinition contracts)
+        where TBatch : BoundedOperationEnvelope<TOp> =>
+        Parse<TBatch>(json, contracts, quotesContent: true);
+
+    /// <summary>
+    /// Parses a document as <see cref="Parse{TBatch}(string, ProductJsonDefinition)"/> does.
+    /// Without <paramref name="quotesContent"/>, a syntax error states only where the document
+    /// breaks, not the text there, as for a document read from standard input, which may hold
+    /// something else by mistake, such as a password.
+    /// </summary>
+    internal TBatch Parse<TBatch>(string json, ProductJsonDefinition contracts, bool quotesContent)
         where TBatch : BoundedOperationEnvelope<TOp>
     {
         ArgumentNullException.ThrowIfNull(contracts);
@@ -152,7 +165,24 @@ public sealed class OperationCatalog<TOp>
             throw Invalid("the document is empty");
         }
 
-        using JsonDocument document = ParseJson(json);
+        JsonDocument document = ParseJson(json, quotesContent);
+        if (document.RootElement.ValueKind == JsonValueKind.Array)
+        {
+            // The bare array is the document with only its operations.
+            document.Dispose();
+            json = $"{{\"ops\":{json}}}";
+            document = JsonDocument.Parse(json);
+        }
+
+        using (document)
+        {
+            return Prepare(Deserialize<TBatch>(json, document.RootElement, contracts));
+        }
+    }
+
+    private TBatch Deserialize<TBatch>(string json, JsonElement root, ProductJsonDefinition contracts)
+        where TBatch : BoundedOperationEnvelope<TOp>
+    {
         TBatch batch;
         try
         {
@@ -160,10 +190,10 @@ public sealed class OperationCatalog<TOp>
         }
         catch (Exception exception) when (IsRejection(exception))
         {
-            throw Rejected(document.RootElement, typeof(TBatch), contracts.LocalOptions, exception as JsonException);
+            throw Rejected(root, typeof(TBatch), contracts.LocalOptions, exception as JsonException);
         }
 
-        return Prepare(batch);
+        return batch;
     }
 
     /// <summary>
@@ -171,7 +201,7 @@ public sealed class OperationCatalog<TOp>
     /// operations without one. Each operation is checked against its declared constraints,
     /// then its own <see cref="BoundedOperation.Validated"/> rules, which may normalize it.
     /// </summary>
-    /// <exception cref="CliException"><c>OPS_INVALID</c>, with the index of the first failing operation and, when several fail, each in <c>details.errors</c>.</exception>
+    /// <exception cref="CliException"><c>OPS_INVALID</c>, with the id of the first failing operation and, when several fail, each in <c>details.errors</c>.</exception>
     public TBatch Prepare<TBatch>(TBatch batch)
         where TBatch : BoundedOperationEnvelope<TOp>
     {
@@ -191,7 +221,7 @@ public sealed class OperationCatalog<TOp>
         var failures = new List<CliException>();
         for (int index = 0; index < identified.Count; index++)
         {
-            if (Validate(index, identified[index], out validated[index]!) is { } failure)
+            if (Validate(identified[index].Id!, identified[index], out validated[index]!) is { } failure)
             {
                 failures.Add(failure);
             }
@@ -234,8 +264,8 @@ public sealed class OperationCatalog<TOp>
     /// Checks one operation against its declared constraints, then its own
     /// <see cref="BoundedOperation.Validated"/> rules, which may normalize it.
     /// </summary>
-    /// <returns>The <c>OPS_INVALID</c> failure of the operation at <paramref name="index"/>, or null when it is valid.</returns>
-    private CliException? Validate(int index, TOp operation, out TOp? validated)
+    /// <returns>The <c>OPS_INVALID</c> failure of the operation with <paramref name="id"/>, or null when it is valid.</returns>
+    private CliException? Validate(string id, TOp operation, out TOp? validated)
     {
         OperationRecord record = DescriptorOf(operation).Record;
         validated = null;
@@ -248,12 +278,12 @@ public sealed class OperationCatalog<TOp>
         }
         catch (OperationInvalidException rejection)
         {
-            return OperationErrors.InvalidAt(index, record.Name, rejection.Message, rejection.Hint ?? DefaultHint, value: rejection.Mistake);
+            return OperationErrors.InvalidAt(id, record.Name, rejection.Message, rejection.Hint ?? DefaultHint, value: rejection.Mistake);
         }
         catch (CliException failure) when (!failure.IsInvocationFailure)
         {
             // A shared value parser (a page range, an address) rejected a field.
-            return OperationErrors.InvalidAt(index, record.Name, failure.Message, failure.Hint ?? DefaultHint, failure.Code);
+            return OperationErrors.InvalidAt(id, record.Name, failure.Message, failure.Hint ?? DefaultHint, failure.Code);
         }
     }
 
@@ -286,7 +316,7 @@ public sealed class OperationCatalog<TOp>
     internal IEnumerable<string?> SecretVariables(TOp operation) =>
         DescriptorOf(operation).SecretVariables?.Invoke(operation) ?? [];
 
-    private JsonDocument ParseJson(string json)
+    private JsonDocument ParseJson(string json, bool quotesContent)
     {
         try
         {
@@ -294,21 +324,24 @@ public sealed class OperationCatalog<TOp>
         }
         catch (JsonException exception)
         {
-            throw Invalid($"the document is not valid JSON: {SyntaxError(exception)}");
+            throw Invalid($"the document is not valid JSON{SyntaxError(exception, quotesContent)}");
         }
     }
 
     /// <summary>
     /// The reader's explanation with its position counted from one, as editors count: the
-    /// reader's own message ends with zero-based line and byte numbers.
+    /// reader's own message ends with zero-based line and byte numbers. Without
+    /// <paramref name="quotesContent"/> only the position, since the reader's explanation can
+    /// quote the text it stopped at.
     /// </summary>
-    private static string SyntaxError(JsonException exception)
+    private static string SyntaxError(JsonException exception, bool quotesContent)
     {
         int suffix = exception.Message.IndexOf(" LineNumber:", StringComparison.Ordinal);
         string reason = suffix < 0 ? exception.Message : exception.Message[..suffix];
-        return exception is { LineNumber: long line, BytePositionInLine: long position }
-            ? $"{reason} (line {line + 1}, byte {position + 1})"
-            : reason;
+        string position = exception is { LineNumber: long line, BytePositionInLine: long column }
+            ? $" (line {line + 1}, byte {column + 1})"
+            : string.Empty;
+        return quotesContent ? $": {reason}{position}" : position;
     }
 
     /// <summary>
@@ -327,6 +360,7 @@ public sealed class OperationCatalog<TOp>
             // fits, so the error names every invalid operation.
             JsonTypeInfo info = options.GetTypeInfo(typeof(TOp));
             JsonElement ops = root.GetProperty("ops");
+            IReadOnlyList<string> ids = BoundedOperationIds.Of(ops);
             var failures = new List<CliException>();
             int count = ops.GetArrayLength() <= MaximumOperationCount ? ops.GetArrayLength() : 0;
             for (int current = 0; current < count; current++)
@@ -338,18 +372,18 @@ public sealed class OperationCatalog<TOp>
                 }
                 catch (Exception failure) when (IsRejection(failure))
                 {
-                    failures.Add(InvalidAt(root, current, failure as JsonException
+                    failures.Add(InvalidAt(ops, ids, current, failure as JsonException
                         ?? JsonContractDiagnostics.Explain(ops[current], typeof(TOp), options, failurePath: null)));
                     continue;
                 }
 
-                if (Validate(current, operation, out _) is { } invalid)
+                if (Validate(ids[current], operation, out _) is { } invalid)
                 {
                     failures.Add(invalid);
                 }
             }
 
-            return OperationErrors.InvalidAll(failures.Count > 0 ? failures : [InvalidAt(root, index, rejection!)]);
+            return OperationErrors.InvalidAll(failures.Count > 0 ? failures : [InvalidAt(ops, ids, index, rejection!)]);
         }
 
         JsonException reason = JsonContractDiagnostics.Explain(root, batchType, options, rejection?.Path);
@@ -371,24 +405,23 @@ public sealed class OperationCatalog<TOp>
     }
 
     /// <summary>
-    /// Rejects the entry at <paramref name="index"/> that the serializer could not read. An
-    /// entry whose op names no operation lists the operations and the closest one.
+    /// Rejects the entry at <paramref name="index"/> of <paramref name="ops"/> that the
+    /// serializer could not read, by the id <paramref name="ids"/> gives it. An entry whose op
+    /// names no operation lists the operations and the closest one.
     /// </summary>
-    private CliException InvalidAt(JsonElement root, int index, JsonException failure) =>
-        NameAt(root, index) is { } name && !_byName.ContainsKey(name)
-            ? OperationErrors.UnknownAt(index, failure.Message, DefaultHint,
-                Mistake.Of(name, Names, meant: Closest(name, root.GetProperty("ops")[index])))
+    private CliException InvalidAt(JsonElement ops, IReadOnlyList<string> ids, int index, JsonException failure) =>
+        NameAt(ops, index) is { } name && !_byName.ContainsKey(name)
+            ? OperationErrors.UnknownAt(ids[index], failure.Message, DefaultHint,
+                Mistake.Of(name, Names, meant: Closest(name, ops[index])))
             : OperationErrors.InvalidAt(
-                index, KnownNameAt(root, index), failure.Message, DefaultHint, field: failure as AllowedFieldsException);
+                ids[index], KnownNameAt(ops, index), failure.Message, DefaultHint, field: failure as AllowedFieldsException);
 
-    private string? KnownNameAt(JsonElement root, int index) =>
-        NameAt(root, index) is { } name && _byName.ContainsKey(name) ? name : null;
+    private string? KnownNameAt(JsonElement ops, int index) =>
+        NameAt(ops, index) is { } name && _byName.ContainsKey(name) ? name : null;
 
     /// <summary>The op name of the entry at <paramref name="index"/>, or null when it states none.</summary>
-    private static string? NameAt(JsonElement root, int index) =>
-        root.ValueKind == JsonValueKind.Object
-        && root.TryGetProperty("ops", out JsonElement ops) && ops.ValueKind == JsonValueKind.Array
-        && index < ops.GetArrayLength()
+    private static string? NameAt(JsonElement ops, int index) =>
+        index < ops.GetArrayLength()
         && ops[index] is { ValueKind: JsonValueKind.Object } operation
         && operation.TryGetProperty("op", out JsonElement name) && name.ValueKind == JsonValueKind.String
             ? name.GetString()

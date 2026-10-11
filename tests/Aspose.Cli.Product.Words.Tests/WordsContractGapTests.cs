@@ -463,8 +463,11 @@ public sealed class WordsContractGapTests
         });
 
         Assert.Equal([0L, 1L], result.Applied.Select(static applied => applied.ItemsAffected));
-        Warning warning = Assert.Single(result.Warnings!, static warning => warning.Code.Name == "REPLACE_NO_MATCH");
-        Assert.Contains("replace_text matched no text", warning.Message, StringComparison.Ordinal);
+        Warning warning = Assert.Single(result.Warnings!, static warning => warning.Code.Name == "OP_NO_EFFECT");
+        Assert.Contains("Operation op-0001 (replace_text) matched no text", warning.Message, StringComparison.Ordinal);
+        Assert.Equal("op-0001", warning.Details!["id"]!.GetValue<string>());
+        Assert.Equal("replace_text", warning.Details["op"]!.GetValue<string>());
+        Assert.Equal("no-match", warning.Details["reason"]!.GetValue<string>());
         Assert.DoesNotContain("eleven", warning.Message + warning.Hint, StringComparison.Ordinal);
     }
 

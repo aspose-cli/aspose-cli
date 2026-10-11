@@ -32,13 +32,14 @@ are in `aspose-cli docs editing`.
   restrictions ([editing](editing.md#protection-and-encryption)).
 - `TRACKED_CHANGES_PRESENT`: the output still contains the revisions the
   input had; disclose them ([revisions](revisions.md)).
-- `AUTHOR_NO_MATCH`: `accept_revisions`, `reject_revisions` or
-  `remove_comments` changed nothing because no revision or comment has that
+- `OP_NO_EFFECT`: the operation `details.id` and `details.op` name changed
+  nothing (`details.reason` `no-match`). For `accept_revisions`,
+  `reject_revisions` or `remove_comments`, no revision or comment has that
   `author`; names match exactly, and the hint lists the document's. Do not
-  report the decision as made; correct the name and run the batch again.
-- `REPLACE_NO_MATCH`: `replace_text` found nothing in its `scope` and changed
-  nothing. Search with `words query search` and the same pattern; text in
-  headers, footers, footnotes or comments needs its `scope`.
+  report the decision as made; correct the name and run the batch again. For
+  `replace_text`, nothing in its `scope` matched. Search with `words query
+  search` and the same pattern; text in headers, footers, footnotes or
+  comments needs its `scope`.
 - `MERGE_VALUE_MISSING`: see [mail merge](mail-merge.md).
 - `DOCUMENT_ENCRYPTION_REMOVED`: see
   [editing](editing.md#protection-and-encryption).

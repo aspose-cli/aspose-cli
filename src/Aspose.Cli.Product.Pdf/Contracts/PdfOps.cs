@@ -12,7 +12,7 @@ public sealed record PdfOpsBatch : BoundedOperationEnvelope<PdfOp>;
 /// The operation document of <c>pdf edit --ops</c>. Page numbers and ranges are 1-based and
 /// resolve against the document as the earlier operations left it.
 /// </summary>
-[OperationVocabulary("ops", MaximumOperations = 256, JsonContext = typeof(PdfOpsJsonContext))]
+[OperationVocabulary("ops", JsonContext = typeof(PdfOpsJsonContext))]
 [JsonConverter(typeof(OperationJsonConverter<PdfOp>))]
 public abstract partial record PdfOp : BoundedOperation;
 
