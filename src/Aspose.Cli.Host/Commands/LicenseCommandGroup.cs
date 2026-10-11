@@ -54,10 +54,6 @@ internal static class LicenseCommandGroup
         install.SetAction(parse => executor.Run(parse, globals, context =>
         {
             string? requestedProduct = parse.GetValue(product);
-            LicenseManager.EnsureApplicable(
-                catalog,
-                requestedProduct,
-                "installation");
             string source = context.Paths.ResolveInput(parse.GetRequiredValue(file));
             return LicenseManager.Install(context, source, requestedProduct);
         }));

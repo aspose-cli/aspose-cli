@@ -1,5 +1,6 @@
 using System.Text.Json.Nodes;
 using Aspose.Cli.TestKit;
+using Aspose.Cli.TestKit.Scenarios;
 using Xunit;
 
 namespace Aspose.Cli.Platform.Tests.Integration;
@@ -32,6 +33,18 @@ public sealed class StartupLicenseNoticeTests
         Assert.Equal(0, result.ExitCode);
         Assert.Equal($"license: {product}=evaluation", result.StdErr.Trim());
         Assert.Contains("Usage:", result.StdOut);
+    }
+
+    [LicensedFact]
+    public void LicensedRun_PrintsNoNotice()
+    {
+        using var workspace = new TempWorkspace();
+        ScenarioLicense.Project(workspace.Path);
+        CliResult result = workspace.Run("--help", "--output-format", "table");
+
+        Assert.Equal(0, result.ExitCode);
+        Assert.Contains("Usage:", result.StdOut);
+        Assert.Empty(result.StdErr);
     }
 
     [Fact]

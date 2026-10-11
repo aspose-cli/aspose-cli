@@ -57,12 +57,6 @@ public sealed record DiagnosticDescriptor
     /// <summary>Schema governing the dynamic details object.</summary>
     public string DetailsSchemaId { get; init; } = DiagnosticDetails.CatalogId;
 
-    /// <summary>
-    /// Whether only licensing produces this diagnostic, as its code declares; a build whose
-    /// products need no license leaves it out of <c>capabilities</c>.
-    /// </summary>
-    public bool LicenseSurface { get; init; }
-
     /// <summary>Declares an error; its category follows from its exit code and its details schema is the code's own.</summary>
     /// <param name="code">The error code.</param>
     /// <param name="owner">The owner, or empty for a product's own.</param>
@@ -77,7 +71,6 @@ public sealed record DiagnosticDescriptor
             ExitCode = code.ExitCode,
             Category = CategoryOf(code.ExitCode),
             DetailsSchemaId = code.DetailsSchemaId,
-            LicenseSurface = code.LicenseSurface,
         };
     }
 
@@ -93,7 +86,6 @@ public sealed record DiagnosticDescriptor
             Owner = Normalized(owner),
             Severity = DiagnosticSeverity.Warning,
             Category = WarningCategory,
-            LicenseSurface = code.LicenseSurface,
         };
     }
 

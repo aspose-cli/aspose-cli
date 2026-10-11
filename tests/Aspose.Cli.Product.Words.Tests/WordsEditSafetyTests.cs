@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Words;
 using Aspose.Words.Loading;
@@ -78,7 +79,7 @@ public sealed class WordsEditSafetyTests
         var reopened = new Document(output, new LoadOptions { Password = OriginalPassword });
         Assert.Contains("Safe", reopened.GetText(), StringComparison.Ordinal);
         Assert.Equal(original, File.ReadAllBytes(inPlace ? backup : input));
-        Assert.DoesNotContain(result.Warnings ?? [], warning => warning.Code == WordsDiagnostics.EncryptionRemoved);
+        Assert.DoesNotContain(result.Warnings ?? [], warning => warning.Code == WarningCodes.EncryptionRemoved);
         if (verify) { Assert.NotNull(result.Verification); }
     }
 
@@ -182,7 +183,7 @@ public sealed class WordsEditSafetyTests
             Options = new EditCommandOptions { DryRun = dryRun },
         });
         Assert.Equal(!dryRun, File.Exists(output));
-        Assert.Equal(!dryRun, result.Warnings?.Any(warning => warning.Code == WordsDiagnostics.EncryptionRemoved) == true);
+        Assert.Equal(!dryRun, result.Warnings?.Any(warning => warning.Code == WarningCodes.EncryptionRemoved) == true);
         Assert.Equal(original, File.ReadAllBytes(input));
         Assert.Throws<CliException>(() => WordsEdit.Run(fixture.Session, new WordsEditRequest
         {

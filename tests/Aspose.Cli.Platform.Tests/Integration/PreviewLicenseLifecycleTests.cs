@@ -59,7 +59,8 @@ public sealed class PreviewLicenseLifecycleTests : IDisposable
         JsonNode licensed = _workspace.Run(
             "preview", "open", "second.xlsx", "--no-open", "--license", license.Path, "--output-format", "json").Json();
 
-        Assert.Equal("licensed", licensed["license"]!["mode"]!.GetValue<string>());
+        // A licensed result omits its license block.
+        Assert.Null(licensed["license"]);
         Assert.Equal("evaluation", evaluation["license"]!["mode"]!.GetValue<string>());
         Assert.NotEqual(evaluation["id"]!.GetValue<string>(), licensed["id"]!.GetValue<string>());
         // One service holds both, because the renderer behind it is recycled.
@@ -100,12 +101,13 @@ public sealed class PreviewLicenseLifecycleTests : IDisposable
         JsonNode relicensed = _workspace.Run(
             "preview", "open", "book.xlsx", "--no-open", "--license", license.Path, "--output-format", "json").Json();
 
-        Assert.Equal("licensed", licensed["license"]!["mode"]!.GetValue<string>());
+        // A licensed result omits its license block.
+        Assert.Null(licensed["license"]);
         Assert.Equal("evaluation", requested["license"]!["mode"]!.GetValue<string>());
         Assert.NotEqual(licensed["id"]!.GetValue<string>(), requested["id"]!.GetValue<string>());
         Assert.Equal(licensed["pid"]!.GetValue<int>(), requested["pid"]!.GetValue<int>());
         Assert.True(relicensed["reused"]!.GetValue<bool>());
-        Assert.Equal("licensed", relicensed["license"]!["mode"]!.GetValue<string>());
+        Assert.Null(relicensed["license"]);
     }
 
     private JsonNode Start() =>

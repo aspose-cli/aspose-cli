@@ -96,7 +96,7 @@ public sealed class SlidesHardeningTests
         {
             Assert.Contains(
                 window.Warnings ?? [],
-                static warning => warning.Code == WarningCodes.EvalInputTruncated);
+                static warning => warning.Code == WarningCodes.EvaluationInputTruncated);
         }
     }
 
@@ -122,7 +122,7 @@ public sealed class SlidesHardeningTests
         }).Warnings));
 
         static bool CutShort(IReadOnlyList<Warning>? warnings) =>
-            warnings?.Any(static warning => warning.Code == WarningCodes.EvalInputTruncated) == true;
+            warnings?.Any(static warning => warning.Code == WarningCodes.EvaluationInputTruncated) == true;
     }
 
     [Fact]

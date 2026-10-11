@@ -12,10 +12,6 @@ namespace Aspose.Cli.Product.Cells.Contracts;
 /// </summary>
 public sealed record WorkbookReadResult() : WindowedResultEnvelope("workbook-read", 2)
 {
-    /// <summary>Document kind discriminator; always <c>workbook</c> for cells.</summary>
-    [JsonPropertyOrder(-50)]
-    public string Kind { get; } = DocumentKinds.Workbook;
-
     /// <summary>The projected file.</summary>
     [JsonPropertyOrder(-49)]
     public required InputInfo Input { get; init; }

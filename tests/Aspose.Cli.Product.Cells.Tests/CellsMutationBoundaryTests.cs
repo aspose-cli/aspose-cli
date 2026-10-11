@@ -81,9 +81,11 @@ public sealed class CellsMutationBoundaryTests
         CliResult result = workspace.RunWithEnv(environment, "cells", "edit", "source.xlsx", "--password-env", "EXPORT_PASSWORD",
             "--set", "Data!A1=7", "--out", "result.csv", "--output-format", "json");
         Assert.True(result.ExitCode == 0, result.StdErr);
-        Assert.Contains("WORKBOOK_ENCRYPTION_REMOVED", result.StdOut, StringComparison.Ordinal);
+        JsonNode edited = JsonNode.Parse(result.StdOut)!;
+        // The SDK's shared code, the one every product reports the lost encryption with.
+        Assert.Contains(edited["warnings"]!.AsArray(), static warning => warning!["code"]!.GetValue<string>() == "ENCRYPTION_REMOVED");
         // A CSV cannot carry a password, so the output reports no encryption state.
-        Assert.Null(JsonNode.Parse(result.StdOut)!["output"]!["encrypted"]);
+        Assert.Null(edited["output"]!["encrypted"]);
         Assert.DoesNotContain("test-export-secret", result.StdOut + result.StdErr, StringComparison.Ordinal);
     }
 

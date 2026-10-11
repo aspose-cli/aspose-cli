@@ -5,12 +5,13 @@ using Aspose.Cli.Host.Commands;
 using Aspose.Cli.Host.Invocation;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
+using Aspose.Cli.TestKit;
 using Xunit;
 
 namespace Aspose.Cli.Host.Tests;
 
 /// <summary>A command answers with exactly one result or one error, never both.</summary>
-[Collection("Console capture")]
+[Collection(ProcessRedirectionCollection.Name)]
 public sealed class CommandExecutorOutcomeTests
 {
     [Fact]

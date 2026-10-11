@@ -176,7 +176,7 @@ aspose-cli capabilities --output-format json
 
 ## Shared warnings
 
-- `EVAL_MODE`, `EVAL_INPUT_TRUNCATED`, `EVAL_INPUT_MARKED`: evaluation mode,
+- `EVALUATION_MODE`, `EVALUATION_INPUT_TRUNCATED`, `EVALUATION_INPUT_MARKED`: evaluation mode,
   now or in an earlier save of the input; disclose it (`aspose-cli docs licensing`).
 - `BACKUP_PREDATES_EDIT`: an in-place edit kept an existing backup that holds an
   earlier version than the file it replaced; the replaced version has no backup.

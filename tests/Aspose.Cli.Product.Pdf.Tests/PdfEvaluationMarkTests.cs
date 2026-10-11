@@ -44,8 +44,8 @@ public sealed class PdfEvaluationMarkTests
             Pages = PageRange.Parse("2"),
         }));
         Assert.StartsWith("The output keeps the evaluation marks", Disclosure(marked).Message, StringComparison.Ordinal);
-        Assert.DoesNotContain(clean.Warnings ?? [], static warning => warning.Code == WarningCodes.EvalInputMarked);
-        Assert.DoesNotContain(tiff.Warnings ?? [], static warning => warning.Code == WarningCodes.EvalInputMarked);
+        Assert.DoesNotContain(clean.Warnings ?? [], static warning => warning.Code == WarningCodes.EvaluationInputMarked);
+        Assert.DoesNotContain(tiff.Warnings ?? [], static warning => warning.Code == WarningCodes.EvaluationInputMarked);
     }
 
     /// <summary>
@@ -85,9 +85,9 @@ public sealed class PdfEvaluationMarkTests
             Pages = PageRange.Parse("2,6"),
         }));
 
-        Assert.DoesNotContain(cleanRender.Warnings ?? [], static warning => warning.Code == WarningCodes.EvalInputMarked);
-        Assert.DoesNotContain(cleanConvert.Warnings ?? [], static warning => warning.Code == WarningCodes.EvalInputMarked);
-        Assert.DoesNotContain(cleanText.Warnings ?? [], static warning => warning.Code == WarningCodes.EvalInputMarked);
+        Assert.DoesNotContain(cleanRender.Warnings ?? [], static warning => warning.Code == WarningCodes.EvaluationInputMarked);
+        Assert.DoesNotContain(cleanConvert.Warnings ?? [], static warning => warning.Code == WarningCodes.EvaluationInputMarked);
+        Assert.DoesNotContain(cleanText.Warnings ?? [], static warning => warning.Code == WarningCodes.EvaluationInputMarked);
         Assert.StartsWith("The rendered source carries the evaluation marks", Disclosure(markedRender).Message, StringComparison.Ordinal);
     }
 
@@ -115,7 +115,7 @@ public sealed class PdfEvaluationMarkTests
     }
 
     private static Warning Disclosure(ResultEnvelope result) =>
-        Assert.Single(result.Warnings!, static warning => warning.Code == WarningCodes.EvalInputMarked);
+        Assert.Single(result.Warnings!, static warning => warning.Code == WarningCodes.EvaluationInputMarked);
 
     /// <summary>Three pages, the first carrying the notice an evaluation save prints.</summary>
     private static string MarkedOnFirstPage(PdfEngineFixture fixture) => Marked(fixture, "marked.pdf", pages: 3, markedPages: 1);

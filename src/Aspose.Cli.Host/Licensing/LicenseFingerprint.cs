@@ -31,7 +31,7 @@ internal static class LicenseFingerprint
             : string.Join('|', resolution.SourceLabel, path, "missing");
     }
 
-    /// <summary>The fingerprints of every license-aware product, as one value.</summary>
+    /// <summary>The fingerprints of every product, as one value.</summary>
     public static string Of(
         ProductCatalog catalog,
         string? flagPath,
@@ -42,7 +42,6 @@ internal static class LicenseFingerprint
         return string.Join(
             '\n',
             catalog.Products
-                .Where(static product => product.Manifest.Engine.LicenseApplicable)
                 .Select(product =>
                 {
                     try

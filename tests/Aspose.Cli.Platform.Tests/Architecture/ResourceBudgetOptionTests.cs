@@ -39,7 +39,7 @@ public sealed class ResourceBudgetOptionTests
                 [
                     ResourceBudgetCapabilities.Domain("alpha.items", 10, 100, "items", "projection", budgetOption),
                 ],
-                Engine = ProductEngineCapabilities.LicenseAware("aspose", "Aspose.Test", "1.0.0"),
+                Engine = new ProductEngineCapabilities { Id = "aspose", Sdk = "Aspose.Test", SdkVersion = "1.0.0" },
                 AvailableEngines = ["aspose"],
             })
             .Formats([FormatDescriptor.Input("alpha", 0, RouteOwnership.Explicit, ".alpha")])

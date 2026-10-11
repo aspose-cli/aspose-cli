@@ -82,7 +82,7 @@ weaken a check or remove a supported operation to make a test pass.
   from `capabilities` and each ops schema and check what every command keeps: no internal error,
   one valid error envelope, suggestions for mistakes, refused unwritable outputs, read-only
   commands and dry runs that write nothing, outputs that reopen, hidden secrets, and evaluation
-  writes that warn `EVAL_MODE`.
+  writes that warn `EVALUATION_MODE`.
 - **Known violations.** `tests/Aspose.Cli.Invariants.Tests/known-violations.json` lists today's
   product defects by `cause`, per license mode (`modes`). A case passes only when its violations
   and their text match its entries, so a new, changed or fixed violation fails; delete an entry
@@ -214,8 +214,7 @@ Kept on purpose:
 ## Conventions
 
 Use only the corresponding commercial Aspose SDK packages; no FOSS source, gitlinks or
-Git LFS. License-free products live in a separate repository; the license-free path still in
-this one (`ProductBinding.CreateLicenseFree` and its Host branches) is planned for removal.
+Git LFS. License-free products live in a separate repository; every product here is licensed.
 Code comments, diagnostics, documentation and Skills are English and describe present behavior.
 Never add old-command aliases, legacy installer or Skill readers, historical version
 baselines, historical trust allowlists, or migration frameworks for unpublished builds.

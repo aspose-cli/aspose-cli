@@ -7,7 +7,7 @@ namespace Aspose.Cli.Sdk.Contracts;
 /// user) can tell whether the CLI is ready — licensed, on a supported runtime,
 /// able to write output — before a task fails midway.
 /// </summary>
-public sealed record DoctorResult() : ResultEnvelope("doctor", 2)
+public sealed record DoctorResult() : ResultEnvelope("doctor", 2), IPartialOutcome
 {
     /// <summary><c>true</c> when no check failed; warnings still allow readiness.</summary>
     [JsonPropertyOrder(-50)]
@@ -18,6 +18,10 @@ public sealed record DoctorResult() : ResultEnvelope("doctor", 2)
 
     /// <summary>License readiness for each compiled product.</summary>
     public IReadOnlyList<DoctorProductStatus>? Products { get; init; }
+
+    /// <summary>Whether a check failed, so the command exits 8 after writing this result. Not serialized.</summary>
+    [JsonIgnore]
+    public bool HasFailures => !Ok;
 }
 
 /// <summary>Readiness of one compiled-in product.</summary>
@@ -27,7 +31,7 @@ public sealed record DoctorProductStatus
     public required string Product { get; init; }
 
     /// <summary>The license mode the product runs under.</summary>
-    [AllowedValues(LicenseModes.Evaluation, LicenseModes.Licensed, LicenseModes.Invalid, LicenseModes.NotApplicable)]
+    [AllowedValues(LicenseModes.Evaluation, LicenseModes.Licensed, LicenseModes.Invalid)]
     public required string LicenseMode { get; init; }
 
     /// <summary>Engine id the product runs.</summary>

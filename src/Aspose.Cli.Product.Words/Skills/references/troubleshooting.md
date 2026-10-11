@@ -41,12 +41,12 @@ are in `aspose-cli docs editing`.
   search` and the same pattern; text in headers, footers, footnotes or
   comments needs its `scope`.
 - `MERGE_VALUE_MISSING`: see [mail merge](mail-merge.md).
-- `DOCUMENT_ENCRYPTION_REMOVED`: see
+- `ENCRYPTION_REMOVED`: see
   [editing](editing.md#protection-and-encryption).
 - `MACROS_DROPPED`: the source has macros and the output of `convert`, `edit`,
   `create`, `split` or `compare` was written without them. Only `doc`, `dot`,
   `docm`, `dotm` and `wordml` keep macros; save to `docm` or `dotm` to keep them.
-- `EVAL_INPUT_MARKED`: with a license, the input holds the evaluation
+- `EVALUATION_INPUT_MARKED`: with a license, the input holds the evaluation
   banner, footer sentence or truncation notice a save without a license wrote
   into it, and the output keeps them; the message lists them. Regenerate the
   document from its original inputs with a license.

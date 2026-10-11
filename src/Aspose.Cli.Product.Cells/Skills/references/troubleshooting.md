@@ -27,14 +27,14 @@ to workbooks.
 | `DATA_TRUNCATED` | The target grid (for example xls, 65,536 rows) is smaller than the data; save to xlsx, xlsb or ods. |
 | `FORMULAS_BROKEN` | Formulas that referenced cells beyond the target grid became `#REF!`; save to xlsx or xlsb. |
 | `FORMULAS_CALCULATED_ON_OPEN` | The workbook asks to be calculated when opened and some formula results shown differ from the stored ones, usually because a tool wrote formulas without results. The values shown are the engine's, as Excel shows them; `cells edit` stores them. |
-| `WORKBOOK_ENCRYPTION_REMOVED` | The output format cannot be encrypted, so the source encryption was dropped. |
+| `ENCRYPTION_REMOVED` | The output format cannot be encrypted, so the source encryption was dropped. |
 | `EXTERNAL_LINK_CACHE_MISSING` | `import_sheet` or `import_range` (`all`) copied formulas that read another workbook through a link that caches no values. They show `#REF!` in the source but read the linked cells as empty, usually 0, here; the message lists them and `location` names the first; `--verify` reports it as an issue. Replace them with `set_formula` or `set_values`. |
 | `EXTERNAL_LINK_RELATIVE` | The edit added a link the output stores as a file name without a folder, relative to the output's folder; a full path to a file in the input's folder is stored this way too. The message names the stored targets. A formula naming a sheet the workbook does not have, such as `=Salse!B2`, is stored this way too; the hint then names the closest sheet, so correct the formula. Otherwise keep those files beside the output, or use `import_range` instead of a link. |
 | `FORMULA_FUNCTION_UNKNOWN` | A formula the edit wrote calls a function Aspose.Cells does not know, so it evaluates to `#NAME?`; the message names each cell and function and, when one is a single edit away, the closest known function after it, such as `SUM` for `SUMM`. Correct the name, in English; an add-in or VBA function, or one newer than the engine, stays in the file for Excel. |
 | `CHART_SPLIT_ACROSS_PAGES` | A PDF conversion printed a chart across two or more pages; the message names each chart and its page count. Fit the sheet with `set_page_setup` (`fitToWidth` 1 and `fitToHeight` 0, or `orientation` landscape), or move or resize the chart, and convert again. |
 | `MHTML_RESOURCE_COVERAGE_UNVERIFIED` | The engine resolves MHTML resources without reporting missing ones; check images and styles yourself. |
 | `ACTIVE_SHEET_SKIPPED` | The input's active sheet is the evaluation warning sheet `location` names, and this command named no sheet, so it used the sheet the message names instead; see below. |
-| `EVAL_INPUT_MARKED` | With a license, the output keeps the warning sheets an earlier evaluation save added, or a render shows them; see below. |
+| `EVALUATION_INPUT_MARKED` | With a license, the output keeps the warning sheets an earlier evaluation save added, or a render shows them; see below. |
 | `ROWS_SHIFTED` | `cells compare` found rows one side inserted or deleted (the message names them, `location` the sheet); the cells below each shift are compared with different rows, so their differences are not edits. Apply the same `insert_rows` or `delete_rows` to a copy of the left workbook and compare the copy. |
 | `PROTECTION_NOT_ENFORCED` | The edit changed a protected sheet (`location` names it when there is one) or the protected workbook structure; protection guides Excel only, so the edit went through it. Confirm the change is authorized. |
 | `TEXT_TABLE_LAYOUT` | A CSV or TSV input is not a plain table from row 1; one warning per finding, with the rows in `location`. The header comes after a title or notes, rows that hold at most one value each or a block such as `Export time: …, Query: …` that an empty row separates from a wider header (`1:3`: the header is the row after them), empty rows lie inside the table, a trailing row is labeled as a total (`合计`, `总计`, `小计`, `Total`, `Grand Total`, `Subtotal`, `Sum`), or the last row is the notice of an evaluation export. The rows are imported as they are; see below. |
@@ -67,7 +67,7 @@ handle these effects:
 
 - The engine appends the warning sheet and makes it the active sheet; no
   option keeps your active sheet (`set_active_sheet` included). The
-  `EVAL_MODE` message names the warning sheets the output carries and which
+  `EVALUATION_MODE` message names the warning sheets the output carries and which
   of them is active.
 - When a workbook's active sheet is such a warning sheet, every command that
   defaults to the active sheet (`query range` without `--sheet`,
@@ -83,7 +83,7 @@ handle these effects:
   sheet order.
 - Each further save adds another ("Evaluation Warning (1)", ...); `inspect`
   lists them. Do not delete them.
-- Data outputs carry the notice as content, and the `EVAL_MODE` message
+- Data outputs carry the notice as content, and the `EVALUATION_MODE` message
   says where: CSV and TSV gain an `Evaluation Only. ...` last
   row after the data, Markdown a closing `# Evaluation Only. ...` heading, and
   JSON a `{"watermark": ...}` record after the records of each sheet with data
@@ -92,10 +92,10 @@ handle these effects:
   `CELLS_EVALUATION_NOTICE` on the CSV or TSV notice row.
 - A whole-workbook PDF, XPS, HTML or MHTML export prints the warning sheets an
   earlier evaluation save added as extra pages that hold only the notice; the
-  `EVAL_MODE` message, or with a license `EVAL_INPUT_MARKED`, names them, and
+  `EVALUATION_MODE` message, or with a license `EVALUATION_INPUT_MARKED`, names them, and
   `review` then reports findings on those pages. A licensed edit or
   conversion to a workbook format keeps the warning sheets and warns
-  `EVAL_INPUT_MARKED` too. Export the content sheets with `--sheet` (PDF), or
+  `EVALUATION_INPUT_MARKED` too. Export the content sheets with `--sheet` (PDF), or
   rebuild the workbook and the export with a license.
 - CSV, TSV and Markdown export only the first worksheet. Without `--sheet` the
   first sheet is written even when another one is active, and

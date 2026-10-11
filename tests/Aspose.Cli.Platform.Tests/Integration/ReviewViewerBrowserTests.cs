@@ -245,7 +245,7 @@ public sealed class ReviewViewerBrowserTests(ITestOutputHelper output)
                 };
             },
             _ => assessment,
-            LicenseState.NotApplicable,
+            LicenseState.Licensed,
             new ContractJsonSerializer([]), Aspose.Cli.Sdk.Tests.TestBudgets.Create());
     }
 

@@ -66,9 +66,6 @@ public sealed class HostCatalogIsolationTests
                         Id = "test",
                         Sdk = "Aspose.Test",
                         SdkVersion = "1.0.0",
-                        LicenseApplicable = true,
-                        LicenseRequired = false,
-                        SupportsFontDiagnostics = true,
                     },
                     AvailableEngines = ["test"],
                 })

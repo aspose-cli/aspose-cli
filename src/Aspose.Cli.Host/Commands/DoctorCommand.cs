@@ -17,8 +17,6 @@ internal static class DoctorCommand
         ProductCatalog catalog,
         GlobalOptions globals)
     {
-        bool licensingApplicable = catalog.Products.Any(
-            static product => product.Manifest.Engine.LicenseApplicable);
         var doctor = new Command(
             "doctor", "Diagnose the environment: runtime, resource budgets and output writability.");
         doctor.SetAction(parse => executor.Run(parse, globals, context =>
@@ -30,12 +28,9 @@ internal static class DoctorCommand
                 CliCheck(),
                 RuntimeCheck(),
                 BudgetCheck(context),
+                LicenseCheck(licenses),
                 OutputCheck(context),
             };
-            if (licensingApplicable)
-            {
-                checks.Insert(3, LicenseCheck(licenses));
-            }
             return new DoctorResult
             {
                 Ok = checks.TrueForAll(static check => check.Status != DoctorStatuses.Fail),
@@ -101,20 +96,7 @@ internal static class DoctorCommand
     private static DoctorCheck LicenseCheck(
         IReadOnlyList<ProductLicenseStatus> licenses)
     {
-        ProductLicenseStatus[] applicable = licenses
-            .Where(static license => license.Applicable)
-            .ToArray();
-        if (applicable.Length == 0)
-        {
-            return new DoctorCheck
-            {
-                Name = "license",
-                Status = DoctorStatuses.Ok,
-                Detail = "licensing is not applicable to compiled products",
-            };
-        }
-
-        ProductLicenseStatus[] broken = applicable
+        ProductLicenseStatus[] broken = licenses
             .Where(static license => license.Problem is not null)
             .ToArray();
         if (broken.Length > 0)
@@ -131,19 +113,19 @@ internal static class DoctorCommand
             };
         }
 
-        int licensed = applicable.Count(static license =>
+        int licensed = licenses.Count(static license =>
             license.Mode == LicenseModes.Licensed);
-        if (applicable.All(static license => license.Source == LicenseResolution.RequestedSourceLabel))
+        if (licenses.All(static license => license.Source == LicenseResolution.RequestedSourceLabel))
         {
             return new DoctorCheck
             {
                 Name = "license",
                 Status = DoctorStatuses.Warn,
-                Detail = $"evaluation mode requested with --license-mode evaluation; no license read for the {applicable.Length} products",
+                Detail = $"evaluation mode requested with --license-mode evaluation; no license read for the {licenses.Count} products",
                 Hint = "Drop --license-mode evaluation to apply the configured licenses.",
             };
         }
-        return licensed == applicable.Length
+        return licensed == licenses.Count
             ? new DoctorCheck
             {
                 Name = "license",
@@ -154,7 +136,7 @@ internal static class DoctorCommand
             {
                 Name = "license",
                 Status = DoctorStatuses.Warn,
-                Detail = $"{licensed} of {applicable.Length} products licensed",
+                Detail = $"{licensed} of {licenses.Count} products licensed",
                 Hint = "Produced files carry an Aspose watermark. "
                     + "Run 'aspose-cli license status' for product-specific setup.",
             };

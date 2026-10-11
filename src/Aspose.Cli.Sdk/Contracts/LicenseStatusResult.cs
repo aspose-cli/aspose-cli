@@ -6,9 +6,6 @@ namespace Aspose.Cli.Sdk.Contracts;
 /// </summary>
 public sealed record LicenseStatusResult() : ResultEnvelope("license-status", 2)
 {
-    /// <summary>Whether a license changes what any selected product produces.</summary>
-    public required bool Applicable { get; init; }
-
     /// <summary>The license status of each selected product.</summary>
     [MinItems(1)]
     public required IReadOnlyList<ProductLicenseStatus> Products { get; init; }
@@ -32,11 +29,8 @@ public sealed record ProductLicenseStatus
     [MinLength(1)]
     public required string Name { get; init; }
 
-    /// <summary>Whether a license changes what the product produces.</summary>
-    public required bool Applicable { get; init; }
-
     /// <summary>The license mode the product runs under.</summary>
-    [AllowedValues(LicenseModes.Evaluation, LicenseModes.Licensed, LicenseModes.Invalid, LicenseModes.NotApplicable)]
+    [AllowedValues(LicenseModes.Evaluation, LicenseModes.Licensed, LicenseModes.Invalid)]
     public required string Mode { get; init; }
 
     /// <summary>Where the license comes from, such as an environment variable or the user license; omitted when there is none.</summary>

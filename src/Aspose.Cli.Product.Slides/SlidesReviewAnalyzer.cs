@@ -286,7 +286,7 @@ internal static class SlidesReviewAnalyzer
     /// <summary>
     /// Density counts content objects and their characters. Text that evaluation mode replaced
     /// with the SDK's truncation marker has lost its length, so on such a slide only the object
-    /// count is judged; the review's EVAL_INPUT_TRUNCATED warning discloses the replacement.
+    /// count is judged; the review's EVALUATION_INPUT_TRUNCATED warning discloses the replacement.
     /// </summary>
     private static void AnalyzeDensity(
         SlideData slide,

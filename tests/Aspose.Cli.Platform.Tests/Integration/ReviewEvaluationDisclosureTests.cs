@@ -26,9 +26,22 @@ public sealed class ReviewEvaluationDisclosureTests : IDisposable
         JsonNode printed = Run("review", "brief.docx", "--out", "review", "--license-mode", "evaluation");
 
         string[] codes = Codes(printed);
-        Assert.Contains("EVAL_MODE", codes);
+        Assert.Contains("EVALUATION_MODE", codes);
         Assert.Equal(codes, Codes(JsonNode.Parse(File.ReadAllText(_workspace.File(Path.Combine("review", "review.json"))))!));
-        Assert.Contains("\"EVAL_MODE\"", File.ReadAllText(_workspace.File(Path.Combine("review", "index.html"))), StringComparison.Ordinal);
+        Assert.Contains("\"EVALUATION_MODE\"", File.ReadAllText(_workspace.File(Path.Combine("review", "index.html"))), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void EvaluationReview_ListsTheMarksItsEvidenceShows_AsRenderDoes()
+    {
+        Run("words", "create", "brief.docx", "--markdown", "brief.md", "--license-mode", "evaluation");
+
+        JsonNode rendered = Run("words", "render", "brief.docx", "--out", "page.png", "--license-mode", "evaluation");
+        JsonNode reviewed = Run("review", "brief.docx", "--out", "review", "--license-mode", "evaluation");
+
+        string expected = Message(rendered, "EVALUATION_MODE");
+        Assert.Contains("The rendered source carries", expected, StringComparison.Ordinal);
+        Assert.Equal(expected, Message(reviewed, "EVALUATION_MODE"));
     }
 
     [LicensedFact]
@@ -39,10 +52,14 @@ public sealed class ReviewEvaluationDisclosureTests : IDisposable
 
         JsonNode printed = Run("review", "marked.docx", "--out", "review");
 
-        Assert.Equal("licensed", printed["license"]!["mode"]!.GetValue<string>());
-        Assert.DoesNotContain("EVAL_MODE", Codes(printed));
+        // A licensed result omits its license block.
+        Assert.Null(printed["license"]);
+        Assert.DoesNotContain("EVALUATION_MODE", Codes(printed));
         Assert.Equal(Codes(printed), Codes(JsonNode.Parse(File.ReadAllText(_workspace.File(Path.Combine("review", "review.json"))))!));
         Assert.Contains(printed["findings"]!.AsArray(), static finding => finding!["code"]!.GetValue<string>() == "WORDS_EVALUATION_MARKS");
+        // The evidence images show the marks the input carries, as a licensed render of it says.
+        JsonNode rendered = Run("words", "render", "marked.docx", "--out", "page.png");
+        Assert.Equal(Message(rendered, "EVALUATION_INPUT_MARKED"), Message(printed, "EVALUATION_INPUT_MARKED"));
     }
 
     private JsonNode Run(params string[] args)
@@ -51,6 +68,9 @@ public sealed class ReviewEvaluationDisclosureTests : IDisposable
         Assert.True(result.ExitCode == 0, result.StdErr);
         return JsonNode.Parse(result.StdOut)!;
     }
+
+    private static string Message(JsonNode result, string code) =>
+        Assert.Single(result["warnings"] as JsonArray ?? [], warning => warning!["code"]!.GetValue<string>() == code)!["message"]!.GetValue<string>();
 
     private static string[] Codes(JsonNode result) =>
         [.. (result["warnings"] as JsonArray ?? []).Select(static warning => warning!["code"]!.GetValue<string>())];

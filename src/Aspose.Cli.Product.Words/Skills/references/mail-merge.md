@@ -17,7 +17,7 @@ row: a data file holding only a CSV header or `[]` fails the op with
 - The expected result size is checked against the document node budget before
   any copy is made.
 - In evaluation mode a merge of many records loses the later ones
-  (`EVAL_INPUT_TRUNCATED`).
+  (`EVALUATION_INPUT_TRUNCATED`).
 
 ```json
 {

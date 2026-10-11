@@ -47,7 +47,7 @@ public interface IProductViewAdapter<TSession>
 
     /// <summary>
     /// Every check <see cref="Assess"/> can report, each declared once; codes start with the
-    /// product id in upper case. The SDK adds its font checks (<see cref="ReviewChecks"/>).
+    /// product id in upper case. The SDK adds its font check (<see cref="ReviewChecks"/>).
     /// </summary>
     IReadOnlyList<ReviewCheck> Checks { get; }
 
@@ -169,15 +169,13 @@ public sealed partial class ProductViewDefinition
             ?? throw new InvalidOperationException(
                 $"Product '{ProductId}' returned no review assessment.");
         EnsureDeclared(assessment.Findings);
-        IFontEnvironment? fonts = binding.FontEnvironment;
-        return fonts is null
-            ? AppendFontCheckUnavailable(assessment)
-            : AppendFontFindings(
-                assessment,
-                fonts.CheckFonts(filePath, new FontCheckRequest
-                {
-                    Password = request.Password,
-                }));
+        return AppendFontFindings(
+            ProductId,
+            assessment,
+            binding.FontEnvironment.CheckFonts(filePath, new FontCheckRequest
+            {
+                Password = request.Password,
+            }));
     }
 
     // A finding must come from a declared check with that check's severity; anything else is a
@@ -242,21 +240,8 @@ public sealed partial class ProductViewDefinition
         }
     }
 
-    private static ProductReviewAssessment AppendFontCheckUnavailable(
-        ProductReviewAssessment assessment) =>
-        assessment with
-        {
-            Findings =
-            [
-                .. assessment.Findings ?? [],
-                ReviewChecks.FontsNotChecked.Finding(
-                    "The product engine does not expose font diagnostics, so used fonts were not checked.",
-                    "document",
-                    "Verify font availability and substitution on the target system before relying on visual fidelity."),
-            ],
-        };
-
     private static ProductReviewAssessment AppendFontFindings(
+        string productId,
         ProductReviewAssessment assessment,
         FontCheckResult fonts)
     {
@@ -277,7 +262,7 @@ public sealed partial class ProductViewDefinition
         {
             summary += $", and {unavailable.Length - 8} more";
         }
-        ReviewFinding finding = ReviewChecks.FontsMissingOrSubstituted.Finding(
+        ReviewFinding finding = ReviewChecks.FontsMissingOrSubstituted(productId).Finding(
             $"{unavailable.Length} used font(s) are unavailable or substituted: {summary}.",
             "document",
             "Install the required fonts or deliberately replace them, then save and run review again in a new directory.");
@@ -312,8 +297,8 @@ public sealed partial class ProductViewDefinition
             throw new InvalidOperationException(
                 $"Product '{productId}' must declare an image review view and a live view.");
         }
-        string prefix = productId.ToUpperInvariant() + "_";
-        ReviewCheck[] checks = [.. adapter.Checks, .. ReviewChecks.Shared];
+        string prefix = ReviewChecks.Prefix(productId);
+        ReviewCheck[] checks = [.. adapter.Checks, .. ReviewChecks.Shared(productId)];
         if (adapter.Checks.Any(check => !check.Code.StartsWith(prefix, StringComparison.Ordinal))
             || checks.Select(static check => check.Code).Distinct(StringComparer.Ordinal).Count() != checks.Length)
         {

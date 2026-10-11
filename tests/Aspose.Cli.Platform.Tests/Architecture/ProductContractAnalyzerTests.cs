@@ -296,9 +296,6 @@ public sealed class ProductContractAnalyzerTests
                             Id = "aspose",
                             Sdk = "Aspose.Test",
                             SdkVersion = "1.0.0",
-                            LicenseApplicable = true,
-                            LicenseRequired = false,
-                            SupportsFontDiagnostics = true,
                         },
                         AvailableEngines = new[] { "aspose" },
                     })
@@ -373,9 +370,6 @@ public sealed class ProductContractAnalyzerTests
                             Id = "aspose",
                             Sdk = "Aspose.Test",
                             SdkVersion = "1.0.0",
-                            LicenseApplicable = true,
-                            LicenseRequired = false,
-                            SupportsFontDiagnostics = true,
                         },
                         AvailableEngines = new[] { "aspose" },
                     })
@@ -520,9 +514,6 @@ public sealed class ProductContractAnalyzerTests
                             Id = "aspose",
                             Sdk = "Aspose.Test",
                             SdkVersion = "1.0.0",
-                            LicenseApplicable = true,
-                            LicenseRequired = false,
-                            SupportsFontDiagnostics = true,
                         },
                         AvailableEngines = new[] { "aspose" },
                     })
@@ -574,7 +565,7 @@ public sealed class ProductContractAnalyzerTests
     public void Apcli008_ReservesEveryNameTheRootCommandAlreadyAccepts()
     {
         var root = new System.CommandLine.RootCommand();
-        new Aspose.Cli.Host.Invocation.GlobalOptions(licensingApplicable: true).AddTo(root);
+        new Aspose.Cli.Host.Invocation.GlobalOptions().AddTo(root);
 
         string[] accepted = root.Options
             .SelectMany(static option => option.Aliases.Prepend(option.Name))

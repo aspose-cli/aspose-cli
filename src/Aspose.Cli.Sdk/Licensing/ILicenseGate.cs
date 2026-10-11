@@ -5,9 +5,6 @@ namespace Aspose.Cli.Sdk.Licensing;
 /// <summary>License state of the current process.</summary>
 public enum LicenseState
 {
-    /// <summary>The product engine does not use Aspose licensing.</summary>
-    NotApplicable,
-
     /// <summary>No license applied; engine output carries evaluation limitations.</summary>
     Evaluation,
 
@@ -22,7 +19,6 @@ public static class LicenseStateExtensions
     public static string ToContractName(this LicenseState state) =>
         state switch
         {
-            LicenseState.NotApplicable => LicenseModes.NotApplicable,
             LicenseState.Evaluation => LicenseModes.Evaluation,
             LicenseState.Licensed => LicenseModes.Licensed,
             _ => throw new ArgumentOutOfRangeException(nameof(state), state, null),
@@ -36,9 +32,6 @@ public static class LicenseStateExtensions
 /// </summary>
 public interface ILicenseGate
 {
-    /// <summary>Whether Aspose licensing applies to this product engine.</summary>
-    bool IsApplicable { get; }
-
     /// <summary>How the license was (or was not) resolved.</summary>
     LicenseResolution Resolution { get; }
 

@@ -33,7 +33,7 @@ public sealed class LicenseModeTests : IDisposable
 
         JsonNode requested = Create("requested.docx", timeout);
         Assert.Equal("evaluation", requested["license"]!["mode"]!.GetValue<string>());
-        Assert.Contains(requested["warnings"]!.AsArray(), warning => warning!["code"]!.GetValue<string>() == "EVAL_MODE");
+        Assert.Contains(requested["warnings"]!.AsArray(), warning => warning!["code"]!.GetValue<string>() == "EVALUATION_MODE");
 
         JsonNode status = _workspace.Run(
             "license", "status", "--product", "words", "--license-mode", "evaluation", "--output-format", "json").Json();
@@ -52,11 +52,11 @@ public sealed class LicenseModeTests : IDisposable
             "words", "create", "licensed.docx", "--markdown", "brief.md", "--output-format", "json").Json();
         JsonNode requested = Create("requested.docx", []);
 
-        Assert.Equal("licensed", licensed["license"]!["mode"]!.GetValue<string>());
+        Assert.Null(licensed["license"]);
         Assert.DoesNotContain(
-            licensed["warnings"]?.AsArray() ?? [], warning => warning!["code"]!.GetValue<string>() == "EVAL_MODE");
+            licensed["warnings"]?.AsArray() ?? [], warning => warning!["code"]!.GetValue<string>() == "EVALUATION_MODE");
         Assert.Equal("evaluation", requested["license"]!["mode"]!.GetValue<string>());
-        Assert.Contains(requested["warnings"]!.AsArray(), warning => warning!["code"]!.GetValue<string>() == "EVAL_MODE");
+        Assert.Contains(requested["warnings"]!.AsArray(), warning => warning!["code"]!.GetValue<string>() == "EVALUATION_MODE");
     }
 
     [Fact]
@@ -107,7 +107,7 @@ public sealed class LicenseModeTests : IDisposable
         JsonNode created = JsonNode.Parse(result.StdOut)!;
         // The disclosure says the evaluation was asked for, not that a license is missing.
         JsonNode warning = Assert.Single(
-            created["warnings"]!.AsArray(), warning => warning!["code"]!.GetValue<string>() == "EVAL_MODE")!;
+            created["warnings"]!.AsArray(), warning => warning!["code"]!.GetValue<string>() == "EVALUATION_MODE")!;
         Assert.Contains("--license-mode evaluation", warning["message"]!.GetValue<string>(), StringComparison.Ordinal);
         Assert.Contains("--license-mode evaluation", warning["hint"]!.GetValue<string>(), StringComparison.Ordinal);
         Assert.DoesNotContain("ASPOSE_LICENSE_PATH", warning["hint"]!.GetValue<string>(), StringComparison.Ordinal);

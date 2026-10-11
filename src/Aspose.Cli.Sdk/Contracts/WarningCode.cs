@@ -14,7 +14,7 @@ namespace Aspose.Cli.Sdk.Contracts;
 public sealed class WarningCode : IEquatable<WarningCode>
 {
     /// <summary>Declares a code.</summary>
-    /// <param name="name">Stable SCREAMING_SNAKE_CASE identifier, e.g. <c>EVAL_MODE</c>.</param>
+    /// <param name="name">Stable SCREAMING_SNAKE_CASE identifier, e.g. <c>EVALUATION_MODE</c>.</param>
     public WarningCode(string name)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
@@ -23,12 +23,6 @@ public sealed class WarningCode : IEquatable<WarningCode>
 
     /// <summary>The stable SCREAMING_SNAKE_CASE identifier.</summary>
     public string Name { get; }
-
-    /// <summary>
-    /// Whether only licensing produces this warning, such as the evaluation disclosures; a build
-    /// whose products need no license leaves it out of <c>capabilities</c>.
-    /// </summary>
-    public bool LicenseSurface { get; init; }
 
     /// <summary>
     /// A code read back from a result another CLI process wrote, such as a worker's or a child

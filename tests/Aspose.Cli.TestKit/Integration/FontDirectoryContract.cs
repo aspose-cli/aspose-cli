@@ -11,7 +11,8 @@ namespace Aspose.Cli.TestKit;
 /// </summary>
 public static class FontDirectoryContract
 {
-    private const string MissingFontsFinding = "FONTS_MISSING_OR_SUBSTITUTED";
+    /// <summary>The end of the shared review check's code, which begins with the product's prefix.</summary>
+    private const string MissingFontsFinding = "_FONTS_MISSING_OR_SUBSTITUTED";
 
     /// <param name="workspace">Workspace whose working directory holds <paramref name="fileName"/>.</param>
     /// <param name="fileName">Document that uses <see cref="FontFixtures.UniqueFamily"/>.</param>
@@ -24,10 +25,10 @@ public static class FontDirectoryContract
         Assert.True(FixtureAvailable(workspace, ["fonts", "check", fileName, "--font-dir", "fonts"]));
         Assert.False(FixtureAvailable(workspace, ["fonts", "check", fileName]));
 
-        Assert.Contains(MissingFontsFinding, ReviewFindings(workspace, fileName, "ambient.review"));
+        Assert.Contains(ReviewFindings(workspace, fileName, "ambient.review"), MissingFonts);
         Assert.DoesNotContain(
-            MissingFontsFinding,
-            ReviewFindings(workspace, fileName, "fonts.review", "--font-dir", "fonts"));
+            ReviewFindings(workspace, fileName, "fonts.review", "--font-dir", "fonts"),
+            MissingFonts);
     }
 
     /// <summary>
@@ -70,6 +71,8 @@ public static class FontDirectoryContract
             font => IsFixture(font!["name"]!.GetValue<string>()))!;
         return font["available"]!.GetValue<bool>();
     }
+
+    private static bool MissingFonts(string code) => code.EndsWith(MissingFontsFinding, StringComparison.Ordinal);
 
     private static string[] ReviewFindings(
         TempWorkspace workspace,

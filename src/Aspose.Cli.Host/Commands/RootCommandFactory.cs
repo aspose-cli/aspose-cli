@@ -19,9 +19,7 @@ internal static class RootCommandFactory
         ArgumentNullException.ThrowIfNull(host);
         var executor = new CommandExecutor(host);
         ProductCatalog catalog = host.Catalog;
-        bool licensingApplicable = catalog.Products.Any(
-            static product => product.Manifest.Engine.LicenseApplicable);
-        globals = new GlobalOptions(licensingApplicable);
+        globals = new GlobalOptions();
 
         var root = new RootCommand(
             "Aspose CLI — high-fidelity file automation for people, scripts, and AI agents. " +
@@ -66,10 +64,7 @@ internal static class RootCommandFactory
             root.Subcommands.Add(command.WithInvocationPolicy(
                 new CommandInvocationPolicy(ProductId: product.Manifest.Id)));
         }
-        if (licensingApplicable)
-        {
-            root.Subcommands.Add(LicenseCommandGroup.Create(executor, catalog, globals));
-        }
+        root.Subcommands.Add(LicenseCommandGroup.Create(executor, catalog, globals));
         capabilitySnapshot = new Lazy<CliCapabilitySnapshot>(
             () => CliCapabilitySnapshot.Create(
                 root,
@@ -86,11 +81,7 @@ internal static class RootCommandFactory
             .WithInvocationPolicy(new CommandInvocationPolicy(McpAllowed: true)));
         root.Subcommands.Add(DocsCommand.Create(executor, host.Docs, globals)
             .WithInvocationPolicy(new CommandInvocationPolicy(McpAllowed: true)));
-        if (catalog.Products.Any(
-                static product => product.Manifest.Engine.SupportsFontDiagnostics))
-        {
-            root.Subcommands.Add(FontsCommandGroup.Create(executor, catalog, globals));
-        }
+        root.Subcommands.Add(FontsCommandGroup.Create(executor, catalog, globals));
         root.Subcommands.Add(McpCommand.Create(host, globals));
         root.Subcommands.Add(UpdateCommand.Create(host, executor, globals));
 

@@ -89,9 +89,6 @@ public sealed class StartupCatalogTests
                     Id = "aspose",
                     Sdk = "Aspose.Test",
                     SdkVersion = "1.0.0",
-                    LicenseApplicable = true,
-                    LicenseRequired = false,
-                    SupportsFontDiagnostics = true,
                 },
                 AvailableEngines = ["aspose"],
             })

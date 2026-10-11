@@ -82,9 +82,6 @@ internal sealed partial class AppHost : IDisposable
 
     public string Url => $"http://127.0.0.1:{_port}/";
 
-    internal bool LicenseManagementApplicable => _catalog.Products.Any(
-        static product => product.Manifest.Engine.LicenseApplicable);
-
     /// <summary>
     /// Points the App at the page a command asked for, and opens the file it
     /// named. The service is already listening, so nothing starts here.

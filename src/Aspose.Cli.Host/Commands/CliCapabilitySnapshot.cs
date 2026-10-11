@@ -225,8 +225,6 @@ internal sealed class CliCapabilitySnapshot
             })
             .ToArray();
         ValidateOperationCommands(products, productRoots);
-        bool licensingApplicable = catalog.Products.Any(
-            static product => product.Manifest.Engine.LicenseApplicable);
 
         return new CliCapabilitySnapshot(new CapabilitiesResult
         {
@@ -244,7 +242,6 @@ internal sealed class CliCapabilitySnapshot
                 .OrderBy(static budget => budget.Kind, StringComparer.Ordinal)
                 .ToArray(),
             Diagnostics = catalog.Diagnostics.With(HostDiagnostics.All, HostDiagnostics.Owner).All
-                .Where(descriptor => licensingApplicable || !descriptor.LicenseSurface)
                 .OrderBy(static descriptor => descriptor.Code, StringComparer.Ordinal)
                 .Select(static descriptor => new DiagnosticCapabilities
                 {

@@ -27,7 +27,8 @@ aspose-cli capabilities --summary --output-format json
   `capabilities`; plain `--version` prints only the version text.
 - `doctor` reports `ok` and one entry per check (`cli`, `runtime`,
   `resource-budgets`, `license`, `output`). A `license` check of `warn` means
-  at least one product runs in evaluation mode.
+  at least one product runs in evaluation mode. A check of `fail` makes `ok`
+  false and the command exit 8 after printing its result.
 - `license status` reports each product's `mode` (`licensed`, `evaluation`,
   `invalid`) and effective `source`; see `aspose-cli docs licensing`.
 - `capabilities --summary` is the short first look at what this build can
@@ -76,7 +77,7 @@ override the choice.
 6. **Verify before delivery.** A clean exit code is not done: read changes
    back, run `review`, and open every image it lists
    (`aspose-cli docs verification`).
-7. **Disclose evaluation mode.** Any `EVAL_MODE` or `EVAL_INPUT_MARKED` warning
+7. **Disclose evaluation mode.** Any `EVALUATION_MODE` or `EVALUATION_INPUT_MARKED` warning
    means the delivered file carries evaluation marks; tell the user
    (`aspose-cli docs licensing`).
 8. **Recover from the error envelope.** Read `error.hint` and `error.details`

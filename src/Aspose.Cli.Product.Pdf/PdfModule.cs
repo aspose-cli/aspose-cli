@@ -17,10 +17,12 @@ public sealed class PdfModule : IProductModule
                 ResourceBudgetCapabilities.Domain(PdfBudgetDomains.Pages, 10_000, 100_000, "items", "post-load"),
                 ResourceBudgetCapabilities.Domain(PdfBudgetDomains.Objects, 1_000_000, 5_000_000, "items", "post-load"),
             ],
-            Engine = ProductEngineCapabilities.LicenseAware(
-                "aspose",
-                ProductBuildMetadata.EngineName,
-                ProductBuildMetadata.SdkVersion),
+            Engine = new ProductEngineCapabilities
+            {
+                Id = "aspose",
+                Sdk = ProductBuildMetadata.EngineName,
+                SdkVersion = ProductBuildMetadata.SdkVersion,
+            },
             AvailableEngines = ["aspose"],
     };
 

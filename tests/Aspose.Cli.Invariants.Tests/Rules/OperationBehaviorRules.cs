@@ -630,7 +630,7 @@ internal static partial class ContractRules
         }
         int affected = count.GetValue<int>();
         // The evaluation warning says nothing about the operation's effect.
-        string[] warnings = [.. ScenarioContract.Codes(edit.Document?["warnings"]).Where(static code => code != "EVAL_MODE")];
+        string[] warnings = [.. ScenarioContract.Codes(edit.Document?["warnings"]).Where(static code => code != "EVALUATION_MODE")];
         bool noEffect = warnings.Contains(NoEffectWarning, StringComparer.Ordinal);
         if (affected == 0 && !noEffect)
         {

@@ -16,7 +16,7 @@ public static class EnvelopeParts
     /// the agent to inform the user instead of silently delivering
     /// watermarked files.
     /// </summary>
-    public static Warning EvaluationWatermark { get; } = new(WarningCodes.EvalMode, "Evaluation mode: the produced file contains an Aspose evaluation watermark and some operations are limited.")
+    public static Warning EvaluationWatermark { get; } = new(WarningCodes.EvaluationMode, "Evaluation mode: the produced file contains an Aspose evaluation watermark and some operations are limited.")
     {
         Hint = "Tell the user about the watermark. A license removes it: set ASPOSE_LICENSE_PATH or pass --license.",
         Docs = "licensing",
@@ -26,7 +26,7 @@ public static class EnvelopeParts
     /// The evaluation-mode warning of a command that asked for evaluation mode
     /// (<c>--license-mode evaluation</c>): the same disclosure, naming the request as its cause.
     /// </summary>
-    public static Warning RequestedEvaluationWatermark { get; } = new(WarningCodes.EvalMode, "Evaluation mode, requested with --license-mode evaluation: the produced file contains an Aspose "
+    public static Warning RequestedEvaluationWatermark { get; } = new(WarningCodes.EvaluationMode, "Evaluation mode, requested with --license-mode evaluation: the produced file contains an Aspose "
             + "evaluation watermark and some operations are limited.")
     {
         Hint = "No license was read, on request. Tell the user if this file is delivered; drop --license-mode evaluation "
@@ -34,11 +34,13 @@ public static class EnvelopeParts
         Docs = "licensing",
     };
 
-    /// <summary>Maps the license state to the contract representation.</summary>
-    public static LicenseInfo License(LicenseState state) => new()
-    {
-        Mode = state.ToContractName(),
-    };
+    /// <summary>
+    /// The license block of a result: the mode when the engine ran without a license, and none
+    /// when it ran licensed, since a licensed result omits it.
+    /// </summary>
+    public static LicenseInfo? License(LicenseState state) => state == LicenseState.Licensed
+        ? null
+        : new LicenseInfo { Mode = state.ToContractName() };
 
     /// <summary>
     /// Discloses a list inside a result that holds only its first <paramref name="returned"/>

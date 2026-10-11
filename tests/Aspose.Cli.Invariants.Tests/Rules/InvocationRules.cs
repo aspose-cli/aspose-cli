@@ -361,7 +361,8 @@ internal static partial class ContractRules
     /// <summary>
     /// The streams of a successful and a failed run of each product's <c>inspect</c> and of
     /// <c>doctor</c>: a success writes its result to stdout, in table and in JSON mode, and with
-    /// a license and no warning leaves stderr empty; a failure in table mode leaves stdout empty.
+    /// a license and no warning leaves stderr empty, and a licensed JSON result carries no license
+    /// block (C-R33); a failure in table mode leaves stdout empty.
     /// A failure in JSON mode is the <c>error-envelope</c> check of every scenario. JSON-mode
     /// warnings belong to the result on stdout, so evaluation runs, which may warn, are checked
     /// for stdout only.
@@ -407,6 +408,11 @@ internal static partial class ContractRules
                 if (result.ExitCode == 0 && ScenarioLicense.Licensed && !warns && result.StdErr.Trim().Length > 0)
                 {
                     problems.Add($"stderr is not empty: {Excerpt(result.StdErr)}");
+                }
+                // C-R33: a licensed result omits the license block.
+                if (ScenarioLicense.Licensed && document?["license"] is { } license)
+                {
+                    problems.Add($"a licensed result carries license {Excerpt(license.ToJsonString())}");
                 }
                 return problems;
             });

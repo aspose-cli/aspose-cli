@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using Aspose.Cli.Host.Invocation;
 using Aspose.Cli.Host.Updating;
 using Aspose.Cli.Sdk;
 using Aspose.Cli.Sdk.Errors;
@@ -52,7 +53,7 @@ public sealed class ReleaseManifestTests : IDisposable
 
         CliException error = Assert.Throws<CliException>(() => ReleaseManifest.Read(Write(manifest)));
 
-        Assert.Equal(ErrorCodes.ReleaseVerificationFailed, error.Code);
+        Assert.Equal(HostDiagnostics.ReleaseVerificationFailedCode, error.Code);
     }
 
     [Fact]
@@ -60,10 +61,10 @@ public sealed class ReleaseManifestTests : IDisposable
     {
         string path = _directory.File(ReleaseManifest.FileName);
         File.WriteAllText(path, Manifest().ToJsonString().Replace("\"schemaVersion\":1", "\"schemaVersion\":1,\"schemaVersion\":1", StringComparison.Ordinal));
-        Assert.Equal(ErrorCodes.ReleaseVerificationFailed, Assert.Throws<CliException>(() => ReleaseManifest.Read(path)).Code);
+        Assert.Equal(HostDiagnostics.ReleaseVerificationFailedCode, Assert.Throws<CliException>(() => ReleaseManifest.Read(path)).Code);
 
         File.WriteAllBytes(path, new byte[64 * 1024 + 1]);
-        Assert.Equal(ErrorCodes.ReleaseVerificationFailed, Assert.Throws<CliException>(() => ReleaseManifest.Read(path)).Code);
+        Assert.Equal(HostDiagnostics.ReleaseVerificationFailedCode, Assert.Throws<CliException>(() => ReleaseManifest.Read(path)).Code);
     }
 
     private string Write(JsonObject manifest)

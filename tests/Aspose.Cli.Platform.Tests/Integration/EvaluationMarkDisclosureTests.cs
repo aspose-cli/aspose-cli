@@ -17,7 +17,7 @@ namespace Aspose.Cli.Platform.Tests.Integration;
 /// </summary>
 public sealed class EvaluationMarkDisclosureTests
 {
-    private const string EvaluationModeWarning = "EVAL_MODE";
+    private const string EvaluationModeWarning = "EVALUATION_MODE";
 
     [LicensedFact]
     public async Task EveryProduct_DisclosesAnEvaluationMarkedInputWithTheSameSdkCode()
@@ -63,7 +63,7 @@ public sealed class EvaluationMarkDisclosureTests
         Assert.Contains(EvaluationModeWarning, Codes(marked));
 
         JsonNode fromMarked = Edit(workspace, product, "marked." + extension, "licensed-marked." + extension);
-        Assert.Equal("licensed", fromMarked["license"]?["mode"]?.GetValue<string>());
+        Assert.Null(fromMarked["license"]);
         Assert.DoesNotContain(EvaluationModeWarning, Codes(fromMarked));
         return [.. Codes(fromMarked).Except(Codes(fromClean), StringComparer.Ordinal).Order(StringComparer.Ordinal)];
     }

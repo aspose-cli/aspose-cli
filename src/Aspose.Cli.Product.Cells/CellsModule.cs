@@ -19,10 +19,12 @@ public sealed class CellsModule : IProductModule
                 ResourceBudgetCapabilities.Domain(CellsBudgetDomains.Cells, 1_000_000, 10_000_000, "items", "projection"),
                 ResourceBudgetCapabilities.Domain(CellsBudgetDomains.Objects, 100_000, 1_000_000, "items", "post-load"),
             ],
-            Engine = ProductEngineCapabilities.LicenseAware(
-                "aspose",
-                ProductBuildMetadata.EngineName,
-                ProductBuildMetadata.SdkVersion),
+            Engine = new ProductEngineCapabilities
+            {
+                Id = "aspose",
+                Sdk = ProductBuildMetadata.EngineName,
+                SdkVersion = ProductBuildMetadata.SdkVersion,
+            },
             AvailableEngines = ["aspose"],
     };
 

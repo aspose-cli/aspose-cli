@@ -37,9 +37,6 @@ public sealed class ProductMenuTests : IDisposable
             Id = "aspose",
             Sdk = "Aspose.Test",
             SdkVersion = "1.0.0",
-            LicenseApplicable = false,
-            LicenseRequired = false,
-            SupportsFontDiagnostics = true,
         },
         AvailableEngines = ["aspose"],
     };

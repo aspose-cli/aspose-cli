@@ -58,14 +58,15 @@ public sealed class ProductActivationContext
 public abstract class ProductBinding
 {
     private readonly Func<object> _session;
+    private readonly Lazy<IFontEnvironment> _fontEnvironment;
 
     internal ProductBinding(
         string productId,
         Type sessionType,
         Func<object> session,
         ILicenseGate licenseGate,
-        Lazy<IFontEnvironment>? fontEnvironment,
-        OutputPipeline? outputs)
+        Lazy<IFontEnvironment> fontEnvironment,
+        OutputPipeline outputs)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(productId);
         ProductId = productId;
@@ -73,8 +74,8 @@ public abstract class ProductBinding
         _session = session ?? throw new ArgumentNullException(nameof(session));
         LicenseGate = licenseGate
             ?? throw new ArgumentNullException(nameof(licenseGate));
-        FontEnvironmentFactory = fontEnvironment;
-        Publishing = outputs;
+        _fontEnvironment = fontEnvironment ?? throw new ArgumentNullException(nameof(fontEnvironment));
+        Publishing = outputs ?? throw new ArgumentNullException(nameof(outputs));
     }
 
     /// <summary>Stable product identifier.</summary>
@@ -88,17 +89,12 @@ public abstract class ProductBinding
 
     /// <summary>
     /// The product's write pipeline, through which it publishes every output and which discloses
-    /// evaluation output in the command's result; null for a binding that creates none.
+    /// evaluation output in the command's result.
     /// </summary>
-    public OutputPipeline? Publishing { get; }
+    public OutputPipeline Publishing { get; }
 
-    /// <summary>Product-specific font environment, when the engine exposes one.</summary>
-    public IFontEnvironment? FontEnvironment => FontEnvironmentFactory?.Value;
-
-    /// <summary>Whether the product exposes font diagnostics without activating them.</summary>
-    public bool HasFontEnvironment => FontEnvironmentFactory is not null;
-
-    internal Lazy<IFontEnvironment>? FontEnvironmentFactory { get; }
+    /// <summary>The product's font environment, created on first use.</summary>
+    public IFontEnvironment FontEnvironment => _fontEnvironment.Value;
 
     internal object UntypedSession => _session();
 
@@ -106,32 +102,12 @@ public abstract class ProductBinding
     /// The one entry through which a command applies a font profile to this product's engine:
     /// the profile's directories, in addition to the system fonts, reach every layout, render
     /// and save of the engine until the returned scope is disposed, and the engine's previous
-    /// fonts are restored then. A product without a font environment has nothing to scope.
+    /// fonts are restored then.
     /// </summary>
-    /// <exception cref="InvalidOperationException">
-    /// The profile adds directories and the product has no font environment; callers accept
-    /// <c>--font-dir</c> only for products that advertise explicit font profiles.
-    /// </exception>
     public IDisposable UseFonts(FontSearchProfile profile)
     {
         ArgumentNullException.ThrowIfNull(profile);
-        if (FontEnvironment is { } fonts)
-        {
-            return fonts.UseFonts(profile);
-        }
-        return profile.IsAmbient
-            ? NoFontScope.Instance
-            : throw new InvalidOperationException(
-                $"Product '{ProductId}' has no font environment for explicit font directories.");
-    }
-
-    private sealed class NoFontScope : IDisposable
-    {
-        public static readonly NoFontScope Instance = new();
-
-        public void Dispose()
-        {
-        }
+        return FontEnvironment.UseFonts(profile);
     }
 
     /// <summary>
@@ -166,25 +142,6 @@ public abstract class ProductBinding
             new Lazy<IFontEnvironment>(() => createFontEnvironment(outputs)),
             outputs);
     }
-
-    /// <summary>
-    /// Creates a binding for an engine to which Aspose licensing does not apply and which has
-    /// no font environment. No activation context is accepted, so license resolution cannot occur.
-    /// </summary>
-    public static ProductBinding<TSession> CreateLicenseFree<TSession>(
-        string productId,
-        Func<ILicenseGate, TSession> createSession)
-        where TSession : class
-    {
-        ArgumentNullException.ThrowIfNull(createSession);
-        ILicenseGate license = LicenseNotApplicableGate.Instance;
-        return new ProductBinding<TSession>(
-            productId,
-            new Lazy<TSession>(() => createSession(license)),
-            license,
-            fontEnvironment: null,
-            outputs: null);
-    }
 }
 
 /// <summary>Strongly typed product binding created once per invocation.</summary>
@@ -198,8 +155,8 @@ public sealed class ProductBinding<TSession> : ProductBinding
         string productId,
         Lazy<TSession> session,
         ILicenseGate licenseGate,
-        Lazy<IFontEnvironment>? fontEnvironment,
-        OutputPipeline? outputs)
+        Lazy<IFontEnvironment> fontEnvironment,
+        OutputPipeline outputs)
         : base(productId, typeof(TSession), () => session.Value, licenseGate, fontEnvironment, outputs)
     {
         _session = session ?? throw new ArgumentNullException(nameof(session));

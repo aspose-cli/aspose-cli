@@ -416,7 +416,6 @@ public sealed class PdfEngineTests
             Details = ["outline", "forms", "attachments", "fonts", "permissions", "signatures", "layers", "metadata"],
         });
 
-        Assert.Equal("pdf", result.Kind);
         Assert.Equal("pdf", result.Input.Format);
         Assert.Equal(2, result.Pdf.PageCount);
         Assert.Equal("none", result.Pdf.FormType);
@@ -775,7 +774,7 @@ public sealed class PdfEngineTests
         });
         if (fixture.LicenseState != Sdk.Licensing.LicenseState.Licensed)
         {
-            Assert.Contains(result.Warnings!, static warning => warning.Code == WarningCodes.EvalMode);
+            Assert.Contains(result.Warnings!, static warning => warning.Code == WarningCodes.EvaluationMode);
         }
     }
 

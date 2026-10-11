@@ -117,10 +117,7 @@
     "engine": {
       "id": "aspose",
       "sdk": "Aspose.Words",
-      "sdkVersion": "<build>",
-      "licenseApplicable": true,
-      "licenseRequired": false,
-      "supportsFontDiagnostics": true
+      "sdkVersion": "<build>"
     },
     "availableEngines": [
       "aspose"
@@ -140,16 +137,6 @@
       "visualInspectionRequired": true,
       "checks": [
         {
-          "code": "FONTS_MISSING_OR_SUBSTITUTED",
-          "severity": "error",
-          "summary": "A font the document uses is unavailable or substituted, so the rendering may differ from the author's."
-        },
-        {
-          "code": "FONTS_NOT_CHECKED",
-          "severity": "warning",
-          "summary": "The product engine exposes no font diagnostics, so the fonts the document uses were not checked."
-        },
-        {
           "code": "WORDS_COMMENTS_PRESENT",
           "severity": "info",
           "summary": "The document contains comments, which a delivered document usually should not keep."
@@ -163,6 +150,11 @@
           "code": "WORDS_EVALUATION_MARKS",
           "severity": "warning",
           "summary": "The document holds the banner or footer text that a save without a license wrote into the file, such as 'Created with an evaluation copy of Aspose.Words'; a license does not remove it. Checked only with a license."
+        },
+        {
+          "code": "WORDS_FONTS_MISSING_OR_SUBSTITUTED",
+          "severity": "error",
+          "summary": "A font the document uses is unavailable or substituted, so the rendering may differ from the author's."
         },
         {
           "code": "WORDS_HEADING_ORPHANED",
@@ -819,7 +811,6 @@
             "allowedValues": [],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Author of the redline's revisions; default: Aspose CLI."
           },
           {
@@ -835,7 +826,6 @@
             "allowedValues": [],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Local font directory searched in addition to the system fonts; repeat for more."
           },
           {
@@ -855,7 +845,6 @@
             ],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Unit a change is marked in: word, or char for Chinese or Japanese text."
           },
           {
@@ -875,7 +864,6 @@
             ],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Ignore formatting-only changes."
           },
           {
@@ -891,7 +879,6 @@
             "allowedValues": [],
             "secret": true,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Password for the original document. Discouraged: visible in the process list; prefer --left-password-env."
           },
           {
@@ -907,7 +894,6 @@
             "allowedValues": [],
             "secret": true,
             "valueSource": "environment-variable-name",
-            "inputKind": "none",
             "description": "Name of an environment variable holding the password for the original document."
           },
           {
@@ -926,7 +912,6 @@
             ],
             "secret": true,
             "valueSource": "stdin",
-            "inputKind": "none",
             "description": "Read the password for the original document from the first line of stdin."
           },
           {
@@ -944,7 +929,6 @@
             "allowedValues": [],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Optional redline output; its extension selects the format, such as .docx or .pdf."
           },
           {
@@ -964,7 +948,6 @@
             ],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Replace the output file if it already exists."
           },
           {
@@ -980,7 +963,6 @@
             "allowedValues": [],
             "secret": true,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Password for the changed document. Discouraged: visible in the process list; prefer --right-password-env."
           },
           {
@@ -996,7 +978,6 @@
             "allowedValues": [],
             "secret": true,
             "valueSource": "environment-variable-name",
-            "inputKind": "none",
             "description": "Name of an environment variable holding the password for the changed document."
           },
           {
@@ -1015,7 +996,6 @@
             ],
             "secret": true,
             "valueSource": "stdin",
-            "inputKind": "none",
             "description": "Read the password for the changed document from the first line of stdin."
           }
         ],
@@ -1068,7 +1048,6 @@
             "allowedValues": [],
             "secret": true,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Password for the output document. Discouraged: visible in the process list; prefer --encrypt-env."
           },
           {
@@ -1084,7 +1063,6 @@
             "allowedValues": [],
             "secret": true,
             "valueSource": "environment-variable-name",
-            "inputKind": "none",
             "description": "Name of an environment variable holding the password for the output document."
           },
           {
@@ -1103,7 +1081,6 @@
             ],
             "secret": true,
             "valueSource": "stdin",
-            "inputKind": "none",
             "description": "Read the password for the output document from the first line of stdin."
           },
           {
@@ -1119,7 +1096,6 @@
             "allowedValues": [],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Local font directory searched in addition to the system fonts; repeat for more."
           },
           {
@@ -1137,7 +1113,6 @@
             "allowedValues": [],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Output path; defaults to a sibling using the target extension."
           },
           {
@@ -1157,7 +1132,6 @@
             ],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Replace the output file if it already exists."
           },
           {
@@ -1173,7 +1147,6 @@
             "allowedValues": [],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Pages to process: 1-based numbers and ranges such as 1-3,7,9-, or all. Default: every page. Only with fixed-page targets."
           },
           {
@@ -1189,7 +1162,6 @@
             "allowedValues": [],
             "secret": true,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Password for the document. Discouraged: visible in the process list; prefer --password-env."
           },
           {
@@ -1205,7 +1177,6 @@
             "allowedValues": [],
             "secret": true,
             "valueSource": "environment-variable-name",
-            "inputKind": "none",
             "description": "Name of an environment variable holding the password for the document."
           },
           {
@@ -1224,7 +1195,6 @@
             ],
             "secret": true,
             "valueSource": "stdin",
-            "inputKind": "none",
             "description": "Read the password for the document from the first line of stdin."
           },
           {
@@ -1265,7 +1235,6 @@
             ],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Target document format."
           }
         ],
@@ -1309,7 +1278,6 @@
             ],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Create a blank document."
           },
           {
@@ -1325,7 +1293,6 @@
             "allowedValues": [],
             "secret": true,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Password for the output document. Discouraged: visible in the process list; prefer --encrypt-env."
           },
           {
@@ -1341,7 +1308,6 @@
             "allowedValues": [],
             "secret": true,
             "valueSource": "environment-variable-name",
-            "inputKind": "none",
             "description": "Name of an environment variable holding the password for the output document."
           },
           {
@@ -1360,7 +1326,6 @@
             ],
             "secret": true,
             "valueSource": "stdin",
-            "inputKind": "none",
             "description": "Read the password for the output document from the first line of stdin."
           },
           {
@@ -1376,7 +1341,6 @@
             "allowedValues": [],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Local font directory searched in addition to the system fonts; repeat for more."
           },
           {
@@ -1412,7 +1376,6 @@
             ],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Replace the output file if it already exists."
           },
           {
@@ -1460,7 +1423,6 @@
             "allowedValues": [],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Set the built-in title property."
           }
         ],
@@ -1468,7 +1430,6 @@
           {
             "name": "file",
             "type": "string",
-            "inputKind": "none",
             "valueSource": "command-line",
             "secret": false,
             "minimumArity": 1,
@@ -1500,7 +1461,6 @@
             "allowedValues": [],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Revision author; required with --track-changes."
           },
           {
@@ -1520,7 +1480,6 @@
             ],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Create a non-overwriting backup before an in-place write."
           },
           {
@@ -1540,7 +1499,6 @@
             ],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Keep successful operations, report failures, and exit 8."
           },
           {
@@ -1560,7 +1518,6 @@
             ],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Resolve and apply operations in memory without writing."
           },
           {
@@ -1576,7 +1533,6 @@
             "allowedValues": [],
             "secret": true,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Password for the output document. Discouraged: visible in the process list; prefer --encrypt-env."
           },
           {
@@ -1592,7 +1548,6 @@
             "allowedValues": [],
             "secret": true,
             "valueSource": "environment-variable-name",
-            "inputKind": "none",
             "description": "Name of an environment variable holding the password for the output document."
           },
           {
@@ -1611,7 +1566,6 @@
             ],
             "secret": true,
             "valueSource": "stdin",
-            "inputKind": "none",
             "description": "Read the password for the output document from the first line of stdin."
           },
           {
@@ -1627,7 +1581,6 @@
             "allowedValues": [],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Local font directory searched in addition to the system fonts; repeat for more."
           },
           {
@@ -1643,7 +1596,6 @@
             "allowedValues": [],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Require the current input SHA-256 fingerprint before editing."
           },
           {
@@ -1663,7 +1615,6 @@
             ],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Modify the input file itself atomically."
           },
           {
@@ -1697,7 +1648,6 @@
             "allowedValues": [],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Output path. Default: the input path with '.out' inserted before the extension."
           },
           {
@@ -1717,7 +1667,6 @@
             ],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Replace the output file if it already exists."
           },
           {
@@ -1733,7 +1682,6 @@
             "allowedValues": [],
             "secret": true,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Password for the document. Discouraged: visible in the process list; prefer --password-env."
           },
           {
@@ -1749,7 +1697,6 @@
             "allowedValues": [],
             "secret": true,
             "valueSource": "environment-variable-name",
-            "inputKind": "none",
             "description": "Name of an environment variable holding the password for the document."
           },
           {
@@ -1768,7 +1715,6 @@
             ],
             "secret": true,
             "valueSource": "stdin",
-            "inputKind": "none",
             "description": "Read the password for the document from the first line of stdin."
           },
           {
@@ -1784,7 +1730,6 @@
             "allowedValues": [],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Replace a bookmark's text as bookmark:NAME=TEXT; repeatable, applied after the --ops document. Example: --set \"bookmark:ClientName=Contoso Ltd.\"."
           },
           {
@@ -1804,7 +1749,6 @@
             ],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Track this batch as revisions."
           },
           {
@@ -1824,7 +1768,6 @@
             ],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Compare the staged document after save and reopen to report semantic verification."
           }
         ],
@@ -1864,7 +1807,6 @@
             "allowedValues": [],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Safe extraction directory."
           },
           {
@@ -1884,7 +1826,6 @@
             ],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Replace the output file if it already exists."
           },
           {
@@ -1900,7 +1841,6 @@
             "allowedValues": [],
             "secret": true,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Password for the document. Discouraged: visible in the process list; prefer --password-env."
           },
           {
@@ -1916,7 +1856,6 @@
             "allowedValues": [],
             "secret": true,
             "valueSource": "environment-variable-name",
-            "inputKind": "none",
             "description": "Name of an environment variable holding the password for the document."
           },
           {
@@ -1935,7 +1874,6 @@
             ],
             "secret": true,
             "valueSource": "stdin",
-            "inputKind": "none",
             "description": "Read the password for the document from the first line of stdin."
           },
           {
@@ -1956,7 +1894,6 @@
             ],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "images, comments, text (the visible block text, one line per paragraph or table row) or tables (one CSV file per body table)."
           }
         ],
@@ -2008,7 +1945,6 @@
             ],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Extra sections to include; repeat for more. outline: headings; sections: page setup, headers and footers; properties: title, author, subject and keywords."
           },
           {
@@ -2024,7 +1960,6 @@
             "allowedValues": [],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Local font directory searched in addition to the system fonts; repeat for more."
           },
           {
@@ -2040,7 +1975,6 @@
             "allowedValues": [],
             "secret": true,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Password for the document. Discouraged: visible in the process list; prefer --password-env."
           },
           {
@@ -2056,7 +1990,6 @@
             "allowedValues": [],
             "secret": true,
             "valueSource": "environment-variable-name",
-            "inputKind": "none",
             "description": "Name of an environment variable holding the password for the document."
           },
           {
@@ -2075,7 +2008,6 @@
             ],
             "secret": true,
             "valueSource": "stdin",
-            "inputKind": "none",
             "description": "Read the password for the document from the first line of stdin."
           },
           {
@@ -2095,7 +2027,6 @@
             ],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Include a bounded sample: the heading outline, as with --detail outline. Default: off."
           }
         ],
@@ -2144,7 +2075,6 @@
             "allowedValues": [],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "1-based block range, e.g. 1-20,25."
           },
           {
@@ -2161,7 +2091,6 @@
             "allowedValues": [],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Maximum projected blocks."
           },
           {
@@ -2178,7 +2107,6 @@
             "allowedValues": [],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Maximum characters returned, counting the text of the returned blocks, including repeated text and run projections. Range 1-10000000."
           },
           {
@@ -2194,7 +2122,6 @@
             "allowedValues": [],
             "secret": true,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Password for the document. Discouraged: visible in the process list; prefer --password-env."
           },
           {
@@ -2210,7 +2137,6 @@
             "allowedValues": [],
             "secret": true,
             "valueSource": "environment-variable-name",
-            "inputKind": "none",
             "description": "Name of an environment variable holding the password for the document."
           },
           {
@@ -2229,7 +2155,6 @@
             ],
             "secret": true,
             "valueSource": "stdin",
-            "inputKind": "none",
             "description": "Read the password for the document from the first line of stdin."
           },
           {
@@ -2250,7 +2175,6 @@
             ],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Projection: text, full or outline."
           },
           {
@@ -2266,7 +2190,6 @@
             "allowedValues": [],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Read one 1-based section; with --blocks, only its blocks in that range."
           }
         ],
@@ -2310,7 +2233,6 @@
             ],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Match letter case exactly."
           },
           {
@@ -2327,7 +2249,6 @@
             "allowedValues": [],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Maximum returned hits (1-10000)."
           },
           {
@@ -2343,7 +2264,6 @@
             "allowedValues": [],
             "secret": true,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Password for the document. Discouraged: visible in the process list; prefer --password-env."
           },
           {
@@ -2359,7 +2279,6 @@
             "allowedValues": [],
             "secret": true,
             "valueSource": "environment-variable-name",
-            "inputKind": "none",
             "description": "Name of an environment variable holding the password for the document."
           },
           {
@@ -2378,7 +2297,6 @@
             ],
             "secret": true,
             "valueSource": "stdin",
-            "inputKind": "none",
             "description": "Read the password for the document from the first line of stdin."
           },
           {
@@ -2394,7 +2312,6 @@
             "allowedValues": [],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Text to find, or a regular expression with --regex."
           },
           {
@@ -2414,7 +2331,6 @@
             ],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Treat the pattern as a culture-invariant regular expression with a one-second budget."
           },
           {
@@ -2437,7 +2353,6 @@
             ],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Search scope: body (the main text, without the comments and footnotes it anchors), headersFooters, footnotes (with endnotes), comments or all."
           },
           {
@@ -2454,7 +2369,6 @@
             "allowedValues": [],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Matches to pass over before the returned hits; a truncated search's window.next sets it."
           }
         ],
@@ -2495,7 +2409,6 @@
             "allowedValues": [],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Raster resolution (36-1200); ignored for vector formats."
           },
           {
@@ -2511,7 +2424,6 @@
             "allowedValues": [],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Local font directory searched in addition to the system fonts; repeat for more."
           },
           {
@@ -2529,7 +2441,6 @@
             "allowedValues": [],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Output path; several pages write <stem>.<page>.<ext> beside it."
           },
           {
@@ -2549,7 +2460,6 @@
             ],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Replace the output file if it already exists."
           },
           {
@@ -2565,7 +2475,6 @@
             "allowedValues": [],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Pages to process: 1-based numbers and ranges such as 1-3,7,9-, or all. Default: every page; at most 20 per run."
           },
           {
@@ -2581,7 +2490,6 @@
             "allowedValues": [],
             "secret": true,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Password for the document. Discouraged: visible in the process list; prefer --password-env."
           },
           {
@@ -2597,7 +2505,6 @@
             "allowedValues": [],
             "secret": true,
             "valueSource": "environment-variable-name",
-            "inputKind": "none",
             "description": "Name of an environment variable holding the password for the document."
           },
           {
@@ -2616,7 +2523,6 @@
             ],
             "secret": true,
             "valueSource": "stdin",
-            "inputKind": "none",
             "description": "Read the password for the document from the first line of stdin."
           },
           {
@@ -2636,7 +2542,6 @@
             ],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Image format: png, jpeg or svg. Default: the --out extension's format, else png."
           }
         ],
@@ -2680,7 +2585,6 @@
             ],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "How to divide the document: sections, one part per section; heading1, one part per Heading 1 after a leading part for any blocks before the first; pages, one part per page, per --every pages or per group."
           },
           {
@@ -2696,7 +2600,6 @@
             "allowedValues": [],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Pages per part with --by pages. Default: 1."
           },
           {
@@ -2712,7 +2615,6 @@
             "allowedValues": [],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Local font directory searched in addition to the system fonts; repeat for more."
           },
           {
@@ -2728,7 +2630,6 @@
             "allowedValues": [],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Directory that receives the parts, named <stem>.<n>.docx."
           },
           {
@@ -2748,7 +2649,6 @@
             ],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Replace the output file if it already exists."
           },
           {
@@ -2764,7 +2664,6 @@
             "allowedValues": [],
             "secret": false,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Pages to process: 1-based numbers and ranges such as 1-3,7,9-, or all. Default: every page. Only with --by pages."
           },
           {
@@ -2780,7 +2679,6 @@
             "allowedValues": [],
             "secret": true,
             "valueSource": "command-line",
-            "inputKind": "none",
             "description": "Password for the document. Discouraged: visible in the process list; prefer --password-env."
           },
           {
@@ -2796,7 +2694,6 @@
             "allowedValues": [],
             "secret": true,
             "valueSource": "environment-variable-name",
-            "inputKind": "none",
             "description": "Name of an environment variable holding the password for the document."
           },
           {
@@ -2815,7 +2712,6 @@
             ],
             "secret": true,
             "valueSource": "stdin",
-            "inputKind": "none",
             "description": "Read the password for the document from the first line of stdin."
           }
         ],
@@ -3097,13 +2993,6 @@
       "detailsSchemaId": "v2/common/not-found-details"
     },
     {
-      "code": "DOCUMENT_ENCRYPTION_REMOVED",
-      "owner": "words",
-      "severity": "warning",
-      "category": "warning",
-      "detailsSchemaId": "v2/common/diagnostic-details"
-    },
-    {
       "code": "DOCUMENT_HAS_REVISIONS",
       "owner": "words",
       "severity": "error",
@@ -3252,11 +3141,11 @@
           "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/output.schema.json"
         },
         "license": {
-          "description": "License mode the engine ran under.",
+          "description": "License mode the engine ran under; omitted when it ran licensed.",
           "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/license.schema.json"
         },
         "warnings": {
-          "description": "Warnings the agent is expected to act on (for example EVAL_MODE: tell the user about the evaluation watermark). Omitted when empty.",
+          "description": "Warnings the agent is expected to act on (for example EVALUATION_MODE: tell the user about the evaluation watermark). Omitted when empty.",
           "type": "array",
           "items": {
             "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
@@ -3358,11 +3247,11 @@
           "type": "string"
         },
         "license": {
-          "description": "License mode the engine ran under.",
+          "description": "License mode the engine ran under; omitted when it ran licensed.",
           "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/license.schema.json"
         },
         "warnings": {
-          "description": "Warnings the agent is expected to act on (for example EVAL_MODE: tell the user about the evaluation watermark). Omitted when empty.",
+          "description": "Warnings the agent is expected to act on (for example EVALUATION_MODE: tell the user about the evaluation watermark). Omitted when empty.",
           "type": "array",
           "items": {
             "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
@@ -3395,11 +3284,11 @@
           "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/output.schema.json"
         },
         "license": {
-          "description": "License mode the engine ran under.",
+          "description": "License mode the engine ran under; omitted when it ran licensed.",
           "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/license.schema.json"
         },
         "warnings": {
-          "description": "Warnings the agent is expected to act on (for example EVAL_MODE: tell the user about the evaluation watermark). Omitted when empty.",
+          "description": "Warnings the agent is expected to act on (for example EVALUATION_MODE: tell the user about the evaluation watermark). Omitted when empty.",
           "type": "array",
           "items": {
             "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
@@ -3415,7 +3304,6 @@
       "required": [
         "schema",
         "schemaVersion",
-        "kind",
         "input",
         "document"
       ],
@@ -3428,10 +3316,6 @@
         "schemaVersion": {
           "description": "Version of this result contract.",
           "const": 2
-        },
-        "kind": {
-          "description": "The kind of file inspected: always document.",
-          "const": "document"
         },
         "input": {
           "description": "The inspected document.",
@@ -3522,11 +3406,11 @@
           }
         },
         "license": {
-          "description": "License mode the engine ran under.",
+          "description": "License mode the engine ran under; omitted when it ran licensed.",
           "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/license.schema.json"
         },
         "warnings": {
-          "description": "Warnings the agent is expected to act on (for example EVAL_MODE: tell the user about the evaluation watermark). Omitted when empty.",
+          "description": "Warnings the agent is expected to act on (for example EVALUATION_MODE: tell the user about the evaluation watermark). Omitted when empty.",
           "type": "array",
           "items": {
             "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
@@ -3966,7 +3850,6 @@
       "required": [
         "schema",
         "schemaVersion",
-        "kind",
         "input",
         "scope",
         "blockCount",
@@ -3982,10 +3865,6 @@
         "schemaVersion": {
           "description": "Version of this result contract.",
           "const": 2
-        },
-        "kind": {
-          "description": "The kind of file read: always document.",
-          "const": "document"
         },
         "input": {
           "description": "The document read.",
@@ -4017,11 +3896,11 @@
           "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/result-window.schema.json"
         },
         "license": {
-          "description": "License mode the engine ran under.",
+          "description": "License mode the engine ran under; omitted when it ran licensed.",
           "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/license.schema.json"
         },
         "warnings": {
-          "description": "Warnings the agent is expected to act on (for example EVAL_MODE: tell the user about the evaluation watermark). Omitted when empty.",
+          "description": "Warnings the agent is expected to act on (for example EVALUATION_MODE: tell the user about the evaluation watermark). Omitted when empty.",
           "type": "array",
           "items": {
             "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
@@ -4315,11 +4194,11 @@
           "$ref": "#/$defs/wordsVerification"
         },
         "license": {
-          "description": "License mode the engine ran under.",
+          "description": "License mode the engine ran under; omitted when it ran licensed.",
           "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/license.schema.json"
         },
         "warnings": {
-          "description": "Warnings the agent is expected to act on (for example EVAL_MODE: tell the user about the evaluation watermark). Omitted when empty.",
+          "description": "Warnings the agent is expected to act on (for example EVALUATION_MODE: tell the user about the evaluation watermark). Omitted when empty.",
           "type": "array",
           "items": {
             "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
@@ -4420,11 +4299,11 @@
           }
         },
         "license": {
-          "description": "License mode the engine ran under.",
+          "description": "License mode the engine ran under; omitted when it ran licensed.",
           "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/license.schema.json"
         },
         "warnings": {
-          "description": "Warnings the agent is expected to act on (for example EVAL_MODE: tell the user about the evaluation watermark). Omitted when empty.",
+          "description": "Warnings the agent is expected to act on (for example EVALUATION_MODE: tell the user about the evaluation watermark). Omitted when empty.",
           "type": "array",
           "items": {
             "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
@@ -6309,11 +6188,11 @@
           "maximum": 1200
         },
         "license": {
-          "description": "License mode the engine ran under.",
+          "description": "License mode the engine ran under; omitted when it ran licensed.",
           "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/license.schema.json"
         },
         "warnings": {
-          "description": "Warnings the agent is expected to act on (for example EVAL_MODE: tell the user about the evaluation watermark). Omitted when empty.",
+          "description": "Warnings the agent is expected to act on (for example EVALUATION_MODE: tell the user about the evaluation watermark). Omitted when empty.",
           "type": "array",
           "items": {
             "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
@@ -6386,11 +6265,11 @@
           "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/result-window.schema.json"
         },
         "license": {
-          "description": "License mode the engine ran under.",
+          "description": "License mode the engine ran under; omitted when it ran licensed.",
           "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/license.schema.json"
         },
         "warnings": {
-          "description": "Warnings the agent is expected to act on (for example EVAL_MODE: tell the user about the evaluation watermark). Omitted when empty.",
+          "description": "Warnings the agent is expected to act on (for example EVALUATION_MODE: tell the user about the evaluation watermark). Omitted when empty.",
           "type": "array",
           "items": {
             "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
@@ -6486,11 +6365,11 @@
           }
         },
         "license": {
-          "description": "License mode the engine ran under.",
+          "description": "License mode the engine ran under; omitted when it ran licensed.",
           "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/license.schema.json"
         },
         "warnings": {
-          "description": "Warnings the agent is expected to act on (for example EVAL_MODE: tell the user about the evaluation watermark). Omitted when empty.",
+          "description": "Warnings the agent is expected to act on (for example EVALUATION_MODE: tell the user about the evaluation watermark). Omitted when empty.",
           "type": "array",
           "items": {
             "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"

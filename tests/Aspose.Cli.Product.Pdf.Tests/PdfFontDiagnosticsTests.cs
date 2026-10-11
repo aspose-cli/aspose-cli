@@ -74,7 +74,7 @@ public sealed class PdfFontDiagnosticsTests
         Assert.Contains(result["findings"]!.AsArray(),
             finding => finding!["code"]!.GetValue<string>() == "PDF_PAGE_WITHOUT_READABLE_CONTENT");
         Assert.DoesNotContain(result["findings"]!.AsArray(),
-            finding => finding!["code"]!.GetValue<string>() == "FONTS_NOT_CHECKED");
+            finding => finding!["code"]!.GetValue<string>() == "PDF_FONTS_MISSING_OR_SUBSTITUTED");
         Assert.True(File.Exists(Path.Combine(output, "artifacts", "page-0001.png")));
         Assert.Equal(original, File.ReadAllBytes(input));
     }

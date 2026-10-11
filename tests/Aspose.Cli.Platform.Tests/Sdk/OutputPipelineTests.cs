@@ -7,8 +7,8 @@ using Xunit;
 namespace Aspose.Cli.Sdk.Tests;
 
 /// <summary>
-/// The write pipeline discloses evaluation output from what it published: <c>EVAL_MODE</c>
-/// with the marks a save added in evaluation mode, <c>EVAL_INPUT_MARKED</c> with the marks a
+/// The write pipeline discloses evaluation output from what it published: <c>EVALUATION_MODE</c>
+/// with the marks a save added in evaluation mode, <c>EVALUATION_INPUT_MARKED</c> with the marks a
 /// licensed output keeps, and nothing for a command that published nothing.
 /// </summary>
 public sealed class OutputPipelineTests
@@ -38,7 +38,7 @@ public sealed class OutputPipelineTests
         });
         ResultEnvelope result = pipeline.Disclose(new SchemaListResult { Schemas = [], Warnings = [Other] });
 
-        Assert.Equal([WarningCodes.EvalMode, Other.Code], result.Warnings!.Select(static warning => warning.Code));
+        Assert.Equal([WarningCodes.EvaluationMode, Other.Code], result.Warnings!.Select(static warning => warning.Code));
         Assert.EndsWith("The output carries the banner and the warning sheet.", result.Warnings![0].Message, StringComparison.Ordinal);
     }
 
@@ -70,7 +70,7 @@ public sealed class OutputPipelineTests
         }
 
         Warning disclosure = Assert.Single(pipeline.Disclosure()!);
-        Assert.Equal(WarningCodes.EvalInputMarked, disclosure.Code);
+        Assert.Equal(WarningCodes.EvaluationInputMarked, disclosure.Code);
         Assert.Contains("the watermark and the notice that evaluation mode cut the content short", disclosure.Message, StringComparison.Ordinal);
         Assert.True(disclosure.AffectsCompleteness);
     }
@@ -150,7 +150,7 @@ public sealed class OutputPipelineTests
         }
 
         Warning disclosure = Assert.Single(pipeline.Disclosure()!);
-        Assert.Equal(WarningCodes.EvalInputMarked, disclosure.Code);
+        Assert.Equal(WarningCodes.EvaluationInputMarked, disclosure.Code);
         Assert.StartsWith("The rendered source carries the evaluation marks", disclosure.Message, StringComparison.Ordinal);
         Assert.Contains("the watermark", disclosure.Message, StringComparison.Ordinal);
         Assert.DoesNotContain("The output keeps", disclosure.Message, StringComparison.Ordinal);
@@ -194,8 +194,6 @@ public sealed class OutputPipelineTests
 
     private sealed class FixedGate(LicenseState state, LicenseResolution resolution) : ILicenseGate
     {
-        public bool IsApplicable => true;
-
         public LicenseResolution Resolution => resolution;
 
         public string Identity => "test";

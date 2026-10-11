@@ -131,7 +131,7 @@ public sealed partial class EvaluationOwnershipTests
         _ => null,
     };
 
-    /// <summary>An evaluation code, such as <c>EVAL_MODE</c> or <c>EVALUATION_LIMIT</c>.</summary>
+    /// <summary>An evaluation code, such as <c>EVALUATION_MODE</c> or <c>EVALUATION_LIMIT</c>.</summary>
     [GeneratedRegex("^EVAL(UATION)?_[A-Z0-9_]+$")]
     private static partial Regex EvaluationCode();
 }

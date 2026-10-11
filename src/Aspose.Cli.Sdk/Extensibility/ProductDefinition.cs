@@ -107,16 +107,6 @@ public sealed class ProductDefinition
             throw new InvalidOperationException(
                 $"Product '{Manifest.Id}' activated an incompatible binding.");
         }
-        if (binding.LicenseGate.IsApplicable != Manifest.Engine.LicenseApplicable)
-        {
-            throw new InvalidOperationException(
-                $"Product '{Manifest.Id}' license binding does not match its manifest.");
-        }
-        if (binding.HasFontEnvironment != Manifest.Engine.SupportsFontDiagnostics)
-        {
-            throw new InvalidOperationException(
-                $"Product '{Manifest.Id}' font binding does not match its manifest.");
-        }
         return binding;
     }
 

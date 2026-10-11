@@ -295,7 +295,7 @@ public sealed class McpCommandTests
     private static InvocationParser ProbeParser()
     {
         var root = new RootCommand();
-        var globals = new GlobalOptions(licensingApplicable: false);
+        var globals = new GlobalOptions();
         globals.AddTo(root);
         root.Subcommands.Add(new Command("timeout-probe").WithInvocationPolicy(
             new CommandInvocationPolicy(ProductId: "timeout-probe")));

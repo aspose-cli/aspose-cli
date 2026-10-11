@@ -47,7 +47,7 @@ internal static class InvariantCases
     public const string Contract = "contract";
 
     /// <summary>The warning that discloses evaluation output (<c>aspose-cli docs licensing</c>).</summary>
-    private const string EvaluationWarning = "EVAL_MODE";
+    private const string EvaluationWarning = "EVALUATION_MODE";
 
     /// <summary>The shard of the slow part of every product's format matrix.</summary>
     public const string FormatMatrix = "formats";

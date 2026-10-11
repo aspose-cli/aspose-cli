@@ -67,15 +67,15 @@ both a width and a height takes the proportions of its viewBox.
 `aspose-cli preview open report.pdf` shows the `pages` view: pages, thumbnails,
 the size of the page in view, zoom and a mark on what a change touched
 (`aspose-cli docs preview`). Without a PDF license, output is watermarked and
-results carry `EVAL_MODE`; `review` reports such pages as
+results carry `EVALUATION_MODE`; `review` reports such pages as
 `PDF_EVALUATION_WATERMARK` ([verification](references/verification.md)), and a
 licensed command whose output keeps such a notice on one of its first 4 pages
-warns `EVAL_INPUT_MARKED`.
+warns `EVALUATION_INPUT_MARKED`.
 Evaluation mode also reads only the first 4 pages of a document. `inspect` of a
-longer PDF warns `EVAL_INPUT_TRUNCATED` and still lists every bookmark and
+longer PDF warns `EVALUATION_INPUT_TRUNCATED` and still lists every bookmark and
 attachment and counts every form field; `query forms` lists every field but
 leaves out the `page` of one on a later page and names it in
-`EVAL_INPUT_TRUNCATED`. Any other command that needs a later page fails with
+`EVALUATION_INPUT_TRUNCATED`. Any other command that needs a later page fails with
 `EVALUATION_LIMIT` (exit 7) before writing anything. Limit it with
 `--pages 1-4`, keep the inputs of a `merge` to 4 pages in total, or tell the
 user a PDF license is needed.

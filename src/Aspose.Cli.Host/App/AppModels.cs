@@ -107,7 +107,6 @@ internal sealed record AppProductView(
 /// <summary>Deterministic state the loopback-only browser workspace of <c>aspose-cli app</c> reads.</summary>
 /// <param name="Version">CLI version.</param>
 /// <param name="DisplayName">The distribution's display name.</param>
-/// <param name="Experience">Whether every product is license-free or a license applies.</param>
 /// <param name="Route">The App route to show, e.g. <c>home</c>.</param>
 /// <param name="OnboardingCompleted">Whether the first-run choice was made.</param>
 /// <param name="Product">Product of the open document, or the default product.</param>
@@ -130,7 +129,6 @@ internal sealed record AppProductView(
 internal sealed record AppStatusView(
     string Version,
     [property: MinLength(1)] string DisplayName,
-    [property: AllowedValues("license-free", "licensed")] string Experience,
     [property: MinLength(1)] string Route,
     bool OnboardingCompleted,
     [property: MinLength(1)] string Product,
