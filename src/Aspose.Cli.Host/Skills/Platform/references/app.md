@@ -4,22 +4,20 @@
 and live preview. Agents and scripts use the CLI commands, `preview` and
 `--license` instead.
 
-```powershell
-aspose-cli app status --output-format json
-```
-
 ```text
 aspose-cli app open
 aspose-cli app open <file>
 aspose-cli app open --welcome
+aspose-cli app status
 aspose-cli app stop
 ```
 
-The App listens only on `127.0.0.1`, and every document stays on the local
-machine.
+Without a file, `app open` opens the App's home page; with one, it opens that
+file. The App listens only on `127.0.0.1`, and every document stays on the
+local machine.
 
-- **Welcome** (`app open --welcome`) installs a `.lic` file or continues in evaluation
-  mode.
+- **Welcome** (`app open --welcome`) installs a `.lic` file or continues in
+  evaluation mode.
 - **Files** opens an original file through the operating system's picker.
   Browser uploads are labelled as temporary preview copies.
 - **Preview** shows each document through the same per-user viewer service as
@@ -44,5 +42,6 @@ the viewer service recycles its renderer and the next render applies it.
 
 `app status` reports whether the App is `running`. `app stop` stops the App,
 its documents and the viewer service. `app open --no-open` starts or activates
-the App without a browser, and `app open --foreground --port <port>` keeps it in
-the current process for debugging, containers and browser automation.
+the App without a browser, and `app open --foreground` keeps it in the current
+process for debugging, containers and browser automation; `--help` lists the
+other options.

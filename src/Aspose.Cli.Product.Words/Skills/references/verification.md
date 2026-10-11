@@ -41,7 +41,8 @@ that took the place of removed blocks; a header or footer change touches every
 page of its section. An operation whose only target is `document`, such as
 `add_watermark` or `mail_merge`, can change any page. An operation that
 changed more than 100 blocks reports its `blocks/<ranges>` instead, or
-`document`; `document` with `itemsAffected` 0 means it changed nothing.
+`document`. Whether an operation took effect comes from `OP_NO_EFFECT` and a
+read-back, not from `itemsAffected` alone (`aspose-cli docs editing`).
 
 ## Visual review
 

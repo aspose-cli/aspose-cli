@@ -10,19 +10,18 @@ The generated schema is the only field reference. Ask it instead of guessing:
 
 ```powershell
 aspose-cli capabilities pdf edit --output-format json
-aspose-cli schema v2/pdf/ops --operation encrypt
+aspose-cli schema v2/pdf/ops --operation set_metadata
 aspose-cli schema v2/pdf/ops
 ```
 
-- `capabilities <product> edit` lists the operation names under
-  `products[].operations[].ops`, the batch limit (`maximumOperationCount`) and
-  the `operationSchema` command.
+- `capabilities <product> edit` names the operations, the batch limit and the
+  schema command.
 - `schema v2/<product>/ops --operation <op>` prints one operation's fields,
-  types, defaults, allowed values and descriptions. An unknown name fails with
-  `OPTION_INVALID` and lists the valid names in `details.available`.
-- The whole schema's top-level `description` states how the product resolves
-  addresses across a batch (against the original document or as the earlier
-  operations left it).
+  types, defaults, allowed values and descriptions.
+- The whole schema states the optional top-level fields of the document, such
+  as `ifMatch`, and its `description` says how the product resolves addresses
+  across a batch: against the original document or as the earlier operations
+  left it.
 
 The product's `aspose-cli docs <product>/editing` groups the operations by task
 and gives recipes and ordering rules the schema cannot state.
@@ -40,113 +39,104 @@ A PDF batch, for example:
 }
 ```
 
-- `ops` holds 1 to 10000 entries, applied in order. The bare array of
-  operations is accepted as the document with only its `ops`.
+- Operations apply in order. The bare array of operations is accepted as the
+  document with only its `ops`.
 - `id` is optional; results echo it, and `op-0001` style ids are assigned when
-  omitted.
-- Optional top-level fields: `schema` (checked when present),
-  `schemaVersion` (`2`) and `ifMatch` (the input's SHA-256 fingerprint).
-- `--ops` takes a file path, `-` for stdin, or the JSON itself when the value
-  starts with `{` or `[`. Only one option of a command reads stdin: `--ops -`
-  with a `--*-stdin` option is refused with `OPTION_INVALID`. Write the document to a file and pass its path: in
-  PowerShell, inline JSON and piped text reach the CLI intact or not depending
-  on the version and `$PSNativeCommandArgumentPassing` (`aspose-cli docs
-  troubleshooting`, Windows PowerShell).
+  omitted. Give ids to the operations you will look up in the result.
+- Write the document to a file and pass its path. `--ops` also takes `-` for
+  stdin or the JSON itself, but how a shell passes inline JSON or piped text
+  varies (`aspose-cli docs troubleshooting`, Windows PowerShell), and only one
+  option of a command reads stdin.
 
 ## Atomic, best-effort and dry run
 
 - **Atomic (default).** If any operation fails, nothing is written. The error
-  carries `details.id` (the id its `applied[]` entry would have, assigned as
-  `op-0001` style when omitted), `details.op` and, for validation failures,
-  `details.reason` (such as `unknown field 'style.shiny'`); the message names
-  the operation the same way, such as `Operation op-0002 (set_values)`. An
-  unknown field lists the fields its operation, nested object or top-level
-  document accepts, an unknown `op` lists the operations and a value outside a
-  field's enum lists its values, each in `details.available` and in the
-  message's last sentence, `Must be one of: ...`. When some are likely meant,
-  `details.suggestions` names up to three, best first, and the hint asks about
-  them; an op suggestion prefers a close name whose operation accepts the
-  fields the entry gives. When several entries fail the same
-  check, `details.errors` lists the same details for each of them. Fix those
-  entries and run the whole batch again.
+  names the failing operation in `details.id` and `details.op`, and why in
+  `details.reason`; a misspelled field, operation or value lists the valid
+  ones in `details.available` and the likely ones in `details.suggestions`.
+  When several entries fail the same check, `details.errors` lists each of
+  them. Fix those entries and run the whole batch again.
 - **`--best-effort`.** Successful operations are kept and saved; each failed
-  entry in `applied[]` has `status: "failed"` and an `error` with `code`,
-  `message`, `hint` and `details`. The command exits 8 when any operation
+  entry in `applied[]` has `status: "failed"` and an `error` that has the shape
+  of an error envelope's `error`. The command exits 8 when any operation
   failed. An invalid document or an engine failure still writes nothing.
-- **`--dry-run`.** Resolves and applies the batch in memory and writes
-  nothing; the result has `dryRun: true`. With `--best-effort` it reports every
-  operation's outcome in one pass.
+- **`--dry-run`.** Checks the input, the output and the batch, applies the
+  batch in memory and writes nothing. The result has `dryRun: true`, the
+  `checked` list and the `applied[]` outcomes, with operation warnings such as
+  `OP_NO_EFFECT`; with `--best-effort` it reports every operation's outcome in
+  one pass. Warnings about a written output, such as `EVALUATION_MODE` or
+  `ENCRYPTION_REMOVED`, come only from the real run, so a clean dry run does
+  not mean the real run is free of them.
 
-Each `applied[]` entry has `id`, `index`, `op`, `status`, `itemsAffected` and
-`targets` (the addresses it changed). `targets` lists at most 100 addresses;
-when it is only the document root address (`pdf`, `presentation` or
-`document`), read it with `itemsAffected`: over 100 means the operation changed
-too many parts to list, and 0 means it changed nothing.
-A product Skill says when its edits
-reopen the output before publishing it; where a product offers
-`--verify`, it adds a semantic check described in the product Skill. Its
-`verification.issues` entries each have a stable `code`, a `message`, and a
-`location` and `hint` when known; any issue makes `verification.ok` false and
-the command exit 8. `capabilities` lists every code among its diagnostics;
-those found only by verification have category `verification`.
+## Reading the outcome
+
+Each operation has one `applied[]` entry with its `id`, `op`, `status`,
+`itemsAffected` and `targets` (`aspose-cli schema v2/common/operation-outcome`).
+`targets` lists the addresses the operation changed; when it changed more
+parts than the list holds, it names a coarser address instead, such as the
+document root or a range.
+
+`itemsAffected` is the count of items the product reports the operation
+changed. Do not conclude from that count alone whether an operation took
+effect. An operation the CLI knows changed nothing, such as a replacement
+that matched no text, warns `OP_NO_EFFECT` with its `details.id`,
+`details.op` and `details.reason`; act on that warning. The absence of the
+warning does not prove the change: read the changed parts back before you
+report it (`aspose-cli docs verification`).
+
+A product Skill says when its edits reopen the output before publishing it;
+where a product offers `--verify`, it adds a semantic check described in the
+product Skill. Any `verification.issues` entry makes `verification.ok` false
+and the command exit 8; each issue has a stable `code` and, when known, a
+`location` and `hint`.
 
 ## Output, in-place and backups
 
 | Option | Effect |
 |--------|--------|
 | (none) | Writes `<name>.out.<ext>` beside the input |
-| `--out <path>` | Writes there; an `--out` that resolves to the input is `OPTION_INVALID` |
+| `--out <path>` | Writes there; to replace the input use `--in-place` |
 | `--overwrite` | Replaces an existing output; without it the edit fails with `OUTPUT_EXISTS` |
 | `--in-place` | Replaces the input atomically |
-| `--backup` | With `--in-place`: copies the input to `<name>.backup.<ext>` first |
-| `--if-match <sha256>` | Fails with `INPUT_CHANGED` (exit 3) unless the input still has that fingerprint |
-
-`--backup` creates the backup once and never overwrites it: later runs report
-`backup.created: false` and keep the original, so the backup stays the
-pre-session state for a final comparison. When the kept backup holds an earlier
-version than the file an edit replaced, `backup.holdsReplacedVersion` is false
-and a `BACKUP_PREDATES_EDIT` warning gives its `lastWriteUtc`; copy the file
-first if that intermediate version must survive. Tell the user its path and
-which version it holds.
+| `--backup` | With `--in-place`: copies the input beside it first |
+| `--if-match <sha256>` | Fails with `INPUT_CHANGED` unless the input still has that fingerprint |
 
 Before the first in-place edit of a file you did not create, use
 `--in-place --backup --if-match <sha256>` with the fingerprint from your last
 read.
 
-## Secrets
+`--backup` creates the backup once and never overwrites it, so it stays the
+pre-session state for a final comparison; the result's `backup` says whether
+this run created it. When the kept backup is older than the file an edit
+replaced, a `BACKUP_PREDATES_EDIT` warning says so; copy the file first if
+that intermediate version must survive. Tell the user the backup's path and
+which version it holds.
 
-Operation fields whose names end in `Env` (such as `passwordEnv` or
-`ownerPasswordEnv`) hold the name of an environment variable, never the
-secret. Each named variable is read once. A missing or empty variable fails
-only the operation that names it, with `OPS_INVALID` naming the variable: an
-atomic batch writes nothing, `--best-effort` keeps the other operations and
-exits 8. Command options follow the same rule: prefer the `-env` and `-stdin`
-forms, such as `--password-env`, `--encrypt-env` and `--password-stdin`;
-`--password` and `--encrypt` are visible in the process list. Only one option
-reads stdin in one command.
+## Secrets and encryption
 
-An output made from an encrypted input keeps its password when the output
-format can carry one, unless `--encrypt-env` replaces it; `output.encrypted`
-states whether the written file is encrypted. Any document, workbook,
-presentation or text output that does not keep an input's encryption warns
-`ENCRYPTION_REMOVED`; images and the files `extract` writes never do. Each
-product Skill says which of its outputs keep it.
+Operation fields whose names end in `Env` (such as `passwordEnv`) hold the
+name of an environment variable, never the secret. A missing or empty
+variable fails only the operation that names it. Command options follow the
+same rule: prefer the `-env` and `-stdin` forms, such as `--password-env`,
+`--encrypt-env` and `--password-stdin`; the plain forms are visible in the
+process list.
+
+An output made from an encrypted input keeps the input's password when the
+product can encrypt that output format (the command offers `--encrypt-env`
+for it) and no such option gives a new one; `output.encrypted` states whether
+the written file is encrypted. A document output the product cannot encrypt
+is written unencrypted with an `ENCRYPTION_REMOVED` warning; tell the user before you
+deliver it. Images and the files `extract` writes never warn. The product
+Skill says which of its outputs can be encrypted.
 
 ## When a target is not found
 
-A not-found error (`SHEET_NOT_FOUND`, `PAGE_NOT_FOUND`, `BOOKMARK_NOT_FOUND`,
-...) states what exists, so you can correct the request without another
-inspection:
-
-| Field | Meaning |
-|-------|---------|
-| `details.subject` | What was looked up, such as `sheet` or `bookmark` |
-| `details.requested` | The name, number or range as you wrote it |
-| `details.availableCount` | How many targets of that kind exist; for a nested target, how many exist at the level where the request ran out |
-| `details.available` | The existing names in document order, at most 50; present for named targets |
-| `details.suggestions` | Up to three existing names closest to the request, best first |
-
-Operation errors add `details.id` and `details.op`, and a best-effort
-failure keeps the same object in its `error.details`. A name that several
-targets share is refused with `OPS_INVALID` instead of picking one; address
-the target by its stable id or number.
+A not-found error (a `*_NOT_FOUND` code) states what exists, so you can
+correct the request without another inspection: `details.requested` echoes
+what you asked for, `details.available` lists the existing names and
+`details.suggestions` the closest ones; `aspose-cli schema
+v2/common/not-found-details` describes every field. Operation errors add
+`details.id` and `details.op`, and a best-effort failure keeps the same
+object in its `error.details`. A name that several targets share is refused
+with `OPS_INVALID` instead of picking one; address the target by its stable id
+or number.
