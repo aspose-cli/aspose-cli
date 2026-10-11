@@ -141,7 +141,7 @@ internal static class PdfForms
         LicenseState state = session.Outputs.License;
         using LoadedPdf loaded = session.Loader.Open(filePath, request.Password);
         EnsureAcroForm(loaded.Document);
-        PublishedFile written = session.Outputs.Write(request.Output.Path, request.Output.Overwrite, null, temp =>
+        PublishedFile written = session.Outputs.WriteExtracted(request.Output.Path, request.Output.Overwrite, temp =>
         {
             var facade = new Aspose.Pdf.Facades.Form(loaded.Document);
             using FileStream stream = File.Create(temp);

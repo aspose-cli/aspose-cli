@@ -16,6 +16,14 @@ public sealed class PageRange
     /// <summary>Original normalized spelling.</summary>
     public string Text { get; }
 
+    /// <summary>
+    /// The highest number the selection names, or null when a range runs to the last part, so
+    /// the parts it selects depend on how many there are.
+    /// </summary>
+    internal int? Last => _segments.All(static segment => segment.End is not null)
+        ? _segments.Max(static segment => segment.End!.Value)
+        : null;
+
     /// <summary>The selection of every part, <c>all</c>, spelled <c>1-</c>.</summary>
     public static PageRange All { get; } = new([new Segment(1, null)], "1-");
 

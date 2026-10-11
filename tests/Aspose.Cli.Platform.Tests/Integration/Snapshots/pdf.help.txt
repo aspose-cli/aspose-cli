@@ -91,6 +91,9 @@ Options:
   --margins <margins>                            One value or top,right,bottom,left in points. [default: 36]
   --overwrite                                    Replace the output file if it already exists.
   --dry-run                                      Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds.
+  --encrypt <encrypt>                            Password for the output PDF. Discouraged: visible in the process list; prefer --encrypt-env.
+  --encrypt-env <encrypt-env>                    Name of an environment variable holding the password for the output PDF.
+  --encrypt-stdin                                Read the password for the output PDF from the first line of stdin.
   --font-dir <font-dir>                          Local font directory searched in addition to the system fonts; repeat for more.
   -h, --help                                     Show help and usage information
   --output-format <compact|json|markdown|table>  Output format: json (contract envelopes), compact (the same JSON on one line), table (human text) or markdown. Default: table on a terminal, json when redirected.
@@ -126,6 +129,9 @@ Options:
   --password <password>                          Password for the PDF. Discouraged: visible in the process list; prefer --password-env.
   --password-env <password-env>                  Name of an environment variable holding the password for the PDF.
   --password-stdin                               Read the password for the PDF from the first line of stdin.
+  --encrypt <encrypt>                            Password for the output PDF. Discouraged: visible in the process list; prefer --encrypt-env.
+  --encrypt-env <encrypt-env>                    Name of an environment variable holding the password for the output PDF.
+  --encrypt-stdin                                Read the password for the output PDF from the first line of stdin.
   --font-dir <font-dir>                          Local font directory searched in addition to the system fonts; repeat for more.
   -h, --help                                     Show help and usage information
   --output-format <compact|json|markdown|table>  Output format: json (contract envelopes), compact (the same JSON on one line), table (human text) or markdown. Default: table on a terminal, json when redirected.
@@ -216,6 +222,9 @@ Options:
   --password <password>                          Password for all input PDFs. Discouraged: visible in the process list; prefer --password-env.
   --password-env <password-env>                  Name of an environment variable holding the password for all input PDFs.
   --password-stdin                               Read the password for all input PDFs from the first line of stdin.
+  --encrypt <encrypt>                            Password for the output PDF. Discouraged: visible in the process list; prefer --encrypt-env.
+  --encrypt-env <encrypt-env>                    Name of an environment variable holding the password for the output PDF.
+  --encrypt-stdin                                Read the password for the output PDF from the first line of stdin.
   -h, --help                                     Show help and usage information
   --output-format <compact|json|markdown|table>  Output format: json (contract envelopes), compact (the same JSON on one line), table (human text) or markdown. Default: table on a terminal, json when redirected.
   -q, --quiet                                    Suppress warnings and notices on stderr (errors still print).
@@ -426,6 +435,9 @@ Options:
   --password <password>                          Password for the PDF. Discouraged: visible in the process list; prefer --password-env.
   --password-env <password-env>                  Name of an environment variable holding the password for the PDF.
   --password-stdin                               Read the password for the PDF from the first line of stdin.
+  --encrypt <encrypt>                            Password for every output PDF. Discouraged: visible in the process list; prefer --encrypt-env.
+  --encrypt-env <encrypt-env>                    Name of an environment variable holding the password for every output PDF.
+  --encrypt-stdin                                Read the password for every output PDF from the first line of stdin.
   -h, --help                                     Show help and usage information
   --output-format <compact|json|markdown|table>  Output format: json (contract envelopes), compact (the same JSON on one line), table (human text) or markdown. Default: table on a terminal, json when redirected.
   -q, --quiet                                    Suppress warnings and notices on stderr (errors still print).

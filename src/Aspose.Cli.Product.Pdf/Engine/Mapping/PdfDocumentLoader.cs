@@ -1,12 +1,16 @@
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
+using Aspose.Cli.Sdk.Results;
 using Aspose.Pdf;
 using Aspose.Pdf.Facades;
 
 namespace Aspose.Cli.Product.Pdf.Engine.Mapping;
 
+/// <param name="resourceBudgets">The invocation's resource budgets.</param>
+/// <param name="outputs">The write pipeline, which learns whether each opened input is encrypted; none for font inspection.</param>
 internal sealed class PdfDocumentLoader(
-    ResourceBudgetLedger resourceBudgets)
+    ResourceBudgetLedger resourceBudgets,
+    OutputPipeline? outputs = null)
 {
     /// <summary>
     /// How a PDF input that does not load is reported: Aspose.PDF raises
@@ -26,7 +30,9 @@ internal sealed class PdfDocumentLoader(
     public LoadedPdf Open(string path, Secret? password)
     {
         InputSizeGuard.Ensure(resourceBudgets, path);
-        return OpenCore(path, password);
+        LoadedPdf loaded = OpenCore(path, password);
+        outputs?.Opened(loaded.Encrypted);
+        return loaded;
     }
 
     // Generated candidates are bounded by publication, not a second user-input admission.
@@ -68,7 +74,16 @@ internal sealed class PdfDocumentLoader(
                 throw;
             }
             var fileInfo = new PdfFileInfo(document);
-            var loaded = new LoadedPdf(document, fileInfo.PasswordType, fileInfo.HasOpenPassword, stream);
+            // Aspose.PDF reports the one password of a file whose open and owner passwords are
+            // the same as its user password, and the file as having no edit password.
+            bool openPasswordIsOwner = document.IsEncrypted && fileInfo.HasOpenPassword && !fileInfo.HasEditPassword;
+            var loaded = new LoadedPdf(
+                document,
+                openPasswordIsOwner ? PasswordType.Owner : fileInfo.PasswordType,
+                fileInfo.HasOpenPassword,
+                fileInfo.HasEditPassword || openPasswordIsOwner,
+                openPasswordIsOwner,
+                stream);
             stream = null;
             return loaded;
         }
@@ -99,13 +114,20 @@ internal sealed class PdfDocumentLoader(
 /// <summary>A loaded document and the input stream it reads from, disposed together.</summary>
 /// <param name="Document">The loaded document.</param>
 /// <param name="PasswordType">
-/// The password the file was opened with. Aspose.PDF reports a file that has only an owner
-/// password as opened with its empty user password, without one given; <paramref name="HasOpenPassword"/>
-/// tells that case apart.
+/// The password the file was opened with: <c>Owner</c> for a password that is the owner
+/// password, also when it is the open password too. Aspose.PDF reports a file that has only an
+/// owner password as opened with its empty user password, without one given;
+/// <paramref name="HasOpenPassword"/> tells that case apart.
 /// </param>
 /// <param name="HasOpenPassword">Whether opening the file requires a user password.</param>
+/// <param name="HasOwnerPassword">Whether the file has an owner password, which lifts its permissions.</param>
+/// <param name="OpenPasswordIsOwner">
+/// Whether the file's open password is also its owner password, so whoever opens it has every
+/// permission, as <c>--encrypt</c> writes it.
+/// </param>
 /// <param name="Source">The input stream the document reads from.</param>
-internal sealed record LoadedPdf(Document Document, PasswordType PasswordType, bool HasOpenPassword, Stream Source)
+internal sealed record LoadedPdf(
+    Document Document, PasswordType PasswordType, bool HasOpenPassword, bool HasOwnerPassword, bool OpenPasswordIsOwner, Stream Source)
     : IDisposable
 {
     /// <summary>Whether the file is encrypted, as it was opened; a later decryption does not change it.</summary>

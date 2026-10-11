@@ -282,10 +282,11 @@ fails, delete the issue's section, the code that names it and the test, then upd
   character, so text beyond Latin-1, such as `采购申请`, reads back garbled. Entries read from the
   file and entries written to a file saved without encryption are kept.
 - **CLI behavior:** a `pdf edit` batch that has `set_metadata` and `encrypt` saves the edited
-  document without encryption, reopens it and encrypts that copy. On an encrypted input,
-  `set_metadata` with text beyond Latin-1 that no later `encrypt` follows is refused with
-  `OPS_INVALID`, because the CLI cannot encrypt a copy with passwords it does not all know.
-- **Workaround:** add `encrypt` after `set_metadata` in the same batch.
+  document without encryption, reopens it and encrypts that copy; so does every PDF command
+  given `--encrypt-env`. On an encrypted input, `set_metadata` with text beyond Latin-1 that
+  neither a later `encrypt` nor `--encrypt-env` follows is refused with `OPS_INVALID`, because
+  the CLI cannot encrypt a copy with passwords it does not all know.
+- **Workaround:** add `encrypt` after `set_metadata` in the same batch, or pass `--encrypt-env`.
 - **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
 
 ### PDF-RENDER-THIN-GLYPH

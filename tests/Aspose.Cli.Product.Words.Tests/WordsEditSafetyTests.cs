@@ -62,14 +62,14 @@ public sealed class WordsEditSafetyTests
         byte[] original = File.ReadAllBytes(input);
         string output = inPlace ? input : fixture.Temp.File($"edited.{format}");
         string backup = fixture.Temp.File("original.backup.docx");
-        WordsEditResult result = WordsEdit.Run(fixture.Session, new WordsEditRequest
+        WordsEditResult result = fixture.Disclosed(session => WordsEdit.Run(session, new WordsEditRequest
         {
             Input = input,
             Batch = TextBatch(),
             Output = TestOutput.At(output, overwrite: inPlace, backup: inPlace ? backup : null),
             Password = new Secret(OriginalPassword),
             Verify = verify,
-        });
+        }));
 
         Assert.True(FileFormatUtil.DetectFileFormat(output).IsEncrypted);
         Assert.Equal(ErrorCodes.PasswordRequired, Assert.Throws<CliException>(() =>
@@ -174,14 +174,15 @@ public sealed class WordsEditSafetyTests
         string input = fixture.CreateEncryptedDocument(OriginalPassword);
         byte[] original = File.ReadAllBytes(input);
         string output = fixture.Temp.File("edited.txt");
-        WordsEditResult result = WordsEdit.Run(fixture.Session, new WordsEditRequest
+        // The write pipeline discloses the removed encryption, as the command template adds it.
+        WordsEditResult result = fixture.Disclosed(session => WordsEdit.Run(session, new WordsEditRequest
         {
             Input = input,
             Batch = TextBatch(),
             Output = TestOutput.At(output),
             Password = new Secret(OriginalPassword),
             Options = new EditCommandOptions { DryRun = dryRun },
-        });
+        }));
         Assert.Equal(!dryRun, File.Exists(output));
         Assert.Equal(!dryRun, result.Warnings?.Any(warning => warning.Code == WarningCodes.EncryptionRemoved) == true);
         Assert.Equal(original, File.ReadAllBytes(input));

@@ -505,7 +505,7 @@ public sealed record FlattenFormsOp : PdfOp
 }
 
 /// <summary>Encrypts the document with AES-256; the published file needs the user password to open when one is set.</summary>
-[Operation("encrypt")]
+[Operation("encrypt"), EncryptsOutput]
 public sealed record EncryptPdfOp : PdfOp
 {
     /// <summary>The environment variable that holds the password to open the document; anyone can open it when omitted.</summary>

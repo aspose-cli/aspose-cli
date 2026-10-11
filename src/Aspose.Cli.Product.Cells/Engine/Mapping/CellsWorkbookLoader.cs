@@ -3,17 +3,20 @@ using System.Text;
 using Aspose.Cells;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
-using Aspose.Cli.Sdk.Licensing;
+using Aspose.Cli.Sdk.Results;
 
 namespace Aspose.Cli.Product.Cells.Engine.Mapping;
 
 /// <summary>
 /// Owns content-driven workbook detection, password application and guarded
-/// open policy. No query, rendering or mutation behavior belongs here. With the license state,
-/// a workbook opened in evaluation mode skips its active evaluation warning sheet; without one
-/// (font inspection, a licensed engine) it opens as stored.
+/// open policy. No query, rendering or mutation behavior belongs here. With the write pipeline,
+/// a workbook opened in evaluation mode skips its active evaluation warning sheet, and the
+/// pipeline learns whether each opened input is encrypted; without one (font inspection) it
+/// opens as stored.
 /// </summary>
-internal sealed class CellsWorkbookLoader(ResourceBudgetLedger resourceBudgets, ILicenseState? license = null)
+/// <param name="resourceBudgets">The invocation's resource budgets.</param>
+/// <param name="outputs">The invocation's write pipeline, or none for font inspection.</param>
+internal sealed class CellsWorkbookLoader(ResourceBudgetLedger resourceBudgets, OutputPipeline? outputs = null)
 {
     // Excel's limit on the length of a sheet name.
     private const int MaxSheetNameLength = 31;
@@ -87,7 +90,9 @@ internal sealed class CellsWorkbookLoader(ResourceBudgetLedger resourceBudgets, 
         bool calculateOnOpen = true)
     {
         InputSizeGuard.Ensure(resourceBudgets, path);
-        return OpenCore(path, password, textImport, published: false, calculateOnOpen);
+        LoadedWorkbook loaded = OpenCore(path, password, textImport, published: false, calculateOnOpen);
+        outputs?.Opened(loaded.IsEncrypted);
+        return loaded;
     }
 
     // Derived output is already bounded by publication; it is not a new user input, and its
@@ -147,7 +152,7 @@ internal sealed class CellsWorkbookLoader(ResourceBudgetLedger resourceBudgets, 
             }
             resources.ThrowIfFailed();
             Warning? calculated = calculateOnOpen ? CellsOpenCalculation.Apply(workbook, resourceBudgets) : null;
-            CellsEvaluation.SkippedWarningSheet? skipped = published || license?.IsEvaluation != true
+            CellsEvaluation.SkippedWarningSheet? skipped = published || outputs?.IsEvaluation != true
                 ? null
                 : CellsEvaluation.SkipActiveWarningSheet(workbook);
             transferred = true;
@@ -181,7 +186,7 @@ internal sealed class CellsWorkbookLoader(ResourceBudgetLedger resourceBudgets, 
     /// so it passes on to the SDK, which reports the evaluation limit; with a license it is.
     /// </summary>
     internal bool IsLoadFailure(Exception exception) =>
-        !(license?.IsEvaluation == true && CellsEvaluationProfile.IsOpenLimit(exception));
+        !(outputs?.IsEvaluation == true && CellsEvaluationProfile.IsOpenLimit(exception));
 
     private LoadPlan ResolveLoadPlan(string path, TextImportOptions? textImport, bool published)
     {

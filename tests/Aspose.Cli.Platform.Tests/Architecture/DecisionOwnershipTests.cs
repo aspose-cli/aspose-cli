@@ -151,6 +151,30 @@ public sealed partial class DecisionOwnershipTests
         };
     }
 
+    [Fact]
+    public void D1_EncryptionRemoved_IsWarnedOnlyByTheWritePipeline()
+    {
+        string[] owners =
+        [
+            Path.Combine(SdkRoot, "Results", "OutputPipeline.cs"),
+            // The declaration of the code itself.
+            Path.Combine(SdkRoot, "Contracts", "Warning.cs"),
+        ];
+        string[] violations = [.. Sources.Value
+            .Where(file => !owners.Contains(file.Path, StringComparer.OrdinalIgnoreCase))
+            .SelectMany(file => file.Root.DescendantNodes()
+                .Where(static node => node switch
+                {
+                    MemberAccessExpressionSyntax access => access.Name.Identifier.ValueText == "EncryptionRemoved",
+                    LiteralExpressionSyntax literal => literal.Token.ValueText == "ENCRYPTION_REMOVED",
+                    _ => false,
+                })
+                .Select(node => file.At(node, node.ToString())))];
+
+        AssertNone(violations,
+            "Only the SDK write pipeline warns ENCRYPTION_REMOVED, comparing the encryption of the documents a product opened with that of the copies it published:");
+    }
+
     // -- D2 Capabilities ---------------------------------------------------------------------
 
     [Theory]

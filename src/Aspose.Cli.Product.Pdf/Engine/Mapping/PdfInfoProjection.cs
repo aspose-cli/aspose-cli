@@ -4,7 +4,6 @@ using Aspose.Cli.Product.Pdf.Engine.Editing;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Results;
 using Aspose.Pdf;
-using Aspose.Pdf.Facades;
 using Aspose.Pdf.Forms;
 using Aspose.Pdf.Text;
 
@@ -265,7 +264,7 @@ internal static class PdfInfoProjection
         return new PdfPermissionInfo
         {
             HasOpenPassword = loaded.HasOpenPassword,
-            HasOwnerPassword = new PdfFileInfo(document).HasEditPassword,
+            HasOwnerPassword = loaded.HasOwnerPassword,
             OwnerAccess = loaded.PasswordType is PasswordType.Owner or PasswordType.None,
             Print = Allowed(Aspose.Pdf.Permissions.PrintDocument),
             Copy = Allowed(Aspose.Pdf.Permissions.ExtractContent),

@@ -54,6 +54,8 @@ internal static class PdfSign
         // whose pipeline inspects the signed document after the save.
         using var facade = new PdfFileSignature(loaded.Document);
         using OutputSet<Document> transaction = session.Outputs.BeginSet([request.Output.Directory], "pdf-sign");
+        // Signing saves the document with the encryption it was opened with.
+        bool encrypted = PdfOutputEncryption.Encrypted(loaded.Document, passwords: null);
         StagedOutput write = transaction.Stage(request.Output.Path, request.Output.Overwrite, loaded.Document, temp =>
         {
             using var pkcs12 = new MemoryStream(certificate, writable: false);
@@ -65,7 +67,7 @@ internal static class PdfSign
             };
             facade.Sign(request.Page, request.Visible, rectangle, signature);
             facade.Save(temp);
-        });
+        }, encrypted: encrypted);
 
         // The staged candidate is the only readable copy before publication: a supervised
         // worker leaves the target to its parent, so reading it here would find nothing.
@@ -75,7 +77,7 @@ internal static class PdfSign
         return new PdfSignResult
         {
             Input = PdfInfoProjection.Source(filePath, loaded),
-            Output = FileObjects.Output(write.Published, request.Output.Format, loaded.Document.IsEncrypted),
+            Output = FileObjects.Output(write.Published, request.Output.Format, encrypted),
             Signature = signed,
             Visible = request.Visible,
             Page = request.Page,

@@ -65,7 +65,18 @@ public sealed class SplitOptions
         }
 
         Options = options;
+        NumberedParts.Declare(_by, parse => Numbers(Read(parse)));
     }
+
+    // The numbers of the parts a split by pages names without the document: one per explicit
+    // group, or those of the pages a closed selection names.
+    private static IReadOnlyList<int>? Numbers(SplitPlan plan) => plan switch
+    {
+        { By: not SplitBy.Pages } => null,
+        { Groups: { } groups } => [.. Enumerable.Range(1, groups.Count)],
+        { Pages.Last: { } last } => plan.PartNumbers(plan.PageGroups(last)),
+        _ => null,
+    };
 
     /// <summary>The options, for a product command's option list.</summary>
     public IReadOnlyList<Option> Options { get; }

@@ -112,6 +112,7 @@ internal static class SlidesEdit
         {
             Presentation presentation = loaded.Presentation;
             Encrypt(presentation, request.EncryptPassword);
+            bool encrypted = presentation.ProtectionManager.IsEncrypted;
             using OutputSet<Presentation> transaction = session.Outputs.BeginSet([request.Output.Directory], "slides-edit");
             StagedOutput write = transaction.Stage(
                 request.Output.Path,
@@ -126,10 +127,11 @@ internal static class SlidesEdit
                         request.EncryptPassword ?? request.Password);
                 },
                 backupPath: request.Output.BackupPath,
-                inputPrecondition: precondition);
+                inputPrecondition: precondition,
+                encrypted: encrypted);
             backup = write.Backup;
             transaction.Commit();
-            output = FileObjects.Output(write.Published, request.Output.Format, presentation.ProtectionManager.IsEncrypted);
+            output = FileObjects.Output(write.Published, request.Output.Format, encrypted);
         }
 
         return new EditPublication(output, backup);

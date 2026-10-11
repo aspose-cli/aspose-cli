@@ -45,7 +45,28 @@ flattens every button `query forms` lists under that name.
 ## Encryption
 
 `encrypt` and `decrypt` are edit operations whose ops name environment
-variables, never password values (`aspose-cli docs editing`). Inspect protected
+variables, never password values (`aspose-cli docs editing`). For a password to
+open the output and no restrictions, `create`, `edit`, `merge` and `split` take
+`--encrypt-env` (or `--encrypt-stdin`); on `edit` it applies after the
+operations and replaces any encryption they leave:
+
+```bash
+aspose-cli pdf merge a.pdf b.pdf --out merged.pdf --encrypt-env PDF_PASSWORD --output-format json
+```
+
+`output.encrypted` states whether the written file is encrypted, a file with
+only an owner password included. Without `--encrypt-env`, an edit or signature
+keeps the input's encryption; a merge or split keeps the password the inputs
+were opened with as the output's open password and warns
+`PROTECTION_NOT_ENFORCED` with what became of the rest: opened with the user
+password, the output keeps the input's permissions under a new owner password
+no one knows; opened with the owner password, that password opens the output
+and grants every permission. An input whose open password is also its owner
+password, as `--encrypt-env` writes it, keeps that one password without a
+warning. An input with only an owner password has no open
+password to keep, and a convert writes formats that cannot carry one: any
+document or text output that does not keep the encryption of an encrypted input
+carries `ENCRYPTION_REMOVED`; images and what `extract` writes never do. Inspect protected
 output with `pdf inspect --detail permissions`: `print`, `copy` and the other
 permission fields state what the file grants readers without the owner
 password, also when `--password-env` opened it with the owner password, and
@@ -54,7 +75,9 @@ password, also when `--password-env` opened it with the owner password, and
 encrypted input unless an `encrypt` operation follows it in the same batch.
 `hasOpenPassword` and `hasOwnerPassword` state which passwords the file has, and
 `passwordType` which one this run opened it with: a file with only an owner
-password opens with `none`, and anyone can open it within its permissions. The CLI
+password opens with `none`, and anyone can open it within its permissions; a
+password that both opens the file and is its owner password reports `owner`, with
+`hasOwnerPassword` and `ownerAccess` true. The CLI
 reports these flags and adds no permission preflight beyond the engine's; opening
 a PDF or completing an edit is not proof of owner authorization, so perform only
 authorized changes.

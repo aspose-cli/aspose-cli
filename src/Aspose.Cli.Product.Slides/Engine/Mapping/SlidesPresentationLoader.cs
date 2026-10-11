@@ -1,11 +1,15 @@
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
+using Aspose.Cli.Sdk.Results;
 using Aspose.Slides;
 
 namespace Aspose.Cli.Product.Slides.Engine.Mapping;
 
+/// <param name="resourceBudgets">The invocation's resource budgets.</param>
+/// <param name="outputs">The write pipeline, which learns whether each opened input is encrypted; none for font inspection.</param>
 internal sealed class SlidesPresentationLoader(
-    ResourceBudgetLedger resourceBudgets)
+    ResourceBudgetLedger resourceBudgets,
+    OutputPipeline? outputs = null)
 {
     /// <summary>
     /// How a presentation input that does not load is reported: Aspose.Slides raises
@@ -28,7 +32,9 @@ internal sealed class SlidesPresentationLoader(
     public LoadedPresentation Open(string path, Secret? password)
     {
         InputSizeGuard.Ensure(resourceBudgets, path);
-        return OpenCore(path, password);
+        LoadedPresentation loaded = OpenCore(path, password);
+        outputs?.Opened(loaded.Encrypted);
+        return loaded;
     }
 
     // Generated candidates are bounded by publication, not a second user-input admission.

@@ -7,7 +7,7 @@ using Aspose.Cells.Rendering;
 namespace Aspose.Cli.Product.Cells.Engine.Mapping;
 
 /// <summary>Product-owned format and encryption decisions for one workbook output.</summary>
-internal sealed record WorkbookSavePlan(string FormatId, SaveFormat Format, SaveOptions? Options, Secret? OutputPassword, Warning? EncryptionWarning, bool IsEvaluation)
+internal sealed record WorkbookSavePlan(string FormatId, SaveFormat Format, SaveOptions? Options, Secret? OutputPassword, bool IsEvaluation)
 {
     /// <remarks>
     /// The commands reject an output password for a format that cannot carry one, naming the
@@ -37,11 +37,7 @@ internal sealed record WorkbookSavePlan(string FormatId, SaveFormat Format, Save
             _ => null,
         };
         Secret? password = encryptPassword ?? (encryptable ? inputPassword : null);
-        Warning? warning = inputPassword is not null && password is null ? new Warning(WarningCodes.EncryptionRemoved, $"The '{formatId}' output cannot retain the source workbook encryption.")
-        {
-            Hint = "Use an encryption-capable spreadsheet output to keep password protection.",
-        } : null;
-        return new WorkbookSavePlan(formatId, format, options, password, warning, licenseState == LicenseState.Evaluation);
+        return new WorkbookSavePlan(formatId, format, options, password, licenseState == LicenseState.Evaluation);
     }
 
     /// <summary>True for the text formats (csv, tsv, md), which write only the active sheet.</summary>

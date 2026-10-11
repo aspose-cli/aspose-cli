@@ -16,6 +16,7 @@ internal static class EditCommand
             new CommandTraits
             {
                 Input = PdfInputs.Document,
+                Encrypt = PdfInputs.EncryptedPdf,
                 UsesFonts = true,
             },
             [],
@@ -28,6 +29,7 @@ internal static class EditCommand
                 Password = standard.InputPassword,
                 Verify = edit.Verify,
                 OpSecrets = edit.Secrets,
+                EncryptPassword = standard.EncryptPassword(),
             },
             Table);
 

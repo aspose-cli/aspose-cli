@@ -14,7 +14,7 @@ internal static class SlidesActivation
             outputs => new SlidesSession(
                 outputs,
                 context.ResourceBudgets,
-                new SlidesPresentationLoader(context.ResourceBudgets)),
+                new SlidesPresentationLoader(context.ResourceBudgets, outputs)),
             outputs => new SlidesFontEnvironment(outputs, context.ResourceBudgets));
 
     /// <summary>Applies a license snapshot to Aspose.Slides.</summary>

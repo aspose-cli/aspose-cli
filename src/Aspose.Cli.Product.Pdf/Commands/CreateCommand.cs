@@ -29,6 +29,7 @@ internal static class CreateCommand
             new CommandTraits
             {
                 Output = OutputTarget.CreatedFile("PDF path to create.", PdfFormats.Document),
+                Encrypt = PdfInputs.EncryptedPdf,
                 UsesFonts = true,
             },
             [images, html, allowNetwork, text, pageSize, margins],
@@ -49,9 +50,11 @@ internal static class CreateCommand
                 string? htmlPath = standard.InputFile(html);
                 string? textPath = standard.InputFile(text);
                 ResolvedOutput output = standard.Output;
+                Secret? encryptPassword = standard.EncryptPassword();
                 return new NewPdfRequest
                 {
                     Output = output,
+                    EncryptPassword = encryptPassword,
                     ImagePaths = imagePaths,
                     HtmlPath = htmlPath,
                     AllowNetworkResources = parse.GetValue(allowNetwork),

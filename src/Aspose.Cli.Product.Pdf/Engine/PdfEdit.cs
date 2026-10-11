@@ -44,7 +44,7 @@ internal static class PdfEdit
         try { publication = Publish(session, loaded.Document, request, outputPassword, encryptCopy, precondition, verifier, state); }
         finally { operationInputs.ThrowIfFailed(); }
         List<Warning> warnings = BuildWarnings(signatures, batch, outcomes, textMoved);
-        if (UnpermittedChange(userPermissions, openPassword, outcomes, request.Options.DryRun) is { } protection)
+        if (UnpermittedChange(userPermissions, openPassword, outcomes, request.Options.DryRun, request.EncryptPassword is not null) is { } protection)
         {
             warnings.Add(protection);
         }
@@ -93,8 +93,8 @@ internal static class PdfEdit
             deadline: null,
             (op, index) =>
             {
-                // A later encrypt makes the save encrypt a copy, which keeps the text.
-                if (op is SetMetadataOp metadata && encryption is null && document.IsEncrypted
+                // A later encrypt, or --encrypt, makes the save encrypt a copy, which keeps the text.
+                if (op is SetMetadataOp metadata && encryption is null && document.IsEncrypted && request.EncryptPassword is null
                     && !batch.Ops.Skip(index + 1).Any(static later => later is EncryptPdfOp))
                 {
                     RefuseTextTheEncryptionGarbles(metadata);
@@ -124,7 +124,8 @@ internal static class PdfEdit
             (op, _) => OperationTargets(op, [], applied: null),
             // Past the bound, the document root: a part address such as pdf/bookmark means all of that part.
             static (_, _) => [DocumentRoot]);
-        return (outcomes, outputPassword, encryption);
+        // --encrypt replaces whatever encryption the operations leave.
+        return (outcomes, request.EncryptPassword ?? outputPassword, encryption);
     }
 
     /// <summary>
@@ -209,17 +210,28 @@ internal static class PdfEdit
         if (!request.Options.DryRun)
         {
             using OutputSet<Document> transaction = session.Outputs.BeginSet([request.Output.Directory], "pdf-edit");
+            PdfOutputPasswords? passwords = PdfOutputEncryption.Requested(request.EncryptPassword);
+            bool encrypted = PdfOutputEncryption.Encrypted(document, passwords);
             StagedOutput write = transaction.Stage(
                 request.Output.Path,
                 request.Output.Overwrite,
                 document,
                 temp =>
                 {
-                    Save(document, temp, encryptCopy, request.OpSecrets);
+                    if (passwords is not null)
+                    {
+                        PdfOutputEncryption.Save(document, temp, passwords);
+                    }
+                    else
+                    {
+                        Save(document, temp, encryptCopy, request.OpSecrets);
+                    }
+
                     using LoadedPdf reopened = session.Loader.OpenPublishedCandidate(temp, outputPassword);
                 },
                 backupPath: request.Output.BackupPath,
-                inputPrecondition: precondition);
+                inputPrecondition: precondition,
+                encrypted: encrypted);
             backup = write.Backup;
             if (verifier is not null)
             {
@@ -232,7 +244,7 @@ internal static class PdfEdit
             }
 
             transaction.Commit();
-            output = FileObjects.Output(write.Published, request.Output.Format, encrypted: outputPassword is not null);
+            output = FileObjects.Output(write.Published, request.Output.Format, encrypted);
         }
 
         return new Publication(output, backup, verification);
@@ -313,7 +325,7 @@ internal static class PdfEdit
     /// encryption only by the owner password.
     /// </summary>
     private static Warning? UnpermittedChange(
-        Permissions? permissions, bool openPassword, IReadOnlyCollection<BoundedOperationOutcome> outcomes, bool dryRun)
+        Permissions? permissions, bool openPassword, IReadOnlyCollection<BoundedOperationOutcome> outcomes, bool dryRun, bool encryptOption)
     {
         if (permissions is not { } granted)
         {
@@ -333,9 +345,10 @@ internal static class PdfEdit
             return null;
         }
 
-        string? encryption = applied.LastOrDefault(static op => op is "encrypt" or "decrypt");
+        string? encryption = encryptOption ? "--encrypt" : applied.LastOrDefault(static op => op is "encrypt" or "decrypt");
         string output = encryption switch
         {
+            "--encrypt" => $"The output {(dryRun ? "would open" : "opens")} only with the --encrypt password, which grants every permission.",
             "decrypt" => $"The output {(dryRun ? "would not be encrypted, so it would no longer restrict" : "is not encrypted, so it no longer restricts")} anyone.",
             "encrypt" => $"The output {(dryRun ? "would be" : "is")} encrypted with the passwords and permissions the encrypt operation set.",
             _ => $"The output {(dryRun ? "would keep" : "keeps")} the input's encryption and permissions; edit with the owner password to change them.",

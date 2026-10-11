@@ -51,8 +51,15 @@ internal static class SlidesExport
         else
         {
             SaveFormat format = SlidesEngineFormats.SaveFormatOf(request.Output.Format.Id);
-            // An editable format keeps the source's encryption unless --encrypt replaces it.
-            bool encrypted = request.EncryptPassword is not null || presentation.ProtectionManager.IsEncrypted;
+            // A format that can carry a password keeps the source's encryption unless --encrypt
+            // replaces it; any other is written without it, which the write pipeline discloses.
+            bool protectable = request.Output.Format.Protectable;
+            bool encrypted = protectable && (request.EncryptPassword is not null || presentation.ProtectionManager.IsEncrypted);
+            if (!protectable && presentation.ProtectionManager.IsEncrypted)
+            {
+                presentation.ProtectionManager.RemoveEncryption();
+            }
+
             return session.Outputs.Write(request.Output, presentation, encrypted, temp =>
             {
                 Save(temp);

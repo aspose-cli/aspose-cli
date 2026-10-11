@@ -296,8 +296,9 @@ public sealed class PdfAttachmentCarryTests : IDisposable
             Password = password,
         });
 
-        Assert.Equal([Entry("a.csv", First), Entry("b.csv", Second)], Attachments(merged));
-        Assert.All(split.Outputs, part => Assert.Equal([Entry("a.csv", First)], Attachments(part.Output.Path)));
+        // The outputs keep the inputs' open password.
+        Assert.Equal([Entry("a.csv", First), Entry("b.csv", Second)], Attachments(merged, "open-sesame"));
+        Assert.All(split.Outputs, part => Assert.Equal([Entry("a.csv", First)], Attachments(part.Output.Path, "open-sesame")));
     }
 
     public void Dispose() => _workspace.Dispose();
@@ -325,9 +326,9 @@ public sealed class PdfAttachmentCarryTests : IDisposable
     private static string Entry(string name, byte[] content) => $"{name}={Convert.ToHexString(content)}";
 
     /// <summary>The attachments of a document as name and contents, in name order.</summary>
-    private static List<string> Attachments(string path)
+    private static List<string> Attachments(string path, string? password = null)
     {
-        using var document = new Document(path);
+        using var document = password is null ? new Document(path) : new Document(path, password);
         return document.EmbeddedFiles
             .Select(static file => Entry(file.UnicodeName ?? file.Name, Read(file)))
             .Order(StringComparer.Ordinal)
