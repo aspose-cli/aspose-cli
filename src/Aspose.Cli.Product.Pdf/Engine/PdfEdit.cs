@@ -29,22 +29,28 @@ internal static class PdfEdit
             ? (Permissions)loaded.Document.Permissions
             : null;
         bool openPassword = userPermissions is not null && loaded.HasOpenPassword;
-        var touched = new SortedSet<int>();
-        var textMoved = new List<string>();
         PdfNavigationCensus navigationBefore = PdfNavigationCensus.Unresolved(loaded.Document);
         PdfEditVerifier? verifier = request.Verify ? new PdfEditVerifier(loaded.Document) : null;
-        (IReadOnlyList<BoundedOperationOutcome> outcomes, Secret? outputPassword, EncryptPdfOp? encryption) =
-            ApplyOperations(session, loaded.Document, batch, request, touched, textMoved, operationInputs, verifier);
+        var model = new PdfEditModel(
+            session.Loader, operationInputs, loaded.Document, batch.Ops, request.Password, request.EncryptPassword is not null, request.OpSecrets);
+        AppliedBatch applied = BoundedOperationRunner.Run(
+            PdfOp.Catalog, batch.Ops, request.Options.BestEffort, deadline: null, model, verifier, PdfSnapshots.PageUnit);
         // PDF-ENCRYPTED-INFO-TEXT: document information set in this batch survives only an
         // encryption applied to a reopened copy.
-        EncryptPdfOp? encryptCopy = batch.Ops.Any(static op => op is SetMetadataOp) ? encryption : null;
+        EncryptPdfOp? encryptCopy = batch.Ops.Any(static op => op is SetMetadataOp) ? model.Encryption : null;
         PdfNavigationCensus navigation = PdfNavigationCensus.Degraded(
             navigationBefore, PdfNavigationCensus.Unresolved(loaded.Document));
         Publication publication;
-        try { publication = Publish(session, loaded.Document, request, outputPassword, encryptCopy, precondition, verifier, state); }
+        // --encrypt replaces whatever encryption the operations leave.
+        try { publication = Publish(session, loaded.Document, request, request.EncryptPassword ?? model.OutputPassword, encryptCopy, precondition, verifier, applied, state); }
         finally { operationInputs.ThrowIfFailed(); }
-        List<Warning> warnings = BuildWarnings(signatures, batch, outcomes, textMoved);
-        if (UnpermittedChange(userPermissions, openPassword, outcomes, request.Options.DryRun, request.EncryptPassword is not null) is { } protection)
+        List<Warning> warnings = BuildWarnings(signatures, applied, model.TextMoved);
+        if (MetadataRewritten(batch.Ops, applied.Outcomes) is { } rewritten)
+        {
+            warnings.Add(rewritten);
+        }
+
+        if (UnpermittedChange(userPermissions, openPassword, applied.Outcomes, request.Options.DryRun, request.EncryptPassword is not null) is { } protection)
         {
             warnings.Add(protection);
         }
@@ -65,134 +71,14 @@ internal static class PdfEdit
             Output = publication.Output,
             DryRun = request.Options.DryRun,
             Checked = request.Options.Checked,
-            Applied = outcomes,
+            Applied = applied.Outcomes,
             Backup = publication.Backup,
-            PagesTouched = touched.Count == 0 ? null : touched.ToArray(),
+            PagesTouched = applied.Pages.Count == 0 ? null : [.. applied.Pages],
             Verification = publication.Verification,
             License = EnvelopeParts.License(state),
             Warnings = warnings.Count == 0 ? null : warnings,
         };
     }
-
-    private static (IReadOnlyList<BoundedOperationOutcome> Outcomes, Secret? OutputPassword, EncryptPdfOp? Encryption) ApplyOperations(
-        PdfSession session,
-        Document document,
-        PdfOpsBatch batch,
-        PdfEditRequest request,
-        ISet<int> touched,
-        List<string> textMoved,
-        InputResourceScope operationInputs,
-        PdfEditVerifier? verifier)
-    {
-        Secret? outputPassword = request.Password;
-        EncryptPdfOp? encryption = null;
-        IReadOnlyList<BoundedOperationOutcome> outcomes = BoundedOperationRunner.Run(
-            PdfOp.Catalog,
-            batch.Ops,
-            request.Options.BestEffort,
-            deadline: null,
-            (op, index) =>
-            {
-                // A later encrypt, or --encrypt, makes the save encrypt a copy, which keeps the text.
-                if (op is SetMetadataOp metadata && encryption is null && document.IsEncrypted && request.EncryptPassword is null
-                    && !batch.Ops.Skip(index + 1).Any(static later => later is EncryptPdfOp))
-                {
-                    RefuseTextTheEncryptionGarbles(metadata);
-                }
-
-                var operationPages = new SortedSet<int>();
-                var movedPages = new SortedSet<int>();
-                long affected = new PdfMutationHandlers(session.Loader, operationInputs, document, request.OpSecrets, operationPages, movedPages).Run(op);
-                verifier?.Record(op, op.Id!, affected, document);
-                touched.UnionWith(operationPages);
-                if (movedPages.Count > 0)
-                {
-                    textMoved.Add($"'{op.Id}' ({PdfOp.Catalog.NameOf(op)}) on page{(movedPages.Count == 1 ? "" : "s")} {string.Join(", ", movedPages)}");
-                }
-                if (op is EncryptPdfOp encrypt)
-                {
-                    outputPassword = OperationSecrets.Resolve(request.OpSecrets, encrypt.UserPasswordEnv);
-                    encryption = encrypt;
-                }
-                else if (op is DecryptPdfOp)
-                {
-                    outputPassword = null;
-                    encryption = null;
-                }
-                return new AppliedOperation(affected, OperationTargets(op, operationPages, document));
-            },
-            (op, _) => OperationTargets(op, [], applied: null),
-            // Past the bound, the document root: a part address such as pdf/bookmark means all of that part.
-            static (_, _) => [DocumentRoot]);
-        // --encrypt replaces whatever encryption the operations leave.
-        return (outcomes, request.EncryptPassword ?? outputPassword, encryption);
-    }
-
-    /// <summary>
-    /// PDF-ENCRYPTED-INFO-TEXT: the engine writes document information beyond Latin-1 into an
-    /// encrypted file garbled, and the encryption the input keeps when no later operation
-    /// encrypts cannot be applied to a copy, because its passwords are not all known.
-    /// </summary>
-    private static void RefuseTextTheEncryptionGarbles(SetMetadataOp metadata)
-    {
-        string[] values =
-        [
-            metadata.Title ?? string.Empty,
-            metadata.Author ?? string.Empty,
-            metadata.Subject ?? string.Empty,
-            metadata.Keywords ?? string.Empty,
-            .. metadata.Custom?.Values ?? [],
-        ];
-        if (values.Any(static value => value.Any(static character => character > '\u00FF')))
-        {
-            throw new OperationInvalidException(
-                "the input stays encrypted, and the PDF engine garbles document information with characters beyond Latin-1 that it writes into an encrypted file",
-                "Add an encrypt operation after set_metadata in the same batch: the batch then encrypts a copy that keeps the text.");
-        }
-    }
-
-    /// <summary>
-    /// The targets an operation reports. A bookmark operation that succeeded names each bookmark
-    /// it added or deleted by its index, a deleted one as it was before the deletion; an operation
-    /// that names no page reports the part of the document it changes.
-    /// </summary>
-    private static IReadOnlyList<string> OperationTargets(
-        PdfOp operation,
-        IReadOnlyCollection<int> pages,
-        Document? applied)
-    {
-        if (applied is not null)
-        {
-            switch (operation)
-            {
-                case AddBookmarkOp add:
-                    return [$"pdf/bookmark/{Editing.PdfMutationSupport.NewBookmarkIndex(applied, add.Parent)}"];
-                case DeleteBookmarksOp { Indexes: { } indexes }:
-                    return [.. indexes.Select(static index => $"pdf/bookmark/{index}")];
-            }
-        }
-
-        return pages.Count > 0
-            ? [.. pages.Order().Select(static page => $"pdf/page/{page}")]
-            : [DocumentTarget(operation)];
-    }
-
-    /// <summary>The address of the whole document, which also stands for more targets than an outcome lists.</summary>
-    private const string DocumentRoot = "pdf";
-
-    /// <summary>The part of the document an operation that names no page changes.</summary>
-    private static string DocumentTarget(PdfOp operation) =>
-        operation switch
-        {
-            SetMetadataOp or RemoveMetadataOp => "pdf/metadata",
-            SetFormFieldOp or FlattenFormsOp => "pdf/form",
-            EncryptPdfOp or DecryptPdfOp => "pdf/security",
-            RedactTextOp or RedactAreaOp => "pdf/text",
-            AddBookmarkOp or DeleteBookmarksOp => "pdf/bookmark",
-            AddAttachmentOp or RemoveAttachmentOp => "pdf/attachment",
-            SetPageLabelsOp => "pdf/pages",
-            _ => DocumentRoot,
-        };
 
     private static Publication Publish(
         PdfSession session,
@@ -202,6 +88,7 @@ internal static class PdfEdit
         EncryptPdfOp? encryptCopy,
         FileWritePrecondition precondition,
         PdfEditVerifier? verifier,
+        AppliedBatch applied,
         LicenseState state)
     {
         OutputInfo? output = null;
@@ -239,7 +126,8 @@ internal static class PdfEdit
                 verification = write.Read(candidate =>
                 {
                     using LoadedPdf reopened = session.Loader.OpenPublishedCandidate(candidate, outputPassword);
-                    return verifier.Verify(reopened.Document, state, session.Budgets.Deadline);
+                    VerifiedBatch verified = applied.Verified(verifier.Verify(reopened.Document, state, session.Budgets.Deadline));
+                    return new PdfEditVerification { Ok = verified.Ok, Issues = verified.Issues, CheckedOps = verified.CheckedOps };
                 });
             }
 
@@ -271,14 +159,39 @@ internal static class PdfEdit
         copy.Save(path);
     }
 
+    /// <summary>
+    /// Aspose.PDF writes the creator, producer and modification date into every PDF it saves
+    /// (<see cref="PdfSnapshots.SaveStamped"/>), so an operation that removed the document
+    /// information, or set one of those entries, leaves them in the output; its targets leave them
+    /// out, and this says why they remain.
+    /// </summary>
+    private static Warning? MetadataRewritten(IReadOnlyList<PdfOp> ops, IReadOnlyList<BoundedOperationOutcome> outcomes)
+    {
+        HashSet<string> applied = [.. outcomes.Where(static outcome => outcome.Status == OpStatuses.Ok).Select(static outcome => outcome.Id)];
+        string[] ids = [.. ops
+            .Where(op => op.Id is { } id && applied.Contains(id) && op switch
+            {
+                RemoveMetadataOp remove => remove.DocumentInfo,
+                SetMetadataOp set => set.Custom?.Keys.Any(PdfSnapshots.SaveStamped.Contains) == true,
+                _ => false,
+            })
+            .Select(static op => $"'{op.Id}'")];
+        return ids.Length == 0
+            ? null
+            : new Warning(PdfDiagnostics.MetadataRewritten, $"Aspose.PDF writes the creator, producer and modificationDate document information into every PDF it saves, "
+                + $"so the output holds them although {(ids.Length == 1 ? "operation " : "operations ")}{string.Join(", ", ids)} removed or set them.")
+            {
+                Hint = "They name the PDF library and the time of this save, and no operation removes them; the operation's targets name only the entries the output changed.",
+            };
+    }
+
     private static List<Warning> BuildWarnings(
         bool signatures,
-        PdfOpsBatch batch,
-        IReadOnlyCollection<BoundedOperationOutcome> outcomes,
+        AppliedBatch applied,
         IReadOnlyList<string> textMoved)
     {
         var warnings = new List<Warning>();
-        if (signatures && outcomes.Any(static item => item.Status == OpStatuses.Ok && item.ItemsAffected > 0))
+        if (signatures && applied.Outcomes.Any(static item => item.Status == OpStatuses.Ok && item.ItemsAffected > 0))
         {
             warnings.Add(new Warning(WarningCodes.SignatureInvalidated, "Editing a signed PDF invalidates or changes its existing signature state.")
             {
@@ -286,20 +199,9 @@ internal static class PdfEdit
             });
         }
 
-        // A redaction that matched nothing passes its read-back check without having removed
-        // anything, so it is disclosed. Like a verification issue, it never repeats the pattern.
-        foreach (BoundedOperationOutcome unmatched in outcomes.Where(static item =>
-            item.Op == "redact_text" && item.Status == OpStatuses.Ok && item.ItemsAffected == 0))
-        {
-            PdfOp operation = batch.Ops.Single(op => op.Id == unmatched.Id);
-            warnings.Add(PdfOp.Catalog.NoEffect(operation, NoEffectReasons.NoMatch,
-                $"Operation {unmatched.Id} (redact_text) matched no text on the pages searched, so nothing was redacted there.") with
-            {
-                Hint = "Search the pages with 'pdf query search' and the same pattern. When the text shows on the page but is not found, "
-                    + "its extracted text differs, for example by spaces between characters: match it with a regular expression "
-                    + "that allows them (\\s*), or cover it with redact_area.",
-            });
-        }
+        // An operation that changed nothing, such as a redaction that matched nothing, passes its
+        // read-back check without having changed anything, so it is disclosed.
+        warnings.AddRange(applied.Warnings);
 
         // PDF-REDACT-TEXT-SHIFT: the text is still in the file, but part of it may now be hidden.
         if (textMoved.Count > 0)

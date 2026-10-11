@@ -11,7 +11,7 @@ namespace Aspose.Cli.Product.Pdf.Engine.Editing;
 // Document metadata, navigation, forms and security.
 internal sealed partial class PdfMutationHandlers
 {
-    public long Apply(SetMetadataOp operation)
+    public ValueTuple Apply(SetMetadataOp operation)
     {
         if (operation.Title is not null)
         {
@@ -40,10 +40,10 @@ internal sealed partial class PdfMutationHandlers
             }
         }
 
-        return 1;
+        return default;
     }
 
-    public long Apply(RemoveMetadataOp operation)
+    public ValueTuple Apply(RemoveMetadataOp operation)
     {
         if (operation.DocumentInfo)
         {
@@ -55,10 +55,10 @@ internal sealed partial class PdfMutationHandlers
             _document.Metadata.Clear();
         }
 
-        return 1;
+        return default;
     }
 
-    public long Apply(AddBookmarkOp operation)
+    public ValueTuple Apply(AddBookmarkOp operation)
     {
         _ = PageAt(_document, operation.Page);
         OutlineCollection target = _document.Outlines;
@@ -71,7 +71,7 @@ internal sealed partial class PdfMutationHandlers
                 Destination = new FitExplicitDestination(_document.Pages[operation.Page]),
             };
             parent.Add(nested);
-            return 1;
+            return default;
         }
 
         target.Add(new OutlineItemCollection(_document.Outlines)
@@ -79,31 +79,29 @@ internal sealed partial class PdfMutationHandlers
             Title = operation.Title,
             Destination = new FitExplicitDestination(_document.Pages[operation.Page]),
         });
-        return 1;
+        return default;
     }
 
-    public long Apply(DeleteBookmarksOp operation)
+    public ValueTuple Apply(DeleteBookmarksOp operation)
     {
         if (operation.All)
         {
-            int count = CountOutline(_document.Outlines);
             _document.Outlines.Delete();
-            return count;
+            return default;
         }
 
         // Resolve every index against the outline as it stands before any deletion, so a
         // missing one changes nothing and the order of the list does not matter.
         OutlineItemCollection[] items = [.. operation.Indexes!.Select(index => Outline(_document.Outlines, index))];
-        int removed = items.Sum(static item => 1 + CountOutline(item));
         foreach (OutlineItemCollection item in items)
         {
             DeleteOutline(item);
         }
 
-        return removed;
+        return default;
     }
 
-    public long Apply(AddAttachmentOp operation)
+    public ValueTuple Apply(AddAttachmentOp operation)
     {
         EnsureFile(operation.Path);
         string name = operation.Name ?? Path.GetFileName(operation.Path);
@@ -119,10 +117,10 @@ internal sealed partial class PdfMutationHandlers
             specification.MIMEType = operation.MimeType;
         }
         _document.EmbeddedFiles.Add(name, specification);
-        return 1;
+        return default;
     }
 
-    public long Apply(RemoveAttachmentOp operation)
+    public ValueTuple Apply(RemoveAttachmentOp operation)
     {
         // FindByName throws an engine exception for a missing name; match the names query reports.
         string[] names = AttachmentNames(_document);
@@ -132,12 +130,11 @@ internal sealed partial class PdfMutationHandlers
         }
 
         _document.EmbeddedFiles.Delete(operation.Name);
-        return 1;
+        return default;
     }
 
-    public long Apply(SetPageLabelsOp operation)
+    public ValueTuple Apply(SetPageLabelsOp operation)
     {
-        int count = 0;
         foreach (PdfPageLabelRange range in operation.Ranges)
         {
             _ = PageAt(_document, range.StartPage);
@@ -147,13 +144,12 @@ internal sealed partial class PdfMutationHandlers
                 StartingValue = range.StartingValue,
                 NumberingStyle = PdfPageLabelStyles.FromStyle(range.Style),
             });
-            count++;
         }
 
-        return count;
+        return default;
     }
 
-    public long Apply(SetFormFieldOp operation)
+    public ValueTuple Apply(SetFormFieldOp operation)
     {
         EnsureAcroForm(_document);
         Field field = FormField(_document, operation.Name);
@@ -164,17 +160,16 @@ internal sealed partial class PdfMutationHandlers
 
         // The name of a radio group resolves to its first button; the group holds the selection.
         (PdfForms.RadioGroup(field) ?? field).Value = operation.Value ?? ClearedFieldValue(field);
-        return 1;
+        return default;
     }
 
-    public long Apply(FlattenFormsOp operation)
+    public ValueTuple Apply(FlattenFormsOp operation)
     {
         EnsureAcroForm(_document);
         if (operation.Fields is null)
         {
-            int count = _document.Form.Count;
             _document.Form.Flatten();
-            return count;
+            return default;
         }
 
         // Resolve every name first: a missing field must reject the operation before any change.
@@ -185,13 +180,13 @@ internal sealed partial class PdfMutationHandlers
             (PdfForms.RadioGroup(named[0]) ?? named[0]).Flatten();
         }
 
-        return fields.Sum(static named => named.Length);
+        return default;
     }
 
-    public long Apply(EncryptPdfOp operation)
+    public ValueTuple Apply(EncryptPdfOp operation)
     {
         Encrypt(_document, operation, _secrets);
-        return 1;
+        return default;
     }
 
     /// <summary>Encrypts a document with AES-256 and the passwords and permissions an operation names.</summary>
@@ -242,18 +237,17 @@ internal sealed partial class PdfMutationHandlers
         document.Encrypt(user, owner, permissions, CryptoAlgorithm.AESx256);
     }
 
-    public long Apply(DecryptPdfOp operation)
+    public ValueTuple Apply(DecryptPdfOp operation)
     {
-        if (!_document.IsEncrypted)
+        if (_document.IsEncrypted)
         {
-            return 0;
+            _document.Decrypt();
         }
 
-        _document.Decrypt();
-        return 1;
+        return default;
     }
 
-    public long Apply(OptimizePdfOp operation)
+    public ValueTuple Apply(OptimizePdfOp operation)
     {
         var options = new OptimizationOptions
         {
@@ -273,6 +267,6 @@ internal sealed partial class PdfMutationHandlers
         }
 
         _document.OptimizeResources(options);
-        return 1;
+        return default;
     }
 }

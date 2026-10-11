@@ -1,0 +1,232 @@
+using Aspose.Cli.Sdk.Contracts;
+using Aspose.Cli.Sdk.Diagnostics;
+using Aspose.Cli.Sdk.Errors;
+using Aspose.Cli.Sdk.Operations;
+using Xunit;
+
+namespace Aspose.Cli.Platform.Tests.Sdk;
+
+/// <summary>
+/// The SDK runner, applying a batch through a product's object model, derives every outcome
+/// from the snapshots: the product counts nothing.
+/// </summary>
+public sealed class BoundedOperationModelTests
+{
+    private static readonly OperationCatalog<TestOp> Catalog = TestOp.Catalog;
+
+    private static IReadOnlyList<TestOp> Batch(params TestOp[] ops) => Catalog.Prepare(new TestBatch { Ops = ops }).Ops;
+
+    /// <summary>A document of pages and named values; each operation edits it as the test says.</summary>
+    private sealed class Model(Action<TestOp, Model> apply) : IOperationModel<TestOp>
+    {
+        public List<string> Pages { get; } = ["a", "b", "c"];
+
+        public Dictionary<string, string> Values { get; } = new(StringComparer.Ordinal) { ["value/x"] = "1" };
+
+        public Func<TestOp, NoEffect?>? Explanation { get; init; }
+
+        /// <summary>The call of <see cref="Snapshot"/>, counted from 1, that fails inside the engine.</summary>
+        public int? FailingSnapshot { get; init; }
+
+        private int _snapshots;
+
+        public OperationSnapshot Snapshot(TestOp operation)
+        {
+            if (++_snapshots == FailingSnapshot)
+            {
+                throw new EngineOpException("the page cannot be read", new InvalidDataException("damaged"));
+            }
+
+            var snapshot = new OperationSnapshot().AddSequence("page", Pages);
+            foreach ((string address, string state) in Values)
+            {
+                snapshot.Add(address, state);
+            }
+
+            return snapshot;
+        }
+
+        public void Apply(TestOp operation) => apply(operation, this);
+
+        public IReadOnlyList<string> AttemptedTargets(TestOp operation) => ["page/all"];
+
+        public NoEffect? Explain(TestOp operation) => Explanation?.Invoke(operation);
+    }
+
+    [Fact]
+    public void Run_CountsWhatTheSnapshotsSeeChangeAndThePagesInTheOutput()
+    {
+        var model = new Model(static (op, document) =>
+        {
+            switch (((SetOp)op).Value)
+            {
+                case 1:
+                    document.Values["value/x"] = "2";
+                    document.Pages[1] = "B";
+                    break;
+                case 2:
+                    document.Pages.Insert(0, "new");
+                    break;
+                case 3:
+                    document.Pages.RemoveAt(3);
+                    break;
+            }
+        });
+
+        AppliedBatch applied = BoundedOperationRunner.Run(
+            Catalog, Batch(new SetOp { Value = 1 }, new SetOp { Value = 2 }, new SetOp { Value = 3 }), bestEffort: false, deadline: null, model, pageUnit: "page");
+
+        Assert.Equal([2L, 1L, 1L], applied.Outcomes.Select(static outcome => outcome.ItemsAffected));
+        Assert.Equal(["value/x", "page/2"], applied.Outcomes[0].Targets);
+        Assert.Equal(["page/1"], applied.Outcomes[1].Targets);
+        Assert.Equal(["page/4"], applied.Outcomes[2].Targets);
+        // The deleted page is not in the output.
+        Assert.Equal([1, 2], applied.Pages);
+        Assert.Empty(applied.Warnings);
+    }
+
+    [Fact]
+    public void Run_WarnsThatAnOperationThatChangedNothingHadNoEffect()
+    {
+        var model = new Model(static (_, document) => document.Values["value/x"] = "1");
+
+        AppliedBatch applied = BoundedOperationRunner.Run(Catalog, Batch(new SetOp { Value = 1 }), bestEffort: false, deadline: null, model);
+
+        BoundedOperationOutcome outcome = Assert.Single(applied.Outcomes);
+        Assert.Equal(OpStatuses.Ok, outcome.Status);
+        Assert.Equal(0, outcome.ItemsAffected);
+        Assert.Empty(outcome.Targets);
+        Warning warning = Assert.Single(applied.Warnings);
+        Assert.Equal("OP_NO_EFFECT", warning.Code.Name);
+        Assert.Equal("op-0001", warning.Details!["id"]!.GetValue<string>());
+        Assert.Equal("set", warning.Details["op"]!.GetValue<string>());
+        Assert.Equal(NoEffectReasons.NoChange, warning.Details["reason"]!.GetValue<string>());
+        Assert.Equal("Operation op-0001 (set) changed nothing: what it addresses already had the state it sets.", warning.Message);
+    }
+
+    [Fact]
+    public void Run_TakesTheProductsExplanationOfNoEffect()
+    {
+        var model = new Model(static (_, _) => { })
+        {
+            Explanation = static op => new NoEffect(NoEffectReasons.NoMatch, $"Operation {op.Id} (note) found no anchor.") { Hint = "Add an anchor." },
+        };
+
+        AppliedBatch applied = BoundedOperationRunner.Run(Catalog, Batch(new NoteOp { Text = "n" }), bestEffort: false, deadline: null, model);
+
+        Warning warning = Assert.Single(applied.Warnings);
+        Assert.Equal(NoEffectReasons.NoMatch, warning.Details!["reason"]!.GetValue<string>());
+        Assert.Equal("Operation op-0001 (note) found no anchor.", warning.Message);
+        Assert.Equal("Add an anchor.", warning.Hint);
+    }
+
+    [Fact]
+    public void Run_ReportsTheAttemptedTargetsOfAFailedOperation()
+    {
+        var model = new Model(static (op, document) =>
+        {
+            if (op is NoteOp)
+            {
+                throw new OperationInvalidException("the note has no anchor");
+            }
+
+            document.Pages[0] = "A";
+        });
+
+        AppliedBatch applied = BoundedOperationRunner.Run(
+            Catalog, Batch(new NoteOp { Text = "n" }, new SetOp { Value = 1 }), bestEffort: true, deadline: null, model);
+
+        Assert.Equal([OpStatuses.Failed, OpStatuses.Ok], applied.Outcomes.Select(static outcome => outcome.Status));
+        Assert.Equal(["page/all"], applied.Outcomes[0].Targets);
+        Assert.Equal(0, applied.Outcomes[0].ItemsAffected);
+        Assert.Empty(applied.Warnings);
+    }
+
+    /// <summary>
+    /// An operation that applied but whose result cannot be read is neither reported failed, which
+    /// would deny a change the document holds, nor counted: the batch stops and nothing is written.
+    /// </summary>
+    [Fact]
+    public void Run_StopsTheBatchWhenWhatAnAppliedOperationChangedCannotBeRead()
+    {
+        var model = new Model(static (_, document) => document.Pages[0] = "A") { FailingSnapshot = 2 };
+
+        CliException error = Assert.Throws<CliException>(() => BoundedOperationRunner.Run(
+            Catalog, Batch(new SetOp { Value = 1 }, new SetOp { Value = 2 }), bestEffort: true, deadline: null, model));
+
+        Assert.Equal(ErrorCodes.FeatureUnsupported, error.Code);
+        Assert.Equal("op-0001", error.Details!["id"]!.GetValue<string>());
+        Assert.Equal("set", error.Details["op"]!.GetValue<string>());
+        Assert.Contains("nothing was written: it applied, but reading what it changed failed: the page cannot be read", error.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Run_CoversMoreThanTheMaximumTargetsWithOneRangePerUnit()
+    {
+        var model = new Model(static (_, document) =>
+        {
+            for (int index = 0; index < document.Pages.Count; index++)
+            {
+                document.Pages[index] += "'";
+            }
+
+            for (int index = 0; index < 101; index++)
+            {
+                document.Values[$"value/n{index}"] = "new";
+            }
+        });
+        model.Pages.AddRange(Enumerable.Range(4, 147).Select(static page => $"p{page}"));
+
+        AppliedBatch applied = BoundedOperationRunner.Run(Catalog, Batch(new SetOp { Value = 1 }), bestEffort: false, deadline: null, model, pageUnit: "page");
+
+        BoundedOperationOutcome outcome = Assert.Single(applied.Outcomes);
+        Assert.Equal(251, outcome.ItemsAffected);
+        Assert.Equal(["value/all", "page/1-150"], outcome.Targets);
+        Assert.Equal(150, applied.Pages.Count);
+    }
+
+    [Fact]
+    public void Verified_ChecksTheRecordedOperationsInBatchOrderAndLeavesOneWhoseRecordFailedUnchecked()
+    {
+        var model = new Model(static (op, document) => document.Pages[0] = ((SetOp)op).Value.ToString(System.Globalization.CultureInfo.InvariantCulture));
+        var verifier = new Verifier();
+
+        AppliedBatch applied = BoundedOperationRunner.Run(
+            Catalog, Batch(new SetOp { Value = 1 }, new SetOp { Value = 2 }, new SetOp { Value = 3 }), bestEffort: false, deadline: null, model, verifier);
+        VerifiedBatch verified = applied.Verified(new VerificationFacts([], ["op-0003", "op-0002", "op-0001"]));
+
+        Assert.Equal([1L, 1L, 1L], verifier.Affected);
+        Assert.True(verified.Ok);
+        Assert.Equal(["op-0001", "op-0003"], verified.CheckedOps);
+    }
+
+    [Fact]
+    public void Verified_FailsWithTheIssuesTheReadBackFound()
+    {
+        var model = new Model(static (_, document) => document.Pages[0] = "A");
+        VerificationIssue issue = VerificationIssues.Of(
+            DiagnosticDescriptor.Verification("TEST_MISMATCH", "test"), "Operation op-0001 (set): page 1 reads 'a'.", "page/1", "Inspect the page.");
+
+        AppliedBatch applied = BoundedOperationRunner.Run(Catalog, Batch(new SetOp { Value = 1 }), bestEffort: false, deadline: null, model, new Verifier());
+        VerifiedBatch verified = applied.Verified(new VerificationFacts([issue], ["op-0001"]));
+
+        Assert.False(verified.Ok);
+        Assert.Equal([issue], verified.Issues);
+        Assert.Equal(["op-0001"], verified.CheckedOps);
+    }
+
+    /// <summary>Records each operation; the second one's record throws.</summary>
+    private sealed class Verifier : IEditVerifier<TestOp>
+    {
+        public List<long> Affected { get; } = [];
+
+        public void Record(TestOp operation, AppliedOperation applied)
+        {
+            Affected.Add(applied.ItemsAffected);
+            if (operation.Id == "op-0002")
+            {
+                throw new InvalidOperationException("The effect cannot be read.");
+            }
+        }
+    }
+}

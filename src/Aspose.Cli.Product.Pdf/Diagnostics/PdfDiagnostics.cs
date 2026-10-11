@@ -28,6 +28,12 @@ internal static class PdfDiagnostics
     /// <summary>An HTML import allowed network resources and the importer requested them.</summary>
     internal static readonly WarningCode NetworkResourcesRequested = new("NETWORK_RESOURCES_REQUESTED");
 
+    /// <summary>
+    /// An operation removed or set document information that the engine writes into every PDF it
+    /// saves, so the output still holds it.
+    /// </summary>
+    internal static readonly WarningCode MetadataRewritten = new("METADATA_REWRITTEN");
+
     /// <summary>A redaction moved the text that followed what it removed.</summary>
     internal static readonly WarningCode RedactionTextMoved = new("REDACTION_TEXT_MOVED");
 
@@ -74,5 +80,6 @@ internal static class PdfDiagnostics
         DiagnosticDescriptor.Warning(NavigationDegraded),
         DiagnosticDescriptor.Warning(NetworkResourcesRequested),
         DiagnosticDescriptor.Warning(RedactionTextMoved),
+        DiagnosticDescriptor.Warning(MetadataRewritten),
     ];
 }

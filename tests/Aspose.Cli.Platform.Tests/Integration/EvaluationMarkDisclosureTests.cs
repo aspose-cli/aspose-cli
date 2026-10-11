@@ -51,7 +51,7 @@ public sealed class EvaluationMarkDisclosureTests
         ScenarioLicense.Project(workspace.Path);
         string extension = ScenarioFixtures.PrimaryFormat(product);
         File.WriteAllBytes(workspace.File("clean." + extension), ScenarioFixtures.Read($"{product}.{extension}"));
-        File.WriteAllBytes(workspace.File("ops.json"), ScenarioFixtures.Read($"{product}.ops"));
+        File.WriteAllText(workspace.File("ops.json"), AddingOperations[product]);
 
         // The licensed edit of the clean document reads only the clean input, so it runs at the
         // same time as the evaluation-mode edit that makes the marked document.
@@ -67,6 +67,18 @@ public sealed class EvaluationMarkDisclosureTests
         Assert.DoesNotContain(EvaluationModeWarning, Codes(fromMarked));
         return [.. Codes(fromMarked).Except(Codes(fromClean), StringComparer.Ordinal).Order(StringComparer.Ordinal)];
     }
+
+    /// <summary>
+    /// One operation per product that adds content each time it runs: the marked document already
+    /// holds one edit, and the edit applied to it again must change it as it changes the clean one.
+    /// </summary>
+    private static readonly IReadOnlyDictionary<string, string> AddingOperations = new Dictionary<string, string>(StringComparer.Ordinal)
+    {
+        ["cells"] = """{"ops":[{"op":"insert_rows","sheet":"Sheet1","at":2}]}""",
+        ["pdf"] = """{"ops":[{"op":"add_bookmark","title":"Again","page":1}]}""",
+        ["slides"] = """{"ops":[{"op":"add_slide","layout":"Title Only"}]}""",
+        ["words"] = """{"ops":[{"op":"insert_paragraphs","at":{"block":2},"position":"after","paragraphs":[{"text":"Added"}]}]}""",
+    };
 
     private static JsonNode Edit(TempWorkspace workspace, string product, string input, string output, params string[] extra) =>
         workspace.Run([product, "edit", input, "--ops", "ops.json", "--out", output, "--output-format", "json", .. extra]).Json();

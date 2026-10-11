@@ -11,10 +11,10 @@ namespace Aspose.Cli.IntegrationTests;
 /// <summary>
 /// The <c>targets</c> of an edit outcome are bounded once, by the SDK, for every product: an
 /// operation that changed at most 100 parts lists each of them, and one that changed more lists
-/// the product's degenerate form instead: exactly the document root address (<c>pdf</c>,
-/// <c>presentation</c> or <c>document</c>) or, for Words, block-range addresses
-/// (<c>blocks/1-101</c>), never a truncated prefix of the parts and never a category address
-/// that has a documented meaning of its own, such as <c>pdf/bookmark</c> ("all bookmarks").
+/// the product's degenerate form instead: exactly the document root address (<c>presentation</c>
+/// or <c>document</c>), for Words block-range addresses (<c>blocks/1-101</c>), and for a product
+/// whose objects the SDK snapshots (PDF) one range per unit (<c>page/1-101</c>), never a
+/// truncated prefix of the parts.
 /// PDF pages and bookmarks, slides and Word blocks are the parts a single operation can change by
 /// the hundred; a Cells target is one range address, so Cells has no case here.
 /// </summary>
@@ -54,10 +54,10 @@ public sealed partial class BoundedEditTargetTests
         }
     }
 
-    /// <summary>The document root address of each product: the degenerate form of an outcome past the bound.</summary>
+    /// <summary>The degenerate form of each product's case past the bound: the document root, or the PDF pages it rotated.</summary>
     private static readonly IReadOnlyDictionary<string, string> Roots = new Dictionary<string, string>(StringComparer.Ordinal)
     {
-        ["pdf"] = "pdf",
+        ["pdf"] = "page/1-101",
         ["slides"] = "presentation",
         ["words"] = "document",
     };

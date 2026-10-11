@@ -8,6 +8,11 @@ namespace Aspose.Cli.Sdk.Operations;
 /// <summary>What one successfully applied operation changed.</summary>
 /// <param name="ItemsAffected">Number of product-owned items changed.</param>
 /// <param name="Targets">Stable product-owned addresses of the changed items.</param>
+/// <remarks>
+/// The SDK builds it from the snapshots an <see cref="IOperationModel{TOp}"/> takes. Until every
+/// product applies its batches through one, a product that still counts for itself constructs it
+/// too; once the last one has moved, the constructor becomes internal to the SDK.
+/// </remarks>
 public readonly record struct AppliedOperation(long ItemsAffected, IReadOnlyList<string> Targets);
 
 /// <summary>
@@ -55,13 +60,137 @@ public static class BoundedOperationRunner
         Func<TOp, IReadOnlyList<string>, IReadOnlyList<string>>? degenerateTargets = null)
         where TOp : BoundedOperation
     {
-        ArgumentNullException.ThrowIfNull(catalog);
-        ArgumentNullException.ThrowIfNull(operations);
         ArgumentNullException.ThrowIfNull(apply);
         ArgumentNullException.ThrowIfNull(attemptedTargets);
+        return Execute(
+            catalog, operations, bestEffort, deadline, apply.Method.Module.Assembly, apply,
+            (operation, index, name) => Bounded(operation, name, attemptedTargets(operation, index), degenerateTargets),
+            (operation, name, applied) => Bounded(operation, name, applied.Targets, degenerateTargets),
+            applied: null);
+    }
+
+    /// <summary>
+    /// Runs every operation of a validated batch through the product's object model: the SDK
+    /// snapshots the objects each operation can change before and after it, and an operation's
+    /// <c>itemsAffected</c> is the number of objects that changed and its <c>targets</c> their
+    /// addresses, where they are in the output, or in the input for removed ones. More than
+    /// <see cref="BoundedOperationOutcome.MaximumTargets"/> addresses shorten to one per unit
+    /// that covers them all, such as <c>page/1-150</c>. An operation that applied but changed
+    /// nothing warns <c>OP_NO_EFFECT</c>.
+    /// When the snapshot after an operation cannot be read, the operation has applied but no
+    /// outcome can say what it changed: the batch stops as after an engine failure.
+    /// </summary>
+    /// <param name="catalog">The vocabulary the batch was validated against.</param>
+    /// <param name="operations">Validated operations with assigned ids.</param>
+    /// <param name="bestEffort">Whether a rejected operation is recorded instead of stopping the batch.</param>
+    /// <param name="deadline">Invocation deadline checked before every operation.</param>
+    /// <param name="model">Snapshots and applies the operations.</param>
+    /// <param name="verifier">With <c>--verify</c>, records the effect of each operation that applied.</param>
+    /// <param name="pageUnit">
+    /// The unit whose numbered addresses, such as <c>page/3</c>, are the pages of the output;
+    /// the batch reports the ones it changed in <see cref="AppliedBatch.Pages"/>.
+    /// </param>
+    public static AppliedBatch Run<TOp>(
+        OperationCatalog<TOp> catalog,
+        IReadOnlyList<TOp> operations,
+        bool bestEffort,
+        OperationDeadline? deadline,
+        IOperationModel<TOp> model,
+        IEditVerifier<TOp>? verifier = null,
+        string? pageUnit = null)
+        where TOp : BoundedOperation
+    {
+        ArgumentNullException.ThrowIfNull(model);
+        var warnings = new List<Warning>();
+        var pages = new SortedSet<int>();
+        var recorded = new List<string>();
+        var unrecorded = new HashSet<string>(StringComparer.Ordinal);
+        IReadOnlyList<BoundedOperationOutcome> outcomes = Execute(
+            catalog,
+            operations,
+            bestEffort,
+            deadline,
+            model.GetType().Assembly,
+            (operation, _) =>
+            {
+                OperationSnapshot before = model.Snapshot(operation);
+                model.Apply(operation);
+                OperationSnapshot after;
+                try
+                {
+                    after = model.Snapshot(operation);
+                }
+                catch (Exception failure) when (failure is EngineOpException or CliException { IsInvocationFailure: false })
+                {
+                    // The operation changed the document, but what it changed cannot be read, so
+                    // no outcome can say it truthfully, and reporting it failed would deny a change
+                    // the output holds: the batch stops and nothing is written, as after an engine
+                    // failure, in both modes. Any other exception is a defect and propagates.
+                    throw new EngineOpException(
+                        $"it applied, but reading what it changed failed: {failure.Message}",
+                        failure is EngineOpException { InnerException: { } inner } ? inner : failure);
+                }
+
+                IReadOnlyList<ObjectChange> changes = OperationSnapshot.Compare(before, after);
+                if (pageUnit is not null)
+                {
+                    pages.UnionWith(changes
+                        .Where(change => change.InOutput && change.Address.StartsWith(pageUnit + "/", StringComparison.Ordinal))
+                        .Select(static change => OperationSnapshot.FirstNumber(change.Address))
+                        .OfType<int>());
+                }
+
+                return new AppliedOperation(changes.Count, [.. changes.Select(static change => change.Address).Distinct(StringComparer.Ordinal)]);
+            },
+            (operation, _, _) => Covered(model.AttemptedTargets(operation)),
+            (_, _, applied) => Covered(applied.Targets),
+            (operation, id, name, applied) =>
+            {
+                if (applied.ItemsAffected == 0)
+                {
+                    NoEffect effect = model.Explain(operation) ?? new NoEffect(
+                        NoEffectReasons.NoChange,
+                        $"Operation {id} ({name}) changed nothing: what it addresses already had the state it sets.");
+                    warnings.Add(catalog.NoEffect(operation, effect.Reason, effect.Message) with { Hint = effect.Hint });
+                }
+
+                if (verifier is not null)
+                {
+                    recorded.Add(id);
+                    try
+                    {
+                        verifier.Record(operation, applied);
+                    }
+                    catch (Exception exception) when (exception is not (OperationCanceledException or OutOfMemoryException))
+                    {
+                        // Recording reads the document; what it cannot read stays unchecked.
+                        unrecorded.Add(id);
+                    }
+                }
+            });
+        return new AppliedBatch(outcomes, warnings, [.. pages], recorded, unrecorded);
+    }
+
+    private static IReadOnlyList<string> Covered(IReadOnlyList<string> targets) =>
+        targets.Count <= BoundedOperationOutcome.MaximumTargets ? targets : OperationSnapshot.Cover(targets);
+
+    private static IReadOnlyList<BoundedOperationOutcome> Execute<TOp>(
+        OperationCatalog<TOp> catalog,
+        IReadOnlyList<TOp> operations,
+        bool bestEffort,
+        OperationDeadline? deadline,
+        Assembly product,
+        Func<TOp, int, AppliedOperation> apply,
+        Func<TOp, int, string, IReadOnlyList<string>> attemptedTargets,
+        Func<TOp, string, AppliedOperation, IReadOnlyList<string>> appliedTargets,
+        Action<TOp, string, string, AppliedOperation>? applied)
+        where TOp : BoundedOperation
+    {
+        ArgumentNullException.ThrowIfNull(catalog);
+        ArgumentNullException.ThrowIfNull(operations);
 
         // The CLI code an operation runs: this SDK and the product that applies it.
-        var own = new HashSet<Assembly> { typeof(BoundedOperationRunner).Assembly, apply.Method.Module.Assembly };
+        var own = new HashSet<Assembly> { typeof(BoundedOperationRunner).Assembly, product };
         var outcomes = new List<BoundedOperationOutcome>(operations.Count);
         for (int index = 0; index < operations.Count; index++)
         {
@@ -70,19 +199,11 @@ public static class BoundedOperationRunner
             string id = operation.Id
                 ?? throw new ArgumentException("Every operation of a validated batch has an id.", nameof(operations));
             deadline?.ThrowIfExpired("operations");
-            CliException rejection;
+            CliException? rejection = null;
+            AppliedOperation done = default;
             try
             {
-                AppliedOperation applied = apply(operation, index);
-                outcomes.Add(new BoundedOperationOutcome
-                {
-                    Id = id,
-                    Op = name,
-                    Status = OpStatuses.Ok,
-                    ItemsAffected = applied.ItemsAffected,
-                    Targets = Bounded(operation, name, applied.Targets, degenerateTargets),
-                });
-                continue;
+                done = apply(operation, index);
             }
             catch (OperationInvalidException invalid)
             {
@@ -116,6 +237,20 @@ public static class BoundedOperationRunner
                 }
             }
 
+            if (rejection is null)
+            {
+                outcomes.Add(new BoundedOperationOutcome
+                {
+                    Id = id,
+                    Op = name,
+                    Status = OpStatuses.Ok,
+                    ItemsAffected = done.ItemsAffected,
+                    Targets = appliedTargets(operation, name, done),
+                });
+                applied?.Invoke(operation, id, name, done);
+                continue;
+            }
+
             if (!bestEffort)
             {
                 throw rejection;
@@ -126,7 +261,7 @@ public static class BoundedOperationRunner
                 Op = name,
                 Status = OpStatuses.Failed,
                 ItemsAffected = 0,
-                Targets = Bounded(operation, name, attemptedTargets(operation, index), degenerateTargets),
+                Targets = attemptedTargets(operation, index, name),
                 Error = rejection.ToEnvelope().Error with { Hint = rejection.Hint ?? BestEffortHint },
             });
         }

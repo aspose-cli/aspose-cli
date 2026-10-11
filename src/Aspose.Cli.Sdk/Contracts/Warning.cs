@@ -124,4 +124,10 @@ public static class NoEffectReasons
 {
     /// <summary>What the operation looks for, such as text, a pattern or an author, is not in the document.</summary>
     public const string NoMatch = "no-match";
+
+    /// <summary>
+    /// The objects the operation addresses already had the state it sets, so a snapshot of them
+    /// before and after it found no difference.
+    /// </summary>
+    public const string NoChange = "no-change";
 }

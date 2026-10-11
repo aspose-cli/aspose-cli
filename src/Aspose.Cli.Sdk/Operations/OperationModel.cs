@@ -1,0 +1,115 @@
+using Aspose.Cli.Sdk.Contracts;
+
+namespace Aspose.Cli.Sdk.Operations;
+
+/// <summary>
+/// What a product supplies so the SDK can apply a batch and say truthfully what each operation
+/// changed: the operation itself, and a snapshot of the objects it can change. The SDK takes
+/// the snapshot before and after each operation and derives the outcome's
+/// <c>itemsAffected</c> and <c>targets</c>, the pages the batch touched and the
+/// <c>OP_NO_EFFECT</c> warning of an operation that changed nothing; the product counts nothing.
+/// </summary>
+/// <typeparam name="TOp">The product's operation vocabulary.</typeparam>
+public interface IOperationModel<in TOp>
+    where TOp : BoundedOperation
+{
+    /// <summary>
+    /// The state of every object of the document the operation can change, such as the pages
+    /// it selects, with their <c>&lt;unit&gt;/&lt;address&gt;</c> addresses. It changes nothing.
+    /// Taken before the operation, it may refuse an operation whose targets do not exist, as
+    /// the operation itself would.
+    /// </summary>
+    OperationSnapshot Snapshot(TOp operation);
+
+    /// <summary>Applies the operation to the document; it reports nothing.</summary>
+    void Apply(TOp operation);
+
+    /// <summary>The addresses an operation that failed attempted to change, such as <c>page/2-4</c>.</summary>
+    IReadOnlyList<string> AttemptedTargets(TOp operation);
+
+    /// <summary>
+    /// Why an operation that applied changed nothing, when the product can say more than that
+    /// what it addresses already had the state it sets: for example that its text matched
+    /// nothing. Null for the general explanation.
+    /// </summary>
+    NoEffect? Explain(TOp operation) => null;
+}
+
+/// <summary>Why an operation changed nothing: the <c>details.reason</c>, message and hint of its <c>OP_NO_EFFECT</c> warning.</summary>
+/// <param name="Reason">One of <see cref="NoEffectReasons"/>.</param>
+/// <param name="Message">What the operation did not find or change; it never repeats a value the caller may keep private, such as find text.</param>
+public sealed record NoEffect(string Reason, string Message)
+{
+    /// <summary>How to make the operation take effect, or null.</summary>
+    public string? Hint { get; init; }
+}
+
+/// <summary>
+/// Records what each applied operation should leave in the output so that, after the batch,
+/// the product's read-back of the staged output can check it (<c>edit --verify</c>).
+/// </summary>
+/// <typeparam name="TOp">The product's operation vocabulary.</typeparam>
+public interface IEditVerifier<in TOp>
+    where TOp : BoundedOperation
+{
+    /// <summary>
+    /// Records the effect of one operation that applied, against the document it left. An
+    /// exception leaves the operation unchecked; it never fails the operation.
+    /// </summary>
+    void Record(TOp operation, AppliedOperation applied);
+}
+
+/// <summary>What the product's read-back of the staged output found.</summary>
+/// <param name="Issues">Each expectation the output does not meet.</param>
+/// <param name="Checked">The ids of the operations whose every recorded effect was read back.</param>
+public sealed record VerificationFacts(IReadOnlyList<VerificationIssue> Issues, IReadOnlyCollection<string> Checked);
+
+/// <summary>The core of an edit's <c>verification</c>, as <see cref="EditVerification"/> reports it.</summary>
+/// <param name="Ok">Whether the verification found no issue.</param>
+/// <param name="Issues">The problems found.</param>
+/// <param name="CheckedOps">In batch order, the ids of the operations whose effect was read back.</param>
+public sealed record VerifiedBatch(bool Ok, IReadOnlyList<VerificationIssue> Issues, IReadOnlyList<string> CheckedOps);
+
+/// <summary>A batch the SDK applied through an <see cref="IOperationModel{TOp}"/>.</summary>
+public sealed class AppliedBatch
+{
+    private readonly IReadOnlyList<string> _recorded;
+    private readonly IReadOnlySet<string> _unrecorded;
+
+    internal AppliedBatch(
+        IReadOnlyList<BoundedOperationOutcome> outcomes,
+        IReadOnlyList<Warning> warnings,
+        IReadOnlyList<int> pages,
+        IReadOnlyList<string> recorded,
+        IReadOnlySet<string> unrecorded)
+    {
+        Outcomes = outcomes;
+        Warnings = warnings;
+        Pages = pages;
+        _recorded = recorded;
+        _unrecorded = unrecorded;
+    }
+
+    /// <summary>One outcome per operation, in batch order.</summary>
+    public IReadOnlyList<BoundedOperationOutcome> Outcomes { get; }
+
+    /// <summary>An <c>OP_NO_EFFECT</c> warning for each operation that applied but changed nothing, in batch order.</summary>
+    public IReadOnlyList<Warning> Warnings { get; }
+
+    /// <summary>The numbers of the pages in the output that the batch changed, ascending; empty without a page unit.</summary>
+    public IReadOnlyList<int> Pages { get; }
+
+    /// <summary>
+    /// The verification core from the product's read-back of the staged output: it passes
+    /// without issues, and an operation counts as checked when the verifier recorded it and the
+    /// read-back checked every effect it recorded.
+    /// </summary>
+    public VerifiedBatch Verified(VerificationFacts facts)
+    {
+        ArgumentNullException.ThrowIfNull(facts);
+        return new VerifiedBatch(
+            facts.Issues.Count == 0,
+            facts.Issues,
+            [.. _recorded.Where(id => facts.Checked.Contains(id) && !_unrecorded.Contains(id)).Distinct(StringComparer.Ordinal)]);
+    }
+}

@@ -350,7 +350,7 @@ public sealed class PdfMutateTests
             },
             Output = TestOutput.At(filled),
         });
-        Assert.Equal(["pdf/form"], Assert.Single(filledResult.Applied).Targets);
+        Assert.Equal(["field/Customer"], Assert.Single(filledResult.Applied).Targets);
         Assert.NotNull(filledResult.Input.Fingerprint);
         Assert.NotNull(filledResult.Output?.Fingerprint);
         Assert.Equal("Contoso", PdfForms.Read(fixture.Session, new PdfFormReadRequest { Input = filled }).Fields.Single().Value);
@@ -376,7 +376,7 @@ public sealed class PdfMutateTests
             },
             Output = TestOutput.At(flattened),
         });
-        Assert.All(flattenResult.Applied, static item => Assert.Equal(["pdf/form"], item.Targets));
+        Assert.All(flattenResult.Applied, static item => Assert.Equal(["field/Customer"], item.Targets));
         using var reopened = new Document(flattened);
         Assert.Empty(reopened.Form.Fields);
         Assert.Contains("Northwind", PageText(reopened.Pages[1]), StringComparison.Ordinal);
@@ -716,8 +716,8 @@ public sealed class PdfMutateTests
         });
         Assert.True(partial.HasFailures);
         Assert.Equal([OpStatuses.Ok, OpStatuses.Failed], partial.Applied.Select(static item => item.Status));
-        Assert.Equal(["pdf/metadata"], partial.Applied[0].Targets);
-        Assert.Equal(["pdf/attachment"], partial.Applied[1].Targets);
+        Assert.Equal(["metadata/title"], partial.Applied[0].Targets);
+        Assert.Equal(["attachment/missing.bin"], partial.Applied[1].Targets);
         Assert.Equal("ATTACHMENT_NOT_FOUND", partial.Applied[1].Error!.Code);
         Assert.Equal("missing.bin", partial.Applied[1].Error!.Details!["requested"]!.GetValue<string>());
         Assert.Equal(0, partial.Applied[1].Error!.Details!["availableCount"]!.GetValue<int>());
@@ -1218,7 +1218,7 @@ public sealed class PdfMutateTests
 
         // Second, its child and Third, each addressed as it was before the deletion.
         Assert.Equal(3, Assert.Single(result.Applied).ItemsAffected);
-        Assert.Equal([$"pdf/bookmark/{first}", $"pdf/bookmark/{second}"], result.Applied[0].Targets);
+        Assert.Equal(["bookmark/2", "bookmark/2/1", "bookmark/3"], result.Applied[0].Targets);
         Assert.Equal(
             ["1 First 1", "2 Fourth 1", "2/1 Fourth.A 2", "2/2 Fourth.B 3"],
             OutlineOf(fixture, edited).Select(static item => $"{item.Index} {item.Title} {item.Page}"));
@@ -1242,17 +1242,19 @@ public sealed class PdfMutateTests
         });
 
         Assert.Equal(7, Assert.Single(result.Applied).ItemsAffected);
-        Assert.Equal(["pdf/bookmark"], result.Applied[0].Targets);
+        Assert.Equal(
+            ["bookmark/1", "bookmark/2", "bookmark/2/1", "bookmark/3", "bookmark/4", "bookmark/4/1", "bookmark/4/2"],
+            result.Applied[0].Targets);
         Assert.Empty(OutlineOf(fixture, edited));
     }
 
     /// <summary>
     /// An outcome lists at most 100 targets: deleting more listed bookmarks than that reports
-    /// the document root, never an internal error, and never <c>pdf/bookmark</c>, which the
-    /// docs define as every bookmark while some remain.
+    /// the ranges that cover them, never an internal error, and never every bookmark while some
+    /// remain.
     /// </summary>
     [Fact]
-    public void Bookmarks_DeletingMoreThanAnOutcomeListsReportsTheDocumentRoot()
+    public void Bookmarks_DeletingMoreThanAnOutcomeListsReportsTheRangesThatCoverThem()
     {
         using var fixture = new PdfEngineFixture();
         string input = Outlined(fixture, "many.pdf", static document =>
@@ -1275,7 +1277,7 @@ public sealed class PdfMutateTests
         });
 
         Assert.Equal(101, Assert.Single(result.Applied).ItemsAffected);
-        Assert.Equal(["pdf"], result.Applied[0].Targets);
+        Assert.Equal(["bookmark/1-101"], result.Applied[0].Targets);
         Assert.Equal(49, OutlineOf(fixture, edited).Length);
     }
 
@@ -1314,9 +1316,9 @@ public sealed class PdfMutateTests
         });
 
         Assert.Equal("BOOKMARK_NOT_FOUND", result.Applied[0].Error!.Code);
-        Assert.Equal(["pdf/bookmark"], result.Applied[0].Targets);
+        Assert.Equal(["bookmark/1", "bookmark/2/5"], result.Applied[0].Targets);
         Assert.Equal(OpStatuses.Ok, result.Applied[1].Status);
-        Assert.Equal(["pdf/bookmark/1/1"], result.Applied[1].Targets);
+        Assert.Equal(["bookmark/1/1"], result.Applied[1].Targets);
         Assert.Equal(
             ["1 First 1", "1/1 Added 1", "2 Second 2", "2/1 Second.A 2", "3 Third 3", "4 Fourth 1", "4/1 Fourth.A 2", "4/2 Fourth.B 3"],
             OutlineOf(fixture, edited).Select(static item => $"{item.Index} {item.Title} {item.Page}"));
@@ -1738,7 +1740,9 @@ public sealed class PdfMutateTests
         });
 
         Assert.True(result.Verification!.Ok);
-        Assert.Equal(2, Assert.Single(result.Applied).ItemsAffected);
+        // Both matches lie on the one page the operation changed.
+        Assert.Equal(1, Assert.Single(result.Applied).ItemsAffected);
+        Assert.Equal(["page/1"], result.Applied[0].Targets);
         using var reopened = new Document(output);
         string text = PageText(reopened.Pages[1]);
         Assert.DoesNotContain("0101", text, StringComparison.Ordinal);
@@ -1766,7 +1770,7 @@ public sealed class PdfMutateTests
             Output = TestOutput.At(output),
         });
 
-        Assert.Equal(2, Assert.Single(result.Applied).ItemsAffected);
+        Assert.Equal(1, Assert.Single(result.Applied).ItemsAffected);
         using var reopened = new Document(output);
         string text = PageText(reopened.Pages[1]);
         Assert.DoesNotMatch("55|0101|0202", text);
@@ -1957,7 +1961,7 @@ public sealed class PdfMutateTests
     private static byte[] PixelPng() => Convert.FromBase64String(
         "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=");
 
-    private static byte[] Bitmap(int width, int height)
+    internal static byte[] Bitmap(int width, int height)
     {
         int stride = (width * 3 + 3) & ~3;
         int pixelBytes = stride * height;

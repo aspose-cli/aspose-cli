@@ -2904,6 +2904,13 @@
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
+      "code": "METADATA_REWRITTEN",
+      "owner": "pdf",
+      "severity": "warning",
+      "category": "warning",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
       "code": "NAVIGATION_DEGRADED",
       "owner": "pdf",
       "severity": "warning",
