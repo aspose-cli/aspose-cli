@@ -32,8 +32,6 @@ public sealed class PdfModule : IProductModule
             .Diagnostics(PdfDiagnostics.All)
             .Json(ProductJsonContext.Definition)
             .View(new PdfViewAdapter())
-            // Only the EVALUATION_LIMIT refusal; the write pipeline discloses evaluation output.
-            .Guard(static (session, run) => PdfEvaluation.Run(session.Outputs, run))
             .Describe("PDF automation with page, security and fixed-layout semantics.", Help)
             .Command(InspectCommand.Create, PdfInfo.Run)
             .Group("query", "Query bounded PDF pages, forms or text matches.", static query => query

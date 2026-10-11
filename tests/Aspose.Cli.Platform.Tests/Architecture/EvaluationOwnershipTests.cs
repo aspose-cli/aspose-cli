@@ -122,6 +122,74 @@ public sealed partial class EvaluationOwnershipTests
             "Every evaluation code the CLI publishes in its diagnostics catalog is declared by the SDK:");
     }
 
+    /// <summary>
+    /// An evaluation limit the engine raises is translated into <c>EVALUATION_LIMIT</c> in one
+    /// place, the SDK: outside it no code builds that error while handling an exception, directly
+    /// or through an error factory of its own, and the SDK has exactly one catch clause that does.
+    /// </summary>
+    [Fact]
+    public void D6_OnlyTheSdkTranslatesAnEngineEvaluationException()
+    {
+        OwnedSourceFile[] outside = [.. OwnershipSourceFiles.All.Where(static file => !file.IsUnder(OwnershipSourceFiles.SdkRoot))];
+        // A product's own factory of the error counts as building it, such as a refusal it raises itself.
+        HashSet<string> builders =
+        [
+            EvaluationLimitFactory,
+            .. outside.SelectMany(static file => file.Root.DescendantNodes().OfType<InvocationExpressionSyntax>()
+                .Where(static invocation => OwnershipSourceFiles.InvokedName(invocation) == EvaluationLimitFactory)
+                .Select(static invocation => invocation.Ancestors().OfType<MethodDeclarationSyntax>().FirstOrDefault())
+                .Where(static method => method?.ReturnType.ToString() == "CliException")
+                .Select(static method => method!.Identifier.ValueText)),
+        ];
+        IEnumerable<string> violations = outside.SelectMany(file => file.Root.DescendantNodes()
+            .OfType<InvocationExpressionSyntax>()
+            .Where(invocation => OwnershipSourceFiles.InvokedName(invocation) is { } name && builders.Contains(name)
+                && invocation.Ancestors().Any(static ancestor => ancestor is CatchClauseSyntax))
+            .Select(invocation => file.At(invocation, invocation.ToString().Split('\n')[0].Trim())));
+
+        OwnershipSourceFiles.AssertNone(violations,
+            "An engine's evaluation exception is translated into EVALUATION_LIMIT by the SDK alone, from the product's "
+            + $"{ExpectedProfileName}; no product or host code builds the error while it handles an exception:");
+
+        string[] sdkTranslations =
+        [
+            .. OwnershipSourceFiles.Sdk.SelectMany(static file => file.Root.DescendantNodes()
+                .OfType<CatchClauseSyntax>()
+                .Where(static clause => clause.DescendantNodes().OfType<IdentifierNameSyntax>()
+                    .Any(static name => name.Identifier.ValueText.Contains(EvaluationLimitFactory, StringComparison.Ordinal)))
+                .Select(clause => file.At(clause, clause.ToString().Split('\n')[0].Trim()))),
+        ];
+        Assert.True(sdkTranslations.Length == 1,
+            "The SDK translates an engine's evaluation exception into EVALUATION_LIMIT in exactly one catch clause; found:"
+            + Environment.NewLine + string.Join(Environment.NewLine, sdkTranslations));
+    }
+
+    /// <summary>
+    /// <c>EVALUATION_INPUT_TRUNCATED</c> is written by the SDK alone, from the product's evaluation
+    /// profile, for an input the command read; no product or host code names the code.
+    /// </summary>
+    [Fact]
+    public void D6_OnlyTheSdkWritesTheInputTruncationWarning()
+    {
+        IEnumerable<string> violations = OwnershipSourceFiles.All
+            .Where(static file => !file.IsUnder(OwnershipSourceFiles.SdkRoot))
+            .SelectMany(file => file.Root.DescendantNodes()
+                .OfType<MemberAccessExpressionSyntax>()
+                .Where(static access => access.Name.Identifier.ValueText == InputTruncatedCode
+                    && access.Expression.ToString().EndsWith("WarningCodes", StringComparison.Ordinal))
+                .Select(access => file.At(access, access.ToString())));
+
+        OwnershipSourceFiles.AssertNone(violations,
+            "EVALUATION_INPUT_TRUNCATED is the SDK's to write for an input a command read (OutputPipeline.ReadInput); "
+            + "no product or host code builds it:");
+    }
+
+    /// <summary>The SDK factory name of the <c>EVALUATION_LIMIT</c> error.</summary>
+    private const string EvaluationLimitFactory = "EvaluationLimit";
+
+    /// <summary>The SDK warning code member of <c>EVALUATION_INPUT_TRUNCATED</c>.</summary>
+    private const string InputTruncatedCode = "EvaluationInputTruncated";
+
     private static string? BaseName(TypeSyntax type) => type switch
     {
         GenericNameSyntax generic => generic.Identifier.ValueText,

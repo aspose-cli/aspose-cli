@@ -129,6 +129,10 @@ internal static class ViewRenderWorker
                 PresenterStylesheet = request.Presentation ? views.Presentation.Stylesheet : null,
             };
         }
+        // An evaluation limit can be the worker's own doing: Aspose.Cells evaluation mode opens at
+        // most 100 files in one process, which a resident worker reaches across requests while a
+        // single command never does. A worker that already served a request is recycled and the
+        // request retried in a fresh one, which reports a limit the document itself reaches.
         catch (CliException exception) when (served && exception.Code == ErrorCodes.EvaluationLimit)
         {
             return new RenderWorkerResponse { Id = request.Id, Ok = false, Recycle = true };

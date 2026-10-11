@@ -13,10 +13,43 @@ namespace Aspose.Cli.Product.Pdf.Engine;
 /// long document would cost seconds, and evaluation mode cannot read the later ones anyway. A
 /// notice only on a later page, as in a PDF merged from a clean and a marked one, is not found;
 /// review reports every page. In evaluation mode a document with more pages than it can read
-/// counts as cut short.
+/// counts as cut short, and reading a later page throws, which the SDK reports as the
+/// evaluation limit (<see cref="RecognizeLimit"/>).
 /// </summary>
 internal sealed class PdfEvaluationProfile : IEvaluationProfile<Document>
 {
+    // The SDK reports the limit only with this message on an IndexOutOfRangeException,
+    // although the message speaks of any collection.
+    private const string LimitMessage = "can be viewed in evaluation mode";
+
+    private static readonly string Allows = $"reads only the first {PdfEvaluation.VisiblePages} pages of a document";
+
+    public string Engine => "Aspose.PDF";
+
+    public string Truncation => Allows;
+
+    /// <summary>
+    /// The page limit; the SDK offers <c>--pages</c> only to a command whose selection keeps the
+    /// engine from reading the other pages.
+    /// </summary>
+    public EvaluationLimitFact? RecognizeLimit(Exception exception) => IsPageLimit(exception)
+        ? new EvaluationLimitFact(Allows, PdfEvaluation.VisiblePages, "pages")
+        : null;
+
+    /// <summary>Whether <paramref name="exception"/> is evaluation mode refusing a page after the ones it shows.</summary>
+    internal static bool IsPageLimit(Exception exception)
+    {
+        for (Exception? current = exception; current is not null; current = current.InnerException)
+        {
+            if (current is IndexOutOfRangeException && current.Message.Contains(LimitMessage, StringComparison.Ordinal))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public EvaluationMarks Inspect(Document document)
     {
         int pages = document.Pages.Count;
@@ -61,7 +94,7 @@ internal sealed class PdfEvaluationProfile : IEvaluationProfile<Document>
             _ = document.Pages[PdfEvaluation.VisiblePages + 1];
             return false;
         }
-        catch (Exception exception) when (PdfEvaluation.IsCollectionLimit(exception))
+        catch (Exception exception) when (IsPageLimit(exception))
         {
             return true;
         }

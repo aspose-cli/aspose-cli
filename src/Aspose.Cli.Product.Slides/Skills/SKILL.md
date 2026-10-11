@@ -57,9 +57,9 @@ Details: [design system](references/design-system.md).
 
 - The license product id is `slides`: `aspose-cli license install Aspose.Slides.lic --product slides`.
   Evaluation output is watermarked (`aspose-cli docs licensing`). Evaluation mode reads text
-  longer than five characters cut short, so reads, reviews, `extract` of text or notes and
-  Markdown conversion warn `EVALUATION_INPUT_TRUNCATED`; the presentations, PDFs and images it saves
-  keep the full text. Each evaluation save adds another watermark text box to every slide, which
+  longer than five characters cut short, so reads, reviews and `extract` of text or notes
+  warn `EVALUATION_INPUT_TRUNCATED`, and the `EVALUATION_MODE` message of a Markdown conversion
+  names the cut text; the presentations, PDFs and images it saves keep the full text. Each evaluation save adds another watermark text box to every slide, which
   reads list as content. A review reports each slide that carries one as
   `SLIDES_EVALUATION_WATERMARK`, licensed or not, leaves the boxes out of its other checks and
   counts them in its `excludedEvaluationWatermarks` coverage metric; a licensed command whose

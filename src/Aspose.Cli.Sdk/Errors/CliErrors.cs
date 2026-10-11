@@ -964,26 +964,52 @@ public static partial class CliErrors
         innerException: inner);
 
     /// <summary>
-    /// A document engine's evaluation mode refused what the command needs, such as a page past
-    /// the ones it shows. The hint leads with the license that lifts the limit.
+    /// A command refuses what evaluation mode would silently get wrong, such as an export the
+    /// engine would write from another worksheet than the one asked for. The hint leads with the
+    /// license that lifts the limit. A limit the engine itself raises is reported by the SDK
+    /// alone, from its product's evaluation profile; no product translates an engine exception.
     /// </summary>
     /// <param name="message">What evaluation mode allows and what it stopped.</param>
     /// <param name="license">The license that lifts the limit, such as <c>Aspose.PDF</c>.</param>
     /// <param name="alternative">What the caller can do without one, completing "or ...", if anything.</param>
     /// <param name="details">The facts of the limit, if any.</param>
-    /// <param name="innerException">The engine's refusal, if any.</param>
     public static CliException EvaluationLimit(
         string message,
         string license,
         string? alternative = null,
-        JsonObject? details = null,
-        Exception? innerException = null) => CliException.Create(
+        JsonObject? details = null) => CliException.Create(
         ErrorCodes.EvaluationLimit,
         message,
         hint: alternative is null ? $"Apply an {license} license." : $"Apply an {license} license, or {alternative}.",
         details: details,
+        docs: "licensing");
+
+    /// <summary>
+    /// The error for an evaluation limit the engine raised, which the SDK write pipeline alone
+    /// builds from the facts its product's evaluation profile recognized in the engine's
+    /// exception, so every product reports it with the same message, hint and details.
+    /// </summary>
+    /// <param name="engine">The engine, which also names the license, such as <c>Aspose.PDF</c>.</param>
+    /// <param name="allows">What evaluation mode allows, completing "Aspose.X evaluation mode ...".</param>
+    /// <param name="limit">The limit, in <paramref name="unit"/>.</param>
+    /// <param name="unit">The unit of the limit, such as <c>pages</c>.</param>
+    /// <param name="alternatives">What the caller can do without a license that works for this command, each completing "or ..."; empty when only a license does.</param>
+    /// <param name="engineError">The engine's exception, kept as the inner exception.</param>
+    internal static CliException EngineEvaluationLimit(
+        string engine,
+        string allows,
+        int limit,
+        string unit,
+        IReadOnlyList<string> alternatives,
+        Exception engineError) => CliException.Create(
+        ErrorCodes.EvaluationLimit,
+        $"{engine} evaluation mode {allows}, and this command needs more, so it stopped and wrote nothing.",
+        hint: alternatives.Count == 0
+            ? $"Apply an {engine} license."
+            : $"Apply an {engine} license, or {string.Join(", or ", alternatives)}.",
+        details: new JsonObject { ["limit"] = limit, ["unit"] = unit },
         docs: "licensing",
-        innerException: innerException);
+        innerException: engineError);
 
     /// <summary>
     /// The error for a named target the document does not contain. The details list the names

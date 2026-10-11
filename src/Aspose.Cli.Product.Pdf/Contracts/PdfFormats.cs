@@ -27,6 +27,13 @@ public static class PdfFormats
         FormatDescriptor.Routed("tiff", FormatUse.Convert, null, 14, null, ".tiff", ".tif"),
     ], PdfFormatRecognition.Rules);
 
+    /// <summary>
+    /// Whether converting to <paramref name="format"/> reads every page of the document, whatever
+    /// --pages selects: a document export or a PDF/A archive keeps the selected pages by removing
+    /// the others, which reads them, while page images and page text read only the pages they show.
+    /// </summary>
+    internal static bool ConvertReadsEveryPage(FormatDescriptor format) => format.Id is not ("png" or "jpeg" or "tiff" or "txt");
+
     /// <summary>The PDF document format, which create, merge, sign and edit write.</summary>
     internal static IReadOnlyList<FormatDescriptor> Document { get; } =
         [.. Definitions.Where(static format => format.Id == "pdf")];

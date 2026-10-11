@@ -177,7 +177,8 @@ public sealed class CommandDefinition<TRequest, TResult>
 
             using IDisposable? fontScope = fonts is null ? null : scope.Binding.UseFonts(fonts);
             TSession session = ((ProductBinding<TSession>)scope.Binding).Session;
-            TResult result = context.Guarded(handler, session, request);
+            TResult result = context.Guarded(handler, session, request, scope.Binding.Publishing,
+                unit => PartRangeOption.NarrowingOption(parse.CommandResult.Command, unit, () => invocation.Output.Format));
             if (Finish is not null)
             {
                 result = Finish(parse, request, result, invocation);

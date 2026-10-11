@@ -6,10 +6,11 @@ namespace Aspose.Cli.Product.Cells.Engine.Mapping;
 /// <summary>
 /// The one place that recognizes the worksheet Aspose.Cells evaluation mode adds to every
 /// workbook it saves: an "Evaluation Warning" sheet (or "Evaluation Warning (1)", ... when the
-/// name is taken) that holds only the evaluation notice and becomes the active sheet. Commands
-/// skip the sheet as their default, and review and the write pipeline
-/// (<see cref="CellsEvaluationProfile"/>) report it in any mode (<see cref="IsWarningSheet"/>),
-/// because licensed commands read and re-save workbooks that evaluation saves produced.
+/// name is taken) that holds only the evaluation notice and becomes the active sheet. In
+/// evaluation mode commands skip the sheet as their default; with a license a sheet of that
+/// name is the workbook's own. Review and the write pipeline (<see cref="CellsEvaluationProfile"/>)
+/// report it in any mode (<see cref="IsWarningSheet"/>), because licensed commands read and
+/// re-save workbooks that evaluation saves produced.
 /// </summary>
 internal static partial class CellsEvaluation
 {

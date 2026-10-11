@@ -74,11 +74,13 @@ warns `EVALUATION_INPUT_MARKED`.
 Evaluation mode also reads only the first 4 pages of a document. `inspect` of a
 longer PDF warns `EVALUATION_INPUT_TRUNCATED` and still lists every bookmark and
 attachment and counts every form field; `query forms` lists every field but
-leaves out the `page` of one on a later page and names it in
+leaves out the `page` of one on a later page and warns
 `EVALUATION_INPUT_TRUNCATED`. Any other command that needs a later page fails with
-`EVALUATION_LIMIT` (exit 7) before writing anything. Limit it with
-`--pages 1-4`, keep the inputs of a `merge` to 4 pages in total, or tell the
-user a PDF license is needed.
+`EVALUATION_LIMIT` (exit 7, `details.limit` 4) before writing anything,
+`render` of every page included. Limit it with `--pages 1-4`, keep the inputs of
+a `merge` to 4 pages in total, or tell the user a PDF license is needed; a
+`convert` of a longer PDF to a document format fails even with `--pages`,
+since removing the other pages reads them.
 
 ## References
 

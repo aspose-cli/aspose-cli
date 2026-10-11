@@ -16,8 +16,9 @@ row: a data file holding only a CSV header or `[]` fails the op with
   names is rejected.
 - The expected result size is checked against the document node budget before
   any copy is made.
-- In evaluation mode a merge of many records loses the later ones
-  (`EVALUATION_INPUT_TRUNCATED`).
+- In evaluation mode a merge of many records loses the later ones: the output
+  ends with the engine's truncation notice, which the `EVALUATION_MODE` message
+  names.
 
 ```json
 {

@@ -117,7 +117,7 @@ public sealed class PdfCliWorkflowTests : IDisposable
     [InlineData("docx")]
     [InlineData("html")]
     [InlineData("pdfa-2b")]
-    public void EvaluationMode_ConvertsTheFirstPagesOfALongerDocument(string format)
+    public void EvaluationMode_ReportsTheEnginesPageLimitForAPageSelectionOfALongerDocument(string format)
     {
         using (var fixture = new PdfEngineFixture())
         {
@@ -128,12 +128,15 @@ public sealed class PdfCliWorkflowTests : IDisposable
         CliResult convert = _workspace.Run(
             "pdf", "convert", "six.pdf", "--to", format, "--pages", "1-2", "--out", output, "--output-format", "json");
 
-        JsonNode copied = Assert.Single(
-            convert.Json()["warnings"]!.AsArray(),
-            static warning => warning!["message"]!.GetValue<string>().Contains("were copied into a new one", StringComparison.Ordinal))!;
-        Assert.True(new FileInfo(_workspace.File(output)).Length > 0);
-        Assert.Equal("LOSSY_CONVERSION", copied["code"]!.GetValue<string>());
-        Assert.Contains("bookmarks, attachments and document properties", copied["message"]!.GetValue<string>(), StringComparison.Ordinal);
+        // Removing the unselected pages reads past the fourth page, which evaluation mode refuses;
+        // the limit is reported as the engine raised it, not worked around with a page copy.
+        Assert.Equal(7, convert.ExitCode);
+        JsonNode error = JsonNode.Parse(convert.StdErr)!["error"]!;
+        Assert.Equal("EVALUATION_LIMIT", error["code"]!.GetValue<string>());
+        Assert.Equal(4, error["details"]!["limit"]!.GetValue<int>());
+        // A selection would read the other pages all the same, so the hint offers none.
+        Assert.DoesNotContain("--pages", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.False(File.Exists(_workspace.File(output)));
     }
 
     [Fact]
@@ -151,14 +154,14 @@ public sealed class PdfCliWorkflowTests : IDisposable
         JsonNode truncated = Assert.Single(
             inspect.Json()["warnings"]!.AsArray(),
             static warning => warning!["code"]!.GetValue<string>() == "EVALUATION_INPUT_TRUNCATED")!;
-        Assert.StartsWith("Evaluation mode shows only the first 4 of 6 pages", truncated["message"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.StartsWith("Aspose.PDF evaluation mode reads only the first 4 pages of a document", truncated["message"]!.GetValue<string>(), StringComparison.Ordinal);
         Assert.True(firstPages.ExitCode == 0, firstPages.StdErr);
         Assert.Equal(7, allPages.ExitCode);
         Assert.Equal("EVALUATION_LIMIT", JsonNode.Parse(allPages.StdErr)!["error"]!["code"]!.GetValue<string>());
     }
 
     [Fact]
-    public void EvaluationMode_RefusesAMergeOfMoreThanFourPagesWithAMergeHint()
+    public void EvaluationMode_RefusesAMergeOfMoreThanFourPagesWithTheEnginesPageLimit()
     {
         using (var fixture = new PdfEngineFixture())
         {
@@ -172,8 +175,8 @@ public sealed class PdfCliWorkflowTests : IDisposable
         Assert.Equal(7, merge.ExitCode);
         JsonNode error = JsonNode.Parse(merge.StdErr)!["error"]!;
         Assert.Equal("EVALUATION_LIMIT", error["code"]!.GetValue<string>());
-        Assert.Contains("together", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
-        Assert.Contains("merge inputs that have at most 4 pages together", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.Contains("reads only the first 4 pages", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.Equal("pages", error["details"]!["unit"]!.GetValue<string>());
         Assert.DoesNotContain("--pages", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
         Assert.False(File.Exists(_workspace.File("merged.pdf")));
     }
@@ -212,10 +215,9 @@ public sealed class PdfCliWorkflowTests : IDisposable
         Assert.Equal(
             Enumerable.Range(1, count).Select(static number => $"Chapter {number}"),
             result["outline"]!.AsArray().Select(static item => item!["title"]!.GetValue<string>()));
-        JsonNode truncated = Assert.Single(
+        Assert.Single(
             result["warnings"]!.AsArray(),
-            static warning => warning!["code"]!.GetValue<string>() == "EVALUATION_INPUT_TRUNCATED")!;
-        Assert.Contains("bookmarks, attachments and the form field count are complete", truncated["message"]!.GetValue<string>(), StringComparison.Ordinal);
+            static warning => warning!["code"]!.GetValue<string>() == "EVALUATION_INPUT_TRUNCATED");
     }
 
     [Theory]
@@ -288,7 +290,7 @@ public sealed class PdfCliWorkflowTests : IDisposable
             static warning => warning!["code"]!.GetValue<string>() == "EVALUATION_INPUT_TRUNCATED")!];
         if (fieldsOnLaterPages)
         {
-            Assert.Contains("of 6 pages, so these fields have no page: Field5, Field6.", Assert.Single(truncated)["message"]!.GetValue<string>(), StringComparison.Ordinal);
+            Assert.Contains("reads only the first 4 pages", Assert.Single(truncated)["message"]!.GetValue<string>(), StringComparison.Ordinal);
         }
         else
         {

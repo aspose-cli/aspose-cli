@@ -33,7 +33,7 @@ to workbooks.
 | `FORMULA_FUNCTION_UNKNOWN` | A formula the edit wrote calls a function Aspose.Cells does not know, so it evaluates to `#NAME?`; the message names each cell and function and, when one is a single edit away, the closest known function after it, such as `SUM` for `SUMM`. Correct the name, in English; an add-in or VBA function, or one newer than the engine, stays in the file for Excel. |
 | `CHART_SPLIT_ACROSS_PAGES` | A PDF conversion printed a chart across two or more pages; the message names each chart and its page count. Fit the sheet with `set_page_setup` (`fitToWidth` 1 and `fitToHeight` 0, or `orientation` landscape), or move or resize the chart, and convert again. |
 | `MHTML_RESOURCE_COVERAGE_UNVERIFIED` | The engine resolves MHTML resources without reporting missing ones; check images and styles yourself. |
-| `ACTIVE_SHEET_SKIPPED` | The input's active sheet is the evaluation warning sheet `location` names, and this command named no sheet, so it used the sheet the message names instead; see below. |
+| `ACTIVE_SHEET_SKIPPED` | In evaluation mode, the input's active sheet is the evaluation warning sheet `location` names, and this command named no sheet, so it used the sheet the message names instead; see below. |
 | `EVALUATION_INPUT_MARKED` | With a license, the output keeps the warning sheets an earlier evaluation save added, or a render shows them; see below. |
 | `ROWS_SHIFTED` | `cells compare` found rows one side inserted or deleted (the message names them, `location` the sheet); the cells below each shift are compared with different rows, so their differences are not edits. Apply the same `insert_rows` or `delete_rows` to a copy of the left workbook and compare the copy. |
 | `PROTECTION_NOT_ENFORCED` | The edit changed a protected sheet (`location` names it when there is one) or the protected workbook structure; protection guides Excel only, so the edit went through it. Confirm the change is authorized. |
@@ -69,12 +69,13 @@ handle these effects:
   option keeps your active sheet (`set_active_sheet` included). The
   `EVALUATION_MODE` message names the warning sheets the output carries and which
   of them is active.
-- When a workbook's active sheet is such a warning sheet, every command that
-  defaults to the active sheet (`query range` without `--sheet`,
+- When a workbook's active sheet is such a warning sheet, in evaluation mode
+  every command that defaults to the active sheet (`query range` without `--sheet`,
   `convert` to CSV, TSV or Markdown without `--sheet`, an operation without
   `"sheet"`, the workbook preview) uses the first other sheet instead,
   preferring a visible one, and warns `ACTIVE_SHEET_SKIPPED` with the skipped
-  sheet in `location`, licensed or not. Only the default changes: the input file is not changed, and an edit
+  sheet in `location`. With a license the active sheet stays the default,
+  whatever its name. Only the default changes: the input file is not changed, and an edit
   or `convert` to a multi-sheet format keeps the warning sheet active unless
   a `set_active_sheet` in the batch succeeded. A command that names its sheet
   or covers every sheet does not warn.

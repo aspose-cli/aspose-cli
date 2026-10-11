@@ -588,32 +588,34 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
     }
 
     /// <summary>
-    /// A licensed engine reading a workbook an evaluation save left with its warning sheet active
-    /// skips that sheet like the evaluation engine does, while a sheet of that name holding
-    /// anything else stays the active default; licensed saves add no warning sheet.
+    /// In evaluation mode an active evaluation warning sheet gives way to the workbook's content
+    /// as every active-sheet default, while a sheet of that name holding anything else stays the
+    /// active default; with a license the active sheet stays the default whatever its name.
     /// </summary>
     [Fact]
-    public void Licensed_TheActiveEvaluationWarningSheetIsSkippedByActiveSheetDefaults()
+    public void EvaluationDefaults_SkipTheActiveEvaluationWarningSheetAndLicensedDefaultsDoNot()
     {
         string marked = WorkbookWithActiveSheet("marked.xlsx", "Evaluation Only. Created with Aspose.Cells for .NET.");
         string lookalike = WorkbookWithActiveSheet("lookalike.xlsx", "notes");
+        CellsSession Session() => _fixture.EvaluationDefaultsSession;
 
-        WorkbookReadResult read = CellsRead.Run(_fixture.Session, new ReadRequest { Input = marked });
-        ConvertResult csv = CellsConvert.Run(_fixture.Session, new ConvertRequest
+        WorkbookReadResult licensed = CellsRead.Run(_fixture.Session, new ReadRequest { Input = marked });
+        WorkbookReadResult read = CellsRead.Run(Session(), new ReadRequest { Input = marked });
+        ConvertResult csv = CellsConvert.Run(Session(), new ConvertRequest
         {
             Input = marked,
             Output = TestOutput.At(_fixture.Temp.File("marked.csv"), format: "csv"),
         });
-        ConvertResult copied = CellsConvert.Run(_fixture.Session, new ConvertRequest
+        ConvertResult copied = CellsConvert.Run(Session(), new ConvertRequest
         {
             Input = marked,
             Output = TestOutput.At(_fixture.Temp.File("marked-copy.xlsx"), format: "xlsx"),
         });
-        EditResult edited = CellsEdit.Run(_fixture.Session,
+        EditResult edited = CellsEdit.Run(Session(),
             new EditRequest { Input = marked, Batch = ParseOps("""{"ops":[{"op":"set_values","range":"A2","values":[["edited"]]}]}"""), Output = TestOutput.At(_fixture.Temp.File("marked-edited.xlsx"), overwrite: true) });
-        EditResult activated = CellsEdit.Run(_fixture.Session,
+        EditResult activated = CellsEdit.Run(Session(),
             new EditRequest { Input = marked, Batch = ParseOps("""{"ops":[{"op":"set_active_sheet","sheet":"Data"}]}"""), Output = TestOutput.At(_fixture.Temp.File("marked-activated.xlsx"), overwrite: true) });
-        EditResult notActivated = CellsEdit.Run(_fixture.Session,
+        EditResult notActivated = CellsEdit.Run(Session(),
             new EditRequest
             {
                 Input = marked,
@@ -621,10 +623,12 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
                 Output = TestOutput.At(_fixture.Temp.File("marked-not-activated.xlsx"), overwrite: true),
                 Options = new EditCommandOptions { BestEffort = true },
             });
-        EditResult editedCsv = CellsEdit.Run(_fixture.Session,
+        EditResult editedCsv = CellsEdit.Run(Session(),
             new EditRequest { Input = marked, Batch = ParseOps("""{"ops":[{"op":"set_values","range":"A2","values":[["edited"]]}]}"""), Output = TestOutput.At(_fixture.Temp.File("marked-edited.csv"), overwrite: true) });
-        WorkbookReadResult kept = CellsRead.Run(_fixture.Session, new ReadRequest { Input = lookalike });
+        WorkbookReadResult kept = CellsRead.Run(Session(), new ReadRequest { Input = lookalike });
 
+        Assert.Equal("Evaluation Warning", licensed.Sheet!.Name);
+        Assert.Null(licensed.Warnings);
         Assert.Equal("Data", read.Sheet!.Name);
         Warning skipped = Assert.Single(read.Warnings!);
         Assert.Equal("ACTIVE_SHEET_SKIPPED", skipped.Code.Name);
@@ -672,9 +676,9 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
     }
 
     /// <summary>
-    /// A licensed edit of a workbook an evaluation save marked, defaulting to its active warning
-    /// sheet, says once that the output keeps the marks (the write pipeline) and once that it
-    /// used another sheet (the product's defaulting notice); no code repeats.
+    /// A licensed edit of a workbook an evaluation save marked says once that the output keeps
+    /// the marks (the write pipeline); no code repeats, and with a license the active warning
+    /// sheet is not skipped.
     /// </summary>
     [Fact]
     public void Licensed_EditOfAMarkedWorkbookDisclosesTheMarksOnce()
@@ -690,12 +694,12 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
         }
 
         EditResult edited = _fixture.Disclosed(session => CellsEdit.Run(session,
-            new EditRequest { Input = marked, Batch = ParseOps("""{"ops":[{"op":"set_values","range":"A1","values":[[1]]}]}"""), Output = TestOutput.At(_fixture.Temp.File("marked-once-edited.xlsx"), overwrite: true) }));
+            new EditRequest { Input = marked, Batch = ParseOps("""{"ops":[{"op":"set_values","sheet":"Data","range":"A1","values":[[1]]}]}"""), Output = TestOutput.At(_fixture.Temp.File("marked-once-edited.xlsx"), overwrite: true) }));
 
         string[] codes = [.. edited.Warnings!.Select(static warning => warning.Code.Name)];
         Assert.Equal(codes.Distinct(StringComparer.Ordinal), codes);
         Assert.Contains(WarningCodes.EvaluationInputMarked.Name, codes);
-        Assert.Contains("ACTIVE_SHEET_SKIPPED", codes);
+        Assert.DoesNotContain("ACTIVE_SHEET_SKIPPED", codes);
     }
 
     /// <summary>

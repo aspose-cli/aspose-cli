@@ -22,7 +22,6 @@ internal static class WordsDiagnostics
     internal static readonly DiagnosticDescriptor FieldCountChanged = DiagnosticDescriptor.Verification("FIELD_COUNT_CHANGED");
     internal static readonly DiagnosticDescriptor RevisionCountChanged = DiagnosticDescriptor.Verification("REVISION_COUNT_CHANGED");
     internal static readonly DiagnosticDescriptor ProtectionChanged = DiagnosticDescriptor.Verification("PROTECTION_CHANGED");
-    internal static readonly DiagnosticDescriptor OutputTruncated = DiagnosticDescriptor.Verification("OUTPUT_TRUNCATED");
 
     internal static IReadOnlyList<DiagnosticDescriptor> All { get; } =
     [
@@ -40,7 +39,6 @@ internal static class WordsDiagnostics
         FieldCountChanged,
         RevisionCountChanged,
         ProtectionChanged,
-        OutputTruncated,
     ];
 
     private static ErrorCode Validation(string code) =>

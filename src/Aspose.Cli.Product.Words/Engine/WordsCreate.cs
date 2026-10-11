@@ -4,7 +4,6 @@ using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Results;
 using Aspose.Words;
 using Aspose.Words.Saving;
-using static Aspose.Cli.Product.Words.Engine.WordsEngineSupport;
 
 namespace Aspose.Cli.Product.Words.Engine;
 
@@ -108,11 +107,6 @@ internal static class WordsCreate
         if (LocalDocumentResourceLoader.OmissionWarning(created.RemoteResourcesBlocked) is { } omitted)
         {
             extra.Add(omitted);
-        }
-
-        if (created.Sources.Any(static source => source.EvaluationInputTruncated))
-        {
-            extra.Add(EvaluationTruncated);
         }
 
         if (created.HasMacros && !WordsFormats.KeepsMacros(format))

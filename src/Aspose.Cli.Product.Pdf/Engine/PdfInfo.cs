@@ -11,13 +11,9 @@ internal static class PdfInfo
         string filePath = request.Input;
         LicenseState state = session.Outputs.License;
         using LoadedPdf loaded = session.Loader.Open(filePath, request.Password);
+        // Page sizes and page content describe only the pages evaluation mode shows.
+        session.Outputs.ReadInput(loaded.Document);
         PdfInfoResult info = PdfInfoProjection.Project(loaded, filePath, request);
-        return info with
-        {
-            License = EnvelopeParts.License(state),
-            Warnings = PdfEvaluation.InputTruncated(state, loaded.Document.Pages.Count) is { } truncated
-                ? EnvelopeParts.CombineWarnings(info.Warnings, [truncated])
-                : info.Warnings,
-        };
+        return info with { License = EnvelopeParts.License(state) };
     }
 }

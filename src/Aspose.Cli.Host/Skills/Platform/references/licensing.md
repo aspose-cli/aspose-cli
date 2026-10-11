@@ -85,9 +85,11 @@ retry unchanged input.
   wrote them, such as a warning sheet or a notice row, and, for page images and
   page text, those of the source they show. The mark is in the file
   you deliver, so tell the user.
-- `EVALUATION_INPUT_TRUNCATED` means evaluation mode kept only part of the content,
-  so the result is incomplete: usually an input it loaded, and for some
-  products (its Skill says which) an edited output it saved. On a read, the text you get back is the
+- `EVALUATION_INPUT_TRUNCATED` means evaluation mode kept only part of an input
+  the command read, so the result is incomplete; the message names the engine
+  and what its evaluation mode leaves out. An output evaluation mode cut short
+  while saving it ends with the engine's truncation notice, which the
+  `EVALUATION_MODE` message names. On a read, the text you get back is the
   engine's replacement ("...text has been truncated due to evaluation version
   limitation"), not what the file holds: check the file's text in rendered
   images instead, and do not report the file as damaged. Whether a saved
@@ -96,7 +98,12 @@ retry unchanged input.
 - When evaluation mode hides content an operation must read, the operation
   fails with `EVALUATION_LIMIT` and writes nothing rather than report that
   nothing matched: Slides `replace_text` on text in its scope that evaluation
-  mode reads cut short, and PDF commands that need a page after the fourth. A
+  mode reads cut short, and PDF commands that need a page after the fourth.
+  When the engine itself stops at an evaluation limit, every product reports
+  it alike: the message names the engine and what its evaluation mode allows,
+  `details.limit` and `details.unit` give the limit (4 `pages` for PDF), and
+  the hint offers a way without a license, such as `--pages 1-4`, only where
+  it works for that command. A
   Words document that ends with the evaluation truncation notice is edited as
   it loaded, with `EVALUATION_INPUT_TRUNCATED`: Aspose.Words does not say whether
   this open cut it short or an earlier save without a license left the notice,

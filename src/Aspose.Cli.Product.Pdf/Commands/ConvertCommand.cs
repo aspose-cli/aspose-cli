@@ -7,7 +7,7 @@ internal static class ConvertCommand
 {
     public static CommandDefinition<PdfConvertRequest, PdfConvertResult> Create()
     {
-        var pages = new PartRangeOption("page", "every page");
+        var pages = new PartRangeOption("page", "every page", narrowsReads: static format => !PdfFormats.ConvertReadsEveryPage(format));
         return new(
             "convert",
             "Convert selected PDF pages to a supported format.",

@@ -66,7 +66,7 @@ internal static class WordsEdit
         session.Loader.EnsureWithinBudgets(loaded.Document, loaded.Resources);
         WordsSavePipeline.RemoveMacrosUnlessKept(loaded.Document, format);
 
-        (OutputInfo? output, BackupInfo? backup, WordsVerification? verification, string? truncation) =
+        (OutputInfo? output, BackupInfo? backup, WordsVerification? verification) =
             Persist(
                 session,
                 loaded.Document,
@@ -76,8 +76,7 @@ internal static class WordsEdit
                 loaded.Resources,
                 written,
                 saveOptions,
-                outputPassword,
-                loaded.Evaluation && !loaded.EvaluationInputTruncated && !loaded.ImportedInputTruncated);
+                outputPassword);
         baseline?.Cleanup();
         var outputWarnings = new List<Warning>();
         if (loaded.Format.IsEncrypted && outputPassword is null && !request.Options.DryRun)
@@ -89,13 +88,6 @@ internal static class WordsEdit
         }
 
         outputWarnings.AddRange(SaveWarnings(loaded, format));
-        if (truncation is not null)
-        {
-            outputWarnings.Add(new Warning(WarningCodes.EvaluationInputTruncated, $"Aspose.Words evaluation mode cut the edited document short: {truncation}")
-            {
-                Hint = "Do not deliver this output as complete; apply a license and retry.",
-            });
-        }
 
         return new WordsEditResult
         {
@@ -116,8 +108,7 @@ internal static class WordsEdit
                 inputHadRevisions && KeepsRevisions(loaded.Document, format),
                 inputWasSigned,
                 inputProtection,
-                loaded.RemoteResourcesBlocked,
-                loaded.EvaluationInputTruncated || loaded.ImportedInputTruncated)),
+                loaded.RemoteResourcesBlocked)),
         };
     }
 
@@ -192,16 +183,14 @@ internal static class WordsEdit
     }
 
     /// <summary>
-    /// Saves, verifies and publishes the edited document. With <paramref name="detectTruncation"/>,
-    /// it also returns what evaluation mode cut from the output, or null: Aspose.Words keeps
-    /// only the start of a long document it lays out or saves in evaluation mode and ends it
-    /// with its truncation notice, in the saved file and in the document itself alike.
+    /// Saves, verifies and publishes the edited document. Aspose.Words keeps only the start of
+    /// a long document it lays out or saves in evaluation mode and ends it with its truncation
+    /// notice; the write pipeline finds the notice in the saved output and discloses it.
     /// </summary>
     private static (
         OutputInfo? Output,
         BackupInfo? Backup,
-        WordsVerification? Verification,
-        string? Truncation) Persist(
+        WordsVerification? Verification) Persist(
         WordsSession session,
         Document document,
         WordsEditRequest request,
@@ -210,14 +199,12 @@ internal static class WordsEdit
         LocalDocumentResourceLoader resources,
         FormatDescriptor written,
         SaveOptions saveOptions,
-        Secret? outputPassword,
-        bool detectTruncation)
+        Secret? outputPassword)
     {
         string format = written.Id;
         OutputInfo? output = null;
         BackupInfo? backup = null;
         WordsVerification? verification = null;
-        string? truncation = null;
         if (!request.Options.DryRun)
         {
             using OutputSet<Document> transaction = session.Outputs.BeginSet([request.Output.Directory], "words-edit");
@@ -229,11 +216,6 @@ internal static class WordsEdit
                 {
                     try { document.Save(temp, saveOptions); }
                     finally { resources.ThrowIfFailed(); }
-                    if (detectTruncation && WordsEvaluation.IsTruncated(document))
-                    {
-                        truncation = $"the output keeps only its first {document.Sections.Count} section(s), the last of them "
-                            + "incomplete and ending with the engine's truncation notice; everything after that point is missing.";
-                    }
                     if (!request.Verify && WordsFormats.IsLoad(format))
                     {
                         using LoadedDocument reopened = session.Loader.OpenPublishedCandidate(temp, outputPassword);
@@ -250,12 +232,12 @@ internal static class WordsEdit
                     document.Revisions.Count,
                     WordsProtection.ToMode(document.ProtectionType));
                 verification = write.Read(
-                    candidate => Verify(session, candidate, format, outputPassword, baseline!, expected, truncation));
+                    candidate => Verify(session, candidate, format, outputPassword, baseline!, expected));
             }
             transaction.Commit();
             output = FileObjects.Output(write.Published, written, encrypted: outputPassword is not null);
         }
-        return (output, backup, verification, truncation);
+        return (output, backup, verification);
     }
 
     /// <summary>
@@ -339,17 +321,9 @@ internal static class WordsEdit
         string format,
         Secret? outputPassword,
         Document baseline,
-        ExpectedDocumentState expected,
-        string? truncation)
+        ExpectedDocumentState expected)
     {
         var issues = new List<VerificationIssue>();
-        if (truncation is not null)
-        {
-            issues.Add(VerificationIssues.Of(
-                WordsDiagnostics.OutputTruncated,
-                $"Evaluation mode cut the edited document short: {truncation}",
-                hint: "Apply a license and run the edit again; the output does not hold the whole result."));
-        }
 
         using LoadedDocument reopened = session.Loader.OpenPublishedCandidate(
             candidatePath,
@@ -420,8 +394,7 @@ internal static class WordsEdit
         bool revisionsKept,
         bool inputWasSigned,
         ProtectionType inputProtection,
-        int remoteResourcesBlocked,
-        bool evaluationInputTruncated)
+        int remoteResourcesBlocked)
     {
         var extra = new List<Warning>();
         if (revisionsKept)
@@ -451,11 +424,6 @@ internal static class WordsEdit
         if (LocalDocumentResourceLoader.OmissionWarning(remoteResourcesBlocked) is { } omitted)
         {
             extra.Add(omitted);
-        }
-
-        if (evaluationInputTruncated)
-        {
-            extra.Add(EvaluationTruncated);
         }
 
         return EnvelopeParts.CombineWarnings(extra);

@@ -16,7 +16,6 @@ The delivery checklist, the review protocol and font checks are in
   `REVISION_COUNT_CHANGED` or `PROTECTION_CHANGED`, usually because the
   output format (such as `txt` or `html`) does not keep that state; save to a
   Word format and verify again.
-- `OUTPUT_TRUNCATED` when evaluation mode cut the edited document short.
 
 `--verify` cannot be combined with `--dry-run`.
 

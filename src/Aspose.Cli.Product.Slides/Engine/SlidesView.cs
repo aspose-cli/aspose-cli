@@ -1,5 +1,4 @@
 using System.Globalization;
-using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Views;
 using Aspose.Slides;
 using static Aspose.Cli.Product.Slides.Engine.SlidesEngineSupport;
@@ -20,8 +19,9 @@ internal static class SlidesView
         const int displayWidth = 1920;
         const int cssWidth = 960;
         ArgumentNullException.ThrowIfNull(artifacts);
-        LicenseState state = session.Outputs.License;
+        _ = session.Outputs.License;
         using LoadedPresentation loaded = session.Loader.Open(filePath, request.Password);
+        session.Outputs.ReadInput(loaded.Presentation);
         Presentation presentation = loaded.Presentation;
         int pixelWidth = request.Purpose == ViewPurpose.Display ? displayWidth : evidenceWidth;
         float scale = (float)(pixelWidth / presentation.SlideSize.Size.Width);
@@ -72,7 +72,7 @@ internal static class SlidesView
             SourceEncrypted = presentation.ProtectionManager.IsEncrypted,
             TotalPartCount = total,
             Parts = parts,
-            Warnings = InputWarnings(state, loaded, textRead: true),
+            Warnings = InputWarnings(loaded),
         };
     }
 }

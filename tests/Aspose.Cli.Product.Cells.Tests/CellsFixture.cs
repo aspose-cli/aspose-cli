@@ -38,6 +38,23 @@ public sealed class CellsFixture : IDisposable
         }
     }
 
+    /// <summary>
+    /// The session of one invocation whose loader opens workbooks as it does in evaluation mode,
+    /// skipping an active evaluation warning sheet, while the engine and the write pipeline stay
+    /// licensed: the in-process suite cannot run the engine in evaluation mode.
+    /// </summary>
+    internal CellsSession EvaluationDefaultsSession
+    {
+        get
+        {
+            TestLicense.Require(EvaluationLimit);
+            return ProductTestBudgets.StartEngine<CellsModule, CellsSession>(
+                (budgets, writer) => new CellsSession(Outputs(writer), budgets, new CellsWorkbookLoader(
+                    budgets,
+                    new OutputPipeline<Workbook>(EvaluationLimits.Gate(LicenseState.Evaluation), new CellsEvaluationProfile(), writer))));
+        }
+    }
+
     /// <summary>The write pipeline of one invocation, as the product binding creates it.</summary>
     internal OutputPipeline<Workbook> Outputs(SafeFileWriter writer) => new(Gate, new CellsEvaluationProfile(), writer);
 
@@ -56,7 +73,7 @@ public sealed class CellsFixture : IDisposable
     }
 
     private static CellsSession NewSession(OutputPipeline<Workbook> outputs, ResourceBudgetLedger budgets) =>
-        new(outputs, budgets, new CellsWorkbookLoader(budgets));
+        new(outputs, budgets, new CellsWorkbookLoader(budgets, outputs));
 
     internal CellsFontEnvironment Fonts
     {

@@ -26,6 +26,7 @@ internal static class SlidesExtract
         }
         else
         {
+            session.Outputs.ReadInput(loaded.Presentation);
             foreach (int number in slides)
             {
                 ISlide slide = loaded.Presentation.Slides[number - 1];
@@ -62,7 +63,7 @@ internal static class SlidesExtract
             What = request.What,
             Items = items,
             License = EnvelopeParts.License(state),
-            Warnings = WrittenWarnings(state, loaded, textRead: request.What != PresentationExtractKinds.Media),
+            Warnings = WrittenWarnings(loaded),
         };
     }
 

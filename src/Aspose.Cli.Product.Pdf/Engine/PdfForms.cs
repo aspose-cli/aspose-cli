@@ -23,6 +23,12 @@ internal static class PdfForms
         var fields = form.Fields.OrderBy(static field => field.FullName, StringComparer.Ordinal)
             .Select(field => Project(loaded.Document, field, unpaged))
             .ToArray();
+        if (unpaged.Count > 0)
+        {
+            // A field on a page evaluation mode hides is listed without its page.
+            session.Outputs.ReadInput(loaded.Document);
+        }
+
         return new PdfFormResult
         {
             Input = PdfInfoProjection.Source(filePath, loaded),
@@ -30,7 +36,6 @@ internal static class PdfForms
             ReadOnly = form.HasXfa,
             Fields = fields,
             License = EnvelopeParts.License(state),
-            Warnings = unpaged.Count > 0 ? [PdfEvaluation.FieldsWithoutPage(loaded.Document.Pages.Count, unpaged)] : null,
         };
     }
 
@@ -89,7 +94,7 @@ internal static class PdfForms
         {
             return field.PageIndex > 0 ? field.PageIndex : null;
         }
-        catch (Exception exception) when (PdfEvaluation.IsCollectionLimit(exception))
+        catch (Exception exception) when (PdfEvaluationProfile.IsPageLimit(exception))
         {
             unpaged.Add(field.FullName);
             return null;

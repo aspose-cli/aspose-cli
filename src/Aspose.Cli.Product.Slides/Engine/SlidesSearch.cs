@@ -16,6 +16,7 @@ internal static class SlidesSearch
 
         LicenseState state = session.Outputs.License;
         using LoadedPresentation loaded = session.Loader.Open(request.Input, request.Password);
+        session.Outputs.ReadInput(loaded.Presentation);
         SearchHits<SlidesSearchHit> hits = request.Query.Collect<SlidesSearchHit>();
         foreach ((ISlide slide, int index) in loaded.Presentation.Slides.Select((slide, index) => (slide, index)))
         {
@@ -76,7 +77,7 @@ internal static class SlidesSearch
             Hits = hits.Hits,
             Window = hits.Window(),
             License = EnvelopeParts.License(state),
-            Warnings = InputWarnings(state, loaded, textRead: true),
+            Warnings = InputWarnings(loaded),
         };
     }
 
