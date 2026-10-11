@@ -75,11 +75,19 @@ public sealed class TargetFormat
 
     internal bool Required { get; }
 
-    /// <summary>A required <c>--to</c> among the product's convert formats.</summary>
-    /// <param name="description">Help for <c>--to</c>.</param>
+    /// <summary>
+    /// An optional <c>--to</c> among the product's convert formats; when it is omitted, the
+    /// <c>--out</c> extension names the format, and a convert that names neither is a usage
+    /// error. Its help ends with the standard wording of that default.
+    /// </summary>
+    /// <param name="description">Help for <c>--to</c>, without its default.</param>
     /// <param name="formats">The product's format declarations; those with the convert use are offered.</param>
-    public static TargetFormat Convert(string description, IReadOnlyList<FormatDescriptor> formats) =>
-        new(FormatUse.Convert, description, formats, defaultFormat: null, required: true);
+    public static TargetFormat Convert(string description, IReadOnlyList<FormatDescriptor> formats)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(description);
+        return new(FormatUse.Convert, $"{description} Default: the {StandardOptionNames.Out} extension's format.",
+            formats, defaultFormat: null, required: false);
+    }
 
     /// <summary>
     /// An optional <c>--to</c> among the product's render formats; when it is omitted, the
@@ -331,6 +339,7 @@ public sealed class StandardOptions
             {
                 Description = "Replace the output file if it already exists.",
             };
+            DryRun = output.Kind == OutputKind.Mutation ? CreateDryRun(EditDryRunDescription) : DryRunOption();
             if (output.Kind == OutputKind.Mutation)
             {
                 InPlace = new Option<bool>(StandardOptionNames.InPlace)
@@ -383,6 +392,8 @@ public sealed class StandardOptions
 
     internal Option<bool>? Backup { get; }
 
+    internal Option<bool>? DryRun { get; }
+
     internal PasswordOptions? InputPassword { get; }
 
     internal PasswordOptions? OtherPassword { get; }
@@ -433,6 +444,7 @@ public sealed class StandardOptions
         AddOption(command, Overwrite);
         AddOption(command, InPlace);
         AddOption(command, Backup);
+        AddOption(command, DryRun);
         InputPassword?.AddTo(command);
         OtherPassword?.AddTo(command);
         Encrypt?.AddTo(command);
@@ -515,6 +527,22 @@ public sealed class StandardOptions
         return option;
     }
 
+    /// <summary>
+    /// The <c>--dry-run</c> of a command that writes files: it checks the command line and the
+    /// files it names, then stops before the command runs or writes anything. Every command with
+    /// an output gets it from its traits; a host command that writes through its own pipeline
+    /// adds this one and returns a <see cref="DryRunResult"/>.
+    /// </summary>
+    public static Option<bool> DryRunOption() => CreateDryRun(
+        "Check the input, the output and the options, then stop without running the command or writing any file. "
+        + "A dry run that succeeds does not guarantee that the command succeeds.");
+
+    private const string EditDryRunDescription =
+        "Check the input, the output and the operations, and apply the operations in memory, without writing any file. "
+        + "A dry run that succeeds does not guarantee that the edit succeeds.";
+
+    private static Option<bool> CreateDryRun(string description) => new(StandardOptionNames.DryRun) { Description = description };
+
     /// <summary>The format a <c>--to</c> option created here chooses among, or null for any other option.</summary>
     internal static TargetFormat? TargetOf(Option option) =>
         Targets.TryGetValue(option, out TargetFormat? target) ? target : null;
@@ -540,6 +568,7 @@ public partial class StandardInvocation
     private readonly Lazy<Secret?> _otherPassword;
     private string? _input;
     private string? _other;
+    private bool _inputChecked;
 
     internal StandardInvocation(
         StandardOptions options,
@@ -582,10 +611,20 @@ public partial class StandardInvocation
     }
 
     /// <summary>The parameter naming the output file and the value the caller gave it, or null when none was named.</summary>
-    private (string Parameter, string Output)? NamedOutput() =>
-        _options.CreatedFile is { } created && _parse.GetValue(created) is { Length: > 0 } file ? (created.Name, file)
-        : _options.OutputFile is { } outputFile && _parse.GetValue(outputFile.Option) is { Length: > 0 } named ? (StandardOptionNames.Out, named)
-        : null;
+    /// <exception cref="CliException"><c>OPTION_INVALID</c> for an output named <c>-</c>.</exception>
+    private (string Parameter, string Output)? NamedOutput()
+    {
+        (string Parameter, string Output)? named =
+            _options.CreatedFile is { } created && _parse.GetValue(created) is { Length: > 0 } file ? (created.Name, file)
+            : _options.OutputFile is { } outputFile && _parse.GetValue(outputFile.Option) is { Length: > 0 } value ? (StandardOptionNames.Out, value)
+            : null;
+        if (named is var (parameter, output))
+        {
+            OutputFileOption.RefuseStandardStream(output, parameter);
+        }
+
+        return named;
+    }
 
     /// <summary>The names of the invoked command and the commands it is under, below the root.</summary>
     private string[] CommandPath()
@@ -787,8 +826,11 @@ public partial class StandardInvocation
             Path.GetDirectoryName(inputPath) ?? string.Empty,
             $"{Path.GetFileNameWithoutExtension(inputPath)}.backup{Path.GetExtension(inputPath)}");
 
-    private string ResolveDocument(Argument<string> argument) =>
-        Paths.ResolveInput(_parse.GetRequiredValue(argument));
+    private string ResolveDocument(Argument<string> argument)
+    {
+        _inputChecked = true;
+        return Paths.ResolveInput(_parse.GetRequiredValue(argument));
+    }
 
     private string[] InputFileValues(Symbol parameter)
     {
@@ -805,6 +847,7 @@ public partial class StandardInvocation
             throw new InvalidOperationException($"'{parameter.Name}' is not an input file parameter of the command.");
         }
 
+        _inputChecked = true;
         return [.. Values(parameter).OfType<string>().Select(Paths.ResolveInput)];
     }
 

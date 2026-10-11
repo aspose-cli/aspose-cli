@@ -46,6 +46,7 @@ internal sealed class OutputDirectoryOption
             return null;
         }
 
+        OutputFileOption.RefuseStandardStream(value, Name, directory: true);
         string path = paths.ResolveOutput(value);
         return File.Exists(path)
             ? throw CliErrors.OptionInvalid(Name, $"a file already exists at '{path}'", "Pass a directory path.")

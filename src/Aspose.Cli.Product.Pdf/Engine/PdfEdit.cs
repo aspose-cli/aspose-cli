@@ -64,6 +64,7 @@ internal static class PdfEdit
             Input = input,
             Output = publication.Output,
             DryRun = request.Options.DryRun,
+            Checked = request.Options.Checked,
             Applied = outcomes,
             Backup = publication.Backup,
             PagesTouched = touched.Count == 0 ? null : touched.ToArray(),

@@ -304,15 +304,37 @@ internal static partial class ContractRules
 
     // ----- C-R11 (declared): every command that writes files has --overwrite and --dry-run --------
 
+    /// <summary>The writing commands that have no <c>--overwrite</c>, each with its reason.</summary>
+    private static readonly (string Command, string Reason)[] OverwriteExemptions =
+    [
+        ("license install", "An installation puts the license in place and replaces the installed one; that is what install means."),
+        ("skill install", "An installation puts the Skill in place and replaces the version this CLI installed; that is what install means."),
+        ("update install", "An installation puts the release in place and replaces the installed one; that is what install means."),
+    ];
+
     private static IEnumerable<InvariantCase> R11Declared(CliCatalog catalog)
     {
         foreach (TreeCommand command in CommandTree.Of(catalog).Where(static command => !command.Hidden && Writes(command)))
         {
             // A removal replaces nothing, so it needs --dry-run but no --overwrite.
-            string[] required = RemovesInstalled(command) ? ["--dry-run"] : ["--overwrite", "--dry-run"];
-            yield return Check("C-R11", $"{command} declared", () => required
-                .Where(name => !command.Has(name))
-                .Select(name => $"{command} writes files but has no {name}."));
+            bool exempt = OverwriteExemptions.Any(exemption => exemption.Command == command.ToString());
+            string[] required = RemovesInstalled(command) || exempt ? ["--dry-run"] : ["--overwrite", "--dry-run"];
+            yield return Check("C-R11", $"{command} declared", () =>
+            [
+                .. required
+                    .Where(name => !command.Has(name))
+                    .Select(name => $"{command} writes files but has no {name}."),
+                .. exempt && command.Has("--overwrite")
+                    ? [$"{command}: the --overwrite exemption no longer matches; delete it from {nameof(OverwriteExemptions)}."]
+                    : Array.Empty<string>(),
+            ]);
+        }
+
+        string[] commands = [.. CommandTree.Of(catalog).Select(static command => command.ToString())];
+        foreach ((string command, _) in OverwriteExemptions.Where(exemption => !commands.Contains(exemption.Command)))
+        {
+            yield return Check("C-R11", $"{command} exemption", () =>
+                [$"{command} no longer exists; delete its exemption from {nameof(OverwriteExemptions)}."]);
         }
     }
 

@@ -49,10 +49,11 @@ Arguments:
   <file>  Presentation file path.
 
 Options:
-  --to <to> (REQUIRED)                           Target presentation export format. PNG and JPEG use 192 DPI; use slides render for custom dimensions. Values: gif, html, html5, jpeg, md, odp, pdf, png, ppt, pptm, pptx, svg, tiff, xps.
+  --to <to>                                      Target presentation export format. PNG and JPEG use 192 DPI; use slides render for custom dimensions. Default: the --out extension's format. Values: gif, html, html5, jpeg, md, odp, pdf, png, ppt, pptm, pptx, svg, tiff, xps.
   --slides <slides>                              Slides to process: 1-based numbers and ranges such as 1-3,7,9-, or all. Default: every slide.
   -o, --out <out>                                Output path; defaults to a sibling using the target extension; several slides as images write <stem>.<slide>.<ext> beside it.
   --overwrite                                    Replace the output file if it already exists.
+  --dry-run                                      Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds.
   --password <password>                          Password for the presentation. Discouraged: visible in the process list; prefer --password-env.
   --password-env <password-env>                  Name of an environment variable holding the password for the presentation.
   --password-stdin                               Read the password for the presentation from the first line of stdin.
@@ -86,6 +87,7 @@ Options:
   --template <template>                          Presentation whose masters, layouts and theme are reused.
   --size <16x9|4x3>                              16x9 or 4x3; template size is preserved when omitted.
   --overwrite                                    Replace the output file if it already exists.
+  --dry-run                                      Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds.
   --encrypt <encrypt>                            Password for the output presentation. Discouraged: visible in the process list; prefer --encrypt-env.
   --encrypt-env <encrypt-env>                    Name of an environment variable holding the password for the output presentation.
   --encrypt-stdin                                Read the password for the output presentation from the first line of stdin.
@@ -114,12 +116,12 @@ Arguments:
 Options:
   --ops <ops>                                    The ops JSON, an object with ops or the bare array of operations: a path to the document, '-' to read it from stdin, or the document itself when the value starts with { or [ (inline). To name a file whose name starts with '[', prefix it with ./ . At most 10000 operations. Vocabulary: aspose-cli schema v2/slides/ops.
   --if-match <if-match>                          Require the current input SHA-256 fingerprint before editing.
-  --dry-run                                      Resolve and apply operations in memory without writing.
   --best-effort                                  Keep successful operations, report failures, and exit 8.
   -o, --out <out>                                Output path. Default: the input path with '.out' inserted before the extension.
   --overwrite                                    Replace the output file if it already exists.
   --in-place                                     Modify the input file itself atomically.
   --backup                                       Create a non-overwriting backup before an in-place write.
+  --dry-run                                      Check the input, the output and the operations, and apply the operations in memory, without writing any file. A dry run that succeeds does not guarantee that the edit succeeds.
   --password <password>                          Password for the presentation. Discouraged: visible in the process list; prefer --password-env.
   --password-env <password-env>                  Name of an environment variable holding the password for the presentation.
   --password-stdin                               Read the password for the presentation from the first line of stdin.
@@ -153,6 +155,7 @@ Options:
   --slides <slides>                              Slides to process: 1-based numbers and ranges such as 1-3,7,9-, or all. Default: every slide.
   --out-dir <out-dir> (REQUIRED)                 Safe extraction directory.
   --overwrite                                    Replace the output file if it already exists.
+  --dry-run                                      Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds.
   --password <password>                          Password for the presentation. Discouraged: visible in the process list; prefer --password-env.
   --password-env <password-env>                  Name of an environment variable holding the password for the presentation.
   --password-stdin                               Read the password for the presentation from the first line of stdin.
@@ -294,6 +297,7 @@ Options:
   --width <width>                                Exact raster width in pixels (64-20000); replaces --dpi.
   -o, --out <out>                                Output path; several slides write <stem>.<slide>.<ext> beside it.
   --overwrite                                    Replace the output file if it already exists.
+  --dry-run                                      Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds.
   --password <password>                          Password for the presentation. Discouraged: visible in the process list; prefer --password-env.
   --password-env <password-env>                  Name of an environment variable holding the password for the presentation.
   --password-stdin                               Read the password for the presentation from the first line of stdin.

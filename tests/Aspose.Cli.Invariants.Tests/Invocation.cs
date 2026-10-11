@@ -88,9 +88,10 @@ internal sealed class Invocation
     }
 
     // Options that no single declaration requires, but that the command needs to run: an edit
-    // needs operations, a create something to create from and an extract a directory for files.
+    // needs operations, a create something to create from, an extract a directory for files and
+    // a convert without --out the format to write.
     private static bool IsImplied(CliCommand command, CliOption option) =>
-        (command.Verb, option.Name) is ("edit", "--ops") or ("extract", "--out-dir")
+        (command.Verb, option.Name) is ("edit", "--ops") or ("extract", "--out-dir") or ("convert", "--to")
         || (command.Verb == "create" && option.Name == command.Options
             .Select(static candidate => candidate.Name)
             .FirstOrDefault(static name => name is "--markdown" or "--from-markdown" or "--from-text"));

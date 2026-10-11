@@ -71,7 +71,13 @@ public abstract partial record ResultEnvelope
     /// </summary>
     /// <param name="owner">A product id, or <c>common</c>.</param>
     /// <param name="id">The relative schema id, such as <c>backup</c>.</param>
-    public static string CatalogId(string owner, string id) => $"v2/{owner}/{id}";
+    public static string CatalogId(string owner, string id) => $"v{ContractVersion}/{owner}/{id}";
+
+    /// <summary>
+    /// The version of the result contracts this build publishes, the <c>v2</c> of every schema id;
+    /// every published result states it as its <c>schemaVersion</c>.
+    /// </summary>
+    public const int ContractVersion = 2;
 
     /// <summary>
     /// The owner of the schemas an assembly's records state: the product id its product module

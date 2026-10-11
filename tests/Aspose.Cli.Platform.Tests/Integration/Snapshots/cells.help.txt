@@ -81,13 +81,14 @@ Arguments:
   <file>  Workbook to convert.
 
 Options:
-  --to <to> (REQUIRED)                           Target format: xlsx, xltx, xlsm, xltm, xlsb, xls, ods, csv, tsv, html, mhtml, pdf, xps, json, md. Values: csv, html, json, md, mhtml, ods, pdf, tsv, xls, xlsb, xlsm, xlsx, xltm, xltx, xps.
+  --to <to>                                      Target format: xlsx, xltx, xlsm, xltm, xlsb, xls, ods, csv, tsv, html, mhtml, pdf, xps, json, md. Default: the --out extension's format. Values: csv, html, json, md, mhtml, ods, pdf, tsv, xls, xlsb, xlsm, xlsx, xltm, xltx, xps.
   --sheet <sheet>                                Convert only this sheet (supported for csv, tsv, md, pdf).
   --encoding <encoding>                          Text encoding of a CSV or TSV input, such as gb18030, big5, shift_jis or windows-1252. Default: its byte order mark, else UTF-8 (other bytes are refused).
   --culture <culture>                            Culture whose number and date formats a CSV or TSV input uses, such as de-DE for '1.234,56'. Default: invariant formats (a decimal comma is refused).
   --bom                                          Start a CSV or TSV output with a UTF-8 byte order mark, so Excel reads its non-English text correctly. Default: UTF-8 without one.
   -o, --out <out>                                Output path. Default: the input path with the target extension (with '.out' inserted when that would overwrite the input).
   --overwrite                                    Replace the output file if it already exists.
+  --dry-run                                      Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds.
   --password <password>                          Password for the workbook. Discouraged: visible in the process list; prefer --password-env.
   --password-env <password-env>                  Name of an environment variable holding the password for the workbook.
   --password-stdin                               Read the password for the workbook from the first line of stdin.
@@ -110,7 +111,7 @@ Examples:
   aspose-cli cells convert erp-export.csv --to xlsx --encoding gb18030
   aspose-cli cells convert partner-orders.csv --to xlsx --culture de-DE
   aspose-cli cells convert book.xlsx --to csv --bom --out for-excel.csv
-  aspose-cli cells convert book.xlsx --to pdf --out report.pdf
+  aspose-cli cells convert book.xlsx --out report.pdf
   aspose-cli cells convert book.xlsx --to pdf --font-dir fonts --out report.pdf
 
 
@@ -127,6 +128,7 @@ Arguments:
 Options:
   --sheets <sheets>                              Comma-separated sheet names, e.g. "Data,Summary". Default: one sheet named Sheet1.
   --overwrite                                    Replace the output file if it already exists.
+  --dry-run                                      Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds.
   --encrypt <encrypt>                            Password for the output file. Discouraged: visible in the process list; prefer --encrypt-env.
   --encrypt-env <encrypt-env>                    Name of an environment variable holding the password for the output file.
   --encrypt-stdin                                Read the password for the output file from the first line of stdin.
@@ -158,7 +160,6 @@ Options:
   --ops <ops>                                    The ops JSON, an object with ops or the bare array of operations: a path to the document, '-' to read it from stdin, or the document itself when the value starts with { or [ (inline). To name a file whose name starts with '[', prefix it with ./ . At most 10000 operations. Vocabulary: aspose-cli schema v2/cells/ops.
   --set <set>                                    Set one cell as SHEET!CELL=VALUE; repeatable, applied after the --ops document. A VALUE starting with '=' is a formula; otherwise TRUE/FALSE and numbers are typed and anything else is text. Quote sheet names that need it: --set "'My Sheet'!A1=5". Example: --set "Sales!B3=42" --set "Sales!G2==E2*F2".
   --if-match <if-match>                          Require the current input SHA-256 fingerprint before editing.
-  --dry-run                                      Resolve and apply operations in memory without writing.
   --best-effort                                  Keep successful operations, report failures, and exit 8.
   --verify                                       Verify the staged output and report its cell changes and formula errors.
   --no-recalc                                    Skip the automatic formula recalculation after applying the ops.
@@ -166,6 +167,7 @@ Options:
   --overwrite                                    Replace the output file if it already exists.
   --in-place                                     Modify the input file itself atomically.
   --backup                                       Create a non-overwriting backup before an in-place write.
+  --dry-run                                      Check the input, the output and the operations, and apply the operations in memory, without writing any file. A dry run that succeeds does not guarantee that the edit succeeds.
   --password <password>                          Password for the workbook. Discouraged: visible in the process list; prefer --password-env.
   --password-env <password-env>                  Name of an environment variable holding the password for the workbook.
   --password-stdin                               Read the password for the workbook from the first line of stdin.
@@ -336,6 +338,7 @@ Options:
   --dpi <dpi>                                    Raster resolution (36-1200); ignored for vector formats. [default: 192]
   -o, --out <out>                                Output path. Default: the input path with the image extension. Several sheets write <stem>.<sheet>.<ext> beside it.
   --overwrite                                    Replace the output file if it already exists.
+  --dry-run                                      Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds.
   --password <password>                          Password for the workbook. Discouraged: visible in the process list; prefer --password-env.
   --password-env <password-env>                  Name of an environment variable holding the password for the workbook.
   --password-stdin                               Read the password for the workbook from the first line of stdin.

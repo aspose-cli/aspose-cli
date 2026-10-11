@@ -578,6 +578,10 @@ public sealed record WordsEditResult() : EngineResultEnvelope("edit-result", 2),
     /// <summary>Whether the batch was only checked, writing nothing.</summary>
     public required bool DryRun { get; init; }
 
+    /// <summary>What the dry run checked, in a fixed order; omitted when the edit was written.</summary>
+    [MinItems(1), UniqueItems, AllowedValues(typeof(DryRunChecks))]
+    public IReadOnlyList<string>? Checked { get; init; }
+
     /// <summary>The outcome of each operation, in batch order.</summary>
     public required IReadOnlyList<BoundedOperationOutcome> Applied { get; init; }
 

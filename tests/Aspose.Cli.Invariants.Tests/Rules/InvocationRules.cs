@@ -595,6 +595,13 @@ internal static partial class ContractRules
                 string typo = InvariantCases.Typo(value, to.AllowedValues);
                 yield return R26Case(output, $"{convert} --to {value} as {typo}", product,
                     Invocation.For(convert, "--to").Add("--to", typo), value, suggests: false);
+
+                // An --out extension names the format a convert writes when --to is omitted.
+                string[] extensions = [.. Extensions(catalog, product, to.AllowedValues)];
+                string extension = Extensions(catalog, product, [value]).First();
+                string extensionTypo = "." + InvariantCases.Typo(extension[1..], extensions.Select(static candidate => candidate[1..]));
+                yield return R26Case(output, $"{convert} --out extension {extension} as {extensionTypo}", product,
+                    Invocation.For(convert, "--to").Add("--out", "output" + extensionTypo), extension, suggests: true);
             }
             foreach (InvariantCase item in R26Operations(catalog, output, catalog.Product(product)))
             {
@@ -624,6 +631,14 @@ internal static partial class ContractRules
                 Invocation.For(sheets).Add("--sheet", typo), Sheet, suggests: true);
         }
     }
+
+    /// <summary>The extensions of the formats <paramref name="ids"/> of a product, in the order capabilities lists them.</summary>
+    private static IEnumerable<string> Extensions(CliCatalog catalog, string product, IEnumerable<string> ids) =>
+        ids.SelectMany(id => catalog.Document["products"]!.AsArray()
+            .Single(entry => entry!["id"]!.GetValue<string>() == product)!["formats"]!.AsArray()
+            .Single(format => format!["id"]!.GetValue<string>() == id)!["extensions"]!.AsArray()
+            .Select(static extension => extension!.GetValue<string>()))
+        .Distinct(StringComparer.OrdinalIgnoreCase);
 
     private static IEnumerable<InvariantCase> R26Operations(CliCatalog catalog, string output, CliProduct product)
     {

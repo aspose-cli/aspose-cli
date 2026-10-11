@@ -94,6 +94,7 @@ internal static class CellsEdit
             Input = input,
             Output = saved?.Output,
             DryRun = request.Options.DryRun,
+            Checked = request.Options.Checked,
             Recalculated = request.Recalculate,
             Applied = applied,
             Backup = saved?.Backup,

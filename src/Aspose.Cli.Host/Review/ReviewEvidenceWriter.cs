@@ -14,9 +14,10 @@ using Aspose.Cli.Sdk.Views;
 namespace Aspose.Cli.Host.Review;
 
 /// <summary>
-/// Publishes one immutable static review bundle into a new directory: the
-/// rendered view parts, their <c>view.json</c> manifest, <c>review.json</c>
-/// and an <c>index.html</c> that presents both in the shared viewer.
+/// Publishes one immutable static review bundle as one directory, new or, with
+/// <c>--overwrite</c>, replacing an existing one: the rendered view parts, their
+/// <c>view.json</c> manifest, <c>review.json</c> and an <c>index.html</c> that
+/// presents both in the shared viewer.
 /// </summary>
 internal static class ReviewEvidenceWriter
 {
@@ -38,7 +39,8 @@ internal static class ReviewEvidenceWriter
         ContractJsonSerializer serializer,
         ResourceBudgetLedger budgets,
         IReadOnlyList<string>? codes = null,
-        Func<ReviewResult, ReviewResult>? disclose = null)
+        Func<ReviewResult, ReviewResult>? disclose = null,
+        bool overwrite = false)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(sourcePath);
         ArgumentException.ThrowIfNullOrWhiteSpace(productId);
@@ -52,8 +54,8 @@ internal static class ReviewEvidenceWriter
 
         string source = Path.GetFullPath(sourcePath);
         string target = Path.GetFullPath(outputDirectory);
-        EnsureNewTarget(target);
-        using var publication = new AtomicNewDirectoryWriter(budgets, target, "review");
+        EnsureTarget(target, overwrite, source);
+        using var publication = new AtomicNewDirectoryWriter(budgets, target, "review", overwrite);
         string staging = publication.StagingDirectory;
         try
         {
@@ -325,11 +327,42 @@ internal static class ReviewEvidenceWriter
             _ => "application/octet-stream",
         };
 
-    private static void EnsureNewTarget(string target)
+    /// <summary>
+    /// Refuses an evidence directory the review may not publish at <paramref name="target"/>:
+    /// the input itself or a directory that holds it (<c>OPTION_INVALID</c>, with or without
+    /// <paramref name="overwrite"/>, as an output file never names an input); a file; and an
+    /// existing directory, unless <paramref name="overwrite"/> lets the review replace one that
+    /// is empty or holds earlier evidence, recognised by its <c>review.json</c>. Like
+    /// <c>skill install</c>, which replaces only a Skill it installed, the review never replaces
+    /// a directory that is not its own (<c>OUTPUT_EXISTS</c>).
+    /// </summary>
+    internal static void EnsureTarget(string target, bool overwrite, string input)
     {
-        if (Directory.Exists(target) || File.Exists(target))
+        string full = Path.TrimEndingDirectorySeparator(Path.GetFullPath(target));
+        string source = Path.GetFullPath(input);
+        if (string.Equals(full, source, StringComparison.OrdinalIgnoreCase)
+            || source.StartsWith(full + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
         {
-            throw CliErrors.OutputDirectoryExists(target);
+            throw CliErrors.OptionInvalid(
+                "--out",
+                $"the evidence directory would hold or replace the input file: {full}",
+                "Choose an --out outside the input's folder, or omit --out to write <filename>.review beside the input.");
+        }
+
+        if (File.Exists(full) && overwrite)
+        {
+            throw CliErrors.OutputUnwritable(full, "a file occupies the path, and --overwrite replaces only a directory");
+        }
+
+        if (File.Exists(full) || Directory.Exists(full) && !overwrite)
+        {
+            throw CliErrors.OutputDirectoryExists(full);
+        }
+
+        if (Directory.Exists(full) && Directory.EnumerateFileSystemEntries(full).Any()
+            && !File.Exists(Path.Combine(full, "review.json")))
+        {
+            throw CliErrors.OutputDirectoryNotOwned(full, "review evidence (review.json)");
         }
     }
 

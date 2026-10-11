@@ -102,6 +102,7 @@ internal static class WordsEdit
             Input = input,
             Output = output,
             DryRun = request.Options.DryRun,
+            Checked = request.Options.Checked,
             Applied = outcomes,
             Backup = backup,
             PagesTouched = pagesTouched.Count == 0 ? null : pagesTouched,

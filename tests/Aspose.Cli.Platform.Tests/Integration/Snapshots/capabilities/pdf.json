@@ -437,6 +437,25 @@
         "hidden": false,
         "options": [
           {
+            "name": "--dry-run",
+            "aliases": [],
+            "type": "boolean",
+            "minimumArity": 0,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": true,
+            "default": "false",
+            "allowedValues": [
+              "false",
+              "true"
+            ],
+            "secret": false,
+            "valueSource": "command-line",
+            "description": "Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds."
+          },
+          {
             "name": "--font-dir",
             "aliases": [],
             "type": "string[]",
@@ -556,7 +575,7 @@
             "type": "string",
             "minimumArity": 1,
             "maximumArity": 1,
-            "required": true,
+            "required": false,
             "recursive": false,
             "hidden": false,
             "hasDefault": false,
@@ -579,7 +598,7 @@
             ],
             "secret": false,
             "valueSource": "command-line",
-            "description": "Target PDF export format."
+            "description": "Target PDF export format. Default: the --out extension's format."
           }
         ],
         "arguments": [
@@ -623,6 +642,25 @@
             "secret": false,
             "valueSource": "command-line",
             "description": "Let the HTML importer request the network resources trusted --from-html input names; the result lists every address. Local references stay beneath the HTML directory."
+          },
+          {
+            "name": "--dry-run",
+            "aliases": [],
+            "type": "boolean",
+            "minimumArity": 0,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": true,
+            "default": "false",
+            "allowedValues": [
+              "false",
+              "true"
+            ],
+            "secret": false,
+            "valueSource": "command-line",
+            "description": "Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds."
           },
           {
             "name": "--font-dir",
@@ -821,7 +859,7 @@
             ],
             "secret": false,
             "valueSource": "command-line",
-            "description": "Resolve and apply operations in memory without writing."
+            "description": "Check the input, the output and the operations, and apply the operations in memory, without writing any file. A dry run that succeeds does not guarantee that the edit succeeds."
           },
           {
             "name": "--font-dir",
@@ -1033,6 +1071,25 @@
             "secret": false,
             "valueSource": "command-line",
             "description": "Start each table's CSV with a UTF-8 byte order mark, so Excel reads its non-English text correctly; only with --what tables. Default: UTF-8 without one."
+          },
+          {
+            "name": "--dry-run",
+            "aliases": [],
+            "type": "boolean",
+            "minimumArity": 0,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": true,
+            "default": "false",
+            "allowedValues": [
+              "false",
+              "true"
+            ],
+            "secret": false,
+            "valueSource": "command-line",
+            "description": "Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds."
           },
           {
             "name": "--out",
@@ -1345,6 +1402,25 @@
             "secret": false,
             "valueSource": "command-line",
             "description": "preserve or drop input bookmarks."
+          },
+          {
+            "name": "--dry-run",
+            "aliases": [],
+            "type": "boolean",
+            "minimumArity": 0,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": true,
+            "default": "false",
+            "allowedValues": [
+              "false",
+              "true"
+            ],
+            "secret": false,
+            "valueSource": "command-line",
+            "description": "Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds."
           },
           {
             "name": "--out",
@@ -1846,6 +1922,25 @@
             "description": "Raster resolution (36-1200); ignored for vector formats."
           },
           {
+            "name": "--dry-run",
+            "aliases": [],
+            "type": "boolean",
+            "minimumArity": 0,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": true,
+            "default": "false",
+            "allowedValues": [
+              "false",
+              "true"
+            ],
+            "secret": false,
+            "valueSource": "command-line",
+            "description": "Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds."
+          },
+          {
             "name": "--font-dir",
             "aliases": [],
             "type": "string[]",
@@ -2062,6 +2157,25 @@
             "secret": false,
             "valueSource": "command-line",
             "description": "Signer contact stored in the signature."
+          },
+          {
+            "name": "--dry-run",
+            "aliases": [],
+            "type": "boolean",
+            "minimumArity": 0,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": true,
+            "default": "false",
+            "allowedValues": [
+              "false",
+              "true"
+            ],
+            "secret": false,
+            "valueSource": "command-line",
+            "description": "Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds."
           },
           {
             "name": "--font-dir",
@@ -2283,6 +2397,25 @@
             "secret": false,
             "valueSource": "command-line",
             "description": "How to divide the document: pages, one part per page, per --every pages or per group; bookmarks, one part per top-level bookmark."
+          },
+          {
+            "name": "--dry-run",
+            "aliases": [],
+            "type": "boolean",
+            "minimumArity": 0,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": true,
+            "default": "false",
+            "allowedValues": [
+              "false",
+              "true"
+            ],
+            "secret": false,
+            "valueSource": "command-line",
+            "description": "Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds."
           },
           {
             "name": "--every",
@@ -2763,6 +2896,21 @@
         "dryRun": {
           "description": "Whether the batch was only checked and applied in memory (--dry-run).",
           "type": "boolean"
+        },
+        "checked": {
+          "description": "What the dry run checked, in a fixed order; omitted when the edit was written.",
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "enum": [
+              "input",
+              "output",
+              "ops",
+              "targets"
+            ]
+          }
         },
         "applied": {
           "description": "The outcome of each operation, in batch order.",

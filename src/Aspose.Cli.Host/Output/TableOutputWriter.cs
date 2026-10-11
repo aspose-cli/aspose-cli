@@ -64,6 +64,7 @@ internal sealed class TableOutputWriter : IOutputWriter
                 case SchemaListResult schemas: CommonRenderers.Render(schemas, surface); break;
                 case FontListResult fonts: CommonRenderers.Render(fonts, surface); break;
                 case FontCheckResult fonts: CommonRenderers.Render(fonts, surface); break;
+                case DryRunResult dryRun: CommonRenderers.Render(dryRun, surface); break;
                 case SkillInstallResult skill: CommonRenderers.Render(skill, surface); break;
                 case SkillListResult skills: CommonRenderers.Render(skills, surface); break;
                 case UpdateResult update: CommonRenderers.Render(update, surface); break;

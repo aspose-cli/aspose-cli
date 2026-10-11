@@ -77,7 +77,6 @@ public sealed class BoundedEditCommand<TOp, TBatch>
     private readonly Option<string?> _ops;
     private readonly Option<string[]>? _set;
     private readonly Option<string?> _ifMatch;
-    private readonly Option<bool> _dryRun;
     private readonly Option<bool> _bestEffort;
     private readonly Option<bool>? _verify;
     private readonly IReadOnlyList<Option> _options;
@@ -111,10 +110,6 @@ public sealed class BoundedEditCommand<TOp, TBatch>
         {
             Description = "Require the current input SHA-256 fingerprint before editing.",
         }.WithInput(InputKind.None);
-        _dryRun = new Option<bool>(StandardOptionNames.DryRun)
-        {
-            Description = "Resolve and apply operations in memory without writing.",
-        };
         _bestEffort = new Option<bool>(StandardOptionNames.BestEffort)
         {
             Description = "Keep successful operations, report failures, and exit 8.",
@@ -130,7 +125,6 @@ public sealed class BoundedEditCommand<TOp, TBatch>
             _ops,
             .. _set is null ? [] : new Option[] { _set },
             _ifMatch,
-            _dryRun,
             _bestEffort,
             .. _verify is null ? [] : new Option[] { _verify },
         ];
@@ -183,7 +177,7 @@ public sealed class BoundedEditCommand<TOp, TBatch>
         }
 
         bool verify = IsVerifyRequested(parse);
-        bool dryRun = parse.GetValue(_dryRun);
+        bool dryRun = standard.DryRun;
         if (verify && dryRun)
         {
             throw CliErrors.OptionInvalid(

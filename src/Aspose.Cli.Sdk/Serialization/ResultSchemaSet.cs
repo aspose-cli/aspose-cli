@@ -42,7 +42,10 @@ public sealed class ResultSchemaSet
     /// <param name="owner">A product id, or <c>common</c> for the SDK and the host.</param>
     /// <param name="records">The records the owner's assembly describes.</param>
     /// <param name="common">The SDK's set, whose records the owner's records may reference; null for the SDK's own set.</param>
-    /// <exception cref="InvalidOperationException">Two records claim one type or one schema id.</exception>
+    /// <exception cref="InvalidOperationException">
+    /// Two records claim one type or one schema id, or a published record states a
+    /// <c>schemaVersion</c> other than <see cref="ResultEnvelope.ContractVersion"/>.
+    /// </exception>
     public ResultSchemaSet(string owner, IEnumerable<ResultRecord> records, ResultSchemaSet? common)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(owner);
@@ -65,6 +68,12 @@ public sealed class ResultSchemaSet
             }
 
             byType.Add(record.Type, record);
+            if (record.SchemaId is not null && record.SchemaVersion is not 0 and not ResultEnvelope.ContractVersion)
+            {
+                throw new InvalidOperationException(
+                    $"Result record {record.Type.Name} states schemaVersion {record.SchemaVersion}, but its schema is published under v{ResultEnvelope.ContractVersion}.");
+            }
+
             if (record.SchemaId is { } id && !schemas.TryAdd(Id(owner, id), new Lazy<string>(() => Write(record))))
             {
                 throw new InvalidOperationException($"Schema '{Id(owner, id)}' is published by more than one result record.");

@@ -458,14 +458,27 @@ public static partial class CliErrors
         details: new JsonObject { ["path"] = path });
 
     /// <summary>
-    /// An output published as one new directory, which never replaces anything, names a
-    /// directory or file that already exists.
+    /// An output published as one directory names a directory or file that already exists, and
+    /// the caller did not ask to replace it.
     /// </summary>
     public static CliException OutputDirectoryExists(string path) => CliException.Create(
         ErrorCodes.OutputExists,
         $"Output directory already exists: {path}",
-        hint: "Pass --out a path that does not exist yet, not even as an empty directory: the command publishes its "
-            + "output as one new directory and never overwrites.",
+        hint: "Pass --overwrite to replace it, or choose a path that does not exist yet with --out.",
+        details: new JsonObject { ["path"] = path });
+
+    /// <summary>
+    /// An output published as one directory names an existing directory that <c>--overwrite</c>
+    /// may not replace: it is neither empty nor an earlier output of the command, which alone it
+    /// replaces. It is the fact <see cref="OutputDirectoryExists"/> states, an output in the way,
+    /// so it has its code; only the way out differs.
+    /// </summary>
+    /// <param name="path">The existing directory.</param>
+    /// <param name="owned">What an earlier output of the command holds, such as <c>review evidence (review.json)</c>.</param>
+    public static CliException OutputDirectoryNotOwned(string path, string owned) => CliException.Create(
+        ErrorCodes.OutputExists,
+        $"Output directory already exists and is not an earlier {owned}: {path}",
+        hint: $"--overwrite replaces only an empty directory or an earlier {owned}; choose another path with --out.",
         details: new JsonObject { ["path"] = path });
 
     /// <summary>
@@ -541,6 +554,24 @@ public static partial class CliErrors
             ? $"Pass --in-place instead of {parameter} to modify the input, with --backup or --if-match as needed; or choose another output path."
             : "Choose another output path; this command never replaces its input.",
         details: new JsonObject { [ParameterKey(parameter)] = parameter, ["path"] = path });
+
+    /// <summary>
+    /// An output named <c>-</c>, which names standard input only: every output is a file or a
+    /// directory, never standard output.
+    /// </summary>
+    /// <param name="parameter">The option or argument that names the output, such as <c>--out</c>.</param>
+    /// <param name="directory">Whether the output is a directory.</param>
+    public static CliException OutputIsStandardStream(string parameter, bool directory = false)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(parameter);
+        return CliException.Create(
+            ErrorCodes.OptionInvalid,
+            $"Invalid use of {parameter}: '-' names standard input, not an output",
+            hint: directory
+                ? "Write to a directory; `-` is not supported: name a file-system path instead."
+                : "Write to a file; `-` is not supported: name a file instead.",
+            details: new JsonObject { [ParameterKey(parameter)] = parameter });
+    }
 
     /// <summary>Two outputs of one operation, including a backup, resolve to the same path.</summary>
     internal static CliException DuplicateOutput(string path) => CliException.Create(

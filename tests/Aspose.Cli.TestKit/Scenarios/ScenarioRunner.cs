@@ -58,10 +58,11 @@ public static partial class ScenarioRunner
                 .Replace(workspace.Path.Replace("\\", "\\\\", StringComparison.Ordinal), "<workspace>", StringComparison.OrdinalIgnoreCase)
                 .Replace(workspace.Path, "<workspace>", StringComparison.OrdinalIgnoreCase), "<id>")));
 
-            IReadOnlyDictionary<string, string> before = Snapshot(workspace.Path);
+            bool installation = step.Expect?.Files?.NothingInstalled == true;
+            IReadOnlyDictionary<string, string> before = Snapshot(workspace, installation);
             string[] args = WithJsonOutput(step.Args);
             CliResult result = Execute(workspace, args, step.Env, step.Stdin);
-            IReadOnlyDictionary<string, string> after = Snapshot(workspace.Path);
+            IReadOnlyDictionary<string, string> after = Snapshot(workspace, installation);
             JsonNode? document = ScenarioContract.Check(args, result, Report);
             if (step.Expect is { } expect)
             {
@@ -197,13 +198,17 @@ public static partial class ScenarioRunner
                 report(FilesCheck, $"{path} changed");
             }
         }
-        if (files.NothingWritten == true)
+        if (files.NothingWritten == true || files.NothingInstalled == true)
         {
+            // Without nothingWritten, only the configuration and installation files are judged.
+            bool Judged(string key) => files.NothingWritten == true
+                || key.StartsWith(ConfigurationPrefix, StringComparison.Ordinal) || key.StartsWith(InstallationPrefix, StringComparison.Ordinal);
             string[] written =
             [
                 .. after.Where(pair => !before.TryGetValue(pair.Key, out string? hash) || hash != pair.Value).Select(static pair => pair.Key),
                 .. before.Keys.Where(key => !after.ContainsKey(key)),
             ];
+            written = [.. written.Where(Judged)];
             if (written.Length > 0)
             {
                 report(FilesCheck, $"wrote {string.Join(", ", written.Order(StringComparer.Ordinal).Take(5))}");
@@ -375,20 +380,43 @@ public static partial class ScenarioRunner
         return true;
     }
 
-    /// <summary>Content hashes of the workspace by relative path, without the project license directory.</summary>
-    private static IReadOnlyDictionary<string, string> Snapshot(string root)
+    /// <summary>
+    /// The files a step may change, by workspace-relative path: the workspace's and, when
+    /// <paramref name="installation"/> is set, the user configuration's under
+    /// <c>&lt;config&gt;/</c> and the CLI's installation directory's under <c>&lt;install&gt;/</c>,
+    /// these by size and time since that directory is large and only an installer writes it.
+    /// </summary>
+    private static IReadOnlyDictionary<string, string> Snapshot(TempWorkspace workspace, bool installation)
     {
         var files = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        foreach (string path in Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories))
+        foreach (string path in Directory.EnumerateFiles(workspace.Path, "*", SearchOption.AllDirectories))
         {
-            string relative = Normalize(Path.GetRelativePath(root, path));
+            string relative = Normalize(Path.GetRelativePath(workspace.Path, path));
             if (!relative.StartsWith(ScenarioLicense.ProjectDirectory + "/", StringComparison.OrdinalIgnoreCase))
             {
                 files[relative] = FileHashes.Sha256(path);
             }
         }
+        if (installation)
+        {
+            string configuration = Path.GetDirectoryName(workspace.ConfigDirectory)!;
+            foreach (string path in Directory.EnumerateFiles(configuration, "*", SearchOption.AllDirectories))
+            {
+                files[ConfigurationPrefix + Normalize(Path.GetRelativePath(configuration, path))] = FileHashes.Sha256(path);
+            }
+            string installed = Path.GetDirectoryName(CliRunner.ExecutablePath)!;
+            foreach (FileInfo file in new DirectoryInfo(installed).EnumerateFiles("*", SearchOption.AllDirectories))
+            {
+                files[InstallationPrefix + Normalize(Path.GetRelativePath(installed, file.FullName))] =
+                    string.Create(CultureInfo.InvariantCulture, $"{file.Length}:{file.LastWriteTimeUtc.Ticks}");
+            }
+        }
         return files;
     }
+
+    private const string ConfigurationPrefix = "<config>/";
+
+    private const string InstallationPrefix = "<install>/";
 
     private static string Normalize(string path) => path.Replace('\\', '/');
 

@@ -23,7 +23,7 @@ public static class WorkerOutputPublisher
         {
             NewDirectoryPublication.EnsureAnchor(output.ParentAnchor, output.ParentIdentity);
             using var directory = new AtomicNewDirectoryWriter(budgets, output.Target, "worker-directory-publication",
-                faults ?? NoPublicationFaultInjector.Instance);
+                faults ?? NoPublicationFaultInjector.Instance, output.Replace);
             NewDirectoryPublication.Copy(output, directory.StagingDirectory, budgets);
             directory.Commit();
             return output.Tree.Files.Select(file => file.Snapshot.Length).ToArray();

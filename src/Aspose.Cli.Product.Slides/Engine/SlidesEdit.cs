@@ -34,6 +34,7 @@ internal static class SlidesEdit
             Input = input,
             Output = publication.Output,
             DryRun = request.Options.DryRun,
+            Checked = request.Options.Checked,
             Applied = outcomes,
             Backup = publication.Backup,
             SlidesTouched = touched.Count == 0 ? null : touched.Order().ToArray(),

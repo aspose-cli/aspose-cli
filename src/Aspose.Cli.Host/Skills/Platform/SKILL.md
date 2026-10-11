@@ -72,6 +72,9 @@ override the choice.
 4. **Protect the user's file.** Write to `--out`, or use `--in-place --backup`
    when replacing the input is intended; pass the fingerprint you read as
    `--if-match`. Existing outputs are replaced only with `--overwrite`.
+   Every command that writes files takes `--dry-run`: it checks the input,
+   the output and the options and writes nothing, which does not guarantee
+   that the real run succeeds.
 5. **Report engine values.** Numbers and text you report come from a read-back
    after the edit, not from your own arithmetic or memory.
 6. **Verify before delivery.** A clean exit code is not done: read changes

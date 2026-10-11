@@ -15,15 +15,21 @@ internal static class UpdateInstaller
 {
     internal const string PreparationCommand = "__prepare";
 
+    /// <summary>
+    /// Checks an install without reading the feed or writing anything: the platform, the trusted
+    /// PowerShell, and the feed's form (an HTTPS URL) or local manifest; names the installation
+    /// directory the update would replace.
+    /// </summary>
+    internal static DryRunResult DryRun(CommandContext context, string feed)
+    {
+        _ = TrustedPowerShell();
+        UpdateClient.CheckFeed(feed, context.Paths.BaseDirectory);
+        return DryRunResult.Of([DryRunChecks.Input, DryRunChecks.Output], [AppContext.BaseDirectory]);
+    }
+
     internal static UpdateResult Install(HostContext host, CommandContext context, string feed)
     {
-        if (!OperatingSystem.IsWindows() || RuntimeInformation.RuntimeIdentifier != "win-x64")
-        {
-            throw CliErrors.OptionInvalid("update install", "the customer updater currently supports Windows x64 only",
-                "Run the win-x64 distribution on Windows, or use update check for feed verification.");
-        }
-        string powerShell = WindowsPowerShell.TryResolve()
-            ?? throw HostDiagnostics.ReleaseVerificationFailed("the trusted Windows PowerShell executable is unavailable");
+        string powerShell = TrustedPowerShell();
         string statusPath = UpdateStatus.PathFor(AppContext.BaseDirectory);
         // Read the outcome of the previous run before this run replaces it.
         Warning? previous = UpdateStatus.ReadWarning(statusPath);
@@ -70,5 +76,17 @@ internal static class UpdateInstaller
         {
             if (ownsPackage && !handedOff) { UserStorage.TryDeleteTree(target); }
         }
+    }
+
+    // The platform the customer updater supports and the PowerShell it hands the install to.
+    private static string TrustedPowerShell()
+    {
+        if (!OperatingSystem.IsWindows() || RuntimeInformation.RuntimeIdentifier != "win-x64")
+        {
+            throw CliErrors.OptionInvalid("update install", "the customer updater currently supports Windows x64 only",
+                "Run the win-x64 distribution on Windows, or use update check for feed verification.");
+        }
+        return WindowsPowerShell.TryResolve()
+            ?? throw HostDiagnostics.ReleaseVerificationFailed("the trusted Windows PowerShell executable is unavailable");
     }
 }

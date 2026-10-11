@@ -25,6 +25,7 @@ namespace Aspose.Cli.Sdk.Serialization;
 [JsonSerializable(typeof(ProductPreviewStartResult))]
 [JsonSerializable(typeof(ProductPreviewStatusResult))]
 [JsonSerializable(typeof(ReviewResult))]
+[JsonSerializable(typeof(DryRunResult))]
 [JsonSerializable(typeof(Aspose.Cli.Sdk.Views.ViewManifest))]
 [JsonSerializable(typeof(Warning))]
 [JsonSerializable(typeof(BackupInfo))]

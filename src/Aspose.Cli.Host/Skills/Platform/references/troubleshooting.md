@@ -84,7 +84,10 @@ aspose-cli capabilities --output-format json
   `--to`, such as `--to pdf --out a.docx`, and an `edit` or `create` output
   that names a format the command does not write, such as `--out report.pdf`,
   whose hint names the product command that writes it: write the command's
-  own format first, then run that `convert` or `render`.
+  own format first, then run that `convert` or `render`. Without `--to`, a
+  `convert` or `render` writes the format its `--out` extension names; a
+  `convert` with neither is a `USAGE_ERROR`. `-` names standard input only:
+  `--out -` is `OPTION_INVALID`, so name a file.
 
 **Input (exit 3)**
 
@@ -143,7 +146,8 @@ aspose-cli capabilities --output-format json
 - `OUTPUT_EXISTS`: pass `--overwrite` deliberately or choose another path.
   Commands that write several files refuse the whole run when one exists;
   `--overwrite` replaces only the files the command writes.
-  Review evidence directories are never overwritten.
+  `review --overwrite` replaces only an empty directory or earlier evidence
+  (a directory with `review.json`).
 - `OUTPUT_UNWRITABLE`: the operating system refused the write. A file open in
   another application usually reads fine but fails the final in-place replace;
   ask the user to close it. The input and any backup are untouched.
