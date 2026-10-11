@@ -1,3 +1,921 @@
 {
-  "violations": []
+  "violations": [
+    {
+      "case": "C-R03 | app declared",
+      "invariant": "C-R03",
+      "rule": "C-R03",
+      "cause": "app-group-has-own-options",
+      "actual": "app has subcommands but declares its own option --foreground.; app has subcommands but declares its own option --no-open.; app has subcommands but declares its own option --port.; app has subcommands but declares its own option --route.; ap..."
+    },
+    {
+      "case": "C-R17 | app booleans",
+      "invariant": "C-R17",
+      "rule": "C-R17",
+      "cause": "boolean-values-published-capitalized",
+      "actual": "app: boolean options that do not publish false, true: --foreground, --no-open, --welcome."
+    },
+    {
+      "case": "C-R17 | app open booleans",
+      "invariant": "C-R17",
+      "rule": "C-R17",
+      "cause": "boolean-values-published-capitalized",
+      "actual": "app open: boolean options that do not publish false, true: --foreground, --no-open."
+    },
+    {
+      "case": "C-R17 | aspose-cli booleans",
+      "invariant": "C-R17",
+      "rule": "C-R17",
+      "cause": "boolean-values-published-capitalized",
+      "actual": "aspose-cli: boolean options that do not publish false, true: --quiet, --verbose."
+    },
+    {
+      "case": "C-R17 | capabilities booleans",
+      "invariant": "C-R17",
+      "rule": "C-R17",
+      "cause": "boolean-values-published-capitalized",
+      "actual": "capabilities: boolean options that do not publish false, true: --summary."
+    },
+    {
+      "case": "C-R17 | cells convert booleans",
+      "invariant": "C-R17",
+      "rule": "C-R17",
+      "cause": "boolean-values-published-capitalized",
+      "actual": "cells convert: boolean options that do not publish false, true: --bom, --overwrite, --password-stdin."
+    },
+    {
+      "case": "C-R17 | cells create booleans",
+      "invariant": "C-R17",
+      "rule": "C-R17",
+      "cause": "boolean-values-published-capitalized",
+      "actual": "cells create: boolean options that do not publish false, true: --overwrite."
+    },
+    {
+      "case": "C-R17 | cells edit booleans",
+      "invariant": "C-R17",
+      "rule": "C-R17",
+      "cause": "boolean-values-published-capitalized",
+      "actual": "cells edit: boolean options that do not publish false, true: --backup, --best-effort, --dry-run, --in-place, --no-recalc, --overwrite, --password-stdin, --verify."
+    },
+    {
+      "case": "C-R17 | cells inspect booleans",
+      "invariant": "C-R17",
+      "rule": "C-R17",
+      "cause": "boolean-values-published-capitalized",
+      "actual": "cells inspect: boolean options that do not publish false, true: --password-stdin, --preview."
+    },
+    {
+      "case": "C-R17 | cells query range booleans",
+      "invariant": "C-R17",
+      "rule": "C-R17",
+      "cause": "boolean-values-published-capitalized",
+      "actual": "cells query range: boolean options that do not publish false, true: --password-stdin."
+    },
+    {
+      "case": "C-R17 | cells query search booleans",
+      "invariant": "C-R17",
+      "rule": "C-R17",
+      "cause": "boolean-values-published-capitalized",
+      "actual": "cells query search: boolean options that do not publish false, true: --case-sensitive, --password-stdin, --regex."
+    },
+    {
+      "case": "C-R17 | cells render booleans",
+      "invariant": "C-R17",
+      "rule": "C-R17",
+      "cause": "boolean-values-published-capitalized",
+      "actual": "cells render: boolean options that do not publish false, true: --all-sheets, --overwrite, --password-stdin."
+    },
+    {
+      "case": "C-R17 | fonts check booleans",
+      "invariant": "C-R17",
+      "rule": "C-R17",
+      "cause": "boolean-values-published-capitalized",
+      "actual": "fonts check: boolean options that do not publish false, true: --password-stdin."
+    },
+    {
+      "case": "C-R17 | pdf convert booleans",
+      "invariant": "C-R17",
+      "rule": "C-R17",
+      "cause": "boolean-values-published-capitalized",
+      "actual": "pdf convert: boolean options that do not publish false, true: --overwrite, --password-stdin."
+    },
+    {
+      "case": "C-R17 | pdf create booleans",
+      "invariant": "C-R17",
+      "rule": "C-R17",
+      "cause": "boolean-values-published-capitalized",
+      "actual": "pdf create: boolean options that do not publish false, true: --allow-network-resources, --overwrite."
+    },
+    {
+      "case": "C-R17 | pdf edit booleans",
+      "invariant": "C-R17",
+      "rule": "C-R17",
+      "cause": "boolean-values-published-capitalized",
+      "actual": "pdf edit: boolean options that do not publish false, true: --backup, --best-effort, --dry-run, --in-place, --overwrite, --password-stdin, --verify."
+    },
+    {
+      "case": "C-R17 | pdf extract booleans",
+      "invariant": "C-R17",
+      "rule": "C-R17",
+      "cause": "boolean-values-published-capitalized",
+      "actual": "pdf extract: boolean options that do not publish false, true: --bom, --overwrite, --password-stdin."
+    },
+    {
+      "case": "C-R17 | pdf inspect booleans",
+      "invariant": "C-R17",
+      "rule": "C-R17",
+      "cause": "boolean-values-published-capitalized",
+      "actual": "pdf inspect: boolean options that do not publish false, true: --password-stdin, --preview."
+    },
+    {
+      "case": "C-R17 | pdf merge booleans",
+      "invariant": "C-R17",
+      "rule": "C-R17",
+      "cause": "boolean-values-published-capitalized",
+      "actual": "pdf merge: boolean options that do not publish false, true: --overwrite, --password-stdin."
+    },
+    {
+      "case": "C-R17 | pdf query forms booleans",
+      "invariant": "C-R17",
+      "rule": "C-R17",
+      "cause": "boolean-values-published-capitalized",
+      "actual": "pdf query forms: boolean options that do not publish false, true: --password-stdin."
+    },
+    {
+      "case": "C-R17 | pdf query pages booleans",
+      "invariant": "C-R17",
+      "rule": "C-R17",
+      "cause": "boolean-values-published-capitalized",
+      "actual": "pdf query pages: boolean options that do not publish false, true: --password-stdin."
+    },
+    {
+      "case": "C-R17 | pdf query search booleans",
+      "invariant": "C-R17",
+      "rule": "C-R17",
+      "cause": "boolean-values-published-capitalized",
+      "actual": "pdf query search: boolean options that do not publish false, true: --case-sensitive, --password-stdin, --regex."
+    },
+    {
+      "case": "C-R17 | pdf render booleans",
+      "invariant": "C-R17",
+      "rule": "C-R17",
+      "cause": "boolean-values-published-capitalized",
+      "actual": "pdf render: boolean options that do not publish false, true: --all-pages, --overwrite, --password-stdin."
+    },
+    {
+      "case": "C-R17 | pdf sign booleans",
+      "invariant": "C-R17",
+      "rule": "C-R17",
+      "cause": "boolean-values-published-capitalized",
+      "actual": "pdf sign: boolean options that do not publish false, true: --overwrite, --password-stdin, --visible."
+    },
+    {
+      "case": "C-R17 | pdf split booleans",
+      "invariant": "C-R17",
+      "rule": "C-R17",
+      "cause": "boolean-values-published-capitalized",
+      "actual": "pdf split: boolean options that do not publish false, true: --by-bookmarks, --overwrite, --password-stdin."
+    },
+    {
+      "case": "C-R17 | pdf validate booleans",
+      "invariant": "C-R17",
+      "rule": "C-R17",
+      "cause": "boolean-values-published-capitalized",
+      "actual": "pdf validate: boolean options that do not publish false, true: --password-stdin."
+    },
+    {
+      "case": "C-R17 | preview open booleans",
+      "invariant": "C-R17",
+      "rule": "C-R17",
+      "cause": "boolean-values-published-capitalized",
+      "actual": "preview open: boolean options that do not publish false, true: --open, --password-stdin."
+    },
+    {
+      "case": "C-R17 | preview stop booleans",
+      "invariant": "C-R17",
+      "rule": "C-R17",
+      "cause": "boolean-values-published-capitalized",
+      "actual": "preview stop: boolean options that do not publish false, true: --all."
+    },
+    {
+      "case": "C-R17 | review booleans",
+      "invariant": "C-R17",
+      "rule": "C-R17",
+      "cause": "boolean-values-published-capitalized",
+      "actual": "review: boolean options that do not publish false, true: --password-stdin."
+    },
+    {
+      "case": "C-R17 | slides convert booleans",
+      "invariant": "C-R17",
+      "rule": "C-R17",
+      "cause": "boolean-values-published-capitalized",
+      "actual": "slides convert: boolean options that do not publish false, true: --overwrite, --password-stdin."
+    },
+    {
+      "case": "C-R17 | slides create booleans",
+      "invariant": "C-R17",
+      "rule": "C-R17",
+      "cause": "boolean-values-published-capitalized",
+      "actual": "slides create: boolean options that do not publish false, true: --overwrite."
+    },
+    {
+      "case": "C-R17 | slides edit booleans",
+      "invariant": "C-R17",
+      "rule": "C-R17",
+      "cause": "boolean-values-published-capitalized",
+      "actual": "slides edit: boolean options that do not publish false, true: --backup, --best-effort, --dry-run, --in-place, --overwrite, --password-stdin."
+    },
+    {
+      "case": "C-R17 | slides extract booleans",
+      "invariant": "C-R17",
+      "rule": "C-R17",
+      "cause": "boolean-values-published-capitalized",
+      "actual": "slides extract: boolean options that do not publish false, true: --overwrite, --password-stdin."
+    },
+    {
+      "case": "C-R17 | slides inspect booleans",
+      "invariant": "C-R17",
+      "rule": "C-R17",
+      "cause": "boolean-values-published-capitalized",
+      "actual": "slides inspect: boolean options that do not publish false, true: --password-stdin, --preview."
+    },
+    {
+      "case": "C-R17 | slides query search booleans",
+      "invariant": "C-R17",
+      "rule": "C-R17",
+      "cause": "boolean-values-published-capitalized",
+      "actual": "slides query search: boolean options that do not publish false, true: --case-sensitive, --password-stdin, --regex."
+    },
+    {
+      "case": "C-R17 | slides query slides booleans",
+      "invariant": "C-R17",
+      "rule": "C-R17",
+      "cause": "boolean-values-published-capitalized",
+      "actual": "slides query slides: boolean options that do not publish false, true: --notes, --password-stdin."
+    },
+    {
+      "case": "C-R17 | slides render booleans",
+      "invariant": "C-R17",
+      "rule": "C-R17",
+      "cause": "boolean-values-published-capitalized",
+      "actual": "slides render: boolean options that do not publish false, true: --all-slides, --overwrite, --password-stdin."
+    },
+    {
+      "case": "C-R17 | words compare booleans",
+      "invariant": "C-R17",
+      "rule": "C-R17",
+      "cause": "boolean-values-published-capitalized",
+      "actual": "words compare: boolean options that do not publish false, true: --ignore-formatting, --overwrite."
+    },
+    {
+      "case": "C-R17 | words convert booleans",
+      "invariant": "C-R17",
+      "rule": "C-R17",
+      "cause": "boolean-values-published-capitalized",
+      "actual": "words convert: boolean options that do not publish false, true: --overwrite, --password-stdin."
+    },
+    {
+      "case": "C-R17 | words create booleans",
+      "invariant": "C-R17",
+      "rule": "C-R17",
+      "cause": "boolean-values-published-capitalized",
+      "actual": "words create: boolean options that do not publish false, true: --blank, --overwrite."
+    },
+    {
+      "case": "C-R17 | words edit booleans",
+      "invariant": "C-R17",
+      "rule": "C-R17",
+      "cause": "boolean-values-published-capitalized",
+      "actual": "words edit: boolean options that do not publish false, true: --backup, --best-effort, --dry-run, --in-place, --overwrite, --password-stdin, --track-changes, --verify."
+    },
+    {
+      "case": "C-R17 | words extract booleans",
+      "invariant": "C-R17",
+      "rule": "C-R17",
+      "cause": "boolean-values-published-capitalized",
+      "actual": "words extract: boolean options that do not publish false, true: --overwrite, --password-stdin."
+    },
+    {
+      "case": "C-R17 | words inspect booleans",
+      "invariant": "C-R17",
+      "rule": "C-R17",
+      "cause": "boolean-values-published-capitalized",
+      "actual": "words inspect: boolean options that do not publish false, true: --password-stdin, --preview."
+    },
+    {
+      "case": "C-R17 | words query blocks booleans",
+      "invariant": "C-R17",
+      "rule": "C-R17",
+      "cause": "boolean-values-published-capitalized",
+      "actual": "words query blocks: boolean options that do not publish false, true: --password-stdin."
+    },
+    {
+      "case": "C-R17 | words query search booleans",
+      "invariant": "C-R17",
+      "rule": "C-R17",
+      "cause": "boolean-values-published-capitalized",
+      "actual": "words query search: boolean options that do not publish false, true: --case-sensitive, --password-stdin, --regex."
+    },
+    {
+      "case": "C-R17 | words render booleans",
+      "invariant": "C-R17",
+      "rule": "C-R17",
+      "cause": "boolean-values-published-capitalized",
+      "actual": "words render: boolean options that do not publish false, true: --all-pages, --overwrite, --password-stdin."
+    },
+    {
+      "case": "C-R17 | words split booleans",
+      "invariant": "C-R17",
+      "rule": "C-R17",
+      "cause": "boolean-values-published-capitalized",
+      "actual": "words split: boolean options that do not publish false, true: --overwrite, --password-stdin."
+    },
+    {
+      "case": "C-R10 | pdf sign declared",
+      "invariant": "C-R10",
+      "rule": "C-R10",
+      "cause": "certificate-password-has-no-stdin",
+      "actual": "pdf sign --certificate-password: the secret has no --certificate-password-stdin."
+    },
+    {
+      "case": "C-R08 | cells compare",
+      "invariant": "C-R08",
+      "rule": "C-R08",
+      "cause": "compare-content-option-named-compare",
+      "actual": "cells compare --compare: a banned name; what a compare compares is --content."
+    },
+    {
+      "case": "C-R10 | cells compare declared",
+      "invariant": "C-R10",
+      "rule": "C-R10",
+      "cause": "compare-passwords-have-no-stdin",
+      "actual": "cells compare --left-password: the secret has no --left-password-stdin.; cells compare --right-password: the secret has no --right-password-stdin."
+    },
+    {
+      "case": "C-R10 | words compare declared",
+      "invariant": "C-R10",
+      "rule": "C-R10",
+      "cause": "compare-passwords-have-no-stdin",
+      "actual": "words compare --left-password: the secret has no --left-password-stdin.; words compare --right-password: the secret has no --right-password-stdin."
+    },
+    {
+      "case": "C-R13 | cells convert declared",
+      "invariant": "C-R13",
+      "rule": "C-R13",
+      "cause": "convert-requires-to",
+      "actual": "cells convert --to is required; the --out extension implies it."
+    },
+    {
+      "case": "C-R13 | pdf convert declared",
+      "invariant": "C-R13",
+      "rule": "C-R13",
+      "cause": "convert-requires-to",
+      "actual": "pdf convert --to is required; the --out extension implies it."
+    },
+    {
+      "case": "C-R13 | slides convert declared",
+      "invariant": "C-R13",
+      "rule": "C-R13",
+      "cause": "convert-requires-to",
+      "actual": "slides convert --to is required; the --out extension implies it."
+    },
+    {
+      "case": "C-R13 | words convert declared",
+      "invariant": "C-R13",
+      "rule": "C-R13",
+      "cause": "convert-requires-to",
+      "actual": "words convert --to is required; the --out extension implies it."
+    },
+    {
+      "case": "same-name-option | --to",
+      "invariant": "same-name-option",
+      "rule": "C-R07",
+      "cause": "convert-requires-to",
+      "actual": "--to: 2 different required flags: required (cells convert, pdf convert, slides convert, words convert) | optional (cells render, pdf extract, pdf render, slides render, words render)"
+    },
+    {
+      "case": "C-R11 | cells convert declared",
+      "invariant": "C-R11",
+      "rule": "C-R11",
+      "cause": "dry-run-only-on-edit",
+      "actual": "cells convert writes files but has no --dry-run."
+    },
+    {
+      "case": "C-R11 | cells create declared",
+      "invariant": "C-R11",
+      "rule": "C-R11",
+      "cause": "dry-run-only-on-edit",
+      "actual": "cells create writes files but has no --dry-run."
+    },
+    {
+      "case": "C-R11 | cells render declared",
+      "invariant": "C-R11",
+      "rule": "C-R11",
+      "cause": "dry-run-only-on-edit",
+      "actual": "cells render writes files but has no --dry-run."
+    },
+    {
+      "case": "C-R11 | pdf convert declared",
+      "invariant": "C-R11",
+      "rule": "C-R11",
+      "cause": "dry-run-only-on-edit",
+      "actual": "pdf convert writes files but has no --dry-run."
+    },
+    {
+      "case": "C-R11 | pdf create declared",
+      "invariant": "C-R11",
+      "rule": "C-R11",
+      "cause": "dry-run-only-on-edit",
+      "actual": "pdf create writes files but has no --dry-run."
+    },
+    {
+      "case": "C-R11 | pdf extract declared",
+      "invariant": "C-R11",
+      "rule": "C-R11",
+      "cause": "dry-run-only-on-edit",
+      "actual": "pdf extract writes files but has no --dry-run."
+    },
+    {
+      "case": "C-R11 | pdf merge declared",
+      "invariant": "C-R11",
+      "rule": "C-R11",
+      "cause": "dry-run-only-on-edit",
+      "actual": "pdf merge writes files but has no --dry-run."
+    },
+    {
+      "case": "C-R11 | pdf render declared",
+      "invariant": "C-R11",
+      "rule": "C-R11",
+      "cause": "dry-run-only-on-edit",
+      "actual": "pdf render writes files but has no --dry-run."
+    },
+    {
+      "case": "C-R11 | pdf sign declared",
+      "invariant": "C-R11",
+      "rule": "C-R11",
+      "cause": "dry-run-only-on-edit",
+      "actual": "pdf sign writes files but has no --dry-run."
+    },
+    {
+      "case": "C-R11 | pdf split declared",
+      "invariant": "C-R11",
+      "rule": "C-R11",
+      "cause": "dry-run-only-on-edit",
+      "actual": "pdf split writes files but has no --dry-run."
+    },
+    {
+      "case": "C-R11 | slides convert declared",
+      "invariant": "C-R11",
+      "rule": "C-R11",
+      "cause": "dry-run-only-on-edit",
+      "actual": "slides convert writes files but has no --dry-run."
+    },
+    {
+      "case": "C-R11 | slides create declared",
+      "invariant": "C-R11",
+      "rule": "C-R11",
+      "cause": "dry-run-only-on-edit",
+      "actual": "slides create writes files but has no --dry-run."
+    },
+    {
+      "case": "C-R11 | slides extract declared",
+      "invariant": "C-R11",
+      "rule": "C-R11",
+      "cause": "dry-run-only-on-edit",
+      "actual": "slides extract writes files but has no --dry-run."
+    },
+    {
+      "case": "C-R11 | slides render declared",
+      "invariant": "C-R11",
+      "rule": "C-R11",
+      "cause": "dry-run-only-on-edit",
+      "actual": "slides render writes files but has no --dry-run."
+    },
+    {
+      "case": "C-R11 | words compare declared",
+      "invariant": "C-R11",
+      "rule": "C-R11",
+      "cause": "dry-run-only-on-edit",
+      "actual": "words compare writes files but has no --dry-run."
+    },
+    {
+      "case": "C-R11 | words convert declared",
+      "invariant": "C-R11",
+      "rule": "C-R11",
+      "cause": "dry-run-only-on-edit",
+      "actual": "words convert writes files but has no --dry-run."
+    },
+    {
+      "case": "C-R11 | words create declared",
+      "invariant": "C-R11",
+      "rule": "C-R11",
+      "cause": "dry-run-only-on-edit",
+      "actual": "words create writes files but has no --dry-run."
+    },
+    {
+      "case": "C-R11 | words extract declared",
+      "invariant": "C-R11",
+      "rule": "C-R11",
+      "cause": "dry-run-only-on-edit",
+      "actual": "words extract writes files but has no --dry-run."
+    },
+    {
+      "case": "C-R11 | words render declared",
+      "invariant": "C-R11",
+      "rule": "C-R11",
+      "cause": "dry-run-only-on-edit",
+      "actual": "words render writes files but has no --dry-run."
+    },
+    {
+      "case": "C-R11 | words split declared",
+      "invariant": "C-R11",
+      "rule": "C-R11",
+      "cause": "dry-run-only-on-edit",
+      "actual": "words split writes files but has no --dry-run."
+    },
+    {
+      "case": "C-R10 | cells convert declared",
+      "invariant": "C-R10",
+      "rule": "C-R10",
+      "cause": "encrypt-secret-has-no-stdin",
+      "actual": "cells convert --encrypt: the secret has no --encrypt-stdin."
+    },
+    {
+      "case": "C-R10 | cells create declared",
+      "invariant": "C-R10",
+      "rule": "C-R10",
+      "cause": "encrypt-secret-has-no-stdin",
+      "actual": "cells create --encrypt: the secret has no --encrypt-stdin."
+    },
+    {
+      "case": "C-R10 | cells edit declared",
+      "invariant": "C-R10",
+      "rule": "C-R10",
+      "cause": "encrypt-secret-has-no-stdin",
+      "actual": "cells edit --encrypt: the secret has no --encrypt-stdin."
+    },
+    {
+      "case": "C-R10 | slides convert declared",
+      "invariant": "C-R10",
+      "rule": "C-R10",
+      "cause": "encrypt-secret-has-no-stdin",
+      "actual": "slides convert --encrypt: the secret has no --encrypt-stdin."
+    },
+    {
+      "case": "C-R10 | slides create declared",
+      "invariant": "C-R10",
+      "rule": "C-R10",
+      "cause": "encrypt-secret-has-no-stdin",
+      "actual": "slides create --encrypt: the secret has no --encrypt-stdin."
+    },
+    {
+      "case": "C-R10 | slides edit declared",
+      "invariant": "C-R10",
+      "rule": "C-R10",
+      "cause": "encrypt-secret-has-no-stdin",
+      "actual": "slides edit --encrypt: the secret has no --encrypt-stdin."
+    },
+    {
+      "case": "C-R10 | words convert declared",
+      "invariant": "C-R10",
+      "rule": "C-R10",
+      "cause": "encrypt-secret-has-no-stdin",
+      "actual": "words convert --encrypt: the secret has no --encrypt-stdin."
+    },
+    {
+      "case": "C-R10 | words create declared",
+      "invariant": "C-R10",
+      "rule": "C-R10",
+      "cause": "encrypt-secret-has-no-stdin",
+      "actual": "words create --encrypt: the secret has no --encrypt-stdin."
+    },
+    {
+      "case": "C-R10 | words edit declared",
+      "invariant": "C-R10",
+      "rule": "C-R10",
+      "cause": "encrypt-secret-has-no-stdin",
+      "actual": "words edit --encrypt: the secret has no --encrypt-stdin."
+    },
+    {
+      "case": "same-name-option | --product",
+      "invariant": "same-name-option",
+      "rule": "C-R07",
+      "cause": "fonts-list-product-default",
+      "actual": "--product: 2 different defaults: \"cells\" (fonts list) | none (license install, license remove, license status, preview open, review)"
+    },
+    {
+      "case": "C-R36 | cells formats",
+      "invariant": "C-R36",
+      "rule": "C-R36",
+      "cause": "format-ids-have-aliases",
+      "actual": "cells format jpeg has the aliases jpg.; cells format md has the aliases markdown."
+    },
+    {
+      "case": "C-R36 | pdf formats",
+      "invariant": "C-R36",
+      "rule": "C-R36",
+      "cause": "format-ids-have-aliases",
+      "actual": "pdf format jpeg has the aliases jpg."
+    },
+    {
+      "case": "C-R36 | slides formats",
+      "invariant": "C-R36",
+      "rule": "C-R36",
+      "cause": "format-ids-have-aliases",
+      "actual": "slides format jpeg has the aliases jpg."
+    },
+    {
+      "case": "C-R36 | words formats",
+      "invariant": "C-R36",
+      "rule": "C-R36",
+      "cause": "format-ids-have-aliases",
+      "actual": "words format jpeg has the aliases jpg."
+    },
+    {
+      "case": "C-R08 | cells inspect",
+      "invariant": "C-R08",
+      "rule": "C-R08",
+      "cause": "inspect-preview-not-sample",
+      "actual": "cells inspect --preview: a banned name; a sample is --sample or --sample-rows.; cells inspect --preview-rows: a banned name; a sample is --sample or --sample-rows."
+    },
+    {
+      "case": "C-R08 | pdf inspect",
+      "invariant": "C-R08",
+      "rule": "C-R08",
+      "cause": "inspect-preview-not-sample",
+      "actual": "pdf inspect --preview: a banned name; a sample is --sample or --sample-rows."
+    },
+    {
+      "case": "C-R08 | slides inspect",
+      "invariant": "C-R08",
+      "rule": "C-R08",
+      "cause": "inspect-preview-not-sample",
+      "actual": "slides inspect --preview: a banned name; a sample is --sample or --sample-rows."
+    },
+    {
+      "case": "C-R08 | words inspect",
+      "invariant": "C-R08",
+      "rule": "C-R08",
+      "cause": "inspect-preview-not-sample",
+      "actual": "words inspect --preview: a banned name; a sample is --sample or --sample-rows."
+    },
+    {
+      "case": "C-R11 | license install declared",
+      "invariant": "C-R11",
+      "rule": "C-R11",
+      "cause": "install-commands-have-no-overwrite-or-dry-run",
+      "actual": "license install writes files but has no --overwrite.; license install writes files but has no --dry-run."
+    },
+    {
+      "case": "C-R11 | skill install declared",
+      "invariant": "C-R11",
+      "rule": "C-R11",
+      "cause": "install-commands-have-no-overwrite-or-dry-run",
+      "actual": "skill install writes files but has no --overwrite.; skill install writes files but has no --dry-run."
+    },
+    {
+      "case": "C-R11 | update install declared",
+      "invariant": "C-R11",
+      "rule": "C-R11",
+      "cause": "install-commands-have-no-overwrite-or-dry-run",
+      "actual": "update install writes files but has no --overwrite.; update install writes files but has no --dry-run."
+    },
+    {
+      "case": "C-R08 | preview open",
+      "invariant": "C-R08",
+      "rule": "C-R08",
+      "cause": "open-and-no-open-both-exist",
+      "actual": "preview open --open: a banned name; a boolean option has a positive name for its default (C-R09)."
+    },
+    {
+      "case": "C-R09 | --no-open",
+      "invariant": "C-R09",
+      "rule": "C-R09",
+      "cause": "open-and-no-open-both-exist",
+      "actual": "preview open declares --open while app, app open declare --no-open."
+    },
+    {
+      "case": "C-R22 | pdf declared",
+      "invariant": "C-R22",
+      "rule": "C-R22",
+      "cause": "operation-count-limit-per-product",
+      "actual": "pdf edit: maximumOperationCount is 256, not 10000."
+    },
+    {
+      "case": "C-R22 | slides declared",
+      "invariant": "C-R22",
+      "rule": "C-R22",
+      "cause": "operation-count-limit-per-product",
+      "actual": "slides edit: maximumOperationCount is 256, not 10000."
+    },
+    {
+      "case": "C-R22 | words declared",
+      "invariant": "C-R22",
+      "rule": "C-R22",
+      "cause": "operation-count-limit-per-product",
+      "actual": "words edit: maximumOperationCount is 256, not 10000."
+    },
+    {
+      "case": "same-name-option | --ops",
+      "invariant": "same-name-option",
+      "rule": "C-R07",
+      "cause": "ops-required-differs-by-product",
+      "actual": "--ops: 2 different required flags: optional (cells edit, words edit) | required (pdf edit, slides edit)"
+    },
+    {
+      "case": "C-R08 | aspose-cli",
+      "invariant": "C-R08",
+      "rule": "C-R08",
+      "cause": "output-format-option-named-output",
+      "actual": "aspose-cli --output: a banned name; the output format is --output-format, one output file --out.; aspose-cli: the output format option is --output-format."
+    },
+    {
+      "case": "C-R12 | pdf extract declared",
+      "invariant": "C-R12",
+      "rule": "C-R12",
+      "cause": "pdf-extract-has-out-and-out-dir",
+      "actual": "pdf extract has both --out and --out-dir."
+    },
+    {
+      "case": "same-name-option | --out-dir",
+      "invariant": "same-name-option",
+      "rule": "C-R07",
+      "cause": "pdf-extract-has-out-and-out-dir",
+      "actual": "--out-dir: 2 different required flags: optional (pdf extract) | required (pdf split, slides extract, words extract, words split)"
+    },
+    {
+      "case": "C-R36 | pdf extract --to",
+      "invariant": "C-R36",
+      "rule": "C-R36",
+      "cause": "pdf-extract-to-lists-form-data-formats",
+      "actual": "pdf extract --to lists fdf, json, xfdf; convertFormats is docx, epub, html, jpeg, md, pdfa-1b, pdfa-2b, pdfa-3b, png, pptx, svg, tiff, txt, xlsx, xps."
+    },
+    {
+      "case": "C-R17 | pdf create values",
+      "invariant": "C-R17",
+      "rule": "C-R17",
+      "cause": "pdf-page-size-values-not-kebab",
+      "actual": "pdf create --page-size: values not in lowercase kebab case: A3, A4, Legal, Letter."
+    },
+    {
+      "case": "C-R08 | pdf query pages",
+      "invariant": "C-R08",
+      "rule": "C-R08",
+      "cause": "pdf-pages-mode-option",
+      "actual": "pdf query pages --mode: a banned name; name what the value chooses: --content, --scope or --detail."
+    },
+    {
+      "case": "C-R15 | pdf query forms declared",
+      "invariant": "C-R15",
+      "rule": "C-R15",
+      "cause": "pdf-query-forms-has-no-budget",
+      "actual": "pdf query forms reads content but has no --max-<unit> budget."
+    },
+    {
+      "case": "same-name-option | --pages",
+      "invariant": "same-name-option",
+      "rule": "C-R07",
+      "cause": "pdf-split-pages-takes-groups",
+      "actual": "--pages: 2 different types or arities: string 1..1 (pdf convert, pdf extract, pdf query pages, pdf query search, pdf render, words convert, words render, words split) | string[] 1..100000 (pdf split)"
+    },
+    {
+      "case": "C-R08 | pdf split",
+      "invariant": "C-R08",
+      "rule": "C-R08",
+      "cause": "pdf-split-strategy-not-by",
+      "actual": "pdf split --by-bookmarks: a banned name; a split strategy is --by."
+    },
+    {
+      "case": "same-name-option | --view",
+      "invariant": "same-name-option",
+      "rule": "C-R07",
+      "cause": "preview-view-offers-workbook",
+      "actual": "--view: 2 different allowed-value sets: [auto, pages, sheets, slides, workbook] (preview open) | [auto, pages, sheets, slides] (review)"
+    },
+    {
+      "case": "C-R01 | cells",
+      "invariant": "C-R01",
+      "rule": "C-R01",
+      "cause": "query-is-a-third-command-level",
+      "actual": "cells query is a command group below the product; its subcommands are a third level.; cells query range is a third command level; a product command is `aspose-cli <product> <verb> <file...>`.; cells query search is a third command level; a ..."
+    },
+    {
+      "case": "C-R01 | pdf",
+      "invariant": "C-R01",
+      "rule": "C-R01",
+      "cause": "query-is-a-third-command-level",
+      "actual": "pdf query is a command group below the product; its subcommands are a third level.; pdf query forms is a third command level; a product command is `aspose-cli <product> <verb> <file...>`.; pdf query pages is a third command level; a product..."
+    },
+    {
+      "case": "C-R01 | slides",
+      "invariant": "C-R01",
+      "rule": "C-R01",
+      "cause": "query-is-a-third-command-level",
+      "actual": "slides query is a command group below the product; its subcommands are a third level.; slides query search is a third command level; a product command is `aspose-cli <product> <verb> <file...>`.; slides query slides is a third command level..."
+    },
+    {
+      "case": "C-R01 | words",
+      "invariant": "C-R01",
+      "rule": "C-R01",
+      "cause": "query-is-a-third-command-level",
+      "actual": "words query is a command group below the product; its subcommands are a third level.; words query blocks is a third command level; a product command is `aspose-cli <product> <verb> <file...>`.; words query search is a third command level; a..."
+    },
+    {
+      "case": "C-R02 | cells",
+      "invariant": "C-R02",
+      "rule": "C-R02",
+      "cause": "query-is-a-third-command-level",
+      "actual": "cells query: 'query' is not a product verb (inspect, read, search, create, edit, convert, render, compare, extract, split, merge, sign, validate)."
+    },
+    {
+      "case": "C-R02 | pdf",
+      "invariant": "C-R02",
+      "rule": "C-R02",
+      "cause": "query-is-a-third-command-level",
+      "actual": "pdf query: 'query' is not a product verb (inspect, read, search, create, edit, convert, render, compare, extract, split, merge, sign, validate)."
+    },
+    {
+      "case": "C-R02 | slides",
+      "invariant": "C-R02",
+      "rule": "C-R02",
+      "cause": "query-is-a-third-command-level",
+      "actual": "slides query: 'query' is not a product verb (inspect, read, search, create, edit, convert, render, compare, extract, split, merge, sign, validate)."
+    },
+    {
+      "case": "C-R02 | words",
+      "invariant": "C-R02",
+      "rule": "C-R02",
+      "cause": "query-is-a-third-command-level",
+      "actual": "words query: 'query' is not a product verb (inspect, read, search, create, edit, convert, render, compare, extract, split, merge, sign, validate)."
+    },
+    {
+      "case": "C-R08 | cells render",
+      "invariant": "C-R08",
+      "rule": "C-R08",
+      "cause": "render-all-option-not-selection-all",
+      "actual": "cells render --all-sheets: a banned name; a selection takes the value all, such as --pages all."
+    },
+    {
+      "case": "C-R08 | pdf render",
+      "invariant": "C-R08",
+      "rule": "C-R08",
+      "cause": "render-all-option-not-selection-all",
+      "actual": "pdf render --all-pages: a banned name; a selection takes the value all, such as --pages all."
+    },
+    {
+      "case": "C-R08 | slides render",
+      "invariant": "C-R08",
+      "rule": "C-R08",
+      "cause": "render-all-option-not-selection-all",
+      "actual": "slides render --all-slides: a banned name; a selection takes the value all, such as --pages all."
+    },
+    {
+      "case": "C-R08 | words render",
+      "invariant": "C-R08",
+      "rule": "C-R08",
+      "cause": "render-all-option-not-selection-all",
+      "actual": "words render --all-pages: a banned name; a selection takes the value all, such as --pages all."
+    },
+    {
+      "case": "C-R11 | review declared",
+      "invariant": "C-R11",
+      "rule": "C-R11",
+      "cause": "review-output-has-no-overwrite-or-dry-run",
+      "actual": "review writes files but has no --overwrite.; review writes files but has no --dry-run."
+    },
+    {
+      "case": "C-R06 | aspose-cli",
+      "invariant": "C-R06",
+      "rule": "C-R06",
+      "cause": "root-short-names-beyond-the-contract",
+      "actual": "--help has the short name -?; the only short names are -o (--out), -q (--quiet), -v (--verbose) and -h (--help).; --help has the short name /?; the only short names are -o (--out), -q (--quiet), -v (--verbose) and -h (--help).; --help has t..."
+    },
+    {
+      "case": "C-R08 | slides create",
+      "invariant": "C-R08",
+      "rule": "C-R08",
+      "cause": "slides-create-size-not-slide-size",
+      "actual": "slides create --size: a banned name; a page size is --page-size, a slide size --slide-size."
+    },
+    {
+      "case": "C-R04 | update _prepare",
+      "invariant": "C-R04",
+      "rule": "C-R04",
+      "cause": "update-prepare-is-hidden-without-double-underscore",
+      "actual": "update _prepare is hidden, so its name starts with '__'."
+    },
+    {
+      "case": "C-R08 | words create",
+      "invariant": "C-R08",
+      "rule": "C-R08",
+      "cause": "words-create-content-options-not-from-format",
+      "actual": "words create --blank: a banned name; a create without --from-<format> or --template is blank.; words create --markdown: a banned name; content read from another file is --from-<format>.; words create --text: a banned name; content read from..."
+    },
+    {
+      "case": "C-R17 | words query search values",
+      "invariant": "C-R17",
+      "rule": "C-R17",
+      "cause": "words-search-scope-camel-case",
+      "actual": "words query search --scope: values not in lowercase kebab case: headersFooters."
+    }
+  ]
 }

@@ -14,53 +14,73 @@ internal enum OptionAspect
     Arity = 1,
     AllowedValues = 2,
     Default = 4,
+    Required = 8,
+    Secret = 16,
+
+    /// <summary>Where the value comes from: the command line, an environment variable name or stdin.</summary>
+    ValueSource = 32,
 }
 
 /// <summary>
-/// An option name whose commands may differ in some aspects, with the reason read from today's
-/// help. With <see cref="Command"/>, only that command's option is left out of the comparison.
+/// An option name whose commands may differ in some aspects, as C-R07 allows, with the reason.
+/// With <see cref="Command"/>, only that command's option is left out of the comparison.
 /// </summary>
 internal sealed record SameNameExemption(string Option, OptionAspect Aspects, string Reason, string? Command = null);
 
 /// <summary>
-/// The invariant <see cref="InvariantCases.SameNameOption"/>: across every command of the tree,
-/// products and host commands alike, hidden ones included, options that share a name share their
-/// value type and arity, allowed values and default, so an agent that learned an option once can
-/// rely on it everywhere. A shared option reads one definition (the SDK option groups); any other
-/// repeated name is kept consistent by hand. The only differences allowed are the
-/// <see cref="Exemptions"/>, each with its reason; an exemption that no longer matches a
-/// difference fails, so the list only shrinks.
+/// The invariant <see cref="InvariantCases.SameNameOption"/>, the check of contract rule C-R07:
+/// across every command of the tree, products and host commands alike, hidden ones included,
+/// options that share a name share their value type and arity, allowed values, default, whether
+/// they are required, whether they are secret, and where their value comes from, so an agent that
+/// learned an option once can rely on it everywhere. Descriptions are never compared: wording is
+/// not behavior. A shared option reads one definition (the SDK option groups); any other repeated
+/// name is kept consistent by hand. The only differences allowed are the <see cref="Exemptions"/>,
+/// each one C-R07 permits (<see cref="RulePermits"/>) and each with its reason; an exemption that
+/// no longer matches a difference fails, so the list only shrinks.
 /// </summary>
 internal static class SameNameOptions
 {
+    /// <summary>The names whose allowed values, and so defaults, C-R07 lets differ from product to product.</summary>
+    public static IReadOnlySet<string> ProductValues { get; } =
+        new HashSet<string>(["--to", "--detail", "--what", "--content", "--scope", "--by"], StringComparer.Ordinal);
+
     /// <summary>
-    /// The names that mean different things on different commands, or whose values the command
-    /// owns: the smallest list that lets every other repeated name be one definition.
+    /// The differences C-R07 permits: the values of <see cref="ProductValues"/> and their defaults
+    /// (a default is one of the values), and a required
+    /// <c>--out</c> on a merge, which has no single input to name a default output after.
     /// </summary>
     public static IReadOnlyList<SameNameExemption> Exemptions { get; } =
     [
-        new("--scope", OptionAspect.AllowedValues | OptionAspect.Default,
-            "Three meanings: the projection a query returns (cells query range, slides query slides, words query blocks), "
-            + "where a search looks (cells, slides and words query search) and where skill install writes (project or user). "
-            + "A rename is left to S3."),
-        new("--what", OptionAspect.AllowedValues,
-            "The part kinds each product extracts differ (pdf: attachments, forms; slides: media, notes; words: comments). "
-            + "A rename is left to S3."),
-        new("--to", OptionAspect.AllowedValues,
-            "Each convert, extract and render writes its own product's formats; S1 keeps each list."),
         new("--detail", OptionAspect.AllowedValues,
-            "Each product's inspect has its own detail sections; S1 keeps them."),
-        new("--view", OptionAspect.AllowedValues,
-            "preview open also offers the live workbook view, which review does not render; S1 keeps both lists."),
-        new("--product", OptionAspect.Default,
-            "Three roles: the font engine fonts list inspects (default cells), the product a license command acts on, and "
-            + "the product that reads the file in preview open and review."),
-        new("--pages", OptionAspect.Arity,
-            "pdf split --pages takes one or more page groups (repeatable list), not one page range.",
-            "pdf split"),
+            "C-R07: each product's inspect lists its own sections. Kept on purpose: slides media covers audio and video, "
+            + "so it stays apart from the images of words."),
+        new("--scope", OptionAspect.AllowedValues | OptionAspect.Default,
+            "C-R07: the part of the document a command reads or searches is the product's own, and so is its default."),
+        new("--to", OptionAspect.AllowedValues,
+            "C-R07: each convert, extract and render lists its own product's formats (C-R36 checks the lists)."),
+        new("--what", OptionAspect.AllowedValues,
+            "C-R07: each product extracts its own part kinds. Kept on purpose: slides media covers audio and video, "
+            + "so it stays wider than the images of pdf and words."),
+        new("--out", OptionAspect.Required,
+            "C-R07: merge has no single input to name a default output after, so its --out is required.",
+            "pdf merge"),
     ];
 
-    private static readonly OptionAspect[] Compared = [OptionAspect.Arity, OptionAspect.AllowedValues, OptionAspect.Default];
+    /// <summary>Whether C-R07 permits the difference an exemption allows.</summary>
+    public static bool RulePermits(SameNameExemption exemption) => exemption.Aspects switch
+    {
+        OptionAspect.AllowedValues or OptionAspect.Default or (OptionAspect.AllowedValues | OptionAspect.Default) =>
+            exemption.Command is null && ProductValues.Contains(exemption.Option),
+        OptionAspect.Required => exemption.Option == "--out" && exemption.Command?.Split(' ')[^1] == "merge",
+        _ => false,
+    };
+
+    /// <summary>Every aspect compared; descriptions are not one of them.</summary>
+    public static IReadOnlyList<OptionAspect> Compared { get; } =
+    [
+        OptionAspect.Arity, OptionAspect.AllowedValues, OptionAspect.Default, OptionAspect.Required, OptionAspect.Secret,
+        OptionAspect.ValueSource,
+    ];
 
     /// <summary>One case per option name that two or more commands declare.</summary>
     public static IEnumerable<InvariantCase> Cases(CliCatalog catalog)
@@ -73,7 +93,7 @@ internal static class SameNameOptions
                 continue;
             }
             string id = $"{InvariantCases.SameNameOption} | {name}";
-            yield return new InvariantCase(id, InvariantCases.SameNameOption, InvariantCases.Platform, Slow: false,
+            yield return new InvariantCase(id, InvariantCases.SameNameOption, InvariantCases.Contract, Slow: false,
                 Scenario: null, Check: () => Problems(name, declared));
         }
     }
@@ -149,6 +169,9 @@ internal static class SameNameOptions
         OptionAspect.Arity => "types or arities",
         OptionAspect.AllowedValues => "allowed-value sets",
         OptionAspect.Default => "defaults",
+        OptionAspect.Required => "required flags",
+        OptionAspect.Secret => "secret flags",
+        OptionAspect.ValueSource => "value sources",
         _ => aspect.ToString(),
     };
 }
@@ -165,11 +188,17 @@ internal sealed record DeclaredOption(string Command, JsonNode Option)
         OptionAspect.Default => Option["hasDefault"]?.GetValue<bool>() == true
             ? "\"" + (Option["default"]?.GetValue<string>() ?? string.Empty) + "\""
             : "none",
+        OptionAspect.Required => Option["required"]!.GetValue<bool>() ? "required" : "optional",
+        OptionAspect.Secret => Option["secret"]!.GetValue<bool>() ? "secret" : "not secret",
+        OptionAspect.ValueSource => Option["valueSource"]!.GetValue<string>(),
         _ => throw new ArgumentOutOfRangeException(nameof(aspect)),
     };
 }
 
-/// <summary>The exemption list itself stays honest: each entry names a repeated option with its reason.</summary>
+/// <summary>
+/// The exemption list itself stays honest: each entry names a repeated option, a difference C-R07
+/// permits and its reason; and the comparison never reads a description.
+/// </summary>
 public sealed class SameNameExemptionTests
 {
     [Fact]
@@ -184,6 +213,21 @@ public sealed class SameNameExemptionTests
                 $"{exemption.Command} no longer declares {exemption.Option}; delete its exemption.");
             Assert.True(exemption.Aspects != OptionAspect.None && exemption.Reason.Length > 20,
                 $"The exemption of {exemption.Option} names what may differ and why.");
+            Assert.True(SameNameOptions.RulePermits(exemption),
+                $"C-R07 does not let {exemption.Option} differ in {exemption.Aspects}{(exemption.Command is null ? string.Empty : " on " + exemption.Command)}; "
+                + "the difference is a violation, not an exemption.");
+        }
+    }
+
+    [Fact]
+    public void DescriptionsAreNotCompared()
+    {
+        foreach (DeclaredOption option in SameNameOptions.Declared(CliCatalog.Current).Values.SelectMany(static options => options))
+        {
+            JsonNode reworded = option.Option.DeepClone();
+            reworded["description"] = "Reworded " + (option.Option["description"]?.GetValue<string>() ?? string.Empty);
+            var other = new DeclaredOption(option.Command, reworded);
+            Assert.All(SameNameOptions.Compared, aspect => Assert.Equal(option.Read(aspect), other.Read(aspect)));
         }
     }
 }
