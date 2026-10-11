@@ -123,7 +123,7 @@ public sealed class ProductMenuTests : IDisposable
         CliException error = RunFailing(product, "compare", "doc.test", "other.test");
 
         Assert.Equal(ErrorCodes.PasswordRequired, error.Code);
-        Assert.Equal("right", error.Details!["input"]!.GetValue<string>());
+        Assert.Equal("right", error.Details!["argument"]!.GetValue<string>());
         Assert.Contains("--right-password-env", error.Hint, StringComparison.Ordinal);
     }
 
@@ -528,7 +528,7 @@ public sealed class ProductMenuTests : IDisposable
 
     private sealed class LoggingFonts : IFontEnvironment
     {
-        public FontListResult ListFonts() => throw new NotSupportedException();
+        public EngineFonts ListFonts() => throw new NotSupportedException();
 
         public FontCheckResult CheckFonts(string filePath, FontCheckRequest request) => throw new NotSupportedException();
 

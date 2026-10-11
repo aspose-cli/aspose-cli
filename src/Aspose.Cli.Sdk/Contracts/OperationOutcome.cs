@@ -1,13 +1,13 @@
-using System.Text.Json.Nodes;
-
 namespace Aspose.Cli.Sdk.Contracts;
 
 /// <summary>
-/// A command result whose process exit code depends on per-item failures.
+/// A command result whose process exit code depends on what it found: the command completed,
+/// but when the result does not pass or is incomplete, such as a failed operation or a missing
+/// font, it exits 8.
 /// </summary>
 public interface IPartialOutcome
 {
-    /// <summary>Whether at least one item failed.</summary>
+    /// <summary>Whether at least one item failed or did not pass.</summary>
     bool HasFailures { get; }
 }
 
@@ -37,27 +37,11 @@ public sealed record BoundedOperationOutcome
     [MaxItems(MaximumTargets)]
     public IReadOnlyList<string> Targets { get; init; } = [];
 
-    /// <summary>Failure details; present only when <see cref="Status"/> is <c>failed</c>.</summary>
-    public OpError? Error { get; init; }
-}
-
-/// <summary>An operation failure reported by a best-effort batch.</summary>
-public sealed record OpError
-{
-    /// <summary>Stable machine-readable error code.</summary>
-    public required string Code { get; init; }
-
-    /// <summary>Human-readable failure description.</summary>
-    public required string Message { get; init; }
-
-    /// <summary>Actionable recovery guidance for the failed operation.</summary>
-    public required string Hint { get; init; }
-
     /// <summary>
-    /// Structured context from the error, such as the names a not-found target could have
-    /// been; the same object a failing batch would report in its error envelope.
+    /// The error that stopped the operation, as an error envelope states it; present only when
+    /// <see cref="Status"/> is <c>failed</c>.
     /// </summary>
-    public JsonObject? Details { get; init; }
+    public ErrorPayload? Error { get; init; }
 }
 
 /// <summary>Stable wire values used for per-operation status.</summary>

@@ -14,7 +14,7 @@ A failed command writes one JSON envelope to stderr and exits non-zero:
   "schemaVersion": 2,
   "error": {
     "code": "SHEET_NOT_FOUND",
-    "message": "No sheet 'Nope' was found.",
+    "message": "No sheet 'Nope' was found. Must be one of: Data, Summary",
     "details": { "subject": "sheet", "requested": "Nope", "availableCount": 2, "available": ["Data", "Summary"] },
     "hint": "Use one of the names in details.available."
   }
@@ -23,7 +23,9 @@ A failed command writes one JSON envelope to stderr and exits non-zero:
 
 - `code` is stable; branch on it, never on `message`.
 - `details` carries structured context: paths, the valid alternatives, the
-  failing operation's `index` and `op`.
+  failing operation's `id` and `op`. Its keys and their meanings are listed in
+  `aspose-cli schema v2/common/error-payload`; `errors` appears only when there
+  are several problems.
 - `hint` is the most likely next action; `docs`, when present, names a topic
   for `aspose-cli docs <topic>`.
 
@@ -40,11 +42,11 @@ with `code`, `message` and `hint`, and on stderr in table output.
 | 3 | Input file | `FILE_NOT_FOUND`, `FILE_LOCKED`, `FILE_CORRUPT`, `PASSWORD_REQUIRED`, `INPUT_CHANGED` |
 | 4 | Validation | `OPS_INVALID`, `*_NOT_FOUND`, `RENDER_TOO_LARGE` |
 | 5 | Output | `OUTPUT_EXISTS`, `OUTPUT_UNWRITABLE`, `OUTPUT_CONFLICT` |
-| 6 | Format | `FORMAT_UNSUPPORTED`, `FORMAT_MISMATCH`, `FEATURE_UNSUPPORTED` |
+| 6 | Format | `FORMAT_UNSUPPORTED`, `FORMAT_MISMATCH`, `FEATURE_UNSUPPORTED`, `RENDER_FAILED` |
 | 7 | License | `LICENSE_FILE_NOT_FOUND`, `LICENSE_INVALID`, `EVALUATION_LIMIT` |
-| 8 | Partial | a `--best-effort` failure, a failed review, `OUTPUT_PUBLICATION_PARTIAL` |
+| 8 | Partial | a `--best-effort` failure, a failed review, a missing font in `fonts check`, `OUTPUT_PUBLICATION_PARTIAL` |
 | 9 | Timeout | `OPERATION_TIMEOUT` |
-| 130 | Cancelled | Ctrl+C interrupted `update`, or a command run with `--timeout`, which supervises it in a worker; no error is written. Otherwise the operating system ends the process with its own code |
+| 130 | Cancelled | Ctrl+C, with or without --timeout: the work stops, nothing is published, its staging is removed and no error is written |
 
 `capabilities --output-format json` lists every error and warning code of this build
 with its owner, severity and exit code under `diagnostics`.
@@ -72,9 +74,12 @@ aspose-cli capabilities --output-format json
   the closest ones in its hint and `details.suggestions`, a command by its
   full path such as `pdf inspect`; a token starting with `--`
   is never taken as a file argument, so pass such a file name after a `--`
-  token, which ends the options. An output whose extension is not one of its
+  token, which ends the options. A command that only groups others, run
+  without one, prints its help and lists its commands in `details.available`.
+  An output whose extension is not one of its
   format's is refused before anything is read; `details.option` names the
-  option or argument and the message lists the extensions to use. That covers
+  option, or `details.argument` the positional argument, and the message lists
+  the extensions to use. That covers
   a `convert` or `render` `--out` with no extension or one that contradicts
   `--to`, such as `--to pdf --out a.docx`, and an `edit` or `create` output
   that names a format the command does not write, such as `--out report.pdf`,
@@ -104,7 +109,7 @@ aspose-cli capabilities --output-format json
 - `PASSWORD_REQUIRED`: no password was given. `PASSWORD_INVALID`: the given one
   failed. Ask the user; never guess. Pass it with `--password-env <VAR>` or
   `--password-stdin` (one stdin option per command). A command that reads two documents, such as `compare`,
-  names the one in `details.input` and its own option in the hint, for example
+  names its argument in `details.argument` and its own option in the hint, for example
   `--right-password-env`. A protect or unprotect operation, such as
   `unprotect_sheet`, reads its password from the variable its `passwordEnv`
   field names; its error names the protected part in `details.target` and that
@@ -112,13 +117,14 @@ aspose-cli capabilities --output-format json
 
 **Usage and validation (exit 2 and 4)**
 
-- `OPTION_INVALID`: an option value is invalid here; `details.option` names
-  it. An `--out` that resolves to the input is refused: use `--in-place`. A
+- `OPTION_INVALID`: an option or argument value is invalid here;
+  `details.option` names the option, `details.argument` the positional
+  argument. An `--out` that resolves to the input is refused: use `--in-place`. A
   `*-env` option, such as `--password-env`, whose variable is not set or is
   empty names that variable in `details.variable`; an operation's `*Env` field
   reports it with the same words as `OPS_INVALID`. `capabilities` with an
   unknown product or command names its positional argument in
-  `details.option` (`product` or `command`) and lists what exists in
+  `details.argument` (`product` or `command`) and lists what exists in
   `details.available` and the closest names in `details.suggestions`; a list
   longer than 50 names is cut there and `details.availableCount` gives the
   total.
@@ -131,8 +137,6 @@ aspose-cli capabilities --output-format json
   `1-3,7,9-`, or `all`.
 - `RENDER_TOO_LARGE`: the image would have too many pixels; lower `--dpi` or
   render less.
-- `RENDER_FAILED`: the engine failed while rasterizing; the input can still be
-  valid. Reduce the selection or check fonts.
 
 **Output (exit 5)**
 
@@ -165,6 +169,8 @@ aspose-cli capabilities --output-format json
   culture (the hint names the option that reads it).
 - `FEATURE_UNSUPPORTED`: this build cannot perform the request on this input;
   the message names what.
+- `RENDER_FAILED`: the engine failed while rasterizing content it can otherwise
+  read; the input can still be valid. Reduce the selection or check fonts.
 
 **Timeout (exit 9)**
 

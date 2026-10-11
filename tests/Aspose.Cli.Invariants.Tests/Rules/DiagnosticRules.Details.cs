@@ -12,79 +12,31 @@ internal static partial class ContractRules
     private const string ErrorSchema = "v2/common/error";
 
     /// <summary>
-    /// The dictionary of <c>error.details</c> keys, one key per concept, each with the description
-    /// the error schema publishes for it. It was drawn from the keys the SDK, Host and products
-    /// write today, less those the rule replaces: budgets state <c>limit</c>, <c>actual</c> and
-    /// <c>unit</c> (not <c>observed</c>, <c>sizeBytes</c>, <c>limitBytes</c>, <c>requestedCells</c>,
-    /// <c>maxCells</c>, <c>maxPixels</c>, <c>requestedSheet</c>, <c>firstSheet</c>); collections state
-    /// <c>available</c> (not <c>supported</c>); operation errors state <c>id</c> and <c>op</c> (not the
-    /// batch position <c>index</c>); a positional argument is <c>argument</c>, not <c>option</c>.
+    /// The keys C-R25 replaces, which the dictionary the error schema publishes must not hold:
+    /// budgets state <c>limit</c>, <c>actual</c> and <c>unit</c> (not <c>observed</c>,
+    /// <c>sizeBytes</c>, <c>limitBytes</c>, <c>requestedCells</c>, <c>maxCells</c>, <c>maxPixels</c>,
+    /// <c>requestedSheet</c>, <c>firstSheet</c>); collections state <c>available</c> (not
+    /// <c>supported</c>); operation errors state <c>id</c> and <c>op</c> (not the batch position
+    /// <c>index</c>).
     /// </summary>
-    private static readonly Dictionary<string, string> DetailsKeys = new(StringComparer.Ordinal)
-    {
-        ["actual"] = "The measured amount of a budget, in unit.",
-        ["actualExists"] = "Whether the output existed when publication found it changed.",
-        ["actualSha256"] = "The SHA-256 of the output publication found.",
-        ["actualSizeBytes"] = "The size of the output publication found.",
-        ["argument"] = "The positional argument the error is about.",
-        ["available"] = "The names or values that exist or are accepted, at most 50.",
-        ["availableCount"] = "How many names or values exist or are accepted.",
-        ["cause"] = "Why an operation field was refused.",
-        ["declared"] = "The product the command or extension declares.",
-        ["detected"] = "The products whose formats the content matches.",
-        ["diagnosticId"] = "The host diagnostic id of a startup or process failure.",
-        ["directory"] = "The directory the error is about.",
-        ["dpi"] = "The resolution of a render.",
-        ["engineMessage"] = "The document engine's own message.",
-        ["errors"] = "Every problem, when there are several.",
-        ["expectedBytes"] = "The size an input had when it was admitted.",
-        ["expectedExists"] = "Whether the output existed when the command read it.",
-        ["expectedSha256"] = "The SHA-256 the file had when the command read it.",
-        ["expectedSizeBytes"] = "The size the output had when the command read it.",
-        ["extension"] = "The file extension the error is about.",
-        ["extensions"] = "The file extensions the command accepts.",
-        ["feature"] = "The feature the product or format does not support.",
-        ["feed"] = "The release feed the update read.",
-        ["field"] = "The operation field the error is about.",
-        ["format"] = "The format id the error is about.",
-        ["height"] = "The height of a render, in pixels.",
-        ["id"] = "The id of the failing operation.",
-        ["input"] = "The input the error is about.",
-        ["limit"] = "The budget's limit, in unit.",
-        ["line"] = "The line of a text input the error is about.",
-        ["observedBytes"] = "The size an input had when it was read again.",
-        ["observedSha256"] = "The SHA-256 an input had when it was read again.",
-        ["offset"] = "The byte offset of the problem in an input.",
-        ["op"] = "The op name of the failing operation.",
-        ["operation"] = "The product feature the error is about.",
-        ["option"] = "The option the error is about, such as --pages.",
-        ["originalError"] = "The error that stopped a publication: its code and details.",
-        ["path"] = "The absolute path of the file the error is about.",
-        ["phase"] = "The stage of processing that failed.",
-        ["pid"] = "The id of the process the error is about.",
-        ["port"] = "The loopback port the error is about.",
-        ["problems"] = "The problems the engine reported.",
-        ["product"] = "The product the error is about.",
-        ["profile"] = "The conformance profile the error is about.",
-        ["quiescenceConfirmed"] = "Whether the stopped worker was confirmed to have ended.",
-        ["range"] = "The range or selection as the caller wrote it.",
-        ["reason"] = "Why the value or file was refused.",
-        ["recoveryComplete"] = "Whether every publication target was restored.",
-        ["requested"] = "The name, number or value as the caller wrote it.",
-        ["resource"] = "The budget's resource kind.",
-        ["sample"] = "An excerpt of the input the error is about.",
-        ["sheet"] = "The worksheet the error is about.",
-        ["source"] = "The source of a value, such as a variable or file.",
-        ["stage"] = "The stage of the worker that failed.",
-        ["subject"] = "What was looked up, such as sheet or page.",
-        ["suggestions"] = "The accepted names closest to the request, best first.",
-        ["target"] = "The target the error is about.",
-        ["targets"] = "The publication targets and their state.",
-        ["timeoutSeconds"] = "The timeout that elapsed, in seconds.",
-        ["unit"] = "The unit of a budget's limit and actual.",
-        ["variable"] = "The environment variable the error is about.",
-        ["width"] = "The width of a render, in pixels.",
-    };
+    private static readonly string[] ReplacedDetailsKeys =
+        ["observed", "sizeBytes", "limitBytes", "requestedCells", "maxCells", "maxPixels", "requestedSheet", "firstSheet", "supported", "index"];
+
+    /// <summary>
+    /// The schema of the error envelope's <c>error</c> object, which a failed operation of a
+    /// best-effort batch carries too.
+    /// </summary>
+    private static (string SchemaId, JsonObject Node) ErrorPayload() =>
+        PublishedSchema.Resolve(ErrorSchema, PublishedSchema.Document(ErrorSchema)["properties"]!["error"]!.AsObject());
+
+    /// <summary>The <c>error.details</c> schema, whose properties are the dictionary of details keys.</summary>
+    private static JsonObject? PublishedDetails() => ErrorPayload().Node["properties"]?["details"] as JsonObject;
+
+    /// <summary>The dictionary of details keys, as the error schema publishes it; empty when it publishes none.</summary>
+    private static readonly Lazy<HashSet<string>> DetailsKeys = new(() =>
+        PublishedDetails()?["properties"] is JsonObject keys
+            ? [.. keys.Select(static key => key.Key)]
+            : []);
 
     private static IEnumerable<InvariantCase> R25(CliCatalog catalog)
     {
@@ -92,7 +44,7 @@ internal static partial class ContractRules
         [
             .. EnvelopeShapeProblems(catalog, ErrorSchema, definition: null, "the error envelope",
                 required: ["schema", "schemaVersion", "error"], properties: ["schema", "schemaVersion", "error"]),
-            .. EnvelopeShapeProblems(catalog, ErrorSchema, definition: "errorPayload", "error",
+            .. EnvelopeShapeProblems(catalog, ErrorPayload().SchemaId, definition: null, "error",
                 required: ["code", "message"], properties: ["code", "message", "details", "hint", "docs"]),
         ]);
         yield return Check("C-R25", "error schema publishes the details dictionary", () => PublishedDictionaryProblems(catalog));
@@ -102,29 +54,29 @@ internal static partial class ContractRules
         }
     }
 
-    /// <summary>The differences between the details the error schema describes and the dictionary.</summary>
+    /// <summary>
+    /// The problems of the dictionary the error schema publishes: it lists keys, each with a
+    /// description, closes <c>error.details</c> to them and holds none of the replaced keys.
+    /// </summary>
     private static IEnumerable<string> PublishedDictionaryProblems(CliCatalog catalog)
     {
-        JsonNode? details = JsonNode.Parse(catalog.SchemaText(ErrorSchema))?["$defs"]?["errorPayload"]?["properties"]?["details"];
-        if (details?["properties"] is not JsonObject published)
+        _ = catalog;
+        JsonObject? details = PublishedDetails();
+        if (details?["properties"] is not JsonObject published || published.Count == 0)
         {
-            yield return $"error.details publishes no key dictionary; the {DetailsKeys.Count} keys of the dictionary have no description in the error schema";
+            yield return "error.details publishes no key dictionary";
             yield break;
-        }
-        foreach (string key in DetailsKeys.Keys.Where(key => !published.ContainsKey(key)).Order(StringComparer.Ordinal))
-        {
-            yield return $"details key '{key}' is not published";
         }
         foreach ((string key, JsonNode? property) in published.OrderBy(static property => property.Key, StringComparer.Ordinal))
         {
-            if (!DetailsKeys.ContainsKey(key))
-            {
-                yield return $"published details key '{key}' is not in the dictionary";
-            }
-            else if (property?["description"]?.GetValue<string>() is not { Length: > 0 })
+            if (property?["description"]?.GetValue<string>() is not { Length: > 0 })
             {
                 yield return $"details key '{key}' has no description";
             }
+        }
+        foreach (string key in ReplacedDetailsKeys.Where(published.ContainsKey))
+        {
+            yield return $"details key '{key}' is one the rule replaces";
         }
         if (details["additionalProperties"]?.GetValue<bool>() != false)
         {
@@ -267,8 +219,8 @@ internal static partial class ContractRules
     }
 
     /// <summary>
-    /// Runs a failing sample and checks its error details against C-R25: every key, and every key
-    /// of each <c>errors</c> item, is in the dictionary, no value is null, <c>errors</c> lists
+    /// Runs a failing sample and checks its error details against C-R25: the envelope matches the
+    /// error schema, every key, and every key of each <c>errors</c> item, is in the dictionary, no value is null, <c>errors</c> lists
     /// several problems, <c>path</c> is absolute and <c>option</c> names an option. A sample that no
     /// longer fails, or fails without an error envelope, is reported, so it cannot pass unchecked.
     /// </summary>
@@ -287,31 +239,35 @@ internal static partial class ContractRules
         {
             return ["the sample no longer fails (exit 0); choose another invocation of this kind"];
         }
-        JsonObject? error = null;
+        JsonNode? envelope = null;
         try
         {
-            error = JsonNode.Parse(result.StdErr)?["error"] as JsonObject;
+            envelope = JsonNode.Parse(result.StdErr);
         }
         catch (JsonException)
         {
         }
-        if (error is null)
+        if (envelope?["error"] is not JsonObject error)
         {
             return [$"the sample exited {result.ExitCode} without an error envelope on stderr"];
         }
-        if (error["details"] is not JsonObject details)
-        {
-            return [];
-        }
         string code = error["code"]?.GetValue<string>() ?? "?";
         var problems = new List<string>();
-        problems.AddRange(details.Select(static member => member.Key).Where(static key => !DetailsKeys.ContainsKey(key))
+        if (ScenarioContract.Validate(ErrorSchema, envelope) is { } invalid)
+        {
+            problems.Add($"{code}: the error envelope does not match {ErrorSchema}: {invalid}");
+        }
+        if (error["details"] is not JsonObject details)
+        {
+            return problems;
+        }
+        problems.AddRange(details.Select(static member => member.Key).Where(static key => !DetailsKeys.Value.Contains(key))
             .Select(key => $"{code} details.{key} is not in the details dictionary"));
         if (details["errors"] is JsonArray errors)
         {
             problems.AddRange(errors.OfType<JsonObject>().SelectMany(static item => item.Select(static member => member.Key))
                 .Distinct(StringComparer.Ordinal)
-                .Where(static key => !DetailsKeys.ContainsKey(key))
+                .Where(static key => !DetailsKeys.Value.Contains(key))
                 .Select(key => $"{code} details.errors[].{key} is not in the details dictionary"));
             if (errors.Count == 1)
             {

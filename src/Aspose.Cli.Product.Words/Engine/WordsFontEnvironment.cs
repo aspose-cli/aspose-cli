@@ -28,7 +28,7 @@ internal sealed partial class WordsFontEnvironment : IFontEnvironment
     }
 
     /// <inheritdoc />
-    public FontListResult ListFonts() => new()
+    public EngineFonts ListFonts() => new()
     {
         Sources = FontSettings.DefaultInstance.GetFontsSources()
             .Select(ToContract)
@@ -118,10 +118,10 @@ internal sealed partial class WordsFontEnvironment : IFontEnvironment
 
     private static FontSource ToContract(FontSourceBase source) => source switch
     {
-        FolderFontSource folder => new FontSource { Type = "folder", Location = folder.FolderPath },
-        FileFontSource file => new FontSource { Type = "file", Location = file.FilePath },
-        MemoryFontSource => new FontSource { Type = "memory" },
-        SystemFontSource => new FontSource { Type = "system" },
-        _ => new FontSource { Type = "other" },
+        FolderFontSource folder => new FontSource { Kind = "folder", Location = folder.FolderPath },
+        FileFontSource file => new FontSource { Kind = "file", Location = file.FilePath },
+        MemoryFontSource => new FontSource { Kind = "memory" },
+        SystemFontSource => new FontSource { Kind = "system" },
+        _ => new FontSource { Kind = "other" },
     };
 }

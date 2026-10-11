@@ -96,7 +96,7 @@ public sealed class ProductViewDefinitionTests
 
     private sealed class MissingFonts : IFontEnvironment
     {
-        public FontListResult ListFonts() => new() { Sources = [] };
+        public EngineFonts ListFonts() => new() { Sources = [] };
 
         public FontCheckResult CheckFonts(string filePath, FontCheckRequest request) => new()
         {

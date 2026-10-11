@@ -29,7 +29,7 @@ internal sealed class CellsFontEnvironment : IFontEnvironment
     /// Font configuration is global to the engine and license-independent, so
     /// this neither opens a workbook nor touches the license gate.
     /// </remarks>
-    public FontListResult ListFonts() => FontOps.BuildFontList();
+    public EngineFonts ListFonts() => FontOps.BuildFontList();
 
     /// <inheritdoc />
     public IDisposable UseFonts(FontSearchProfile profile) => FontOps.Use(profile);

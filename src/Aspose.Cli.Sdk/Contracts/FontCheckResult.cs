@@ -6,9 +6,9 @@ namespace Aspose.Cli.Sdk.Contracts;
 /// Result of <c>aspose-cli fonts check &lt;file&gt;</c>: whether the fonts a document uses
 /// are available on this machine and, if not, what they will be substituted
 /// with. This is the rendering-fidelity diagnostic that a product listing of the used
-/// fonts cannot give.
+/// fonts cannot give. A document with a font that is not available here exits 8.
 /// </summary>
-public sealed record FontCheckResult() : EngineResultEnvelope("font-check", 2)
+public sealed record FontCheckResult() : EngineResultEnvelope("font-check", 2), IPartialOutcome
 {
     /// <summary>The document that was checked.</summary>
     [JsonPropertyOrder(-50)]
@@ -20,6 +20,10 @@ public sealed record FontCheckResult() : EngineResultEnvelope("font-check", 2)
 
     /// <summary>Each font the document uses, with its availability.</summary>
     public required IReadOnlyList<FontAvailability> Fonts { get; init; }
+
+    /// <summary>Whether some font is not available here. Not serialized.</summary>
+    [JsonIgnore]
+    public bool HasFailures => !AllAvailable;
 }
 
 /// <summary>Availability of one font a document uses.</summary>

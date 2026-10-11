@@ -18,21 +18,88 @@ public static partial class CliErrors
 
     /// <summary>
     /// The error for a command line that does not parse. <paramref name="mistake"/> is the first
-    /// unknown command, option or value, whose closest names the hint asks about first.
+    /// unknown command, option or value: the message ends with the names it could have been,
+    /// which <c>details.available</c> lists too, and the hint asks about the closest ones first.
+    /// <c>details.errors</c> lists the problems only when there are several.
     /// </summary>
+    /// <param name="problems">Each problem, one sentence each.</param>
+    /// <param name="mistake">The first unknown command, option or value, if any.</param>
     public static CliException Usage(IReadOnlyList<string> problems, Mistake? mistake = null)
     {
-        var details = new JsonObject { ["errors"] = Strings(problems) };
+        ArgumentNullException.ThrowIfNull(problems);
+        var details = new JsonObject();
+        if (problems.Count > 1)
+        {
+            details["errors"] = Strings(problems);
+        }
+
         mistake?.WriteTo(details);
-        string next = $"Run the command again with --help for usage; '{DistributionInfo.CommandName} --help' lists the commands and '{DistributionInfo.CommandName} docs' the documentation topics.";
-        return CliException.Create(ErrorCodes.UsageError, string.Join("; ", problems), mistake?.Hint(next) ?? next, details);
+        string message = string.Join(" ", problems.Select(static problem => Sentence(problem)));
+        if (mistake is not null)
+        {
+            message = $"{message} {mistake.MustBeOneOf()}";
+        }
+
+        return CliException.Create(ErrorCodes.UsageError, message, mistake?.Hint(UsageHint) ?? UsageHint, details.Count == 0 ? null : details);
     }
 
+    /// <summary>
+    /// A command that only groups other commands, run without one: it does nothing on its own, so
+    /// the error lists its commands in <c>details.available</c> by their path below the root.
+    /// </summary>
+    /// <param name="command">The group as the caller typed it, such as <c>aspose-cli cells</c>.</param>
+    /// <param name="commands">Its visible commands by their path below the root, such as <c>cells inspect</c>.</param>
+    public static CliException CommandRequired(string command, IReadOnlyList<string> commands)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(command);
+        ArgumentNullException.ThrowIfNull(commands);
+        var mistake = Mistake.Of(string.Empty, commands);
+        var details = new JsonObject();
+        mistake.WriteTo(details);
+        return CliException.Create(
+            ErrorCodes.UsageError,
+            $"'{command}' needs a command. {mistake.MustBeOneOf()}",
+            $"Run '{command} <command>'; '{command} --help' describes each one.",
+            details);
+    }
+
+    private static string UsageHint =>
+        $"Run the command again with --help for usage; '{DistributionInfo.CommandName} --help' lists the commands and '{DistributionInfo.CommandName} docs' the documentation topics.";
+
+    /// <summary>A problem as a sentence that ends with a period.</summary>
+    private static string Sentence(string problem)
+    {
+        string trimmed = problem.Trim();
+        return trimmed.EndsWith('.') ? trimmed : trimmed + ".";
+    }
+
+    /// <summary>
+    /// An input file that does not exist. Its details are the not-found details of a
+    /// <c>file</c>: the path as the caller wrote it and as it resolved.
+    /// </summary>
     public static CliException FileNotFound(string path) => CliException.Create(
         ErrorCodes.FileNotFound,
         $"Input file not found: {path}",
         hint: "Check the path. Relative paths resolve against --workdir (or the current directory).",
-        details: new JsonObject { ["path"] = path });
+        details: FileNotFoundDetails("file", path));
+
+    /// <summary>
+    /// A recent file the caller chose by its id that is no longer listed, so there is no path
+    /// to name; the details state the id.
+    /// </summary>
+    /// <param name="id">The recent file's id as the caller gave it.</param>
+    public static CliException RecentFileNotFound(string id) => CliException.Create(
+        ErrorCodes.FileNotFound,
+        $"The recent file '{id}' is no longer listed.",
+        hint: "Choose the file again; the recent list keeps only files that still exist.",
+        details: new JsonObject { ["subject"] = "recent file", ["requested"] = id });
+
+    private static JsonObject FileNotFoundDetails(string subject, string path) => new()
+    {
+        ["subject"] = subject,
+        ["requested"] = path,
+        ["path"] = Path.GetFullPath(path),
+    };
 
     public static CliException FileLocked(string path) => CliException.Create(
         ErrorCodes.FileLocked,
@@ -102,8 +169,8 @@ public static partial class CliErrors
     }
 
     /// <summary>
-    /// Restates a password error about one of the documents a command reads, naming that
-    /// input in the details and its own password option in the hint.
+    /// Restates a password error about one of the documents a command reads, naming the
+    /// argument of that input in <c>details.argument</c> and its own password option in the hint.
     /// </summary>
     internal static CliException ForInput(CliException error, string input, string passwordEnvironmentOption)
     {
@@ -112,7 +179,7 @@ public static partial class CliErrors
             error.Code,
             $"{error.Message} (the {input} input)",
             hint: PasswordHint(error.Code, operationField: null, passwordEnvironmentOption),
-            details: new JsonObject { ["path"] = path, ["input"] = input });
+            details: new JsonObject { ["path"] = path, ["argument"] = input });
     }
 
     /// <summary>Whether <paramref name="error"/> is <c>PASSWORD_REQUIRED</c> or <c>PASSWORD_INVALID</c>.</summary>
@@ -173,12 +240,10 @@ public static partial class CliErrors
         details: new JsonObject
         {
             ["resource"] = ResourceBudgetKinds.InputBytes,
-            ["observed"] = sizeBytes,
+            ["actual"] = sizeBytes,
             ["limit"] = limitBytes,
             ["unit"] = "bytes",
             ["phase"] = "pre-runtime-metadata",
-            ["sizeBytes"] = sizeBytes,
-            ["limitBytes"] = limitBytes,
         });
 
     public static CliException InputBudgetExceeded(
@@ -197,7 +262,7 @@ public static partial class CliErrors
         details: new JsonObject
         {
             ["resource"] = resource,
-            ["observed"] = observed,
+            ["actual"] = observed,
             ["limit"] = limit,
             ["unit"] = unit,
             ["phase"] = phase,
@@ -318,7 +383,9 @@ public static partial class CliErrors
                 ["width"] = width,
                 ["height"] = height,
                 ["dpi"] = dpi,
-                ["maxPixels"] = maxPixels,
+                ["actual"] = width * height,
+                ["limit"] = maxPixels,
+                ["unit"] = "pixels",
             });
     }
 
@@ -473,7 +540,7 @@ public static partial class CliErrors
         hint: inPlaceAvailable
             ? $"Pass --in-place instead of {parameter} to modify the input, with --backup or --if-match as needed; or choose another output path."
             : "Choose another output path; this command never replaces its input.",
-        details: new JsonObject { ["option"] = parameter, ["path"] = path });
+        details: new JsonObject { [ParameterKey(parameter)] = parameter, ["path"] = path });
 
     /// <summary>Two outputs of one operation, including a backup, resolve to the same path.</summary>
     internal static CliException DuplicateOutput(string path) => CliException.Create(
@@ -544,15 +611,17 @@ public static partial class CliErrors
         },
         innerException: innerException);
 
+    /// <summary>A format id that names none of <paramref name="supported"/>; the details list them and the closest ones.</summary>
     public static CliException FormatUnsupported(string requested, IReadOnlyList<string> supported)
     {
-        JsonArray ids = Strings(supported);
-
+        var mistake = Mistake.Of(requested, supported);
+        var details = new JsonObject { ["requested"] = requested };
+        mistake.WriteTo(details);
         return CliException.Create(
             ErrorCodes.FormatUnsupported,
-            $"Unsupported format '{requested}'. Supported formats: {string.Join(", ", supported)}",
-            hint: $"Use one of the supported format ids, or run '{DistributionInfo.CommandName} capabilities' to list everything this build supports.",
-            details: new JsonObject { ["requested"] = requested, ["supported"] = ids });
+            $"Unsupported format '{requested}'. {mistake.MustBeOneOf()}",
+            hint: mistake.Hint($"Use one of the supported format ids, or run '{DistributionInfo.CommandName} capabilities' to list everything this build supports."),
+            details: details);
     }
 
     /// <summary>
@@ -564,25 +633,34 @@ public static partial class CliErrors
     /// <param name="output">The output as the caller gave it, or the input it is derived from.</param>
     /// <param name="subject">The start of the message naming the file, such as <c>--out 'x.ppt'</c>.</param>
     /// <param name="problem">What is wrong with its extension, completing a sentence about the subject.</param>
-    /// <param name="extensions">The extensions the output may have.</param>
+    /// <param name="extensions">The extensions the output may have, which <c>details.available</c> lists.</param>
+    /// <param name="mistyped">
+    /// Whether the extension names no format at all, so it is a mistake for the closest of
+    /// <paramref name="extensions"/>, which <c>details.suggestions</c> lists; false for a missing
+    /// extension or one of a format the command does not write.
+    /// </param>
     /// <param name="hint">How to fix the command line.</param>
-    /// <param name="facts">The format or formats that decided <paramref name="extensions"/>.</param>
+    /// <param name="facts">The format that decided <paramref name="extensions"/>, or the one the extension names.</param>
     internal static CliException OutputExtensionInvalid(
         string parameter,
         string output,
         string subject,
         string problem,
         IReadOnlyList<string> extensions,
+        bool mistyped,
         string hint,
         JsonObject facts)
     {
-        facts["option"] = parameter;
-        facts["extension"] = Path.GetExtension(output);
-        facts["extensions"] = Strings(extensions);
+        string extension = Path.GetExtension(output);
+        // Only a mistyped extension is compared; an empty request is close to nothing.
+        var mistake = Mistake.Of(mistyped ? extension : string.Empty, extensions, keyOf: static name => name.TrimStart('.').ToLowerInvariant());
+        facts[ParameterKey(parameter)] = parameter;
+        facts["extension"] = extension;
+        mistake.WriteTo(facts);
         return CliException.Create(
             ErrorCodes.UsageError,
-            $"{subject} {problem}; use {string.Join(", ", extensions)}.",
-            hint,
+            $"{subject} {problem}. {mistake.MustBeOneOf()}.",
+            mistake.Hint(hint),
             details: facts);
     }
 
@@ -709,11 +787,19 @@ public static partial class CliErrors
             });
     }
 
+    /// <summary>
+    /// An option or positional argument used wrongly. <paramref name="option"/> names an option
+    /// such as <c>--pages</c>, stated in <c>details.option</c>, or an argument such as
+    /// <c>file</c>, stated in <c>details.argument</c>.
+    /// </summary>
     public static CliException OptionInvalid(string option, string reason, string hint) => CliException.Create(
         ErrorCodes.OptionInvalid,
         $"Invalid use of {option}: {reason}",
         hint: hint,
-        details: new JsonObject { ["option"] = option });
+        details: new JsonObject { [ParameterKey(option)] = option });
+
+    /// <summary>The details key that names a parameter: <c>option</c> for an option, <c>argument</c> for a positional argument.</summary>
+    private static string ParameterKey(string parameter) => parameter.StartsWith('-') ? "option" : "argument";
 
     /// <summary>
     /// An <c>*-env</c> option names an environment variable that is not set or is empty. An
@@ -737,14 +823,20 @@ public static partial class CliErrors
 
     /// <summary>
     /// An option or argument value that names none of the values it accepts; the details list
-    /// them and the closest ones, which the hint asks about before <paramref name="hint"/>.
+    /// them and the closest ones, which the hint asks about before <paramref name="hint"/>, and
+    /// the message ends with the same values.
     /// </summary>
     public static CliException OptionInvalid(string option, string reason, string hint, Mistake mistake)
     {
         ArgumentNullException.ThrowIfNull(mistake);
-        var details = new JsonObject { ["option"] = option };
+        var details = new JsonObject { [ParameterKey(option)] = option };
         mistake.WriteTo(details);
-        return CliException.Create(ErrorCodes.OptionInvalid, $"Invalid use of {option}: {reason}", mistake.Hint(hint), details);
+        string message = Sentence($"Invalid use of {option}: {reason}");
+        return CliException.Create(
+            ErrorCodes.OptionInvalid,
+            mistake.Available.Count == 0 ? message : $"{message} {mistake.MustBeOneOf()}",
+            mistake.Hint(hint),
+            details);
     }
 
     /// <summary>Creates an error for an unavailable product capability.</summary>
@@ -815,15 +907,22 @@ public static partial class CliErrors
         ErrorCodes.LicenseFileNotFound,
         $"License file configured via {source} does not exist: {path}",
         hint: "Fix the license path, or remove the setting to run in evaluation mode.",
-        details: new JsonObject { ["path"] = path, ["source"] = source },
+        details: LicenseFileDetails(path, source),
         docs: "licensing");
 
     public static CliException LicensePathIsDirectory(string path, string source) => CliException.Create(
         ErrorCodes.LicenseFileNotFound,
         $"License path configured via {source} is a directory, not a license file: {path}",
         hint: "Name the license file itself, such as Aspose.Total.lic, or remove the setting to run in evaluation mode.",
-        details: new JsonObject { ["path"] = path, ["source"] = source },
+        details: LicenseFileDetails(path, source),
         docs: "licensing");
+
+    private static JsonObject LicenseFileDetails(string path, string source)
+    {
+        JsonObject details = FileNotFoundDetails("license file", path);
+        details["source"] = source;
+        return details;
+    }
 
     public static CliException LicenseInvalid(string source, string reason, Exception? inner = null) => CliException.Create(
         ErrorCodes.LicenseInvalid,
@@ -858,7 +957,7 @@ public static partial class CliErrors
     /// <summary>
     /// The error for a named target the document does not contain. The details list the names
     /// that exist (at most <see cref="MaximumAvailableNames"/>) and the closest ones, so the
-    /// caller can correct the request directly.
+    /// caller can correct the request directly; the message ends with the same names.
     /// </summary>
     /// <param name="code">A code declared with <see cref="ErrorCode.NotFound"/>.</param>
     /// <param name="subject">What was looked up, e.g. <c>sheet</c> or <c>bookmark</c>.</param>
@@ -870,7 +969,32 @@ public static partial class CliErrors
         string subject,
         string requested,
         IReadOnlyCollection<string> available,
-        string? hint = null)
+        string? hint = null) => NotFoundIn(code, subject, requested, available, hint, listInMessage: true);
+
+    /// <summary>
+    /// The error for a text a search did not find, such as a heading or a find text. The texts
+    /// searched are not names to choose from, so the message does not list them; the details
+    /// state them and the closest ones as <see cref="NotFound"/> does.
+    /// </summary>
+    /// <param name="code">A code declared with <see cref="ErrorCode.NotFound"/>.</param>
+    /// <param name="subject">What was searched for, e.g. <c>text</c> or <c>heading</c>.</param>
+    /// <param name="requested">The text as the caller wrote it.</param>
+    /// <param name="searched">The texts searched, in document order.</param>
+    /// <param name="hint">A product-specific next step, after the question that names the closest texts.</param>
+    public static CliException TextNotFound(
+        ErrorCode code,
+        string subject,
+        string requested,
+        IReadOnlyCollection<string> searched,
+        string? hint = null) => NotFoundIn(code, subject, requested, searched, hint, listInMessage: false);
+
+    private static CliException NotFoundIn(
+        ErrorCode code,
+        string subject,
+        string requested,
+        IReadOnlyCollection<string> available,
+        string? hint,
+        bool listInMessage)
     {
         RequireNotFoundCode(code);
         ArgumentException.ThrowIfNullOrWhiteSpace(subject);
@@ -888,7 +1012,10 @@ public static partial class CliErrors
         hint = hint is not null ? mistake.Hint(hint)
             : mistake.Question
                 ?? (available.Count == 0 ? $"The document has no {subject} to select." : "Use one of the names in details.available.");
-        return CliException.Create(code, $"No {subject} '{requested}' was found.", hint, details);
+        string message = listInMessage && available.Count > 0
+            ? $"No {subject} '{requested}' was found. {mistake.MustBeOneOf()}"
+            : $"No {subject} '{requested}' was found.";
+        return CliException.Create(code, message, hint, details);
     }
 
     /// <summary>

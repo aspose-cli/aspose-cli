@@ -195,11 +195,18 @@ internal static class CommonSchemaSamples
 
     public static FontListResult FontList { get; } = new()
     {
-        DefaultFont = "Calibri",
-        Sources =
+        Products =
         [
-            new FontSource { Type = "folder", Location = "/usr/share/fonts" },
-            new FontSource { Type = "memory" },
+            new ProductFonts
+            {
+                Product = "cells",
+                DefaultFont = "Calibri",
+                Sources =
+                [
+                    new FontSource { Kind = "folder", Location = "/usr/share/fonts" },
+                    new FontSource { Kind = "memory" },
+                ],
+            },
         ],
     };
 

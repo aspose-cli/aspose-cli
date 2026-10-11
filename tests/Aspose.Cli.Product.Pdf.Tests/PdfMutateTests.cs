@@ -917,7 +917,7 @@ public sealed class PdfMutateTests
             ],
             result.Applied.Select(static applied =>
             {
-                OpError error = applied.Error!;
+                ErrorPayload error = applied.Error!;
                 Assert.Equal("BOOKMARK_NOT_FOUND", error.Code);
                 return $"{error.Details!["requested"]!.GetValue<string>()} "
                     + $"{error.Details["availableCount"]!.GetValue<int>()} {error.Hint}";
@@ -1383,11 +1383,11 @@ public sealed class PdfMutateTests
             Options = new EditCommandOptions { BestEffort = true },
         });
 
-        OpError page = result.Applied[0].Error!;
+        ErrorPayload page = result.Applied[0].Error!;
         Assert.Equal("PAGE_NOT_FOUND", page.Code);
         Assert.Equal("5", page.Details!["requested"]!.GetValue<string>());
         Assert.Equal(2, page.Details["availableCount"]!.GetValue<int>());
-        OpError position = result.Applied[1].Error!;
+        ErrorPayload position = result.Applied[1].Error!;
         Assert.Equal("PAGE_NOT_FOUND", position.Code);
         Assert.Equal(3, position.Details!["availableCount"]!.GetValue<int>());
     }

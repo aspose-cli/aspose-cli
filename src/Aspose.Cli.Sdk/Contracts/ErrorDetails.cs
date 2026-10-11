@@ -22,9 +22,9 @@ public sealed record DiagnosticDetails
 }
 
 /// <summary>
-/// Details of an error whose code names a target the document does not contain. They state what
-/// was requested and what exists, so the caller can correct the request without another
-/// inspection. Operation errors add the operation's id and op.
+/// Details of an error whose code names a target that does not exist: a part the document does
+/// not contain, or a file. They state what was requested and what exists, so the caller can
+/// correct the request without another inspection. Operation errors add the operation's id and op.
 /// </summary>
 [SchemaId(SchemaName)]
 public sealed record NotFoundDetails
@@ -38,11 +38,17 @@ public sealed record NotFoundDetails
     /// <summary>What was looked up, e.g. sheet, slide, bookmark or page.</summary>
     public required string Subject { get; init; }
 
-    /// <summary>The name, number or range as the caller wrote it.</summary>
+    /// <summary>The name, number, range or path as the caller wrote it.</summary>
     public required string Requested { get; init; }
 
-    /// <summary>How many targets of this kind the document contains.</summary>
-    public required uint AvailableCount { get; init; }
+    /// <summary>How many targets of this kind the document contains; present for a target in a document.</summary>
+    public uint? AvailableCount { get; init; }
+
+    /// <summary>The absolute path of the missing file; present for a file.</summary>
+    public string? Path { get; init; }
+
+    /// <summary>Where the missing file was configured, such as an environment variable; present when a setting names it.</summary>
+    public string? Source { get; init; }
 
     /// <summary>
     /// The names that exist, in document order; present for named targets and truncated to 50

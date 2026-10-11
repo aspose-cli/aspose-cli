@@ -64,6 +64,12 @@ internal sealed class CommandExecutor
         finally { Console.CancelKeyPress -= onCancel; }
     }
 
+    /// <summary>
+    /// Runs a command that answers with one result. Ctrl+C cancels it as the caller's own
+    /// cancellation, with or without <c>--timeout</c>: the work stops at its next check, nothing
+    /// is published, its staging is removed and the process exits 130. A second Ctrl+C ends the
+    /// process at once.
+    /// </summary>
     private int RunEnvelope(
         ParseResult parseResult,
         GlobalOptions globalOptions,
@@ -71,18 +77,39 @@ internal sealed class CommandExecutor
         bool detectPartial)
     {
         ArgumentNullException.ThrowIfNull(handler);
-        return Execute(
-            parseResult,
-            globalOptions,
-            admitInputs: true,
-            cancellationToken: default,
-            scope =>
+        using var cancellation = new CancellationTokenSource();
+        ConsoleCancelEventHandler onCancel = (_, e) =>
+        {
+            try
             {
-                scope.Deadline.ThrowIfExpired("command-start");
-                ResultEnvelope result = handler(scope);
-                if (!scope.Budgets.HasCommittedOutputs) { scope.Deadline.ThrowIfExpired("command-complete"); }
-                return scope.Complete(result, detectPartial);
-            });
+                e.Cancel = !cancellation.IsCancellationRequested;
+                cancellation.Cancel();
+            }
+            catch (ObjectDisposedException)
+            {
+                // The command already ended.
+            }
+        };
+        Console.CancelKeyPress += onCancel;
+        try
+        {
+            return Execute(
+                parseResult,
+                globalOptions,
+                admitInputs: true,
+                cancellation.Token,
+                scope =>
+                {
+                    scope.Deadline.ThrowIfExpired("command-start");
+                    ResultEnvelope result = handler(scope);
+                    if (!scope.Budgets.HasCommittedOutputs) { scope.Deadline.ThrowIfExpired("command-complete"); }
+                    return scope.Complete(result, detectPartial);
+                });
+        }
+        finally
+        {
+            Console.CancelKeyPress -= onCancel;
+        }
     }
 
     public int RunRaw(

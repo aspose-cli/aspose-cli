@@ -71,9 +71,9 @@ public sealed partial class ExitCodeDeclarationTests
         ];
 
         string row = Assert.Single(rows);
-        Assert.True(row.Contains("--timeout", StringComparison.Ordinal),
+        Assert.True(row.Contains("with or without --timeout", StringComparison.Ordinal),
             $"The {Cancelled} row of the platform Skill's exit-code table ({Path.GetRelativePath(RepositoryPaths.Root, path)}) "
-            + $"says that cancellation returns {Cancelled} only when the command runs under --timeout: {row}");
+            + $"says that Ctrl+C returns {Cancelled} with or without --timeout: {row}");
     }
 
     [GeneratedRegex(@"(?m)^\|\s*(?<exit>[0-9]+)\s*\|")]

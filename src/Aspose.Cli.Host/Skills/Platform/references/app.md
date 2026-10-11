@@ -1,6 +1,6 @@
 # The local browser App
 
-`aspose-cli app` opens a browser workspace for people: license setup, files
+`aspose-cli app open` opens a browser workspace for people: license setup, files
 and live preview. Agents and scripts use the CLI commands, `preview` and
 `--license` instead.
 
@@ -9,16 +9,16 @@ aspose-cli app status --output-format json
 ```
 
 ```text
-aspose-cli app
+aspose-cli app open
 aspose-cli app open <file>
-aspose-cli app --welcome
+aspose-cli app open --welcome
 aspose-cli app stop
 ```
 
 The App listens only on `127.0.0.1`, and every document stays on the local
 machine.
 
-- **Welcome** (`--welcome`) installs a `.lic` file or continues in evaluation
+- **Welcome** (`app open --welcome`) installs a `.lic` file or continues in evaluation
   mode.
 - **Files** opens an original file through the operating system's picker.
   Browser uploads are labelled as temporary preview copies.
@@ -43,6 +43,6 @@ the viewer service recycles its renderer and the next render applies it.
 ## Lifecycle
 
 `app status` reports whether the App is `running`. `app stop` stops the App,
-its documents and the viewer service. `--no-open` starts or activates the App
-without a browser, and `--foreground --port <port>` keeps it in the current
-process for debugging, containers and browser automation.
+its documents and the viewer service. `app open --no-open` starts or activates
+the App without a browser, and `app open --foreground --port <port>` keeps it in
+the current process for debugging, containers and browser automation.

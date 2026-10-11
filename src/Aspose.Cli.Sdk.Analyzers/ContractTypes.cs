@@ -67,6 +67,7 @@ internal static class ContractTypes
         ["HexColorAttribute"] = ["String"],
         ["WebLinkAttribute"] = ["String"],
         ["ValueKindAttribute"] = ["String"],
+        ["ErrorDetailsAttribute"] = ["Object"],
     };
 
     /// <summary>

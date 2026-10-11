@@ -65,7 +65,7 @@ internal static class TestBindings
 
     private sealed class AvailableFonts : IFontEnvironment
     {
-        public FontListResult ListFonts() => new() { Sources = [] };
+        public EngineFonts ListFonts() => new() { Sources = [] };
 
         public FontCheckResult CheckFonts(string filePath, FontCheckRequest request) => new()
         {

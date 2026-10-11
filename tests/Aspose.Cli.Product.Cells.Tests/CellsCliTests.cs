@@ -80,6 +80,9 @@ public sealed class CellsCliTests : IDisposable
         Assert.EndsWith(" --range A1:C3 --scan-range A1:C10 --scope values --max-cells 10 --output-format json", first, StringComparison.Ordinal);
         JsonNode error = JsonNode.Parse(refused.StdErr)!["error"]!;
         Assert.Equal("RANGE_TOO_LARGE", error["code"]!.GetValue<string>());
+        Assert.Equal(10, error["details"]!["limit"]!.GetValue<int>());
+        Assert.Equal("cells", error["details"]!["unit"]!.GetValue<string>());
+        Assert.Null(error["details"]!["maxCells"]);
         Assert.Contains(" --range A1:C3 --scan-range A1:C10 ", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
 
         CliResult second = _workspace.RunCommandLine(first);
@@ -274,7 +277,7 @@ public sealed class CellsCliTests : IDisposable
 
         JsonNode error = JsonNode.Parse(refused.StdErr)!["error"]!;
         Assert.Equal("EVALUATION_LIMIT", error["code"]!.GetValue<string>());
-        Assert.Equal("Dashboard", error["details"]!["firstSheet"]!.GetValue<string>());
+        Assert.Equal("Dashboard", Assert.Single(error["details"]!["available"]!.AsArray())!.GetValue<string>());
         Assert.Contains("license", error["hint"]!.GetValue<string>(), StringComparison.OrdinalIgnoreCase);
         Assert.Empty(refused.StdOut);
         Assert.Equal("existing report", File.ReadAllText(_workspace.File("report.csv")));

@@ -32,8 +32,7 @@ public sealed class CliContractTests : IDisposable
         Assert.False(string.IsNullOrWhiteSpace(result.StdOut));
         Assert.True(char.IsAsciiDigit(result.StdOut.TrimStart()[0]));
         // Plain --version stays the parser's single text line, never a JSON envelope.
-        Assert.Matches(@"^[0-9][^\s]*?
-$", result.StdOut);
+        Assert.Matches("^[0-9][^\\s]*\r?\n$", result.StdOut);
         Assert.Equal(string.Empty, result.StdErr);
     }
 
@@ -453,7 +452,8 @@ $", result.StdOut);
                 selection == "unknown-product"
                     ? "product"
                     : "command",
-                details["option"]!.GetValue<string>());
+                details["argument"]!.GetValue<string>());
+            Assert.Null(details["option"]);
             Assert.NotEmpty(details["available"]!.AsArray());
             return;
         }
@@ -587,10 +587,108 @@ $", result.StdOut);
         Assert.Equal(2, result.ExitCode);
         JsonNode error = Parse(result.StdErr)["error"]!;
         Assert.Equal("USAGE_ERROR", error["code"]!.GetValue<string>());
-        Assert.NotNull(error["details"]!["errors"]!.AsArray());
+        // One problem is the message; details.errors lists problems only when there are several.
+        Assert.Null(error["details"]!["errors"]);
         string hint = error["hint"]!.GetValue<string>();
         Assert.Contains("aspose-cli --help", hint, StringComparison.Ordinal);
         Assert.DoesNotContain("aspose-cli cells", hint, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void SeveralUsageProblems_AreListedInErrors()
+    {
+        CliResult result = _workspace.Run("cells", "inspect", "--detail", "cahrts", "--output-format", "json");
+
+        Assert.Equal(2, result.ExitCode);
+        JsonNode error = Parse(result.StdErr)["error"]!;
+        Assert.Equal(2, error["details"]!["errors"]!.AsArray().Count);
+    }
+
+    [Theory]
+    [InlineData("help", "--help")]
+    [InlineData("version", "--version")]
+    [InlineData("cells help", "cells --help")]
+    [InlineData("words help edit", "words edit --help")]
+    [InlineData("help words edit", "words edit --help")]
+    [InlineData("version capabilities", "--version")]
+    public void HelpOrVersionAsACommand_SuggestsTheOption(string commandLine, string suggestion)
+    {
+        CliResult result = _workspace.Run([.. commandLine.Split(' '), "--output-format", "json"]);
+
+        Assert.Equal(2, result.ExitCode);
+        JsonNode error = Parse(result.StdErr)["error"]!;
+        Assert.Equal("USAGE_ERROR", error["code"]!.GetValue<string>());
+        Assert.Equal(suggestion, error["details"]!["suggestions"]![0]!.GetValue<string>());
+        Assert.StartsWith($"Did you mean '{suggestion}'?", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("cells")]
+    [InlineData("cells query")]
+    [InlineData("app")]
+    public void GroupWithoutACommand_PrintsItsHelpAndListsItsCommands(string group)
+    {
+        string[] tokens = group.Length == 0 ? [] : group.Split(' ');
+        string help = _workspace.Run([.. tokens, "--help"]).StdOut;
+
+        CliResult table = _workspace.Run([.. tokens, "--output-format", "table"]);
+        CliResult json = _workspace.Run([.. tokens, "--output-format", "json"]);
+
+        Assert.Equal(2, table.ExitCode);
+        Assert.Empty(table.StdOut);
+        Assert.Contains(help.ReplaceLineEndings("\n").Trim(), table.StdErr.ReplaceLineEndings("\n"), StringComparison.Ordinal);
+        Assert.Equal(2, json.ExitCode);
+        JsonNode error = Parse(json.StdErr)["error"]!;
+        Assert.Equal("USAGE_ERROR", error["code"]!.GetValue<string>());
+        string[] available = [.. error["details"]!["available"]!.AsArray().Select(static item => item!.GetValue<string>())];
+        Assert.NotEmpty(available);
+        Assert.All(available, path => Assert.StartsWith(group, path, StringComparison.Ordinal));
+        Assert.Null(error["details"]!["errors"]);
+    }
+
+    [Fact]
+    public void FontsList_WithoutProduct_ListsEveryProductEngine()
+    {
+        string[] products = [.. CliCatalog.Current.Command("fonts list").Option("--product")!.AllowedValues];
+
+        CliResult all = _workspace.Run("fonts", "list", "--output-format", "json");
+        CliResult one = _workspace.Run("fonts", "list", "--product", products[^1], "--output-format", "json");
+
+        Assert.True(all.ExitCode == 0, all.StdErr);
+        JsonArray listed = Parse(all.StdOut)["products"]!.AsArray();
+        Assert.Equal(products, listed.Select(static item => item!["product"]!.GetValue<string>()));
+        Assert.All(listed.SelectMany(static item => item!["sources"]!.AsArray()), source =>
+        {
+            Assert.NotNull(source!["kind"]);
+            Assert.Null(source["type"]);
+        });
+        Assert.True(one.ExitCode == 0, one.StdErr);
+        Assert.Equal([products[^1]], Parse(one.StdOut)["products"]!.AsArray().Select(static item => item!["product"]!.GetValue<string>()));
+    }
+
+    [Fact]
+    public void AppOpen_RefusesWelcomeWithAFile()
+    {
+        File.WriteAllText(_workspace.File("book.xlsx"), "not opened");
+        CliResult result = _workspace.Run("app", "open", "book.xlsx", "--welcome", "--no-open", "--output-format", "json");
+
+        Assert.Equal(2, result.ExitCode);
+        JsonNode error = Parse(result.StdErr)["error"]!;
+        Assert.Equal("OPTION_INVALID", error["code"]!.GetValue<string>());
+        Assert.Equal("--welcome", error["details"]!["option"]!.GetValue<string>());
+    }
+
+    [Fact]
+    public void UnknownValue_IsOneLineThatListsDetailsAvailable()
+    {
+        CliResult result = _workspace.Run("cells", "inspect", "a.xlsx", "--detail", "cahrts", "--output-format", "json");
+
+        JsonNode error = Parse(result.StdErr)["error"]!;
+        string message = error["message"]!.GetValue<string>();
+        string[] available = [.. error["details"]!["available"]!.AsArray().Select(static item => item!.GetValue<string>())];
+        Assert.DoesNotContain('\n', message);
+        Assert.EndsWith($"Must be one of: {string.Join(", ", available)}", message, StringComparison.Ordinal);
     }
 
     [Theory]
@@ -689,7 +787,6 @@ $", result.StdOut);
     }
 
     [Theory]
-    [InlineData("app", "--route", true)]
     [InlineData("cells query range", "--scan-range", true)]
     [InlineData("cells convert", "--out", false)]
     public void Capabilities_PublishWhetherAnOptionIsHidden(string command, string option, bool hidden)
@@ -703,7 +800,6 @@ $", result.StdOut);
     }
 
     [Theory]
-    [InlineData("app --routee", "--route")]
     [InlineData("cells query range a.xlsx --sacn-range", "--scan-range")]
     public void UnknownOption_NeverSuggestsAHiddenOption(string commandLine, string hidden)
     {

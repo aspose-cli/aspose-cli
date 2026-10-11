@@ -9,7 +9,7 @@ namespace Aspose.Cli.Host.Commands;
 /// <summary>
 /// Starts the one local service that serves both faces of live preview: the
 /// App a person works in, and the documents the viewer renders. Both commands
-/// that can bring it up — the hidden service host and <c>app --foreground</c>
+/// that can bring it up — the hidden service host and <c>app open --foreground</c>
 /// — start it exactly this way, so what a person sees never depends on which
 /// command happened to start the service.
 /// </summary>

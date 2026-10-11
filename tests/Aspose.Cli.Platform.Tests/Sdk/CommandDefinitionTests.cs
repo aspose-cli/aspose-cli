@@ -109,9 +109,9 @@ public sealed class CommandDefinitionTests : IDisposable
 
         Assert.Equal(ErrorCodes.PasswordRequired, right.Code);
         Assert.Equal(("right", _temp.File("other.test")),
-            (right.Details!["input"]!.GetValue<string>(), right.Details["path"]!.GetValue<string>()));
+            (right.Details!["argument"]!.GetValue<string>(), right.Details["path"]!.GetValue<string>()));
         Assert.Contains("--right-password-env", right.Hint, StringComparison.Ordinal);
-        Assert.Equal((ErrorCodes.PasswordInvalid, "left"), (left.Code, left.Details!["input"]!.GetValue<string>()));
+        Assert.Equal((ErrorCodes.PasswordInvalid, "left"), (left.Code, left.Details!["argument"]!.GetValue<string>()));
         Assert.Contains("--left-password-env", left.Hint, StringComparison.Ordinal);
     }
 
@@ -126,7 +126,7 @@ public sealed class CommandDefinitionTests : IDisposable
         CliException error = RunFailing(command, "report.test", "other.test");
 
         Assert.Equal(ErrorCodes.PasswordRequired, error.Code);
-        Assert.Null(error.Details!["input"]);
+        Assert.Null(error.Details!["argument"]);
         Assert.Contains("--left-password-env", error.Hint, StringComparison.Ordinal);
     }
 
@@ -190,7 +190,7 @@ public sealed class CommandDefinitionTests : IDisposable
         CliException error = RunFailing(command, "Report.test", "--template", "report.test");
 
         Assert.Equal(ErrorCodes.OptionInvalid, error.Code);
-        Assert.Equal("file", error.Details!["option"]!.GetValue<string>());
+        Assert.Equal("file", error.Details!["argument"]!.GetValue<string>());
         Assert.Equal(_temp.File("new.test"), Run(command, "new.test", "--template", "report.test"));
     }
 
@@ -288,12 +288,12 @@ public sealed class CommandDefinitionTests : IDisposable
             CliException foreign = RunFailing(command, arguments);
             Assert.Equal(ErrorCodes.UsageError, foreign.Code);
             Assert.Equal("--out", foreign.Details!["option"]!.GetValue<string>());
-            Assert.EndsWith("; use .png, .jpg, .jpeg, .svg.", foreign.Message, StringComparison.Ordinal);
+            Assert.EndsWith(". Must be one of: .png, .jpg, .jpeg, .svg.", foreign.Message, StringComparison.Ordinal);
         }
 
         CliException conflict = RunFailing(command, "report.test", "--to", "png", "--out", "page.svg");
         Assert.Equal(ErrorCodes.UsageError, conflict.Code);
-        Assert.Equal("--to png contradicts --out 'page.svg': its .svg extension is not a png extension; use .png.", conflict.Message);
+        Assert.Equal("--to png contradicts --out 'page.svg': its .svg extension is not a png extension. Must be one of: .png.", conflict.Message);
         Assert.Equal("Give --out the .png extension, as in page.png, or pass --to svg to write svg.", conflict.Hint);
 
         // An output without an extension often names a folder: the hint names both corrected paths.
@@ -338,7 +338,7 @@ public sealed class CommandDefinitionTests : IDisposable
             CliException conflict = RunFailing(command, "report.test", "--to", "md", "--out", output);
             Assert.Equal(ErrorCodes.UsageError, conflict.Code);
             Assert.StartsWith($"--to md contradicts --out '{output}': ", conflict.Message, StringComparison.Ordinal);
-            Assert.EndsWith("; use .md, .markdown.", conflict.Message, StringComparison.Ordinal);
+            Assert.EndsWith(". Must be one of: .md, .markdown.", conflict.Message, StringComparison.Ordinal);
             Assert.Equal("md", conflict.Details!["format"]!.GetValue<string>());
         }
     }
@@ -378,9 +378,9 @@ public sealed class CommandDefinitionTests : IDisposable
 
         CliException producer = Refused("new.pdf");
         Assert.Equal(ErrorCodes.UsageError, producer.Code);
-        Assert.Equal("file 'new.pdf' asks for pdf, which aspose-cli test create does not write; use .tst, .test, .tsx.", producer.Message);
+        Assert.Equal("file 'new.pdf' has the .pdf extension of pdf, which aspose-cli test create does not write. Must be one of: .tst, .test, .tsx.", producer.Message);
         Assert.Equal("Give file one of these extensions, then run 'aspose-cli test convert <that file> --to pdf' for pdf.", producer.Hint);
-        Assert.Equal("file", producer.Details!["option"]!.GetValue<string>());
+        Assert.Equal("file", producer.Details!["argument"]!.GetValue<string>());
         foreach (string file in new[] { "new.foo", "new" })
         {
             CliException refused = Refused(file);
@@ -674,7 +674,7 @@ public sealed class CommandDefinitionTests : IDisposable
 
         public string ActiveDirectories() => string.Join(';', _active?.Directories ?? []);
 
-        public FontListResult ListFonts() => throw new NotSupportedException();
+        public EngineFonts ListFonts() => throw new NotSupportedException();
 
         public FontCheckResult CheckFonts(string filePath, FontCheckRequest request) => throw new NotSupportedException();
 

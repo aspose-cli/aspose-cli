@@ -210,7 +210,6 @@ public sealed partial class DecisionOwnershipTests
     }
 
     [Theory]
-    [InlineData("app", "--route")]
     [InlineData("cells query range", "--scan-range")]
     public void D3_Capabilities_MarkAHiddenOptionHidden(string command, string option)
     {

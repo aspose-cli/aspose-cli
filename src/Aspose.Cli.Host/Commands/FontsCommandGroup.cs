@@ -1,6 +1,7 @@
 using System.CommandLine;
 using Aspose.Cli.Host.Catalog;
 using Aspose.Cli.Host.Invocation;
+using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Rendering;
 
 namespace Aspose.Cli.Host.Commands;
@@ -31,33 +32,29 @@ internal static class FontsCommandGroup
         GlobalOptions globals)
     {
         IReadOnlyList<ProductDefinition> providers = catalog.Products;
-        string? defaultProduct = providers.FirstOrDefault(product =>
-                product.Manifest.IsDefaultCandidate)?.Manifest.Id
-            ?? providers.FirstOrDefault()?.Manifest.Id;
-        var product = new Option<string>("--product")
+        var product = new Option<string?>("--product")
         {
-            Required = defaultProduct is null,
-            Description = defaultProduct is null
-                ? "Product font engine to inspect. Required because this distribution has no declared default."
-                : "Product font engine to inspect.",
+            Description = "Product whose font engine to list; every product's when omitted.",
         }.WithInput(InputKind.None);
-        if (defaultProduct is not null)
-        {
-            product.DefaultValueFactory = _ => defaultProduct;
-        }
         product.AcceptOnlyFromAmong(
             providers
                 .Select(static item => item.Manifest.Id)
                 .ToArray());
-        var list = new Command("list", "List the engine's font sources and its default fallback font.");
+        var list = new Command("list", "List each engine's font sources and its default fallback font.");
         list.Options.Add(product);
 
         list.SetAction(parseResult => executor.Run(parseResult, globals, context =>
         {
-            string selected = parseResult.GetValue(product)!;
-            ProductDefinition definition =
-                catalog.ResolveById(selected);
-            return context.Activate(definition).FontEnvironment.ListFonts();
+            string? selected = parseResult.GetValue(product);
+            return new FontListResult
+            {
+                Products =
+                [
+                    .. providers
+                        .Where(definition => selected is null || definition.Manifest.Id == selected)
+                        .Select(definition => Fonts(definition.Manifest.Id, context.Activate(definition).FontEnvironment.ListFonts())),
+                ],
+            };
         }));
 
         return list.WithInvocationPolicy(new CommandInvocationPolicy(McpAllowed: true));
@@ -97,4 +94,11 @@ internal static class FontsCommandGroup
 
         return check.WithInvocationPolicy(new CommandInvocationPolicy(McpAllowed: true));
     }
+
+    private static ProductFonts Fonts(string product, EngineFonts engine) => new()
+    {
+        Product = product,
+        DefaultFont = engine.DefaultFont,
+        Sources = engine.Sources,
+    };
 }

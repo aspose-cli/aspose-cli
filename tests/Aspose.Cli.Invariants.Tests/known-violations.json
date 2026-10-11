@@ -1,13 +1,6 @@
 {
   "violations": [
     {
-      "case": "C-R03 | app declared",
-      "invariant": "C-R03",
-      "rule": "C-R03",
-      "cause": "app-group-has-own-options",
-      "actual": "app has subcommands but declares its own option --foreground.; app has subcommands but declares its own option --no-open.; app has subcommands but declares its own option --port.; app has subcommands but declares its own option --route.; ap..."
-    },
-    {
       "case": "C-R19 | cells add_comment applied twice",
       "invariant": "C-R19",
       "rule": "C-R19",
@@ -44,16 +37,6 @@
       "rule": "C-R17",
       "cause": "cells-enum-values-camel-case",
       "actual": "validationInfo.type.anyOf[0]: enum values wholeNumber, textLength are not lowercase kebab-case"
-    },
-    {
-      "case": "C-R25 | cells evaluation export of a later sheet error details",
-      "invariant": "C-R25",
-      "rule": "C-R25",
-      "cause": "cells-evaluation-sheet-limit-uses-its-own-keys",
-      "modes": [
-        "evaluation"
-      ],
-      "actual": "EVALUATION_LIMIT details.requestedSheet is not in the details dictionary; EVALUATION_LIMIT details.firstSheet is not in the details dictionary"
     },
     {
       "case": "C-R20 | v2/cells/ops field bottom",
@@ -482,13 +465,6 @@
       "actual": "exit 4 RANGE_INVALID, expected 0: Invalid range 'all': 'all' is missing a row number (whole-column ranges are not supported; give explicit bounds like A1:A100)"
     },
     {
-      "case": "C-R25 | cells range over budget error details",
-      "invariant": "C-R25",
-      "rule": "C-R25",
-      "cause": "cells-range-budget-uses-its-own-keys",
-      "actual": "RANGE_TOO_LARGE details.requestedCells is not in the details dictionary; RANGE_TOO_LARGE details.maxCells is not in the details dictionary"
-    },
-    {
       "case": "C-R16 | cells query range --range A1:!!",
       "invariant": "C-R16",
       "rule": "C-R16",
@@ -874,13 +850,6 @@
       "actual": "--to: 2 different required flags: required (cells convert, pdf convert, slides convert, words convert) | optional (cells render, pdf extract, pdf render, slides render, words render)"
     },
     {
-      "case": "C-R24 | words create interrupted by Ctrl+C",
-      "invariant": "C-R24",
-      "rule": "C-R24",
-      "cause": "ctrl-c-not-handled-without-timeout",
-      "actual": "exit -1073741510, expected 130"
-    },
-    {
       "case": "C-R11 | cells convert declared",
       "invariant": "C-R11",
       "rule": "C-R11",
@@ -1021,20 +990,6 @@
       "actual": "words split writes files but has no --dry-run."
     },
     {
-      "case": "C-R25 | error schema publishes the details dictionary",
-      "invariant": "C-R25",
-      "rule": "C-R25",
-      "cause": "error-schema-publishes-no-details-dictionary",
-      "actual": "error.details publishes no key dictionary; the 62 keys of the dictionary have no description in the error schema"
-    },
-    {
-      "case": "C-R28 | common not-found details",
-      "invariant": "C-R28",
-      "rule": "C-R28",
-      "cause": "file-not-found-codes-use-generic-details",
-      "actual": "FILE_NOT_FOUND has details v2/common/diagnostic-details, not v2/common/not-found-details; LICENSE_FILE_NOT_FOUND has details v2/common/diagnostic-details, not v2/common/not-found-details"
-    },
-    {
       "case": "C-R20 | v2/cells/ops#conditionalStyle fixednames",
       "invariant": "C-R20",
       "rule": "C-R20",
@@ -1112,137 +1067,11 @@
       "actual": "size: a font size is named fontSize"
     },
     {
-      "case": "C-R24 | fonts check of a document whose font is missing",
-      "invariant": "C-R24",
-      "rule": "C-R24",
-      "cause": "fonts-check-failure-exits-0",
-      "actual": "exit 0, expected 8"
-    },
-    {
-      "case": "same-name-option | --product",
-      "invariant": "same-name-option",
-      "rule": "C-R07",
-      "cause": "fonts-list-product-default",
-      "actual": "--product: 2 different defaults: \"cells\" (fonts list) | none (license install, license remove, license status, preview open, review)"
-    },
-    {
-      "case": "C-R26 | cells convert --to csv as csvv",
-      "invariant": "C-R26",
-      "rule": "C-R26",
-      "cause": "format-aliases-in-to-message",
-      "actual": "the message lists markdown, which details.available does not"
-    },
-    {
       "case": "C-R36 | cells formats",
       "invariant": "C-R36",
       "rule": "C-R36",
       "cause": "format-ids-have-aliases",
       "actual": "cells format md has the aliases markdown."
-    },
-    {
-      "case": "C-R03 | aspose-cli without a subcommand",
-      "invariant": "C-R03",
-      "rule": "C-R03",
-      "cause": "group-command-without-subcommand-prints-no-help",
-      "actual": "table mode does not print the help to stderr: error USAGE_ERROR: Required command was not provided.   hint: Run the command again with --help for usage; 'aspose-cli --help' lists the commands and 'aspose-cl...; the error has no details.avai..."
-    },
-    {
-      "case": "C-R03 | cells query without a subcommand",
-      "invariant": "C-R03",
-      "rule": "C-R03",
-      "cause": "group-command-without-subcommand-prints-no-help",
-      "actual": "table mode does not print the help to stderr: error USAGE_ERROR: Required command was not provided.   hint: Run the command again with --help for usage; 'aspose-cli --help' lists the commands and 'aspose-cl...; the error has no details.avai..."
-    },
-    {
-      "case": "C-R03 | cells without a subcommand",
-      "invariant": "C-R03",
-      "rule": "C-R03",
-      "cause": "group-command-without-subcommand-prints-no-help",
-      "actual": "table mode does not print the help to stderr: error USAGE_ERROR: Required command was not provided.   hint: Run the command again with --help for usage; 'aspose-cli --help' lists the commands and 'aspose-cl...; the error has no details.avai..."
-    },
-    {
-      "case": "C-R03 | fonts without a subcommand",
-      "invariant": "C-R03",
-      "rule": "C-R03",
-      "cause": "group-command-without-subcommand-prints-no-help",
-      "actual": "table mode does not print the help to stderr: error USAGE_ERROR: Required command was not provided.   hint: Run the command again with --help for usage; 'aspose-cli --help' lists the commands and 'aspose-cl...; the error has no details.avai..."
-    },
-    {
-      "case": "C-R03 | license without a subcommand",
-      "invariant": "C-R03",
-      "rule": "C-R03",
-      "cause": "group-command-without-subcommand-prints-no-help",
-      "actual": "table mode does not print the help to stderr: error USAGE_ERROR: Required command was not provided.   hint: Run the command again with --help for usage; 'aspose-cli --help' lists the commands and 'aspose-cl...; the error has no details.avai..."
-    },
-    {
-      "case": "C-R03 | mcp without a subcommand",
-      "invariant": "C-R03",
-      "rule": "C-R03",
-      "cause": "group-command-without-subcommand-prints-no-help",
-      "actual": "table mode does not print the help to stderr: error USAGE_ERROR: Required command was not provided.   hint: Run the command again with --help for usage; 'aspose-cli --help' lists the commands and 'aspose-cl...; the error has no details.avai..."
-    },
-    {
-      "case": "C-R03 | pdf query without a subcommand",
-      "invariant": "C-R03",
-      "rule": "C-R03",
-      "cause": "group-command-without-subcommand-prints-no-help",
-      "actual": "table mode does not print the help to stderr: error USAGE_ERROR: Required command was not provided.   hint: Run the command again with --help for usage; 'aspose-cli --help' lists the commands and 'aspose-cl...; the error has no details.avai..."
-    },
-    {
-      "case": "C-R03 | pdf without a subcommand",
-      "invariant": "C-R03",
-      "rule": "C-R03",
-      "cause": "group-command-without-subcommand-prints-no-help",
-      "actual": "table mode does not print the help to stderr: error USAGE_ERROR: Required command was not provided.   hint: Run the command again with --help for usage; 'aspose-cli --help' lists the commands and 'aspose-cl...; the error has no details.avai..."
-    },
-    {
-      "case": "C-R03 | preview without a subcommand",
-      "invariant": "C-R03",
-      "rule": "C-R03",
-      "cause": "group-command-without-subcommand-prints-no-help",
-      "actual": "table mode does not print the help to stderr: error USAGE_ERROR: Required command was not provided.   hint: Run the command again with --help for usage; 'aspose-cli --help' lists the commands and 'aspose-cl...; the error has no details.avai..."
-    },
-    {
-      "case": "C-R03 | skill without a subcommand",
-      "invariant": "C-R03",
-      "rule": "C-R03",
-      "cause": "group-command-without-subcommand-prints-no-help",
-      "actual": "table mode does not print the help to stderr: error USAGE_ERROR: Required command was not provided.   hint: Run the command again with --help for usage; 'aspose-cli --help' lists the commands and 'aspose-cl...; the error has no details.avai..."
-    },
-    {
-      "case": "C-R03 | slides query without a subcommand",
-      "invariant": "C-R03",
-      "rule": "C-R03",
-      "cause": "group-command-without-subcommand-prints-no-help",
-      "actual": "table mode does not print the help to stderr: error USAGE_ERROR: Required command was not provided.   hint: Run the command again with --help for usage; 'aspose-cli --help' lists the commands and 'aspose-cl...; the error has no details.avai..."
-    },
-    {
-      "case": "C-R03 | slides without a subcommand",
-      "invariant": "C-R03",
-      "rule": "C-R03",
-      "cause": "group-command-without-subcommand-prints-no-help",
-      "actual": "table mode does not print the help to stderr: error USAGE_ERROR: Required command was not provided.   hint: Run the command again with --help for usage; 'aspose-cli --help' lists the commands and 'aspose-cl...; the error has no details.avai..."
-    },
-    {
-      "case": "C-R03 | update without a subcommand",
-      "invariant": "C-R03",
-      "rule": "C-R03",
-      "cause": "group-command-without-subcommand-prints-no-help",
-      "actual": "table mode does not print the help to stderr: error USAGE_ERROR: Required command was not provided.   hint: Run the command again with --help for usage; 'aspose-cli --help' lists the commands and 'aspose-cl...; the error has no details.avai..."
-    },
-    {
-      "case": "C-R03 | words query without a subcommand",
-      "invariant": "C-R03",
-      "rule": "C-R03",
-      "cause": "group-command-without-subcommand-prints-no-help",
-      "actual": "table mode does not print the help to stderr: error USAGE_ERROR: Required command was not provided.   hint: Run the command again with --help for usage; 'aspose-cli --help' lists the commands and 'aspose-cl...; the error has no details.avai..."
-    },
-    {
-      "case": "C-R03 | words without a subcommand",
-      "invariant": "C-R03",
-      "rule": "C-R03",
-      "cause": "group-command-without-subcommand-prints-no-help",
-      "actual": "table mode does not print the help to stderr: error USAGE_ERROR: Required command was not provided.   hint: Run the command again with --help for usage; 'aspose-cli --help' lists the commands and 'aspose-cl...; the error has no details.avai..."
     },
     {
       "case": "C-R34 | app open",
@@ -1665,34 +1494,6 @@
       "actual": "cells convert: Usage leaves out the required --to; cells query search: Usage leaves out the required --pattern; pdf convert: Usage leaves out the required --to; pdf extract: Usage leaves out the required --what; pdf merge: Usage leaves out ..."
     },
     {
-      "case": "C-R25 | cells input over budget error details",
-      "invariant": "C-R25",
-      "rule": "C-R25",
-      "cause": "input-budget-uses-observed-and-byte-keys",
-      "actual": "FILE_TOO_LARGE details.observed is not in the details dictionary; FILE_TOO_LARGE details.sizeBytes is not in the details dictionary; FILE_TOO_LARGE details.limitBytes is not in the details dictionary"
-    },
-    {
-      "case": "C-R25 | pdf input over budget error details",
-      "invariant": "C-R25",
-      "rule": "C-R25",
-      "cause": "input-budget-uses-observed-and-byte-keys",
-      "actual": "FILE_TOO_LARGE details.observed is not in the details dictionary; FILE_TOO_LARGE details.sizeBytes is not in the details dictionary; FILE_TOO_LARGE details.limitBytes is not in the details dictionary"
-    },
-    {
-      "case": "C-R25 | slides input over budget error details",
-      "invariant": "C-R25",
-      "rule": "C-R25",
-      "cause": "input-budget-uses-observed-and-byte-keys",
-      "actual": "FILE_TOO_LARGE details.observed is not in the details dictionary; FILE_TOO_LARGE details.sizeBytes is not in the details dictionary; FILE_TOO_LARGE details.limitBytes is not in the details dictionary"
-    },
-    {
-      "case": "C-R25 | words input over budget error details",
-      "invariant": "C-R25",
-      "rule": "C-R25",
-      "cause": "input-budget-uses-observed-and-byte-keys",
-      "actual": "FILE_TOO_LARGE details.observed is not in the details dictionary; FILE_TOO_LARGE details.sizeBytes is not in the details dictionary; FILE_TOO_LARGE details.limitBytes is not in the details dictionary"
-    },
-    {
       "case": "C-R08 | cells inspect",
       "invariant": "C-R08",
       "rule": "C-R08",
@@ -1775,20 +1576,6 @@
       "rule": "C-R20",
       "cause": "measure-names-without-unit",
       "actual": "zoom: measured in percent; name it *Percent"
-    },
-    {
-      "case": "C-R26 | cells query range --sheet Sheet1 as Sehet1",
-      "invariant": "C-R26",
-      "rule": "C-R26",
-      "cause": "not-found-message-not-must-be-one-of",
-      "actual": "the message does not say 'Must be one of: ...': No sheet 'Sehet1' was found."
-    },
-    {
-      "case": "C-R30 | v2/common/operation-outcome error",
-      "invariant": "C-R30",
-      "rule": "C-R30",
-      "cause": "op-error-not-error-envelope",
-      "actual": "applied[].error defines its own error object instead of referencing v2/common/error; applied[].error requires hint, which the error envelope leaves optional"
     },
     {
       "case": "C-R19 | v2/pdf/ops#decrypt",
@@ -2085,62 +1872,6 @@
       "actual": "USAGE_ERROR: --out '-' has no extension, which names the format aspose-cli words render writes; use .png, .jpg, .jpeg, .svg., expected OPTION_INVALID; error.hint is \"Give --out one of these extensions.\", expected it to contain \"name a file\""
     },
     {
-      "case": "C-R25 | cells unknown created extension error details",
-      "invariant": "C-R25",
-      "rule": "C-R25",
-      "cause": "output-extension-details-off-the-dictionary",
-      "actual": "USAGE_ERROR details.supported is not in the details dictionary; USAGE_ERROR details.requested is null; USAGE_ERROR details.option 'file' names an argument; details.argument names one"
-    },
-    {
-      "case": "C-R25 | cells unknown output extension error details",
-      "invariant": "C-R25",
-      "rule": "C-R25",
-      "cause": "output-extension-details-off-the-dictionary",
-      "actual": "USAGE_ERROR details.supported is not in the details dictionary; USAGE_ERROR details.requested is null"
-    },
-    {
-      "case": "C-R25 | pdf unknown created extension error details",
-      "invariant": "C-R25",
-      "rule": "C-R25",
-      "cause": "output-extension-details-off-the-dictionary",
-      "actual": "USAGE_ERROR details.supported is not in the details dictionary; USAGE_ERROR details.requested is null; USAGE_ERROR details.option 'file' names an argument; details.argument names one"
-    },
-    {
-      "case": "C-R25 | pdf unknown output extension error details",
-      "invariant": "C-R25",
-      "rule": "C-R25",
-      "cause": "output-extension-details-off-the-dictionary",
-      "actual": "USAGE_ERROR details.supported is not in the details dictionary; USAGE_ERROR details.requested is null"
-    },
-    {
-      "case": "C-R25 | slides unknown created extension error details",
-      "invariant": "C-R25",
-      "rule": "C-R25",
-      "cause": "output-extension-details-off-the-dictionary",
-      "actual": "USAGE_ERROR details.supported is not in the details dictionary; USAGE_ERROR details.requested is null; USAGE_ERROR details.option 'file' names an argument; details.argument names one"
-    },
-    {
-      "case": "C-R25 | slides unknown output extension error details",
-      "invariant": "C-R25",
-      "rule": "C-R25",
-      "cause": "output-extension-details-off-the-dictionary",
-      "actual": "USAGE_ERROR details.supported is not in the details dictionary; USAGE_ERROR details.requested is null"
-    },
-    {
-      "case": "C-R25 | words unknown created extension error details",
-      "invariant": "C-R25",
-      "rule": "C-R25",
-      "cause": "output-extension-details-off-the-dictionary",
-      "actual": "USAGE_ERROR details.supported is not in the details dictionary; USAGE_ERROR details.requested is null; USAGE_ERROR details.option 'file' names an argument; details.argument names one"
-    },
-    {
-      "case": "C-R25 | words unknown output extension error details",
-      "invariant": "C-R25",
-      "rule": "C-R25",
-      "cause": "output-extension-details-off-the-dictionary",
-      "actual": "USAGE_ERROR details.supported is not in the details dictionary; USAGE_ERROR details.requested is null"
-    },
-    {
       "case": "C-R31 | v2/cells/render-result outputs",
       "invariant": "C-R31",
       "rule": "C-R31",
@@ -2286,97 +2017,6 @@
       "rule": "C-R21",
       "cause": "page-size-read-as-width-and-height-points",
       "actual": "setup.size \"letter\" does not read back as widthPoints in words inspect"
-    },
-    {
-      "case": "C-R26 | cells inspect --detail charts as cahrts",
-      "invariant": "C-R26",
-      "rule": "C-R26",
-      "cause": "parser-enum-message-multiline",
-      "actual": "the message has 9 lines: Argument 'cahrts' not recognized. Must be one of: \t'names' \t'errors' \t'fonts' \t'tables' \t'charts' \t'pivots' \t'validation' \t'layout'; the message does not say 'Must be one of: ...': Argument 'cahrts' not recognized. ..."
-    },
-    {
-      "case": "C-R26 | pdf inspect --detail attachments as attachmentss",
-      "invariant": "C-R26",
-      "rule": "C-R26",
-      "cause": "parser-enum-message-multiline",
-      "actual": "the message has 9 lines: Argument 'attachmentss' not recognized. Must be one of: \t'outline' \t'forms' \t'attachments' \t'fonts' \t'permissions' \t'signatures' \t'layers' \t'metadata'; the message does not say 'Must be one of: ...': Argument 'attac..."
-    },
-    {
-      "case": "C-R26 | slides inspect --detail comments as cmoments",
-      "invariant": "C-R26",
-      "rule": "C-R26",
-      "cause": "parser-enum-message-multiline",
-      "actual": "the message has 9 lines: Argument 'cmoments' not recognized. Must be one of: \t'masters' \t'layouts' \t'media' \t'fonts' \t'notes' \t'comments' \t'sections' \t'properties'; the message does not say 'Must be one of: ...': Argument 'cmoments' not rec..."
-    },
-    {
-      "case": "C-R26 | words inspect --detail bookmarks as bookmarkss",
-      "invariant": "C-R26",
-      "rule": "C-R26",
-      "cause": "parser-enum-message-multiline",
-      "actual": "the message has 12 lines: Argument 'bookmarkss' not recognized. Must be one of: \t'outline' \t'sections' \t'styles' \t'fields' \t'bookmarks' \t'comments' \t'revisions' \t'images' \t'tables' \t'pro...; the message does not say 'Must be one of: ...': A..."
-    },
-    {
-      "case": "C-R26 | cells command compare as cmopare",
-      "invariant": "C-R26",
-      "rule": "C-R26",
-      "cause": "parser-mistake-message-not-must-be-one-of",
-      "actual": "the message does not say 'Must be one of: ...': 'cmopare' is not a command of 'aspose-cli cells'; its commands: inspect, query, create, edit, compare, convert, render."
-    },
-    {
-      "case": "C-R26 | cells inspect option --detail as --dteail",
-      "invariant": "C-R26",
-      "rule": "C-R26",
-      "cause": "parser-mistake-message-not-must-be-one-of",
-      "actual": "the message does not say 'Must be one of: ...': Unrecognized command or argument '--dteail'."
-    },
-    {
-      "case": "C-R26 | command cells as cellss",
-      "invariant": "C-R26",
-      "rule": "C-R26",
-      "cause": "parser-mistake-message-not-must-be-one-of",
-      "actual": "the message does not say 'Must be one of: ...': 'cellss' is not a command of 'aspose-cli'; its commands: app, preview, review, cells, pdf, slides, words, license, capabilities, doctor, skill, schema, docs, fo..."
-    },
-    {
-      "case": "C-R26 | pdf command convert as cnovert",
-      "invariant": "C-R26",
-      "rule": "C-R26",
-      "cause": "parser-mistake-message-not-must-be-one-of",
-      "actual": "the message does not say 'Must be one of: ...': 'cnovert' is not a command of 'aspose-cli pdf'; its commands: inspect, query, convert, render, create, merge, split, extract, edit, validate, sign."
-    },
-    {
-      "case": "C-R26 | pdf inspect option --detail as --dteail",
-      "invariant": "C-R26",
-      "rule": "C-R26",
-      "cause": "parser-mistake-message-not-must-be-one-of",
-      "actual": "the message does not say 'Must be one of: ...': Unrecognized command or argument '--dteail'."
-    },
-    {
-      "case": "C-R26 | slides command convert as cnovert",
-      "invariant": "C-R26",
-      "rule": "C-R26",
-      "cause": "parser-mistake-message-not-must-be-one-of",
-      "actual": "the message does not say 'Must be one of: ...': 'cnovert' is not a command of 'aspose-cli slides'; its commands: inspect, query, convert, render, create, edit, extract."
-    },
-    {
-      "case": "C-R26 | slides inspect option --detail as --dteail",
-      "invariant": "C-R26",
-      "rule": "C-R26",
-      "cause": "parser-mistake-message-not-must-be-one-of",
-      "actual": "the message does not say 'Must be one of: ...': Unrecognized command or argument '--dteail'."
-    },
-    {
-      "case": "C-R26 | words command compare as cmopare",
-      "invariant": "C-R26",
-      "rule": "C-R26",
-      "cause": "parser-mistake-message-not-must-be-one-of",
-      "actual": "the message does not say 'Must be one of: ...': 'cmopare' is not a command of 'aspose-cli words'; its commands: inspect, query, convert, render, create, edit, compare, split, extract."
-    },
-    {
-      "case": "C-R26 | words inspect option --detail as --dteail",
-      "invariant": "C-R26",
-      "rule": "C-R26",
-      "cause": "parser-mistake-message-not-must-be-one-of",
-      "actual": "the message does not say 'Must be one of: ...': Unrecognized command or argument '--dteail'."
     },
     {
       "case": "C-R12 | pdf extract declared",
@@ -2561,20 +2201,6 @@
       "actual": "PDF_ATTACHMENT_MISMATCH: a verification code carries no product prefix (PDF_); PDF_BOOKMARK_MISMATCH: a verification code carries no product prefix (PDF_); PDF_FIELD_NOT_FLATTENED: a verification code carries no product prefix (PDF_); PDF_F..."
     },
     {
-      "case": "C-R25 | platform unknown docs topic error details",
-      "invariant": "C-R25",
-      "rule": "C-R25",
-      "cause": "positional-arguments-reported-as-options",
-      "actual": "OPTION_INVALID details.option 'topic' names an argument; details.argument names one"
-    },
-    {
-      "case": "C-R25 | platform unknown schema id error details",
-      "invariant": "C-R25",
-      "rule": "C-R25",
-      "cause": "positional-arguments-reported-as-options",
-      "actual": "OPTION_INVALID details.option 'schema id' names an argument; details.argument names one"
-    },
-    {
       "case": "C-R01 | cells",
       "invariant": "C-R01",
       "rule": "C-R01",
@@ -2643,20 +2269,6 @@
       "rule": "C-R08",
       "cause": "render-all-option-not-selection-all",
       "actual": "cells render --all-sheets: a banned name; a selection takes the value all, such as --pages all."
-    },
-    {
-      "case": "C-R24 | unsupported format or content errors exit 6",
-      "invariant": "C-R24",
-      "rule": "C-R24",
-      "cause": "render-failed-exits-as-validation",
-      "actual": "RENDER_FAILED exits 4; unsupported format or content errors exit 6"
-    },
-    {
-      "case": "C-R25 | slides raster over budget error details",
-      "invariant": "C-R25",
-      "rule": "C-R25",
-      "cause": "render-too-large-uses-max-pixels-and-null-dpi",
-      "actual": "RENDER_TOO_LARGE details.maxPixels is not in the details dictionary; RENDER_TOO_LARGE details.dpi is null"
     },
     {
       "case": "C-R14 | review --out -",
@@ -2897,125 +2509,6 @@
       "actual": "col: abbreviated name"
     },
     {
-      "case": "C-R25 | cells invalid option value error details",
-      "invariant": "C-R25",
-      "rule": "C-R25",
-      "cause": "usage-errors-always-list-errors",
-      "actual": "USAGE_ERROR details.errors lists a single error"
-    },
-    {
-      "case": "C-R25 | cells missing argument error details",
-      "invariant": "C-R25",
-      "rule": "C-R25",
-      "cause": "usage-errors-always-list-errors",
-      "actual": "USAGE_ERROR details.errors lists a single error"
-    },
-    {
-      "case": "C-R25 | cells unknown command error details",
-      "invariant": "C-R25",
-      "rule": "C-R25",
-      "cause": "usage-errors-always-list-errors",
-      "actual": "USAGE_ERROR details.errors lists a single error"
-    },
-    {
-      "case": "C-R25 | cells unknown option error details",
-      "invariant": "C-R25",
-      "rule": "C-R25",
-      "cause": "usage-errors-always-list-errors",
-      "actual": "USAGE_ERROR details.errors lists a single error"
-    },
-    {
-      "case": "C-R25 | pdf invalid option value error details",
-      "invariant": "C-R25",
-      "rule": "C-R25",
-      "cause": "usage-errors-always-list-errors",
-      "actual": "USAGE_ERROR details.errors lists a single error"
-    },
-    {
-      "case": "C-R25 | pdf missing argument error details",
-      "invariant": "C-R25",
-      "rule": "C-R25",
-      "cause": "usage-errors-always-list-errors",
-      "actual": "USAGE_ERROR details.errors lists a single error"
-    },
-    {
-      "case": "C-R25 | pdf unknown command error details",
-      "invariant": "C-R25",
-      "rule": "C-R25",
-      "cause": "usage-errors-always-list-errors",
-      "actual": "USAGE_ERROR details.errors lists a single error"
-    },
-    {
-      "case": "C-R25 | pdf unknown option error details",
-      "invariant": "C-R25",
-      "rule": "C-R25",
-      "cause": "usage-errors-always-list-errors",
-      "actual": "USAGE_ERROR details.errors lists a single error"
-    },
-    {
-      "case": "C-R25 | platform unknown command error details",
-      "invariant": "C-R25",
-      "rule": "C-R25",
-      "cause": "usage-errors-always-list-errors",
-      "actual": "USAGE_ERROR details.errors lists a single error"
-    },
-    {
-      "case": "C-R25 | slides invalid option value error details",
-      "invariant": "C-R25",
-      "rule": "C-R25",
-      "cause": "usage-errors-always-list-errors",
-      "actual": "USAGE_ERROR details.errors lists a single error"
-    },
-    {
-      "case": "C-R25 | slides missing argument error details",
-      "invariant": "C-R25",
-      "rule": "C-R25",
-      "cause": "usage-errors-always-list-errors",
-      "actual": "USAGE_ERROR details.errors lists a single error"
-    },
-    {
-      "case": "C-R25 | slides unknown command error details",
-      "invariant": "C-R25",
-      "rule": "C-R25",
-      "cause": "usage-errors-always-list-errors",
-      "actual": "USAGE_ERROR details.errors lists a single error"
-    },
-    {
-      "case": "C-R25 | slides unknown option error details",
-      "invariant": "C-R25",
-      "rule": "C-R25",
-      "cause": "usage-errors-always-list-errors",
-      "actual": "USAGE_ERROR details.errors lists a single error"
-    },
-    {
-      "case": "C-R25 | words invalid option value error details",
-      "invariant": "C-R25",
-      "rule": "C-R25",
-      "cause": "usage-errors-always-list-errors",
-      "actual": "USAGE_ERROR details.errors lists a single error"
-    },
-    {
-      "case": "C-R25 | words missing argument error details",
-      "invariant": "C-R25",
-      "rule": "C-R25",
-      "cause": "usage-errors-always-list-errors",
-      "actual": "USAGE_ERROR details.errors lists a single error"
-    },
-    {
-      "case": "C-R25 | words unknown command error details",
-      "invariant": "C-R25",
-      "rule": "C-R25",
-      "cause": "usage-errors-always-list-errors",
-      "actual": "USAGE_ERROR details.errors lists a single error"
-    },
-    {
-      "case": "C-R25 | words unknown option error details",
-      "invariant": "C-R25",
-      "rule": "C-R25",
-      "cause": "usage-errors-always-list-errors",
-      "actual": "USAGE_ERROR details.errors lists a single error"
-    },
-    {
       "case": "C-R20 | v2/cells/ops#add_sparkline variants",
       "invariant": "C-R20",
       "rule": "C-R20",
@@ -3049,13 +2542,6 @@
       "rule": "C-R20",
       "cause": "variant-field-named-type",
       "actual": "chartInfo.type: a variant named type, not kind; validationInfo.type: a variant named type, not kind"
-    },
-    {
-      "case": "C-R20 | v2/common/font-list variants",
-      "invariant": "C-R20",
-      "rule": "C-R20",
-      "cause": "variant-field-named-type",
-      "actual": "fontSource.type: a variant named type, not kind"
     },
     {
       "case": "C-R20 | v2/pdf/form-result variants",

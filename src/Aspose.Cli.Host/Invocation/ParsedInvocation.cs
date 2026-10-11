@@ -35,23 +35,50 @@ internal sealed class ParsedInvocation
     public CommandExecutionOwnership Execution { get; }
     public bool McpAllowed { get; }
 
+    /// <summary>
+    /// Whether the command only groups other commands and was given none of them, such as
+    /// <c>aspose-cli cells</c>: it does nothing on its own, so its help is the answer.
+    /// </summary>
+    internal bool LacksCommand =>
+        ParseResult.Errors.Count > 0
+        && ParseResult.Errors.All(static error => error.SymbolResult is CommandResult)
+        && Command.Action is null
+        && VisibleCommands().Length > 0
+        && ParseResult.UnmatchedTokens.Count == 0
+        && !OptionLikeArguments().Any();
+
     internal void EnsureValid()
     {
-        if (UnknownCommand() is { } unknown)
+        if (LacksCommand)
+        {
+            throw CliErrors.CommandRequired(
+                string.Join(' ', [DistributionInfo.CommandName, .. CommandPath.Select(static command => command.Name)]),
+                [.. VisibleCommands().Select(Below)]);
+        }
+
+        if ((UnknownCommand() ?? HelpOrVersionWord()) is { } unknown)
         {
             throw CliErrors.Usage([unknown.Problem], unknown.Mistake);
         }
 
+        (ParseError Error, string Problem, Mistake Mistake)? value = UnknownValue();
         string[] problems =
         [
-            .. ParseResult.Errors.Select(static error => error.Message),
+            .. ParseResult.Errors.Select(error => value is { } refused && refused.Error == error ? refused.Problem : error.Message),
             .. OptionLikeArguments().Select(static token => $"Unrecognized command or argument '{token}'."),
         ];
         if (problems.Length > 0)
         {
-            throw CliErrors.Usage(problems, UnknownOption() ?? UnknownValue());
+            throw CliErrors.Usage(problems, UnknownOption() ?? value?.Mistake);
         }
     }
+
+    /// <summary>The names of the commands the command groups, as help lists them.</summary>
+    private string[] VisibleCommands() =>
+        [.. Command.Subcommands.Where(static command => !command.Hidden).Select(static command => command.Name)];
+
+    /// <summary>A command of this one by its path below the root, such as <c>cells inspect</c>.</summary>
+    private string Below(string name) => string.Join(' ', [.. CommandPath.Select(static command => command.Name), name]);
 
     /// <summary>
     /// The tokens starting with <c>--</c> that the command's arguments took, such as a mistyped
@@ -69,22 +96,47 @@ internal sealed class ParsedInvocation
     /// <summary>
     /// A command that only groups other commands, given a first token that names none of them:
     /// the token is a mistyped command, so the tokens after it are not reported on their own and
-    /// the closest commands are suggested by their full path, as unknown options are.
+    /// the closest commands are suggested by their full path, as unknown options are. Help and
+    /// the version are options, not commands, so <c>help</c> and <c>version</c> suggest
+    /// <c>--help</c> and <c>--version</c>.
     /// </summary>
     private (string Problem, Mistake Mistake)? UnknownCommand()
     {
-        string[] commands = [.. Command.Subcommands.Where(static command => !command.Hidden).Select(static command => command.Name)];
+        string[] commands = VisibleCommands();
         if (commands.Length == 0
             || ParseResult.UnmatchedTokens.FirstOrDefault() is not { } token || token.StartsWith('-'))
         {
             return null;
         }
 
-        string[] path = [.. CommandPath.Select(static command => command.Name)];
-        string parent = string.Join(' ', [DistributionInfo.CommandName, .. path]);
+        string parent = string.Join(' ', [DistributionInfo.CommandName, .. CommandPath.Select(static command => command.Name)]);
+        string? meant = token switch
+        {
+            "help" => Below("--help"),
+            "version" when CommandPath.Count == 0 => "--version",
+            _ => null,
+        };
         return (
-            $"'{token}' is not a command of '{parent}'; its commands: {string.Join(", ", commands)}.",
-            Mistake.Of(token, commands.Select(name => string.Join(' ', [.. path, name])), keyOf: static name => name[(name.LastIndexOf(' ') + 1)..]));
+            $"'{token}' is not a command of '{parent}'.",
+            Mistake.Of(token, commands.Select(Below), meant, keyOf: static name => name[(name.LastIndexOf(' ') + 1)..]));
+    }
+
+    /// <summary>
+    /// A <c>help</c> or <c>version</c> the parser left over beside the command it found, typed
+    /// before or after the command's name: help and the version are options, so the command's <c>--help</c>
+    /// or <c>--version</c> is suggested, and the problems the stray word caused, such as a missing
+    /// argument, are not reported on their own.
+    /// </summary>
+    private (string Problem, Mistake Mistake)? HelpOrVersionWord()
+    {
+        if (ParseResult.UnmatchedTokens.FirstOrDefault(static token => token is "help" or "version") is not { } token)
+        {
+            return null;
+        }
+
+        string parent = string.Join(' ', [DistributionInfo.CommandName, .. CommandPath.Select(static command => command.Name)]);
+        string meant = token == "help" ? Below("--help") : "--version";
+        return ($"'{token}' is not a command of '{parent}'.", Mistake.Of(token, [meant], meant));
     }
 
     /// <summary>
@@ -110,23 +162,28 @@ internal sealed class ParsedInvocation
 
     /// <summary>
     /// The first value the parser refused that its option or argument declares a list of values
-    /// for, such as a mistyped <c>--detail</c>; null when no refused value has such a list.
+    /// for, such as a mistyped <c>--detail</c>: the error, the one-line problem that replaces the
+    /// parser's message, which lists the values on lines of their own, and the mistake; null when
+    /// no refused value has such a list.
     /// </summary>
-    private Mistake? UnknownValue()
+    private (ParseError Error, string Problem, Mistake Mistake)? UnknownValue()
     {
         foreach (ParseError error in ParseResult.Errors)
         {
-            (Option? option, IReadOnlyList<string> allowed, IReadOnlyList<Token> tokens) = error.SymbolResult switch
+            (Option? option, string name, IReadOnlyList<string> allowed, IReadOnlyList<Token> tokens) = error.SymbolResult switch
             {
-                OptionResult result => (result.Option, OptionCompletions.Read(result.Option), result.Tokens),
-                ArgumentResult { Parent: OptionResult result } argument => (result.Option, OptionCompletions.Read(result.Option), argument.Tokens),
-                ArgumentResult argument => (null, OptionCompletions.Read(argument.Argument), argument.Tokens),
-                _ => (null, [], []),
+                OptionResult result => (result.Option, result.Option.Name, OptionCompletions.Read(result.Option), result.Tokens),
+                ArgumentResult { Parent: OptionResult result } argument => (result.Option, result.Option.Name, OptionCompletions.Read(result.Option), argument.Tokens),
+                ArgumentResult argument => (null, $"<{argument.Argument.Name}>", OptionCompletions.Read(argument.Argument), argument.Tokens),
+                _ => (null, string.Empty, [], []),
             };
             if (allowed.Count > 0
                 && tokens.Select(static token => token.Value).LastOrDefault(value => !allowed.Contains(value, StringComparer.Ordinal)) is { } value)
             {
-                return Mistake.Of(value, allowed, meant: option?.Name == GlobalOptionNames.OutputFormat ? TargetFormat(value) : null);
+                return (
+                    error,
+                    $"'{value}' is not a value of {name}.",
+                    Mistake.Of(value, allowed, meant: option?.Name == GlobalOptionNames.OutputFormat ? TargetFormat(value) : null));
             }
         }
 
@@ -158,6 +215,14 @@ internal sealed class InvocationParser(RootCommand root, GlobalOptions globals)
 
     internal (OutputMode OutputFormat, bool Quiet) ResolveErrorOutput(IReadOnlyList<string> args) =>
         globals.ResolveForErrorReporting(root.Parse(args, Configuration));
+
+    /// <summary>Writes the help of the command <paramref name="args"/> name to <paramref name="output"/>, as <c>--help</c> prints it.</summary>
+    internal void WriteHelp(IReadOnlyList<string> args, TextWriter output) =>
+        root.Parse([.. args, "--help"], Configuration).Invoke(new InvocationConfiguration
+        {
+            Output = output,
+            EnableDefaultExceptionHandler = false,
+        });
 
     /// <summary>The host commands MCP <c>execute</c> may run, as command paths in tree order.</summary>
     internal IReadOnlyList<string> McpHostCommands()

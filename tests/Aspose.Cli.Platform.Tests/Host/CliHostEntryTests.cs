@@ -15,7 +15,7 @@ public sealed class CliHostEntryTests
     public void InteractiveDesktopWithoutArguments_OpensApp()
     {
         Assert.Equal(
-            ["app"],
+            ["app", "open"],
             Normalize([], interactiveDesktop: true));
     }
 

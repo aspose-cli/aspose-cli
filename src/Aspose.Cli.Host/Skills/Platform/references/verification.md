@@ -75,7 +75,8 @@ and pagination.
 aspose-cli fonts check <file> --output-format json
 ```
 
-`fonts check` reports `allAvailable` and, for each font the document uses,
+`fonts check` exits 8 when a font is not available here. It reports
+`allAvailable` and, for each font the document uses,
 `available` and, when a substitute is known, `substitutedBy`: the font the
 engine draws instead. It answers
 whether the declared font names are installed here, not whether every glyph
@@ -87,8 +88,8 @@ Fonts delivered beside the document reach the engine only through
 `--font-dir <dir>`, which adds to the system fonts and can repeat. Pass the
 same directories to `fonts check`, `review` and every command whose output
 depends on layout; `capabilities` shows which commands accept `--font-dir`.
-`aspose-cli fonts list --product <product>` shows an engine's font sources and
-default fallback font.
+`aspose-cli fonts list` shows each engine's font sources and default fallback
+font; `--product <product>` narrows it to one.
 
 ## Honest limits
 

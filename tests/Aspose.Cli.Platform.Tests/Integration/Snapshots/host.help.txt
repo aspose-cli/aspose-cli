@@ -36,7 +36,7 @@ Commands:
   update                            Check or install a CLI release; no background checks are performed.
 
 Examples:
-  aspose-cli app
+  aspose-cli app open
   aspose-cli capabilities --output-format json
   aspose-cli review <file> --max-items 50
   aspose-cli schema
@@ -59,10 +59,6 @@ Usage:
   aspose-cli app [command] [options]
 
 Options:
-  --foreground                                   Keep the App in this process for debugging, containers and tests.
-  --port <port>                                  Loopback port; 0 chooses a free port. [default: 0]
-  --no-open                                      Start or activate the App without opening a browser.
-  --welcome                                      Open the first-run workspace guide.
   -h, --help                                     Show help and usage information
   --output-format <compact|json|markdown|table>  Output format: json (contract envelopes), compact (the same JSON on one line), table (human text) or markdown. Default: table on a terminal, json when redirected.
   -q, --quiet                                    Suppress warnings and notices on stderr (errors still print).
@@ -74,15 +70,15 @@ Options:
   --max-input-bytes <max-input-bytes>            Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
 
 Commands:
-  open <file>  Open a file in the local App.
+  open <file>  Start or activate the local App and open a file, its home page or its guide.
   status       Show whether the local App is running.
   stop         Stop the local App, its documents and the viewer service.
 
 Examples:
-  aspose-cli app
+  aspose-cli app open
   aspose-cli app open <file>
-  aspose-cli app --welcome
-  aspose-cli app --foreground --port 4680
+  aspose-cli app open --welcome
+  aspose-cli app open --foreground --port 4680
   aspose-cli app status --output-format json
 
 Learn more:
@@ -91,15 +87,16 @@ Learn more:
 
 ## aspose-cli app open --help
 Description:
-  Open a file in the local App.
+  Start or activate the local App and open a file, its home page or its guide.
 
 Usage:
   aspose-cli app open [<file>] [options]
 
 Arguments:
-  <file>  File to open in the local App.
+  <file>  File to open in the local App; without one the App opens on its home page.
 
 Options:
+  --welcome                                      Open the first-run workspace guide instead of a file.
   --foreground                                   Keep the App in this process for debugging, containers and tests.
   --port <port>                                  Loopback port; 0 chooses a free port. [default: 0]
   --no-open                                      Start or activate the App without opening a browser.
@@ -247,7 +244,7 @@ Options:
   --max-input-bytes <max-input-bytes>            Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
 
 Commands:
-  list          List the engine's font sources and its default fallback font.
+  list          List each engine's font sources and its default fallback font.
   check <file>  Check whether a document's fonts are available here, and what they substitute to.
 
 Examples:
@@ -282,13 +279,13 @@ Options:
 
 ## aspose-cli fonts list --help
 Description:
-  List the engine's font sources and its default fallback font.
+  List each engine's font sources and its default fallback font.
 
 Usage:
   aspose-cli fonts list [options]
 
 Options:
-  --product <cells|pdf|slides|words>             Product font engine to inspect. [default: cells]
+  --product <cells|pdf|slides|words>             Product whose font engine to list; every product's when omitted.
   -h, --help                                     Show help and usage information
   --output-format <compact|json|markdown|table>  Output format: json (contract envelopes), compact (the same JSON on one line), table (human text) or markdown. Default: table on a terminal, json when redirected.
   -q, --quiet                                    Suppress warnings and notices on stderr (errors still print).

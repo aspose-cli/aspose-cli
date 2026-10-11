@@ -37,17 +37,33 @@ public sealed class CliException : Exception
     {
         ArgumentNullException.ThrowIfNull(code);
         if (code.DetailsSchemaId == NotFoundDetails.CatalogId
-            && (details?["subject"] is null || details["requested"] is null || details["availableCount"] is null))
+            && (details?["subject"] is null || details["requested"] is null))
         {
             throw new ArgumentException(
-                $"Error code '{code.Name}' is a not-found code; build it with CliErrors.NotFound or CliErrors.NotFoundAt.",
+                $"Error code '{code.Name}' is a not-found code; build it with a not-found factory of CliErrors, such as CliErrors.NotFound.",
                 nameof(details));
         }
 
         Code = code;
         Hint = hint;
-        Details = details;
+        Details = WithoutNulls(details);
         Docs = docs;
+    }
+
+    /// <summary>The details without their null members: a fact that does not apply is left out, never stated as null.</summary>
+    private static JsonObject? WithoutNulls(JsonObject? details)
+    {
+        if (details is null)
+        {
+            return null;
+        }
+
+        foreach (string key in details.Where(static member => member.Value is null).Select(static member => member.Key).ToArray())
+        {
+            details.Remove(key);
+        }
+
+        return details;
     }
 
     /// <summary>Creates an error with any code; the SDK's factories build shared codes with it.</summary>
