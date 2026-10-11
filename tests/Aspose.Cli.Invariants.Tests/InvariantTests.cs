@@ -75,7 +75,7 @@ public sealed class WordsInvariantTests
 /// <summary>The contract rules that the catalog, help and schemas answer without running a command.</summary>
 public sealed class ContractInvariantTests
 {
-    [Theory(SkipTestWithoutData = true)]
+    [Theory]
     [MemberData(nameof(InvariantCases.Sample), InvariantCases.Contract, MemberType = typeof(InvariantCases))]
     public void Holds(string id) => KnownViolations.Verify(id);
 
@@ -210,13 +210,23 @@ public sealed partial class KnownViolationsTests
             listed);
     }
 
+    [Fact]
+    public void EveryNumberedContractRuleHasCases()
+    {
+        string[] numbered = [.. Enumerable.Range(1, 38).Select(static number => $"C-R{number:00}")];
+        Assert.Equal(numbered, ContractRules.All.Select(static rule => rule.Id));
+        HashSet<string> checkedRules = [.. InvariantCases.All.Values.Select(static item => InvariantCases.RuleOf(item.Invariant))];
+        string[] missing = [.. numbered.Where(rule => !checkedRules.Contains(rule))];
+        Assert.True(missing.Length == 0, $"No invariant case checks {string.Join(", ", missing)}.");
+    }
+
     [GeneratedRegex("^[a-z0-9]+(-[a-z0-9]+)*$")]
     private static partial Regex CausePattern();
 
     [Fact]
     public void EveryShardHasCases()
     {
-        string[] shards = [InvariantCases.Platform, .. ScenarioFixtures.Products, .. ScenarioFixtures.Products.Select(static product => product + "-formats")];
+        string[] shards = [InvariantCases.Platform, InvariantCases.Contract, .. ScenarioFixtures.Products, .. ScenarioFixtures.Products.Select(static product => product + "-formats")];
         foreach (string shard in shards)
         {
             Assert.NotEmpty(InvariantCases.Sample(shard));
