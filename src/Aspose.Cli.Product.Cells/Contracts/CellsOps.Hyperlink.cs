@@ -13,12 +13,15 @@ public sealed record SetHyperlinkOp : CellsOp
     [A1Cell] public required string Cell { get; init; }
 
     /// <summary>An external URL, such as https://example.com.</summary>
+    [NotReadBack]
     [WebLink] public string? Url { get; init; }
 
     /// <summary>An internal target, such as Summary!A1.</summary>
+    [NotReadBack]
     [A1Reference] public string? Target { get; init; }
 
     /// <summary>The text shown in the cell; the URL or target when omitted.</summary>
+    [NotReadBack]
     public string? Display { get; init; }
 }
 

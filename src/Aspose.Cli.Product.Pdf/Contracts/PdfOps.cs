@@ -12,7 +12,7 @@ public sealed record PdfOpsBatch : BoundedOperationEnvelope<PdfOp>;
 /// The operation document of <c>pdf edit --ops</c>. Page numbers and ranges are 1-based and
 /// resolve against the document as the earlier operations left it.
 /// </summary>
-[OperationVocabulary("ops", JsonContext = typeof(PdfOpsJsonContext))]
+[OperationVocabulary("ops", JsonContext = typeof(PdfOpsJsonContext), Addresses = new[] { "page", "pages", "at", "path", "passwordEnv" })]
 [JsonConverter(typeof(OperationJsonConverter<PdfOp>))]
 public abstract partial record PdfOp : BoundedOperation;
 
@@ -33,20 +33,28 @@ public sealed record PdfRectInput
 /// <summary>What a reader may do without the owner password; everything omitted is denied.</summary>
 public sealed record PdfPermissionsInput
 {
+    [ReadBack("pdf-info.schema.json#/$defs/pdfPermissionInfo/properties/print")]
     public bool Print { get; init; }
 
+    [ReadBack("pdf-info.schema.json#/$defs/pdfPermissionInfo/properties/copy")]
     public bool Copy { get; init; }
 
+    [ReadBack("pdf-info.schema.json#/$defs/pdfPermissionInfo/properties/modify")]
     public bool Modify { get; init; }
 
+    [ReadBack("pdf-info.schema.json#/$defs/pdfPermissionInfo/properties/annotate")]
     public bool Annotate { get; init; }
 
+    [ReadBack("pdf-info.schema.json#/$defs/pdfPermissionInfo/properties/fillForms")]
     public bool FillForms { get; init; }
 
+    [ReadBack("pdf-info.schema.json#/$defs/pdfPermissionInfo/properties/extractAccessibility")]
     public bool ExtractAccessibility { get; init; }
 
+    [ReadBack("pdf-info.schema.json#/$defs/pdfPermissionInfo/properties/assemble")]
     public bool Assemble { get; init; }
 
+    [ReadBack("pdf-info.schema.json#/$defs/pdfPermissionInfo/properties/printHighResolution")]
     public bool PrintHighResolution { get; init; }
 }
 
@@ -54,15 +62,19 @@ public sealed record PdfPermissionsInput
 public sealed record PdfPageLabelRange
 {
     /// <summary>The 1-based page where the range starts.</summary>
+    [ReadBack("pdf-info.schema.json#/$defs/pdfPageLabelInfo/properties/startPage")]
     [Minimum(1)] public required int StartPage { get; init; }
 
     [AllowedValues("arabic", "roman-upper", "roman-lower", "letters-upper", "letters-lower", "none")]
+    [ReadBack("pdf-info.schema.json#/$defs/pdfPageLabelInfo/properties/style")]
     public string Style { get; init; } = "arabic";
 
     /// <summary>Text placed before each label value.</summary>
+    [ReadBack("pdf-info.schema.json#/$defs/pdfPageLabelInfo/properties/prefix")]
     public string? Prefix { get; init; }
 
     /// <summary>The label value of the start page.</summary>
+    [ReadBack("pdf-info.schema.json#/$defs/pdfPageLabelInfo/properties/startingValue")]
     [Minimum(0)] public int StartingValue { get; init; } = 1;
 }
 
@@ -98,6 +110,7 @@ public sealed record RotatePagesOp : PdfOp
     [PageRange] public required string Pages { get; init; }
 
     /// <summary>The rotation in degrees, clockwise; 0 sets a page upright.</summary>
+    [ReadBack("pdf-info.schema.json#/$defs/pdfPageInfo/properties/rotation")]
     [AllowedValues(0, 90, 180, 270)] public required int Angle { get; init; }
 }
 
@@ -115,6 +128,7 @@ public sealed record MovePagesOp : PdfOp
     [PageRange] public required string Pages { get; init; }
 
     /// <summary>The 1-based position, counted before the move, at most the page count plus one.</summary>
+    [NotState]
     [Minimum(1)] public required int To { get; init; }
 }
 
@@ -142,6 +156,7 @@ public sealed record InsertBlankPageOp : PdfOp
     /// <summary>The 1-based position of the new page, at most the page count plus one.</summary>
     [Minimum(1)] public required int At { get; init; }
 
+    [ReadBack("pdf-info.schema.json#/$defs/pdfPageInfo/properties/widthPoints")]
     [PdfPageSize] public string Size { get; init; } = "A4";
 }
 
@@ -152,8 +167,10 @@ public sealed record CropPagesOp : PdfOp
     [PageRange] public required string Pages { get; init; }
 
     /// <summary>The page box to set: the visible crop box or the physical media box.</summary>
+    [NotState]
     [AllowedValues("media", "crop")] public string Box { get; init; } = "crop";
 
+    [ReadBack("pdf-info.schema.json#/$defs/pdfPageInfo/properties/cropBox")]
     public required PdfRectInput Rect { get; init; }
 }
 
@@ -163,9 +180,11 @@ public sealed record SetPageSizeOp : PdfOp
 {
     [PageRange] public required string Pages { get; init; }
 
+    [ReadBack("pdf-info.schema.json#/$defs/pdfPageInfo/properties/widthPoints")]
     [PdfPageSize] public required string Size { get; init; }
 
     /// <summary>Whether the content is scaled to the new size rather than kept at its position.</summary>
+    [NotState]
     public bool ScaleContent { get; init; }
 }
 
@@ -176,21 +195,28 @@ public sealed record AddWatermarkTextOp : PdfOp
     /// <summary>The pages to stamp; every page when omitted.</summary>
     [PageRange] public string? Pages { get; init; }
 
+    [NotReadBack]
     [MinLength(1)] public required string Text { get; init; }
 
     /// <summary>An installed font name; the default font when omitted.</summary>
+    [NotReadBack]
     public string? Font { get; init; }
 
     /// <summary>The font size in points.</summary>
+    [NotReadBack]
     [ExclusiveMinimum(0)] public double Size { get; init; } = 48;
 
+    [NotReadBack]
     [HexColor] public string Color { get; init; } = "#808080";
 
+    [NotReadBack]
     [Minimum(0), Maximum(1)] public double Opacity { get; init; } = 0.35;
 
     /// <summary>The angle in degrees, counterclockwise.</summary>
+    [NotReadBack]
     public double Rotation { get; init; } = 45;
 
+    [NotReadBack]
     [AllowedValues(typeof(PdfLayers))] public string Layer { get; init; } = PdfLayers.Over;
 }
 
@@ -204,11 +230,14 @@ public sealed record AddWatermarkImageOp : PdfOp
     /// <summary>The image, relative to the working directory; an SVG must not reference network resources.</summary>
     [InputPath] public required string Path { get; init; }
 
+    [NotReadBack]
     [Minimum(0), Maximum(1)] public double Opacity { get; init; } = 0.35;
 
     /// <summary>The zoom factor applied to the image.</summary>
+    [NotReadBack]
     [ExclusiveMinimum(0)] public double Scale { get; init; } = 0.5;
 
+    [NotReadBack]
     [AllowedValues(typeof(PdfLayers))] public string Layer { get; init; } = PdfLayers.Over;
 }
 
@@ -220,14 +249,18 @@ public sealed record AddPageNumbersOp : PdfOp
     [PageRange] public string? Pages { get; init; }
 
     /// <summary>The text; {n} is the number, counted over the selected pages from start, and {N} the document's page count.</summary>
+    [NotReadBack]
     public string Format { get; init; } = "Page {n} of {N}";
 
+    [NotReadBack]
     [AllowedValues(typeof(PdfPositions))] public string Position { get; init; } = PdfPositions.BottomCenter;
 
     /// <summary>The number of the first selected page.</summary>
+    [NotReadBack]
     [Minimum(0)] public int Start { get; init; } = 1;
 
     /// <summary>An installed font name; the default font when omitted.</summary>
+    [NotReadBack]
     public string? Font { get; init; }
 }
 
@@ -238,11 +271,14 @@ public sealed record AddHeaderTextOp : PdfOp
     /// <summary>The pages to stamp; every page when omitted.</summary>
     [PageRange] public string? Pages { get; init; }
 
+    [NotReadBack]
     [MinLength(1)] public required string Text { get; init; }
 
+    [NotReadBack]
     [AllowedValues(typeof(PdfPositions))] public string Position { get; init; } = PdfPositions.TopCenter;
 
     /// <summary>An installed font name; the default font when omitted.</summary>
+    [NotReadBack]
     public string? Font { get; init; }
 }
 
@@ -253,11 +289,14 @@ public sealed record AddFooterTextOp : PdfOp
     /// <summary>The pages to stamp; every page when omitted.</summary>
     [PageRange] public string? Pages { get; init; }
 
+    [NotReadBack]
     [MinLength(1)] public required string Text { get; init; }
 
+    [NotReadBack]
     [AllowedValues(typeof(PdfPositions))] public string Position { get; init; } = PdfPositions.BottomCenter;
 
     /// <summary>An installed font name; the default font when omitted.</summary>
+    [NotReadBack]
     public string? Font { get; init; }
 }
 
@@ -270,6 +309,7 @@ public sealed record AddStampImageOp : PdfOp
     /// <summary>The image, relative to the working directory; an SVG must not reference network resources.</summary>
     [InputPath] public required string Path { get; init; }
 
+    [NotReadBack]
     public required PdfRectInput Rect { get; init; }
 }
 
@@ -279,8 +319,10 @@ public sealed record AddLinkOp : PdfOp
 {
     [Minimum(1)] public required int Page { get; init; }
 
+    [NotReadBack]
     public required PdfRectInput Rect { get; init; }
 
+    [NotReadBack]
     [WebLink] public required string Url { get; init; }
 }
 
@@ -296,14 +338,17 @@ public sealed record RedactTextOp : PdfOp
     /// spaces, never a line break, where an East Asian character meets a character that is not
     /// East Asian, such as a digit or Latin letter, as extracted text can hold there.
     /// </summary>
+    [NotState]
     [MinLength(1)] public required string Pattern { get; init; }
 
     /// <summary>Whether the pattern is a .NET regular expression rather than literal text.</summary>
+    [NotState]
     public bool Regex { get; init; }
 
     /// <summary>The pages to search; every page when omitted.</summary>
     [PageRange] public string? Pages { get; init; }
 
+    [NotState]
     [HexColor] public string FillColor { get; init; } = "#000000";
 
     /// <inheritdoc />
@@ -336,8 +381,10 @@ public sealed record RedactAreaOp : PdfOp
 {
     [Minimum(1)] public required int Page { get; init; }
 
+    [NotState]
     public required PdfRectInput Rect { get; init; }
 
+    [NotState]
     [HexColor] public string FillColor { get; init; } = "#000000";
 }
 
@@ -345,15 +392,20 @@ public sealed record RedactAreaOp : PdfOp
 [Operation("set_metadata")]
 public sealed record SetMetadataOp : PdfOp
 {
+    [ReadBack("pdf-info.schema.json#/properties/metadata/additionalProperties")]
     public string? Title { get; init; }
 
+    [ReadBack("pdf-info.schema.json#/properties/metadata/additionalProperties")]
     public string? Author { get; init; }
 
+    [ReadBack("pdf-info.schema.json#/properties/metadata/additionalProperties")]
     public string? Subject { get; init; }
 
+    [ReadBack("pdf-info.schema.json#/properties/metadata/additionalProperties")]
     public string? Keywords { get; init; }
 
     /// <summary>Custom document information entries by name.</summary>
+    [NotReadBack]
     public IReadOnlyDictionary<string, string>? Custom { get; init; }
 }
 
@@ -362,9 +414,11 @@ public sealed record SetMetadataOp : PdfOp
 public sealed record RemoveMetadataOp : PdfOp
 {
     /// <summary>Whether the XMP metadata stream is removed.</summary>
+    [NotState]
     public bool Xmp { get; init; } = true;
 
     /// <summary>Whether the document information dictionary is cleared.</summary>
+    [NotState]
     public bool DocumentInfo { get; init; } = true;
 }
 
@@ -372,8 +426,10 @@ public sealed record RemoveMetadataOp : PdfOp
 [Operation("add_bookmark")]
 public sealed record AddBookmarkOp : PdfOp
 {
+    [ReadBack("pdf-info.schema.json#/$defs/pdfOutlineItem/properties/title")]
     [MinLength(1)] public required string Title { get; init; }
 
+    [ReadBack("pdf-info.schema.json#/$defs/pdfOutlineItem/properties/page")]
     [Minimum(1)] public required int Page { get; init; }
 
     /// <summary>
@@ -382,6 +438,7 @@ public sealed record AddBookmarkOp : PdfOp
     /// bookmark. The new bookmark is appended after the parent's existing children, or after
     /// the existing top-level bookmarks when omitted, so no existing index changes.
     /// </summary>
+    [NotState]
     [Pattern(BookmarkIndex.Pattern, Meaning = BookmarkIndex.Meaning)] public string? Parent { get; init; }
 }
 
@@ -401,9 +458,11 @@ public sealed record DeleteBookmarksOp : PdfOp
     /// batch address the renumbered outline.
     /// </summary>
     [MinItems(1), Pattern(BookmarkIndex.Pattern, Meaning = BookmarkIndex.Meaning)]
+    [NotState]
     public IReadOnlyList<string>? Indexes { get; init; }
 
     /// <summary>Whether every bookmark is deleted.</summary>
+    [NotState]
     public bool All { get; init; }
 
     /// <inheritdoc />
@@ -448,8 +507,10 @@ public sealed record AddAttachmentOp : PdfOp
     [InputPath] public required string Path { get; init; }
 
     /// <summary>The stable attachment name; the file name when omitted, never its local path.</summary>
+    [ReadBack("pdf-info.schema.json#/$defs/pdfAttachmentInfo/properties/name")]
     [MinLength(1)] public string? Name { get; init; }
 
+    [NotReadBack]
     public string? Description { get; init; }
 
     /// <summary>
@@ -457,6 +518,7 @@ public sealed record AddAttachmentOp : PdfOp
     /// read to identify it and PDF/A-3 keeps; none when omitted.
     /// </summary>
     [Pattern(@"^[A-Za-z0-9][A-Za-z0-9!#$&^_.+-]*/[A-Za-z0-9][A-Za-z0-9!#$&^_.+-]*$", Meaning = "must be a media type, such as \"image/png\"")]
+    [ReadBack("pdf-info.schema.json#/$defs/pdfAttachmentInfo/properties/mimeType")]
     public string? MimeType { get; init; }
 }
 
@@ -464,6 +526,7 @@ public sealed record AddAttachmentOp : PdfOp
 [Operation("remove_attachment")]
 public sealed record RemoveAttachmentOp : PdfOp
 {
+    [NotState]
     [MinLength(1)] public required string Name { get; init; }
 }
 
@@ -487,12 +550,14 @@ public sealed record SetPageLabelsOp : PdfOp
 [Operation("set_form_field")]
 public sealed record SetFormFieldOp : PdfOp
 {
+    [NotState]
     [MinLength(1)] public required string Name { get; init; }
 
     /// <summary>
     /// The value to set; null clears the field: a radio group selects no button, a check box
     /// is unchecked and any other field is emptied.
     /// </summary>
+    [ReadBack("form-result.schema.json#/$defs/pdfFormField/properties/value")]
     public required string? Value { get; init; }
 }
 
@@ -501,6 +566,7 @@ public sealed record SetFormFieldOp : PdfOp
 public sealed record FlattenFormsOp : PdfOp
 {
     /// <summary>The full names of the fields to flatten, each with every widget of the name, such as all buttons of a radio group; every field when omitted.</summary>
+    [NotState]
     [MinItems(1), MinLength(1)] public IReadOnlyList<string>? Fields { get; init; }
 }
 
@@ -509,9 +575,11 @@ public sealed record FlattenFormsOp : PdfOp
 public sealed record EncryptPdfOp : PdfOp
 {
     /// <summary>The environment variable that holds the password to open the document; anyone can open it when omitted.</summary>
+    [NotState]
     [SecretEnv] public string? UserPasswordEnv { get; init; }
 
     /// <summary>The environment variable that holds the owner password, which grants every permission.</summary>
+    [NotState]
     [SecretEnv] public required string OwnerPasswordEnv { get; init; }
 
     public PdfPermissionsInput Permissions { get; init; } = new();
@@ -526,15 +594,20 @@ public sealed record DecryptPdfOp : PdfOp;
 public sealed record OptimizePdfOp : PdfOp
 {
     /// <summary>The largest image resolution kept, in dots per inch.</summary>
+    [NotState]
     [Minimum(36), Maximum(1200)] public int? DownsampleImagesDpi { get; init; }
 
     /// <summary>The JPEG quality of recompressed images.</summary>
+    [NotState]
     [Minimum(1), Maximum(100)] public int? ImageQuality { get; init; }
 
+    [NotState]
     public bool UnembedFonts { get; init; }
 
+    [NotState]
     public bool RemoveUnusedObjects { get; init; } = true;
 
+    [NotState]
     public bool CompressStreams { get; init; } = true;
 }
 

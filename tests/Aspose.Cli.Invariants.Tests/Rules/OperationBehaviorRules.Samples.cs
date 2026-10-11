@@ -6,7 +6,7 @@ namespace Aspose.Cli.Invariants.Tests;
 /// One operation that succeeds on the product's fixture document (<c>ScenarioFixtures</c>), for the
 /// rules that run operations: C-R19 (a <c>set_</c> operation applied twice leaves what applying it
 /// once leaves, an <c>add_</c> operation applied twice adds twice), C-R21 (the state fields
-/// <c>StateFields</c> lists read back) and C-R30 (its outcome tells the truth). The schemas say what an operation accepts, not
+/// read paths the ops schemas declare read back) and C-R30 (its outcome tells the truth). The schemas say what an operation accepts, not
 /// what the fixture holds, so the samples are written by hand against the fixtures: Sheet1 with
 /// A1:B3 filled, one PDF page, two slides whose second has a title (shape 2) and a body (shape 3),
 /// and five Word blocks. Operations that read a file name <c>other.&lt;format&gt;</c> (the fixture

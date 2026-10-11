@@ -12,7 +12,7 @@ public sealed record WordsOpsBatch : BoundedOperationEnvelope<WordsOp>;
 /// document as it was before the first operation, so an insertion does not shift a later
 /// operation's anchor.
 /// </summary>
-[OperationVocabulary("ops", JsonContext = typeof(WordsOpsJsonContext))]
+[OperationVocabulary("ops", JsonContext = typeof(WordsOpsJsonContext), Addresses = new[] { "at", "position", "target", "section", "path", "passwordEnv" })]
 [JsonConverter(typeof(OperationJsonConverter<WordsOp>))]
 public abstract partial record WordsOp : BoundedOperation;
 
@@ -49,6 +49,7 @@ internal sealed class WordsPositionAttribute() : AllowedValuesAttribute("before"
 /// <summary>One paragraph supplied to an insertion operation.</summary>
 public sealed record ParagraphInput
 {
+    [ReadBack("document-read.schema.json#/$defs/blockData/properties/text")]
     public required string Text { get; init; }
 
     /// <summary>
@@ -57,21 +58,27 @@ public sealed record ParagraphInput
     /// its indents, spacing, alignment and the run format of its last text, or after a heading
     /// the heading style's next style.
     /// </summary>
+    [ReadBack("document-read.schema.json#/$defs/blockData/properties/style")]
     [MinLength(1)] public string? Style { get; init; }
 
     /// <summary>Makes the paragraph a list item at this level. When the anchor is a list item, it joins the anchor's list if that list defines the level, else the list of the nearest item at this level under the same parent, and without style continues that list's nearest existing item at this level, if any, with the indents it sets on itself. When the anchor is no list item, or no such list exists, it joins one new bullet list.</summary>
+    [NotReadBack]
     [Minimum(0), Maximum(8)] public int? ListLevel { get; init; }
 }
 
 /// <summary>Page size, orientation, margins and column settings; omitted settings keep their values.</summary>
 public sealed record PageSetupInput
 {
+    [ReadBack("document-info.schema.json#/$defs/sectionData/properties/widthPoints")]
     [AllowedValues("a3", "a4", "a5", "letter", "legal")] public string? Size { get; init; }
 
+    [ReadBack("document-info.schema.json#/$defs/sectionData/properties/orientation")]
     [AllowedValues(typeof(PageOrientations))] public string? Orientation { get; init; }
 
+    [ReadBack("document-info.schema.json#/$defs/sectionData/properties/margins")]
     public MarginInput? Margins { get; init; }
 
+    [NotReadBack]
     [Minimum(1)] public int? ColumnCount { get; init; }
 }
 
@@ -91,26 +98,33 @@ public sealed record MarginInput
 [Operation("replace_text")]
 public sealed record ReplaceTextOp : WordsOp
 {
+    [NotState]
     [MinLength(1)] public required string Find { get; init; }
 
     /// <summary>With regex, .NET substitutions such as $1 and ${name} apply; write $$ for a literal $.</summary>
     [MistakenFor("replacement", "replaceWith")]
+    [NotState]
     public required string Replace { get; init; }
 
     /// <summary>Whether find is a .NET regular expression rather than literal text.</summary>
+    [NotState]
     public bool Regex { get; init; }
 
+    [NotState]
     public bool MatchCase { get; init; }
 
+    [NotState]
     public bool WholeWord { get; init; }
 
     /// <summary>
     /// body is the main text without the comments and footnotes it anchors; footnotes include
     /// endnotes. Field codes and text a tracked change deletes are never replaced.
     /// </summary>
+    [NotState]
     [AllowedValues(typeof(WordsTextScopes))] public string Scope { get; init; } = WordsTextScopes.Body;
 
     /// <summary>The most matches replaced; every match when omitted.</summary>
+    [NotState]
     [Minimum(1)] public int? MaxReplacementCount { get; init; }
 }
 
@@ -120,6 +134,7 @@ public sealed record SetTextOp : WordsOp
 {
     public required WordsTarget At { get; init; }
 
+    [ReadBack("document-read.schema.json#/$defs/blockData/properties/text")]
     public required string Text { get; init; }
 }
 
@@ -142,6 +157,7 @@ public sealed record InsertMarkdownOp : WordsOp
 
     [WordsPosition] public required string Position { get; init; }
 
+    [NotState]
     [MinLength(1)] public required string Markdown { get; init; }
 }
 
@@ -160,6 +176,7 @@ public sealed record InsertBreakOp : WordsOp
 
     [WordsPosition] public required string Position { get; init; }
 
+    [ReadBack("document-read.schema.json#/$defs/blockData/properties/breakAfter")]
     [AllowedValues(typeof(WordsBreakKinds))] public required string Kind { get; init; }
 }
 
@@ -175,12 +192,15 @@ public sealed record InsertImageOp : WordsOp
     [InputPath] public required string Path { get; init; }
 
     /// <summary>The width in points; the image's own when omitted.</summary>
+    [ReadBack("document-read.schema.json#/$defs/blockImageData/properties/width")]
     [ExclusiveMinimum(0)] public double? Width { get; init; }
 
     /// <summary>The height in points; the image's own when omitted.</summary>
+    [ReadBack("document-read.schema.json#/$defs/blockImageData/properties/height")]
     [ExclusiveMinimum(0)] public double? Height { get; init; }
 
     /// <summary>Whether the image sits in the text line rather than floating with square wrapping.</summary>
+    [NotReadBack]
     public bool Inline { get; init; } = true;
 }
 
@@ -192,15 +212,19 @@ public sealed record InsertTableOp : WordsOp
 
     [WordsPosition] public required string Position { get; init; }
 
+    [ReadBack("document-read.schema.json#/$defs/blockData/properties/rowCount")]
     [Minimum(1), Maximum(32_767)] public required int RowCount { get; init; }
 
     /// <summary>The column count; Word allows at most 63.</summary>
+    [ReadBack("document-read.schema.json#/$defs/blockData/properties/columnCount")]
     [Minimum(1), Maximum(63)] public required int ColumnCount { get; init; }
 
     /// <summary>Cell text by row, then column; cells beyond it stay empty.</summary>
+    [ReadBack("document-read.schema.json#/$defs/blockData/properties/cells")]
     public IReadOnlyList<IReadOnlyList<string>>? Cells { get; init; }
 
     /// <summary>An existing table style.</summary>
+    [ReadBack("document-info.schema.json#/$defs/tableData/properties/style")]
     [MinLength(1)] public string? Style { get; init; }
 
     /// <inheritdoc />
@@ -218,10 +242,13 @@ public sealed record SetTableCellOp : WordsOp
 {
     public required WordsTarget At { get; init; }
 
+    [NotState]
     [Minimum(1)] public required int Row { get; init; }
 
+    [NotState]
     [Minimum(1)] public required int Col { get; init; }
 
+    [ReadBackByPosition] // Reads back as cells[row][col] of the table block.
     public required string Text { get; init; }
 }
 
@@ -238,12 +265,14 @@ public sealed record RepeatTableRowOp : WordsOp
     public required WordsTarget At { get; init; }
 
     /// <summary>The 1-based template row; when omitted, the table's one row that contains a <c>{{key}}</c> placeholder.</summary>
+    [NotState]
     [Minimum(1)] public int? Row { get; init; }
 
     /// <summary>
     /// Placeholder values by key, one object per row copy, read as a data file's are: a number
     /// or Boolean as its JSON text and null as empty text. An empty list removes the template row.
     /// </summary>
+    [NotState]
     [JsonScalar] public IReadOnlyList<IReadOnlyDictionary<string, object?>>? Items { get; init; }
 
     /// <summary>A JSON array of flat objects, or a CSV file with a header row, relative to the working directory.</summary>
@@ -266,15 +295,19 @@ public sealed record FormatTableOp : WordsOp
     /// every paragraph keeps with the next except the last paragraph of each last-row cell.
     /// false clears keep-with-next on those same paragraphs and leaves the row setting.
     /// </summary>
+    [NotReadBack]
     public bool? KeepTogether { get; init; }
 
     /// <summary>Whether the text of each row may split across a page break.</summary>
+    [NotReadBack]
     public bool? AllowRowBreakAcrossPages { get; init; }
 
     /// <summary>The first rows repeated as a heading on every page the table spans; 0 clears it. At most the table's row count.</summary>
+    [NotReadBack]
     [Minimum(0)] public int? HeaderRowCount { get; init; }
 
     /// <summary>Whether the last paragraph of each last-row cell keeps with the paragraph after the table, keeping the table with it.</summary>
+    [NotReadBack]
     public bool? KeepWithNext { get; init; }
 
     /// <inheritdoc />
@@ -296,6 +329,7 @@ public sealed record InsertTocOp : WordsOp
     [WordsPosition] public required string Position { get; init; }
 
     /// <summary>The deepest heading level listed.</summary>
+    [NotReadBack]
     [Minimum(1), Maximum(9)] public int MaxLevel { get; init; } = 3;
 }
 
@@ -305,6 +339,7 @@ public sealed record InsertBookmarkOp : WordsOp
 {
     public required WordsTarget At { get; init; }
 
+    [ReadBackByPosition] // Reads back as an entry of the document's bookmarks list.
     [MinLength(1)] public required string Name { get; init; }
 }
 
@@ -316,8 +351,10 @@ public sealed record InsertHyperlinkOp : WordsOp
 
     [WordsPosition] public required string Position { get; init; }
 
+    [ReadBack("document-read.schema.json#/$defs/runData/properties/text")]
     public required string Text { get; init; }
 
+    [NotReadBack]
     [WebLink] public required string Url { get; init; }
 }
 
@@ -330,6 +367,7 @@ public sealed record InsertFieldOp : WordsOp
     [WordsPosition] public required string Position { get; init; }
 
     /// <summary>The field code, such as DATE.</summary>
+    [ReadBack("document-info.schema.json#/$defs/fieldData/properties/code")]
     [MinLength(1)] public required string Code { get; init; }
 }
 
@@ -341,6 +379,7 @@ public sealed record AddSectionOp : WordsOp
     [AllowedValues("start", "end", "after")] public string Position { get; init; } = "end";
 
     /// <summary>The 1-based section the new section follows; set exactly when position is after.</summary>
+    [NotState]
     [Minimum(1)] public int? After { get; init; }
 
     /// <summary>Page setup applied over the neighbouring section's.</summary>
@@ -372,11 +411,14 @@ public abstract record HeaderFooterOp : WordsOp
     [Minimum(1)] public int? Section { get; init; }
 
     /// <summary>Which pages it shows on; first and even also turn on the section setting that shows it.</summary>
+    [ReadBack("document-info.schema.json#/$defs/headerFooterData/properties/kind")]
     [AllowedValues(typeof(HeaderFooterKinds))] public string Kind { get; init; } = HeaderFooterKinds.Primary;
 
     /// <summary>Plain paragraphs, one per item, in the paragraph and character format of the first paragraph they replace, such as its alignment, or in Word's Header or Footer style when there is none.</summary>
+    [ReadBack("document-info.schema.json#/$defs/headerFooterData/properties/paragraphs")]
     public IReadOnlyList<string>? Paragraphs { get; init; }
 
+    [NotState]
     public string? Markdown { get; init; }
 }
 
@@ -395,13 +437,17 @@ public sealed record SetPageNumbersOp : WordsOp
     /// <summary>The 1-based section; every section when omitted.</summary>
     [Minimum(1)] public int? Section { get; init; }
 
+    [NotReadBack]
     [AllowedValues(typeof(HeaderFooterLocations))] public string Location { get; init; } = HeaderFooterLocations.Footer;
 
+    [NotReadBack]
     [AllowedValues("left", "center", "right")] public string Alignment { get; init; } = "center";
 
+    [NotReadBack]
     [AllowedValues("decimal", "upperRoman", "lowerRoman", "upperLetter", "lowerLetter")] public string? Format { get; init; }
 
     /// <summary>The number of the section's first page; numbering continues when omitted.</summary>
+    [NotReadBack]
     [Minimum(0)] public int? Start { get; init; }
 }
 
@@ -411,28 +457,37 @@ public sealed record FormatTextOp : WordsOp
 {
     public required WordsTarget Target { get; init; }
 
+    [ReadBack("document-read.schema.json#/$defs/runData/properties/bold")]
     public bool? Bold { get; init; }
 
+    [ReadBack("document-read.schema.json#/$defs/runData/properties/italic")]
     public bool? Italic { get; init; }
 
+    [NotReadBack]
     public bool? Underline { get; init; }
 
     /// <summary>The font size in points.</summary>
+    [ReadBack("document-read.schema.json#/$defs/runData/properties/size")]
     [ExclusiveMinimum(0)] public double? Size { get; init; }
 
     /// <summary>A #RRGGBB or named color.</summary>
+    [ReadBack("document-read.schema.json#/$defs/runData/properties/color")]
     public string? Color { get; init; }
 
     /// <summary>The font of Latin and East Asian text.</summary>
+    [ReadBack("document-read.schema.json#/$defs/runData/properties/font")]
     [MinLength(1)] public string? Font { get; init; }
 
     /// <summary>The font of Latin text, in place of font's.</summary>
+    [ReadBack("document-read.schema.json#/$defs/runData/properties/latinFont")]
     [MinLength(1)] public string? LatinFont { get; init; }
 
     /// <summary>The font of Chinese, Japanese and Korean text, in place of font's.</summary>
+    [ReadBack("document-read.schema.json#/$defs/runData/properties/eastAsianFont")]
     [MinLength(1)] public string? EastAsianFont { get; init; }
 
     /// <summary>A #RRGGBB or named highlight color.</summary>
+    [NotReadBack]
     public string? Highlight { get; init; }
 }
 
@@ -442,6 +497,7 @@ public sealed record SetStyleOp : WordsOp
 {
     public required WordsTarget Target { get; init; }
 
+    [ReadBack("document-read.schema.json#/$defs/blockData/properties/style")]
     [MinLength(1)] public required string Style { get; init; }
 }
 
@@ -449,31 +505,41 @@ public sealed record SetStyleOp : WordsOp
 [Operation("define_style")]
 public sealed record DefineStyleOp : WordsOp
 {
+    [NotState]
     [MinLength(1)] public required string Name { get; init; }
 
+    [NotReadBack]
     [MinLength(1)] public string? BasedOn { get; init; }
 
     /// <summary>The font of Latin and East Asian text.</summary>
+    [NotReadBack]
     [MinLength(1)] public string? Font { get; init; }
 
     /// <summary>The font of Latin text, in place of font's.</summary>
+    [NotReadBack]
     [MinLength(1)] public string? LatinFont { get; init; }
 
     /// <summary>The font of Chinese, Japanese and Korean text, in place of font's.</summary>
+    [NotReadBack]
     [MinLength(1)] public string? EastAsianFont { get; init; }
 
     /// <summary>The font size in points.</summary>
+    [NotReadBack]
     [ExclusiveMinimum(0)] public double? Size { get; init; }
 
+    [NotReadBack]
     public bool? Bold { get; init; }
 
     /// <summary>A #RRGGBB or named color.</summary>
+    [NotReadBack]
     public string? Color { get; init; }
 
     /// <summary>Space before the paragraph, in points.</summary>
+    [NotReadBack]
     [Minimum(0)] public double? SpaceBefore { get; init; }
 
     /// <summary>Space after the paragraph, in points.</summary>
+    [NotReadBack]
     [Minimum(0)] public double? SpaceAfter { get; init; }
 }
 
@@ -483,8 +549,10 @@ public sealed record ApplyListOp : WordsOp
 {
     public required WordsTarget Target { get; init; }
 
+    [NotReadBack]
     [AllowedValues("bullet", "number")] public required string Kind { get; init; }
 
+    [NotReadBack]
     [Minimum(0), Maximum(8)] public int Level { get; init; }
 }
 
@@ -494,15 +562,19 @@ public sealed record ApplyListOp : WordsOp
 public sealed record SetDefaultFontOp : WordsOp
 {
     /// <summary>The font of Latin and East Asian text.</summary>
+    [NotReadBack]
     [MinLength(1)] public string? Font { get; init; }
 
     /// <summary>The font of Latin text, in place of font's.</summary>
+    [NotReadBack]
     [MinLength(1)] public string? LatinFont { get; init; }
 
     /// <summary>The font of Chinese, Japanese and Korean text, in place of font's.</summary>
+    [NotReadBack]
     [MinLength(1)] public string? EastAsianFont { get; init; }
 
     /// <summary>The font size in points; sizes are kept when omitted.</summary>
+    [NotReadBack]
     [ExclusiveMinimum(0)] public double? Size { get; init; }
 }
 
@@ -510,15 +582,20 @@ public sealed record SetDefaultFontOp : WordsOp
 [Operation("set_properties")]
 public sealed record SetPropertiesOp : WordsOp
 {
+    [ReadBack("document-info.schema.json#/properties/properties/additionalProperties")]
     public string? Title { get; init; }
 
+    [ReadBack("document-info.schema.json#/properties/properties/additionalProperties")]
     public string? Author { get; init; }
 
+    [ReadBack("document-info.schema.json#/properties/properties/additionalProperties")]
     public string? Subject { get; init; }
 
+    [ReadBack("document-info.schema.json#/properties/properties/additionalProperties")]
     public string? Keywords { get; init; }
 
     /// <summary>Custom properties by name; a null value removes the property.</summary>
+    [NotReadBack]
     public IReadOnlyDictionary<string, string?>? Custom { get; init; }
 }
 
@@ -530,18 +607,23 @@ public sealed record SetPropertiesOp : WordsOp
 public sealed record AddWatermarkOp : WordsOp
 {
     /// <summary>The watermark text; Word holds at most 200 characters.</summary>
+    [NotReadBack]
     [MinLength(1), MaxLength(200)] public string? Text { get; init; }
 
     /// <summary>The watermark image, relative to the working directory.</summary>
+    [NotReadBack]
     [InputPath] public string? ImagePath { get; init; }
 
     /// <summary>Semi-transparent text or a washed-out image.</summary>
+    [NotReadBack]
     public bool Faded { get; init; } = true;
 
     /// <summary>A #RRGGBB or named text color.</summary>
+    [NotReadBack]
     public string? Color { get; init; }
 
     /// <summary>The text font; when omitted, East Asian text takes the default East Asian font of a Chinese, Japanese or Korean document, or else Microsoft YaHei.</summary>
+    [NotReadBack]
     [MinLength(1)] public string? Font { get; init; }
 }
 
@@ -554,6 +636,7 @@ public sealed record RemoveWatermarkOp : WordsOp;
 public sealed record ProtectOp : WordsOp
 {
     [AllowedValues(WordsProtectionModes.ReadOnly, WordsProtectionModes.Comments, WordsProtectionModes.TrackedChanges, WordsProtectionModes.Forms)]
+    [ReadBack("document-info.schema.json#/$defs/documentSummary/properties/protection")]
     public required string Mode { get; init; }
 
     /// <summary>The environment variable that holds the protection password; no password when omitted.</summary>
@@ -575,6 +658,7 @@ public sealed record UnprotectOp : WordsOp
 public abstract record RevisionDecisionOp : WordsOp
 {
     /// <summary>The author whose revisions are decided; a name no revision has changes nothing and reports OP_NO_EFFECT.</summary>
+    [NotState]
     [MinLength(1)] public string? Author { get; init; }
 
     /// <summary>
@@ -583,6 +667,7 @@ public abstract record RevisionDecisionOp : WordsOp
     /// operation other than a revision decision, and lists together the changes that share a
     /// node and type, as its error names them.
     /// </summary>
+    [NotState]
     [MinItems(1), Minimum(1)] public IReadOnlyList<int>? Revisions { get; init; }
 
     /// <inheritdoc />
@@ -607,8 +692,10 @@ public sealed record AddCommentOp : WordsOp
 {
     public required WordsTarget At { get; init; }
 
+    [ReadBack("document-info.schema.json#/$defs/commentData/properties/author")]
     [MinLength(1)] public required string Author { get; init; }
 
+    [ReadBack("document-info.schema.json#/$defs/commentData/properties/text")]
     public required string Text { get; init; }
 }
 
@@ -617,6 +704,7 @@ public sealed record AddCommentOp : WordsOp
 public sealed record RemoveCommentsOp : WordsOp
 {
     /// <summary>The author whose comments are removed; a name no comment has changes nothing and reports OP_NO_EFFECT.</summary>
+    [NotState]
     [MinLength(1)] public string? Author { get; init; }
 }
 
@@ -628,6 +716,7 @@ public sealed record AppendDocumentOp : WordsOp
     [InputPath] public required string Path { get; init; }
 
     /// <summary>Which definition a style both documents name takes: the appended document's (keepSource) or this document's (useDestination). Headers and footers are not styles and come with their sections either way.</summary>
+    [NotState]
     [AllowedValues("keepSource", "useDestination")] public string ImportFormatMode { get; init; } = "keepSource";
 }
 
@@ -640,9 +729,11 @@ public sealed record MailMergeOp : WordsOp
     [InputPath] public string? Path { get; init; }
 
     /// <summary>Merge rows of field values by field name, read as a data file's are: a number or Boolean merges as its JSON text.</summary>
+    [NotState]
     [MinItems(1), JsonScalar] public IReadOnlyList<IReadOnlyDictionary<string, object?>>? Inline { get; init; }
 
     /// <summary>Whether the rows repeat the template's one TableStart/TableEnd region.</summary>
+    [NotState]
     public bool Regions { get; init; }
 }
 
@@ -650,6 +741,7 @@ public sealed record MailMergeOp : WordsOp
 [Operation("update_fields")]
 public sealed record UpdateFieldsOp : WordsOp
 {
+    [NotState]
     [AllowedValues("all", "toc")] public string What { get; init; } = "all";
 }
 

@@ -15,6 +15,12 @@ internal static class ContractTypes
     /// <summary>A schema id relative to its owner, such as <c>render-result</c>: lower-case words joined by hyphens.</summary>
     internal static readonly Regex RelativeId = new("^[a-z0-9]+(-[a-z0-9]+)*$", RegexOptions.CultureInvariant);
 
+    /// <summary>
+    /// A read path relative to the operation schema: a schema file of the same owner and a JSON
+    /// Pointer into it, such as <c>pdf-info.schema.json#/$defs/pdfPageInfo/properties/rotation</c>.
+    /// </summary>
+    internal static readonly Regex ReadPath = new(@"^[a-z0-9]+(-[a-z0-9]+)*\.schema\.json#(/[^/]+)+$",RegexOptions.CultureInvariant);
+
     internal static AttributeData? Find(ISymbol symbol, string attribute) =>
         symbol.GetAttributes().FirstOrDefault(data => data.AttributeClass?.ToDisplayString() == attribute);
 

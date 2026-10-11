@@ -10,9 +10,11 @@ namespace Aspose.Cli.Product.Cells.Contracts;
 public sealed record SetAutoFilterOp : CellsOp
 {
     /// <summary>The range to filter, including its header row, such as A1:D20; required unless off is true.</summary>
+    [ReadBack("workbook-info.schema.json#/$defs/sheetLayoutInfo/properties/autoFilter")]
     [A1Range] public string? Range { get; init; }
 
     /// <summary>Whether the sheet's AutoFilter is removed instead of added.</summary>
+    [NotState]
     public bool Off { get; init; }
 }
 
@@ -24,9 +26,11 @@ public sealed record SortRangeOp : CellsOp
     [A1Range] public required string Range { get; init; }
 
     /// <summary>The sort keys, primary first; each column lies inside the range.</summary>
+    [NotState]
     [MinItems(1)] public required IReadOnlyList<SortKey> By { get; init; }
 
     /// <summary>Whether the first row is a header that stays in place.</summary>
+    [NotState]
     public bool HasHeader { get; init; }
 
     /// <inheritdoc />
@@ -71,32 +75,41 @@ public sealed record SetValidationOp : CellsOp
     /// <summary>The range to validate, such as B2:B100.</summary>
     [A1Range] public required string Range { get; init; }
 
+    [ReadBack("workbook-info.schema.json#/$defs/validationInfo/properties/type")]
     [AllowedValues(typeof(ValidationTypes))] public required string Type { get; init; }
 
+    [NotReadBack]
     [AllowedValues(typeof(ValidationOperators))] public string? Operator { get; init; }
 
     /// <summary>The first bound (the lower bound for between), or the formula of a custom validation.</summary>
+    [NotReadBack]
     [Pattern(@"\S")] public string? Value1 { get; init; }
 
     /// <summary>The upper bound for between and notBetween.</summary>
+    [NotReadBack]
     [Pattern(@"\S")] public string? Value2 { get; init; }
 
     /// <summary>
     /// The dropdown items of a list. No item contains a comma or a double quote, and joined with
     /// commas they stay within Excel's 255 characters; use listSource for longer lists.
     /// </summary>
+    [NotReadBack]
     [MinItems(1), Pattern("^[^,\"]+$")] public IReadOnlyList<string>? ListItems { get; init; }
 
     /// <summary>The range a list reads its items from, such as Lists!A1:A20.</summary>
+    [NotReadBack]
     [Pattern(@"\S")] public string? ListSource { get; init; }
 
     /// <summary>The prompt shown when a validated cell is selected.</summary>
+    [NotReadBack]
     public string? InputMessage { get; init; }
 
     /// <summary>The message shown when a value is rejected.</summary>
+    [NotReadBack]
     public string? ErrorMessage { get; init; }
 
     /// <summary>Whether a validated cell may be left blank.</summary>
+    [NotReadBack]
     public bool AllowBlank { get; init; } = true;
 
     /// <inheritdoc />
@@ -147,9 +160,11 @@ public sealed record RemoveDuplicatesOp : CellsOp
     [A1Range] public required string Range { get; init; }
 
     /// <summary>The columns inside the range that define a duplicate; every column when omitted.</summary>
+    [NotState]
     [MinItems(1), A1Column] public IReadOnlyList<string>? Columns { get; init; }
 
     /// <summary>Whether the first row is a header that is kept.</summary>
+    [NotState]
     public bool HasHeader { get; init; }
 
     /// <inheritdoc />

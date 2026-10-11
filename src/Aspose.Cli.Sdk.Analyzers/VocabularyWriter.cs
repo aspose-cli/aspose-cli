@@ -24,6 +24,12 @@ internal sealed class VocabularyWriter(
     private readonly INamedTypeSymbol? _secretEnv = compilation.GetTypeByMetadataName(OperationContractGenerator.Operations + "SecretEnvAttribute");
     private readonly INamedTypeSymbol? _minProperties = compilation.GetTypeByMetadataName(OperationContractGenerator.Operations + "MinPropertiesAttribute");
     private readonly INamedTypeSymbol? _presentWhen = compilation.GetTypeByMetadataName(OperationContractGenerator.Operations + "PresentWhenAttribute");
+    private readonly INamedTypeSymbol? _readBack = compilation.GetTypeByMetadataName(OperationContractGenerator.Operations + "ReadBackAttribute");
+    private readonly INamedTypeSymbol? _notReadBack = compilation.GetTypeByMetadataName(OperationContractGenerator.Operations + "NotReadBackAttribute");
+    private readonly INamedTypeSymbol? _byPosition = compilation.GetTypeByMetadataName(OperationContractGenerator.Operations + "ReadBackByPositionAttribute");
+    private readonly INamedTypeSymbol? _notState = compilation.GetTypeByMetadataName(OperationContractGenerator.Operations + "NotStateAttribute");
+    private readonly Dictionary<INamedTypeSymbol, bool> _classifiedRecords = new(SymbolEqualityComparer.Default);
+    private HashSet<string> _addresses = new(StringComparer.Ordinal);
     private bool _failed;
 
     /// <summary>
@@ -38,6 +44,11 @@ internal sealed class VocabularyWriter(
         AttributeData declaration = Find(vocabulary, OperationContractGenerator.Operations + "OperationVocabularyAttribute")!;
         string schemaId = SchemaId(declaration);
         INamedTypeSymbol? context = Named(declaration, "JsonContext") as INamedTypeSymbol;
+        _addresses = new HashSet<string>(
+            declaration.NamedArguments.FirstOrDefault(static argument => argument.Key == "Addresses").Value is { Kind: TypedConstantKind.Array } addresses
+                ? addresses.Values.Select(static value => value.Value).OfType<string>()
+                : [],
+            StringComparer.Ordinal);
         if (!vocabulary.IsAbstract || !vocabulary.IsRecord || vocabulary.ContainingType is not null
             || !BaseTypes(vocabulary).Any(static type => type.ToDisplayString() == BoundedOperation)
             || vocabulary.DeclaringSyntaxReferences.Any(static reference =>
@@ -106,6 +117,13 @@ internal sealed class VocabularyWriter(
     private string Operation(string name, INamedTypeSymbol type)
     {
         (string record, IReadOnlyList<IPropertySymbol> properties) = Record(type, name, isOperation: true);
+        foreach (IPropertySymbol property in properties.Where(property => ReadBackOf(property, isOperation: true) is null && !ClassifiedByItsRecord(property)))
+        {
+            Invalid(property, "classify the field for read-back (C-R21): [ReadBack(path)] for state a read reports, [NotReadBack] for state no read reports yet, "
+                + "[ReadBackByPosition] for state read back by position or [NotState] for a selector, a source or a parameter; a field named in "
+                + "the vocabulary's Addresses is not state, and a record field may classify the fields of its record instead");
+        }
+
         var code = new StringBuilder("            new() { Record = new() ").Append(record);
         IPropertySymbol[] paths = [.. properties.Where(property => Has(property, _inputPath))];
         if (paths.Length > 0)
@@ -372,6 +390,16 @@ internal sealed class VocabularyWriter(
             code.Append(", MistakenFor = ").Append(MistakenNames(mistaken));
         }
 
+        if (new[] { _readBack, _notReadBack, _byPosition, _notState }.Count(attribute => Has(property, attribute)) > 1)
+        {
+            Invalid(property, "declare one read-back classification");
+        }
+
+        if (ReadBackOf(property, isOperation) is { } readBack)
+        {
+            code.Append(", ReadBack = ").Append(Literal(readBack));
+        }
+
         code.Append(", Get = static value => ((").Append(TypeName(owner)).Append(")value).").Append(property.Name).Append(" }");
         return new Member(
             property,
@@ -380,6 +408,75 @@ internal sealed class VocabularyWriter(
             literal,
             nullable || property.Type.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T,
             property.Type.SpecialType == SpecialType.System_Boolean);
+    }
+
+    /// <summary>
+    /// The read-back classification a member declares (see <c>ReadBackAttribute</c>): its read
+    /// path, <c>unread</c>, <c>position</c> or <c>not-state</c>; an operation field the vocabulary
+    /// names among its addresses is not state. Null when the member declares none.
+    /// </summary>
+    private string? ReadBackOf(IPropertySymbol property, bool isOperation)
+    {
+        if (Find(property, OperationContractGenerator.Operations + "ReadBackAttribute") is { } readBack)
+        {
+            return readBack.ConstructorArguments.FirstOrDefault().Value is string path && ReadPath.IsMatch(path)
+                ? path
+                : Invalid(property, "[ReadBack] names a read path '<schema>.schema.json#<JSON Pointer>', such as 'pdf-info.schema.json#/$defs/pdfPageInfo/properties/rotation'");
+        }
+
+        return Has(property, _notReadBack) ? "unread"
+            : Has(property, _byPosition) ? "position"
+            : Has(property, _notState) || (isOperation && _addresses.Contains(CamelCase(property.Name))) ? "not-state"
+            : null;
+    }
+
+    /// <summary>
+    /// Whether a member without a classification of its own holds a contract record, or a list
+    /// or map of them, whose every field is classified, in turn by its own record when it has none.
+    /// </summary>
+    private bool ClassifiedByItsRecord(IPropertySymbol property)
+    {
+        ITypeSymbol type = property.Type;
+        while (true)
+        {
+            if (type is INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } wrapped)
+            {
+                type = wrapped.TypeArguments[0];
+            }
+            else if (Element(type) is { } element)
+            {
+                type = element.Type;
+            }
+            else
+            {
+                break;
+            }
+        }
+
+        if (type is not INamedTypeSymbol { TypeKind: TypeKind.Class, IsAbstract: false } record
+            || ScalarKind(record) is not null
+            || !SymbolEqualityComparer.Default.Equals(record.ContainingAssembly, compilation.Assembly))
+        {
+            return false;
+        }
+
+        if (_classifiedRecords.TryGetValue(record, out bool classified))
+        {
+            return classified;
+        }
+
+        // A record that contains itself is reported where it is described.
+        _classifiedRecords[record] = false;
+        IPropertySymbol[] fields = [.. Properties(record)];
+        classified = fields.Length > 0 && fields.All(field => ReadBackOf(field, isOperation: false) is not null || ClassifiedByItsRecord(field));
+        foreach (IPropertySymbol field in fields.Where(field => fields.Any(other => ReadBackOf(other, isOperation: false) is not null)
+            && ReadBackOf(field, isOperation: false) is null && !ClassifiedByItsRecord(field)))
+        {
+            Invalid(field, "classify the field for read-back (C-R21), as the other fields of its record are");
+        }
+
+        _classifiedRecords[record] = classified;
+        return classified;
     }
 
     /// <summary>The collection expression of the names a <c>[MistakenFor]</c> attribute declares.</summary>

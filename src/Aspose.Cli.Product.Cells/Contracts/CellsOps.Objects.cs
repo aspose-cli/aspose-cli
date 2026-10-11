@@ -13,32 +13,40 @@ namespace Aspose.Cli.Product.Cells.Contracts;
 [Operation("create_chart")]
 public sealed record CreateChartOp : CellsOp
 {
+    [ReadBack("workbook-info.schema.json#/$defs/chartInfo/properties/type")]
     [AllowedValues(typeof(ChartTypes))] public required string Type { get; init; }
 
     /// <summary>
     /// The data to plot, including headers, such as A1:C5. It may name another sheet, such as
     /// Data!A1:C5, so a chart on a dashboard sheet can plot a data sheet.
     /// </summary>
+    [NotReadBack]
     [A1Reference] public required string DataRange { get; init; }
 
     /// <summary>The range of at least two cells the chart is placed over, such as E2:L18.</summary>
     [A1Range] public required string At { get; init; }
 
+    [NotReadBack]
     public string? Title { get; init; }
 
     /// <summary>Whether series are plotted from rows rather than columns.</summary>
+    [NotReadBack]
     public bool SeriesInRows { get; init; }
 
+    [NotReadBack]
     public ChartLegend? Legend { get; init; }
 
+    [NotReadBack]
     public ChartAxisTitles? AxisTitles { get; init; }
 
     /// <summary>
     /// Series colors in series order; a pie's slices count as the series. Colors beyond the
     /// series count are ignored.
     /// </summary>
+    [NotReadBack]
     [MinItems(1), HexColor] public IReadOnlyList<string>? SeriesColors { get; init; }
 
+    [NotReadBack]
     public ChartDataLabels? DataLabels { get; init; }
 
     /// <inheritdoc />
@@ -123,21 +131,26 @@ public sealed record ChartDataLabels
 public sealed record CreatePivotOp : CellsOp
 {
     /// <summary>The source data including headers; it may name another sheet, such as Data!A1:D100.</summary>
+    [NotReadBack]
     [A1Reference] public required string SourceRange { get; init; }
 
     /// <summary>The top-left cell of the pivot table.</summary>
     [A1Cell] public required string At { get; init; }
 
     /// <summary>The pivot table name; generated when omitted.</summary>
+    [ReadBack("workbook-info.schema.json#/$defs/pivotInfo/properties/name")]
     public string? Name { get; init; }
 
     /// <summary>The header names of the row fields.</summary>
+    [NotReadBack]
     [MinItems(1)] public IReadOnlyList<string>? Rows { get; init; }
 
     /// <summary>The header names of the column fields.</summary>
+    [NotReadBack]
     [MinItems(1)] public IReadOnlyList<string>? Columns { get; init; }
 
     /// <summary>The value fields with their aggregation; two or more are columns, after the column fields, as in Excel.</summary>
+    [NotReadBack]
     [MinItems(1)] public required IReadOnlyList<PivotValueField> Values { get; init; }
 
     /// <summary>
@@ -145,6 +158,7 @@ public sealed record CreatePivotOp : CellsOp
     /// zh writes Excel's Simplified Chinese ones (求和项:X, 总计, 行标签, 列标签, 值); auto is zh
     /// when a row, column or value field name contains a Han character, otherwise en.
     /// </summary>
+    [NotReadBack]
     [AllowedValues(typeof(PivotCaptionLanguages))] public string Captions { get; init; } = PivotCaptionLanguages.Auto;
 }
 
@@ -192,9 +206,11 @@ public sealed record InsertImageOp : CellsOp
     [A1Cell] public required string At { get; init; }
 
     /// <summary>The width in pixels; the image's natural width when omitted.</summary>
+    [NotReadBack]
     [Minimum(1)] public int? Width { get; init; }
 
     /// <summary>The height in pixels; the image's natural height when omitted.</summary>
+    [NotReadBack]
     [Minimum(1)] public int? Height { get; init; }
 }
 
@@ -206,6 +222,7 @@ public sealed record InsertImageOp : CellsOp
 public sealed record RefreshPivotOp : CellsOp
 {
     /// <summary>The pivot table name; every pivot table on the sheet when omitted.</summary>
+    [NotState]
     public string? Name { get; init; }
 }
 
@@ -221,15 +238,18 @@ public sealed record CreateTableOp : CellsOp
     /// '\' first, then letters, digits, '.', '_', '\' or '?'; never text that reads as a cell
     /// reference such as T1 or R1C1. Generated when omitted.
     /// </summary>
+    [ReadBack("workbook-info.schema.json#/$defs/tableInfo/properties/name")]
     [MinLength(1), MaxLength(255)] public string? Name { get; init; }
 
     /// <summary>
     /// A built-in table style (TableStyleLight1-21, TableStyleMedium1-28, TableStyleDark1-11),
     /// such as TableStyleMedium2, or a custom table style the workbook defines.
     /// </summary>
+    [NotReadBack]
     [MinLength(1)] public string? Style { get; init; }
 
     /// <summary>Whether a totals row is added below the table.</summary>
+    [NotReadBack]
     public bool TotalsRow { get; init; }
 
     /// <inheritdoc />
@@ -306,28 +326,37 @@ public sealed record UpdateChartOp : CellsOp
     [Minimum(0)] public int? Index { get; init; }
 
     /// <summary>The chart name.</summary>
+    [NotState]
     [Pattern(@"\S")] public string? Name { get; init; }
 
+    [NotReadBack]
     public string? Title { get; init; }
 
     /// <summary>The new data to plot, including headers; it may name another sheet, such as Data!A1:C5.</summary>
+    [NotReadBack]
     [A1Reference] public string? DataRange { get; init; }
 
+    [ReadBack("workbook-info.schema.json#/$defs/chartInfo/properties/type")]
     [AllowedValues(typeof(ChartTypes))] public string? Type { get; init; }
 
     /// <summary>Whether series are plotted from rows rather than columns.</summary>
+    [NotReadBack]
     public bool? SeriesInRows { get; init; }
 
+    [NotReadBack]
     public ChartLegend? Legend { get; init; }
 
+    [NotReadBack]
     public ChartAxisTitles? AxisTitles { get; init; }
 
     /// <summary>
     /// Series colors in series order; a pie's slices count as the series. Colors beyond the
     /// series count are ignored.
     /// </summary>
+    [NotReadBack]
     [MinItems(1), HexColor] public IReadOnlyList<string>? SeriesColors { get; init; }
 
+    [NotReadBack]
     public ChartDataLabels? DataLabels { get; init; }
 
     /// <inheritdoc />
@@ -347,5 +376,6 @@ public sealed record DeleteChartOp : CellsOp
     [Minimum(0)] public int? Index { get; init; }
 
     /// <summary>The chart name.</summary>
+    [NotState]
     [Pattern(@"\S")] public string? Name { get; init; }
 }

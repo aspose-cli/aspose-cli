@@ -13,6 +13,7 @@ public sealed record ProtectSheetOp : CellsOp
     [SecretEnv] public string? PasswordEnv { get; init; }
 
     /// <summary>The actions users may still perform.</summary>
+    [NotReadBack]
     [AllowedValues(typeof(ProtectActions))] public IReadOnlyList<string> Allow { get; init; } = [];
 }
 

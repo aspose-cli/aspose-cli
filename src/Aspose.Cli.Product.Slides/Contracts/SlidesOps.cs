@@ -15,7 +15,7 @@ public sealed record SlidesOpsBatch : BoundedOperationEnvelope<SlidesOp>;
 /// against the presentation as it was before the first operation, so content inserted earlier
 /// in the batch cannot be targeted, and a target deleted earlier fails the operation.
 /// </summary>
-[OperationVocabulary("ops", JsonContext = typeof(SlidesOpsJsonContext))]
+[OperationVocabulary("ops", JsonContext = typeof(SlidesOpsJsonContext), Addresses = new[] { "slide", "slideId", "slides", "shapeId", "shapeName", "placeholder", "at", "path" })]
 [JsonConverter(typeof(OperationJsonConverter<SlidesOp>))]
 public abstract partial record SlidesOp : BoundedOperation;
 
@@ -97,12 +97,15 @@ public sealed record SlidesRectInput
 /// <summary>One body paragraph; its bullets and spacing come from the placeholder's level.</summary>
 public sealed record SlidesParagraphInput
 {
+    [ReadBack("presentation-read.schema.json#/$defs/slideShapeData/properties/text")]
     public required string Text { get; init; }
 
     /// <summary>The outline level, 0 for a top-level paragraph.</summary>
+    [NotReadBack]
     [Minimum(0), Maximum(8)] public int Level { get; init; }
 
     /// <summary>Whether the paragraph shows its level's bullet; false writes a plain paragraph without one.</summary>
+    [NotReadBack]
     public bool Bullet { get; init; } = true;
 }
 
@@ -110,12 +113,15 @@ public sealed record SlidesParagraphInput
 [MinProperties(1)]
 public sealed record SlidesShapeStyleInput
 {
+    [NotReadBack]
     [HexColor] public string? Fill { get; init; }
 
+    [NotReadBack]
     [HexColor] public string? Line { get; init; }
 
     /// <summary>A font name for Latin, East Asian and complex-script text.</summary>
     [Pattern(@"^[^+]", Meaning = "must be a font name; give theme fonts such as \"+mn-lt\" in latinFont and eastAsianFont")]
+    [ReadBack("presentation-read.schema.json#/$defs/slideTextRunData/properties/font")]
     public string? Font { get; init; }
 
     /// <summary>
@@ -123,6 +129,7 @@ public sealed record SlidesShapeStyleInput
     /// "+mj-lt" or body font "+mn-lt", which returns the text to the template's font.
     /// </summary>
     [Pattern(@"^(?:\+m[jn]-lt$|[^+])", Meaning = "must be a font name, or \"+mj-lt\" or \"+mn-lt\" for the theme's Latin heading or body font")]
+    [NotReadBack]
     public string? LatinFont { get; init; }
 
     /// <summary>
@@ -131,14 +138,18 @@ public sealed record SlidesShapeStyleInput
     /// template's font.
     /// </summary>
     [Pattern(@"^(?:\+m[jn]-ea$|[^+])", Meaning = "must be a font name, or \"+mj-ea\" or \"+mn-ea\" for the theme's East Asian heading or body font")]
+    [ReadBack("presentation-read.schema.json#/$defs/slideTextRunData/properties/eastAsianFont")]
     public string? EastAsianFont { get; init; }
 
     /// <summary>The font size in points.</summary>
+    [ReadBack("presentation-read.schema.json#/$defs/slideTextRunData/properties/size")]
     [ExclusiveMinimum(0), Maximum(400)] public double? Size { get; init; }
 
     /// <summary>The text color.</summary>
+    [ReadBack("presentation-read.schema.json#/$defs/slideTextRunData/properties/color")]
     [HexColor] public string? Color { get; init; }
 
+    [ReadBack("presentation-read.schema.json#/$defs/slideTextRunData/properties/bold")]
     public bool? Bold { get; init; }
 }
 
@@ -163,6 +174,7 @@ public sealed record SlidesChartSeriesInput
 public sealed record AddSlideOp : SlidesOp
 {
     /// <summary>The layout name, matched case-insensitively; the first layout when omitted.</summary>
+    [ReadBack("presentation-info.schema.json#/$defs/slideInfo/properties/layout")]
     [Pattern(@"\S")] public string? Layout { get; init; }
 
     /// <summary>The 1-based position of the new slide, at most the slide count plus one; the end when omitted.</summary>
@@ -181,6 +193,7 @@ public sealed record DeleteSlidesOp : SlidesOp
 public sealed record MoveSlideOp : SlideTargetOp
 {
     /// <summary>The 1-based position, at most the slide count.</summary>
+    [NotState]
     [Minimum(1)] public required int To { get; init; }
 }
 
@@ -198,6 +211,7 @@ public sealed record SetSlideHiddenOp : SlidesOp
 {
     [PageRange] public required string Slides { get; init; }
 
+    [ReadBack("presentation-info.schema.json#/$defs/slideInfo/properties/hidden")]
     public required bool Hidden { get; init; }
 }
 
@@ -208,6 +222,7 @@ public sealed record ApplyLayoutOp : SlidesOp
     [PageRange] public required string Slides { get; init; }
 
     /// <summary>The layout name, matched case-insensitively.</summary>
+    [ReadBack("presentation-info.schema.json#/$defs/slideInfo/properties/layout")]
     [Pattern(@"\S")] public required string Layout { get; init; }
 }
 
@@ -219,9 +234,11 @@ public sealed record SetBackgroundOp : SlidesOp
     /// <summary>The slides to change; every slide when omitted.</summary>
     [PageRange] public string? Slides { get; init; }
 
+    [NotReadBack]
     [HexColor] public string? Color { get; init; }
 
     /// <summary>The picture, relative to the working directory.</summary>
+    [NotReadBack]
     [InputPath] public string? ImagePath { get; init; }
 }
 
@@ -229,9 +246,11 @@ public sealed record SetBackgroundOp : SlidesOp
 [Operation("add_section")]
 public sealed record AddSectionOp : SlidesOp
 {
+    [ReadBack("presentation-info.schema.json#/$defs/presentationSectionInfo/properties/name")]
     [Pattern(@"\S")] public required string Name { get; init; }
 
     /// <summary>The 1-based number of the section's first slide.</summary>
+    [ReadBack("presentation-info.schema.json#/$defs/presentationSectionInfo/properties/startSlide")]
     [Minimum(1)] public required int StartSlide { get; init; }
 }
 
@@ -246,6 +265,7 @@ public sealed record AppendPresentationOp : SlidesOp
     /// Whether appended slides keep their own masters, or take the destination's first master
     /// and show its layouts' backgrounds instead of their own.
     /// </summary>
+    [NotState]
     [AllowedValues(typeof(SlidesMasterPolicies))] public string MasterPolicy { get; init; } = SlidesMasterPolicies.KeepSource;
 }
 
@@ -253,6 +273,7 @@ public sealed record AppendPresentationOp : SlidesOp
 [Operation("set_title")]
 public sealed record SetTitleOp : SlideTargetOp
 {
+    [ReadBack("presentation-info.schema.json#/$defs/slideInfo/properties/title")]
     public required string Text { get; init; }
 }
 
@@ -267,6 +288,7 @@ public sealed record SetBodyOp : SlideTargetOp
 [Operation("set_text")]
 public sealed record SetTextOp : ShapeTargetOp
 {
+    [ReadBack("presentation-read.schema.json#/$defs/slideShapeData/properties/text")]
     public required string Text { get; init; }
 }
 
@@ -278,17 +300,22 @@ public sealed record SetTextOp : ShapeTargetOp
 [Operation("replace_text")]
 public sealed record SlidesReplaceTextOp : SlidesOp
 {
+    [NotState]
     [MinLength(1)] public required string Find { get; init; }
 
     /// <summary>The replacement; with regex it honors .NET substitutions such as $1, and $$ is a literal $.</summary>
     [MistakenFor("replacement", "replaceWith")]
+    [NotState]
     public required string Replace { get; init; }
 
     /// <summary>Whether find is a .NET regular expression rather than literal text.</summary>
+    [NotState]
     public bool Regex { get; init; }
 
+    [NotState]
     public bool MatchCase { get; init; }
 
+    [NotState]
     [AllowedValues(typeof(PresentationSearchScopes))] public string Scope { get; init; } = PresentationSearchScopes.All;
 
     /// <inheritdoc />
@@ -314,6 +341,7 @@ public sealed record SlidesReplaceTextOp : SlidesOp
 [Operation("set_notes")]
 public sealed record SetNotesOp : SlideTargetOp
 {
+    [ReadBack("presentation-read.schema.json#/$defs/slideData/properties/notes")]
     public required string Text { get; init; }
 }
 
@@ -325,9 +353,11 @@ public sealed record SlidesInsertImageOp : SlideTargetOp
     [InputPath] public required string Path { get; init; }
 
     /// <summary>Where the picture goes; when omitted it keeps its aspect ratio, centered in 80% by 75% of the slide.</summary>
+    [ReadBack("presentation-read.schema.json#/$defs/slideShapeData/properties/rect")]
     public SlidesRectInput? Rect { get; init; }
 
     /// <summary>The picture's alternative text, which screen readers and exported PDFs carry.</summary>
+    [ReadBack("presentation-read.schema.json#/$defs/slideShapeData/properties/altText")]
     public string? AltText { get; init; }
 }
 
@@ -336,11 +366,14 @@ public sealed record SlidesInsertImageOp : SlideTargetOp
 public sealed record InsertShapeOp : SlideTargetOp
 {
     [MistakenFor("type", "shapeType")]
+    [NotReadBack]
     [AllowedValues(typeof(SlidesShapeKinds))] public required string Kind { get; init; }
 
     [MistakenFor("box", "bounds")]
+    [ReadBack("presentation-read.schema.json#/$defs/slideShapeData/properties/rect")]
     public required SlidesRectInput Rect { get; init; }
 
+    [ReadBack("presentation-read.schema.json#/$defs/slideShapeData/properties/text")]
     public string? Text { get; init; }
 
     public SlidesShapeStyleInput? Style { get; init; }
@@ -356,13 +389,17 @@ public sealed record SlidesInsertTableOp : SlideTargetOp
     /// <summary>The most columns a slide table holds, shared by Markdown tables.</summary>
     internal const int MaxCols = 50;
 
+    [ReadBack("presentation-read.schema.json#/$defs/slideShapeData/properties/rect")]
     public required SlidesRectInput Rect { get; init; }
 
+    [NotReadBack]
     [Minimum(1), Maximum(MaxRows)] public required int RowCount { get; init; }
 
+    [NotReadBack]
     [Minimum(1), Maximum(MaxCols)] public required int ColumnCount { get; init; }
 
     /// <summary>Cell text by row, at most rowCount rows of at most columnCount cells each.</summary>
+    [NotReadBack]
     public IReadOnlyList<IReadOnlyList<string>>? Data { get; init; }
 
     /// <inheritdoc />
@@ -379,11 +416,14 @@ public sealed record SlidesInsertTableOp : SlideTargetOp
 public sealed record SlidesSetTableCellOp : ShapeTargetOp
 {
     /// <summary>The 1-based row.</summary>
+    [NotState]
     [Minimum(1)] public required int Row { get; init; }
 
     /// <summary>The 1-based column.</summary>
+    [NotState]
     [Minimum(1)] public required int Col { get; init; }
 
+    [NotReadBack]
     public required string Text { get; init; }
 }
 
@@ -395,15 +435,20 @@ public sealed record SlidesSetTableCellOp : ShapeTargetOp
 public sealed record InsertChartOp : SlideTargetOp
 {
     [MistakenFor("type", "chartType")]
+    [NotReadBack]
     [AllowedValues(typeof(SlidesChartKinds))] public required string Kind { get; init; }
 
     [MistakenFor("box", "bounds")]
+    [ReadBack("presentation-read.schema.json#/$defs/slideShapeData/properties/rect")]
     public required SlidesRectInput Rect { get; init; }
 
+    [NotReadBack]
     [MinItems(1), MaxItems(1000)] public required IReadOnlyList<string> Categories { get; init; }
 
+    [NotReadBack]
     [MinItems(1), MaxItems(50)] public required IReadOnlyList<SlidesChartSeriesInput> Series { get; init; }
 
+    [NotReadBack]
     public string? Title { get; init; }
 
     /// <inheritdoc />
@@ -424,8 +469,10 @@ public sealed record InsertChartOp : SlideTargetOp
 [AtLeastOneOf("categories", "series")]
 public sealed record UpdateChartDataOp : ShapeTargetOp
 {
+    [NotReadBack]
     [MinItems(1), MaxItems(1000)] public IReadOnlyList<string>? Categories { get; init; }
 
+    [NotReadBack]
     [MinItems(1), MaxItems(50)] public IReadOnlyList<SlidesChartSeriesInput>? Series { get; init; }
 
     /// <inheritdoc />
@@ -459,12 +506,16 @@ public sealed record SetShapeStyleOp : ShapeTargetOp
 [AtLeastOneOf("x", "y", "width", "height")]
 public sealed record SetShapeBoundsOp : ShapeTargetOp
 {
+    [ReadBack("presentation-read.schema.json#/$defs/slideRect/properties/x")]
     [Minimum(0)] public double? X { get; init; }
 
+    [ReadBack("presentation-read.schema.json#/$defs/slideRect/properties/y")]
     [Minimum(0)] public double? Y { get; init; }
 
+    [ReadBack("presentation-read.schema.json#/$defs/slideRect/properties/width")]
     [ExclusiveMinimum(0)] public double? Width { get; init; }
 
+    [ReadBack("presentation-read.schema.json#/$defs/slideRect/properties/height")]
     [ExclusiveMinimum(0)] public double? Height { get; init; }
 }
 
@@ -479,10 +530,13 @@ public sealed record SetFooterOp : SlidesOp
     /// <summary>The slides to change; every slide when omitted.</summary>
     [PageRange] public string? Slides { get; init; }
 
+    [NotReadBack]
     public string? Text { get; init; }
 
+    [NotReadBack]
     public bool? ShowNumber { get; init; }
 
+    [NotReadBack]
     public bool? ShowDate { get; init; }
 }
 
@@ -493,9 +547,11 @@ public sealed record SetTransitionOp : SlidesOp
 {
     [PageRange] public required string Slides { get; init; }
 
+    [NotReadBack]
     [AllowedValues(typeof(SlidesTransitionKinds))] public string? Kind { get; init; }
 
     /// <summary>The transition duration in milliseconds.</summary>
+    [NotReadBack]
     [Minimum(0), Maximum(60000)] public int? DurationMs { get; init; }
 }
 
@@ -504,14 +560,19 @@ public sealed record SetTransitionOp : SlidesOp
 [AtLeastOneOf("title", "author", "subject", "keywords", "company")]
 public sealed record SlidesSetPropertiesOp : SlidesOp
 {
+    [ReadBack("presentation-info.schema.json#/properties/properties/additionalProperties")]
     public string? Title { get; init; }
 
+    [ReadBack("presentation-info.schema.json#/properties/properties/additionalProperties")]
     public string? Author { get; init; }
 
+    [ReadBack("presentation-info.schema.json#/properties/properties/additionalProperties")]
     public string? Subject { get; init; }
 
+    [ReadBack("presentation-info.schema.json#/properties/properties/additionalProperties")]
     public string? Keywords { get; init; }
 
+    [ReadBack("presentation-info.schema.json#/properties/properties/additionalProperties")]
     public string? Company { get; init; }
 }
 
@@ -521,9 +582,11 @@ public sealed record SetSlideSizeOp : SlidesOp
 {
     /// <summary>16x9, 4x3, or WxHpt such as 800x450pt; each side is 72 through 7200 points.</summary>
     [Pattern(@"^(16x9|4x3|[0-9]+(?:\.[0-9]+)?x[0-9]+(?:\.[0-9]+)?pt)$")]
+    [ReadBack("presentation-info.schema.json#/$defs/presentationSummary/properties/widthPoints")]
     public required string Size { get; init; }
 
     /// <summary>Whether the content is scaled to fit the new size rather than kept at its position.</summary>
+    [NotState]
     public bool ScaleContent { get; init; } = true;
 
     /// <summary>The sides of a WxHpt size in points; false for a named size.</summary>

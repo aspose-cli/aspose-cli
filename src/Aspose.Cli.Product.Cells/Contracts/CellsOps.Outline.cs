@@ -15,6 +15,7 @@ public sealed record GroupRowsOp : CellsOp
     [Minimum(1)] public int? To { get; init; }
 
     /// <summary>Whether the new group is collapsed.</summary>
+    [ReadBack("workbook-info.schema.json#/$defs/rowGroupInfo/properties/collapsed")]
     public bool Collapse { get; init; }
 
     /// <inheritdoc />
@@ -46,6 +47,7 @@ public sealed record GroupColumnsOp : CellsOp
     [A1Column] public string? To { get; init; }
 
     /// <summary>Whether the new group is collapsed.</summary>
+    [ReadBack("workbook-info.schema.json#/$defs/columnGroupInfo/properties/collapsed")]
     public bool Collapse { get; init; }
 
     /// <inheritdoc />

@@ -23,6 +23,70 @@ public sealed class OperationVocabularyAttribute(string schemaId) : Attribute
     /// vocabulary with camelCase property names.
     /// </summary>
     public Type? JsonContext { get; set; }
+
+    /// <summary>
+    /// The wire names of the top-level operation fields that address a target, an anchor or a
+    /// source, such as <c>page</c> or <c>path</c>: they are not state (C-R21), unless the member
+    /// declares a read-back classification of its own.
+    /// </summary>
+    public string[]? Addresses { get; set; }
+}
+
+/// <summary>
+/// Classifies an operation field for the read-back rule (C-R21): it is state the operation
+/// writes, and a read result reports it at <paramref name="path"/>. Every field of an operation
+/// is classified, by one of <see cref="ReadBackAttribute"/>, <see cref="NotReadBackAttribute"/>,
+/// <see cref="ReadBackByPositionAttribute"/> or <see cref="NotStateAttribute"/>, or by the
+/// vocabulary's <see cref="OperationVocabularyAttribute.Addresses"/>; a record field without one
+/// is classified field by field in its record. The operation schema publishes the
+/// classification of each field as <c>x-readBack</c>.
+/// </summary>
+/// <param name="path">
+/// The schema of the property the read reports, as a URI reference relative to the product's
+/// operation schema: the read result's schema file and a JSON Pointer into it, such as
+/// <c>pdf-info.schema.json#/$defs/pdfPageInfo/properties/rotation</c>. A pointer that ends in a
+/// dictionary's <c>additionalProperties</c>, such as
+/// <c>pdf-info.schema.json#/properties/metadata/additionalProperties</c>, is the entry named
+/// after the field. The operation schema publishes it resolved against its own <c>$id</c>, like
+/// the absolute <c>$ref</c> of one schema to another.
+/// </param>
+[AttributeUsage(AttributeTargets.Property)]
+public sealed class ReadBackAttribute(string path) : Attribute
+{
+    /// <summary>The read path, published as the field's <c>x-readBack</c>.</summary>
+    public string Path { get; } = path;
+}
+
+/// <summary>Classifies an operation field as state that no read result reports yet; published as <c>x-readBack: "unread"</c>.</summary>
+[AttributeUsage(AttributeTargets.Property)]
+public sealed class NotReadBackAttribute : Attribute;
+
+/// <summary>
+/// Classifies an operation field as state that a read result reports by position rather than
+/// under a field of its own name, such as values written into cells; published as
+/// <c>x-readBack: "position"</c>.
+/// </summary>
+[AttributeUsage(AttributeTargets.Property)]
+public sealed class ReadBackByPositionAttribute : Attribute;
+
+/// <summary>
+/// Classifies an operation field as not state: it selects a target, names a source or
+/// parameterizes the action, such as a search pattern; published as <c>x-readBack: "not-state"</c>.
+/// </summary>
+[AttributeUsage(AttributeTargets.Property)]
+public sealed class NotStateAttribute : Attribute;
+
+/// <summary>The values of an operation field's <c>x-readBack</c> other than a read path.</summary>
+public static class ReadBackKinds
+{
+    /// <summary>State that no read result reports yet.</summary>
+    public const string Unread = "unread";
+
+    /// <summary>State a read result reports by position.</summary>
+    public const string Position = "position";
+
+    /// <summary>Not state: a selector, a source or a parameter of the action.</summary>
+    public const string NotState = "not-state";
 }
 
 /// <summary>Declares one operation of a vocabulary by its stable wire name.</summary>

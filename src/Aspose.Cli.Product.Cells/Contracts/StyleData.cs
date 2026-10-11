@@ -10,50 +10,64 @@ namespace Aspose.Cli.Product.Cells.Contracts;
 public sealed record StyleData
 {
     /// <summary>The font family name.</summary>
+    [ReadBack("workbook-read.schema.json#/$defs/styleData/properties/font")]
     [Pattern(@"\S")] public string? Font { get; init; }
 
     /// <summary>The font size in points; fractional sizes such as 10.5 are kept.</summary>
+    [ReadBack("workbook-read.schema.json#/$defs/styleData/properties/size")]
     [Minimum(1), Maximum(409)] public double? Size { get; init; }
 
     /// <summary>Whether the text is bold.</summary>
+    [ReadBack("workbook-read.schema.json#/$defs/styleData/properties/bold")]
     public bool? Bold { get; init; }
 
     /// <summary>Whether the text is italic.</summary>
+    [ReadBack("workbook-read.schema.json#/$defs/styleData/properties/italic")]
     public bool? Italic { get; init; }
 
     /// <summary>The text color.</summary>
+    [ReadBack("workbook-read.schema.json#/$defs/styleData/properties/color")]
     [HexColor] public string? Color { get; init; }
 
     /// <summary>The solid background fill color.</summary>
     [MistakenFor("backgroundColor", "bgColor", "fillColor", "background", "fill")]
+    [ReadBack("workbook-read.schema.json#/$defs/styleData/properties/bg")]
     [HexColor] public string? Bg { get; init; }
 
     /// <summary>The number format code, such as 0.0%.</summary>
+    [ReadBack("workbook-read.schema.json#/$defs/styleData/properties/numberFormat")]
     [MinLength(1)] public string? NumberFormat { get; init; }
 
     /// <summary>The horizontal alignment of the text.</summary>
     [MistakenFor("horizontalAlignment", "alignment", "align", "textAlign")]
+    [ReadBack("workbook-read.schema.json#/$defs/styleData/properties/hAlign")]
     [AllowedValues(typeof(HorizontalAlignments))] public string? HAlign { get; init; }
 
     /// <summary>The vertical alignment of the text.</summary>
+    [ReadBack("workbook-read.schema.json#/$defs/styleData/properties/vAlign")]
     [AllowedValues(typeof(VerticalAlignments))] public string? VAlign { get; init; }
 
     /// <summary>Whether text wraps within the cell.</summary>
+    [ReadBack("workbook-read.schema.json#/$defs/styleData/properties/wrap")]
     public bool? Wrap { get; init; }
 
     /// <summary>Whether the text has a single underline.</summary>
+    [ReadBack("workbook-read.schema.json#/$defs/styleData/properties/underline")]
     public bool? Underline { get; init; }
 
     /// <summary>Whether the text is struck through.</summary>
+    [ReadBack("workbook-read.schema.json#/$defs/styleData/properties/strikethrough")]
     public bool? Strikethrough { get; init; }
 
     /// <summary>The indent level; 0 removes the indent.</summary>
+    [ReadBack("workbook-read.schema.json#/$defs/styleData/properties/indent")]
     [Minimum(0), Maximum(250)] public int? Indent { get; init; }
 
     /// <summary>
     /// Whether Excel keeps the cell read-only once its sheet is protected. Every cell is locked
     /// unless set false, as for the input cells of a protected form; a read reports only false.
     /// </summary>
+    [ReadBack("workbook-read.schema.json#/$defs/styleData/properties/locked")]
     public bool? Locked { get; init; }
 }
 

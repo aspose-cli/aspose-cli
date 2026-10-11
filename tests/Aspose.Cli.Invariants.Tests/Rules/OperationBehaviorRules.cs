@@ -372,11 +372,11 @@ internal static partial class ContractRules
     // ----- C-R21: what an operation writes reads back ----------------------------------------------
 
     /// <summary>
-    /// Every operation with a state field that <see cref="StateFields"/> gives a read path: its
+    /// Every operation with a state field whose declaration gives a read path (<see cref="ReadPaths"/>): its
     /// sample's edit, then the one command whose result the path's schema describes, before and
     /// after. Each state field the sample writes must hold the written value under the read name
     /// at a place that did not hold it before. Whether the read name is the op field's name, and
-    /// the fields no read reports, are <c>R21Declared</c>'s questions; a state the table says reads
+    /// the fields no read reports, are <c>R21Declared</c>'s questions; a state declared to read
     /// back by position is not judged. An operation with read paths but no sample fails.
     /// </summary>
     private static IEnumerable<InvariantCase> R21Run(CliCatalog catalog)
@@ -386,12 +386,7 @@ internal static partial class ContractRules
         {
             foreach (string op in product.Ops)
             {
-                string prefix = $"{product.Id} {op}.";
-                (string Field, string Path)[] fields =
-                [
-                    .. StateFields.Where(pair => pair.Value is not null && pair.Key.StartsWith(prefix, StringComparison.Ordinal))
-                        .Select(pair => (pair.Key[prefix.Length..], pair.Value!)),
-                ];
+                (string Field, string Path)[] fields = [.. ReadPaths(product, op)];
                 if (fields.Length == 0)
                 {
                     continue;
@@ -459,8 +454,7 @@ internal static partial class ContractRules
         foreach ((string field, string path) in fields)
         {
             JsonNode?[] written = [.. Written(operation, field.Split('.'))];
-            string schemaId = path[..path.IndexOf('#', StringComparison.Ordinal)];
-            string read = path[(path.LastIndexOfAny(['/', '#']) + 1)..];
+            (string schemaId, string read) = ReadTarget(field, path);
             if (!reads.TryGetValue(schemaId, out (JsonArray Before, JsonArray After) state))
             {
                 state = (OperationRuns.Read(workspace, sample.Product, source, open, schemaId), OperationRuns.Read(workspace, sample.Product, output, open, schemaId));

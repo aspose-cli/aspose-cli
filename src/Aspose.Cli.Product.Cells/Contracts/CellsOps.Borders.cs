@@ -18,10 +18,13 @@ public sealed record SetBordersOp : CellsOp
     /// The edges to draw: outline (the four outer edges), inside (the inner grid lines), single
     /// edges, horizontal and vertical inner lines, or all (the full grid).
     /// </summary>
+    [NotReadBack]
     [MinItems(1), AllowedValues(typeof(BorderEdges))] public required IReadOnlyList<string> Edges { get; init; }
 
+    [NotReadBack]
     [AllowedValues(typeof(BorderLineStyles))] public string Style { get; init; } = BorderLineStyles.Thin;
 
+    [NotReadBack]
     [HexColor] public string Color { get; init; } = "#000000";
 
     /// <inheritdoc />

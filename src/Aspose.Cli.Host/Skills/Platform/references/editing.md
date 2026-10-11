@@ -22,6 +22,12 @@ aspose-cli schema v2/pdf/ops
   as `ifMatch`, and its `description` says how the product resolves addresses
   across a batch: against the original document or as the earlier operations
   left it.
+- Each field's `x-readBack` says where a read reports what the field writes:
+  a read result's schema URI with a JSON Pointer to that property (a
+  dictionary's `additionalProperties` is the entry named after the field),
+  `unread` when no read reports it yet, `position` when a read reports it by
+  position rather than by name, and `not-state` for a selector, a source or a
+  parameter. Read a changed field back at that property before you report it.
 
 The product's `aspose-cli docs <product>/editing` groups the operations by task
 and gives recipes and ordering rules the schema cannot state.
