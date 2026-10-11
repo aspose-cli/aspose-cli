@@ -16,15 +16,13 @@ internal static class PdfRender
         PdfRenderGrid? grid = RenderGrid(request);
         LicenseState state = session.Outputs.License;
         using LoadedPdf loaded = session.Loader.Open(filePath, request.Password);
-        IReadOnlyList<int> pages = request.AllPages
-            ? Enumerable.Range(1, loaded.Document.Pages.Count).ToArray()
-            : request.Pages?.Resolve(loaded.Document.Pages.Count) ?? [1];
+        IReadOnlyList<int> pages = RenderSelection.Resolve(request.Pages, loaded.Document.Pages.Count, ErrorCodes.PageNotFound, "page");
+        IReadOnlyList<string> paths = request.Output.Parts(pages);
         string outputDirectory = request.Output.Directory;
         using OutputSet<Document> writer = session.Outputs.BeginSet([outputDirectory], "pdf-render");
         var staged = new List<(int Page, string Path)>();
-        foreach (int pageNumber in pages)
+        foreach ((int pageNumber, string path) in pages.Zip(paths))
         {
-            string path = request.Output.Part(PdfRaster.PagePart, pageNumber, pages.Count);
             writer.Stage(path, request.Output.Overwrite, loaded.Document, stagedPath =>
             {
                 using FileStream stream = File.Create(stagedPath);

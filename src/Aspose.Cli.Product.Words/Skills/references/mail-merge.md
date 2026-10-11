@@ -52,9 +52,10 @@ Supply the values or confirm with the user that the result is acceptable.
 For one file per record, such as one contract per employee, either run one
 `words edit` per row with an `inline` row and its own `--out`, which names
 each file as you choose, or merge once and run
-`aspose-cli words split merged.docx --by section --out-dir parts`: with a
-one-section template, part N (`part-001.docx`, `part-002.docx`, ...) is record
-N, so rename each part from row N of the data. Check representative
+`aspose-cli words split merged.docx --by sections --out-dir parts`: with a
+one-section template, part N (`merged.1.docx`, `merged.2.docx`, ..., padded
+as `merged.01.docx` from ten parts on) is record N, so rename each part from
+row N of the data. Check representative
 outputs for long values, CJK or right-to-left text and pagination. The
 [mail-merge example](../examples/mail-merge-letters/README.md) merges a CSV
 file into a letter.

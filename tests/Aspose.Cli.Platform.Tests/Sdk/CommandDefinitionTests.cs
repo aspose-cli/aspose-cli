@@ -434,8 +434,8 @@ public sealed class CommandDefinitionTests : IDisposable
     {
         var output = new ResolvedOutput(FormatDescriptor.Declare("png", FormatUse.Render, null, null, 0, false, ".png"), _temp.File("deck.png"));
 
-        Assert.Equal(_temp.File("deck.png"), output.Part("s", 1, 1));
-        Assert.Equal(_temp.File("deck.s3.png"), output.Part("s", 3, 4));
+        Assert.Equal([_temp.File("deck.png")], output.Parts([3]));
+        Assert.Equal([_temp.File("deck.3.png"), _temp.File("deck.4.png")], output.Parts([3, 4]));
         Assert.Equal(_temp.File("deck.Summary.png"), output.Part("Summary"));
     }
 

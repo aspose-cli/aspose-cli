@@ -31,7 +31,7 @@ internal static class ReadCommand
                 return new DocumentReadRequest
                 {
                     Input = standard.Input,
-                    Blocks = range is null ? null : PageRange.Parse(range),
+                    Blocks = range is null ? null : PageRange.ParseOption(blocks.Name, range),
                     Section = parse.GetValue(section),
                     Scope = parse.GetValue(scope) ?? "text",
                     MaxCharacters = characters,

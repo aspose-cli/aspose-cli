@@ -5445,14 +5445,6 @@
       "detailsSchemaId": "v2/common/not-found-details"
     },
     {
-      "code": "PAGE_RANGE_INVALID",
-      "owner": "common",
-      "severity": "error",
-      "exitCode": 4,
-      "category": "validation",
-      "detailsSchemaId": "v2/common/diagnostic-details"
-    },
-    {
       "code": "PASSWORD_INVALID",
       "owner": "common",
       "severity": "error",

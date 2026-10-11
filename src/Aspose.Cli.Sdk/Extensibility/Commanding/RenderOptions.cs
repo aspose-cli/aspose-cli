@@ -1,4 +1,5 @@
 using System.CommandLine;
+using System.Globalization;
 using Aspose.Cli.Sdk.Addressing;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Rendering;
@@ -38,50 +39,30 @@ public sealed class DpiOption
     }
 }
 
-/// <summary>One resolved selection of rendered parts.</summary>
-/// <param name="Range">The 1-based range, or null for the default first part.</param>
-/// <param name="All">Whether every part was requested.</param>
-public sealed record PartSelection(PageRange? Range, bool All);
-
 /// <summary>
 /// The shared part selection of a render command: the <see cref="PartRangeOption"/>
-/// <c>--{part}s</c> with <c>--all-{part}s</c> for a product-supplied part noun. Omitting both
-/// renders the first part.
+/// <c>--{part}s</c> for a product-supplied part noun. Omitting it renders every part; one run
+/// renders at most <see cref="RenderSelection.MaximumParts"/>.
 /// </summary>
 public sealed class PartSelectionOptions
 {
     private readonly PartRangeOption _range;
-    private readonly Option<bool> _all;
 
-    /// <summary>Creates the options for a product-supplied part noun, such as <c>page</c>.</summary>
+    /// <summary>Creates the option for a product-supplied part noun, such as <c>page</c>.</summary>
     public PartSelectionOptions(string part)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(part);
-        _range = new PartRangeOption(part, $"{part} 1");
-        _all = new Option<bool>($"--all-{part}s") { Description = $"Render every {part}." };
-        Options = [.. _range.Options, _all];
+        _range = new PartRangeOption(part, string.Create(CultureInfo.InvariantCulture, $"every {part}; at most {RenderSelection.MaximumParts} per run"));
+        Options = _range.Options;
     }
 
-    /// <summary>Both options, for a product command's option list.</summary>
+    /// <summary>The option, for a product command's option list.</summary>
     public IReadOnlyList<Option> Options { get; }
 
-    /// <summary>Returns the validated selection.</summary>
-    /// <exception cref="CliException">
-    /// <c>OPTION_INVALID</c> when both are given; <c>PAGE_RANGE_INVALID</c> for a bad range.
-    /// </exception>
-    public PartSelection Read(ParseResult parse)
-    {
-        ArgumentNullException.ThrowIfNull(parse);
-        string? range = _range.Read(parse);
-        bool all = parse.GetValue(_all);
-        if (range is not null && all)
-        {
-            throw CliErrors.OptionInvalid(
-                _all.Name,
-                $"cannot be combined with {_range.Name}",
-                $"Choose a range with {_range.Name} or every part with {_all.Name}.");
-        }
-
-        return new PartSelection(range is null ? null : PageRange.Parse(range), all);
-    }
+    /// <summary>
+    /// The selected parts, or null when the option is omitted, which selects every part; the
+    /// engine resolves them with <see cref="RenderSelection.Resolve"/>.
+    /// </summary>
+    /// <exception cref="CliException"><c>OPTION_INVALID</c> when the value is not a selection.</exception>
+    public PageRange? Read(ParseResult parse) => _range.ReadRange(parse);
 }

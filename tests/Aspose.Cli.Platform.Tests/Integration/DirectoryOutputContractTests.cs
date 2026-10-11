@@ -15,11 +15,11 @@ public sealed class DirectoryOutputContractTests
     private static readonly Dictionary<string, (string[] Create, string[] Publish)> Cases = new(StringComparer.Ordinal)
     {
         ["pdf split"] = (["pdf", "create", "input.pdf", "--from-text", "content.txt"],
-            ["pdf", "split", "input.pdf", "--every", "1", "--out-dir", "parts"]),
+            ["pdf", "split", "input.pdf", "--by", "pages", "--out-dir", "parts"]),
         ["pdf extract"] = (["pdf", "create", "input.pdf", "--from-text", "content.txt"],
             ["pdf", "extract", "input.pdf", "--what", "text", "--out-dir", "parts"]),
         ["words split"] = (["words", "create", "input.docx", "--text", "content.txt"],
-            ["words", "split", "input.docx", "--by", "section", "--out-dir", "parts"]),
+            ["words", "split", "input.docx", "--by", "sections", "--out-dir", "parts"]),
         ["words extract"] = (["words", "create", "input.docx", "--text", "content.txt"],
             ["words", "extract", "input.docx", "--what", "text", "--out-dir", "parts"]),
         ["slides extract"] = (["slides", "create", "input.pptx", "--from-markdown", "content.md"],

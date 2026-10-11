@@ -1,4 +1,5 @@
 using System.CommandLine;
+using Aspose.Cli.Sdk.Addressing;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Extensibility.Commanding;
 using Aspose.Cli.Sdk.IO;
@@ -71,7 +72,7 @@ public sealed class RenderPixelGuardTests
     }
 
     [Fact]
-    public void PartSelection_RejectsARangeWithAllParts()
+    public void PartSelection_ReadsARangeOrAllAndRejectsAMalformedOneAsAnOptionMistake()
     {
         var selection = new PartSelectionOptions("page");
         var command = new Command("render");
@@ -80,13 +81,18 @@ public sealed class RenderPixelGuardTests
             command.Options.Add(option);
         }
 
-        PartSelection range = selection.Read(command.Parse(["--pages", "2-3"]));
+        PageRange? range = selection.Read(command.Parse(["--pages", "2-3"]));
+        PageRange? all = selection.Read(command.Parse(["--pages", "all"]));
+        PageRange? omitted = selection.Read(command.Parse([]));
         CliException error = Assert.Throws<CliException>(
-            () => selection.Read(command.Parse(["--pages", "2", "--all-pages"])));
+            () => selection.Read(command.Parse(["--pages", "3-x"])));
 
-        Assert.Equal("2-3", range.Range!.Text);
-        Assert.False(range.All);
+        Assert.Equal("2-3", range!.Text);
+        Assert.Equal([1, 2, 3, 4], all!.Resolve(4));
+        Assert.Null(omitted);
         Assert.Equal(ErrorCodes.OptionInvalid, error.Code);
+        Assert.Equal("--pages", error.Details!["option"]!.GetValue<string>());
+        Assert.DoesNotContain(selection.Options, static option => option.Name.StartsWith("--all-", StringComparison.Ordinal));
     }
 
     private static (DpiOption Dpi, ParseResult Parse) ParseDpi(params string[] arguments)

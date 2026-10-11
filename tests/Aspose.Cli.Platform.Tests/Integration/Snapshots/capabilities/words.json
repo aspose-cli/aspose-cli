@@ -1174,7 +1174,7 @@
             "secret": false,
             "valueSource": "command-line",
             "inputKind": "none",
-            "description": "Pages to process, as 1-based numbers and ranges such as 1-3,7,9-. Default: every page. Only with fixed-page targets."
+            "description": "Pages to process: 1-based numbers and ranges such as 1-3,7,9-, or all. Default: every page. Only with fixed-page targets."
           },
           {
             "name": "--password",
@@ -2482,26 +2482,6 @@
         "hidden": false,
         "options": [
           {
-            "name": "--all-pages",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "false",
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": false,
-            "valueSource": "command-line",
-            "inputKind": "none",
-            "description": "Render every page."
-          },
-          {
             "name": "--dpi",
             "aliases": [],
             "type": "integer",
@@ -2550,7 +2530,7 @@
             "secret": false,
             "valueSource": "command-line",
             "inputKind": "none",
-            "description": "Output path; multi-page output adds .pN before the extension."
+            "description": "Output path; several pages write <stem>.<page>.<ext> beside it."
           },
           {
             "name": "--overwrite",
@@ -2586,7 +2566,7 @@
             "secret": false,
             "valueSource": "command-line",
             "inputKind": "none",
-            "description": "Pages to process, as 1-based numbers and ranges such as 1-3,7,9-. Default: page 1."
+            "description": "Pages to process: 1-based numbers and ranges such as 1-3,7,9-, or all. Default: every page; at most 20 per run."
           },
           {
             "name": "--password",
@@ -2696,12 +2676,28 @@
             "allowedValues": [
               "heading1",
               "pages",
-              "section"
+              "sections"
             ],
             "secret": false,
             "valueSource": "command-line",
             "inputKind": "none",
-            "description": "section, heading1 (one part per Heading 1, after a leading part for any blocks before the first) or pages."
+            "description": "How to divide the document: sections, one part per section; heading1, one part per Heading 1 after a leading part for any blocks before the first; pages, one part per page, per --every pages or per group."
+          },
+          {
+            "name": "--every",
+            "aliases": [],
+            "type": "integer",
+            "minimumArity": 1,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": false,
+            "allowedValues": [],
+            "secret": false,
+            "valueSource": "command-line",
+            "inputKind": "none",
+            "description": "Pages per part with --by pages. Default: 1."
           },
           {
             "name": "--font-dir",
@@ -2733,7 +2729,7 @@
             "secret": false,
             "valueSource": "command-line",
             "inputKind": "none",
-            "description": "Directory that receives the parts."
+            "description": "Directory that receives the parts, named <stem>.<n>.docx."
           },
           {
             "name": "--overwrite",
@@ -2769,7 +2765,7 @@
             "secret": false,
             "valueSource": "command-line",
             "inputKind": "none",
-            "description": "Pages to process, as 1-based numbers and ranges such as 1-3,7,9-. Default: every page, one part each. Only with --by pages."
+            "description": "Pages to process: 1-based numbers and ranges such as 1-3,7,9-, or all. Default: every page. Only with --by pages."
           },
           {
             "name": "--password",
@@ -6521,7 +6517,7 @@
               "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/output.schema.json"
             },
             "source": {
-              "description": "What of the document the part holds: section-N, page-N or blocks-S-E.",
+              "description": "What of the document the part holds: section-N, page-N, pages-R for the range R of a part of several pages, or blocks-S-E.",
               "type": "string"
             }
           }

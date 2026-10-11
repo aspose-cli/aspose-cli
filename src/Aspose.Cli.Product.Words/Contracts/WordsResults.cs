@@ -763,7 +763,7 @@ public sealed record SplitOutput
     /// <summary>The part's file.</summary>
     public required OutputInfo Output { get; init; }
 
-    /// <summary>What of the document the part holds: <c>section-N</c>, <c>page-N</c> or <c>blocks-S-E</c>.</summary>
+    /// <summary>What of the document the part holds: <c>section-N</c>, <c>page-N</c>, <c>pages-R</c> for the range R of a part of several pages, or <c>blocks-S-E</c>.</summary>
     public string? Source { get; init; }
 }
 

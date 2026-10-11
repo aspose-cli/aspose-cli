@@ -330,11 +330,11 @@ Arguments:
 
 Options:
   --to <jpeg|png|svg>                            Image format: png, jpeg or svg. Default: the --out extension's format, else png.
-  --sheet <sheet>                                Sheet to render. Default: the active sheet.
+  --sheet <sheet>                                Sheet to render. Default: every visible sheet, at most 20 per run.
   --range <range>                                Render only this range, e.g. A1:G20 or Sales!A1:G20.
   --all-sheets                                   Render every visible sheet, one image per sheet named <out-base>.<Sheet><ext>.
   --dpi <dpi>                                    Raster resolution (36-1200); ignored for vector formats. [default: 192]
-  -o, --out <out>                                Output path. Default: the input path with the image extension. With --all-sheets it is the naming template: <base>.<Sheet><ext>.
+  -o, --out <out>                                Output path. Default: the input path with the image extension. Several sheets write <stem>.<sheet>.<ext> beside it.
   --overwrite                                    Replace the output file if it already exists.
   --password <password>                          Password for the workbook. Discouraged: visible in the process list; prefer --password-env.
   --password-env <password-env>                  Name of an environment variable holding the password for the workbook.

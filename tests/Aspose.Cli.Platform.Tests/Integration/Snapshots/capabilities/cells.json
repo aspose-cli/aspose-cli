@@ -2154,7 +2154,7 @@
             "secret": false,
             "valueSource": "command-line",
             "inputKind": "none",
-            "description": "Output path. Default: the input path with the image extension. With --all-sheets it is the naming template: <base>.<Sheet><ext>."
+            "description": "Output path. Default: the input path with the image extension. Several sheets write <stem>.<sheet>.<ext> beside it."
           },
           {
             "name": "--overwrite",
@@ -2257,7 +2257,7 @@
             "secret": false,
             "valueSource": "command-line",
             "inputKind": "none",
-            "description": "Sheet to render. Default: the active sheet."
+            "description": "Sheet to render. Default: every visible sheet, at most 20 per run."
           },
           {
             "name": "--to",
@@ -6282,7 +6282,7 @@
           "maximum": 1200
         },
         "outputs": {
-          "description": "Per-sheet output files of an --all-sheets render, in workbook order. Omitted for a single-sheet render. When present, output and sheet describe the first rendered sheet — a stable summary for single-output consumers.",
+          "description": "Per-sheet output files of a render of every visible sheet, the default or --all-sheets, in workbook order. Omitted for a render of a named sheet or a range. When present, output and sheet describe the first rendered sheet — a stable summary for single-output consumers.",
           "type": "array",
           "items": {
             "$ref": "#/$defs/sheetRenderOutput"
@@ -6302,7 +6302,7 @@
       },
       "$defs": {
         "sheetRenderOutput": {
-          "description": "One rendered sheet of an --all-sheets render.",
+          "description": "One rendered sheet of a render of every visible sheet.",
           "type": "object",
           "required": [
             "sheet",

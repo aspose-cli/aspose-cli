@@ -42,7 +42,7 @@ public sealed class PdfResultWorkflowTests : IDisposable
         Assert.Equal(1, Assert.Single(render["outputs"]!.AsArray())!["page"]!.GetValue<int>());
 
         JsonNode split = Succeeds(_workspace.Run(
-            "pdf", "split", "report.pdf", "--every", "1", "--out-dir", "parts", "--output-format", "json"));
+            "pdf", "split", "report.pdf", "--by", "pages", "--out-dir", "parts", "--output-format", "json"));
         Assert.Equal(["1", "2"], split["outputs"]!.AsArray().Select(static part => part!["pages"]!.GetValue<string>()));
 
         JsonNode extract = Succeeds(_workspace.Run(

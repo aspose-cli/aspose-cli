@@ -2,6 +2,7 @@ using System.Text;
 using Aspose.Cells;
 using Aspose.Cells.Rendering;
 using Aspose.Cli.Product.Cells.Engine.Mapping;
+using Aspose.Cli.Sdk.Addressing;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Licensing;
@@ -25,7 +26,7 @@ internal static class CellsRender
         Workbook workbook = loaded.Workbook;
         SourceInfo input = BuildSource(request.Input, loaded);
 
-        if (request.AllSheets)
+        if (request.AllSheets || (request.SheetName is null && request.Range is null))
         {
             return RenderAllSheets(session, workbook, input, request, licenseState, loaded);
         }
@@ -140,7 +141,8 @@ internal static class CellsRender
     }
 
     /// <summary>
-    /// The <c>--all-sheets</c> path: renders every visible sheet, each to its
+    /// The every-sheet path, the default and <c>--all-sheets</c>: renders every visible sheet, at most
+    /// <see cref="RenderSelection.MaximumParts"/>, each to its
     /// own file derived from the single output path, in workbook order. A
     /// hidden sheet is skipped silently by design — revealing is reserved for
     /// an explicit <c>--sheet</c> request. A sheet only IT cannot produce
@@ -149,6 +151,9 @@ internal static class CellsRender
     /// (<c>OUTPUT_EXISTS</c>, <c>RENDER_TOO_LARGE</c>, …) fails the whole
     /// command. If every candidate was skipped, the first skip reason is
     /// rethrown so an all-empty workbook still surfaces <c>RENDER_EMPTY</c>.
+    /// The default, unlike <c>--all-sheets</c>, leaves out the warning sheets an
+    /// evaluation save added, as every command's default does, unless the
+    /// workbook shows nothing else.
     /// </summary>
     private static RenderResult RenderAllSheets(
         CellsSession session, Workbook workbook, SourceInfo input, RenderRequest request, LicenseState licenseState, LoadedWorkbook loaded)
@@ -160,6 +165,21 @@ internal static class CellsRender
             {
                 candidates.Add(sheet);
             }
+        }
+
+        if (!request.AllSheets && candidates.Any(static sheet => !CellsEvaluation.IsWarningSheet(sheet)))
+        {
+            candidates.RemoveAll(CellsEvaluation.IsWarningSheet);
+        }
+
+        if (candidates.Count > RenderSelection.MaximumParts)
+        {
+            throw CliErrors.SelectionTooLarge(
+                "--sheet",
+                "sheet",
+                candidates.Count,
+                RenderSelection.MaximumParts,
+                "Render one sheet with --sheet, or part of one with --range.");
         }
 
         IReadOnlyList<string> outputPaths = DerivePerSheetPaths(request.Output, candidates);
@@ -236,10 +256,15 @@ internal static class CellsRender
     /// replaced with one underscore (a run of them collapses to one) using a
     /// fixed, platform-independent set so the same workbook names the same
     /// files everywhere; a collision after sanitizing appends the sheet's
-    /// zero-based workbook index.
+    /// zero-based workbook index. A single sheet is written to the output path itself.
     /// </summary>
     private static IReadOnlyList<string> DerivePerSheetPaths(ResolvedOutput output, IReadOnlyList<Worksheet> sheets)
     {
+        if (sheets.Count == 1)
+        {
+            return [output.Path];
+        }
+
         var paths = new string[sheets.Count];
         var taken = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         for (int i = 0; i < sheets.Count; i++)

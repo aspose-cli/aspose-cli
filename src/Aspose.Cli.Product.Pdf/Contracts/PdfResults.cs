@@ -487,7 +487,7 @@ public sealed record PdfSplitOutput
     /// <summary>The part's pages as range text, such as <c>1-3</c> or <c>1-3,7</c>.</summary>
     public required string Pages { get; init; }
 
-    /// <summary>The title of the bookmark the part starts at, with <c>--by-bookmarks</c>.</summary>
+    /// <summary>The title of the bookmark the part starts at, with <c>--by bookmarks</c>.</summary>
     public string? Bookmark { get; init; }
 
     /// <summary>The PDF written for the part.</summary>

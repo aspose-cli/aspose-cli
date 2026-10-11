@@ -70,7 +70,6 @@ public static partial class ErrorCodes
     /// <summary>An ops batch could not be parsed, validated or applied.</summary>
     public static readonly ErrorCode OpsInvalid = new("OPS_INVALID", ExitCode.ValidationError);
 
-    public static readonly ErrorCode PageRangeInvalid = new("PAGE_RANGE_INVALID", ExitCode.ValidationError);
     public static readonly ErrorCode PageNotFound = ErrorCode.NotFound("PAGE_NOT_FOUND");
 
     /// <summary>A bookmark named by the caller does not exist (documents with bookmarks share it).</summary>
@@ -186,7 +185,6 @@ public static partial class ErrorCodes
         RenderTooLarge,
         RenderFailed,
         OpsInvalid,
-        PageRangeInvalid,
         PageNotFound,
         BookmarkNotFound,
         StyleNotFound,

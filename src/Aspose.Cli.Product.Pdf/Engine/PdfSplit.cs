@@ -1,4 +1,3 @@
-using System.Globalization;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Results;
@@ -15,29 +14,21 @@ internal static class PdfSplit
     internal static PdfSplitResult Run(PdfSession session, PdfSplitRequest request)
     {
         string filePath = request.Input;
-        int modes = request.PageGroups is { Count: > 0 } ? 1 : 0;
-        modes += request.Every.HasValue ? 1 : 0;
-        modes += request.ByBookmarks ? 1 : 0;
-        if (modes != 1)
-        {
-            throw CliErrors.Usage(["Choose exactly one of --pages, --every or --by-bookmarks."]);
-        }
-
         LicenseState state = session.Outputs.License;
         using LoadedPdf loaded = session.Loader.Open(filePath, request.Password);
         IReadOnlyList<SplitPart> parts = SplitParts(loaded.Document, request);
         string root = request.Output.Path;
         using OutputSet<Document> writer = session.Outputs.BeginSet([root], "pdf-split");
-        string stem = SafeName(Path.GetFileNameWithoutExtension(filePath));
+        IReadOnlyList<int> numbers = request.Plan.By == SplitBy.Pages
+            ? request.Plan.PartNumbers([.. parts.Select(static part => part.Pages)])
+            : [.. parts.Select(static part => part.Index)];
+        IReadOnlyList<string> paths = request.Output.Parts(Path.GetFileNameWithoutExtension(filePath), "pdf", numbers);
         var targets = new List<(SplitPart Part, string Path)>();
         int bookmarks = 0;
         int links = 0;
         int namedDestinations = 0;
-        foreach (SplitPart part in parts)
+        foreach ((SplitPart part, string target) in parts.Zip(paths))
         {
-            string target = Path.Combine(
-                root,
-                string.Create(CultureInfo.InvariantCulture, $"{stem}.{part.Index:000}.pdf"));
             Document source = loaded.Document;
             int[] pages = [.. part.Pages];
             // The part is the document the write pipeline inspects, so it lives until it is staged.
@@ -92,23 +83,9 @@ internal static class PdfSplit
 
     private static IReadOnlyList<SplitPart> SplitParts(Document document, PdfSplitRequest request)
     {
-        if (request.PageGroups is { Count: > 0 } groups)
+        if (request.Plan.By == SplitBy.Pages)
         {
-            return groups.Select((group, index) =>
-                new SplitPart(index + 1, group.Resolve(document.Pages.Count), null)).ToArray();
-        }
-
-        if (request.Every is int every)
-        {
-            if (every < 1)
-            {
-                throw CliErrors.OptionInvalid("--every", "must be at least 1", "Pass a positive page count.");
-            }
-
-            return Enumerable.Range(1, document.Pages.Count)
-                .Chunk(every)
-                .Select((pages, index) => new SplitPart(index + 1, pages, null))
-                .ToArray();
+            return [.. request.Plan.PageGroups(document.Pages.Count).Select(static (pages, index) => new SplitPart(index + 1, pages, null))];
         }
 
         var bookmarks = document.Outlines
@@ -121,9 +98,9 @@ internal static class PdfSplit
         if (bookmarks.Length == 0)
         {
             throw CliErrors.OptionInvalid(
-                "--by-bookmarks",
+                "--by",
                 "the document has no top-level bookmarks with page destinations",
-                "Use --pages or --every, or add bookmarks first.");
+                "Use --by pages, or add bookmarks first.");
         }
 
         var parts = new List<SplitPart>();
@@ -180,14 +157,6 @@ internal static class PdfSplit
             previous = page;
             previousStart = start;
         }
-    }
-
-    private static string SafeName(string value)
-    {
-        char[] invalid = Path.GetInvalidFileNameChars();
-        string sanitized = new(value.Select(character =>
-            invalid.Contains(character) || char.IsControl(character) ? '-' : character).ToArray());
-        return string.IsNullOrWhiteSpace(sanitized) ? "untitled" : sanitized.Trim().TrimEnd('.');
     }
 
     private sealed record SplitPart(int Index, IReadOnlyList<int> Pages, string? Bookmark);

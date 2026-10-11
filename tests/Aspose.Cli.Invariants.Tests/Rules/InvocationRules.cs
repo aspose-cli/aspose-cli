@@ -163,11 +163,16 @@ internal static partial class ContractRules
                 && render.Option("--to") is { AllowedValues.Count: > 1 } image)
             {
                 string other = image.AllowedValues.First(static value => value != "png");
+                // A render writes every unit by default and the fixture may hold several, so it
+                // selects the first, whose image is the output itself.
+                string[] first = render.Options.FirstOrDefault(static option => option.Name is "--pages" or "--slides") is { } selection
+                    ? [selection.Name, "1"]
+                    : [];
                 yield return InvariantCases.Case("C-R13", $"{render} --out out.{other} without --to", product, slow: false,
-                    Invocation.For(render).Add("--out", "out." + other),
+                    Invocation.For(render).Add(first).Add("--out", "out." + other),
                     new ScenarioExpectation { ExitCode = [0], Files = new ScenarioFiles { Present = ["out." + other] } });
                 yield return InvariantCases.Case("C-R13", $"{render} without --to or --out", product, slow: false,
-                    Invocation.For(render),
+                    Invocation.For(render).Add(first),
                     new ScenarioExpectation { ExitCode = [0], Files = new ScenarioFiles { Present = ["input.png"] } });
             }
         }
@@ -311,15 +316,14 @@ internal static partial class ContractRules
 
     /// <summary>
     /// The smallest invocation that applies a selection: a convert that can write PDF writes it,
-    /// since a flow format has no pages to select; a split selects pages without
-    /// <c>--every</c>, by pages where it splits <c>--by</c> a choice; and an extract selects the
+    /// since a flow format has no pages to select; a split selects pages <c>--by pages</c>; and an extract selects the
     /// units of the text it extracts.
     /// </summary>
     private static Invocation R16Selection(CliCommand command, string option, string value)
     {
         string? omit = command.Option("--to")?.AllowedValues.Contains("pdf") == true
             ? "--to"
-            : new[] { "--every", "--by", "--what" }.FirstOrDefault(command.Has);
+            : new[] { "--by", "--every", "--what" }.FirstOrDefault(command.Has);
         Invocation invocation = Invocation.For(command, omit);
         if (omit == "--to")
         {

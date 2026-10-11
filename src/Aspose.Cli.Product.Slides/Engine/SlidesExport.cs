@@ -10,9 +10,6 @@ namespace Aspose.Cli.Product.Slides.Engine;
 /// <summary>Conversion and rendering of a presentation or selected slides.</summary>
 internal static class SlidesExport
 {
-    /// <summary>Marks the slide number in a multi-slide output name: <c>deck.s3.png</c>.</summary>
-    private const string SlidePartMarker = "s";
-
     internal static SlidesConvertResult Convert(SlidesSession session, PresentationConvertRequest request)
     {
         LicenseState state = session.Outputs.License;
@@ -105,9 +102,7 @@ internal static class SlidesExport
     {
         LicenseState state = session.Outputs.License;
         using LoadedPresentation loaded = session.Loader.Open(request.Input, request.Password);
-        IReadOnlyList<int> slides = request.AllSlides
-            ? AllSlides(loaded.Presentation.Slides.Count)
-            : ResolveSlideRange(request.Slides ?? PageRange.Parse("1"), loaded.Presentation.Slides.Count);
+        IReadOnlyList<int> slides = RenderSelection.Resolve(request.Slides, loaded.Presentation.Slides.Count, SlidesDiagnostics.SlideNotFound, "slide");
         IReadOnlyList<SlideRenderOutput> outputs = RenderImages(session, loaded, request, slides, "slides-render");
         return new SlidesRenderResult
         {
@@ -145,10 +140,9 @@ internal static class SlidesExport
         string directory = request.Output.Directory;
         using OutputSet<Presentation> transaction = session.Outputs.BeginSet([directory], transactionName);
         var targets = new List<(int Number, uint SlideId, string Path)>(slides.Count);
-        foreach (int number in slides)
+        foreach ((int number, string path) in slides.Zip(request.Output.Parts(slides)))
         {
             ISlide slide = presentation.Slides[number - 1];
-            string path = request.Output.Part(SlidePartMarker, number, slides.Count);
             targets.Add((number, slide.SlideId, path));
             transaction.Stage(path, request.Output.Overwrite, presentation, temp =>
             {

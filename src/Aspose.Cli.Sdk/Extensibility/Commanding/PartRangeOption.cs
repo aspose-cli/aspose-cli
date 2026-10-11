@@ -23,7 +23,7 @@ public sealed class PartRangeOption
         string parts = part + "s";
         _range = new Option<string?>("--" + parts)
         {
-            Description = $"{char.ToUpperInvariant(parts[0])}{parts[1..]} to process, as 1-based numbers and ranges such as 1-3,7,9-. "
+            Description = $"{char.ToUpperInvariant(parts[0])}{parts[1..]} to process: 1-based numbers and ranges such as 1-3,7,9-, or all. "
                 + $"Default: {defaultText}."
                 + (onlyWith is null ? string.Empty : $" Only with {onlyWith}."),
         }.WithInput(InputKind.None);
@@ -44,7 +44,7 @@ public sealed class PartRangeOption
     }
 
     /// <summary>The parsed range, or null when the option is omitted.</summary>
-    /// <exception cref="Errors.CliException">The range is not valid range syntax.</exception>
+    /// <exception cref="Errors.CliException"><c>OPTION_INVALID</c> when the value is not a selection.</exception>
     public PageRange? ReadRange(ParseResult parse) =>
-        Read(parse) is { } text ? PageRange.Parse(text) : null;
+        Read(parse) is { } text ? PageRange.ParseOption(Name, text) : null;
 }

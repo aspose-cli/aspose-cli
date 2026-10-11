@@ -126,7 +126,7 @@ public sealed class PdfArtifactWorkflowTests
         {
             Input = merged,
             Output = new ResolvedDirectory(fixture.File("parts")),
-            Every = 1,
+            Plan = new Sdk.Addressing.SplitPlan(Sdk.Addressing.SplitBy.Pages, 1, null, null),
         });
         Assert.Equal(2, split.Outputs.Count);
         Assert.All(split.Outputs, part =>
@@ -147,12 +147,12 @@ public sealed class PdfArtifactWorkflowTests
         {
             Input = input,
             Output = new ResolvedDirectory(fixture.File("parts")),
-            PageGroups = [Sdk.Addressing.PageRange.Parse("1-3"), Sdk.Addressing.PageRange.Parse("1,3-4"), Sdk.Addressing.PageRange.Parse("2")],
+            Plan = new Sdk.Addressing.SplitPlan(Sdk.Addressing.SplitBy.Pages, null, [Sdk.Addressing.PageRange.Parse("1-3"), Sdk.Addressing.PageRange.Parse("1,3-4"), Sdk.Addressing.PageRange.Parse("2")], null),
         });
 
         Assert.Equal(["1-3", "1,3-4", "2"], split.Outputs.Select(static part => part.Pages));
         Assert.Equal(
-            ["region.001.pdf", "region.002.pdf", "region.003.pdf"],
+            ["region.1.pdf", "region.2.pdf", "region.3.pdf"],
             split.Outputs.Select(static part => Path.GetFileName(part.Output.Path)));
     }
 
@@ -174,13 +174,13 @@ public sealed class PdfArtifactWorkflowTests
         {
             Input = input,
             Output = new ResolvedDirectory(fixture.File("regions")),
-            ByBookmarks = true,
+            Plan = new Sdk.Addressing.SplitPlan(Sdk.Addressing.SplitBy.Bookmarks, null, null, null),
         });
         PdfSplitResult byPage = PdfSplit.Run(fixture.Session, new PdfSplitRequest
         {
             Input = input,
             Output = new ResolvedDirectory(fixture.File("pages")),
-            Every = 1,
+            Plan = new Sdk.Addressing.SplitPlan(Sdk.Addressing.SplitBy.Pages, 1, null, null),
         });
 
         Assert.Equal(
@@ -224,7 +224,7 @@ public sealed class PdfArtifactWorkflowTests
         {
             Input = input,
             Output = new ResolvedDirectory(fixture.File("parts")),
-            PageGroups = [Sdk.Addressing.PageRange.Parse("2-4"), Sdk.Addressing.PageRange.Parse("1,4")],
+            Plan = new Sdk.Addressing.SplitPlan(Sdk.Addressing.SplitBy.Pages, null, [Sdk.Addressing.PageRange.Parse("2-4"), Sdk.Addressing.PageRange.Parse("1,4")], null),
         });
 
         Assert.Equal(

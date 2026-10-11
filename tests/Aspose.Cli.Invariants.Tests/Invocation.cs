@@ -88,10 +88,9 @@ internal sealed class Invocation
     }
 
     // Options that no single declaration requires, but that the command needs to run: an edit
-    // needs operations, a create something to create from, an extract a directory for files and
-    // a split a way to split.
+    // needs operations, a create something to create from and an extract a directory for files.
     private static bool IsImplied(CliCommand command, CliOption option) =>
-        (command.Verb, option.Name) is ("edit", "--ops") or ("extract", "--out-dir") or ("split", "--every")
+        (command.Verb, option.Name) is ("edit", "--ops") or ("extract", "--out-dir")
         || (command.Verb == "create" && option.Name == command.Options
             .Select(static candidate => candidate.Name)
             .FirstOrDefault(static name => name is "--markdown" or "--from-markdown" or "--from-text"));
@@ -118,8 +117,9 @@ internal sealed class Invocation
             case "--out":
                 Add(option.Name, "output." + extension);
                 return;
-            case "--every":
-                Add(option.Name, "1");
+            case "--by" when option.AllowedValues.Contains("pages"):
+                // A split by pages runs on every fixture, which has no bookmarks or headings.
+                Add(option.Name, "pages");
                 return;
             case "--out-dir":
                 Add(option.Name, "output");

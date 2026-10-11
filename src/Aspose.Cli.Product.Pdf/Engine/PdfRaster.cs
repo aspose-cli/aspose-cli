@@ -11,9 +11,6 @@ namespace Aspose.Cli.Product.Pdf.Engine;
 /// <summary>Writes PDF pages as images for render, convert and the pages view.</summary>
 internal static class PdfRaster
 {
-    /// <summary>Marks the page number in a multi-page output name: <c>report.p3.png</c>.</summary>
-    internal const string PagePart = "p";
-
     /// <summary>
     /// Writes one page as an image. Every page raster passes the shared pixel guard here,
     /// before the engine allocates the bitmap. A <paramref name="grid"/> is drawn on the raster,

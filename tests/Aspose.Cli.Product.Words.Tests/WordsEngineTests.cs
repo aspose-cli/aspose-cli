@@ -1182,19 +1182,19 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
         string input = _fixture.CreateTwoSectionDocument("split-source.docx");
         string outputDirectory = Path.Combine(_fixture.Temp.Path, "split-output");
         Directory.CreateDirectory(outputDirectory);
-        File.WriteAllText(Path.Combine(outputDirectory, "part-002.docx"), "existing");
+        File.WriteAllText(Path.Combine(outputDirectory, "split-source.2.docx"), "existing");
 
         Sdk.Errors.CliException error = Assert.Throws<Sdk.Errors.CliException>(() =>
             WordsSplit.Run(_fixture.Session, new WordsSplitRequest
             {
                 Input = input,
                 Output = new ResolvedDirectory(outputDirectory),
-                By = "section",
+                Plan = new Sdk.Addressing.SplitPlan(Sdk.Addressing.SplitBy.Sections, null, null, null),
             }));
 
         Assert.Equal(Sdk.Errors.ErrorCodes.OutputExists, error.Code);
-        Assert.False(File.Exists(Path.Combine(outputDirectory, "part-001.docx")));
-        Assert.Equal("existing", File.ReadAllText(Path.Combine(outputDirectory, "part-002.docx")));
+        Assert.False(File.Exists(Path.Combine(outputDirectory, "split-source.1.docx")));
+        Assert.Equal("existing", File.ReadAllText(Path.Combine(outputDirectory, "split-source.2.docx")));
     }
 
     [Fact]

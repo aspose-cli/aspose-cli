@@ -1,4 +1,5 @@
 using System.CommandLine;
+using Aspose.Cli.Sdk.Addressing;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Extensibility.Output;
 using Aspose.Cli.Sdk.IO;
@@ -15,7 +16,7 @@ internal static class RenderCommand
     {
         var sheet = new Option<string?>("--sheet")
         {
-            Description = "Sheet to render. Default: the active sheet.",
+            Description = $"Sheet to render. Default: every visible sheet, at most {RenderSelection.MaximumParts} per run.",
         }.WithInput(InputKind.None);
         var rangeOption = new Option<string?>("--range")
         {
@@ -33,7 +34,7 @@ internal static class RenderCommand
             {
                 Input = CellsInputs.Workbook("Workbook to render."),
                 Output = OutputTarget.File("Output path. Default: the input path with the image extension. "
-                    + "With --all-sheets it is the naming template: <base>.<Sheet><ext>."),
+                    + "Several sheets write <stem>.<sheet>.<ext> beside it."),
                 UsesFonts = true,
                 Target = TargetFormat.Render(CellsFormats.Definitions),
             },

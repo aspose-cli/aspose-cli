@@ -489,7 +489,7 @@ public sealed class WordsDisclosureTests
         {
             Input = input,
             Output = new ResolvedDirectory(fixture.Temp.File("parts")),
-            By = "section",
+            Plan = new Sdk.Addressing.SplitPlan(Sdk.Addressing.SplitBy.Sections, null, null, null),
         });
         WordsCompareResult compared = WordsCompare.Run(fixture.Session, new WordsCompareRequest
         {
@@ -554,7 +554,7 @@ public sealed class WordsDisclosureTests
         {
             Input = input,
             Output = new ResolvedDirectory(fixture.Temp.File("parts")),
-            By = "heading1",
+            Plan = new Sdk.Addressing.SplitPlan(Sdk.Addressing.SplitBy.Heading1, null, null, null),
         });
 
         Assert.Equal(2, result.Outputs.Count);
@@ -594,7 +594,7 @@ public sealed class WordsDisclosureTests
         {
             Input = input,
             Output = new ResolvedDirectory(fixture.Temp.File("preamble-parts")),
-            By = "heading1",
+            Plan = new Sdk.Addressing.SplitPlan(Sdk.Addressing.SplitBy.Heading1, null, null, null),
         });
 
         Assert.Equal(["blocks-1-1", "blocks-2-3", "blocks-4-5"], result.Outputs.Select(static part => part.Source));

@@ -722,7 +722,7 @@
             "secret": false,
             "valueSource": "command-line",
             "inputKind": "none",
-            "description": "Output path; defaults to a sibling using the target extension; multi-slide image output adds .sN before the extension."
+            "description": "Output path; defaults to a sibling using the target extension; several slides as images write <stem>.<slide>.<ext> beside it."
           },
           {
             "name": "--overwrite",
@@ -809,7 +809,7 @@
             "secret": false,
             "valueSource": "command-line",
             "inputKind": "none",
-            "description": "Slides to process, as 1-based numbers and ranges such as 1-3,7,9-. Default: every slide."
+            "description": "Slides to process: 1-based numbers and ranges such as 1-3,7,9-, or all. Default: every slide."
           },
           {
             "name": "--to",
@@ -1421,7 +1421,7 @@
             "secret": false,
             "valueSource": "command-line",
             "inputKind": "none",
-            "description": "Slides to process, as 1-based numbers and ranges such as 1-3,7,9-. Default: every slide."
+            "description": "Slides to process: 1-based numbers and ranges such as 1-3,7,9-, or all. Default: every slide."
           },
           {
             "name": "--what",
@@ -1905,7 +1905,7 @@
             "secret": false,
             "valueSource": "command-line",
             "inputKind": "none",
-            "description": "Slides to process, as 1-based numbers and ranges such as 1-3,7,9-. Default: the first 10 slides."
+            "description": "Slides to process: 1-based numbers and ranges such as 1-3,7,9-, or all. Default: the first 10 slides."
           }
         ],
         "arguments": [
@@ -1931,26 +1931,6 @@
         "description": "Render one or more slides for visual verification.",
         "hidden": false,
         "options": [
-          {
-            "name": "--all-slides",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "false",
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": false,
-            "valueSource": "command-line",
-            "inputKind": "none",
-            "description": "Render every slide."
-          },
           {
             "name": "--dpi",
             "aliases": [],
@@ -2000,7 +1980,7 @@
             "secret": false,
             "valueSource": "command-line",
             "inputKind": "none",
-            "description": "Output path; multi-slide output adds .sN before the extension."
+            "description": "Output path; several slides write <stem>.<slide>.<ext> beside it."
           },
           {
             "name": "--overwrite",
@@ -2087,7 +2067,7 @@
             "secret": false,
             "valueSource": "command-line",
             "inputKind": "none",
-            "description": "Slides to process, as 1-based numbers and ranges such as 1-3,7,9-. Default: slide 1."
+            "description": "Slides to process: 1-based numbers and ranges such as 1-3,7,9-, or all. Default: every slide; at most 20 per run."
           },
           {
             "name": "--to",

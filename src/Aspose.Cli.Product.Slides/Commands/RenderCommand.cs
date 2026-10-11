@@ -19,14 +19,14 @@ internal static class RenderCommand
             new CommandTraits
             {
                 Input = SlidesInputs.Presentation,
-                Output = OutputTarget.File("Output path; multi-slide output adds .sN before the extension."),
+                Output = OutputTarget.File("Output path; several slides write <stem>.<slide>.<ext> beside it."),
                 UsesFonts = true,
                 Target = TargetFormat.Render(SlidesFormats.Definitions),
             },
             [.. slides.Options, .. dpi.Options, width],
             (parse, standard) =>
             {
-                PartSelection selection = slides.Read(parse);
+                PageRange? selection = slides.Read(parse);
                 int resolution = dpi.Read(parse);
                 bool explicitDpi = dpi.IsExplicit(parse);
                 int? pixelWidth = parse.GetValue(width);
@@ -50,8 +50,7 @@ internal static class RenderCommand
                 {
                     Input = standard.Input,
                     Output = output,
-                    Slides = selection.Range,
-                    AllSlides = selection.All,
+                    Slides = selection,
                     Dpi = pixelWidth is null ? resolution : null,
                     Width = pixelWidth,
                     Password = standard.InputPassword,

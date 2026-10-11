@@ -15,41 +15,41 @@ internal static class WordsSplit
     {
         LicenseState state = session.Outputs.License;
         using LoadedDocument loaded = session.Loader.Open(request.Input, request.Password);
-        using var writer = new WordsSplitWriter(session.Outputs, request.Output.Path, request.Output.Overwrite);
-        if (request.By == "section")
+        using var writer = new WordsSplitWriter(session.Outputs, request.Output, request.Input);
+        switch (request.Plan.By)
         {
-            for (int index = 0; index < loaded.Document.Sections.Count; index++)
-            {
-                Document part = loaded.Document.Clone();
-                for (int remove = part.Sections.Count - 1; remove >= 0; remove--)
+            case SplitBy.Sections:
+                writer.Number([.. Enumerable.Range(1, loaded.Document.Sections.Count)]);
+                for (int index = 0; index < loaded.Document.Sections.Count; index++)
                 {
-                    if (remove != index)
+                    Document part = loaded.Document.Clone();
+                    for (int remove = part.Sections.Count - 1; remove >= 0; remove--)
                     {
-                        part.Sections.RemoveAt(remove);
+                        if (remove != index)
+                        {
+                            part.Sections.RemoveAt(remove);
+                        }
                     }
+
+                    writer.Stage(part, index + 1, $"section-{index + 1}");
                 }
 
-                writer.Stage(part, index + 1, $"section-{index + 1}");
-            }
-        }
-        else if (request.By == "pages")
-        {
-            IReadOnlyList<int> pages = request.Pages?.Resolve(loaded.Document.PageCount)
-                ?? Enumerable.Range(1, loaded.Document.PageCount).ToArray();
-            int outputIndex = 0;
-            foreach (int page in pages)
-            {
-                Document part = loaded.Document.ExtractPages(page - 1, 1);
-                writer.Stage(part, ++outputIndex, $"page-{page}");
-            }
-        }
-        else if (request.By == "heading1")
-        {
-            SplitByHeading(loaded, writer);
-        }
-        else
-        {
-            throw CliErrors.OptionInvalid("--by", $"unknown split mode '{request.By}'", "Use section, heading1 or pages.");
+                break;
+            case SplitBy.Pages:
+                IReadOnlyList<IReadOnlyList<int>> groups = request.Plan.PageGroups(loaded.Document.PageCount);
+                IReadOnlyList<int> numbers = request.Plan.PartNumbers(groups);
+                writer.Number(numbers);
+                foreach ((IReadOnlyList<int> pages, int number) in groups.Zip(numbers))
+                {
+                    writer.Stage(ExtractPages(loaded.Document, pages), number, pages.Count == 1 ? $"page-{pages[0]}" : "pages-" + PageRange.Describe(pages));
+                }
+
+                break;
+            case SplitBy.Heading1:
+                SplitByHeading(loaded, writer);
+                break;
+            default:
+                throw new InvalidOperationException($"words split does not divide by {request.Plan.By}.");
         }
 
         IReadOnlyList<SplitOutput> outputs = writer.Commit();
@@ -58,10 +58,41 @@ internal static class WordsSplit
             Input = InfoProjection.Source(request.Input, loaded),
             Outputs = outputs,
             License = EnvelopeParts.License(state),
-            Warnings = request.By == "pages"
+            Warnings = request.Plan.By == SplitBy.Pages
                 ? EnvelopeParts.CombineWarnings(WrittenWarnings(loaded, "docx"), [new Warning(WordsDiagnostics.LayoutMayDiffer, "Page extraction can slightly reflow complex layouts.") { Hint = "Visually inspect the split pages." }])
                 : WrittenWarnings(loaded, "docx"),
         };
+    }
+
+    /// <summary>
+    /// The pages of one part: a run of consecutive pages extracted at once, and other pages
+    /// appended run by run in their order.
+    /// </summary>
+    private static Document ExtractPages(Document document, IReadOnlyList<int> pages)
+    {
+        Document? part = null;
+        int start = 0;
+        for (int index = 1; index <= pages.Count; index++)
+        {
+            if (index < pages.Count && pages[index] == pages[index - 1] + 1)
+            {
+                continue;
+            }
+
+            Document run = document.ExtractPages(pages[start] - 1, index - start);
+            if (part is null)
+            {
+                part = run;
+            }
+            else
+            {
+                part.AppendDocument(run, ImportFormatMode.KeepSourceFormatting);
+            }
+
+            start = index;
+        }
+
+        return part!;
     }
 
     /// <summary>
@@ -78,13 +109,15 @@ internal static class WordsSplit
         if (starts.Count == 0)
         {
             throw CliErrors.NotFoundAt(WordsDiagnostics.AnchorNotFound, "Heading 1 paragraph", "1", 0,
-                "Use --by section or --by pages, or apply Heading 1 styles first.");
+                "Use --by sections or --by pages, or apply Heading 1 styles first.");
         }
 
         if (starts[0] > 1)
         {
             starts.Insert(0, 1);
         }
+
+        writer.Number([.. Enumerable.Range(1, starts.Count)]);
 
         for (int group = 0; group < starts.Count; group++)
         {

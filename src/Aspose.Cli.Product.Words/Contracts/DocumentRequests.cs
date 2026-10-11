@@ -47,8 +47,8 @@ public sealed record WordsRenderRequest
     public required string Input { get; init; }
     /// <summary>The resolved output: its format, path and overwrite permission.</summary>
     public required ResolvedOutput Output { get; init; }
+    /// <summary>The pages to render, or null for every page.</summary>
     public PageRange? Pages { get; init; }
-    public bool AllPages { get; init; }
     public int Dpi { get; init; } = RenderPixelGuard.DefaultDpi;
     public Secret? Password { get; init; }
 }
@@ -118,8 +118,8 @@ public sealed record WordsSplitRequest
 {
     /// <summary>The document to open.</summary>
     public required string Input { get; init; }
-    public required string By { get; init; }
-    public PageRange? Pages { get; init; }
+    /// <summary>How the document is divided: by sections, at each Heading 1, or by pages.</summary>
+    public required SplitPlan Plan { get; init; }
     /// <summary>The resolved directory that receives the files.</summary>
     public required ResolvedDirectory Output { get; init; }
     public Secret? Password { get; init; }

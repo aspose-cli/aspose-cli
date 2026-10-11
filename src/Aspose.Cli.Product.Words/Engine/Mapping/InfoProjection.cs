@@ -136,7 +136,7 @@ internal static class InfoProjection
                 Result = WordsText.ResultOf(field),
             },
             "fields",
-            "Split the document with 'words split --by section' and inspect each part with '--detail fields'.",
+            "Split the document with 'words split --by sections' and inspect each part with '--detail fields'.",
             warnings);
 
     private static IReadOnlyList<CommentData> Comments(Document document, DocumentBlockIndex index, List<Warning> warnings) =>
@@ -169,7 +169,7 @@ internal static class InfoProjection
             changes,
             change => Entry(change.Change.First, change.Number, change.Change.Text, index),
             "revisions",
-            "Split the document with 'words split --by section' and inspect each part with '--detail revisions'.",
+            "Split the document with 'words split --by sections' and inspect each part with '--detail revisions'.",
             warnings);
     }
 
