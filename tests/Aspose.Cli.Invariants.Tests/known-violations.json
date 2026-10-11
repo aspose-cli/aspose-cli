@@ -330,6 +330,30 @@
       "actual": "words split: boolean options that do not publish false, true: --overwrite, --password-stdin."
     },
     {
+      "case": "C-R25 | cells evaluation export of a later sheet error details",
+      "invariant": "C-R25",
+      "rule": "C-R25",
+      "cause": "cells-evaluation-sheet-limit-uses-its-own-keys",
+      "modes": [
+        "evaluation"
+      ],
+      "actual": "EVALUATION_LIMIT details.requestedSheet is not in the details dictionary; EVALUATION_LIMIT details.firstSheet is not in the details dictionary"
+    },
+    {
+      "case": "C-R28 | cells code names",
+      "invariant": "C-R28",
+      "rule": "C-R28",
+      "cause": "cells-partial-render-warning-has-a-product-prefix",
+      "actual": "CELLS_SHEET_PARTIALLY_RENDERED: a warning code carries no product prefix (CELLS_)"
+    },
+    {
+      "case": "C-R25 | cells range over budget error details",
+      "invariant": "C-R25",
+      "rule": "C-R25",
+      "cause": "cells-range-budget-uses-its-own-keys",
+      "actual": "RANGE_TOO_LARGE details.requestedCells is not in the details dictionary; RANGE_TOO_LARGE details.maxCells is not in the details dictionary"
+    },
+    {
       "case": "C-R10 | pdf sign declared",
       "invariant": "C-R10",
       "rule": "C-R10",
@@ -596,6 +620,27 @@
       "actual": "words edit --encrypt: the secret has no --encrypt-stdin."
     },
     {
+      "case": "C-R25 | error schema publishes the details dictionary",
+      "invariant": "C-R25",
+      "rule": "C-R25",
+      "cause": "error-schema-publishes-no-details-dictionary",
+      "actual": "error.details publishes no key dictionary; the 63 keys of the dictionary have no description in the error schema"
+    },
+    {
+      "case": "C-R28 | evaluation codes",
+      "invariant": "C-R28",
+      "rule": "C-R28",
+      "cause": "evaluation-warnings-use-the-eval-prefix",
+      "actual": "EVAL_INPUT_MARKED: evaluation codes are EVALUATION_*, as EVALUATION_LIMIT; EVAL_INPUT_TRUNCATED: evaluation codes are EVALUATION_*, as EVALUATION_LIMIT; EVAL_MODE: evaluation codes are EVALUATION_*, as EVALUATION_LIMIT"
+    },
+    {
+      "case": "C-R28 | common not-found details",
+      "invariant": "C-R28",
+      "rule": "C-R28",
+      "cause": "file-not-found-codes-use-generic-details",
+      "actual": "FILE_NOT_FOUND has details v2/common/diagnostic-details, not v2/common/not-found-details; LICENSE_FILE_NOT_FOUND has details v2/common/diagnostic-details, not v2/common/not-found-details"
+    },
+    {
       "case": "same-name-option | --product",
       "invariant": "same-name-option",
       "rule": "C-R07",
@@ -629,6 +674,34 @@
       "rule": "C-R36",
       "cause": "format-ids-have-aliases",
       "actual": "words format jpeg has the aliases jpg."
+    },
+    {
+      "case": "C-R25 | cells input over budget error details",
+      "invariant": "C-R25",
+      "rule": "C-R25",
+      "cause": "input-budget-uses-observed-and-byte-keys",
+      "actual": "FILE_TOO_LARGE details.observed is not in the details dictionary; FILE_TOO_LARGE details.sizeBytes is not in the details dictionary; FILE_TOO_LARGE details.limitBytes is not in the details dictionary"
+    },
+    {
+      "case": "C-R25 | pdf input over budget error details",
+      "invariant": "C-R25",
+      "rule": "C-R25",
+      "cause": "input-budget-uses-observed-and-byte-keys",
+      "actual": "FILE_TOO_LARGE details.observed is not in the details dictionary; FILE_TOO_LARGE details.sizeBytes is not in the details dictionary; FILE_TOO_LARGE details.limitBytes is not in the details dictionary"
+    },
+    {
+      "case": "C-R25 | slides input over budget error details",
+      "invariant": "C-R25",
+      "rule": "C-R25",
+      "cause": "input-budget-uses-observed-and-byte-keys",
+      "actual": "FILE_TOO_LARGE details.observed is not in the details dictionary; FILE_TOO_LARGE details.sizeBytes is not in the details dictionary; FILE_TOO_LARGE details.limitBytes is not in the details dictionary"
+    },
+    {
+      "case": "C-R25 | words input over budget error details",
+      "invariant": "C-R25",
+      "rule": "C-R25",
+      "cause": "input-budget-uses-observed-and-byte-keys",
+      "actual": "FILE_TOO_LARGE details.observed is not in the details dictionary; FILE_TOO_LARGE details.sizeBytes is not in the details dictionary; FILE_TOO_LARGE details.limitBytes is not in the details dictionary"
     },
     {
       "case": "C-R08 | cells inspect",
@@ -680,6 +753,34 @@
       "actual": "update install writes files but has no --overwrite.; update install writes files but has no --dry-run."
     },
     {
+      "case": "C-R24 | license errors exit 7",
+      "invariant": "C-R24",
+      "rule": "C-R24",
+      "cause": "license-not-applicable-exits-as-validation",
+      "actual": "LICENSE_NOT_APPLICABLE exits 4; license errors exit 7"
+    },
+    {
+      "case": "C-R27 | common warning codes",
+      "invariant": "C-R27",
+      "rule": "C-R27",
+      "cause": "no-effect-operations-warn-no-match",
+      "actual": "REPLACE_NO_MATCH: an operation without effect warns OP_NO_EFFECT, never *_NO_MATCH"
+    },
+    {
+      "case": "C-R27 | pdf warning codes",
+      "invariant": "C-R27",
+      "rule": "C-R27",
+      "cause": "no-effect-operations-warn-no-match",
+      "actual": "REDACTION_NO_MATCH: an operation without effect warns OP_NO_EFFECT, never *_NO_MATCH"
+    },
+    {
+      "case": "C-R27 | words warning codes",
+      "invariant": "C-R27",
+      "rule": "C-R27",
+      "cause": "no-effect-operations-warn-no-match",
+      "actual": "AUTHOR_NO_MATCH: an operation without effect warns OP_NO_EFFECT, never *_NO_MATCH"
+    },
+    {
       "case": "C-R08 | preview open",
       "invariant": "C-R08",
       "rule": "C-R08",
@@ -715,11 +816,151 @@
       "actual": "words edit: maximumOperationCount is 256, not 10000."
     },
     {
+      "case": "C-R25 | cells several invalid operations error details",
+      "invariant": "C-R25",
+      "rule": "C-R25",
+      "cause": "operation-errors-name-the-batch-index",
+      "actual": "OPS_INVALID details.index is not in the details dictionary; OPS_INVALID details.errors[].index is not in the details dictionary"
+    },
+    {
+      "case": "C-R25 | cells unknown field error details",
+      "invariant": "C-R25",
+      "rule": "C-R25",
+      "cause": "operation-errors-name-the-batch-index",
+      "actual": "OPS_INVALID details.index is not in the details dictionary"
+    },
+    {
+      "case": "C-R25 | cells unknown op error details",
+      "invariant": "C-R25",
+      "rule": "C-R25",
+      "cause": "operation-errors-name-the-batch-index",
+      "actual": "OPS_INVALID details.index is not in the details dictionary"
+    },
+    {
+      "case": "C-R25 | pdf several invalid operations error details",
+      "invariant": "C-R25",
+      "rule": "C-R25",
+      "cause": "operation-errors-name-the-batch-index",
+      "actual": "OPS_INVALID details.index is not in the details dictionary; OPS_INVALID details.errors[].index is not in the details dictionary"
+    },
+    {
+      "case": "C-R25 | pdf unknown field error details",
+      "invariant": "C-R25",
+      "rule": "C-R25",
+      "cause": "operation-errors-name-the-batch-index",
+      "actual": "OPS_INVALID details.index is not in the details dictionary"
+    },
+    {
+      "case": "C-R25 | pdf unknown op error details",
+      "invariant": "C-R25",
+      "rule": "C-R25",
+      "cause": "operation-errors-name-the-batch-index",
+      "actual": "OPS_INVALID details.index is not in the details dictionary"
+    },
+    {
+      "case": "C-R25 | slides several invalid operations error details",
+      "invariant": "C-R25",
+      "rule": "C-R25",
+      "cause": "operation-errors-name-the-batch-index",
+      "actual": "OPS_INVALID details.index is not in the details dictionary; OPS_INVALID details.errors[].index is not in the details dictionary"
+    },
+    {
+      "case": "C-R25 | slides unknown field error details",
+      "invariant": "C-R25",
+      "rule": "C-R25",
+      "cause": "operation-errors-name-the-batch-index",
+      "actual": "OPS_INVALID details.index is not in the details dictionary"
+    },
+    {
+      "case": "C-R25 | slides unknown op error details",
+      "invariant": "C-R25",
+      "rule": "C-R25",
+      "cause": "operation-errors-name-the-batch-index",
+      "actual": "OPS_INVALID details.index is not in the details dictionary"
+    },
+    {
+      "case": "C-R25 | words several invalid operations error details",
+      "invariant": "C-R25",
+      "rule": "C-R25",
+      "cause": "operation-errors-name-the-batch-index",
+      "actual": "OPS_INVALID details.index is not in the details dictionary; OPS_INVALID details.errors[].index is not in the details dictionary"
+    },
+    {
+      "case": "C-R25 | words unknown field error details",
+      "invariant": "C-R25",
+      "rule": "C-R25",
+      "cause": "operation-errors-name-the-batch-index",
+      "actual": "OPS_INVALID details.index is not in the details dictionary"
+    },
+    {
+      "case": "C-R25 | words unknown op error details",
+      "invariant": "C-R25",
+      "rule": "C-R25",
+      "cause": "operation-errors-name-the-batch-index",
+      "actual": "OPS_INVALID details.index is not in the details dictionary"
+    },
+    {
       "case": "same-name-option | --ops",
       "invariant": "same-name-option",
       "rule": "C-R07",
       "cause": "ops-required-differs-by-product",
       "actual": "--ops: 2 different required flags: optional (cells edit, words edit) | required (pdf edit, slides edit)"
+    },
+    {
+      "case": "C-R25 | cells unknown created extension error details",
+      "invariant": "C-R25",
+      "rule": "C-R25",
+      "cause": "output-extension-details-off-the-dictionary",
+      "actual": "USAGE_ERROR details.supported is not in the details dictionary; USAGE_ERROR details.requested is null; USAGE_ERROR details.option 'file' names an argument; details.argument names one"
+    },
+    {
+      "case": "C-R25 | cells unknown output extension error details",
+      "invariant": "C-R25",
+      "rule": "C-R25",
+      "cause": "output-extension-details-off-the-dictionary",
+      "actual": "USAGE_ERROR details.supported is not in the details dictionary; USAGE_ERROR details.requested is null"
+    },
+    {
+      "case": "C-R25 | pdf unknown created extension error details",
+      "invariant": "C-R25",
+      "rule": "C-R25",
+      "cause": "output-extension-details-off-the-dictionary",
+      "actual": "USAGE_ERROR details.supported is not in the details dictionary; USAGE_ERROR details.requested is null; USAGE_ERROR details.option 'file' names an argument; details.argument names one"
+    },
+    {
+      "case": "C-R25 | pdf unknown output extension error details",
+      "invariant": "C-R25",
+      "rule": "C-R25",
+      "cause": "output-extension-details-off-the-dictionary",
+      "actual": "USAGE_ERROR details.supported is not in the details dictionary; USAGE_ERROR details.requested is null"
+    },
+    {
+      "case": "C-R25 | slides unknown created extension error details",
+      "invariant": "C-R25",
+      "rule": "C-R25",
+      "cause": "output-extension-details-off-the-dictionary",
+      "actual": "USAGE_ERROR details.supported is not in the details dictionary; USAGE_ERROR details.requested is null; USAGE_ERROR details.option 'file' names an argument; details.argument names one"
+    },
+    {
+      "case": "C-R25 | slides unknown output extension error details",
+      "invariant": "C-R25",
+      "rule": "C-R25",
+      "cause": "output-extension-details-off-the-dictionary",
+      "actual": "USAGE_ERROR details.supported is not in the details dictionary; USAGE_ERROR details.requested is null"
+    },
+    {
+      "case": "C-R25 | words unknown created extension error details",
+      "invariant": "C-R25",
+      "rule": "C-R25",
+      "cause": "output-extension-details-off-the-dictionary",
+      "actual": "USAGE_ERROR details.supported is not in the details dictionary; USAGE_ERROR details.requested is null; USAGE_ERROR details.option 'file' names an argument; details.argument names one"
+    },
+    {
+      "case": "C-R25 | words unknown output extension error details",
+      "invariant": "C-R25",
+      "rule": "C-R25",
+      "cause": "output-extension-details-off-the-dictionary",
+      "actual": "USAGE_ERROR details.supported is not in the details dictionary; USAGE_ERROR details.requested is null"
     },
     {
       "case": "C-R08 | aspose-cli",
@@ -785,6 +1026,27 @@
       "actual": "pdf split --by-bookmarks: a banned name; a split strategy is --by."
     },
     {
+      "case": "C-R28 | pdf code names",
+      "invariant": "C-R28",
+      "rule": "C-R28",
+      "cause": "pdf-verification-codes-have-a-product-prefix",
+      "actual": "PDF_ATTACHMENT_MISMATCH: a verification code carries no product prefix (PDF_); PDF_BOOKMARK_MISMATCH: a verification code carries no product prefix (PDF_); PDF_FIELD_NOT_FLATTENED: a verification code carries no product prefix (PDF_); PDF_F..."
+    },
+    {
+      "case": "C-R25 | platform unknown docs topic error details",
+      "invariant": "C-R25",
+      "rule": "C-R25",
+      "cause": "positional-arguments-reported-as-options",
+      "actual": "OPTION_INVALID details.option 'topic' names an argument; details.argument names one"
+    },
+    {
+      "case": "C-R25 | platform unknown schema id error details",
+      "invariant": "C-R25",
+      "rule": "C-R25",
+      "cause": "positional-arguments-reported-as-options",
+      "actual": "OPTION_INVALID details.option 'schema id' names an argument; details.argument names one"
+    },
+    {
       "case": "same-name-option | --view",
       "invariant": "same-name-option",
       "rule": "C-R07",
@@ -848,6 +1110,13 @@
       "actual": "words query: 'query' is not a product verb (inspect, read, search, create, edit, convert, render, compare, extract, split, merge, sign, validate)."
     },
     {
+      "case": "C-R28 | release and update codes belong to host",
+      "invariant": "C-R28",
+      "rule": "C-R28",
+      "cause": "release-codes-owned-by-common",
+      "actual": "RELEASE_FEED_UNAVAILABLE is owned by common, not host; RELEASE_VERIFICATION_FAILED is owned by common, not host"
+    },
+    {
       "case": "C-R08 | cells render",
       "invariant": "C-R08",
       "rule": "C-R08",
@@ -876,6 +1145,20 @@
       "actual": "words render --all-pages: a banned name; a selection takes the value all, such as --pages all."
     },
     {
+      "case": "C-R24 | unsupported format or content errors exit 6",
+      "invariant": "C-R24",
+      "rule": "C-R24",
+      "cause": "render-failed-exits-as-validation",
+      "actual": "RENDER_FAILED exits 4; unsupported format or content errors exit 6"
+    },
+    {
+      "case": "C-R25 | slides raster over budget error details",
+      "invariant": "C-R25",
+      "rule": "C-R25",
+      "cause": "render-too-large-uses-max-pixels-and-null-dpi",
+      "actual": "RENDER_TOO_LARGE details.maxPixels is not in the details dictionary; RENDER_TOO_LARGE details.dpi is null"
+    },
+    {
       "case": "C-R11 | review declared",
       "invariant": "C-R11",
       "rule": "C-R11",
@@ -890,6 +1173,34 @@
       "actual": "--help has the short name -?; the only short names are -o (--out), -q (--quiet), -v (--verbose) and -h (--help).; --help has the short name /?; the only short names are -o (--out), -q (--quiet), -v (--verbose) and -h (--help).; --help has t..."
     },
     {
+      "case": "C-R28 | cells review check codes",
+      "invariant": "C-R28",
+      "rule": "C-R28",
+      "cause": "shared-font-review-checks-have-no-product-prefix",
+      "actual": "review check FONTS_MISSING_OR_SUBSTITUTED does not begin with CELLS_; review check FONTS_NOT_CHECKED does not begin with CELLS_"
+    },
+    {
+      "case": "C-R28 | pdf review check codes",
+      "invariant": "C-R28",
+      "rule": "C-R28",
+      "cause": "shared-font-review-checks-have-no-product-prefix",
+      "actual": "review check FONTS_MISSING_OR_SUBSTITUTED does not begin with PDF_; review check FONTS_NOT_CHECKED does not begin with PDF_"
+    },
+    {
+      "case": "C-R28 | slides review check codes",
+      "invariant": "C-R28",
+      "rule": "C-R28",
+      "cause": "shared-font-review-checks-have-no-product-prefix",
+      "actual": "review check FONTS_MISSING_OR_SUBSTITUTED does not begin with SLIDES_; review check FONTS_NOT_CHECKED does not begin with SLIDES_"
+    },
+    {
+      "case": "C-R28 | words review check codes",
+      "invariant": "C-R28",
+      "rule": "C-R28",
+      "cause": "shared-font-review-checks-have-no-product-prefix",
+      "actual": "review check FONTS_MISSING_OR_SUBSTITUTED does not begin with WORDS_; review check FONTS_NOT_CHECKED does not begin with WORDS_"
+    },
+    {
       "case": "C-R08 | slides create",
       "invariant": "C-R08",
       "rule": "C-R08",
@@ -902,6 +1213,125 @@
       "rule": "C-R04",
       "cause": "update-prepare-is-hidden-without-double-underscore",
       "actual": "update _prepare is hidden, so its name starts with '__'."
+    },
+    {
+      "case": "C-R25 | cells invalid option value error details",
+      "invariant": "C-R25",
+      "rule": "C-R25",
+      "cause": "usage-errors-always-list-errors",
+      "actual": "USAGE_ERROR details.errors lists a single error"
+    },
+    {
+      "case": "C-R25 | cells missing argument error details",
+      "invariant": "C-R25",
+      "rule": "C-R25",
+      "cause": "usage-errors-always-list-errors",
+      "actual": "USAGE_ERROR details.errors lists a single error"
+    },
+    {
+      "case": "C-R25 | cells unknown command error details",
+      "invariant": "C-R25",
+      "rule": "C-R25",
+      "cause": "usage-errors-always-list-errors",
+      "actual": "USAGE_ERROR details.errors lists a single error"
+    },
+    {
+      "case": "C-R25 | cells unknown option error details",
+      "invariant": "C-R25",
+      "rule": "C-R25",
+      "cause": "usage-errors-always-list-errors",
+      "actual": "USAGE_ERROR details.errors lists a single error"
+    },
+    {
+      "case": "C-R25 | pdf invalid option value error details",
+      "invariant": "C-R25",
+      "rule": "C-R25",
+      "cause": "usage-errors-always-list-errors",
+      "actual": "USAGE_ERROR details.errors lists a single error"
+    },
+    {
+      "case": "C-R25 | pdf missing argument error details",
+      "invariant": "C-R25",
+      "rule": "C-R25",
+      "cause": "usage-errors-always-list-errors",
+      "actual": "USAGE_ERROR details.errors lists a single error"
+    },
+    {
+      "case": "C-R25 | pdf unknown command error details",
+      "invariant": "C-R25",
+      "rule": "C-R25",
+      "cause": "usage-errors-always-list-errors",
+      "actual": "USAGE_ERROR details.errors lists a single error"
+    },
+    {
+      "case": "C-R25 | pdf unknown option error details",
+      "invariant": "C-R25",
+      "rule": "C-R25",
+      "cause": "usage-errors-always-list-errors",
+      "actual": "USAGE_ERROR details.errors lists a single error"
+    },
+    {
+      "case": "C-R25 | platform unknown command error details",
+      "invariant": "C-R25",
+      "rule": "C-R25",
+      "cause": "usage-errors-always-list-errors",
+      "actual": "USAGE_ERROR details.errors lists a single error"
+    },
+    {
+      "case": "C-R25 | slides invalid option value error details",
+      "invariant": "C-R25",
+      "rule": "C-R25",
+      "cause": "usage-errors-always-list-errors",
+      "actual": "USAGE_ERROR details.errors lists a single error"
+    },
+    {
+      "case": "C-R25 | slides missing argument error details",
+      "invariant": "C-R25",
+      "rule": "C-R25",
+      "cause": "usage-errors-always-list-errors",
+      "actual": "USAGE_ERROR details.errors lists a single error"
+    },
+    {
+      "case": "C-R25 | slides unknown command error details",
+      "invariant": "C-R25",
+      "rule": "C-R25",
+      "cause": "usage-errors-always-list-errors",
+      "actual": "USAGE_ERROR details.errors lists a single error"
+    },
+    {
+      "case": "C-R25 | slides unknown option error details",
+      "invariant": "C-R25",
+      "rule": "C-R25",
+      "cause": "usage-errors-always-list-errors",
+      "actual": "USAGE_ERROR details.errors lists a single error"
+    },
+    {
+      "case": "C-R25 | words invalid option value error details",
+      "invariant": "C-R25",
+      "rule": "C-R25",
+      "cause": "usage-errors-always-list-errors",
+      "actual": "USAGE_ERROR details.errors lists a single error"
+    },
+    {
+      "case": "C-R25 | words missing argument error details",
+      "invariant": "C-R25",
+      "rule": "C-R25",
+      "cause": "usage-errors-always-list-errors",
+      "actual": "USAGE_ERROR details.errors lists a single error"
+    },
+    {
+      "case": "C-R25 | words unknown command error details",
+      "invariant": "C-R25",
+      "rule": "C-R25",
+      "cause": "usage-errors-always-list-errors",
+      "actual": "USAGE_ERROR details.errors lists a single error"
+    },
+    {
+      "case": "C-R25 | words unknown option error details",
+      "invariant": "C-R25",
+      "rule": "C-R25",
+      "cause": "usage-errors-always-list-errors",
+      "actual": "USAGE_ERROR details.errors lists a single error"
     },
     {
       "case": "C-R08 | words create",
