@@ -487,11 +487,39 @@
       "actual": "CELLS_SHEET_PARTIALLY_RENDERED: a warning code carries no product prefix (CELLS_)"
     },
     {
+      "case": "C-R16 | cells query range --range all",
+      "invariant": "C-R16",
+      "rule": "C-R16",
+      "cause": "cells-range-all-unsupported",
+      "actual": "exit 4 RANGE_INVALID, expected 0: Invalid range 'all': 'all' is missing a row number (whole-column ranges are not supported; give explicit bounds like A1:A100)"
+    },
+    {
+      "case": "C-R16 | cells render --range all",
+      "invariant": "C-R16",
+      "rule": "C-R16",
+      "cause": "cells-range-all-unsupported",
+      "actual": "exit 4 RANGE_INVALID, expected 0: Invalid range 'all': 'all' is missing a row number (whole-column ranges are not supported; give explicit bounds like A1:A100)"
+    },
+    {
       "case": "C-R25 | cells range over budget error details",
       "invariant": "C-R25",
       "rule": "C-R25",
       "cause": "cells-range-budget-uses-its-own-keys",
       "actual": "RANGE_TOO_LARGE details.requestedCells is not in the details dictionary; RANGE_TOO_LARGE details.maxCells is not in the details dictionary"
+    },
+    {
+      "case": "C-R16 | cells query range --range A1:!!",
+      "invariant": "C-R16",
+      "rule": "C-R16",
+      "cause": "cells-range-syntax-error-is-not-option-invalid",
+      "actual": "exit 4 RANGE_INVALID, expected 2: Invalid range 'A1:!!': missing cell range after the sheet name; RANGE_INVALID: Invalid range 'A1:!!': missing cell range after the sheet name, expected OPTION_INVALID"
+    },
+    {
+      "case": "C-R16 | cells render --range A1:!!",
+      "invariant": "C-R16",
+      "rule": "C-R16",
+      "cause": "cells-range-syntax-error-is-not-option-invalid",
+      "actual": "exit 4 RANGE_INVALID, expected 2: Invalid range 'A1:!!': missing cell range after the sheet name; RANGE_INVALID: Invalid range 'A1:!!': missing cell range after the sheet name, expected OPTION_INVALID"
     },
     {
       "case": "C-R21 | v2/cells/ops#freeze_panes",
@@ -795,11 +823,25 @@
       "actual": "words compare --left-password: the secret has no --left-password-stdin.; words compare --right-password: the secret has no --right-password-stdin."
     },
     {
+      "case": "C-R13 | cells convert --out out.pdf without --to",
+      "invariant": "C-R13",
+      "rule": "C-R13",
+      "cause": "convert-requires-to",
+      "actual": "exit 2 USAGE_ERROR, expected 0: Option '--to' is required.; out.pdf does not exist"
+    },
+    {
       "case": "C-R13 | cells convert declared",
       "invariant": "C-R13",
       "rule": "C-R13",
       "cause": "convert-requires-to",
       "actual": "cells convert --to is required; the --out extension implies it."
+    },
+    {
+      "case": "C-R13 | pdf convert --out out.docx without --to",
+      "invariant": "C-R13",
+      "rule": "C-R13",
+      "cause": "convert-requires-to",
+      "actual": "exit 2 USAGE_ERROR, expected 0: Option '--to' is required.; out.docx does not exist"
     },
     {
       "case": "C-R13 | pdf convert declared",
@@ -809,11 +851,25 @@
       "actual": "pdf convert --to is required; the --out extension implies it."
     },
     {
+      "case": "C-R13 | slides convert --out out.pdf without --to",
+      "invariant": "C-R13",
+      "rule": "C-R13",
+      "cause": "convert-requires-to",
+      "actual": "exit 2 USAGE_ERROR, expected 0: Option '--to' is required.; out.pdf does not exist"
+    },
+    {
       "case": "C-R13 | slides convert declared",
       "invariant": "C-R13",
       "rule": "C-R13",
       "cause": "convert-requires-to",
       "actual": "slides convert --to is required; the --out extension implies it."
+    },
+    {
+      "case": "C-R13 | words convert --out out.pdf without --to",
+      "invariant": "C-R13",
+      "rule": "C-R13",
+      "cause": "convert-requires-to",
+      "actual": "exit 2 USAGE_ERROR, expected 0: Option '--to' is required.; out.pdf does not exist"
     },
     {
       "case": "C-R13 | words convert declared",
@@ -828,6 +884,20 @@
       "rule": "C-R07",
       "cause": "convert-requires-to",
       "actual": "--to: 2 different required flags: required (cells convert, pdf convert, slides convert, words convert) | optional (cells render, pdf extract, pdf render, slides render, words render)"
+    },
+    {
+      "case": "C-R24 | words create interrupted by Ctrl+C",
+      "invariant": "C-R24",
+      "rule": "C-R24",
+      "cause": "ctrl-c-not-handled-without-timeout",
+      "actual": "exit -1073741510, expected 130"
+    },
+    {
+      "case": "C-R24 | doctor with a missing license file",
+      "invariant": "C-R24",
+      "rule": "C-R24",
+      "cause": "doctor-failure-exits-0",
+      "actual": "exit 0, expected 8"
     },
     {
       "case": "C-R11 | cells convert declared",
@@ -1397,11 +1467,39 @@
       "actual": "size: a font size is named fontSize"
     },
     {
+      "case": "C-R24 | fonts check of a document whose font is missing",
+      "invariant": "C-R24",
+      "rule": "C-R24",
+      "cause": "fonts-check-failure-exits-0",
+      "actual": "exit 0, expected 8"
+    },
+    {
       "case": "same-name-option | --product",
       "invariant": "same-name-option",
       "rule": "C-R07",
       "cause": "fonts-list-product-default",
       "actual": "--product: 2 different defaults: \"cells\" (fonts list) | none (license install, license remove, license status, preview open, review)"
+    },
+    {
+      "case": "C-R26 | cells convert --to csv as csvv",
+      "invariant": "C-R26",
+      "rule": "C-R26",
+      "cause": "format-aliases-in-to-message",
+      "actual": "the message lists markdown, which details.available does not"
+    },
+    {
+      "case": "C-R26 | pdf convert --to docx as docxx",
+      "invariant": "C-R26",
+      "rule": "C-R26",
+      "cause": "format-aliases-in-to-message",
+      "actual": "the message lists jpg, which details.available does not"
+    },
+    {
+      "case": "C-R26 | slides convert --to gif as giff",
+      "invariant": "C-R26",
+      "rule": "C-R26",
+      "cause": "format-aliases-in-to-message",
+      "actual": "the message lists jpg, which details.available does not"
     },
     {
       "case": "C-R36 | cells formats",
@@ -1430,6 +1528,111 @@
       "rule": "C-R36",
       "cause": "format-ids-have-aliases",
       "actual": "words format jpeg has the aliases jpg."
+    },
+    {
+      "case": "C-R03 | aspose-cli without a subcommand",
+      "invariant": "C-R03",
+      "rule": "C-R03",
+      "cause": "group-command-without-subcommand-prints-no-help",
+      "actual": "table mode does not print the help to stderr: error USAGE_ERROR: Required command was not provided.   hint: Run the command again with --help for usage; 'aspose-cli --help' lists the commands and 'aspose-cl...; the error has no details.avai..."
+    },
+    {
+      "case": "C-R03 | cells query without a subcommand",
+      "invariant": "C-R03",
+      "rule": "C-R03",
+      "cause": "group-command-without-subcommand-prints-no-help",
+      "actual": "table mode does not print the help to stderr: error USAGE_ERROR: Required command was not provided.   hint: Run the command again with --help for usage; 'aspose-cli --help' lists the commands and 'aspose-cl...; the error has no details.avai..."
+    },
+    {
+      "case": "C-R03 | cells without a subcommand",
+      "invariant": "C-R03",
+      "rule": "C-R03",
+      "cause": "group-command-without-subcommand-prints-no-help",
+      "actual": "table mode does not print the help to stderr: error USAGE_ERROR: Required command was not provided.   hint: Run the command again with --help for usage; 'aspose-cli --help' lists the commands and 'aspose-cl...; the error has no details.avai..."
+    },
+    {
+      "case": "C-R03 | fonts without a subcommand",
+      "invariant": "C-R03",
+      "rule": "C-R03",
+      "cause": "group-command-without-subcommand-prints-no-help",
+      "actual": "table mode does not print the help to stderr: error USAGE_ERROR: Required command was not provided.   hint: Run the command again with --help for usage; 'aspose-cli --help' lists the commands and 'aspose-cl...; the error has no details.avai..."
+    },
+    {
+      "case": "C-R03 | license without a subcommand",
+      "invariant": "C-R03",
+      "rule": "C-R03",
+      "cause": "group-command-without-subcommand-prints-no-help",
+      "actual": "table mode does not print the help to stderr: error USAGE_ERROR: Required command was not provided.   hint: Run the command again with --help for usage; 'aspose-cli --help' lists the commands and 'aspose-cl...; the error has no details.avai..."
+    },
+    {
+      "case": "C-R03 | mcp without a subcommand",
+      "invariant": "C-R03",
+      "rule": "C-R03",
+      "cause": "group-command-without-subcommand-prints-no-help",
+      "actual": "table mode does not print the help to stderr: error USAGE_ERROR: Required command was not provided.   hint: Run the command again with --help for usage; 'aspose-cli --help' lists the commands and 'aspose-cl...; the error has no details.avai..."
+    },
+    {
+      "case": "C-R03 | pdf query without a subcommand",
+      "invariant": "C-R03",
+      "rule": "C-R03",
+      "cause": "group-command-without-subcommand-prints-no-help",
+      "actual": "table mode does not print the help to stderr: error USAGE_ERROR: Required command was not provided.   hint: Run the command again with --help for usage; 'aspose-cli --help' lists the commands and 'aspose-cl...; the error has no details.avai..."
+    },
+    {
+      "case": "C-R03 | pdf without a subcommand",
+      "invariant": "C-R03",
+      "rule": "C-R03",
+      "cause": "group-command-without-subcommand-prints-no-help",
+      "actual": "table mode does not print the help to stderr: error USAGE_ERROR: Required command was not provided.   hint: Run the command again with --help for usage; 'aspose-cli --help' lists the commands and 'aspose-cl...; the error has no details.avai..."
+    },
+    {
+      "case": "C-R03 | preview without a subcommand",
+      "invariant": "C-R03",
+      "rule": "C-R03",
+      "cause": "group-command-without-subcommand-prints-no-help",
+      "actual": "table mode does not print the help to stderr: error USAGE_ERROR: Required command was not provided.   hint: Run the command again with --help for usage; 'aspose-cli --help' lists the commands and 'aspose-cl...; the error has no details.avai..."
+    },
+    {
+      "case": "C-R03 | skill without a subcommand",
+      "invariant": "C-R03",
+      "rule": "C-R03",
+      "cause": "group-command-without-subcommand-prints-no-help",
+      "actual": "table mode does not print the help to stderr: error USAGE_ERROR: Required command was not provided.   hint: Run the command again with --help for usage; 'aspose-cli --help' lists the commands and 'aspose-cl...; the error has no details.avai..."
+    },
+    {
+      "case": "C-R03 | slides query without a subcommand",
+      "invariant": "C-R03",
+      "rule": "C-R03",
+      "cause": "group-command-without-subcommand-prints-no-help",
+      "actual": "table mode does not print the help to stderr: error USAGE_ERROR: Required command was not provided.   hint: Run the command again with --help for usage; 'aspose-cli --help' lists the commands and 'aspose-cl...; the error has no details.avai..."
+    },
+    {
+      "case": "C-R03 | slides without a subcommand",
+      "invariant": "C-R03",
+      "rule": "C-R03",
+      "cause": "group-command-without-subcommand-prints-no-help",
+      "actual": "table mode does not print the help to stderr: error USAGE_ERROR: Required command was not provided.   hint: Run the command again with --help for usage; 'aspose-cli --help' lists the commands and 'aspose-cl...; the error has no details.avai..."
+    },
+    {
+      "case": "C-R03 | update without a subcommand",
+      "invariant": "C-R03",
+      "rule": "C-R03",
+      "cause": "group-command-without-subcommand-prints-no-help",
+      "actual": "table mode does not print the help to stderr: error USAGE_ERROR: Required command was not provided.   hint: Run the command again with --help for usage; 'aspose-cli --help' lists the commands and 'aspose-cl...; the error has no details.avai..."
+    },
+    {
+      "case": "C-R03 | words query without a subcommand",
+      "invariant": "C-R03",
+      "rule": "C-R03",
+      "cause": "group-command-without-subcommand-prints-no-help",
+      "actual": "table mode does not print the help to stderr: error USAGE_ERROR: Required command was not provided.   hint: Run the command again with --help for usage; 'aspose-cli --help' lists the commands and 'aspose-cl...; the error has no details.avai..."
+    },
+    {
+      "case": "C-R03 | words without a subcommand",
+      "invariant": "C-R03",
+      "rule": "C-R03",
+      "cause": "group-command-without-subcommand-prints-no-help",
+      "actual": "table mode does not print the help to stderr: error USAGE_ERROR: Required command was not provided.   hint: Run the command again with --help for usage; 'aspose-cli --help' lists the commands and 'aspose-cl...; the error has no details.avai..."
     },
     {
       "case": "C-R34 | app open",
@@ -2006,6 +2209,13 @@
       "actual": "AUTHOR_NO_MATCH: an operation without effect warns OP_NO_EFFECT, never *_NO_MATCH"
     },
     {
+      "case": "C-R26 | cells query range --sheet Sheet1 as Sehet1",
+      "invariant": "C-R26",
+      "rule": "C-R26",
+      "cause": "not-found-message-not-must-be-one-of",
+      "actual": "the message does not say 'Must be one of: ...': No sheet 'Sehet1' was found."
+    },
+    {
       "case": "C-R18 | v2/common/not-found-details",
       "invariant": "C-R18",
       "rule": "C-R18",
@@ -2025,6 +2235,34 @@
       "rule": "C-R30",
       "cause": "op-batch-index-reported",
       "actual": "applied[] has index; an outcome names its op by id"
+    },
+    {
+      "case": "C-R26 | cells op set_page_setup orientation portrait as protrait",
+      "invariant": "C-R26",
+      "rule": "C-R26",
+      "cause": "op-enum-message-not-must-be-one-of",
+      "actual": "the message does not say 'Must be one of: ...': Operation 0 (set_page_setup) is invalid: orientation must be one of: portrait, landscape"
+    },
+    {
+      "case": "C-R26 | pdf op add_page_numbers position top-left as tpo-left",
+      "invariant": "C-R26",
+      "rule": "C-R26",
+      "cause": "op-enum-message-not-must-be-one-of",
+      "actual": "the message does not say 'Must be one of: ...': Operation 0 (add_page_numbers) is invalid: position must be one of: top-left, top-center, top-right, bottom-left, bottom-center, bottom-right"
+    },
+    {
+      "case": "C-R26 | slides op delete_shape placeholder title as titlee",
+      "invariant": "C-R26",
+      "rule": "C-R26",
+      "cause": "op-enum-message-not-must-be-one-of",
+      "actual": "the message does not say 'Must be one of: ...': Operation 0 (delete_shape) is invalid: placeholder must be one of: title, body, subtitle, footer"
+    },
+    {
+      "case": "C-R26 | words op add_section position start as startt",
+      "invariant": "C-R26",
+      "rule": "C-R26",
+      "cause": "op-enum-message-not-must-be-one-of",
+      "actual": "the message does not say 'Must be one of: ...': Operation 0 (add_section) is invalid: position must be one of: start, end, after"
     },
     {
       "case": "C-R30 | v2/common/operation-outcome error",
@@ -2314,6 +2552,34 @@
       "actual": "OPS_INVALID details.index is not in the details dictionary"
     },
     {
+      "case": "C-R22 | cells edit --ops with a bare array",
+      "invariant": "C-R22",
+      "rule": "C-R22",
+      "cause": "ops-bare-array-rejected",
+      "actual": "exit 4 OPS_INVALID, expected 0: The operation document is invalid: the document must be an object"
+    },
+    {
+      "case": "C-R22 | pdf edit --ops with a bare array",
+      "invariant": "C-R22",
+      "rule": "C-R22",
+      "cause": "ops-bare-array-rejected",
+      "actual": "exit 4 OPS_INVALID, expected 0: The operation document is invalid: the document must be an object"
+    },
+    {
+      "case": "C-R22 | slides edit --ops with a bare array",
+      "invariant": "C-R22",
+      "rule": "C-R22",
+      "cause": "ops-bare-array-rejected",
+      "actual": "exit 4 OPS_INVALID, expected 0: The operation document is invalid: the document must be an object"
+    },
+    {
+      "case": "C-R22 | words edit --ops with a bare array",
+      "invariant": "C-R22",
+      "rule": "C-R22",
+      "cause": "ops-bare-array-rejected",
+      "actual": "exit 4 OPS_INVALID, expected 0: The operation document is invalid: the document must be an object"
+    },
+    {
       "case": "C-R20 | ops field format across products",
       "invariant": "C-R20",
       "rule": "C-R20",
@@ -2347,6 +2613,111 @@
       "rule": "C-R07",
       "cause": "ops-required-differs-by-product",
       "actual": "--ops: 2 different required flags: optional (cells edit, words edit) | required (pdf edit, slides edit)"
+    },
+    {
+      "case": "C-R14 | cells convert --out -",
+      "invariant": "C-R14",
+      "rule": "C-R14",
+      "cause": "out-dash-not-refused",
+      "actual": "USAGE_ERROR: --to xlsx contradicts --out '-': it has no extension, and a xlsx output needs one; use .xlsx., expected OPTION_INVALID"
+    },
+    {
+      "case": "C-R14 | cells edit --out -",
+      "invariant": "C-R14",
+      "rule": "C-R14",
+      "cause": "out-dash-not-refused",
+      "actual": "USAGE_ERROR: --out '-' has no extension, which names the format aspose-cli cells edit writes; use .xlsx, .xltx, .xlsm, .xltm, .xlsb, .xls, .ods, .csv, .txt, .tsv, .html, .htm, .mhtml., expected OPTION_INVALID; error.hint is \"Give --out one ..."
+    },
+    {
+      "case": "C-R14 | cells render --out -",
+      "invariant": "C-R14",
+      "rule": "C-R14",
+      "cause": "out-dash-not-refused",
+      "actual": "USAGE_ERROR: --out '-' has no extension, which names the format aspose-cli cells render writes; use .png, .jpg, .jpeg, .svg., expected OPTION_INVALID; error.hint is \"Give --out one of these extensions.\", expected it to contain \"name a file\""
+    },
+    {
+      "case": "C-R14 | pdf convert --out -",
+      "invariant": "C-R14",
+      "rule": "C-R14",
+      "cause": "out-dash-not-refused",
+      "actual": "USAGE_ERROR: --to docx contradicts --out '-': it has no extension, and a docx output needs one; use .docx., expected OPTION_INVALID"
+    },
+    {
+      "case": "C-R14 | pdf edit --out -",
+      "invariant": "C-R14",
+      "rule": "C-R14",
+      "cause": "out-dash-not-refused",
+      "actual": "USAGE_ERROR: --out '-' has no extension, which names the format aspose-cli pdf edit writes; use .pdf., expected OPTION_INVALID; error.hint is \"Give --out one of these extensions.\", expected it to contain \"name a file\""
+    },
+    {
+      "case": "C-R14 | pdf merge --out -",
+      "invariant": "C-R14",
+      "rule": "C-R14",
+      "cause": "out-dash-not-refused",
+      "actual": "USAGE_ERROR: --out '-' has no extension, which names the format aspose-cli pdf merge writes; use .pdf., expected OPTION_INVALID; error.hint is \"Give --out one of these extensions.\", expected it to contain \"name a file\""
+    },
+    {
+      "case": "C-R14 | pdf render --out -",
+      "invariant": "C-R14",
+      "rule": "C-R14",
+      "cause": "out-dash-not-refused",
+      "actual": "USAGE_ERROR: --out '-' has no extension, which names the format aspose-cli pdf render writes; use .png, .jpg, .jpeg, .svg., expected OPTION_INVALID; error.hint is \"Give --out one of these extensions.\", expected it to contain \"name a file\""
+    },
+    {
+      "case": "C-R14 | pdf sign --out -",
+      "invariant": "C-R14",
+      "rule": "C-R14",
+      "cause": "out-dash-not-refused",
+      "actual": "USAGE_ERROR: --out '-' has no extension, which names the format aspose-cli pdf sign writes; use .pdf., expected OPTION_INVALID; error.hint is \"Give --out one of these extensions.\", expected it to contain \"name a file\""
+    },
+    {
+      "case": "C-R14 | slides convert --out -",
+      "invariant": "C-R14",
+      "rule": "C-R14",
+      "cause": "out-dash-not-refused",
+      "actual": "USAGE_ERROR: --to pptx contradicts --out '-': it has no extension, and a pptx output needs one; use .pptx., expected OPTION_INVALID"
+    },
+    {
+      "case": "C-R14 | slides edit --out -",
+      "invariant": "C-R14",
+      "rule": "C-R14",
+      "cause": "out-dash-not-refused",
+      "actual": "USAGE_ERROR: --out '-' has no extension, which names the format aspose-cli slides edit writes; use .pptx, .pptm., expected OPTION_INVALID; error.hint is \"Give --out one of these extensions.\", expected it to contain \"name a file\""
+    },
+    {
+      "case": "C-R14 | slides render --out -",
+      "invariant": "C-R14",
+      "rule": "C-R14",
+      "cause": "out-dash-not-refused",
+      "actual": "USAGE_ERROR: --out '-' has no extension, which names the format aspose-cli slides render writes; use .png, .jpg, .jpeg, .svg., expected OPTION_INVALID; error.hint is \"Give --out one of these extensions.\", expected it to contain \"name a file..."
+    },
+    {
+      "case": "C-R14 | words compare --out -",
+      "invariant": "C-R14",
+      "rule": "C-R14",
+      "cause": "out-dash-not-refused",
+      "actual": "USAGE_ERROR: --out '-' has no extension, which names the format aspose-cli words compare writes; use .doc, .dot, .docx, .docm, .dotx, .dotm, .xml, .rtf, .pdf, .xps, .oxps, .ps, .pcl, .html, .htm, .mhtml, .epub, .mobi, .azw3, .odt, .ott, .tx..."
+    },
+    {
+      "case": "C-R14 | words convert --out -",
+      "invariant": "C-R14",
+      "rule": "C-R14",
+      "cause": "out-dash-not-refused",
+      "actual": "USAGE_ERROR: --to docx contradicts --out '-': it has no extension, and a docx output needs one; use .docx., expected OPTION_INVALID"
+    },
+    {
+      "case": "C-R14 | words edit --out -",
+      "invariant": "C-R14",
+      "rule": "C-R14",
+      "cause": "out-dash-not-refused",
+      "actual": "USAGE_ERROR: --out '-' has no extension, which names the format aspose-cli words edit writes; use .doc, .dot, .docx, .docm, .dotx, .dotm, .xml, .rtf, .pdf, .xps, .oxps, .ps, .pcl, .html, .htm, .mhtml, .epub, .mobi, .azw3, .odt, .ott, .txt, ..."
+    },
+    {
+      "case": "C-R14 | words render --out -",
+      "invariant": "C-R14",
+      "rule": "C-R14",
+      "cause": "out-dash-not-refused",
+      "actual": "USAGE_ERROR: --out '-' has no extension, which names the format aspose-cli words render writes; use .png, .jpg, .jpeg, .svg., expected OPTION_INVALID; error.hint is \"Give --out one of these extensions.\", expected it to contain \"name a file\""
     },
     {
       "case": "C-R25 | cells unknown created extension error details",
@@ -2538,11 +2909,109 @@
       "actual": "setup.size: read back as widthPoints; setup.size: writes enum(a3,a4,a5,legal,letter), reads number; setup.columnCount: no read reports it"
     },
     {
+      "case": "C-R26 | cells inspect --detail charts as cahrts",
+      "invariant": "C-R26",
+      "rule": "C-R26",
+      "cause": "parser-enum-message-multiline",
+      "actual": "the message has 9 lines: Argument 'cahrts' not recognized. Must be one of: \t'names' \t'errors' \t'fonts' \t'tables' \t'charts' \t'pivots' \t'validation' \t'layout'; the message does not say 'Must be one of: ...': Argument 'cahrts' not recognized. ..."
+    },
+    {
+      "case": "C-R26 | pdf inspect --detail attachments as attachmentss",
+      "invariant": "C-R26",
+      "rule": "C-R26",
+      "cause": "parser-enum-message-multiline",
+      "actual": "the message has 9 lines: Argument 'attachmentss' not recognized. Must be one of: \t'outline' \t'forms' \t'attachments' \t'fonts' \t'permissions' \t'signatures' \t'layers' \t'metadata'; the message does not say 'Must be one of: ...': Argument 'attac..."
+    },
+    {
+      "case": "C-R26 | slides inspect --detail comments as cmoments",
+      "invariant": "C-R26",
+      "rule": "C-R26",
+      "cause": "parser-enum-message-multiline",
+      "actual": "the message has 9 lines: Argument 'cmoments' not recognized. Must be one of: \t'masters' \t'layouts' \t'media' \t'fonts' \t'notes' \t'comments' \t'sections' \t'properties'; the message does not say 'Must be one of: ...': Argument 'cmoments' not rec..."
+    },
+    {
+      "case": "C-R26 | words inspect --detail bookmarks as bookmarkss",
+      "invariant": "C-R26",
+      "rule": "C-R26",
+      "cause": "parser-enum-message-multiline",
+      "actual": "the message has 12 lines: Argument 'bookmarkss' not recognized. Must be one of: \t'outline' \t'sections' \t'styles' \t'fields' \t'bookmarks' \t'comments' \t'revisions' \t'images' \t'tables' \t'pro...; the message does not say 'Must be one of: ...': A..."
+    },
+    {
+      "case": "C-R26 | cells command compare as cmopare",
+      "invariant": "C-R26",
+      "rule": "C-R26",
+      "cause": "parser-mistake-message-not-must-be-one-of",
+      "actual": "the message does not say 'Must be one of: ...': 'cmopare' is not a command of 'aspose-cli cells'; its commands: inspect, query, create, edit, compare, convert, render."
+    },
+    {
+      "case": "C-R26 | cells inspect option --detail as --dteail",
+      "invariant": "C-R26",
+      "rule": "C-R26",
+      "cause": "parser-mistake-message-not-must-be-one-of",
+      "actual": "the message does not say 'Must be one of: ...': Unrecognized command or argument '--dteail'."
+    },
+    {
+      "case": "C-R26 | command cells as cellss",
+      "invariant": "C-R26",
+      "rule": "C-R26",
+      "cause": "parser-mistake-message-not-must-be-one-of",
+      "actual": "the message does not say 'Must be one of: ...': 'cellss' is not a command of 'aspose-cli'; its commands: app, preview, review, cells, pdf, slides, words, license, capabilities, doctor, skill, schema, docs, fo..."
+    },
+    {
+      "case": "C-R26 | pdf command convert as cnovert",
+      "invariant": "C-R26",
+      "rule": "C-R26",
+      "cause": "parser-mistake-message-not-must-be-one-of",
+      "actual": "the message does not say 'Must be one of: ...': 'cnovert' is not a command of 'aspose-cli pdf'; its commands: inspect, query, convert, render, create, merge, split, extract, edit, validate, sign."
+    },
+    {
+      "case": "C-R26 | pdf inspect option --detail as --dteail",
+      "invariant": "C-R26",
+      "rule": "C-R26",
+      "cause": "parser-mistake-message-not-must-be-one-of",
+      "actual": "the message does not say 'Must be one of: ...': Unrecognized command or argument '--dteail'."
+    },
+    {
+      "case": "C-R26 | slides command convert as cnovert",
+      "invariant": "C-R26",
+      "rule": "C-R26",
+      "cause": "parser-mistake-message-not-must-be-one-of",
+      "actual": "the message does not say 'Must be one of: ...': 'cnovert' is not a command of 'aspose-cli slides'; its commands: inspect, query, convert, render, create, edit, extract."
+    },
+    {
+      "case": "C-R26 | slides inspect option --detail as --dteail",
+      "invariant": "C-R26",
+      "rule": "C-R26",
+      "cause": "parser-mistake-message-not-must-be-one-of",
+      "actual": "the message does not say 'Must be one of: ...': Unrecognized command or argument '--dteail'."
+    },
+    {
+      "case": "C-R26 | words command compare as cmopare",
+      "invariant": "C-R26",
+      "rule": "C-R26",
+      "cause": "parser-mistake-message-not-must-be-one-of",
+      "actual": "the message does not say 'Must be one of: ...': 'cmopare' is not a command of 'aspose-cli words'; its commands: inspect, query, convert, render, create, edit, compare, split, extract."
+    },
+    {
+      "case": "C-R26 | words inspect option --detail as --dteail",
+      "invariant": "C-R26",
+      "rule": "C-R26",
+      "cause": "parser-mistake-message-not-must-be-one-of",
+      "actual": "the message does not say 'Must be one of: ...': Unrecognized command or argument '--dteail'."
+    },
+    {
       "case": "C-R12 | pdf extract declared",
       "invariant": "C-R12",
       "rule": "C-R12",
       "cause": "pdf-extract-has-out-and-out-dir",
       "actual": "pdf extract has both --out and --out-dir."
+    },
+    {
+      "case": "C-R14 | pdf extract --out -",
+      "invariant": "C-R14",
+      "rule": "C-R14",
+      "cause": "pdf-extract-has-out-and-out-dir",
+      "actual": "error.hint is \"Name the directory that receives the attachments with --out-dir instead.\", expected it to contain \"name a file\""
     },
     {
       "case": "same-name-option | --out-dir",
@@ -2690,6 +3159,13 @@
       "rule": "C-R21",
       "cause": "pdf-state-not-read-back",
       "actual": "title: no read reports it; author: no read reports it; subject: no read reports it; keywords: no read reports it; custom: no read reports it"
+    },
+    {
+      "case": "C-R24 | pdf validate of a PDF that is not PDF/A",
+      "invariant": "C-R24",
+      "rule": "C-R24",
+      "cause": "pdf-validate-failure-exits-0",
+      "actual": "exit 0, expected 8"
     },
     {
       "case": "C-R28 | pdf code names",
@@ -2986,6 +3462,13 @@
       "actual": "input: a string, not the file object"
     },
     {
+      "case": "C-R14 | review --out -",
+      "invariant": "C-R14",
+      "rule": "C-R14",
+      "cause": "review-out-dash-is-a-directory",
+      "actual": "exit 0, expected 2; no error (exit 0), expected OPTION_INVALID; error.hint is missing, expected it to contain \"name a file\""
+    },
+    {
       "case": "C-R11 | review declared",
       "invariant": "C-R11",
       "rule": "C-R11",
@@ -3019,6 +3502,202 @@
       "rule": "C-R32",
       "cause": "search-hit-text-named-snippet-or-value",
       "actual": "hits[] does not require text (it has snippet)"
+    },
+    {
+      "case": "C-R16 | pdf convert --pages all",
+      "invariant": "C-R16",
+      "rule": "C-R16",
+      "cause": "selection-all-unsupported",
+      "actual": "exit 4 PAGE_RANGE_INVALID, expected 0: Invalid item range 'all': 'all' is not a positive 1-based number."
+    },
+    {
+      "case": "C-R16 | pdf extract --pages all",
+      "invariant": "C-R16",
+      "rule": "C-R16",
+      "cause": "selection-all-unsupported",
+      "actual": "exit 4 PAGE_RANGE_INVALID, expected 0: Invalid item range 'all': 'all' is not a positive 1-based number."
+    },
+    {
+      "case": "C-R16 | pdf query pages --pages all",
+      "invariant": "C-R16",
+      "rule": "C-R16",
+      "cause": "selection-all-unsupported",
+      "actual": "exit 4 PAGE_RANGE_INVALID, expected 0: Invalid item range 'all': 'all' is not a positive 1-based number."
+    },
+    {
+      "case": "C-R16 | pdf query search --pages all",
+      "invariant": "C-R16",
+      "rule": "C-R16",
+      "cause": "selection-all-unsupported",
+      "actual": "exit 4 PAGE_RANGE_INVALID, expected 0: Invalid item range 'all': 'all' is not a positive 1-based number."
+    },
+    {
+      "case": "C-R16 | pdf render --pages all",
+      "invariant": "C-R16",
+      "rule": "C-R16",
+      "cause": "selection-all-unsupported",
+      "actual": "exit 4 PAGE_RANGE_INVALID, expected 0: Invalid item range 'all': 'all' is not a positive 1-based number."
+    },
+    {
+      "case": "C-R16 | pdf split --pages all",
+      "invariant": "C-R16",
+      "rule": "C-R16",
+      "cause": "selection-all-unsupported",
+      "actual": "exit 4 PAGE_RANGE_INVALID, expected 0: Invalid item range 'all': 'all' is not a positive 1-based number."
+    },
+    {
+      "case": "C-R16 | slides convert --slides all",
+      "invariant": "C-R16",
+      "rule": "C-R16",
+      "cause": "selection-all-unsupported",
+      "actual": "exit 4 PAGE_RANGE_INVALID, expected 0: Invalid item range 'all': 'all' is not a positive 1-based number."
+    },
+    {
+      "case": "C-R16 | slides extract --slides all",
+      "invariant": "C-R16",
+      "rule": "C-R16",
+      "cause": "selection-all-unsupported",
+      "actual": "exit 4 PAGE_RANGE_INVALID, expected 0: Invalid item range 'all': 'all' is not a positive 1-based number."
+    },
+    {
+      "case": "C-R16 | slides query slides --slides all",
+      "invariant": "C-R16",
+      "rule": "C-R16",
+      "cause": "selection-all-unsupported",
+      "actual": "exit 4 PAGE_RANGE_INVALID, expected 0: Invalid item range 'all': 'all' is not a positive 1-based number."
+    },
+    {
+      "case": "C-R16 | slides render --slides all",
+      "invariant": "C-R16",
+      "rule": "C-R16",
+      "cause": "selection-all-unsupported",
+      "actual": "exit 4 PAGE_RANGE_INVALID, expected 0: Invalid item range 'all': 'all' is not a positive 1-based number."
+    },
+    {
+      "case": "C-R16 | words convert --pages all",
+      "invariant": "C-R16",
+      "rule": "C-R16",
+      "cause": "selection-all-unsupported",
+      "actual": "exit 4 PAGE_RANGE_INVALID, expected 0: Invalid item range 'all': 'all' is not a positive 1-based number."
+    },
+    {
+      "case": "C-R16 | words query blocks --blocks all",
+      "invariant": "C-R16",
+      "rule": "C-R16",
+      "cause": "selection-all-unsupported",
+      "actual": "exit 4 PAGE_RANGE_INVALID, expected 0: Invalid item range 'all': 'all' is not a positive 1-based number."
+    },
+    {
+      "case": "C-R16 | words render --pages all",
+      "invariant": "C-R16",
+      "rule": "C-R16",
+      "cause": "selection-all-unsupported",
+      "actual": "exit 4 PAGE_RANGE_INVALID, expected 0: Invalid item range 'all': 'all' is not a positive 1-based number."
+    },
+    {
+      "case": "C-R16 | words split --pages all",
+      "invariant": "C-R16",
+      "rule": "C-R16",
+      "cause": "selection-all-unsupported",
+      "actual": "exit 4 PAGE_RANGE_INVALID, expected 0: Invalid item range 'all': 'all' is not a positive 1-based number."
+    },
+    {
+      "case": "C-R16 | pdf convert --pages 1-x",
+      "invariant": "C-R16",
+      "rule": "C-R16",
+      "cause": "selection-syntax-error-is-not-option-invalid",
+      "actual": "exit 4 PAGE_RANGE_INVALID, expected 2: Invalid item range '1-x': 'x' is not a positive 1-based number.; PAGE_RANGE_INVALID: Invalid item range '1-x': 'x' is not a positive 1-based number., expected OPTION_INVALID"
+    },
+    {
+      "case": "C-R16 | pdf extract --pages 1-x",
+      "invariant": "C-R16",
+      "rule": "C-R16",
+      "cause": "selection-syntax-error-is-not-option-invalid",
+      "actual": "exit 4 PAGE_RANGE_INVALID, expected 2: Invalid item range '1-x': 'x' is not a positive 1-based number.; PAGE_RANGE_INVALID: Invalid item range '1-x': 'x' is not a positive 1-based number., expected OPTION_INVALID"
+    },
+    {
+      "case": "C-R16 | pdf query pages --pages 1-x",
+      "invariant": "C-R16",
+      "rule": "C-R16",
+      "cause": "selection-syntax-error-is-not-option-invalid",
+      "actual": "exit 4 PAGE_RANGE_INVALID, expected 2: Invalid item range '1-x': 'x' is not a positive 1-based number.; PAGE_RANGE_INVALID: Invalid item range '1-x': 'x' is not a positive 1-based number., expected OPTION_INVALID"
+    },
+    {
+      "case": "C-R16 | pdf query search --pages 1-x",
+      "invariant": "C-R16",
+      "rule": "C-R16",
+      "cause": "selection-syntax-error-is-not-option-invalid",
+      "actual": "exit 4 PAGE_RANGE_INVALID, expected 2: Invalid item range '1-x': 'x' is not a positive 1-based number.; PAGE_RANGE_INVALID: Invalid item range '1-x': 'x' is not a positive 1-based number., expected OPTION_INVALID"
+    },
+    {
+      "case": "C-R16 | pdf render --pages 1-x",
+      "invariant": "C-R16",
+      "rule": "C-R16",
+      "cause": "selection-syntax-error-is-not-option-invalid",
+      "actual": "exit 4 PAGE_RANGE_INVALID, expected 2: Invalid item range '1-x': 'x' is not a positive 1-based number.; PAGE_RANGE_INVALID: Invalid item range '1-x': 'x' is not a positive 1-based number., expected OPTION_INVALID"
+    },
+    {
+      "case": "C-R16 | pdf split --pages 1-x",
+      "invariant": "C-R16",
+      "rule": "C-R16",
+      "cause": "selection-syntax-error-is-not-option-invalid",
+      "actual": "exit 4 PAGE_RANGE_INVALID, expected 2: Invalid item range '1-x': 'x' is not a positive 1-based number.; PAGE_RANGE_INVALID: Invalid item range '1-x': 'x' is not a positive 1-based number., expected OPTION_INVALID"
+    },
+    {
+      "case": "C-R16 | slides convert --slides 1-x",
+      "invariant": "C-R16",
+      "rule": "C-R16",
+      "cause": "selection-syntax-error-is-not-option-invalid",
+      "actual": "exit 4 PAGE_RANGE_INVALID, expected 2: Invalid item range '1-x': 'x' is not a positive 1-based number.; PAGE_RANGE_INVALID: Invalid item range '1-x': 'x' is not a positive 1-based number., expected OPTION_INVALID"
+    },
+    {
+      "case": "C-R16 | slides extract --slides 1-x",
+      "invariant": "C-R16",
+      "rule": "C-R16",
+      "cause": "selection-syntax-error-is-not-option-invalid",
+      "actual": "exit 4 PAGE_RANGE_INVALID, expected 2: Invalid item range '1-x': 'x' is not a positive 1-based number.; PAGE_RANGE_INVALID: Invalid item range '1-x': 'x' is not a positive 1-based number., expected OPTION_INVALID"
+    },
+    {
+      "case": "C-R16 | slides query slides --slides 1-x",
+      "invariant": "C-R16",
+      "rule": "C-R16",
+      "cause": "selection-syntax-error-is-not-option-invalid",
+      "actual": "exit 4 PAGE_RANGE_INVALID, expected 2: Invalid item range '1-x': 'x' is not a positive 1-based number.; PAGE_RANGE_INVALID: Invalid item range '1-x': 'x' is not a positive 1-based number., expected OPTION_INVALID"
+    },
+    {
+      "case": "C-R16 | slides render --slides 1-x",
+      "invariant": "C-R16",
+      "rule": "C-R16",
+      "cause": "selection-syntax-error-is-not-option-invalid",
+      "actual": "exit 4 PAGE_RANGE_INVALID, expected 2: Invalid item range '1-x': 'x' is not a positive 1-based number.; PAGE_RANGE_INVALID: Invalid item range '1-x': 'x' is not a positive 1-based number., expected OPTION_INVALID"
+    },
+    {
+      "case": "C-R16 | words convert --pages 1-x",
+      "invariant": "C-R16",
+      "rule": "C-R16",
+      "cause": "selection-syntax-error-is-not-option-invalid",
+      "actual": "exit 4 PAGE_RANGE_INVALID, expected 2: Invalid item range '1-x': 'x' is not a positive 1-based number.; PAGE_RANGE_INVALID: Invalid item range '1-x': 'x' is not a positive 1-based number., expected OPTION_INVALID"
+    },
+    {
+      "case": "C-R16 | words query blocks --blocks 1-x",
+      "invariant": "C-R16",
+      "rule": "C-R16",
+      "cause": "selection-syntax-error-is-not-option-invalid",
+      "actual": "exit 4 PAGE_RANGE_INVALID, expected 2: Invalid item range '1-x': 'x' is not a positive 1-based number.; PAGE_RANGE_INVALID: Invalid item range '1-x': 'x' is not a positive 1-based number., expected OPTION_INVALID"
+    },
+    {
+      "case": "C-R16 | words render --pages 1-x",
+      "invariant": "C-R16",
+      "rule": "C-R16",
+      "cause": "selection-syntax-error-is-not-option-invalid",
+      "actual": "exit 4 PAGE_RANGE_INVALID, expected 2: Invalid item range '1-x': 'x' is not a positive 1-based number.; PAGE_RANGE_INVALID: Invalid item range '1-x': 'x' is not a positive 1-based number., expected OPTION_INVALID"
+    },
+    {
+      "case": "C-R16 | words split --pages 1-x",
+      "invariant": "C-R16",
+      "rule": "C-R16",
+      "cause": "selection-syntax-error-is-not-option-invalid",
+      "actual": "exit 4 PAGE_RANGE_INVALID, expected 2: Invalid item range '1-x': 'x' is not a positive 1-based number.; PAGE_RANGE_INVALID: Invalid item range '1-x': 'x' is not a positive 1-based number., expected OPTION_INVALID"
     },
     {
       "case": "C-R28 | cells review check codes",
@@ -3238,6 +3917,34 @@
       "actual": "Commands/ConvertCommand.cs: 'slides render' is written bare; quote it or write aspose-cli before it"
     },
     {
+      "case": "C-R10 | cells edit --ops with --password-stdin",
+      "invariant": "C-R10",
+      "rule": "C-R10",
+      "cause": "stdin-sources-not-exclusive",
+      "actual": "exit 4 OPS_INVALID, expected 2: The operation document is invalid: the document is not valid JSON: 'I' is an invalid start of a value. (line 1, byte 1); OPS_INVALID: The operation document is invalid: the document is not valid JSON: 'I' is ..."
+    },
+    {
+      "case": "C-R10 | pdf edit --ops with --password-stdin",
+      "invariant": "C-R10",
+      "rule": "C-R10",
+      "cause": "stdin-sources-not-exclusive",
+      "actual": "exit 4 OPS_INVALID, expected 2: The operation document is invalid: the document is not valid JSON: 'I' is an invalid start of a value. (line 1, byte 1); OPS_INVALID: The operation document is invalid: the document is not valid JSON: 'I' is ..."
+    },
+    {
+      "case": "C-R10 | slides edit --ops with --password-stdin",
+      "invariant": "C-R10",
+      "rule": "C-R10",
+      "cause": "stdin-sources-not-exclusive",
+      "actual": "exit 4 OPS_INVALID, expected 2: The operation document is invalid: the document is not valid JSON: 'I' is an invalid start of a value. (line 1, byte 1); OPS_INVALID: The operation document is invalid: the document is not valid JSON: 'I' is ..."
+    },
+    {
+      "case": "C-R10 | words edit --ops with --password-stdin",
+      "invariant": "C-R10",
+      "rule": "C-R10",
+      "cause": "stdin-sources-not-exclusive",
+      "actual": "exit 4 OPS_INVALID, expected 2: The operation document is invalid: the document is not valid JSON: 'I' is an invalid start of a value. (line 1, byte 1); OPS_INVALID: The operation document is invalid: the document is not valid JSON: 'I' is ..."
+    },
+    {
       "case": "C-R20 | v2/slides/ops#set_table_cell spelling",
       "invariant": "C-R20",
       "rule": "C-R20",
@@ -3250,6 +3957,56 @@
       "rule": "C-R20",
       "cause": "table-cell-col-abbreviated",
       "actual": "col: abbreviated name"
+    },
+    {
+      "case": "C-R23 | cells inspect succeeds in table mode",
+      "invariant": "C-R23",
+      "rule": "C-R23",
+      "cause": "table-mode-prints-license-line",
+      "modes": [
+        "licensed"
+      ],
+      "actual": "stderr is not empty: license: cells=licensed"
+    },
+    {
+      "case": "C-R23 | doctor succeeds in table mode",
+      "invariant": "C-R23",
+      "rule": "C-R23",
+      "cause": "table-mode-prints-license-line",
+      "modes": [
+        "licensed"
+      ],
+      "actual": "stderr is not empty: license: cells=licensed; pdf=licensed; slides=licensed; words=licensed"
+    },
+    {
+      "case": "C-R23 | pdf inspect succeeds in table mode",
+      "invariant": "C-R23",
+      "rule": "C-R23",
+      "cause": "table-mode-prints-license-line",
+      "modes": [
+        "licensed"
+      ],
+      "actual": "stderr is not empty: license: pdf=licensed"
+    },
+    {
+      "case": "C-R23 | slides inspect succeeds in table mode",
+      "invariant": "C-R23",
+      "rule": "C-R23",
+      "cause": "table-mode-prints-license-line",
+      "modes": [
+        "licensed"
+      ],
+      "actual": "stderr is not empty: license: slides=licensed"
+    },
+    {
+      "case": "C-R23 | words inspect succeeds in table mode",
+      "invariant": "C-R23",
+      "rule": "C-R23",
+      "cause": "table-mode-prints-license-line",
+      "modes": [
+        "licensed"
+      ],
+      "actual": "stderr is not empty: license: words=licensed"
     },
     {
       "case": "C-R33 | v2/cells/workbook-info envelope",
@@ -3306,6 +4063,62 @@
       "rule": "C-R33",
       "cause": "top-level-kind",
       "actual": "top-level kind"
+    },
+    {
+      "case": "C-R26 | cells op add_comment field sheet as sheett",
+      "invariant": "C-R26",
+      "rule": "C-R26",
+      "cause": "unknown-field-has-no-available",
+      "actual": "details.available is missing; the message does not say 'Must be one of: ...': Operation 0 (add_comment) is invalid: unknown field 'sheett'; add_comment accepts: op, id, sheet, cell, text, author"
+    },
+    {
+      "case": "C-R26 | pdf op add_attachment field path as pathh",
+      "invariant": "C-R26",
+      "rule": "C-R26",
+      "cause": "unknown-field-has-no-available",
+      "actual": "details.available is missing; the message does not say 'Must be one of: ...': Operation 0 (add_attachment) is invalid: unknown field 'pathh'; add_attachment accepts: op, id, path, name, description, mimeType"
+    },
+    {
+      "case": "C-R26 | slides op add_section field name as namee",
+      "invariant": "C-R26",
+      "rule": "C-R26",
+      "cause": "unknown-field-has-no-available",
+      "actual": "details.available is missing; the message does not say 'Must be one of: ...': Operation 0 (add_section) is invalid: unknown field 'namee'; add_section accepts: op, id, name, startSlide"
+    },
+    {
+      "case": "C-R26 | words op accept_revisions field author as atuhor",
+      "invariant": "C-R26",
+      "rule": "C-R26",
+      "cause": "unknown-field-has-no-available",
+      "actual": "details.available is missing; the message does not say 'Must be one of: ...': Operation 0 (accept_revisions) is invalid: unknown field 'atuhor'; accept_revisions accepts: op, id, author, revisions"
+    },
+    {
+      "case": "C-R26 | cells op add_comment as add_commentt",
+      "invariant": "C-R26",
+      "rule": "C-R26",
+      "cause": "unknown-op-message-not-must-be-one-of",
+      "actual": "the message does not say 'Must be one of: ...': Operation 0 is invalid: unknown op 'add_commentt'; valid ops: add_comment, add_conditional_format, add_sheet, add_sparkline, clear_conditional_formats, clear_ra..."
+    },
+    {
+      "case": "C-R26 | pdf op add_attachment as add_attachmentt",
+      "invariant": "C-R26",
+      "rule": "C-R26",
+      "cause": "unknown-op-message-not-must-be-one-of",
+      "actual": "the message does not say 'Must be one of: ...': Operation 0 is invalid: unknown op 'add_attachmentt'; valid ops: add_attachment, add_bookmark, add_footer_text, add_header_text, add_link, add_page_numbers, add..."
+    },
+    {
+      "case": "C-R26 | slides op add_section as add_sectionn",
+      "invariant": "C-R26",
+      "rule": "C-R26",
+      "cause": "unknown-op-message-not-must-be-one-of",
+      "actual": "the message does not say 'Must be one of: ...': Operation 0 is invalid: unknown op 'add_sectionn'; valid ops: add_section, add_slide, append_presentation, apply_layout, delete_shape, delete_slides, duplicate_..."
+    },
+    {
+      "case": "C-R26 | words op accept_revisions as accept_revisionss",
+      "invariant": "C-R26",
+      "rule": "C-R26",
+      "cause": "unknown-op-message-not-must-be-one-of",
+      "actual": "the message does not say 'Must be one of: ...': Operation 0 is invalid: unknown op 'accept_revisionss'; valid ops: accept_revisions, add_comment, add_section, add_watermark, append_document, apply_list, defin..."
     },
     {
       "case": "C-R04 | update _prepare",
