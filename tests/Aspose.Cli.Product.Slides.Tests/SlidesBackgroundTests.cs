@@ -20,10 +20,10 @@ public sealed class SlidesBackgroundTests
         using var fixture = new SlidesEngineFixture();
         string source = BeigeDeck(fixture, "source.pptx");
         string destination = fixture.File("destination.pptx");
-        SlidesCreate.Run(fixture.Session, new NewPresentationRequest { Output = TestOutput.At(destination) });
+        SlidesCreate.Run(fixture.Session, new SlidesCreateRequest { Output = TestOutput.At(destination) });
         string output = fixture.File($"merged-{masterPolicy}.pptx");
 
-        SlidesEditResult result = SlidesEdit.Run(fixture.Session, new PresentationEditRequest
+        SlidesEditResult result = SlidesEdit.Run(fixture.Session, new SlidesEditRequest
         {
             Input = destination,
             Batch = new SlidesOpsBatch
@@ -43,8 +43,8 @@ public sealed class SlidesBackgroundTests
     {
         using var fixture = new SlidesEngineFixture();
         string input = fixture.File("deck.pptx");
-        SlidesCreate.Run(fixture.Session, new NewPresentationRequest { Output = TestOutput.At(input) });
-        SlidesEdit.Run(fixture.Session, new PresentationEditRequest
+        SlidesCreate.Run(fixture.Session, new SlidesCreateRequest { Output = TestOutput.At(input) });
+        SlidesEdit.Run(fixture.Session, new SlidesEditRequest
         {
             Input = input,
             Batch = new SlidesOpsBatch
@@ -57,7 +57,7 @@ public sealed class SlidesBackgroundTests
             },
             Output = TestOutput.At(input, overwrite: true),
         });
-        SlidesEdit.Run(fixture.Session, new PresentationEditRequest
+        SlidesEdit.Run(fixture.Session, new SlidesEditRequest
         {
             Input = input,
             Batch = new SlidesOpsBatch
@@ -68,7 +68,7 @@ public sealed class SlidesBackgroundTests
         });
         string output = fixture.File("relaid.pptx");
 
-        SlidesEditResult result = SlidesEdit.Run(fixture.Session, new PresentationEditRequest
+        SlidesEditResult result = SlidesEdit.Run(fixture.Session, new SlidesEditRequest
         {
             Input = input,
             Batch = new SlidesOpsBatch
@@ -97,7 +97,7 @@ public sealed class SlidesBackgroundTests
     private static string BeigeDeck(SlidesEngineFixture fixture, string name)
     {
         string path = fixture.File(name);
-        SlidesEdit.Run(fixture.Session, new PresentationEditRequest
+        SlidesEdit.Run(fixture.Session, new SlidesEditRequest
         {
             Input = fixture.CreatePresentation("plain-" + name, slides: 1),
             Batch = new SlidesOpsBatch { Ops = [new SetBackgroundOp { Color = Beige }] },

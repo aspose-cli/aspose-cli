@@ -829,11 +829,11 @@
       "actual": "fill: a fill is named fillColor; size: a font size is named fontSize"
     },
     {
-      "case": "C-R20 | v2/slides/presentation-read fixednames",
+      "case": "C-R20 | v2/slides/read-result fixednames",
       "invariant": "C-R20",
       "rule": "C-R20",
       "cause": "font-size-not-named-font-size",
-      "actual": "slideTextRunData.size: a font size is named fontSize"
+      "actual": "slidesTextRunData.size: a font size is named fontSize"
     },
     {
       "case": "C-R20 | v2/words/document-read fixednames",
@@ -1613,11 +1613,11 @@
       "actual": "slides edit has no --verify; v2/slides/edit-result declares no verification"
     },
     {
-      "case": "C-R18 | v2/slides/presentation-info",
+      "case": "C-R18 | v2/slides/inspect-result",
       "invariant": "C-R18",
       "rule": "C-R18",
       "cause": "slides-empty-section-start-slide-zero",
-      "actual": "presentationSectionInfo.startSlide: minimum 0, not 1"
+      "actual": "slidesSectionInfo.startSlide: minimum 0, not 1"
     },
     {
       "case": "C-R38 | src/Aspose.Cli.Product.Slides",
@@ -1830,18 +1830,18 @@
       "actual": "pdfFormSummary.type: a variant named type, not kind"
     },
     {
-      "case": "C-R20 | v2/slides/presentation-info variants",
+      "case": "C-R20 | v2/slides/inspect-result variants",
       "invariant": "C-R20",
       "rule": "C-R20",
       "cause": "variant-field-named-type",
-      "actual": "presentationMediaInfo.type: a variant named type, not kind"
+      "actual": "slidesMediaInfo.type: a variant named type, not kind"
     },
     {
-      "case": "C-R20 | v2/slides/presentation-read variants",
+      "case": "C-R20 | v2/slides/read-result variants",
       "invariant": "C-R20",
       "rule": "C-R20",
       "cause": "variant-field-named-type",
-      "actual": "slideShapeData.type: a variant named type, not kind"
+      "actual": "slidesShapeData.type: a variant named type, not kind"
     },
     {
       "case": "C-R20 | v2/words/compare-result variants",

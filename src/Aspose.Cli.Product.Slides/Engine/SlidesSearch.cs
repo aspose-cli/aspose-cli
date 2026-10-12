@@ -9,10 +9,10 @@ namespace Aspose.Cli.Product.Slides.Engine;
 /// <summary>Bounded shape and speaker-notes text search.</summary>
 internal static class SlidesSearch
 {
-    internal static SlidesSearchResult Run(SlidesSession session, PresentationSearchRequest request)
+    internal static SlidesSearchResult Run(SlidesSession session, SlidesSearchRequest request)
     {
         TextSearch text = request.Query.Text;
-        string scope = request.Query.Scope ?? PresentationSearchScopes.All;
+        string scope = request.Query.Scope ?? SlidesSearchScopes.All;
 
         LicenseState state = session.Outputs.License;
         using LoadedPresentation loaded = session.Loader.Open(request.Input, request.Password);
@@ -20,7 +20,7 @@ internal static class SlidesSearch
         SearchHits<SlidesSearchHit> hits = request.Query.Collect<SlidesSearchHit>();
         foreach ((ISlide slide, int index) in loaded.Presentation.Slides.Select((slide, index) => (slide, index)))
         {
-            if (scope is PresentationSearchScopes.Shapes or PresentationSearchScopes.All)
+            if (scope is SlidesSearchScopes.Shapes or SlidesSearchScopes.All)
             {
                 foreach (IShape shape in slide.Shapes)
                 {
@@ -33,7 +33,7 @@ internal static class SlidesSearch
             }
 
             if (!hits.Truncated
-                && scope is PresentationSearchScopes.Notes or PresentationSearchScopes.All
+                && scope is SlidesSearchScopes.Notes or SlidesSearchScopes.All
                 && Notes(slide) is { } notes)
             {
                 Offer(notes, "notes", null, null);

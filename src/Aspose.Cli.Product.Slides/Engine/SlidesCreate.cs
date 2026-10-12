@@ -9,7 +9,7 @@ namespace Aspose.Cli.Product.Slides.Engine;
 /// <summary>Creates a blank, template-based or Markdown-authored presentation.</summary>
 internal static class SlidesCreate
 {
-    internal static SlidesCreateResult Run(SlidesSession session, NewPresentationRequest request)
+    internal static SlidesCreateResult Run(SlidesSession session, SlidesCreateRequest request)
     {
         LicenseState state = session.Outputs.License;
         string format = request.Output.Format.Id;

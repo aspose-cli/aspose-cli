@@ -21,7 +21,7 @@ public sealed class SlidesImageInputTests
         File.WriteAllText(picture, "not an image");
         string output = fixture.File("deck.out.pptx");
 
-        CliException error = Assert.Throws<CliException>(() => SlidesEdit.Run(fixture.Session, new PresentationEditRequest
+        CliException error = Assert.Throws<CliException>(() => SlidesEdit.Run(fixture.Session, new SlidesEditRequest
         {
             Input = input,
             Batch = new SlidesOpsBatch
@@ -45,7 +45,7 @@ public sealed class SlidesImageInputTests
         File.WriteAllBytes(picture, png[..(png.Length / 2)]);
         string output = fixture.File("deck.out.pptx");
 
-        CliException error = Assert.Throws<CliException>(() => SlidesEdit.Run(fixture.Session, new PresentationEditRequest
+        CliException error = Assert.Throws<CliException>(() => SlidesEdit.Run(fixture.Session, new SlidesEditRequest
         {
             Input = input,
             Batch = new SlidesOpsBatch { Ops = [new SetBackgroundOp { ImagePath = picture }] },
@@ -82,7 +82,7 @@ public sealed class SlidesImageInputTests
         File.WriteAllBytes(picture, Gzip("<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"9\" height=\"9\"/>"));
         string output = fixture.File("deck.out.pptx");
 
-        CliException error = Assert.Throws<CliException>(() => SlidesEdit.Run(fixture.Session, new PresentationEditRequest
+        CliException error = Assert.Throws<CliException>(() => SlidesEdit.Run(fixture.Session, new SlidesEditRequest
         {
             Input = input,
             Batch = new SlidesOpsBatch { Ops = [new SlidesInsertImageOp { Slide = 1, Path = picture }] },

@@ -17,15 +17,15 @@ public sealed class SlidesReviewCheckTests
     [Fact]
     public void Analyze_EmitsEveryDeclaredCheckAndNothingElse()
     {
-        SlideShapeData repeated = Shape(1, new(50, 50, 300, 100), "Repeated content long enough to compare");
-        SlideData[] slides =
+        SlidesShapeData repeated = Shape(1, new(50, 50, 300, 100), "Repeated content long enough to compare");
+        SlidesSlideData[] slides =
         [
             Slide(1, repeated),
             Slide(2, repeated),
             Slide(3),
             Slide(4, Shape(1, new(700, 50, 100, 50), "Hi") with
             {
-                Runs = [new SlideTextRunData { Text = "Hi", Size = 10 }],
+                Runs = [new SlidesTextRunData { Text = "Hi", Size = 10 }],
             }),
             Slide(5, [.. Enumerable.Range(1, 18).Select(id => Shape(id, new(id * 30, 400, 20, 20), "Item"))]),
             Slide(6, Shape(1, new(0, 0, 10, 10), "a"), Shape(2, new(20, 0, 10, 10), "b"), Shape(3, new(0, 20, 10, 10), "c")),
@@ -37,7 +37,7 @@ public sealed class SlidesReviewCheckTests
             Slide(12, TitleWithLines(1, new(400, 100, 200, 40), new(410, 104, 180, 108))),
             Slide(13, Shape(1, new(60, 100, 400, 60), "White") with
             {
-                Runs = [new SlideTextRunData { Text = "White", Color = "#FFFFFF" }],
+                Runs = [new SlidesTextRunData { Text = "White", Color = "#FFFFFF" }],
                 Backdrop = System.Drawing.Color.White,
             }),
             Slide(14, Shape(1, new(100, 100, 400, 80), "Evaluation only.") with { EvaluationWatermark = true }),
@@ -113,7 +113,7 @@ public sealed class SlidesReviewCheckTests
         // Evaluation mode replaces every text longer than five characters with its start and the
         // SDK's truncation marker, so a 25-cell table reads as about 1,500 characters.
         string cells = string.Join(' ', Enumerable.Repeat($"¥1,20... {SlidesEngineSupport.EvaluationTruncationMarker}.", 25));
-        SlideData slide = Slide(
+        SlidesSlideData slide = Slide(
             1,
             Shape(1, new(40, 22, 640, 58), $"投资与回报... {SlidesEngineSupport.EvaluationTruncationMarker}."),
             Shape(2, new(40, 100, 640, 144), cells, type: "table"));
@@ -144,7 +144,7 @@ public sealed class SlidesReviewCheckTests
         box.TextFrame.Text = "A summary line";
         box.TextFrame.TextFrameFormat.AnchoringType = Aspose.Slides.TextAnchorType.Top;
 
-        SlideRect rect = Assert.IsType<SlideRect>(Engine.Mapping.SlidesReviewProjection.TextRect(box));
+        SlidesRect rect = Assert.IsType<SlidesRect>(Engine.Mapping.SlidesReviewProjection.TextRect(box));
 
         Assert.InRange(rect.Y, 150, 170);
         Assert.InRange(rect.Height, 10, 60);
@@ -203,8 +203,8 @@ public sealed class SlidesReviewCheckTests
         File.WriteAllText(markdown, "# Proposal\n\nSales team\n\n## Next steps\n\n- Confirm the pilot site\n- Sign the letter of intent\n");
         string deck = fixture.File("deck.pptx");
         string edited = fixture.File("deck.long-title.pptx");
-        SlidesCreate.Run(fixture.Session, new NewPresentationRequest { Output = TestOutput.At(deck), MarkdownPath = markdown });
-        SlidesEdit.Run(fixture.Session, new PresentationEditRequest
+        SlidesCreate.Run(fixture.Session, new SlidesCreateRequest { Output = TestOutput.At(deck), MarkdownPath = markdown });
+        SlidesEdit.Run(fixture.Session, new SlidesEditRequest
         {
             Input = deck,
             Batch = new SlidesOpsBatch
@@ -240,7 +240,7 @@ public sealed class SlidesReviewCheckTests
         File.WriteAllText(markdown, "## Short title\n\n" + string.Concat(Enumerable.Range(1, 12).Select(static item =>
             $"- 培训 Training {item}：每季度一次线下集训，线上课程全年开放 on-demand courses for every partner\n")));
         string deck = fixture.File("long-bullets.pptx");
-        SlidesCreate.Run(fixture.Session, new NewPresentationRequest { Output = TestOutput.At(deck), MarkdownPath = markdown });
+        SlidesCreate.Run(fixture.Session, new SlidesCreateRequest { Output = TestOutput.At(deck), MarkdownPath = markdown });
 
         Assert.DoesNotContain(Review(fixture, deck).Findings, static finding => finding.Code == SlidesReviewChecks.TextOverflowsShape.Code);
     }
@@ -255,11 +255,11 @@ public sealed class SlidesReviewCheckTests
         File.WriteAllText(markdown, "## 风险清单 Risk Register\n\n" + string.Concat(Enumerable.Range(1, 10).Select(static item =>
             $"- 风险 {item}：跨市场数据合规要求不一致导致项目延期 Risk {item}: inconsistent cross-market data compliance delays delivery\n")));
         string deck = fixture.File("bilingual-risks.pptx");
-        SlidesCreate.Run(fixture.Session, new NewPresentationRequest { Output = TestOutput.At(deck), MarkdownPath = markdown });
+        SlidesCreate.Run(fixture.Session, new SlidesCreateRequest { Output = TestOutput.At(deck), MarkdownPath = markdown });
 
-        PresentationReadResult read = SlidesRead.Run(fixture.Session, new PresentationReadRequest { Input = deck, Scope = PresentationReadScopes.Full });
-        SlideShapeData body = Assert.Single(read.Slides[0].Shapes, static shape => shape.Placeholder == "body");
-        SlideRect text = Assert.IsType<SlideRect>(body.TextRect);
+        SlidesReadResult read = SlidesRead.Run(fixture.Session, new SlidesReadRequest { Input = deck, Scope = SlidesReadScopes.Full });
+        SlidesShapeData body = Assert.Single(read.Slides[0].Shapes, static shape => shape.Placeholder == "body");
+        SlidesRect text = Assert.IsType<SlidesRect>(body.TextRect);
 
         Assert.InRange(text.X + text.Width, body.Rect.X, body.Rect.X + body.Rect.Width);
         Assert.DoesNotContain(Review(fixture, deck).Findings, static finding => finding.Code.StartsWith("SLIDES_TEXT_O", StringComparison.Ordinal));
@@ -419,27 +419,27 @@ public sealed class SlidesReviewCheckTests
 
     private static SlidesReviewAnalysis Review(SlidesEngineFixture fixture, string path)
     {
-        PresentationSummary info = SlidesInfo.Run(fixture.Session, new PresentationInfoRequest { Input = path }).Presentation;
-        PresentationReadResult read = SlidesRead.Run(fixture.Session, new PresentationReadRequest { Input = path, Scope = PresentationReadScopes.Full });
+        SlidesPresentationSummary info = SlidesInfo.Run(fixture.Session, new SlidesInspectRequest { Input = path }).Presentation;
+        SlidesReadResult read = SlidesRead.Run(fixture.Session, new SlidesReadRequest { Input = path, Scope = SlidesReadScopes.Full });
         return SlidesReviewAnalyzer.Analyze(read.Slides, info.WidthPoints, info.HeightPoints);
     }
 
-    private static SlideShapeData TitleWithLines(long id, Rect frame, Rect lines) =>
+    private static SlidesShapeData TitleWithLines(long id, Rect frame, Rect lines) =>
         Shape(id, frame, "A title long enough to wrap onto several lines") with
         {
             ShapeName = "Title",
             Placeholder = "title",
-            TextRect = new SlideRect { X = lines.X, Y = lines.Y, Width = lines.Width, Height = lines.Height },
+            TextRect = new SlidesRect { X = lines.X, Y = lines.Y, Width = lines.Width, Height = lines.Height },
         };
 
-    private static SlideShapeData BodyWithLines(long id, Rect lines) =>
+    private static SlidesShapeData BodyWithLines(long id, Rect lines) =>
         Shape(id, new(lines.X, lines.Y, lines.Width, 350), "Two lines of summary text above the table") with
         {
             Placeholder = "body",
-            TextRect = new SlideRect { X = lines.X, Y = lines.Y, Width = lines.Width, Height = lines.Height },
+            TextRect = new SlidesRect { X = lines.X, Y = lines.Y, Width = lines.Width, Height = lines.Height },
         };
 
-    private static SlideData Slide(int number, params SlideShapeData[] shapes) => new()
+    private static SlidesSlideData Slide(int number, params SlidesShapeData[] shapes) => new()
     {
         Slide = number,
         SlideId = (uint)(255 + number),
@@ -447,17 +447,17 @@ public sealed class SlidesReviewCheckTests
         ContentTruncated = false,
     };
 
-    private static SlideShapeData Shape(long id, Rect rect, string? text = null, string type = "shape") => new()
+    private static SlidesShapeData Shape(long id, Rect rect, string? text = null, string type = "shape") => new()
     {
         ShapeId = id,
         ShapeName = $"Shape {id}",
         Type = type,
         Text = text,
-        Rect = new SlideRect { X = rect.X, Y = rect.Y, Width = rect.Width, Height = rect.Height },
+        Rect = new SlidesRect { X = rect.X, Y = rect.Y, Width = rect.Width, Height = rect.Height },
         ZOrder = (int)id,
     };
 
-    private static SlideShapeData Occluder(long id, Rect rect) => Shape(id, rect) with { HasOpaqueFill = true };
+    private static SlidesShapeData Occluder(long id, Rect rect) => Shape(id, rect) with { HasOpaqueFill = true };
 
     private readonly record struct Rect(double X, double Y, double Width, double Height);
 }

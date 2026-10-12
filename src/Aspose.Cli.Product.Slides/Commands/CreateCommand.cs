@@ -8,7 +8,7 @@ namespace Aspose.Cli.Product.Slides.Commands;
 
 internal static class CreateCommand
 {
-    public static CommandDefinition<NewPresentationRequest, SlidesCreateResult> Create()
+    public static CommandDefinition<SlidesCreateRequest, SlidesCreateResult> Create()
     {
         var markdown = new Option<string?>("--from-markdown") { Description = "Markdown outline to author." }.WithInput(InputKind.File);
         var template = new Option<string?>("--template") { Description = "Presentation whose masters, layouts and theme are reused." }.WithInput(InputKind.File);
@@ -30,7 +30,7 @@ internal static class CreateCommand
                 string? templatePath = standard.InputFile(template);
                 ResolvedOutput output = standard.Output;
                 Secret? encryptPassword = standard.EncryptPassword();
-                return new NewPresentationRequest
+                return new SlidesCreateRequest
                 {
                     Output = output,
                     MarkdownPath = markdownPath,

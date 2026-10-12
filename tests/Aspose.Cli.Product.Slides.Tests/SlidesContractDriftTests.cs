@@ -48,17 +48,17 @@ public sealed class SlidesContractDriftTests
             deck.Save(input, SaveFormat.Pptx);
         }
 
-        SlidesExtractResult all = SlidesExtract.Run(fixture.Session, new PresentationExtractRequest
+        SlidesExtractResult all = SlidesExtract.Run(fixture.Session, new SlidesExtractRequest
         {
             Input = input,
             Output = new ResolvedDirectory(fixture.File("all")),
-            What = PresentationExtractKinds.Media,
+            What = SlidesExtractKinds.Media,
         });
-        SlidesExtractResult selected = SlidesExtract.Run(fixture.Session, new PresentationExtractRequest
+        SlidesExtractResult selected = SlidesExtract.Run(fixture.Session, new SlidesExtractRequest
         {
             Input = input,
             Output = new ResolvedDirectory(fixture.File("selected")),
-            What = PresentationExtractKinds.Media,
+            What = SlidesExtractKinds.Media,
             Slides = PageRange.Parse("2"),
         });
 
@@ -88,7 +88,7 @@ public sealed class SlidesContractDriftTests
             deck.Save(input, SaveFormat.Pptx);
         }
 
-        PresentationInfoResult info = SlidesInfo.Run(fixture.Session, new PresentationInfoRequest { Input = input, Details = ["media"] });
+        SlidesInspectResult info = SlidesInfo.Run(fixture.Session, new SlidesInspectRequest { Input = input, Details = ["media"] });
 
         Assert.Equal(count, info.Presentation.MediaCount);
         Assert.Equal(SlidesInfo.MediaListLimit, info.Media!.Count);
@@ -106,15 +106,15 @@ public sealed class SlidesContractDriftTests
         File.WriteAllBytes(picture, SlidesEngineFixture.Png(40));
         string output = fixture.File("alt.out.pptx");
 
-        SlidesEdit.Run(fixture.Session, new PresentationEditRequest
+        SlidesEdit.Run(fixture.Session, new SlidesEditRequest
         {
             Input = input,
             Batch = new SlidesOpsBatch { Ops = [new SlidesInsertImageOp { Slide = 1, Path = picture, AltText = "Logo" }] },
             Output = TestOutput.At(output),
         });
-        PresentationReadResult read = SlidesRead.Run(fixture.Session, new PresentationReadRequest { Input = output, Scope = PresentationReadScopes.Shapes });
+        SlidesReadResult read = SlidesRead.Run(fixture.Session, new SlidesReadRequest { Input = output, Scope = SlidesReadScopes.Shapes });
 
-        SlideShapeData image = Assert.Single(Assert.Single(read.Slides).Shapes, static shape => shape.Type == "image");
+        SlidesShapeData image = Assert.Single(Assert.Single(read.Slides).Shapes, static shape => shape.Type == "image");
         Assert.Equal("Logo", image.AltText);
     }
 }

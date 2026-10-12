@@ -17,7 +17,7 @@ public sealed class SlidesPartialChartTests
         string seed = CreateChart(fixture, kind);
         long id = ChartId(seed);
         string output = fixture.File("categories.pptx");
-        SlidesEdit.Run(fixture.Session, new PresentationEditRequest
+        SlidesEdit.Run(fixture.Session, new SlidesEditRequest
         {
             Input = seed,
             Batch = new SlidesOpsBatch
@@ -41,7 +41,7 @@ public sealed class SlidesPartialChartTests
         string seed = CreateChart(fixture, "scatter");
         string output = fixture.File("scatter-categories.pptx");
 
-        CliException error = Assert.Throws<CliException>(() => SlidesEdit.Run(fixture.Session, new PresentationEditRequest
+        CliException error = Assert.Throws<CliException>(() => SlidesEdit.Run(fixture.Session, new SlidesEditRequest
         {
             Input = seed,
             Batch = new SlidesOpsBatch
@@ -61,7 +61,7 @@ public sealed class SlidesPartialChartTests
         using var fixture = new SlidesEngineFixture();
         string seed = CreateChart(fixture, "scatter");
         string output = fixture.File("series.pptx");
-        SlidesEdit.Run(fixture.Session, new PresentationEditRequest
+        SlidesEdit.Run(fixture.Session, new SlidesEditRequest
         {
             Input = seed,
             Batch = new SlidesOpsBatch
@@ -105,7 +105,7 @@ public sealed class SlidesPartialChartTests
                 },
             ],
         };
-        var request = new PresentationEditRequest { Input = seed, Batch = batch, Output = TestOutput.At(output), Options = new EditCommandOptions { BestEffort = bestEffort } };
+        var request = new SlidesEditRequest { Input = seed, Batch = batch, Output = TestOutput.At(output), Options = new EditCommandOptions { BestEffort = bestEffort } };
         if (bestEffort)
         {
             SlidesEditResult result = SlidesEdit.Run(fixture.Session, request);
@@ -126,7 +126,7 @@ public sealed class SlidesPartialChartTests
     {
         string input = fixture.CreatePresentation(slides: 1);
         string output = fixture.File("chart.pptx");
-        SlidesEdit.Run(fixture.Session, new PresentationEditRequest
+        SlidesEdit.Run(fixture.Session, new SlidesEditRequest
         {
             Input = input,
             Batch = new SlidesOpsBatch

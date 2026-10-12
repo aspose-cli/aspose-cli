@@ -33,7 +33,7 @@ internal static class SlidesReviewProjection
     /// relative to the unrotated frame, so text in a rotated shape or in vertical text is not
     /// projected.
     /// </summary>
-    internal static SlideRect? TextRect(IShape shape)
+    internal static SlidesRect? TextRect(IShape shape)
     {
         if (shape is not IAutoShape { TextFrame: { } frame }
             || string.IsNullOrWhiteSpace(frame.Text)
@@ -55,7 +55,7 @@ internal static class SlidesReviewProjection
         }
 
         return bounds is { } area
-            ? new SlideRect { X = shape.X + area.X, Y = shape.Y + area.Y, Width = area.Width, Height = area.Height }
+            ? new SlidesRect { X = shape.X + area.X, Y = shape.Y + area.Y, Width = area.Width, Height = area.Height }
             : null;
     }
 

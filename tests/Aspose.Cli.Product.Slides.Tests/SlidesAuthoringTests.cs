@@ -185,8 +185,8 @@ public sealed class SlidesAuthoringTests
         File.WriteAllText(markdown, "# Proposal\n\n## Next steps\n\n- Confirm the pilot site\n");
         string deck = fixture.File("deck.pptx");
         string edited = fixture.File("deck.titled.pptx");
-        SlidesCreate.Run(fixture.Session, new NewPresentationRequest { Output = TestOutput.At(deck), MarkdownPath = markdown });
-        SlidesEdit.Run(fixture.Session, new PresentationEditRequest
+        SlidesCreate.Run(fixture.Session, new SlidesCreateRequest { Output = TestOutput.At(deck), MarkdownPath = markdown });
+        SlidesEdit.Run(fixture.Session, new SlidesEditRequest
         {
             Input = deck,
             Batch = new SlidesOpsBatch
@@ -227,7 +227,7 @@ public sealed class SlidesAuthoringTests
         }
 
         string output = fixture.File("titled.pptx");
-        SlidesEdit.Run(fixture.Session, new PresentationEditRequest
+        SlidesEdit.Run(fixture.Session, new SlidesEditRequest
         {
             Input = input,
             Batch = new SlidesOpsBatch
@@ -285,9 +285,9 @@ public sealed class SlidesAuthoringTests
         string markdown = fixture.File("outline.md");
         File.WriteAllText(markdown, "## Results\n- Draft\n");
         string input = fixture.File("outline.pptx");
-        SlidesCreate.Run(fixture.Session, new NewPresentationRequest { Output = TestOutput.At(input), MarkdownPath = markdown });
+        SlidesCreate.Run(fixture.Session, new SlidesCreateRequest { Output = TestOutput.At(input), MarkdownPath = markdown });
         string filled = fixture.File("filled.pptx");
-        SlidesEdit.Run(fixture.Session, new PresentationEditRequest
+        SlidesEdit.Run(fixture.Session, new SlidesEditRequest
         {
             Input = input,
             Batch = new SlidesOpsBatch
@@ -297,7 +297,7 @@ public sealed class SlidesAuthoringTests
             Output = TestOutput.At(filled),
         });
         string addressed = fixture.File("addressed.pptx");
-        SlidesEdit.Run(fixture.Session, new PresentationEditRequest
+        SlidesEdit.Run(fixture.Session, new SlidesEditRequest
         {
             Input = input,
             Batch = new SlidesOpsBatch
@@ -315,10 +315,10 @@ public sealed class SlidesAuthoringTests
             // The layout's content placeholder takes the text; no second shape carries it.
             Assert.Single(deck.Slides[0].Shapes.OfType<IAutoShape>(), static shape => shape.TextFrame?.Text == "Final");
         }
-        PresentationReadResult read = SlidesRead.Run(fixture.Session, new PresentationReadRequest
+        SlidesReadResult read = SlidesRead.Run(fixture.Session, new SlidesReadRequest
         {
             Input = addressed,
-            Slides = PageRange.Parse("1"), Scope = PresentationReadScopes.Shapes,
+            Slides = PageRange.Parse("1"), Scope = SlidesReadScopes.Shapes,
         });
         Assert.Contains(read.Slides[0].Shapes!, static shape => shape.Placeholder == "body" && shape.Text == "Final");
     }
@@ -327,8 +327,8 @@ public sealed class SlidesAuthoringTests
     private static string SetBodyOfAContentSlide(SlidesEngineFixture fixture, params SlidesParagraphInput[] paragraphs)
     {
         string input = fixture.File("layout.pptx");
-        SlidesCreate.Run(fixture.Session, new NewPresentationRequest { Output = TestOutput.At(input) });
-        SlidesEdit.Run(fixture.Session, new PresentationEditRequest
+        SlidesCreate.Run(fixture.Session, new SlidesCreateRequest { Output = TestOutput.At(input) });
+        SlidesEdit.Run(fixture.Session, new SlidesEditRequest
         {
             Input = input,
             Batch = new SlidesOpsBatch
@@ -338,7 +338,7 @@ public sealed class SlidesAuthoringTests
             Output = TestOutput.At(input, overwrite: true),
         });
         string edited = fixture.File("layout.body.pptx");
-        SlidesEdit.Run(fixture.Session, new PresentationEditRequest
+        SlidesEdit.Run(fixture.Session, new SlidesEditRequest
         {
             Input = input,
             Batch = new SlidesOpsBatch

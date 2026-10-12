@@ -7,21 +7,21 @@ namespace Aspose.Cli.Product.Slides.Commands;
 
 internal static class InspectCommand
 {
-    public static CommandDefinition<PresentationInfoRequest, PresentationInfoResult> Create()
+    public static CommandDefinition<SlidesInspectRequest, SlidesInspectResult> Create()
     {
-        var sample = new SampleOption($"each slide's title and up to {SlideInfo.PreviewTextLength} characters of its text");
+        var sample = new SampleOption($"each slide's title and up to {SlidesSlideInfo.PreviewTextLength} characters of its text");
         var detail = new DetailOption(
-            InfoDetails.All,
+            SlidesInspectDetails.All,
             new Dictionary<string, string>(StringComparer.Ordinal)
             {
-                [InfoDetails.Notes] = "presence and character count, with the text from query slides --notes",
+                [SlidesInspectDetails.Notes] = "presence and character count, with the text from query slides --notes",
             });
         return new(
             "inspect",
             "Show presentation structure, stable slide ids and metadata.",
             new CommandTraits { Input = SlidesInputs.Presentation },
             [.. sample.Options, .. detail.Options],
-            (parse, standard) => new PresentationInfoRequest
+            (parse, standard) => new SlidesInspectRequest
             {
                 Input = standard.Input,
                 IncludePreview = sample.Read(parse),
@@ -43,9 +43,9 @@ internal static class InspectCommand
         };
     }
 
-    internal static void Table(PresentationInfoResult result, TableSurface surface)
+    internal static void Table(SlidesInspectResult result, TableSurface surface)
     {
-        PresentationSummary presentation = result.Presentation;
+        SlidesPresentationSummary presentation = result.Presentation;
         ResultText.Input(surface, result.Input);
         surface.Out.WriteLine(
             $"slides: {presentation.SlideCount}   size: {TableText.Points(presentation.WidthPoints)} x {TableText.Points(presentation.HeightPoints)} pt   "
@@ -55,7 +55,7 @@ internal static class InspectCommand
             + $"comments: {presentation.CommentCount}   media: {presentation.MediaCount}   macros: {TableText.YesNo(presentation.HasMacros)}");
 
         var table = new TextTable("slide", "id", "title", "layout", "shapes", "flags");
-        foreach (SlideInfo slide in result.Slides)
+        foreach (SlidesSlideInfo slide in result.Slides)
         {
             table.AddRow(
                 TableText.Int(slide.Slide),
@@ -76,7 +76,7 @@ internal static class InspectCommand
     }
 
     /// <summary>The sections --detail asked for, in the order the JSON result lists them.</summary>
-    private static void DetailTables(PresentationInfoResult result, TableSurface surface)
+    private static void DetailTables(SlidesInspectResult result, TableSurface surface)
     {
         ResultText.Table(surface, "sections", result.Sections, ["name", "id", "start slide"],
             static section => [section.Name, section.SectionId, TableText.Int(section.StartSlide)]);

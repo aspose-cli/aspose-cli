@@ -24,7 +24,7 @@ public sealed class SlidesChartUpdateTests
         });
         string output = fixture.File("updated.pptx");
 
-        SlidesEdit.Run(fixture.Session, new PresentationEditRequest
+        SlidesEdit.Run(fixture.Session, new SlidesEditRequest
         {
             Input = seed,
             Batch = new SlidesOpsBatch
@@ -65,7 +65,7 @@ public sealed class SlidesChartUpdateTests
         });
         string output = fixture.File("line.pptx");
 
-        SlidesEdit.Run(fixture.Session, new PresentationEditRequest
+        SlidesEdit.Run(fixture.Session, new SlidesEditRequest
         {
             Input = seed,
             Batch = new SlidesOpsBatch
@@ -105,7 +105,7 @@ public sealed class SlidesChartUpdateTests
         using var fixture = new SlidesEngineFixture();
         string input = fixture.CreatePresentation(slides: 1);
         string seed = fixture.File("scatter.pptx");
-        SlidesEdit.Run(fixture.Session, new PresentationEditRequest
+        SlidesEdit.Run(fixture.Session, new SlidesEditRequest
         {
             Input = input,
             Batch = new SlidesOpsBatch
@@ -130,7 +130,7 @@ public sealed class SlidesChartUpdateTests
         }
 
         string output = fixture.File("scatter.updated.pptx");
-        SlidesEdit.Run(fixture.Session, new PresentationEditRequest
+        SlidesEdit.Run(fixture.Session, new SlidesEditRequest
         {
             Input = seed,
             Batch = new SlidesOpsBatch
@@ -162,7 +162,7 @@ public sealed class SlidesChartUpdateTests
         byte[] original = File.ReadAllBytes(seed);
         string output = fixture.File("bubble.pptx");
 
-        CliException error = Assert.Throws<CliException>(() => SlidesEdit.Run(fixture.Session, new PresentationEditRequest
+        CliException error = Assert.Throws<CliException>(() => SlidesEdit.Run(fixture.Session, new SlidesEditRequest
         {
             Input = seed,
             Batch = new SlidesOpsBatch

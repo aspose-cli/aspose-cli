@@ -6,15 +6,15 @@ namespace Aspose.Cli.Product.Slides.Commands;
 
 internal static class ReadCommand
 {
-    public static CommandDefinition<PresentationReadRequest, PresentationReadResult> Create()
+    public static CommandDefinition<SlidesReadRequest, SlidesReadResult> Create()
     {
         var slides = new PartRangeOption("slide", "the first 10 slides");
         var scope = new Option<string>("--scope")
         {
             Description = "Projection scope: how much of each slide to return.",
-            DefaultValueFactory = _ => PresentationReadScopes.Shapes,
+            DefaultValueFactory = _ => SlidesReadScopes.Shapes,
         }.WithInput(InputKind.None);
-        scope.AcceptOnlyFromAmong([.. PresentationReadScopes.All]);
+        scope.AcceptOnlyFromAmong([.. SlidesReadScopes.All]);
         var maxChars = new MaxCharactersOption(
             "every returned title, text, run, note and comment, repeats included");
         var notes = new Option<bool>("--notes") { Description = "Include speaker notes for returned slides." };
@@ -26,11 +26,11 @@ internal static class ReadCommand
             (parse, standard) =>
             {
                 int characters = maxChars.Read(parse);
-                return new PresentationReadRequest
+                return new SlidesReadRequest
                 {
                     Input = standard.Input,
                     Slides = slides.ReadRange(parse),
-                    Scope = parse.GetValue(scope) ?? PresentationReadScopes.Shapes,
+                    Scope = parse.GetValue(scope) ?? SlidesReadScopes.Shapes,
                     IncludeNotes = parse.GetValue(notes),
                     MaxCharacters = characters,
                     Password = standard.InputPassword,
@@ -43,10 +43,10 @@ internal static class ReadCommand
         };
     }
 
-    internal static void Table(PresentationReadResult result, TableSurface surface)
+    internal static void Table(SlidesReadResult result, TableSurface surface)
     {
         surface.Out.WriteLine($"{result.Input.Path}: {result.SlideCount} slide(s) ({result.Scope})");
-        foreach (SlideData slide in result.Slides)
+        foreach (SlidesSlideData slide in result.Slides)
         {
             surface.Out.WriteLine();
             surface.Out.WriteLine($"--- slide {slide.Slide} [{slide.SlideId}] {slide.Title ?? slide.Name ?? string.Empty} ---");
@@ -55,7 +55,7 @@ internal static class ReadCommand
                 surface.Out.WriteLine(text);
             }
 
-            foreach (SlideShapeData shape in slide.Shapes)
+            foreach (SlidesShapeData shape in slide.Shapes)
             {
                 if (shape.Text is not null)
                 {
@@ -74,7 +74,7 @@ internal static class ReadCommand
     /// The read that resumes where this one stopped, or null when it covered the selection.
     /// Without --slides the selection is every slide, read ten at a time.
     /// </summary>
-    private static string? Next(ContinuationCommand resume, string slidesOption, PresentationReadRequest request, PresentationReadResult result)
+    private static string? Next(ContinuationCommand resume, string slidesOption, SlidesReadRequest request, SlidesReadResult result)
     {
         if (!result.Window.Truncated || result.SlideCount == 0)
         {

@@ -14,7 +14,7 @@ public sealed class SlidesCreationTests
         using var fixture = new SlidesEngineFixture();
         string output = fixture.File("blank.pptx");
 
-        SlidesCreateResult result = SlidesCreate.Run(fixture.Session, new NewPresentationRequest { Output = TestOutput.At(output) });
+        SlidesCreateResult result = SlidesCreate.Run(fixture.Session, new SlidesCreateRequest { Output = TestOutput.At(output) });
 
         Assert.Equal(1, result.SlideCount);
         Assert.Null(result.Template);
@@ -37,7 +37,7 @@ public sealed class SlidesCreationTests
             source.Save(template, SaveFormat.Pptx);
         }
 
-        SlidesCreateResult result = SlidesCreate.Run(fixture.Session, new NewPresentationRequest
+        SlidesCreateResult result = SlidesCreate.Run(fixture.Session, new SlidesCreateRequest
         {
             Output = TestOutput.At(fixture.File("from-template.pptx")),
             TemplatePath = template,
@@ -56,7 +56,7 @@ public sealed class SlidesCreationTests
         using var fixture = new SlidesEngineFixture();
         string output = fixture.File($"sized-{size}.pptx");
 
-        SlidesCreate.Run(fixture.Session, new NewPresentationRequest { Output = TestOutput.At(output), Size = size });
+        SlidesCreate.Run(fixture.Session, new SlidesCreateRequest { Output = TestOutput.At(output), Size = size });
 
         using var deck = new Presentation(output);
         Assert.Equal(width, deck.SlideSize.Size.Width);
@@ -96,7 +96,7 @@ public sealed class SlidesCreationTests
     {
         using var fixture = new SlidesEngineFixture();
         string output = fixture.File("design.pptx");
-        SlidesCreate.Run(fixture.Session, new NewPresentationRequest { Output = TestOutput.At(output) });
+        SlidesCreate.Run(fixture.Session, new SlidesCreateRequest { Output = TestOutput.At(output) });
 
         using var deck = new Presentation(output);
         (string Layout, float Size)[] sizes = deck.LayoutSlides
@@ -122,16 +122,16 @@ public sealed class SlidesCreationTests
 
         CliException render = Assert.Throws<CliException>(() => SlidesExport.Render(
             fixture.Session,
-            new PresentationRenderRequest { Input = input, Output = TestOutput.At(fixture.File("slide.png"), format: "png"), Slides = PageRange.Parse("1") }));
+            new SlidesRenderRequest { Input = input, Output = TestOutput.At(fixture.File("slide.png"), format: "png"), Slides = PageRange.Parse("1") }));
         CliException all = Assert.Throws<CliException>(() => SlidesExport.Render(
             fixture.Session,
-            new PresentationRenderRequest { Input = input, Output = TestOutput.At(fixture.File("all.png"), format: "png") }));
+            new SlidesRenderRequest { Input = input, Output = TestOutput.At(fixture.File("all.png"), format: "png") }));
         CliException convert = Assert.Throws<CliException>(() => SlidesExport.Convert(
             fixture.Session,
-            new PresentationConvertRequest { Input = input, Output = TestOutput.At(fixture.File("converted.png"), format: "png") }));
+            new SlidesConvertRequest { Input = input, Output = TestOutput.At(fixture.File("converted.png"), format: "png") }));
         CliException read = Assert.Throws<CliException>(() => SlidesRead.Run(
             fixture.Session,
-            new PresentationReadRequest { Input = input, Slides = PageRange.Parse("1") }));
+            new SlidesReadRequest { Input = input, Slides = PageRange.Parse("1") }));
 
         Assert.All(
             new[] { render, all, convert, read },
@@ -149,7 +149,7 @@ public sealed class SlidesCreationTests
             "# Review\nFor the board\n\n## Results\n- Revenue up\n  - Enterprise\nPlain note\n\n## Close\n");
         string output = fixture.File("outline.pptx");
 
-        SlidesCreate.Run(fixture.Session, new NewPresentationRequest { Output = TestOutput.At(output), MarkdownPath = markdown });
+        SlidesCreate.Run(fixture.Session, new SlidesCreateRequest { Output = TestOutput.At(output), MarkdownPath = markdown });
 
         using var deck = new Presentation(output);
         Assert.Equal(
@@ -185,7 +185,7 @@ public sealed class SlidesCreationTests
         File.WriteAllText(markdown, "## Results\n- Revenue up\nA plain note\n");
         string output = fixture.File("plain.pptx");
 
-        SlidesCreate.Run(fixture.Session, new NewPresentationRequest { Output = TestOutput.At(output), MarkdownPath = markdown });
+        SlidesCreate.Run(fixture.Session, new SlidesCreateRequest { Output = TestOutput.At(output), MarkdownPath = markdown });
 
         // The body level's hanging indent makes room for a bullet; without one, wrapped
         // lines would start a bullet's width right of the first.
@@ -220,7 +220,7 @@ public sealed class SlidesCreationTests
             """);
         string output = fixture.File("table.pptx");
 
-        SlidesCreateResult result = SlidesCreate.Run(fixture.Session, new NewPresentationRequest { Output = TestOutput.At(output), MarkdownPath = markdown });
+        SlidesCreateResult result = SlidesCreate.Run(fixture.Session, new SlidesCreateRequest { Output = TestOutput.At(output), MarkdownPath = markdown });
 
         Assert.DoesNotContain(result.Warnings ?? [], static warning => warning.Code == SlidesDiagnostics.TableOverflow);
         using var deck = new Presentation(output);
@@ -273,7 +273,7 @@ public sealed class SlidesCreationTests
             """);
         string output = fixture.File("columns.pptx");
 
-        SlidesCreate.Run(fixture.Session, new NewPresentationRequest { Output = TestOutput.At(output), MarkdownPath = markdown });
+        SlidesCreate.Run(fixture.Session, new SlidesCreateRequest { Output = TestOutput.At(output), MarkdownPath = markdown });
 
         using var deck = new Presentation(output);
         ITable table = Assert.Single(deck.Slides[0].Shapes.OfType<ITable>());
@@ -306,7 +306,7 @@ public sealed class SlidesCreationTests
             """);
         string output = fixture.File("title-table.pptx");
 
-        SlidesCreateResult result = SlidesCreate.Run(fixture.Session, new NewPresentationRequest { Output = TestOutput.At(output), MarkdownPath = markdown });
+        SlidesCreateResult result = SlidesCreate.Run(fixture.Session, new SlidesCreateRequest { Output = TestOutput.At(output), MarkdownPath = markdown });
 
         Assert.DoesNotContain(result.Warnings ?? [], static warning => warning.Code == SlidesDiagnostics.TableOverflow);
         using var deck = new Presentation(output);
@@ -332,7 +332,7 @@ public sealed class SlidesCreationTests
             "## Intro\n\n## Backlog\n| Item | Owner |\n|---|---|\n"
                 + string.Concat(Enumerable.Range(1, 30).Select(static row => $"| Item {row} | Team |\n")));
 
-        SlidesCreateResult result = SlidesCreate.Run(fixture.Session, new NewPresentationRequest
+        SlidesCreateResult result = SlidesCreate.Run(fixture.Session, new SlidesCreateRequest
         {
             Output = TestOutput.At(fixture.File("long.pptx")),
             MarkdownPath = markdown,
@@ -351,7 +351,7 @@ public sealed class SlidesCreationTests
         using var fixture = new SlidesEngineFixture();
         string input = fixture.CreatePresentation("insert-table.pptx", slides: 2);
 
-        SlidesEditResult result = SlidesEdit.Run(fixture.Session, new PresentationEditRequest
+        SlidesEditResult result = SlidesEdit.Run(fixture.Session, new SlidesEditRequest
         {
             Input = input,
             Batch = new SlidesOpsBatch

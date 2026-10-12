@@ -7,10 +7,10 @@ namespace Aspose.Cli.Product.Slides.Commands;
 
 internal static class ExtractCommand
 {
-    public static CommandDefinition<PresentationExtractRequest, SlidesExtractResult> Create()
+    public static CommandDefinition<SlidesExtractRequest, SlidesExtractResult> Create()
     {
         var what = new Option<string>("--what") { Required = true, Description = "What to extract; media includes audio and video." }.WithInput(InputKind.None);
-        what.AcceptOnlyFromAmong([.. PresentationExtractKinds.All]);
+        what.AcceptOnlyFromAmong([.. SlidesExtractKinds.All]);
         var slides = new PartRangeOption("slide", "every slide");
         return new(
             "extract",
@@ -23,7 +23,7 @@ internal static class ExtractCommand
             [what, .. slides.Options],
             (parse, standard) =>
             {
-                return new PresentationExtractRequest
+                return new SlidesExtractRequest
                 {
                     Input = standard.Input,
                     What = parse.GetRequiredValue(what),

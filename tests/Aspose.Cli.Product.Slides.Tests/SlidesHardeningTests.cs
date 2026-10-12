@@ -49,12 +49,12 @@ public sealed class SlidesHardeningTests
                 "Reply", slide, new System.Drawing.PointF(10, 10), DateTime.UtcNow);
             presentation.Save(input, Aspose.Slides.Export.SaveFormat.Pptx);
         }
-        PresentationReadResult read = SlidesRead.Run(fixture.Session, new PresentationReadRequest
+        SlidesReadResult read = SlidesRead.Run(fixture.Session, new SlidesReadRequest
         {
             Input = input,
             Slides = PageRange.Parse("1"), Scope = scope, IncludeNotes = true, MaxCharacters = budget,
         });
-        SlideData result = Assert.Single(read.Slides);
+        SlidesSlideData result = Assert.Single(read.Slides);
         int characters = (result.Title?.Length ?? 0) + (result.Text?.Sum(static text => text.Length) ?? 0)
             + result.Shapes.Sum(static shape => (shape.Text?.Length ?? 0) + (shape.Runs?.Sum(static run => run.Text.Length) ?? 0))
             + (result.Notes?.Length ?? 0) + (result.Comments?.Sum(static comment => comment.Text.Length) ?? 0);
@@ -69,15 +69,15 @@ public sealed class SlidesHardeningTests
         using var fixture = new SlidesEngineFixture();
         string input = fixture.CreatePresentation("windowed.pptx", slides: 12);
 
-        PresentationInfoResult info = SlidesInfo.Run(
+        SlidesInspectResult info = SlidesInfo.Run(
             fixture.Session,
-            new PresentationInfoRequest { Input = input });
-        PresentationReadResult window = fixture.Disclosed(session => SlidesRead.Run(
+            new SlidesInspectRequest { Input = input });
+        SlidesReadResult window = fixture.Disclosed(session => SlidesRead.Run(
             session,
-            new PresentationReadRequest { Input = input, Scope = PresentationReadScopes.Text }));
+            new SlidesReadRequest { Input = input, Scope = SlidesReadScopes.Text }));
         SlidesRenderResult rendered = SlidesExport.Render(
             fixture.Session,
-            new PresentationRenderRequest
+            new SlidesRenderRequest
             {
                 Input = input,
                 Output = TestOutput.At(fixture.File("bounded.png"), format: "png"),
@@ -111,15 +111,15 @@ public sealed class SlidesHardeningTests
 
         // A read or a text extraction tells the SDK it read the text; a Markdown output carries the
         // cut text, which the write pipeline's disclosure names; saved files keep the full text.
-        Assert.Equal(evaluation, CutShort(fixture.Disclosed(session => SlidesRead.Run(session, new PresentationReadRequest { Input = input, Scope = PresentationReadScopes.Text })).Warnings));
-        Assert.Equal(evaluation, CutShort(fixture.Disclosed(session => SlidesExtract.Run(session, new PresentationExtractRequest { Input = input, Output = new ResolvedDirectory(fixture.File("text")), What = PresentationExtractKinds.Text })).Warnings));
-        IReadOnlyList<Warning>? markdownOutput = fixture.Disclosed(session => SlidesExport.Convert(session, new PresentationConvertRequest { Input = input, Output = TestOutput.At(fixture.File("cut-short.out.md"), format: "md") })).Warnings;
+        Assert.Equal(evaluation, CutShort(fixture.Disclosed(session => SlidesRead.Run(session, new SlidesReadRequest { Input = input, Scope = SlidesReadScopes.Text })).Warnings));
+        Assert.Equal(evaluation, CutShort(fixture.Disclosed(session => SlidesExtract.Run(session, new SlidesExtractRequest { Input = input, Output = new ResolvedDirectory(fixture.File("text")), What = SlidesExtractKinds.Text })).Warnings));
+        IReadOnlyList<Warning>? markdownOutput = fixture.Disclosed(session => SlidesExport.Convert(session, new SlidesConvertRequest { Input = input, Output = TestOutput.At(fixture.File("cut-short.out.md"), format: "md") })).Warnings;
         Assert.False(CutShort(markdownOutput));
         Assert.Equal(evaluation, markdownOutput?.Any(static warning => warning.Code == WarningCodes.EvaluationMode
             && warning.Message.Contains("cut the content short", StringComparison.Ordinal)) == true);
-        Assert.False(CutShort(fixture.Disclosed(session => SlidesExport.Convert(session, new PresentationConvertRequest { Input = input, Output = TestOutput.At(fixture.File("cut-short.pdf"), format: "pdf") })).Warnings));
-        Assert.False(CutShort(fixture.Disclosed(session => SlidesCreate.Run(session, new NewPresentationRequest { Output = TestOutput.At(fixture.File("created.pptx")), MarkdownPath = markdown })).Warnings));
-        Assert.False(CutShort(fixture.Disclosed(session => SlidesEdit.Run(session, new PresentationEditRequest
+        Assert.False(CutShort(fixture.Disclosed(session => SlidesExport.Convert(session, new SlidesConvertRequest { Input = input, Output = TestOutput.At(fixture.File("cut-short.pdf"), format: "pdf") })).Warnings));
+        Assert.False(CutShort(fixture.Disclosed(session => SlidesCreate.Run(session, new SlidesCreateRequest { Output = TestOutput.At(fixture.File("created.pptx")), MarkdownPath = markdown })).Warnings));
+        Assert.False(CutShort(fixture.Disclosed(session => SlidesEdit.Run(session, new SlidesEditRequest
         {
             Input = input,
             Batch = new SlidesOpsBatch { Ops = [new SlidesSetPropertiesOp { Title = "Briefing" }] },
@@ -149,7 +149,7 @@ public sealed class SlidesHardeningTests
         CliException error = Assert.Throws<CliException>(() =>
             SlidesExport.Render(
                 fixture.Session,
-                new PresentationRenderRequest
+                new SlidesRenderRequest
                 {
                     Input = input,
                     Output = TestOutput.At(output, format: "png"),
@@ -169,13 +169,13 @@ public sealed class SlidesHardeningTests
         string widthOutput = fixture.File("width.png");
         string dpiOutput = fixture.File("dpi.png");
 
-        SlidesExport.Render(fixture.Session, new PresentationRenderRequest
+        SlidesExport.Render(fixture.Session, new SlidesRenderRequest
         {
             Input = input,
             Output = TestOutput.At(widthOutput, format: "png"),
             Width = 640,
         });
-        SlidesExport.Render(fixture.Session, new PresentationRenderRequest
+        SlidesExport.Render(fixture.Session, new SlidesRenderRequest
         {
             Input = input,
             Output = TestOutput.At(dpiOutput, format: "png"),
@@ -196,7 +196,7 @@ public sealed class SlidesHardeningTests
         string input = fixture.File("malformed" + extension);
         File.WriteAllBytes(input, content);
         CliException infoError = Assert.Throws<CliException>(() =>
-            SlidesInfo.Run(fixture.Session, new PresentationInfoRequest { Input = input }));
+            SlidesInfo.Run(fixture.Session, new SlidesInspectRequest { Input = input }));
 
         Assert.Equal(ErrorCodes.FileCorrupt, infoError.Code);
     }
@@ -212,7 +212,7 @@ public sealed class SlidesHardeningTests
         CliException error = Assert.Throws<CliException>(() =>
             SlidesExport.Convert(
                 fixture.Session,
-                new PresentationConvertRequest
+                new SlidesConvertRequest
                 {
                     Input = input,
                     Output = TestOutput.At(output, format: "pdf"),

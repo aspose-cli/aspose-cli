@@ -72,10 +72,10 @@ internal sealed partial class SlidesMutationHandlers
     /// <summary>The text frames of a slide that a search scope reaches: its shapes, its speaker notes, or both.</summary>
     private IEnumerable<ITextFrame> Frames(ISlide slide, string scope)
     {
-        IEnumerable<ITextFrame> shapes = scope is PresentationSearchScopes.Shapes or PresentationSearchScopes.All
+        IEnumerable<ITextFrame> shapes = scope is SlidesSearchScopes.Shapes or SlidesSearchScopes.All
             ? slide.Shapes.Where(shape => !_evaluation || !IsEvaluationWatermark(shape)).SelectMany(TextFrames)
             : [];
-        return scope is PresentationSearchScopes.Notes or PresentationSearchScopes.All
+        return scope is SlidesSearchScopes.Notes or SlidesSearchScopes.All
             && slide.NotesSlideManager.NotesSlide?.NotesTextFrame is { } notes
             ? shapes.Append(notes)
             : shapes;

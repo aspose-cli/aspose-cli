@@ -8,7 +8,7 @@ namespace Aspose.Cli.Product.Slides.Engine;
 /// <summary>One bounded slide-content window.</summary>
 internal static class SlidesRead
 {
-    internal static PresentationReadResult Run(SlidesSession session, PresentationReadRequest request)
+    internal static SlidesReadResult Run(SlidesSession session, SlidesReadRequest request)
     {
         LicenseState state = session.Outputs.License;
         using LoadedPresentation loaded = session.Loader.Open(request.Input, request.Password);
@@ -19,10 +19,10 @@ internal static class SlidesRead
             : ResolveSlideRange(request.Slides, presentation.Slides.Count);
         IComment[] comments = Comments(presentation);
         int remaining = request.MaxCharacters;
-        var slides = new List<SlideData>();
+        var slides = new List<SlidesSlideData>();
         foreach (int number in requested)
         {
-            SlideData projected = ProjectSlide(
+            SlidesSlideData projected = ProjectSlide(
                 presentation.Slides[number - 1],
                 number,
                 request.Scope,
@@ -42,7 +42,7 @@ internal static class SlidesRead
         bool selectionTruncated = slides.Count < requested.Count;
         bool defaultWindowTruncated = request.Slides is null && last < presentation.Slides.Count;
         bool truncated = selectionTruncated || defaultWindowTruncated || slides.Any(static slide => slide.ContentTruncated);
-        return new PresentationReadResult
+        return new SlidesReadResult
         {
             Input = Source(request.Input, loaded),
             Scope = request.Scope,

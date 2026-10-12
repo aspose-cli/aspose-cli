@@ -10,7 +10,7 @@ namespace Aspose.Cli.Product.Slides.Engine;
 /// <summary>Validated, atomic presentation mutation and verification.</summary>
 internal static class SlidesEdit
 {
-    internal static SlidesEditResult Run(SlidesSession session, PresentationEditRequest request)
+    internal static SlidesEditResult Run(SlidesSession session, SlidesEditRequest request)
     {
         string filePath = request.Input;
         SlidesOpsBatch batch = SlidesOp.Catalog.Prepare(request.Batch);
@@ -102,7 +102,7 @@ internal static class SlidesEdit
     private static EditPublication Publish(
         SlidesSession session,
         LoadedPresentation loaded,
-        PresentationEditRequest request,
+        SlidesEditRequest request,
         string format,
         FileWritePrecondition precondition)
     {

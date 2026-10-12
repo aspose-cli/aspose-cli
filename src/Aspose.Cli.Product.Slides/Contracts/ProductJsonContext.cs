@@ -5,8 +5,8 @@ namespace Aspose.Cli.Generated;
 
 /// <summary>Source-generated serialization metadata for Slides contracts.</summary>
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull, WriteIndented = true)]
-[JsonSerializable(typeof(Product.Slides.Contracts.PresentationInfoResult))]
-[JsonSerializable(typeof(Product.Slides.Contracts.PresentationReadResult))]
+[JsonSerializable(typeof(Product.Slides.Contracts.SlidesInspectResult))]
+[JsonSerializable(typeof(Product.Slides.Contracts.SlidesReadResult))]
 [JsonSerializable(typeof(Product.Slides.Contracts.SlidesConvertResult))]
 [JsonSerializable(typeof(Product.Slides.Contracts.SlidesRenderResult))]
 [JsonSerializable(typeof(Product.Slides.Contracts.SlidesCreateResult))]

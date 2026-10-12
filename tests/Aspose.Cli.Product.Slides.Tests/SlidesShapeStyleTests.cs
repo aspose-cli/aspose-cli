@@ -138,8 +138,8 @@ public sealed class SlidesShapeStyleTests
             Assert.Equal("+mn-ea", format.EastAsianFont.FontName);
         }
 
-        PresentationReadResult read = SlidesRead.Run(fixture.Session, new PresentationReadRequest { Input = output, Scope = PresentationReadScopes.Full });
-        SlideTextRunData run = read.Slides[0].Shapes
+        SlidesReadResult read = SlidesRead.Run(fixture.Session, new SlidesReadRequest { Input = output, Scope = SlidesReadScopes.Full });
+        SlidesTextRunData run = read.Slides[0].Shapes
             .Where(static shape => shape.ShapeName?.StartsWith("rectangle", StringComparison.Ordinal) == true)
             .SelectMany(static shape => shape.Runs!)
             .First();
@@ -178,7 +178,7 @@ public sealed class SlidesShapeStyleTests
     private static string Seed(SlidesEngineFixture fixture, string name, SlidesOp insert)
     {
         string seed = fixture.File(name);
-        SlidesEdit.Run(fixture.Session, new PresentationEditRequest
+        SlidesEdit.Run(fixture.Session, new SlidesEditRequest
         {
             Input = fixture.CreatePresentation("blank-" + name, slides: 1),
             Batch = new SlidesOpsBatch { Ops = [insert] },
@@ -190,7 +190,7 @@ public sealed class SlidesShapeStyleTests
     private static string Style(SlidesEngineFixture fixture, string seed, string name, long shapeId, SlidesShapeStyleInput style)
     {
         string output = fixture.File(name);
-        SlidesEdit.Run(fixture.Session, new PresentationEditRequest
+        SlidesEdit.Run(fixture.Session, new SlidesEditRequest
         {
             Input = seed,
             Batch = new SlidesOpsBatch { Ops = [new SetShapeStyleOp { Slide = 1, ShapeId = shapeId, Style = style }] },

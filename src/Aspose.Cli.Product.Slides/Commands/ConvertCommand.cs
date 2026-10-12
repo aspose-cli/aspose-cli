@@ -8,7 +8,7 @@ namespace Aspose.Cli.Product.Slides.Commands;
 
 internal static class ConvertCommand
 {
-    public static CommandDefinition<PresentationConvertRequest, SlidesConvertResult> Create()
+    public static CommandDefinition<SlidesConvertRequest, SlidesConvertResult> Create()
     {
         var slides = new PartRangeOption("slide", "every slide");
         return new(
@@ -27,7 +27,7 @@ internal static class ConvertCommand
             {
                 ResolvedOutput output = standard.Output;
                 Secret? encryptPassword = standard.EncryptPassword();
-                return new PresentationConvertRequest
+                return new SlidesConvertRequest
                 {
                     Input = standard.Input,
                     Output = output,

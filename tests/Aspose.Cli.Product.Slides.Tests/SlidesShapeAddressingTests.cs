@@ -17,7 +17,7 @@ public sealed class SlidesShapeAddressingTests
         string output = fixture.File("deleted.pptx");
         byte[] original = File.ReadAllBytes(input);
 
-        SlidesEditResult result = SlidesEdit.Run(fixture.Session, new PresentationEditRequest
+        SlidesEditResult result = SlidesEdit.Run(fixture.Session, new SlidesEditRequest
         {
             Input = input,
             Batch = new SlidesOpsBatch
@@ -35,11 +35,11 @@ public sealed class SlidesShapeAddressingTests
         Assert.Equal(!dryRun, File.Exists(output));
         if (!dryRun)
         {
-            PresentationReadResult read = SlidesRead.Run(fixture.Session, new PresentationReadRequest
+            SlidesReadResult read = SlidesRead.Run(fixture.Session, new SlidesReadRequest
             {
                 Input = output,
                 Slides = PageRange.Parse("2"),
-                Scope = PresentationReadScopes.Shapes,
+                Scope = SlidesReadScopes.Shapes,
             });
             Assert.DoesNotContain(read.Slides[0].Shapes!, static shape => shape.ShapeName == "Title 2");
         }
@@ -53,7 +53,7 @@ public sealed class SlidesShapeAddressingTests
         string output = fixture.File("missing.pptx");
         byte[] original = File.ReadAllBytes(input);
 
-        CliException error = Assert.Throws<CliException>(() => SlidesEdit.Run(fixture.Session, new PresentationEditRequest
+        CliException error = Assert.Throws<CliException>(() => SlidesEdit.Run(fixture.Session, new SlidesEditRequest
         {
             Input = input,
             Batch = new SlidesOpsBatch
@@ -85,7 +85,7 @@ public sealed class SlidesShapeAddressingTests
             presentation.Save(input, SaveFormat.Pptx);
         }
 
-        CliException error = Assert.Throws<CliException>(() => SlidesEdit.Run(fixture.Session, new PresentationEditRequest
+        CliException error = Assert.Throws<CliException>(() => SlidesEdit.Run(fixture.Session, new SlidesEditRequest
         {
             Input = input,
             Batch = new SlidesOpsBatch { Ops = [new SetTextOp { Slide = 1, ShapeName = "Box", Text = "Which?" }] },
@@ -103,13 +103,13 @@ public sealed class SlidesShapeAddressingTests
         using var fixture = new SlidesEngineFixture();
         string input = fixture.CreatePresentation();
 
-        CliException byNumber = Assert.Throws<CliException>(() => SlidesEdit.Run(fixture.Session, new PresentationEditRequest
+        CliException byNumber = Assert.Throws<CliException>(() => SlidesEdit.Run(fixture.Session, new SlidesEditRequest
         {
             Input = input,
             Batch = new SlidesOpsBatch { Ops = [new SetNotesOp { Slide = 9, Text = "Late" }] },
             Output = TestOutput.At(fixture.File("number.pptx")),
         }));
-        CliException byId = Assert.Throws<CliException>(() => SlidesEdit.Run(fixture.Session, new PresentationEditRequest
+        CliException byId = Assert.Throws<CliException>(() => SlidesEdit.Run(fixture.Session, new SlidesEditRequest
         {
             Input = input,
             Batch = new SlidesOpsBatch { Ops = [new SetNotesOp { SlideId = 99999, Text = "Late" }] },
@@ -130,7 +130,7 @@ public sealed class SlidesShapeAddressingTests
         using var fixture = new SlidesEngineFixture();
         string input = fixture.CreatePresentation();
 
-        SlidesEditResult result = SlidesEdit.Run(fixture.Session, new PresentationEditRequest
+        SlidesEditResult result = SlidesEdit.Run(fixture.Session, new SlidesEditRequest
         {
             Input = input,
             Batch = new SlidesOpsBatch
@@ -153,29 +153,29 @@ public sealed class SlidesShapeAddressingTests
     {
         using var fixture = new SlidesEngineFixture();
         string input = fixture.CreatePresentation();
-        PresentationReadResult all = SlidesRead.Run(fixture.Session, new PresentationReadRequest
+        SlidesReadResult all = SlidesRead.Run(fixture.Session, new SlidesReadRequest
         {
             Input = input,
-            Slides = PageRange.Parse("1-3"), Scope = PresentationReadScopes.Shapes,
+            Slides = PageRange.Parse("1-3"), Scope = SlidesReadScopes.Shapes,
         });
-        PresentationReadResult window = SlidesRead.Run(fixture.Session, new PresentationReadRequest
+        SlidesReadResult window = SlidesRead.Run(fixture.Session, new SlidesReadRequest
         {
             Input = input,
-            Slides = PageRange.Parse("3"), Scope = PresentationReadScopes.Shapes,
+            Slides = PageRange.Parse("3"), Scope = SlidesReadScopes.Shapes,
         });
-        SlideShapeData shape = Assert.Single(all.Slides[2].Shapes!, static shape => shape.ShapeName == "Title 3");
-        SlideShapeData selected = Assert.Single(window.Slides[0].Shapes!, static shape => shape.ShapeName == "Title 3");
+        SlidesShapeData shape = Assert.Single(all.Slides[2].Shapes!, static shape => shape.ShapeName == "Title 3");
+        SlidesShapeData selected = Assert.Single(window.Slides[0].Shapes!, static shape => shape.ShapeName == "Title 3");
         Assert.True(shape.ShapeId > 0);
         Assert.Equal(shape.ShapeId, selected.ShapeId);
 
-        SlidesSearchResult search = SlidesSearch.Run(fixture.Session, new PresentationSearchRequest
+        SlidesSearchResult search = SlidesSearch.Run(fixture.Session, new SlidesSearchRequest
         {
             Input = input,
-            Query = new SearchQuery(TextSearch.Create("Slide", regex: false, caseSensitive: false), 100, PresentationSearchScopes.Shapes),
+            Query = new SearchQuery(TextSearch.Create("Slide", regex: false, caseSensitive: false), 100, SlidesSearchScopes.Shapes),
         });
         Assert.Contains(search.Hits, hit => hit.Slide == 3 && hit.ShapeId == shape.ShapeId);
         string output = fixture.File("addressed.pptx");
-        SlidesEditResult edit = SlidesEdit.Run(fixture.Session, new PresentationEditRequest
+        SlidesEditResult edit = SlidesEdit.Run(fixture.Session, new SlidesEditRequest
         {
             Input = input,
             Batch = new SlidesOpsBatch
@@ -185,10 +185,10 @@ public sealed class SlidesShapeAddressingTests
             Output = TestOutput.At(output),
         });
         Assert.Equal([$"slide/{all.Slides[2].SlideId}/shape/{shape.ShapeId}"], edit.Applied[0].Targets);
-        PresentationReadResult changed = SlidesRead.Run(fixture.Session, new PresentationReadRequest
+        SlidesReadResult changed = SlidesRead.Run(fixture.Session, new SlidesReadRequest
         {
             Input = output,
-            Slides = PageRange.Parse("3"), Scope = PresentationReadScopes.Shapes,
+            Slides = PageRange.Parse("3"), Scope = SlidesReadScopes.Shapes,
         });
         Assert.Contains(changed.Slides[0].Shapes!, item => item.ShapeId == shape.ShapeId && item.Text == "Saved");
     }
@@ -233,15 +233,15 @@ public sealed class SlidesShapeAddressingTests
             Assert.Equal(childId, Assert.Single(group.Shapes).OfficeInteropShapeId);
         }
 
-        PresentationReadResult read = SlidesRead.Run(fixture.Session, new PresentationReadRequest
+        SlidesReadResult read = SlidesRead.Run(fixture.Session, new SlidesReadRequest
         {
             Input = saved,
-            Slides = PageRange.Parse("2"), Scope = PresentationReadScopes.Shapes,
+            Slides = PageRange.Parse("2"), Scope = SlidesReadScopes.Shapes,
         });
-        SlideShapeData projectedGroup = Assert.Single(read.Slides[0].Shapes!, static shape => shape.Type == "group");
+        SlidesShapeData projectedGroup = Assert.Single(read.Slides[0].Shapes!, static shape => shape.Type == "group");
         Assert.Equal(groupId, projectedGroup.ShapeId);
         string output = fixture.File("group-removed.pptx");
-        SlidesEditResult removed = SlidesEdit.Run(fixture.Session, new PresentationEditRequest
+        SlidesEditResult removed = SlidesEdit.Run(fixture.Session, new SlidesEditRequest
         {
             Input = saved,
             Batch = new SlidesOpsBatch
@@ -251,10 +251,10 @@ public sealed class SlidesShapeAddressingTests
             Output = TestOutput.At(output),
         });
         Assert.Equal([$"slide/{read.Slides[0].SlideId}/shape/{groupId}"], removed.Applied[0].Targets);
-        PresentationReadResult final = SlidesRead.Run(fixture.Session, new PresentationReadRequest
+        SlidesReadResult final = SlidesRead.Run(fixture.Session, new SlidesReadRequest
         {
             Input = output,
-            Slides = PageRange.Parse("2"), Scope = PresentationReadScopes.Shapes,
+            Slides = PageRange.Parse("2"), Scope = SlidesReadScopes.Shapes,
         });
         Assert.DoesNotContain(final.Slides[0].Shapes!, static shape => shape.Type == "group");
         Assert.Contains(final.Slides[0].Shapes!, static shape => shape.ShapeName == "Title 2");
@@ -270,7 +270,7 @@ public sealed class SlidesShapeAddressingTests
         var rect = new SlidesRectInput { X = 40, Y = 120, Width = 200, Height = 100 };
         string output = fixture.File("named.pptx");
 
-        SlidesEdit.Run(fixture.Session, new PresentationEditRequest
+        SlidesEdit.Run(fixture.Session, new SlidesEditRequest
         {
             Input = input,
             Batch = new SlidesOpsBatch
@@ -294,10 +294,10 @@ public sealed class SlidesShapeAddressingTests
             Output = TestOutput.At(output),
         });
 
-        PresentationReadResult read = SlidesRead.Run(fixture.Session, new PresentationReadRequest
+        SlidesReadResult read = SlidesRead.Run(fixture.Session, new SlidesReadRequest
         {
             Input = output,
-            Slides = PageRange.Parse("1"), Scope = PresentationReadScopes.Shapes,
+            Slides = PageRange.Parse("1"), Scope = SlidesReadScopes.Shapes,
         });
         Assert.Equal(
             ["rectangle", "rectangle", "picture", "table", "chart"],
@@ -323,7 +323,7 @@ public sealed class SlidesShapeAddressingTests
         }
         string output = fixture.File("bounds.pptx");
 
-        SlidesEditResult result = SlidesEdit.Run(fixture.Session, new PresentationEditRequest
+        SlidesEditResult result = SlidesEdit.Run(fixture.Session, new SlidesEditRequest
         {
             Input = input,
             Batch = new SlidesOpsBatch
@@ -338,14 +338,14 @@ public sealed class SlidesShapeAddressingTests
         });
 
         Assert.All(result.Applied, static operation => Assert.Equal("ok", operation.Status));
-        PresentationReadResult read = SlidesRead.Run(fixture.Session, new PresentationReadRequest
+        SlidesReadResult read = SlidesRead.Run(fixture.Session, new SlidesReadRequest
         {
             Input = output,
-            Slides = PageRange.Parse("1-2"), Scope = PresentationReadScopes.Shapes,
+            Slides = PageRange.Parse("1-2"), Scope = SlidesReadScopes.Shapes,
         });
-        SlideRect title = Assert.Single(read.Slides[0].Shapes!, static shape => shape.ShapeName == "Title 1").Rect;
+        SlidesRect title = Assert.Single(read.Slides[0].Shapes!, static shape => shape.ShapeName == "Title 1").Rect;
         Assert.Equal((100d, 30d, 300d, 70d), (title.X, title.Y, title.Width, title.Height));
-        SlideRect table = Assert.Single(read.Slides[1].Shapes!, static shape => shape.ShapeName == "Figures").Rect;
+        SlidesRect table = Assert.Single(read.Slides[1].Shapes!, static shape => shape.ShapeName == "Figures").Rect;
         Assert.Equal((40d, 200d, 400d, 100d), (table.X, table.Y, table.Width, table.Height));
         using var reopened = new Presentation(output);
         ITable saved = reopened.Slides[1].Shapes.OfType<ITable>().Single();

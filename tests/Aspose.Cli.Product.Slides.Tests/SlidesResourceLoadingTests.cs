@@ -30,13 +30,13 @@ public sealed class SlidesResourceLoadingTests
         }
         Assert.True(Relink(input, Unreachable, server.Url) >= 2, "The deck must keep both external links.");
 
-        PresentationReadResult read = SlidesRead.Run(fixture.Session, new PresentationReadRequest { Input = input, Scope = PresentationReadScopes.Full });
-        SlidesRenderResult rendered = SlidesExport.Render(fixture.Session, new PresentationRenderRequest
+        SlidesReadResult read = SlidesRead.Run(fixture.Session, new SlidesReadRequest { Input = input, Scope = SlidesReadScopes.Full });
+        SlidesRenderResult rendered = SlidesExport.Render(fixture.Session, new SlidesRenderRequest
         {
             Input = input,
             Output = TestOutput.At(fixture.File("slide.png"), format: "png"),
         });
-        SlidesConvertResult converted = SlidesExport.Convert(fixture.Session, new PresentationConvertRequest
+        SlidesConvertResult converted = SlidesExport.Convert(fixture.Session, new SlidesConvertRequest
         {
             Input = input,
             Output = TestOutput.At(fixture.File("linked.pdf"), format: "pdf"),
@@ -76,7 +76,7 @@ public sealed class SlidesResourceLoadingTests
             presentation.Save(input, SaveFormat.Pptx);
         }
 
-        SlidesRenderResult beside = SlidesExport.Render(fixture.Session, new PresentationRenderRequest
+        SlidesRenderResult beside = SlidesExport.Render(fixture.Session, new SlidesRenderRequest
         {
             Input = input,
             Output = TestOutput.At(fixture.File("beside.png"), format: "png"),
@@ -88,7 +88,7 @@ public sealed class SlidesResourceLoadingTests
             ((IPictureFrame)presentation.Slides[0].Shapes[0]).PictureFormat.Picture.LinkPathLong = "../outside.png";
             presentation.Save(input, SaveFormat.Pptx);
         }
-        SlidesRenderResult outside = SlidesExport.Render(fixture.Session, new PresentationRenderRequest
+        SlidesRenderResult outside = SlidesExport.Render(fixture.Session, new SlidesRenderRequest
         {
             Input = input,
             Output = TestOutput.At(fixture.File("outside-render.png"), format: "png"),
