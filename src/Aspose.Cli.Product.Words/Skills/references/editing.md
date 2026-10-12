@@ -31,14 +31,16 @@ aspose-cli schema v2/words/ops --operation insert_table
 
 ## Batch semantics
 
-- Every address, including numbered sections and `insert_section.after`,
-  resolves to the document as it was before the first operation. An omitted
-  section means every original section. Inserted content and sections cannot
-  be targeted later in the same batch.
-- Overlapping deletes, delete-then-reference and other invalid dependencies
-  fail during preflight, also with `--best-effort`. Removing a section
-  invalidates references to its original blocks; later section numbers never
-  shift to a different original section.
+- Every address, including numbered sections, resolves to the document as
+  it was before the first operation. An omitted section means every original
+  section. Inserted content and sections cannot be targeted later in the same
+  batch.
+- An operation whose block, bookmark or section an earlier operation deleted,
+  such as a block of a removed section, fails when the batch reaches it, and
+  its error names it in `details.id`; with `--best-effort` only that
+  operation fails. An earlier operation that failed deleted nothing, so it
+  refuses nothing. Later section numbers never shift to a different original
+  section.
 - `--track-changes` requires `--author` and records content insertions and
   deletions: `replace_text`, `set_text`, `insert_*` (page breaks only, not
   section breaks), `delete_blocks`, `set_table_cell`, `repeat_table_row`,
