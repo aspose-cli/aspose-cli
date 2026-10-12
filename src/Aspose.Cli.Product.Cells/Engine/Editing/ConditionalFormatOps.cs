@@ -11,11 +11,13 @@ internal static class ConditionalFormatOps
 {
     public static void AddConditionalFormat(Worksheet sheet, AddConditionalFormatOp op)
     {
-        RangeRef range = A1.ParseRange(op.Range).Range;
         int cfIndex = sheet.ConditionalFormattings.Add();
         FormatConditionCollection conditions = sheet.ConditionalFormattings[cfIndex];
-        conditions.AddArea(CellArea.CreateCellArea(
-            range.Start.Row, range.Start.Column, range.End.Row, range.End.Column));
+        // One rule over every area of the range, as a read reports it.
+        foreach (CellArea area in ValidationOps.Areas(op.Range))
+        {
+            conditions.AddArea(area);
+        }
 
         CellsConditionalRule rule = op.Rule;
         switch (rule.Kind)
@@ -24,14 +26,14 @@ internal static class ConditionalFormatOps
                 {
                     int condition = conditions.AddCondition(
                         FormatConditionType.CellValue, ValidationOps.ToOperator(rule.Operator!), rule.Value1, rule.Value2);
-                    ApplyConditionStyle(conditions[condition], op.Style!);
+                    ApplyConditionStyle(conditions[condition], op.MatchStyle!);
                     break;
                 }
 
             case CellsConditionalRuleKinds.Duplicates:
                 {
                     int condition = conditions.AddCondition(FormatConditionType.DuplicateValues);
-                    ApplyConditionStyle(conditions[condition], op.Style!);
+                    ApplyConditionStyle(conditions[condition], op.MatchStyle!);
                     break;
                 }
 
@@ -65,7 +67,7 @@ internal static class ConditionalFormatOps
                     // stores the text as a string literal that never matches.
                     int condition = conditions.AddCondition(FormatConditionType.Expression);
                     conditions[condition].Formula1 = rule.Value1;
-                    ApplyConditionStyle(conditions[condition], op.Style!);
+                    ApplyConditionStyle(conditions[condition], op.MatchStyle!);
                     break;
                 }
 
@@ -75,9 +77,9 @@ internal static class ConditionalFormatOps
                     Top10 top10 = conditions[condition].Top10;
                     top10.Rank = rule.Rank!.Value; // parser-required
                     top10.IsPercent = rule.Percent;
-                    top10.IsBottom = rule.Bottom;
+                    top10.IsBottom = rule.FromBottom;
 
-                    ApplyConditionStyle(conditions[condition], op.Style!);
+                    ApplyConditionStyle(conditions[condition], op.MatchStyle!);
                     break;
                 }
 
@@ -150,8 +152,10 @@ internal static class ConditionalFormatOps
 
     public static void ClearConditionalFormats(Worksheet sheet, ClearConditionalFormatsOp op)
     {
-        RangeRef range = A1.ParseRange(op.Range).Range;
-        sheet.ConditionalFormattings.RemoveArea(
-            range.Start.Row, range.Start.Column, range.RowCount, range.ColumnCount);
+        foreach (RangeRef range in A1.ParseRanges(op.Range))
+        {
+            sheet.ConditionalFormattings.RemoveArea(
+                range.Start.Row, range.Start.Column, range.RowCount, range.ColumnCount);
+        }
     }
 }

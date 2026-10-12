@@ -49,12 +49,22 @@ internal static class PageSetupOps
             ApplyMargins(pageSetup, margins);
         }
 
-        if (op.Header is { } header)
+        if (op.HeaderMargin is { } headerMargin)
+        {
+            pageSetup.HeaderMargin = Centimetres(headerMargin);
+        }
+
+        if (op.FooterMargin is { } footerMargin)
+        {
+            pageSetup.FooterMargin = Centimetres(footerMargin);
+        }
+
+        if (op.HeaderCenter is { } header)
         {
             pageSetup.SetHeader(1, header);
         }
 
-        if (op.Footer is { } footer)
+        if (op.FooterCenter is { } footer)
         {
             pageSetup.SetFooter(1, footer);
         }
@@ -63,7 +73,8 @@ internal static class PageSetupOps
     public static void SetPrintArea(Worksheet sheet, SetPrintAreaOp op)
     {
         PageSetup pageSetup = sheet.PageSetup;
-        pageSetup.PrintArea = op.Range;
+        // Several areas are stored as Excel writes them, comma-separated.
+        pageSetup.PrintArea = A1.FormatRanges(A1.ParseRanges(op.Range));
 
         // The parser normalized the titles to Excel's absolute band form; titles omitted are removed.
         pageSetup.PrintTitleRows = op.TitleRows ?? string.Empty;
@@ -101,15 +112,6 @@ internal static class PageSetupOps
             pageSetup.RightMargin = Centimetres(right);
         }
 
-        if (margins.Header is { } header)
-        {
-            pageSetup.HeaderMargin = Centimetres(header);
-        }
-
-        if (margins.Footer is { } footer)
-        {
-            pageSetup.FooterMargin = Centimetres(footer);
-        }
     }
 
     // Every Aspose.Cells PageSetup margin is measured in centimetres, while the op

@@ -33,6 +33,7 @@ internal static class A1
             throw CellsErrors.RangeInvalid(spec, "the range is empty");
         }
 
+        RefuseList(spec);
         (string? sheetName, string rangePart) = SplitSheet(spec, trimmed);
         if (rangePart.Length == 0)
         {
@@ -50,11 +51,63 @@ internal static class A1
         return new RangeSpec(sheetName, new RangeRef(start, end));
     }
 
+    /// <summary>
+    /// The items of a comma-separated list of ranges, such as <c>B5:C5,B7:C7</c> or
+    /// <c>'Q1, Q2'!A1,Data!B2</c>: split at each comma outside a quoted sheet name, each item as
+    /// written. A text without a comma is one item.
+    /// </summary>
+    public static IReadOnlyList<string> SplitList(string spec)
+    {
+        ArgumentNullException.ThrowIfNull(spec);
+        var items = new List<string>();
+        bool quoted = false;
+        int start = 0;
+        for (int index = 0; index < spec.Length; index++)
+        {
+            // A doubled quote inside a quoted name toggles twice and so stays quoted.
+            if (spec[index] == '\'')
+            {
+                quoted = !quoted;
+            }
+            else if (spec[index] == ',' && !quoted)
+            {
+                items.Add(spec[start..index]);
+                start = index + 1;
+            }
+        }
+
+        items.Add(spec[start..]);
+        return items;
+    }
+
+    /// <summary>
+    /// Refuses a list where one range is taken, the same way for every field and option that
+    /// takes one: a list is not a range with a stray separator, and the fields that take a list
+    /// parse each of its ranges on its own.
+    /// </summary>
+    private static void RefuseList(string spec)
+    {
+        if (SplitList(spec) is { Count: > 1 } items)
+        {
+            throw CellsErrors.RangeInvalid(spec,
+                $"it lists {items.Count} ranges separated by commas, but takes one range: give each range its own operation");
+        }
+    }
+
+    /// <summary>The ranges of a comma-separated list on one sheet, such as <c>B5:B7,D5:D7</c>, in order.</summary>
+    /// <exception cref="CliException"><c>OPS_INVALID</c> when an item cannot be parsed.</exception>
+    public static IReadOnlyList<RangeRef> ParseRanges(string spec) =>
+        [.. SplitList(spec).Select(static item => ParseRange(item).Range)];
+
+    /// <summary>Formats ranges as a comma-separated list, such as <c>B5:B7,D5:D7</c>.</summary>
+    public static string FormatRanges(IEnumerable<RangeRef> ranges) => string.Join(",", ranges.Select(FormatRange));
+
     /// <summary>Parses a single cell reference such as <c>B3</c> or <c>$B$3</c>.</summary>
     /// <exception cref="CliException"><c>OPS_INVALID</c> when the text is not a cell.</exception>
     public static CellRef ParseCell(string cell)
     {
         ArgumentNullException.ThrowIfNull(cell);
+        RefuseList(cell);
         return ParseCellPart(cell, cell.Trim());
     }
 

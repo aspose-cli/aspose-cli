@@ -9,20 +9,24 @@ namespace Aspose.Cli.Product.Cells.Contracts;
 /// operator and value1 (and value2 for between and not-between); color-scale minColor and
 /// maxColor; data-bar barColor; formula value1, to which a missing leading = is added; top-bottom
 /// rank, at most 100 with percent; icon-set iconSet. cell-value, duplicates, formula and
-/// top-bottom need a style; icon-set takes none.
+/// top-bottom need a matchStyle; icon-set takes none.
 /// </summary>
 [Operation("add_conditional_format")]
 public sealed record AddConditionalFormatOp : CellsSheetOp
 {
-    /// <summary>The range to format, such as B2:B100.</summary>
-    [A1Range] public required string Range { get; init; }
+    /// <summary>
+    /// The range to format, such as B2:B100, or several separated by commas, such as
+    /// B2:B10,D2:D10, as a read reports a rule over several areas: one rule formats them all.
+    /// </summary>
+    [A1RangeList] public required string Range { get; init; }
 
     [ReadBack("inspect-result.schema.json#/$defs/cellsConditionalFormatInfo/properties/rule")]
     public required CellsConditionalRule Rule { get; init; }
 
     /// <summary>The style matching cells receive.</summary>
-    [ReadBack("inspect-result.schema.json#/$defs/cellsConditionalFormatInfo/properties/style")]
-    public CellsConditionalStyle? Style { get; init; }
+    [MistakenFor("style")]
+    [ReadBack("inspect-result.schema.json#/$defs/cellsConditionalFormatInfo/properties/matchStyle")]
+    public CellsConditionalStyle? MatchStyle { get; init; }
 
     /// <inheritdoc />
     protected override BoundedOperation Validated()
@@ -60,12 +64,12 @@ public sealed record AddConditionalFormatOp : CellsSheetOp
 
         if (styled)
         {
-            Require(Style is not null, $"a '{rule.Kind}' rule needs a 'style' to apply");
+            Require(MatchStyle is not null, $"a '{rule.Kind}' rule needs a 'matchStyle' to apply");
         }
         else if (rule.Kind == CellsConditionalRuleKinds.IconSet)
         {
             // Icons come from the set; a style would be dead weight the caller believes took effect.
-            Require(Style is null, "an 'icon-set' rule draws icons; omit 'style'");
+            Require(MatchStyle is null, "an 'icon-set' rule draws icons; omit 'matchStyle'");
             Require(rule.IconSet is not null, "an 'icon-set' rule needs 'iconSet'");
         }
 
@@ -133,7 +137,8 @@ public sealed record CellsConditionalRule
     public bool Percent { get; init; }
 
     /// <summary>Whether a top-bottom rule marks the bottom rather than the top.</summary>
-    public bool Bottom { get; init; }
+    [MistakenFor("bottom")]
+    public bool FromBottom { get; init; }
 
     /// <summary>The icons of an icon-set rule.</summary>
     [AllowedValues(typeof(CellsIconSetNames))] public string? IconSet { get; init; }
@@ -174,6 +179,6 @@ public static class CellsIconSetNames
 [Operation("clear_conditional_formats")]
 public sealed record ClearConditionalFormatsOp : CellsSheetOp
 {
-    /// <summary>The range to clear conditional formatting from.</summary>
-    [A1Range] public required string Range { get; init; }
+    /// <summary>The range to clear conditional formatting from, or several separated by commas, such as B2:B10,D2:D10.</summary>
+    [A1RangeList] public required string Range { get; init; }
 }

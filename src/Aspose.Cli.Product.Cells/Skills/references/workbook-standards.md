@@ -193,7 +193,7 @@ never beside a color scale saying the same thing.
 aspose-cli cells edit book.xlsx --in-place --ops '{"ops":[
   {"op":"add_conditional_format","sheet":"Sales","range":"F2:F9",
    "rule":{"kind":"cell-value","operator":"less-than","value1":"1000"},
-   "style":{"color":"#9C0006","fillColor":"#FFC7CE"}}
+   "matchStyle":{"color":"#9C0006","fillColor":"#FFC7CE"}}
 ]}'
 ```
 
@@ -224,7 +224,7 @@ summary sheet — portrait, fitted to one page, a page footer:
 ```sh
 aspose-cli cells edit book.xlsx --in-place --ops '{"ops":[
   {"op":"set_page_setup","sheet":"Sales","orientation":"portrait","pageSize":{"preset":"a4"},
-   "fitToWidth":1,"fitToHeight":1,"footer":"page &P of &N"},
+   "fitToWidth":1,"fitToHeight":1,"footerCenter":"page &P of &N"},
   {"op":"set_print_area","sheet":"Sales","range":"A1:G12"}
 ]}'
 ```

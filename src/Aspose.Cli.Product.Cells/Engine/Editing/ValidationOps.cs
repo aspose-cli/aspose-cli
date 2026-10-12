@@ -7,13 +7,21 @@ internal static class ValidationOps
 {
     public static void SetValidation(Worksheet sheet, SetValidationOp op)
     {
-        RangeRef range = A1.ParseRange(op.Range).Range;
-        CellArea area = CellArea.CreateCellArea(
-            range.Start.Row, range.Start.Column, range.End.Row, range.End.Column);
+        CellArea[] areas = Areas(op.Range);
 
-        // set_ replaces: the range's earlier validation gives way, so a repeat leaves one.
-        sheet.Validations.RemoveArea(area);
-        Validation validation = sheet.Validations[sheet.Validations.Add(area)];
+        // set_ replaces: the range's earlier validation gives way, so a repeat leaves one, and
+        // one validation covers every area of the range, as a read reports it.
+        foreach (CellArea area in areas)
+        {
+            sheet.Validations.RemoveArea(area);
+        }
+
+        Validation validation = sheet.Validations[sheet.Validations.Add(areas[0])];
+        foreach (CellArea area in areas.Skip(1))
+        {
+            validation.AddArea(area);
+        }
+
         validation.IgnoreBlank = op.AllowBlank;
 
         switch (op.Kind)
@@ -66,10 +74,16 @@ internal static class ValidationOps
 
     public static void ClearValidation(Worksheet sheet, ClearValidationOp op)
     {
-        RangeRef range = A1.ParseRange(op.Range).Range;
-        sheet.Validations.RemoveArea(CellArea.CreateCellArea(
-            range.Start.Row, range.Start.Column, range.End.Row, range.End.Column));
+        foreach (CellArea area in Areas(op.Range))
+        {
+            sheet.Validations.RemoveArea(area);
+        }
     }
+
+    /// <summary>The engine areas of a range or a comma-separated list of them, in order.</summary>
+    internal static CellArea[] Areas(string ranges) =>
+        [.. A1.ParseRanges(ranges).Select(static range =>
+            CellArea.CreateCellArea(range.Start.Row, range.Start.Column, range.End.Row, range.End.Column))];
 
     private static ValidationType ToType(string type) => type switch
     {

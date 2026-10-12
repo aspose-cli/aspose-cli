@@ -55,15 +55,17 @@ internal static class ObjectProjection
             return null;
         }
 
+        // A union of ranges or an array of constants is not one range; a comma inside a quoted
+        // sheet name, such as 'Q1, Q2'!A1:B3, is part of the name.
         string text = stored.TrimStart('=');
-        if (text.Contains(',', StringComparison.Ordinal) || text.StartsWith('{'))
+        if (text.StartsWith('{') || A1.SplitList(text) is not [var single])
         {
             return null;
         }
 
         try
         {
-            RangeSpec spec = A1.ParseRange(text);
+            RangeSpec spec = A1.ParseRange(single);
             return (spec.SheetName, spec.Range);
         }
         catch (CliException)
@@ -225,7 +227,7 @@ internal static class ObjectProjection
         }
     }
 
-    public static CellsValidationInfo Validation(Worksheet sheet, Validation validation, CellArea area, string kind)
+    public static CellsValidationInfo Validation(Worksheet sheet, Validation validation, IEnumerable<CellArea> areas, string kind)
     {
         bool list = validation.Type == ValidationType.List;
         bool compares = validation.Type is not (ValidationType.List or ValidationType.Custom or ValidationType.AnyValue);
@@ -233,7 +235,7 @@ internal static class ObjectProjection
         return new CellsValidationInfo
         {
             Sheet = sheet.Name,
-            Range = Area(area),
+            Range = string.Join(",", areas.Select(Area)),
             Kind = kind,
             Operator = compares ? ValidationOps.FromOperator(validation.Operator) : null,
             Value1 = list ? null : Bound(formula),
@@ -277,7 +279,7 @@ internal static class ObjectProjection
                         Sheet = sheet.Name,
                         Range = range,
                         Rule = rule,
-                        Style = conditions[i].Type is FormatConditionType.ColorScale or FormatConditionType.DataBar or FormatConditionType.IconSet
+                        MatchStyle = conditions[i].Type is FormatConditionType.ColorScale or FormatConditionType.DataBar or FormatConditionType.IconSet
                             ? null
                             : ConditionalStyle(conditions[i].Style),
                     });
@@ -320,7 +322,7 @@ internal static class ObjectProjection
             Kind = CellsConditionalRuleKinds.TopBottom,
             Rank = condition.Top10.Rank,
             Percent = condition.Top10.IsPercent,
-            Bottom = condition.Top10.IsBottom,
+            FromBottom = condition.Top10.IsBottom,
         },
         FormatConditionType.IconSet => new CellsConditionalRuleInfo
         {
@@ -357,11 +359,15 @@ internal static class ObjectProjection
             {
                 budgets.Deadline.ThrowIfExpired("sparklines");
                 Sparkline[] sparklines = [.. group.Sparklines.Cast<Sparkline>()];
-                var data = sparklines.Select(static sparkline => Parse(sparkline.DataRange)).OfType<(string? Sheet, RangeRef Range)>().ToList();
-                if (data.Count == 0)
+                if (sparklines.Length == 0)
                 {
                     continue;
                 }
+
+                // Data this read cannot parse as one range is listed as the engine stores it,
+                // never left out.
+                var parsed = sparklines.Select(static sparkline => Parse(sparkline.DataRange)).ToList();
+                var data = parsed.OfType<(string? Sheet, RangeRef Range)>().ToList();
 
                 string kind = SparklineOps.FromType(group.Type) ?? group.Type.ToString().ToLowerInvariant();
 
@@ -370,10 +376,12 @@ internal static class ObjectProjection
                     Sheet = sheet.Name,
                     Kind = kind,
                     Color = group.SeriesColor is { } color ? StylePool.ToHex(color.Color) : null,
-                    DataRange = Covered([.. data.Select(static item => item.Range)]) is { } block
-                        ? Reference(sheet, data[0].Sheet, block)
-                        : string.Join(",", data.Select(item => Reference(sheet, item.Sheet, item.Range))),
-                    Location = Covered([.. sparklines.Select(static sparkline =>
+                    DataRange = data.Count < parsed.Count
+                        ? string.Join(",", sparklines.Select(static sparkline => (sparkline.DataRange ?? string.Empty).TrimStart('=')))
+                        : Covered([.. data.Select(static item => item.Range)]) is { } block
+                            ? Reference(sheet, data[0].Sheet, block)
+                            : string.Join(",", data.Select(item => Reference(sheet, item.Sheet, item.Range))),
+                    At = Covered([.. sparklines.Select(static sparkline =>
                         new RangeRef(new CellRef(sparkline.Row, sparkline.Column), new CellRef(sparkline.Row, sparkline.Column)))]) is { } strip
                         ? A1.FormatRange(strip)
                         : string.Join(",", sparklines.Select(static sparkline => A1.FormatCell(new CellRef(sparkline.Row, sparkline.Column)))),

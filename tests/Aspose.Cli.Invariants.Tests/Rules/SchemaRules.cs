@@ -263,7 +263,8 @@ internal static partial class ContractRules
             {
                 continue;
             }
-            if (name == "to" && property.Owner["properties"]?["from"] is not null)
+            if (name == "to" && property.Owner["properties"]?["from"] is not null
+                && !(property.OwnerPath.Length == 0 && subject.Definition is { } op && SourceAndDestination.Contains((subject.SchemaId, op))))
             {
                 yield return (NameAspect.Ranges, $"{property.Path}: to ends a from-to range; a range names its ends first and last");
             }
@@ -275,6 +276,12 @@ internal static partial class ContractRules
             {
                 yield return (NameAspect.Secrets, $"{property.Path}: the source file's password is named sourcePasswordEnv");
             }
+        }
+        if (ops && subject.Definition is { } listed && SourceAndDestination.Contains((subject.SchemaId, listed))
+            && PublishedSchema.Definition(subject.SchemaId, listed)["properties"] is var own
+            && (own?["from"] is null || own?["to"] is null))
+        {
+            yield return (NameAspect.Ranges, "from and to: listed as a source and a destination but no longer declared; update the list");
         }
         if (subject.Definition is { } definition)
         {
@@ -292,6 +299,16 @@ internal static partial class ContractRules
             yield return (NameAspect.Spelling, "the compact-cell exemption (v, t, f) no longer matches; remove it");
         }
     }
+
+    /// <summary>
+    /// The operations whose <c>from</c> and <c>to</c> are a source range and the cell it lands at,
+    /// not the two ends of one range (C-N178).
+    /// </summary>
+    private static readonly HashSet<(string Schema, string Op)> SourceAndDestination =
+    [
+        ("v2/cells/ops", "copy_range"),
+        ("v2/cells/ops", "import_range"),
+    ];
 
     /// <summary>The parts of C-R20's name rules, one case each, since each is a fix of its own.</summary>
     private enum NameAspect
@@ -384,8 +401,8 @@ internal static partial class ContractRules
             ["insert_pivot", "set_values"],
             "values are the values of the object they fill (user, 2026-10-12): a range's a row-major matrix, a pivot table's its value fields"),
         [("v2/cells/ops", "at")] = (
-            ["delete_columns", "delete_rows", "import_sheet", "insert_chart", "insert_columns", "insert_image", "insert_pivot", "insert_rows", "insert_sheet"],
-            "at is a destination shaped as the unit it addresses (user, 2026-10-12): a sheet position, a row number, a column letter, or a cell or range anchor"),
+            ["add_sparkline", "delete_columns", "delete_rows", "import_sheet", "insert_chart", "insert_columns", "insert_image", "insert_pivot", "insert_rows", "insert_sheet"],
+            "at is a destination shaped as the unit it addresses (user, 2026-10-12): a sheet position, a row number, a column letter, or a cell or range anchor such as the cells sparklines are drawn in"),
         [("v2/cells/ops", "to")] = (
             ["copy_range", "import_range", "move_sheet"],
             "to is a destination (user, 2026-10-12): a sheet position or a cell anchor"),

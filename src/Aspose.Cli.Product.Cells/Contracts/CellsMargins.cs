@@ -20,10 +20,4 @@ public sealed record CellsMargins
 
     /// <summary>The right margin.</summary>
     [Minimum(0)] public double? Right { get; init; }
-
-    /// <summary>The distance from the top of the page to the header.</summary>
-    [Minimum(0)] public double? Header { get; init; }
-
-    /// <summary>The distance from the bottom of the page to the footer.</summary>
-    [Minimum(0)] public double? Footer { get; init; }
 }

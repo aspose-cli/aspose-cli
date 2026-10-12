@@ -21,7 +21,7 @@ Cells semantics, ordering rules and recipes.
 | Rows and columns | `insert_rows`, `delete_rows`, `insert_columns`, `delete_columns`, `resize_rows`, `resize_columns`, `merge_cells`, `unmerge_cells`, `group_rows`, `ungroup_rows`, `group_columns`, `ungroup_columns`, `freeze_panes`, `unfreeze_panes` |
 | Sheets | `insert_sheet`, `rename_sheet`, `delete_sheet`, `move_sheet`, `set_sheet_visibility`, `set_active_sheet` |
 | Workbook look | `set_default_font`, `set_tab_color`, `clear_tab_color`, `set_sheet_view` |
-| Charts and sparklines | `insert_chart`, `set_chart`, `delete_chart`, `add_sparkline` |
+| Charts and sparklines | `insert_chart`, `set_chart`, `delete_chart`, `add_sparkline`; `clear_range` with `what` `all` removes the sparklines in its range |
 | Pivot tables | `insert_pivot`, `refresh_pivot` |
 | Tables, filtering, sorting | `define_table`, `set_autofilter`, `clear_autofilter`, `sort_range`, `delete_duplicates` |
 | Input rules | `set_validation`, `clear_validation`, `add_conditional_format`, `clear_conditional_formats` |
@@ -44,7 +44,7 @@ The field names of these operations are the ones most often guessed wrong:
   { "op": "insert_rows", "sheet": "Data", "at": 2, "count": 3 },
   { "op": "resize_rows", "sheet": "Data", "first": 1, "last": 1, "height": 24 },
   { "op": "resize_columns", "sheet": "Data", "first": "A", "last": "D" },
-  { "op": "set_sheet_view", "sheet": "Data", "gridlines": false, "zoom": 90 }
+  { "op": "set_sheet_view", "sheet": "Data", "gridlines": false, "zoomPercent": 90 }
 ] }
 ```
 
@@ -234,7 +234,7 @@ highlights whole rows from one status column:
 { "ops": [
   { "op": "add_conditional_format", "range": "A2:F100",
     "rule": { "kind": "formula", "value1": "=$F2=\"OVERDUE\"" },
-    "style": { "fillColor": "#FFC7CE" } }
+    "matchStyle": { "fillColor": "#FFC7CE" } }
 ] }
 ```
 
@@ -251,12 +251,12 @@ or order.
 
 ## Sparklines
 
-    { "op": "add_sparkline", "dataRange": "B2:E10", "location": "F2:F10",
+    { "op": "add_sparkline", "dataRange": "B2:E10", "at": "F2:F10",
       "kind": "line", "color": "#1F4E79" }
 
-The location's cell count decides the fan-out: one sparkline per data row, or
+The `at` range's cell count decides the fan-out: one sparkline per data row, or
 per data column. A sparkline cell must lie inside the sheet's used range to
-show in renders and reads; give the location column a header.
+show in renders and reads; give the sparkline column a header.
 
 ## Tables, validation, links and pictures
 
@@ -296,10 +296,14 @@ show in renders and reads; give the location column a header.
 
 - `set_active_sheet` saves the sheet a workbook opens on; the browser preview
   honors it.
-- `set_sheet_view` gridlines, zoom and headings affect Excel and the live
+- `set_sheet_view` gridlines, zoomPercent and headings affect Excel and the live
   preview, never `render` or PDF output. Draw `set_borders` when a grid must
   appear in a render.
-- `set_page_setup` header and footer text fills the center section only.
+- `set_borders` draws the outline and inner lines of a range; a read reports
+  each cell's lines in its style's `borders`, one `{side, lineStyle, color}`
+  per side, and `format_range` writes the same `style.borders` cell by cell.
+- `set_page_setup` writes the center header and footer (`headerCenter`,
+  `footerCenter`); `cells inspect --detail layout` reads all three sections.
 - `set_print_area` replaces the sheet's print area with what it gives: title
   rows or columns it omits are cleared, so repeat `titleRows` in every call
   that should keep them.
@@ -327,6 +331,9 @@ cells read `cell/all`), `sheet/Sales`, `row/Sales!5`, `column/Sales!C`,
 or object name keeps its spelling, apostrophes and `!` included, except that
 `/`, `%`, control characters and leading or trailing spaces are written as
 `%XX` of their UTF-8 bytes: a sheet named ` Q3 100%` is `sheet/%20Q3 100%25`.
+Before the `!` of a cell, row, column, merge, comment or hyperlink address a
+`!` in the sheet name is `%21` too, so the first `!` ends the sheet:
+`cell/a%21b!A1` is cell A1 of the sheet `a!b`.
 An operation that changed nothing counts 0 and warns `OP_NO_EFFECT`.
 Inserting or deleting rows or columns counts each line it added or removed
 and each object anchored on the sheet that moved or resized with them, such

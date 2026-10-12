@@ -217,16 +217,19 @@ internal static class InfoProjection
         {
             foreach (var validation in sheet.Validations)
             {
-                foreach (var area in validation.Areas)
+                // A validation whose cells were all deleted applies to nothing.
+                if (validation.Areas is not { Length: > 0 } areas)
                 {
-                    if (validations.Count >= maxItems)
-                    {
-                        return validations;
-                    }
-
-                    validations.Add(ObjectProjection.Validation(
-                        sheet, validation, area, VocabularyName(validation.Type, JsonNamingPolicy.KebabCaseLower)));
+                    continue;
                 }
+
+                if (validations.Count >= maxItems)
+                {
+                    return validations;
+                }
+
+                validations.Add(ObjectProjection.Validation(
+                    sheet, validation, areas, VocabularyName(validation.Type, JsonNamingPolicy.KebabCaseLower)));
             }
         }
 

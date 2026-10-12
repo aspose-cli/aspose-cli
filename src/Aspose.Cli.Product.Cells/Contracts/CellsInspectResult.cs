@@ -213,7 +213,7 @@ public sealed record CellsSheetViewInfo
     public required bool Gridlines { get; init; }
 
     /// <summary>The zoom percentage.</summary>
-    public required int Zoom { get; init; }
+    public required int ZoomPercent { get; init; }
 
     /// <summary>Whether the row numbers and column letters show.</summary>
     public required bool Headings { get; init; }
@@ -315,8 +315,14 @@ public sealed record CellsPageSetupInfo
     /// <summary>The page margins in points, every side.</summary>
     public required CellsMargins Margins { get; init; }
 
+    /// <summary>The distance in points from the top of the page to the header.</summary>
+    public required double HeaderMargin { get; init; }
+
+    /// <summary>The distance in points from the bottom of the page to the footer.</summary>
+    public required double FooterMargin { get; init; }
+
     /// <summary>The center header text, with Excel codes such as &amp;P; omitted when empty.</summary>
-    public string? Header { get; init; }
+    public string? HeaderCenter { get; init; }
 
     /// <summary>The left header text; omitted when empty.</summary>
     public string? HeaderLeft { get; init; }
@@ -325,7 +331,7 @@ public sealed record CellsPageSetupInfo
     public string? HeaderRight { get; init; }
 
     /// <summary>The center footer text, with Excel codes such as &amp;P and &amp;N; omitted when empty.</summary>
-    public string? Footer { get; init; }
+    public string? FooterCenter { get; init; }
 
     /// <summary>The left footer text; omitted when empty.</summary>
     public string? FooterLeft { get; init; }
@@ -480,7 +486,7 @@ public sealed record CellsValidationInfo
     /// <summary>Sheet the validation is on.</summary>
     public required string Sheet { get; init; }
 
-    /// <summary>A1 range the validation applies to.</summary>
+    /// <summary>The A1 range the validation applies to; several areas of one validation are comma-separated.</summary>
     public required string Range { get; init; }
 
     /// <summary>
@@ -552,7 +558,7 @@ public sealed record CellsConditionalFormatInfo
     public required CellsConditionalRuleInfo Rule { get; init; }
 
     /// <summary>The style matching cells receive; omitted for the kinds that take none.</summary>
-    public CellsConditionalStyle? Style { get; init; }
+    public CellsConditionalStyle? MatchStyle { get; init; }
 }
 
 /// <summary>A conditional-formatting rule as a read reports it: add_conditional_format's fields the rule's kind uses.</summary>
@@ -594,7 +600,7 @@ public sealed record CellsConditionalRuleInfo
     public bool? Percent { get; init; }
 
     /// <summary>Whether a top-bottom rule marks the bottom rather than the top.</summary>
-    public bool? Bottom { get; init; }
+    public bool? FromBottom { get; init; }
 
     /// <summary>
     /// The icons of an icon-set rule: an add_conditional_format icon set, or the lower-kebab engine
@@ -627,7 +633,7 @@ public sealed record CellsSparklineInfo
     /// The cells the sparklines are drawn in: one range when they fill it, otherwise each cell,
     /// comma-separated, such as H2,H4,H5 after a row was inserted inside the group.
     /// </summary>
-    public required string Location { get; init; }
+    public required string At { get; init; }
 }
 
 /// <summary>A picture on a sheet.</summary>

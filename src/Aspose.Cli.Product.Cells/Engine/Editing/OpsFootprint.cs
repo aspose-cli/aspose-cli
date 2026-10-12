@@ -143,18 +143,18 @@ internal static class OpsFootprint
         MergeCellsOp o => new CellsEditTarget(o.Sheet, o.Range),
         UnmergeCellsOp o => new CellsEditTarget(o.Sheet, o.Range),
         SortRangeOp o => new CellsEditTarget(o.Sheet, o.Range),
-        SetValidationOp o => new CellsEditTarget(o.Sheet, o.Range),
-        ClearValidationOp o => new CellsEditTarget(o.Sheet, o.Range),
+        SetValidationOp o => new CellsEditTarget(o.Sheet, Bounds(o.Range)),
+        ClearValidationOp o => new CellsEditTarget(o.Sheet, Bounds(o.Range)),
         DeleteDuplicatesOp o => new CellsEditTarget(o.Sheet, o.Range),
         DefineTableOp o => new CellsEditTarget(o.Sheet, o.Range),
-        AddConditionalFormatOp o => new CellsEditTarget(o.Sheet, o.Range),
-        ClearConditionalFormatsOp o => new CellsEditTarget(o.Sheet, o.Range),
+        AddConditionalFormatOp o => new CellsEditTarget(o.Sheet, Bounds(o.Range)),
+        ClearConditionalFormatsOp o => new CellsEditTarget(o.Sheet, Bounds(o.Range)),
         SetBordersOp o => new CellsEditTarget(o.Sheet, o.Range),
         SetAutoFilterOp o => new CellsEditTarget(o.Sheet, o.Range),
-        SetPrintAreaOp o => new CellsEditTarget(o.Sheet, o.Range),
+        SetPrintAreaOp o => new CellsEditTarget(o.Sheet, Bounds(o.Range)),
         // A sparkline's visible change is the location strip it draws into,
         // not the data it reads.
-        AddSparklineOp o => new CellsEditTarget(o.Sheet, o.Location),
+        AddSparklineOp o => new CellsEditTarget(o.Sheet, Bounds(o.At)),
         _ => throw new InvalidOperationException(),
     };
 
@@ -289,6 +289,25 @@ internal static class OpsFootprint
         catch (CliException)
         {
             return range;
+        }
+    }
+
+    /// <summary>
+    /// The one range that covers a list of cells and ranges, such as D5:D8 for D5,D7,D8; the
+    /// list as given when it is unparsable, which only a failed operation can carry.
+    /// </summary>
+    private static string Bounds(string list)
+    {
+        try
+        {
+            IReadOnlyList<RangeRef> parts = A1.ParseRanges(list);
+            return A1.FormatRange(new RangeRef(
+                new CellRef(parts.Min(static part => part.Start.Row), parts.Min(static part => part.Start.Column)),
+                new CellRef(parts.Max(static part => part.End.Row), parts.Max(static part => part.End.Column))));
+        }
+        catch (CliException)
+        {
+            return list;
         }
     }
 

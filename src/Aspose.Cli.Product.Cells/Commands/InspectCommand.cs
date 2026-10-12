@@ -128,8 +128,8 @@ internal static class InspectCommand
             static pivot => [pivot.Sheet, pivot.Name, pivot.Range, pivot.SourceRange]);
         ResultText.Table(surface, "conditional formats", workbook.ConditionalFormats, ["sheet", "range", "kind"],
             static format => [format.Sheet, format.Range, format.Rule.Kind]);
-        ResultText.Table(surface, "sparklines", workbook.Sparklines, ["sheet", "kind", "data", "location"],
-            static group => [group.Sheet, group.Kind, group.DataRange, group.Location]);
+        ResultText.Table(surface, "sparklines", workbook.Sparklines, ["sheet", "kind", "data", "at"],
+            static group => [group.Sheet, group.Kind, group.DataRange, group.At]);
         ResultText.Table(surface, "images", workbook.Images, ["sheet", "index", "at", "width", "height"],
             static image => [image.Sheet, TableText.Int(image.Index), image.At, TableText.Points(image.Width), TableText.Points(image.Height)]);
         ResultText.Table(surface, "comments", workbook.Comments, ["sheet", "cell", "author", "text"],
@@ -151,8 +151,8 @@ internal static class InspectCommand
                     + (layout.PageSetup.ScalePercent is { } scale
                         ? $" {scale}%"
                         : $" fit {layout.PageSetup.FitToWidth}x{layout.PageSetup.FitToHeight}"),
-                layout.PageSetup.Header,
-                layout.PageSetup.Footer,
+                layout.PageSetup.HeaderCenter,
+                layout.PageSetup.FooterCenter,
             ]);
     }
 

@@ -138,8 +138,8 @@ public sealed record UnfreezePanesOp : CellsSheetOp;
 /// Sets the page layout for printing and PDF export: at least one field, and margins set at
 /// least one side. Only the fields present are applied; the rest of the page setup is preserved.
 /// </summary>
-[Operation("set_page_setup")]
-[AtLeastOneOf("orientation", "pageSize", "fitToWidth", "fitToHeight", "scalePercent", "margins", "header", "footer")]
+[Operation("set_page_setup", Hint = "The header and footer distances are headerMargin and footerMargin, beside margins.")]
+[AtLeastOneOf("orientation", "pageSize", "fitToWidth", "fitToHeight", "scalePercent", "margins", "headerMargin", "footerMargin", "headerCenter", "footerCenter")]
 public sealed record SetPageSetupOp : CellsSheetOp
 {
     [ReadBack("inspect-result.schema.json#/$defs/cellsPageSetupInfo/properties/orientation")]
@@ -169,13 +169,23 @@ public sealed record SetPageSetupOp : CellsSheetOp
     [ReadBack("inspect-result.schema.json#/$defs/cellsPageSetupInfo/properties/margins")]
     public CellsMargins? Margins { get; init; }
 
+    /// <summary>The distance in points from the top of the page to the header.</summary>
+    [ReadBack("inspect-result.schema.json#/$defs/cellsPageSetupInfo/properties/headerMargin")]
+    [Minimum(0)] public double? HeaderMargin { get; init; }
+
+    /// <summary>The distance in points from the bottom of the page to the footer.</summary>
+    [ReadBack("inspect-result.schema.json#/$defs/cellsPageSetupInfo/properties/footerMargin")]
+    [Minimum(0)] public double? FooterMargin { get; init; }
+
     /// <summary>The center header text, with Excel codes such as &amp;P (page) and &amp;N (pages).</summary>
-    [ReadBack("inspect-result.schema.json#/$defs/cellsPageSetupInfo/properties/header")]
-    public string? Header { get; init; }
+    [MistakenFor("header")]
+    [ReadBack("inspect-result.schema.json#/$defs/cellsPageSetupInfo/properties/headerCenter")]
+    public string? HeaderCenter { get; init; }
 
     /// <summary>The center footer text, with Excel codes such as &amp;P and &amp;N.</summary>
-    [ReadBack("inspect-result.schema.json#/$defs/cellsPageSetupInfo/properties/footer")]
-    public string? Footer { get; init; }
+    [MistakenFor("footer")]
+    [ReadBack("inspect-result.schema.json#/$defs/cellsPageSetupInfo/properties/footerCenter")]
+    public string? FooterCenter { get; init; }
 
     /// <inheritdoc />
     protected override BoundedOperation Validated()
@@ -193,9 +203,9 @@ public sealed record SetPageSetupOp : CellsSheetOp
 [Operation("set_print_area", Hint = "To remove the print area and titles, use clear_print_area.")]
 public sealed record SetPrintAreaOp : CellsSheetOp
 {
-    /// <summary>The print area, such as A1:H50.</summary>
+    /// <summary>The print area, such as A1:H50, or several areas separated by commas, such as A1:B5,D1:E5, each printed on pages of its own.</summary>
     [ReadBack("inspect-result.schema.json#/$defs/cellsPrintAreaInfo/properties/range")]
-    [A1Range] public required string Range { get; init; }
+    [A1RangeList] public required string Range { get; init; }
 
     /// <summary>The rows repeated on every printed page, such as 1:2 or 1.</summary>
     [ReadBack("inspect-result.schema.json#/$defs/cellsPrintAreaInfo/properties/titleRows")]

@@ -107,7 +107,7 @@ aspose-cli cells edit model.xlsx --in-place --ops '{"ops":[
   {"op":"set_formula","sheet":"Summary","range":"B6","formula":"=IF(COUNTIF(PnL!B14:D14,\"IMBALANCED\")=0,\"OK\",\"IMBALANCED\")"},
   {"op":"add_conditional_format","sheet":"PnL","range":"B14:D14",
    "rule":{"kind":"cell-value","operator":"equal","value1":"IMBALANCED"},
-   "style":{"color":"#9C0006","fillColor":"#FFC7CE"}}
+   "matchStyle":{"color":"#9C0006","fillColor":"#FFC7CE"}}
 ]}'
 ```
 

@@ -80,6 +80,7 @@ internal static class CellOps
                 break;
             case CellsClearTargets.Everything:
                 sheet.Cells.ClearRange(area);
+                SparklineOps.Clear(sheet, area);
                 break;
             default:
                 sheet.Cells.ClearContents(area);

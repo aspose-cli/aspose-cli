@@ -378,8 +378,10 @@ public sealed class CellsRendererGoldenTests
                             PageSize = PageSizeInfo.Of(792, 612),
                             ScalePercent = 85,
                             Margins = Margins,
-                            Header = "&P",
-                            Footer = "Page &P of &N",
+                            HeaderMargin = 21.6,
+                            FooterMargin = 21.6,
+                            HeaderCenter = "&P",
+                            FooterCenter = "Page &P of &N",
                         },
                     },
                     new CellsSheetLayoutInfo
@@ -393,6 +395,8 @@ public sealed class CellsRendererGoldenTests
                             FitToWidth = 1,
                             FitToHeight = 0,
                             Margins = Margins,
+                            HeaderMargin = 21.6,
+                            FooterMargin = 21.6,
                         },
                     },
                 ],
@@ -400,7 +404,7 @@ public sealed class CellsRendererGoldenTests
         };
     }
 
-    private static readonly CellsSheetViewInfo View = new() { Gridlines = true, Zoom = 100, Headings = true };
+    private static readonly CellsSheetViewInfo View = new() { Gridlines = true, ZoomPercent = 100, Headings = true };
 
-    private static readonly CellsMargins Margins = new() { Top = 54, Bottom = 54, Left = 50.4, Right = 50.4, Header = 21.6, Footer = 21.6 };
+    private static readonly CellsMargins Margins = new() { Top = 54, Bottom = 54, Left = 50.4, Right = 50.4 };
 }

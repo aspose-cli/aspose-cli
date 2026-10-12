@@ -72,8 +72,11 @@ public static class CellsSortOrders
 [Operation("set_validation")]
 public sealed record SetValidationOp : CellsSheetOp
 {
-    /// <summary>The range to validate, such as B2:B100.</summary>
-    [A1Range] public required string Range { get; init; }
+    /// <summary>
+    /// The range to validate, such as B2:B100, or several separated by commas, such as
+    /// B2:B10,D2:D10, as a read reports a validation over several areas: one validation covers them all.
+    /// </summary>
+    [A1RangeList] public required string Range { get; init; }
 
     [MistakenFor("type")]
     [ReadBack("inspect-result.schema.json#/$defs/cellsValidationInfo/properties/kind")]
@@ -149,8 +152,8 @@ public sealed record SetValidationOp : CellsSheetOp
 [Operation("clear_validation")]
 public sealed record ClearValidationOp : CellsSheetOp
 {
-    /// <summary>The range to clear validation from, such as B2:B100.</summary>
-    [A1Range] public required string Range { get; init; }
+    /// <summary>The range to clear validation from, such as B2:B100, or several separated by commas, such as B2:B10,D2:D10.</summary>
+    [A1RangeList] public required string Range { get; init; }
 }
 
 /// <summary>Removes duplicate rows from a range, comparing every column or the listed ones.</summary>
