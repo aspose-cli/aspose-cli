@@ -34,7 +34,7 @@ internal static class WordsOperationSample
                 Position = "after",
                 Paragraphs =
                 [
-                    new WordsParagraphInput { Text = "Inserted paragraph", Style = "Normal", ListLevel = 1 },
+                    new WordsParagraphInput { Text = "Inserted paragraph", Style = "Normal", List = new WordsListInput { Level = 1 } },
                 ],
             },
             new InsertMarkdownOp
@@ -143,7 +143,7 @@ internal static class WordsOperationSample
             {
                 Section = 1,
                 Kind = "primary",
-                Paragraphs = ["Quarterly report"],
+                Paragraphs = [new WordsParagraphInput { Text = "Quarterly report" }],
             },
             new SetFooterOp
             {

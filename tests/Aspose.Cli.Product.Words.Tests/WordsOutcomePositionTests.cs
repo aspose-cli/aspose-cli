@@ -62,7 +62,7 @@ public sealed class WordsOutcomePositionTests
         using var fixture = new WordsFixture();
         string input = ThreePages(fixture);
 
-        Assert.Equal([1, 2, 3], Edit(fixture, input, new SetHeaderOp { Paragraphs = ["Draft"] }).PagesTouched);
+        Assert.Equal([1, 2, 3], Edit(fixture, input, new SetHeaderOp { Paragraphs = [new WordsParagraphInput { Text = "Draft" }] }).PagesTouched);
         Assert.Null(Edit(fixture, input, new SetPropertiesOp { Title = "Report" }).PagesTouched);
     }
 

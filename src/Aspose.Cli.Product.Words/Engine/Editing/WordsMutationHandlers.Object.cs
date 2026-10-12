@@ -32,6 +32,13 @@ internal sealed partial class WordsMutationHandlers
         var builder = new DocumentBuilder(_document);
         builder.MoveTo(paragraph);
         Shape shape = builder.InsertImage(OperationImages.Read(_operationInputs, operation.Path));
+        // The engine keeps an inserted image's aspect ratio, so the height would rescale the
+        // width given before it; with both given, the image takes exactly those.
+        if (operation.Width is not null && operation.Height is not null)
+        {
+            shape.AspectRatioLocked = false;
+        }
+
         if (operation.Width is not null)
         {
             shape.Width = operation.Width.Value;
@@ -291,7 +298,7 @@ internal sealed partial class WordsMutationHandlers
         string initials = string.Concat(operation.Author.Split(' ', StringSplitOptions.RemoveEmptyEntries).Select(static part => char.ToUpperInvariant(part[0])));
         Untracked(() =>
         {
-            var comment = new Comment(_document, operation.Author, initials, DateTime.Now);
+            var comment = new Comment(_document, operation.Author, initials, DateTime.UtcNow);
             comment.AppendChild(new Paragraph(_document));
             comment.FirstParagraph!.AppendChild(new Run(_document, operation.Text));
             var start = new CommentRangeStart(_document, comment.Id);

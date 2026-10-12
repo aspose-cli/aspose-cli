@@ -1,4 +1,3 @@
-using System.Globalization;
 using System.Text;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Results;
@@ -94,7 +93,12 @@ internal static class InfoProjection
                     // Evaluation mode writes its sentence into the footers of the documents it opens.
                     Paragraphs = WordsStories.Units(headerFooter).Cast<Paragraph>()
                         .Where(paragraph => !(evaluation && WordsEvaluation.IsMark(paragraph)))
-                        .Select(static paragraph => WordsText.Of(paragraph))
+                        .Select(static paragraph => new WordsParagraphData
+                        {
+                            Text = WordsText.Of(paragraph),
+                            Style = paragraph.ParagraphFormat.StyleName,
+                            List = WordsReadBack.List(paragraph),
+                        })
                         .ToArray(),
                 };
             }).ToArray(),
@@ -334,11 +338,12 @@ internal static class InfoProjection
             Revision = number,
             Kind = RevisionKindName(revision.RevisionType),
             Author = revision.Author,
-            // The SDK reports a revision without a recorded date as DateTime.MinValue. Word records
-            // local wall-clock time, so the date is written without a time zone.
+            // The SDK reports a revision without a recorded date as DateTime.MinValue. The date the
+            // file declares is reported as UTC, as this CLI records it; Word records the author's
+            // local time there instead, which the contract states.
             Date = revision.DateTime == DateTime.MinValue
                 ? null
-                : revision.DateTime.ToString("yyyy-MM-dd'T'HH:mm:ss", CultureInfo.InvariantCulture),
+                : new DateTimeOffset(DateTime.SpecifyKind(revision.DateTime, DateTimeKind.Utc)),
             Scope = style ? null : WordsStories.ScopeOf(revision.ParentNode),
             Block = style ? null : index.FindBlock(revision.ParentNode),
             Text = string.IsNullOrEmpty(text) ? null : text,
@@ -403,9 +408,7 @@ internal static class InfoProjection
                 Block = entry.Index,
                 RowCount = table.Rows.Count,
                 ColumnCount = table.Rows.Count == 0 ? 0 : table.Rows.Cast<Row>().Max(static row => row.Cells.Count),
-                TableStyle = table.StyleIdentifier == StyleIdentifier.TableNormal || string.IsNullOrEmpty(table.StyleName)
-                    ? null
-                    : table.StyleName,
+                TableStyle = string.IsNullOrEmpty(table.StyleName) ? "Table Normal" : table.StyleName,
             };
         }).ToArray();
 

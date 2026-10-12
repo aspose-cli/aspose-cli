@@ -27,8 +27,8 @@ public sealed class WordsContractGapTests
                         Position = "after",
                         Paragraphs =
                         [
-                            new WordsParagraphInput { Text = "Point", ListLevel = 1 },
-                            new WordsParagraphInput { Text = "Detail", ListLevel = 2 },
+                            new WordsParagraphInput { Text = "Point", List = new WordsListInput { Level = 1 } },
+                            new WordsParagraphInput { Text = "Detail", List = new WordsListInput { Level = 2 } },
                             new WordsParagraphInput { Text = "Plain" },
                         ],
                     },
@@ -127,8 +127,8 @@ public sealed class WordsContractGapTests
                         Position = "after",
                         Paragraphs =
                         [
-                            new WordsParagraphInput { Text = "New clause", ListLevel = 2 },
-                            new WordsParagraphInput { Text = "New chapter", ListLevel = 1 },
+                            new WordsParagraphInput { Text = "New clause", List = new WordsListInput { Level = 2 } },
+                            new WordsParagraphInput { Text = "New chapter", List = new WordsListInput { Level = 1 } },
                         ],
                     },
                 ],
@@ -170,7 +170,7 @@ public sealed class WordsContractGapTests
                     {
                         At = new WordsTarget { Find = "First" },
                         Position = "after",
-                        Paragraphs = [new WordsParagraphInput { Text = "New sub", ListLevel = 2 }],
+                        Paragraphs = [new WordsParagraphInput { Text = "New sub", List = new WordsListInput { Level = 2 } }],
                     },
                     new InsertParagraphsOp
                     {
@@ -178,15 +178,15 @@ public sealed class WordsContractGapTests
                         Position = "after",
                         Paragraphs =
                         [
-                            new WordsParagraphInput { Text = "Later sub", ListLevel = 2 },
-                            new WordsParagraphInput { Text = "Third", ListLevel = 1 },
+                            new WordsParagraphInput { Text = "Later sub", List = new WordsListInput { Level = 2 } },
+                            new WordsParagraphInput { Text = "Third", List = new WordsListInput { Level = 1 } },
                         ],
                     },
                     new InsertParagraphsOp
                     {
                         At = new WordsTarget { Find = "Second" },
                         Position = "before",
-                        Paragraphs = [new WordsParagraphInput { Text = "Between", ListLevel = 1 }],
+                        Paragraphs = [new WordsParagraphInput { Text = "Between", List = new WordsListInput { Level = 1 } }],
                     },
                 ],
             },
@@ -241,7 +241,7 @@ public sealed class WordsContractGapTests
                     {
                         At = new WordsTarget { Find = "First" },
                         Position = "after",
-                        Paragraphs = [new WordsParagraphInput { Text = "Detail", ListLevel = 2 }],
+                        Paragraphs = [new WordsParagraphInput { Text = "Detail", List = new WordsListInput { Level = 2 } }],
                     },
                 ],
             },
@@ -290,7 +290,7 @@ public sealed class WordsContractGapTests
                     {
                         At = new WordsTarget { Find = "Chapter" },
                         Position = "after",
-                        Paragraphs = [new WordsParagraphInput { Text = "First detail", ListLevel = 2 }],
+                        Paragraphs = [new WordsParagraphInput { Text = "First detail", List = new WordsListInput { Level = 2 } }],
                     },
                 ],
             },
@@ -346,8 +346,8 @@ public sealed class WordsContractGapTests
                         Position = markdown ? "after" : "before",
                         Paragraphs =
                         [
-                            new WordsParagraphInput { Text = "Detail one", ListLevel = 2 },
-                            new WordsParagraphInput { Text = "Detail two", ListLevel = 2 },
+                            new WordsParagraphInput { Text = "Detail one", List = new WordsListInput { Level = 2 } },
+                            new WordsParagraphInput { Text = "Detail two", List = new WordsListInput { Level = 2 } },
                         ],
                     },
                 ],
@@ -402,7 +402,7 @@ public sealed class WordsContractGapTests
                     {
                         At = new WordsTarget { Find = "Detail" },
                         Position = "after",
-                        Paragraphs = [new WordsParagraphInput { Text = "New detail", ListLevel = 2 }],
+                        Paragraphs = [new WordsParagraphInput { Text = "New detail", List = new WordsListInput { Level = 2 } }],
                     },
                 ],
             },
@@ -511,7 +511,7 @@ public sealed class WordsContractGapTests
 
         WordsReadResult read = WordsRead.Run(fixture.Session, new WordsReadRequest { Input = input, Content = "text" });
 
-        string? BreakAfter(string text) => read.Blocks.Single(block => block.Text == text).BreakAfter;
+        string? BreakAfter(string text) => read.Blocks.Single(block => block.Text == text).Break?.Kind;
         Assert.Equal("page", BreakAfter("Before page"));
         Assert.Null(BreakAfter("Starts a page"));
         Assert.Equal("section", BreakAfter("Ends section"));
@@ -534,7 +534,7 @@ public sealed class WordsContractGapTests
         WordsReadResult read = WordsRead.Run(fixture.Session, new WordsReadRequest { Input = input, Content = "full" });
 
         Assert.Equal(["Page one", "第五条 违约责任", "Body"], read.Blocks.Select(static block => block.Text));
-        Assert.Equal(["page", null, null], read.Blocks.Select(static block => block.BreakAfter));
+        Assert.Equal(["page", null, null], read.Blocks.Select(static block => block.Break?.Kind));
         Assert.Equal("第五条 违约责任", string.Concat(read.Blocks[1].Runs!.Select(static run => run.Text)));
     }
 }

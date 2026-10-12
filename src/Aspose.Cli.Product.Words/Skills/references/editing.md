@@ -127,7 +127,8 @@ style names another next style, such as a heading, it takes that style alone;
 it continues no list, page break before or tracked change, and at the start of
 the body or after a table it takes Normal.
 
-A paragraph with `listLevel` before or after a list item joins the list that
+A paragraph with a `list` (`{"level": 2}`, or with `"kind": "number"` for a
+new numbered list) before or after a list item joins the list that
 numbers that level there: the anchor's list when it defines the level, such as
 a new clause 2.3 after 2.2, else, as in lists created from Markdown, where each
 nesting level is a list of its own, the list of the nearest item at that level
@@ -203,12 +204,11 @@ omitted settings keep their values:
 
 `set_header` and `set_footer` replace the selected kind, including its fields,
 in one section or every section. Their content is exactly one of `markdown` or
-`paragraphs`, and these `paragraphs` are plain strings, one per paragraph, such
-as `["Contract C-2026-014", "Confidential"]`, which keep the alignment, style
-and font of the first paragraph they replace, including one a section
-continues from an earlier section, or take Word's Header or Footer style when
-there is none; `insert_paragraphs` instead takes
-`{"text": ..., "style": ...}` objects. Markdown takes the document's styles. Apply footer text before `set_page_numbers`.
+`paragraphs`, the same `{"text": ..., "style": ...}` objects `insert_paragraphs`
+takes, without `list`, such as `[{"text": "Contract C-2026-014"}]`. A paragraph
+without `style` keeps the alignment, style and font of the first paragraph it
+replaces, including one a section continues from an earlier section, or takes
+Word's Header or Footer style when there is none. Markdown takes the document's styles. Apply footer text before `set_page_numbers`.
 `import_sections` brings the appended document's sections with the headers
 and footers they define, and `formatting` decides only styles. A
 section that defines no header or footer of a kind continues the one before

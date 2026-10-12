@@ -1051,55 +1051,6 @@
       "rule": "C-R20",
       "cause": "variant-field-named-type",
       "actual": "chartInfo.type: a variant named type, not kind; validationInfo.type: a variant named type, not kind"
-    },
-    {
-      "case": "C-R20 | v2/words/ops field paragraphs",
-      "invariant": "C-R20",
-      "rule": "C-R20",
-      "cause": "words-field-types-disagree",
-      "actual": "array of object{listLevel,style,text} in insert_paragraphs; array of string in set_footer, set_header"
-    },
-    {
-      "case": "C-R21 | v2/words/ops#insert_break",
-      "invariant": "C-R21",
-      "rule": "C-R21",
-      "cause": "words-read-names-differ-from-op-fields",
-      "actual": "kind: read back as breakAfter"
-    },
-    {
-      "case": "C-R33 | v2/words/inspect-result names",
-      "invariant": "C-R33",
-      "rule": "C-R33",
-      "cause": "words-revision-names-and-dates",
-      "actual": "wordsRevisionData.date: a timestamp without format date-time"
-    },
-    {
-      "case": "C-R21 | v2/words/ops#insert_paragraphs",
-      "invariant": "C-R21",
-      "rule": "C-R21",
-      "cause": "words-state-not-read-back",
-      "actual": "paragraphs.listLevel: read back as level"
-    },
-    {
-      "case": "C-R21 | v2/words/ops#set_properties",
-      "invariant": "C-R21",
-      "rule": "C-R21",
-      "cause": "words-state-not-read-back",
-      "actual": "custom: read back as properties"
-    },
-    {
-      "case": "C-R21 | words insert_image reads back",
-      "invariant": "C-R21",
-      "rule": "C-R21",
-      "cause": "words-state-not-read-back",
-      "actual": "width 50 does not read back as width in words read"
-    },
-    {
-      "case": "C-R21 | words insert_table reads back",
-      "invariant": "C-R21",
-      "rule": "C-R21",
-      "cause": "words-state-not-read-back",
-      "actual": "tableStyle \"Table Normal\" does not read back as tableStyle in words inspect"
     }
   ]
 }

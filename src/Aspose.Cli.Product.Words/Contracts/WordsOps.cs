@@ -54,16 +54,28 @@ public sealed record WordsParagraphInput
 
     /// <summary>
     /// An existing paragraph style. Without it, the paragraph continues the paragraph before the
-    /// insertion point, or with listLevel the existing item at that level it joins, as Word's Enter does:
+    /// insertion point, or with list the existing item at that level it joins, as Word's Enter does:
     /// its indents, spacing, alignment and the run format of its last text, or after a heading
     /// the heading style's next style.
     /// </summary>
     [ReadBack("read-result.schema.json#/$defs/wordsBlockData/properties/style")]
     [MinLength(1)] public string? Style { get; init; }
 
-    /// <summary>Makes the paragraph a list item at this 1-based level. When the anchor is a list item, it joins the anchor's list if that list defines the level, else the list of the nearest item at this level under the same parent, and without style continues that list's nearest existing item at this level, if any, with the indents it sets on itself. When the anchor is no list item, or no such list exists, it joins one new bullet list.</summary>
+    /// <summary>Makes the paragraph a list item at the list's 1-based level. When the anchor is a list item, it joins the anchor's list if that list defines the level, else the list of the nearest item at this level under the same parent, and without style continues that list's nearest existing item at this level, if any, with the indents it sets on itself. When the anchor is no list item, or no such list exists, it joins one new list of the list's kind, bullets by default. A header or footer paragraph takes no list.</summary>
+    [MistakenFor("listLevel")]
+    public WordsListInput? List { get; init; }
+}
+
+/// <summary>The list a paragraph belongs to, as a read reports it.</summary>
+public sealed record WordsListInput
+{
+    /// <summary>The kind of a new list the paragraph starts; a list it joins keeps its own.</summary>
+    [ReadBack("read-result.schema.json#/$defs/wordsListData/properties/kind")]
+    [AllowedValues("bullet", "number")] public string? Kind { get; init; }
+
+    /// <summary>The paragraph's 1-based level in the list.</summary>
     [ReadBack("read-result.schema.json#/$defs/wordsListData/properties/level")]
-    [Minimum(1), Maximum(9)] public int? ListLevel { get; init; }
+    [Minimum(1), Maximum(9)] public required int Level { get; init; }
 }
 
 /// <summary>Page size, orientation, margins and column settings; omitted settings keep their values.</summary>
@@ -180,7 +192,7 @@ public sealed record InsertBreakOp : WordsOp
 
     [WordsPosition] public required string Position { get; init; }
 
-    [ReadBack("read-result.schema.json#/$defs/wordsBlockData/properties/breakAfter")]
+    [ReadBack("read-result.schema.json#/$defs/wordsBreakData/properties/kind")]
     [AllowedValues(typeof(WordsBreakKinds))] public required string Kind { get; init; }
 }
 
@@ -440,12 +452,22 @@ public abstract record HeaderFooterOp : WordsOp
     [ReadBack("inspect-result.schema.json#/$defs/wordsHeaderFooterData/properties/kind")]
     [AllowedValues(typeof(WordsHeaderFooterKinds))] public string Kind { get; init; } = WordsHeaderFooterKinds.Primary;
 
-    /// <summary>Plain paragraphs, one per item, in the paragraph and character format of the first paragraph they replace, such as its alignment, or in Word's Header or Footer style when there is none.</summary>
+    /// <summary>The paragraphs, one per item, in the paragraph and character format of the first paragraph they replace, such as its alignment, or in Word's Header or Footer style when there is none; a style given replaces that paragraph format.</summary>
     [ReadBack("inspect-result.schema.json#/$defs/wordsHeaderFooterData/properties/paragraphs")]
-    public IReadOnlyList<string>? Paragraphs { get; init; }
+    public IReadOnlyList<WordsParagraphInput>? Paragraphs { get; init; }
 
     [NotState]
     public string? Markdown { get; init; }
+
+    /// <inheritdoc />
+    protected override BoundedOperation Validated()
+    {
+        OperationInvalidException.Require(
+            Paragraphs?.All(static paragraph => paragraph.List is null) != false,
+            "a header or footer paragraph takes no list",
+            "Give the paragraph text and a style; insert list items in the body with insert_paragraphs.");
+        return this;
+    }
 }
 
 /// <summary>Replaces one kind of section header with paragraphs or with Markdown.</summary>
@@ -627,9 +649,39 @@ public sealed record SetPropertiesOp : WordsOp
     [ReadBack("inspect-result.schema.json#/properties/properties/additionalProperties")]
     public string? Keywords { get; init; }
 
-    /// <summary>Custom properties by name; a null value removes the property.</summary>
-    [ReadBack("inspect-result.schema.json#/properties/properties")]
+    /// <summary>
+    /// Custom properties by name; a null value removes the property. <c>words inspect --detail
+    /// properties</c> reports each under its name, with <c>/</c>, <c>%</c>, control characters and
+    /// leading and trailing white space escaped as UTF-8 <c>%XX</c>, and a custom property a
+    /// document already has under a standard key's name as <c>custom:</c> and that name. A name
+    /// must not be title, author, subject or keywords in any case, which the fields above set, and
+    /// must not start with <c>custom:</c>.
+    /// </summary>
+    [ReadBack("inspect-result.schema.json#/properties/properties/additionalProperties")]
     public IReadOnlyDictionary<string, string?>? Custom { get; init; }
+
+    /// <inheritdoc />
+    protected override BoundedOperation Validated()
+    {
+        foreach (string key in Custom?.Keys ?? [])
+        {
+            if (new[] { "title", "author", "subject", "keywords" }.FirstOrDefault(name => string.Equals(name, key, StringComparison.OrdinalIgnoreCase)) is { } standard)
+            {
+                throw new OperationInvalidException(
+                    $"custom must not name the standard property '{key}'",
+                    $"Set it with the {standard} field instead.");
+            }
+
+            if (key.StartsWith("custom:", StringComparison.Ordinal))
+            {
+                throw new OperationInvalidException(
+                    $"custom must not name '{key}': the prefix 'custom:' marks a read key, not a name",
+                    "Name the property without the 'custom:' prefix.");
+            }
+        }
+
+        return this;
+    }
 }
 
 /// <summary>Sets the text or image watermark, replacing any the document has; color and font apply to a text watermark only.</summary>

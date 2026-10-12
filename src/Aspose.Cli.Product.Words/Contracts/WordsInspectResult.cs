@@ -224,8 +224,21 @@ public sealed record WordsHeaderFooterData
     [AllowedValues(typeof(WordsHeaderFooterKinds))]
     public required string Kind { get; init; }
 
-    /// <summary>The visible text of each paragraph, as set_header and set_footer take it.</summary>
-    public required IReadOnlyList<string> Paragraphs { get; init; }
+    /// <summary>Each paragraph's visible text, style and list, as set_header and set_footer take them.</summary>
+    public required IReadOnlyList<WordsParagraphData> Paragraphs { get; init; }
+}
+
+/// <summary>A paragraph of a header or footer.</summary>
+public sealed record WordsParagraphData
+{
+    /// <summary>The visible text.</summary>
+    public required string Text { get; init; }
+
+    /// <summary>The name of the paragraph's style.</summary>
+    public string? Style { get; init; }
+
+    /// <summary>The list it belongs to; absent for a paragraph in none.</summary>
+    public WordsListData? List { get; init; }
 }
 
 /// <summary>Page margins in points.</summary>
@@ -323,10 +336,11 @@ public sealed record WordsRevisionData
     public required string Author { get; init; }
 
     /// <summary>
-    /// The date and time the document records, as ISO 8601 yyyy-MM-ddTHH:mm:ss without a time
-    /// zone; absent when none is recorded.
+    /// The date and time the document records for the change, reported as UTC; absent when none
+    /// is recorded. Word stores the author's local time in this field, so a date Word wrote can
+    /// be off from the true UTC by the author's time zone offset.
     /// </summary>
-    public string? Date { get; init; }
+    public DateTimeOffset? Date { get; init; }
 
     /// <summary>
     /// The story that holds the change, named as <c>words search</c> names its scopes; absent for
@@ -390,12 +404,9 @@ public sealed record WordsTableData
     [Minimum(0)]
     public required int ColumnCount { get; init; }
 
-    /// <summary>
-    /// The table style the table uses, accepted by insert_table's tableStyle; omitted for the default
-    /// Table Normal style.
-    /// </summary>
+    /// <summary>The table style the table uses, Table Normal by default, accepted by insert_table's tableStyle.</summary>
     [MinLength(1)]
-    public string? TableStyle { get; init; }
+    public required string TableStyle { get; init; }
 
     /// <summary>Whether the whole table keeps on one page when it fits, as set_table_pagination keepTogether sets it.</summary>
     public required bool KeepTogether { get; init; }

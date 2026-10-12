@@ -226,7 +226,7 @@ public sealed class WordsMarkdownImportTests
             Input = input,
             Batch = new WordsOpsBatch
             {
-                Ops = [new SetHeaderOp { Kind = kind, Paragraphs = ["Header"] }],
+                Ops = [new SetHeaderOp { Kind = kind, Paragraphs = [new WordsParagraphInput { Text = "Header" }] }],
             },
             Output = TestOutput.At(output),
         });
@@ -257,7 +257,7 @@ public sealed class WordsMarkdownImportTests
             Input = input,
             Batch = new WordsOpsBatch
             {
-                Ops = [new SetHeaderOp { Paragraphs = ["New header"] }, new SetFooterOp { Paragraphs = ["New footer"] }],
+                Ops = [new SetHeaderOp { Paragraphs = [new WordsParagraphInput { Text = "New header" }] }, new SetFooterOp { Paragraphs = [new WordsParagraphInput { Text = "New footer" }] }],
             },
             Output = TestOutput.At(output),
         });
@@ -298,7 +298,7 @@ public sealed class WordsMarkdownImportTests
             Input = input,
             Batch = new WordsOpsBatch
             {
-                Ops = [new SetHeaderOp { Paragraphs = ["New header"], Section = target }],
+                Ops = [new SetHeaderOp { Paragraphs = [new WordsParagraphInput { Text = "New header" }], Section = target }],
             },
             Output = TestOutput.At(output),
         });

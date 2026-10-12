@@ -123,8 +123,8 @@ public sealed class WordsSectionIdentityTests
                 [
                     new InsertSectionOp { At = 1, Position = "before" },
                     new DeleteSectionOp { Section = 2 },
-                    new SetHeaderOp { Section = 3, Paragraphs = ["Head"] },
-                    new SetFooterOp { Section = 3, Paragraphs = ["Foot"] },
+                    new SetHeaderOp { Section = 3, Paragraphs = [new WordsParagraphInput { Text = "Head" }] },
+                    new SetFooterOp { Section = 3, Paragraphs = [new WordsParagraphInput { Text = "Foot" }] },
                     new SetPageSetupOp { Section = 3, Orientation = "landscape" },
                     new SetPageNumbersOp { Section = 3, Start = 7 },
                     new SetTextOp { Target = new WordsTarget { Find = "Third" }, Text = "Safe" },
@@ -176,7 +176,7 @@ public sealed class WordsSectionIdentityTests
             Input = input,
             Batch = new WordsOpsBatch
             {
-                Ops = [new InsertSectionOp { At = 1, Position = "before" }, new SetHeaderOp { Paragraphs = ["All"] }],
+                Ops = [new InsertSectionOp { At = 1, Position = "before" }, new SetHeaderOp { Paragraphs = [new WordsParagraphInput { Text = "All" }] }],
             },
             Output = TestOutput.At(output),
         });

@@ -445,7 +445,7 @@ public sealed class WordsTableEditingTests : IClassFixture<WordsFixture>
         document.Save(input);
 
         IReadOnlyList<WordsTableData> tables = WordsInspect.Run(_fixture.Session, new WordsInspectRequest { Input = input, Details = ["tables"] }).Tables!;
-        Assert.Equal(["Table Grid", null], tables.Select(static table => table.TableStyle));
+        Assert.Equal(["Table Grid", "Table Normal"], tables.Select(static table => table.TableStyle));
 
         WordsEdit.Run(_fixture.Session, new WordsEditRequest
         {
@@ -458,7 +458,7 @@ public sealed class WordsTableEditingTests : IClassFixture<WordsFixture>
         });
 
         IReadOnlyList<WordsTableData> changed = WordsInspect.Run(_fixture.Session, new WordsInspectRequest { Input = output, Details = ["tables"] }).Tables!;
-        Assert.Equal(["Table Grid", null, "Table Grid"], changed.Select(static table => table.TableStyle));
+        Assert.Equal(["Table Grid", "Table Normal", "Table Grid"], changed.Select(static table => table.TableStyle));
         Assert.Equal(StyleIdentifier.TableGrid, new Document(output).GetChildNodes(NodeType.Table, true).Cast<Table>().Last().StyleIdentifier);
     }
 

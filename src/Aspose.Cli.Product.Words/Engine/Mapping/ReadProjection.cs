@@ -135,7 +135,7 @@ internal static class ReadProjection
                         Inline = shape.WrapType == WrapType.Inline,
                     }).ToArray(),
                 List = WordsReadBack.List(paragraph),
-                BreakAfter = BreakAfter(paragraph),
+                Break = BreakAfter(paragraph) is { } kind ? new WordsBreakData { Kind = kind } : null,
                 ContentTruncated = truncated,
             };
         }

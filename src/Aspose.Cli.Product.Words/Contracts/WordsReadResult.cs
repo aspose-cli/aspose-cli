@@ -74,11 +74,10 @@ public sealed record WordsBlockData
     public WordsListData? List { get; init; }
 
     /// <summary>
-    /// The break that follows this block: a page break, including one that starts the next
-    /// paragraph, or a section break after the last block of a section.
+    /// The break that follows this block, as insert_break inserts it: a page break, including one
+    /// that starts the next paragraph, or a section break after the last block of a section.
     /// </summary>
-    [AllowedValues(typeof(WordsBreakKinds))]
-    public string? BreakAfter { get; init; }
+    public WordsBreakData? Break { get; init; }
 
     /// <summary>A table's number of rows.</summary>
     [Minimum(0)]
@@ -121,6 +120,14 @@ public sealed record WordsBlockImageData
 
     /// <summary>Whether the image sits in the text line rather than floating.</summary>
     public required bool Inline { get; init; }
+}
+
+/// <summary>A break after a block.</summary>
+public sealed record WordsBreakData
+{
+    /// <summary>Whether it is a page break or a section break.</summary>
+    [AllowedValues(typeof(WordsBreakKinds))]
+    public required string Kind { get; init; }
 }
 
 /// <summary>The list a paragraph belongs to, as set_list sets it.</summary>

@@ -75,7 +75,7 @@ internal static class InspectCommand
                 WordsText.Block(revision.Block),
                 revision.Kind,
                 revision.Author,
-                revision.Date,
+                revision.Date?.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", System.Globalization.CultureInfo.InvariantCulture),
                 revision.Text,
             ]);
         ResultText.Table(surface, "images", result.Images, ["block", "name", "size"],
@@ -110,7 +110,7 @@ internal static class InspectCommand
         {
             foreach (WordsHeaderFooterData item in section.HeadersFooters)
             {
-                headersFooters.AddRow(TableText.Int(section.Section), item.Location, item.Kind, string.Join(" | ", item.Paragraphs));
+                headersFooters.AddRow(TableText.Int(section.Section), item.Location, item.Kind, string.Join(" | ", item.Paragraphs.Select(static paragraph => paragraph.Text)));
             }
         }
 
