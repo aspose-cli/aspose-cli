@@ -14,7 +14,14 @@ namespace Aspose.Cli.IntegrationTests;
 public sealed class EncryptionRemovedHintCliTests : IDisposable
 {
     private const string Variable = "DOC_PASSWORD";
-    private static readonly Dictionary<string, string?> Variables = new(StringComparer.Ordinal) { [Variable] = "hint-secret" };
+    private const string UserVariable = "DOC_USER_PASSWORD";
+    private const string OwnerVariable = "DOC_OWNER_PASSWORD";
+    private static readonly Dictionary<string, string?> Variables = new(StringComparer.Ordinal)
+    {
+        [Variable] = "hint-secret",
+        [UserVariable] = "hint-user",
+        [OwnerVariable] = "hint-owner",
+    };
     private readonly TempWorkspace _workspace = new();
 
     public void Dispose() => _workspace.Dispose();
@@ -59,6 +66,126 @@ public sealed class EncryptionRemovedHintCliTests : IDisposable
         Assert.True(encrypted.ExitCode == 0, encrypted.StdErr);
         Assert.Equal("PASSWORD_REQUIRED", JsonNode.Parse(Run("pdf", "inspect", "plain.pdf").StdErr)!["error"]!["code"]!.GetValue<string>());
         Assert.Equal(0, Run("pdf", "inspect", "plain.pdf", "--password-env", Variable).ExitCode);
+    }
+
+    /// <summary>
+    /// When the batch decrypts a PDF, an unencrypted output is what was asked for: the hint says
+    /// so and suggests no way to encrypt the output again but the operation that encrypts.
+    /// </summary>
+    [Category(TestCategory.Slow)]
+    [Fact]
+    public void DecryptedPdf_HintSaysTheOutputIsExpected()
+    {
+        CreateProtected();
+
+        CliResult result = Run("pdf", "edit", "protected.pdf", "--password-env", OwnerVariable, "--ops", """[{"op":"decrypt_document"}]""", "--out", "decrypted.pdf");
+
+        Assert.True(result.ExitCode == 0, result.StdErr);
+        string hint = Hint(result);
+        Assert.Contains("expected result", hint, StringComparison.Ordinal);
+        Assert.Contains("encrypt_document", hint, StringComparison.Ordinal);
+        Assert.DoesNotContain("--encrypt-env", hint, StringComparison.Ordinal);
+        Assert.DoesNotContain("must stay protected", hint, StringComparison.Ordinal);
+        Assert.DoesNotContain("`aspose-cli", hint, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// Pages imported from a PDF with an open password, a different owner password and only
+    /// printing allowed: the command line the hint names restores both passwords and the
+    /// permissions, and the hint claims no option keeps the source's password.
+    /// </summary>
+    [Category(TestCategory.Slow)]
+    [Fact]
+    public void ImportFromProtectedPdf_HintRestoresItsPasswordsAndPermissions()
+    {
+        CreateProtected();
+        JsonObject granted = Permissions("protected.pdf", UserVariable);
+
+        CliResult result = Run(
+            "pdf", "edit", "plain.pdf", "--ops",
+            $$$"""[{"op":"import_pages","path":"protected.pdf","pages":"1","at":1,"sourcePasswordEnv":"{{{UserVariable}}}"}]""",
+            "--out", "imported.pdf");
+
+        Assert.True(result.ExitCode == 0, result.StdErr);
+        string hint = Hint(result);
+        Assert.DoesNotContain("keeps the input's password", hint, StringComparison.Ordinal);
+        Assert.DoesNotContain("expected result", hint, StringComparison.Ordinal);
+        Match line = Regex.Match(hint, "`aspose-cli ([^`]+)`");
+        Assert.True(line.Success, hint);
+        CliResult encrypted = Run(Tokens(line.Groups[1].Value
+            .Replace("<user-password-env>", UserVariable, StringComparison.Ordinal)
+            .Replace("<owner-password-env>", OwnerVariable, StringComparison.Ordinal)));
+        Assert.True(encrypted.ExitCode == 0, encrypted.StdErr);
+
+        Assert.Equal("PASSWORD_REQUIRED", JsonNode.Parse(Run("pdf", "inspect", "imported.pdf").StdErr)!["error"]!["code"]!.GetValue<string>());
+        Assert.Equal(granted.ToJsonString(), Permissions("imported.pdf", UserVariable).ToJsonString());
+        Assert.True(Permissions("imported.pdf", OwnerVariable)["ownerAccess"]!.GetValue<bool>());
+    }
+
+    /// <summary>
+    /// A PDF with only an owner password opens without one and only restricts what may be done:
+    /// the hint of a split names the edit that restores that protection alone, which runs as
+    /// given, not an option that would make the parts need a password to open.
+    /// </summary>
+    [Category(TestCategory.Slow)]
+    [Fact]
+    public void RestrictedPdf_HintNamesAnOwnerPasswordOnly()
+    {
+        File.WriteAllText(_workspace.File("source.md"), "# One\n\nFirst part.\n");
+        Assert.Equal(0, Run("pdf", "create", "plain.pdf", "--from-text", "source.md").ExitCode);
+        // Readers may print and copy without the owner password.
+        Assert.Equal(0, Run(
+            "pdf", "edit", "plain.pdf", "--ops",
+            $$$"""[{"op":"encrypt_document","ownerPasswordEnv":"{{{OwnerVariable}}}","permissions":{"print":true,"copy":true}}]""",
+            "--out", "restricted.pdf").ExitCode);
+        JsonObject granted = Permissions("restricted.pdf", variable: null);
+
+        CliResult result = Run("pdf", "split", "restricted.pdf", "--by", "pages", "--out-dir", "parts");
+
+        Assert.True(result.ExitCode == 0, result.StdErr);
+        string hint = Hint(result);
+        Assert.DoesNotContain("keeps the input's password", hint, StringComparison.Ordinal);
+        Assert.DoesNotContain("expected result", hint, StringComparison.Ordinal);
+        Assert.Contains("owner password only", hint, StringComparison.Ordinal);
+        Match line = Regex.Match(hint, "`aspose-cli ([^`]+)`");
+        Assert.True(line.Success, hint);
+        Assert.DoesNotContain("userPasswordEnv", line.Value, StringComparison.Ordinal);
+        string part = Path.GetRelativePath(_workspace.Path, Directory.GetFiles(_workspace.File("parts"), "*.pdf").Order(StringComparer.Ordinal).First());
+        CliResult encrypted = Run(Tokens(line.Groups[1].Value
+            .Replace("<file>", part, StringComparison.Ordinal)
+            .Replace("<owner-password-env>", OwnerVariable, StringComparison.Ordinal)));
+        Assert.True(encrypted.ExitCode == 0, encrypted.StdErr);
+        // The part opens without a password and grants what the input granted.
+        JsonObject restored = Permissions(part, variable: null);
+        Assert.True(restored["print"]!.GetValue<bool>() && restored["copy"]!.GetValue<bool>() && !restored["modify"]!.GetValue<bool>(), restored.ToJsonString());
+        Assert.Equal(granted.ToJsonString(), restored.ToJsonString());
+    }
+
+    // protected.pdf: an open password, a different owner password, and only printing allowed.
+    private void CreateProtected()
+    {
+        File.WriteAllText(_workspace.File("source.md"), "# One\n\nFirst part.\n\n# Two\n\nSecond part.\n");
+        Assert.Equal(0, Run("pdf", "create", "plain.pdf", "--from-text", "source.md").ExitCode);
+        CliResult encrypted = Run(
+            "pdf", "edit", "plain.pdf", "--ops",
+            $$$"""[{"op":"encrypt_document","userPasswordEnv":"{{{UserVariable}}}","ownerPasswordEnv":"{{{OwnerVariable}}}","permissions":{"print":true}}]""",
+            "--out", "protected.pdf");
+        Assert.True(encrypted.ExitCode == 0, encrypted.StdErr);
+    }
+
+    private static string Hint(CliResult result) => JsonNode.Parse(result.StdOut)!["warnings"]!.AsArray()
+        .Single(static warning => warning!["code"]!.GetValue<string>() == "ENCRYPTION_REMOVED")!["hint"]!.GetValue<string>();
+
+    // The permissions of an encrypted PDF as inspect reports them, opened with the password the variable holds.
+    private JsonObject Permissions(string path, string? variable)
+    {
+        CliResult inspected = variable is null
+            ? Run("pdf", "inspect", path, "--detail", "permissions")
+            : Run("pdf", "inspect", path, "--detail", "permissions", "--password-env", variable);
+        Assert.True(inspected.ExitCode == 0, inspected.StdErr);
+        JsonNode result = JsonNode.Parse(inspected.StdOut)!;
+        Assert.True(result["input"]!["encrypted"]!.GetValue<bool>());
+        return result["permissions"]!.AsObject();
     }
 
     private CliResult Run(params string[] arguments) =>

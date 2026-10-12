@@ -352,6 +352,16 @@ fails, delete the issue's section, the code that names it and the test, then upd
   they redact and set it again after.
 - **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
 
+### PDF-TEXT-SEARCH-WRAPS-CONTENT
+
+- **Defect:** searching a page's text with `TextFragmentAbsorber` changes the page it only
+  reads: on a page that carries a stamp, it wraps the page's content in one more saved graphics
+  state (`q` … `Q`), which draws nothing different.
+- **CLI behavior:** none visible: an edit compares a page's content without its saved graphics
+  states, so a `redact_text` that matched nothing reports 0 with `OP_NO_EFFECT`, and one that
+  matched counts only the pages it removed text from.
+- **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
+
 ## Aspose.Slides.NET6.CrossPlatform 26.9.0
 
 ### SLIDES-AUTOFIT-RECT

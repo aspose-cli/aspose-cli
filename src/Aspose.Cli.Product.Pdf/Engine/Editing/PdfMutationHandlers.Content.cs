@@ -136,7 +136,7 @@ internal sealed partial class PdfMutationHandlers
                 // they are removed last first: each one still lies where the search found it.
                 foreach (TextFragment fragment in fragments.Reverse())
                 {
-                    Cover(page, fragment.Rectangle, fill).Redact();
+                    Redact(page, fragment.Rectangle, fill);
                 }
                 NoteMovedText(number, page, before);
             });
@@ -152,11 +152,82 @@ internal sealed partial class PdfMutationHandlers
         Unrotated(page, () =>
         {
             ILookup<string, Point> before = TextRuns(page);
-            Cover(page, area, ParseColor(operation.FillColor)).Redact();
+            Redact(page, area, ParseColor(operation.FillColor));
             NoteMovedText(operation.Page, page, before);
         });
         return default;
     }
+
+    /// <summary>
+    /// Removes the characters whose middle lies in the area and covers it. The engine removes
+    /// every character its redaction touches, so on lines set closer than their characters are
+    /// high it would also take the neighbouring lines' text the area only grazes. The cover is
+    /// drawn short of each such character, and a selected character the shortened cover no
+    /// longer touches is removed under a cover of its own at its middle.
+    /// </summary>
+    private static void Redact(Page page, Rectangle area, PdfColor fill)
+    {
+        Rectangle[] characters = Characters(page);
+        Rectangle[] selected = [.. characters.Where(character => Contains(area, Middle(character)))];
+        double left = area.LLX, bottom = area.LLY, right = area.URX, top = area.URY;
+        foreach (Rectangle other in characters.Where(character => !Contains(area, Middle(character))))
+        {
+            if (!Touches(other, left, bottom, right, top))
+            {
+                continue;
+            }
+
+            (double x, double y) = Middle(other);
+            double above = y > top ? (top - (other.LLY - Gap)) * (right - left) : double.MaxValue;
+            double below = y < bottom ? ((other.URY + Gap) - bottom) * (right - left) : double.MaxValue;
+            double before = x < left ? ((other.URX + Gap) - left) * (top - bottom) : double.MaxValue;
+            double after = x > right ? (right - (other.LLX - Gap)) * (top - bottom) : double.MaxValue;
+            double least = Math.Min(Math.Min(above, below), Math.Min(before, after));
+            if (least == above) { top = other.LLY - Gap; }
+            else if (least == below) { bottom = other.URY + Gap; }
+            else if (least == before) { left = other.URX + Gap; }
+            else { right = other.LLX - Gap; }
+        }
+
+        bool cover = left < right && bottom < top;
+        foreach (Rectangle character in selected.Where(character => !cover || !Touches(character, left, bottom, right, top)))
+        {
+            (double x, double y) = Middle(character);
+            double half = Math.Min(MiddleCover, Math.Min(character.Width, character.Height) / 4);
+            Cover(page, new Rectangle(x - half, y - half, x + half, y + half), fill).Redact();
+        }
+
+        if (cover)
+        {
+            Cover(page, new Rectangle(left, bottom, right, top), fill).Redact();
+        }
+    }
+
+    /// <summary>How far a shortened cover stays from a character it must not touch, in points.</summary>
+    private const double Gap = 0.01;
+
+    /// <summary>Half the side of the cover over the middle of one character, in points.</summary>
+    private const double MiddleCover = 0.25;
+
+    private static Rectangle[] Characters(Page page)
+    {
+        var absorber = new TextFragmentAbsorber();
+        page.Accept(absorber);
+        return [.. absorber.TextFragments
+            .SelectMany(static fragment => fragment.Segments)
+            .SelectMany(static segment => segment.Characters)
+            .Select(static character => character.Rectangle)
+            .Where(static rectangle => rectangle.Width > 0 && rectangle.Height > 0)];
+    }
+
+    private static (double X, double Y) Middle(Rectangle rectangle) =>
+        ((rectangle.LLX + rectangle.URX) / 2, (rectangle.LLY + rectangle.URY) / 2);
+
+    private static bool Contains(Rectangle area, (double X, double Y) point) =>
+        point.X > area.LLX && point.X < area.URX && point.Y > area.LLY && point.Y < area.URY;
+
+    private static bool Touches(Rectangle character, double left, double bottom, double right, double top) =>
+        character.LLX <= right && character.URX >= left && character.LLY <= top && character.URY >= bottom;
 
     /// <summary>
     /// Redacts with the page's rotation cleared: on a rotated page the engine would draw the

@@ -149,6 +149,62 @@ public sealed class PdfOutcomeTests
         Assert.Equal(op == "flatten_forms" ? "no-match" : "no-change", warning.Details["reason"]!.GetValue<string>());
     }
 
+    /// <summary>
+    /// A text redaction counts the pages it removed text from, and only those, on pages that also
+    /// carry stamps: a header, page numbers and a watermark.
+    /// </summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void RedactText_OnStampedPages_CountsOnlyThePagesItRemovedTextFrom(bool regex)
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.CreateDocument(pages: 2);
+        string stamped = Edit(fixture, input,
+            new AddHeaderTextOp { Text = "Internal", Placement = PdfPlacements.TopRight },
+            new AddPageNumbersOp { Text = "Page {n} of {N}", Placement = PdfPlacements.BottomCenter },
+            new AddWatermarkTextOp { Text = "DRAFT", FontSize = 60, Rotation = -45 }).Output!.Path;
+
+        PdfEditResult missed = Edit(fixture, stamped, new RedactTextOp { Find = regex ? @"ZZZ\d+" : "ZZZ", Regex = regex });
+        BoundedOperationOutcome none = Assert.Single(missed.Applied);
+        Assert.Equal(0, none.ItemsAffected);
+        Assert.Empty(none.Targets);
+        Assert.Single(missed.Warnings!, static warning => warning.Code.Name == "OP_NO_EFFECT");
+
+        PdfEditResult found = Edit(fixture, stamped, new RedactTextOp { Find = regex ? @"page\s1" : "page 1", Regex = regex });
+        BoundedOperationOutcome one = Assert.Single(found.Applied);
+        Assert.Equal(["page/1"], one.Targets);
+        Assert.Null(found.Warnings?.FirstOrDefault(static warning => warning.Code.Name == "OP_NO_EFFECT"));
+    }
+
+    [Fact]
+    public void RedactArea_OverNoCharacterMiddle_SaysWhyNothingWasRemoved()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.CreateDocument(pages: 1);
+
+        // A strip across the bottom of a line's characters, below their middles.
+        PdfRect line = Assert.Single(PdfSearch.Run(fixture.Session, new PdfSearchRequest
+        {
+            Input = input,
+            Query = new Aspose.Cli.Sdk.Text.SearchQuery(Aspose.Cli.Sdk.Text.TextSearch.Create("Portable", false, caseSensitive: true), 10, Scope: null),
+        }).Hits).Rect;
+        var strip = new PdfRectInput { X = line.X, Y = line.Y + (line.Height * 0.75), Width = line.Width, Height = line.Height / 8 };
+
+        PdfEditResult result = Edit(fixture, input, new RedactAreaOp { Page = 1, Rect = strip });
+
+        BoundedOperationOutcome outcome = Assert.Single(result.Applied);
+        Assert.Equal(0, outcome.ItemsAffected);
+        Warning warning = Assert.Single(result.Warnings!, static warning => warning.Code.Name == "OP_NO_EFFECT");
+        Assert.Equal("no-match", warning.Details!["reason"]!.GetValue<string>());
+        Assert.Contains("no character has its middle inside the area", warning.Message, StringComparison.Ordinal);
+        Assert.Single(PdfSearch.Run(fixture.Session, new PdfSearchRequest
+        {
+            Input = result.Output!.Path,
+            Query = new Aspose.Cli.Sdk.Text.SearchQuery(Aspose.Cli.Sdk.Text.TextSearch.Create("Portable", false, caseSensitive: true), 10, Scope: null),
+        }).Hits);
+    }
+
     [Fact]
     public void Encrypt_AgainWithTheSamePasswordsAndPermissionsChangesNothing()
     {

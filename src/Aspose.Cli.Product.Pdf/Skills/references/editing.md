@@ -133,8 +133,17 @@ the text that follows them on their lines:
   left it and removes its matches on a page from the last to the first, so
   every match is still where it was found.
 - To cover text with `redact_area`, take each rectangle from the `rect` of a
-  `pdf search` hit as it is, without a margin: a margin also removes the
-  characters it touches, such as the full-width `，` or `：` beside a value.
+  `pdf search` hit as it is. A redaction removes the characters whose middle
+  lies in its rectangle, `redact_text` those of its matches, and its cover
+  stops short of the characters around them, such as the lines above and
+  below; a margin that takes in the middle of the full-width `，` or `：`
+  beside a value removes it too. On closely set lines a margin also takes in
+  the middle of the next line's characters and removes them: do not widen the
+  area there. The cover can be smaller than the area, because it stops short
+  of every character kept, and a removed character it no longer reaches, as
+  in an area across lines or one that only grazes a character, gets a small
+  cover of its own. Confirm a redaction by `pdf search` no longer finding the
+  text, not by the black box.
   Order the areas of one line from right to left, because each removal moves
   the rest of the line and an area taken from the original would then miss
   part of the value it was meant to cover.

@@ -23,6 +23,9 @@ public sealed class OperationCatalog<TOp>
     private readonly Dictionary<string, string> _byMistakenName = new(StringComparer.OrdinalIgnoreCase);
     private readonly GeneratedOperationSchema _schema;
 
+    // Writes an operation document for a command line: a placeholder such as <VARIABLE> stays as it is.
+    private static readonly JsonSerializerOptions Readable = new() { Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
+
     /// <summary>
     /// Creates a vocabulary from its operation descriptors, published in ordinal order of their
     /// wire names. Only generated code calls this constructor.
@@ -117,14 +120,16 @@ public sealed class OperationCatalog<TOp>
     }
 
     /// <summary>
-    /// The operation document that encrypts the edited document with the password the environment
-    /// variable <paramref name="variable"/> holds: the <see cref="EncryptsOutputAttribute"/>
-    /// operation with every secret field naming that variable. Null when the vocabulary has no
-    /// such operation, or it requires a field that is not a secret.
+    /// The operation document that encrypts the edited document: the
+    /// <see cref="EncryptsOutputAttribute"/> operation with its secret fields, every one when
+    /// <paramref name="openPassword"/> and otherwise only those it requires, so that the document
+    /// keeps opening without a password where the operation allows it; and the
+    /// <paramref name="restrictions"/> fields. Each secret field names <paramref name="variable"/>,
+    /// or when it is null a placeholder of its own, such as <c>&lt;owner-password-env&gt;</c>.
+    /// Null when the vocabulary has no such operation, or it requires a field that is not a secret.
     /// </summary>
-    internal string? EncryptingDocument(string variable)
+    internal string? EncryptingDocument(string? variable, bool openPassword, JsonObject? restrictions)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(variable);
         if (_byName.Values.Select(static operation => operation.Record).FirstOrDefault(static record => record.EncryptsOutput) is not { } record
             || record.Properties.Any(static property => property.Required && !IsSecret(property)))
         {
@@ -132,14 +137,24 @@ public sealed class OperationCatalog<TOp>
         }
 
         var operation = new JsonObject { ["op"] = record.Name };
-        foreach (OperationProperty property in record.Properties.Where(IsSecret))
+        foreach (OperationProperty property in record.Properties.Where(property => IsSecret(property) && (openPassword || property.Required)))
         {
-            operation[property.Name] = variable;
+            operation[property.Name] = variable ?? Placeholder(property.Name);
         }
 
-        return new JsonObject { ["ops"] = new JsonArray(operation) }.ToJsonString();
+        foreach ((string name, JsonNode? value) in restrictions ?? [])
+        {
+            operation[name] = value?.DeepClone();
+        }
+
+        return new JsonObject { ["ops"] = new JsonArray(operation) }.ToJsonString(Readable);
 
         static bool IsSecret(OperationProperty property) => property.Constraints.OfType<SecretEnvAttribute>().Any();
+
+        // ownerPasswordEnv: <owner-password-env>.
+        static string Placeholder(string name) =>
+            "<" + string.Concat(name.Select(static character =>
+                char.IsUpper(character) ? "-" + char.ToLowerInvariant(character) : character.ToString())) + ">";
     }
 
     /// <summary>Returns the wire name of an operation of this vocabulary.</summary>
