@@ -85,7 +85,7 @@ public sealed class SlidesCoreWorkflowTests
             "# Revenue briefing\n\nRevenue grew in the current quarter.");
         string presentation = fixture.File("briefing.pptx");
 
-        SlidesCreateResult created = SlidesCreate.Run(fixture.Session, new NewPresentationRequest
+        SlidesCreateResult created = SlidesCreate.Run(fixture.Session, new SlidesCreateRequest
         {
             Output = TestOutput.At(presentation),
             MarkdownPath = markdown,
@@ -98,7 +98,7 @@ public sealed class SlidesCoreWorkflowTests
 
         SlidesSearchResult search = SlidesSearch.Run(
             fixture.Session,
-            new PresentationSearchRequest
+            new SlidesSearchRequest
             {
                 Input = searchable,
                 Query = new SearchQuery(TextSearch.Create("Slide", regex: false, caseSensitive: false), 1, Scope: null),
@@ -108,11 +108,11 @@ public sealed class SlidesCoreWorkflowTests
 
         SlidesExtractResult extracted = SlidesExtract.Run(
             fixture.Session,
-            new PresentationExtractRequest
+            new SlidesExtractRequest
             {
                 Input = searchable,
                 Output = new ResolvedDirectory(fixture.File("text")),
-                What = PresentationExtractKinds.Text,
+                What = SlidesExtractKinds.Text,
             });
         Assert.NotEmpty(extracted.Items);
         Assert.All(extracted.Items, item =>
@@ -138,7 +138,7 @@ public sealed class SlidesCoreWorkflowTests
 
         SlidesConvertResult result = fixture.Disclosed(session => SlidesExport.Convert(
             session,
-            new PresentationConvertRequest
+            new SlidesConvertRequest
             {
                 Input = input,
                 Output = TestOutput.At(output, format: format),

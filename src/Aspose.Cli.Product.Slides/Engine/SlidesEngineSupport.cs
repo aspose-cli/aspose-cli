@@ -22,10 +22,10 @@ internal static class SlidesEngineSupport
         }
     }
 
-    internal static SlideInfo ProjectInfo(ISlide slide, int number, IReadOnlyList<IComment> comments, bool preview)
+    internal static SlidesSlideInfo ProjectInfo(ISlide slide, int number, IReadOnlyList<IComment> comments, bool preview)
     {
         string? title = preview ? Title(slide) : null;
-        return new SlideInfo
+        return new SlidesSlideInfo
         {
             Slide = number,
             SlideId = slide.SlideId,
@@ -40,7 +40,7 @@ internal static class SlidesEngineSupport
         };
     }
 
-    internal static SlideData ProjectSlide(
+    internal static SlidesSlideData ProjectSlide(
         ISlide slide,
         int number,
         string scope,
@@ -48,13 +48,13 @@ internal static class SlidesEngineSupport
         IReadOnlyList<IComment> comments,
         ref int remaining)
     {
-        bool includeShapes = scope is PresentationReadScopes.Shapes or PresentationReadScopes.Full;
+        bool includeShapes = scope is SlidesReadScopes.Shapes or SlidesReadScopes.Full;
         bool contentTruncated = false;
         string? title = Take(Title(slide), ref remaining, ref contentTruncated);
-        var textBlocks = scope == PresentationReadScopes.Text ? new List<string>() : null;
-        var shapes = new List<SlideShapeData>();
+        var textBlocks = scope == SlidesReadScopes.Text ? new List<string>() : null;
+        var shapes = new List<SlidesShapeData>();
         int zOrder = 0;
-        bool full = scope == PresentationReadScopes.Full;
+        bool full = scope == SlidesReadScopes.Full;
         foreach (IShape shape in slide.Shapes)
         {
             string? sourceText = ShapeText(shape);
@@ -70,7 +70,7 @@ internal static class SlidesEngineSupport
             }
             if (includeShapes)
             {
-                shapes.Add(new SlideShapeData
+                shapes.Add(new SlidesShapeData
                 {
                     ShapeId = shape.OfficeInteropShapeId,
                     ShapeName = EmptyToNull(shape.Name),
@@ -86,7 +86,7 @@ internal static class SlidesEngineSupport
                     Backdrop = full ? SlidesReviewProjection.Backdrop(slide, shape) : null,
                     ChartTextColor = full ? SlidesReviewProjection.ChartTextColor(shape) : null,
                     EvaluationWatermark = IsEvaluationWatermark(shape),
-                    Rect = new SlideRect
+                    Rect = new SlidesRect
                     {
                         X = shape.X,
                         Y = shape.Y,
@@ -96,10 +96,10 @@ internal static class SlidesEngineSupport
                 });
             }
         }
-        string? notes = scope == PresentationReadScopes.Full || includeNotes
+        string? notes = scope == SlidesReadScopes.Full || includeNotes
             ? Take(Notes(slide), ref remaining, ref contentTruncated)
             : null;
-        var projectedComments = scope == PresentationReadScopes.Full ? new List<SlideCommentData>() : null;
+        var projectedComments = scope == SlidesReadScopes.Full ? new List<SlidesCommentData>() : null;
         if (projectedComments is not null)
         {
             foreach (IComment comment in comments.Where(comment => ReferenceEquals(comment.Slide, slide)))
@@ -109,14 +109,14 @@ internal static class SlidesEngineSupport
                     contentTruncated = true;
                     break;
                 }
-                projectedComments.Add(new SlideCommentData
+                projectedComments.Add(new SlidesCommentData
                 {
                     Author = comment.Author.Name,
                     Text = Take(comment.Text, ref remaining, ref contentTruncated) ?? string.Empty,
                 });
             }
         }
-        return new SlideData
+        return new SlidesSlideData
         {
             Slide = number,
             SlideId = slide.SlideId,
@@ -256,12 +256,12 @@ internal static class SlidesEngineSupport
     internal static bool CutByEvaluation(string? text) =>
         text?.Contains(EvaluationTruncationMarker, StringComparison.OrdinalIgnoreCase) == true;
 
-    internal static IReadOnlyList<SlideTextRunData>? Runs(
+    internal static IReadOnlyList<SlidesTextRunData>? Runs(
         IShape shape,
         ref int remaining,
         ref bool truncated)
     {
-        var runs = new List<SlideTextRunData>();
+        var runs = new List<SlidesTextRunData>();
         foreach (IParagraph paragraph in TextFrames(shape).SelectMany(static frame => frame.Paragraphs))
         {
             foreach (IPortion portion in paragraph.Portions)
@@ -279,7 +279,7 @@ internal static class SlidesEngineSupport
 
                 IBasePortionFormatEffectiveData effective =
                     portion.PortionFormat.GetEffective().AsIBasePortionFormatEffectiveData;
-                runs.Add(new SlideTextRunData
+                runs.Add(new SlidesTextRunData
                 {
                     Text = text,
                     Font = EmptyToNull(effective.LatinFont?.FontName),
@@ -317,8 +317,8 @@ internal static class SlidesEngineSupport
         return value.Length switch
         {
             0 => null,
-            <= SlideInfo.PreviewTextLength => value,
-            _ => value[..SlideInfo.PreviewTextLength],
+            <= SlidesSlideInfo.PreviewTextLength => value,
+            _ => value[..SlidesSlideInfo.PreviewTextLength],
         };
     }
 
@@ -343,12 +343,12 @@ internal static class SlidesEngineSupport
             .SelectMany(static author => author.Comments.Cast<IComment>())
             .ToArray();
 
-    internal static IReadOnlyList<PresentationMediaInfo> Media(Presentation presentation)
+    internal static IReadOnlyList<SlidesMediaInfo> Media(Presentation presentation)
     {
-        var media = new List<PresentationMediaInfo>();
+        var media = new List<SlidesMediaInfo>();
         foreach (IPPImage image in presentation.Images)
         {
-            media.Add(new PresentationMediaInfo
+            media.Add(new SlidesMediaInfo
             {
                 Index = media.Count + 1,
                 Type = "image",
@@ -359,7 +359,7 @@ internal static class SlidesEngineSupport
 
         foreach (IAudio audio in presentation.Audios)
         {
-            media.Add(new PresentationMediaInfo
+            media.Add(new SlidesMediaInfo
             {
                 Index = media.Count + 1,
                 Type = "audio",
@@ -370,7 +370,7 @@ internal static class SlidesEngineSupport
 
         foreach (IVideo video in presentation.Videos)
         {
-            media.Add(new PresentationMediaInfo
+            media.Add(new SlidesMediaInfo
             {
                 Index = media.Count + 1,
                 Type = "video",
@@ -405,7 +405,7 @@ internal static class SlidesEngineSupport
             ["title"] = EmptyToNull(properties.Title),
         };
 
-    internal static float RenderScale(Presentation presentation, PresentationRenderRequest request)
+    internal static float RenderScale(Presentation presentation, SlidesRenderRequest request)
     {
         if (request.Width is int width)
         {

@@ -22,7 +22,7 @@ public sealed class SlidesChartPresentationTests
         SlidesEngineFixture fixture, string name, string kind, params double[] values)
     {
         string output = fixture.File(name);
-        SlidesEdit.Run(fixture.Session, new PresentationEditRequest
+        SlidesEdit.Run(fixture.Session, new SlidesEditRequest
         {
             Input = fixture.CreatePresentation($"seed-{name}"),
             Batch = new SlidesOpsBatch
@@ -87,7 +87,7 @@ public sealed class SlidesChartPresentationTests
         Assert.Null(ReadAxisScale(seeded, "valAx", "min"));
         string output = fixture.File("updated-baseline.pptx");
 
-        SlidesEdit.Run(fixture.Session, new PresentationEditRequest
+        SlidesEdit.Run(fixture.Session, new SlidesEditRequest
         {
             Input = seeded,
             Batch = new SlidesOpsBatch
@@ -116,7 +116,7 @@ public sealed class SlidesChartPresentationTests
         Assert.Equal("0", ReadAxisScale(seeded, "valAx", "min"));
         string output = fixture.File("fixed-zero-updated.pptx");
 
-        SlidesEdit.Run(fixture.Session, new PresentationEditRequest
+        SlidesEdit.Run(fixture.Session, new SlidesEditRequest
         {
             Input = seeded,
             Batch = new SlidesOpsBatch
@@ -161,7 +161,7 @@ public sealed class SlidesChartPresentationTests
         SetValueAxisRange(seeded, 50, 200);
         string output = fixture.File("explicit.pptx");
 
-        SlidesEdit.Run(fixture.Session, new PresentationEditRequest
+        SlidesEdit.Run(fixture.Session, new SlidesEditRequest
         {
             Input = seeded,
             Batch = new SlidesOpsBatch
@@ -191,7 +191,7 @@ public sealed class SlidesChartPresentationTests
         Assert.False(HasLegend(seeded));
         string output = fixture.File("legend.pptx");
 
-        SlidesEdit.Run(fixture.Session, new PresentationEditRequest
+        SlidesEdit.Run(fixture.Session, new SlidesEditRequest
         {
             Input = seeded,
             Batch = new SlidesOpsBatch
@@ -231,7 +231,7 @@ public sealed class SlidesChartPresentationTests
         // The renderer draws labels that just fit edge to edge, as one run of text.
         using var fixture = new SlidesEngineFixture();
         string output = fixture.File($"{kind}-{width}.pptx");
-        SlidesEdit.Run(fixture.Session, new PresentationEditRequest
+        SlidesEdit.Run(fixture.Session, new SlidesEditRequest
         {
             Input = fixture.CreatePresentation($"seed-{kind}-{width}.pptx"),
             Batch = new SlidesOpsBatch
@@ -309,7 +309,7 @@ public sealed class SlidesChartPresentationTests
         }
         string output = fixture.File("preserved-layout.pptx");
 
-        SlidesEdit.Run(fixture.Session, new PresentationEditRequest
+        SlidesEdit.Run(fixture.Session, new SlidesEditRequest
         {
             Input = seeded,
             Batch = new SlidesOpsBatch
@@ -342,8 +342,8 @@ public sealed class SlidesChartPresentationTests
         // The built-in design's title slide is dark; a content slide is light, and a slide
         // given its own dark background is dark whatever its layout.
         string seed = fixture.File("contrast-seed.pptx");
-        SlidesCreate.Run(fixture.Session, new NewPresentationRequest { Output = TestOutput.At(seed) });
-        SlidesEdit.Run(fixture.Session, new PresentationEditRequest
+        SlidesCreate.Run(fixture.Session, new SlidesCreateRequest { Output = TestOutput.At(seed) });
+        SlidesEdit.Run(fixture.Session, new SlidesEditRequest
         {
             Input = seed,
             Batch = new SlidesOpsBatch
@@ -358,7 +358,7 @@ public sealed class SlidesChartPresentationTests
         });
         string output = fixture.File("contrast.pptx");
 
-        SlidesEdit.Run(fixture.Session, new PresentationEditRequest
+        SlidesEdit.Run(fixture.Session, new SlidesEditRequest
         {
             Input = seed,
             Batch = new SlidesOpsBatch
@@ -423,7 +423,7 @@ public sealed class SlidesChartPresentationTests
     private static string InsertTitledChart(SlidesEngineFixture fixture, string name, string kind)
     {
         string output = fixture.File(name);
-        SlidesEdit.Run(fixture.Session, new PresentationEditRequest
+        SlidesEdit.Run(fixture.Session, new SlidesEditRequest
         {
             Input = fixture.CreatePresentation("seed-" + name),
             Batch = new SlidesOpsBatch

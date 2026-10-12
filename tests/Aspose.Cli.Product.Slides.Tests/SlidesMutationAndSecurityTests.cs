@@ -25,7 +25,7 @@ public sealed class SlidesMutationAndSecurityTests
         {
             Ops = [new DeleteSlidesOp { Slides = "1" }, new DeleteSlidesOp { Slides = secondRange }],
         };
-        var request = new PresentationEditRequest
+        var request = new SlidesEditRequest
         {
             Input = input,
             Batch = batch,
@@ -38,7 +38,7 @@ public sealed class SlidesMutationAndSecurityTests
             Assert.Equal(["ok", "failed"], result.Applied.Select(static outcome => outcome.Status));
             Assert.Equal(1, result.Applied[0].ItemsAffected);
             Assert.Equal(0, result.Applied[1].ItemsAffected);
-            Assert.Equal(2, SlidesInfo.Run(fixture.Session, new PresentationInfoRequest { Input = output }).Presentation.SlideCount);
+            Assert.Equal(2, SlidesInfo.Run(fixture.Session, new SlidesInspectRequest { Input = output }).Presentation.SlideCount);
         }
         else
         {
@@ -57,14 +57,14 @@ public sealed class SlidesMutationAndSecurityTests
             password: "correct");
 
         CliException missing = Assert.Throws<CliException>(() =>
-            SlidesInfo.Run(fixture.Session, new PresentationInfoRequest { Input = input }));
+            SlidesInfo.Run(fixture.Session, new SlidesInspectRequest { Input = input }));
         CliException wrong = Assert.Throws<CliException>(() =>
             SlidesInfo.Run(
                 fixture.Session,
-                new PresentationInfoRequest { Input = input, Password = new Secret("wrong") }));
-        PresentationInfoResult opened = SlidesInfo.Run(
+                new SlidesInspectRequest { Input = input, Password = new Secret("wrong") }));
+        SlidesInspectResult opened = SlidesInfo.Run(
             fixture.Session,
-            new PresentationInfoRequest { Input = input, Password = new Secret("correct") });
+            new SlidesInspectRequest { Input = input, Password = new Secret("correct") });
 
         Assert.Equal(ErrorCodes.PasswordRequired, missing.Code);
         Assert.Equal(ErrorCodes.PasswordInvalid, wrong.Code);
@@ -82,7 +82,7 @@ public sealed class SlidesMutationAndSecurityTests
             "# Remote\n\n![hero](https://example.test/hero.png)");
 
         CliException error = Assert.Throws<CliException>(() =>
-            SlidesCreate.Run(fixture.Session, new NewPresentationRequest
+            SlidesCreate.Run(fixture.Session, new SlidesCreateRequest
             {
                 Output = TestOutput.At(output),
                 MarkdownPath = markdown,
@@ -114,7 +114,7 @@ public sealed class SlidesMutationAndSecurityTests
             ],
         };
 
-        Assert.ThrowsAny<Exception>(() => SlidesEdit.Run(fixture.Session, new PresentationEditRequest
+        Assert.ThrowsAny<Exception>(() => SlidesEdit.Run(fixture.Session, new SlidesEditRequest
         {
             Input = input,
             Batch = batch,
@@ -122,7 +122,7 @@ public sealed class SlidesMutationAndSecurityTests
         }));
         Assert.False(File.Exists(atomicOutput));
 
-        SlidesEditResult result = SlidesEdit.Run(fixture.Session, new PresentationEditRequest
+        SlidesEditResult result = SlidesEdit.Run(fixture.Session, new SlidesEditRequest
         {
             Input = input,
             Batch = batch,
@@ -152,7 +152,7 @@ public sealed class SlidesMutationAndSecurityTests
         string input = fixture.CreatePresentation();
         string output = fixture.File("encrypted.pptx");
 
-        SlidesEditResult result = SlidesEdit.Run(fixture.Session, new PresentationEditRequest
+        SlidesEditResult result = SlidesEdit.Run(fixture.Session, new SlidesEditRequest
         {
             Input = input,
             Batch = new SlidesOpsBatch
@@ -164,18 +164,18 @@ public sealed class SlidesMutationAndSecurityTests
         });
 
         Assert.Equal(ErrorCodes.PasswordRequired, Assert.Throws<CliException>(() =>
-            SlidesInfo.Run(fixture.Session, new PresentationInfoRequest { Input = output })).Code);
+            SlidesInfo.Run(fixture.Session, new SlidesInspectRequest { Input = output })).Code);
         Assert.Equal(3, SlidesInfo.Run(
             fixture.Session,
-            new PresentationInfoRequest { Input = output, Password = new Secret("correct") }).Presentation.SlideCount);
-        PresentationReadResult read = SlidesRead.Run(
+            new SlidesInspectRequest { Input = output, Password = new Secret("correct") }).Presentation.SlideCount);
+        SlidesReadResult read = SlidesRead.Run(
             fixture.Session,
-            new PresentationReadRequest
+            new SlidesReadRequest
             {
                 Input = output,
                 Password = new Secret("correct"),
                 Slides = PageRange.Parse("1"),
-                Scope = PresentationReadScopes.Full,
+                Scope = SlidesReadScopes.Full,
                 IncludeNotes = true,
             });
         Assert.NotNull(read.Slides[0].Notes);
@@ -191,7 +191,7 @@ public sealed class SlidesMutationAndSecurityTests
         // Evaluation mode refuses replace_text over the titles it reads cut short.
         bool licensed = fixture.LicenseState == Sdk.Licensing.LicenseState.Licensed;
 
-        SlidesEditResult result = SlidesEdit.Run(fixture.Session, new PresentationEditRequest
+        SlidesEditResult result = SlidesEdit.Run(fixture.Session, new SlidesEditRequest
         {
             Input = input,
             Batch = new SlidesOpsBatch
@@ -249,7 +249,7 @@ public sealed class SlidesMutationAndSecurityTests
             presentation.Save(input, Aspose.Slides.Export.SaveFormat.Pptx);
         }
 
-        SlidesEditResult result = SlidesEdit.Run(fixture.Session, new PresentationEditRequest
+        SlidesEditResult result = SlidesEdit.Run(fixture.Session, new SlidesEditRequest
         {
             Input = input,
             Batch = new SlidesOpsBatch { Ops = [new SetFooterOp { Text = "Confidential", ShowNumber = true }] },
@@ -300,7 +300,7 @@ public sealed class SlidesMutationAndSecurityTests
             presentation.Save(input, Aspose.Slides.Export.SaveFormat.Pptx);
         }
 
-        SlidesEditResult result = SlidesEdit.Run(fixture.Session, new PresentationEditRequest
+        SlidesEditResult result = SlidesEdit.Run(fixture.Session, new SlidesEditRequest
         {
             Input = input,
             Batch = new SlidesOpsBatch
@@ -346,9 +346,9 @@ public sealed class SlidesMutationAndSecurityTests
             }
         }
 
-        PresentationReadResult read = SlidesRead.Run(
+        SlidesReadResult read = SlidesRead.Run(
             fixture.Session,
-            new PresentationReadRequest { Input = output, Scope = PresentationReadScopes.Full });
+            new SlidesReadRequest { Input = output, Scope = SlidesReadScopes.Full });
         SlidesReviewAnalysis review = SlidesReviewAnalyzer.Analyze(
             read.Slides,
             slideWidth,
@@ -387,7 +387,7 @@ public sealed class SlidesMutationAndSecurityTests
         File.WriteAllBytes(picture, [(byte)'I', (byte)'I', 0x2A, 0x00, 0x08, 0x00, 0x00, 0x00]);
         string output = fixture.File("cut-image.out.pptx");
 
-        CliException error = Assert.Throws<CliException>(() => SlidesEdit.Run(fixture.Session, new PresentationEditRequest
+        CliException error = Assert.Throws<CliException>(() => SlidesEdit.Run(fixture.Session, new SlidesEditRequest
         {
             Input = input,
             Batch = new SlidesOpsBatch

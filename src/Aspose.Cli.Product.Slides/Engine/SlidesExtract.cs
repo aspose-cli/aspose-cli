@@ -10,7 +10,7 @@ namespace Aspose.Cli.Product.Slides.Engine;
 /// <summary>Bounded extraction of embedded media, speaker notes and slide text.</summary>
 internal static class SlidesExtract
 {
-    internal static SlidesExtractResult Run(SlidesSession session, PresentationExtractRequest request)
+    internal static SlidesExtractResult Run(SlidesSession session, SlidesExtractRequest request)
     {
         LicenseState state = session.Outputs.License;
         using LoadedPresentation loaded = session.Loader.Open(request.Input, request.Password);
@@ -20,7 +20,7 @@ internal static class SlidesExtract
         using ExtractionGuard guard = session.Outputs.BeginExtraction(request.Output.Path, request.Output.Overwrite);
         var items = new List<SlidesExtractedItem>();
 
-        if (request.What == PresentationExtractKinds.Media)
+        if (request.What == SlidesExtractKinds.Media)
         {
             ExtractMedia(loaded.Presentation, request.Slides is null ? null : slides, guard, items);
         }
@@ -30,7 +30,7 @@ internal static class SlidesExtract
             foreach (int number in slides)
             {
                 ISlide slide = loaded.Presentation.Slides[number - 1];
-                string? text = request.What == PresentationExtractKinds.Notes
+                string? text = request.What == SlidesExtractKinds.Notes
                     ? Notes(slide)
                     : string.Join(
                         "\n",
@@ -40,7 +40,7 @@ internal static class SlidesExtract
                     continue;
                 }
 
-                string suffix = request.What == PresentationExtractKinds.Notes ? "notes" : "text";
+                string suffix = request.What == SlidesExtractKinds.Notes ? "notes" : "text";
                 byte[] bytes = Encoding.UTF8.GetBytes(text);
                 items.Add(new SlidesExtractedItem
                 {

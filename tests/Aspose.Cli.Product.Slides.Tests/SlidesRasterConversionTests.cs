@@ -22,7 +22,7 @@ public sealed class SlidesRasterConversionTests(SlidesRasterConversionTests.Crea
             source.Save(input, SaveFormat.Pptx);
         }
         byte[] original = File.ReadAllBytes(input);
-        SlidesConvertResult result = SlidesExport.Convert(fixture.Session, new PresentationConvertRequest
+        SlidesConvertResult result = SlidesExport.Convert(fixture.Session, new SlidesConvertRequest
         {
             Input = input,
             Output = TestOutput.At(fixture.File("converted" + SlidesFormats.Definitions.ExtensionFor(format)), format: format),
@@ -58,7 +58,7 @@ public sealed class SlidesRasterConversionTests(SlidesRasterConversionTests.Crea
         }
         string output = fixture.File("oversized" + SlidesFormats.Definitions.ExtensionFor(format));
 
-        CliException error = Assert.Throws<CliException>(() => SlidesExport.Convert(fixture.Session, new PresentationConvertRequest
+        CliException error = Assert.Throws<CliException>(() => SlidesExport.Convert(fixture.Session, new SlidesConvertRequest
         {
             Input = input,
             Output = TestOutput.At(output, format: format),
@@ -111,7 +111,7 @@ public sealed class SlidesRasterConversionTests(SlidesRasterConversionTests.Crea
 
         if (convert)
         {
-            SlidesExport.Convert(fixture.Session, new PresentationConvertRequest
+            SlidesExport.Convert(fixture.Session, new SlidesConvertRequest
             {
                 Input = input,
                 Output = TestOutput.At(output, format: format),
@@ -119,7 +119,7 @@ public sealed class SlidesRasterConversionTests(SlidesRasterConversionTests.Crea
         }
         else
         {
-            SlidesExport.Render(fixture.Session, new PresentationRenderRequest
+            SlidesExport.Render(fixture.Session, new SlidesRenderRequest
             {
                 Input = input,
                 Output = TestOutput.At(output, format: format),

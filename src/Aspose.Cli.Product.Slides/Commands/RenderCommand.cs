@@ -9,7 +9,7 @@ namespace Aspose.Cli.Product.Slides.Commands;
 
 internal static class RenderCommand
 {
-    public static CommandDefinition<PresentationRenderRequest, SlidesRenderResult> Create()
+    public static CommandDefinition<SlidesRenderRequest, SlidesRenderResult> Create()
     {
         var slides = new PartSelectionOptions("slide");
         var dpi = new DpiOption();
@@ -42,7 +42,7 @@ internal static class RenderCommand
                     throw CliErrors.Usage(["SVG is vector output; omit --dpi and --width."]);
                 }
 
-                return new PresentationRenderRequest
+                return new SlidesRenderRequest
                 {
                     Input = standard.Input,
                     Output = output,

@@ -26,7 +26,7 @@ public sealed class SlidesTargetLivenessTests
                 new SetNotesOp { Slide = 2, Text = "Safe" },
             ],
         };
-        var request = new PresentationEditRequest
+        var request = new SlidesEditRequest
         {
             Input = input,
             Batch = batch,
@@ -61,7 +61,7 @@ public sealed class SlidesTargetLivenessTests
         using var fixture = new SlidesEngineFixture();
         string input = fixture.CreatePresentation();
         string output = fixture.File("mixed.pptx");
-        SlidesEditResult result = SlidesEdit.Run(fixture.Session, new PresentationEditRequest
+        SlidesEditResult result = SlidesEdit.Run(fixture.Session, new SlidesEditRequest
         {
             Input = input,
             Batch = new SlidesOpsBatch
@@ -98,7 +98,7 @@ public sealed class SlidesTargetLivenessTests
                 new SetNotesOp { Slide = 2, Text = "Safe" },
             ],
         };
-        var request = new PresentationEditRequest { Input = input, Batch = batch, Output = TestOutput.At(output), Options = new EditCommandOptions { BestEffort = bestEffort } };
+        var request = new SlidesEditRequest { Input = input, Batch = batch, Output = TestOutput.At(output), Options = new EditCommandOptions { BestEffort = bestEffort } };
         if (!bestEffort)
         {
             Assert.Throws<CliException>(() => SlidesEdit.Run(fixture.Session, request));
@@ -120,7 +120,7 @@ public sealed class SlidesTargetLivenessTests
         uint originalId;
         using (var source = new Presentation(input)) { originalId = source.Slides[0].SlideId; }
         string output = fixture.File("moved.pptx");
-        SlidesEdit.Run(fixture.Session, new PresentationEditRequest
+        SlidesEdit.Run(fixture.Session, new SlidesEditRequest
         {
             Input = input,
             Batch = new SlidesOpsBatch

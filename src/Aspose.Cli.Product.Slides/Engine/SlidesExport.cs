@@ -11,7 +11,7 @@ namespace Aspose.Cli.Product.Slides.Engine;
 /// <summary>Conversion and rendering of a presentation or selected slides.</summary>
 internal static class SlidesExport
 {
-    internal static SlidesConvertResult Convert(SlidesSession session, PresentationConvertRequest request)
+    internal static SlidesConvertResult Convert(SlidesSession session, SlidesConvertRequest request)
     {
         LicenseState state = session.Outputs.License;
         using LoadedPresentation loaded = session.Loader.Open(request.Input, request.Password);
@@ -33,7 +33,7 @@ internal static class SlidesExport
     private static IReadOnlyList<OutputInfo> ConvertOutputs(
         SlidesSession session,
         LoadedPresentation loaded,
-        PresentationConvertRequest request,
+        SlidesConvertRequest request,
         IReadOnlyList<int>? slides)
     {
         Presentation presentation = loaded.Presentation;
@@ -43,7 +43,7 @@ internal static class SlidesExport
             return RenderImages(
                     session,
                     loaded,
-                    new PresentationRenderRequest { Input = request.Input, Output = request.Output },
+                    new SlidesRenderRequest { Input = request.Input, Output = request.Output },
                     selected,
                     "slides-convert")
                 .Select(static item => item.Output).ToArray();
@@ -107,12 +107,12 @@ internal static class SlidesExport
         return warnings;
     }
 
-    internal static SlidesRenderResult Render(SlidesSession session, PresentationRenderRequest request)
+    internal static SlidesRenderResult Render(SlidesSession session, SlidesRenderRequest request)
     {
         LicenseState state = session.Outputs.License;
         using LoadedPresentation loaded = session.Loader.Open(request.Input, request.Password);
         IReadOnlyList<int> slides = RenderSelection.Resolve(request.Slides, loaded.Presentation.Slides.Count, SlidesDiagnostics.SlideNotFound, "slide");
-        IReadOnlyList<SlideRenderOutput> outputs = RenderImages(session, loaded, request, slides, "slides-render");
+        IReadOnlyList<SlidesSlideOutput> outputs = RenderImages(session, loaded, request, slides, "slides-render");
         return new SlidesRenderResult
         {
             Input = Source(request.Input, loaded),
@@ -126,10 +126,10 @@ internal static class SlidesExport
         };
     }
 
-    private static IReadOnlyList<SlideRenderOutput> RenderImages(
+    private static IReadOnlyList<SlidesSlideOutput> RenderImages(
         SlidesSession session,
         LoadedPresentation loaded,
-        PresentationRenderRequest request,
+        SlidesRenderRequest request,
         IReadOnlyList<int> slides,
         string transactionName)
     {
@@ -173,7 +173,7 @@ internal static class SlidesExport
 
         loaded.Resources.ThrowIfFailed();
         IReadOnlyList<PublishedFile> files = transaction.Commit();
-        return targets.Select((target, index) => new SlideRenderOutput
+        return targets.Select((target, index) => new SlidesSlideOutput
         {
             Slide = target.Number,
             SlideId = target.SlideId,

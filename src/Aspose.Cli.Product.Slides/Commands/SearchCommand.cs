@@ -6,18 +6,18 @@ namespace Aspose.Cli.Product.Slides.Commands;
 
 internal static class SearchCommand
 {
-    public static CommandDefinition<PresentationSearchRequest, SlidesSearchResult> Create()
+    public static CommandDefinition<SlidesSearchRequest, SlidesSearchResult> Create()
     {
         var search = new SearchOptions(new SearchScopeGrammar(
             "Search scope: the shape text, the speaker notes or both.",
-            PresentationSearchScopes.Values,
-            PresentationSearchScopes.All));
+            SlidesSearchScopes.Values,
+            SlidesSearchScopes.All));
         return new(
             "search",
             "Search presentation shape and speaker-notes text.",
             new CommandTraits { Input = SlidesInputs.Presentation },
             search.Options,
-            (parse, standard) => new PresentationSearchRequest
+            (parse, standard) => new SlidesSearchRequest
             {
                 Input = standard.Input,
                 Query = search.Read(parse),

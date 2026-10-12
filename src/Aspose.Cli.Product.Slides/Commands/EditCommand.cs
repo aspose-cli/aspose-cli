@@ -6,8 +6,8 @@ namespace Aspose.Cli.Product.Slides.Commands;
 
 internal static class EditCommand
 {
-    public static CommandDefinition<PresentationEditRequest, SlidesEditResult> Create() =>
-        EditDefinition.Create<SlidesOp, SlidesOpsBatch, PresentationEditRequest, SlidesEditResult>(
+    public static CommandDefinition<SlidesEditRequest, SlidesEditResult> Create() =>
+        EditDefinition.Create<SlidesOp, SlidesOpsBatch, SlidesEditRequest, SlidesEditResult>(
             new BoundedEditCommand<SlidesOp, SlidesOpsBatch>(new BoundedEditDefinition<SlidesOp, SlidesOpsBatch>
             {
                 Contracts = ProductJsonContext.Definition,
@@ -24,7 +24,7 @@ internal static class EditCommand
             (_, edit, standard) =>
             {
                 Secret? encryptPassword = standard.EncryptPassword();
-                return new PresentationEditRequest
+                return new SlidesEditRequest
                 {
                     Input = standard.Input,
                     Batch = edit.Batch,

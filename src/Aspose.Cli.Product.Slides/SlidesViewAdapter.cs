@@ -30,17 +30,17 @@ internal sealed class SlidesViewAdapter : IProductViewAdapter<SlidesSession>
         ViewRenderRequest request,
         ViewManifest rendered)
     {
-        PresentationInfoResult info = SlidesInfo.Run(session, new PresentationInfoRequest
+        SlidesInspectResult info = SlidesInfo.Run(session, new SlidesInspectRequest
         {
             Input = filePath,
             Password = request.Password,
         });
         int inspected = rendered.Parts.Count;
-        PresentationReadResult read = SlidesRead.Run(session, new PresentationReadRequest
+        SlidesReadResult read = SlidesRead.Run(session, new SlidesReadRequest
         {
             Input = filePath,
             Slides = inspected == 0 ? null : PageRange.Parse($"1-{inspected}"),
-            Scope = PresentationReadScopes.Full,
+            Scope = SlidesReadScopes.Full,
             MaxCharacters = 1_000_000,
             Password = request.Password,
         });

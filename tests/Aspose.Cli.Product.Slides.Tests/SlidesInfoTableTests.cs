@@ -13,21 +13,21 @@ public sealed class SlidesInfoTableTests
     [InlineData(TableFormat.Markdown, "### ")]
     public void Info_ShowsEveryRequestedDetailUnderItsHeadingAndTheMissingMarkWhenEmpty(TableFormat format, string heading)
     {
-        var result = new PresentationInfoResult
+        var result = new SlidesInspectResult
         {
             Input = new InputInfo { Path = "deck.pptx", Format = "pptx", SizeBytes = 10, Fingerprint = new FileFingerprint { Sha256 = new string('0', 64) }, Encrypted = false },
-            Presentation = new PresentationSummary
+            Presentation = new SlidesPresentationSummary
             {
                 SlideCount = 1, WidthPoints = 720, HeightPoints = 540, Orientation = "landscape",
                 MasterCount = 1, LayoutCount = 1, SectionCount = 1, CommentCount = 1, MediaCount = 1, HasMacros = false,
             },
             Slides = [],
-            Sections = [new PresentationSectionInfo { Name = "Intro", SectionId = "s1", StartSlide = 1 }],
-            Masters = [new PresentationMasterInfo { Name = "Office Theme", SlideCount = 1 }],
-            Layouts = [new PresentationLayoutInfo { Name = "Title Slide", Master = "Office Theme", SlideCount = 1 }],
-            Media = [new PresentationMediaInfo { Index = 0, Type = "image", ContentType = "image/png", SizeBytes = 2_048 }],
-            Notes = [new PresentationNotesInfo { Slide = 1, Present = true, CharacterCount = 42 }],
-            Comments = [new PresentationCommentInfo { Slide = 1, Author = "Ann", Text = "Check the date" }],
+            Sections = [new SlidesSectionInfo { Name = "Intro", SectionId = "s1", StartSlide = 1 }],
+            Masters = [new SlidesMasterInfo { Name = "Office Theme", SlideCount = 1 }],
+            Layouts = [new SlidesLayoutInfo { Name = "Title Slide", Master = "Office Theme", SlideCount = 1 }],
+            Media = [new SlidesMediaInfo { Index = 0, Type = "image", ContentType = "image/png", SizeBytes = 2_048 }],
+            Notes = [new SlidesNotesInfo { Slide = 1, Present = true, CharacterCount = 42 }],
+            Comments = [new SlidesCommentInfo { Slide = 1, Author = "Ann", Text = "Check the date" }],
             Fonts = ["Calibri", "Arial"],
             Properties = new Dictionary<string, string?>(),
         };

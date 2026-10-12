@@ -137,7 +137,7 @@ public sealed class SlidesRendererGoldenTests
     [Fact]
     public void Info_WithEmptyDetails_SaysMissingUnderEachHeading()
     {
-        PresentationInfoResult result = Info() with
+        SlidesInspectResult result = Info() with
         {
             Sections = [], Masters = [], Layouts = [], Media = [], Notes = [], Comments = [], Fonts = [],
             Properties = new Dictionary<string, string?>(),
@@ -203,8 +203,8 @@ public sealed class SlidesRendererGoldenTests
     [Fact]
     public void Read_PrintsEachSlideWithItsTextAndNotes()
     {
-        var rect = new SlideRect { X = 0, Y = 0, Width = 100, Height = 20 };
-        var result = new PresentationReadResult
+        var rect = new SlidesRect { X = 0, Y = 0, Width = 100, Height = 20 };
+        var result = new SlidesReadResult
         {
             Input = new InputInfo { Path = "deck.pptx", Format = "pptx", SizeBytes = 50_000, Fingerprint = new FileFingerprint { Sha256 = new string('0', 64) }, Encrypted = false },
             Window = new ResultWindow { Unit = "slide", Returned = 2, Total = 2, Truncated = false },
@@ -212,16 +212,16 @@ public sealed class SlidesRendererGoldenTests
             SlideCount = 2,
             Slides =
             [
-                new SlideData
+                new SlidesSlideData
                 {
                     Slide = 1, SlideId = 256, Title = "Welcome", Text = ["Welcome", "Agenda"],
-                    Shapes = [new SlideShapeData { ShapeId = 2, Type = "autoShape", Text = "Shape text", Rect = rect }],
+                    Shapes = [new SlidesShapeData { ShapeId = 2, Type = "autoShape", Text = "Shape text", Rect = rect }],
                     Notes = "Say hello", ContentTruncated = false,
                 },
-                new SlideData
+                new SlidesSlideData
                 {
                     Slide = 2, SlideId = 257,
-                    Shapes = [new SlideShapeData { ShapeId = 3, Type = "picture", Rect = rect }],
+                    Shapes = [new SlidesShapeData { ShapeId = 3, Type = "picture", Rect = rect }],
                     ContentTruncated = false,
                 },
             ],
@@ -267,42 +267,42 @@ public sealed class SlidesRendererGoldenTests
             text);
     }
 
-    private static PresentationInfoResult Info() => new()
+    private static SlidesInspectResult Info() => new()
     {
         Input = new InputInfo { Path = @"C:\decks\deck.pptx", Format = "pptx", SizeBytes = 50_000, Fingerprint = new FileFingerprint { Sha256 = new string('0', 64) }, Encrypted = false },
-        Presentation = new PresentationSummary
+        Presentation = new SlidesPresentationSummary
         {
             SlideCount = 3, WidthPoints = 960, HeightPoints = 540.004, Orientation = "landscape",
             MasterCount = 1, LayoutCount = 11, SectionCount = 2, CommentCount = 1, MediaCount = 1, HasMacros = false,
         },
         Slides =
         [
-            new SlideInfo { Slide = 1, SlideId = 256, Title = "Welcome", Layout = "Title Slide", ShapeCount = 2, Hidden = false, HasNotes = true, CommentCount = 1 },
-            new SlideInfo { Slide = 2, SlideId = 257, Name = "Slide 2", ShapeCount = 0, Hidden = true, HasNotes = false, CommentCount = 0 },
-            new SlideInfo { Slide = 3, SlideId = 258, ShapeCount = 5, Hidden = false, HasNotes = false, CommentCount = 0 },
+            new SlidesSlideInfo { Slide = 1, SlideId = 256, Title = "Welcome", Layout = "Title Slide", ShapeCount = 2, Hidden = false, HasNotes = true, CommentCount = 1 },
+            new SlidesSlideInfo { Slide = 2, SlideId = 257, Name = "Slide 2", ShapeCount = 0, Hidden = true, HasNotes = false, CommentCount = 0 },
+            new SlidesSlideInfo { Slide = 3, SlideId = 258, ShapeCount = 5, Hidden = false, HasNotes = false, CommentCount = 0 },
         ],
     };
 
-    private static PresentationInfoResult InfoWithDetails() => Info() with
+    private static SlidesInspectResult InfoWithDetails() => Info() with
     {
         Sections =
         [
-            new PresentationSectionInfo { Name = "Intro", SectionId = "{A1}", StartSlide = 1 },
-            new PresentationSectionInfo { Name = "Body", SectionId = "{B2}", StartSlide = 2 },
+            new SlidesSectionInfo { Name = "Intro", SectionId = "{A1}", StartSlide = 1 },
+            new SlidesSectionInfo { Name = "Body", SectionId = "{B2}", StartSlide = 2 },
         ],
-        Masters = [new PresentationMasterInfo { Name = "Office Theme", SlideCount = 3 }],
+        Masters = [new SlidesMasterInfo { Name = "Office Theme", SlideCount = 3 }],
         Layouts =
         [
-            new PresentationLayoutInfo { Name = "Title Slide", Master = "Office Theme", SlideCount = 1 },
-            new PresentationLayoutInfo { Name = "Orphan", Master = null, SlideCount = 0 },
+            new SlidesLayoutInfo { Name = "Title Slide", Master = "Office Theme", SlideCount = 1 },
+            new SlidesLayoutInfo { Name = "Orphan", Master = null, SlideCount = 0 },
         ],
         Media =
         [
-            new PresentationMediaInfo { Index = 0, Type = "image", ContentType = "image/png", SizeBytes = 2_048 },
-            new PresentationMediaInfo { Index = 1, Type = "audio", SizeBytes = 1_048_576 },
+            new SlidesMediaInfo { Index = 0, Type = "image", ContentType = "image/png", SizeBytes = 2_048 },
+            new SlidesMediaInfo { Index = 1, Type = "audio", SizeBytes = 1_048_576 },
         ],
-        Notes = [new PresentationNotesInfo { Slide = 1, Present = true, CharacterCount = 9 }],
-        Comments = [new PresentationCommentInfo { Slide = 1, Author = "Ann", Text = "Check the date" }],
+        Notes = [new SlidesNotesInfo { Slide = 1, Present = true, CharacterCount = 9 }],
+        Comments = [new SlidesCommentInfo { Slide = 1, Author = "Ann", Text = "Check the date" }],
         Fonts = ["Calibri", "Arial"],
         Properties = new Dictionary<string, string?> { ["Title"] = "Deck", ["Author"] = null, ["Company"] = "Aspose" },
     };
