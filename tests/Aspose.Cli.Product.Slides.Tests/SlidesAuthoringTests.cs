@@ -254,8 +254,8 @@ public sealed class SlidesAuthoringTests
         using var fixture = new SlidesEngineFixture();
         using var deck = new Presentation(SetBodyOfAContentSlide(
             fixture,
-            new SlidesParagraphInput { Text = "Top" },
-            new SlidesParagraphInput { Text = "Sub", Level = 2 }));
+            new SlidesParagraphInput { Text = "Top", List = new SlidesListInput { Level = 1 } },
+            new SlidesParagraphInput { Text = "Sub", List = new SlidesListInput { Kind = "bullet", Level = 2 } }));
         IAutoShape body = Assert.Single(SlidesPlaceholders.Content(deck.Slides[1]));
         Assert.Equal([0, 1], body.TextFrame.Paragraphs.Select(static paragraph => (int)paragraph.ParagraphFormat.Depth));
         Assert.All(
@@ -264,18 +264,20 @@ public sealed class SlidesAuthoringTests
     }
 
     [Fact]
-    public void SetBody_ParagraphWithoutBullet_IsAPlainParagraph()
+    public void SetBody_ParagraphWithoutList_IsAPlainParagraph_AndANumberedItemIsNumbered()
     {
         using var fixture = new SlidesEngineFixture();
         using var deck = new Presentation(SetBodyOfAContentSlide(
             fixture,
-            new SlidesParagraphInput { Text = "Note", Bullet = false },
-            new SlidesParagraphInput { Text = "Point" }));
+            new SlidesParagraphInput { Text = "Note" },
+            new SlidesParagraphInput { Text = "Point", List = new SlidesListInput { Level = 1 } },
+            new SlidesParagraphInput { Text = "Step", List = new SlidesListInput { Kind = "number", Level = 1 } }));
         IAutoShape body = Assert.Single(SlidesPlaceholders.Content(deck.Slides[1]));
         IParagraph[] paragraphs = [.. body.TextFrame.Paragraphs];
         Assert.Equal(BulletType.None, paragraphs[0].ParagraphFormat.GetEffective().Bullet.Type);
         Assert.True(paragraphs[0].ParagraphFormat.GetEffective().Indent >= 0);
         Assert.Equal(BulletType.NotDefined, paragraphs[1].ParagraphFormat.Bullet.Type);
+        Assert.Equal(BulletType.Numbered, paragraphs[2].ParagraphFormat.Bullet.Type);
     }
 
     [Fact]

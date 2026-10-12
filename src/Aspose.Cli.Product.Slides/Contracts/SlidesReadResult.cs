@@ -121,7 +121,7 @@ public sealed record SlidesShapeData
     public IReadOnlyList<SlidesTextRunData>? Runs { get; init; }
 
     /// <summary>
-    /// The paragraphs of a text shape with their outline level and bullet; only with
+    /// The paragraphs of a text shape with the list each one belongs to; only with
     /// <c>--content full</c>, and omitted for a shape without text of its own.
     /// </summary>
     public IReadOnlyList<SlidesParagraphData>? Paragraphs { get; init; }
@@ -243,12 +243,20 @@ public sealed record SlidesParagraphData
     /// <summary>The paragraph's text.</summary>
     public required string Text { get; init; }
 
-    /// <summary>The 1-based outline level, 1 for a top-level paragraph.</summary>
+    /// <summary>A list paragraph's list: bullets or numbers, and its 1-based level; omitted for a paragraph without either.</summary>
+    public SlidesListData? List { get; init; }
+}
+
+/// <summary>The list a paragraph belongs to, as set_body sets it.</summary>
+public sealed record SlidesListData
+{
+    /// <summary>Whether the paragraph shows a bullet or a number.</summary>
+    [AllowedValues("bullet", "number")]
+    public required string Kind { get; init; }
+
+    /// <summary>The paragraph's 1-based level in the list.</summary>
     [Minimum(1)]
     public required int Level { get; init; }
-
-    /// <summary>Whether the paragraph shows a bullet.</summary>
-    public required bool Bullet { get; init; }
 }
 
 /// <summary>A chart's kind, title and data.</summary>

@@ -20,7 +20,7 @@ public sealed class SlidesOpContractTests
     [InlineData("""{"op":"set_text","slide":1,"shapeName":"","text":"x"}""")]
     [InlineData("""{"op":"delete_slides","slides":"0"}""")]
     [InlineData("""{"op":"set_background","color":"#FFFFFF","path":"a.png"}""")]
-    [InlineData("""{"op":"set_body","slide":1,"paragraphs":[{"text":"x","level":10}]}""")]
+    [InlineData("""{"op":"set_body","slide":1,"paragraphs":[{"text":"x","list":{"level":10}}]}""")]
     [InlineData("""{"op":"insert_table","slide":1,"rect":{"x":0,"y":0,"width":10,"height":10},"rowCount":101,"columnCount":1}""")]
     [InlineData("""{"op":"set_transition","slides":"1"}""")]
     [InlineData("""{"op":"format_shape","slide":1,"shapeId":2,"style":{}}""")]

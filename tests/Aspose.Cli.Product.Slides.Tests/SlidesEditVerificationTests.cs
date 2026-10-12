@@ -183,7 +183,7 @@ public sealed class SlidesEditVerificationTests
                     {
                         Id = "body",
                         Slide = 3,
-                        Paragraphs = [new SlidesParagraphInput { Text = "First" }, new SlidesParagraphInput { Text = "Inner", Level = 2 }],
+                        Paragraphs = [new SlidesParagraphInput { Text = "First" }, new SlidesParagraphInput { Text = "Inner", List = new SlidesListInput { Kind = "number", Level = 2 } }],
                     },
                     new InsertSlideOp { Id = "insert" },
                     new ImportSlidesOp { Id = "import", Path = other },

@@ -38,7 +38,7 @@ public sealed class SlidesModuleTests
             new SlidesContracts.SetBodyOp
             {
                 Slide = 1,
-                Paragraphs = [new SlidesParagraphInput { Text = "Revenue grew", Level = 1 }],
+                Paragraphs = [new SlidesParagraphInput { Text = "Revenue grew", List = new SlidesListInput { Level = 1 } }],
             },
             new SlidesContracts.SetTextOp { Slide = 1, ShapeId = 4, Text = "Updated" },
             new SlidesReplaceTextOp { Find = "Q3", Replace = "Q4", Scope = "all" },

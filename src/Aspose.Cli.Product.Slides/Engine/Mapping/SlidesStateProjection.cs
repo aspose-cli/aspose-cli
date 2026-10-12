@@ -21,7 +21,7 @@ internal static class SlidesStateProjection
     internal static string? Line(IShape shape) =>
         OneColor(SlidesMutationHandlers.Lines(shape).Select(static line => (line.FillType, line.SolidFillColor.Color)));
 
-    /// <summary>The paragraphs of a shape's own text frame with their 1-based level and whether they show a bullet.</summary>
+    /// <summary>The paragraphs of a shape's own text frame with the list, bullets or numbers at a 1-based level, each one belongs to.</summary>
     internal static IReadOnlyList<SlidesParagraphData>? Paragraphs(IShape shape, ref int remaining, ref bool truncated)
     {
         if (shape is not IAutoShape { TextFrame: { } frame } || string.IsNullOrWhiteSpace(frame.Text))
@@ -36,8 +36,12 @@ internal static class SlidesStateProjection
             paragraphs.Add(new SlidesParagraphData
             {
                 Text = SlidesEngineSupport.Take(paragraph.Text, ref remaining, ref truncated) ?? string.Empty,
-                Level = format.Depth + 1,
-                Bullet = format.Bullet.Type != BulletType.None,
+                List = format.Bullet.Type switch
+                {
+                    BulletType.None or BulletType.NotDefined => null,
+                    BulletType.Numbered => new SlidesListData { Kind = "number", Level = format.Depth + 1 },
+                    _ => new SlidesListData { Kind = "bullet", Level = format.Depth + 1 },
+                },
             });
         }
 

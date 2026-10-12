@@ -76,6 +76,13 @@ internal static class SlidesAuthoring
             {
                 AlignWrappedLines(paragraph);
             }
+            else if (item.List == ParagraphList.Bullet
+                && paragraph.ParagraphFormat.GetEffective().Bullet.Type is BulletType.None or BulletType.NotDefined)
+            {
+                // The placeholder defines no bullet at this level, so the item states its own.
+                paragraph.ParagraphFormat.Bullet.Type = BulletType.Symbol;
+                paragraph.ParagraphFormat.Bullet.Char = '•';
+            }
         }
     }
 
@@ -178,6 +185,9 @@ internal enum ParagraphList
 {
     /// <summary>Bullets as the placeholder's level defines them.</summary>
     Inherit,
+
+    /// <summary>The placeholder level's bullet, or a bullet of its own where the level defines none.</summary>
+    Bullet,
 
     /// <summary>A plain paragraph without a bullet.</summary>
     None,
