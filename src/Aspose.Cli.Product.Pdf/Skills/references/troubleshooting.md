@@ -1,49 +1,54 @@
 # PDF troubleshooting
 
-The error envelope, exit codes and shared codes are in
-`aspose-cli docs troubleshooting`. What PDF adds to them:
+The error envelope and the shared codes are in `aspose-cli docs troubleshooting`;
+`aspose-cli capabilities pdf` lists every PDF code with its exit code. This page
+adds what to do about the PDF cases that need more than the error's hint.
 
-- `FORM_XFA_UNSUPPORTED`: XFA can be inspected but not filled, flattened or
-  exported as AcroForm data.
-- `PDFA_CONVERSION_FAILED`: `error.details.problems` lists what the conversion
-  could not fix; a font the document uses that is missing here also fails it.
-- `FEATURE_UNSUPPORTED` naming a network address or script: HTML, Markdown and SVG
-  image inputs, and the stylesheets and SVG files they load, may not name any
-  network address, including hyperlinks and addresses in text, or contain script,
-  event-handler attributes or `javascript:` URLs, because the PDF engine requests
-  them, or runs the script, before the CLI can refuse them. Remove the address, or
-  save the resource beside the input and reference it by relative path. For
-  trusted HTML, `--allow-network-resources` lets the import fetch them, and
-  `aspose-cli words convert page.html --to pdf` converts without any request.
-- `NETWORK_RESOURCES_REQUESTED`: `--allow-network-resources` let the HTML importer
-  request the listed addresses, and the output contains what they returned; review
-  it. Combine the option with `--timeout`: each unanswered request can hold the
-  import for up to 100 seconds. Every source other than `--from-html` refuses
-  the option with `OPTION_INVALID`.
-- `FEATURE_UNSUPPORTED` naming a Markdown reference: every image, stylesheet and
-  SVG file the Markdown could load, and those they reference, must be an existing
-  ordinary file beneath the Markdown file's directory. Absolute paths, `file:`
-  URIs, `..` escapes (also percent- or entity-encoded), links and junctions,
-  missing files and non-raster `data:` URIs are refused, including in code
-  examples. Run the command from the Markdown file's directory.
-- `REMOTE_RESOURCES_BLOCKED`: a local HTML image or stylesheet was missing or
-  outside the HTML directory and was left out; review the incomplete output.
-  Relative paths resolve against the HTML file's directory; keep resources
-  beneath it rather than widening access.
-- `PROTECTION_NOT_ENFORCED`: the input was opened without its owner password
-  (with its user password, or with none when it has no open password) and its
-  permissions (`pdf inspect --detail permissions`) forbid a change, but the
-  engine does not enforce them, so the edit was applied (or, with `--dry-run`,
-  would be). Filling fields needs `fillForms`, `annotate` or `modify`; inserting,
-  moving, rotating or deleting pages and adding bookmarks need `assemble` or
-  `modify`; other changes need `modify`; `encrypt_document` and `decrypt_document` always need the
-  owner password. Confirm the owner authorized the change. The hint says whether
-  the output keeps the input's encryption, is decrypted, carries the
-  passwords and permissions of an `encrypt_document` operation, or opens only with the
-  `--encrypt` password. A merge or split that keeps an input's open password
-  warns it too, saying which passwords and permissions the output has
-  ([encryption](forms-security.md#encryption)).
-- `ENCRYPTION_REMOVED`: an input was encrypted and the output is not, as after a
-  convert to a document or text format, a `decrypt_document`, or a merge or split of an
-  input with only an owner password. Images and extracted files never warn. Pass `--encrypt-env` where the
-  output must stay protected ([encryption](forms-security.md#encryption)).
+## Sources that can reach the network
+
+HTML, Markdown and SVG image inputs, and the stylesheets and SVG files they load,
+may not name any network address, including hyperlinks and addresses in text, or
+contain script, event-handler attributes or `javascript:` URLs: the PDF engine
+requests them, or runs the script, before the CLI can refuse them, so the input is
+refused with `FEATURE_UNSUPPORTED`. Remove the address, or save the resource beside
+the input and reference it by relative path. For trusted HTML,
+`--allow-network-resources` lets the import fetch them, and the result lists the
+requested addresses as `NETWORK_RESOURCES_REQUESTED`; review what they returned.
+Combine the option with `--timeout`, since each unanswered request can hold the
+import for up to 100 seconds. `aspose-cli words convert page.html --to pdf`
+converts without any request.
+
+Every image, stylesheet and SVG file Markdown could load, and those they reference,
+must be an existing ordinary file beneath the Markdown file's directory: absolute
+paths, `file:` URIs, `..` escapes (also percent- or entity-encoded), links and
+junctions, missing files and non-raster `data:` URIs are refused, including in code
+examples. Run the command from the Markdown file's directory. A local HTML image or
+stylesheet that is missing or outside the HTML directory is left out with
+`REMOTE_RESOURCES_BLOCKED`; keep resources beneath that directory rather than
+widening access, and review the incomplete output.
+
+## Forms and archives
+
+XFA forms can be inspected but not filled, flattened or exported as AcroForm data
+(`FORM_XFA_UNSUPPORTED`). A PDF/A conversion that cannot make the document conform
+fails with `PDFA_CONVERSION_FAILED` and lists what it could not fix in
+`error.details.problems`; a font the document uses that is missing here also fails
+it ([PDF/A](pdf-standards.md)).
+
+## Permissions and encryption
+
+An input opened without its owner password (with its user password, or with none
+when it has no open password) whose permissions (`pdf inspect --detail permissions`)
+forbid a change is still changed, because the engine does not enforce them, and the
+result warns `PROTECTION_NOT_ENFORCED`. Filling fields needs `fillForms`, `annotate`
+or `modify`; inserting, moving, rotating or deleting pages and adding bookmarks need
+`assemble` or `modify`; other changes need `modify`; `encrypt_document` and
+`decrypt_document` always need the owner password. Confirm the owner authorized the
+change; the hint says which encryption the output carries. A merge or split that
+keeps an input's open password warns too.
+
+An output that loses its input's encryption, as after a convert to a document or
+text format, a `decrypt_document`, or a merge or split of an input with only an
+owner password, warns `ENCRYPTION_REMOVED`; images and extracted files never warn.
+Pass `--encrypt-env` where the output must stay protected
+([encryption](forms-security.md#encryption)).

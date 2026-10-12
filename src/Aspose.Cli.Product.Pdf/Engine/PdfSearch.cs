@@ -64,7 +64,7 @@ internal static class PdfSearch
                     Page = number,
                     Text = fragment.Text,
                     Context = Context(current - 1, fragment.Text),
-                    Rect = ToContractRect(page, fragment.Rectangle),
+                    Rect = ToContractTextRect(page, fragment.Rectangle),
                     Occurrence = current,
                 }))
                 {

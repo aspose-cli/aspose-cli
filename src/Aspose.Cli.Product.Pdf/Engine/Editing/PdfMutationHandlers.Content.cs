@@ -54,7 +54,7 @@ internal sealed partial class PdfMutationHandlers
             {
                 Background = operation.Layer == PdfLayers.Under,
                 Opacity = operation.Opacity,
-                Zoom = operation.Scale,
+                Zoom = operation.ScalePercent / 100,
                 HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment = VerticalAlignment.Center,
             };
@@ -121,22 +121,25 @@ internal sealed partial class PdfMutationHandlers
         foreach (int number in pages)
         {
             Page page = _document.Pages[number];
-            TextFragmentCollection fragments = MatchText(page, operation.Find, operation.Regex, caseSensitive: true,
-                static reason => new OperationInvalidException(reason));
-            if (fragments.Count == 0)
+            Unrotated(page, () =>
             {
-                continue;
-            }
+                TextFragmentCollection fragments = MatchText(page, operation.Find, operation.Regex, caseSensitive: true,
+                    static reason => new OperationInvalidException(reason));
+                if (fragments.Count == 0)
+                {
+                    return;
+                }
 
-            ILookup<string, Point> before = TextRuns(page);
-            // PDF-REDACT-TEXT-SHIFT moves the text that follows a removed match in the content
-            // stream, wherever it is drawn. The search returns the matches in that order, so
-            // they are removed last first: each one still lies where the search found it.
-            foreach (TextFragment fragment in fragments.Reverse())
-            {
-                Cover(page, fragment.Rectangle, fill).Redact();
-            }
-            NoteMovedText(number, page, before);
+                ILookup<string, Point> before = TextRuns(page);
+                // PDF-REDACT-TEXT-SHIFT moves the text that follows a removed match in the content
+                // stream, wherever it is drawn. The search returns the matches in that order, so
+                // they are removed last first: each one still lies where the search found it.
+                foreach (TextFragment fragment in fragments.Reverse())
+                {
+                    Cover(page, fragment.Rectangle, fill).Redact();
+                }
+                NoteMovedText(number, page, before);
+            });
         }
 
         return default;
@@ -145,10 +148,33 @@ internal sealed partial class PdfMutationHandlers
     public ValueTuple Apply(RedactAreaOp operation)
     {
         Page page = PageAt(_document, operation.Page);
-        ILookup<string, Point> before = TextRuns(page);
-        Cover(page, ToPdfRect(page, operation.Rect), ParseColor(operation.FillColor)).Redact();
-        NoteMovedText(operation.Page, page, before);
+        Rectangle area = ToPdfRect(page, operation.Rect);
+        Unrotated(page, () =>
+        {
+            ILookup<string, Point> before = TextRuns(page);
+            Cover(page, area, ParseColor(operation.FillColor)).Redact();
+            NoteMovedText(operation.Page, page, before);
+        });
         return default;
+    }
+
+    /// <summary>
+    /// Redacts with the page's rotation cleared: on a rotated page the engine would draw the
+    /// cover in the unrotated page's space and remove the text under it in the rotated one
+    /// (PDF-REDACT-ROTATED). Upright the two are one, the space annotations are placed in.
+    /// </summary>
+    private static void Unrotated(Page page, Action redact)
+    {
+        Rotation rotation = page.Rotate;
+        page.Rotate = Rotation.None;
+        try
+        {
+            redact();
+        }
+        finally
+        {
+            page.Rotate = rotation;
+        }
     }
 
     /// <summary>

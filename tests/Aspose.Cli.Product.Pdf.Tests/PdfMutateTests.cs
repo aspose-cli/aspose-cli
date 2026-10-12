@@ -6,6 +6,7 @@ using Aspose.Pdf;
 using Aspose.Pdf.Annotations;
 using Aspose.Pdf.Forms;
 using Aspose.Pdf.Text;
+using SkiaSharp;
 using Xunit;
 
 namespace Aspose.Cli.Product.Pdf.Tests;
@@ -52,49 +53,104 @@ public sealed class PdfMutateTests
     }
 
     [Theory]
-    [InlineData(0)]
-    [InlineData(90)]
-    [InlineData(180)]
-    [InlineData(270)]
-    public void CroppedPageCoordinates_SearchAndRedactionAgreeAfterRotation(int angle)
+    [InlineData(0, false)]
+    [InlineData(90, false)]
+    [InlineData(180, false)]
+    [InlineData(270, false)]
+    [InlineData(0, true)]
+    [InlineData(90, true)]
+    [InlineData(180, true)]
+    [InlineData(270, true)]
+    public void SearchRect_IsWhereTheMatchIsDrawnOnTheVisiblePageAndRedactionsCoverIt(int angle, bool cropped)
     {
         using var fixture = new PdfEngineFixture();
-        string input = fixture.File($"coordinates-{angle}.pdf");
+        string input = fixture.File($"coordinates-{angle}-{cropped}.pdf");
         using (var document = new Document())
         {
             Page page = document.Pages.Add();
-            page.CropBox = new Rectangle(20, 30, 400, 600);
-            page.Rotate = angle switch { 90 => Rotation.on90, 180 => Rotation.on180, 270 => Rotation.on270, _ => Rotation.None };
-            var builder = new TextBuilder(page);
-            builder.AppendText(new TextFragment("SECRET") { Position = new Position(80, 500) });
-            builder.AppendText(new TextFragment("PUBLIC") { Position = new Position(80, 300) });
+            page.SetPageSize(595, 842);
+            // PUBLIC is drawn first: a redaction moves the text drawn after the match.
+            page.Paragraphs.Add(Text("PUBLIC", 80, 300));
+            page.Paragraphs.Add(Text("SECRET", 80, 500));
             document.Save(input);
         }
-        PdfRect rect = Assert.Single(PdfSearch.Run(fixture.Session, Find(input, "SECRET")).Hits).Rect;
-        double width = angle is 90 or 270 ? 570 : 380;
-        double height = angle is 90 or 270 ? 380 : 570;
-        PdfPageInfo geometry = Assert.Single(PdfInfo.Run(fixture.Session, new PdfInspectRequest { Input = input, IncludePreview = true }).Pages!);
-        Assert.Equal(width, geometry.PageSize.Width);
-        Assert.Equal(height, geometry.PageSize.Height);
-        Assert.InRange(rect.X, 0, width - rect.Width);
-        Assert.InRange(rect.Y, 0, height - rect.Height);
-        string output = fixture.File($"coordinates-{angle}.out.pdf");
-        PdfEdit.Run(fixture.Session, new PdfEditRequest
+
+        // As rotate_pages and crop_pages leave it: the content stays where it was drawn.
+        using (var document = new Document(input))
         {
-            Input = input,
-            Batch = new PdfOpsBatch
+            Page page = document.Pages[1];
+            if (cropped)
             {
-                Ops = [new RedactAreaOp
+                page.CropBox = new Rectangle(20, 30, 400, 600);
+            }
+            page.Rotate = angle switch { 90 => Rotation.on90, 180 => Rotation.on180, 270 => Rotation.on270, _ => Rotation.None };
+            document.Save(input);
+        }
+
+        PdfRect rect = Assert.Single(PdfSearch.Run(fixture.Session, Find(input, "SECRET")).Hits).Rect;
+        PdfRectInput area = new() { X = rect.X - 1, Y = rect.Y - 1, Width = rect.Width + 2, Height = rect.Height + 2 };
+        using SKBitmap original = RenderPage(fixture, input);
+        foreach (PdfOp op in new PdfOp[]
+        {
+            new RedactAreaOp { Page = 1, Rect = area, FillColor = "#FFFFFF" },
+            new RedactTextOp { Find = "SECRET", FillColor = "#FFFFFF" },
+        })
+        {
+            string output = fixture.File($"coordinates-{angle}-{cropped}-{op.GetType().Name}.pdf");
+            PdfEdit.Run(fixture.Session, new PdfEditRequest
+            {
+                Input = input,
+                Batch = new PdfOpsBatch { Ops = [op] },
+                Output = TestOutput.At(output),
+            });
+            string text = PdfRead.Run(fixture.Session, new PdfReadRequest { Input = output }).Pages[0].Text;
+            Assert.True(
+                !text.Contains("SECRET", StringComparison.Ordinal) && text.Contains("PUBLIC", StringComparison.Ordinal),
+                $"After {op.GetType().Name} at {angle} degrees the page reads: {text}");
+
+            // At 72 dpi a pixel is a point: what the redaction cleared is the match's ink, and it
+            // lies in the rectangle search reported.
+            using SKBitmap redacted = RenderPage(fixture, output);
+            Assert.Equal((original.Width, original.Height), (redacted.Width, redacted.Height));
+            (int Left, int Top, int Right, int Bottom)? cleared = ClearedInk(original, redacted);
+            Assert.True(cleared is not null, $"{op.GetType().Name} cleared no ink at {angle} degrees.");
+            (int left, int top, int right, int bottom) = cleared.Value;
+            string where = $"{op.GetType().Name} cleared {left},{top}-{right},{bottom}; search said {rect.X:0.#},{rect.Y:0.#} {rect.Width:0.#}x{rect.Height:0.#}";
+            Assert.True(left >= rect.X - 1 && top >= rect.Y - 1 && right <= rect.X + rect.Width + 1 && bottom <= rect.Y + rect.Height + 1, where);
+            Assert.True(left <= rect.X + 6 && top <= rect.Y + 6 && right >= rect.X + rect.Width - 6 && bottom >= rect.Y + rect.Height - 6, where);
+        }
+
+        static TextFragment Text(string text, double x, double y)
+        {
+            var fragment = new TextFragment(text) { Position = new Position(x, y) };
+            fragment.TextState.FontSize = 20;
+            return fragment;
+        }
+
+        static SKBitmap RenderPage(PdfEngineFixture fixture, string pdf)
+        {
+            string png = fixture.File(Path.GetFileNameWithoutExtension(pdf) + ".png");
+            PdfRender.Run(fixture.Session, new PdfRenderRequest { Input = pdf, Output = TestOutput.At(png, format: "png"), Dpi = 72 });
+            return SKBitmap.Decode(png);
+        }
+
+        static (int Left, int Top, int Right, int Bottom)? ClearedInk(SKBitmap before, SKBitmap after)
+        {
+            int left = int.MaxValue, top = int.MaxValue, right = -1, bottom = -1;
+            for (int y = 0; y < before.Height; y++)
+            {
+                for (int x = 0; x < before.Width; x++)
                 {
-                    Page = 1,
-                    Rect = new PdfRectInput { X = rect.X - 1, Y = rect.Y - 1, Width = rect.Width + 2, Height = rect.Height + 2 },
-                }],
-            },
-            Output = TestOutput.At(output),
-        });
-        string text = PdfRead.Run(fixture.Session, new PdfReadRequest { Input = output }).Pages[0].Text;
-        Assert.DoesNotContain("SECRET", text, StringComparison.Ordinal);
-        Assert.Contains("PUBLIC", text, StringComparison.Ordinal);
+                    if (IsInk(before.GetPixel(x, y)) && !IsInk(after.GetPixel(x, y)))
+                    {
+                        (left, top, right, bottom) = (Math.Min(left, x), Math.Min(top, y), Math.Max(right, x), Math.Max(bottom, y));
+                    }
+                }
+            }
+            return right < 0 ? null : (left, top, right + 1, bottom + 1);
+        }
+
+        static bool IsInk(SKColor color) => color.Red < 128 && color.Green < 128 && color.Blue < 128;
     }
 
     [Fact]
@@ -170,7 +226,7 @@ public sealed class PdfMutateTests
                 Ops =
                 [
                     new AddWatermarkTextOp { Text = "DRAFT", Pages = "1" },
-                    new AddWatermarkImageOp { Path = image, Pages = "2", Scale = 0.1 },
+                    new AddWatermarkImageOp { Path = image, Pages = "2", ScalePercent = 10 },
                     new AddPageNumbersOp { Text = "{n}/{N}" },
                     new AddHeaderTextOp { Text = "Header" },
                     new AddFooterTextOp { Text = "Footer" },

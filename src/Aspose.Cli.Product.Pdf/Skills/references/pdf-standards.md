@@ -39,10 +39,9 @@ appearances the profile rejects, such as the radio groups of a form made with
 `flatten_forms` edit, which ends their fillability, then convert again. PDF/A must
 embed every font, so a font missing here fails the conversion; pass the
 delivered fonts with `--font-dir`. `pdf validate` checks only the selected
-profile, not signatures, redaction or permissions. Each `issues` entry gives
-the `clause` it breaks, its `severity`, `page` and `message`, and whether a
-`pdf convert` to the profile can fix it (`convertible`); a file that does not
-conform exits 8. `pdf inspect` reports only the profile a file
+profile, not signatures, redaction or permissions, and completes with exit 8 when
+the file does not conform; `aspose-cli schema v2/pdf/validate-result` describes
+each issue, including whether a conversion to the profile can fix it. `pdf inspect` reports only the profile a file
 declares, as `pdf.pdfaProfile`; a declaration is not a check.
 
 ## Other formats
@@ -66,10 +65,9 @@ plain lines and reports the embedded fonts as missing, so neither shows what a
 reader sees. Review the source PDF instead, then open the HTML in a browser and
 compare the pages.
 
-Table extraction is best effort. Extracted tables carry page and rectangle
-context, but `confidence` is a fixed 0.5, not a calibrated score; check the
-values against the source. Each table is a UTF-8 CSV file without a byte order
-mark; add `--bom` when a person will open it in Excel, which otherwise reads
+Table extraction is best effort: each extracted table names the page it comes
+from, and nothing scores how well it was recognized, so check the values against
+the source. Each table is a UTF-8 CSV file without a byte order mark; add `--bom` when a person will open it in Excel, which otherwise reads
 non-English text in the system code page.
 
 The CLI does not linearize PDFs; `pdf inspect` reports an existing file's

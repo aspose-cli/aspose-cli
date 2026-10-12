@@ -104,8 +104,10 @@ weaken a check or remove a supported operation to make a test pass.
   and a `Validated()` override, stated in its summary, for the rest. Summaries are the schema's
   descriptions. Every field states its read-back (D9): `[ReadBack("<schema id>#<definition>/<property>")]`
   for state a read reports, `[NotReadBack]` for state none reports yet, `[ReadBackByPosition]`,
-  or `[NotState]` for a selector, a source or a parameter; the vocabulary's `Addresses` names the
-  address fields, and a record field may classify the fields of its record instead.
+  or `[NotState]` for a selector, a source or a parameter, including the drawing parameters of an
+  operation that draws content into the page and leaves no object the file can be read back by;
+  the vocabulary's `Addresses` names the address fields, and a record field may classify the
+  fields of its record instead.
   `APCLI012` rejects an incomplete contract.
 - **Results** are records passing their relative schema id and version to `ResultEnvelope`,
   `EngineResultEnvelope` (adds `license`) or `WindowedResultEnvelope` (adds `window`), listed in

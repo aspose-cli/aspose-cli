@@ -1046,13 +1046,6 @@
       "actual": "cells object{bottom,footer,header,left,right,top}; words object{bottom,left,right,top}"
     },
     {
-      "case": "C-R20 | ops field scale across products",
-      "invariant": "C-R20",
-      "rule": "C-R20",
-      "cause": "ops-field-types-differ-across-products",
-      "actual": "cells integer; pdf number"
-    },
-    {
       "case": "C-R31 | v2/cells/render-result outputs",
       "invariant": "C-R31",
       "rule": "C-R31",
@@ -1114,69 +1107,6 @@
       "rule": "C-R21",
       "cause": "page-size-read-as-width-and-height-points",
       "actual": "setup.size \"letter\" does not read back as widthPoints in words inspect"
-    },
-    {
-      "case": "C-R21 | pdf crop_pages reads back",
-      "invariant": "C-R21",
-      "rule": "C-R21",
-      "cause": "pdf-read-names-differ-from-op-fields",
-      "actual": "rect {\"x\":10,\"y\":10,\"width\":500,\"height\":700} does not read back as cropBox in pdf inspect"
-    },
-    {
-      "case": "C-R21 | v2/pdf/ops#crop_pages",
-      "invariant": "C-R21",
-      "rule": "C-R21",
-      "cause": "pdf-read-names-differ-from-op-fields",
-      "actual": "rect: read back as cropBox; rect: writes object{height,width,x,y}, reads object{bottom,left,right,top}"
-    },
-    {
-      "case": "C-R21 | v2/pdf/ops#add_attachment",
-      "invariant": "C-R21",
-      "rule": "C-R21",
-      "cause": "pdf-state-not-read-back",
-      "actual": "description: no read reports it"
-    },
-    {
-      "case": "C-R21 | v2/pdf/ops#add_footer_text",
-      "invariant": "C-R21",
-      "rule": "C-R21",
-      "cause": "pdf-state-not-read-back",
-      "actual": "text: no read reports it; placement: no read reports it; font: no read reports it"
-    },
-    {
-      "case": "C-R21 | v2/pdf/ops#add_header_text",
-      "invariant": "C-R21",
-      "rule": "C-R21",
-      "cause": "pdf-state-not-read-back",
-      "actual": "text: no read reports it; placement: no read reports it; font: no read reports it"
-    },
-    {
-      "case": "C-R21 | v2/pdf/ops#add_page_numbers",
-      "invariant": "C-R21",
-      "rule": "C-R21",
-      "cause": "pdf-state-not-read-back",
-      "actual": "text: no read reports it; placement: no read reports it; start: no read reports it; font: no read reports it"
-    },
-    {
-      "case": "C-R21 | v2/pdf/ops#add_stamp_image",
-      "invariant": "C-R21",
-      "rule": "C-R21",
-      "cause": "pdf-state-not-read-back",
-      "actual": "rect: no read reports it"
-    },
-    {
-      "case": "C-R21 | v2/pdf/ops#add_watermark_image",
-      "invariant": "C-R21",
-      "rule": "C-R21",
-      "cause": "pdf-state-not-read-back",
-      "actual": "opacity: no read reports it; scale: no read reports it; layer: no read reports it"
-    },
-    {
-      "case": "C-R21 | v2/pdf/ops#add_watermark_text",
-      "invariant": "C-R21",
-      "rule": "C-R21",
-      "cause": "pdf-state-not-read-back",
-      "actual": "text: no read reports it; font: no read reports it; fontSize: no read reports it; color: no read reports it; opacity: no read reports it; rotation: no read reports it; layer: no read reports it"
     },
     {
       "case": "C-R01 | cells",
@@ -1590,13 +1520,6 @@
       "rule": "C-R30",
       "cause": "words-targets-not-unit-address",
       "actual": "targets outside <unit>/<address>: add_section document; add_watermark document; set_default_font document; set_footer document; set_header document; set_page_numbers document; set_page_setup document; set_properties document"
-    },
-    {
-      "case": "C-R21 | v2/pdf/ops#add_hyperlink",
-      "invariant": "C-R21",
-      "rule": "C-R21",
-      "cause": "pdf-state-not-read-back",
-      "actual": "rect: no read reports it; url: no read reports it"
     }
   ]
 }

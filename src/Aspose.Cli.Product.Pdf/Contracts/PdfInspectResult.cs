@@ -11,6 +11,9 @@ public sealed record PdfInspectResult() : EngineResultEnvelope("inspect-result",
     /// <summary>The most bookmarks <see cref="Outline"/> lists.</summary>
     public const int OutlineLimit = 200;
 
+    /// <summary>The most links <see cref="Links"/> lists.</summary>
+    public const int LinkLimit = 500;
+
     /// <summary>The most form fields <see cref="PdfFormInfo.Fields"/> lists.</summary>
     public const int FieldLimit = 500;
 
@@ -37,6 +40,13 @@ public sealed record PdfInspectResult() : EngineResultEnvelope("inspect-result",
     /// </summary>
     [MaxItems(OutlineLimit)]
     public IReadOnlyList<PdfOutlineItem>? Outline { get; init; }
+
+    /// <summary>
+    /// The links to web addresses in page order, with <c>--detail links</c>; a
+    /// <c>LIST_TRUNCATED</c> warning names the total when there are more.
+    /// </summary>
+    [MaxItems(LinkLimit)]
+    public IReadOnlyList<PdfLinkInfo>? Links { get; init; }
 
     /// <summary>The interactive form and its fields' values, with <c>--detail forms</c>.</summary>
     public PdfFormInfo? Forms { get; init; }
@@ -143,11 +153,17 @@ public sealed record PdfPageInfo
     [Minimum(0), Maximum(270), MultipleOf(90)]
     public required double Rotation { get; init; }
 
-    /// <summary>The page's media box, the full physical page.</summary>
-    public required PdfBox MediaBox { get; init; }
+    /// <summary>
+    /// The page's media box, the full physical page as it is seen, with the page's rotation: the
+    /// frame the crop box is measured in, so it is always at 0,0.
+    /// </summary>
+    public required PdfRect MediaBox { get; init; }
 
-    /// <summary>The page's crop box, the region a viewer shows.</summary>
-    public required PdfBox CropBox { get; init; }
+    /// <summary>
+    /// The page's crop box, the region a viewer shows, in points from the top-left corner of the
+    /// media box as it is seen, with the page's rotation, as <c>crop_pages</c> measures.
+    /// </summary>
+    public required PdfRect CropBox { get; init; }
 }
 
 /// <summary>One page-label range, addressed by its 1-based starting page.</summary>
@@ -167,22 +183,6 @@ public sealed record PdfPageLabelInfo
     /// <summary>The number the range's first page shows.</summary>
     [Minimum(0)]
     public required int StartingValue { get; init; }
-}
-
-/// <summary>A PDF rectangle in points, using left, bottom, right and top coordinates.</summary>
-public sealed record PdfBox
-{
-    /// <summary>The left edge.</summary>
-    public required double Left { get; init; }
-
-    /// <summary>The bottom edge.</summary>
-    public required double Bottom { get; init; }
-
-    /// <summary>The right edge.</summary>
-    public required double Right { get; init; }
-
-    /// <summary>The top edge.</summary>
-    public required double Top { get; init; }
 }
 
 /// <summary>One bookmark of the document's outline.</summary>
@@ -274,6 +274,20 @@ public sealed record PdfFormField
     public PdfRect? Rect { get; init; }
 }
 
+/// <summary>One link to a web address.</summary>
+public sealed record PdfLinkInfo
+{
+    /// <summary>The 1-based page the link is on.</summary>
+    [Minimum(1)]
+    public required int Page { get; init; }
+
+    /// <summary>The link's area on its page, in points from the top-left corner of the visible page.</summary>
+    public required PdfRect Rect { get; init; }
+
+    /// <summary>The web address the link opens.</summary>
+    public required string Url { get; init; }
+}
+
 /// <summary>One embedded file.</summary>
 public sealed record PdfAttachmentInfo
 {
@@ -286,6 +300,9 @@ public sealed record PdfAttachmentInfo
     /// <summary>The attachment's size in bytes; absent when the file does not state it.</summary>
     [Minimum(0)]
     public long? SizeBytes { get; init; }
+
+    /// <summary>The attachment's description; absent when the file states none.</summary>
+    public string? Description { get; init; }
 }
 
 /// <summary>One distinct PDF font resource.</summary>

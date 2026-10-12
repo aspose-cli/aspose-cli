@@ -16,6 +16,9 @@ public static class PdfInspectDetails
     /// <summary>The bookmarks, in reading order.</summary>
     public const string Outline = "outline";
 
+    /// <summary>The links to web addresses, with their pages and rectangles.</summary>
+    public const string Links = "links";
+
     /// <summary>The interactive form and its fields' values.</summary>
     public const string Forms = "forms";
 
@@ -38,7 +41,7 @@ public static class PdfInspectDetails
     public const string Properties = "properties";
 
     /// <summary>Every detail id, in documentation order.</summary>
-    public static IReadOnlyList<string> All { get; } = [Outline, Forms, Attachments, Fonts, Permissions, Signatures, Layers, Properties];
+    public static IReadOnlyList<string> All { get; } = [Outline, Links, Forms, Attachments, Fonts, Permissions, Signatures, Layers, Properties];
 }
 
 /// <summary>The kinds of interactive form a PDF can have.</summary>

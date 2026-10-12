@@ -48,7 +48,7 @@ public sealed class PdfModuleTests
     [InlineData("""{"op":"insert_page","at":1}""", """{"at":1}""")]
     [InlineData("""{"op":"crop_pages","pages":"1","rect":{"x":0,"y":0,"width":10,"height":10}}""", """{"box":"crop"}""")]
     [InlineData("""{"op":"add_watermark_text","text":"DRAFT"}""", """{"fontSize":48,"color":"#808080","opacity":0.35,"rotation":-45,"layer":"over"}""")]
-    [InlineData("""{"op":"add_watermark_image","path":"image.png"}""", """{"opacity":0.35,"scale":0.5,"layer":"over"}""")]
+    [InlineData("""{"op":"add_watermark_image","path":"image.png"}""", """{"opacity":0.35,"scalePercent":50,"layer":"over"}""")]
     [InlineData("""{"op":"add_page_numbers"}""", """{"text":"Page {n} of {N}","placement":"bottom-center","start":1}""")]
     [InlineData("""{"op":"add_header_text","text":"Header"}""", """{"placement":"top-center"}""")]
     [InlineData("""{"op":"add_footer_text","text":"Footer"}""", """{"placement":"bottom-center"}""")]

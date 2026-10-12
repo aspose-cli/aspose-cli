@@ -10,6 +10,14 @@ aspose-cli pdf edit cover.pdf --ops form-ops.json --out cover.filled.pdf --outpu
 aspose-cli pdf extract cover.filled.pdf --what forms --form-format json --out-dir form-data --output-format json
 ```
 
+`pdf inspect --detail forms` is the structured read of the fields: their `name`,
+`kind` and `value` as its schema names them. `extract --what forms` writes a
+file for other form software in the format `--form-format` names: `fdf`,
+`xfdf`, or with `json` the engine's own JSON, whose field names (`Name`,
+`PageIndex`, `Flags`, `Value`) differ from the inspect result's and that no
+schema describes. To hand field values to another program, read them with
+`inspect --detail forms`.
+
 `set_form_field` addresses an AcroForm field by its exact full name. Each field's
 `kind` is one of `text` (including date, number, password and rich-text boxes),
 `checkbox`, `radio`, `combobox`, `listbox`, `button`, `signature` or `other`.
