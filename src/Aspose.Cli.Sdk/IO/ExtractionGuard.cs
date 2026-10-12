@@ -54,10 +54,24 @@ public sealed class ExtractionGuard : IDisposable
         return _plan.CreateDirectory(ExtractionPathValidator.NormalizeRelativePath(suggestedPath.TrimEnd('/', '\\'), false), suggestedPath);
     }
 
-    public string WriteAllBytes(string suggestedName, byte[] bytes) =>
-        Write(suggestedName, bytes.LongLength, stream => stream.Write(bytes), flatten: true);
+    public string WriteAllBytes(string suggestedName, byte[] bytes) => StageAllBytes(suggestedName, bytes).Path;
 
-    public string Write(string suggestedPath, long sizeBytes, Action<Stream> write, bool flatten = false)
+    public string Write(string suggestedPath, long sizeBytes, Action<Stream> write, bool flatten = false) =>
+        Stage(suggestedPath, sizeBytes, write, flatten).Path;
+
+    /// <summary>
+    /// Writes one file of <paramref name="bytes"/> as <see cref="WriteAllBytes"/> does and
+    /// returns the facts of the file it publishes, from which <c>FileObjects.Companion</c>
+    /// describes it in a result.
+    /// </summary>
+    public PublishedFile StageAllBytes(string suggestedName, byte[] bytes) =>
+        Stage(suggestedName, bytes.LongLength, stream => stream.Write(bytes), flatten: true);
+
+    /// <summary>
+    /// Writes one file as <see cref="Write"/> does and returns the facts of the file it
+    /// publishes, taken from the staged copy.
+    /// </summary>
+    public PublishedFile Stage(string suggestedPath, long sizeBytes, Action<Stream> write, bool flatten = false)
     {
         ArgumentNullException.ThrowIfNull(write);
         try
@@ -66,7 +80,7 @@ public sealed class ExtractionGuard : IDisposable
             long reserved = Math.Max(0, sizeBytes);
             long limit = _budget.WriteLimit(reserved);
             FilePublicationSnapshot original = FilePublicationSnapshot.Capture(target);
-            _transaction.StagePrepared(target, _overwrite, requestedBackup: null, original, staged =>
+            StagedOutput output = _transaction.StagePrepared(target, _overwrite, requestedBackup: null, original, staged =>
             {
                 using var file = new FileStream(staged, FileMode.Truncate, FileAccess.Write, FileShare.None);
                 using Stream bounded = _budget.Bound(file, limit, suggestedPath);
@@ -76,7 +90,7 @@ public sealed class ExtractionGuard : IDisposable
                 FilePublicationSnapshot current = FilePublicationSnapshot.Capture(target);
                 if (!original.VersionEquals(current)) { throw PublicationErrors.OutputConflict(target, original, current); }
             });
-            return target;
+            return output.Published;
         }
         catch { Dispose(); throw; }
     }

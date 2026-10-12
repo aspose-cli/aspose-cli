@@ -9,23 +9,20 @@ public sealed record PdfSplitResult() : EngineResultEnvelope("split-result", 2)
     [JsonPropertyOrder(-50)]
     public required InputInfo Input { get; init; }
 
-    /// <summary>Each part written, in order.</summary>
-    public required IReadOnlyList<PdfSplitOutput> Outputs { get; init; }
+    /// <summary>Each part written, in order; its number is the one in its file name.</summary>
+    public required IReadOnlyList<PdfPartOutput> Outputs { get; init; }
 }
 
-/// <summary>One part of a split PDF.</summary>
-public sealed record PdfSplitOutput
+/// <summary>The PDF written for one part of a split, and the pages of the source it holds.</summary>
+public sealed record PdfPartOutput : OutputItem
 {
-    /// <summary>The part's 1-based position.</summary>
-    [Minimum(1)]
-    public required int Index { get; init; }
+    /// <summary>Copies the facts of the written <paramref name="file"/>.</summary>
+    public PdfPartOutput(OutputInfo file)
+        : base(file)
+    {
+    }
 
-    /// <summary>The part's pages as range text, such as <c>1-3</c> or <c>1-3,7</c>.</summary>
+    /// <summary>The source pages the part holds, as range text such as <c>1-3</c> or <c>1-3,7</c>.</summary>
+    [Pattern("^[1-9][0-9]*(-[1-9][0-9]*)?(,[1-9][0-9]*(-[1-9][0-9]*)?)*$")]
     public required string Pages { get; init; }
-
-    /// <summary>The title of the bookmark the part starts at, with <c>--by bookmarks</c>.</summary>
-    public string? Bookmark { get; init; }
-
-    /// <summary>The PDF written for the part.</summary>
-    public required OutputInfo Output { get; init; }
 }

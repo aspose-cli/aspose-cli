@@ -20,8 +20,8 @@ top-left origin against the visible, rotated page box.
 2. Inspect structure and security, then read only the pages you need:
 
    ```powershell
-   aspose-cli pdf inspect input.pdf --sample --detail metadata permissions forms signatures attachments outline fonts --output-format json
-   aspose-cli pdf query pages input.pdf --pages 1-5 --mode layout --output-format json
+   aspose-cli pdf inspect input.pdf --sample --detail properties permissions forms signatures attachments outline fonts --output-format json
+   aspose-cli pdf read input.pdf --pages 1-5 --content layout --output-format json
    ```
 
 3. Put all related changes in one `pdf edit` batch with `--verify`
@@ -52,7 +52,7 @@ its `name`; other controls get generated names and lose their `value`s, and
 inputs of type `email`, `tel`, `url`, `time`, `datetime-local`, `month`, `week`,
 `color`, `range` or `file` are dropped;
 `LOSSY_CONVERSION` lists both. Use `type="text"` for an input that must stay a
-field, read the fields with `pdf query forms` and match each field's `rect` to
+field, read the fields with `pdf inspect --detail forms` and match each field's `rect` to
 its label before filling. The HTML `<title>` becomes the PDF title; a PDF made from HTML or
 Markdown has no author or subject until a `set_metadata` edit sets them.
 
@@ -73,9 +73,8 @@ licensed command whose output keeps such a notice on one of its first 4 pages
 warns `EVALUATION_INPUT_MARKED`.
 Evaluation mode also reads only the first 4 pages of a document. `inspect` of a
 longer PDF warns `EVALUATION_INPUT_TRUNCATED` and still lists every bookmark and
-attachment and counts every form field; `query forms` lists every field but
-leaves out the `page` of one on a later page and warns
-`EVALUATION_INPUT_TRUNCATED`. Any other command that needs a later page fails with
+attachment and counts every form field; `--detail forms` lists the fields but
+leaves out the `page` of one on a later page. Any other command that needs a later page fails with
 `EVALUATION_LIMIT` (exit 7, `details.limit` 4) before writing anything,
 `render` of every page included. Limit it with `--pages 1-4`, keep the inputs of
 a `merge` to 4 pages in total, or tell the user a PDF license is needed; a

@@ -1,8 +1,8 @@
 namespace Aspose.Cli.Product.Pdf.Contracts;
 
 /// <summary>
-/// The named page sizes, in points. A name matches exactly, the same way on the command
-/// line, in the ops schema and rules, and in the engine.
+/// The named page sizes operations take, in points. A name matches exactly, the same way in
+/// the ops schema and rules and in the engine.
 /// </summary>
 internal static class PdfPageSizes
 {

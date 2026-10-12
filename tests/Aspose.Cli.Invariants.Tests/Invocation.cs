@@ -61,7 +61,7 @@ internal sealed class Invocation
                 invocation.Args.Add(file);
             }
         }
-        foreach (CliOption option in command.Options.Where(option => option.Name != omit && (option.Required || IsImplied(command, option))))
+        foreach (CliOption option in command.Options.Where(option => option.Name != omit && (option.Required || IsImplied(command, option, omit))))
         {
             invocation.Fill(command, product, extension, option);
         }
@@ -88,10 +88,12 @@ internal sealed class Invocation
     }
 
     // Options that no single declaration requires, but that the command needs to run: an edit
-    // needs operations, a create something to create from, an extract a directory for files and
-    // a convert without --out the format to write.
-    private static bool IsImplied(CliCommand command, CliOption option) =>
+    // needs operations, a create something to create from, an extract a directory for files, a
+    // convert without --out the format to write and a signature its certificate's password.
+    private static bool IsImplied(CliCommand command, CliOption option, string? omit) =>
         (command.Verb, option.Name) is ("edit", "--ops") or ("extract", "--out-dir") or ("convert", "--to")
+        // The certificate password comes from its variable unless the case passes it another way.
+        || ((command.Verb, option.Name) is ("sign", "--certificate-password-env") && omit?.StartsWith("--certificate-password", StringComparison.Ordinal) != true)
         || (command.Verb == "create" && option.Name == command.Options
             .Select(static candidate => candidate.Name)
             .FirstOrDefault(static name => name is "--markdown" or "--from-markdown" or "--from-text"));

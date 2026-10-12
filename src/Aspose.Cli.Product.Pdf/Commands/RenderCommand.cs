@@ -60,7 +60,7 @@ internal static class RenderCommand
     internal static void Table(PdfRenderResult result, TableSurface surface)
     {
         ResultText.Files(surface, "rendered", "page", [.. result.Outputs.Select(static output =>
-            new ProducedFile($"page {output.Page}", output.Output.Path, output.Output.Format, output.Output.SizeBytes))]);
+            new ProducedFile($"page {output.Page}", output.Path, output.Format, output.SizeBytes))]);
 
         if (result.Grid is { } grid)
         {

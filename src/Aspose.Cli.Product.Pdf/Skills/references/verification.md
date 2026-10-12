@@ -25,7 +25,7 @@ checked, even when part of its effect was.
 | `insert_blank_page`, `insert_pages_from`, `delete_pages`, `move_pages` | the page count | `PDF_PAGE_COUNT_MISMATCH` |
 
 `PDF_VERIFICATION_INCOMPLETE` reports a page a `redact_text` pattern could not be
-checked on within its time budget; search that page with `pdf query search`.
+checked on within its time budget; search that page with `pdf search`.
 A `redact_text` pattern that matched nothing passes its check, and no check
 catches text a redaction moved under its cover; act on `OP_NO_EFFECT`,
 `REDACTION_TEXT_MOVED` and `PDF_TEXT_COVERED` ([redaction](editing.md#redaction)).
@@ -45,13 +45,13 @@ count as remaining redacted text.
 ## Content
 
 ```powershell
-aspose-cli pdf inspect report.final.pdf --detail metadata permissions forms signatures attachments outline fonts --output-format json
-aspose-cli pdf query pages report.final.pdf --pages 1-5 --mode layout --output-format json
-aspose-cli pdf query search report.final.pdf --pattern DRAFT --output-format json
+aspose-cli pdf inspect report.final.pdf --detail properties permissions forms signatures attachments outline fonts --output-format json
+aspose-cli pdf read report.final.pdf --pages 1-5 --content layout --output-format json
+aspose-cli pdf search report.final.pdf --pattern DRAFT --output-format json
 ```
 
 Choose page ranges from the inspected page count and compare the text with the
-expected content. Search is not OCR. `metadata` reports the values stored in the
+expected content. Search is not OCR. `properties` reports the values stored in the
 file; `aspose-cli schema v2/pdf/inspect-result` describes how its dates are written.
 
 For redaction, search every relevant page, inspect the redacted regions in the

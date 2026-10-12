@@ -336,8 +336,8 @@ public sealed class PdfMutateTests
     {
         using var fixture = new PdfEngineFixture();
         string input = FormDocument(fixture);
-        PdfFormResult read = PdfForms.Read(fixture.Session, new PdfFormReadRequest { Input = input });
-        Assert.Equal("acro", read.Type);
+        PdfFormInfo read = fixture.Forms(input);
+        Assert.Equal("acro", read.Kind);
         Assert.Contains(read.Fields, static field => field.Name == "Customer");
 
         string filled = fixture.File("form.filled.pdf");
@@ -353,14 +353,21 @@ public sealed class PdfMutateTests
         Assert.Equal(["field/Customer"], Assert.Single(filledResult.Applied).Targets);
         Assert.NotNull(filledResult.Input.Fingerprint);
         Assert.NotNull(filledResult.Output?.Fingerprint);
-        Assert.Equal("Contoso", PdfForms.Read(fixture.Session, new PdfFormReadRequest { Input = filled }).Fields.Single().Value);
+        Assert.Equal("Contoso", fixture.Forms(filled).Fields.Single().Value);
 
-        PdfFormExportResult exported = PdfForms.Export(fixture.Session, new PdfFormExportRequest
+        PdfExtractResult exported = PdfExtract.Run(fixture.Session, new PdfExtractRequest
         {
             Input = filled,
-            Output = TestOutput.At(fixture.File("form.json"), format: "json"),
+            What = PdfExtractKinds.Forms,
+            Output = new ResolvedDirectory(fixture.File("form-data")),
+            FormFormat = PdfFormats.FormData.Single(static format => format.Id == "json"),
         });
-        Assert.True(exported.Output.SizeBytes > 0);
+        PdfPageOutput data = Assert.Single(exported.Outputs);
+        Assert.Equal("json", data.Format);
+        Assert.Equal("form.json", Path.GetFileName(data.Path));
+        Assert.Null(data.Page);
+        Assert.True(data.SizeBytes > 0);
+        Assert.Contains("Contoso", File.ReadAllText(data.Path), StringComparison.Ordinal);
 
         string flattened = fixture.File("form.flattened.pdf");
         PdfEditResult flattenResult = PdfEdit.Run(fixture.Session, new PdfEditRequest
@@ -797,22 +804,22 @@ public sealed class PdfMutateTests
         Assert.False(validation.Valid);
         Assert.NotEmpty(validation.Issues);
 
-        PdfExtractResult tables = PdfExtract.Assets(fixture.Session, new PdfExtractRequest
+        PdfExtractResult tables = PdfExtract.Run(fixture.Session, new PdfExtractRequest
         {
             Input = input,
             Output = new ResolvedDirectory(fixture.File("tables")),
             What = "tables",
         });
-        Assert.NotEmpty(tables.Items);
-        Assert.All(tables.Items, static table =>
+        Assert.NotEmpty(tables.Outputs);
+        Assert.All(tables.Outputs, static table =>
         {
-            Assert.Equal("table", table.Kind);
-            Assert.NotNull(table.Rect);
+            Assert.Equal("csv", table.Format);
+            Assert.NotNull(table.Page);
         });
         Assert.Contains(
-            tables.Items,
+            tables.Outputs,
             table => File.ReadAllText(table.Path).Contains("Revenue", StringComparison.Ordinal));
-        Assert.All(tables.Items, static table => Assert.NotEqual(0xEF, File.ReadAllBytes(table.Path)[0]));
+        Assert.All(tables.Outputs, static table => Assert.NotEqual(0xEF, File.ReadAllBytes(table.Path)[0]));
     }
 
     [Fact]
@@ -821,7 +828,7 @@ public sealed class PdfMutateTests
         using var fixture = new PdfEngineFixture();
         string input = TableDocument(fixture);
 
-        PdfExtractResult tables = PdfExtract.Assets(fixture.Session, new PdfExtractRequest
+        PdfExtractResult tables = PdfExtract.Run(fixture.Session, new PdfExtractRequest
         {
             Input = input,
             Output = new ResolvedDirectory(fixture.File("tables")),
@@ -829,8 +836,8 @@ public sealed class PdfMutateTests
             ByteOrderMark = true,
         });
 
-        Assert.NotEmpty(tables.Items);
-        Assert.All(tables.Items, static table =>
+        Assert.NotEmpty(tables.Outputs);
+        Assert.All(tables.Outputs, static table =>
         {
             byte[] bytes = File.ReadAllBytes(table.Path);
             Assert.Equal([0xEF, 0xBB, 0xBF], bytes[..3]);
@@ -1415,27 +1422,26 @@ public sealed class PdfMutateTests
     }
 
     [Fact]
-    public void QueryForms_ReportsTheValuesThatCheckABoxAndSelectARadioButton()
+    public void InspectForms_ReportsTheValuesThatCheckABoxAndSelectARadioButton()
     {
         using var fixture = new PdfEngineFixture();
         string input = ChoiceDocument(fixture);
         string output = fixture.File("choices.filled.pdf");
 
-        IReadOnlyList<PdfFormField> fields = PdfForms.Read(fixture.Session, new PdfFormReadRequest { Input = input }).Fields;
+        IReadOnlyList<PdfFormField> fields = fixture.Forms(input).Fields;
 
         PdfFormField agree = fields.Single(static field => field.Name == "agree");
-        Assert.Equal(["Off", "Checked"], agree.States);
-        Assert.Equal("Checked", agree.OnValue);
-        Assert.Null(agree.Options);
-        // Widgets that export several values leave the state to check to the caller.
+        Assert.Equal(["Off", "Checked"], agree.Options);
+        // Widgets that export several values list every state they accept.
         PdfFormField multi = fields.Single(static field => field.Name == "multi");
-        Assert.Equal(["Off", "Yes", "Alpha", "Beta"], multi.States);
-        Assert.Null(multi.OnValue);
-        PdfFormField[] buttons = fields.Where(static field => field.Name == "color").ToArray();
-        Assert.All(buttons, static button => Assert.Equal(PdfFormFieldTypes.RadioOption, button.Type));
-        Assert.All(buttons, static button => Assert.Equal(["Red", "Blue"], button.Options));
-        Assert.Equal(["Red", "Blue"], buttons.Select(static button => button.OnValue));
-        Assert.All(fields, static field => Assert.True(field.Type is PdfFormFieldTypes.Checkbox or PdfFormFieldTypes.RadioOption));
+        Assert.Equal(["Off", "Yes", "Alpha", "Beta"], multi.Options);
+        // A radio group is one field, with the values of its buttons and no page of its own.
+        PdfFormField color = Assert.Single(fields, static field => field.Name == "color");
+        Assert.Equal(PdfFormFieldKinds.Radio, color.Kind);
+        Assert.Equal(["Red", "Blue"], color.Options);
+        Assert.Null(color.Page);
+        Assert.Equal(3, fields.Count);
+        Assert.All(fields, static field => Assert.True(field.Kind is PdfFormFieldKinds.Checkbox or PdfFormFieldKinds.Radio));
 
         PdfEdit.Run(fixture.Session, new PdfEditRequest
         {
@@ -1444,8 +1450,8 @@ public sealed class PdfMutateTests
             {
                 Ops =
                 [
-                    new SetFormFieldOp { Name = "agree", Value = agree.OnValue! },
-                    new SetFormFieldOp { Name = "color", Value = buttons[1].OnValue! },
+                    new SetFormFieldOp { Name = "agree", Value = agree.Options![1] },
+                    new SetFormFieldOp { Name = "color", Value = color.Options![1] },
                 ],
             },
             Output = TestOutput.At(output),
@@ -1458,10 +1464,8 @@ public sealed class PdfMutateTests
         var group = (RadioButtonField)reopened.Form["color"];
         Assert.Equal("Blue", group.Value);
         Assert.Equal(2, group.Selected);
-        // Every button of the group reports the group's selection as its value.
-        Assert.All(
-            PdfForms.Read(fixture.Session, new PdfFormReadRequest { Input = output }).Fields.Where(static field => field.Name == "color"),
-            static button => Assert.Equal("Blue", button.Value));
+        // The group reports its selection as its value.
+        Assert.Equal("Blue", Assert.Single(fixture.Forms(output).Fields, static field => field.Name == "color").Value);
     }
 
     [Fact]
@@ -1484,7 +1488,7 @@ public sealed class PdfMutateTests
         Assert.Equal(["op-0001"], result.Verification.CheckedOps);
         Assert.Equal(
             ["agree", "multi"],
-            PdfForms.Read(fixture.Session, new PdfFormReadRequest { Input = output }).Fields.Select(static field => field.Name));
+            fixture.Forms(output).Fields.Select(static field => field.Name));
     }
 
     [Fact]
@@ -1676,7 +1680,7 @@ public sealed class PdfMutateTests
         Assert.DoesNotContain("op-0001", warning.Message, StringComparison.Ordinal);
         // Like a verification issue, the warning never repeats the pattern.
         Assert.DoesNotContain("4711", warning.Message + warning.Hint, StringComparison.Ordinal);
-        Assert.Contains("pdf query search", warning.Hint, StringComparison.Ordinal);
+        Assert.Contains("pdf search", warning.Hint, StringComparison.Ordinal);
     }
 
     /// <summary>
@@ -1819,7 +1823,7 @@ public sealed class PdfMutateTests
         string input = WriteSpacedRuns(fixture, "autospace.pdf", "Due", "2026", "年", "10", "月", "31", "日");
 
         PdfSearchHit hit = Assert.Single(PdfSearch.Run(fixture.Session, Find(input, "2026年10月31日")).Hits);
-        Assert.Matches(@"^2026\s*年\s*10\s*月\s*31\s*日$", hit.Snippet);
+        Assert.Matches(@"^2026\s*年\s*10\s*月\s*31\s*日$", hit.Text);
         // Only the boundaries between East Asian and other characters take a gap.
         Assert.Empty(PdfSearch.Run(fixture.Session, Find(input, "Due2026")).Hits);
 

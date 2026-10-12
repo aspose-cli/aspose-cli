@@ -30,9 +30,9 @@ public sealed class PdfCliWorkflowTests : IDisposable
         CliResult info = _workspace.Run(
             "pdf", "inspect", "source.pdf", "--output-format", "json");
         CliResult read = _workspace.Run(
-            "pdf", "query", "pages", "source.pdf", "--pages", "1", "--output-format", "json");
+            "pdf", "read", "source.pdf", "--pages", "1", "--output-format", "json");
         CliResult forms = _workspace.Run(
-            "pdf", "query", "forms", "source.pdf", "--output-format", "json");
+            "pdf", "inspect", "source.pdf", "--detail", "forms", "--output-format", "json");
         CliResult convert = _workspace.Run(
             "pdf", "convert", "source.pdf", "--to", "txt",
             "--out", "source.txt", "--output-format", "json");
@@ -53,15 +53,18 @@ public sealed class PdfCliWorkflowTests : IDisposable
         Assert.True(edited.ExitCode == 0, edited.StdErr);
 
         CliResult reopened = _workspace.Run(
-            "pdf", "query", "forms", "edited.pdf", "--output-format", "json");
+            "pdf", "inspect", "edited.pdf", "--detail", "forms", "--output-format", "json");
         Assert.True(reopened.ExitCode == 0, reopened.StdErr);
         Assert.Contains("Contoso", reopened.StdOut, StringComparison.Ordinal);
 
         CliResult exported = _workspace.Run(
-            "pdf", "extract", "edited.pdf", "--what", "forms", "--to", "json",
-            "--out", "forms.json", "--output-format", "json");
+            "pdf", "extract", "edited.pdf", "--what", "forms", "--form-format", "json",
+            "--out-dir", "form-data", "--output-format", "json");
         Assert.True(exported.ExitCode == 0, exported.StdErr);
-        Assert.True(File.Exists(_workspace.File("forms.json")));
+        Assert.True(File.Exists(_workspace.File(Path.Combine("form-data", "form.json"))));
+        JsonNode data = Assert.Single(exported.Json()["outputs"]!.AsArray())!;
+        Assert.Equal("json", data["format"]!.GetValue<string>());
+        Assert.NotNull(data["fingerprint"]);
     }
 
     [Theory]
@@ -148,8 +151,8 @@ public sealed class PdfCliWorkflowTests : IDisposable
         }
 
         CliResult inspect = _workspace.Run("pdf", "inspect", "six.pdf", "--output-format", "json");
-        CliResult firstPages = _workspace.Run("pdf", "query", "pages", "six.pdf", "--pages", "1-4", "--output-format", "json");
-        CliResult allPages = _workspace.Run("pdf", "query", "pages", "six.pdf", "--output-format", "json");
+        CliResult firstPages = _workspace.Run("pdf", "read", "six.pdf", "--pages", "1-4", "--output-format", "json");
+        CliResult allPages = _workspace.Run("pdf", "read", "six.pdf", "--output-format", "json");
 
         JsonNode truncated = Assert.Single(
             inspect.Json()["warnings"]!.AsArray(),
@@ -269,16 +272,14 @@ public sealed class PdfCliWorkflowTests : IDisposable
 
         CliResult inspect = _workspace.Run(
             "pdf", "inspect", "fields.pdf", "--detail", "forms", "--detail", "attachments", "--output-format", "json");
-        CliResult forms = _workspace.Run("pdf", "query", "forms", "fields.pdf", "--output-format", "json");
-
         JsonNode result = inspect.Json();
         Assert.Equal(count, result["forms"]!["fieldCount"]!.GetValue<int>());
         Assert.Equal(
             Enumerable.Range(1, count).Select(static number => $"file{number}.txt"),
             result["attachments"]!.AsArray().Select(static item => item!["name"]!.GetValue<string>()));
         Assert.Contains(result["warnings"]!.AsArray(), static warning => warning!["code"]!.GetValue<string>() == "EVALUATION_INPUT_TRUNCATED");
-        JsonNode read = forms.Json();
-        JsonArray fields = read["fields"]!.AsArray();
+        JsonNode read = result;
+        JsonArray fields = read["forms"]!["fields"]!.AsArray();
         Assert.Equal(
             all.Select(static index => $"Value {index + 1}"),
             fields.Select(static item => item!["value"]!.GetValue<string>()));
@@ -288,14 +289,8 @@ public sealed class PdfCliWorkflowTests : IDisposable
             fields.Select(static item => item!["page"]?.GetValue<int>()));
         JsonNode[] truncated = [.. (read["warnings"]?.AsArray() ?? []).Where(
             static warning => warning!["code"]!.GetValue<string>() == "EVALUATION_INPUT_TRUNCATED")!];
-        if (fieldsOnLaterPages)
-        {
-            Assert.Contains("reads only the first 4 pages", Assert.Single(truncated)["message"]!.GetValue<string>(), StringComparison.Ordinal);
-        }
-        else
-        {
-            Assert.Empty(truncated);
-        }
+        // The inspection of the longer document warns once, whether or not a field lies past the fourth page.
+        Assert.Contains("reads only the first 4 pages", Assert.Single(truncated)["message"]!.GetValue<string>(), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -311,8 +306,8 @@ public sealed class PdfCliWorkflowTests : IDisposable
             document.Save(_workspace.File("pages.pdf"));
         }
 
-        CliResult window = _workspace.Run("pdf", "query", "pages", "pages.pdf", "--max-chars", "24", "--output-format", "json");
-        CliResult single = _workspace.Run("pdf", "query", "pages", "pages.pdf", "--pages", "2", "--max-chars", "5", "--output-format", "json");
+        CliResult window = _workspace.Run("pdf", "read", "pages.pdf", "--max-chars", "24", "--output-format", "json");
+        CliResult single = _workspace.Run("pdf", "read", "pages.pdf", "--pages", "2", "--max-chars", "5", "--output-format", "json");
 
         JsonNode result = window.Json();
         JsonArray pages = result["pages"]!.AsArray();
@@ -321,16 +316,16 @@ public sealed class PdfCliWorkflowTests : IDisposable
         string resume = cut == 3 ? "3" : $"{cut}-3";
         int budget = pages.Count == 1 ? 48 : 24;
         string next = result["window"]!["next"]!.GetValue<string>();
-        Assert.StartsWith("aspose-cli pdf query pages ", next, StringComparison.Ordinal);
-        Assert.EndsWith($" --pages {resume} --mode plain --max-chars {budget} --output-format json", next, StringComparison.Ordinal);
+        Assert.StartsWith("aspose-cli pdf read ", next, StringComparison.Ordinal);
+        Assert.EndsWith($" --pages {resume} --content text --max-chars {budget} --output-format json", next, StringComparison.Ordinal);
         Assert.EndsWith(
-            " --pages 2 --mode plain --max-chars 10 --output-format json",
+            " --pages 2 --content text --max-chars 10 --output-format json",
             single.Json()["window"]!["next"]!.GetValue<string>(),
             StringComparison.Ordinal);
     }
 
     [Fact]
-    public void QuerySearch_WindowNextReturnsTheFollowingHits()
+    public void Search_WindowNextReturnsTheFollowingHits()
     {
         using (var document = new Document())
         {
@@ -343,14 +338,14 @@ public sealed class PdfCliWorkflowTests : IDisposable
         }
 
         CliResult first = _workspace.Run(
-            "pdf", "query", "search", "markers.pdf", "--pages", "1-3", "--pattern", "marker", "--max-hits", "4", "--output-format", "json");
+            "pdf", "search", "markers.pdf", "--pages", "1-3", "--pattern", "marker", "--max-hits", "4", "--output-format", "json");
 
         JsonNode window = first.Json()["window"]!;
         Assert.Equal("hit", window["unit"]!.GetValue<string>());
         Assert.Equal(4, window["returned"]!.GetValue<int>());
         Assert.True(window["truncated"]!.GetValue<bool>());
         string next = window["next"]!.GetValue<string>();
-        Assert.StartsWith("aspose-cli pdf query search ", next, StringComparison.Ordinal);
+        Assert.StartsWith("aspose-cli pdf search ", next, StringComparison.Ordinal);
         Assert.EndsWith(
             "markers.pdf\" --pages 1-3 --pattern marker --max-hits 4 --skip 4 --output-format json", next, StringComparison.Ordinal);
 
@@ -412,7 +407,7 @@ public sealed class PdfCliWorkflowTests : IDisposable
             () =>
             {
                 form = _workspace.Run("pdf", "create", "form.pdf", "--from-html", "form.html", "--output-format", "json");
-                fields = _workspace.Run("pdf", "query", "forms", "form.pdf", "--output-format", "json");
+                fields = _workspace.Run("pdf", "inspect", "form.pdf", "--detail", "forms", "--output-format", "json");
             },
             () => text = _workspace.Run("pdf", "create", "text.pdf", "--from-html", "text.html", "--output-format", "json"),
             () => contact = _workspace.Run("pdf", "create", "contact.pdf", "--from-html", "contact.html", "--output-format", "json"));
@@ -420,7 +415,7 @@ public sealed class PdfCliWorkflowTests : IDisposable
         JsonNode lossy = Assert.Single(
             form.Json()["warnings"]!.AsArray(),
             static warning => warning!["code"]!.GetValue<string>() == "LOSSY_CONVERSION")!;
-        JsonArray read = fields.Json()["fields"]!.AsArray();
+        JsonArray read = fields.Json()["forms"]!["fields"]!.AsArray();
         string[] generated = [.. read.Select(static field => field!["name"]!.GetValue<string>()).Where(static name => name != "company").Distinct()];
         Assert.NotEmpty(generated);
         Assert.All(generated, name => Assert.Contains($"'{name}'", lossy["message"]!.GetValue<string>(), StringComparison.Ordinal));
@@ -447,19 +442,17 @@ public sealed class PdfCliWorkflowTests : IDisposable
         }
 
         CliResult search = _workspace.Run(
-            "pdf", "query", "search", "contract.pdf", "--pattern", "penalty", "--output-format", "json");
+            "pdf", "search", "contract.pdf", "--pattern", "penalty", "--output-format", "json");
 
         JsonArray hits = search.Json()["hits"]!.AsArray();
-        Assert.Equal(["penalty", "penalty"], hits.Select(static hit => hit!["snippet"]!.GetValue<string>()));
+        Assert.Equal(["penalty", "penalty"], hits.Select(static hit => hit!["text"]!.GetValue<string>()));
         string[] contexts = [.. hits.Select(static hit => hit!["context"]!.GetValue<string>())];
         Assert.Contains("shall pay a penalty of 0.5%", contexts[0], StringComparison.Ordinal);
         Assert.Contains("No penalty applies", contexts[1], StringComparison.Ordinal);
     }
 
-    [Theory]
-    [InlineData("attachments", "--out", "files")]
-    [InlineData("images", "--to", "json")]
-    public void Extract_NamesTheFormOutputOptionGivenAndPointsToOutDir(string what, string option, string value)
+    [Fact]
+    public void Extract_TakesAFormatOnlyForFormDataAndWritesEverythingIntoOutDir()
     {
         using (var document = new Document())
         {
@@ -467,15 +460,22 @@ public sealed class PdfCliWorkflowTests : IDisposable
             document.Save(_workspace.File("source.pdf"));
         }
 
-        CliResult result = _workspace.Run(
-            "pdf", "extract", "source.pdf", "--what", what, option, value, "--output-format", "json");
+        CliResult format = _workspace.Run(
+            "pdf", "extract", "source.pdf", "--what", "images", "--form-format", "json", "--out-dir", "files", "--output-format", "json");
+        CliResult file = _workspace.Run(
+            "pdf", "extract", "source.pdf", "--what", "forms", "--form-format", "json", "--out", "forms.json", "--output-format", "json");
+        CliResult unnamed = _workspace.Run(
+            "pdf", "extract", "source.pdf", "--what", "forms", "--out-dir", "files", "--output-format", "json");
 
-        Assert.Equal(2, result.ExitCode);
-        JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
+        Assert.Equal(2, format.ExitCode);
+        JsonNode error = JsonNode.Parse(format.StdErr)!["error"]!;
         Assert.Equal("OPTION_INVALID", error["code"]!.GetValue<string>());
-        Assert.StartsWith($"Invalid use of {option}:", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
-        Assert.Contains($"--out-dir", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
-        Assert.DoesNotContain(option == "--out" ? "--to" : "--out ", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.StartsWith("Invalid use of --form-format:", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.Equal(2, file.ExitCode);
+        Assert.Contains("--out", file.StdErr, StringComparison.Ordinal);
+        Assert.Equal(2, unnamed.ExitCode);
+        Assert.StartsWith("Invalid use of --form-format:", JsonNode.Parse(unnamed.StdErr)!["error"]!["message"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.False(Directory.Exists(_workspace.File("files")));
     }
 
     [Theory]
@@ -490,7 +490,7 @@ public sealed class PdfCliWorkflowTests : IDisposable
         }
 
         CliResult result = _workspace.Run(
-            "pdf", "extract", "source.pdf", "--what", what, "--bom", "--output-format", "json");
+            "pdf", "extract", "source.pdf", "--what", what, "--bom", "--out-dir", "files", "--output-format", "json");
 
         Assert.Equal(2, result.ExitCode);
         JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;

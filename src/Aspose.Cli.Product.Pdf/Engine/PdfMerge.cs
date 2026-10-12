@@ -83,7 +83,6 @@ internal static class PdfMerge
 
         return new PdfMergeResult
         {
-            Action = "merge",
             Output = FileObjects.Output(written, request.Output.Format, encrypted),
             Inputs = inputs,
             License = EnvelopeParts.License(state),

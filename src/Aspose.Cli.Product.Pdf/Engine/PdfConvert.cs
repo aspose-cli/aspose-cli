@@ -21,13 +21,13 @@ internal static class PdfConvert
             ?? Enumerable.Range(1, loaded.Document.Pages.Count).ToArray();
         List<Warning> warnings = [];
         PdfEngineFormat target = PdfEngineFormats.Of(request.Output.Format.Id);
-        IReadOnlyList<OutputInfo> outputs = target.Write switch
+        IReadOnlyList<PdfPageOutput> outputs = target.Write switch
         {
             PdfEngineWrite.PageImage => ConvertPages(session, loaded.Document, pages, request),
-            PdfEngineWrite.Tiff => [ConvertTiff(session, loaded.Document, pages, request)],
-            PdfEngineWrite.Text => [ConvertText(session, loaded.Document, pages, request)],
-            PdfEngineWrite.Archive => [ConvertPdfa(session, loaded.Document, pages, request, warnings)],
-            PdfEngineWrite.Document => [ConvertDocument(session, loaded.Document, pages, request, warnings)],
+            PdfEngineWrite.Tiff => [new(ConvertTiff(session, loaded.Document, pages, request))],
+            PdfEngineWrite.Text => [new(ConvertText(session, loaded.Document, pages, request))],
+            PdfEngineWrite.Archive => [new(ConvertPdfa(session, loaded.Document, pages, request, warnings))],
+            PdfEngineWrite.Document => [new(ConvertDocument(session, loaded.Document, pages, request, warnings))],
             _ => throw new InvalidOperationException($"'{target.Id}' is not a PDF convert format."),
         };
 
@@ -279,7 +279,7 @@ internal static class PdfConvert
         _ => $"the engine could not make it conform to {profile}",
     };
 
-    private static IReadOnlyList<OutputInfo> ConvertPages(
+    private static IReadOnlyList<PdfPageOutput> ConvertPages(
         PdfSession session,
         Document document,
         IReadOnlyList<int> pages,
@@ -297,7 +297,7 @@ internal static class PdfConvert
             }, rendering: true, pages: [pageNumber]);
         }
 
-        return [.. writer.Commit().Select(file => FileObjects.Output(file, request.Output.Format, encrypted: false))];
+        return [.. writer.Commit().Zip(pages, (file, page) => new PdfPageOutput(FileObjects.Output(file, request.Output.Format, encrypted: false)) { Page = page })];
     }
 
     private static OutputInfo ConvertTiff(

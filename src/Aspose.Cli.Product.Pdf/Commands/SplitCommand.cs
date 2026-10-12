@@ -43,12 +43,12 @@ internal static class SplitCommand
 
     internal static void Table(PdfSplitResult result, TableSurface surface)
     {
-        ResultText.Files(surface, "wrote", "part", [.. result.Outputs.Select(static output =>
+        ResultText.Files(surface, "wrote", "part", [.. result.Outputs.Select(static (output, index) =>
             new ProducedFile(
-                $"part {output.Index}",
-                output.Output.Path,
-                output.Output.Format,
-                output.Output.SizeBytes,
-                $"pages {output.Pages}{(output.Bookmark is null ? string.Empty : $" [{output.Bookmark}]")}"))]);
+                $"part {index + 1}",
+                output.Path,
+                output.Format,
+                output.SizeBytes,
+                $"pages {output.Pages}"))]);
     }
 }

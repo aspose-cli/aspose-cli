@@ -219,9 +219,9 @@ internal static class PdfEngineSupport
         }
     }
 
-    internal static string ExtractText(Page page, string mode)
+    internal static string ExtractText(Page page, string content)
     {
-        TextExtractionOptions.TextFormattingMode formatting = mode == PdfReadModes.Layout
+        TextExtractionOptions.TextFormattingMode formatting = content == PdfReadContents.Layout
             ? TextExtractionOptions.TextFormattingMode.Pure
             : TextExtractionOptions.TextFormattingMode.Flatten;
         var absorber = new TextAbsorber
@@ -239,7 +239,7 @@ internal static class PdfEngineSupport
     internal static string DocumentText(Document document, IReadOnlyList<int> pages) =>
         string.Join(
             "\f" + Environment.NewLine,
-            pages.Select(pageNumber => ExtractText(document.Pages[pageNumber], PdfReadModes.Plain)));
+            pages.Select(pageNumber => ExtractText(document.Pages[pageNumber], PdfReadContents.Text)));
 
     /// <summary>
     /// Whether one image is scaled to the page, as a scan is: it spans at least three quarters of
@@ -328,7 +328,7 @@ internal static class PdfEngineSupport
         {
             // The SDK overflows on contextual zero-width matches. Reject them before
             // handing it the original expression, whose timeout and context it preserves.
-            if (regex && expression.Matches(ExtractText(page, PdfReadModes.Plain))
+            if (regex && expression.Matches(ExtractText(page, PdfReadContents.Text))
                 .Any(static match => match.Length == 0))
             {
                 throw invalidPattern("the regular expression must not match an empty string");

@@ -42,10 +42,9 @@ internal static class PdfRender
         return new PdfRenderResult
         {
             Input = PdfInfoProjection.Source(filePath, loaded),
-            Outputs = staged.Select((item, index) => new PdfPageOutput
+            Outputs = staged.Select((item, index) => new PdfPageOutput(FileObjects.Output(files[index], request.Output.Format, encrypted: false))
             {
                 Page = item.Page,
-                Output = FileObjects.Output(files[index], request.Output.Format, encrypted: false),
             }).ToArray(),
             Dpi = PdfEngineFormats.IsRaster(request.Output.Format.Id) ? request.Dpi : null,
             Grid = grid,

@@ -34,10 +34,8 @@ public sealed class PdfModule : IProductModule
             .View(new PdfViewAdapter())
             .Describe("PDF automation with page, security and fixed-layout semantics.", Help)
             .Command(InspectCommand.Create, PdfInfo.Run)
-            .Group("query", "Query bounded PDF pages, forms or text matches.", static query => query
-                .Command(ReadCommand.Create, PdfRead.Run)
-                .Command(FormsCommand.Create, PdfForms.Read)
-                .Command(SearchCommand.Create, PdfSearch.Run))
+            .Command(ReadCommand.Create, PdfRead.Run)
+            .Command(SearchCommand.Create, PdfSearch.Run)
             .Command(ConvertCommand.Create, PdfConvert.Run)
             .Command(RenderCommand.Create, PdfRender.Run)
             .Command(CreateCommand.Create, PdfCreate.Run)
@@ -53,7 +51,7 @@ public sealed class PdfModule : IProductModule
     private static CommandHelp Help() => new(
         [
             "pdf inspect report.pdf --sample --detail permissions forms signatures",
-            "pdf query pages report.pdf --pages 1-5 --mode layout --output-format json",
+            "pdf read report.pdf --pages 1-5 --content layout --output-format json",
             "pdf edit report.pdf --ops ops.json --out reviewed.pdf",
             "pdf sign reviewed.pdf --certificate signer.pfx --certificate-password-env PDF_SIGNING_PASSWORD --out approved.pdf",
         ],

@@ -1,3 +1,4 @@
+using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.Extensibility.Output;
 using Aspose.Cli.Sdk.Text;
 
@@ -37,6 +38,16 @@ internal static class SearchCommand
 
                 return result with { Window = SearchOptions.Continue(request.Query, result.Window, resume) };
             },
+            Examples =
+            [
+                "pdf search report.pdf --pattern invoice --output-format json",
+                "pdf search report.pdf --pattern \"total: [0-9]+\" --regex --pages 2-4",
+            ],
+            Links =
+            [
+                CommandHelpLink.Docs(PdfModule.Manifest, "overview", "what each PDF command is for"),
+                new("aspose-cli docs reading", "reading every product within bounded windows"),
+            ],
         };
     }
 
@@ -50,7 +61,7 @@ internal static class SearchCommand
                 TableText.Int(hit.Page),
                 TableText.Int(hit.Occurrence),
                 PdfText.Rectangle(hit.Rect),
-                hit.Context ?? hit.Snippet);
+                hit.Context ?? hit.Text);
         }
 
         table.WriteTo(surface.Out, surface.Format);

@@ -34,7 +34,7 @@ aspose-cli pdf edit report.pdf --ops report-ops.json --out report.review.pdf --v
 
 Each operation resolves its pages against the document as the earlier
 operations of the batch left it: an insert, delete or move changes the pages
-that later operations name. `pdf inspect` and `pdf query pages` report targets
+that later operations name. `pdf inspect` and `pdf read` report targets
 under the names the operations take: each page's `page`, each label range's
 `startPage`, `style`, `prefix` and `startingValue`, and each bookmark's `page`
 and `index`, the 1-based positions joined by `/` that `delete_bookmarks.indexes`
@@ -98,13 +98,13 @@ before adding navigation, then follow the destination checks in
 ## Redaction
 
 Redaction is destructive: keep the baseline, apply `redact_text` or
-`redact_area`, then verify with `pdf query search` and `review`. `redact_text`
+`redact_area`, then verify with `pdf search` and `review`. `redact_text`
 works on extractable text and performs no OCR. A black rectangle or zero search
 hits alone is not proof that all sensitive content was removed; a raw-byte
 absence check for a known literal is additional evidence only, because PDF text
 can be encoded or compressed. An `OP_NO_EFFECT` warning names each
 `redact_text` operation that removed nothing: search for the text it targets
-with `pdf query search`, and when it shows on the page but is not found, widen
+with `pdf search`, and when it shows on the page but is not found, widen
 the pattern into a regular expression or cover the text with `redact_area`.
 
 The engine removes redacted text without keeping its width, so text on the
@@ -127,13 +127,13 @@ the text that follows them on their lines:
   left it and removes its matches on a page from the last to the first, so
   every match is still where it was found.
 - To cover text with `redact_area`, take each rectangle from the `rect` of a
-  `pdf query search` hit as it is, without a margin: a margin also removes the
+  `pdf search` hit as it is, without a margin: a margin also removes the
   characters it touches, such as the full-width `，` or `：` beside a value.
   Order the areas of one line from right to left, because each removal moves
   the rest of the line and an area taken from the original would then miss
   part of the value it was meant to cover.
 
-Then run `pdf query search` for each value to confirm that none is left, and
+Then run `pdf search` for each value to confirm that none is left, and
 `review` the output: tell the user which pages `PDF_TEXT_COVERED` names, because
 their text is hidden there.
 
@@ -141,7 +141,7 @@ The engine reads a visible gap between characters as a space, so extracted
 text can hold spaces the source never had: Word separates Chinese, Japanese or
 Korean text from digits and Latin letters with such a gap, and `2026年10月31日`
 extracts as `2026年 10月 31日`. Literal patterns of `redact_text` and
-`pdf query search` therefore also match with up to two spaces, never a line
+`pdf search` therefore also match with up to two spaces, never a line
 break, wherever an East Asian character meets a character that is not East
 Asian, such as a digit or Latin letter. A regular
 expression is matched as written: allow the gaps with ` *`, for example
@@ -149,7 +149,7 @@ expression is matched as written: allow the gaps with ` *`, for example
 
 ### Scanned pages
 
-A page without a text layer (`pdf query pages` reports
+A page without a text layer (`pdf read` reports
 `SCANNED_PAGES_SUSPECTED`, and `review` `PDF_PAGE_WITHOUT_TEXT_LAYER`) can only
 be redacted with `redact_area`. Both name a page that has no extractable text
 and one image spanning at least three quarters of its width or height and
@@ -172,7 +172,7 @@ rectangle from a gridded render, never by eye:
    `review` the output.
 
 ```powershell
-aspose-cli pdf query pages scan.pdf --output-format json
+aspose-cli pdf read scan.pdf --output-format json
 aspose-cli pdf render scan.pdf --pages 2 --grid 50 --dpi 150 --out scan.grid.png --output-format json
 aspose-cli pdf edit scan.pdf --ops redact-ops.json --out scan.redacted.pdf --output-format json
 aspose-cli pdf render scan.redacted.pdf --pages 2 --grid 50 --dpi 200 --out scan.redacted.grid.png --output-format json

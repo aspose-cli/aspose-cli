@@ -359,9 +359,9 @@ internal static class InvariantCases
         }
         ScenarioExpectation Unchanged(Invocation invocation) => new()
         {
-            // The smallest valid invocation of a read-only command succeeds, so a check that
+            // The smallest valid invocation of a read-only command completes, so a check that
             // nothing was written is never met by a command that failed before it could write.
-            ExitCode = [0],
+            ExitCode = Completed(command),
             // Review writes its evidence next to the input; every other read-only command writes nothing.
             Files = review
                 ? new ScenarioFiles { Unchanged = [.. invocation.Files.Keys] }
@@ -508,7 +508,7 @@ internal static class InvariantCases
                     yield return Case(SecretHidden, $"{command} {option.Name}{(right ? string.Empty : " with a wrong password")}",
                         ShardOf(command), slow, invocation,
                         right
-                            ? new ScenarioExpectation { ExitCode = [0], Hidden = [secret] }
+                            ? new ScenarioExpectation { ExitCode = Completed(command), Hidden = [secret] }
                             : new ScenarioExpectation { Error = [refusal!], Files = new ScenarioFiles { NothingWritten = true }, Hidden = [secret] },
                         stdin);
                 }
@@ -662,6 +662,12 @@ internal static class InvariantCases
         };
         return new InvariantCase(id, invariant, shard, slow, scenario);
     }
+
+    /// <summary>
+    /// The exit codes of a command that ran to completion: 0, and for a check such as
+    /// <c>validate</c> also 8, since a fixture need not pass the check.
+    /// </summary>
+    private static int[] Completed(CliCommand command) => command.Verb == "validate" ? [0, 8] : [0];
 
     internal static IEnumerable<int> ExitCodesOf(CliCatalog catalog, params string[] categories) =>
         catalog.Document["diagnostics"]!.AsArray()

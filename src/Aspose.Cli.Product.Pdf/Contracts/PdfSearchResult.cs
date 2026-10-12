@@ -2,7 +2,7 @@ using System.Text.Json.Serialization;
 
 namespace Aspose.Cli.Product.Pdf.Contracts;
 
-/// <summary>The bounded text search of <c>pdf query search</c>.</summary>
+/// <summary>The bounded text search of <c>pdf search</c>.</summary>
 public sealed record PdfSearchResult() : WindowedResultEnvelope("search-result", 2)
 {
     /// <summary>The PDF searched.</summary>
@@ -24,7 +24,7 @@ public sealed record PdfSearchHit
     public required int Page { get; init; }
 
     /// <summary>The matched text.</summary>
-    public required string Snippet { get; init; }
+    public required string Text { get; init; }
 
     /// <summary>
     /// The page text around the match, up to 40 characters on each side, with line breaks as

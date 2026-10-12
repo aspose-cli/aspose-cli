@@ -41,7 +41,7 @@ internal static class MergeCommand
                     EncryptPassword = standard.EncryptPassword(),
                 };
             },
-            static (result, surface) => ResultText.Produced(surface, result.Output, result.Action))
+            static (result, surface) => ResultText.Produced(surface, result.Output, "merge"))
         {
             Examples =
             [

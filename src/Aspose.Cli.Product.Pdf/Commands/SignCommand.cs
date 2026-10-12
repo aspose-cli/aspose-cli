@@ -16,7 +16,7 @@ internal static class SignCommand
             Required = true,
             Description = "PKCS#12 certificate path (.pfx or .p12).",
         }.WithInput(InputKind.File);
-        PasswordOptions certificatePassword = PasswordOptions.RequiredEnvironment("--certificate-password", "the PKCS#12 certificate");
+        PasswordOptions certificatePassword = PasswordOptions.Required("--certificate-password", "the PKCS#12 certificate");
         var visible = new Option<bool>("--visible")
         {
             Description = "Place a visible signature appearance on the selected page.",
@@ -28,7 +28,7 @@ internal static class SignCommand
         };
         var rect = new Option<string?>("--rect")
         {
-            Description = "Visible rectangle x,y,width,height in PDF points; default 36,36,180,60.",
+            Description = "Visible rectangle x,y,width,height in PDF points from the page's top-left corner, as redact_area and 'pdf render --grid' measure. Default: 180x60, 36 points from the bottom-left corner, smaller on a page too small for it.",
         }.WithInput(InputKind.None);
         var reason = new Option<string?>("--reason") { Description = "Signing reason stored in the signature." }.WithInput(InputKind.None);
         var location = new Option<string?>("--location") { Description = "Signing location stored in the signature." }.WithInput(InputKind.None);
@@ -82,7 +82,7 @@ internal static class SignCommand
             Examples =
             [
                 "pdf sign contract.pdf --certificate signer.pfx --certificate-password-env PDF_SIGNING_PASSWORD",
-                "pdf sign contract.pdf --certificate signer.pfx --certificate-password-env PDF_SIGNING_PASSWORD --visible --page 2 --reason Approved --out signed.pdf",
+                "pdf sign contract.pdf --certificate signer.pfx --certificate-password-stdin --visible --page 2 --rect 36,700,180,60 --reason Approved --out signed.pdf",
             ],
             Links =
             [
@@ -111,7 +111,7 @@ internal static class SignCommand
         catch (FormatException)
         {
             throw CliErrors.OptionInvalid(
-                "--rect", $"'{text}' is not numeric", "Use x,y,width,height in PDF points.");
+                "--rect", $"'{text}' is not numeric", "Use x,y,width,height in PDF points from the page's top-left corner.");
         }
 
         if (values.Length != 4 || values[2] <= 0 || values[3] <= 0)
@@ -119,7 +119,7 @@ internal static class SignCommand
             throw CliErrors.OptionInvalid(
                 "--rect",
                 $"'{text}' must contain x,y and positive width,height",
-                "Use x,y,width,height in PDF points, for example 36,36,180,60.");
+                "Use x,y,width,height in PDF points from the page's top-left corner, for example 36,36,180,60.");
         }
 
         return new PdfSignatureRect(values[0], values[1], values[2], values[3]);

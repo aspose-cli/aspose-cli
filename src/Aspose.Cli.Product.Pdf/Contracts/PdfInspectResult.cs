@@ -11,6 +11,9 @@ public sealed record PdfInspectResult() : EngineResultEnvelope("inspect-result",
     /// <summary>The most bookmarks <see cref="Outline"/> lists.</summary>
     public const int OutlineLimit = 200;
 
+    /// <summary>The most form fields <see cref="PdfFormInfo.Fields"/> lists.</summary>
+    public const int FieldLimit = 500;
+
     /// <summary>The inspected PDF.</summary>
     [JsonPropertyOrder(-49)]
     public required InputInfo Input { get; init; }
@@ -35,8 +38,8 @@ public sealed record PdfInspectResult() : EngineResultEnvelope("inspect-result",
     [MaxItems(OutlineLimit)]
     public IReadOnlyList<PdfOutlineItem>? Outline { get; init; }
 
-    /// <summary>The interactive form, with <c>--detail forms</c>.</summary>
-    public PdfFormSummary? Forms { get; init; }
+    /// <summary>The interactive form and its fields' values, with <c>--detail forms</c>.</summary>
+    public PdfFormInfo? Forms { get; init; }
 
     /// <summary>The embedded files, with <c>--detail attachments</c>.</summary>
     public IReadOnlyList<PdfAttachmentInfo>? Attachments { get; init; }
@@ -55,13 +58,13 @@ public sealed record PdfInspectResult() : EngineResultEnvelope("inspect-result",
 
     /// <summary>
     /// Document information and XMP properties as the file stores them, with
-    /// <c>--detail metadata</c>; XMP keys start with <c>xmp:</c>. <c>creationDate</c> and
+    /// <c>--detail properties</c>; XMP keys start with <c>xmp:</c>. <c>creationDate</c> and
     /// <c>modificationDate</c> are ISO 8601 with a fraction of a second only when it is not zero,
     /// as XMP writes dates (<c>2026-10-01T06:01:53Z</c>): in UTC ending in <c>Z</c> when the stored
     /// date states an offset, without <c>Z</c> when it states none, and the stored text unchanged
     /// when it is not a PDF date.
     /// </summary>
-    public IReadOnlyDictionary<string, string?>? Metadata { get; init; }
+    public IReadOnlyDictionary<string, string?>? Properties { get; init; }
 }
 
 /// <summary>The PDF summary every inspection reports.</summary>
@@ -93,9 +96,9 @@ public sealed record PdfSummary
     [Pattern("^pdfa-[1-4][abuef]?$")]
     public string? PdfaProfile { get; init; }
 
-    /// <summary>The kind of interactive form the file has: none, an AcroForm or an XFA form.</summary>
+    /// <summary>The kind of interactive form the file has, an AcroForm or an XFA form; absent when it has none.</summary>
     [AllowedValues(typeof(PdfFormKinds))]
-    public required string FormType { get; init; }
+    public string? FormType { get; init; }
 
     /// <summary>How many files are embedded in the document.</summary>
     [Minimum(0)]
@@ -105,13 +108,13 @@ public sealed record PdfSummary
     public required bool Signed { get; init; }
 
     /// <summary>
-    /// The password this run opened the file with: <c>none</c> when it needed none (an unencrypted
-    /// file, or one with only an owner password), <c>user</c> for the open password, <c>owner</c>
-    /// for the owner password, also when it is the open password too. <c>permissions.hasOpenPassword</c> and <c>hasOwnerPassword</c> state
-    /// which passwords the file has.
+    /// The password this run opened the file with: <c>user</c> for the open password, <c>owner</c>
+    /// for the owner password, also when it is the open password too; absent when it needed none
+    /// (an unencrypted file, or one with only an owner password). <c>permissions.hasOpenPassword</c>
+    /// and <c>hasOwnerPassword</c> state which passwords the file has.
     /// </summary>
-    [AllowedValues("none", "user", "owner")]
-    public required string PasswordType { get; init; }
+    [AllowedValues("user", "owner")]
+    public string? PasswordType { get; init; }
 }
 
 /// <summary>One distinct page size and how many pages of the document have it.</summary>
@@ -214,22 +217,70 @@ public sealed record PdfOutlineItem
     public int? Page { get; init; }
 }
 
-/// <summary>The document's interactive form.</summary>
-public sealed record PdfFormSummary
+/// <summary>The document's interactive form and its fields.</summary>
+public sealed record PdfFormInfo
 {
-    /// <summary>The kind of form: none, an AcroForm or an XFA form.</summary>
+    /// <summary>The kind of form, an AcroForm or an XFA form; absent when the file has none.</summary>
     [AllowedValues(typeof(PdfFormKinds))]
-    public required string Type { get; init; }
+    public string? Kind { get; init; }
 
     /// <summary>
-    /// The number of field names, so a radio group is one field however many buttons
-    /// <c>pdf query forms</c> lists for it; review counts fields the same way.
+    /// The number of field names, so a radio group is one field however many buttons it has;
+    /// review counts fields the same way.
     /// </summary>
     [Minimum(0)]
     public required int FieldCount { get; init; }
 
     /// <summary>Whether the form's fields cannot be filled.</summary>
     public required bool ReadOnly { get; init; }
+
+    /// <summary>
+    /// The first fields in order of their names, one per field name; a <c>LIST_TRUNCATED</c>
+    /// warning names <see cref="FieldCount"/> when there are more.
+    /// </summary>
+    [MaxItems(PdfInspectResult.FieldLimit)]
+    public required IReadOnlyList<PdfFormField> Fields { get; init; }
+}
+
+/// <summary>One form field; a radio group is one field, however many buttons it has.</summary>
+public sealed record PdfFormField
+{
+    /// <summary>The field's full name, which <c>set_form_field</c> accepts.</summary>
+    public required string Name { get; init; }
+
+    /// <summary>The field kind, such as <c>text</c>, <c>checkbox</c> or <c>radio</c>.</summary>
+    [AllowedValues(typeof(PdfFormFieldKinds))]
+    public required string Kind { get; init; }
+
+    /// <summary>The field's value; for a radio group, the value of its selected button.</summary>
+    public string? Value { get; init; }
+
+    /// <summary>
+    /// The values <c>set_form_field</c> accepts for the field: a choice field's or a radio
+    /// group's values, or a check box's appearance states, <c>Off</c> first; absent for a field
+    /// that takes any text.
+    /// </summary>
+    public IReadOnlyList<string>? Options { get; init; }
+
+    /// <summary>Whether the field cannot be filled.</summary>
+    public required bool ReadOnly { get; init; }
+
+    /// <summary>Whether the form requires a value for the field.</summary>
+    public required bool Required { get; init; }
+
+    /// <summary>
+    /// The page of the field's widget; absent for a radio group, whose buttons each have their
+    /// own, for a field without a widget, and in evaluation mode for a widget past the pages the
+    /// engine shows, which EVALUATION_INPUT_TRUNCATED then discloses.
+    /// </summary>
+    [Minimum(1)]
+    public int? Page { get; init; }
+
+    /// <summary>
+    /// The field's widget on that page, in points from its top-left corner. Present only with
+    /// <see cref="Page"/>.
+    /// </summary>
+    public PdfRect? Rect { get; init; }
 }
 
 /// <summary>One embedded file.</summary>

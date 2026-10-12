@@ -32,7 +32,7 @@ public sealed class PdfRendererGoldenTests
             1.1      Scope  -
 
             forms:
-            acroform: 4 field(s), read-only
+            acro: 4 field(s), read-only
 
             attachments:
             name         type      size
@@ -56,7 +56,7 @@ public sealed class PdfRendererGoldenTests
             layers:
             Background, Notes
 
-            metadata:
+            properties:
             name     value
             Author   -
             Creator  Writer
@@ -91,7 +91,7 @@ public sealed class PdfRendererGoldenTests
 
             ### forms
 
-            acroform: 4 field(s), read-only
+            acro: 4 field(s), read-only
 
             ### attachments
 
@@ -123,7 +123,7 @@ public sealed class PdfRendererGoldenTests
 
             Background, Notes
 
-            ### metadata
+            ### properties
 
             | name | value |
             | --- | --- |
@@ -140,7 +140,7 @@ public sealed class PdfRendererGoldenTests
         PdfInspectResult result = Info() with
         {
             Outline = [], Attachments = [], Fonts = [], Signatures = [], Layers = [],
-            Metadata = new Dictionary<string, string?>(),
+            Properties = new Dictionary<string, string?>(),
         };
 
         string text = RenderedText.Of(surface => InspectCommand.Table(result, surface), TableFormat.Plain);
@@ -167,7 +167,7 @@ public sealed class PdfRendererGoldenTests
             layers:
             -
 
-            metadata:
+            properties:
             -
             """,
             text);
@@ -313,7 +313,7 @@ public sealed class PdfRendererGoldenTests
                 new PdfOutlineItem { Index = "1", Title = "Intro", Level = 1, Page = 1 },
                 new PdfOutlineItem { Index = "1.1", Title = "Scope", Level = 2 },
             ],
-            Forms = new PdfFormSummary { Type = "acroform", FieldCount = 4, ReadOnly = true },
+            Forms = new PdfFormInfo { Kind = "acro", FieldCount = 4, ReadOnly = true, Fields = [] },
             Attachments =
             [
                 new PdfAttachmentInfo { Name = "data.csv", MimeType = "text/csv", SizeBytes = 1_234 },
@@ -336,7 +336,7 @@ public sealed class PdfRendererGoldenTests
                 new PdfSignatureInfo { Name = "Signature2", Signed = false },
             ],
             Layers = ["Background", "Notes"],
-            Metadata = new Dictionary<string, string?> { ["Title"] = "Report", ["Author"] = null, ["Creator"] = "Writer" },
+            Properties = new Dictionary<string, string?> { ["Title"] = "Report", ["Author"] = null, ["Creator"] = "Writer" },
         };
     }
 }

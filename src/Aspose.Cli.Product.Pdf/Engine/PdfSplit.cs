@@ -77,12 +77,9 @@ internal static class PdfSplit
         return new PdfSplitResult
         {
             Input = PdfInfoProjection.Source(filePath, loaded),
-            Outputs = targets.Select((item, index) => new PdfSplitOutput
+            Outputs = targets.Select((item, index) => new PdfPartOutput(FileObjects.Output(files[index], PdfFormats.Document[0], item.Encrypted))
             {
-                Index = item.Part.Index,
                 Pages = Aspose.Cli.Sdk.Addressing.PageRange.Describe(item.Part.Pages) ?? string.Empty,
-                Bookmark = item.Part.Bookmark,
-                Output = FileObjects.Output(files[index], PdfFormats.Document[0], item.Encrypted),
             }).ToArray(),
             License = EnvelopeParts.License(state),
             Warnings = warnings.Count == 0 ? null : warnings,
@@ -94,11 +91,11 @@ internal static class PdfSplit
     {
         if (request.Plan.By == SplitBy.Pages)
         {
-            return [.. request.Plan.PageGroups(document.Pages.Count).Select(static (pages, index) => new SplitPart(index + 1, pages, null))];
+            return [.. request.Plan.PageGroups(document.Pages.Count).Select(static (pages, index) => new SplitPart(index + 1, pages))];
         }
 
         var bookmarks = document.Outlines
-            .Select(item => (Title: item.Title ?? string.Empty, Page: PdfNavigationCensus.DestinationPage(item)))
+            .Select(static item => (Title: item.Title ?? string.Empty, Page: PdfNavigationCensus.DestinationPage(item)))
             .Where(static item => item.Page > 0)
             .OrderBy(static item => item.Page)
             .GroupBy(static item => item.Page)
@@ -117,8 +114,7 @@ internal static class PdfSplit
         {
             parts.Add(new SplitPart(
                 parts.Count + 1,
-                Enumerable.Range(1, bookmarks[0].Page - 1).ToArray(),
-                null));
+                Enumerable.Range(1, bookmarks[0].Page - 1).ToArray()));
         }
 
         int bookmarkIndexOffset = parts.Count;
@@ -126,7 +122,7 @@ internal static class PdfSplit
         {
             int end = index + 1 < bookmarks.Length ? bookmarks[index + 1].Page - 1 : document.Pages.Count;
             int[] pages = Enumerable.Range(bookmark.Page, end - bookmark.Page + 1).ToArray();
-            return new SplitPart(bookmarkIndexOffset + index + 1, pages, bookmark.Title);
+            return new SplitPart(bookmarkIndexOffset + index + 1, pages);
         }));
         return parts;
     }
@@ -168,6 +164,6 @@ internal static class PdfSplit
         }
     }
 
-    private sealed record SplitPart(int Index, IReadOnlyList<int> Pages, string? Bookmark);
+    private sealed record SplitPart(int Index, IReadOnlyList<int> Pages);
 }
 

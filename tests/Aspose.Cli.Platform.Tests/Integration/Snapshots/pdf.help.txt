@@ -6,8 +6,9 @@ Usage:
   aspose-cli pdf [command]
 
 Commands:
-  inspect <file>   Show PDF structure, security state and metadata.
-  query            Query bounded PDF pages, forms or text matches.
+  inspect <file>   Show PDF structure, security state and properties.
+  read <file>      Read a bounded page-text window.
+  search <file>    Search PDF text and return page rectangles.
   convert <file>   Convert selected PDF pages to a supported format.
   render <file>    Render one or more PDF pages.
   create <file>    Create a PDF from exactly one source family.
@@ -23,7 +24,7 @@ Global options:
 
 Examples:
   aspose-cli pdf inspect report.pdf --sample --detail permissions forms signatures
-  aspose-cli pdf query pages report.pdf --pages 1-5 --mode layout --output-format json
+  aspose-cli pdf read report.pdf --pages 1-5 --content layout --output-format json
   aspose-cli pdf edit report.pdf --ops ops.json --out reviewed.pdf
   aspose-cli pdf sign reviewed.pdf --certificate signer.pfx --certificate-password-env PDF_SIGNING_PASSWORD --out approved.pdf
 
@@ -82,7 +83,7 @@ Options:
   --from-html <from-html>           HTML input file.
   --allow-network-resources         Let the HTML importer request the network resources trusted --from-html input names; the result lists every address. Local references stay beneath the HTML directory.
   --from-text <from-text>           UTF-8 text or Markdown input file.
-  --page-size <A3|A4|Legal|Letter>  Page size of the new PDF. [default: A4]
+  --page-size <a3|a4|legal|letter>  Page size of the new PDF. [default: a4]
   --margins <margins>               One value or top,right,bottom,left in points. [default: 36]
   --overwrite                       Replace the output file if it already exists.
   --dry-run                         Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds.
@@ -96,7 +97,7 @@ Global options:
 
 Examples:
   aspose-cli pdf create scans.pdf --from-images page1.png page2.png
-  aspose-cli pdf create notes.pdf --from-text notes.md --page-size Letter --margins 54
+  aspose-cli pdf create notes.pdf --from-text notes.md --page-size letter --margins 54
 
 Learn more:
   aspose-cli docs pdf/assemble-review-report  building a PDF from several sources
@@ -149,18 +150,17 @@ Description:
   Extract bounded PDF assets, text, tables or form data.
 
 Usage:
-  aspose-cli pdf extract <file> --what <what> [options]
+  aspose-cli pdf extract <file> --what <what> --out-dir <out-dir> [options]
 
 Arguments:
   <file>  PDF document to open.
 
 Options:
-  --to <fdf|json|xfdf>                                      Form export format; only with --what forms. Default: the --out extension's.
-  --what <attachments|forms|images|tables|text> (REQUIRED)  What to extract; forms exports the form data to one file.
+  --what <attachments|forms|images|tables|text> (REQUIRED)  What to extract; forms writes the form data to one file.
+  --form-format <fdf|json|xfdf>                             Form data format; required with --what forms, and only with it.
   --pages <pages>                                           Pages to process: 1-based numbers and ranges such as 1-3,7,9-, or all. Default: every page. Only with --what images, text or tables.
   --bom                                                     Start each table's CSV with a UTF-8 byte order mark, so Excel reads its non-English text correctly; only with --what tables. Default: UTF-8 without one.
-  --out-dir <out-dir>                                       Safe extraction directory; required unless --what forms.
-  -o, --out <out>                                           Form-data output file; only with --what forms. Default extension follows --to.
+  --out-dir <out-dir> (REQUIRED)                            Safe extraction directory.
   --overwrite                                               Replace the output file if it already exists.
   --dry-run                                                 Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds.
   --password <password>                                     Password for the PDF. Discouraged: visible in the process list; prefer --password-env.
@@ -173,7 +173,7 @@ Global options:
 Examples:
   aspose-cli pdf extract report.pdf --what images --out-dir images
   aspose-cli pdf extract report.pdf --what tables --pages 2-4 --bom --out-dir tables
-  aspose-cli pdf extract form.pdf --what forms --out form.json
+  aspose-cli pdf extract form.pdf --what forms --form-format json --out-dir form-data
 
 Learn more:
   aspose-cli docs pdf/overview        what each PDF command is for
@@ -182,7 +182,7 @@ Learn more:
 
 ## aspose-cli pdf inspect --help
 Description:
-  Show PDF structure, security state and metadata.
+  Show PDF structure, security state and properties.
 
 Usage:
   aspose-cli pdf inspect <file> [options]
@@ -192,7 +192,7 @@ Arguments:
 
 Options:
   --sample                       Include a bounded sample: the size and rotation of each page, up to 20 pages. Default: off.
-  --detail <detail>              Extra sections to include; repeat for more. outline: bookmarks, up to 200; forms: form type and field count; layers: optional content layer names; metadata: document information such as title and author. Values: attachments, fonts, forms, layers, metadata, outline, permissions, signatures.
+  --detail <detail>              Extra sections to include; repeat for more. outline: bookmarks, up to 200; forms: form kind and each field's value, up to 500 fields; layers: optional content layer names; properties: document information such as title and author. Values: attachments, fonts, forms, layers, outline, permissions, properties, signatures.
   --password <password>          Password for the PDF. Discouraged: visible in the process list; prefer --password-env.
   --password-env <password-env>  Name of an environment variable holding the password for the PDF.
   --password-stdin               Read the password for the PDF from the first line of stdin.
@@ -242,54 +242,19 @@ Learn more:
   aspose-cli docs pdf/assemble-review-report  building a PDF from several sources
 
 
-## aspose-cli pdf query --help
-Description:
-  Query bounded PDF pages, forms or text matches.
-
-Usage:
-  aspose-cli pdf query [command]
-
-Commands:
-  pages <file>   Read a bounded page-text window.
-  forms <file>   List PDF form fields and current values.
-  search <file>  Search PDF text and return page rectangles.
-
-Global options:
-  -h/--help, --output-format, -q/--quiet, -v/--verbose, --license, --license-mode, --workdir, --timeout, --max-input-bytes (see aspose-cli --help)
-
-
-## aspose-cli pdf query forms --help
-Description:
-  List PDF form fields and current values.
-
-Usage:
-  aspose-cli pdf query forms <file> [options]
-
-Arguments:
-  <file>  PDF document to open.
-
-Options:
-  --password <password>          Password for the PDF. Discouraged: visible in the process list; prefer --password-env.
-  --password-env <password-env>  Name of an environment variable holding the password for the PDF.
-  --password-stdin               Read the password for the PDF from the first line of stdin.
-
-Global options:
-  -h/--help, --output-format, -q/--quiet, -v/--verbose, --license, --license-mode, --workdir, --timeout, --max-input-bytes (see aspose-cli --help)
-
-
-## aspose-cli pdf query pages --help
+## aspose-cli pdf read --help
 Description:
   Read a bounded page-text window.
 
 Usage:
-  aspose-cli pdf query pages <file> [options]
+  aspose-cli pdf read <file> [options]
 
 Arguments:
   <file>  PDF document to open.
 
 Options:
   --pages <pages>                Pages to process: 1-based numbers and ranges such as 1-3,7,9-, or all. Default: every page.
-  --mode <layout|plain>          Text projection: whether the text keeps the spacing of the page. [default: plain]
+  --content <layout|text>        How each page is returned: in reading order, or with the spacing of the page kept. [default: text]
   --max-chars <max-chars>        Maximum characters returned, counting the text of the returned pages. Range: 1-10000000. [default: 20000]
   --password <password>          Password for the PDF. Discouraged: visible in the process list; prefer --password-env.
   --password-env <password-env>  Name of an environment variable holding the password for the PDF.
@@ -298,30 +263,13 @@ Options:
 Global options:
   -h/--help, --output-format, -q/--quiet, -v/--verbose, --license, --license-mode, --workdir, --timeout, --max-input-bytes (see aspose-cli --help)
 
+Examples:
+  aspose-cli pdf read report.pdf --pages 1-5 --output-format json
+  aspose-cli pdf read report.pdf --pages 3 --content layout --max-chars 5000
 
-## aspose-cli pdf query search --help
-Description:
-  Search PDF text and return page rectangles.
-
-Usage:
-  aspose-cli pdf query search <file> --pattern <pattern> [options]
-
-Arguments:
-  <file>  PDF document to open.
-
-Options:
-  --pattern <pattern> (REQUIRED)  Text to find, or a regular expression with --regex.
-  --regex                         Treat the pattern as a culture-invariant regular expression with a one-second budget.
-  --case-sensitive                Match letter case exactly.
-  --max-hits <max-hits>           Maximum returned hits. Range: 1-10000. [default: 100]
-  --skip <skip>                   Matches to pass over before the returned hits; a truncated search's window.next sets it. [default: 0]
-  --pages <pages>                 Pages to process: 1-based numbers and ranges such as 1-3,7,9-, or all. Default: every page.
-  --password <password>           Password for the PDF. Discouraged: visible in the process list; prefer --password-env.
-  --password-env <password-env>   Name of an environment variable holding the password for the PDF.
-  --password-stdin                Read the password for the PDF from the first line of stdin.
-
-Global options:
-  -h/--help, --output-format, -q/--quiet, -v/--verbose, --license, --license-mode, --workdir, --timeout, --max-input-bytes (see aspose-cli --help)
+Learn more:
+  aspose-cli docs pdf/overview  what each PDF command is for
+  aspose-cli docs reading       reading every product within bounded windows
 
 
 ## aspose-cli pdf render --help
@@ -359,39 +307,73 @@ Learn more:
   aspose-cli docs pdf/editing       the page coordinates redact_area takes
 
 
-## aspose-cli pdf sign --help
+## aspose-cli pdf search --help
 Description:
-  Apply a PKCS#7 signature and verify the saved signature field.
+  Search PDF text and return page rectangles.
 
 Usage:
-  aspose-cli pdf sign <file> --certificate <certificate> --certificate-password-env <certificate-password-env> [options]
+  aspose-cli pdf search <file> --pattern <pattern> [options]
 
 Arguments:
   <file>  PDF document to open.
 
 Options:
-  --certificate <certificate> (REQUIRED)                            PKCS#12 certificate path (.pfx or .p12).
-  --certificate-password-env <certificate-password-env> (REQUIRED)  Name of an environment variable holding the password for the PKCS#12 certificate.
-  --visible                                                         Place a visible signature appearance on the selected page.
-  --page <page>                                                     1-based page for the signature field. [default: 1]
-  --rect <rect>                                                     Visible rectangle x,y,width,height in PDF points; default 36,36,180,60.
-  --reason <reason>                                                 Signing reason stored in the signature.
-  --location <location>                                             Signing location stored in the signature.
-  --contact <contact>                                               Signer contact stored in the signature.
-  -o, --out <out>                                                   Signed PDF path. Default: <input>.signed.pdf.
-  --overwrite                                                       Replace the output file if it already exists.
-  --dry-run                                                         Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds.
-  --password <password>                                             Password for the input PDF. Discouraged: visible in the process list; prefer --password-env.
-  --password-env <password-env>                                     Name of an environment variable holding the password for the input PDF.
-  --password-stdin                                                  Read the password for the input PDF from the first line of stdin.
-  --font-dir <font-dir>                                             Local font directory searched in addition to the system fonts; repeat for more.
+  --pattern <pattern> (REQUIRED)  Text to find, or a regular expression with --regex.
+  --regex                         Treat the pattern as a culture-invariant regular expression with a one-second budget.
+  --case-sensitive                Match letter case exactly.
+  --max-hits <max-hits>           Maximum returned hits. Range: 1-10000. [default: 100]
+  --skip <skip>                   Matches to pass over before the returned hits; a truncated search's window.next sets it. [default: 0]
+  --pages <pages>                 Pages to process: 1-based numbers and ranges such as 1-3,7,9-, or all. Default: every page.
+  --password <password>           Password for the PDF. Discouraged: visible in the process list; prefer --password-env.
+  --password-env <password-env>   Name of an environment variable holding the password for the PDF.
+  --password-stdin                Read the password for the PDF from the first line of stdin.
+
+Global options:
+  -h/--help, --output-format, -q/--quiet, -v/--verbose, --license, --license-mode, --workdir, --timeout, --max-input-bytes (see aspose-cli --help)
+
+Examples:
+  aspose-cli pdf search report.pdf --pattern invoice --output-format json
+  aspose-cli pdf search report.pdf --pattern "total: [0-9]+" --regex --pages 2-4
+
+Learn more:
+  aspose-cli docs pdf/overview  what each PDF command is for
+  aspose-cli docs reading       reading every product within bounded windows
+
+
+## aspose-cli pdf sign --help
+Description:
+  Apply a PKCS#7 signature and verify the saved signature field.
+
+Usage:
+  aspose-cli pdf sign <file> --certificate <certificate> [options]
+
+Arguments:
+  <file>  PDF document to open.
+
+Options:
+  --certificate <certificate> (REQUIRED)                 PKCS#12 certificate path (.pfx or .p12).
+  --certificate-password-env <certificate-password-env>  Name of an environment variable holding the password for the PKCS#12 certificate.
+  --certificate-password-stdin                           Read the password for the PKCS#12 certificate from the first line of stdin.
+  --visible                                              Place a visible signature appearance on the selected page.
+  --page <page>                                          1-based page for the signature field. [default: 1]
+  --rect <rect>                                          Visible rectangle x,y,width,height in PDF points from the page's top-left corner, as redact_area and 'pdf render --grid' measure. Default: 180x60, 36 points from the bottom-left corner, smaller on a page too small for it.
+  --reason <reason>                                      Signing reason stored in the signature.
+  --location <location>                                  Signing location stored in the signature.
+  --contact <contact>                                    Signer contact stored in the signature.
+  -o, --out <out>                                        Signed PDF path. Default: <input>.signed.pdf.
+  --overwrite                                            Replace the output file if it already exists.
+  --dry-run                                              Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds.
+  --password <password>                                  Password for the input PDF. Discouraged: visible in the process list; prefer --password-env.
+  --password-env <password-env>                          Name of an environment variable holding the password for the input PDF.
+  --password-stdin                                       Read the password for the input PDF from the first line of stdin.
+  --font-dir <font-dir>                                  Local font directory searched in addition to the system fonts; repeat for more.
 
 Global options:
   -h/--help, --output-format, -q/--quiet, -v/--verbose, --license, --license-mode, --workdir, --timeout, --max-input-bytes (see aspose-cli --help)
 
 Examples:
   aspose-cli pdf sign contract.pdf --certificate signer.pfx --certificate-password-env PDF_SIGNING_PASSWORD
-  aspose-cli pdf sign contract.pdf --certificate signer.pfx --certificate-password-env PDF_SIGNING_PASSWORD --visible --page 2 --reason Approved --out signed.pdf
+  aspose-cli pdf sign contract.pdf --certificate signer.pfx --certificate-password-stdin --visible --page 2 --rect 36,700,180,60 --reason Approved --out signed.pdf
 
 Learn more:
   aspose-cli docs pdf/forms-security  signatures, permissions and encryption

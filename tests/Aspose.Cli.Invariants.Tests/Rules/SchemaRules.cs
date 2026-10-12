@@ -612,7 +612,7 @@ internal static partial class ContractRules
     {
         foreach (string id in PublishedSchema.ResultIds(catalog))
         {
-            if (id.EndsWith("-read", StringComparison.Ordinal))
+            if (id.EndsWith("-read", StringComparison.Ordinal) || id.EndsWith("/read-result", StringComparison.Ordinal))
             {
                 yield return Check("C-R32", $"{id} input", () => ReadShape(id, units: false));
                 yield return Check("C-R32", $"{id} units", () => ReadShape(id, units: true));

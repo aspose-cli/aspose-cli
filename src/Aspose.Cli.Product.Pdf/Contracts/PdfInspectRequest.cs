@@ -16,7 +16,7 @@ public static class PdfInspectDetails
     /// <summary>The bookmarks, in reading order.</summary>
     public const string Outline = "outline";
 
-    /// <summary>The interactive form: its type and field count.</summary>
+    /// <summary>The interactive form and its fields' values.</summary>
     public const string Forms = "forms";
 
     /// <summary>The embedded files.</summary>
@@ -34,9 +34,47 @@ public static class PdfInspectDetails
     /// <summary>The names of the optional content layers.</summary>
     public const string Layers = "layers";
 
-    /// <summary>The document information and XMP metadata.</summary>
-    public const string Metadata = "metadata";
+    /// <summary>The document information and XMP properties.</summary>
+    public const string Properties = "properties";
 
     /// <summary>Every detail id, in documentation order.</summary>
-    public static IReadOnlyList<string> All { get; } = [Outline, Forms, Attachments, Fonts, Permissions, Signatures, Layers, Metadata];
+    public static IReadOnlyList<string> All { get; } = [Outline, Forms, Attachments, Fonts, Permissions, Signatures, Layers, Properties];
+}
+
+/// <summary>The kinds of interactive form a PDF can have.</summary>
+public static class PdfFormKinds
+{
+    /// <summary>An AcroForm.</summary>
+    public const string Acro = "acro";
+
+    /// <summary>An XFA form.</summary>
+    public const string Xfa = "xfa";
+}
+
+/// <summary>The product vocabulary of form field kinds, independent of the engine's class names.</summary>
+public static class PdfFormFieldKinds
+{
+    /// <summary>A text box.</summary>
+    public const string Text = "text";
+
+    /// <summary>A check box.</summary>
+    public const string Checkbox = "checkbox";
+
+    /// <summary>A radio group.</summary>
+    public const string Radio = "radio";
+
+    /// <summary>A drop-down list.</summary>
+    public const string ComboBox = "combobox";
+
+    /// <summary>A list box.</summary>
+    public const string ListBox = "listbox";
+
+    /// <summary>A push button.</summary>
+    public const string Button = "button";
+
+    /// <summary>A signature field.</summary>
+    public const string Signature = "signature";
+
+    /// <summary>A field kind the vocabulary does not name.</summary>
+    public const string Other = "other";
 }

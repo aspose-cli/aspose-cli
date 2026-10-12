@@ -31,7 +31,7 @@ public sealed class PdfRenderSelectionTests
         });
 
         Assert.Equal([1, 2], result.Outputs.Select(static output => output.Page));
-        Assert.Equal(["page.1.png", "page.2.png"], Names(result.Outputs.Select(static output => output.Output.Path)));
+        Assert.Equal(["page.1.png", "page.2.png"], Names(result.Outputs.Select(static output => output.Path)));
         Assert.Equal(["page.1.png", "page.2.png"], Names(Directory.GetFiles(fixture.File("out"))));
     }
 
@@ -129,6 +129,6 @@ public sealed class PdfRenderSelectionTests
             Plan = new Sdk.Addressing.SplitPlan(Sdk.Addressing.SplitBy.Pages, 1, null, null),
         });
 
-        Assert.Equal(["report.1.pdf", "report.2.pdf", "report.3.pdf"], Names(result.Outputs.Select(static part => part.Output.Path)));
+        Assert.Equal(["report.1.pdf", "report.2.pdf", "report.3.pdf"], Names(result.Outputs.Select(static part => part.Path)));
     }
 }

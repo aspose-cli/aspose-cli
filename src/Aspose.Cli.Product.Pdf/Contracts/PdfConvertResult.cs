@@ -9,10 +9,10 @@ public sealed record PdfConvertResult() : EngineResultEnvelope("convert-result",
     [JsonPropertyOrder(-50)]
     public required InputInfo Input { get; init; }
 
-    /// <summary>The files written: one, or one per page for an image format.</summary>
+    /// <summary>The files written: one, or one per page for an image format, each with its page.</summary>
     [JsonPropertyOrder(-49)]
     [MinItems(1)]
-    public required IReadOnlyList<OutputInfo> Outputs { get; init; }
+    public required IReadOnlyList<PdfPageOutput> Outputs { get; init; }
 
     /// <summary>The page range converted, as <c>--pages</c> gave it; absent when every page was.</summary>
     public string? Pages { get; init; }

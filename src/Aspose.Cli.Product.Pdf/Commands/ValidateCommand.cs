@@ -38,9 +38,10 @@ internal static class ValidateCommand
     internal static void Table(PdfValidateResult result, TableSurface surface)
     {
         surface.Out.WriteLine($"{result.Profile}: {(result.Valid ? "valid" : "not valid")}");
-        foreach (string issue in result.Issues)
+        foreach (PdfComplianceIssue issue in result.Issues)
         {
-            surface.Out.WriteLine($"  {issue}");
+            string where = issue.Page is { } page ? $"{issue.Severity}, page {TableText.Int(page)}" : issue.Severity;
+            surface.Out.WriteLine(issue.Clause is { } clause ? $"  {clause} ({where}): {issue.Message}" : $"  ({where}): {issue.Message}");
         }
     }
 }

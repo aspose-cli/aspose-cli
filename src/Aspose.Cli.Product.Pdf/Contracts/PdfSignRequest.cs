@@ -20,5 +20,8 @@ public sealed record PdfSignRequest
     public string? Contact { get; init; }
 }
 
-/// <summary>A visible-signature rectangle in PDF points from the lower-left origin.</summary>
+/// <summary>
+/// A visible-signature rectangle in PDF points from the top-left corner of the visible, rotated
+/// page box, as <c>redact_area</c> and <c>pdf render --grid</c> measure.
+/// </summary>
 public sealed record PdfSignatureRect(double X, double Y, double Width, double Height);

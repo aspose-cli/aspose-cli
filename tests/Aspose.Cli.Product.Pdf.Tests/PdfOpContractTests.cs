@@ -137,11 +137,11 @@ public sealed class PdfOpContractTests
             document.Save(path);
         }
 
-        PdfFormResult form = PdfForms.Read(fixture.Session, new PdfFormReadRequest { Input = path });
+        PdfFormInfo form = fixture.Forms(path);
 
         Assert.Equal(
             [("agree", "checkbox"), ("choice", "combobox"), ("date", "text"), ("name", "text")],
-            form.Fields.Select(static field => (field.Name, field.Type)));
+            form.Fields.Select(static field => (field.Name, field.Kind)));
     }
 
     [Fact]
@@ -159,7 +159,7 @@ public sealed class PdfOpContractTests
             document.Save(path);
         }
 
-        PdfFormResult form = PdfForms.Read(fixture.Session, new PdfFormReadRequest { Input = path });
+        PdfFormInfo form = fixture.Forms(path);
 
         Assert.Equal(
             [("first", 72d, height - 640, 20d, 20d), ("second", 300d, height - 516, 16d, 16d)],

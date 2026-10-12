@@ -58,11 +58,15 @@ internal static class PdfDiagnostics
     /// <summary>The output's page count differs from what the page operations left.</summary>
     internal static readonly DiagnosticDescriptor PageCountMismatch = DiagnosticDescriptor.Verification("PDF_PAGE_COUNT_MISMATCH");
 
+    /// <summary>A PDF/A check found a problem: the issue code of <c>pdf validate</c>.</summary>
+    internal static readonly DiagnosticDescriptor PdfaNonconformance = DiagnosticDescriptor.Verification(PdfComplianceIssue.NonconformanceCode);
+
     /// <summary>An operation's effect could not be read back, so it was not checked.</summary>
     internal static readonly DiagnosticDescriptor VerificationIncomplete = DiagnosticDescriptor.Verification("PDF_VERIFICATION_INCOMPLETE");
 
     internal static IReadOnlyList<DiagnosticDescriptor> All { get; } =
     [
+        PdfaNonconformance,
         FieldValueMismatch,
         FieldNotFlattened,
         RedactedTextFound,

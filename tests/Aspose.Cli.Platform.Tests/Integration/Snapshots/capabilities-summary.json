@@ -198,31 +198,23 @@
         },
         {
           "command": "inspect",
-          "description": "Show PDF structure, security state and metadata."
+          "description": "Show PDF structure, security state and properties."
         },
         {
           "command": "merge",
           "description": "Merge PDF inputs in order."
         },
         {
-          "command": "query",
-          "description": "Query bounded PDF pages, forms or text matches."
-        },
-        {
-          "command": "query forms",
-          "description": "List PDF form fields and current values."
-        },
-        {
-          "command": "query pages",
+          "command": "read",
           "description": "Read a bounded page-text window."
-        },
-        {
-          "command": "query search",
-          "description": "Search PDF text and return page rectangles."
         },
         {
           "command": "render",
           "description": "Render one or more PDF pages."
+        },
+        {
+          "command": "search",
+          "description": "Search PDF text and return page rectangles."
         },
         {
           "command": "sign",

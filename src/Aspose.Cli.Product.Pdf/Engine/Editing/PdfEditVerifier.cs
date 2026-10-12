@@ -228,7 +228,7 @@ internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
                         ? $"form field '{name}' is not in the output"
                         : $"form field '{name}' reads '{actual}' in the output, not '{expected.Value}'",
                     location: $"pdf/form/{name}",
-                    hint: "Read the field with 'pdf query forms' and check the value against the field's options or states."));
+                    hint: "Read the field with 'pdf inspect --detail forms' and check the value against the field's options."));
             }
         }
     }
@@ -250,7 +250,7 @@ internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
                     [flatten.Id],
                     $"the output still has the form field(s) {string.Join(", ", remaining.Select(static name => $"'{name}'"))}",
                     location: "pdf/form",
-                    hint: "List the remaining fields with 'pdf query forms' and flatten them again."));
+                    hint: "List the remaining fields with 'pdf inspect --detail forms' and flatten them again."));
             }
         }
     }
@@ -280,7 +280,7 @@ internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
         foreach (int number in pages.Where(number => number <= output.Pages.Count))
         {
             deadline?.ThrowIfExpired("pdf-verify");
-            string text = ExtractText(output.Pages[number], PdfReadModes.Plain);
+            string text = ExtractText(output.Pages[number], PdfReadContents.Text);
             string? watermark = license == LicenseState.Evaluation ? Watermark(output.Pages[number]) : null;
             string location = string.Create(CultureInfo.InvariantCulture, $"pdf/page/{number}");
             foreach (RedactionExpectation redaction in _redactions.Where(redaction => redaction.Pages?.Contains(number) ?? true))
@@ -298,7 +298,7 @@ internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
                         [redaction.Id],
                         string.Create(CultureInfo.InvariantCulture, $"its pattern exceeded its time budget on page {number}, so the page was not checked"),
                         location,
-                        "Simplify the expression, or search the page with 'pdf query search'."));
+                        "Simplify the expression, or search the page with 'pdf search'."));
                     continue;
                 }
 
@@ -310,7 +310,7 @@ internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
                         [redaction.Id],
                         string.Create(CultureInfo.InvariantCulture, $"page {number} of the output still has {remaining} match(es) of its pattern"),
                         location,
-                        "Check whether a later operation added the text again, or redact the area with redact_area, then search the output with 'pdf query search'."));
+                        "Check whether a later operation added the text again, or redact the area with redact_area, then search the output with 'pdf search'."));
                 }
             }
         }
@@ -367,7 +367,7 @@ internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
                     [expected.Id],
                     $"document information '{key}' reads '{actual}' in the output, not '{expected.Value}'",
                     location: $"pdf/metadata/{key}",
-                    hint: "Inspect the output with 'pdf inspect --detail metadata'."));
+                    hint: "Inspect the output with 'pdf inspect --detail properties'."));
             }
         }
     }

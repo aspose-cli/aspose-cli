@@ -1,4 +1,5 @@
 using System.CommandLine;
+using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.Extensibility.Output;
 
 namespace Aspose.Cli.Product.Pdf.Commands;
@@ -8,18 +9,18 @@ internal static class ReadCommand
     public static CommandDefinition<PdfReadRequest, PdfReadResult> Create()
     {
         var pages = new PartRangeOption("page", "every page");
-        var mode = new Option<string>("--mode")
+        var content = new Option<string>("--content")
         {
-            Description = "Text projection: whether the text keeps the spacing of the page.",
-            DefaultValueFactory = _ => PdfReadModes.Plain,
+            Description = "How each page is returned: in reading order, or with the spacing of the page kept.",
+            DefaultValueFactory = _ => PdfReadContents.Text,
         }.WithInput(InputKind.None);
-        mode.AcceptOnlyFromAmong([.. PdfReadModes.All]);
+        content.AcceptOnlyFromAmong([.. PdfReadContents.All]);
         var maxChars = new MaxCharactersOption("the text of the returned pages");
         return new(
-            "pages",
+            "read",
             "Read a bounded page-text window.",
             new CommandTraits { Input = PdfInputs.Document },
-            [.. pages.Options, mode, .. maxChars.Options],
+            [.. pages.Options, content, .. maxChars.Options],
             (parse, standard) =>
             {
                 int characters = maxChars.Read(parse);
@@ -27,7 +28,7 @@ internal static class ReadCommand
                 {
                     Input = standard.Input,
                     Pages = pages.ReadRange(parse),
-                    Mode = parse.GetValue(mode) ?? PdfReadModes.Plain,
+                    Content = parse.GetValue(content) ?? PdfReadContents.Text,
                     MaxCharacters = characters,
                     Password = standard.InputPassword,
                 };
@@ -36,12 +37,22 @@ internal static class ReadCommand
         {
             Finish = (_, request, result, standard) =>
                 result with { Window = result.Window with { Next = Next(standard.Continuation(), pages.Name, request, result) } },
+            Examples =
+            [
+                "pdf read report.pdf --pages 1-5 --output-format json",
+                "pdf read report.pdf --pages 3 --content layout --max-chars 5000",
+            ],
+            Links =
+            [
+                CommandHelpLink.Docs(PdfModule.Manifest, "overview", "what each PDF command is for"),
+                new("aspose-cli docs reading", "reading every product within bounded windows"),
+            ],
         };
     }
 
     internal static void Table(PdfReadResult result, TableSurface surface)
     {
-        surface.Out.WriteLine($"{result.Input.Path}: {result.PageCount} page(s) ({result.Mode})");
+        surface.Out.WriteLine($"{result.Input.Path}: {result.PageCount} page(s) ({result.Content})");
         foreach (PdfPageText page in result.Pages)
         {
             surface.Out.WriteLine();
@@ -66,7 +77,7 @@ internal static class ReadCommand
                 request.MaxCharacters) is { } continuation
             ? resume
                 .Option(pagesOption, continuation.Parts)
-                .Option("--mode", request.Mode)
+                .Option("--content", request.Content)
                 .Option(MaxCharactersOption.Name, continuation.MaxCharacters)
                 .ToString()
             : null;

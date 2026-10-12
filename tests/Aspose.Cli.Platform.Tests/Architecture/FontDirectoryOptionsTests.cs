@@ -28,9 +28,8 @@ public sealed class FontDirectoryOptionsTests
         ["cells edit"] = true, // auto-fit measures text; --verify renders
         ["cells compare"] = false,
         ["pdf inspect"] = false,
-        ["pdf query pages"] = false,
-        ["pdf query forms"] = false,
-        ["pdf query search"] = false,
+        ["pdf read"] = false,
+        ["pdf search"] = false,
         ["pdf create"] = true, // lays out text, HTML and Markdown
         ["pdf merge"] = false,
         ["pdf split"] = false,

@@ -5,25 +5,23 @@
 Read the fields before filling, then read the result back:
 
 ```powershell
-aspose-cli pdf query forms cover.pdf --output-format json
+aspose-cli pdf inspect cover.pdf --detail forms --output-format json
 aspose-cli pdf edit cover.pdf --ops form-ops.json --out cover.filled.pdf --output-format json
-aspose-cli pdf extract cover.filled.pdf --what forms --to json --out form-result.json --output-format json
+aspose-cli pdf extract cover.filled.pdf --what forms --form-format json --out-dir form-data --output-format json
 ```
 
 `set_form_field` addresses an AcroForm field by its exact full name. Each field's
-`type` is one of `text` (including date, number, password and rich-text boxes),
-`checkbox`, `radio`, `radio-option`, `combobox`, `listbox`, `button`, `signature`
-or `other`. Its `page` and `rect` (points from the page's top-left corner) place
-it on the page: when names do not say which label a field belongs to, match the
-`rect` to the label's position (`pdf query search` gives each text's `rect`).
+`kind` is one of `text` (including date, number, password and rich-text boxes),
+`checkbox`, `radio`, `combobox`, `listbox`, `button`, `signature` or `other`.
+Its `page` and `rect` (points from the page's top-left corner) place it on the
+page: when names do not say which label a field belongs to, match the `rect` to
+the label's position (`pdf search` gives each text's `rect`). The list holds the
+first 500 fields by name; a `LIST_TRUNCATED` warning says when there are more.
 
-A check box accepts only its `states`: set its `onValue` to check it and `Off`
-to clear it. A box whose widgets export several values has no `onValue`; set
-the state of the widget to check. A radio group is listed as one `radio-option`
-field per button under the group's name: `value` holds the group's selection,
-`options` the group's values and `onValue` the value that selects that button.
-Any other value, `Off` included,
-is refused. A `value` of `null` clears any field: a radio group selects no
+A field with `options` accepts only those values. A check box lists its states,
+`Off` first: set another state to check it and `Off` to clear it. A radio group
+is one field with the group's selection as its `value` and its buttons' values
+as its `options`; it has no `page` of its own. Any other value is refused. A `value` of `null` clears any field: a radio group selects no
 button, a check box is unchecked and any other field is emptied.
 Fields are counted by name: `fieldCount` of `pdf inspect --detail forms` and the
 count `review` reports take a radio group as one field.
@@ -36,11 +34,11 @@ count `review` reports take a radio group as one field.
 ] }
 ```
 
-`query forms` reports XFA as `type: "xfa"` and `readOnly: true`;
+`pdf inspect --detail forms` reports XFA as `kind: "xfa"` and `readOnly: true`;
 filling, flattening and form export reject it with `FORM_XFA_UNSUPPORTED`.
 Flattening is the `flatten_forms` operation, for named fields or every field; use
 it only when those fields should no longer be editable. Naming a radio group
-flattens every button `query forms` lists under that name.
+flattens every button of that group.
 
 ## Encryption
 
@@ -75,7 +73,7 @@ password, also when `--password-env` opened it with the owner password, and
 encrypted input unless an `encrypt` operation follows it in the same batch.
 `hasOpenPassword` and `hasOwnerPassword` state which passwords the file has, and
 `passwordType` which one this run opened it with: a file with only an owner
-password opens with `none`, and anyone can open it within its permissions; a
+password opens with none, so `passwordType` is absent, and anyone can open it within its permissions; a
 password that both opens the file and is its owner password reports `owner`, with
 `hasOwnerPassword` and `ownerAccess` true. The CLI
 reports these flags and adds no permission preflight beyond the engine's; opening
@@ -88,14 +86,15 @@ Edits can invalidate existing signatures. Inspect signatures before changing
 signed material and again afterward; a `SIGNATURE_INVALIDATED` warning is not a
 preservation guarantee. Sign only after final content and standards
 verification, with the PKCS#12 password in an environment variable that is
-already set:
+already set (or on stdin with `--certificate-password-stdin`):
 
 ```powershell
 aspose-cli pdf sign report.pdf --certificate signer.pfx --certificate-password-env PDF_SIGNING_PASSWORD --visible --page 1 --rect 36,36,180,60 --reason "Approved" --out report.signed.pdf --output-format json
 aspose-cli pdf inspect report.signed.pdf --detail signatures --output-format json
 ```
 
-Omit `--visible` for an invisible signature; `--rect` requires `--visible`.
+Omit `--visible` for an invisible signature; `--rect` requires `--visible` and
+measures from the page's top-left corner, as `redact_area` and `pdf render --grid` do.
 Signature rectangle values are rounded to whole points, so review the placement.
 The command reopens the saved file and reports `signature.valid`, which may be
 true, false or unavailable. Require `valid: true` and inspect every signature

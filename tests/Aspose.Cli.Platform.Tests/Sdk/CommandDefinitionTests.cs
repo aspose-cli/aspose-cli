@@ -218,7 +218,7 @@ public sealed class CommandDefinitionTests : IDisposable
         Assert.Throws<ArgumentException>(() => Create(
             new CommandTraits { Input = Report, Other = Report }, (_, _) => Result()));
         Assert.Throws<ArgumentException>(() => Create(
-            new CommandTraits { Input = Report, Output = OutputTarget.FileOrDirectory("Form file.", "Parts.") }, (_, _) => Result()));
+            new CommandTraits { Input = Report, Output = OutputTarget.File("Form file.") }, (_, _) => Result()));
     }
 
     [Fact]
@@ -277,25 +277,15 @@ public sealed class CommandDefinitionTests : IDisposable
     }
 
     [Fact]
-    public void FileOrDirectory_LeavesTheModeToTheCommand()
-    {
-        Command command = Create(
+    public void Directory_TakesNoTargetFormat() =>
+        Assert.Throws<ArgumentException>(() => Create(
             new CommandTraits
             {
                 Input = Report,
-                Output = OutputTarget.FileOrDirectory("Form file.", "Parts."),
+                Output = OutputTarget.Directory("Parts."),
                 Target = TargetFormat.Among("Form format.", [FormatDescriptor.Declare("form", FormatUse.Convert, null, 0, null, false, ".form", ".xfdf")]),
             },
-            (_, standard) => Result(standard.RequestedOutputDirectory is { } directory
-                ? directory
-                : standard.Output.Path + "|" + standard.Output.Overwrite));
-
-        Assert.Equal(["--to", "--mode", "--out-dir", "--out", "--overwrite", "--dry-run", "--password", "--password-env", "--password-stdin"],
-            command.Options.Select(static option => option.Name));
-        Assert.Equal(_temp.File("parts"), Run(command, "report.test", "--out-dir", "parts"));
-        Assert.Equal(_temp.File("report.form") + "|False", Run(command, "report.test"));
-        Assert.Equal(_temp.File("data.xfdf") + "|True", Run(command, "report.test", "--out", "data.xfdf", "--overwrite"));
-    }
+            (_, _) => Result()));
 
     [Fact]
     public void Output_RefusesADerivedSiblingThatAProductOptionReads()
@@ -547,22 +537,31 @@ public sealed class CommandDefinitionTests : IDisposable
     }
 
     [Fact]
-    public void RequiredEnvironmentPassword_IsNamedOnlyByItsVariable()
+    public void RequiredPassword_IsGivenByExactlyOneOfItsVariableAndStdin()
     {
-        PasswordOptions key = PasswordOptions.RequiredEnvironment("--key-password", "the signing key");
+        PasswordOptions key = PasswordOptions.Required("--key-password", "the signing key");
         Command command = Create(
             "sign", "Signs.", new CommandTraits { Input = Report }, [.. key.Options],
             (_, standard) => Result(standard.Password(key).Reveal()));
 
-        Option environment = Assert.Single(
-            command.Options, static option => option.Name.StartsWith("--key-password", StringComparison.Ordinal));
-        Assert.Equal("--key-password-env", environment.Name);
-        Assert.True(environment.Required);
+        Option[] options = [.. command.Options.Where(static option => option.Name.StartsWith("--key-password", StringComparison.Ordinal))];
+        Assert.Equal(["--key-password-env", "--key-password-stdin"], options.Select(static option => option.Name));
+        Assert.All(options, static option => Assert.False(option.Required));
         Assert.Equal("a", Run(command, "report.test", "--key-password-env", "LEFT"));
-        CliException missing = RunFailing(command, "report.test", "--key-password-env", "MISSING");
-        Assert.Equal(ErrorCodes.OptionInvalid, missing.Code);
-        Assert.Equal("--key-password-env", missing.Details!["option"]!.GetValue<string>());
-        Assert.DoesNotContain("another source", missing.Hint, StringComparison.Ordinal);
+
+        CliException unset = RunFailing(command, "report.test", "--key-password-env", "MISSING");
+        Assert.Equal(ErrorCodes.OptionInvalid, unset.Code);
+        Assert.Equal("--key-password-env", unset.Details!["option"]!.GetValue<string>());
+        Assert.DoesNotContain("another source", unset.Hint, StringComparison.Ordinal);
+
+        CliException none = RunFailing(command, "report.test");
+        Assert.Equal(ErrorCodes.OptionInvalid, none.Code);
+        Assert.Equal("--key-password-env", none.Details!["option"]!.GetValue<string>());
+        Assert.Contains("--key-password-stdin", none.Hint, StringComparison.Ordinal);
+
+        CliException both = RunFailing(command, "report.test", "--key-password-env", "LEFT", "--key-password-stdin");
+        Assert.Equal(ErrorCodes.OptionInvalid, both.Code);
+        Assert.Equal("Use only one of --key-password-env or --key-password-stdin.", both.Hint);
     }
 
     [Fact]

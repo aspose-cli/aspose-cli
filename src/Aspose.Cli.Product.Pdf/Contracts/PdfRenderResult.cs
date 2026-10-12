@@ -9,7 +9,7 @@ public sealed record PdfRenderResult() : EngineResultEnvelope("render-result", 2
     [JsonPropertyOrder(-50)]
     public required InputInfo Input { get; init; }
 
-    /// <summary>Each written image, in page order.</summary>
+    /// <summary>Each written image and the page it shows, in page order.</summary>
     public required IReadOnlyList<PdfPageOutput> Outputs { get; init; }
 
     /// <summary>The resolution raster images were rendered at; absent for SVG.</summary>
@@ -41,15 +41,4 @@ public sealed record PdfRenderGrid
 
     /// <summary>Where the coordinates start: always <c>top-left</c>.</summary>
     public string Origin { get; } = "top-left";
-}
-
-/// <summary>One rendered PDF page.</summary>
-public sealed record PdfPageOutput
-{
-    /// <summary>The 1-based page rendered.</summary>
-    [Minimum(1)]
-    public required int Page { get; init; }
-
-    /// <summary>The image written for the page.</summary>
-    public required OutputInfo Output { get; init; }
 }

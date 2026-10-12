@@ -25,7 +25,7 @@ internal static class PdfSign
         ValidateCertificate(certificate, request.CertificatePassword);
         LicenseState state = session.Outputs.License;
         using LoadedPdf loaded = session.Loader.Open(filePath, request.Password);
-        _ = PageAt(loaded.Document, request.Page);
+        Page signedPage = PageAt(loaded.Document, request.Page);
         // The signature to verify is the one this command adds: a document may already
         // carry signed fields, and the first of them says nothing about the new one.
         HashSet<string> alreadySigned = SignedFields(loaded.Document)
@@ -33,23 +33,19 @@ internal static class PdfSign
             .ToHashSet(StringComparer.Ordinal);
 
         PdfSignatureRect? visibleRect = request.Visible
-            ? request.Rect ?? new PdfSignatureRect(36, 36, 180, 60)
+            ? request.Rect ?? DefaultRect(signedPage)
             : null;
         if (visibleRect is { Width: <= 0 } or { Height: <= 0 })
         {
             throw CliErrors.OptionInvalid(
                 "--rect",
                 "signature width and height must be greater than zero",
-                "Use x,y,width,height in PDF points, for example 36,36,180,60.");
+                "Use x,y,width,height in PDF points from the page's top-left corner, for example 36,36,180,60.");
         }
 
         DrawingRectangle rectangle = visibleRect is null
             ? new DrawingRectangle(0, 0, 0, 0)
-            : new DrawingRectangle(
-                checked((int)Math.Round(visibleRect.X)),
-                checked((int)Math.Round(visibleRect.Y)),
-                checked((int)Math.Round(visibleRect.Width)),
-                checked((int)Math.Round(visibleRect.Height)));
+            : EngineRect(signedPage, visibleRect);
         // The facade closes the document when it is disposed, so it outlives the publication,
         // whose pipeline inspects the signed document after the save.
         using var facade = new PdfFileSignature(loaded.Document);
@@ -92,6 +88,49 @@ internal static class PdfSign
                 },
             License = EnvelopeParts.License(state),
         };
+    }
+
+    /// <summary>
+    /// The default visible rectangle in the bottom-left corner of the visible page: 180 by 60
+    /// points, 36 points from its edges, and on a page too small for that, as large as fits with
+    /// a margin of an eighth of the page.
+    /// </summary>
+    private static PdfSignatureRect DefaultRect(Page page)
+    {
+        Rectangle box = page.GetPageRect(considerRotation: true);
+        double margin = Math.Min(36, Math.Min(box.Width, box.Height) / 8);
+        double width = Math.Min(180, box.Width - (2 * margin));
+        double height = Math.Min(60, box.Height - (2 * margin));
+        return new PdfSignatureRect(margin, box.Height - margin - height, width, height);
+    }
+
+    /// <summary>
+    /// The signing facade's rectangle of a rectangle measured from the top-left corner of the
+    /// visible page. The facade places its rectangle in the page's unrotated space from the
+    /// lower-left corner, but on a page turned by 90 or 270 degrees it swaps the rectangle's
+    /// x with y and width with height first, so the swap is undone here.
+    /// </summary>
+    private static DrawingRectangle EngineRect(Page page, PdfSignatureRect rect)
+    {
+        Rectangle placed;
+        try
+        {
+            placed = ToPdfRect(page, new PdfRectInput { X = rect.X, Y = rect.Y, Width = rect.Width, Height = rect.Height });
+        }
+        catch (InvalidOperationException)
+        {
+            throw CliErrors.OptionInvalid(
+                "--rect",
+                "the rectangle lies outside the page",
+                "Use x,y,width,height in PDF points from the page's top-left corner that fit on the page; 'pdf inspect --sample' reports its size.");
+        }
+
+        bool swapped = page.Rotate is Rotation.on90 or Rotation.on270;
+        return new DrawingRectangle(
+            checked((int)Math.Round(swapped ? placed.LLY : placed.LLX)),
+            checked((int)Math.Round(swapped ? placed.LLX : placed.LLY)),
+            checked((int)Math.Round(swapped ? placed.Height : placed.Width)),
+            checked((int)Math.Round(swapped ? placed.Width : placed.Height)));
     }
 
     private static PdfSignatureInfo VerifySignedOutput(

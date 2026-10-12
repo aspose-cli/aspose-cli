@@ -49,9 +49,12 @@ internal static class ConvertCommand
 
     internal static void Table(PdfConvertResult result, TableSurface surface)
     {
-        foreach (var output in result.Outputs)
-        {
-            ResultText.Produced(surface, output, result.Pages is null ? null : $"pages {result.Pages}");
-        }
+        ResultText.Files(surface, "wrote", "file", [.. result.Outputs.Select(output =>
+            new ProducedFile(
+                output.Page is { } page ? $"page {page}" : null,
+                output.Path,
+                output.Format,
+                output.SizeBytes,
+                result.Pages is null ? null : $"pages {result.Pages}"))]);
     }
 }

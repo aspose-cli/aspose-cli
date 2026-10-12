@@ -204,14 +204,6 @@ public sealed class OutputTarget
         new(OutputKind.Directory, null, Help(description), required: true, writes);
 
     /// <summary>
-    /// Either a set of files in the directory named by <c>--out-dir</c> or one file named by
-    /// <c>--out</c> beside <c>--overwrite</c>, in the format the command's <c>--to</c> chooses;
-    /// both are optional and the command picks the mode.
-    /// </summary>
-    public static OutputTarget FileOrDirectory(string fileDescription, string directoryDescription) =>
-        new(OutputKind.FileOrDirectory, Help(fileDescription), Help(directoryDescription), required: false);
-
-    /// <summary>
     /// A new file named by the required <c>file</c> argument, beside <c>--overwrite</c>, in the
     /// format among <paramref name="writes"/> its extension declares.
     /// </summary>
@@ -243,7 +235,7 @@ public sealed class OutputTarget
     }
 }
 
-internal enum OutputKind { File, Directory, FileOrDirectory, CreatedFile, Mutation }
+internal enum OutputKind { File, Directory, CreatedFile, Mutation }
 
 /// <summary>The password a command can put on its output.</summary>
 /// <remarks>
@@ -696,10 +688,10 @@ public partial class StandardInvocation
     public Secret? OtherPassword => _otherPassword.Value;
 
     /// <summary>
-    /// The password one of the command's own <see cref="PasswordOptions.RequiredEnvironment"/>
-    /// parameters names, read from its environment variable.
+    /// The password one of the command's own <see cref="PasswordOptions.Required"/> parameters
+    /// gives, read from the environment variable it names or from stdin.
     /// </summary>
-    /// <exception cref="CliException"><c>OPTION_INVALID</c> when the variable is missing or empty.</exception>
+    /// <exception cref="CliException"><c>OPTION_INVALID</c> when no source, several sources, or a missing or empty value was given.</exception>
     public Secret Password(PasswordOptions password)
     {
         ArgumentNullException.ThrowIfNull(password);
@@ -710,7 +702,7 @@ public partial class StandardInvocation
         }
 
         return password.Resolve(_parse, Inputs, ReadEnvironment)
-            ?? throw new InvalidOperationException("A required password option resolved no password.");
+            ?? throw password.Missing();
     }
 
     /// <summary>

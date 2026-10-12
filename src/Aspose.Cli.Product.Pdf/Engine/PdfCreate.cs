@@ -71,7 +71,6 @@ internal static class PdfCreate
 
         return new PdfCreateResult
         {
-            Action = "create",
             Output = FileObjects.Output(written, request.Output.Format, encrypted),
             Inputs = CreationInputs(request),
             License = EnvelopeParts.License(state),
@@ -93,7 +92,7 @@ internal static class PdfCreate
         var document = new Document();
         try
         {
-            (double portraitWidth, double portraitHeight) = PdfPageSizes.Dimensions(request.PageSize);
+            (double portraitWidth, double portraitHeight) = PageSizePresets.Dimensions(request.PageSize);
             PdfMargins margins = request.Margins;
             for (int index = 0; index < paths.Count; index++)
             {
@@ -158,7 +157,7 @@ internal static class PdfCreate
             throw CliErrors.FileNotFound(fullPath);
         }
 
-        (double width, double height) = PdfPageSizes.Dimensions(request.PageSize);
+        (double width, double height) = PageSizePresets.Dimensions(request.PageSize);
         ValidateMargins(request.Margins, width, height);
         var options = new HtmlLoadOptions(resources.BaseDirectory)
         {
@@ -241,7 +240,7 @@ internal static class PdfCreate
 
         return losses.Count == 0 ? null : new Warning(WarningCodes.LossyConversion, $"The HTML importer keeps the name and value of single-line text inputs only: {string.Join("; ", losses)}.")
         {
-            Hint = "Read the fields with 'pdf query forms' and match each field's page and rect to the label beside it before filling; give a dropped input type=\"text\" to keep it as a field.",
+            Hint = "Read the fields with 'pdf inspect --detail forms' and match each field's page and rect to the label beside it before filling; give a dropped input type=\"text\" to keep it as a field.",
         };
     }
 
@@ -253,7 +252,7 @@ internal static class PdfCreate
             throw CliErrors.FileNotFound(fullPath);
         }
 
-        (double width, double height) = PdfPageSizes.Dimensions(request.PageSize);
+        (double width, double height) = PageSizePresets.Dimensions(request.PageSize);
         ValidateMargins(request.Margins, width, height);
         var pageInfo = new PageInfo { Width = width, Height = height, Margin = Margin(request.Margins) };
         return markdown

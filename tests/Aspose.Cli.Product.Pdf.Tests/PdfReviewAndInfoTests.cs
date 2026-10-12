@@ -372,7 +372,7 @@ public sealed class PdfReviewAndInfoTests
         JsonNode result = Review(workspace, input);
 
         Assert.Equal(2, info.Forms!.FieldCount);
-        Assert.Equal(2, PdfForms.Read(fixture.Session, new PdfFormReadRequest { Input = input }).Fields.Select(static field => field.Name).Distinct().Count());
+        Assert.Equal(2, fixture.Forms(input).Fields.Count);
         Assert.Contains(result["findings"]!.AsArray(), static item => item!["code"]!.GetValue<string>() == "PDF_FORM_APPEARANCE_REVIEW_REQUIRED"
             && item["message"]!.GetValue<string>().Contains("2 form field(s)", StringComparison.Ordinal));
         Assert.Equal(2, result["coverage"]!["metrics"]!.AsArray()

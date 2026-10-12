@@ -23,7 +23,7 @@ public sealed class PdfHardeningTests
             File.Replace(replacement, input, destinationBackupFileName: null);
 
             Assert.Equal(2, loaded.Document.Pages.Count);
-            Assert.False(string.IsNullOrWhiteSpace(PdfEngineSupport.ExtractText(loaded.Document.Pages[2], PdfReadModes.Plain)));
+            Assert.False(string.IsNullOrWhiteSpace(PdfEngineSupport.ExtractText(loaded.Document.Pages[2], PdfReadContents.Text)));
         }
 
         // A new command admits the replaced input afresh.
