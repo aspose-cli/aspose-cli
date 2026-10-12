@@ -26,6 +26,7 @@ public sealed partial class PlatformSkillPointerTests
         Path.Combine("src", "Aspose.Cli.Product.Pdf", "Skills"),
         Path.Combine("src", "Aspose.Cli.Product.Slides", "Skills"),
         Path.Combine("src", "Aspose.Cli.Product.Words", "Skills"),
+        Path.Combine("src", "Aspose.Cli.Product.Cells", "Skills"),
     ];
 
     [Theory]
