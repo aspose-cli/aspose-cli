@@ -8,7 +8,7 @@ namespace Aspose.Cli.Product.Words.Engine.Mapping;
 
 internal static class ReadProjection
 {
-    public static DocumentReadResult Project(LoadedDocument loaded, string path, DocumentReadRequest request)
+    public static WordsReadResult Project(LoadedDocument loaded, string path, WordsReadRequest request)
     {
         var index = new DocumentBlockIndex(loaded.Document, loaded.Evaluation);
         IReadOnlyList<BlockEntry> candidates = request.Blocks is { } range
@@ -38,7 +38,7 @@ internal static class ReadProjection
         }
 
         int remainingCharacters = request.MaxCharacters;
-        var blocks = new List<BlockData>();
+        var blocks = new List<WordsBlockData>();
         foreach (BlockEntry entry in candidates)
         {
             if (blocks.Count >= request.MaxBlocks || blocks.Count > 0 && remainingCharacters == 0)
@@ -46,7 +46,7 @@ internal static class ReadProjection
                 break;
             }
             int available = remainingCharacters;
-            BlockData block = ProjectBlock(entry, request.Scope, ref available);
+            WordsBlockData block = ProjectBlock(entry, request.Scope, ref available);
             if (blocks.Count > 0 && block.ContentTruncated)
             {
                 break;
@@ -55,7 +55,7 @@ internal static class ReadProjection
             remainingCharacters = available;
         }
 
-        return new DocumentReadResult
+        return new WordsReadResult
         {
             Input = InfoProjection.Source(path, loaded),
             Scope = request.Scope,
@@ -71,7 +71,7 @@ internal static class ReadProjection
         };
     }
 
-    private static BlockData ProjectBlock(BlockEntry entry, string scope, ref int remaining)
+    private static WordsBlockData ProjectBlock(BlockEntry entry, string scope, ref int remaining)
     {
         bool truncated = false;
         if (entry.Node is Paragraph paragraph)
@@ -81,7 +81,7 @@ internal static class ReadProjection
             // The runs leave out the leading page breaks the text leaves out.
             int skipped = visible.Length - text.Length;
             text = Take(text, ref remaining, ref truncated);
-            var runs = scope == "full" ? new List<RunData>() : null;
+            var runs = scope == "full" ? new List<WordsRunData>() : null;
             if (runs is not null)
             {
                 foreach (Run run in WordsText.VisibleRuns(paragraph))
@@ -97,7 +97,7 @@ internal static class ReadProjection
                         truncated = true;
                         break;
                     }
-                    runs.Add(new RunData
+                    runs.Add(new WordsRunData
                     {
                         Text = Take(runText, ref remaining, ref truncated),
                         Font = run.Font.Name,
@@ -110,7 +110,7 @@ internal static class ReadProjection
                     });
                 }
             }
-            return new BlockData
+            return new WordsBlockData
             {
                 Block = entry.Index,
                 Type = "paragraph",
@@ -122,7 +122,7 @@ internal static class ReadProjection
                 Runs = runs,
                 ParagraphFormat = runs is null ? null : FormatOf(paragraph.ParagraphFormat),
                 Images = paragraph.GetChildNodes(NodeType.Shape, true).Cast<Shape>().Where(static shape => shape.HasImage)
-                    .Select(shape => new BlockImageData
+                    .Select(shape => new WordsBlockImageData
                     {
                         Block = entry.Index,
                         Name = shape.Name,
@@ -155,7 +155,7 @@ internal static class ReadProjection
             }
             rows.Add(cells);
         }
-        return new BlockData
+        return new WordsBlockData
         {
             Block = entry.Index,
             Type = "table",
@@ -167,7 +167,7 @@ internal static class ReadProjection
         };
     }
 
-    private static ParagraphFormatData FormatOf(ParagraphFormat format) => new()
+    private static WordsParagraphFormatData FormatOf(ParagraphFormat format) => new()
     {
         Alignment = JsonNamingPolicy.CamelCase.ConvertName(format.Alignment.ToString()),
         LeftIndent = format.LeftIndent,

@@ -84,7 +84,7 @@ public sealed class WordsTextScopeTests : IClassFixture<WordsFixture>
         string input = _fixture.Temp.File("named-headers.docx");
         document.Save(input);
 
-        DocumentInfoResult info = WordsInspect.Run(_fixture.Session, new DocumentInfoRequest { Input = input, Details = ["sections"] });
+        WordsInspectResult info = WordsInspect.Run(_fixture.Session, new WordsInspectRequest { Input = input, Details = ["sections"] });
         WordsSearchResult search = WordsSearch.Run(_fixture.Session, WordsFixture.Search(input, "needle", "all"));
         WordsEditResult edit = WordsEdit.Run(
             _fixture.Session,
@@ -98,8 +98,8 @@ public sealed class WordsTextScopeTests : IClassFixture<WordsFixture>
         Assert.Equivalent(
             new[]
             {
-                new HeaderFooterData { Location = "header", Kind = "primary", Paragraphs = ["Contract needle", "Confidential"] },
-                new HeaderFooterData { Location = "footer", Kind = "first", Paragraphs = ["Cover needle"] },
+                new WordsHeaderFooterData { Location = "header", Kind = "primary", Paragraphs = ["Contract needle", "Confidential"] },
+                new WordsHeaderFooterData { Location = "footer", Kind = "first", Paragraphs = ["Cover needle"] },
             },
             Assert.Single(info.Sections!).HeadersFooters.Where(static item => item.Paragraphs.Any(static text => text.Length > 0)),
             strict: true);

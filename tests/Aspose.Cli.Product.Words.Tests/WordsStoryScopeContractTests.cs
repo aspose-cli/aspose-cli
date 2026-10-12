@@ -10,12 +10,12 @@ namespace Aspose.Cli.Product.Words.Tests;
 
 /// <summary>
 /// <c>words inspect</c> names the story that holds each field and image in <c>scope</c>. The real
-/// engine always reports it, in every story, so the <c>document-info</c> schema requires it and
+/// engine always reports it, in every story, so the <c>inspect-result</c> schema requires it and
 /// refuses null, as it always has; a record that types it as optional must not loosen the schema.
 /// </summary>
 public sealed class WordsStoryScopeContractTests : IDisposable
 {
-    private const string Id = "v2/words/document-info";
+    private const string Id = "v2/words/inspect-result";
     private readonly TempWorkspace _workspace = new();
 
     public void Dispose() => _workspace.Dispose();

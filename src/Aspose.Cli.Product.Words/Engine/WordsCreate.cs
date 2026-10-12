@@ -11,7 +11,7 @@ namespace Aspose.Cli.Product.Words.Engine;
 internal static class WordsCreate
 {
     /// <summary>Creates a document from a bounded source or blank template.</summary>
-    internal static WordsCreateResult Run(WordsSession session, NewDocumentRequest request)
+    internal static WordsCreateResult Run(WordsSession session, WordsCreateRequest request)
     {
         LicenseState state = session.Outputs.License;
         using CreatedDocument created = Build(session, request);
@@ -34,7 +34,7 @@ internal static class WordsCreate
     /// headers and footers; Markdown or text supplies the body. Content takes the
     /// destination's styles, so the template alone owns the look of the created document.
     /// </summary>
-    private static CreatedDocument Build(WordsSession session, NewDocumentRequest request)
+    private static CreatedDocument Build(WordsSession session, WordsCreateRequest request)
     {
         var sources = new List<LoadedDocument>();
         try

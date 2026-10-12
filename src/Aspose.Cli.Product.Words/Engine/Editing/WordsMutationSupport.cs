@@ -8,7 +8,7 @@ namespace Aspose.Cli.Product.Words.Engine.Editing;
 /// <summary>Provides stateless SDK adaptation helpers shared by Words operation families.</summary>
 internal static class WordsMutationSupport
 {
-    internal static void ApplyPageSetup(Section section, PageSetupInput setup)
+    internal static void ApplyPageSetup(Section section, WordsPageSetupInput setup)
     {
         if (setup.Size is not null)
         {

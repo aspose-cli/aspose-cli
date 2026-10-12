@@ -20,7 +20,7 @@ public sealed class WordsResourceLoadingTests
         File.WriteAllBytes(fixture.Temp.File("local.png"), ResourceHttpServer.Image);
         File.WriteAllText(input, $"<html><body><p>Template</p><img src='local.png'><img src='{server.Url}/remote.png'></body></html>");
         string output = fixture.Temp.File("created.docx");
-        var created = WordsCreate.Run(fixture.Session, new NewDocumentRequest
+        var created = WordsCreate.Run(fixture.Session, new WordsCreateRequest
         {
             Output = TestOutput.At(output),
             TemplatePath = input,
@@ -86,7 +86,7 @@ public sealed class WordsResourceLoadingTests
             },
             Output = TestOutput.At(edited),
         });
-        WordsRead.Run(fixture.Session, new DocumentReadRequest { Input = edited });
+        WordsRead.Run(fixture.Session, new WordsReadRequest { Input = edited });
         WordsRender.Run(fixture.Session, new WordsRenderRequest { Input = edited, Output = TestOutput.At(fixture.Temp.File("page.png"), format: "png") });
         WordsConvert.Run(fixture.Session, new WordsConvertRequest { Input = edited, Output = TestOutput.At(fixture.Temp.File("edited.pdf"), format: "pdf") });
 
@@ -113,7 +113,7 @@ public sealed class WordsResourceLoadingTests
                 shape => shape.HasImage && shape.ImageData.ImageBytes.Length > 0);
             Assert.True(loaded.RemoteResourcesBlocked > 0);
         }
-        var read = WordsRead.Run(fixture.Session, new DocumentReadRequest { Input = input });
+        var read = WordsRead.Run(fixture.Session, new WordsReadRequest { Input = input });
         Assert.Contains(read.Warnings!, warning =>
             warning.Code == WarningCodes.RemoteResourcesBlocked && warning.AffectsCompleteness);
         string output = fixture.Temp.File("converted.docx");

@@ -24,7 +24,7 @@ public sealed class WordsEditSafetyTests
         using (new FileStream(input, FileMode.Open, FileAccess.Read,
                    FileShare.ReadWrite | FileShare.Delete, 1, FileOptions.DeleteOnClose))
         {
-            Assert.Equal(0, WordsInspect.Run(fixture.Session, new DocumentInfoRequest { Input = input }).Document.CommentCount);
+            Assert.Equal(0, WordsInspect.Run(fixture.Session, new WordsInspectRequest { Input = input }).Document.CommentCount);
         }
     }
 
@@ -73,9 +73,9 @@ public sealed class WordsEditSafetyTests
 
         Assert.True(FileFormatUtil.DetectFileFormat(output).IsEncrypted);
         Assert.Equal(ErrorCodes.PasswordRequired, Assert.Throws<CliException>(() =>
-            WordsInspect.Run(fixture.Session, new DocumentInfoRequest { Input = output })).Code);
+            WordsInspect.Run(fixture.Session, new WordsInspectRequest { Input = output })).Code);
         Assert.Equal(ErrorCodes.PasswordInvalid, Assert.Throws<CliException>(() =>
-            WordsInspect.Run(fixture.Session, new DocumentInfoRequest { Input = output, Password = new Secret("wrong") })).Code);
+            WordsInspect.Run(fixture.Session, new WordsInspectRequest { Input = output, Password = new Secret("wrong") })).Code);
         var reopened = new Document(output, new LoadOptions { Password = OriginalPassword });
         Assert.Contains("Safe", reopened.GetText(), StringComparison.Ordinal);
         Assert.Equal(original, File.ReadAllBytes(inPlace ? backup : input));
@@ -101,8 +101,8 @@ public sealed class WordsEditSafetyTests
             Verify = verify,
         });
         Assert.Equal(ErrorCodes.PasswordInvalid, Assert.Throws<CliException>(() =>
-            WordsInspect.Run(fixture.Session, new DocumentInfoRequest { Input = output, Password = new Secret(OriginalPassword) })).Code);
-        Assert.True(WordsInspect.Run(fixture.Session, new DocumentInfoRequest { Input = output, Password = new Secret(ReplacementPassword) }).Document.BlockCount > 0);
+            WordsInspect.Run(fixture.Session, new WordsInspectRequest { Input = output, Password = new Secret(OriginalPassword) })).Code);
+        Assert.True(WordsInspect.Run(fixture.Session, new WordsInspectRequest { Input = output, Password = new Secret(ReplacementPassword) }).Document.BlockCount > 0);
     }
 
     [Fact]
@@ -135,7 +135,7 @@ public sealed class WordsEditSafetyTests
                 Output = TestOutput.At(protectedPath),
                 OpSecrets = secrets,
             });
-        Assert.Equal("readOnly", WordsInspect.Run(fixture.Session, new DocumentInfoRequest { Input = protectedPath }).Document.Protection);
+        Assert.Equal("readOnly", WordsInspect.Run(fixture.Session, new WordsInspectRequest { Input = protectedPath }).Document.Protection);
 
         CliException wrong = Assert.Throws<CliException>(() => WordsEdit.Run(
             fixture.Session,
@@ -159,7 +159,7 @@ public sealed class WordsEditSafetyTests
                 OpSecrets = secrets,
             });
         Assert.Equal(ProtectionType.NoProtection, new Document(output).ProtectionType);
-        Assert.Equal("none", WordsInspect.Run(fixture.Session, new DocumentInfoRequest { Input = output }).Document.Protection);
+        Assert.Equal("none", WordsInspect.Run(fixture.Session, new WordsInspectRequest { Input = output }).Document.Protection);
 
         static WordsOpsBatch Unprotect(string variable) =>
             new() { Ops = [new UnprotectOp { PasswordEnv = variable }] };

@@ -36,8 +36,8 @@ public sealed class WordsDisclosureTests
         var loader = new WordsDocumentLoader(budgets, outputs);
         using LoadedDocument loaded = loader.Open(input, null);
         var index = new DocumentBlockIndex(loaded.Document, loaded.Evaluation);
-        DocumentReadResult read = (DocumentReadResult)outputs.Disclose(
-            WordsRead.Run(WordsActivation.Session(outputs, budgets), new DocumentReadRequest { Input = input, Scope = "text" }));
+        WordsReadResult read = (WordsReadResult)outputs.Disclose(
+            WordsRead.Run(WordsActivation.Session(outputs, budgets), new WordsReadRequest { Input = input, Scope = "text" }));
 
         bool evaluation = state == LicenseState.Evaluation;
         // The SDK discloses the truncation notice of an input read in evaluation mode only.
@@ -513,8 +513,8 @@ public sealed class WordsDisclosureTests
     {
         using var fixture = new WordsFixture();
 
-        Assert.True(WordsInspect.Run(fixture.Session, new DocumentInfoRequest { Input = MacroDocument(fixture) }).Document.HasMacros);
-        Assert.False(WordsInspect.Run(fixture.Session, new DocumentInfoRequest { Input = fixture.CreateReport() }).Document.HasMacros);
+        Assert.True(WordsInspect.Run(fixture.Session, new WordsInspectRequest { Input = MacroDocument(fixture) }).Document.HasMacros);
+        Assert.False(WordsInspect.Run(fixture.Session, new WordsInspectRequest { Input = fixture.CreateReport() }).Document.HasMacros);
     }
 
     private static string MacroDocument(WordsFixture fixture)
@@ -562,7 +562,7 @@ public sealed class WordsDisclosureTests
         });
 
         Assert.Equal(2, result.Outputs.Count);
-        foreach (SplitOutput part in result.Outputs)
+        foreach (WordsSplitOutput part in result.Outputs)
         {
             var document = new Document(part.Output.Path);
             Assert.Equal(PaperSize.A5, document.FirstSection.PageSetup.PaperSize);
@@ -603,7 +603,7 @@ public sealed class WordsDisclosureTests
 
         Assert.Equal(["blocks-1-1", "blocks-2-3", "blocks-4-5"], result.Outputs.Select(static part => part.Source));
         string[] texts = result.Outputs
-            .Select(part => string.Join("|", WordsRead.Run(fixture.Session, new DocumentReadRequest { Input = part.Output.Path })
+            .Select(part => string.Join("|", WordsRead.Run(fixture.Session, new WordsReadRequest { Input = part.Output.Path })
                 .Blocks.Select(static block => block.Text)))
             .ToArray();
         Assert.Equal(["Contents", "One|Body One", "Two|Body Two"], texts);

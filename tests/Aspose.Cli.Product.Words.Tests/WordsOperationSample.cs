@@ -34,7 +34,7 @@ internal static class WordsOperationSample
                 Position = "after",
                 Paragraphs =
                 [
-                    new ParagraphInput { Text = "Inserted paragraph", Style = "Normal", ListLevel = 0 },
+                    new WordsParagraphInput { Text = "Inserted paragraph", Style = "Normal", ListLevel = 0 },
                 ],
             },
             new InsertMarkdownOp
@@ -122,11 +122,11 @@ internal static class WordsOperationSample
             {
                 Position = "after",
                 After = 1,
-                PageSetup = new PageSetupInput
+                PageSetup = new WordsPageSetupInput
                 {
                     Size = "a4",
                     Orientation = "landscape",
-                    Margins = new MarginInput { Top = 48, Right = 54, Bottom = 48, Left = 54 },
+                    Margins = new WordsMarginInput { Top = 48, Right = 54, Bottom = 48, Left = 54 },
                     ColumnCount = 2,
                 },
             },
@@ -134,11 +134,11 @@ internal static class WordsOperationSample
             new SetPageSetupOp
             {
                 Section = 1,
-                Setup = new PageSetupInput
+                Setup = new WordsPageSetupInput
                 {
                     Size = "letter",
                     Orientation = "portrait",
-                    Margins = new MarginInput { Top = 72, Right = 72, Bottom = 72, Left = 72 },
+                    Margins = new WordsMarginInput { Top = 72, Right = 72, Bottom = 72, Left = 72 },
                     ColumnCount = 1,
                 },
             },

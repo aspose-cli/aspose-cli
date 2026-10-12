@@ -33,10 +33,10 @@ internal sealed class WordsViewAdapter : IProductViewAdapter<WordsSession>
         ViewRenderRequest request,
         ViewManifest rendered)
     {
-        DocumentInfoResult info = WordsInspect.Run(session, new DocumentInfoRequest
+        WordsInspectResult info = WordsInspect.Run(session, new WordsInspectRequest
         {
             Input = filePath,
-            Details = [InfoDetails.Sections, InfoDetails.Outline, InfoDetails.Images, InfoDetails.Tables, InfoDetails.Fonts],
+            Details = [WordsInspectDetails.Sections, WordsInspectDetails.Outline, WordsInspectDetails.Images, WordsInspectDetails.Tables, WordsInspectDetails.Fonts],
             Password = request.Password,
         });
         WordsReviewLayout layout = WordsReviewLayoutReader.Read(

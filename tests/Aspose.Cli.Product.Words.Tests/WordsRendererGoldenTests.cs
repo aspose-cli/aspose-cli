@@ -165,7 +165,7 @@ public sealed class WordsRendererGoldenTests
     [Fact]
     public void Info_WithEmptyDetails_SaysMissingUnderEachHeading()
     {
-        DocumentInfoResult result = Info() with
+        WordsInspectResult result = Info() with
         {
             Sections = [], Outline = [], Styles = [], Fields = [], Bookmarks = [], Comments = [], Revisions = [],
             Images = [], Tables = [], Properties = new Dictionary<string, string?>(), Fonts = [],
@@ -232,7 +232,7 @@ public sealed class WordsRendererGoldenTests
     [Fact]
     public void Read_PrintsOneRowPerBlock()
     {
-        var result = new DocumentReadResult
+        var result = new WordsReadResult
         {
             Input = new InputInfo { Path = "report.docx", Format = "docx", SizeBytes = 10_240, Fingerprint = new FileFingerprint { Sha256 = new string('0', 64) }, Encrypted = false },
             Window = new ResultWindow { Unit = "block", Returned = 2, Total = 12, Truncated = true },
@@ -240,9 +240,9 @@ public sealed class WordsRendererGoldenTests
             BlockCount = 12,
             Blocks =
             [
-                new BlockData { Block = 0, Type = "paragraph", Section = 0, Style = "Heading 1", Text = "Summary" },
-                new BlockData { Block = 1, Type = "paragraph", Section = 0, Text = "" },
-                new BlockData { Block = 2, Type = "table", Section = 0, RowCount = 3, ColumnCount = 2 },
+                new WordsBlockData { Block = 0, Type = "paragraph", Section = 0, Style = "Heading 1", Text = "Summary" },
+                new WordsBlockData { Block = 1, Type = "paragraph", Section = 0, Text = "" },
+                new WordsBlockData { Block = 2, Type = "table", Section = 0, RowCount = 3, ColumnCount = 2 },
             ],
         };
 
@@ -297,10 +297,10 @@ public sealed class WordsRendererGoldenTests
             text);
     }
 
-    private static DocumentInfoResult Info() => new()
+    private static WordsInspectResult Info() => new()
     {
         Input = new InputInfo { Path = @"C:\docs\report.docx", Format = "docx", SizeBytes = 10_240, Fingerprint = new FileFingerprint { Sha256 = new string('0', 64) }, Encrypted = false },
-        Document = new DocumentSummary
+        Document = new WordsDocumentSummary
         {
             SectionCount = 2, BlockCount = 12, ParagraphCount = 10, TableCount = 2, PageCount = 3, WordCount = 456,
             RevisionsPresent = true, RevisionCount = 1, RevisionAuthors = ["Ann"], CommentCount = 1,
@@ -308,54 +308,54 @@ public sealed class WordsRendererGoldenTests
         },
     };
 
-    private static DocumentInfoResult InfoWithDetails() => Info() with
+    private static WordsInspectResult InfoWithDetails() => Info() with
     {
         Sections =
         [
-            new SectionData
+            new WordsSectionData
             {
                 Section = 0, Orientation = "portrait", WidthPoints = 612, HeightPoints = 792,
-                Margins = new MarginData { Top = 72, Right = 89.85, Bottom = 72.004, Left = 0.125 },
+                Margins = new WordsMarginData { Top = 72, Right = 89.85, Bottom = 72.004, Left = 0.125 },
                 HeadersFooters =
                 [
-                    new HeaderFooterData { Location = "header", Kind = "primary", Paragraphs = ["Quarterly report", "Draft"] },
-                    new HeaderFooterData { Location = "footer", Kind = "first", Paragraphs = [] },
+                    new WordsHeaderFooterData { Location = "header", Kind = "primary", Paragraphs = ["Quarterly report", "Draft"] },
+                    new WordsHeaderFooterData { Location = "footer", Kind = "first", Paragraphs = [] },
                 ],
             },
-            new SectionData
+            new WordsSectionData
             {
                 Section = 1, Orientation = "landscape", WidthPoints = 841.89, HeightPoints = 595.276,
-                Margins = new MarginData { Top = 36, Right = 36, Bottom = 36, Left = 36 },
+                Margins = new WordsMarginData { Top = 36, Right = 36, Bottom = 36, Left = 36 },
                 HeadersFooters = [],
             },
         ],
         Outline =
         [
-            new OutlineItem { Block = 0, HeadingLevel = 1, Text = "Summary" },
-            new OutlineItem { Block = 5, HeadingLevel = 2, Text = "Details" },
+            new WordsOutlineItem { Block = 0, HeadingLevel = 1, Text = "Summary" },
+            new WordsOutlineItem { Block = 5, HeadingLevel = 2, Text = "Details" },
         ],
         Styles = ["Normal", "Heading 1"],
         Fields =
         [
-            new FieldData { Type = "PAGE", Scope = "headersFooters", Code = " PAGE ", Result = "1" },
-            new FieldData { Type = "TOC", Scope = "body", Block = 1 },
+            new WordsFieldData { Type = "PAGE", Scope = "headersFooters", Code = " PAGE ", Result = "1" },
+            new WordsFieldData { Type = "TOC", Scope = "body", Block = 1 },
         ],
         Bookmarks = [],
-        Comments = [new CommentData { Author = "Ann", Text = "Check the totals", Block = 3 }],
+        Comments = [new WordsCommentData { Author = "Ann", Text = "Check the totals", Block = 3 }],
         Revisions =
         [
-            new RevisionData { Revision = 0, Type = "insertion", Author = "Ann", Date = "2026-09-28T08:30:00Z", Block = 2, Text = "new text" },
-            new RevisionData { Revision = 1, Type = "formatChange", Author = "Bob", Scope = "headersFooters" },
+            new WordsRevisionData { Revision = 0, Type = "insertion", Author = "Ann", Date = "2026-09-28T08:30:00Z", Block = 2, Text = "new text" },
+            new WordsRevisionData { Revision = 1, Type = "formatChange", Author = "Bob", Scope = "headersFooters" },
         ],
         Images =
         [
-            new ImageData { Scope = "body", Block = 4, Name = "Logo", Width = 120.5, Height = 60 },
-            new ImageData { Scope = "headersFooters", Width = 10, Height = 10.333 },
+            new WordsImageData { Scope = "body", Block = 4, Name = "Logo", Width = 120.5, Height = 60 },
+            new WordsImageData { Scope = "headersFooters", Width = 10, Height = 10.333 },
         ],
         Tables =
         [
-            new TableData { Block = 6, RowCount = 3, ColumnCount = 2, Style = "Table Grid" },
-            new TableData { Block = 9, RowCount = 1, ColumnCount = 1 },
+            new WordsTableData { Block = 6, RowCount = 3, ColumnCount = 2, Style = "Table Grid" },
+            new WordsTableData { Block = 9, RowCount = 1, ColumnCount = 1 },
         ],
         Properties = new Dictionary<string, string?> { ["Title"] = "Report", ["Author"] = "Ann", ["Subject"] = null },
         Fonts = ["Calibri", "Times New Roman"],

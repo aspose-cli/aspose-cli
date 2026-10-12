@@ -7,7 +7,6 @@ using Aspose.Cli.Sdk.Results;
 using Aspose.Words;
 using Aspose.Words.Drawing;
 using Aspose.Words.Tables;
-using ContractCommentData = Aspose.Cli.Product.Words.Contracts.CommentData;
 using static Aspose.Cli.Product.Words.Engine.WordsEngineSupport;
 
 namespace Aspose.Cli.Product.Words.Engine;
@@ -22,7 +21,7 @@ internal static class WordsExtract
         using LoadedDocument loaded = session.Loader.Open(request.Input, request.Password);
         using ExtractionGuard guard = session.Outputs.BeginExtraction(request.Output.Path, request.Output.Overwrite);
         var index = new DocumentBlockIndex(loaded.Document, loaded.Evaluation);
-        var items = new List<ExtractedItem>();
+        var items = new List<WordsExtractedItem>();
         var warnings = new List<Warning>();
         if (request.What == WordsExtractTargets.Images)
         {
@@ -40,7 +39,7 @@ internal static class WordsExtract
                 byte[] bytes = shape.ImageData.ImageBytes;
                 string extension = FileFormatUtil.ImageTypeToExtension(shape.ImageData.ImageType);
                 string path = guard.WriteAllBytes($"image-{++number:000}{extension}", bytes);
-                items.Add(new ExtractedItem { Path = path, Kind = "image", SizeBytes = bytes.LongLength, Block = index.FindBlock(shape) });
+                items.Add(new WordsExtractedItem { Path = path, Kind = "image", SizeBytes = bytes.LongLength, Block = index.FindBlock(shape) });
             }
 
             if (linked > 0)
@@ -54,20 +53,20 @@ internal static class WordsExtract
         }
         else if (request.What == WordsExtractTargets.Comments)
         {
-            IReadOnlyList<ContractCommentData> comments = loaded.Document.GetChildNodes(NodeType.Comment, true).Cast<Comment>()
-                .Select(comment => new ContractCommentData { Author = comment.Author, Text = WordsText.Of(comment), Block = index.FindBlock(comment) }).ToArray();
+            IReadOnlyList<WordsCommentData> comments = loaded.Document.GetChildNodes(NodeType.Comment, true).Cast<Comment>()
+                .Select(comment => new WordsCommentData { Author = comment.Author, Text = WordsText.Of(comment), Block = index.FindBlock(comment) }).ToArray();
             string json = JsonSerializer.Serialize(
                 comments,
                 ProductJsonContext.Definition.LocalOptions);
             byte[] bytes = System.Text.Encoding.UTF8.GetBytes(json);
             string path = guard.WriteAllBytes("comments.json", bytes);
-            items.Add(new ExtractedItem { Path = path, Kind = "comments", SizeBytes = bytes.LongLength });
+            items.Add(new WordsExtractedItem { Path = path, Kind = "comments", SizeBytes = bytes.LongLength });
         }
         else if (request.What == WordsExtractTargets.Text)
         {
             byte[] bytes = System.Text.Encoding.UTF8.GetBytes(WordsText.Lines(index.Entries.Select(static entry => entry.Node)));
             string path = guard.WriteAllBytes("document.txt", bytes);
-            items.Add(new ExtractedItem { Path = path, Kind = "text", SizeBytes = bytes.LongLength });
+            items.Add(new WordsExtractedItem { Path = path, Kind = "text", SizeBytes = bytes.LongLength });
         }
         else if (request.What == WordsExtractTargets.Tables)
         {
@@ -76,7 +75,7 @@ internal static class WordsExtract
             {
                 byte[] bytes = Csv((Table)entry.Node);
                 string path = guard.WriteAllBytes($"table-{++number:000}.csv", bytes);
-                items.Add(new ExtractedItem { Path = path, Kind = "table", SizeBytes = bytes.LongLength, Block = entry.Index });
+                items.Add(new WordsExtractedItem { Path = path, Kind = "table", SizeBytes = bytes.LongLength, Block = entry.Index });
             }
         }
         else

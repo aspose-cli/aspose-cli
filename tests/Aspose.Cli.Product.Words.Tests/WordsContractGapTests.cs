@@ -27,9 +27,9 @@ public sealed class WordsContractGapTests
                         Position = "after",
                         Paragraphs =
                         [
-                            new ParagraphInput { Text = "Point", ListLevel = 0 },
-                            new ParagraphInput { Text = "Detail", ListLevel = 1 },
-                            new ParagraphInput { Text = "Plain" },
+                            new WordsParagraphInput { Text = "Point", ListLevel = 0 },
+                            new WordsParagraphInput { Text = "Detail", ListLevel = 1 },
+                            new WordsParagraphInput { Text = "Plain" },
                         ],
                     },
                 ],
@@ -59,7 +59,7 @@ public sealed class WordsContractGapTests
         {
             At = new WordsTarget { Find = "Operations remained" },
             Position = position,
-            Paragraphs = [new ParagraphInput { Text = text }],
+            Paragraphs = [new WordsParagraphInput { Text = text }],
         };
 
         WordsEdit.Run(fixture.Session, new WordsEditRequest
@@ -127,8 +127,8 @@ public sealed class WordsContractGapTests
                         Position = "after",
                         Paragraphs =
                         [
-                            new ParagraphInput { Text = "New clause", ListLevel = 1 },
-                            new ParagraphInput { Text = "New chapter", ListLevel = 0 },
+                            new WordsParagraphInput { Text = "New clause", ListLevel = 1 },
+                            new WordsParagraphInput { Text = "New chapter", ListLevel = 0 },
                         ],
                     },
                 ],
@@ -156,7 +156,7 @@ public sealed class WordsContractGapTests
         string markdown = fixture.Temp.File("nested.md");
         File.WriteAllText(markdown, "# T\n\n1. First\n    1. Sub A\n    2. Sub B\n2. Second\n    1. Sub C\n");
         string input = fixture.Temp.File("nested.docx");
-        WordsCreate.Run(fixture.Session, new NewDocumentRequest { Output = TestOutput.At(input), MarkdownPath = markdown });
+        WordsCreate.Run(fixture.Session, new WordsCreateRequest { Output = TestOutput.At(input), MarkdownPath = markdown });
         string output = fixture.Temp.File("nested-out.docx");
 
         WordsEdit.Run(fixture.Session, new WordsEditRequest
@@ -170,7 +170,7 @@ public sealed class WordsContractGapTests
                     {
                         At = new WordsTarget { Find = "First" },
                         Position = "after",
-                        Paragraphs = [new ParagraphInput { Text = "New sub", ListLevel = 1 }],
+                        Paragraphs = [new WordsParagraphInput { Text = "New sub", ListLevel = 1 }],
                     },
                     new InsertParagraphsOp
                     {
@@ -178,15 +178,15 @@ public sealed class WordsContractGapTests
                         Position = "after",
                         Paragraphs =
                         [
-                            new ParagraphInput { Text = "Later sub", ListLevel = 1 },
-                            new ParagraphInput { Text = "Third", ListLevel = 0 },
+                            new WordsParagraphInput { Text = "Later sub", ListLevel = 1 },
+                            new WordsParagraphInput { Text = "Third", ListLevel = 0 },
                         ],
                     },
                     new InsertParagraphsOp
                     {
                         At = new WordsTarget { Find = "Second" },
                         Position = "before",
-                        Paragraphs = [new ParagraphInput { Text = "Between", ListLevel = 0 }],
+                        Paragraphs = [new WordsParagraphInput { Text = "Between", ListLevel = 0 }],
                     },
                 ],
             },
@@ -227,7 +227,7 @@ public sealed class WordsContractGapTests
         string markdown = fixture.Temp.File("flat.md");
         File.WriteAllText(markdown, "1. First\n2. Second\n");
         string input = fixture.Temp.File("flat.docx");
-        WordsCreate.Run(fixture.Session, new NewDocumentRequest { Output = TestOutput.At(input), MarkdownPath = markdown });
+        WordsCreate.Run(fixture.Session, new WordsCreateRequest { Output = TestOutput.At(input), MarkdownPath = markdown });
         string output = fixture.Temp.File("flat-out.docx");
 
         WordsEdit.Run(fixture.Session, new WordsEditRequest
@@ -241,7 +241,7 @@ public sealed class WordsContractGapTests
                     {
                         At = new WordsTarget { Find = "First" },
                         Position = "after",
-                        Paragraphs = [new ParagraphInput { Text = "Detail", ListLevel = 1 }],
+                        Paragraphs = [new WordsParagraphInput { Text = "Detail", ListLevel = 1 }],
                     },
                 ],
             },
@@ -290,7 +290,7 @@ public sealed class WordsContractGapTests
                     {
                         At = new WordsTarget { Find = "Chapter" },
                         Position = "after",
-                        Paragraphs = [new ParagraphInput { Text = "First detail", ListLevel = 1 }],
+                        Paragraphs = [new WordsParagraphInput { Text = "First detail", ListLevel = 1 }],
                     },
                 ],
             },
@@ -318,7 +318,7 @@ public sealed class WordsContractGapTests
         {
             string source = fixture.Temp.File("items.md");
             File.WriteAllText(source, "1. **First**\n2. Second\n");
-            WordsCreate.Run(fixture.Session, new NewDocumentRequest { Output = TestOutput.At(input), MarkdownPath = source });
+            WordsCreate.Run(fixture.Session, new WordsCreateRequest { Output = TestOutput.At(input), MarkdownPath = source });
         }
         else
         {
@@ -346,8 +346,8 @@ public sealed class WordsContractGapTests
                         Position = markdown ? "after" : "before",
                         Paragraphs =
                         [
-                            new ParagraphInput { Text = "Detail one", ListLevel = 1 },
-                            new ParagraphInput { Text = "Detail two", ListLevel = 1 },
+                            new WordsParagraphInput { Text = "Detail one", ListLevel = 1 },
+                            new WordsParagraphInput { Text = "Detail two", ListLevel = 1 },
                         ],
                     },
                 ],
@@ -402,7 +402,7 @@ public sealed class WordsContractGapTests
                     {
                         At = new WordsTarget { Find = "Detail" },
                         Position = "after",
-                        Paragraphs = [new ParagraphInput { Text = "New detail", ListLevel = 1 }],
+                        Paragraphs = [new WordsParagraphInput { Text = "New detail", ListLevel = 1 }],
                     },
                 ],
             },
@@ -509,7 +509,7 @@ public sealed class WordsContractGapTests
         string input = fixture.Temp.File("breaks.docx");
         source.Save(input, SaveFormat.Docx);
 
-        DocumentReadResult read = WordsRead.Run(fixture.Session, new DocumentReadRequest { Input = input, Scope = "text" });
+        WordsReadResult read = WordsRead.Run(fixture.Session, new WordsReadRequest { Input = input, Scope = "text" });
 
         string? BreakAfter(string text) => read.Blocks.Single(block => block.Text == text).BreakAfter;
         Assert.Equal("page", BreakAfter("Before page"));
@@ -531,7 +531,7 @@ public sealed class WordsContractGapTests
         string input = fixture.Temp.File("leading-break.docx");
         source.Save(input, SaveFormat.Docx);
 
-        DocumentReadResult read = WordsRead.Run(fixture.Session, new DocumentReadRequest { Input = input, Scope = "full" });
+        WordsReadResult read = WordsRead.Run(fixture.Session, new WordsReadRequest { Input = input, Scope = "full" });
 
         Assert.Equal(["Page one", "第五条 违约责任", "Body"], read.Blocks.Select(static block => block.Text));
         Assert.Equal(["page", null, null], read.Blocks.Select(static block => block.BreakAfter));

@@ -123,7 +123,7 @@ public sealed class WordsSectionIdentityTests
                     new DeleteSectionOp { Section = 2 },
                     new SetHeaderOp { Section = 3, Paragraphs = ["Head"] },
                     new SetFooterOp { Section = 3, Paragraphs = ["Foot"] },
-                    new SetPageSetupOp { Section = 3, Setup = new PageSetupInput { Orientation = "landscape" } },
+                    new SetPageSetupOp { Section = 3, Setup = new WordsPageSetupInput { Orientation = "landscape" } },
                     new SetPageNumbersOp { Section = 3, Start = 7 },
                     new SetTextOp { At = new WordsTarget { Find = "Third" }, Text = "Safe" },
                     new AddSectionOp { Position = "after", After = 1 },

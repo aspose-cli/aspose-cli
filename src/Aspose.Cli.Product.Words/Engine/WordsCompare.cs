@@ -61,14 +61,14 @@ internal static class WordsCompare
             Left = InfoProjection.Source(leftPath, leftLoaded),
             Right = InfoProjection.Source(rightPath, rightLoaded),
             Identical = revisions.Length == 0,
-            Revisions = new RevisionCounts
+            Revisions = new WordsRevisionCounts
             {
                 InsertionCount = revisions.Count(static r => r.RevisionType == RevisionType.Insertion),
                 DeletionCount = revisions.Count(static r => r.RevisionType == RevisionType.Deletion),
                 FormatChangeCount = revisions.Count(static r => r.RevisionType == RevisionType.FormatChange),
                 MoveCount = revisions.Count(static r => r.RevisionType == RevisionType.Moving),
             },
-            Samples = revisions.Take(SampleLimit).Select(static revision => new RevisionSample
+            Samples = revisions.Take(SampleLimit).Select(static revision => new WordsRevisionSample
             {
                 Type = InfoProjection.RevisionTypeName(revision.RevisionType),
                 Text = InfoProjection.NodeText(revision) is { } text && WordsText.Clean(text) is { Length: > 0 } clean
