@@ -131,7 +131,7 @@ public sealed class WordsFieldAndReviewTests
         WordsInspectResult info = WordsInspect.Run(fixture.Session, new WordsInspectRequest { Input = input, Details = ["fields"] });
 
         Assert.All(info.Fields!, static field => Assert.DoesNotContain(field.Result!, static c => c is '\u0013' or '\u0014' or '\u0015'));
-        Assert.Equal("Scope\t2\rTerms\t2", Assert.Single(info.Fields!, static field => field.Type == "FieldTOC").Result);
+        Assert.Equal("Scope\t2\rTerms\t2", Assert.Single(info.Fields!, static field => field.Kind == "FieldTOC").Result);
         Assert.Equal("Scope\t2", info.Fields!.First(static field => field.Code!.Contains("_Toc", StringComparison.Ordinal)).Result);
     }
 
@@ -179,10 +179,10 @@ public sealed class WordsFieldAndReviewTests
         WordsInspectResult info = WordsInspect.Run(fixture.Session, new WordsInspectRequest { Input = input, Details = ["fields", "images"] });
 
         Assert.Equal(
-            ["FieldMergeField:body:1", "FieldPage:headersFooters:"],
-            info.Fields!.Where(static f => f.Type is "FieldMergeField" or "FieldPage").Select(static f => $"{f.Type}:{f.Scope}:{f.Block}").Order(StringComparer.Ordinal));
+            ["FieldMergeField:body:1", "FieldPage:headers-footers:"],
+            info.Fields!.Where(static f => f.Kind is "FieldMergeField" or "FieldPage").Select(static f => $"{f.Kind}:{f.Scope}:{f.Block}").Order(StringComparer.Ordinal));
         Assert.Equal(
-            ["body:1", "headersFooters:"],
+            ["body:1", "headers-footers:"],
             info.Images!.Where(static i => i.Width < 2).Select(static i => $"{i.Scope}:{i.Block}").Order(StringComparer.Ordinal));
     }
 

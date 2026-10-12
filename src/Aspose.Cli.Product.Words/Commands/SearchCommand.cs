@@ -1,3 +1,4 @@
+using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.Extensibility.Output;
 using Aspose.Cli.Sdk.Text;
 
@@ -9,7 +10,7 @@ internal static class SearchCommand
     {
         var search = new SearchOptions(new SearchScopeGrammar(
             "Search scope: body (the main text, without the comments and footnotes it anchors), "
-                + "headersFooters, footnotes (with endnotes), comments or all.",
+                + "headers-footers, footnotes (with endnotes), comments or all.",
             WordsTextScopes.Names,
             WordsTextScopes.Body));
         return new(
@@ -35,8 +36,13 @@ internal static class SearchCommand
             },
             Examples =
             [
-                "words query search contract.docx --pattern TODO --scope all",
-                "words query search contract.docx --pattern \"Section\\s+\\d+\" --regex --max-hits 20",
+                "words search contract.docx --pattern TODO --scope all",
+                "words search contract.docx --pattern \"Section\\s+\\d+\" --regex --max-hits 20",
+            ],
+            Links =
+            [
+                CommandHelpLink.Docs(WordsModule.Manifest, "overview", "what each Words command is for"),
+                new("aspose-cli docs reading", "reading every product within bounded windows"),
             ],
         };
     }
@@ -51,7 +57,7 @@ internal static class SearchCommand
                 WordsText.Block(hit.Block),
                 TableText.Int(hit.Section),
                 hit.Location is { } location ? $"{hit.Scope} ({location}, {hit.Kind})" : hit.Scope,
-                hit.Snippet);
+                hit.Text);
         }
 
         table.WriteTo(surface.Out, surface.Format);

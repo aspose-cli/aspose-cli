@@ -23,7 +23,7 @@ public sealed partial class RenderDpiContractTests : IDisposable
         File.WriteAllText(_workspace.File("text.txt"), "Dpi range.\n");
         File.WriteAllText(_workspace.File("outline.md"), "# Dpi range\n");
         Succeeds(_workspace.Run("pdf", "create", "document.pdf", "--from-text", "text.txt", "--output-format", "json"));
-        Succeeds(_workspace.Run("words", "create", "document.docx", "--markdown", "outline.md", "--output-format", "json"));
+        Succeeds(_workspace.Run("words", "create", "document.docx", "--from-markdown", "outline.md", "--output-format", "json"));
         Succeeds(_workspace.Run("slides", "create", "deck.pptx", "--output-format", "json"));
         var inputs = new Dictionary<string, string>(StringComparer.Ordinal)
         {

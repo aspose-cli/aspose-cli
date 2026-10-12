@@ -509,7 +509,7 @@ public sealed class WordsContractGapTests
         string input = fixture.Temp.File("breaks.docx");
         source.Save(input, SaveFormat.Docx);
 
-        WordsReadResult read = WordsRead.Run(fixture.Session, new WordsReadRequest { Input = input, Scope = "text" });
+        WordsReadResult read = WordsRead.Run(fixture.Session, new WordsReadRequest { Input = input, Content = "text" });
 
         string? BreakAfter(string text) => read.Blocks.Single(block => block.Text == text).BreakAfter;
         Assert.Equal("page", BreakAfter("Before page"));
@@ -531,7 +531,7 @@ public sealed class WordsContractGapTests
         string input = fixture.Temp.File("leading-break.docx");
         source.Save(input, SaveFormat.Docx);
 
-        WordsReadResult read = WordsRead.Run(fixture.Session, new WordsReadRequest { Input = input, Scope = "full" });
+        WordsReadResult read = WordsRead.Run(fixture.Session, new WordsReadRequest { Input = input, Content = "full" });
 
         Assert.Equal(["Page one", "第五条 违约责任", "Body"], read.Blocks.Select(static block => block.Text));
         Assert.Equal(["page", null, null], read.Blocks.Select(static block => block.BreakAfter));

@@ -34,7 +34,7 @@ shows no images.
   tables inside a block-level content control, such as a table of contents,
   are blocks too. Images, fields, hyperlinks and breaks belong to their
   paragraph; `inspect` names the `scope` of each image, field and revision,
-  and `query search` the `scope` and `section` of each hit; neither gives a
+  and `search` the `scope` and `section` of each hit; neither gives a
   `block` in headers and footers. A **section** carries page setup, headers and footers, numbered
   from 1. `inspect --detail sections` lists the headers and footers each
   section defines, by the `location` (`header`, `footer`) and `kind`
@@ -42,21 +42,21 @@ shows no images.
   `set_page_numbers` take, with their `paragraphs`; a kind a section does not
   define continues from the previous section. A search hit in one names its
   `location` and `kind` too.
-- Block text, `--scope full` runs, search snippets and `heading`/`find`
+- Block text, `--content full` runs, search hit text and `heading`/`find`
   addresses use the text a reader sees: field results rather than field codes, without text a tracked
   change deletes, and without the comments and footnotes a paragraph anchors.
-  Read those with `inspect --detail comments` or `query search --scope`, and
+  Read those with `inspect --detail comments` or `search --scope`, and
   tracked changes themselves with `inspect --detail revisions`
   ([revisions](references/revisions.md)).
 - A numbered list paragraph's number, such as `6.2`, is its block's
   `listLabel`, and its block `text` leaves it out. Everywhere else the text
-  starts with the number and a space: search snippets and patterns,
+  starts with the number and a space: search hit text and patterns,
   `find`/`heading` addresses, extracted text and table `cells`. So
   `"find": "6.2 "` addresses clause 6.2, a search pattern anchored with `^`
   must allow for the number, and `replace_text` and `set_text` change only
   the text after it.
-- `query search --scope` and the `replace_text` op share one scope vocabulary:
-  `body`, `headersFooters`, `footnotes` (with endnotes), `comments` and `all`.
+- `search --scope` and the `replace_text` op share one scope vocabulary:
+  `body`, `headers-footers`, `footnotes` (with endnotes), `comments` and `all`.
 - Read fields use the edit vocabulary: a table block's `rowCount`,
   `columnCount` and `cells` and a paragraph's `text` and `style` can be
   written back through `insert_table` and `insert_paragraphs` under the same
@@ -66,13 +66,13 @@ shows no images.
 
 ```powershell
 aspose-cli words inspect input.docx --detail outline sections fields bookmarks comments --output-format json
-aspose-cli words query blocks input.docx --blocks 1- --max-blocks 30 --scope full --output-format json
-aspose-cli words query search input.docx --pattern "notice period" --scope all --output-format json
+aspose-cli words read input.docx --blocks 1- --max-blocks 30 --content full --output-format json
+aspose-cli words search input.docx --pattern "notice period" --scope all --output-format json
 ```
 
 `--blocks 1- --max-blocks 30` reads the first 30 blocks, or all of a shorter
 document; a closed range such as `1-30` must lie inside the document, or it is
-`BLOCK_NOT_FOUND`. `--scope outline|text|full` chooses how much of each block is projected.
+`BLOCK_NOT_FOUND`. `--content outline|text|full` chooses how much of each block is projected.
 `--max-chars` bounds the sum of paragraph, table-cell and run text; addressing
 and formatting metadata do not count against it. Check `window.truncated` and
 each block's `contentTruncated`, and run `window.next` as given: it resumes at
@@ -83,8 +83,8 @@ of them is `BLOCK_NOT_FOUND`, whose hint names the section's blocks. `extract --
 file, one line per paragraph and per table row, whose cells are separated by
 tabs.
 `extract --what tables` writes each body table to its own CSV file
-(`table-001.csv` and on, UTF-8 with a byte order mark, so Excel reads Chinese
-text) and reports its `block`; a cell's paragraphs and line breaks become lines
+(`table-001.csv` and on, UTF-8; add `--bom` for a byte order mark, so Excel
+reads Chinese text) and reports its `block`; a cell's paragraphs and line breaks become lines
 inside its field, and cells a merge covers stay as empty fields. Cell text is
 written as it is, so Excel evaluates a cell that starts with `=`, `+`, `-` or
 `@` as a formula; import such files as text when that matters. Windows, paging and compact output in general:
@@ -96,7 +96,7 @@ written as it is, so Excel evaluates a cell that starts with `=`, `+`, `-` or
    Design below).
 
    ```powershell
-   aspose-cli words create report.docx --markdown report.md --template brand.docx --title "Quarterly Report" --output-format json
+   aspose-cli words create report.docx --from-markdown report.md --template brand.docx --title "Quarterly Report" --output-format json
    ```
 
 2. **Existing document:** inspect structure and revision state, then read only
@@ -124,7 +124,7 @@ written as it is, so Excel evaluates a cell that starts with `=`, `+`, `-` or
    ]}
    ```
 
-   Then confirm `words query search output.docx --pattern "{{" --scope all`
+   Then confirm `words search output.docx --pattern "{{" --scope all`
    finds nothing (the pattern is literal unless `--regex`).
 
 4. **Verify:** read the changed blocks back, then review every page
@@ -132,8 +132,8 @@ written as it is, so Excel evaluates a cell that starts with `=`, `+`, `-` or
 
 ## Design: the template owns the look
 
-- A template supplies styles, page setup, headers and footers; `--markdown` or
-  `--text` supplies the body. Markdown headings map to Heading 1-6, quotes to
+- A template supplies styles, page setup, headers and footers; `--from-markdown`
+  or `--from-text` supplies the body. Markdown headings map to Heading 1-6, quotes to
   Quote, lists to list paragraphs; only bold, italic and strike-through from
   the Markdown survive as direct formatting. As in CommonMark, a closing `**`
   or `~~` right after punctuation, such as `》` or `）`, needs a space or

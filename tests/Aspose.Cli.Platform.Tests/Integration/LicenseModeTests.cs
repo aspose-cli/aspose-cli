@@ -27,7 +27,7 @@ public sealed class LicenseModeTests : IDisposable
         string[] timeout = supervised ? ["--timeout", "60"] : [];
 
         CliResult configured = _workspace.Run(
-            ["words", "create", "configured.docx", "--markdown", "brief.md", "--output-format", "json", .. timeout]);
+            ["words", "create", "configured.docx", "--from-markdown", "brief.md", "--output-format", "json", .. timeout]);
         Assert.Equal(7, configured.ExitCode);
         Assert.Equal("LICENSE_INVALID", Error(configured)["code"]!.GetValue<string>());
 
@@ -49,7 +49,7 @@ public sealed class LicenseModeTests : IDisposable
         ProjectLicense(File.ReadAllBytes(TestLicense.Path!));
 
         JsonNode licensed = _workspace.Run(
-            "words", "create", "licensed.docx", "--markdown", "brief.md", "--output-format", "json").Json();
+            "words", "create", "licensed.docx", "--from-markdown", "brief.md", "--output-format", "json").Json();
         JsonNode requested = Create("requested.docx", []);
 
         Assert.Null(licensed["license"]);
@@ -74,7 +74,7 @@ public sealed class LicenseModeTests : IDisposable
     public void EvaluationMode_CannotBeCombinedWithAnExplicitLicense()
     {
         CliResult result = _workspace.Run(
-            "words", "create", "brief.docx", "--markdown", "brief.md",
+            "words", "create", "brief.docx", "--from-markdown", "brief.md",
             "--license", "any.lic", "--license-mode", "evaluation", "--output-format", "json");
 
         Assert.Equal(2, result.ExitCode);
@@ -102,7 +102,7 @@ public sealed class LicenseModeTests : IDisposable
     private JsonNode Create(string output, string[] options)
     {
         CliResult result = _workspace.Run(
-            ["words", "create", output, "--markdown", "brief.md", "--license-mode", "evaluation", "--output-format", "json", .. options]);
+            ["words", "create", output, "--from-markdown", "brief.md", "--license-mode", "evaluation", "--output-format", "json", .. options]);
         Assert.True(result.ExitCode == 0, result.StdErr);
         JsonNode created = JsonNode.Parse(result.StdOut)!;
         // The disclosure says the evaluation was asked for, not that a license is missing.

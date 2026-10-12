@@ -74,4 +74,7 @@ public static class WordsFormats
     /// <summary>The formats create, edit and compare write: every convert format.</summary>
     internal static IReadOnlyList<FormatDescriptor> Writable { get; } =
         [.. Definitions.Where(static format => format.Uses.HasFlag(FormatUse.Convert)).OrderBy(static format => format.ConvertOrder)];
+
+    /// <summary>The format split writes every part in: docx.</summary>
+    internal static IReadOnlyList<FormatDescriptor> SplitParts { get; } = [.. Definitions.Where(static format => format.Id == "docx")];
 }

@@ -70,7 +70,7 @@ internal static class WordsCompare
             },
             Samples = revisions.Take(SampleLimit).Select(static revision => new WordsRevisionSample
             {
-                Type = InfoProjection.RevisionTypeName(revision.RevisionType),
+                Kind = InfoProjection.RevisionKindName(revision.RevisionType),
                 Text = InfoProjection.NodeText(revision) is { } text && WordsText.Clean(text) is { Length: > 0 } clean
                     ? TextSearch.Truncate(clean, 300)
                     : null,

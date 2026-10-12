@@ -26,10 +26,9 @@ public sealed class WordsSplitExtractCliTests : IDisposable
 
         Assert.True(split.ExitCode == 0, split.StdErr);
         JsonArray outputs = JsonNode.Parse(split.StdOut)!["outputs"]!.AsArray();
-        Assert.Equal(["section-1", "section-2"], outputs.Select(static output => output!["source"]!.GetValue<string>()));
-        Assert.All(outputs, static output => Assert.True(File.Exists(output!["output"]!["path"]!.GetValue<string>())));
-        // A docx part can carry a password, so each part states that it has none.
-        Assert.All(outputs, static output => Assert.False(output!["output"]!["encrypted"]!.GetValue<bool>()));
+        Assert.Equal([1, 2], outputs.Select(static output => output!["section"]!.GetValue<int>()));
+        Assert.All(outputs, static output => Assert.True(File.Exists(output!["path"]!.GetValue<string>())));
+        Assert.All(outputs, static output => Assert.Equal("docx", output!["format"]!.GetValue<string>()));
     }
 
     [Category(TestCategory.Slow)]
@@ -52,6 +51,18 @@ public sealed class WordsSplitExtractCliTests : IDisposable
             Assert.True(File.Exists(item["path"]!.GetValue<string>()));
         });
         Assert.Contains(items, static item => item!["block"]?.GetValue<int>() >= 1);
+    }
+
+    [Fact]
+    public void Extract_BomWithoutTables_IsAnInvalidOption()
+    {
+        WriteDocument();
+
+        CliResult extracted = _workspace.Run("words", "extract", "report.docx", "--what", "text", "--bom", "--out-dir", "text", "--output-format", "json");
+
+        Assert.Equal(2, extracted.ExitCode);
+        Assert.Equal("OPTION_INVALID", JsonNode.Parse(extracted.StdErr)!["error"]!["code"]!.GetValue<string>());
+        Assert.False(Directory.Exists(_workspace.File("text")));
     }
 
     /// <summary>Two sections: a paragraph with an image, then a one-cell table.</summary>

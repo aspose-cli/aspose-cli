@@ -71,10 +71,10 @@ internal static class CompareCommand
         surface.Out.WriteLine($"insertions: {result.Revisions.InsertionCount}   deletions: {result.Revisions.DeletionCount}   formatting: {result.Revisions.FormatChangeCount}   moves: {result.Revisions.MoveCount}");
         if (result.Samples.Count > 0)
         {
-            var table = new TextTable("type", "sample");
+            var table = new TextTable("kind", "sample");
             foreach (WordsRevisionSample sample in result.Samples)
             {
-                table.AddRow(sample.Type, sample.Text);
+                table.AddRow(sample.Kind, sample.Text);
             }
 
             table.WriteTo(surface.Out, surface.Format);

@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 namespace Aspose.Cli.Product.Words.Contracts;
 
 /// <summary>
-/// Result of <c>words query search</c>: one window of search hits; its <c>window</c> counts hits
+/// Result of <c>words search</c>: one window of search hits; its <c>window</c> counts hits
 /// and continues with <c>--skip</c>.
 /// </summary>
 public sealed record WordsSearchResult() : WindowedResultEnvelope("search-result", 2)
@@ -48,5 +48,5 @@ public sealed record WordsSearchHit
     /// The text of the paragraph, comment or note that holds the hit, cut to 300 characters and
     /// an ellipsis.
     /// </summary>
-    public required string Snippet { get; init; }
+    public required string Text { get; init; }
 }

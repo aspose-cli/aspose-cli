@@ -18,9 +18,9 @@ public sealed class DirectoryOutputContractTests
             ["pdf", "split", "input.pdf", "--by", "pages", "--out-dir", "parts"]),
         ["pdf extract"] = (["pdf", "create", "input.pdf", "--from-text", "content.txt"],
             ["pdf", "extract", "input.pdf", "--what", "text", "--out-dir", "parts"]),
-        ["words split"] = (["words", "create", "input.docx", "--text", "content.txt"],
+        ["words split"] = (["words", "create", "input.docx", "--from-text", "content.txt"],
             ["words", "split", "input.docx", "--by", "sections", "--out-dir", "parts"]),
-        ["words extract"] = (["words", "create", "input.docx", "--text", "content.txt"],
+        ["words extract"] = (["words", "create", "input.docx", "--from-text", "content.txt"],
             ["words", "extract", "input.docx", "--what", "text", "--out-dir", "parts"]),
         ["slides extract"] = (["slides", "create", "input.pptx", "--from-markdown", "content.md"],
             ["slides", "extract", "input.pptx", "--what", "text", "--out-dir", "parts"]),
@@ -62,7 +62,7 @@ public sealed class DirectoryOutputContractTests
 
     private static readonly Dictionary<string, (string[] Create, string[] Publish)> MultiFileCases = new(StringComparer.Ordinal)
     {
-        ["words split"] = (["words", "create", "input.docx", "--markdown", "content.md"],
+        ["words split"] = (["words", "create", "input.docx", "--from-markdown", "content.md"],
             ["words", "split", "input.docx", "--by", "heading1", "--out-dir", "parts"]),
         ["slides extract"] = (["slides", "create", "input.pptx", "--from-markdown", "content.md"],
             ["slides", "extract", "input.pptx", "--what", "text", "--out-dir", "parts"]),

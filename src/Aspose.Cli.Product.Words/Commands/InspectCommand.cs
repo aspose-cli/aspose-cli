@@ -14,17 +14,15 @@ internal static class InspectCommand
 
     public static CommandDefinition<WordsInspectRequest, WordsInspectResult> Create()
     {
-        var sample = new SampleOption("the heading outline, as with --detail outline");
         var detail = new DetailOption(WordsInspectDetails.All, DetailNotes);
         return new(
             "inspect",
             "Show document structure, safety state and metadata.",
             new CommandTraits { Input = WordsInputs.Document, UsesFonts = true },
-            [.. sample.Options, .. detail.Options],
+            [.. detail.Options],
             (parse, standard) => new WordsInspectRequest
             {
                 Input = standard.Input,
-                IncludePreview = sample.Read(parse),
                 Details = detail.Read(parse),
                 Password = standard.InputPassword,
             },
@@ -33,7 +31,7 @@ internal static class InspectCommand
             Examples =
             [
                 "words inspect contract.docx --output-format json",
-                "words inspect contract.docx --detail outline sections fields bookmarks --sample",
+                "words inspect contract.docx --detail outline sections fields bookmarks",
             ],
             Links =
             [
@@ -51,7 +49,7 @@ internal static class InspectCommand
             $"sections: {document.SectionCount}   blocks: {document.BlockCount} "
             + $"({document.ParagraphCount} paragraphs, {document.TableCount} tables)   "
             + $"pages: {document.PageCount}   words: {document.WordCount}");
-        surface.Out.WriteLine($"revisions: {document.RevisionCount}   protection: {document.Protection}   signed: {TableText.YesNo(document.Signed)}   macros: {TableText.YesNo(document.HasMacros)}");
+        surface.Out.WriteLine($"revisions: {document.RevisionCount}   protection: {document.Protection ?? "none"}   signed: {TableText.YesNo(document.Signed)}   macros: {TableText.YesNo(document.HasMacros)}");
         RenderDetails(result, surface);
     }
 
@@ -66,16 +64,16 @@ internal static class InspectCommand
         ResultText.List(surface, "styles", result.Styles);
         ResultText.List(surface, "bookmarks", result.Bookmarks);
         ResultText.List(surface, "fonts", result.Fonts);
-        ResultText.Table(surface, "fields", result.Fields, ["block", "type", "code", "result"],
-            static field => [WordsText.Block(field.Block), field.Type, field.Code, field.Result]);
+        ResultText.Table(surface, "fields", result.Fields, ["block", "kind", "code", "result"],
+            static field => [WordsText.Block(field.Block), field.Kind, field.Code, field.Result]);
         ResultText.Table(surface, "comments", result.Comments, ["block", "author", "text"],
             static comment => [WordsText.Block(comment.Block), comment.Author, comment.Text]);
-        ResultText.Table(surface, "revisions", result.Revisions, ["revision", "block", "type", "author", "date", "text"],
+        ResultText.Table(surface, "revisions", result.Revisions, ["revision", "block", "kind", "author", "date", "text"],
             static revision =>
             [
                 TableText.Int(revision.Revision),
                 WordsText.Block(revision.Block),
-                revision.Type,
+                revision.Kind,
                 revision.Author,
                 revision.Date,
                 revision.Text,

@@ -38,7 +38,7 @@ public sealed class EncryptionRemovedHintCliTests : IDisposable
         {
             "cells" => ["cells", "create", locked],
             "slides" => ["slides", "create", locked, "--from-markdown", "source.md"],
-            _ => ["words", "create", locked, "--markdown", "source.md"],
+            _ => ["words", "create", locked, "--from-markdown", "source.md"],
         };
         CliResult created = Run([.. create, "--encrypt-env", Variable]);
         Assert.True(created.ExitCode == 0, created.StdErr);

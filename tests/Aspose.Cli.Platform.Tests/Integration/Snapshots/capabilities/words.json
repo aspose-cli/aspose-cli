@@ -3,7 +3,8 @@
     "id": "words",
     "verbs": [
       "inspect",
-      "query",
+      "read",
+      "search",
       "convert",
       "render",
       "create",
@@ -48,7 +49,7 @@
         "command": "edit",
         "inputSchema": "v2/words/ops",
         "operationSchema": "aspose-cli schema v2/words/ops --operation <op>",
-        "contractFingerprint": "sha256:d8be5a3fe2a7d5e5e51a74d4c069c3bc6ddcf644a5bda872d711d48a91184fc3",
+        "contractFingerprint": "sha256:a9236e330146480e28529a3c8e166206b9653834a0321a44734a7613273678d8",
         "maximumOperationCount": 10000,
         "ops": [
           "accept_revisions",
@@ -1296,28 +1297,9 @@
         "path": "words create",
         "name": "create",
         "aliases": [],
-        "description": "Create a document from one content source, optionally inside a template.",
+        "description": "Create a document from at most one content source, optionally inside a template; without either it is blank.",
         "hidden": false,
         "options": [
-          {
-            "name": "--blank",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "false",
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Create a blank document."
-          },
           {
             "name": "--dry-run",
             "aliases": [],
@@ -1401,7 +1383,7 @@
             "description": "Local font directory searched in addition to the system fonts; repeat for more."
           },
           {
-            "name": "--markdown",
+            "name": "--from-markdown",
             "aliases": [],
             "type": "string",
             "minimumArity": 1,
@@ -1415,6 +1397,22 @@
             "valueSource": "command-line",
             "inputKind": "file",
             "description": "Create from a Markdown file."
+          },
+          {
+            "name": "--from-text",
+            "aliases": [],
+            "type": "string",
+            "minimumArity": 1,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": false,
+            "allowedValues": [],
+            "secret": false,
+            "valueSource": "command-line",
+            "inputKind": "file",
+            "description": "Create from a UTF-8 text file."
           },
           {
             "name": "--overwrite",
@@ -1449,23 +1447,7 @@
             "secret": false,
             "valueSource": "command-line",
             "inputKind": "file",
-            "description": "Document whose styles, page setup, headers and footers the new document uses; its body is replaced by --markdown or --text content."
-          },
-          {
-            "name": "--text",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "inputKind": "file",
-            "description": "Create from a UTF-8 text file."
+            "description": "Document whose styles, page setup, headers and footers the new document uses; its body is replaced by --from-markdown or --from-text content."
           },
           {
             "name": "--title",
@@ -1852,6 +1834,25 @@
         "hidden": false,
         "options": [
           {
+            "name": "--bom",
+            "aliases": [],
+            "type": "boolean",
+            "minimumArity": 0,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": true,
+            "default": "false",
+            "allowedValues": [
+              "false",
+              "true"
+            ],
+            "secret": false,
+            "valueSource": "command-line",
+            "description": "Start each table's CSV with a UTF-8 byte order mark, so Excel reads its non-English text correctly; only with --what tables. Default: UTF-8 without one."
+          },
+          {
             "name": "--dry-run",
             "aliases": [],
             "type": "boolean",
@@ -2085,25 +2086,6 @@
             "secret": true,
             "valueSource": "stdin",
             "description": "Read the password for the document from the first line of stdin."
-          },
-          {
-            "name": "--sample",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "false",
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Include a bounded sample: the heading outline, as with --detail outline. Default: off."
           }
         ],
         "arguments": [
@@ -2123,17 +2105,8 @@
         ]
       },
       {
-        "path": "words query",
-        "name": "query",
-        "aliases": [],
-        "description": "Read bounded document projections without mutating the source.",
-        "hidden": false,
-        "options": [],
-        "arguments": []
-      },
-      {
-        "path": "words query blocks",
-        "name": "blocks",
+        "path": "words read",
+        "name": "read",
         "aliases": [],
         "description": "Read a bounded, stable window of document blocks.",
         "hidden": false,
@@ -2152,6 +2125,26 @@
             "secret": false,
             "valueSource": "command-line",
             "description": "1-based block range, e.g. 1-20,25."
+          },
+          {
+            "name": "--content",
+            "aliases": [],
+            "type": "string",
+            "minimumArity": 1,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": true,
+            "default": "text",
+            "allowedValues": [
+              "full",
+              "outline",
+              "text"
+            ],
+            "secret": false,
+            "valueSource": "command-line",
+            "description": "How much of each block to return: its text, only the headings, or the text with its runs and paragraph format."
           },
           {
             "name": "--max-blocks",
@@ -2234,26 +2227,6 @@
             "description": "Read the password for the document from the first line of stdin."
           },
           {
-            "name": "--scope",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "text",
-            "allowedValues": [
-              "full",
-              "outline",
-              "text"
-            ],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Projection: how much of each block to return."
-          },
-          {
             "name": "--section",
             "aliases": [],
             "type": "integer",
@@ -2267,185 +2240,6 @@
             "secret": false,
             "valueSource": "command-line",
             "description": "Read one 1-based section; with --blocks, only its blocks in that range."
-          }
-        ],
-        "arguments": [
-          {
-            "name": "file",
-            "type": "string",
-            "inputKind": "file",
-            "valueSource": "command-line",
-            "secret": false,
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": true,
-            "hasDefault": false,
-            "allowedValues": [],
-            "description": "Document to open."
-          }
-        ]
-      },
-      {
-        "path": "words query search",
-        "name": "search",
-        "aliases": [],
-        "description": "Search bounded document scopes with regex timeout protection.",
-        "hidden": false,
-        "options": [
-          {
-            "name": "--case-sensitive",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "false",
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Match letter case exactly."
-          },
-          {
-            "name": "--max-hits",
-            "aliases": [],
-            "type": "integer",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "100",
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Maximum returned hits. Range: 1-10000."
-          },
-          {
-            "name": "--password",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": true,
-            "valueSource": "command-line",
-            "description": "Password for the document. Discouraged: visible in the process list; prefer --password-env."
-          },
-          {
-            "name": "--password-env",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": true,
-            "valueSource": "environment-variable-name",
-            "description": "Name of an environment variable holding the password for the document."
-          },
-          {
-            "name": "--password-stdin",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": true,
-            "valueSource": "stdin",
-            "description": "Read the password for the document from the first line of stdin."
-          },
-          {
-            "name": "--pattern",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": true,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Text to find, or a regular expression with --regex."
-          },
-          {
-            "name": "--regex",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "false",
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Treat the pattern as a culture-invariant regular expression with a one-second budget."
-          },
-          {
-            "name": "--scope",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "body",
-            "allowedValues": [
-              "all",
-              "body",
-              "comments",
-              "footnotes",
-              "headersFooters"
-            ],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Search scope: body (the main text, without the comments and footnotes it anchors), headersFooters, footnotes (with endnotes), comments or all."
-          },
-          {
-            "name": "--skip",
-            "aliases": [],
-            "type": "integer",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "0",
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Matches to pass over before the returned hits; a truncated search's window.next sets it."
           }
         ],
         "arguments": [
@@ -2638,6 +2432,185 @@
             "secret": false,
             "valueSource": "command-line",
             "description": "Image format. Default: the --out extension's format, else png."
+          }
+        ],
+        "arguments": [
+          {
+            "name": "file",
+            "type": "string",
+            "inputKind": "file",
+            "valueSource": "command-line",
+            "secret": false,
+            "minimumArity": 1,
+            "maximumArity": 1,
+            "required": true,
+            "hasDefault": false,
+            "allowedValues": [],
+            "description": "Document to open."
+          }
+        ]
+      },
+      {
+        "path": "words search",
+        "name": "search",
+        "aliases": [],
+        "description": "Search bounded document scopes with regex timeout protection.",
+        "hidden": false,
+        "options": [
+          {
+            "name": "--case-sensitive",
+            "aliases": [],
+            "type": "boolean",
+            "minimumArity": 0,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": true,
+            "default": "false",
+            "allowedValues": [
+              "false",
+              "true"
+            ],
+            "secret": false,
+            "valueSource": "command-line",
+            "description": "Match letter case exactly."
+          },
+          {
+            "name": "--max-hits",
+            "aliases": [],
+            "type": "integer",
+            "minimumArity": 1,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": true,
+            "default": "100",
+            "allowedValues": [],
+            "secret": false,
+            "valueSource": "command-line",
+            "description": "Maximum returned hits. Range: 1-10000."
+          },
+          {
+            "name": "--password",
+            "aliases": [],
+            "type": "string",
+            "minimumArity": 1,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": false,
+            "allowedValues": [],
+            "secret": true,
+            "valueSource": "command-line",
+            "description": "Password for the document. Discouraged: visible in the process list; prefer --password-env."
+          },
+          {
+            "name": "--password-env",
+            "aliases": [],
+            "type": "string",
+            "minimumArity": 1,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": false,
+            "allowedValues": [],
+            "secret": true,
+            "valueSource": "environment-variable-name",
+            "description": "Name of an environment variable holding the password for the document."
+          },
+          {
+            "name": "--password-stdin",
+            "aliases": [],
+            "type": "boolean",
+            "minimumArity": 0,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": true,
+            "allowedValues": [
+              "false",
+              "true"
+            ],
+            "secret": true,
+            "valueSource": "stdin",
+            "description": "Read the password for the document from the first line of stdin."
+          },
+          {
+            "name": "--pattern",
+            "aliases": [],
+            "type": "string",
+            "minimumArity": 1,
+            "maximumArity": 1,
+            "required": true,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": false,
+            "allowedValues": [],
+            "secret": false,
+            "valueSource": "command-line",
+            "description": "Text to find, or a regular expression with --regex."
+          },
+          {
+            "name": "--regex",
+            "aliases": [],
+            "type": "boolean",
+            "minimumArity": 0,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": true,
+            "default": "false",
+            "allowedValues": [
+              "false",
+              "true"
+            ],
+            "secret": false,
+            "valueSource": "command-line",
+            "description": "Treat the pattern as a culture-invariant regular expression with a one-second budget."
+          },
+          {
+            "name": "--scope",
+            "aliases": [],
+            "type": "string",
+            "minimumArity": 1,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": true,
+            "default": "body",
+            "allowedValues": [
+              "all",
+              "body",
+              "comments",
+              "footnotes",
+              "headers-footers"
+            ],
+            "secret": false,
+            "valueSource": "command-line",
+            "description": "Search scope: body (the main text, without the comments and footnotes it anchors), headers-footers, footnotes (with endnotes), comments or all."
+          },
+          {
+            "name": "--skip",
+            "aliases": [],
+            "type": "integer",
+            "minimumArity": 1,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": true,
+            "default": "0",
+            "allowedValues": [],
+            "secret": false,
+            "valueSource": "command-line",
+            "description": "Matches to pass over before the returned hits; a truncated search's window.next sets it."
           }
         ],
         "arguments": [
@@ -3233,7 +3206,7 @@
           "type": "boolean"
         },
         "revisions": {
-          "description": "The revisions the comparison found, counted by type.",
+          "description": "The revisions the comparison found, counted by kind.",
           "$ref": "#/$defs/wordsRevisionCounts"
         },
         "samples": {
@@ -3261,7 +3234,7 @@
       },
       "$defs": {
         "wordsRevisionCounts": {
-          "description": "Counts by revision type.",
+          "description": "Counts by revision kind.",
           "type": "object",
           "required": [
             "insertionCount",
@@ -3297,18 +3270,18 @@
           "description": "One revision the comparison found.",
           "type": "object",
           "required": [
-            "type"
+            "kind"
           ],
           "additionalProperties": false,
           "properties": {
-            "type": {
+            "kind": {
               "description": "The kind of change.",
               "type": "string",
               "enum": [
                 "insertion",
                 "deletion",
-                "formatChange",
-                "styleDefinitionChange",
+                "format-change",
+                "style-definition-change",
                 "moving"
               ]
             },
@@ -3532,10 +3505,9 @@
               "minimum": 0
             },
             "protection": {
-              "description": "The editing restriction: none, or the protect operation mode that sets it; every SDK protection type maps to one of these.",
+              "description": "The written document's editing restriction, as the protect operation mode that sets it; every SDK protection type maps to one of these. Absent for a document without one.",
               "type": "string",
               "enum": [
-                "none",
                 "readOnly",
                 "comments",
                 "trackedChanges",
@@ -3796,11 +3768,10 @@
             "tableCount",
             "pageCount",
             "wordCount",
-            "revisionsPresent",
+            "hasRevisions",
             "revisionCount",
             "revisionAuthors",
             "commentCount",
-            "protection",
             "signed",
             "hasMacros"
           ],
@@ -3836,7 +3807,7 @@
               "type": "integer",
               "minimum": 0
             },
-            "revisionsPresent": {
+            "hasRevisions": {
               "description": "Whether the document holds tracked changes.",
               "type": "boolean"
             },
@@ -3858,10 +3829,9 @@
               "minimum": 0
             },
             "protection": {
-              "description": "The editing restriction: none, or the protect operation mode that sets it; every SDK protection type maps to one of these.",
+              "description": "The editing restriction, as the protect operation mode that sets it; every SDK protection type maps to one of these. Absent for a document without one.",
               "type": "string",
               "enum": [
-                "none",
                 "readOnly",
                 "comments",
                 "trackedChanges",
@@ -3882,21 +3852,21 @@
           "description": "One field in any story.",
           "type": "object",
           "required": [
-            "type",
+            "kind",
             "scope"
           ],
           "additionalProperties": false,
           "properties": {
-            "type": {
+            "kind": {
               "description": "The SDK's name of the field type, such as FieldDate.",
               "type": "string"
             },
             "scope": {
-              "description": "The story that holds the field, named as query search names its scopes.",
+              "description": "The story that holds the field, named as words search names its scopes.",
               "type": "string",
               "enum": [
                 "body",
-                "headersFooters",
+                "headers-footers",
                 "footnotes",
                 "comments"
               ]
@@ -3963,11 +3933,11 @@
           "additionalProperties": false,
           "properties": {
             "scope": {
-              "description": "The story that holds the image, named as query search names its scopes.",
+              "description": "The story that holds the image, named as words search names its scopes.",
               "type": "string",
               "enum": [
                 "body",
-                "headersFooters",
+                "headers-footers",
                 "footnotes",
                 "comments"
               ]
@@ -4049,11 +4019,11 @@
           }
         },
         "wordsRevisionData": {
-          "description": "One tracked change in document order: its 1-based number, which accept_revisions and reject_revisions accept, its type, author, the date the document records and the text it inserts, deletes or moves.",
+          "description": "One tracked change in document order: its 1-based number, which accept_revisions and reject_revisions accept, its kind, author, the date the document records and the text it inserts, deletes or moves.",
           "type": "object",
           "required": [
             "revision",
-            "type",
+            "kind",
             "author"
           ],
           "additionalProperties": false,
@@ -4063,14 +4033,14 @@
               "type": "integer",
               "minimum": 1
             },
-            "type": {
+            "kind": {
               "description": "The kind of change.",
               "type": "string",
               "enum": [
                 "insertion",
                 "deletion",
-                "formatChange",
-                "styleDefinitionChange",
+                "format-change",
+                "style-definition-change",
                 "moving"
               ]
             },
@@ -4083,11 +4053,11 @@
               "type": "string"
             },
             "scope": {
-              "description": "The story that holds the change, named as query search names its scopes; absent for style definition changes.",
+              "description": "The story that holds the change, named as words search names its scopes; absent for style definition changes.",
               "type": "string",
               "enum": [
                 "body",
-                "headersFooters",
+                "headers-footers",
                 "footnotes",
                 "comments"
               ]
@@ -5483,7 +5453,7 @@
               "type": "string",
               "enum": [
                 "body",
-                "headersFooters",
+                "headers-footers",
                 "footnotes",
                 "comments",
                 "all"
@@ -6123,13 +6093,13 @@
     "v2/words/read-result": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "$id": "https://schemas.aspose.com/aspose-cli/v2/words/read-result.schema.json",
-      "description": "Windowed block projection returned by words query blocks. Its window counts blocks: the total is the blocks the range, section and scope select. window.next starts again at a block whose content was truncated and doubles --max-chars when that block alone exceeded the budget.",
+      "description": "Windowed block projection returned by words read. Its window counts blocks: the total is the blocks the range, section and content select. window.next starts again at a block whose content was truncated and doubles --max-chars when that block alone exceeded the budget.",
       "type": "object",
       "required": [
         "schema",
         "schemaVersion",
         "input",
-        "scope",
+        "content",
         "blockCount",
         "blocks",
         "window"
@@ -6148,8 +6118,8 @@
           "description": "The document read.",
           "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
         },
-        "scope": {
-          "description": "The projection, as --scope chose it.",
+        "content": {
+          "description": "How much of each block the read returns, as --content chose it.",
           "type": "string",
           "enum": [
             "text",
@@ -6158,7 +6128,7 @@
           ]
         },
         "blockCount": {
-          "description": "The document's block count, whatever the range, section and scope select.",
+          "description": "The document's block count, whatever the range, section and content select.",
           "type": "integer",
           "minimum": 0
         },
@@ -6191,7 +6161,7 @@
           "type": "object",
           "required": [
             "block",
-            "type",
+            "kind",
             "section",
             "contentTruncated"
           ],
@@ -6202,7 +6172,7 @@
               "type": "integer",
               "minimum": 1
             },
-            "type": {
+            "kind": {
               "description": "Whether the block is a paragraph or a table.",
               "type": "string",
               "enum": [
@@ -6233,14 +6203,14 @@
               "minimum": 1
             },
             "runs": {
-              "description": "The runs of the visible text, in order: their text joins to the paragraph's text, without field codes, deleted text or anchored comments and footnotes. Returned in full scope.",
+              "description": "The runs of the visible text, in order: their text joins to the paragraph's text, without field codes, deleted text or anchored comments and footnotes. Returned with --content full.",
               "type": "array",
               "items": {
                 "$ref": "#/$defs/wordsRunData"
               }
             },
             "paragraphFormat": {
-              "description": "The paragraph's indents, spacing and alignment, returned in full scope.",
+              "description": "The paragraph's indents, spacing and alignment, returned with --content full.",
               "$ref": "#/$defs/wordsParagraphFormatData"
             },
             "images": {
@@ -6316,7 +6286,7 @@
           }
         },
         "wordsParagraphFormatData": {
-          "description": "The format a paragraph has, from its own settings and its style, in points; returned in full scope.",
+          "description": "The format a paragraph has, from its own settings and its style, in points; returned with --content full.",
           "type": "object",
           "required": [
             "alignment",
@@ -6358,7 +6328,7 @@
               "description": "How lineSpacing is measured.",
               "type": "string",
               "enum": [
-                "atLeast",
+                "at-least",
                 "exactly",
                 "multiple"
               ]
@@ -6370,7 +6340,7 @@
           }
         },
         "wordsRunData": {
-          "description": "One run of a paragraph's visible text and its formatting, returned in full scope.",
+          "description": "One run of a paragraph's visible text and its formatting, returned with --content full.",
           "type": "object",
           "required": [
             "text"
@@ -6466,22 +6436,38 @@
       },
       "$defs": {
         "wordsPageOutput": {
-          "description": "One rendered page.",
+          "description": "One rendered page and its image file.",
           "type": "object",
           "required": [
-            "page",
-            "output"
+            "path",
+            "format",
+            "sizeBytes",
+            "fingerprint",
+            "page"
           ],
           "additionalProperties": false,
           "properties": {
+            "path": {
+              "description": "Absolute path of the produced file.",
+              "type": "string"
+            },
+            "format": {
+              "description": "Format id of the produced file, e.g. png.",
+              "type": "string"
+            },
+            "sizeBytes": {
+              "description": "File size in bytes.",
+              "type": "integer",
+              "minimum": 0
+            },
+            "fingerprint": {
+              "description": "SHA-256 identity of the published file.",
+              "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/file-fingerprint.schema.json"
+            },
             "page": {
               "description": "The 1-based page.",
               "type": "integer",
               "minimum": 1
-            },
-            "output": {
-              "description": "The page's image file.",
-              "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/output.schema.json"
             }
           }
         }
@@ -6490,7 +6476,7 @@
     "v2/words/search-result": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "$id": "https://schemas.aspose.com/aspose-cli/v2/words/search-result.schema.json",
-      "description": "Result of words query search: one window of search hits; its window counts hits and continues with --skip.",
+      "description": "Result of words search: one window of search hits; its window counts hits and continues with --skip.",
       "type": "object",
       "required": [
         "schema",
@@ -6548,7 +6534,7 @@
           "required": [
             "section",
             "scope",
-            "snippet"
+            "text"
           ],
           "additionalProperties": false,
           "properties": {
@@ -6567,7 +6553,7 @@
               "type": "string",
               "enum": [
                 "body",
-                "headersFooters",
+                "headers-footers",
                 "footnotes",
                 "comments"
               ]
@@ -6589,7 +6575,7 @@
                 "even"
               ]
             },
-            "snippet": {
+            "text": {
               "description": "The text of the paragraph, comment or note that holds the hit, cut to 300 characters and an ellipsis.",
               "type": "string"
             }
@@ -6626,7 +6612,7 @@
           "description": "The written parts, in document order.",
           "type": "array",
           "items": {
-            "$ref": "#/$defs/wordsSplitOutput"
+            "$ref": "#/$defs/wordsPartOutput"
           }
         },
         "license": {
@@ -6642,27 +6628,48 @@
         }
       },
       "$defs": {
-        "wordsSplitOutput": {
-          "description": "One split output.",
+        "wordsPartOutput": {
+          "description": "One written part and what of the document it holds, in the unit --by divides by: its section by sections, its pages by pages, or its blocks at each Heading 1.",
           "type": "object",
           "required": [
-            "index",
-            "output"
+            "path",
+            "format",
+            "sizeBytes",
+            "fingerprint"
           ],
           "additionalProperties": false,
           "properties": {
-            "index": {
-              "description": "The part's 1-based number.",
+            "path": {
+              "description": "Absolute path of the produced file.",
+              "type": "string"
+            },
+            "format": {
+              "description": "Format id of the produced file, e.g. png.",
+              "type": "string"
+            },
+            "sizeBytes": {
+              "description": "File size in bytes.",
+              "type": "integer",
+              "minimum": 0
+            },
+            "fingerprint": {
+              "description": "SHA-256 identity of the published file.",
+              "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/file-fingerprint.schema.json"
+            },
+            "section": {
+              "description": "The 1-based section the part holds; present with --by sections.",
               "type": "integer",
               "minimum": 1
             },
-            "output": {
-              "description": "The part's file.",
-              "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/output.schema.json"
+            "pages": {
+              "description": "The 1-based pages the part holds, such as 3 or 1-3,8; present with --by pages.",
+              "type": "string",
+              "minLength": 1
             },
-            "source": {
-              "description": "What of the document the part holds: section-N, page-N, pages-R for the range R of a part of several pages, or blocks-S-E.",
-              "type": "string"
+            "blocks": {
+              "description": "The 1-based blocks the part holds, such as 1-12; present with --by heading1.",
+              "type": "string",
+              "minLength": 1
             }
           }
         }

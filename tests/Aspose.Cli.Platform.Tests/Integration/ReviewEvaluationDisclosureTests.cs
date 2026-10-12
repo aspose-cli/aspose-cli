@@ -21,7 +21,7 @@ public sealed class ReviewEvaluationDisclosureTests : IDisposable
     [Fact]
     public void EvaluationReview_WritesTheDisclosureIntoTheEvidence()
     {
-        Run("words", "create", "brief.docx", "--markdown", "brief.md", "--license-mode", "evaluation");
+        Run("words", "create", "brief.docx", "--from-markdown", "brief.md", "--license-mode", "evaluation");
 
         JsonNode printed = Run("review", "brief.docx", "--out", "review", "--license-mode", "evaluation");
 
@@ -34,7 +34,7 @@ public sealed class ReviewEvaluationDisclosureTests : IDisposable
     [Fact]
     public void EvaluationReview_ListsTheMarksItsEvidenceShows_AsRenderDoes()
     {
-        Run("words", "create", "brief.docx", "--markdown", "brief.md", "--license-mode", "evaluation");
+        Run("words", "create", "brief.docx", "--from-markdown", "brief.md", "--license-mode", "evaluation");
 
         JsonNode rendered = Run("words", "render", "brief.docx", "--out", "page.png", "--license-mode", "evaluation");
         JsonNode reviewed = Run("review", "brief.docx", "--out", "review", "--license-mode", "evaluation");
@@ -48,7 +48,7 @@ public sealed class ReviewEvaluationDisclosureTests : IDisposable
     public void LicensedReviewOfAMarkedDocument_WritesWhatItPrints()
     {
         ScenarioLicense.Project(_workspace.Path);
-        Run("words", "create", "marked.docx", "--markdown", "brief.md", "--license-mode", "evaluation");
+        Run("words", "create", "marked.docx", "--from-markdown", "brief.md", "--license-mode", "evaluation");
 
         JsonNode printed = Run("review", "marked.docx", "--out", "review");
 

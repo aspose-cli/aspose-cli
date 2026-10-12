@@ -66,8 +66,8 @@ public sealed record WordsEditVerification : EditVerification
     public int? RevisionCount { get; init; }
 
     /// <summary>
-    /// The editing restriction: none, or the protect operation mode that sets it; every SDK
-    /// protection type maps to one of these.
+    /// The written document's editing restriction, as the protect operation mode that sets it;
+    /// every SDK protection type maps to one of these. Absent for a document without one.
     /// </summary>
     [AllowedValues(typeof(WordsProtectionModes))]
     public string? Protection { get; init; }

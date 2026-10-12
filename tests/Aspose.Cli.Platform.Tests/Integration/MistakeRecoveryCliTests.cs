@@ -173,7 +173,7 @@ public sealed class MistakeRecoveryCliTests : IDisposable
     [InlineData("slides create noext --from-markdown deck.md", "noext")]
     [InlineData("slides create dotonly. --from-markdown deck.md", "dotonly")]
     [InlineData("words edit a.docx --ops words.json --out noext", "noext")]
-    [InlineData("words create noext --markdown deck.md", "noext")]
+    [InlineData("words create noext --from-markdown deck.md", "noext")]
     public void OutputWithoutExtension_IsAUsageError(string commandLine, string output)
     {
         File.WriteAllText(_workspace.File("a.pptx"), "not a document");

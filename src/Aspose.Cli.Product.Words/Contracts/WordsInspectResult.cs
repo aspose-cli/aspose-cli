@@ -85,7 +85,7 @@ public sealed record WordsDocumentSummary
     public required int WordCount { get; init; }
 
     /// <summary>Whether the document holds tracked changes.</summary>
-    public required bool RevisionsPresent { get; init; }
+    public required bool HasRevisions { get; init; }
 
     /// <summary>
     /// The revisions the document stores, one per run, paragraph mark or other changed node;
@@ -102,11 +102,11 @@ public sealed record WordsDocumentSummary
     public required int CommentCount { get; init; }
 
     /// <summary>
-    /// The editing restriction: none, or the protect operation mode that sets it; every SDK
-    /// protection type maps to one of these.
+    /// The editing restriction, as the protect operation mode that sets it; every SDK protection
+    /// type maps to one of these. Absent for a document without one.
     /// </summary>
     [AllowedValues(typeof(WordsProtectionModes))]
-    public required string Protection { get; init; }
+    public string? Protection { get; init; }
 
     /// <summary>Whether the document carries a digital signature.</summary>
     public required bool Signed { get; init; }
@@ -200,9 +200,9 @@ public sealed record WordsOutlineItem
 public sealed record WordsFieldData
 {
     /// <summary>The SDK's name of the field type, such as FieldDate.</summary>
-    public required string Type { get; init; }
+    public required string Kind { get; init; }
 
-    /// <summary>The story that holds the field, named as query search names its scopes.</summary>
+    /// <summary>The story that holds the field, named as <c>words search</c> names its scopes.</summary>
     [AllowedValues(typeof(WordsStoryScopes))]
     public required string Scope { get; init; }
 
@@ -236,7 +236,7 @@ public sealed record WordsCommentData
 
 /// <summary>
 /// One tracked change in document order: its 1-based number, which accept_revisions and
-/// reject_revisions accept, its type, author, the date the document records and the text it
+/// reject_revisions accept, its kind, author, the date the document records and the text it
 /// inserts, deletes or moves.
 /// </summary>
 public sealed record WordsRevisionData
@@ -249,8 +249,8 @@ public sealed record WordsRevisionData
     public required int Revision { get; init; }
 
     /// <summary>The kind of change.</summary>
-    [AllowedValues(typeof(WordsRevisionTypes))]
-    public required string Type { get; init; }
+    [AllowedValues(typeof(WordsRevisionKinds))]
+    public required string Kind { get; init; }
 
     /// <summary>The change's author.</summary>
     public required string Author { get; init; }
@@ -262,7 +262,7 @@ public sealed record WordsRevisionData
     public string? Date { get; init; }
 
     /// <summary>
-    /// The story that holds the change, named as query search names its scopes; absent for
+    /// The story that holds the change, named as <c>words search</c> names its scopes; absent for
     /// style definition changes.
     /// </summary>
     [AllowedValues(typeof(WordsStoryScopes))]
@@ -285,7 +285,7 @@ public sealed record WordsRevisionData
 /// <summary>One embedded image in any story; its size is in points.</summary>
 public sealed record WordsImageData
 {
-    /// <summary>The story that holds the image, named as query search names its scopes.</summary>
+    /// <summary>The story that holds the image, named as <c>words search</c> names its scopes.</summary>
     [AllowedValues(typeof(WordsStoryScopes))]
     public required string Scope { get; init; }
 

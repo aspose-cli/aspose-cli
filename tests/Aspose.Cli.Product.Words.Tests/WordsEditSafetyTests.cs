@@ -159,7 +159,7 @@ public sealed class WordsEditSafetyTests
                 OpSecrets = secrets,
             });
         Assert.Equal(ProtectionType.NoProtection, new Document(output).ProtectionType);
-        Assert.Equal("none", WordsInspect.Run(fixture.Session, new WordsInspectRequest { Input = output }).Document.Protection);
+        Assert.Null(WordsInspect.Run(fixture.Session, new WordsInspectRequest { Input = output }).Document.Protection);
 
         static WordsOpsBatch Unprotect(string variable) =>
             new() { Ops = [new UnprotectOp { PasswordEnv = variable }] };
@@ -226,7 +226,7 @@ public sealed class WordsEditSafetyTests
         File.WriteAllText(workspace.File("source.txt"), "Seed");
         File.WriteAllText(workspace.File("ops.json"), """{"ops":[{"op":"set_text","at":{"block":1},"text":"Safe"}]}""");
         var environment = new Dictionary<string, string?> { ["WORDS_EDIT_SECRET"] = OriginalPassword };
-        CliResult created = workspace.RunWithEnv(environment, "words", "create", "secret.docx", "--text", "source.txt", "--encrypt-env", "WORDS_EDIT_SECRET", "--output-format", "json");
+        CliResult created = workspace.RunWithEnv(environment, "words", "create", "secret.docx", "--from-text", "source.txt", "--encrypt-env", "WORDS_EDIT_SECRET", "--output-format", "json");
         Assert.True(created.ExitCode == 0, created.StdErr);
         byte[] original = File.ReadAllBytes(workspace.File("secret.docx"));
         CliResult edited = workspace.RunWithEnv(environment, "words", "edit", "secret.docx", "--ops", "ops.json", "--password-env", "WORDS_EDIT_SECRET", "--in-place", "--backup", "--verify", "--output-format", "json");

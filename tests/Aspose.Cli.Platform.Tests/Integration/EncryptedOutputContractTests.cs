@@ -20,7 +20,7 @@ public sealed class EncryptedOutputContractTests
                 ["cells", "convert", "book.xlsx", "--to", "csv", "--out", "book.csv"], "book.csv", "csv"),
             ["slides convert"] = (["slides", "create", "deck.pptx"],
                 ["slides", "convert", "deck.pptx", "--to", "odp", "--out", "deck.odp"], "deck.odp", "odp"),
-            ["words create"] = (null, ["words", "create", "doc.pdf", "--text", "content.txt"], "doc.pdf", "pdf"),
+            ["words create"] = (null, ["words", "create", "doc.pdf", "--from-text", "content.txt"], "doc.pdf", "pdf"),
         };
 
     public static TheoryData<string> Commands => [.. Cases.Keys];

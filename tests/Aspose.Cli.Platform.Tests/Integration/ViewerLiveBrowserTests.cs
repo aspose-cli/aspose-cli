@@ -45,7 +45,7 @@ public sealed class ViewerLiveBrowserTests : IDisposable
         {
             File.WriteAllText(_workspace.File("report.md"), string.Join("\n\n",
                 Enumerable.Range(1, 120).Select(index => $"Paragraph {index} of the report.")));
-            _workspace.Run("words", "create", "report.docx", "--markdown", "report.md", "--output-format", "json").Succeeded();
+            _workspace.Run("words", "create", "report.docx", "--from-markdown", "report.md", "--output-format", "json").Succeeded();
             return _documents.Open(_workspace.File("report.docx"), new LiveDocumentOptions(), ViewerDocuments.PreviewHolder);
         },
         async (page, document) =>

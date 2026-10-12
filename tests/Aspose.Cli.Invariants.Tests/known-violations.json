@@ -857,20 +857,6 @@
       "actual": "has no Learn more"
     },
     {
-      "case": "C-R34 | words query blocks",
-      "invariant": "C-R34",
-      "rule": "C-R34",
-      "cause": "help-examples-and-links-not-declared",
-      "actual": "has no Learn more"
-    },
-    {
-      "case": "C-R34 | words query search",
-      "invariant": "C-R34",
-      "rule": "C-R34",
-      "cause": "help-examples-and-links-not-declared",
-      "actual": "has no Learn more"
-    },
-    {
       "case": "C-R08 | cells inspect",
       "invariant": "C-R08",
       "rule": "C-R08",
@@ -1053,20 +1039,6 @@
       "actual": "outputs[]: lacks format, fingerprint"
     },
     {
-      "case": "C-R31 | v2/words/render-result outputs",
-      "invariant": "C-R31",
-      "rule": "C-R31",
-      "cause": "outputs-shapes-differ",
-      "actual": "outputs[]: lacks path, format, sizeBytes, fingerprint; outputs[]: not flat (output)"
-    },
-    {
-      "case": "C-R31 | v2/words/split-result outputs",
-      "invariant": "C-R31",
-      "rule": "C-R31",
-      "cause": "outputs-shapes-differ",
-      "actual": "outputs[]: lacks path, format, sizeBytes, fingerprint; outputs[]: not flat (output); outputs[]: index, source beside the file fields, not one unit field"
-    },
-    {
       "case": "C-R20 | v2/cells/ops#set_page_setup fixednames",
       "invariant": "C-R20",
       "rule": "C-R20",
@@ -1116,25 +1088,11 @@
       "actual": "cells query is a command group below the product; its subcommands are a third level.; cells query range is a third command level; a product command is `aspose-cli <product> <verb> <file...>`.; cells query search is a third command level; a ..."
     },
     {
-      "case": "C-R01 | words",
-      "invariant": "C-R01",
-      "rule": "C-R01",
-      "cause": "query-is-a-third-command-level",
-      "actual": "words query is a command group below the product; its subcommands are a third level.; words query blocks is a third command level; a product command is `aspose-cli <product> <verb> <file...>`.; words query search is a third command level; a..."
-    },
-    {
       "case": "C-R02 | cells",
       "invariant": "C-R02",
       "rule": "C-R02",
       "cause": "query-is-a-third-command-level",
       "actual": "cells query: 'query' is not a product verb (inspect, read, search, create, edit, convert, render, compare, extract, split, merge, sign, validate)."
-    },
-    {
-      "case": "C-R02 | words",
-      "invariant": "C-R02",
-      "rule": "C-R02",
-      "cause": "query-is-a-third-command-level",
-      "actual": "words query: 'query' is not a product verb (inspect, read, search, create, edit, convert, render, compare, extract, split, merge, sign, validate)."
     },
     {
       "case": "C-R04 | cells query range budget hint",
@@ -1156,13 +1114,6 @@
       "rule": "C-R32",
       "cause": "search-hit-text-named-snippet-or-value",
       "actual": "hits[] does not require text (it has value)"
-    },
-    {
-      "case": "C-R32 | v2/words/search-result hits",
-      "invariant": "C-R32",
-      "rule": "C-R32",
-      "cause": "search-hit-text-named-snippet-or-value",
-      "actual": "hits[] does not require text (it has snippet)"
     },
     {
       "case": "C-R20 | v2/words/ops field size",
@@ -1235,27 +1186,6 @@
       "actual": "chartInfo.type: a variant named type, not kind; validationInfo.type: a variant named type, not kind"
     },
     {
-      "case": "C-R20 | v2/words/compare-result variants",
-      "invariant": "C-R20",
-      "rule": "C-R20",
-      "cause": "variant-field-named-type",
-      "actual": "wordsRevisionSample.type: a variant named type, not kind"
-    },
-    {
-      "case": "C-R20 | v2/words/inspect-result variants",
-      "invariant": "C-R20",
-      "rule": "C-R20",
-      "cause": "variant-field-named-type",
-      "actual": "wordsRevisionData.type: a variant named type, not kind"
-    },
-    {
-      "case": "C-R20 | v2/words/read-result variants",
-      "invariant": "C-R20",
-      "rule": "C-R20",
-      "cause": "variant-field-named-type",
-      "actual": "wordsBlockData.type: a variant named type, not kind"
-    },
-    {
       "case": "C-R19 | words add_watermark applied twice",
       "invariant": "C-R19",
       "rule": "C-R19",
@@ -1263,32 +1193,11 @@
       "actual": "applied twice, it leaves the same package parts and the same inspect and read results as applied once: the second replaces the first"
     },
     {
-      "case": "C-R08 | words create",
-      "invariant": "C-R08",
-      "rule": "C-R08",
-      "cause": "words-create-content-options-not-from-format",
-      "actual": "words create --blank: a banned name; a create without --from-<format> or --template is blank.; words create --markdown: a banned name; content read from another file is --from-<format>.; words create --text: a banned name; content read from..."
-    },
-    {
-      "case": "C-R17 | v2/words/compare-result",
-      "invariant": "C-R17",
-      "rule": "C-R17",
-      "cause": "words-enum-values-camel-case",
-      "actual": "wordsRevisionSample.type: enum values formatChange, styleDefinitionChange are not lowercase kebab-case"
-    },
-    {
       "case": "C-R17 | v2/words/inspect-result",
       "invariant": "C-R17",
       "rule": "C-R17",
       "cause": "words-enum-values-camel-case",
-      "actual": "wordsDocumentSummary.protection: enum values readOnly, trackedChanges are not lowercase kebab-case; wordsFieldData.scope: enum values headersFooters are not lowercase kebab-case; wordsImageData.scope: enum values headersFooters are not lowe..."
-    },
-    {
-      "case": "C-R17 | v2/words/read-result",
-      "invariant": "C-R17",
-      "rule": "C-R17",
-      "cause": "words-enum-values-camel-case",
-      "actual": "wordsParagraphFormatData.lineSpacingRule: enum values atLeast are not lowercase kebab-case"
+      "actual": "wordsDocumentSummary.protection: enum values readOnly, trackedChanges are not lowercase kebab-case"
     },
     {
       "case": "C-R17 | v2/words/edit-result",
@@ -1312,25 +1221,11 @@
       "actual": "mode: enum values readOnly, trackedChanges are not lowercase kebab-case"
     },
     {
-      "case": "C-R17 | v2/words/ops#replace_text",
-      "invariant": "C-R17",
-      "rule": "C-R17",
-      "cause": "words-enum-values-camel-case",
-      "actual": "scope: enum values headersFooters are not lowercase kebab-case"
-    },
-    {
       "case": "C-R17 | v2/words/ops#set_page_numbers",
       "invariant": "C-R17",
       "rule": "C-R17",
       "cause": "words-enum-values-camel-case",
       "actual": "format: enum values upperRoman, lowerRoman, upperLetter, lowerLetter are not lowercase kebab-case"
-    },
-    {
-      "case": "C-R17 | v2/words/search-result",
-      "invariant": "C-R17",
-      "rule": "C-R17",
-      "cause": "words-enum-values-camel-case",
-      "actual": "wordsSearchHit.scope: enum values headersFooters are not lowercase kebab-case"
     },
     {
       "case": "C-R20 | v2/words/ops field inline",
@@ -1375,20 +1270,6 @@
       "actual": "listLevel: minimum 0, not 1"
     },
     {
-      "case": "C-R33 | v2/words/inspect-result none",
-      "invariant": "C-R33",
-      "rule": "C-R33",
-      "cause": "words-protection-none",
-      "actual": "wordsDocumentSummary.protection: \"none\" as a value; omit the field instead"
-    },
-    {
-      "case": "C-R33 | v2/words/edit-result none",
-      "invariant": "C-R33",
-      "rule": "C-R33",
-      "cause": "words-protection-none",
-      "actual": "wordsEditVerification.protection: \"none\" as a value; omit the field instead"
-    },
-    {
       "case": "C-R21 | v2/words/ops#insert_break",
       "invariant": "C-R21",
       "rule": "C-R21",
@@ -1400,21 +1281,14 @@
       "invariant": "C-R21",
       "rule": "C-R21",
       "cause": "words-read-names-differ-from-op-fields",
-      "actual": "mode: read back as protection; mode: writes enum(comments,forms,readOnly,trackedChanges), reads enum(comments,forms,none,readOnly,trackedChanges)"
+      "actual": "mode: read back as protection"
     },
     {
       "case": "C-R33 | v2/words/inspect-result names",
       "invariant": "C-R33",
       "rule": "C-R33",
       "cause": "words-revision-names-and-dates",
-      "actual": "wordsDocumentSummary.revisionsPresent: a boolean says \"contains\" as has<Noun> and a state as an adjective; wordsRevisionData.date: a timestamp without format date-time"
-    },
-    {
-      "case": "C-R17 | words query search values",
-      "invariant": "C-R17",
-      "rule": "C-R17",
-      "cause": "words-search-scope-camel-case",
-      "actual": "words query search --scope: values not in lowercase kebab case: headersFooters."
+      "actual": "wordsRevisionData.date: a timestamp without format date-time"
     },
     {
       "case": "C-R21 | v2/words/ops#add_watermark",
@@ -1505,7 +1379,7 @@
       "invariant": "C-R21",
       "rule": "C-R21",
       "cause": "words-state-not-read-back",
-      "actual": "width 50 does not read back as width in words query blocks"
+      "actual": "width 50 does not read back as width in words read"
     },
     {
       "case": "C-R21 | words insert_table reads back",

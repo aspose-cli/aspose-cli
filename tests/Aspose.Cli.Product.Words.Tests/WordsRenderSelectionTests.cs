@@ -111,7 +111,7 @@ public sealed class WordsRenderSelectionTests : IDisposable
         });
 
         Assert.Equal(["runs.1.docx", "runs.2.docx"], Names("runs"));
-        Assert.Equal(["pages-1,3", "pages-4-5"], result.Outputs.Select(static part => part.Source));
-        Assert.Equal([2, 2], result.Outputs.Select(static part => new Document(part.Output.Path).PageCount));
+        Assert.Equal(["1,3", "4-5"], result.Outputs.Select(static part => part.Pages));
+        Assert.Equal([2, 2], result.Outputs.Select(static part => new Document(part.Path).PageCount));
     }
 }

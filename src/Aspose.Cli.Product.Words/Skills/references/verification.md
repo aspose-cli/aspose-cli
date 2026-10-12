@@ -26,12 +26,12 @@ The delivery checklist, the review protocol and font checks are in
 
 ```powershell
 aspose-cli words inspect output.docx --detail outline fields comments --output-format json
-aspose-cli words query blocks output.docx --blocks 1- --max-blocks 30 --scope full --output-format json
+aspose-cli words read output.docx --blocks 1- --max-blocks 30 --content full --output-format json
 aspose-cli words compare baseline.docx output.docx --output-format json
 ```
 
 Read the blocks the batch reported in `applied[].targets`, and blocks that
-follow insertions. In `--scope full`, compare an inserted paragraph's `runs`
+follow insertions. In `--content full`, compare an inserted paragraph's `runs`
 fonts and `paragraphFormat` (indents, spacing, alignment) with its neighbours'. `replace_text` names the original body blocks whose text,
 comments or footnotes it changed, then each header and footer it changed as
 `section/<n>/<location>/<kind>`, and `document` when it changed none of them.

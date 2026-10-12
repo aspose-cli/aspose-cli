@@ -120,7 +120,7 @@ public sealed class CorruptInputDetectionTests
     private static void WriteWordDocumentNamedPdf(TempWorkspace workspace)
     {
         File.WriteAllText(workspace.File("doc.md"), "# Title\n\nFirst paragraph.\n");
-        workspace.Run("words", "create", "doc.docx", "--markdown", "doc.md", "--output-format", "json").Succeeded();
+        workspace.Run("words", "create", "doc.docx", "--from-markdown", "doc.md", "--output-format", "json").Succeeded();
         File.Move(workspace.File("doc.docx"), workspace.File("renamed.pdf"));
     }
 

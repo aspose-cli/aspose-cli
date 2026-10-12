@@ -95,7 +95,7 @@ public sealed class WordsTrackChangesTests
 
         Assert.Equal("Check the figure.", Assert.Single(info.Comments!).Text);
         Assert.Equal(1, info.Document.CommentCount);
-        Assert.Equal(["deletion:twelve", "insertion:fifteen"], info.Revisions!.Select(static r => $"{r.Type}:{r.Text}"));
+        Assert.Equal(["deletion:twelve", "insertion:fifteen"], info.Revisions!.Select(static r => $"{r.Kind}:{r.Text}"));
 
         string removed = fixture.Temp.File("removed.docx");
         WordsEdit.Run(fixture.Session, tracked with
@@ -140,8 +140,8 @@ public sealed class WordsTrackChangesTests
         // that anchors the comment. The SDK lists the header's change before or after the
         // body's depending on the license state, so the entries are compared in any order.
         Assert.Equal(
-            ["body:1:insertion: Added in two runs.", "comments:1:insertion:", "comments:1:insertion:Note", "headersFooters::insertion: two"],
-            info.Revisions!.Select(static r => $"{r.Scope}:{r.Block}:{r.Type}:{r.Text}").Order(StringComparer.Ordinal));
+            ["body:1:insertion: Added in two runs.", "comments:1:insertion:", "comments:1:insertion:Note", "headers-footers::insertion: two"],
+            info.Revisions!.Select(static r => $"{r.Scope}:{r.Block}:{r.Kind}:{r.Text}").Order(StringComparer.Ordinal));
         // revisionCount counts the stored revisions, one per run and paragraph mark.
         Assert.Equal(5, info.Document.RevisionCount);
     }
@@ -158,7 +158,7 @@ public sealed class WordsTrackChangesTests
 
         WordsCompareResult result = WordsCompare.Run(fixture.Session, new WordsCompareRequest { Left = left, Right = right });
 
-        Assert.Equal(["deletion:twelve", "insertion:ten"], result.Samples.Select(static s => $"{s.Type}:{s.Text}"));
+        Assert.Equal(["deletion:twelve", "insertion:ten"], result.Samples.Select(static s => $"{s.Kind}:{s.Text}"));
     }
 
     [Theory]
@@ -193,7 +193,7 @@ public sealed class WordsTrackChangesTests
         WordsCompareResult result = WordsCompare.Run(fixture.Session, new WordsCompareRequest { Left = left, Right = right });
 
         // The deleted paragraph's mark is one sample without text and its run another.
-        Assert.Equal(["deletion:", "deletion:Operations remained stable."], result.Samples.Select(static s => $"{s.Type}:{s.Text}"));
+        Assert.Equal(["deletion:", "deletion:Operations remained stable."], result.Samples.Select(static s => $"{s.Kind}:{s.Text}"));
     }
 
     [Fact]
@@ -223,10 +223,10 @@ public sealed class WordsTrackChangesTests
 
         Assert.Equal(
             [
-                new WordsRevisionData { Revision = 1, Type = "deletion", Author = "Alice Legal", Date = "2026-09-01T10:30:00", Scope = "body", Block = 1, Text = "thirty" },
-                new WordsRevisionData { Revision = 2, Type = "insertion", Author = "Alice Legal", Date = "2026-09-01T10:30:00", Scope = "body", Block = 1, Text = "sixty" },
-                new WordsRevisionData { Revision = 3, Type = "deletion", Author = "Bob Counsel", Date = "2026-09-02T08:00:00", Scope = "body", Block = 2, Text = "This clause is removed." },
-                new WordsRevisionData { Revision = 4, Type = "insertion", Author = "Bob Counsel", Date = "2026-09-02T08:00:00", Scope = "body", Block = 2, Text = "New governing law clause." },
+                new WordsRevisionData { Revision = 1, Kind = "deletion", Author = "Alice Legal", Date = "2026-09-01T10:30:00", Scope = "body", Block = 1, Text = "thirty" },
+                new WordsRevisionData { Revision = 2, Kind = "insertion", Author = "Alice Legal", Date = "2026-09-01T10:30:00", Scope = "body", Block = 1, Text = "sixty" },
+                new WordsRevisionData { Revision = 3, Kind = "deletion", Author = "Bob Counsel", Date = "2026-09-02T08:00:00", Scope = "body", Block = 2, Text = "This clause is removed." },
+                new WordsRevisionData { Revision = 4, Kind = "insertion", Author = "Bob Counsel", Date = "2026-09-02T08:00:00", Scope = "body", Block = 2, Text = "New governing law clause." },
             ],
             info.Revisions);
     }
@@ -260,12 +260,12 @@ public sealed class WordsTrackChangesTests
         const string BobDate = "2026-09-02T08:00:00";
         Assert.Equal(
             [
-                new WordsRevisionData { Revision = 1, Type = "moving", Author = "Ann", Date = AnnDate, Scope = "body", Block = 2, Text = "Alpha beta gamma." },
-                new WordsRevisionData { Revision = 2, Type = "moving", Author = "Ann", Date = AnnDate, Scope = "body", Block = 3, Text = "Alpha beta gamma." },
-                new WordsRevisionData { Revision = 3, Type = "insertion", Author = "Bob", Date = BobDate, Scope = "body", Block = 4 },
-                new WordsRevisionData { Revision = 4, Type = "deletion", Author = "Bob", Date = BobDate, Scope = "body", Block = 5 },
-                new WordsRevisionData { Revision = 5, Type = "moving", Author = "Ann", Date = AnnDate, Scope = "body", Block = 7, Text = "Whole para\rSecond" },
-                new WordsRevisionData { Revision = 6, Type = "moving", Author = "Ann", Date = AnnDate, Scope = "body", Block = 10, Text = "Whole para\rSecond" },
+                new WordsRevisionData { Revision = 1, Kind = "moving", Author = "Ann", Date = AnnDate, Scope = "body", Block = 2, Text = "Alpha beta gamma." },
+                new WordsRevisionData { Revision = 2, Kind = "moving", Author = "Ann", Date = AnnDate, Scope = "body", Block = 3, Text = "Alpha beta gamma." },
+                new WordsRevisionData { Revision = 3, Kind = "insertion", Author = "Bob", Date = BobDate, Scope = "body", Block = 4 },
+                new WordsRevisionData { Revision = 4, Kind = "deletion", Author = "Bob", Date = BobDate, Scope = "body", Block = 5 },
+                new WordsRevisionData { Revision = 5, Kind = "moving", Author = "Ann", Date = AnnDate, Scope = "body", Block = 7, Text = "Whole para\rSecond" },
+                new WordsRevisionData { Revision = 6, Kind = "moving", Author = "Ann", Date = AnnDate, Scope = "body", Block = 10, Text = "Whole para\rSecond" },
             ],
             info.Revisions);
     }
@@ -282,7 +282,7 @@ public sealed class WordsTrackChangesTests
             <w:p><w:r><w:t>Body</w:t></w:r></w:p>
             """);
         IReadOnlyList<WordsRevisionData> listed = WordsInspect.Run(fixture.Session, new WordsInspectRequest { Input = input, Details = ["revisions"] }).Revisions!;
-        Assert.Equal(["formatChange", "formatChange"], listed.Select(static revision => revision.Type));
+        Assert.Equal(["format-change", "format-change"], listed.Select(static revision => revision.Kind));
 
         CliException refused = Assert.Throws<CliException>(() => WordsEdit.Run(
             fixture.Session,

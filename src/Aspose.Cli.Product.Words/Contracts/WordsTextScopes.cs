@@ -1,8 +1,8 @@
 namespace Aspose.Cli.Product.Words.Contracts;
 
 /// <summary>
-/// The text scopes <c>query search</c> and <c>replace_text</c> share: <c>body</c> is the main
-/// text without the comments and footnotes it anchors, <c>headersFooters</c> every header and
+/// The text scopes <c>words search</c> and <c>replace_text</c> share: <c>body</c> is the main
+/// text without the comments and footnotes it anchors, <c>headers-footers</c> every header and
 /// footer, <c>footnotes</c> every footnote and endnote, <c>comments</c> every comment, and
 /// <c>all</c> all of them.
 /// </summary>

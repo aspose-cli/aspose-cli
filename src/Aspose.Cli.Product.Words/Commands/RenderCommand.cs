@@ -50,6 +50,6 @@ internal static class RenderCommand
     internal static void Table(WordsRenderResult result, TableSurface surface)
     {
         ResultText.Files(surface, "rendered", "page", [.. result.Outputs.Select(static page =>
-            new ProducedFile($"page {page.Page}", page.Output.Path, page.Output.Format, page.Output.SizeBytes))]);
+            new ProducedFile($"page {page.Page}", page.Path, page.Format, page.SizeBytes))]);
     }
 }

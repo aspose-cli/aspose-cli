@@ -445,7 +445,7 @@
         },
         {
           "command": "create",
-          "description": "Create a document from one content source, optionally inside a template."
+          "description": "Create a document from at most one content source, optionally inside a template; without either it is blank."
         },
         {
           "command": "edit",
@@ -460,20 +460,16 @@
           "description": "Show document structure, safety state and metadata."
         },
         {
-          "command": "query",
-          "description": "Read bounded document projections without mutating the source."
-        },
-        {
-          "command": "query blocks",
+          "command": "read",
           "description": "Read a bounded, stable window of document blocks."
-        },
-        {
-          "command": "query search",
-          "description": "Search bounded document scopes with regex timeout protection."
         },
         {
           "command": "render",
           "description": "Render one or more document pages."
+        },
+        {
+          "command": "search",
+          "description": "Search bounded document scopes with regex timeout protection."
         },
         {
           "command": "split",

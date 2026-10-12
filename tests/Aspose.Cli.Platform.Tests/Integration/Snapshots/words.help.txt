@@ -7,10 +7,11 @@ Usage:
 
 Commands:
   inspect <file>          Show document structure, safety state and metadata.
-  query                   Read bounded document projections without mutating the source.
+  read <file>             Read a bounded, stable window of document blocks.
+  search <file>           Search bounded document scopes with regex timeout protection.
   convert <file>          Convert a document using the detected input format.
   render <file>           Render one or more document pages.
-  create <file>           Create a document from one content source, optionally inside a template.
+  create <file>           Create a document from at most one content source, optionally inside a template; without either it is blank.
   edit <file>             Apply one validated, atomic Words operation batch.
   compare <left> <right>  Semantically compare two documents and optionally save a redline.
   split <file>            Split a document into safe, deterministically named DOCX files.
@@ -20,8 +21,8 @@ Global options:
   -h/--help, --output-format, -q/--quiet, -v/--verbose, --license, --license-mode, --workdir, --timeout, --max-input-bytes (see aspose-cli --help)
 
 Examples:
-  aspose-cli words inspect contract.docx --detail outline sections --sample
-  aspose-cli words query blocks contract.docx --blocks 1-30 --scope full
+  aspose-cli words inspect contract.docx --detail outline sections
+  aspose-cli words read contract.docx --blocks 1-30 --content full
 
 Learn more:
   aspose-cli docs words/editing       the document block model and edit operations
@@ -104,7 +105,7 @@ Learn more:
 
 ## aspose-cli words create --help
 Description:
-  Create a document from one content source, optionally inside a template.
+  Create a document from at most one content source, optionally inside a template; without either it is blank.
 
 Usage:
   aspose-cli words create <file> [options]
@@ -113,24 +114,24 @@ Arguments:
   <file>  Document path to create.
 
 Options:
-  --blank                      Create a blank document.
-  --markdown <markdown>        Create from a Markdown file.
-  --text <text>                Create from a UTF-8 text file.
-  --template <template>        Document whose styles, page setup, headers and footers the new document uses; its body is replaced by --markdown or --text content.
-  --title <title>              Set the built-in title property.
-  --overwrite                  Replace the output file if it already exists.
-  --dry-run                    Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds.
-  --encrypt <encrypt>          Password for the output document. Discouraged: visible in the process list; prefer --encrypt-env.
-  --encrypt-env <encrypt-env>  Name of an environment variable holding the password for the output document.
-  --encrypt-stdin              Read the password for the output document from the first line of stdin.
-  --font-dir <font-dir>        Local font directory searched in addition to the system fonts; repeat for more.
+  --from-markdown <from-markdown>  Create from a Markdown file.
+  --from-text <from-text>          Create from a UTF-8 text file.
+  --template <template>            Document whose styles, page setup, headers and footers the new document uses; its body is replaced by --from-markdown or --from-text content.
+  --title <title>                  Set the built-in title property.
+  --overwrite                      Replace the output file if it already exists.
+  --dry-run                        Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds.
+  --encrypt <encrypt>              Password for the output document. Discouraged: visible in the process list; prefer --encrypt-env.
+  --encrypt-env <encrypt-env>      Name of an environment variable holding the password for the output document.
+  --encrypt-stdin                  Read the password for the output document from the first line of stdin.
+  --font-dir <font-dir>            Local font directory searched in addition to the system fonts; repeat for more.
 
 Global options:
   -h/--help, --output-format, -q/--quiet, -v/--verbose, --license, --license-mode, --workdir, --timeout, --max-input-bytes (see aspose-cli --help)
 
 Examples:
-  aspose-cli words create report.docx --markdown report.md --template brand.docx --title "Quarterly report"
+  aspose-cli words create report.docx --from-markdown report.md --template brand.docx --title "Quarterly report"
   aspose-cli words create letter.docx --template letter.dotx
+  aspose-cli words create notes.docx
 
 Learn more:
   aspose-cli docs words/report-from-markdown  a report from Markdown and a template
@@ -192,6 +193,7 @@ Arguments:
 
 Options:
   --what <comments|images|tables|text> (REQUIRED)  What to extract; tables writes one CSV file per body table.
+  --bom                                            Start each table's CSV with a UTF-8 byte order mark, so Excel reads its non-English text correctly; only with --what tables. Default: UTF-8 without one.
   --out-dir <out-dir> (REQUIRED)                   Safe extraction directory.
   --overwrite                                      Replace the output file if it already exists.
   --dry-run                                        Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds.
@@ -205,7 +207,7 @@ Global options:
 Examples:
   aspose-cli words extract report.docx --what images --out-dir images
   aspose-cli words extract report.docx --what text --out-dir text
-  aspose-cli words extract report.docx --what tables --out-dir tables
+  aspose-cli words extract report.docx --what tables --bom --out-dir tables
 
 Learn more:
   aspose-cli docs words/overview  what each Words command is for
@@ -222,7 +224,6 @@ Arguments:
   <file>  Document to open.
 
 Options:
-  --sample                       Include a bounded sample: the heading outline, as with --detail outline. Default: off.
   --detail <detail>              Extra sections to include; repeat for more. outline: headings; sections: page setup, headers and footers; properties: title, author, subject and keywords. Values: bookmarks, comments, fields, fonts, images, outline, properties, revisions, sections, styles, tables.
   --password <password>          Password for the document. Discouraged: visible in the process list; prefer --password-env.
   --password-env <password-env>  Name of an environment variable holding the password for the document.
@@ -234,34 +235,19 @@ Global options:
 
 Examples:
   aspose-cli words inspect contract.docx --output-format json
-  aspose-cli words inspect contract.docx --detail outline sections fields bookmarks --sample
+  aspose-cli words inspect contract.docx --detail outline sections fields bookmarks
 
 Learn more:
   aspose-cli docs words/overview  what each Words command is for
   aspose-cli docs reading         reading every product within bounded windows
 
 
-## aspose-cli words query --help
-Description:
-  Read bounded document projections without mutating the source.
-
-Usage:
-  aspose-cli words query [command]
-
-Commands:
-  blocks <file>  Read a bounded, stable window of document blocks.
-  search <file>  Search bounded document scopes with regex timeout protection.
-
-Global options:
-  -h/--help, --output-format, -q/--quiet, -v/--verbose, --license, --license-mode, --workdir, --timeout, --max-input-bytes (see aspose-cli --help)
-
-
-## aspose-cli words query blocks --help
+## aspose-cli words read --help
 Description:
   Read a bounded, stable window of document blocks.
 
 Usage:
-  aspose-cli words query blocks <file> [options]
+  aspose-cli words read <file> [options]
 
 Arguments:
   <file>  Document to open.
@@ -269,7 +255,7 @@ Arguments:
 Options:
   --blocks <blocks>              1-based block range, e.g. 1-20,25.
   --section <section>            Read one 1-based section; with --blocks, only its blocks in that range.
-  --scope <full|outline|text>    Projection: how much of each block to return. [default: text]
+  --content <full|outline|text>  How much of each block to return: its text, only the headings, or the text with its runs and paragraph format. [default: text]
   --max-chars <max-chars>        Maximum characters returned, counting the text of the returned blocks, including repeated text and run projections. Range: 1-10000000. [default: 20000]
   --max-blocks <max-blocks>      Maximum projected blocks. Range: 1-100000. [default: 200]
   --password <password>          Password for the document. Discouraged: visible in the process list; prefer --password-env.
@@ -280,37 +266,12 @@ Global options:
   -h/--help, --output-format, -q/--quiet, -v/--verbose, --license, --license-mode, --workdir, --timeout, --max-input-bytes (see aspose-cli --help)
 
 Examples:
-  aspose-cli words query blocks contract.docx --blocks 1-30 --scope full --output-format json
-  aspose-cli words query blocks contract.docx --section 2 --scope text
+  aspose-cli words read contract.docx --blocks 1-30 --content full --output-format json
+  aspose-cli words read contract.docx --section 2 --content outline
 
-
-## aspose-cli words query search --help
-Description:
-  Search bounded document scopes with regex timeout protection.
-
-Usage:
-  aspose-cli words query search <file> --pattern <pattern> [options]
-
-Arguments:
-  <file>  Document to open.
-
-Options:
-  --pattern <pattern> (REQUIRED)  Text to find, or a regular expression with --regex.
-  --regex                         Treat the pattern as a culture-invariant regular expression with a one-second budget.
-  --case-sensitive                Match letter case exactly.
-  --scope <scope>                 Search scope: body (the main text, without the comments and footnotes it anchors), headersFooters, footnotes (with endnotes), comments or all. Values: all, body, comments, footnotes, headersFooters. [default: body]
-  --max-hits <max-hits>           Maximum returned hits. Range: 1-10000. [default: 100]
-  --skip <skip>                   Matches to pass over before the returned hits; a truncated search's window.next sets it. [default: 0]
-  --password <password>           Password for the document. Discouraged: visible in the process list; prefer --password-env.
-  --password-env <password-env>   Name of an environment variable holding the password for the document.
-  --password-stdin                Read the password for the document from the first line of stdin.
-
-Global options:
-  -h/--help, --output-format, -q/--quiet, -v/--verbose, --license, --license-mode, --workdir, --timeout, --max-input-bytes (see aspose-cli --help)
-
-Examples:
-  aspose-cli words query search contract.docx --pattern TODO --scope all
-  aspose-cli words query search contract.docx --pattern "Section\s+\d+" --regex --max-hits 20
+Learn more:
+  aspose-cli docs words/editing  the document block model and edit operations
+  aspose-cli docs reading        reading every product within bounded windows
 
 
 ## aspose-cli words render --help
@@ -344,6 +305,39 @@ Examples:
 
 Learn more:
   aspose-cli docs words/verification  read-back, semantic and visual verification
+
+
+## aspose-cli words search --help
+Description:
+  Search bounded document scopes with regex timeout protection.
+
+Usage:
+  aspose-cli words search <file> --pattern <pattern> [options]
+
+Arguments:
+  <file>  Document to open.
+
+Options:
+  --pattern <pattern> (REQUIRED)  Text to find, or a regular expression with --regex.
+  --regex                         Treat the pattern as a culture-invariant regular expression with a one-second budget.
+  --case-sensitive                Match letter case exactly.
+  --scope <scope>                 Search scope: body (the main text, without the comments and footnotes it anchors), headers-footers, footnotes (with endnotes), comments or all. Values: all, body, comments, footnotes, headers-footers. [default: body]
+  --max-hits <max-hits>           Maximum returned hits. Range: 1-10000. [default: 100]
+  --skip <skip>                   Matches to pass over before the returned hits; a truncated search's window.next sets it. [default: 0]
+  --password <password>           Password for the document. Discouraged: visible in the process list; prefer --password-env.
+  --password-env <password-env>   Name of an environment variable holding the password for the document.
+  --password-stdin                Read the password for the document from the first line of stdin.
+
+Global options:
+  -h/--help, --output-format, -q/--quiet, -v/--verbose, --license, --license-mode, --workdir, --timeout, --max-input-bytes (see aspose-cli --help)
+
+Examples:
+  aspose-cli words search contract.docx --pattern TODO --scope all
+  aspose-cli words search contract.docx --pattern "Section\s+\d+" --regex --max-hits 20
+
+Learn more:
+  aspose-cli docs words/overview  what each Words command is for
+  aspose-cli docs reading         reading every product within bounded windows
 
 
 ## aspose-cli words split --help

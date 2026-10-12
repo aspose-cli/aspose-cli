@@ -17,13 +17,13 @@ diffed.
 | Rung | Command | Answers |
 |------|---------|---------|
 | 1. Structure | `<product> inspect` | Counts, names, ids, properties; `--detail` adds the sections you name, `--sample` a bounded sample |
-| 2. Window | `cells query range`, `pdf read`, `slides read`, `words query blocks` | The content of a selected range, pages, slides or blocks |
-| 3. Search | `pdf search`, `slides search`, `<product> query search` | Where a pattern occurs |
+| 2. Window | `cells query range`, `pdf read`, `slides read`, `words read` | The content of a selected range, pages, slides or blocks |
+| 3. Search | `cells query search`, `pdf search`, `slides search`, `words search` | Where a pattern occurs |
 | 4. Look | `review`, `<product> render` | What data cannot show: layout, clipping, overlap, charts |
 
 Take addresses (sheet names, page and slide numbers, block numbers, shape ids)
 from rung 1 before reading rung 2. Each product overview names its inspect
-details and read scopes; `--help` lists each command's selection and budget
+details and read scopes (`words read --content`); `--help` lists each command's selection and budget
 options with their defaults.
 
 Fields a read returns use the edit vocabulary: a value read under a name is
@@ -65,7 +65,7 @@ with `next` keeps each result small.
 
 ## Search paging
 
-A search (`pdf search`, `slides search`, `<product> query search`) returns at most its `--max-hits` budget of hits in document
+A search (`cells query search`, `pdf search`, `slides search`, `words search`) returns at most its `--max-hits` budget of hits in document
 order. A truncated search's `window.next` repeats the search with `--skip`
 past the hits already returned.
 

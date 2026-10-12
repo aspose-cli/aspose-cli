@@ -106,12 +106,14 @@ public sealed class WordsModuleTests
 
         foreach (Aspose.Words.ProtectionType type in Enum.GetValues<Aspose.Words.ProtectionType>())
         {
-            string mode = Engine.Mapping.WordsProtection.ToMode(type);
+            string? mode = Engine.Mapping.WordsProtection.ToMode(type);
             if (type == Aspose.Words.ProtectionType.NoProtection)
             {
-                Assert.Equal("none", mode);
+                Assert.Null(mode);
                 continue;
             }
+
+            Assert.NotNull(mode);
 
             Assert.Contains(mode, modes);
             Assert.Equal(type, Engine.Mapping.WordsProtection.FromMode(mode));

@@ -56,7 +56,7 @@ internal sealed class WordsViewAdapter : IProductViewAdapter<WordsSession>
                 RepairHint));
         }
         AddLayoutFindings(layout, findings);
-        if (info.Document.RevisionsPresent)
+        if (info.Document.HasRevisions)
         {
             findings.Add(WordsReviewChecks.RevisionsPresent.Finding(
                 $"The document contains {info.Document.RevisionCount} tracked revision(s), which must not be accepted as a visual-only repair.",

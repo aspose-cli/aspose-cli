@@ -23,7 +23,7 @@ public sealed class WordsContentControlTests : IClassFixture<WordsFixture>
     {
         string input = CreateDocument();
 
-        WordsReadResult read = WordsRead.Run(_fixture.Session, new WordsReadRequest { Input = input, Scope = "text" });
+        WordsReadResult read = WordsRead.Run(_fixture.Session, new WordsReadRequest { Input = input, Content = "text" });
 
         Assert.Equal(Blocks, read.Blocks.Select(static block => block.Text));
         Assert.Equal([1, 2, 3, 4, 5], read.Blocks.Select(static block => block.Block));
@@ -83,7 +83,7 @@ public sealed class WordsContentControlTests : IClassFixture<WordsFixture>
         });
 
         Assert.Empty(Controls(new Document(output)));
-        WordsReadResult read = WordsRead.Run(_fixture.Session, new WordsReadRequest { Input = output, Scope = "text" });
+        WordsReadResult read = WordsRead.Run(_fixture.Session, new WordsReadRequest { Input = output, Content = "text" });
         Assert.Equal(["Before", "After"], read.Blocks.Select(static block => block.Text));
     }
 

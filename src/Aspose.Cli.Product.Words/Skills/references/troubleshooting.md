@@ -7,7 +7,7 @@ are in `aspose-cli docs editing`.
 ## Errors
 
 - `BLOCK_NOT_FOUND`, `SECTION_NOT_FOUND`: block and section numbers are
-  1-based. Read the numbers again with `words query blocks --scope outline`
+  1-based. Read the numbers again with `words read --content outline`
   or `inspect --detail sections`.
 - `ANCHOR_NOT_FOUND`: no heading contains the `heading` text, a `find` text
   or an `nth` goes past the matches, or `words split --by heading1` found no
@@ -37,8 +37,8 @@ are in `aspose-cli docs editing`.
   `reject_revisions` or `remove_comments`, no revision or comment has that
   `author`; names match exactly, and the hint lists the document's. Do not
   report the decision as made; correct the name and run the batch again. For
-  `replace_text`, nothing in its `scope` matched. Search with `words query
-  search` and the same pattern; text in headers, footers, footnotes or
+  `replace_text`, nothing in its `scope` matched. Search with `words search`
+  and the same pattern; text in headers, footers, footnotes or
   comments needs its `scope`.
 - `MERGE_VALUE_MISSING`: see [mail merge](mail-merge.md).
 - `ENCRYPTION_REMOVED`: see

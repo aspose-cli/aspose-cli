@@ -51,7 +51,7 @@ public sealed class InputAdmissionTests
     [Theory]
     [InlineData("pdf", "pdf", "--from-text")]
     [InlineData("slides", "pptx", "--from-markdown")]
-    [InlineData("words", "docx", "--text")]
+    [InlineData("words", "docx", "--from-text")]
     public void Create_AdmitsSourceOptionsBeforeTheOutput(string product, string extension, string sourceOption)
     {
         using var workspace = new TempWorkspace();

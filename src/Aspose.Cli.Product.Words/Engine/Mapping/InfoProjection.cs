@@ -39,7 +39,7 @@ internal static class InfoProjection
                 TableCount = tables.Count,
                 PageCount = document.PageCount,
                 WordCount = document.BuiltInDocumentProperties.Words,
-                RevisionsPresent = document.Revisions.Count > 0,
+                HasRevisions = document.Revisions.Count > 0,
                 RevisionCount = document.Revisions.Count,
                 RevisionAuthors = document.Revisions.Cast<Revision>().Select(static r => r.Author)
                     .Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray(),
@@ -49,7 +49,7 @@ internal static class InfoProjection
                 HasMacros = loaded.Format.HasMacros,
             },
             Sections = details.Contains(WordsInspectDetails.Sections) ? Sections(document, loaded.Evaluation) : null,
-            Outline = details.Contains(WordsInspectDetails.Outline) || request.IncludePreview ? Outline(index, warnings) : null,
+            Outline = details.Contains(WordsInspectDetails.Outline) ? Outline(index, warnings) : null,
             Styles = details.Contains(WordsInspectDetails.Styles) ? document.Styles.Cast<Style>()
                 .Select(static s => s.Name).Order(StringComparer.Ordinal).ToArray() : null,
             Fields = details.Contains(WordsInspectDetails.Fields) ? Fields(document, index, warnings) : null,
@@ -113,7 +113,7 @@ internal static class InfoProjection
                 };
             },
             "outline",
-            "Read every heading in windows with 'words query blocks --scope outline'.",
+            "Read every heading in windows with 'words read --content outline'.",
             warnings);
 
     private static IReadOnlyList<WordsFieldData> Fields(Document document, DocumentBlockIndex index, List<Warning> warnings) =>
@@ -121,7 +121,7 @@ internal static class InfoProjection
             document.Range.Fields.Cast<Field>().ToArray(),
             field => new WordsFieldData
             {
-                Type = field.Type.ToString(),
+                Kind = field.Type.ToString(),
                 Scope = WordsStories.StoryOf(field.Start),
                 Block = index.FindBlock(field.Start),
                 Code = field.GetFieldCode(),
@@ -330,7 +330,7 @@ internal static class InfoProjection
         return new WordsRevisionData
         {
             Revision = number,
-            Type = RevisionTypeName(revision.RevisionType),
+            Kind = RevisionKindName(revision.RevisionType),
             Author = revision.Author,
             // The SDK reports a revision without a recorded date as DateTime.MinValue. Word records
             // local wall-clock time, so the date is written without a time zone.
@@ -343,13 +343,13 @@ internal static class InfoProjection
         };
     }
 
-    internal static string RevisionTypeName(RevisionType type) => type switch
+    internal static string RevisionKindName(RevisionType type) => type switch
     {
-        RevisionType.Insertion => WordsRevisionTypes.Insertion,
-        RevisionType.Deletion => WordsRevisionTypes.Deletion,
-        RevisionType.FormatChange => WordsRevisionTypes.FormatChange,
-        RevisionType.StyleDefinitionChange => WordsRevisionTypes.StyleDefinitionChange,
-        RevisionType.Moving => WordsRevisionTypes.Moving,
+        RevisionType.Insertion => WordsRevisionKinds.Insertion,
+        RevisionType.Deletion => WordsRevisionKinds.Deletion,
+        RevisionType.FormatChange => WordsRevisionKinds.FormatChange,
+        RevisionType.StyleDefinitionChange => WordsRevisionKinds.StyleDefinitionChange,
+        RevisionType.Moving => WordsRevisionKinds.Moving,
         _ => throw new ArgumentOutOfRangeException(nameof(type), type, "Unmapped revision type."),
     };
 

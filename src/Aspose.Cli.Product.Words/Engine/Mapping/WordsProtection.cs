@@ -4,15 +4,13 @@ namespace Aspose.Cli.Product.Words.Engine.Mapping;
 
 /// <summary>
 /// Maps editing restrictions to the <c>protect.mode</c> vocabulary, so reads report the value
-/// the protect operation accepts and <c>none</c> for an unrestricted document.
+/// the protect operation accepts and nothing for an unrestricted document.
 /// </summary>
 internal static class WordsProtection
 {
-    public const string None = WordsProtectionModes.None;
-
-    public static string ToMode(ProtectionType type) => type switch
+    public static string? ToMode(ProtectionType type) => type switch
     {
-        ProtectionType.NoProtection => None,
+        ProtectionType.NoProtection => null,
         ProtectionType.ReadOnly => WordsProtectionModes.ReadOnly,
         ProtectionType.AllowOnlyComments => WordsProtectionModes.Comments,
         ProtectionType.AllowOnlyRevisions => WordsProtectionModes.TrackedChanges,

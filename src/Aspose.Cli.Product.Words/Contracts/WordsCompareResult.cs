@@ -15,7 +15,7 @@ public sealed record WordsCompareResult() : EngineResultEnvelope("compare-result
     /// <summary>Whether the comparison found no revisions.</summary>
     public required bool Identical { get; init; }
 
-    /// <summary>The revisions the comparison found, counted by type.</summary>
+    /// <summary>The revisions the comparison found, counted by kind.</summary>
     public required WordsRevisionCounts Revisions { get; init; }
 
     /// <summary>The first revisions the comparison found.</summary>
@@ -25,7 +25,7 @@ public sealed record WordsCompareResult() : EngineResultEnvelope("compare-result
     public OutputInfo? Output { get; init; }
 }
 
-/// <summary>Counts by revision type.</summary>
+/// <summary>Counts by revision kind.</summary>
 public sealed record WordsRevisionCounts
 {
     /// <summary>The number of insertions.</summary>
@@ -49,8 +49,8 @@ public sealed record WordsRevisionCounts
 public sealed record WordsRevisionSample
 {
     /// <summary>The kind of change.</summary>
-    [AllowedValues(typeof(WordsRevisionTypes))]
-    public required string Type { get; init; }
+    [AllowedValues(typeof(WordsRevisionKinds))]
+    public required string Kind { get; init; }
 
     /// <summary>The text of the revision's run, cut to 300 characters and an ellipsis; absent for a paragraph mark.</summary>
     public string? Text { get; init; }

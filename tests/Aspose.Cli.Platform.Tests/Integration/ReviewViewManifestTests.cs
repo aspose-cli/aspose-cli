@@ -134,7 +134,7 @@ public sealed class ReviewViewManifestTests
                 break;
             default:
                 File.WriteAllText(workspace.File("doc.md"), "# Title\n\nFirst paragraph.\n");
-                workspace.Run("words", "create", "doc.docx", "--markdown", "doc.md", "--output-format", "json").Succeeded();
+                workspace.Run("words", "create", "doc.docx", "--from-markdown", "doc.md", "--output-format", "json").Succeeded();
                 if (file.EndsWith(".pdf", StringComparison.Ordinal))
                 {
                     workspace.Run("words", "convert", "doc.docx", "--to", "pdf", "--out", file, "--output-format", "json").Succeeded();

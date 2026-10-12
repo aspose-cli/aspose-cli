@@ -117,7 +117,7 @@ public sealed class EngineAssemblyLoadingTests : IDisposable
     [Theory]
     [InlineData("Aspose.PDF", new[] { "pdf", "create", "control.pdf", "--from-text", "control.txt" })]
     [InlineData("Aspose.Cells", new[] { "cells", "create", "control.xlsx" })]
-    [InlineData("Aspose.Words", new[] { "words", "create", "control.docx", "--blank" })]
+    [InlineData("Aspose.Words", new[] { "words", "create", "control.docx" })]
     [InlineData("Aspose.Slides", new[] { "slides", "create", "control.pptx" })]
     public void Control_ACommandThatWritesADocumentLoadsItsEngine(string engine, string[] args)
     {

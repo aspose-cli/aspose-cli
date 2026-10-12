@@ -184,7 +184,7 @@ public sealed class RenderWorkerTests : IDisposable
     private void CreateDocument(string file)
     {
         File.WriteAllText(_workspace.File("report.md"), "# Report\n\nOne paragraph of prose.\n");
-        _workspace.Run("words", "create", file, "--markdown", "report.md", "--output-format", "json").Succeeded();
+        _workspace.Run("words", "create", file, "--from-markdown", "report.md", "--output-format", "json").Succeeded();
     }
 
     private void CreateWorkbook(string file)

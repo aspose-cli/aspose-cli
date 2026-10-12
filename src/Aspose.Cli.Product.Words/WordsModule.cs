@@ -36,9 +36,8 @@ public sealed class WordsModule : IProductModule
             .DetectFormat(WordsDocumentLoader.DetectFormatId)
             .Describe("Word-processing document automation with layout fidelity.", Help)
             .Command(InspectCommand.Create, WordsInspect.Run)
-            .Group("query", "Read bounded document projections without mutating the source.", query => query
-                .Command(ReadCommand.Create, WordsRead.Run)
-                .Command(SearchCommand.Create, WordsSearch.Run))
+            .Command(ReadCommand.Create, WordsRead.Run)
+            .Command(SearchCommand.Create, WordsSearch.Run)
             .Command(ConvertCommand.Create, WordsConvert.Run)
             .Command(RenderCommand.Create, WordsRender.Run)
             .Command(CreateCommand.Create, WordsCreate.Run)
@@ -51,8 +50,8 @@ public sealed class WordsModule : IProductModule
 
     private static CommandHelp Help() => new(
         [
-            "words inspect contract.docx --detail outline sections --sample",
-            "words query blocks contract.docx --blocks 1-30 --scope full",
+            "words inspect contract.docx --detail outline sections",
+            "words read contract.docx --blocks 1-30 --content full",
         ],
         [
             CommandHelpLink.Docs(Manifest, "editing", "the document block model and edit operations"),

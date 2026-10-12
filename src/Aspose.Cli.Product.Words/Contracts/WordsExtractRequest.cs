@@ -10,6 +10,8 @@ public sealed record WordsExtractRequest
     public required string What { get; init; }
     /// <summary>The resolved directory that receives the files.</summary>
     public required ResolvedDirectory Output { get; init; }
+    /// <summary>Whether each table's CSV starts with a UTF-8 byte order mark.</summary>
+    public bool ByteOrderMark { get; init; }
     public Secret? Password { get; init; }
 }
 

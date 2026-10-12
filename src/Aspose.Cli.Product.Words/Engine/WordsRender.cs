@@ -37,7 +37,7 @@ internal static class WordsRender
             RenderPixelGuard.EnsureFits(session.Budgets, width, height, request.Dpi, RenderHint);
             SaveOptions options = WordsSavePipeline.Options(request.Output.Format.Id, pages: [page], dpi: request.Dpi);
             StagedOutput staged = transaction.Stage(path, request.Output.Overwrite, loaded.Document, temp => loaded.Document.Save(temp, options), rendering: true, pages: [page]);
-            outputs.Add(new WordsPageOutput { Page = page, Output = FileObjects.Output(staged.Published, request.Output.Format, encrypted: false) });
+            outputs.Add(new WordsPageOutput(FileObjects.Output(staged.Published, request.Output.Format, encrypted: false)) { Page = page });
         }
 
         loaded.Resources.ThrowIfFailed();
