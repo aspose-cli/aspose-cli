@@ -16,7 +16,7 @@ internal static class CompareCommand
     private const string CompareValues = "values";
     private const string CompareFormulas = "formulas";
 
-    public static CommandDefinition<DiffRequest, DiffResult> Create()
+    public static CommandDefinition<CellsCompareRequest, CellsCompareResult> Create()
     {
         var compare = new Option<string>("--compare")
         {
@@ -41,11 +41,11 @@ internal static class CompareCommand
             (parse, standard) =>
             {
                 int maxDiffs = parse.GetInRange(maxDiffsOption, "Lower the budget, or narrow the comparison to the sheets that matter.");
-                return new DiffRequest
+                return new CellsCompareRequest
                 {
                     Left = standard.Input,
                     Right = standard.Other,
-                    Scope = parse.GetValue(compare) == CompareValues ? DiffScope.Values : DiffScope.Formulas,
+                    Scope = parse.GetValue(compare) == CompareValues ? CellsCompareScope.Values : CellsCompareScope.Formulas,
                     MaxDiffs = maxDiffs,
                     LeftPassword = standard.InputPassword,
                     RightPassword = standard.OtherPassword,
@@ -65,7 +65,7 @@ internal static class CompareCommand
         };
     }
 
-    internal static void Table(DiffResult diff, TableSurface surface)
+    internal static void Table(CellsCompareResult diff, TableSurface surface)
     {
         if (diff.Identical)
         {
@@ -73,7 +73,7 @@ internal static class CompareCommand
             return;
         }
 
-        DiffSummary summary = diff.Summary;
+        CellsCompareSummary summary = diff.Summary;
         surface.Out.WriteLine(
             $"{diff.Left.Path} vs {diff.Right.Path}: {summary.CellsDiffering} cell(s) differ across " +
             $"{summary.SheetsModified} sheet(s); +{summary.SheetsAdded} -{summary.SheetsRemoved} sheet(s), {summary.SheetsRenamed} renamed");
@@ -82,7 +82,7 @@ internal static class CompareCommand
         {
             surface.Out.WriteLine();
             var table = new TextTable("sheet", "status", "cells");
-            foreach (SheetDiff sheet in sheets)
+            foreach (CellsSheetDiff sheet in sheets)
             {
                 table.AddRow(sheet.Name, sheet.From is null ? sheet.Status : $"renamed from {sheet.From}", sheet.Cells is { } changed ? TableText.Int(changed.Count) : null);
             }

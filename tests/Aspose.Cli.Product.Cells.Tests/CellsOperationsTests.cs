@@ -20,10 +20,10 @@ public sealed class CellsOperationsTests : IClassFixture<CellsFixture>
 
     public CellsOperationsTests(CellsFixture fixture) => _fixture = fixture;
 
-    private EditResult Apply(string path, string operations, string output,
+    private CellsEditResult Apply(string path, string operations, string output,
         IReadOnlyDictionary<string, Secret>? secrets = null) =>
         CellsEdit.Run(_fixture.Session,
-            new EditRequest
+            new CellsEditRequest
             {
                 Input = path,
                 Batch = ParseOps(operations),
@@ -46,8 +46,8 @@ public sealed class CellsOperationsTests : IClassFixture<CellsFixture>
     public void BestEffort_ReportsSuccessfulAndFailedAttemptedTargets()
     {
         string source = _fixture.CreateSalesWorkbook("attempted.xlsx");
-        EditResult result = CellsEdit.Run(_fixture.Session,
-            new EditRequest
+        CellsEditResult result = CellsEdit.Run(_fixture.Session,
+            new CellsEditRequest
             {
                 Input = source,
                 Batch = ParseOps("{\"ops\":[{\"op\":\"set_values\",\"sheet\":\"Data\",\"range\":\"A1\",\"values\":[[1]]},{\"op\":\"clear_range\",\"sheet\":\"Missing\",\"range\":\"A1:B1\"}]}"),
@@ -68,7 +68,7 @@ public sealed class CellsOperationsTests : IClassFixture<CellsFixture>
         string output = _fixture.Temp.File("budget.out.xlsx");
 
         CliException error = Assert.Throws<CliException>(() => CellsEdit.Run(_fixture.Session,
-            new EditRequest { Input = source, Batch = ParseOps("{\"ops\":[{\"op\":\"set_formula\",\"range\":\"A1:XFD1048576\",\"formula\":\"=1\"}]}"), Output = TestOutput.At(output, overwrite: true) }));
+            new CellsEditRequest { Input = source, Batch = ParseOps("{\"ops\":[{\"op\":\"set_formula\",\"range\":\"A1:XFD1048576\",\"formula\":\"=1\"}]}"), Output = TestOutput.At(output, overwrite: true) }));
 
         Assert.Equal(ErrorCodes.InputBudgetExceeded, error.Code);
         Assert.False(File.Exists(output));
@@ -78,7 +78,7 @@ public sealed class CellsOperationsTests : IClassFixture<CellsFixture>
     public void ConditionalFormats_AddAndClearPersist()
     {
         string source = _fixture.CreateSalesWorkbook("conditional.xlsx");
-        EditResult result = Apply(
+        CellsEditResult result = Apply(
             source,
             """
             { "ops": [
@@ -115,7 +115,7 @@ public sealed class CellsOperationsTests : IClassFixture<CellsFixture>
     public void CellValueConditionalFormat_MatchesPlainAndQuotedText()
     {
         string source = _fixture.CreateSalesWorkbook("conditional-text.xlsx");
-        EditResult result = Apply(
+        CellsEditResult result = Apply(
             source,
             """
             { "ops": [
@@ -140,7 +140,7 @@ public sealed class CellsOperationsTests : IClassFixture<CellsFixture>
     [InlineData("""{ "op": "create_pivot", "sheet": "Pivot", "sourceRange": "Data!A1:B3", "at": "A1", "rows": ["Ghost"], "values": [{ "field": "Amount" }] }""")]
     public void PivotWithUnknownField_IsAnActionableOperationsError(string pivotOperation)
     {
-        string created = CellsCreate.Run(_fixture.Session, new NewWorkbookRequest
+        string created = CellsCreate.Run(_fixture.Session, new CellsCreateRequest
         {
             Output = TestOutput.At(_fixture.Temp.File("pivot.xlsx"), overwrite: true),
             SheetNames = ["Data", "Pivot"],
@@ -194,7 +194,7 @@ public sealed class CellsOperationsTests : IClassFixture<CellsFixture>
     {
         const string secret = "test-sheet-secret";
         string source = _fixture.CreateSalesWorkbook("protected.xlsx");
-        EditResult result = Apply(
+        CellsEditResult result = Apply(
             source,
             """{ "ops": [ { "op": "protect_sheet", "sheet": "Data", "passwordEnv": "ASPOSE_CLI_TEST_SHEET_PASSWORD", "allow": ["sort"] } ] }""",
             "protected.out.xlsx",
@@ -211,7 +211,7 @@ public sealed class CellsOperationsTests : IClassFixture<CellsFixture>
     public void SheetProtection_LeavesCellsFormattedUnlockedEditable()
     {
         string source = _fixture.CreateSalesWorkbook("input-cells.xlsx");
-        EditResult result = Apply(
+        CellsEditResult result = Apply(
             source,
             """
             { "ops": [
@@ -229,13 +229,13 @@ public sealed class CellsOperationsTests : IClassFixture<CellsFixture>
             Assert.True(cells["B3"].GetStyle().IsLocked);
         }
 
-        WorkbookReadResult read = CellsRead.Run(_fixture.Session,
-            new ReadRequest
+        CellsReadResult read = CellsRead.Run(_fixture.Session,
+            new CellsReadRequest
             {
                 Input = result.Output.Path,
                 SheetName = "Data",
                 Range = global::Aspose.Cli.Product.Cells.Contracts.Addressing.A1.ParseRange("B2:B3").Range,
-                Scope = ReadScopes.Full,
+                Scope = CellsReadScopes.Full,
                 MaxCells = 10,
             });
         Assert.False(read.Styles![Assert.IsType<string>(read.Sheet.Cells![0][0].StyleId)].Locked);
@@ -304,7 +304,7 @@ public sealed class CellsOperationsTests : IClassFixture<CellsFixture>
     public void FormulaConditionalFormat_PreservesTheCellsNumberFormat()
     {
         string source = _fixture.CreateSalesWorkbook("formula-format.xlsx");
-        EditResult result = Apply(
+        CellsEditResult result = Apply(
             source,
             """
             { "ops": [
@@ -325,13 +325,13 @@ public sealed class CellsOperationsTests : IClassFixture<CellsFixture>
             Assert.Equal("=$C3=\"OVERDUE\"", condition.GetFormula1(2, 0));
         }
 
-        WorkbookReadResult read = CellsRead.Run(_fixture.Session,
-            new ReadRequest
+        CellsReadResult read = CellsRead.Run(_fixture.Session,
+            new CellsReadRequest
             {
                 Input = result.Output.Path,
                 SheetName = "Data",
                 Range = global::Aspose.Cli.Product.Cells.Contracts.Addressing.A1.ParseRange("B2:B2").Range,
-                Scope = ReadScopes.Full,
+                Scope = CellsReadScopes.Full,
                 MaxCells = 10,
             });
         string styleId = Assert.IsType<string>(read.Sheet.Cells![0][0].StyleId);

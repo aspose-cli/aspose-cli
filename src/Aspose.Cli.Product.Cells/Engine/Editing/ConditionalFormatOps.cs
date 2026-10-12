@@ -17,10 +17,10 @@ internal static class ConditionalFormatOps
         conditions.AddArea(CellArea.CreateCellArea(
             range.Start.Row, range.Start.Column, range.End.Row, range.End.Column));
 
-        ConditionalRule rule = op.Rule;
+        CellsConditionalRule rule = op.Rule;
         switch (rule.Kind)
         {
-            case ConditionalRuleKinds.CellValue:
+            case CellsConditionalRuleKinds.CellValue:
                 {
                     int condition = conditions.AddCondition(
                         FormatConditionType.CellValue, ValidationOps.ToOperator(rule.Operator!), rule.Value1, rule.Value2);
@@ -28,14 +28,14 @@ internal static class ConditionalFormatOps
                     break;
                 }
 
-            case ConditionalRuleKinds.Duplicates:
+            case CellsConditionalRuleKinds.Duplicates:
                 {
                     int condition = conditions.AddCondition(FormatConditionType.DuplicateValues);
                     ApplyConditionStyle(conditions[condition], op.Style!);
                     break;
                 }
 
-            case ConditionalRuleKinds.ColorScale:
+            case CellsConditionalRuleKinds.ColorScale:
                 {
                     int condition = conditions.AddCondition(FormatConditionType.ColorScale);
                     ColorScale scale = conditions[condition].ColorScale;
@@ -50,14 +50,14 @@ internal static class ConditionalFormatOps
                     break;
                 }
 
-            case ConditionalRuleKinds.DataBar:
+            case CellsConditionalRuleKinds.DataBar:
                 {
                     int condition = conditions.AddCondition(FormatConditionType.DataBar);
                     conditions[condition].DataBar.Color = StyleWriter.ParseHex(rule.BarColor!);
                     break;
                 }
 
-            case ConditionalRuleKinds.Formula:
+            case CellsConditionalRuleKinds.Formula:
                 {
                     // Expression: the formula anchors at the area's top-left cell
                     // and relative references shift per cell (probe-verified). The
@@ -69,7 +69,7 @@ internal static class ConditionalFormatOps
                     break;
                 }
 
-            case ConditionalRuleKinds.TopBottom:
+            case CellsConditionalRuleKinds.TopBottom:
                 {
                     int condition = conditions.AddCondition(FormatConditionType.Top10);
                     Top10 top10 = conditions[condition].Top10;
@@ -81,7 +81,7 @@ internal static class ConditionalFormatOps
                     break;
                 }
 
-            case ConditionalRuleKinds.IconSet:
+            case CellsConditionalRuleKinds.IconSet:
                 {
                     // Icons only — thresholds are automatic and no dxf style is
                     // involved (the parser rejects one).
@@ -102,11 +102,11 @@ internal static class ConditionalFormatOps
     /// </summary>
     private static IconSetType ToIconSetType(string name) => name switch
     {
-        IconSetNames.Arrows3 => IconSetType.Arrows3,
-        IconSetNames.TrafficLights3 => IconSetType.TrafficLights31,
-        IconSetNames.Symbols3 => IconSetType.Symbols3,
-        IconSetNames.Rating4 => IconSetType.Rating4,
-        IconSetNames.Rating5 => IconSetType.Rating5,
+        CellsIconSetNames.Arrows3 => IconSetType.Arrows3,
+        CellsIconSetNames.TrafficLights3 => IconSetType.TrafficLights31,
+        CellsIconSetNames.Symbols3 => IconSetType.Symbols3,
+        CellsIconSetNames.Rating4 => IconSetType.Rating4,
+        CellsIconSetNames.Rating5 => IconSetType.Rating5,
         _ => throw new ArgumentOutOfRangeException(
             nameof(name), name, "Icon set is missing from the engine mapper."),
     };
@@ -128,7 +128,7 @@ internal static class ConditionalFormatOps
     /// there, so a fgColor-only dxf renders the font colour but no fill.</item>
     /// </list>
     /// </summary>
-    private static void ApplyConditionStyle(FormatCondition condition, ConditionalStyle style)
+    private static void ApplyConditionStyle(FormatCondition condition, CellsConditionalStyle style)
     {
         Style differential = condition.Style;
         StyleWriter.Apply(differential, style.ToStyleData());

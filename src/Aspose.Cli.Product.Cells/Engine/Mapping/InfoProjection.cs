@@ -14,18 +14,18 @@ namespace Aspose.Cli.Product.Cells.Engine.Mapping;
 /// </summary>
 internal static class InfoProjection
 {
-    public static (WorkbookSummary Summary, Warning? ListTruncated) Summarize(
-        ResourceBudgetLedger budgets, Workbook workbook, InfoRequest request)
+    public static (CellsWorkbookSummary Summary, Warning? ListTruncated) Summarize(
+        ResourceBudgetLedger budgets, Workbook workbook, CellsInspectRequest request)
     {
-        var sheets = new List<SheetInfo>(workbook.Worksheets.Count);
+        var sheets = new List<CellsSheetInfo>(workbook.Worksheets.Count);
         for (int index = 0; index < workbook.Worksheets.Count; index++)
         {
             sheets.Add(BuildSheetInfo(workbook.Worksheets[index], index, request));
         }
 
-        IReadOnlyList<CellError>? formulaErrors = null;
+        IReadOnlyList<CellsCellError>? formulaErrors = null;
         Warning? errorsTruncated = null;
-        if (WantsDetail(request, InfoDetails.Errors))
+        if (WantsDetail(request, CellsInspectDetails.Errors))
         {
             (formulaErrors, int total) = ScanFormulaErrors(budgets, workbook);
             if (total > formulaErrors.Count)
@@ -35,7 +35,7 @@ internal static class InfoProjection
             }
         }
 
-        var summary = new WorkbookSummary
+        var summary = new CellsWorkbookSummary
         {
             Name = Path.GetFileName(request.Input),
             SheetCount = sheets.Count,
@@ -46,27 +46,27 @@ internal static class InfoProjection
             StructurePasswordProtected = Sheets.StructurePasswordProtected(workbook),
             Author = Normalize(workbook.BuiltInDocumentProperties.Author),
             Title = Normalize(workbook.BuiltInDocumentProperties.Title),
-            DefinedNames = WantsDetail(request, InfoDetails.Names) ? BuildDefinedNames(workbook) : null,
+            DefinedNames = WantsDetail(request, CellsInspectDetails.Names) ? BuildDefinedNames(workbook) : null,
             FormulaErrors = formulaErrors,
-            Fonts = WantsDetail(request, InfoDetails.Fonts) ? FontOps.UsedFonts(workbook) : null,
-            Tables = WantsDetail(request, InfoDetails.Tables) ? BuildTables(workbook) : null,
-            Charts = WantsDetail(request, InfoDetails.Charts) ? BuildCharts(workbook) : null,
-            Pivots = WantsDetail(request, InfoDetails.Pivots) ? BuildPivots(workbook) : null,
-            Validations = WantsDetail(request, InfoDetails.Validation) ? BuildValidations(workbook) : null,
-            Layouts = WantsDetail(request, InfoDetails.Layout) ? SheetLayoutProjection.Build(budgets, workbook) : null,
+            Fonts = WantsDetail(request, CellsInspectDetails.Fonts) ? FontOps.UsedFonts(workbook) : null,
+            Tables = WantsDetail(request, CellsInspectDetails.Tables) ? BuildTables(workbook) : null,
+            Charts = WantsDetail(request, CellsInspectDetails.Charts) ? BuildCharts(workbook) : null,
+            Pivots = WantsDetail(request, CellsInspectDetails.Pivots) ? BuildPivots(workbook) : null,
+            Validations = WantsDetail(request, CellsInspectDetails.Validation) ? BuildValidations(workbook) : null,
+            Layouts = WantsDetail(request, CellsInspectDetails.Layout) ? SheetLayoutProjection.Build(budgets, workbook) : null,
         };
 
         return (summary, errorsTruncated);
     }
 
-    private static bool WantsDetail(InfoRequest request, string detail) =>
+    private static bool WantsDetail(CellsInspectRequest request, string detail) =>
         request.Details is { } details && details.Contains(detail);
 
-    private static SheetInfo BuildSheetInfo(Worksheet sheet, int index, InfoRequest request)
+    private static CellsSheetInfo BuildSheetInfo(Worksheet sheet, int index, CellsInspectRequest request)
     {
         RangeRef? usedRange = Sheets.UsedRange(sheet);
 
-        return new SheetInfo
+        return new CellsSheetInfo
         {
             Name = sheet.Name,
             Position = index,
@@ -89,7 +89,7 @@ internal static class InfoProjection
         Worksheet sheet, RangeRef range, int previewRows)
     {
         int rowCount = Math.Min(previewRows, range.End.Row + 1);
-        int columnCount = Math.Min(range.End.Column + 1, SheetInfo.PreviewColumns);
+        int columnCount = Math.Min(range.End.Column + 1, CellsSheetInfo.PreviewColumns);
 
         var rows = new List<IReadOnlyList<string?>>(rowCount);
         for (int row = 0; row < rowCount; row++)
@@ -108,9 +108,9 @@ internal static class InfoProjection
         return rows;
     }
 
-    private static IReadOnlyList<DefinedNameInfo> BuildDefinedNames(Workbook workbook)
+    private static IReadOnlyList<CellsDefinedNameInfo> BuildDefinedNames(Workbook workbook)
     {
-        var names = new List<DefinedNameInfo>();
+        var names = new List<CellsDefinedNameInfo>();
         foreach (Name name in DefinedNames.Of(workbook))
         {
             // Once a name's target sheet is deleted the SDK returns a null
@@ -120,7 +120,7 @@ internal static class InfoProjection
             // payload — a strict agent parser then sees a required key missing.
             // Excel surfaces #REF! for exactly this broken state; emit that so the
             // name still reports, honestly flagged as broken.
-            names.Add(new DefinedNameInfo { Name = name.Text, RefersTo = name.RefersTo ?? "#REF!" });
+            names.Add(new CellsDefinedNameInfo { Name = name.Text, RefersTo = name.RefersTo ?? "#REF!" });
         }
 
         return names;
@@ -132,11 +132,11 @@ internal static class InfoProjection
             + "'cells query range --sheet <name>' and look for cells of type error.";
 
     /// <summary>Counts every stored error under the work budget and returns the first bounded sample.</summary>
-    internal static (IReadOnlyList<CellError> Errors, int Total) ScanFormulaErrors(
+    internal static (IReadOnlyList<CellsCellError> Errors, int Total) ScanFormulaErrors(
         ResourceBudgetLedger budgets, Workbook workbook)
     {
         const int maxErrors = 1000;
-        var errors = new List<CellError>();
+        var errors = new List<CellsCellError>();
         int total = 0;
         foreach (Worksheet sheet in workbook.Worksheets)
         {
@@ -147,7 +147,7 @@ internal static class InfoProjection
                 total++;
                 if (errors.Count < maxErrors)
                 {
-                    errors.Add(new CellError
+                    errors.Add(new CellsCellError
                     {
                         Sheet = sheet.Name,
                         Cell = A1.FormatCell(new CellRef(cell.Row, cell.Column)),
@@ -159,14 +159,14 @@ internal static class InfoProjection
         return (errors, total);
     }
 
-    private static IReadOnlyList<TableInfo> BuildTables(Workbook workbook)
+    private static IReadOnlyList<CellsTableInfo> BuildTables(Workbook workbook)
     {
-        var tables = new List<TableInfo>();
+        var tables = new List<CellsTableInfo>();
         foreach (Worksheet sheet in workbook.Worksheets)
         {
             foreach (var table in sheet.ListObjects)
             {
-                tables.Add(new TableInfo
+                tables.Add(new CellsTableInfo
                 {
                     Sheet = sheet.Name,
                     Name = table.DisplayName,
@@ -180,15 +180,15 @@ internal static class InfoProjection
         return tables;
     }
 
-    private static IReadOnlyList<ChartInfo> BuildCharts(Workbook workbook)
+    private static IReadOnlyList<CellsChartInfo> BuildCharts(Workbook workbook)
     {
-        var charts = new List<ChartInfo>();
+        var charts = new List<CellsChartInfo>();
         foreach (Worksheet sheet in workbook.Worksheets)
         {
             for (int index = 0; index < sheet.Charts.Count; index++)
             {
                 Chart chart = sheet.Charts[index];
-                charts.Add(new ChartInfo
+                charts.Add(new CellsChartInfo
                 {
                     Sheet = sheet.Name,
                     Index = index,
@@ -201,14 +201,14 @@ internal static class InfoProjection
         return charts;
     }
 
-    private static IReadOnlyList<PivotInfo> BuildPivots(Workbook workbook)
+    private static IReadOnlyList<CellsPivotInfo> BuildPivots(Workbook workbook)
     {
-        var pivots = new List<PivotInfo>();
+        var pivots = new List<CellsPivotInfo>();
         foreach (Worksheet sheet in workbook.Worksheets)
         {
             foreach (var pivot in sheet.PivotTables)
             {
-                pivots.Add(new PivotInfo { Sheet = sheet.Name, Name = pivot.Name, Range = FormatArea(pivot.TableRange1) });
+                pivots.Add(new CellsPivotInfo { Sheet = sheet.Name, Name = pivot.Name, Range = FormatArea(pivot.TableRange1) });
             }
         }
 
@@ -216,10 +216,10 @@ internal static class InfoProjection
     }
 
     // Budgeted like the formula-error scan: a very large validation set is capped.
-    private static IReadOnlyList<ValidationInfo> BuildValidations(Workbook workbook)
+    private static IReadOnlyList<CellsValidationInfo> BuildValidations(Workbook workbook)
     {
         const int maxItems = 1000;
-        var validations = new List<ValidationInfo>();
+        var validations = new List<CellsValidationInfo>();
         foreach (Worksheet sheet in workbook.Worksheets)
         {
             foreach (var validation in sheet.Validations)
@@ -231,7 +231,7 @@ internal static class InfoProjection
                         return validations;
                     }
 
-                    validations.Add(new ValidationInfo
+                    validations.Add(new CellsValidationInfo
                     {
                         Sheet = sheet.Name,
                         Range = FormatArea(area),

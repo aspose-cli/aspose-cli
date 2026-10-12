@@ -15,7 +15,7 @@ namespace Aspose.Cli.Product.Cells.Engine;
 /// <summary><c>cells render</c>: a sheet, a range of it, or every visible sheet drawn as images.</summary>
 internal static class CellsRender
 {
-    public static RenderResult Run(CellsSession session, RenderRequest request)
+    public static CellsRenderResult Run(CellsSession session, CellsRenderRequest request)
     {
         ArgumentNullException.ThrowIfNull(session);
         ArgumentNullException.ThrowIfNull(request);
@@ -55,7 +55,7 @@ internal static class CellsRender
         StagedOutput staged = StageSheet(session.Budgets, transaction, sheet, request, renderedRange, request.Output.Path);
         transaction.Commit();
 
-        return new RenderResult
+        return new CellsRenderResult
         {
             Input = input,
             Output = FileObjects.Output(staged.Published, request.Output.Format, encrypted: false),
@@ -75,7 +75,7 @@ internal static class CellsRender
     /// an engine rasterization crash into <c>RENDER_FAILED</c>. Both the
     /// single-sheet path and <c>--all-sheets</c> run through it.
     /// </summary>
-    private static StagedOutput StageSheet(ResourceBudgetLedger budgets, OutputSet<Workbook> transaction, Worksheet sheet, RenderRequest request, string? printArea, string outputPath)
+    private static StagedOutput StageSheet(ResourceBudgetLedger budgets, OutputSet<Workbook> transaction, Worksheet sheet, CellsRenderRequest request, string? printArea, string outputPath)
     {
         bool isRaster = CellsEngineFormats.IsRaster(request.Output.Format.Id);
 
@@ -150,8 +150,8 @@ internal static class CellsRender
     /// evaluation save added, as every command's default does, unless the
     /// workbook shows nothing else.
     /// </summary>
-    private static RenderResult RenderAllSheets(
-        CellsSession session, Workbook workbook, InputInfo input, RenderRequest request, LicenseState licenseState, LoadedWorkbook loaded)
+    private static CellsRenderResult RenderAllSheets(
+        CellsSession session, Workbook workbook, InputInfo input, CellsRenderRequest request, LicenseState licenseState, LoadedWorkbook loaded)
     {
         var candidates = new List<Worksheet>();
         foreach (Worksheet sheet in workbook.Worksheets)
@@ -180,7 +180,7 @@ internal static class CellsRender
         IReadOnlyList<string> outputPaths = DerivePerSheetPaths(request.Output, candidates);
 
         using OutputSet<Workbook> transaction = session.Outputs.BeginSet([request.Output.Directory], "cells-render");
-        var rendered = new List<SheetRenderOutput>();
+        var rendered = new List<CellsSheetOutput>();
         StagedOutput? first = null;
         var skipped = new List<string>();
         CliException? firstSkip = null;
@@ -192,7 +192,7 @@ internal static class CellsRender
             {
                 StagedOutput staged = StageSheet(session.Budgets, transaction, sheet, request, printArea: null, outputPaths[i]);
                 first ??= staged;
-                rendered.Add(new SheetRenderOutput
+                rendered.Add(new CellsSheetOutput
                 {
                     Sheet = sheet.Name,
                     Path = outputPaths[i],
@@ -221,7 +221,7 @@ internal static class CellsRender
             Hint = "Render a skipped sheet alone with --sheet to get the full error.",
         };
 
-        return new RenderResult
+        return new CellsRenderResult
         {
             Input = input,
             Output = FileObjects.Output(first!.Published, request.Output.Format, encrypted: false),

@@ -36,12 +36,12 @@ public sealed class CellsValueAndObjectTests : IClassFixture<CellsFixture>
             Assert.Equal(11.5, workbook.Worksheets["Data"].Cells["A1"].GetStyle().Font.DoubleSize);
         }
 
-        WorkbookReadResult read = CellsRead.Run(_fixture.Session, new ReadRequest
+        CellsReadResult read = CellsRead.Run(_fixture.Session, new CellsReadRequest
         {
             Input = output,
             SheetName = "Data",
             Range = A1.ParseRange("A1").Range,
-            Scope = ReadScopes.Full,
+            Scope = CellsReadScopes.Full,
             MaxCells = 1,
         });
         string styleId = Assert.IsType<string>(read.Sheet.Cells![0][0].StyleId);
@@ -245,5 +245,5 @@ public sealed class CellsValueAndObjectTests : IClassFixture<CellsFixture>
 
     private string Apply(string path, string operations, string output) =>
         CellsEdit.Run(_fixture.Session,
-            new EditRequest { Input = path, Batch = Parse(operations), Output = TestOutput.At(_fixture.Temp.File(output), overwrite: true) }).Output!.Path;
+            new CellsEditRequest { Input = path, Batch = Parse(operations), Output = TestOutput.At(_fixture.Temp.File(output), overwrite: true) }).Output!.Path;
 }

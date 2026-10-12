@@ -13,13 +13,13 @@ internal static class DiffComparer
     /// <param name="Truncated">Whether more cells differ than are listed.</param>
     /// <param name="Warnings">The row shifts of each modified sheet (ROWS_SHIFTED).</param>
     public sealed record Result(
-        IReadOnlyList<SheetDiff> Sheets, DiffSummary Summary, bool Identical, bool Truncated, IReadOnlyList<Warning> Warnings);
+        IReadOnlyList<CellsSheetDiff> Sheets, CellsCompareSummary Summary, bool Identical, bool Truncated, IReadOnlyList<Warning> Warnings);
 
     public static Result Compare(
         ResourceBudgetLedger budgets, Workbook left, Workbook right, bool includeFormulas, int maxDiffs)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(maxDiffs);
-        var sheets = new List<SheetDiff>();
+        var sheets = new List<CellsSheetDiff>();
         int added = 0;
         int removed = 0;
         int renamed = 0;
@@ -35,7 +35,7 @@ internal static class DiffComparer
             if (right.Worksheets[sheet.Name] is null && !renames.ContainsValue(sheet))
             {
                 removed++;
-                sheets.Add(new SheetDiff { Name = sheet.Name, Status = SheetChangeStatuses.Removed });
+                sheets.Add(new CellsSheetDiff { Name = sheet.Name, Status = CellsSheetChangeStatuses.Removed });
             }
         }
 
@@ -46,12 +46,12 @@ internal static class DiffComparer
             if (leftSheet is null)
             {
                 added++;
-                sheets.Add(new SheetDiff { Name = rightSheet.Name, Status = SheetChangeStatuses.Added });
+                sheets.Add(new CellsSheetDiff { Name = rightSheet.Name, Status = CellsSheetChangeStatuses.Added });
                 continue;
             }
 
             long[] addresses = Addresses(budgets, leftSheet, rightSheet);
-            var cells = new List<CellDiff>();
+            var cells = new List<CellsCellDiff>();
             var shifts = new RowShifts();
             int before = cellsDiffering;
             foreach (long address in addresses)
@@ -76,7 +76,7 @@ internal static class DiffComparer
                 if (listed < maxDiffs)
                 {
                     listed++;
-                    cells.Add(new CellDiff
+                    cells.Add(new CellsCellDiff
                     {
                         Cell = A1.FormatCell(new CellRef(row, column)),
                         Left = leftValue.Side(leftFormula),
@@ -93,16 +93,16 @@ internal static class DiffComparer
             if (renames.ContainsKey(rightSheet))
             {
                 renamed++;
-                sheets.Add(new SheetDiff { Name = rightSheet.Name, Status = SheetChangeStatuses.Renamed, From = leftSheet.Name, Cells = cells });
+                sheets.Add(new CellsSheetDiff { Name = rightSheet.Name, Status = CellsSheetChangeStatuses.Renamed, From = leftSheet.Name, Cells = cells });
             }
             else if (cellsDiffering != before)
             {
                 modified++;
-                sheets.Add(new SheetDiff { Name = rightSheet.Name, Status = SheetChangeStatuses.Modified, Cells = cells });
+                sheets.Add(new CellsSheetDiff { Name = rightSheet.Name, Status = CellsSheetChangeStatuses.Modified, Cells = cells });
             }
         }
 
-        var summary = new DiffSummary
+        var summary = new CellsCompareSummary
         {
             SheetsAdded = added,
             SheetsRemoved = removed,

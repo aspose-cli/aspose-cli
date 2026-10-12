@@ -28,7 +28,7 @@ public sealed class CellsFormatDetectionTests(CellsFixture fixture) : IClassFixt
         string path = fixture.Temp.File("legacy.xls");
         File.WriteAllBytes(path, Biff2Workbook());
 
-        WorkbookInfoResult result = CellsInfo.Run(fixture.Session, new InfoRequest { Input = path });
+        CellsInspectResult result = CellsInfo.Run(fixture.Session, new CellsInspectRequest { Input = path });
 
         Assert.Equal("excel2", result.Input.Format);
     }
@@ -38,7 +38,7 @@ public sealed class CellsFormatDetectionTests(CellsFixture fixture) : IClassFixt
     {
         string path = fixture.CreateEncryptedWorkbook("secret", "encrypted.xlsx");
 
-        WorkbookInfoResult result = CellsInfo.Run(fixture.Session, new InfoRequest { Input = path, Password = new Secret("secret") });
+        CellsInspectResult result = CellsInfo.Run(fixture.Session, new CellsInspectRequest { Input = path, Password = new Secret("secret") });
 
         Assert.Equal("xlsx", result.Input.Format);
         Assert.True(result.Input.Encrypted);
@@ -57,7 +57,7 @@ public sealed class CellsFormatDetectionTests(CellsFixture fixture) : IClassFixt
             Assert.Equal(FileFormatType.Unknown, FileFormatUtil.DetectFileFormat(input).FileFormatType);
         }
 
-        WorkbookInfoResult result = CellsInfo.Run(fixture.Session, new InfoRequest { Input = path });
+        CellsInspectResult result = CellsInfo.Run(fixture.Session, new CellsInspectRequest { Input = path });
 
         Assert.Equal("html", result.Input.Format);
     }

@@ -8,7 +8,7 @@ namespace Aspose.Cli.Product.Cells.Engine;
 /// <summary><c>cells create</c>: a new workbook with the given sheets.</summary>
 internal static class CellsCreate
 {
-    public static CreateResult Run(CellsSession session, NewWorkbookRequest request)
+    public static CellsCreateResult Run(CellsSession session, CellsCreateRequest request)
     {
         ArgumentNullException.ThrowIfNull(session);
         ArgumentNullException.ThrowIfNull(request);
@@ -28,7 +28,7 @@ internal static class CellsCreate
             licenseState,
             request.EncryptPassword);
 
-        return new CreateResult
+        return new CellsCreateResult
         {
             Output = saved.Output,
             Sheets = request.SheetNames,

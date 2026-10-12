@@ -59,11 +59,11 @@ public sealed record ClearRangeOp : CellsOp
 
     /// <summary>What to clear: contents keeps the formatting, formats keeps the contents, all clears both.</summary>
     [NotState]
-    [AllowedValues(typeof(ClearTargets))] public string What { get; init; } = ClearTargets.Contents;
+    [AllowedValues(typeof(CellsClearTargets))] public string What { get; init; } = CellsClearTargets.Contents;
 }
 
 /// <summary>Accepted values of <see cref="ClearRangeOp.What"/>.</summary>
-public static class ClearTargets
+public static class CellsClearTargets
 {
     public const string Contents = "contents";
     public const string Formats = "formats";
@@ -99,7 +99,7 @@ public sealed record FormatRangeOp : CellsOp
     /// <summary>The range to format, such as B2:D10.</summary>
     [A1Range] public required string Range { get; init; }
 
-    public required StyleData Style { get; init; }
+    public required CellsStyleData Style { get; init; }
 }
 
 /// <summary>Merges a range into one cell.</summary>

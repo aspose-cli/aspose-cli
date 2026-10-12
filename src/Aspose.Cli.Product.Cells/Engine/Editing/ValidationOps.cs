@@ -16,7 +16,7 @@ internal static class ValidationOps
 
         switch (op.Type)
         {
-            case ValidationTypes.List:
+            case CellsValidationTypes.List:
                 validation.Type = ValidationType.List;
                 validation.InCellDropDown = true;
                 // An explicit list is a comma-separated string literal, given as a
@@ -32,7 +32,7 @@ internal static class ValidationOps
                     : op.ListSource!.StartsWith('=') ? op.ListSource : "=" + op.ListSource;
                 break;
 
-            case ValidationTypes.Custom:
+            case CellsValidationTypes.Custom:
                 validation.Type = ValidationType.Custom;
                 validation.Formula1 = op.Value1;
                 break;
@@ -74,24 +74,24 @@ internal static class ValidationOps
 
     private static ValidationType ToType(string type) => type switch
     {
-        ValidationTypes.WholeNumber => ValidationType.WholeNumber,
-        ValidationTypes.Decimal => ValidationType.Decimal,
-        ValidationTypes.Date => ValidationType.Date,
-        ValidationTypes.TextLength => ValidationType.TextLength,
+        CellsValidationTypes.WholeNumber => ValidationType.WholeNumber,
+        CellsValidationTypes.Decimal => ValidationType.Decimal,
+        CellsValidationTypes.Date => ValidationType.Date,
+        CellsValidationTypes.TextLength => ValidationType.TextLength,
         _ => throw new ArgumentOutOfRangeException(
             nameof(type), type, "Validation type is missing from the engine mapper."),
     };
 
     internal static OperatorType ToOperator(string op) => op switch
     {
-        ValidationOperators.Between => OperatorType.Between,
-        ValidationOperators.NotBetween => OperatorType.NotBetween,
-        ValidationOperators.Equal => OperatorType.Equal,
-        ValidationOperators.NotEqual => OperatorType.NotEqual,
-        ValidationOperators.GreaterThan => OperatorType.GreaterThan,
-        ValidationOperators.LessThan => OperatorType.LessThan,
-        ValidationOperators.GreaterOrEqual => OperatorType.GreaterOrEqual,
-        ValidationOperators.LessOrEqual => OperatorType.LessOrEqual,
+        CellsValidationOperators.Between => OperatorType.Between,
+        CellsValidationOperators.NotBetween => OperatorType.NotBetween,
+        CellsValidationOperators.Equal => OperatorType.Equal,
+        CellsValidationOperators.NotEqual => OperatorType.NotEqual,
+        CellsValidationOperators.GreaterThan => OperatorType.GreaterThan,
+        CellsValidationOperators.LessThan => OperatorType.LessThan,
+        CellsValidationOperators.GreaterOrEqual => OperatorType.GreaterOrEqual,
+        CellsValidationOperators.LessOrEqual => OperatorType.LessOrEqual,
         _ => throw new ArgumentOutOfRangeException(
             nameof(op), op, "Validation operator is missing from the engine mapper."),
     };

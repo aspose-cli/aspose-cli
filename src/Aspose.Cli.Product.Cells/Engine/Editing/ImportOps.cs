@@ -79,7 +79,7 @@ internal static class ImportOps
             from.Start.Row, from.Start.Column, from.RowCount, from.ColumnCount);
         CellsRange destination = toSheet.Cells.CreateRange(
             to.Start.Row, to.Start.Column, from.RowCount, from.ColumnCount);
-        bool everything = op.Content == ImportContents.Everything;
+        bool everything = op.Content == CellsImportContents.Everything;
         using (new SourceLinks(toSheet.Workbook, source))
         {
             destination.Copy(origin, new PasteOptions

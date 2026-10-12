@@ -16,10 +16,10 @@ internal static class ReadProjection
     /// (null outside style-bearing scopes, or when every cell carries the workbook default
     /// style) and the read's window; the read command adds the window's next page.
     /// </summary>
-    public static (SheetProjection Sheet, IReadOnlyDictionary<string, StyleData>? Styles, ResultWindow Window) Project(
+    public static (CellsSheetProjection Sheet, IReadOnlyDictionary<string, CellsStyleData>? Styles, ResultWindow Window) Project(
         ResourceBudgetLedger resourceBudgets,
         Workbook workbook,
-        ReadRequest request)
+        CellsReadRequest request)
     {
         Worksheet sheet = Sheets.Resolve(workbook, request.SheetName);
         RangeRef? usedRange = Sheets.UsedRange(sheet);
@@ -31,12 +31,12 @@ internal static class ReadProjection
             "items",
             phase: "projection");
 
-        StylePool? stylePool = ReadScopes.IncludesStyles(request.Scope) ? new StylePool(workbook) : null;
-        IReadOnlyList<IReadOnlyList<CellData>>? cells = window is { } resolvedWindow
+        StylePool? stylePool = CellsReadScopes.IncludesStyles(request.Scope) ? new StylePool(workbook) : null;
+        IReadOnlyList<IReadOnlyList<CellsCellData>>? cells = window is { } resolvedWindow
             ? BuildCells(sheet, resolvedWindow, request.Scope, stylePool)
             : null;
 
-        var projection = new SheetProjection
+        var projection = new CellsSheetProjection
         {
             Name = sheet.Name,
             Position = sheet.Index,
@@ -66,15 +66,15 @@ internal static class ReadProjection
         };
     }
 
-    private static IReadOnlyList<IReadOnlyList<CellData>> BuildCells(
+    private static IReadOnlyList<IReadOnlyList<CellsCellData>> BuildCells(
         Worksheet sheet, RangeRef window, string scope, StylePool? stylePool)
     {
-        bool includeFormulas = ReadScopes.IncludesFormulas(scope);
-        var rows = new List<IReadOnlyList<CellData>>(window.RowCount);
+        bool includeFormulas = CellsReadScopes.IncludesFormulas(scope);
+        var rows = new List<IReadOnlyList<CellsCellData>>(window.RowCount);
 
         for (int row = window.Start.Row; row <= window.End.Row; row++)
         {
-            var cells = new CellData[window.ColumnCount];
+            var cells = new CellsCellData[window.ColumnCount];
             for (int column = window.Start.Column; column <= window.End.Column; column++)
             {
                 // CheckCell avoids materializing cells that were never written.

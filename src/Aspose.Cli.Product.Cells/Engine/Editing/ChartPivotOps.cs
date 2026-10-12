@@ -83,7 +83,7 @@ internal static class ChartPivotOps
             }
 
             var dataFields = new List<PivotField>(op.Values.Count);
-            foreach (PivotValueField value in op.Values)
+            foreach (CellsPivotValueField value in op.Values)
             {
                 int fieldIndex = AddField(pivot, PivotFieldType.Data, value.Field);
                 pivot.DataFields[fieldIndex].Function = ToFunction(value.Function);
@@ -132,8 +132,8 @@ internal static class ChartPivotOps
     {
         bool chinese = op.Captions switch
         {
-            PivotCaptionLanguages.Chinese => true,
-            PivotCaptionLanguages.English => false,
+            CellsPivotCaptionLanguages.Chinese => true,
+            CellsPivotCaptionLanguages.English => false,
             _ => (op.Rows ?? []).Concat(op.Columns ?? []).Concat(op.Values.Select(static value => value.Field)).Any(ContainsHan),
         };
 
@@ -200,11 +200,11 @@ internal static class ChartPivotOps
     /// <summary>Excel's Simplified Chinese value field prefixes, with its ASCII colon.</summary>
     private static string ChineseCaptionPrefix(string function) => function switch
     {
-        PivotFunctions.Sum => "求和项:",
-        PivotFunctions.Count => "计数项:",
-        PivotFunctions.Average => "平均值项:",
-        PivotFunctions.Max => "最大值项:",
-        PivotFunctions.Min => "最小值项:",
+        CellsPivotFunctions.Sum => "求和项:",
+        CellsPivotFunctions.Count => "计数项:",
+        CellsPivotFunctions.Average => "平均值项:",
+        CellsPivotFunctions.Max => "最大值项:",
+        CellsPivotFunctions.Min => "最小值项:",
         _ => throw new ArgumentOutOfRangeException(
             nameof(function), function, "Pivot function is missing from the caption mapper."),
     };
@@ -467,7 +467,7 @@ internal static class ChartPivotOps
         chart.ShowLegend = true;
         chart.Legend.Position = LegendPositionType.Bottom;
 
-        if (type != ChartTypes.Pie)
+        if (type != CellsChartTypes.Pie)
         {
             // A pie has no axes; the engine silently drops axis writes there,
             // so the code skips them to stay honest.
@@ -477,7 +477,7 @@ internal static class ChartPivotOps
             chart.CategoryAxis.MajorTickMark = TickMarkType.None;
         }
 
-        if (type is ChartTypes.Column or ChartTypes.Bar)
+        if (type is CellsChartTypes.Column or CellsChartTypes.Bar)
         {
             chart.GapWidth = 75;
         }
@@ -514,10 +514,10 @@ internal static class ChartPivotOps
     /// </summary>
     private static void ApplyCosmetics(
         Chart chart,
-        ChartLegend? legend,
-        ChartAxisTitles? axisTitles,
+        CellsChartLegend? legend,
+        CellsChartAxisTitles? axisTitles,
         IReadOnlyList<string>? seriesColors,
-        ChartDataLabels? dataLabels)
+        CellsChartDataLabels? dataLabels)
     {
         if (legend is { } chartLegend)
         {
@@ -675,33 +675,33 @@ internal static class ChartPivotOps
 
     private static ChartType ToChartType(string type) => type switch
     {
-        ChartTypes.Column => ChartType.Column,
-        ChartTypes.Bar => ChartType.Bar,
-        ChartTypes.Line => ChartType.Line,
-        ChartTypes.Pie => ChartType.Pie,
-        ChartTypes.Scatter => ChartType.Scatter,
-        ChartTypes.Area => ChartType.Area,
+        CellsChartTypes.Column => ChartType.Column,
+        CellsChartTypes.Bar => ChartType.Bar,
+        CellsChartTypes.Line => ChartType.Line,
+        CellsChartTypes.Pie => ChartType.Pie,
+        CellsChartTypes.Scatter => ChartType.Scatter,
+        CellsChartTypes.Area => ChartType.Area,
         _ => throw new ArgumentOutOfRangeException(
             nameof(type), type, "Chart type is missing from the engine mapper."),
     };
 
     private static LegendPositionType ToLegendPosition(string position) => position switch
     {
-        LegendPositions.Right => LegendPositionType.Right,
-        LegendPositions.Bottom => LegendPositionType.Bottom,
-        LegendPositions.Top => LegendPositionType.Top,
-        LegendPositions.Left => LegendPositionType.Left,
+        CellsLegendPositions.Right => LegendPositionType.Right,
+        CellsLegendPositions.Bottom => LegendPositionType.Bottom,
+        CellsLegendPositions.Top => LegendPositionType.Top,
+        CellsLegendPositions.Left => LegendPositionType.Left,
         _ => throw new ArgumentOutOfRangeException(
             nameof(position), position, "Legend position is missing from the engine mapper."),
     };
 
     private static ConsolidationFunction ToFunction(string function) => function switch
     {
-        PivotFunctions.Sum => ConsolidationFunction.Sum,
-        PivotFunctions.Count => ConsolidationFunction.Count,
-        PivotFunctions.Average => ConsolidationFunction.Average,
-        PivotFunctions.Max => ConsolidationFunction.Max,
-        PivotFunctions.Min => ConsolidationFunction.Min,
+        CellsPivotFunctions.Sum => ConsolidationFunction.Sum,
+        CellsPivotFunctions.Count => ConsolidationFunction.Count,
+        CellsPivotFunctions.Average => ConsolidationFunction.Average,
+        CellsPivotFunctions.Max => ConsolidationFunction.Max,
+        CellsPivotFunctions.Min => ConsolidationFunction.Min,
         _ => throw new ArgumentOutOfRangeException(
             nameof(function), function, "Pivot function is missing from the engine mapper."),
     };

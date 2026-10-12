@@ -128,7 +128,7 @@ public sealed class CellsRendererGoldenTests
     [Fact]
     public void Info_WithEmptyDetails_SaysMissingUnderEachHeading()
     {
-        WorkbookInfoResult result = Info() with
+        CellsInspectResult result = Info() with
         {
             Workbook = Info().Workbook with
             {
@@ -202,12 +202,12 @@ public sealed class CellsRendererGoldenTests
     [Fact]
     public void Read_PrintsTheRangeAsAGrid()
     {
-        var result = new WorkbookReadResult
+        var result = new CellsReadResult
         {
             Input = new InputInfo { Path = "book.xlsx", Format = "xlsx", SizeBytes = 2_048, Fingerprint = new FileFingerprint { Sha256 = new string('0', 64) }, Encrypted = false },
             Window = new ResultWindow { Unit = "cell", Returned = 4, Truncated = false },
-            Scope = ReadScopes.Values,
-            Sheet = new SheetProjection
+            Scope = CellsReadScopes.Values,
+            Sheet = new CellsSheetProjection
             {
                 Name = "Data",
                 Position = 0,
@@ -215,8 +215,8 @@ public sealed class CellsRendererGoldenTests
                 Range = "B2:C3",
                 Cells =
                 [
-                    [new CellData { V = "Region", T = CellValueTypes.String }, new CellData { V = 1.5, T = CellValueTypes.Number }],
-                    [new CellData { V = true, T = CellValueTypes.Boolean }, new CellData { T = CellValueTypes.Empty }],
+                    [new CellsCellData { V = "Region", T = CellsCellValueTypes.String }, new CellsCellData { V = 1.5, T = CellsCellValueTypes.Number }],
+                    [new CellsCellData { V = true, T = CellsCellValueTypes.Boolean }, new CellsCellData { T = CellsCellValueTypes.Empty }],
                 ],
             },
         };
@@ -236,7 +236,7 @@ public sealed class CellsRendererGoldenTests
     [Fact]
     public void Edit_WithVerification_PrintsOutcomesIssuesAndBackup()
     {
-        var result = new EditResult
+        var result = new CellsEditResult
         {
             Input = new InputInfo { Path = "book.xlsx", Format = "xlsx", SizeBytes = 2_048, Fingerprint = new FileFingerprint { Sha256 = new string('0', 64) }, Encrypted = false },
             Output = new OutputInfo { Path = "out.xlsx", Format = "xlsx", SizeBytes = 4_096, Fingerprint = new FileFingerprint { Sha256 = new string('0', 64) } },
@@ -261,10 +261,10 @@ public sealed class CellsRendererGoldenTests
                 Ok = false,
                 CheckedOps = ["op-0001"],
                 RequestedTargets = [],
-                DirectChanges = [new VerifiedCellChange { Sheet = "Data", Cell = "A1" }],
+                DirectChanges = [new CellsVerifiedCellChange { Sheet = "Data", Cell = "A1" }],
                 FormulaResultChanges = [],
                 OtherChanges = [],
-                FormulaErrors = [new CellError { Sheet = "Data", Cell = "C7", Error = "#REF!" }],
+                FormulaErrors = [new CellsCellError { Sheet = "Data", Cell = "C7", Error = "#REF!" }],
                 Truncated = false,
                 Issues =
                 [
@@ -295,7 +295,7 @@ public sealed class CellsRendererGoldenTests
     [Fact]
     public void Edit_DryRunWithoutVerification_PrintsOnlyTheOutcomes()
     {
-        var result = new EditResult
+        var result = new CellsEditResult
         {
             Input = new InputInfo { Path = "book.xlsx", Format = "xlsx", SizeBytes = 2_048, Fingerprint = new FileFingerprint { Sha256 = new string('0', 64) }, Encrypted = false },
             DryRun = true,
@@ -313,10 +313,10 @@ public sealed class CellsRendererGoldenTests
             text);
     }
 
-    private static WorkbookInfoResult Info() => new()
+    private static CellsInspectResult Info() => new()
     {
         Input = new InputInfo { Path = @"C:\data\report.xlsx", Format = "xlsx", SizeBytes = 1_234_567, Fingerprint = new FileFingerprint { Sha256 = new string('0', 64) }, Encrypted = false },
-        Workbook = new WorkbookSummary
+        Workbook = new CellsWorkbookSummary
         {
             Name = "report.xlsx",
             SheetCount = 2,
@@ -326,13 +326,13 @@ public sealed class CellsRendererGoldenTests
             StructurePasswordProtected = false,
             Sheets =
             [
-                new SheetInfo
+                new CellsSheetInfo
                 {
                     Name = "Data", Position = 0, UsedRange = "A1:C9", RowCount = 9, ColumnCount = 3, Hidden = false,
                     Protected = true, PasswordProtected = false, ChartCount = 1, PivotTableCount = 0,
                     Preview = [["Region", "Sales", null], ["North", "1,200", "x"]],
                 },
-                new SheetInfo
+                new CellsSheetInfo
                 {
                     Name = "Empty sheet", Position = 1, RowCount = 0, ColumnCount = 0, Hidden = true,
                     Protected = false, PasswordProtected = false, ChartCount = 0, PivotTableCount = 0,
@@ -341,33 +341,33 @@ public sealed class CellsRendererGoldenTests
         },
     };
 
-    private static WorkbookInfoResult InfoWithDetails()
+    private static CellsInspectResult InfoWithDetails()
     {
-        WorkbookInfoResult info = Info();
+        CellsInspectResult info = Info();
         return info with
         {
             Input = info.Input with { Encrypted = true },
             Workbook = info.Workbook with
             {
-                DefinedNames = [new DefinedNameInfo { Name = "Rate", RefersTo = "=Data!$B$2" }],
+                DefinedNames = [new CellsDefinedNameInfo { Name = "Rate", RefersTo = "=Data!$B$2" }],
                 FormulaErrors = [],
-                Validations = [new ValidationInfo { Sheet = "Data", Range = "B2:B9", Type = "list" }],
+                Validations = [new CellsValidationInfo { Sheet = "Data", Range = "B2:B9", Type = "list" }],
                 Fonts = ["Calibri", "Arial"],
-                Tables = [new TableInfo { Sheet = "Data", Name = "Sales", Range = "A1:C9" }],
-                Charts = [new ChartInfo { Sheet = "Data", Index = 0, Name = "Chart 1", Type = "column" }],
+                Tables = [new CellsTableInfo { Sheet = "Data", Name = "Sales", Range = "A1:C9" }],
+                Charts = [new CellsChartInfo { Sheet = "Data", Index = 0, Name = "Chart 1", Type = "column" }],
                 Pivots = null,
                 Layouts =
                 [
-                    new SheetLayoutInfo
+                    new CellsSheetLayoutInfo
                     {
                         Sheet = "Data",
                         FreezePanes = "B2",
                         RowGroups =
                         [
-                            new RowGroupInfo { From = 2, To = 20, Level = 1, Collapsed = false },
-                            new RowGroupInfo { From = 3, To = 4, Level = 2, Collapsed = true },
+                            new CellsRowGroupInfo { From = 2, To = 20, Level = 1, Collapsed = false },
+                            new CellsRowGroupInfo { From = 3, To = 4, Level = 2, Collapsed = true },
                         ],
-                        ColumnGroups = [new ColumnGroupInfo { From = "B", To = "C", Level = 1, Collapsed = false }],
+                        ColumnGroups = [new CellsColumnGroupInfo { From = "B", To = "C", Level = 1, Collapsed = false }],
                         AutoFilter = "A1:C9",
                         PrintArea = "A1:C9",
                         TitleRows = "1:1",
@@ -377,7 +377,7 @@ public sealed class CellsRendererGoldenTests
                         Header = "&P",
                         Footer = "Page &P of &N",
                     },
-                    new SheetLayoutInfo { Sheet = "Empty sheet", Orientation = "portrait", FitToWidth = 1, FitToHeight = 0 },
+                    new CellsSheetLayoutInfo { Sheet = "Empty sheet", Orientation = "portrait", FitToWidth = 1, FitToHeight = 0 },
                 ],
             },
         };

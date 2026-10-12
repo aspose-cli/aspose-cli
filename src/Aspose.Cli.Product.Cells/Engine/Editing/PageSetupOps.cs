@@ -15,7 +15,7 @@ internal static class PageSetupOps
 
         if (op.Orientation is { } orientation)
         {
-            pageSetup.Orientation = orientation == PageOrientations.Landscape
+            pageSetup.Orientation = orientation == CellsPageOrientations.Landscape
                 ? PageOrientationType.Landscape
                 : PageOrientationType.Portrait;
         }
@@ -87,7 +87,7 @@ internal static class PageSetupOps
         return null;
     }
 
-    private static void ApplyMargins(PageSetup pageSetup, Margins margins)
+    private static void ApplyMargins(PageSetup pageSetup, CellsMargins margins)
     {
         if (margins.Top is { } top)
         {
@@ -126,12 +126,12 @@ internal static class PageSetupOps
 
     private static PaperSizeType ToPaperSize(string paper) => paper switch
     {
-        PaperSizes.Letter => PaperSizeType.PaperLetter,
-        PaperSizes.Legal => PaperSizeType.PaperLegal,
-        PaperSizes.A3 => PaperSizeType.PaperA3,
-        PaperSizes.A4 => PaperSizeType.PaperA4,
-        PaperSizes.A5 => PaperSizeType.PaperA5,
-        PaperSizes.Tabloid => PaperSizeType.PaperTabloid,
+        CellsPaperSizes.Letter => PaperSizeType.PaperLetter,
+        CellsPaperSizes.Legal => PaperSizeType.PaperLegal,
+        CellsPaperSizes.A3 => PaperSizeType.PaperA3,
+        CellsPaperSizes.A4 => PaperSizeType.PaperA4,
+        CellsPaperSizes.A5 => PaperSizeType.PaperA5,
+        CellsPaperSizes.Tabloid => PaperSizeType.PaperTabloid,
         _ => throw new ArgumentOutOfRangeException(
             nameof(paper), paper, "Paper size is missing from the engine mapper."),
     };

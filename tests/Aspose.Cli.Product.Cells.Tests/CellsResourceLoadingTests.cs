@@ -79,10 +79,10 @@ public sealed class CellsResourceLoadingTests
             Assert.True(server.RequestCount == 0, string.Join("; ", server.Requests));
             AssertOmission(loaded.Warnings());
         }
-        AssertOmission(CellsInfo.Run(fixture.Session, new InfoRequest { Input = input }).Warnings);
-        AssertOmission(CellsRead.Run(fixture.Session, new ReadRequest { Input = input }).Warnings);
+        AssertOmission(CellsInfo.Run(fixture.Session, new CellsInspectRequest { Input = input }).Warnings);
+        AssertOmission(CellsRead.Run(fixture.Session, new CellsReadRequest { Input = input }).Warnings);
         string output = fixture.Temp.File("converted-" + extension + ".xlsx");
-        AssertOmission(CellsConvert.Run(fixture.Session, new ConvertRequest
+        AssertOmission(CellsConvert.Run(fixture.Session, new CellsConvertRequest
         {
             Input = input,
             Output = TestOutput.At(output, format: "xlsx"),

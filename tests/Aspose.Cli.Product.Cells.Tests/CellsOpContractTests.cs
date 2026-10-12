@@ -128,7 +128,7 @@ public sealed class CellsOpContractTests : IClassFixture<CellsFixture>
     [Fact]
     public void ImportRange_ImportsValuesByDefault() =>
         Assert.Equal(
-            ImportContents.Values,
+            CellsImportContents.Values,
             Assert.IsType<ImportRangeOp>(Assert.Single(
                 Parse("""{"ops":[{"op":"import_range","path":"eu.xlsx","from":"A1:B2","to":"C1"}]}""").Ops)).Content);
 
@@ -138,7 +138,7 @@ public sealed class CellsOpContractTests : IClassFixture<CellsFixture>
         CreatePivotOp pivot = Assert.IsType<CreatePivotOp>(Assert.Single(
             Parse("""{"ops":[{"op":"create_pivot","sourceRange":"A1:B9","at":"D1","values":[{"field":"X"}]}]}""").Ops));
 
-        Assert.Equal(PivotCaptionLanguages.Auto, pivot.Captions);
+        Assert.Equal(CellsPivotCaptionLanguages.Auto, pivot.Captions);
         Assert.Null(Assert.Single(pivot.Values).Label);
     }
 
@@ -181,7 +181,7 @@ public sealed class CellsOpContractTests : IClassFixture<CellsFixture>
     {
         using var workbook = new Workbook();
         Assert.Throws<ArgumentOutOfRangeException>(() =>
-            StyleWriter.Apply(workbook.CreateStyle(), new StyleData { HAlign = horizontal, VAlign = vertical }));
+            StyleWriter.Apply(workbook.CreateStyle(), new CellsStyleData { HAlign = horizontal, VAlign = vertical }));
     }
 
     private static bool IsSchemaValid(string json)
@@ -195,5 +195,5 @@ public sealed class CellsOpContractTests : IClassFixture<CellsFixture>
 
     private string Apply(string path, string operations, string output) =>
         CellsEdit.Run(_fixture.Session,
-            new EditRequest { Input = path, Batch = Parse(operations), Output = TestOutput.At(_fixture.Temp.File(output), overwrite: true) }).Output!.Path;
+            new CellsEditRequest { Input = path, Batch = Parse(operations), Output = TestOutput.At(_fixture.Temp.File(output), overwrite: true) }).Output!.Path;
 }

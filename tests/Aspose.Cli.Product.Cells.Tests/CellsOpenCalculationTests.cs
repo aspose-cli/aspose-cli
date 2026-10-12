@@ -19,7 +19,7 @@ public sealed class CellsOpenCalculationTests : IClassFixture<CellsFixture>
     {
         string path = Workbook("uncalculated.xlsx", calculate: false);
 
-        WorkbookReadResult read = CellsRead.Run(_fixture.Session, new ReadRequest { Input = path });
+        CellsReadResult read = CellsRead.Run(_fixture.Session, new CellsReadRequest { Input = path });
 
         Assert.Equal("42", read.Sheet!.Cells![0][2].V?.ToString());
         Assert.Contains(read.Warnings ?? [], static warning => warning.Code.Name == "FORMULAS_CALCULATED_ON_OPEN");
@@ -30,7 +30,7 @@ public sealed class CellsOpenCalculationTests : IClassFixture<CellsFixture>
     {
         string path = Workbook("calculated.xlsx", calculate: true);
 
-        WorkbookReadResult read = CellsRead.Run(_fixture.Session, new ReadRequest { Input = path });
+        CellsReadResult read = CellsRead.Run(_fixture.Session, new CellsReadRequest { Input = path });
 
         Assert.Equal("42", read.Sheet!.Cells![0][2].V?.ToString());
         Assert.DoesNotContain(read.Warnings ?? [], static warning => warning.Code.Name == "FORMULAS_CALCULATED_ON_OPEN");

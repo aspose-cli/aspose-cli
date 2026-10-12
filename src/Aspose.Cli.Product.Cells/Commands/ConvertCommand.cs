@@ -9,7 +9,7 @@ namespace Aspose.Cli.Product.Cells.Commands;
 /// <summary><c>cells convert</c> — workbook format conversion.</summary>
 internal static class ConvertCommand
 {
-    public static CommandDefinition<ConvertRequest, ConvertResult> Create()
+    public static CommandDefinition<CellsConvertRequest, CellsConvertResult> Create()
     {
         var sheet = new Option<string?>("--sheet")
         {
@@ -67,7 +67,7 @@ internal static class ConvertCommand
                 }
 
                 Secret? encryptPassword = standard.EncryptPassword();
-                return new ConvertRequest
+                return new CellsConvertRequest
                 {
                     Input = standard.Input,
                     Output = output,
@@ -76,7 +76,7 @@ internal static class ConvertCommand
                     EncryptPassword = encryptPassword,
                     TextImport = encodingName is null && cultureName is null
                         ? null
-                        : new TextImportOptions { Encoding = encodingName, Culture = cultureName },
+                        : new CellsTextImportOptions { Encoding = encodingName, Culture = cultureName },
                     ByteOrderMark = byteOrderMark,
                 };
             },
@@ -99,6 +99,6 @@ internal static class ConvertCommand
         };
     }
 
-    internal static void Table(ConvertResult convert, TableSurface surface) =>
+    internal static void Table(CellsConvertResult convert, TableSurface surface) =>
         ResultText.Produced(surface, convert.Output, convert.Sheet is null ? null : $"sheet {convert.Sheet}");
 }

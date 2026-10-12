@@ -7,15 +7,15 @@ namespace Aspose.Cli.Product.Cells.Engine.Mapping;
 internal static class CellMapper
 {
     /// <summary>Maps one cell; <paramref name="cell"/> is null for never-written cells.</summary>
-    public static CellData Map(Cell? cell, bool includeFormula, string? styleId)
+    public static CellsCellData Map(Cell? cell, bool includeFormula, string? styleId)
     {
         if (cell is null || cell.Type == CellValueType.IsNull)
         {
             // A cell can be empty yet styled (blank with a fill color), or
             // empty with a formula that produced nothing yet.
-            return new CellData
+            return new CellsCellData
             {
-                T = CellValueTypes.Empty,
+                T = CellsCellValueTypes.Empty,
                 F = includeFormula && cell is { IsFormula: true } ? cell.Formula : null,
                 StyleId = styleId,
             };
@@ -24,14 +24,14 @@ internal static class CellMapper
         string? formula = includeFormula && cell.IsFormula ? cell.Formula : null;
         (object? value, string type) = cell.Type switch
         {
-            CellValueType.IsNumeric => ((object?)cell.DoubleValue, CellValueTypes.Number),
-            CellValueType.IsDateTime => (FormatDateTime(cell.DateTimeValue), CellValueTypes.DateTime),
-            CellValueType.IsBool => (cell.BoolValue, CellValueTypes.Boolean),
-            CellValueType.IsError => (cell.StringValue, CellValueTypes.Error),
-            _ => (cell.StringValue, CellValueTypes.String),
+            CellValueType.IsNumeric => ((object?)cell.DoubleValue, CellsCellValueTypes.Number),
+            CellValueType.IsDateTime => (FormatDateTime(cell.DateTimeValue), CellsCellValueTypes.DateTime),
+            CellValueType.IsBool => (cell.BoolValue, CellsCellValueTypes.Boolean),
+            CellValueType.IsError => (cell.StringValue, CellsCellValueTypes.Error),
+            _ => (cell.StringValue, CellsCellValueTypes.String),
         };
 
-        return new CellData { V = value, T = type, F = formula, StyleId = styleId };
+        return new CellsCellData { V = value, T = type, F = formula, StyleId = styleId };
     }
 
     /// <summary>

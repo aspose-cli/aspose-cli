@@ -11,9 +11,9 @@ namespace Aspose.Cli.Product.Cells.Engine.Mapping;
 /// </summary>
 internal sealed class StylePool
 {
-    private readonly Dictionary<StyleData, string> _idsByStyle = [];
-    private readonly Dictionary<string, StyleData> _stylesById = [];
-    private readonly StyleData _workbookDefault;
+    private readonly Dictionary<CellsStyleData, string> _idsByStyle = [];
+    private readonly Dictionary<string, CellsStyleData> _stylesById = [];
+    private readonly CellsStyleData _workbookDefault;
 
     public StylePool(Workbook workbook) =>
         _workbookDefault = Map(workbook.DefaultStyle);
@@ -26,7 +26,7 @@ internal sealed class StylePool
             return null;
         }
 
-        StyleData mapped = Map(cell.GetStyle());
+        CellsStyleData mapped = Map(cell.GetStyle());
         if (mapped == _workbookDefault)
         {
             return null;
@@ -45,11 +45,11 @@ internal sealed class StylePool
     }
 
     /// <summary>The pool content, or null when no non-default style was seen.</summary>
-    public IReadOnlyDictionary<string, StyleData>? ToDictionary() =>
+    public IReadOnlyDictionary<string, CellsStyleData>? ToDictionary() =>
         _stylesById.Count == 0 ? null : _stylesById;
 
     /// <summary>Maps an engine style onto the unified style core.</summary>
-    internal static StyleData Map(Style style) => new()
+    internal static CellsStyleData Map(Style style) => new()
     {
         Font = style.Font.Name,
         Size = style.Font.DoubleSize,

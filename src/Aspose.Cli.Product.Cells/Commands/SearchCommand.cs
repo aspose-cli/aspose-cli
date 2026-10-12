@@ -15,7 +15,7 @@ internal static class SearchCommand
     private const string InFormulas = "formulas";
     private const string InBoth = "both";
 
-    public static CommandDefinition<SearchRequest, SearchResult> Create()
+    public static CommandDefinition<CellsSearchRequest, CellsSearchResult> Create()
     {
         var search = new SearchOptions(new SearchScopeGrammar(
             "Where to search: the cell results, the formula text or both.",
@@ -30,15 +30,15 @@ internal static class SearchCommand
             (parse, standard) =>
             {
                 SearchQuery query = search.Read(parse);
-                return new SearchRequest
+                return new CellsSearchRequest
                 {
                     Input = standard.Input,
                     Query = query,
                     In = query.Scope switch
                     {
-                        InFormulas => SearchIn.Formulas,
-                        InBoth => SearchIn.Both,
-                        _ => SearchIn.Values,
+                        InFormulas => CellsSearchIn.Formulas,
+                        InBoth => CellsSearchIn.Both,
+                        _ => CellsSearchIn.Values,
                     },
                     SheetName = parse.GetValue(sheet),
                     Password = standard.InputPassword,
@@ -64,7 +64,7 @@ internal static class SearchCommand
         };
     }
 
-    internal static void Table(SearchResult search, TableSurface surface)
+    internal static void Table(CellsSearchResult search, TableSurface surface)
     {
         surface.Out.WriteLine($"{search.Hits.Count} hit(s) for '{search.Pattern}' in {search.Input.Path}");
 
@@ -72,7 +72,7 @@ internal static class SearchCommand
         {
             surface.Out.WriteLine();
             var table = new TextTable("sheet", "cell", "value");
-            foreach (SearchHit hit in search.Hits)
+            foreach (CellsSearchHit hit in search.Hits)
             {
                 table.AddRow(hit.Sheet, hit.Cell, hit.Value);
             }

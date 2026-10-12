@@ -28,7 +28,7 @@ public sealed record AddSparklineOp : CellsOp
 
     /// <summary>winloss draws equal-height columns above or below the axis by sign.</summary>
     [NotReadBack]
-    [AllowedValues(typeof(SparklineTypes))] public string Type { get; init; } = SparklineTypes.Line;
+    [AllowedValues(typeof(CellsSparklineTypes))] public string Type { get; init; } = CellsSparklineTypes.Line;
 
     /// <summary>The series color; the engine default when omitted.</summary>
     [NotReadBack]
@@ -45,7 +45,7 @@ public sealed record AddSparklineOp : CellsOp
 }
 
 /// <summary>Accepted values of <see cref="AddSparklineOp.Type"/>.</summary>
-public static class SparklineTypes
+public static class CellsSparklineTypes
 {
     public const string Line = "line";
     public const string Column = "column";

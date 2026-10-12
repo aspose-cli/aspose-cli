@@ -18,41 +18,41 @@ public sealed record AddConditionalFormatOp : CellsOp
     [A1Range] public required string Range { get; init; }
 
     [NotReadBack]
-    public required ConditionalRule Rule { get; init; }
+    public required CellsConditionalRule Rule { get; init; }
 
     /// <summary>The style matching cells receive.</summary>
     [NotReadBack]
-    public ConditionalStyle? Style { get; init; }
+    public CellsConditionalStyle? Style { get; init; }
 
     /// <inheritdoc />
     protected override BoundedOperation Validated()
     {
-        ConditionalRule rule = Rule;
-        bool styled = rule.Kind != ConditionalRuleKinds.IconSet;
+        CellsConditionalRule rule = Rule;
+        bool styled = rule.Kind != CellsConditionalRuleKinds.IconSet;
         switch (rule.Kind)
         {
-            case ConditionalRuleKinds.CellValue:
+            case CellsConditionalRuleKinds.CellValue:
                 Require(rule.Operator is not null, "a 'cellValue' rule needs 'operator'");
                 Require(rule.Value1 is not null, "a 'cellValue' rule needs 'value1'");
-                Require(rule.Operator is not (ValidationOperators.Between or ValidationOperators.NotBetween) || rule.Value2 is not null,
+                Require(rule.Operator is not (CellsValidationOperators.Between or CellsValidationOperators.NotBetween) || rule.Value2 is not null,
                     "'between'/'notBetween' need 'value2'");
                 break;
-            case ConditionalRuleKinds.ColorScale:
+            case CellsConditionalRuleKinds.ColorScale:
                 Require(rule.MinColor is not null && rule.MaxColor is not null,
                     "a 'colorScale' rule needs 'minColor' and 'maxColor' (add 'midColor' for a 3-point scale)");
                 styled = false;
                 break;
-            case ConditionalRuleKinds.DataBar:
+            case CellsConditionalRuleKinds.DataBar:
                 Require(rule.BarColor is not null, "a 'dataBar' rule needs 'barColor'");
                 styled = false;
                 break;
-            case ConditionalRuleKinds.Formula:
+            case CellsConditionalRuleKinds.Formula:
                 Require(rule.Value1 is not null,
                     "a 'formula' rule needs 'value1' set to a formula",
                     "The formula anchors at the range's top-left cell and shifts per cell; anchor the tested "
                     + "column with '$' to highlight whole rows, e.g. =$F2=\"OVERDUE\" over A2:F100.");
                 break;
-            case ConditionalRuleKinds.TopBottom:
+            case CellsConditionalRuleKinds.TopBottom:
                 Require(rule.Rank is not null && (!rule.Percent || rule.Rank <= 100),
                     "a 'topBottom' rule needs 'rank' (1-1000; 1-100 with 'percent')");
                 break;
@@ -62,7 +62,7 @@ public sealed record AddConditionalFormatOp : CellsOp
         {
             Require(Style is not null, $"a '{rule.Kind}' rule needs a 'style' to apply");
         }
-        else if (rule.Kind == ConditionalRuleKinds.IconSet)
+        else if (rule.Kind == CellsConditionalRuleKinds.IconSet)
         {
             // Icons come from the set; a style would be dead weight the caller believes took effect.
             Require(Style is null, "an 'iconSet' rule draws icons; omit 'style'");
@@ -75,9 +75,9 @@ public sealed record AddConditionalFormatOp : CellsOp
         // quoted as an Excel string literal ("Done") is that literal's formula.
         return rule.Kind switch
         {
-            ConditionalRuleKinds.Formula when !rule.Value1!.StartsWith('=') =>
+            CellsConditionalRuleKinds.Formula when !rule.Value1!.StartsWith('=') =>
                 this with { Rule = rule with { Value1 = "=" + rule.Value1 } },
-            ConditionalRuleKinds.CellValue =>
+            CellsConditionalRuleKinds.CellValue =>
                 this with { Rule = rule with { Value1 = Comparison(rule.Value1), Value2 = Comparison(rule.Value2) } },
             _ => this,
         };
@@ -90,7 +90,7 @@ public sealed record AddConditionalFormatOp : CellsOp
 }
 
 /// <summary>A conditional-formatting rule; the fields it uses depend on its kind.</summary>
-public sealed record ConditionalRule
+public sealed record CellsConditionalRule
 {
     /// <summary>
     /// cellValue compares values; colorScale and dataBar shade by value; duplicates marks
@@ -98,10 +98,10 @@ public sealed record ConditionalRule
     /// cell and shifted per cell; topBottom marks the top or bottom N or N percent; iconSet draws
     /// icons with automatic thresholds.
     /// </summary>
-    [AllowedValues(typeof(ConditionalRuleKinds))] public required string Kind { get; init; }
+    [AllowedValues(typeof(CellsConditionalRuleKinds))] public required string Kind { get; init; }
 
     /// <summary>The comparison of a cellValue rule.</summary>
-    [AllowedValues(typeof(ValidationOperators))] public string? Operator { get; init; }
+    [AllowedValues(typeof(CellsValidationOperators))] public string? Operator { get; init; }
 
     /// <summary>
     /// The comparison value of a cellValue rule (the lower bound for between): a number, text as
@@ -136,11 +136,11 @@ public sealed record ConditionalRule
     public bool Bottom { get; init; }
 
     /// <summary>The icons of an iconSet rule.</summary>
-    [AllowedValues(typeof(IconSetNames))] public string? IconSet { get; init; }
+    [AllowedValues(typeof(CellsIconSetNames))] public string? IconSet { get; init; }
 }
 
-/// <summary>Accepted values of <see cref="ConditionalRule.Kind"/>.</summary>
-public static class ConditionalRuleKinds
+/// <summary>Accepted values of <see cref="CellsConditionalRule.Kind"/>.</summary>
+public static class CellsConditionalRuleKinds
 {
     public const string CellValue = "cellValue";
     public const string ColorScale = "colorScale";
@@ -151,8 +151,8 @@ public static class ConditionalRuleKinds
     public const string IconSet = "iconSet";
 }
 
-/// <summary>Accepted values of <see cref="ConditionalRule.IconSet"/>.</summary>
-public static class IconSetNames
+/// <summary>Accepted values of <see cref="CellsConditionalRule.IconSet"/>.</summary>
+public static class CellsIconSetNames
 {
     /// <summary>Three colored arrows: up, sideways, down.</summary>
     public const string Arrows3 = "arrows3";

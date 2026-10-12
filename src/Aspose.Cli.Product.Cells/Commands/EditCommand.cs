@@ -25,11 +25,11 @@ internal static class EditCommand
         Writes = CellsFormats.Editable,
     };
 
-    public static CommandDefinition<EditRequest, EditResult> Create()
+    public static CommandDefinition<CellsEditRequest, CellsEditResult> Create()
     {
         var noRecalc = new Option<bool>("--no-recalc") { Description = "Skip the automatic formula recalculation after applying the ops." };
         var bounded = new BoundedEditCommand<CellsOp, CellsOpsBatch>(Definition);
-        return EditDefinition.Create<CellsOp, CellsOpsBatch, EditRequest, EditResult>(
+        return EditDefinition.Create<CellsOp, CellsOpsBatch, CellsEditRequest, CellsEditResult>(
             bounded,
             $"Apply a batch of edit ops atomically. Editable outputs: {string.Join(", ", CellsFormats.Editable.Select(static format => format.Id))}.",
             new CommandTraits
@@ -42,7 +42,7 @@ internal static class EditCommand
             (parse, batch, standard) =>
             {
                 Secret? encryptPassword = standard.EncryptPassword();
-                return new EditRequest
+                return new CellsEditRequest
                 {
                     Input = standard.Input,
                     Batch = batch.Batch,
@@ -77,7 +77,7 @@ internal static class EditCommand
             ]);
     }
 
-    internal static void Table(EditResult edit, TableSurface surface)
+    internal static void Table(CellsEditResult edit, TableSurface surface)
     {
         ResultText.Edit(surface, edit.DryRun, edit.Output, edit.Applied, edit.Backup);
         ResultText.Verification(

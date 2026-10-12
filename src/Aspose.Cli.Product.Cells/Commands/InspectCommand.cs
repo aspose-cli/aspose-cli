@@ -12,19 +12,19 @@ internal static class InspectCommand
 {
     private const int MaxPreviewRows = 100;
 
-    public static CommandDefinition<InfoRequest, WorkbookInfoResult> Create()
+    public static CommandDefinition<CellsInspectRequest, CellsInspectResult> Create()
     {
-        var sample = new SampleOption($"display values of the first --preview-rows rows and up to {SheetInfo.PreviewColumns} columns of each sheet, from A1");
+        var sample = new SampleOption($"display values of the first --preview-rows rows and up to {CellsSheetInfo.PreviewColumns} columns of each sheet, from A1");
         var previewRows = new Option<int>("--preview-rows")
         {
             Description = "Number of preview rows per sheet.",
             DefaultValueFactory = _ => 5,
         }.InRange(1, MaxPreviewRows);
-        var detail = new DetailOption(InfoDetails.All, new Dictionary<string, string>
+        var detail = new DetailOption(CellsInspectDetails.All, new Dictionary<string, string>
         {
-            [InfoDetails.Names] = "defined names",
-            [InfoDetails.Errors] = "formula-error scan",
-            [InfoDetails.Layout] = "frozen panes, outline groups, filter, print area and page setup of each sheet",
+            [CellsInspectDetails.Names] = "defined names",
+            [CellsInspectDetails.Errors] = "formula-error scan",
+            [CellsInspectDetails.Layout] = "frozen panes, outline groups, filter, print area and page setup of each sheet",
         });
         return new(
             "inspect",
@@ -34,7 +34,7 @@ internal static class InspectCommand
             (parse, standard) =>
             {
                 int rows = parse.GetInRange(previewRows, "Pass a smaller sample size; previews are meant to be cheap to read.");
-                return new InfoRequest
+                return new CellsInspectRequest
                 {
                     Input = standard.Input,
                     IncludePreview = sample.Read(parse),
@@ -58,16 +58,16 @@ internal static class InspectCommand
         };
     }
 
-    internal static void Table(WorkbookInfoResult info, TableSurface surface)
+    internal static void Table(CellsInspectResult info, TableSurface surface)
     {
-        WorkbookSummary workbook = info.Workbook;
+        CellsWorkbookSummary workbook = info.Workbook;
         ResultText.Input(surface, info.Input);
         surface.Out.WriteLine(
             $"sheets: {workbook.SheetCount}   vba: {TableText.YesNo(workbook.HasVba)}   defined names: {workbook.DefinedNameCount}   encrypted: {TableText.YesNo(info.Input.Encrypted == true)}   structure protected: {TableText.YesNo(workbook.StructureProtected)}");
         surface.Out.WriteLine();
 
         var table = new TextTable("name", "position", "used range", "rows", "columns", "hidden", "protected", "charts", "pivots");
-        foreach (SheetInfo sheet in workbook.Sheets)
+        foreach (CellsSheetInfo sheet in workbook.Sheets)
         {
             table.AddRow(
                 sheet.Name,
@@ -83,7 +83,7 @@ internal static class InspectCommand
 
         table.WriteTo(surface.Out, surface.Format);
 
-        foreach (SheetInfo sheet in workbook.Sheets)
+        foreach (CellsSheetInfo sheet in workbook.Sheets)
         {
             if (sheet.Preview is not { Count: > 0 } preview)
             {
@@ -102,7 +102,7 @@ internal static class InspectCommand
     }
 
     /// <summary>Each list --detail requested, as a table under its own heading.</summary>
-    private static void Details(WorkbookSummary workbook, TableSurface surface)
+    private static void Details(CellsWorkbookSummary workbook, TableSurface surface)
     {
         ResultText.Table(surface, "names", workbook.DefinedNames, ["name", "refers to"],
             static name => [name.Name, name.RefersTo]);

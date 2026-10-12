@@ -104,7 +104,7 @@ internal sealed class CellsProtectionTracker
     /// <summary>Whether the operation changes only the contents of cells Excel leaves unlocked on a protected sheet.</summary>
     private static bool WritesUnlockedCellsOnly(Worksheet sheet, CellsOp op)
     {
-        if (op is not (SetValuesOp or SetFormulaOp or ClearRangeOp { What: ClearTargets.Contents })
+        if (op is not (SetValuesOp or SetFormulaOp or ClearRangeOp { What: CellsClearTargets.Contents })
             || OpsFootprint.TargetOf(op)?.Range is not { } target)
         {
             return false;

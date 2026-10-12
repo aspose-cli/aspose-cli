@@ -77,7 +77,7 @@ internal static partial class ContractRules
     /// </summary>
     private static readonly HashSet<string> CompactCellNames = new(StringComparer.Ordinal) { "v", "t", "f" };
     private const string CompactCellSchemaPrefix = "v2/cells/";
-    private const string CellsReadSchema = "v2/cells/workbook-read";
+    private const string CellsReadSchema = "v2/cells/read-result";
 
     /// <summary>Field names whose products may give them different types (C-R20): each follows its product's address or style model.</summary>
     private static readonly HashSet<string> ProductModelNames = new(StringComparer.Ordinal) { "at", "target", "style", "column" };

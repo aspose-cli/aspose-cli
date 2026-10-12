@@ -23,7 +23,7 @@ internal static class ScanContinuation
     /// <param name="resume">The invocation's continuation (<see cref="StandardInvocation.Continuation"/>).</param>
     /// <param name="maxCells">The cell budget of one page.</param>
     public static string? Build(
-        ContinuationCommand resume, WorkbookReadResult result, RangeRef? range, RangeRef? scan, int maxCells)
+        ContinuationCommand resume, CellsReadResult result, RangeRef? range, RangeRef? scan, int maxCells)
     {
         RangeRef? used = result.Sheet.UsedRange is { } text ? A1.ParseRange(text).Range : null;
         ReadPlan plan = ReadWindowPlanner.Plan(range, scan, used, maxCells);

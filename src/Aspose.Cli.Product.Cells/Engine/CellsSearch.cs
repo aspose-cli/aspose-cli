@@ -10,7 +10,7 @@ namespace Aspose.Cli.Product.Cells.Engine;
 /// <summary><c>cells query search</c>: the budgeted cells whose value or formula matches a pattern.</summary>
 internal static class CellsSearch
 {
-    public static SearchResult Run(CellsSession session, SearchRequest request)
+    public static CellsSearchResult Run(CellsSession session, CellsSearchRequest request)
     {
         ArgumentNullException.ThrowIfNull(session);
         ArgumentNullException.ThrowIfNull(request);
@@ -22,9 +22,9 @@ internal static class CellsSearch
         InputInfo source = BuildSource(request.Input, loaded);
 
         int? sheetIndex = request.SheetName is { } name ? Sheets.Resolve(workbook, name).Index : null;
-        SearchHits<SearchHit> hits = SearchMatcher.Find(session.Budgets, workbook, request, sheetIndex);
+        SearchHits<CellsSearchHit> hits = SearchMatcher.Find(session.Budgets, workbook, request, sheetIndex);
 
-        return new SearchResult
+        return new CellsSearchResult
         {
             Input = source,
             Pattern = request.Query.Text.Pattern,

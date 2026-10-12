@@ -19,12 +19,12 @@ public sealed class CellsModuleTests
         };
 
     [Theory]
-    [InlineData("chartInfo", "create_chart")]
-    [InlineData("validationInfo", "set_validation")]
+    [InlineData("cellsChartInfo", "create_chart")]
+    [InlineData("cellsValidationInfo", "set_validation")]
     public void InspectedTypes_StateTheOperationVocabulary(string info, string operation)
     {
         ProductCatalog catalog = ProductCatalog.Build([new CellsModule()]);
-        JsonNode read = JsonNode.Parse(catalog.Resources.Read("v2/cells/workbook-info"))!;
+        JsonNode read = JsonNode.Parse(catalog.Resources.Read("v2/cells/inspect-result"))!;
         JsonNode ops = JsonNode.Parse(catalog.Resources.Read("v2/cells/ops"))!;
 
         Assert.Equal(

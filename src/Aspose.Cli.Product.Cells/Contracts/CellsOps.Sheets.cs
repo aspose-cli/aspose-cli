@@ -9,11 +9,11 @@ namespace Aspose.Cli.Product.Cells.Contracts;
 public sealed record AddSheetOp : CellsOp
 {
     /// <summary>The name of the new sheet.</summary>
-    [ReadBack("workbook-info.schema.json#/$defs/sheetInfo/properties/name")]
+    [ReadBack("inspect-result.schema.json#/$defs/cellsSheetInfo/properties/name")]
     [Pattern(@"\S")] public required string Name { get; init; }
 
     /// <summary>The zero-based position; appended when omitted.</summary>
-    [ReadBack("workbook-info.schema.json#/$defs/sheetInfo/properties/position")]
+    [ReadBack("inspect-result.schema.json#/$defs/cellsSheetInfo/properties/position")]
     [Minimum(0)] public int? Position { get; init; }
 }
 
@@ -23,7 +23,7 @@ public sealed record AddSheetOp : CellsOp
 public sealed record RenameSheetOp : CellsOp
 {
     /// <summary>The new name.</summary>
-    [ReadBack("workbook-info.schema.json#/$defs/sheetInfo/properties/name")]
+    [ReadBack("inspect-result.schema.json#/$defs/cellsSheetInfo/properties/name")]
     [Pattern(@"\S")] public required string To { get; init; }
 }
 
@@ -38,7 +38,7 @@ public sealed record DeleteSheetOp : CellsOp;
 public sealed record SetSheetVisibilityOp : CellsOp
 {
     /// <summary>Whether the sheet is hidden.</summary>
-    [ReadBack("workbook-info.schema.json#/$defs/sheetInfo/properties/hidden")]
+    [ReadBack("inspect-result.schema.json#/$defs/cellsSheetInfo/properties/hidden")]
     public required bool Hidden { get; init; }
 }
 
@@ -59,7 +59,7 @@ public sealed record SetActiveSheetOp : CellsOp;
 public sealed record MoveSheetOp : CellsOp
 {
     /// <summary>The zero-based destination in the tab order; a value past the last sheet moves it to the end.</summary>
-    [ReadBack("workbook-info.schema.json#/$defs/sheetInfo/properties/position")]
+    [ReadBack("inspect-result.schema.json#/$defs/cellsSheetInfo/properties/position")]
     [Minimum(0)] public required int Position { get; init; }
 }
 
@@ -68,7 +68,7 @@ public sealed record MoveSheetOp : CellsOp
 public sealed record FreezePanesOp : CellsOp
 {
     /// <summary>The anchor cell.</summary>
-    [ReadBack("workbook-info.schema.json#/$defs/sheetLayoutInfo/properties/freezePanes")]
+    [ReadBack("inspect-result.schema.json#/$defs/cellsSheetLayoutInfo/properties/freezePanes")]
     [A1Cell] public required string Cell { get; init; }
 }
 
@@ -80,39 +80,39 @@ public sealed record FreezePanesOp : CellsOp
 [AtLeastOneOf("orientation", "paperSize", "fitToWidth", "fitToHeight", "scale", "margins", "header", "footer")]
 public sealed record SetPageSetupOp : CellsOp
 {
-    [ReadBack("workbook-info.schema.json#/$defs/sheetLayoutInfo/properties/orientation")]
-    [AllowedValues(typeof(PageOrientations))] public string? Orientation { get; init; }
+    [ReadBack("inspect-result.schema.json#/$defs/cellsSheetLayoutInfo/properties/orientation")]
+    [AllowedValues(typeof(CellsPageOrientations))] public string? Orientation { get; init; }
 
     [NotReadBack]
-    [AllowedValues(typeof(PaperSizes))] public string? PaperSize { get; init; }
+    [AllowedValues(typeof(CellsPaperSizes))] public string? PaperSize { get; init; }
 
     /// <summary>The number of pages the printout fits across; 0 is automatic.</summary>
-    [ReadBack("workbook-info.schema.json#/$defs/sheetLayoutInfo/properties/fitToWidth")]
+    [ReadBack("inspect-result.schema.json#/$defs/cellsSheetLayoutInfo/properties/fitToWidth")]
     [Minimum(0)] public int? FitToWidth { get; init; }
 
     /// <summary>The number of pages the printout fits down; 0 is automatic.</summary>
-    [ReadBack("workbook-info.schema.json#/$defs/sheetLayoutInfo/properties/fitToHeight")]
+    [ReadBack("inspect-result.schema.json#/$defs/cellsSheetLayoutInfo/properties/fitToHeight")]
     [Minimum(0)] public int? FitToHeight { get; init; }
 
     /// <summary>The zoom percentage; ignored when the printout fits to pages.</summary>
-    [ReadBack("workbook-info.schema.json#/$defs/sheetLayoutInfo/properties/scale")]
+    [ReadBack("inspect-result.schema.json#/$defs/cellsSheetLayoutInfo/properties/scale")]
     [Minimum(10), Maximum(400)] public int? Scale { get; init; }
 
     [NotReadBack]
-    public Margins? Margins { get; init; }
+    public CellsMargins? Margins { get; init; }
 
     /// <summary>The center header text, with Excel codes such as &amp;P (page) and &amp;N (pages).</summary>
-    [ReadBack("workbook-info.schema.json#/$defs/sheetLayoutInfo/properties/header")]
+    [ReadBack("inspect-result.schema.json#/$defs/cellsSheetLayoutInfo/properties/header")]
     public string? Header { get; init; }
 
     /// <summary>The center footer text, with Excel codes such as &amp;P and &amp;N.</summary>
-    [ReadBack("workbook-info.schema.json#/$defs/sheetLayoutInfo/properties/footer")]
+    [ReadBack("inspect-result.schema.json#/$defs/cellsSheetLayoutInfo/properties/footer")]
     public string? Footer { get; init; }
 }
 
 /// <summary>Page margins in inches; only the sides present are applied, and at least one is set.</summary>
 [MinProperties(1)]
-public sealed record Margins
+public sealed record CellsMargins
 {
     [Minimum(0)] public double? Top { get; init; }
 
@@ -129,15 +129,8 @@ public sealed record Margins
     [Minimum(0)] public double? Footer { get; init; }
 }
 
-/// <summary>Accepted values of <see cref="SetPageSetupOp.Orientation"/>.</summary>
-public static class PageOrientations
-{
-    public const string Portrait = "portrait";
-    public const string Landscape = "landscape";
-}
-
 /// <summary>Accepted values of <see cref="SetPageSetupOp.PaperSize"/>.</summary>
-public static class PaperSizes
+public static class CellsPaperSizes
 {
     public const string Letter = "letter";
     public const string Legal = "legal";
@@ -155,15 +148,15 @@ public static class PaperSizes
 public sealed record SetPrintAreaOp : CellsOp
 {
     /// <summary>The print area, such as A1:H50.</summary>
-    [ReadBack("workbook-info.schema.json#/$defs/sheetLayoutInfo/properties/printArea")]
+    [ReadBack("inspect-result.schema.json#/$defs/cellsSheetLayoutInfo/properties/printArea")]
     [A1Range] public string? Range { get; init; }
 
     /// <summary>The rows repeated on every printed page, such as 1:2 or 1.</summary>
-    [ReadBack("workbook-info.schema.json#/$defs/sheetLayoutInfo/properties/titleRows")]
+    [ReadBack("inspect-result.schema.json#/$defs/cellsSheetLayoutInfo/properties/titleRows")]
     [A1RowBand] public string? TitleRows { get; init; }
 
     /// <summary>The columns repeated on every printed page, such as A:B or A.</summary>
-    [ReadBack("workbook-info.schema.json#/$defs/sheetLayoutInfo/properties/titleColumns")]
+    [ReadBack("inspect-result.schema.json#/$defs/cellsSheetLayoutInfo/properties/titleColumns")]
     [A1ColumnBand] public string? TitleColumns { get; init; }
 
     /// <inheritdoc />

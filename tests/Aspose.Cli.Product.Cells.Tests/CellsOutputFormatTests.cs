@@ -25,7 +25,7 @@ public sealed class CellsOutputFormatTests : IClassFixture<CellsFixture>
             workbook.Save(path, format);
         }
 
-        EditResult result = Apply(path, path);
+        CellsEditResult result = Apply(path, path);
 
         Assert.Equal(formatId, result.Output!.Format);
         Assert.Equal(detected, FileFormatUtil.DetectFileFormat(path).FileFormatType);
@@ -38,7 +38,7 @@ public sealed class CellsOutputFormatTests : IClassFixture<CellsFixture>
     {
         string output = _fixture.Temp.File("report.htm");
 
-        EditResult result = Apply(_fixture.CreateSalesWorkbook("htm-source.xlsx"), output);
+        CellsEditResult result = Apply(_fixture.CreateSalesWorkbook("htm-source.xlsx"), output);
 
         Assert.Equal("html", result.Output!.Format);
         Assert.Contains("edited", File.ReadAllText(output), StringComparison.Ordinal);
@@ -49,7 +49,7 @@ public sealed class CellsOutputFormatTests : IClassFixture<CellsFixture>
     {
         string output = _fixture.Temp.File("converted.xltx");
 
-        ConvertResult result = CellsConvert.Run(_fixture.Session, new ConvertRequest
+        CellsConvertResult result = CellsConvert.Run(_fixture.Session, new CellsConvertRequest
         {
             Input = _fixture.CreateSalesWorkbook("convert-source.xlsx"),
             Output = TestOutput.At(output, format: "xltx", overwrite: true),
@@ -95,7 +95,7 @@ public sealed class CellsOutputFormatTests : IClassFixture<CellsFixture>
         Assert.Empty(Directory.GetFileSystemEntries(workspace.Path));
     }
 
-    private EditResult Apply(string source, string output) =>
+    private CellsEditResult Apply(string source, string output) =>
         CellsEdit.Run(_fixture.Session,
-            new EditRequest { Input = source, Batch = CellsOp.Catalog.Parse<CellsOpsBatch>(Edit, Aspose.Cli.Generated.ProductJsonContext.Definition), Output = TestOutput.At(output, overwrite: true) });
+            new CellsEditRequest { Input = source, Batch = CellsOp.Catalog.Parse<CellsOpsBatch>(Edit, Aspose.Cli.Generated.ProductJsonContext.Definition), Output = TestOutput.At(output, overwrite: true) });
 }

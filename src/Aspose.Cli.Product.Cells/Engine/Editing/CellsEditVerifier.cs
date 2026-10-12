@@ -25,9 +25,9 @@ internal sealed class CellsEditVerifier(CellsWorkbookLoader loader, ResourceBudg
         using LoadedWorkbook baseline = loader.OpenPublishedCandidate(baselinePath, inputPassword, originalPath);
         using LoadedWorkbook candidate = loader.OpenPublishedCandidate(candidatePath, outputPassword);
         IReadOnlyList<CellsEditTarget> footprint = OpsFootprint.Collect(batch);
-        var direct = new List<VerifiedCellChange>();
-        var formulaResults = new List<VerifiedCellChange>();
-        var other = new List<VerificationOtherChange>();
+        var direct = new List<CellsVerifiedCellChange>();
+        var formulaResults = new List<CellsVerifiedCellChange>();
+        var other = new List<CellsVerificationOtherChange>();
         var issues = new List<VerificationIssue>();
         issues.AddRange(CompletenessIssues(sourceWarnings));
         issues.AddRange(CompletenessIssues(candidate.Warnings()));
@@ -36,7 +36,7 @@ internal sealed class CellsEditVerifier(CellsWorkbookLoader loader, ResourceBudg
         // The change lists are evidence capped at MaxDiffs cells (Truncated); they decide nothing,
         // so a large edit such as a sort still passes when the checks below find no issue.
         Classify(diff, footprint, direct, formulaResults, other);
-        (IReadOnlyList<CellError> errors, int errorTotal) = InfoProjection.ScanFormulaErrors(budgets, candidate.Workbook);
+        (IReadOnlyList<CellsCellError> errors, int errorTotal) = InfoProjection.ScanFormulaErrors(budgets, candidate.Workbook);
         errors = errors.Select(error => IsPreexisting(error, baseline.Workbook, candidate.Workbook)
             ? error with { Preexisting = true } : error).ToArray();
         bool errorsCapped = errorTotal > errors.Count;
@@ -68,7 +68,7 @@ internal sealed class CellsEditVerifier(CellsWorkbookLoader loader, ResourceBudg
                 .Where(static outcome => outcome.Status == OpStatuses.Ok)
                 .Select(static outcome => outcome.Id)
                 .ToHashSet(StringComparer.Ordinal)),
-            RequestedTargets = footprint.Select(static target => new VerificationTarget { Sheet = target.Sheet, Range = target.Range }).ToArray(),
+            RequestedTargets = footprint.Select(static target => new CellsVerificationTarget { Sheet = target.Sheet, Range = target.Range }).ToArray(),
             DirectChanges = direct, FormulaResultChanges = formulaResults, OtherChanges = other,
             FormulaErrors = errors,
             Truncated = diff.Truncated, Issues = issues,
@@ -82,21 +82,21 @@ internal sealed class CellsEditVerifier(CellsWorkbookLoader loader, ResourceBudg
     private static void Classify(
         DiffComparer.Result diff,
         IReadOnlyList<CellsEditTarget> targets,
-        ICollection<VerifiedCellChange> direct,
-        ICollection<VerifiedCellChange> formulaResults,
-        ICollection<VerificationOtherChange> other)
+        ICollection<CellsVerifiedCellChange> direct,
+        ICollection<CellsVerifiedCellChange> formulaResults,
+        ICollection<CellsVerificationOtherChange> other)
     {
-        foreach (SheetDiff sheet in diff.Sheets ?? [])
+        foreach (CellsSheetDiff sheet in diff.Sheets ?? [])
         {
-            if (sheet.Status != SheetChangeStatuses.Modified)
+            if (sheet.Status != CellsSheetChangeStatuses.Modified)
             {
-                other.Add(new VerificationOtherChange { Sheet = sheet.Name, Status = sheet.Status });
+                other.Add(new CellsVerificationOtherChange { Sheet = sheet.Name, Status = sheet.Status });
             }
 
             // A renamed sheet lists its cell changes like a modified one.
-            foreach (CellDiff cell in sheet.Cells ?? [])
+            foreach (CellsCellDiff cell in sheet.Cells ?? [])
             {
-                var change = new VerifiedCellChange
+                var change = new CellsVerifiedCellChange
                 {
                     Sheet = sheet.Name,
                     Cell = cell.Cell,
@@ -114,7 +114,7 @@ internal sealed class CellsEditVerifier(CellsWorkbookLoader loader, ResourceBudg
                 }
                 else
                 {
-                    other.Add(new VerificationOtherChange
+                    other.Add(new CellsVerificationOtherChange
                     {
                         Sheet = sheet.Name,
                         Status = sheet.Status,
@@ -157,7 +157,7 @@ internal sealed class CellsEditVerifier(CellsWorkbookLoader loader, ResourceBudg
     }
 
     /// <summary>Whether the input cell had the same formula and the same error value.</summary>
-    private static bool IsPreexisting(CellError error, Workbook baseline, Workbook candidate)
+    private static bool IsPreexisting(CellsCellError error, Workbook baseline, Workbook candidate)
     {
         CellRef address = A1.ParseCell(error.Cell);
         Cell? before = baseline.Worksheets[error.Sheet]?.Cells.CheckCell(address.Row, address.Column);
@@ -167,7 +167,7 @@ internal sealed class CellsEditVerifier(CellsWorkbookLoader loader, ResourceBudg
             && string.Equals(before.Formula, after.Formula, StringComparison.Ordinal);
     }
 
-    private static bool HasUnchangedFormulaWithChangedResult(CellDiff cell) =>
+    private static bool HasUnchangedFormulaWithChangedResult(CellsCellDiff cell) =>
         cell.Left?.F is { } formula &&
         string.Equals(formula, cell.Right?.F, StringComparison.Ordinal);
 
