@@ -7,12 +7,11 @@ namespace Aspose.Cli.Product.Cells.Engine.Editing;
 
 /// <summary>
 /// The value- and range-level ops: writing values and formulas, clearing,
-/// copying, formatting and merging. Each returns the count of cells it touched
-/// where that is meaningful.
+/// copying, formatting and merging.
 /// </summary>
 internal static class CellOps
 {
-    public static long SetValues(Worksheet sheet, SetValuesOp op)
+    public static void SetValues(Worksheet sheet, SetValuesOp op)
     {
         CellRef anchor = Range(op.Range).Start;
         for (int row = 0; row < op.Values.Count; row++)
@@ -23,15 +22,13 @@ internal static class CellOps
                 ValueWriter.Write(sheet.Cells[anchor.Row + row, anchor.Column + column], line[column]);
             }
         }
-
-        return (long)op.Values.Count * op.Values[0].Count;
     }
 
-    public static long SetFormula(Worksheet sheet, SetFormulaOp op, out Cell anchor)
+    public static void SetFormula(Worksheet sheet, SetFormulaOp op, out Cell anchor)
     {
         try
         {
-            return WriteFormula(sheet, op, out anchor);
+            WriteFormula(sheet, op, out anchor);
         }
         catch (CellsException exception) when (exception.Code == ExceptionType.Formula)
         {
@@ -44,7 +41,7 @@ internal static class CellOps
     internal const string EnglishFormulaHint = "Write the formula as Excel's English formula bar shows it: English function names and commas "
         + "between arguments, as in =SUM(B2:B10).";
 
-    private static long WriteFormula(Worksheet sheet, SetFormulaOp op, out Cell anchor)
+    private static void WriteFormula(Worksheet sheet, SetFormulaOp op, out Cell anchor)
     {
         // Like Excel 365, every cell gets a dynamic-array formula: array arithmetic inside a
         // function (MAX(B2*rates-deductions)) evaluates over whole ranges rather than by implicit
@@ -68,11 +65,9 @@ internal static class CellOps
                 }
             }
         }
-
-        return range.CellCount;
     }
 
-    public static long Clear(Worksheet sheet, ClearRangeOp op)
+    public static void Clear(Worksheet sheet, ClearRangeOp op)
     {
         RangeRef range = Range(op.Range);
         CellArea area = CellArea.CreateCellArea(
@@ -90,11 +85,9 @@ internal static class CellOps
                 sheet.Cells.ClearContents(area);
                 break;
         }
-
-        return range.CellCount;
     }
 
-    public static long Copy(Worksheet sheet, CopyRangeOp op)
+    public static void Copy(Worksheet sheet, CopyRangeOp op)
     {
         (Worksheet fromSheet, RangeRef from) = Sheets.ResolveRange(sheet, op.From);
         (Worksheet toSheet, RangeRef to) = Sheets.ResolveRange(sheet, op.To);
@@ -105,11 +98,9 @@ internal static class CellOps
         CellsRange destination = toSheet.Cells.CreateRange(
             anchor.Row, anchor.Column, from.RowCount, from.ColumnCount);
         destination.Copy(source);
-
-        return from.CellCount;
     }
 
-    public static long Format(Workbook workbook, Worksheet sheet, FormatRangeOp op)
+    public static void Format(Workbook workbook, Worksheet sheet, FormatRangeOp op)
     {
         RangeRef range = Range(op.Range);
 
@@ -135,15 +126,13 @@ internal static class CellOps
                 }
             }
 
-            return range.CellCount;
+            return;
         }
 
         (Style style, StyleFlag flag) = StyleWriter.Build(workbook, op.Style);
         CellsRange target = sheet.Cells.CreateRange(
             range.Start.Row, range.Start.Column, range.RowCount, range.ColumnCount);
         target.ApplyStyle(style, flag);
-
-        return range.CellCount;
     }
 
     private static bool IntersectsPivot(Worksheet sheet, RangeRef range)
@@ -161,7 +150,7 @@ internal static class CellOps
         return false;
     }
 
-    public static long Merge(Worksheet sheet, string rangeText, bool merged)
+    public static void Merge(Worksheet sheet, string rangeText, bool merged)
     {
         RangeRef range = Range(rangeText);
         if (merged)
@@ -172,8 +161,6 @@ internal static class CellOps
         {
             sheet.Cells.UnMerge(range.Start.Row, range.Start.Column, range.RowCount, range.ColumnCount);
         }
-
-        return range.CellCount;
     }
 
     private static RangeRef Range(string text) => A1.ParseRange(text).Range;

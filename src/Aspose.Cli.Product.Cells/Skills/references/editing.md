@@ -268,6 +268,11 @@ show in renders and reads; give the location column a header.
   writes.
 - `set_hyperlink.target` is a cell or range, sheet-qualified when it lies on
   another sheet; defined names are not accepted.
+- `set_validation` replaces the validation its range had and `set_hyperlink`
+  the link that covered its cell, so repeating one leaves one. `add_comment`
+  on a cell that already has a comment adds its text as a new paragraph;
+  `set_comment` replaces the text of a comment the cell has, and on a cell
+  without one fails with `COMMENT_NOT_FOUND`: add it with `add_comment`.
 - `insert_image` refuses an SVG that names a network address, and any SVGZ,
   with `FEATURE_UNSUPPORTED`, because the engine would fetch the address.
   Embed the SVG's images or supply a raster image.
@@ -311,14 +316,32 @@ it drops the encryption with an `ENCRYPTION_REMOVED` warning, and
 `--encrypt-env` on it is `OPTION_INVALID`. A single-sheet output of a multi-sheet workbook reports
 `SHEETS_DROPPED`. `cells create` and `cells convert` follow the same rules.
 
+## Reading the outcome
+
+Each applied operation's `itemsAffected` counts the objects it changed, and
+`targets` names them as `<unit>/<address>`: `cell/Sales!B2` (more than 100
+cells read `cell/all`), `sheet/Sales`, `row/Sales!5`, `column/Sales!C`,
+`merge/Sales!A1:C1`, `comment/Sales!B2`, `hyperlink/Sales!B2`,
+`chart/Sales/1`, `image/Sales/1`, `validation/Sales!B2:B9`, `table/SalesTable`,
+`pivot/Sales/PivotTable1`, `name/TaxRate` or `workbook/default-font`. A sheet
+or object name keeps its spelling, apostrophes and `!` included, except that
+`/`, `%`, control characters and leading or trailing spaces are written as
+`%XX` of their UTF-8 bytes: a sheet named ` Q3 100%` is `sheet/%20Q3 100%25`.
+An operation that changed nothing counts 0 and warns `OP_NO_EFFECT`.
+Inserting or deleting rows or columns counts each line it added or removed
+and each object anchored on the sheet that moved or resized with them, such
+as a chart or a comment; the cells and formulas that only shift with their
+lines are not counted.
+
 ## Built-in verification
 
 `cells edit --verify` compares a temporary snapshot of the input with the
 staged output before publishing and reports `verification`
 (`aspose-cli schema v2/cells/edit-result`). `checkedOps` lists the operations
 whose changes the comparison read back: those that write cell values or
-formulas, or add, remove or rename a sheet, on a named sheet among the first
-16 targets of the batch. Formula errors, sheet loss, grid truncation,
+formulas, or add, remove or rename a sheet, among the first 16 targets of the
+batch. An operation that names no sheet is checked on the sheet that was
+active when the batch started. Formula errors, sheet loss, grid truncation,
 imported formulas whose results changed or an incomplete scan keep the edited
 file and exit 8 with `verification.ok: false`; each issue's code is one that
 `aspose-cli capabilities cells` lists. `FORMULA_ERRORS` is the common one:

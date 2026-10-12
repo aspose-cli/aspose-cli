@@ -17,11 +17,11 @@ public sealed record AddConditionalFormatOp : CellsSheetOp
     /// <summary>The range to format, such as B2:B100.</summary>
     [A1Range] public required string Range { get; init; }
 
-    [NotReadBack]
+    [ReadBack("inspect-result.schema.json#/$defs/cellsConditionalFormatInfo/properties/rule")]
     public required CellsConditionalRule Rule { get; init; }
 
     /// <summary>The style matching cells receive.</summary>
-    [NotReadBack]
+    [ReadBack("inspect-result.schema.json#/$defs/cellsConditionalFormatInfo/properties/style")]
     public CellsConditionalStyle? Style { get; init; }
 
     /// <inheritdoc />

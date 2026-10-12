@@ -25,7 +25,8 @@ internal static class InspectCommand
         {
             [CellsInspectDetails.Names] = "defined names",
             [CellsInspectDetails.Errors] = "formula-error scan",
-            [CellsInspectDetails.Layout] = "frozen panes, outline groups, filter, print area and page setup of each sheet",
+            [CellsInspectDetails.ConditionalFormats] = "conditional-formatting rules",
+            [CellsInspectDetails.Layout] = "view, tab color, frozen panes, sizes, outline groups, filter, protection, print area and page setup of each sheet",
         });
         return new(
             "inspect",
@@ -123,8 +124,18 @@ internal static class InspectCommand
             static item => [item.Sheet, item.Name, item.Range]);
         ResultText.Table(surface, "charts", workbook.Charts, ["sheet", "index", "name", "kind"],
             static chart => [chart.Sheet, TableText.Int(chart.Index), chart.Name, chart.Kind]);
-        ResultText.Table(surface, "pivots", workbook.Pivots, ["sheet", "name", "range"],
-            static pivot => [pivot.Sheet, pivot.Name, pivot.Range]);
+        ResultText.Table(surface, "pivots", workbook.Pivots, ["sheet", "name", "range", "source"],
+            static pivot => [pivot.Sheet, pivot.Name, pivot.Range, pivot.SourceRange]);
+        ResultText.Table(surface, "conditional formats", workbook.ConditionalFormats, ["sheet", "range", "kind"],
+            static format => [format.Sheet, format.Range, format.Rule.Kind]);
+        ResultText.Table(surface, "sparklines", workbook.Sparklines, ["sheet", "kind", "data", "location"],
+            static group => [group.Sheet, group.Kind, group.DataRange, group.Location]);
+        ResultText.Table(surface, "images", workbook.Images, ["sheet", "index", "at", "width", "height"],
+            static image => [image.Sheet, TableText.Int(image.Index), image.At, TableText.Points(image.Width), TableText.Points(image.Height)]);
+        ResultText.Table(surface, "comments", workbook.Comments, ["sheet", "cell", "author", "text"],
+            static comment => [comment.Sheet, comment.Cell, comment.Author, comment.Text]);
+        ResultText.Table(surface, "hyperlinks", workbook.Hyperlinks, ["sheet", "range", "link", "display"],
+            static link => [link.Sheet, link.Range, link.Url ?? link.Target, link.Display]);
         ResultText.Table(surface, "layouts", workbook.Layouts,
             ["sheet", "freeze", "row groups", "column groups", "filter", "print area", "titles", "page", "header", "footer"],
             static layout =>

@@ -46,6 +46,7 @@ internal static class InfoProjection
             StructurePasswordProtected = Sheets.StructurePasswordProtected(workbook),
             Author = Normalize(workbook.BuiltInDocumentProperties.Author),
             Title = Normalize(workbook.BuiltInDocumentProperties.Title),
+            DefaultFont = new CellsDefaultFontInfo { Font = workbook.DefaultStyle.Font.Name, FontSize = workbook.DefaultStyle.Font.DoubleSize },
             DefinedNames = WantsDetail(request, CellsInspectDetails.Names) ? BuildDefinedNames(workbook) : null,
             FormulaErrors = formulaErrors,
             Fonts = WantsDetail(request, CellsInspectDetails.Fonts) ? FontOps.UsedFonts(workbook) : null,
@@ -53,6 +54,11 @@ internal static class InfoProjection
             Charts = WantsDetail(request, CellsInspectDetails.Charts) ? BuildCharts(workbook) : null,
             Pivots = WantsDetail(request, CellsInspectDetails.Pivots) ? BuildPivots(workbook) : null,
             Validations = WantsDetail(request, CellsInspectDetails.Validation) ? BuildValidations(workbook) : null,
+            ConditionalFormats = WantsDetail(request, CellsInspectDetails.ConditionalFormats) ? ObjectProjection.ConditionalFormats(budgets, workbook) : null,
+            Sparklines = WantsDetail(request, CellsInspectDetails.Sparklines) ? ObjectProjection.Sparklines(budgets, workbook) : null,
+            Images = WantsDetail(request, CellsInspectDetails.Images) ? ObjectProjection.Images(workbook) : null,
+            Comments = WantsDetail(request, CellsInspectDetails.Comments) ? ObjectProjection.Comments(budgets, workbook) : null,
+            Hyperlinks = WantsDetail(request, CellsInspectDetails.Hyperlinks) ? ObjectProjection.Hyperlinks(budgets, workbook) : null,
             Layouts = WantsDetail(request, CellsInspectDetails.Layout) ? SheetLayoutProjection.Build(budgets, workbook) : null,
         };
 
@@ -166,14 +172,7 @@ internal static class InfoProjection
         {
             foreach (var table in sheet.ListObjects)
             {
-                tables.Add(new CellsTableInfo
-                {
-                    Sheet = sheet.Name,
-                    Name = table.DisplayName,
-                    Range = A1.FormatRange(new RangeRef(
-                        new CellRef(table.StartRow, table.StartColumn),
-                        new CellRef(table.EndRow, table.EndColumn))),
-                });
+                tables.Add(ObjectProjection.Table(sheet, table));
             }
         }
 
@@ -188,13 +187,7 @@ internal static class InfoProjection
             for (int index = 0; index < sheet.Charts.Count; index++)
             {
                 Chart chart = sheet.Charts[index];
-                charts.Add(new CellsChartInfo
-                {
-                    Sheet = sheet.Name,
-                    Index = index + 1,
-                    Name = chart.Name,
-                    Kind = VocabularyName(chart.Type),
-                });
+                charts.Add(ObjectProjection.Chart(sheet, chart, index + 1, VocabularyName(chart.Type)));
             }
         }
 
@@ -208,7 +201,7 @@ internal static class InfoProjection
         {
             foreach (var pivot in sheet.PivotTables)
             {
-                pivots.Add(new CellsPivotInfo { Sheet = sheet.Name, Name = pivot.Name, Range = FormatArea(pivot.TableRange1) });
+                pivots.Add(ObjectProjection.Pivot(sheet, pivot, FormatArea(pivot.TableRange1)));
             }
         }
 
@@ -231,12 +224,8 @@ internal static class InfoProjection
                         return validations;
                     }
 
-                    validations.Add(new CellsValidationInfo
-                    {
-                        Sheet = sheet.Name,
-                        Range = FormatArea(area),
-                        Kind = VocabularyName(validation.Type, JsonNamingPolicy.KebabCaseLower),
-                    });
+                    validations.Add(ObjectProjection.Validation(
+                        sheet, validation, area, VocabularyName(validation.Type, JsonNamingPolicy.KebabCaseLower)));
                 }
             }
         }

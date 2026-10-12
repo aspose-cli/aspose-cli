@@ -11,7 +11,7 @@ namespace Aspose.Cli.Product.Cells.Engine.Editing;
 /// </summary>
 internal static class ProtectOps
 {
-    public static long? ProtectSheet(Worksheet sheet, ProtectSheetOp op, IReadOnlyDictionary<string, Secret>? secrets)
+    public static void ProtectSheet(Worksheet sheet, ProtectSheetOp op, IReadOnlyDictionary<string, Secret>? secrets)
     {
         string? password = OperationSecrets.Resolve(secrets, op.PasswordEnv)?.Reveal();
         if (password is null)
@@ -28,11 +28,9 @@ internal static class ProtectOps
         {
             Allow(protection, action);
         }
-
-        return null;
     }
 
-    public static long? UnprotectSheet(Worksheet sheet, UnprotectSheetOp op, IReadOnlyDictionary<string, Secret>? secrets)
+    public static void UnprotectSheet(Worksheet sheet, UnprotectSheetOp op, IReadOnlyDictionary<string, Secret>? secrets)
     {
         string? password = OperationSecrets.Resolve(secrets, op.PasswordEnv)?.Reveal();
         Unprotect(() =>
@@ -46,24 +44,21 @@ internal static class ProtectOps
                 sheet.Unprotect(password);
             }
         }, $"sheet '{sheet.Name}'", password);
-        return null;
     }
 
-    public static long? ProtectWorkbook(Workbook workbook, ProtectWorkbookOp op, IReadOnlyDictionary<string, Secret>? secrets)
+    public static void ProtectWorkbook(Workbook workbook, ProtectWorkbookOp op, IReadOnlyDictionary<string, Secret>? secrets)
     {
         OperationInvalidException.Require(
             !Sheets.StructurePasswordProtected(workbook),
             "the workbook structure is already protected with a password",
             "Run unprotect_workbook with that password's passwordEnv first, then protect_workbook.");
         workbook.Protect(ProtectionType.Structure, OperationSecrets.Resolve(secrets, op.PasswordEnv)?.Reveal());
-        return null;
     }
 
-    public static long? UnprotectWorkbook(Workbook workbook, UnprotectWorkbookOp op, IReadOnlyDictionary<string, Secret>? secrets)
+    public static void UnprotectWorkbook(Workbook workbook, UnprotectWorkbookOp op, IReadOnlyDictionary<string, Secret>? secrets)
     {
         string? password = OperationSecrets.Resolve(secrets, op.PasswordEnv)?.Reveal();
         Unprotect(() => workbook.Unprotect(password ?? string.Empty), "the workbook structure", password);
-        return null;
     }
 
     /// <summary>Reports a password the protection does not accept as a password error, not an engine failure.</summary>
@@ -79,33 +74,26 @@ internal static class ProtectOps
         }
     }
 
-    private static void Allow(Protection protection, string action)
-    {
-        switch (action)
-        {
-            case CellsProtectActions.FormatCells:
-                protection.AllowFormattingCell = true;
-                break;
-            case CellsProtectActions.InsertRows:
-                protection.AllowInsertingRow = true;
-                break;
-            case CellsProtectActions.InsertColumns:
-                protection.AllowInsertingColumn = true;
-                break;
-            case CellsProtectActions.DeleteRows:
-                protection.AllowDeletingRow = true;
-                break;
-            case CellsProtectActions.DeleteColumns:
-                protection.AllowDeletingColumn = true;
-                break;
-            case CellsProtectActions.Sort:
-                protection.AllowSorting = true;
-                break;
-            case CellsProtectActions.AutoFilter:
-                protection.AllowFiltering = true;
-                break;
-            default:
-                break; // the parser guarantees a known action
-        }
-    }
+    /// <summary>
+    /// Each protect_sheet action with the protection flag that allows it, in the order the
+    /// vocabulary lists them: protect_sheet sets the flags, a read lists the actions set.
+    /// </summary>
+    private static readonly (string Action, Func<Protection, bool> Get, Action<Protection> Set)[] Actions =
+    [
+        (CellsProtectActions.FormatCells, static p => p.AllowFormattingCell, static p => p.AllowFormattingCell = true),
+        (CellsProtectActions.InsertRows, static p => p.AllowInsertingRow, static p => p.AllowInsertingRow = true),
+        (CellsProtectActions.InsertColumns, static p => p.AllowInsertingColumn, static p => p.AllowInsertingColumn = true),
+        (CellsProtectActions.DeleteRows, static p => p.AllowDeletingRow, static p => p.AllowDeletingRow = true),
+        (CellsProtectActions.DeleteColumns, static p => p.AllowDeletingColumn, static p => p.AllowDeletingColumn = true),
+        (CellsProtectActions.Sort, static p => p.AllowSorting, static p => p.AllowSorting = true),
+        (CellsProtectActions.AutoFilter, static p => p.AllowFiltering, static p => p.AllowFiltering = true),
+    ];
+
+    /// <summary>The protect_sheet actions a protection allows, in the order the vocabulary lists them.</summary>
+    internal static IReadOnlyList<string> Allowed(Protection protection) =>
+        [.. Actions.Where(item => item.Get(protection)).Select(static item => item.Action)];
+
+    // The parser guarantees a known action.
+    private static void Allow(Protection protection, string action) =>
+        Actions.Single(item => item.Action == action).Set(protection);
 }

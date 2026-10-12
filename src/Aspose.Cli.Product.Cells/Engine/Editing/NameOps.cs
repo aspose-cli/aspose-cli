@@ -7,15 +7,14 @@ namespace Aspose.Cli.Product.Cells.Engine.Editing;
 /// <summary>Workbook-scoped defined names (named ranges).</summary>
 internal static class NameOps
 {
-    public static long? DefineName(Workbook workbook, DefineNameOp op)
+    public static void DefineName(Workbook workbook, DefineNameOp op)
     {
         int index = workbook.Worksheets.Names.Add(op.Name);
         Name name = workbook.Worksheets.Names[index];
         name.RefersTo = op.RefersTo.StartsWith('=') ? op.RefersTo : "=" + op.RefersTo;
-        return null;
     }
 
-    public static long? DeleteName(Workbook workbook, DeleteNameOp op)
+    public static void DeleteName(Workbook workbook, DeleteNameOp op)
     {
         if (workbook.Worksheets.Names[op.Name] is null)
         {
@@ -23,7 +22,6 @@ internal static class NameOps
         }
 
         workbook.Worksheets.Names.Remove(op.Name);
-        return null;
     }
 
     /// <summary>

@@ -61,7 +61,7 @@ public sealed record ResizeRowsOp : CellsSheetOp
     [Minimum(1)] public int? Last { get; init; }
 
     /// <summary>The height in points; omitted auto-fits.</summary>
-    [NotReadBack]
+    [ReadBack("inspect-result.schema.json#/$defs/cellsRowHeightInfo/properties/height")]
     [Minimum(0)] public double? Height { get; init; }
 
     /// <inheritdoc />
@@ -82,7 +82,7 @@ public sealed record ResizeColumnsOp : CellsSheetOp
 
     /// <summary>The width in characters of the default font's digit 0; omitted auto-fits.</summary>
     [MistakenFor("width")]
-    [NotReadBack]
+    [ReadBack("inspect-result.schema.json#/$defs/cellsColumnWidthInfo/properties/widthChars")]
     [Minimum(0)] public double? WidthChars { get; init; }
 
     /// <inheritdoc />

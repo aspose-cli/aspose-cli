@@ -5,12 +5,14 @@ namespace Aspose.Cli.Product.Cells.Engine.Editing;
 /// <summary>Data validation: dropdown lists and input constraints.</summary>
 internal static class ValidationOps
 {
-    public static long? SetValidation(Worksheet sheet, SetValidationOp op)
+    public static void SetValidation(Worksheet sheet, SetValidationOp op)
     {
         RangeRef range = A1.ParseRange(op.Range).Range;
         CellArea area = CellArea.CreateCellArea(
             range.Start.Row, range.Start.Column, range.End.Row, range.End.Column);
 
+        // set_ replaces: the range's earlier validation gives way, so a repeat leaves one.
+        sheet.Validations.RemoveArea(area);
         Validation validation = sheet.Validations[sheet.Validations.Add(area)];
         validation.IgnoreBlank = op.AllowBlank;
 
@@ -60,16 +62,13 @@ internal static class ValidationOps
             validation.ShowError = true;
             validation.ErrorMessage = error;
         }
-
-        return range.CellCount;
     }
 
-    public static long? ClearValidation(Worksheet sheet, ClearValidationOp op)
+    public static void ClearValidation(Worksheet sheet, ClearValidationOp op)
     {
         RangeRef range = A1.ParseRange(op.Range).Range;
         sheet.Validations.RemoveArea(CellArea.CreateCellArea(
             range.Start.Row, range.Start.Column, range.End.Row, range.End.Column));
-        return range.CellCount;
     }
 
     private static ValidationType ToType(string type) => type switch
@@ -81,6 +80,17 @@ internal static class ValidationOps
         _ => throw new ArgumentOutOfRangeException(
             nameof(type), type, "Validation type is missing from the engine mapper."),
     };
+
+    /// <summary>The set_validation operator of an engine comparison, or null for none.</summary>
+    internal static string? FromOperator(OperatorType type) =>
+        Operators.FirstOrDefault(name => ToOperator(name) == type);
+
+    private static readonly string[] Operators =
+    [
+        CellsValidationOperators.Between, CellsValidationOperators.NotBetween, CellsValidationOperators.Equal,
+        CellsValidationOperators.NotEqual, CellsValidationOperators.GreaterThan, CellsValidationOperators.LessThan,
+        CellsValidationOperators.GreaterOrEqual, CellsValidationOperators.LessOrEqual,
+    ];
 
     internal static OperatorType ToOperator(string op) => op switch
     {

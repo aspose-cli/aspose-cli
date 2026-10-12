@@ -18,7 +18,7 @@ internal static class LookOps
     /// reopen, unstyled cells pick up the new font, cells with an explicitly
     /// set font keep it, and stored column-width unit values are unchanged.
     /// </summary>
-    public static long? SetDefaultFont(Workbook workbook, SetDefaultFontOp op)
+    public static void SetDefaultFont(Workbook workbook, SetDefaultFontOp op)
     {
         Style style = workbook.DefaultStyle;
         style.Font.Name = op.Font;
@@ -28,7 +28,6 @@ internal static class LookOps
         }
 
         workbook.DefaultStyle = style;
-        return null;
     }
 
     /// <summary>
@@ -36,22 +35,19 @@ internal static class LookOps
     /// removes the stored tab-color element entirely, and a never-set tab reads
     /// back as <c>Empty</c> too (probe-verified) — a clean tri-state.
     /// </summary>
-    public static long? SetTabColor(Worksheet sheet, SetTabColorOp op)
+    public static void SetTabColor(Worksheet sheet, SetTabColorOp op)
     {
         sheet.TabColor = StyleWriter.ParseHex(op.Color);
-        return null;
     }
 
-    /// <summary>Removes the tab color; 1 when the sheet had one, null when there was nothing to remove.</summary>
-    public static long? ClearTabColor(Worksheet sheet)
+    /// <summary>Removes the tab color.</summary>
+    public static void ClearTabColor(Worksheet sheet)
     {
-        bool had = !sheet.TabColor.IsEmpty;
         sheet.TabColor = System.Drawing.Color.Empty;
-        return had ? 1 : null;
     }
 
     /// <summary>Applies the view fields that are present; the rest stay as they are.</summary>
-    public static long? SetSheetView(Worksheet sheet, SetSheetViewOp op)
+    public static void SetSheetView(Worksheet sheet, SetSheetViewOp op)
     {
         if (op.Gridlines is { } gridlines)
         {
@@ -69,7 +65,5 @@ internal static class LookOps
         {
             sheet.IsRowColumnHeadersVisible = headings;
         }
-
-        return null;
     }
 }

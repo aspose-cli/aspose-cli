@@ -27,7 +27,7 @@ internal static class ChartPivotOps
         ThemeColorType.Accent4, ThemeColorType.Accent5, ThemeColorType.Accent6,
     ];
 
-    public static long? CreateChart(Worksheet sheet, InsertChartOp op)
+    public static void CreateChart(Worksheet sheet, InsertChartOp op)
     {
         RangeRef placement = A1.ParseRange(op.At).Range;
         string dataRange = Sheets.Reference(sheet, op.DataRange);
@@ -52,10 +52,9 @@ internal static class ChartPivotOps
         ApplyModernDefaults(chart, op.Kind, sheet.Workbook);
         ApplyCosmetics(chart, op.Legend, op.AxisTitles, op.SeriesColors, op.DataLabels);
         EnsureHonestValueAxis(chart);
-        return null;
     }
 
-    public static long? CreatePivot(Worksheet sheet, InsertPivotOp op)
+    public static void CreatePivot(Worksheet sheet, InsertPivotOp op)
     {
         // An unqualified source refers to the op's sheet; the engine API
         // requires the qualified form.
@@ -115,7 +114,6 @@ internal static class ChartPivotOps
         }
 
         pivot.CalculateData();
-        return null;
     }
 
     /// <summary>
@@ -298,7 +296,7 @@ internal static class ChartPivotOps
         return index;
     }
 
-    public static long? RefreshPivot(Worksheet sheet, RefreshPivotOp op)
+    public static void RefreshPivot(Worksheet sheet, RefreshPivotOp op)
     {
         bool refreshedAny = false;
         foreach (PivotTable pivot in sheet.PivotTables)
@@ -354,11 +352,9 @@ internal static class ChartPivotOps
 
             throw CliErrors.NotFound(CellsDiagnostics.PivotNotFound, "pivot table", name, names);
         }
-
-        return null;
     }
 
-    public static long? UpdateChart(Worksheet sheet, SetChartOp op)
+    public static void UpdateChart(Worksheet sheet, SetChartOp op)
     {
         Chart chart = sheet.Charts[ResolveChart(sheet, op.Index, op.Name)];
         string? dataRange = op.DataRange is { } text ? Sheets.Reference(sheet, text) : null;
@@ -376,9 +372,14 @@ internal static class ChartPivotOps
             chart.Type = ToChartType(type);
         }
 
-        if (dataRange is not null)
+        // Setting the data again rebuilds the series and drops their formatting, so the range a
+        // chart already plots, the same way, is left as it is.
+        bool inRows = op.SeriesInRows is true;
+        if (dataRange is not null
+            && ObjectProjection.Chart(sheet, chart, 1, string.Empty) is var current
+            && (current.DataRange != ObjectProjection.Reference(sheet, dataRange) || current.SeriesInRows != inRows))
         {
-            chart.SetChartDataRange(dataRange, isVertical: op.SeriesInRows is not true);
+            chart.SetChartDataRange(dataRange, isVertical: !inRows);
         }
 
         if (op.Title is { } title)
@@ -390,13 +391,11 @@ internal static class ChartPivotOps
         // value-axis baseline is a creation default: an existing chart keeps the
         // axis its author chose.
         ApplyCosmetics(chart, op.Legend, op.AxisTitles, op.SeriesColors, op.DataLabels);
-        return null;
     }
 
-    public static long? DeleteChart(Worksheet sheet, DeleteChartOp op)
+    public static void DeleteChart(Worksheet sheet, DeleteChartOp op)
     {
         sheet.Charts.RemoveAt(ResolveChart(sheet, op.Index, op.Name));
-        return null;
     }
 
     /// <summary>
@@ -641,7 +640,7 @@ internal static class ChartPivotOps
     /// engine chart types in an existing workbook, not just the six the
     /// vocabulary creates.
     /// </summary>
-    private static bool IsPieFamily(ChartType type) =>
+    internal static bool IsPieFamily(ChartType type) =>
         IsFamily(type, "Pie") || IsFamily(type, "Doughnut");
 
     private static bool IsFamily(ChartType type, string prefix) =>
@@ -694,6 +693,13 @@ internal static class ChartPivotOps
         _ => throw new ArgumentOutOfRangeException(
             nameof(position), position, "Legend position is missing from the engine mapper."),
     };
+
+    /// <summary>The insert_pivot function of an engine aggregation, or null for one outside the vocabulary.</summary>
+    internal static string? FromFunction(ConsolidationFunction function) =>
+        Functions.FirstOrDefault(name => ToFunction(name) == function);
+
+    private static readonly string[] Functions =
+        [CellsPivotFunctions.Sum, CellsPivotFunctions.Count, CellsPivotFunctions.Average, CellsPivotFunctions.Max, CellsPivotFunctions.Min];
 
     private static ConsolidationFunction ToFunction(string function) => function switch
     {

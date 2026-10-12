@@ -36,7 +36,7 @@ public sealed class CellsImportCliTests : IClassFixture<CellsImportCliTests.Sour
             """).Json();
 
         Assert.Equal(
-            ["Report!B2:C6", "Report!E2:F6", "Report!H1"],
+            ["cell/Report!B2", "cell/Report!E2", "cell/Report!H1"],
             edited["applied"]!.AsArray().Select(static item => item!["targets"]![0]!.GetValue<string>()));
         Assert.Equal(source, File.ReadAllBytes(_workspace.File("eu.xlsx")));
         JsonNode read = _workspace.Run(

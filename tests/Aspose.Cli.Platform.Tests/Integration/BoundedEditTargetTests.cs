@@ -11,12 +11,11 @@ namespace Aspose.Cli.IntegrationTests;
 /// <summary>
 /// The <c>targets</c> of an edit outcome are bounded once, by the SDK, for every product: an
 /// operation that changed at most 100 parts lists each of them, and one that changed more lists
-/// the product's degenerate form instead: exactly the document root address (<c>document</c>),
-/// for Words block-range addresses (<c>blocks/1-101</c>), and for a product whose objects the
-/// SDK snapshots (PDF, Slides) one range per unit (<c>page/1-101</c>, <c>slide/1-101</c>), never
-/// a truncated prefix of the parts.
-/// PDF pages and bookmarks, slides and Word blocks are the parts a single operation can change by
-/// the hundred; a Cells target is one range address, so Cells has no case here.
+/// the product's degenerate form instead: one range per unit of the objects the SDK snapshots
+/// (<c>page/1-101</c>, <c>slide/1-101</c>, <c>block/1-101</c>) or, for a unit whose addresses are
+/// not numbers, the unit (<c>cell/all</c>), never a truncated prefix of the parts. PDF pages and
+/// bookmarks, slides, cells and Word blocks are the parts a single operation can change by the
+/// hundred.
 /// </summary>
 public sealed partial class BoundedEditTargetTests
 {
@@ -55,13 +54,15 @@ public sealed partial class BoundedEditTargetTests
     }
 
     /// <summary>
-    /// The degenerate form of each product's case past the bound: the document root, or the range
-    /// of the PDF pages it rotated, of the slides whose shapes it changed or of the Words blocks it changed.
+    /// The degenerate form of each product's case past the bound: the range of the PDF pages it
+    /// rotated, of the slides whose shapes it changed or of the Words blocks it changed, or the cell
+    /// unit of the Cells cells it changed.
     /// </summary>
     private static readonly IReadOnlyDictionary<string, string> Roots = new Dictionary<string, string>(StringComparer.Ordinal)
     {
         ["pdf"] = "page/1-101",
         ["slides"] = "slide/1-101",
+        ["cells"] = "cell/all",
         ["words"] = "block/1-101",
     };
 
@@ -101,6 +102,19 @@ public sealed partial class BoundedEditTargetTests
         yield return ("slides", workspace => (Create(workspace, "slides", "input.pptx", "--from-markdown",
             string.Join("\n\n", Enumerable.Range(1, Bound + 1).Select(static slide =>
                 $"# Slide {slide}\n\n- Hello {slide}{(slide <= Bound ? " Mark" : string.Empty)}"))), Replacements()));
+        yield return ("cells", static workspace =>
+        {
+            CliResult created = workspace.Run("cells", "create", "input.xlsx", "--output-format", "json");
+            Assert.True(created.ExitCode == 0, $"cells create: {created.StdErr}");
+            static JsonArray Column(int rows, int offset) =>
+                [.. Enumerable.Range(1, rows).Select(row => (JsonNode)new JsonArray(row + offset))];
+            JsonArray ops =
+            [
+                new JsonObject { ["op"] = "set_values", ["sheet"] = "Sheet1", ["range"] = "A1", ["values"] = Column(Bound, 0) },
+                new JsonObject { ["op"] = "set_values", ["sheet"] = "Sheet1", ["range"] = "A1", ["values"] = Column(Bound + 1, 1000) },
+            ];
+            return ("input.xlsx", ops);
+        });
         yield return ("words", workspace => (Create(workspace, "words", "input.docx", "--from-markdown",
             string.Join("\n\n", Enumerable.Range(1, Bound + 1).Select(static block =>
                 $"Hello {block}{(block <= Bound ? " Mark" : string.Empty)}"))), Replacements()));

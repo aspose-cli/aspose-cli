@@ -50,7 +50,7 @@ public sealed class CellsCliTests : IDisposable
         Assert.Equal("op-0001", editPayload["applied"]![0]!["id"]!.GetValue<string>());
         Assert.Equal("double", editPayload["applied"]![1]!["id"]!.GetValue<string>());
         Assert.Equal(
-            ["Data!A1:B2", "Data!B3"],
+            ["cell/Data!A1", "cell/Data!B3"],
             editPayload["applied"]!.AsArray()
                 .Select(static item => item!["targets"]![0]!.GetValue<string>()));
         JsonNode payload = JsonNode.Parse(read.StdOut)!;

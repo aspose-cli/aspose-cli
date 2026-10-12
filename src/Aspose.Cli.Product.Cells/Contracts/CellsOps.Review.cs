@@ -4,18 +4,21 @@ namespace Aspose.Cli.Product.Cells.Contracts;
 
 // Ops for review and collaboration: cell comments.
 
-/// <summary>Adds a note (comment) to a cell.</summary>
+/// <summary>
+/// Adds a note (comment) to a cell; on a cell that has one, the text is added to it as a new
+/// paragraph. set_comment replaces a comment's text.
+/// </summary>
 [Operation("add_comment")]
 public sealed record AddCommentOp : CellsSheetOp
 {
     /// <summary>The cell to annotate, such as B2.</summary>
     [A1Cell] public required string Cell { get; init; }
 
-    [NotReadBack]
+    [ReadBack("inspect-result.schema.json#/$defs/cellsCommentInfo/properties/text")]
     [MinLength(1)] public required string Text { get; init; }
 
     /// <summary>The comment author; the engine default when omitted.</summary>
-    [NotReadBack]
+    [ReadBack("inspect-result.schema.json#/$defs/cellsCommentInfo/properties/author")]
     public string? Author { get; init; }
 }
 
@@ -28,11 +31,11 @@ public sealed record SetCommentOp : CellsSheetOp
     [A1Cell] public required string Cell { get; init; }
 
     /// <summary>The new comment text.</summary>
-    [NotReadBack]
+    [ReadBack("inspect-result.schema.json#/$defs/cellsCommentInfo/properties/text")]
     [MinLength(1)] public required string Text { get; init; }
 
     /// <summary>The new author; unchanged when omitted.</summary>
-    [NotReadBack]
+    [ReadBack("inspect-result.schema.json#/$defs/cellsCommentInfo/properties/author")]
     public string? Author { get; init; }
 }
 

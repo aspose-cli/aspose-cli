@@ -87,7 +87,7 @@ internal sealed class StylePool
         return string.IsNullOrEmpty(format) || format == "General" ? null : format;
     }
 
-    private static string? ToHex(Color color) =>
+    internal static string? ToHex(Color color) =>
         color.IsEmpty || color.A == 0
             ? null
             : $"#{color.R:X2}{color.G:X2}{color.B:X2}";

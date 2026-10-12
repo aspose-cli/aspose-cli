@@ -22,33 +22,33 @@ public sealed record InsertChartOp : CellsSheetOp
     /// The data to plot, including headers, such as A1:C5. It may name another sheet, such as
     /// Data!A1:C5, so a chart on a dashboard sheet can plot a data sheet.
     /// </summary>
-    [NotReadBack]
+    [ReadBack("inspect-result.schema.json#/$defs/cellsChartInfo/properties/dataRange")]
     [A1Reference] public required string DataRange { get; init; }
 
     /// <summary>The range of at least two cells the chart is placed over, such as E2:L18.</summary>
     [A1Range] public required string At { get; init; }
 
-    [NotReadBack]
+    [ReadBack("inspect-result.schema.json#/$defs/cellsChartInfo/properties/title")]
     public string? Title { get; init; }
 
     /// <summary>Whether series are plotted from rows rather than columns.</summary>
-    [NotReadBack]
+    [ReadBack("inspect-result.schema.json#/$defs/cellsChartInfo/properties/seriesInRows")]
     public bool SeriesInRows { get; init; }
 
-    [NotReadBack]
+    [ReadBack("inspect-result.schema.json#/$defs/cellsChartInfo/properties/legend")]
     public CellsChartLegend? Legend { get; init; }
 
-    [NotReadBack]
+    [ReadBack("inspect-result.schema.json#/$defs/cellsChartInfo/properties/axisTitles")]
     public CellsChartAxisTitles? AxisTitles { get; init; }
 
     /// <summary>
     /// Series colors in series order; a pie's slices count as the series. Colors beyond the
     /// series count are ignored.
     /// </summary>
-    [NotReadBack]
+    [ReadBack("inspect-result.schema.json#/$defs/cellsChartInfo/properties/seriesColors")]
     [MinItems(1), HexColor] public IReadOnlyList<string>? SeriesColors { get; init; }
 
-    [NotReadBack]
+    [ReadBack("inspect-result.schema.json#/$defs/cellsChartInfo/properties/dataLabels")]
     public CellsChartDataLabels? DataLabels { get; init; }
 
     /// <inheritdoc />
@@ -75,8 +75,10 @@ public sealed record InsertChartOp : CellsSheetOp
 [MinProperties(1)]
 public sealed record CellsChartLegend
 {
+    /// <summary>Whether the legend shows.</summary>
     public bool? Visible { get; init; }
 
+    /// <summary>The side of the chart the legend sits on.</summary>
     [AllowedValues(typeof(CellsLegendPositions))] public string? Position { get; init; }
 }
 
@@ -124,7 +126,7 @@ public sealed record CellsChartDataLabels
 public sealed record InsertPivotOp : CellsSheetOp
 {
     /// <summary>The source data including headers; it may name another sheet, such as Data!A1:D100.</summary>
-    [NotReadBack]
+    [ReadBack("inspect-result.schema.json#/$defs/cellsPivotInfo/properties/sourceRange")]
     [A1Reference] public required string SourceRange { get; init; }
 
     /// <summary>The top-left cell of the pivot table.</summary>
@@ -135,15 +137,15 @@ public sealed record InsertPivotOp : CellsSheetOp
     public string? Name { get; init; }
 
     /// <summary>The header names of the row fields.</summary>
-    [NotReadBack]
+    [ReadBack("inspect-result.schema.json#/$defs/cellsPivotInfo/properties/rows")]
     [MinItems(1)] public IReadOnlyList<string>? Rows { get; init; }
 
     /// <summary>The header names of the column fields.</summary>
-    [NotReadBack]
+    [ReadBack("inspect-result.schema.json#/$defs/cellsPivotInfo/properties/columns")]
     [MinItems(1)] public IReadOnlyList<string>? Columns { get; init; }
 
     /// <summary>The value fields with their aggregation; two or more are columns, after the column fields, as in Excel.</summary>
-    [NotReadBack]
+    [ReadBack("inspect-result.schema.json#/$defs/cellsPivotInfo/properties/values")]
     [MinItems(1)] public required IReadOnlyList<CellsPivotValueField> Values { get; init; }
 
     /// <summary>
@@ -151,7 +153,7 @@ public sealed record InsertPivotOp : CellsSheetOp
     /// zh writes Excel's Simplified Chinese ones (求和项:X, 总计, 行标签, 列标签, 值); auto is zh
     /// when a row, column or value field name contains a Han character, otherwise en.
     /// </summary>
-    [NotReadBack]
+    [ReadBack("inspect-result.schema.json#/$defs/cellsPivotInfo/properties/captions")]
     [AllowedValues(typeof(CellsPivotCaptionLanguages))] public string Captions { get; init; } = CellsPivotCaptionLanguages.Auto;
 }
 
@@ -169,6 +171,7 @@ public sealed record CellsPivotValueField
     /// <summary>The header name of the source column.</summary>
     [Pattern(@"\S")] public required string Field { get; init; }
 
+    /// <summary>The aggregation of the field's values.</summary>
     [AllowedValues(typeof(CellsPivotFunctions))] public string Function { get; init; } = CellsPivotFunctions.Sum;
 
     /// <summary>The number format code of the field, such as #,##0.</summary>
@@ -200,11 +203,11 @@ public sealed record InsertImageOp : CellsSheetOp
     [A1Cell] public required string At { get; init; }
 
     /// <summary>The width in points; the image's natural width when omitted.</summary>
-    [NotReadBack]
+    [ReadBack("inspect-result.schema.json#/$defs/cellsImageInfo/properties/width")]
     [ExclusiveMinimum(0)] public double? Width { get; init; }
 
     /// <summary>The height in points; the image's natural height when omitted.</summary>
-    [NotReadBack]
+    [ReadBack("inspect-result.schema.json#/$defs/cellsImageInfo/properties/height")]
     [ExclusiveMinimum(0)] public double? Height { get; init; }
 }
 
@@ -241,11 +244,11 @@ public sealed record DefineTableOp : CellsSheetOp
     /// such as TableStyleMedium2, or a custom table style the workbook defines.
     /// </summary>
     [MistakenFor("style")]
-    [NotReadBack]
+    [ReadBack("inspect-result.schema.json#/$defs/cellsTableInfo/properties/tableStyle")]
     [MinLength(1)] public string? TableStyle { get; init; }
 
     /// <summary>Whether a totals row is added below the table.</summary>
-    [NotReadBack]
+    [ReadBack("inspect-result.schema.json#/$defs/cellsTableInfo/properties/totalsRow")]
     public bool TotalsRow { get; init; }
 
     /// <inheritdoc />
@@ -326,11 +329,11 @@ public sealed record SetChartOp : CellsSheetOp
     [NotState]
     [Pattern(@"\S")] public string? Name { get; init; }
 
-    [NotReadBack]
+    [ReadBack("inspect-result.schema.json#/$defs/cellsChartInfo/properties/title")]
     public string? Title { get; init; }
 
     /// <summary>The new data to plot, including headers; it may name another sheet, such as Data!A1:C5.</summary>
-    [NotReadBack]
+    [ReadBack("inspect-result.schema.json#/$defs/cellsChartInfo/properties/dataRange")]
     [A1Reference] public string? DataRange { get; init; }
 
     [MistakenFor("type")]
@@ -338,23 +341,23 @@ public sealed record SetChartOp : CellsSheetOp
     [AllowedValues(typeof(CellsChartTypes))] public string? Kind { get; init; }
 
     /// <summary>Whether series are plotted from rows rather than columns.</summary>
-    [NotReadBack]
+    [ReadBack("inspect-result.schema.json#/$defs/cellsChartInfo/properties/seriesInRows")]
     public bool? SeriesInRows { get; init; }
 
-    [NotReadBack]
+    [ReadBack("inspect-result.schema.json#/$defs/cellsChartInfo/properties/legend")]
     public CellsChartLegend? Legend { get; init; }
 
-    [NotReadBack]
+    [ReadBack("inspect-result.schema.json#/$defs/cellsChartInfo/properties/axisTitles")]
     public CellsChartAxisTitles? AxisTitles { get; init; }
 
     /// <summary>
     /// Series colors in series order; a pie's slices count as the series. Colors beyond the
     /// series count are ignored.
     /// </summary>
-    [NotReadBack]
+    [ReadBack("inspect-result.schema.json#/$defs/cellsChartInfo/properties/seriesColors")]
     [MinItems(1), HexColor] public IReadOnlyList<string>? SeriesColors { get; init; }
 
-    [NotReadBack]
+    [ReadBack("inspect-result.schema.json#/$defs/cellsChartInfo/properties/dataLabels")]
     public CellsChartDataLabels? DataLabels { get; init; }
 
     /// <inheritdoc />

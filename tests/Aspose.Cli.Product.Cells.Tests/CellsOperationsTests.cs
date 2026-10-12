@@ -56,8 +56,8 @@ public sealed class CellsOperationsTests : IClassFixture<CellsFixture>
             });
 
         Assert.Equal([OpStatuses.Ok, OpStatuses.Failed], result.Applied.Select(static item => item.Status));
-        Assert.Equal(["Data!A1"], result.Applied[0].Targets);
-        Assert.Equal(["Missing!A1:B1"], result.Applied[1].Targets);
+        Assert.Equal(["cell/Data!A1"], result.Applied[0].Targets);
+        Assert.Equal(["cell/Missing!A1:B1"], result.Applied[1].Targets);
         Assert.Equal("SHEET_NOT_FOUND", result.Applied[1].Error!.Code);
     }
 
@@ -91,8 +91,8 @@ public sealed class CellsOperationsTests : IClassFixture<CellsFixture>
             ] }
             """,
             "conditional.out.xlsx");
-        Assert.Equal(["Data!A1:A3"], result.Applied[0].Targets);
-        Assert.Equal(["Data!A1:A3"], result.Applied[1].Targets);
+        Assert.Equal(["cell/Data!A1", "cell/Data!A2", "cell/Data!A3"], result.Applied[0].Targets);
+        Assert.Equal(["conditional-format/Data/1"], result.Applied[1].Targets);
 
         using (var reopened = new Workbook(result.Output!.Path))
         {

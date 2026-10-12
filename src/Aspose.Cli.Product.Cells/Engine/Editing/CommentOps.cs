@@ -6,20 +6,33 @@ namespace Aspose.Cli.Product.Cells.Engine.Editing;
 /// <summary>Cell comments (notes) for review workflows.</summary>
 internal static class CommentOps
 {
-    public static long? AddComment(Worksheet sheet, AddCommentOp op)
+    /// <summary>
+    /// Adds a note to a cell: a cell without a comment gets one, and a cell that has one gets the
+    /// text as a new paragraph of it, so each add keeps what earlier ones wrote.
+    /// </summary>
+    public static void AddComment(Worksheet sheet, AddCommentOp op)
     {
         CellRef cell = A1.ParseCell(op.Cell);
+        if (sheet.Comments[cell.Row, cell.Column] is { } existing)
+        {
+            existing.Note = existing.Note + "\n" + op.Text;
+            if (op.Author is { } addedBy)
+            {
+                existing.Author = addedBy;
+            }
+
+            return;
+        }
+
         Comment comment = sheet.Comments[sheet.Comments.Add(cell.Row, cell.Column)];
         comment.Note = op.Text;
         if (op.Author is { } author)
         {
             comment.Author = author;
         }
-
-        return null;
     }
 
-    public static long? EditComment(Worksheet sheet, SetCommentOp op)
+    public static void EditComment(Worksheet sheet, SetCommentOp op)
     {
         CellRef cell = A1.ParseCell(op.Cell);
         Comment comment = sheet.Comments[cell.Row, cell.Column]
@@ -30,11 +43,9 @@ internal static class CommentOps
         {
             comment.Author = author;
         }
-
-        return null;
     }
 
-    public static long? DeleteComment(Worksheet sheet, DeleteCommentOp op)
+    public static void DeleteComment(Worksheet sheet, DeleteCommentOp op)
     {
         CellRef cell = A1.ParseCell(op.Cell);
         if (sheet.Comments[cell.Row, cell.Column] is null)
@@ -43,7 +54,6 @@ internal static class CommentOps
         }
 
         sheet.Comments.RemoveAt(cell.Row, cell.Column);
-        return null;
     }
 
     /// <summary>

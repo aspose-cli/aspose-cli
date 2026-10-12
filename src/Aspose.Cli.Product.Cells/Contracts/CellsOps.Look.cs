@@ -14,12 +14,12 @@ namespace Aspose.Cli.Product.Cells.Contracts;
 public sealed record SetDefaultFontOp : CellsOp
 {
     /// <summary>The font family name, such as Calibri; surrounding spaces are removed.</summary>
-    [NotReadBack]
+    [ReadBack("inspect-result.schema.json#/$defs/cellsDefaultFontInfo/properties/font")]
     [Pattern(@"\S")] public required string Font { get; init; }
 
     /// <summary>The font size in points; unchanged when omitted.</summary>
     [MistakenFor("size")]
-    [NotReadBack]
+    [ReadBack("inspect-result.schema.json#/$defs/cellsDefaultFontInfo/properties/fontSize")]
     [Minimum(1), Maximum(409)] public double? FontSize { get; init; }
 
     /// <inheritdoc />
@@ -31,7 +31,7 @@ public sealed record SetDefaultFontOp : CellsOp
 public sealed record SetTabColorOp : CellsSheetOp
 {
     /// <summary>The tab color.</summary>
-    [NotReadBack]
+    [ReadBack("inspect-result.schema.json#/$defs/cellsTabColorInfo/properties/color")]
     [HexColor] public required string Color { get; init; }
 }
 
@@ -49,14 +49,14 @@ public sealed record ClearTabColorOp : CellsSheetOp;
 public sealed record SetSheetViewOp : CellsSheetOp
 {
     /// <summary>Whether the on-screen gridlines show; unchanged when omitted.</summary>
-    [NotReadBack]
+    [ReadBack("inspect-result.schema.json#/$defs/cellsSheetViewInfo/properties/gridlines")]
     public bool? Gridlines { get; init; }
 
     /// <summary>The zoom percentage; unchanged when omitted.</summary>
-    [NotReadBack]
+    [ReadBack("inspect-result.schema.json#/$defs/cellsSheetViewInfo/properties/zoom")]
     [Minimum(10), Maximum(400)] public int? Zoom { get; init; }
 
     /// <summary>Whether the row numbers and column letters show; unchanged when omitted.</summary>
-    [NotReadBack]
+    [ReadBack("inspect-result.schema.json#/$defs/cellsSheetViewInfo/properties/headings")]
     public bool? Headings { get; init; }
 }
