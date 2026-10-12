@@ -478,6 +478,130 @@ public sealed class PdfKnownIssueTests
             $"the rectangle 10,20,100,30 lands at {Describe(placed[0])} unrotated, {Describe(placed[90])} at 90 degrees and {Describe(placed[180])} at 180 degrees");
     }
 
+    [LicensedFact]
+    public void TextRectangles_OnARotatedCroppedPage_StartFromAnOriginThatMovesWithTheRotation()
+    {
+        using var fixture = new PdfEngineFixture();
+        var found = new Dictionary<int, string>();
+        foreach ((int degrees, Rotation rotation) in new[] { (0, Rotation.None), (90, Rotation.on90), (180, Rotation.on180), (270, Rotation.on270) })
+        {
+            string path = TextPage(fixture, $"page-{degrees}.pdf");
+            using (var turned = new Document(path))
+            {
+                turned.Pages[1].CropBox = new Rectangle(20, 30, 400, 600);
+                turned.Pages[1].Rotate = rotation;
+                turned.Save(path);
+            }
+
+            using var document = new Document(path);
+            Page page = document.Pages[1];
+            var absorber = new Aspose.Pdf.Text.TextFragmentAbsorber("SECRET");
+            page.Accept(absorber);
+            Rectangle rect = absorber.TextFragments[1].Rectangle;
+            found[degrees] = $"{Math.Round(rect.LLX)},{Math.Round(rect.URY)}";
+        }
+
+        // The crop shows 380 x 570 points of the page, 570 x 380 turned a quarter. Measured from
+        // the lower-left corner of what is seen, the text's top-left corner lies at 470,320 at
+        // 90 degrees, 239,100 at 180 and 78,141 at 270; upright the engine measures from the
+        // page's own origin, at 80,522.
+        string reported = string.Join(" ", found.Select(static pair => $"{pair.Key}:{pair.Value}"));
+        KnownIssue.Reproduces(
+            "PDF-TEXT-RECT-ROTATED-CROP",
+            reported == "0:80,522 90:500,320 180:239,100 270:78,161",
+            $"the corner is reported at {reported}");
+    }
+
+    [LicensedFact]
+    public void Redact_OnARotatedPageLeavesTheTextUnderItsCover()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = TextPage(fixture, "page.pdf");
+        Rectangle drawn;
+        using (var document = new Document(input))
+        {
+            var absorber = new Aspose.Pdf.Text.TextFragmentAbsorber("SECRET");
+            document.Pages[1].Accept(absorber);
+            drawn = absorber.TextFragments[1].Rectangle;
+        }
+
+        bool Removed(Rotation rotation)
+        {
+            using var document = new Document(input);
+            Page page = document.Pages[1];
+            page.Rotate = rotation;
+            var cover = new RedactionAnnotation(page, new Rectangle(drawn.LLX - 1, drawn.LLY - 1, drawn.URX + 1, drawn.URY + 1));
+            page.Annotations.Add(cover);
+            cover.Redact();
+            var absorber = new Aspose.Pdf.Text.TextFragmentAbsorber("SECRET");
+            page.Accept(absorber);
+            return absorber.TextFragments.Count == 0;
+        }
+
+        bool upright = Removed(Rotation.None);
+        bool turned = Removed(Rotation.on90);
+        KnownIssue.Reproduces(
+            "PDF-REDACT-ROTATED",
+            upright && !turned,
+            $"a cover over the text removes it {(upright ? "upright" : "not even upright")} and {(turned ? "also" : "not")} on a page rotated by 90 degrees");
+    }
+
+    /// <summary>A 595 x 842 pt page with SECRET drawn upright at 80,500 pt in 20 pt type.</summary>
+    private static string TextPage(PdfEngineFixture fixture, string fileName)
+    {
+        string path = fixture.File(fileName);
+        using var document = new Document();
+        Page page = document.Pages.Add();
+        page.SetPageSize(595, 842);
+        var fragment = new Aspose.Pdf.Text.TextFragment("SECRET") { Position = new Aspose.Pdf.Text.Position(80, 500) };
+        fragment.TextState.FontSize = 20;
+        page.Paragraphs.Add(fragment);
+        document.Save(path);
+        return path;
+    }
+
+    [LicensedFact]
+    public void ConcurrentSaves_LeaveTheModificationDateOut()
+    {
+        using var fixture = new PdfEngineFixture();
+        string[] inputs = [.. Enumerable.Range(0, 16).Select(index =>
+        {
+            string path = fixture.File($"input-{index}.pdf");
+            using var document = new Document();
+            document.Pages.Add();
+            document.Info.Title = "Quarterly";
+            document.Save(path);
+            return path;
+        })];
+
+        static bool Stamped(string path)
+        {
+            using var document = new Document(path);
+            return document.Info.TryGetValue("ModDate", out string? value) && !string.IsNullOrWhiteSpace(value);
+        }
+
+        // Saved one at a time, as the PdfSaveStampTests collection does, every output has the date;
+        // other tests of this process may save at the same time, so this test checks only the
+        // concurrent saves.
+        var together = new ConcurrentBag<bool>();
+        Parallel.ForEach(inputs, input =>
+        {
+            string output = input.Replace("input-", "together-", StringComparison.Ordinal);
+            using (var document = new Document(input))
+            {
+                document.Info.Clear();
+                document.Save(output);
+            }
+
+            together.Add(Stamped(output));
+        });
+
+        KnownIssue.Reproduces(
+            "PDF-CONCURRENT-SAVE-MODDATE",
+            together.Contains(false),
+            $"saved at the same time, {together.Count(static stamped => !stamped)} of {together.Count} outputs have no ModDate");
+    }
+
     /// <summary>One page and two bookmarks: one omits every coordinate, one names 0.</summary>
     private static void WriteDestinationDocument(string path)
     {

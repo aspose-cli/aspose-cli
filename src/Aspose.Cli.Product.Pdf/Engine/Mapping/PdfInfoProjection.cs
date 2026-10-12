@@ -16,11 +16,22 @@ internal static class PdfInfoProjection
         Document document = loaded.Document;
         HashSet<string> details = new(request.Details ?? [], StringComparer.Ordinal);
         bool includePages = request.IncludePreview;
+        var warnings = new List<Warning>();
+        PdfLinkInfo[]? links = details.Contains(PdfInspectDetails.Links) ? [.. Links(document).Take(PdfInspectResult.LinkLimit + 1)] : null;
+        if (links?.Length > PdfInspectResult.LinkLimit)
+        {
+            warnings.Add(EnvelopeParts.ListTruncated(
+                "links",
+                PdfInspectResult.LinkLimit,
+                Links(document).Count(),
+                "Inspect a split part of the document, such as 'aspose-cli pdf split --by pages --every 50', to see the rest."));
+            links = links[..PdfInspectResult.LinkLimit];
+        }
+
         bool fieldsTruncated = false;
         PdfFormInfo? form = details.Contains(PdfInspectDetails.Forms) ? PdfForms.Project(document, out fieldsTruncated) : null;
         PdfSignatureInfo[] signatures = Signatures(document);
         PdfOutlineItem[]? outline = details.Contains(PdfInspectDetails.Outline) ? Outline(document) : null;
-        var warnings = new List<Warning>();
         if (includePages && document.Pages.Count > PdfInspectResult.PagePreviewLimit)
         {
             warnings.Add(EnvelopeParts.ListTruncated(
@@ -68,6 +79,7 @@ internal static class PdfInfoProjection
             Pages = includePages ? Pages(document) : null,
             PageLabels = PageLabels(document),
             Outline = outline,
+            Links = links,
             Forms = form,
             Attachments = details.Contains(PdfInspectDetails.Attachments) ? Attachments(document) : null,
             Fonts = details.Contains(PdfInspectDetails.Fonts) ? Fonts(document) : null,
@@ -149,8 +161,8 @@ internal static class PdfInfoProjection
         Page = page.Number,
         PageSize = PageSizeInfo.Of(Round(page.GetPageRect(considerRotation: true).Width), Round(page.GetPageRect(considerRotation: true).Height)),
         Rotation = Degrees(page.Rotate),
-        MediaBox = Box(page.MediaBox),
-        CropBox = Box(page.CropBox),
+        MediaBox = Box(page, page.MediaBox),
+        CropBox = Box(page, page.CropBox),
     };
 
     /// <summary>The page's clockwise rotation in degrees; a full turn is no rotation.</summary>
@@ -163,13 +175,22 @@ internal static class PdfInfoProjection
         _ => throw new ArgumentOutOfRangeException(nameof(rotation), rotation, "Page rotation is missing from the projection."),
     };
 
-    private static PdfBox Box(Rectangle rectangle) => new()
+    /// <summary>
+    /// A page box as it is seen, with the page's rotation, in points from the top-left corner of
+    /// the media box seen the same way.
+    /// </summary>
+    private static PdfRect Box(Page page, Rectangle box)
     {
-        Left = Round(rectangle.LLX),
-        Bottom = Round(rectangle.LLY),
-        Right = Round(rectangle.URX),
-        Top = Round(rectangle.URY),
-    };
+        Rectangle media = page.RotationMatrix.Transform(page.MediaBox);
+        Rectangle seen = page.RotationMatrix.Transform(box);
+        return new PdfRect
+        {
+            X = Round(seen.LLX - media.LLX),
+            Y = Round(media.URY - seen.URY),
+            Width = Round(seen.Width),
+            Height = Round(seen.Height),
+        };
+    }
 
     private static double Round(double value) => Math.Round(value, 3, MidpointRounding.AwayFromZero);
 
@@ -211,6 +232,21 @@ internal static class PdfInfoProjection
     private static string? FormKind(Document document) =>
         document.Form.HasXfa ? PdfFormKinds.Xfa : document.Form.Count > 0 ? PdfFormKinds.Acro : null;
 
+    /// <summary>The links of every page that open a web address, in page order.</summary>
+    private static IEnumerable<PdfLinkInfo> Links(Document document) =>
+        Enumerable.Range(1, document.Pages.Count).SelectMany(number =>
+        {
+            Page page = document.Pages[number];
+            return page.Annotations.OfType<Aspose.Pdf.Annotations.LinkAnnotation>()
+                .Where(static link => link.Action is Aspose.Pdf.Annotations.GoToURIAction { URI.Length: > 0 })
+                .Select(link => new PdfLinkInfo
+                {
+                    Page = number,
+                    Rect = PdfEngineSupport.ToContractRect(page, link.Rect),
+                    Url = ((Aspose.Pdf.Annotations.GoToURIAction)link.Action).URI,
+                });
+        });
+
     private static PdfAttachmentInfo[] Attachments(Document document) =>
         document.EmbeddedFiles
             .Select(static file => new PdfAttachmentInfo
@@ -218,6 +254,7 @@ internal static class PdfInfoProjection
                 Name = file.UnicodeName ?? file.Name ?? string.Empty,
                 MimeType = string.IsNullOrWhiteSpace(file.MIMEType) ? null : file.MIMEType,
                 SizeBytes = file.Params?.Size,
+                Description = string.IsNullOrWhiteSpace(file.Description) ? null : file.Description,
             })
             .OrderBy(static item => item.Name, StringComparer.Ordinal)
             .ToArray();

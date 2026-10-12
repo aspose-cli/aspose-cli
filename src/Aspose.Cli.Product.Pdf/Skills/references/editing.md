@@ -73,7 +73,10 @@ custom entry reads back under its own key.
 
 Rectangles must lie within the visible page box. Reinspect geometry and review
 after changing crop, size or rotation, because later rectangles follow the new
-box.
+box. A `crop_pages` rectangle is measured on the page as the crop finds it, so a
+second crop cuts into the first; `pdf inspect --sample` reports each page's
+`mediaBox` and `cropBox` as seen, with the page's rotation, both measured from
+the top-left corner of the media box.
 
 `set_page_labels` changes navigation labels, not visible page text, and updates
 only the ranges it names. `add_page_numbers` stamps visible text: `{n}` counts

@@ -5,8 +5,8 @@ namespace Aspose.Cli.Product.Pdf.Tests;
 
 /// <summary>
 /// What the PDF engine writes into every document it saves. The engine leaves its modification
-/// date out of a document saved while other documents of the process are saved, so these tests
-/// run alone, after the parallel ones.
+/// date out of a document saved while other documents of the process are saved
+/// (PDF-CONCURRENT-SAVE-MODDATE), so these tests run alone, after the parallel ones.
 /// </summary>
 [Collection(EngineSaveStampsCollection.Name)]
 public sealed class PdfSaveStampTests

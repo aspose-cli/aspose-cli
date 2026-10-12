@@ -293,14 +293,14 @@ public sealed class PdfRendererGoldenTests
                 new PdfPageInfo
                 {
                     Page = 1, PageSize = PageSizeInfo.Of(612, 792), Rotation = 0,
-                    MediaBox = new PdfBox { Left = 0, Bottom = 0, Right = 612, Top = 792 },
-                    CropBox = new PdfBox { Left = 0, Bottom = 0, Right = 612, Top = 792 },
+                    MediaBox = new PdfRect { X = 0, Y = 0, Width = 612, Height = 792 },
+                    CropBox = new PdfRect { X = 0, Y = 0, Width = 612, Height = 792 },
                 },
                 new PdfPageInfo
                 {
                     Page = 2, PageSize = PageSizeInfo.Of(841.89, 595.276), Rotation = 90,
-                    MediaBox = new PdfBox { Left = 0, Bottom = 0, Right = 595.276, Top = 841.89 },
-                    CropBox = new PdfBox { Left = 0, Bottom = 0, Right = 595.276, Top = 841.89 },
+                    MediaBox = new PdfRect { X = 0, Y = 0, Width = 841.89, Height = 595.276 },
+                    CropBox = new PdfRect { X = 0, Y = 0, Width = 841.89, Height = 595.276 },
                 },
             ],
             PageLabels =

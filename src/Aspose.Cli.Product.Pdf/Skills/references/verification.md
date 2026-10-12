@@ -2,33 +2,35 @@
 
 Follow the delivery checklist and review protocol in `aspose-cli docs verification`.
 Every `pdf edit` reopens its output before publishing it; this page adds the
-PDF evidence to collect.
+PDF evidence to collect. `aspose-cli capabilities pdf` lists the verification and
+review codes.
 
 ## Edit verification
 
 `pdf edit --verify` reads the staged output back against the effect of each
 applied operation. When it finds an issue, the output is still published so you
 can inspect it. Each issue message starts with the ids and names of the
-operations it concerns, and never repeats redacted text. `verification.checkedOps` lists, in batch order, the operations
-whose every recorded effect was read back; an operation it omits was not fully
-checked, even when part of its effect was.
+operations it concerns, and never repeats redacted text; its `location` is the
+address the operation's `targets` use. `verification.checkedOps` lists, in batch
+order, the operations whose every recorded effect was read back; an operation it
+omits was not fully checked, even when part of its effect was.
 
-| Operation | Read back | Issue code |
-| --- | --- | --- |
-| `set_form_field` | the field holds the value set, or is clear after `null` | `FIELD_VALUE_MISMATCH` |
-| `flatten_forms` | no field of a flattened name remains, or no field at all without `fields` | `FIELD_NOT_FLATTENED` |
-| `redact_text` | the pattern no longer matches the text of its pages | `REDACTED_TEXT_FOUND` |
-| `add_bookmark` | its address holds its title and page | `BOOKMARK_MISMATCH` |
-| `add_bookmark`, `delete_bookmarks` | the bookmark count | `BOOKMARK_MISMATCH` |
-| `set_properties` | each document information entry set | `PROPERTIES_MISMATCH` |
-| `add_attachment`, `delete_attachment` | an attachment of the name holds the embedded length, or none has the name | `ATTACHMENT_MISMATCH` |
-| `insert_page`, `import_pages`, `delete_pages`, `move_pages` | the page count | `PAGE_COUNT_MISMATCH` |
+| Operation | Read back |
+| --- | --- |
+| `set_form_field` | the field holds the value set, or is clear after `null` |
+| `flatten_forms` | no field of a flattened name remains, or no field at all without `fields` |
+| `redact_text` | its text no longer matches the text of its pages |
+| `add_bookmark` | its address holds its title and page, and the bookmark count |
+| `delete_bookmarks` | the bookmark count |
+| `set_properties` | each document information entry set |
+| `add_attachment`, `delete_attachment` | an attachment of the name holds the embedded length, or none has the name |
+| `insert_page`, `import_pages`, `delete_pages`, `move_pages` | the page count |
 
-`VERIFICATION_INCOMPLETE` reports a page a `redact_text` pattern could not be
-checked on within its time budget; search that page with `pdf search`.
-A `redact_text` pattern that matched nothing passes its check, and no check
-catches text a redaction moved under its cover; act on `OP_NO_EFFECT`,
-`REDACTION_TEXT_MOVED` and `PDF_TEXT_COVERED` ([redaction](editing.md#redaction)).
+A page whose `redact_text` match could not be checked within its time budget is
+reported as not checked; search that page with `pdf search`. A `redact_text`
+that matched nothing passes its check, and no check catches text a redaction
+moved under its cover; act on `OP_NO_EFFECT`, `REDACTION_TEXT_MOVED` and the
+review's covered-text finding ([redaction](editing.md#redaction)).
 
 The batch is checked as a whole: only the last value set for a field, entry or
 attachment is checked, the value of a flattened field or a deleted page's fields is not, a
@@ -37,25 +39,25 @@ and page-scoped redactions and bookmark pages are not checked after a page
 operation renumbers the pages. `add_attachment` with a name the document already
 uses adds a second attachment of that name. Other operations (stamps,
 watermarks, links, `redact_area`, page geometry, page labels,
-`clear_properties`, encryption, `optimize_document`) have no reliable read-back and are
-not checked: render or search the output for them. In evaluation mode the
-matches inside the watermark sentence the engine stamps on each page do not
-count as remaining redacted text.
+`clear_properties`, encryption, `optimize_document`) are not checked: render,
+inspect or search the output for them. In evaluation mode the matches inside the
+watermark sentence the engine stamps on each page do not count as remaining
+redacted text.
 
 ## Content
 
 ```powershell
-aspose-cli pdf inspect report.final.pdf --detail properties permissions forms signatures attachments outline fonts --output-format json
+aspose-cli pdf inspect report.final.pdf --detail properties permissions forms signatures attachments outline links fonts --output-format json
 aspose-cli pdf read report.final.pdf --pages 1-5 --content layout --output-format json
 aspose-cli pdf search report.final.pdf --pattern DRAFT --output-format json
 ```
 
 Choose page ranges from the inspected page count and compare the text with the
-expected content. Search is not OCR. `properties` reports the values stored in the
-file; `aspose-cli schema v2/pdf/inspect-result` describes how its dates are written.
+expected content. Search is not OCR. `aspose-cli schema v2/pdf/inspect-result`
+describes every inspected field, including how property dates are written.
 
 For redaction, search every relevant page, inspect the redacted regions in the
-review images, and check images, annotations, metadata and attachments as
+review images, and check images, annotations, properties and attachments as
 needed. Search provides no redaction certification.
 
 After `move_pages`, `delete_pages`, `pdf merge` or `pdf split`, check each affected bookmark,
@@ -75,6 +77,7 @@ Require `valid: true` from `pdf validate` for archival output
 
 ```powershell
 aspose-cli review report.final.pdf --out report.review-1 --output-format json
+aspose-cli fonts check report.pdf --font-dir fonts --output-format json
 ```
 
 Check page order and size, crop and rotation, clipping, images, tables, headers
@@ -82,37 +85,34 @@ and footers, stamps, form field appearances, annotations, redaction appearance
 and contrast. The engine drops some thin glyph strokes, such as the underscores
 of a signature line, when it renders below about 300 DPI. Review images are
 150 DPI, scaled down from a 300 DPI render unless the page is too large for
-that, so such a line shows as a light grey line; `pdf render` draws exactly the `--dpi` it is given, so render with
-`--dpi 300` to look at thin lines or small print closely.
-PDF review findings worth acting on:
+that, so such a line shows as a light grey line; `pdf render` draws exactly the
+`--dpi` it is given, so render with `--dpi 300` to look at thin lines or small
+print closely.
 
-- `PDF_FONTS_NOT_EMBEDDED`: a font the PDF uses without embedding it is drawn
-  from the fonts installed here; pass the delivered fonts with `--font-dir`.
-  HTML and text sources of `pdf create` resolve CSS `font-family` from it too.
-  Text operations that name a `font`, and a visible signature, need that font here.
-- `PDF_FORM_APPEARANCE_REVIEW_REQUIRED`: open the pages with fields and look for
-  stale, clipped or missing values.
-- `PDF_EVALUATION_WATERMARK`: a run without a license saved its watermark into
-  the page, and a license does not remove it; regenerate the file from its
-  original inputs with the license before delivery. The check matches the
-  notice from "Created with Aspose.<product>" to its "Copyright … Aspose Pty Ltd"
-  in the page text, read in the order it is drawn, so a notice drawn over a
-  title is found too. A PDF that `cells`, `words` or `slides` saved is flagged as
-  well, and the finding names the product whose license is needed. The notice
-  is not also reported as `PDF_TEXT_OUTSIDE_PAGE`, such as where Aspose.Cells
-  prints it beyond the page edge on the evaluation warning sheet it adds.
-- `PDF_TEXT_COVERED`: text lies under an opaque box painted over it, such as
-  the cover a redaction leaves, so the file holds text the page does not show.
-  After a redaction it is the text the engine moved under the cover
-  ([redaction](editing.md#redaction)).
-- `PDF_PAGE_WITHOUT_READABLE_CONTENT` and `PDF_PAGE_UTILIZATION_LOW`: a page
-  with no or very little text, no images covering a quarter of it and that does
-  not look scanned; look at it, it may be unintentionally blank or sparse. A blank or
-  image-only page also has no font resources, so `fonts check` returns an empty
-  `fonts` array for it.
-- `PDF_PAGE_WITHOUT_TEXT_LAYER` (info): a page with no extractable text and an
-  image that fills its width or height ([scanned pages](editing.md#scanned-pages)).
+What the PDF review findings ask of you:
 
-```powershell
-aspose-cli fonts check report.pdf --font-dir fonts --output-format json
-```
+A font the PDF uses without embedding it is drawn from the fonts installed here;
+pass the delivered fonts with `--font-dir`, which HTML and text sources of
+`pdf create` also resolve CSS `font-family` from. Text operations that name a
+`font`, and a visible signature, need that font here. A blank or image-only page
+has no font resources, so `fonts check` returns an empty `fonts` array for it.
+
+For a PDF with form fields, open the pages with fields and look for stale,
+clipped or missing values.
+
+A run without a license saves its watermark into the page, and a license does
+not remove it: regenerate the file from its original inputs with the license
+before delivery. The check matches the notice from "Created with Aspose.<product>"
+to its "Copyright … Aspose Pty Ltd" in the page text, in the order it is drawn,
+so a notice drawn over a title is found too; a PDF that `cells`, `words` or
+`slides` saved is flagged as well, and the finding names the product whose
+license is needed.
+
+Text under an opaque box painted over it, such as the cover a redaction leaves,
+means the file holds text the page does not show; after a redaction it is the
+text the engine moved under the cover ([redaction](editing.md#redaction)).
+
+A page with no or very little text, no image covering a quarter of it and no
+look of a scan may be unintentionally blank or sparse; look at it. A page with no
+extractable text and an image that fills its width or height is reported for
+information ([scanned pages](editing.md#scanned-pages)).

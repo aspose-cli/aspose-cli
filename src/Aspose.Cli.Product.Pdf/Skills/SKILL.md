@@ -8,6 +8,8 @@ description: Inspect, assemble, edit, fill, redact, secure, sign, convert, valid
 Use `aspose-cli pdf` for fixed-layout PDF work. The shared rules (session start,
 reading windows, operation batches, secrets, review protocol, licensing, errors)
 are in `aspose-cli docs overview`; this Skill adds only what is specific to PDF.
+`aspose-cli capabilities pdf` lists the commands, formats and codes, and
+`aspose-cli schema v2/pdf/<id>` describes each result and the operations.
 When the goal is an editable word-processing document, convert explicitly with
 `aspose-cli words convert input.pdf --to docx`.
 

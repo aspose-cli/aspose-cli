@@ -42,7 +42,7 @@
         "command": "edit",
         "inputSchema": "v2/pdf/ops",
         "operationSchema": "aspose-cli schema v2/pdf/ops --operation <op>",
-        "contractFingerprint": "sha256:c0502f4688e7d8b7176a9151657945ec213eba1185f1a76bb1b6e8fea1b5a1ed",
+        "contractFingerprint": "sha256:e9dc420b74c40b036dc59d4cf8bbe638fe459d2222b7076445b393a9ac4871ec",
         "maximumOperationCount": 10000,
         "ops": [
           "add_attachment",
@@ -1364,6 +1364,7 @@
               "fonts",
               "forms",
               "layers",
+              "links",
               "outline",
               "permissions",
               "properties",
@@ -1371,7 +1372,7 @@
             ],
             "secret": false,
             "valueSource": "command-line",
-            "description": "Extra sections to include; repeat for more. outline: bookmarks, up to 200; forms: form kind and each field's value, up to 500 fields; layers: optional content layer names; properties: document information such as title and author."
+            "description": "Extra sections to include; repeat for more. outline: bookmarks, up to 200; links: links to web addresses, up to 500; forms: form kind and each field's value, up to 500 fields; layers: optional content layer names; properties: document information such as title and author."
           },
           {
             "name": "--password",
@@ -3335,6 +3336,14 @@
             "$ref": "#/$defs/pdfOutlineItem"
           }
         },
+        "links": {
+          "description": "The links to web addresses in page order, with --detail links; a LIST_TRUNCATED warning names the total when there are more.",
+          "type": "array",
+          "maxItems": 500,
+          "items": {
+            "$ref": "#/$defs/pdfLinkInfo"
+          }
+        },
         "forms": {
           "description": "The interactive form and its fields' values, with --detail forms.",
           "$ref": "#/$defs/pdfFormInfo"
@@ -3414,35 +3423,10 @@
               "description": "The attachment's size in bytes; absent when the file does not state it.",
               "type": "integer",
               "minimum": 0
-            }
-          }
-        },
-        "pdfBox": {
-          "description": "A PDF rectangle in points, using left, bottom, right and top coordinates.",
-          "type": "object",
-          "required": [
-            "left",
-            "bottom",
-            "right",
-            "top"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "left": {
-              "description": "The left edge.",
-              "type": "number"
             },
-            "bottom": {
-              "description": "The bottom edge.",
-              "type": "number"
-            },
-            "right": {
-              "description": "The right edge.",
-              "type": "number"
-            },
-            "top": {
-              "description": "The top edge.",
-              "type": "number"
+            "description": {
+              "description": "The attachment's description; absent when the file states none.",
+              "type": "string"
             }
           }
         },
@@ -3566,6 +3550,31 @@
             }
           }
         },
+        "pdfLinkInfo": {
+          "description": "One link to a web address.",
+          "type": "object",
+          "required": [
+            "page",
+            "rect",
+            "url"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "page": {
+              "description": "The 1-based page the link is on.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "rect": {
+              "description": "The link's area on its page, in points from the top-left corner of the visible page.",
+              "$ref": "#/$defs/pdfRect"
+            },
+            "url": {
+              "description": "The web address the link opens.",
+              "type": "string"
+            }
+          }
+        },
         "pdfOutlineItem": {
           "description": "One bookmark of the document's outline.",
           "type": "object",
@@ -3626,12 +3635,12 @@
               "multipleOf": 90
             },
             "mediaBox": {
-              "description": "The page's media box, the full physical page.",
-              "$ref": "#/$defs/pdfBox"
+              "description": "The page's media box, the full physical page as it is seen, with the page's rotation: the frame the crop box is measured in, so it is always at 0,0.",
+              "$ref": "#/$defs/pdfRect"
             },
             "cropBox": {
-              "description": "The page's crop box, the region a viewer shows.",
-              "$ref": "#/$defs/pdfBox"
+              "description": "The page's crop box, the region a viewer shows, in points from the top-left corner of the media box as it is seen, with the page's rotation, as crop_pages measures.",
+              "$ref": "#/$defs/pdfRect"
             }
           }
         },
@@ -4086,7 +4095,7 @@
             },
             "description": {
               "type": "string",
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/pdf/inspect-result.schema.json#/$defs/pdfAttachmentInfo/properties/description"
             },
             "mimeType": {
               "description": "The media type stored with the attachment, such as \"image/png\", which archives and viewers read to identify it and PDF/A-3 keeps; none when omitted.",
@@ -4155,7 +4164,7 @@
             "text": {
               "type": "string",
               "minLength": 1,
-              "x-readBack": "unread"
+              "x-readBack": "not-state"
             },
             "placement": {
               "type": "string",
@@ -4168,12 +4177,12 @@
                 "bottom-right"
               ],
               "default": "bottom-center",
-              "x-readBack": "unread"
+              "x-readBack": "not-state"
             },
             "font": {
               "description": "An installed font name; the default font when omitted.",
               "type": "string",
-              "x-readBack": "unread"
+              "x-readBack": "not-state"
             }
           }
         },
@@ -4200,7 +4209,7 @@
             "text": {
               "type": "string",
               "minLength": 1,
-              "x-readBack": "unread"
+              "x-readBack": "not-state"
             },
             "placement": {
               "type": "string",
@@ -4213,12 +4222,12 @@
                 "bottom-right"
               ],
               "default": "top-center",
-              "x-readBack": "unread"
+              "x-readBack": "not-state"
             },
             "font": {
               "description": "An installed font name; the default font when omitted.",
               "type": "string",
-              "x-readBack": "unread"
+              "x-readBack": "not-state"
             }
           }
         },
@@ -4246,11 +4255,11 @@
             },
             "rect": {
               "$ref": "#/$defs/pdfRectInput",
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/pdf/inspect-result.schema.json#/$defs/pdfLinkInfo/properties/rect"
             },
             "url": {
               "$ref": "#/$defs/webLink",
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/pdf/inspect-result.schema.json#/$defs/pdfLinkInfo/properties/url"
             }
           }
         },
@@ -4277,7 +4286,7 @@
               "description": "The text; {n} is the number, counted over the selected pages from start, and {N} the document's page count.",
               "type": "string",
               "default": "Page {n} of {N}",
-              "x-readBack": "unread"
+              "x-readBack": "not-state"
             },
             "placement": {
               "type": "string",
@@ -4290,19 +4299,19 @@
                 "bottom-right"
               ],
               "default": "bottom-center",
-              "x-readBack": "unread"
+              "x-readBack": "not-state"
             },
             "start": {
               "description": "The number of the first selected page.",
               "type": "integer",
               "minimum": 0,
               "default": 1,
-              "x-readBack": "unread"
+              "x-readBack": "not-state"
             },
             "font": {
               "description": "An installed font name; the default font when omitted.",
               "type": "string",
-              "x-readBack": "unread"
+              "x-readBack": "not-state"
             }
           }
         },
@@ -4337,7 +4346,7 @@
             },
             "rect": {
               "$ref": "#/$defs/pdfRectInput",
-              "x-readBack": "unread"
+              "x-readBack": "not-state"
             }
           }
         },
@@ -4373,14 +4382,14 @@
               "minimum": 0,
               "maximum": 1,
               "default": 0.35,
-              "x-readBack": "unread"
+              "x-readBack": "not-state"
             },
-            "scale": {
-              "description": "The zoom factor applied to the image.",
+            "scalePercent": {
+              "description": "The size of the image as a percentage of its own size.",
               "type": "number",
               "exclusiveMinimum": 0,
-              "default": 0.5,
-              "x-readBack": "unread"
+              "default": 50,
+              "x-readBack": "not-state"
             },
             "layer": {
               "type": "string",
@@ -4389,7 +4398,7 @@
                 "under"
               ],
               "default": "over",
-              "x-readBack": "unread"
+              "x-readBack": "not-state"
             }
           }
         },
@@ -4416,37 +4425,37 @@
             "text": {
               "type": "string",
               "minLength": 1,
-              "x-readBack": "unread"
+              "x-readBack": "not-state"
             },
             "font": {
               "description": "An installed font name; the default font when omitted.",
               "type": "string",
-              "x-readBack": "unread"
+              "x-readBack": "not-state"
             },
             "fontSize": {
               "description": "The font size in points.",
               "type": "number",
               "exclusiveMinimum": 0,
               "default": 48,
-              "x-readBack": "unread"
+              "x-readBack": "not-state"
             },
             "color": {
               "$ref": "#/$defs/color",
               "default": "#808080",
-              "x-readBack": "unread"
+              "x-readBack": "not-state"
             },
             "opacity": {
               "type": "number",
               "minimum": 0,
               "maximum": 1,
               "default": 0.35,
-              "x-readBack": "unread"
+              "x-readBack": "not-state"
             },
             "rotation": {
               "description": "The angle in degrees, clockwise; the default -45 rises from the bottom left to the top right.",
               "type": "number",
               "default": -45,
-              "x-readBack": "unread"
+              "x-readBack": "not-state"
             },
             "layer": {
               "type": "string",
@@ -4455,7 +4464,7 @@
                 "under"
               ],
               "default": "over",
-              "x-readBack": "unread"
+              "x-readBack": "not-state"
             }
           }
         },
@@ -4488,7 +4497,7 @@
           }
         },
         "crop_pages": {
-          "description": "Crops pages to a rectangle.",
+          "description": "Crops pages to a rectangle measured on each page's visible page box before the crop, from its top-left corner; 'pdf inspect --sample' reports the resulting page size and the crop box, measured from the top-left corner of the media box as it is seen.",
           "type": "object",
           "required": [
             "op",
@@ -4518,8 +4527,9 @@
               "x-readBack": "not-state"
             },
             "rect": {
+              "description": "The part of the visible page before the crop to keep, from its top-left corner.",
               "$ref": "#/$defs/pdfRectInput",
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/pdf/inspect-result.schema.json#/$defs/pdfPageInfo/properties/cropBox"
+              "x-readBack": "not-state"
             }
           }
         },

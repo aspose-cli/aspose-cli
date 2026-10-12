@@ -311,6 +311,16 @@ fails, delete the issue's section, the code that names it and the test, then upd
 - **Workaround:** render the page with `pdf render --dpi 300` or higher.
 - **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
 
+### PDF-CONCURRENT-SAVE-MODDATE
+
+- **Defect:** `Document.Save` writes the modification date (`ModDate`) into the document
+  information of every PDF it saves, but leaves it out of documents saved while other documents
+  of the same process are being saved.
+- **CLI behavior:** none visible: every command runs in its own process, and the MCP server and
+  the app run each command in a child process of its own. The tests that read the date run
+  alone, in the `Engine save stamps` collection.
+- **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
+
 ### PDF-SIGN-RECT-ROTATED
 
 - **Defect:** `PdfFileSignature.Sign(page, visible, rectangle, signature)` places the rectangle in
@@ -320,6 +330,26 @@ fails, delete the issue's section, the code that names it and the test, then upd
 - **CLI behavior:** `pdf sign --rect` measures from the top-left corner of the visible page, and
   the CLI swaps the rectangle back before it signs a page rotated by 90 or 270 degrees, so the
   signature lies where `--rect` names on every rotation.
+- **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
+
+### PDF-TEXT-RECT-ROTATED-CROP
+
+- **Defect:** on a rotated page that has a crop box, `TextFragment.Rectangle` is given in the
+  space of the visible, rotated page, but not from that page's lower-left corner: at 90 degrees
+  its x is offset by the crop box's bottom, at 270 degrees its y by the crop box's left, at 180
+  degrees neither, and upright both, as the page's own space has them.
+- **CLI behavior:** none visible: `pdf search` takes each offset back out, so a match's `rect`
+  is measured from the top-left corner of the visible page on every rotation and passes to
+  `redact_area` as it is.
+- **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
+
+### PDF-REDACT-ROTATED
+
+- **Defect:** on a rotated page, `RedactionAnnotation.Redact()` draws its cover where its
+  rectangle lies in the page's unrotated space but removes the text it finds there in the
+  rotated page's space, so text under the cover stays in the file.
+- **CLI behavior:** none visible: `redact_text` and `redact_area` clear the page's rotation while
+  they redact and set it again after.
 - **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
 
 ## Aspose.Slides.NET6.CrossPlatform 26.9.0

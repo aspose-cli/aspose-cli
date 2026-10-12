@@ -52,7 +52,9 @@ internal sealed class PdfSnapshots(Document document, PdfPageIdentities pages, F
     /// <summary>
     /// The document information entries Aspose.PDF writes into every PDF it saves, licensed or
     /// not, whatever the document held: the library as creator and producer, and the time of the
-    /// save. No operation removes or sets them in the output.
+    /// save. No operation removes or sets them in the output. A save while other documents of the
+    /// process are saved leaves the date out (PDF-CONCURRENT-SAVE-MODDATE), which a command, run
+    /// in a process of its own, never meets.
     /// </summary>
     internal static readonly IReadOnlySet<string> SaveStamped = new HashSet<string>(["Creator", "Producer", "ModDate"], StringComparer.Ordinal);
 

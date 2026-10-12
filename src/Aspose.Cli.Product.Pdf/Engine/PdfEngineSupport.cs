@@ -268,11 +268,50 @@ internal static class PdfEngineSupport
         {
             throw new InvalidOperationException("Rectangle lies outside the page bounds.");
         }
-        return page.RotationMatrix.Reverse().Transform(new Rectangle(
-            box.LLX + rect.X, box.URY - rect.Y - rect.Height,
-            box.LLX + rect.X + rect.Width, box.URY - rect.Y));
+        return FromContractRect(page, rect.X, rect.Y, rect.Width, rect.Height);
     }
 
+    /// <summary>
+    /// A rectangle the engine reports for text, such as a search match, as points from the
+    /// top-left corner of the visible, rotated page.
+    /// </summary>
+    internal static PdfRect ToContractTextRect(Page page, Rectangle rect)
+    {
+        (double left, double top) = TextOrigin(page);
+        return new PdfRect
+        {
+            X = rect.LLX - left,
+            Y = top - rect.URY,
+            Width = rect.Width,
+            Height = rect.Height,
+        };
+    }
+
+    /// <summary>
+    /// Where the visible page's left and top edges lie in the space the engine reports text in,
+    /// which on a rotated, cropped page moves with the rotation (PDF-TEXT-RECT-ROTATED-CROP).
+    /// </summary>
+    private static (double Left, double Top) TextOrigin(Page page)
+    {
+        Rectangle crop = page.CropBox;
+        return page.Rotate switch
+        {
+            Rotation.on90 => (crop.LLY, crop.Width),
+            Rotation.on180 => (0, crop.Height),
+            Rotation.on270 => (0, crop.URX),
+            _ => (crop.LLX, crop.URY),
+        };
+    }
+
+    private static Rectangle FromContractRect(Page page, double x, double y, double width, double height)
+    {
+        Rectangle box = page.GetPageRect(considerRotation: true);
+        return page.RotationMatrix.Reverse().Transform(new Rectangle(
+            box.LLX + x, box.URY - y - height,
+            box.LLX + x + width, box.URY - y));
+    }
+
+    /// <summary>A rectangle in the page's unrotated space, such as an annotation's, as points from the top-left corner of the visible, rotated page.</summary>
     internal static PdfRect ToContractRect(Page page, Rectangle rect)
     {
         Rectangle box = page.GetPageRect(considerRotation: true);

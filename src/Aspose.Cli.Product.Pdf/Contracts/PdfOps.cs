@@ -161,7 +161,11 @@ public sealed record InsertPageOp : PdfOp
     public PageSizeInput? PageSize { get; init; }
 }
 
-/// <summary>Crops pages to a rectangle.</summary>
+/// <summary>
+/// Crops pages to a rectangle measured on each page's visible page box before the crop, from its
+/// top-left corner; 'pdf inspect --sample' reports the resulting page size and the crop box,
+/// measured from the top-left corner of the media box as it is seen.
+/// </summary>
 [Operation("crop_pages")]
 public sealed record CropPagesOp : PdfOp
 {
@@ -171,7 +175,8 @@ public sealed record CropPagesOp : PdfOp
     [NotState]
     [AllowedValues("media", "crop")] public string Box { get; init; } = "crop";
 
-    [ReadBack("inspect-result.schema.json#/$defs/pdfPageInfo/properties/cropBox")]
+    /// <summary>The part of the visible page before the crop to keep, from its top-left corner.</summary>
+    [NotState]
     public required PdfRectInput Rect { get; init; }
 }
 
@@ -197,29 +202,29 @@ public sealed record AddWatermarkTextOp : PdfOp
     /// <summary>The pages to stamp; every page when omitted.</summary>
     [PageRange] public string? Pages { get; init; }
 
-    [NotReadBack]
+    [NotState]
     [MinLength(1)] public required string Text { get; init; }
 
     /// <summary>An installed font name; the default font when omitted.</summary>
-    [NotReadBack]
+    [NotState]
     public string? Font { get; init; }
 
     /// <summary>The font size in points.</summary>
-    [NotReadBack]
+    [NotState]
     [MistakenFor("size")]
     [ExclusiveMinimum(0)] public double FontSize { get; init; } = 48;
 
-    [NotReadBack]
+    [NotState]
     [HexColor] public string Color { get; init; } = "#808080";
 
-    [NotReadBack]
+    [NotState]
     [Minimum(0), Maximum(1)] public double Opacity { get; init; } = 0.35;
 
     /// <summary>The angle in degrees, clockwise; the default -45 rises from the bottom left to the top right.</summary>
-    [NotReadBack]
+    [NotState]
     public double Rotation { get; init; } = -45;
 
-    [NotReadBack]
+    [NotState]
     [AllowedValues(typeof(PdfLayers))] public string Layer { get; init; } = PdfLayers.Over;
 }
 
@@ -233,14 +238,15 @@ public sealed record AddWatermarkImageOp : PdfOp
     /// <summary>The image, relative to the working directory; an SVG must not reference network resources.</summary>
     [InputPath] public required string Path { get; init; }
 
-    [NotReadBack]
+    [NotState]
     [Minimum(0), Maximum(1)] public double Opacity { get; init; } = 0.35;
 
-    /// <summary>The zoom factor applied to the image.</summary>
-    [NotReadBack]
-    [ExclusiveMinimum(0)] public double Scale { get; init; } = 0.5;
+    /// <summary>The size of the image as a percentage of its own size.</summary>
+    [NotState]
+    [MistakenFor("scale")]
+    [ExclusiveMinimum(0)] public double ScalePercent { get; init; } = 50;
 
-    [NotReadBack]
+    [NotState]
     [AllowedValues(typeof(PdfLayers))] public string Layer { get; init; } = PdfLayers.Over;
 }
 
@@ -252,20 +258,20 @@ public sealed record AddPageNumbersOp : PdfOp
     [PageRange] public string? Pages { get; init; }
 
     /// <summary>The text; {n} is the number, counted over the selected pages from start, and {N} the document's page count.</summary>
-    [NotReadBack]
+    [NotState]
     [MistakenFor("format")]
     public string Text { get; init; } = "Page {n} of {N}";
 
-    [NotReadBack]
+    [NotState]
     [MistakenFor("position")]
     [AllowedValues(typeof(PdfPlacements))] public string Placement { get; init; } = PdfPlacements.BottomCenter;
 
     /// <summary>The number of the first selected page.</summary>
-    [NotReadBack]
+    [NotState]
     [Minimum(0)] public int Start { get; init; } = 1;
 
     /// <summary>An installed font name; the default font when omitted.</summary>
-    [NotReadBack]
+    [NotState]
     public string? Font { get; init; }
 }
 
@@ -276,15 +282,15 @@ public sealed record AddHeaderTextOp : PdfOp
     /// <summary>The pages to stamp; every page when omitted.</summary>
     [PageRange] public string? Pages { get; init; }
 
-    [NotReadBack]
+    [NotState]
     [MinLength(1)] public required string Text { get; init; }
 
-    [NotReadBack]
+    [NotState]
     [MistakenFor("position")]
     [AllowedValues(typeof(PdfPlacements))] public string Placement { get; init; } = PdfPlacements.TopCenter;
 
     /// <summary>An installed font name; the default font when omitted.</summary>
-    [NotReadBack]
+    [NotState]
     public string? Font { get; init; }
 }
 
@@ -295,15 +301,15 @@ public sealed record AddFooterTextOp : PdfOp
     /// <summary>The pages to stamp; every page when omitted.</summary>
     [PageRange] public string? Pages { get; init; }
 
-    [NotReadBack]
+    [NotState]
     [MinLength(1)] public required string Text { get; init; }
 
-    [NotReadBack]
+    [NotState]
     [MistakenFor("position")]
     [AllowedValues(typeof(PdfPlacements))] public string Placement { get; init; } = PdfPlacements.BottomCenter;
 
     /// <summary>An installed font name; the default font when omitted.</summary>
-    [NotReadBack]
+    [NotState]
     public string? Font { get; init; }
 }
 
@@ -316,7 +322,7 @@ public sealed record AddStampImageOp : PdfOp
     /// <summary>The image, relative to the working directory; an SVG must not reference network resources.</summary>
     [InputPath] public required string Path { get; init; }
 
-    [NotReadBack]
+    [NotState]
     public required PdfRectInput Rect { get; init; }
 }
 
@@ -327,10 +333,10 @@ public sealed record AddHyperlinkOp : PdfOp
 {
     [Minimum(1)] public required int Page { get; init; }
 
-    [NotReadBack]
+    [ReadBack("inspect-result.schema.json#/$defs/pdfLinkInfo/properties/rect")]
     public required PdfRectInput Rect { get; init; }
 
-    [NotReadBack]
+    [ReadBack("inspect-result.schema.json#/$defs/pdfLinkInfo/properties/url")]
     [WebLink] public required string Url { get; init; }
 }
 
@@ -579,7 +585,7 @@ public sealed record AddAttachmentOp : PdfOp
     [ReadBack("inspect-result.schema.json#/$defs/pdfAttachmentInfo/properties/name")]
     [MinLength(1)] public string? Name { get; init; }
 
-    [NotReadBack]
+    [ReadBack("inspect-result.schema.json#/$defs/pdfAttachmentInfo/properties/description")]
     public string? Description { get; init; }
 
     /// <summary>

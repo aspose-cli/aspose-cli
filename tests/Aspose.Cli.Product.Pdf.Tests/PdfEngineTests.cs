@@ -35,14 +35,14 @@ public sealed class PdfEngineTests
         PdfInspectResult info = PdfInfo.Run(fixture.Session, new PdfInspectRequest
         {
             Input = path,
-            Details = ["outline", "forms", "attachments", "fonts", "permissions", "signatures", "layers", "properties"],
+            Details = ["outline", "links", "forms", "attachments", "fonts", "permissions", "signatures", "layers", "properties"],
         });
         using var writer = new StringWriter();
         Commands.InspectCommand.Table(info, new Sdk.Extensibility.Output.TableSurface(writer, format));
         string text = writer.ToString();
 
         string heading = format == Sdk.Extensibility.Output.TableFormat.Markdown ? "### " : string.Empty;
-        foreach (string section in new[] { "outline", "forms", "attachments", "fonts", "permissions", "signatures", "layers", "properties" })
+        foreach (string section in new[] { "outline", "links", "forms", "attachments", "fonts", "permissions", "signatures", "layers", "properties" })
         {
             Assert.Contains(heading + section, text, StringComparison.Ordinal);
         }
@@ -413,7 +413,7 @@ public sealed class PdfEngineTests
         {
             Input = path,
             IncludePreview = true,
-            Details = ["outline", "forms", "attachments", "fonts", "permissions", "signatures", "layers", "properties"],
+            Details = ["outline", "links", "forms", "attachments", "fonts", "permissions", "signatures", "layers", "properties"],
         });
 
         Assert.Equal("pdf", result.Input.Format);

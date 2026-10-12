@@ -23,6 +23,7 @@ public sealed partial class PlatformSkillPointerTests
     public static TheoryData<string> Skills { get; } =
     [
         Path.Combine("src", "Aspose.Cli.Host", "Skills", "Platform"),
+        Path.Combine("src", "Aspose.Cli.Product.Pdf", "Skills"),
         Path.Combine("src", "Aspose.Cli.Product.Slides", "Skills"),
     ];
 
