@@ -19,13 +19,17 @@ namespace Aspose.Cli.Sdk.Operations;
 /// sequence: an object that the operation inserted, deleted or moved shifts the positions of
 /// the others, so a sequence is compared by state in order, and an object that kept its state
 /// but moved counts once, at its new address. Their state must then identify the object, not
-/// only its content, wherever the product can tell objects apart.
+/// only its content, wherever the product can tell objects apart. A product whose engine keeps
+/// each object as one instance adds the sequence with <see cref="AddObjects"/> instead: the
+/// objects are then compared by that instance, so one that only moved never counts, and the
+/// batch reports each changed one at its position in the output
+/// (<see cref="IOperationModel{TOp}.Positions"/>).
 /// </remarks>
 public sealed partial class OperationSnapshot
 {
     private readonly List<(string Address, string State)> _objects = [];
     private readonly HashSet<string> _addresses = new(StringComparer.Ordinal);
-    private readonly List<(string Name, IReadOnlyList<(string Address, string State)> Items)> _sequences = [];
+    private readonly List<(string Name, IReadOnlyList<(string Address, string State)> Items, IReadOnlyList<object>? Identities)> _sequences = [];
 
     /// <summary>Adds an object addressed by a name, which keeps its address across the operation.</summary>
     /// <param name="address">The object's <c>&lt;unit&gt;/&lt;address&gt;</c> address, unique in the snapshot.</param>
@@ -66,7 +70,23 @@ public sealed partial class OperationSnapshot
             ArgumentNullException.ThrowIfNull(state);
         }
 
-        _sequences.Add((name, list));
+        _sequences.Add((name, list, null));
+        return this;
+    }
+
+    /// <summary>
+    /// Adds a sequence of objects numbered from 1 in <paramref name="unit"/>, such as the blocks
+    /// of a document as <c>block/1</c>, <c>block/2</c> and so on, each with the instance the
+    /// engine keeps it as, which identifies it across operations by reference.
+    /// </summary>
+    /// <param name="unit">The unit, which also names the sequence.</param>
+    /// <param name="objects">Each object's instance and state, in order.</param>
+    public OperationSnapshot AddObjects(string unit, IEnumerable<(object Identity, string State)> objects)
+    {
+        ArgumentNullException.ThrowIfNull(objects);
+        (object Identity, string State)[] list = [.. objects];
+        AddSequence(unit, list.Select(static item => item.State));
+        _sequences[^1] = (_sequences[^1].Name, _sequences[^1].Items, [.. list.Select(static item => item.Identity)]);
         return this;
     }
 
@@ -109,10 +129,76 @@ public sealed partial class OperationSnapshot
             .Concat(after._sequences.Select(static sequence => sequence.Name))
             .Distinct(StringComparer.Ordinal))
         {
-            changes.AddRange(SequenceChanges(Items(before, name), Items(after, name)));
+            (IReadOnlyList<(string Address, string State)> items, IReadOnlyList<object>? identities) first = Sequence(before, name);
+            (IReadOnlyList<(string Address, string State)> items, IReadOnlyList<object>? identities) second = Sequence(after, name);
+            changes.AddRange(first.identities is not null && second.identities is not null
+                ? ObjectChanges(first, second)
+                : SequenceChanges(first.items, second.items));
         }
 
         return changes;
+    }
+
+    /// <summary>
+    /// The changed objects of one sequence the engine keeps by instance: an object in both
+    /// snapshots counts when its state differs, wherever it moved; one in only one snapshot was
+    /// inserted or removed, except where the engine replaced the instance: an inserted object
+    /// paired with a removed one of the same state does not count, as nothing it shows changed,
+    /// and one paired with a removed one at the same position counts once, at its address in the
+    /// output.
+    /// </summary>
+    private static IEnumerable<ObjectChange> ObjectChanges(
+        (IReadOnlyList<(string Address, string State)> Items, IReadOnlyList<object>? Identities) before,
+        (IReadOnlyList<(string Address, string State)> Items, IReadOnlyList<object>? Identities) after)
+    {
+        var earlier = new Dictionary<object, int>(ReferenceEqualityComparer.Instance);
+        for (int index = 0; index < before.Items.Count; index++)
+        {
+            earlier.TryAdd(before.Identities![index], index);
+        }
+
+        var kept = new HashSet<object>(ReferenceEqualityComparer.Instance);
+        var inserted = new List<int>();
+        for (int index = 0; index < after.Items.Count; index++)
+        {
+            object identity = after.Identities![index];
+            if (earlier.TryGetValue(identity, out int previous))
+            {
+                kept.Add(identity);
+                if (before.Items[previous].State != after.Items[index].State)
+                {
+                    yield return new ObjectChange(after.Items[index].Address, InOutput: true, identity);
+                }
+            }
+            else
+            {
+                inserted.Add(index);
+            }
+        }
+
+        var removed = Enumerable.Range(0, before.Items.Count).Where(index => !kept.Contains(before.Identities![index])).ToList();
+        foreach (int index in inserted)
+        {
+            int same = removed.FindIndex(deletion => before.Items[deletion].State == after.Items[index].State);
+            if (same >= 0)
+            {
+                removed.RemoveAt(same);
+                continue;
+            }
+
+            int pair = removed.FindIndex(deletion => before.Items[deletion].Address == after.Items[index].Address);
+            if (pair >= 0)
+            {
+                removed.RemoveAt(pair);
+            }
+
+            yield return new ObjectChange(after.Items[index].Address, InOutput: true, after.Identities![index]);
+        }
+
+        foreach (int index in removed)
+        {
+            yield return new ObjectChange(before.Items[index].Address, InOutput: false, before.Identities![index]);
+        }
     }
 
     /// <summary>
@@ -150,8 +236,10 @@ public sealed partial class OperationSnapshot
         }
     }
 
-    private static IReadOnlyList<(string Address, string State)> Items(OperationSnapshot snapshot, string name) =>
-        snapshot._sequences.FirstOrDefault(sequence => sequence.Name == name).Items ?? [];
+    private static (IReadOnlyList<(string Address, string State)> Items, IReadOnlyList<object>? Identities) Sequence(OperationSnapshot snapshot, string name) =>
+        snapshot._sequences.FirstOrDefault(sequence => sequence.Name == name) is { Items: not null } sequence
+            ? (sequence.Items, sequence.Identities)
+            : ([], null);
 
     /// <summary>
     /// Shortens more than <see cref="BoundedOperationOutcome.MaximumTargets"/> addresses to one per
@@ -196,7 +284,8 @@ public sealed partial class OperationSnapshot
 /// <summary>One object an operation changed.</summary>
 /// <param name="Address">Its address in the output, or in the input when the operation removed it.</param>
 /// <param name="InOutput">Whether the object is in the output: false when the operation removed it.</param>
-internal readonly record struct ObjectChange(string Address, bool InOutput);
+/// <param name="Identity">The instance the engine keeps the object as, for a sequence added with <see cref="OperationSnapshot.AddObjects"/>.</param>
+internal readonly record struct ObjectChange(string Address, bool InOutput, object? Identity = null);
 
 /// <summary>The shortest edit script between two sequences (Myers' O(ND) algorithm).</summary>
 internal static class SequenceDiff

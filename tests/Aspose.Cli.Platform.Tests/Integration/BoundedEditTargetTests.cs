@@ -49,32 +49,25 @@ public sealed partial class BoundedEditTargetTests
             string[] parts = [.. targets.Where(listed.Contains)];
             Assert.True(targets.Length > 0 && parts.Length == 0 && IsDegenerate(product, targets),
                 $"{product}: an operation that changed more than {Bound} parts lists the product's degenerate form, exactly "
-                + $"['{Roots[product]}']{(product == "words" ? " or blocks/<ranges> addresses" : string.Empty)}, not a prefix of its "
+                + $"['{Roots[product]}'], not a prefix of its "
                 + $"parts or a category address; it lists {targets.Length}: [{string.Join(", ", targets.Take(5))}]");
         }
     }
 
     /// <summary>
     /// The degenerate form of each product's case past the bound: the document root, or the range
-    /// of the PDF pages it rotated or of the slides whose shapes it changed.
+    /// of the PDF pages it rotated, of the slides whose shapes it changed or of the Words blocks it changed.
     /// </summary>
     private static readonly IReadOnlyDictionary<string, string> Roots = new Dictionary<string, string>(StringComparer.Ordinal)
     {
         ["pdf"] = "page/1-101",
         ["slides"] = "slide/1-101",
-        ["words"] = "document",
+        ["words"] = "block/1-101",
     };
 
-    /// <summary>
-    /// Whether <paramref name="targets"/> is the product's degenerate form: exactly its root address
-    /// or, for Words, block-range addresses within the bound.
-    /// </summary>
+    /// <summary>Whether <paramref name="targets"/> is the product's degenerate form: exactly its address.</summary>
     private static bool IsDegenerate(string product, string[] targets) =>
-        targets.Length == 1 && targets[0] == Roots[product]
-        || product == "words" && targets.Length <= Bound && targets.All(static target => BlockRanges().IsMatch(target));
-
-    [GeneratedRegex(@"^blocks/[0-9]+(-[0-9]*)?(,[0-9]+(-[0-9]*)?)*$")]
-    private static partial Regex BlockRanges();
+        targets.Length == 1 && targets[0] == Roots[product];
 
     [Fact]
     public void Products_LeaveTheBoundToTheSdk()

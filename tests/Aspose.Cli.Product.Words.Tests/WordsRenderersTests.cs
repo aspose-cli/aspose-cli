@@ -25,7 +25,7 @@ public sealed class WordsRenderersTests
                 HasRevisions = false, RevisionCount = 0, RevisionAuthors = [], CommentCount = 0,
                 Signed = false, HasMacros = false,
             },
-            Styles = ["Normal", "Heading 1"],
+            Styles = [new WordsStyleData { Name = "Normal", Kind = "paragraph" }, new WordsStyleData { Name = "Heading 1", Kind = "paragraph" }],
             Bookmarks = [],
         };
         using var writer = new StringWriter();

@@ -962,20 +962,6 @@
       "actual": "paperSize: a page size is named pageSize"
     },
     {
-      "case": "C-R21 | v2/words/ops#insert_section",
-      "invariant": "C-R21",
-      "rule": "C-R21",
-      "cause": "page-size-read-as-width-and-height-points",
-      "actual": "pageSetup.columnCount: no read reports it"
-    },
-    {
-      "case": "C-R21 | v2/words/ops#set_page_setup",
-      "invariant": "C-R21",
-      "rule": "C-R21",
-      "cause": "page-size-read-as-width-and-height-points",
-      "actual": "columnCount: no read reports it"
-    },
-    {
       "case": "C-R01 | cells",
       "invariant": "C-R01",
       "rule": "C-R01",
@@ -1074,20 +1060,6 @@
       "actual": "array of object{listLevel,style,text} in insert_paragraphs; array of string in set_footer, set_header"
     },
     {
-      "case": "C-R30 | words delete_watermark on a document without a watermark",
-      "invariant": "C-R30",
-      "rule": "C-R30",
-      "cause": "words-items-affected-not-from-snapshots",
-      "actual": "itemsAffected is above 0 but the output has the same package parts and the same inspect and read results as the input"
-    },
-    {
-      "case": "C-R30 | words refresh_fields",
-      "invariant": "C-R30",
-      "rule": "C-R30",
-      "cause": "words-items-affected-not-from-snapshots",
-      "actual": "itemsAffected is above 0 but the output has the same package parts and the same inspect and read results as the input"
-    },
-    {
       "case": "C-R21 | v2/words/ops#insert_break",
       "invariant": "C-R21",
       "rule": "C-R21",
@@ -1102,88 +1074,18 @@
       "actual": "wordsRevisionData.date: a timestamp without format date-time"
     },
     {
-      "case": "C-R21 | v2/words/ops#set_watermark",
-      "invariant": "C-R21",
-      "rule": "C-R21",
-      "cause": "words-state-not-read-back",
-      "actual": "text: no read reports it; path: no read reports it; faded: no read reports it; color: no read reports it; font: no read reports it"
-    },
-    {
-      "case": "C-R21 | v2/words/ops#set_list",
-      "invariant": "C-R21",
-      "rule": "C-R21",
-      "cause": "words-state-not-read-back",
-      "actual": "kind: no read reports it; level: no read reports it"
-    },
-    {
-      "case": "C-R21 | v2/words/ops#define_style",
-      "invariant": "C-R21",
-      "rule": "C-R21",
-      "cause": "words-state-not-read-back",
-      "actual": "basedOn: no read reports it; font: no read reports it; latinFont: no read reports it; eastAsianFont: no read reports it; fontSize: no read reports it; bold: no read reports it; color: no read reports it; spaceBefore: no read reports it; spa..."
-    },
-    {
-      "case": "C-R21 | v2/words/ops#set_table_pagination",
-      "invariant": "C-R21",
-      "rule": "C-R21",
-      "cause": "words-state-not-read-back",
-      "actual": "keepTogether: no read reports it; allowRowBreakAcrossPages: no read reports it; headerRowCount: no read reports it; keepWithNext: no read reports it"
-    },
-    {
-      "case": "C-R21 | v2/words/ops#format_text",
-      "invariant": "C-R21",
-      "rule": "C-R21",
-      "cause": "words-state-not-read-back",
-      "actual": "underline: no read reports it; highlight: no read reports it"
-    },
-    {
-      "case": "C-R21 | v2/words/ops#insert_hyperlink",
-      "invariant": "C-R21",
-      "rule": "C-R21",
-      "cause": "words-state-not-read-back",
-      "actual": "url: no read reports it"
-    },
-    {
-      "case": "C-R21 | v2/words/ops#insert_image",
-      "invariant": "C-R21",
-      "rule": "C-R21",
-      "cause": "words-state-not-read-back",
-      "actual": "inline: no read reports it"
-    },
-    {
       "case": "C-R21 | v2/words/ops#insert_paragraphs",
       "invariant": "C-R21",
       "rule": "C-R21",
       "cause": "words-state-not-read-back",
-      "actual": "paragraphs.listLevel: no read reports it"
-    },
-    {
-      "case": "C-R21 | v2/words/ops#insert_toc",
-      "invariant": "C-R21",
-      "rule": "C-R21",
-      "cause": "words-state-not-read-back",
-      "actual": "maxLevel: no read reports it"
-    },
-    {
-      "case": "C-R21 | v2/words/ops#set_default_font",
-      "invariant": "C-R21",
-      "rule": "C-R21",
-      "cause": "words-state-not-read-back",
-      "actual": "font: no read reports it; latinFont: no read reports it; eastAsianFont: no read reports it; fontSize: no read reports it"
-    },
-    {
-      "case": "C-R21 | v2/words/ops#set_page_numbers",
-      "invariant": "C-R21",
-      "rule": "C-R21",
-      "cause": "words-state-not-read-back",
-      "actual": "location: no read reports it; alignment: no read reports it; numberStyle: no read reports it; start: no read reports it"
+      "actual": "paragraphs.listLevel: read back as level"
     },
     {
       "case": "C-R21 | v2/words/ops#set_properties",
       "invariant": "C-R21",
       "rule": "C-R21",
       "cause": "words-state-not-read-back",
-      "actual": "custom: no read reports it"
+      "actual": "custom: read back as properties"
     },
     {
       "case": "C-R21 | words insert_image reads back",
@@ -1198,13 +1100,6 @@
       "rule": "C-R21",
       "cause": "words-state-not-read-back",
       "actual": "tableStyle \"Table Normal\" does not read back as tableStyle in words inspect"
-    },
-    {
-      "case": "C-R30 | words targets read <unit>/<address>",
-      "invariant": "C-R30",
-      "rule": "C-R30",
-      "cause": "words-targets-not-unit-address",
-      "actual": "targets outside <unit>/<address>: set_default_font document; set_footer document; set_header document; set_page_numbers document; set_page_setup document; set_properties document; set_watermark document"
     }
   ]
 }

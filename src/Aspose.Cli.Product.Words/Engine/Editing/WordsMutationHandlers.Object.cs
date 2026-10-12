@@ -19,7 +19,7 @@ namespace Aspose.Cli.Product.Words.Engine.Editing;
 // Embedded objects, fields, metadata, protection, revisions, comments and merges.
 internal sealed partial class WordsMutationHandlers
 {
-    public long Apply(InsertImageOp operation)
+    public ValueTuple Apply(InsertImageOp operation)
     {
         if (!File.Exists(operation.Path))
         {
@@ -46,20 +46,20 @@ internal sealed partial class WordsMutationHandlers
             shape.WrapType = WrapType.Square;
         }
 
-        return 1;
+        return default;
     }
 
-    public long Apply(InsertTocOp operation)
+    public ValueTuple Apply(InsertTocOp operation)
     {
         Paragraph paragraph = InsertBuilderParagraph(_document, Anchor, operation.Position);
         var builder = new DocumentBuilder(_document);
         builder.MoveTo(paragraph);
         var toc = (FieldToc)builder.InsertTableOfContents($"\\o \"1-{operation.MaxLevel}\" \\h \\z \\u");
         UpdateTocs(_document, [toc]);
-        return 1;
+        return default;
     }
 
-    public long Apply(InsertBookmarkOp operation)
+    public ValueTuple Apply(InsertBookmarkOp operation)
     {
         if (_document.Range.Bookmarks[operation.Name] is not null)
         {
@@ -73,19 +73,19 @@ internal sealed partial class WordsMutationHandlers
 
         paragraph.PrependChild(new BookmarkStart(_document, operation.Name));
         paragraph.AppendChild(new BookmarkEnd(_document, operation.Name));
-        return 1;
+        return default;
     }
 
-    public long Apply(InsertHyperlinkOp operation)
+    public ValueTuple Apply(InsertHyperlinkOp operation)
     {
         Paragraph paragraph = InsertBuilderParagraph(_document, Anchor, operation.Position);
         var builder = new DocumentBuilder(_document);
         builder.MoveTo(paragraph);
         builder.InsertHyperlink(operation.Text, operation.Url, isBookmark: false);
-        return 1;
+        return default;
     }
 
-    public long Apply(InsertFieldOp operation)
+    public ValueTuple Apply(InsertFieldOp operation)
     {
         Paragraph paragraph = InsertBuilderParagraph(_document, Anchor, operation.Position);
         var builder = new DocumentBuilder(_document);
@@ -100,10 +100,10 @@ internal sealed partial class WordsMutationHandlers
             _pageFields.Add(field);
         }
 
-        return 1;
+        return default;
     }
 
-    public long Apply(SetPropertiesOp operation)
+    public ValueTuple Apply(SetPropertiesOp operation)
     {
         if (operation.Title is not null)
         {
@@ -134,10 +134,10 @@ internal sealed partial class WordsMutationHandlers
             }
         }
 
-        return 1;
+        return default;
     }
 
-    public long Apply(SetWatermarkOp operation)
+    public ValueTuple Apply(SetWatermarkOp operation)
     {
         if (operation.Text is not null)
         {
@@ -163,7 +163,7 @@ internal sealed partial class WordsMutationHandlers
             }
 
             _document.Watermark.SetText(operation.Text, options);
-            return 1;
+            return default;
         }
 
         // The image is an admitted, size-bounded input, checked to decode before the engine
@@ -183,29 +183,29 @@ internal sealed partial class WordsMutationHandlers
         }
 
         _document.Watermark.SetImage(new MemoryStream(image, writable: false), new ImageWatermarkOptions { IsWashout = operation.Faded });
-        return 1;
+        return default;
     }
 
-    public long Apply(DeleteWatermarkOp operation)
+    public ValueTuple Apply(DeleteWatermarkOp operation)
     {
         _document.Watermark.Remove();
-        return 1;
+        return default;
     }
 
-    public long Apply(ProtectDocumentOp operation)
+    public ValueTuple Apply(ProtectDocumentOp operation)
     {
         string? password = OperationSecrets.Resolve(_secrets, operation.PasswordEnv)?.Reveal();
         _document.Protect(WordsProtection.FromMode(operation.Protection), password ?? string.Empty);
-        return 1;
+        return default;
     }
 
-    public long Apply(UnprotectDocumentOp operation)
+    public ValueTuple Apply(UnprotectDocumentOp operation)
     {
         string? password = OperationSecrets.Resolve(_secrets, operation.PasswordEnv)?.Reveal();
         if (password is null)
         {
             _document.Unprotect();
-            return 1;
+            return default;
         }
 
         bool removed = _document.Unprotect(password);
@@ -214,20 +214,27 @@ internal sealed partial class WordsMutationHandlers
             throw CliErrors.ProtectionPassword(passwordGiven: true, "the document", "passwordEnv");
         }
 
-        return 1;
+        return default;
     }
 
-    public long Apply(AcceptRevisionsOp operation) => ChangeRevisions(operation.Author, accept: true);
+    public ValueTuple Apply(AcceptRevisionsOp operation)
+    {
+        ChangeRevisions(operation.Author, accept: true);
+        return default;
+    }
 
-    public long Apply(RejectRevisionsOp operation) => ChangeRevisions(operation.Author, accept: false);
+    public ValueTuple Apply(RejectRevisionsOp operation)
+    {
+        ChangeRevisions(operation.Author, accept: false);
+        return default;
+    }
 
     /// <summary>
     /// Accepts or rejects the numbered changes the batch resolved, one author's revisions or
-    /// every revision, and counts the revisions the document stores that it decided. Numbered
-    /// changes are checked first: when an earlier decision in the batch took some of their
-    /// revisions, the operation is refused before it changes anything.
+    /// every revision. Numbered changes are checked first: when an earlier decision in the batch
+    /// took some of their revisions, the operation is refused before it changes anything.
     /// </summary>
-    private long ChangeRevisions(string? author, bool accept)
+    private void ChangeRevisions(string? author, bool accept)
     {
         if (_resolved.Revisions is { } changes)
         {
@@ -248,23 +255,16 @@ internal sealed partial class WordsMutationHandlers
                     new InvalidOperationException("Revision decision count mismatch."));
             }
 
-            return decided;
+            return;
         }
 
         if (author is not null)
         {
-            string[] authors = [.. _document.Revisions.Select(static revision => revision.Author).Distinct(StringComparer.Ordinal)];
             var byAuthor = new AuthorCriteria(author);
-            int changed = accept ? _document.Revisions.Accept(byAuthor) : _document.Revisions.Reject(byAuthor);
-            if (changed == 0)
-            {
-                _warnings.Add(AuthorNoMatch(author, "tracked revision", authors));
-            }
-
-            return changed;
+            _ = accept ? _document.Revisions.Accept(byAuthor) : _document.Revisions.Reject(byAuthor);
+            return;
         }
 
-        int count = _document.Revisions.Count;
         if (accept)
         {
             _document.Revisions.AcceptAll();
@@ -273,8 +273,6 @@ internal sealed partial class WordsMutationHandlers
         {
             _document.Revisions.RejectAll();
         }
-
-        return count;
     }
 
     private sealed class AuthorCriteria(string author) : IRevisionCriteria
@@ -283,24 +281,7 @@ internal sealed partial class WordsMutationHandlers
             string.Equals(revision?.Author, author, StringComparison.Ordinal);
     }
 
-    /// <summary>
-    /// The <c>OP_NO_EFFECT</c> warning of a review operation whose author has no
-    /// <paramref name="items"/> in the document, naming the closest of the
-    /// <paramref name="authors"/> it has.
-    /// </summary>
-    private Warning AuthorNoMatch(string author, string items, IReadOnlyCollection<string> authors)
-    {
-        string listed = string.Join(", ", authors.Select(static name => $"'{name}'"));
-        return WordsOp.Catalog.NoEffect(_resolved.Op, NoEffectReasons.NoMatch,
-            $"Operation {_resolved.Op.Id} ({WordsOp.Catalog.NameOf(_resolved.Op)}) changed nothing: the document has no {items} by '{author}'.") with
-        {
-            Hint = authors.Count == 0
-                ? $"The document has no {items}s; check 'words inspect --detail revisions comments'."
-                : Mistake.Of(author, authors).Hint($"Authors match exactly; the document's are {listed}."),
-        };
-    }
-
-    public long Apply(AddCommentOp operation)
+    public ValueTuple Apply(AddCommentOp operation)
     {
         if (Anchor is not Paragraph paragraph)
         {
@@ -319,7 +300,7 @@ internal sealed partial class WordsMutationHandlers
             paragraph.AppendChild(end);
             paragraph.AppendChild(comment);
         });
-        return 1;
+        return default;
     }
 
     /// <summary>
@@ -340,16 +321,12 @@ internal sealed partial class WordsMutationHandlers
         }
     }
 
-    public long Apply(DeleteCommentsOp operation)
+    public ValueTuple Apply(DeleteCommentsOp operation)
     {
         Comment[] all = [.. _document.GetChildNodes(NodeType.Comment, true).Cast<Comment>()];
         Comment[] comments = all
             .Where(comment => operation.Author is null || string.Equals(comment.Author, operation.Author, StringComparison.Ordinal))
             .ToArray();
-        if (operation.Author is { } author && comments.Length == 0)
-        {
-            _warnings.Add(AuthorNoMatch(author, "comment", [.. all.Select(static comment => comment.Author).Distinct(StringComparer.Ordinal)]));
-        }
         // Collect every node first: removing from a live node collection while enumerating it skips nodes.
         var ids = comments.Select(static comment => comment.Id).ToHashSet();
         Node[] anchors = _document.GetChildNodes(NodeType.CommentRangeStart, true).Cast<CommentRangeStart>()
@@ -365,10 +342,10 @@ internal sealed partial class WordsMutationHandlers
             }
         });
 
-        return comments.LongLength;
+        return default;
     }
 
-    public long Apply(MailMergeOp operation)
+    public ValueTuple Apply(MailMergeOp operation)
     {
         IReadOnlyList<IReadOnlyDictionary<string, string?>> rows = operation.Items is { } inline
             ? MergeRows(inline)
@@ -387,7 +364,7 @@ internal sealed partial class WordsMutationHandlers
             Warning? regionGaps = WordsMergeGaps.Find(WordsMergeGaps.TemplateFields(_document, region), rows);
             ExecuteRegionMerge(_document, region, rows);
             AddWarning(regionGaps);
-            return rows.Count;
+            return default;
         }
 
         // Every further row appends one copy of the whole template.
@@ -407,7 +384,7 @@ internal sealed partial class WordsMutationHandlers
         }
 
         AddWarning(gaps);
-        return rows.Count;
+        return default;
     }
 
     // Discloses a merge's blank fields once the merge succeeded.
@@ -526,7 +503,7 @@ internal sealed partial class WordsMutationHandlers
         document.MailMerge.ExecuteWithRegions(table);
     }
 
-    public long Apply(RefreshFieldsOp operation)
+    public ValueTuple Apply(RefreshFieldsOp operation)
     {
         if (operation.What == "toc")
         {
@@ -540,7 +517,7 @@ internal sealed partial class WordsMutationHandlers
             _document.UpdatePageLayout();
         }
 
-        return _document.Range.Fields.Count;
+        return default;
     }
 
     /// <summary>

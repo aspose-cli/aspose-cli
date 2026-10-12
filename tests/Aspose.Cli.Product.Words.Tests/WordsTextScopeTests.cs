@@ -107,8 +107,8 @@ public sealed class WordsTextScopeTests : IClassFixture<WordsFixture>
         Assert.Equal(
             [(null, null), ("footer", "first"), ("header", "primary")],
             search.Hits.Select(static hit => (hit.Location, hit.Kind)).Order());
-        Assert.Equal("block/1", edit.Applied[0].Targets[0]);
-        Assert.Equal(["section/1/footer/first", "section/1/header/primary"], edit.Applied[0].Targets.Skip(1).Order());
+        // A header or footer counts as its section.
+        Assert.Equal(["block/1", "section/1"], edit.Applied[0].Targets);
     }
 
     [Theory]
@@ -132,7 +132,9 @@ public sealed class WordsTextScopeTests : IClassFixture<WordsFixture>
             });
 
         var document = new Document(output);
-        Assert.Equal(expected.Length, result.Applied[0].ItemsAffected);
+        // Each block and section whose text changed counts once, however many matches it held.
+        Assert.Equal(result.Applied[0].Targets.Count, result.Applied[0].ItemsAffected);
+        Assert.Equal(scope == "headers-footers", result.Applied[0].Targets.All(static target => target.StartsWith("section/", StringComparison.Ordinal)));
         Assert.Equal(expected.Order(), Words(document.GetText(), "pin").Order());
         Assert.Contains("https://example.com/needle", document.GetText(), StringComparison.Ordinal);
         Assert.Contains("withdrawn needle", document.GetText(), StringComparison.Ordinal);

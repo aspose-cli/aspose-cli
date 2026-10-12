@@ -16,12 +16,11 @@ internal sealed partial class WordsMutationHandlers
     /// <summary>
     /// Replaces matches in the stories of the op's scope, as search reads them: field codes
     /// and text a tracked change deletes are not text, and a match in a comment or footnote
-    /// belongs to that note's scope, not to the body or header that anchors it. Each replacement
-    /// records its paragraph as changed.
+    /// belongs to that note's scope, not to the body or header that anchors it.
     /// </summary>
-    public long Apply(ReplaceTextOp operation)
+    public ValueTuple Apply(ReplaceTextOp operation)
     {
-        var callback = new ScopedReplacingCallback(operation.MaxReplacementCount, _changed);
+        var callback = new ScopedReplacingCallback(operation.MaxReplacementCount);
         var options = new FindReplaceOptions
         {
             MatchCase = operation.CaseSensitive,
@@ -47,21 +46,11 @@ internal sealed partial class WordsMutationHandlers
             }
         }
 
-        // Like a verification issue, the warning never repeats the find text.
-        if (replaced == 0)
-        {
-            _warnings.Add(WordsOp.Catalog.NoEffect(operation, NoEffectReasons.NoMatch,
-                $"Operation {operation.Id} (replace_text) matched no text in scope '{operation.Scope}', so nothing was replaced.") with
-            {
-                Hint = "Search with 'words search' and the same pattern and scope, or --scope all for headers, footers, "
-                    + "footnotes and comments. Field codes and text a tracked change deletes are never matched.",
-            });
-        }
-
-        return replaced;
+        Matched = replaced;
+        return default;
     }
 
-    private sealed class ScopedReplacingCallback(int? maximum, ICollection<Node> changed) : IReplacingCallback
+    private sealed class ScopedReplacingCallback(int? maximum) : IReplacingCallback
     {
         private int _accepted;
 
@@ -78,7 +67,6 @@ internal sealed partial class WordsMutationHandlers
             }
 
             _accepted++;
-            changed.Add(args.MatchNode.GetAncestor(NodeType.Paragraph) ?? args.MatchNode);
             if (args.MatchNode is Run run)
             {
                 KeepEastAsianFont(run, args.Replacement);
@@ -112,7 +100,7 @@ internal sealed partial class WordsMutationHandlers
         }
     }
 
-    public long Apply(SetTextOp operation)
+    public ValueTuple Apply(SetTextOp operation)
     {
         // A bookmark owns exactly its enclosed range, wherever it sits (mid-paragraph or in a
         // table cell). Only that range changes; the bookmark and its surroundings remain.
@@ -121,7 +109,7 @@ internal sealed partial class WordsMutationHandlers
             Bookmark bookmark = _document.Range.Bookmarks[name]
                 ?? throw Invalid($"bookmark '{name}' was removed by an earlier operation");
             bookmark.Text = operation.Text;
-            return 1;
+            return default;
         }
 
         // Check every target before the first change: a rejected operation changes nothing.
@@ -140,7 +128,7 @@ internal sealed partial class WordsMutationHandlers
             paragraph.AppendChild(run);
         }
 
-        return Nodes.Count;
+        return default;
     }
 
     /// <summary>
@@ -153,7 +141,7 @@ internal sealed partial class WordsMutationHandlers
     /// inserted joins its list but continues the item that one continued, since an inserted
     /// item is a tracked insertion when changes are tracked and gives no format to continue.
     /// </summary>
-    public long Apply(InsertParagraphsOp operation)
+    public ValueTuple Apply(InsertParagraphsOp operation)
     {
         Node cursor = Anchor;
         Paragraph? before = (operation.Position == "after" ? Anchor : Anchor.PreviousSibling) as Paragraph;
@@ -202,7 +190,7 @@ internal sealed partial class WordsMutationHandlers
             InsertRelative(Anchor, ref cursor, paragraph, operation.Position);
         }
 
-        return operation.Paragraphs.Count;
+        return default;
     }
 
     /// <summary>
@@ -362,7 +350,7 @@ internal sealed partial class WordsMutationHandlers
         run.IsInsertRevision || run.IsDeleteRevision || run.IsFormatRevision
         || run.IsMoveFromRevision || run.IsMoveToRevision;
 
-    public long Apply(InsertMarkdownOp operation)
+    public ValueTuple Apply(InsertMarkdownOp operation)
     {
         Document markdown = _loader.OpenMarkdown(operation.Markdown, _loaded);
         Node cursor = Anchor;
@@ -372,31 +360,32 @@ internal sealed partial class WordsMutationHandlers
             InsertRelative(Anchor, ref cursor, block, operation.Position);
         }
 
-        return blocks.Count;
+        return default;
     }
 
-    public long Apply(DeleteBlocksOp operation)
+    public ValueTuple Apply(DeleteBlocksOp operation)
     {
         foreach (Node node in Nodes)
         {
             DocumentBlockIndex.Remove(node);
         }
 
-        return Nodes.Count;
+        return default;
     }
 
-    public long Apply(InsertBreakOp operation)
+    public ValueTuple Apply(InsertBreakOp operation)
     {
         if (operation.Kind == "section")
         {
-            return InsertSectionBreak(Anchor, operation.Position);
+            InsertSectionBreak(Anchor, operation.Position);
+            return default;
         }
 
         var paragraph = new Paragraph(_document);
         paragraph.AppendChild(new Run(_document, ControlChar.PageBreak));
         Node cursor = Anchor;
         InsertRelative(Anchor, ref cursor, paragraph, operation.Position);
-        return 1;
+        return default;
     }
 }
 

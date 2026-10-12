@@ -303,7 +303,7 @@ public sealed class WordsTrackChangesTests
 
         Assert.Equal(ErrorCodes.OpsInvalid, refused.Code);
         Assert.Contains("revisions 1 and 2", refused.Message, StringComparison.Ordinal);
-        Assert.Equal(2L, Assert.Single(both.Applied).ItemsAffected);
+        Assert.Equal(1L, Assert.Single(both.Applied).ItemsAffected);
         Assert.Equal(0, new Document(fixture.Temp.File("both.docx")).Revisions.Count);
     }
 

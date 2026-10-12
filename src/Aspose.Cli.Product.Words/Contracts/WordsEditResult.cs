@@ -30,9 +30,11 @@ public sealed record WordsEditResult() : EngineResultEnvelope("edit-result", 2),
     public BackupInfo? Backup { get; init; }
 
     /// <summary>
-    /// The output pages the batch changed: those of the blocks and sections the operations
-    /// addressed or inserted, of replaced text, and of the content that took the place of
-    /// removed blocks. An operation whose only target is document can change any page.
+    /// The output pages that hold what the batch changed: the pages of each changed block, and
+    /// for a removed block the page of the content that took its place; every page of a section
+    /// whose page setup, headers or footers changed; every page for the watermark; and the pages
+    /// of the text in a changed style. Absent when the batch changed nothing on a page, such as
+    /// only document properties or the editing restriction.
     /// </summary>
     [Minimum(1, Depth = 1)]
     [UniqueItems]

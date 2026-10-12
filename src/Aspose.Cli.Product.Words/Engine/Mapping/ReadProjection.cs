@@ -84,6 +84,7 @@ internal static class ReadProjection
             var runs = content == WordsReadContents.Full ? new List<WordsRunData>() : null;
             if (runs is not null)
             {
+                IReadOnlyDictionary<Run, string> links = WordsReadBack.Hyperlinks(paragraph);
                 foreach (Run run in WordsText.VisibleRuns(paragraph))
                 {
                     string runText = run.Text[Math.Min(skipped, run.Text.Length)..];
@@ -107,6 +108,9 @@ internal static class ReadProjection
                         Bold = run.Font.Bold,
                         Italic = run.Font.Italic,
                         Color = $"#{run.Font.Color.ToArgb() & 0xffffff:X6}",
+                        Underline = run.Font.Underline != Underline.None,
+                        Highlight = WordsReadBack.Hex(run.Font.HighlightColor),
+                        Url = links.GetValueOrDefault(run),
                     });
                 }
             }
@@ -128,7 +132,9 @@ internal static class ReadProjection
                         Name = shape.Name,
                         Width = shape.Width,
                         Height = shape.Height,
+                        Inline = shape.WrapType == WrapType.Inline,
                     }).ToArray(),
+                List = WordsReadBack.List(paragraph),
                 BreakAfter = BreakAfter(paragraph),
                 ContentTruncated = truncated,
             };

@@ -215,6 +215,71 @@ public sealed class BoundedOperationModelTests
         Assert.Equal(["op-0001"], verified.CheckedOps);
     }
 
+    /// <summary>A document of blocks the engine keeps by instance, each with its text.</summary>
+    private sealed class BlockModel(Action<TestOp, List<Block>> apply) : IOperationModel<TestOp>
+    {
+        public List<Block> Blocks { get; } = [new("a"), new("b"), new("c"), new("d")];
+
+        public OperationSnapshot Snapshot(TestOp operation) =>
+            new OperationSnapshot().AddObjects("block", Blocks.Select(static block => ((object)block, block.Text)));
+
+        public void Apply(TestOp operation) => apply(operation, Blocks);
+
+        public IReadOnlyList<string> AttemptedTargets(TestOp operation) => ["block/all"];
+
+        public IReadOnlyDictionary<string, IReadOnlyList<object>> Positions() =>
+            new Dictionary<string, IReadOnlyList<object>> { ["block"] = [.. Blocks] };
+    }
+
+    private sealed class Block(string text)
+    {
+        public string Text { get; set; } = text;
+    }
+
+    [Fact]
+    public void Run_NamesObjectsKeptByInstanceWhereTheOutputHoldsThem_InOrder()
+    {
+        var model = new BlockModel(static (op, blocks) =>
+        {
+            switch (((SetOp)op).Value)
+            {
+                case 1:
+                    // Changes c and removes b, which moves c and d up without changing them.
+                    blocks[2].Text = "C";
+                    blocks.RemoveAt(1);
+                    break;
+                case 2:
+                    blocks.Insert(0, new Block("new"));
+                    break;
+            }
+        });
+
+        AppliedBatch applied = BoundedOperationRunner.Run(
+            Catalog, Batch(new SetOp { Value = 1 }, new SetOp { Value = 2 }), bestEffort: false, deadline: null, model);
+
+        // c is block 3 of the output, after the later insertion; b, removed, keeps its number in the input.
+        Assert.Equal(2L, applied.Outcomes[0].ItemsAffected);
+        Assert.Equal(["block/2", "block/3"], applied.Outcomes[0].Targets);
+        Assert.Equal(["block/1"], applied.Outcomes[1].Targets);
+        Assert.Equal(
+            [("block/1", true), ("block/2", false), ("block/3", true)],
+            applied.Changed.Select(static item => (item.Address, item.InOutput)));
+    }
+
+    [Fact]
+    public void Run_AnObjectWhoseInstanceTheEngineReplacedWithTheSameState_ChangedNothing()
+    {
+        var model = new BlockModel(static (_, blocks) => blocks[1] = new Block(blocks[1].Text));
+
+        AppliedBatch applied = BoundedOperationRunner.Run(Catalog, Batch(new SetOp { Value = 1 }), bestEffort: false, deadline: null, model);
+
+        BoundedOperationOutcome outcome = Assert.Single(applied.Outcomes);
+        Assert.Equal(0L, outcome.ItemsAffected);
+        Assert.Empty(outcome.Targets);
+        Assert.Equal("OP_NO_EFFECT", Assert.Single(applied.Warnings).Code.Name);
+        Assert.Empty(applied.Changed);
+    }
+
     /// <summary>Records each operation; the second one's record throws.</summary>
     private sealed class Verifier : IEditVerifier<TestOp>
     {

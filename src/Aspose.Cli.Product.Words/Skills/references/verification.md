@@ -32,17 +32,18 @@ aspose-cli words compare baseline.docx output.docx --output-format json
 
 Read the blocks the batch reported in `applied[].targets`, and blocks that
 follow insertions. In `--content full`, compare an inserted paragraph's `runs`
-fonts and `paragraphFormat` (indents, spacing, alignment) with its neighbours'. `replace_text` names the original body blocks whose text,
-comments or footnotes it changed, then each header and footer it changed as
-`section/<n>/<location>/<kind>`, and `document` when it changed none of them.
-`pagesTouched` lists the output pages the batch changed: those of the blocks
-and sections it addressed or inserted, of replaced text, and of the content
-that took the place of removed blocks; a header or footer change touches every
-page of its section. An operation whose only target is `document`, such as
-`set_watermark` or `mail_merge`, can change any page. An operation that
-changed more than 100 blocks reports its `blocks/<ranges>` instead, or
-`document`. Whether an operation took effect comes from `OP_NO_EFFECT` and a
-read-back, not from `itemsAffected` alone (`aspose-cli docs editing`).
+fonts and `paragraphFormat` (indents, spacing, alignment) with its neighbours'.
+`applied[].itemsAffected` counts the objects the operation changed, compared
+before and after it, and `targets` names them where the output holds them: a
+body block as `block/<n>`, numbered as `words read` numbers it, a section
+whose page setup, headers or footers changed as `section/<n>`, a style as
+`style/<name>`, a document property as `property/<name>`, the watermark as
+`watermark/1` and the editing restriction as `protection/document`. More than
+100 of one kind shorten to one range, such as `block/1-150`. An operation that
+changed nothing reports 0 and `OP_NO_EFFECT`. `pagesTouched` lists the output
+pages the batch changed: those of the blocks and sections it addressed or
+inserted, of replaced text, and of the content that took the place of removed
+blocks; a header or footer change touches every page of its section.
 
 ## Visual review
 

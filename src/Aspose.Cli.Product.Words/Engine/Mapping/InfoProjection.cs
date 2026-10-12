@@ -47,11 +47,11 @@ internal static class InfoProjection
                 Protection = WordsProtection.ToMode(document.ProtectionType),
                 Signed = loaded.Format.HasDigitalSignature,
                 HasMacros = loaded.Format.HasMacros,
+                Watermark = WordsReadBack.Watermark(document),
             },
             Sections = details.Contains(WordsInspectDetails.Sections) ? Sections(document, loaded.Evaluation) : null,
             Outline = details.Contains(WordsInspectDetails.Outline) ? Outline(index, warnings) : null,
-            Styles = details.Contains(WordsInspectDetails.Styles) ? document.Styles.Cast<Style>()
-                .Select(static s => s.Name).Order(StringComparer.Ordinal).ToArray() : null,
+            Styles = details.Contains(WordsInspectDetails.Styles) ? WordsReadBack.Styles(document) : null,
             Fields = details.Contains(WordsInspectDetails.Fields) ? Fields(document, index, warnings) : null,
             Bookmarks = details.Contains(WordsInspectDetails.Bookmarks) ? document.Range.Bookmarks.Cast<Bookmark>()
                 .Select(static b => b.Name).Order(StringComparer.Ordinal).ToArray() : null,
@@ -75,6 +75,8 @@ internal static class InfoProjection
             Section = index + 1,
             Orientation = section.PageSetup.Orientation == Orientation.Landscape ? WordsPageOrientations.Landscape : WordsPageOrientations.Portrait,
             PageSize = PageSizeInfo.Of(section.PageSetup.PageWidth, section.PageSetup.PageHeight),
+            ColumnCount = section.PageSetup.TextColumns.Count,
+            PageNumbers = WordsReadBack.PageNumbers(section),
             Margins = new WordsMarginData
             {
                 Top = section.PageSetup.TopMargin,
@@ -125,6 +127,7 @@ internal static class InfoProjection
                 Block = index.FindBlock(field.Start),
                 Code = field.GetFieldCode(),
                 Result = WordsText.ResultOf(field),
+                MaxLevel = field is Aspose.Words.Fields.FieldToc toc ? TocMaxLevel(toc.HeadingLevelRange) : null,
             },
             "fields",
             "Split the document with 'words split --by sections' and inspect each part with '--detail fields'.",
@@ -390,8 +393,13 @@ internal static class InfoProjection
         index.Entries.Where(static entry => entry.Node is Table).Select(static entry =>
         {
             var table = (Table)entry.Node;
+            (bool keepTogether, bool allowRowBreak, int headerRows, bool keepWithNext) = WordsReadBack.Pagination(table);
             return new WordsTableData
             {
+                KeepTogether = keepTogether,
+                AllowRowBreakAcrossPages = allowRowBreak,
+                HeaderRowCount = headerRows,
+                KeepWithNext = keepWithNext,
                 Block = entry.Index,
                 RowCount = table.Rows.Count,
                 ColumnCount = table.Rows.Count == 0 ? 0 : table.Rows.Cast<Row>().Max(static row => row.Cells.Count),
@@ -401,14 +409,29 @@ internal static class InfoProjection
             };
         }).ToArray();
 
-    private static IReadOnlyDictionary<string, string?> Properties(Document document) =>
-        new SortedDictionary<string, string?>(StringComparer.Ordinal)
+    /// <summary>The built-in title, author, subject and keywords, and every custom property by its own name.</summary>
+    private static IReadOnlyDictionary<string, string?> Properties(Document document)
+    {
+        var properties = new SortedDictionary<string, string?>(StringComparer.Ordinal)
         {
             ["title"] = document.BuiltInDocumentProperties.Title,
             ["author"] = document.BuiltInDocumentProperties.Author,
             ["subject"] = document.BuiltInDocumentProperties.Subject,
             ["keywords"] = document.BuiltInDocumentProperties.Keywords,
         };
+        foreach (Aspose.Words.Properties.DocumentProperty property in document.CustomDocumentProperties)
+        {
+            properties[WordsReadBack.PropertyKey(property.Name)] = property.Value?.ToString();
+        }
+
+        return properties;
+    }
+
+    /// <summary>The last level of a table of contents' heading range, such as 3 of <c>1-3</c>.</summary>
+    private static int? TocMaxLevel(string? range) =>
+        range?.Split('-') is [_, var last] && int.TryParse(last, System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out int level)
+            ? level
+            : null;
 
     internal static int? HeadingLevel(Paragraph paragraph)
     {

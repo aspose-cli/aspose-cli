@@ -192,8 +192,8 @@ omitted settings keep their values:
   A caption or heading before the table stays with it through its own
   paragraph style's keep-with-next setting, which heading styles usually have.
 
-`itemsAffected` counts the table's rows, or 1 when only `keepWithNext` is
-set.
+`inspect --detail tables` reads `keepTogether`, `allowRowBreakAcrossPages`,
+`headerRowCount` and `keepWithNext` back for each table.
 
 ```json
 { "ops": [ { "op": "set_table_pagination", "target": { "find": "Action items" }, "keepTogether": true, "headerRowCount": 1 } ] }

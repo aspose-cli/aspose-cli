@@ -58,8 +58,8 @@ aspose-cli words inspect contract.docx --detail revisions --output-format json
 to the document as it was before the batch, as block addresses do, so one
 batch can accept some changes and reject others; list both halves of a
 replacement.
-`itemsAffected` counts the revisions the document stores that were decided,
-one per run, paragraph mark or other changed node. Authors match exactly, as
+`itemsAffected` counts the blocks and sections whose content the decision
+changed, and its `targets` name them. Authors match exactly, as
 `document.revisionAuthors` spells them.
 
 ```json
