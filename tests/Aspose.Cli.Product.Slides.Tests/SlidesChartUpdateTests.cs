@@ -8,7 +8,7 @@ using Xunit;
 
 namespace Aspose.Cli.Product.Slides.Tests;
 
-/// <summary>update_chart_data changes data in place and keeps what the author styled.</summary>
+/// <summary>set_chart_data changes data in place and keeps what the author styled.</summary>
 public sealed class SlidesChartUpdateTests
 {
     [Fact]
@@ -31,7 +31,7 @@ public sealed class SlidesChartUpdateTests
             {
                 Ops =
                 [
-                    new UpdateChartDataOp
+                    new SetChartDataOp
                     {
                         Slide = 1,
                         ShapeId = ChartId(seed),
@@ -72,7 +72,7 @@ public sealed class SlidesChartUpdateTests
             {
                 Ops =
                 [
-                    new UpdateChartDataOp
+                    new SetChartDataOp
                     {
                         Slide = 1,
                         ShapeId = ChartId(seed),
@@ -137,7 +137,7 @@ public sealed class SlidesChartUpdateTests
             {
                 Ops =
                 [
-                    new UpdateChartDataOp
+                    new SetChartDataOp
                     {
                         Slide = 1, ShapeId = ChartId(seed),
                         Series = [new SlidesChartSeriesInput { Name = "One", Values = [11, 21, 31], XValues = [1.5, 2.5, 3.5] }],
@@ -169,7 +169,7 @@ public sealed class SlidesChartUpdateTests
             {
                 Ops =
                 [
-                    new UpdateChartDataOp
+                    new SetChartDataOp
                     {
                         Slide = 1, ShapeId = ChartId(seed),
                         Series = [new SlidesChartSeriesInput { Name = "One", Values = [1, 2, 3], XValues = [1, 2, 3] }],

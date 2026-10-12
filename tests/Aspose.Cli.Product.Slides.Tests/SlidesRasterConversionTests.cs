@@ -195,7 +195,7 @@ public sealed class SlidesRasterConversionTests(SlidesRasterConversionTests.Crea
         public CreatedDeck() => _deck = new(() =>
         {
             File.WriteAllText(_workspace.File("outline.md"), "# Quarterly review\n\nGrowth and retention");
-            CliResult create = _workspace.Run("slides", "create", "deck.pptx", "--from-markdown", "outline.md", "--size", "16x9", "--output-format", "json");
+            CliResult create = _workspace.Run("slides", "create", "deck.pptx", "--from-markdown", "outline.md", "--slide-size", "16x9", "--output-format", "json");
             Assert.True(create.ExitCode == 0, create.StdErr);
             return _workspace.File("deck.pptx");
         });

@@ -32,7 +32,7 @@ text on overflow; still check review for overflow and split a crowded slide
 rather than rely on shrinking. Wrap an image path that contains spaces in angle
 brackets; remote images are refused.
 
-`--size 16x9` or `--size 4x3` resizes the canvas and scales the masters,
+`--slide-size 16x9` or `--slide-size 4x3` resizes the canvas and scales the masters,
 layouts and slides with it. Without `--from-markdown`, the template's own slides
 are kept; a template that has none yields one empty Title Slide.
 
@@ -69,7 +69,7 @@ Deals by stage
   `FEATURE_UNSUPPORTED`. Rows grow with their text, and a table that ends below
   its placeholder is reported as a `TABLE_OVERFLOW` warning located at its
   slide: split it across slides under the same heading, shorten its cells, or
-  give it a smaller text `size` with `set_shape_style`.
+  give it a smaller `fontSize` with `format_shape`.
 
-After creation, read the slides with `slides query slides --scope shapes` before adding
+After creation, read the slides with `slides read --content shapes` before adding
 charts, images, notes or transitions with `slides edit`.

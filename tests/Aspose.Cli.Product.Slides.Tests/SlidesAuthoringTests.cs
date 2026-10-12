@@ -255,7 +255,7 @@ public sealed class SlidesAuthoringTests
         using var deck = new Presentation(SetBodyOfAContentSlide(
             fixture,
             new SlidesParagraphInput { Text = "Top" },
-            new SlidesParagraphInput { Text = "Sub", Level = 1 }));
+            new SlidesParagraphInput { Text = "Sub", Level = 2 }));
         IAutoShape body = Assert.Single(SlidesPlaceholders.Content(deck.Slides[1]));
         Assert.Equal([0, 1], body.TextFrame.Paragraphs.Select(static paragraph => (int)paragraph.ParagraphFormat.Depth));
         Assert.All(
@@ -318,7 +318,7 @@ public sealed class SlidesAuthoringTests
         SlidesReadResult read = SlidesRead.Run(fixture.Session, new SlidesReadRequest
         {
             Input = addressed,
-            Slides = PageRange.Parse("1"), Scope = SlidesReadScopes.Shapes,
+            Slides = PageRange.Parse("1"), Content = SlidesReadContents.Shapes,
         });
         Assert.Contains(read.Slides[0].Shapes!, static shape => shape.Placeholder == "body" && shape.Text == "Final");
     }
@@ -333,7 +333,7 @@ public sealed class SlidesAuthoringTests
             Input = input,
             Batch = new SlidesOpsBatch
             {
-                Ops = [new AddSlideOp { Layout = "Title and Content" }],
+                Ops = [new InsertSlideOp { Layout = "Title and Content" }],
             },
             Output = TestOutput.At(input, overwrite: true),
         });

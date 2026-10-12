@@ -6,7 +6,7 @@ namespace Aspose.Cli.Product.Slides.Engine.Editing;
 // Slide and section structure.
 internal sealed partial class SlidesMutationHandlers
 {
-    public long Apply(AddSlideOp operation)
+    public long Apply(InsertSlideOp operation)
     {
         int at = operation.At ?? _presentation.Slides.Count + 1;
         if (at > _presentation.Slides.Count + 1)
@@ -51,7 +51,7 @@ internal sealed partial class SlidesMutationHandlers
         return 1;
     }
 
-    public long Apply(DuplicateSlideOp operation)
+    public long Apply(CopySlideOp operation)
     {
         int at = operation.At ?? _presentation.Slides.Count + 1;
         if (at > _presentation.Slides.Count + 1)
@@ -77,7 +77,7 @@ internal sealed partial class SlidesMutationHandlers
         return Slides.Count;
     }
 
-    public long Apply(ApplyLayoutOp operation)
+    public long Apply(SetLayoutOp operation)
     {
         foreach (ISlide slide in Slides)
         {
@@ -116,10 +116,10 @@ internal sealed partial class SlidesMutationHandlers
     public long Apply(SetBackgroundOp operation)
     {
         IPPImage? image = null;
-        if (operation.ImagePath is not null)
+        if (operation.Path is not null)
         {
-            EnsureFile(operation.ImagePath);
-            image = _presentation.Images.AddImage(OperationImages.Read(_inputs, operation.ImagePath));
+            EnsureFile(operation.Path);
+            image = _presentation.Images.AddImage(OperationImages.Read(_inputs, operation.Path));
         }
 
         foreach (ISlide slide in Slides)
@@ -143,7 +143,7 @@ internal sealed partial class SlidesMutationHandlers
         return Slides.Count;
     }
 
-    public long Apply(AddSectionOp operation)
+    public long Apply(InsertSectionOp operation)
     {
         if (_presentation.Sections.Any(section => string.Equals(section.Name, operation.Name, StringComparison.Ordinal)))
         {
@@ -154,20 +154,20 @@ internal sealed partial class SlidesMutationHandlers
         return 1;
     }
 
-    public long Apply(AppendPresentationOp operation)
+    public long Apply(ImportSlidesOp operation)
     {
-        using LoadedPresentation source = _loader.Open(operation.Path, password: null);
+        using LoadedPresentation source = _loader.Open(operation.Path, OperationSecrets.Resolve(_secrets, operation.SourcePasswordEnv));
         var clones = new List<ISlide>();
         foreach (ISlide slide in source.Presentation.Slides)
         {
-            ISlide clone = operation.MasterPolicy == SlidesMasterPolicies.KeepSource
+            ISlide clone = operation.Formatting == FormattingModes.KeepSource
                 ? _presentation.Slides.AddClone(slide)
                 : _presentation.Slides.AddClone(slide, _presentation.Masters[0], allowCloneMissingLayout: true);
             _touched.Add(clone.SlideId);
             clones.Add(clone);
         }
 
-        if (operation.MasterPolicy != SlidesMasterPolicies.KeepSource)
+        if (operation.Formatting != FormattingModes.KeepSource)
         {
             FollowLayoutBackgrounds(clones);
         }
@@ -189,7 +189,7 @@ internal sealed partial class SlidesMutationHandlers
             SlidesAuthoring.Body(Slide).TextFrame,
             operation.Paragraphs.Select(static input => new AuthoredParagraph(
                 [new AuthoredRun(input.Text)],
-                input.Level,
+                input.Level - 1,
                 input.Bullet ? ParagraphList.Inherit : ParagraphList.None)));
 
         _touched.Add(Slide.SlideId);

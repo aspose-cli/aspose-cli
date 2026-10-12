@@ -39,8 +39,8 @@ public sealed class FontDirectoryOptionsTests
         ["pdf validate"] = false,
         ["pdf sign"] = true, // the visible signature appearance
         ["slides inspect"] = false,
-        ["slides query slides"] = false,
-        ["slides query search"] = false,
+        ["slides read"] = false,
+        ["slides search"] = false,
         ["slides create"] = true, // saving shrinks auto-fit text with the fonts' metrics
         ["slides edit"] = true,
         ["slides extract"] = false,

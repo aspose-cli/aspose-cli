@@ -25,7 +25,7 @@ public sealed class SlidesReviewCheckTests
             Slide(3),
             Slide(4, Shape(1, new(700, 50, 100, 50), "Hi") with
             {
-                Runs = [new SlidesTextRunData { Text = "Hi", Size = 10 }],
+                Runs = [new SlidesTextRunData { Text = "Hi", FontSize = 10 }],
             }),
             Slide(5, [.. Enumerable.Range(1, 18).Select(id => Shape(id, new(id * 30, 400, 20, 20), "Item"))]),
             Slide(6, Shape(1, new(0, 0, 10, 10), "a"), Shape(2, new(20, 0, 10, 10), "b"), Shape(3, new(0, 20, 10, 10), "c")),
@@ -257,7 +257,7 @@ public sealed class SlidesReviewCheckTests
         string deck = fixture.File("bilingual-risks.pptx");
         SlidesCreate.Run(fixture.Session, new SlidesCreateRequest { Output = TestOutput.At(deck), MarkdownPath = markdown });
 
-        SlidesReadResult read = SlidesRead.Run(fixture.Session, new SlidesReadRequest { Input = deck, Scope = SlidesReadScopes.Full });
+        SlidesReadResult read = SlidesRead.Run(fixture.Session, new SlidesReadRequest { Input = deck, Content = SlidesReadContents.Full });
         SlidesShapeData body = Assert.Single(read.Slides[0].Shapes, static shape => shape.Placeholder == "body");
         SlidesRect text = Assert.IsType<SlidesRect>(body.TextRect);
 
@@ -420,8 +420,8 @@ public sealed class SlidesReviewCheckTests
     private static SlidesReviewAnalysis Review(SlidesEngineFixture fixture, string path)
     {
         SlidesPresentationSummary info = SlidesInfo.Run(fixture.Session, new SlidesInspectRequest { Input = path }).Presentation;
-        SlidesReadResult read = SlidesRead.Run(fixture.Session, new SlidesReadRequest { Input = path, Scope = SlidesReadScopes.Full });
-        return SlidesReviewAnalyzer.Analyze(read.Slides, info.WidthPoints, info.HeightPoints);
+        SlidesReadResult read = SlidesRead.Run(fixture.Session, new SlidesReadRequest { Input = path, Content = SlidesReadContents.Full });
+        return SlidesReviewAnalyzer.Analyze(read.Slides, info.SlideSize.Width, info.SlideSize.Height);
     }
 
     private static SlidesShapeData TitleWithLines(long id, Rect frame, Rect lines) =>
@@ -451,7 +451,7 @@ public sealed class SlidesReviewCheckTests
     {
         ShapeId = id,
         ShapeName = $"Shape {id}",
-        Type = type,
+        Kind = type,
         Text = text,
         Rect = new SlidesRect { X = rect.X, Y = rect.Y, Width = rect.Width, Height = rect.Height },
         ZOrder = (int)id,

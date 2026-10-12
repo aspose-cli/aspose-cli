@@ -2,7 +2,7 @@ using System.Text.Json.Serialization;
 
 namespace Aspose.Cli.Product.Slides.Contracts;
 
-/// <summary>Result of <c>slides query slides</c>: a window of slides with their content at the requested scope.</summary>
+/// <summary>Result of <c>slides read</c>: a window of slides with their content at the requested depth.</summary>
 public sealed record SlidesReadResult() : WindowedResultEnvelope("read-result", 2)
 {
     /// <summary>The presentation read.</summary>
@@ -13,8 +13,8 @@ public sealed record SlidesReadResult() : WindowedResultEnvelope("read-result", 
     /// How much of each slide was projected: <c>text</c> the text blocks, <c>shapes</c> every
     /// shape with its text and geometry, <c>full</c> also text runs, notes and comments.
     /// </summary>
-    [AllowedValues(typeof(SlidesReadScopes))]
-    public required string Scope { get; init; }
+    [AllowedValues(typeof(SlidesReadContents))]
+    public required string Content { get; init; }
 
     /// <summary>How many slides the presentation holds, which open slide ranges resolve against.</summary>
     [Minimum(0)]
@@ -44,16 +44,16 @@ public sealed record SlidesSlideData
     /// <summary>The slide's title text; omitted when the slide has no title.</summary>
     public string? Title { get; init; }
 
-    /// <summary>The text of each shape that has text, in shape order; only at scope <c>text</c>.</summary>
+    /// <summary>The text of each shape that has text, in shape order; only with <c>--content text</c>.</summary>
     public IReadOnlyList<string>? Text { get; init; }
 
-    /// <summary>The slide's top-level shapes in z-order; empty at scope <c>text</c>.</summary>
+    /// <summary>The slide's top-level shapes in z-order; empty with <c>--content text</c>.</summary>
     public required IReadOnlyList<SlidesShapeData> Shapes { get; init; }
 
-    /// <summary>The speaker notes; at scope <c>full</c> or with <c>--notes</c>, and omitted when the slide has none.</summary>
+    /// <summary>The speaker notes; with <c>--content full</c> or <c>--notes</c>, and omitted when the slide has none.</summary>
     public string? Notes { get; init; }
 
-    /// <summary>The slide's comments; only at scope <c>full</c>.</summary>
+    /// <summary>The slide's comments; only with <c>--content full</c>.</summary>
     public IReadOnlyList<SlidesCommentData>? Comments { get; init; }
 
     /// <summary>
@@ -80,7 +80,7 @@ public sealed record SlidesShapeData
     /// any other shape.
     /// </summary>
     [AllowedValues("placeholder", "chart", "table", "audio", "video", "image", "group", "shape")]
-    public required string Type { get; init; }
+    public required string Kind { get; init; }
 
     /// <summary>
     /// The placeholder role, which set_text and the other shape operations accept as placeholder
@@ -97,7 +97,7 @@ public sealed record SlidesShapeData
     /// <summary>The shape's text; omitted when it has none.</summary>
     public string? Text { get; init; }
 
-    /// <summary>The shape's text runs with their effective formatting; only at scope <c>full</c>, and omitted for a shape without text.</summary>
+    /// <summary>The shape's text runs with their effective formatting; only with <c>--content full</c>, and omitted for a shape without text.</summary>
     public IReadOnlyList<SlidesTextRunData>? Runs { get; init; }
 
     /// <summary>Where the shape is on the slide.</summary>
@@ -138,7 +138,7 @@ public sealed record SlidesTextRunData
     public string? EastAsianFont { get; init; }
 
     /// <summary>The font size in points.</summary>
-    public double? Size { get; init; }
+    public double? FontSize { get; init; }
 
     /// <summary>Whether the run is bold.</summary>
     public bool? Bold { get; init; }

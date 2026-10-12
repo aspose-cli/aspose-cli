@@ -336,53 +336,49 @@
           "description": "Show presentation structure, stable slide ids and metadata."
         },
         {
-          "command": "query",
-          "description": "Read bounded presentation projections without mutating the source."
-        },
-        {
-          "command": "query search",
-          "description": "Search presentation shape and speaker-notes text."
-        },
-        {
-          "command": "query slides",
+          "command": "read",
           "description": "Read a bounded slide-content window."
         },
         {
           "command": "render",
           "description": "Render one or more slides for visual verification."
+        },
+        {
+          "command": "search",
+          "description": "Search presentation shape and speaker-notes text."
         }
       ],
       "operations": [
         {
           "command": "edit",
           "ops": [
-            "add_section",
-            "add_slide",
-            "append_presentation",
-            "apply_layout",
+            "copy_slide",
             "delete_shape",
             "delete_slides",
-            "duplicate_slide",
+            "format_shape",
+            "import_slides",
             "insert_chart",
             "insert_image",
+            "insert_section",
             "insert_shape",
+            "insert_slide",
             "insert_table",
             "move_slide",
             "replace_text",
             "set_background",
             "set_body",
+            "set_chart_data",
             "set_footer",
+            "set_layout",
             "set_notes",
             "set_properties",
             "set_shape_bounds",
-            "set_shape_style",
             "set_slide_hidden",
             "set_slide_size",
             "set_table_cell",
             "set_text",
             "set_title",
-            "set_transition",
-            "update_chart_data"
+            "set_transition"
           ]
         }
       ]

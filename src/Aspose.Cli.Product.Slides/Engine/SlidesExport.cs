@@ -46,7 +46,7 @@ internal static class SlidesExport
                     new SlidesRenderRequest { Input = request.Input, Output = request.Output },
                     selected,
                     "slides-convert")
-                .Select(static item => item.Output).ToArray();
+                .Select(static item => item.File).ToArray();
         }
         else
         {
@@ -112,7 +112,8 @@ internal static class SlidesExport
         LicenseState state = session.Outputs.License;
         using LoadedPresentation loaded = session.Loader.Open(request.Input, request.Password);
         IReadOnlyList<int> slides = RenderSelection.Resolve(request.Slides, loaded.Presentation.Slides.Count, SlidesDiagnostics.SlideNotFound, "slide");
-        IReadOnlyList<SlidesSlideOutput> outputs = RenderImages(session, loaded, request, slides, "slides-render");
+        SlidesSlideOutput[] outputs = [.. RenderImages(session, loaded, request, slides, "slides-render")
+            .Select(static item => new SlidesSlideOutput(item.File) { Slide = item.Slide })];
         return new SlidesRenderResult
         {
             Input = Source(request.Input, loaded),
@@ -126,7 +127,7 @@ internal static class SlidesExport
         };
     }
 
-    private static IReadOnlyList<SlidesSlideOutput> RenderImages(
+    private static IReadOnlyList<(int Slide, OutputInfo File)> RenderImages(
         SlidesSession session,
         LoadedPresentation loaded,
         SlidesRenderRequest request,
@@ -148,11 +149,11 @@ internal static class SlidesExport
 
         string directory = request.Output.Directory;
         using OutputSet<Presentation> transaction = session.Outputs.BeginSet([directory], transactionName);
-        var targets = new List<(int Number, uint SlideId, string Path)>(slides.Count);
+        var targets = new List<int>(slides.Count);
         foreach ((int number, string path) in slides.Zip(request.Output.Parts(slides)))
         {
             ISlide slide = presentation.Slides[number - 1];
-            targets.Add((number, slide.SlideId, path));
+            targets.Add(number);
             transaction.Stage(path, request.Output.Overwrite, presentation, temp =>
             {
                 if (request.Output.Format.Id == "svg")
@@ -173,11 +174,6 @@ internal static class SlidesExport
 
         loaded.Resources.ThrowIfFailed();
         IReadOnlyList<PublishedFile> files = transaction.Commit();
-        return targets.Select((target, index) => new SlidesSlideOutput
-        {
-            Slide = target.Number,
-            SlideId = target.SlideId,
-            Output = FileObjects.Output(files[index], request.Output.Format, encrypted: false),
-        }).ToArray();
+        return [.. targets.Select((number, index) => (number, FileObjects.Output(files[index], request.Output.Format, encrypted: false)))];
     }
 }

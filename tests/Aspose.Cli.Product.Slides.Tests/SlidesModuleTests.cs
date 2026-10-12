@@ -25,20 +25,20 @@ public sealed class SlidesModuleTests
         SchemaVersion = 2,
         Ops =
         [
-            new AddSlideOp { Layout = "Title and Content", At = 2 },
+            new InsertSlideOp { Layout = "Title and Content", At = 2 },
             new DeleteSlidesOp { Slides = "4" },
             new MoveSlideOp { Slide = 2, To = 1 },
-            new DuplicateSlideOp { SlideId = 256, At = 3 },
+            new CopySlideOp { SlideId = 256, At = 3 },
             new SetSlideHiddenOp { Slides = "3", Hidden = true },
-            new ApplyLayoutOp { Slides = "2", Layout = "Title Only" },
+            new SetLayoutOp { Slides = "2", Layout = "Title Only" },
             new SetBackgroundOp { Slides = "1-2", Color = "#F8FAFC" },
-            new SlidesContracts.AddSectionOp { Name = "Results", StartSlide = 2 },
-            new AppendPresentationOp { Path = "D:/data/append.pptx", MasterPolicy = "keep-source" },
+            new SlidesContracts.InsertSectionOp { Name = "Results", At = 2 },
+            new ImportSlidesOp { Path = "D:/data/append.pptx", Formatting = "keep-source" },
             new SetTitleOp { Slide = 1, Text = "Q3 Review" },
             new SlidesContracts.SetBodyOp
             {
                 Slide = 1,
-                Paragraphs = [new SlidesParagraphInput { Text = "Revenue grew", Level = 0 }],
+                Paragraphs = [new SlidesParagraphInput { Text = "Revenue grew", Level = 1 }],
             },
             new SlidesContracts.SetTextOp { Slide = 1, ShapeId = 4, Text = "Updated" },
             new SlidesReplaceTextOp { Find = "Q3", Replace = "Q4", Scope = "all" },
@@ -56,7 +56,7 @@ public sealed class SlidesModuleTests
                 Kind = "rounded-rectangle",
                 Rect = new SlidesRectInput { X = 400, Y = 120, Width = 200, Height = 80 },
                 Text = "Key point",
-                Style = new SlidesShapeStyleInput { Fill = "#E0F2FE", Color = "#0F172A", Bold = true },
+                Style = new SlidesShapeStyleInput { FillColor = "#E0F2FE", Color = "#0F172A", Bold = true },
             },
             new SlidesInsertTableOp
             {
@@ -64,9 +64,9 @@ public sealed class SlidesModuleTests
                 Rect = new SlidesRectInput { X = 72, Y = 320, Width = 540, Height = 120 },
                 RowCount = 2,
                 ColumnCount = 2,
-                Data = [new[] { "Metric", "Value" }, new[] { "ARR", "$2M" }],
+                Values = [new[] { "Metric", "Value" }, new[] { "ARR", "$2M" }],
             },
-            new SlidesSetTableCellOp { Slide = 2, ShapeId = 8, Row = 2, Col = 2, Text = "$2.1M" },
+            new SlidesSetTableCellOp { Slide = 2, ShapeId = 8, Row = 2, Column = 2, Text = "$2.1M" },
             new InsertChartOp
             {
                 Slide = 3,
@@ -76,7 +76,7 @@ public sealed class SlidesModuleTests
                 Series = [new SlidesChartSeriesInput { Name = "Revenue", Values = [10, 12] }],
                 Title = "Quarterly revenue",
             },
-            new UpdateChartDataOp
+            new SetChartDataOp
             {
                 Slide = 3,
                 ShapeId = 9,
@@ -85,16 +85,16 @@ public sealed class SlidesModuleTests
             },
             new DeleteShapeOp { Slide = 3, ShapeId = 10 },
             new SetShapeBoundsOp { Slide = 2, ShapeId = 7, X = 380, Width = 240 },
-            new SetShapeStyleOp
+            new FormatShapeOp
             {
                 Slide = 1,
                 Placeholder = "title",
-                Style = new SlidesShapeStyleInput { Font = "Aptos Display", Size = 30, Color = "#0F172A" },
+                Style = new SlidesShapeStyleInput { Font = "Aptos Display", FontSize = 30, Color = "#0F172A" },
             },
             new SlidesContracts.SetFooterOp { Slides = "1-3", Text = "Confidential", ShowNumber = true },
             new SetTransitionOp { Slides = "1-3", Kind = "fade", DurationMs = 500 },
             new SlidesSetPropertiesOp { Title = "Q3 Review", Author = "Finance", Company = "Aspose" },
-            new SetSlideSizeOp { Size = "16x9", ScaleContent = true },
+            new SetSlideSizeOp { SlideSize = new SlidesSlideSizeInput { Preset = "16x9" }, ScaleContent = true },
         ],
     };
 
@@ -109,7 +109,7 @@ public sealed class SlidesModuleTests
     [Fact]
     public void OperationObjects_RejectUnknownNestedFields() =>
         AssertOperationObjectIsStrict<SlidesOp>(
-            """{"op":"set_shape_style","slide":1,"shapeId":1,"style":{"bold":true}}""", "style");
+            """{"op":"format_shape","slide":1,"shapeId":1,"style":{"bold":true}}""", "style");
 
     [Fact]
     public Task EveryDefaultInputFormatHasPositiveRoutingEvidence() =>
@@ -143,10 +143,10 @@ public sealed class SlidesModuleTests
         "application/vnd.oasis.opendocument.presentation");
 
     [Theory]
-    [InlineData("""{"op":"append_presentation","path":"other.pptx"}""", """{"masterPolicy":"keep-source"}""")]
+    [InlineData("""{"op":"import_slides","path":"other.pptx"}""", """{"formatting":"keep-source"}""")]
     [InlineData("""{"op":"replace_text","find":"a","replace":"b"}""", """{"scope":"all"}""")]
-    [InlineData("""{"op":"set_slide_size","size":"800x600pt"}""", """{"scaleContent":true}""")]
-    [InlineData("""{"op":"set_slide_size","size":"800x600pt","scaleContent":false}""", """{"scaleContent":false}""")]
+    [InlineData("""{"op":"set_slide_size","slideSize":{"width":800,"height":600}}""", """{"scaleContent":true}""")]
+    [InlineData("""{"op":"set_slide_size","slideSize":{"width":800,"height":600},"scaleContent":false}""", """{"scaleContent":false}""")]
     public void OperationFields_PreserveDefaultsAndExplicitValues(string input, string expected) =>
         AssertOperationDefaults<SlidesOp>(input, expected);
 
@@ -159,8 +159,8 @@ public sealed class SlidesModuleTests
     }
 
     [Theory]
-    [InlineData("""{"op":"set_shape_style","slide":1,"shapeId":1}""")]
-    [InlineData("""{"op":"set_shape_style","slide":1,"shapeId":1,"style":null}""")]
+    [InlineData("""{"op":"format_shape","slide":1,"shapeId":1}""")]
+    [InlineData("""{"op":"format_shape","slide":1,"shapeId":1,"style":null}""")]
     public void ShapeStyle_RequiresTheStyleObject(string input)
     {
         Assert.Throws<Aspose.Cli.Sdk.Errors.CliException>(() =>
@@ -168,10 +168,10 @@ public sealed class SlidesModuleTests
     }
 
     [Theory]
-    [InlineData("""{"op":"set_shape_style","slide":1,"shapeId":2}""")]
+    [InlineData("""{"op":"format_shape","slide":1,"shapeId":2}""")]
     [InlineData("""{"op":"set_shape_bounds","slide":1,"shapeId":2}""")]
     [InlineData("""{"op":"set_shape_bounds","slide":1,"shapeId":2,"width":0}""")]
-    [InlineData("""{"op":"update_chart_data","slide":1,"shapeId":2,"series":[]}""")]
+    [InlineData("""{"op":"set_chart_data","slide":1,"shapeId":2,"series":[]}""")]
     [InlineData("""{"op":"set_text","slide":1,"placeholder":"object","text":"x"}""")]
     public void OperationRules_RejectIncompleteOrUnknownValues(string operation)
     {

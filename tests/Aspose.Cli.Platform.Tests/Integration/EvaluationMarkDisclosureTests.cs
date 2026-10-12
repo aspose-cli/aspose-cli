@@ -76,7 +76,7 @@ public sealed class EvaluationMarkDisclosureTests
     {
         ["cells"] = """{"ops":[{"op":"insert_rows","sheet":"Sheet1","at":2}]}""",
         ["pdf"] = """{"ops":[{"op":"add_bookmark","title":"Again","page":1}]}""",
-        ["slides"] = """{"ops":[{"op":"add_slide","layout":"Title Only"}]}""",
+        ["slides"] = """{"ops":[{"op":"insert_slide","layout":"Title Only"}]}""",
         ["words"] = """{"ops":[{"op":"insert_paragraphs","at":{"block":2},"position":"after","paragraphs":[{"text":"Added"}]}]}""",
     };
 

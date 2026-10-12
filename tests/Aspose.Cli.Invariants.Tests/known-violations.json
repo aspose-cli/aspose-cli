@@ -822,20 +822,6 @@
       "actual": "size: a font size is named fontSize"
     },
     {
-      "case": "C-R20 | v2/slides/ops#slidesShapeStyleInput fixednames",
-      "invariant": "C-R20",
-      "rule": "C-R20",
-      "cause": "font-size-not-named-font-size",
-      "actual": "fill: a fill is named fillColor; size: a font size is named fontSize"
-    },
-    {
-      "case": "C-R20 | v2/slides/read-result fixednames",
-      "invariant": "C-R20",
-      "rule": "C-R20",
-      "cause": "font-size-not-named-font-size",
-      "actual": "slidesTextRunData.size: a font size is named fontSize"
-    },
-    {
       "case": "C-R20 | v2/words/document-read fixednames",
       "invariant": "C-R20",
       "rule": "C-R20",
@@ -900,20 +886,6 @@
     },
     {
       "case": "C-R34 | pdf query search",
-      "invariant": "C-R34",
-      "rule": "C-R34",
-      "cause": "help-examples-and-links-not-declared",
-      "actual": "has 0 examples; at least 2; has no Learn more"
-    },
-    {
-      "case": "C-R34 | slides query search",
-      "invariant": "C-R34",
-      "rule": "C-R34",
-      "cause": "help-examples-and-links-not-declared",
-      "actual": "has 0 examples; at least 2; has no Learn more"
-    },
-    {
-      "case": "C-R34 | slides query slides",
       "invariant": "C-R34",
       "rule": "C-R34",
       "cause": "help-examples-and-links-not-declared",
@@ -1025,25 +997,11 @@
       "actual": "op unprotect is not <verb>_<noun> with a verb of the rule's table"
     },
     {
-      "case": "C-R19 | v2/slides/ops#append_presentation",
-      "invariant": "C-R19",
-      "rule": "C-R19",
-      "cause": "op-verb-append",
-      "actual": "op append_presentation is not <verb>_<noun> with a verb of the rule's table"
-    },
-    {
       "case": "C-R19 | v2/words/ops#append_document",
       "invariant": "C-R19",
       "rule": "C-R19",
       "cause": "op-verb-append",
       "actual": "op append_document is not <verb>_<noun> with a verb of the rule's table"
-    },
-    {
-      "case": "C-R19 | v2/slides/ops#apply_layout",
-      "invariant": "C-R19",
-      "rule": "C-R19",
-      "cause": "op-verb-apply",
-      "actual": "op apply_layout is not <verb>_<noun> with a verb of the rule's table"
     },
     {
       "case": "C-R19 | v2/words/ops#apply_list",
@@ -1072,13 +1030,6 @@
       "rule": "C-R19",
       "cause": "op-verb-create",
       "actual": "op create_table is not <verb>_<noun> with a verb of the rule's table"
-    },
-    {
-      "case": "C-R19 | v2/slides/ops#duplicate_slide",
-      "invariant": "C-R19",
-      "rule": "C-R19",
-      "cause": "op-verb-duplicate",
-      "actual": "op duplicate_slide is not <verb>_<noun> with a verb of the rule's table"
     },
     {
       "case": "C-R19 | v2/cells/ops#edit_comment",
@@ -1137,13 +1088,6 @@
       "actual": "op update_chart is not <verb>_<noun> with a verb of the rule's table"
     },
     {
-      "case": "C-R19 | v2/slides/ops#update_chart_data",
-      "invariant": "C-R19",
-      "rule": "C-R19",
-      "cause": "op-verb-update",
-      "actual": "op update_chart_data is not <verb>_<noun> with a verb of the rule's table"
-    },
-    {
       "case": "C-R19 | v2/words/ops#update_fields",
       "invariant": "C-R19",
       "rule": "C-R19",
@@ -1200,13 +1144,6 @@
       "actual": "outputs[]: lacks path, format, sizeBytes, fingerprint; outputs[]: not flat (output); outputs[]: index, pages, bookmark beside the file fields, not one unit field"
     },
     {
-      "case": "C-R31 | v2/slides/render-result outputs",
-      "invariant": "C-R31",
-      "rule": "C-R31",
-      "cause": "outputs-shapes-differ",
-      "actual": "outputs[]: lacks path, format, sizeBytes, fingerprint; outputs[]: not flat (output); outputs[]: slide, slideId beside the file fields, not one unit field"
-    },
-    {
       "case": "C-R31 | v2/words/render-result outputs",
       "invariant": "C-R31",
       "rule": "C-R31",
@@ -1242,13 +1179,6 @@
       "actual": "size: a page size is named pageSize"
     },
     {
-      "case": "C-R20 | v2/slides/ops#set_slide_size fixednames",
-      "invariant": "C-R20",
-      "rule": "C-R20",
-      "cause": "page-size-not-named-page-size",
-      "actual": "size: a page size is named slideSize"
-    },
-    {
       "case": "C-R20 | v2/words/ops#pageSetupInput fixednames",
       "invariant": "C-R20",
       "rule": "C-R20",
@@ -1270,13 +1200,6 @@
       "actual": "size \"Letter\" does not read back as widthPoints in pdf inspect"
     },
     {
-      "case": "C-R21 | slides set_slide_size reads back",
-      "invariant": "C-R21",
-      "rule": "C-R21",
-      "cause": "page-size-read-as-width-and-height-points",
-      "actual": "size \"4x3\" does not read back as widthPoints in slides inspect"
-    },
-    {
       "case": "C-R21 | v2/pdf/ops#insert_blank_page",
       "invariant": "C-R21",
       "rule": "C-R21",
@@ -1289,13 +1212,6 @@
       "rule": "C-R21",
       "cause": "page-size-read-as-width-and-height-points",
       "actual": "size: read back as widthPoints; size: writes enum(A3,A4,Legal,Letter), reads number"
-    },
-    {
-      "case": "C-R21 | v2/slides/ops#set_slide_size",
-      "invariant": "C-R21",
-      "rule": "C-R21",
-      "cause": "page-size-read-as-width-and-height-points",
-      "actual": "size: read back as widthPoints; size: writes string, reads number"
     },
     {
       "case": "C-R21 | v2/words/ops#add_section",
@@ -1501,13 +1417,6 @@
       "actual": "pdf query is a command group below the product; its subcommands are a third level.; pdf query forms is a third command level; a product command is `aspose-cli <product> <verb> <file...>`.; pdf query pages is a third command level; a product..."
     },
     {
-      "case": "C-R01 | slides",
-      "invariant": "C-R01",
-      "rule": "C-R01",
-      "cause": "query-is-a-third-command-level",
-      "actual": "slides query is a command group below the product; its subcommands are a third level.; slides query search is a third command level; a product command is `aspose-cli <product> <verb> <file...>`.; slides query slides is a third command level..."
-    },
-    {
       "case": "C-R01 | words",
       "invariant": "C-R01",
       "rule": "C-R01",
@@ -1527,13 +1436,6 @@
       "rule": "C-R02",
       "cause": "query-is-a-third-command-level",
       "actual": "pdf query: 'query' is not a product verb (inspect, read, search, create, edit, convert, render, compare, extract, split, merge, sign, validate)."
-    },
-    {
-      "case": "C-R02 | slides",
-      "invariant": "C-R02",
-      "rule": "C-R02",
-      "cause": "query-is-a-third-command-level",
-      "actual": "slides query: 'query' is not a product verb (inspect, read, search, create, edit, convert, render, compare, extract, split, merge, sign, validate)."
     },
     {
       "case": "C-R02 | words",
@@ -1585,25 +1487,11 @@
       "actual": "enum in insert_blank_page, set_page_size; number in add_watermark_text"
     },
     {
-      "case": "C-R20 | v2/slides/ops field size",
-      "invariant": "C-R20",
-      "rule": "C-R20",
-      "cause": "size-names-font-and-page-size",
-      "actual": "number in slidesShapeStyleInput; string in set_slide_size"
-    },
-    {
       "case": "C-R20 | v2/words/ops field size",
       "invariant": "C-R20",
       "rule": "C-R20",
       "cause": "size-names-font-and-page-size",
       "actual": "enum in pageSetupInput; number in define_style, format_text, set_default_font"
-    },
-    {
-      "case": "C-R08 | slides create",
-      "invariant": "C-R08",
-      "rule": "C-R08",
-      "cause": "slides-create-size-not-slide-size",
-      "actual": "slides create --size: a banned name; a page size is --page-size, a slide size --slide-size."
     },
     {
       "case": "C-R29 | slides edit",
@@ -1627,13 +1515,6 @@
       "actual": "Engine/SlidesInfo.cs: 'slides extract' has no option '--out'"
     },
     {
-      "case": "C-R18 | v2/slides/ops#slidesParagraphInput",
-      "invariant": "C-R18",
-      "rule": "C-R18",
-      "cause": "slides-paragraph-level-zero-based",
-      "actual": "level: minimum 0, not 1"
-    },
-    {
       "case": "C-R21 | v2/slides/ops#set_notes",
       "invariant": "C-R21",
       "rule": "C-R21",
@@ -1648,6 +1529,13 @@
       "actual": "text: read back as title"
     },
     {
+      "case": "C-R21 | v2/slides/ops#format_shape",
+      "invariant": "C-R21",
+      "rule": "C-R21",
+      "cause": "slides-state-not-read-back",
+      "actual": "style.fillColor: no read reports it; style.line: no read reports it; style.latinFont: no read reports it"
+    },
+    {
       "case": "C-R21 | v2/slides/ops#insert_chart",
       "invariant": "C-R21",
       "rule": "C-R21",
@@ -1659,21 +1547,21 @@
       "invariant": "C-R21",
       "rule": "C-R21",
       "cause": "slides-state-not-read-back",
-      "actual": "kind: no read reports it; style.fill: no read reports it; style.line: no read reports it; style.latinFont: no read reports it"
+      "actual": "kind: no read reports it; style.fillColor: no read reports it; style.line: no read reports it; style.latinFont: no read reports it"
     },
     {
       "case": "C-R21 | v2/slides/ops#insert_table",
       "invariant": "C-R21",
       "rule": "C-R21",
       "cause": "slides-state-not-read-back",
-      "actual": "rowCount: no read reports it; columnCount: no read reports it; data: no read reports it"
+      "actual": "rowCount: no read reports it; columnCount: no read reports it; values: no read reports it"
     },
     {
       "case": "C-R21 | v2/slides/ops#set_background",
       "invariant": "C-R21",
       "rule": "C-R21",
       "cause": "slides-state-not-read-back",
-      "actual": "color: no read reports it; imagePath: no read reports it"
+      "actual": "color: no read reports it"
     },
     {
       "case": "C-R21 | v2/slides/ops#set_body",
@@ -1683,18 +1571,18 @@
       "actual": "paragraphs.level: no read reports it; paragraphs.bullet: no read reports it"
     },
     {
+      "case": "C-R21 | v2/slides/ops#set_chart_data",
+      "invariant": "C-R21",
+      "rule": "C-R21",
+      "cause": "slides-state-not-read-back",
+      "actual": "categories: no read reports it; series: no read reports it"
+    },
+    {
       "case": "C-R21 | v2/slides/ops#set_footer",
       "invariant": "C-R21",
       "rule": "C-R21",
       "cause": "slides-state-not-read-back",
       "actual": "text: no read reports it; showNumber: no read reports it; showDate: no read reports it"
-    },
-    {
-      "case": "C-R21 | v2/slides/ops#set_shape_style",
-      "invariant": "C-R21",
-      "rule": "C-R21",
-      "cause": "slides-state-not-read-back",
-      "actual": "style.fill: no read reports it; style.line: no read reports it; style.latinFont: no read reports it"
     },
     {
       "case": "C-R21 | v2/slides/ops#set_table_cell",
@@ -1709,13 +1597,6 @@
       "rule": "C-R21",
       "cause": "slides-state-not-read-back",
       "actual": "kind: no read reports it; durationMs: no read reports it"
-    },
-    {
-      "case": "C-R21 | v2/slides/ops#update_chart_data",
-      "invariant": "C-R21",
-      "rule": "C-R21",
-      "cause": "slides-state-not-read-back",
-      "actual": "categories: no read reports it; series: no read reports it"
     },
     {
       "case": "C-R30 | slides targets read <unit>/<address>",
@@ -1765,13 +1646,6 @@
       "rule": "C-R38",
       "cause": "source-writes-commands-bare",
       "actual": "Commands/ConvertCommand.cs: 'slides render' is written bare; quote it or write aspose-cli before it"
-    },
-    {
-      "case": "C-R20 | v2/slides/ops#set_table_cell spelling",
-      "invariant": "C-R20",
-      "rule": "C-R20",
-      "cause": "table-cell-col-abbreviated",
-      "actual": "col: abbreviated name"
     },
     {
       "case": "C-R20 | v2/words/ops#set_table_cell spelling",
@@ -1828,20 +1702,6 @@
       "rule": "C-R20",
       "cause": "variant-field-named-type",
       "actual": "pdfFormSummary.type: a variant named type, not kind"
-    },
-    {
-      "case": "C-R20 | v2/slides/inspect-result variants",
-      "invariant": "C-R20",
-      "rule": "C-R20",
-      "cause": "variant-field-named-type",
-      "actual": "slidesMediaInfo.type: a variant named type, not kind"
-    },
-    {
-      "case": "C-R20 | v2/slides/read-result variants",
-      "invariant": "C-R20",
-      "rule": "C-R20",
-      "cause": "variant-field-named-type",
-      "actual": "slidesShapeData.type: a variant named type, not kind"
     },
     {
       "case": "C-R20 | v2/words/compare-result variants",

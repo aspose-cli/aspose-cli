@@ -30,7 +30,7 @@ public sealed class SlidesResourceLoadingTests
         }
         Assert.True(Relink(input, Unreachable, server.Url) >= 2, "The deck must keep both external links.");
 
-        SlidesReadResult read = SlidesRead.Run(fixture.Session, new SlidesReadRequest { Input = input, Scope = SlidesReadScopes.Full });
+        SlidesReadResult read = SlidesRead.Run(fixture.Session, new SlidesReadRequest { Input = input, Content = SlidesReadContents.Full });
         SlidesRenderResult rendered = SlidesExport.Render(fixture.Session, new SlidesRenderRequest
         {
             Input = input,
@@ -49,7 +49,7 @@ public sealed class SlidesResourceLoadingTests
 
         Assert.True(server.RequestCount == 0, string.Join("; ", server.Requests));
         Assert.NotEmpty(Assert.Single(read.Slides).Shapes);
-        Assert.All(rendered.Outputs, static item => Assert.True(item.Output.SizeBytes > 0));
+        Assert.All(rendered.Outputs, static item => Assert.True(item.SizeBytes > 0));
         Assert.All(converted.Outputs, static output => Assert.True(new FileInfo(output.Path).Length > 0));
         Assert.Equal(1, view.TotalPartCount);
         Assert.False(view.SourceEncrypted);

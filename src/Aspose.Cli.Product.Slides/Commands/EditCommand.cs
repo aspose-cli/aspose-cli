@@ -32,6 +32,7 @@ internal static class EditCommand
                     Options = edit.Options,
                     Password = standard.InputPassword,
                     EncryptPassword = encryptPassword,
+                    OpSecrets = edit.Secrets,
                 };
             },
             Table,

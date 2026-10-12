@@ -8,17 +8,24 @@ namespace Aspose.Cli.Product.Slides.Tests;
 public sealed class SlidesContractDriftTests
 {
     [Theory]
-    [InlineData("800x450pt", true)]
-    [InlineData("800.5x450.25pt", true)]
-    [InlineData("72x7200pt", true)]
-    [InlineData("800x450PT", false)]
-    [InlineData("800 x 450pt", false)]
-    [InlineData("71x450pt", false)]
-    [InlineData("800x7201pt", false)]
-    [InlineData("1e3x450pt", false)]
-    public void SetSlideSize_AcceptsExactlyTheSchemaSpelling(string size, bool valid)
+    [InlineData("16x9", null, null, true)]
+    [InlineData("4x3", null, null, true)]
+    [InlineData(null, 800.0, 450.0, true)]
+    [InlineData(null, 800.5, 450.25, true)]
+    [InlineData(null, 72.0, 7200.0, true)]
+    [InlineData("16x9", 800.0, 450.0, false)]
+    [InlineData(null, 800.0, null, false)]
+    [InlineData(null, null, 450.0, false)]
+    [InlineData(null, null, null, false)]
+    [InlineData("a4", null, null, false)]
+    [InlineData(null, 71.0, 450.0, false)]
+    [InlineData(null, 800.0, 7201.0, false)]
+    public void SetSlideSize_AcceptsAPresetOrBothSides(string? preset, double? width, double? height, bool valid)
     {
-        var batch = new SlidesOpsBatch { Ops = [new SetSlideSizeOp { Size = size }] };
+        var batch = new SlidesOpsBatch
+        {
+            Ops = [new SetSlideSizeOp { SlideSize = new SlidesSlideSizeInput { Preset = preset, Width = width, Height = height } }],
+        };
 
         if (valid)
         {
@@ -28,6 +35,33 @@ public sealed class SlidesContractDriftTests
         {
             Assert.Equal(ErrorCodes.OpsInvalid, Assert.Throws<CliException>(() => SlidesOp.Catalog.Prepare(batch)).Code);
         }
+    }
+
+    [Theory]
+    [InlineData("4x3", null, null, "4x3", 720.0, 540.0)]
+    [InlineData("16x9", null, null, "16x9", 720.0, 405.0)]
+    [InlineData(null, 800.0, 450.0, null, 800.0, 450.0)]
+    public void SetSlideSize_ReadsBackAsTheSlideSizeInspectReports(
+        string? preset, double? width, double? height, string? readPreset, double readWidth, double readHeight)
+    {
+        using var fixture = new SlidesEngineFixture();
+        string input = fixture.CreatePresentation("size.pptx", slides: 1);
+        string output = fixture.File("resized.pptx");
+        SlidesEdit.Run(fixture.Session, new SlidesEditRequest
+        {
+            Input = input,
+            Batch = new SlidesOpsBatch
+            {
+                Ops = [new SetSlideSizeOp { SlideSize = new SlidesSlideSizeInput { Preset = preset, Width = width, Height = height } }],
+            },
+            Output = TestOutput.At(output),
+        });
+
+        SlidesSlideSizeInfo size = SlidesInfo.Run(fixture.Session, new SlidesInspectRequest { Input = output }).Presentation.SlideSize;
+
+        Assert.Equal(readPreset, size.Preset);
+        Assert.Equal(readWidth, size.Width, 2);
+        Assert.Equal(readHeight, size.Height, 2);
     }
 
     [Fact]
@@ -112,9 +146,9 @@ public sealed class SlidesContractDriftTests
             Batch = new SlidesOpsBatch { Ops = [new SlidesInsertImageOp { Slide = 1, Path = picture, AltText = "Logo" }] },
             Output = TestOutput.At(output),
         });
-        SlidesReadResult read = SlidesRead.Run(fixture.Session, new SlidesReadRequest { Input = output, Scope = SlidesReadScopes.Shapes });
+        SlidesReadResult read = SlidesRead.Run(fixture.Session, new SlidesReadRequest { Input = output, Content = SlidesReadContents.Shapes });
 
-        SlidesShapeData image = Assert.Single(Assert.Single(read.Slides).Shapes, static shape => shape.Type == "image");
+        SlidesShapeData image = Assert.Single(Assert.Single(read.Slides).Shapes, static shape => shape.Kind == "image");
         Assert.Equal("Logo", image.AltText);
     }
 }

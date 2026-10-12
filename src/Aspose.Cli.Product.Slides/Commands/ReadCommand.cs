@@ -1,4 +1,5 @@
 using System.CommandLine;
+using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.Extensibility.Commanding;
 using Aspose.Cli.Sdk.Extensibility.Output;
 
@@ -9,20 +10,20 @@ internal static class ReadCommand
     public static CommandDefinition<SlidesReadRequest, SlidesReadResult> Create()
     {
         var slides = new PartRangeOption("slide", "the first 10 slides");
-        var scope = new Option<string>("--scope")
+        var content = new Option<string>("--content")
         {
-            Description = "Projection scope: how much of each slide to return.",
-            DefaultValueFactory = _ => SlidesReadScopes.Shapes,
+            Description = "Projection depth: how much of each slide to return.",
+            DefaultValueFactory = _ => SlidesReadContents.Shapes,
         }.WithInput(InputKind.None);
-        scope.AcceptOnlyFromAmong([.. SlidesReadScopes.All]);
+        content.AcceptOnlyFromAmong([.. SlidesReadContents.All]);
         var maxChars = new MaxCharactersOption(
             "every returned title, text, run, note and comment, repeats included");
         var notes = new Option<bool>("--notes") { Description = "Include speaker notes for returned slides." };
         return new(
-            "slides",
+            "read",
             "Read a bounded slide-content window.",
             new CommandTraits { Input = SlidesInputs.Presentation },
-            [.. slides.Options, scope, .. maxChars.Options, notes],
+            [.. slides.Options, content, .. maxChars.Options, notes],
             (parse, standard) =>
             {
                 int characters = maxChars.Read(parse);
@@ -30,7 +31,7 @@ internal static class ReadCommand
                 {
                     Input = standard.Input,
                     Slides = slides.ReadRange(parse),
-                    Scope = parse.GetValue(scope) ?? SlidesReadScopes.Shapes,
+                    Content = parse.GetValue(content) ?? SlidesReadContents.Shapes,
                     IncludeNotes = parse.GetValue(notes),
                     MaxCharacters = characters,
                     Password = standard.InputPassword,
@@ -38,6 +39,16 @@ internal static class ReadCommand
             },
             Table)
         {
+            Examples =
+            [
+                "slides read deck.pptx --slides 1-5 --output-format json",
+                "slides read deck.pptx --slides 2 --content full --notes --output-format json",
+            ],
+            Links =
+            [
+                CommandHelpLink.Docs(SlidesModule.Manifest, "verification", "slide read-back and visual review"),
+                new("aspose-cli docs reading", "reading every product within bounded windows"),
+            ],
             Finish = (_, request, result, standard) =>
                 result with { Window = result.Window with { Next = Next(standard.Continuation(), slides.Name, request, result) } },
         };
@@ -45,7 +56,7 @@ internal static class ReadCommand
 
     internal static void Table(SlidesReadResult result, TableSurface surface)
     {
-        surface.Out.WriteLine($"{result.Input.Path}: {result.SlideCount} slide(s) ({result.Scope})");
+        surface.Out.WriteLine($"{result.Input.Path}: {result.SlideCount} slide(s) ({result.Content})");
         foreach (SlidesSlideData slide in result.Slides)
         {
             surface.Out.WriteLine();
@@ -89,7 +100,7 @@ internal static class ReadCommand
                 request.MaxCharacters) is { } continuation
             ? resume
                 .Option(slidesOption, continuation.Parts)
-                .Option("--scope", request.Scope)
+                .Option("--content", request.Content)
                 .Flag("--notes", request.IncludeNotes)
                 .Option(MaxCharactersOption.Name, continuation.MaxCharacters)
                 .ToString()

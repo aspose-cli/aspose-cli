@@ -40,14 +40,14 @@ internal sealed class SlidesViewAdapter : IProductViewAdapter<SlidesSession>
         {
             Input = filePath,
             Slides = inspected == 0 ? null : PageRange.Parse($"1-{inspected}"),
-            Scope = SlidesReadScopes.Full,
+            Content = SlidesReadContents.Full,
             MaxCharacters = 1_000_000,
             Password = request.Password,
         });
         SlidesReviewAnalysis analysis = SlidesReviewAnalyzer.Analyze(
             read.Slides,
-            info.Presentation.WidthPoints,
-            info.Presentation.HeightPoints);
+            info.Presentation.SlideSize.Width,
+            info.Presentation.SlideSize.Height);
         return new ProductReviewAssessment
         {
             Findings = analysis.Findings,

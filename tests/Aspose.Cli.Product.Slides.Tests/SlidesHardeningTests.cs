@@ -52,7 +52,7 @@ public sealed class SlidesHardeningTests
         SlidesReadResult read = SlidesRead.Run(fixture.Session, new SlidesReadRequest
         {
             Input = input,
-            Slides = PageRange.Parse("1"), Scope = scope, IncludeNotes = true, MaxCharacters = budget,
+            Slides = PageRange.Parse("1"), Content = scope, IncludeNotes = true, MaxCharacters = budget,
         });
         SlidesSlideData result = Assert.Single(read.Slides);
         int characters = (result.Title?.Length ?? 0) + (result.Text?.Sum(static text => text.Length) ?? 0)
@@ -74,7 +74,7 @@ public sealed class SlidesHardeningTests
             new SlidesInspectRequest { Input = input });
         SlidesReadResult window = fixture.Disclosed(session => SlidesRead.Run(
             session,
-            new SlidesReadRequest { Input = input, Scope = SlidesReadScopes.Text }));
+            new SlidesReadRequest { Input = input, Content = SlidesReadContents.Text }));
         SlidesRenderResult rendered = SlidesExport.Render(
             fixture.Session,
             new SlidesRenderRequest
@@ -90,8 +90,8 @@ public sealed class SlidesHardeningTests
         Assert.True(window.Window!.Truncated);
         Assert.Equal(12, window.Window.Total);
         Assert.Equal([1, 12], rendered.Outputs.Select(static item => item.Slide));
-        Assert.All(rendered.Outputs, static item => Assert.True(item.Output.SizeBytes > 100));
-        Assert.Equal(320, PngWidth(rendered.Outputs[0].Output.Path));
+        Assert.All(rendered.Outputs, static item => Assert.True(item.SizeBytes > 100));
+        Assert.Equal(320, PngWidth(rendered.Outputs[0].Path));
         if (fixture.LicenseState != Sdk.Licensing.LicenseState.Licensed)
         {
             Assert.Contains(
@@ -111,7 +111,7 @@ public sealed class SlidesHardeningTests
 
         // A read or a text extraction tells the SDK it read the text; a Markdown output carries the
         // cut text, which the write pipeline's disclosure names; saved files keep the full text.
-        Assert.Equal(evaluation, CutShort(fixture.Disclosed(session => SlidesRead.Run(session, new SlidesReadRequest { Input = input, Scope = SlidesReadScopes.Text })).Warnings));
+        Assert.Equal(evaluation, CutShort(fixture.Disclosed(session => SlidesRead.Run(session, new SlidesReadRequest { Input = input, Content = SlidesReadContents.Text })).Warnings));
         Assert.Equal(evaluation, CutShort(fixture.Disclosed(session => SlidesExtract.Run(session, new SlidesExtractRequest { Input = input, Output = new ResolvedDirectory(fixture.File("text")), What = SlidesExtractKinds.Text })).Warnings));
         IReadOnlyList<Warning>? markdownOutput = fixture.Disclosed(session => SlidesExport.Convert(session, new SlidesConvertRequest { Input = input, Output = TestOutput.At(fixture.File("cut-short.out.md"), format: "md") })).Warnings;
         Assert.False(CutShort(markdownOutput));

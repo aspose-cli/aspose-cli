@@ -92,7 +92,7 @@ public sealed class SlidesChartPresentationTests
             Input = seeded,
             Batch = new SlidesOpsBatch
             {
-                Ops = [new UpdateChartDataOp
+                Ops = [new SetChartDataOp
                 {
                     Slide = 1,
                     ShapeId = FindChartShapeId(seeded),
@@ -121,7 +121,7 @@ public sealed class SlidesChartPresentationTests
             Input = seeded,
             Batch = new SlidesOpsBatch
             {
-                Ops = [new UpdateChartDataOp
+                Ops = [new SetChartDataOp
                 {
                     Slide = 1,
                     ShapeId = FindChartShapeId(seeded),
@@ -168,7 +168,7 @@ public sealed class SlidesChartPresentationTests
             {
                 Ops =
                 [
-                    new UpdateChartDataOp
+                    new SetChartDataOp
                     {
                         Slide = 1,
                         ShapeId = FindChartShapeId(seeded),
@@ -198,7 +198,7 @@ public sealed class SlidesChartPresentationTests
             {
                 Ops =
                 [
-                    new UpdateChartDataOp
+                    new SetChartDataOp
                     {
                         Slide = 1,
                         ShapeId = FindChartShapeId(seeded),
@@ -314,7 +314,7 @@ public sealed class SlidesChartPresentationTests
             Input = seeded,
             Batch = new SlidesOpsBatch
             {
-                Ops = [new UpdateChartDataOp
+                Ops = [new SetChartDataOp
                 {
                     Slide = 1,
                     ShapeId = FindChartShapeId(seeded),
@@ -350,8 +350,8 @@ public sealed class SlidesChartPresentationTests
             {
                 Ops =
                 [
-                    new AddSlideOp { Layout = "Title and Content" },
-                    new AddSlideOp { Layout = "Title and Content" },
+                    new InsertSlideOp { Layout = "Title and Content" },
+                    new InsertSlideOp { Layout = "Title and Content" },
                 ],
             },
             Output = TestOutput.At(seed, overwrite: true),

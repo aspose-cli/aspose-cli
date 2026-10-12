@@ -116,7 +116,7 @@ internal static class SlidesReviewAnalyzer
         foreach (SlidesShapeData shape in slide.Shapes.Where(static shape => shape.Backdrop is not null && !IsDecorative(shape)))
         {
             Color backdrop = shape.Backdrop!.Value;
-            IEnumerable<Color> colors = shape.Type == "chart"
+            IEnumerable<Color> colors = shape.Kind == "chart"
                 ? shape.ChartTextColor is { } chart ? [chart] : []
                 : (shape.Runs ?? [])
                     .Where(static run => !string.IsNullOrWhiteSpace(run.Text) && run.Color is not null)
@@ -136,7 +136,7 @@ internal static class SlidesReviewAnalyzer
             result.Findings.Add(Finding(
                 SlidesReviewChecks.TextLowContrast,
                 slide,
-                string.Create(CultureInfo.InvariantCulture, $"The text of {Label(shape)} is {SlidesContrast.Hex(low[0].Text)} on {SlidesContrast.Hex(backdrop)}, a contrast of {low[0].Ratio:0.0}:1; give the text a contrasting color with set_shape_style, or change what is behind it.")));
+                string.Create(CultureInfo.InvariantCulture, $"The text of {Label(shape)} is {SlidesContrast.Hex(low[0].Text)} on {SlidesContrast.Hex(backdrop)}, a contrast of {low[0].Ratio:0.0}:1; give the text a contrasting color with format_shape, or change what is behind it.")));
         }
     }
 
@@ -155,7 +155,7 @@ internal static class SlidesReviewAnalyzer
         {
             SlidesRect lines = text.TextRect!;
             foreach (SlidesShapeData other in slide.Shapes.Where(shape => shape.ShapeId != text.ShapeId
-                && (shape.Type is "table" or "chart" || shape.ZOrder > text.ZOrder && IsOccluder(shape, slideArea))))
+                && (shape.Kind is "table" or "chart" || shape.ZOrder > text.ZOrder && IsOccluder(shape, slideArea))))
             {
                 double overlap = IntersectionArea(lines, other.Rect);
                 if (overlap < 0.10 * Math.Max(1, Area(lines)))
@@ -167,7 +167,7 @@ internal static class SlidesReviewAnalyzer
                 result.Findings.Add(Finding(
                     SlidesReviewChecks.TextOverlapsObject,
                     slide,
-                    $"The text of {Label(text)} runs into {other.Type} {Label(other)} ({overlap / Math.Max(1, Area(lines)):P0} of the text area); move or shorten one of them."));
+                    $"The text of {Label(text)} runs into {other.Kind} {Label(other)} ({overlap / Math.Max(1, Area(lines)):P0} of the text area); move or shorten one of them."));
                 break;
             }
         }
@@ -177,7 +177,7 @@ internal static class SlidesReviewAnalyzer
     {
         foreach (SlidesShapeData shape in slide.Shapes.Where(static shape =>
                      shape.Placeholder is not (null or "footer" or "date" or "slide-number")
-                     && shape.Type is not ("chart" or "table" or "image" or "audio" or "video")
+                     && shape.Kind is not ("chart" or "table" or "image" or "audio" or "video")
                      && string.IsNullOrWhiteSpace(shape.Text)))
         {
             result.EmptyPlaceholders++;
@@ -213,8 +213,8 @@ internal static class SlidesReviewAnalyzer
         }
 
         double minimum = shape.Runs?
-            .Where(static run => !string.IsNullOrWhiteSpace(run.Text) && run.Size is > 0)
-            .Select(static run => run.Size!.Value)
+            .Where(static run => !string.IsNullOrWhiteSpace(run.Text) && run.FontSize is > 0)
+            .Select(static run => run.FontSize!.Value)
             .DefaultIfEmpty()
             .Min() ?? 0;
         if (minimum is > 0 and < 12)
@@ -310,7 +310,7 @@ internal static class SlidesReviewAnalyzer
             return;
         }
 
-        bool hasRichMedia = content.Any(static shape => shape.Type is "chart" or "table" or "image" or "video");
+        bool hasRichMedia = content.Any(static shape => shape.Kind is "chart" or "table" or "image" or "video");
         double occupied = BoundingArea(content) / slideArea;
         if (textMeasured
             && content.Length >= 3
@@ -354,7 +354,7 @@ internal static class SlidesReviewAnalyzer
                     continue;
                 }
                 double covered = intersection / lowerArea;
-                if (lower.Type == "chart" && covered >= ChartCoverage)
+                if (lower.Kind == "chart" && covered >= ChartCoverage)
                 {
                     result.CoveredCharts++;
                     result.Findings.Add(Finding(
@@ -380,11 +380,11 @@ internal static class SlidesReviewAnalyzer
         slide.Shapes.Count == 0
         || slide.Shapes.All(static shape =>
             string.IsNullOrWhiteSpace(shape.Text)
-            && shape.Type is not ("chart" or "table" or "image" or "audio" or "video"));
+            && shape.Kind is not ("chart" or "table" or "image" or "audio" or "video"));
 
     private static bool IsContent(SlidesShapeData shape) =>
         !string.IsNullOrWhiteSpace(shape.Text)
-        || shape.Type is "chart" or "table" or "image" or "audio" or "video";
+        || shape.Kind is "chart" or "table" or "image" or "audio" or "video";
 
     private static bool IsOccluder(SlidesShapeData shape, double slideArea)
     {
@@ -392,7 +392,7 @@ internal static class SlidesReviewAnalyzer
         {
             return false;
         }
-        return shape.HasOpaqueFill || shape.Type is "chart" or "table" or "video";
+        return shape.HasOpaqueFill || shape.Kind is "chart" or "table" or "video";
     }
 
     private static bool IsDecorative(SlidesShapeData shape)
@@ -418,7 +418,7 @@ internal static class SlidesReviewAnalyzer
             return null;
         }
         int characters = slide.Shapes.Sum(static shape => shape.Text?.Length ?? 0);
-        bool hasMedia = slide.Shapes.Any(static shape => shape.Type is "chart" or "table" or "image" or "video");
+        bool hasMedia = slide.Shapes.Any(static shape => shape.Kind is "chart" or "table" or "image" or "video");
         if (characters < 20 && !hasMedia)
         {
             return null;
@@ -427,7 +427,7 @@ internal static class SlidesReviewAnalyzer
         var value = new StringBuilder();
         foreach (SlidesShapeData shape in slide.Shapes.Where(static shape => !IsDecorative(shape)))
         {
-            value.Append(shape.Type).Append('|').Append(shape.Placeholder).Append('|')
+            value.Append(shape.Kind).Append('|').Append(shape.Placeholder).Append('|')
                 .Append(Normalize(shape.Text)).Append('|')
                 .Append(Geometry(shape.Rect)).Append(';');
         }

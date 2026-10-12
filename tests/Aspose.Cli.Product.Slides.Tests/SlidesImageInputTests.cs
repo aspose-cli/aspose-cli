@@ -48,7 +48,7 @@ public sealed class SlidesImageInputTests
         CliException error = Assert.Throws<CliException>(() => SlidesEdit.Run(fixture.Session, new SlidesEditRequest
         {
             Input = input,
-            Batch = new SlidesOpsBatch { Ops = [new SetBackgroundOp { ImagePath = picture }] },
+            Batch = new SlidesOpsBatch { Ops = [new SetBackgroundOp { Path = picture }] },
             Output = TestOutput.At(output),
         }));
 

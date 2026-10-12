@@ -1,4 +1,5 @@
 using System.Globalization;
+using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.Extensibility.Commanding;
 using Aspose.Cli.Sdk.Extensibility.Output;
 
@@ -25,6 +26,16 @@ internal static class SearchCommand
             },
             Table)
         {
+            Examples =
+            [
+                "slides search deck.pptx --pattern TODO --output-format json",
+                "slides search deck.pptx --pattern \"Q[1-4]\" --regex --scope notes",
+            ],
+            Links =
+            [
+                CommandHelpLink.Docs(SlidesModule.Manifest, "verification", "slide read-back and visual review"),
+                new("aspose-cli docs reading", "reading every product within bounded windows"),
+            ],
             Finish = static (_, request, result, standard) =>
                 result with { Window = SearchOptions.Continue(request.Query, result.Window, standard.Continuation()) },
         };

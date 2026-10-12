@@ -14,7 +14,7 @@ internal static class InspectCommand
             SlidesInspectDetails.All,
             new Dictionary<string, string>(StringComparer.Ordinal)
             {
-                [SlidesInspectDetails.Notes] = "presence and character count, with the text from query slides --notes",
+                [SlidesInspectDetails.Notes] = "presence and character count, with the text from 'slides read --notes'",
             });
         return new(
             "inspect",
@@ -48,7 +48,7 @@ internal static class InspectCommand
         SlidesPresentationSummary presentation = result.Presentation;
         ResultText.Input(surface, result.Input);
         surface.Out.WriteLine(
-            $"slides: {presentation.SlideCount}   size: {TableText.Points(presentation.WidthPoints)} x {TableText.Points(presentation.HeightPoints)} pt   "
+            $"slides: {presentation.SlideCount}   size: {TableText.Points(presentation.SlideSize.Width)} x {TableText.Points(presentation.SlideSize.Height)} pt   "
             + $"orientation: {presentation.Orientation}");
         surface.Out.WriteLine(
             $"masters: {presentation.MasterCount}   layouts: {presentation.LayoutCount}   sections: {presentation.SectionCount}   "
@@ -85,7 +85,7 @@ internal static class InspectCommand
         ResultText.Table(surface, "layouts", result.Layouts, ["name", "master", "slides"],
             static layout => [layout.Name, layout.Master, TableText.Int(layout.SlideCount)]);
         ResultText.Table(surface, "media", result.Media, ["index", "type", "content type", "size"],
-            static item => [TableText.Int(item.Index), item.Type, item.ContentType, TableText.Bytes(item.SizeBytes)]);
+            static item => [TableText.Int(item.Index), item.Kind, item.ContentType, TableText.Bytes(item.SizeBytes)]);
         ResultText.Table(surface, "notes", result.Notes, ["slide", "present", "characters"],
             static note => [TableText.Int(note.Slide), TableText.YesNo(note.Present), TableText.Int(note.CharacterCount)]);
         ResultText.Table(surface, "comments", result.Comments, ["slide", "author", "text"],

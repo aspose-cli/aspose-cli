@@ -69,6 +69,6 @@ internal static class RenderCommand
     internal static void Table(SlidesRenderResult result, TableSurface surface)
     {
         ResultText.Files(surface, "rendered", "slide", [.. result.Outputs.Select(static item =>
-            new ProducedFile($"slide {item.Slide} [{item.SlideId}]", item.Output.Path, item.Output.Format, item.Output.SizeBytes))]);
+            new ProducedFile($"slide {item.Slide}", item.Path, item.Format, item.SizeBytes))]);
     }
 }

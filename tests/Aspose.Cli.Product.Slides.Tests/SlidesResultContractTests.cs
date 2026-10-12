@@ -28,7 +28,7 @@ public sealed class SlidesResultContractTests : IDisposable
             "--output-format", "json"));
 
         Assert.Contains(info["sections"]!.AsArray(), static section => section!["name"]!.GetValue<string>() == "Results");
-        Assert.Equal("image", Assert.Single(info["media"]!.AsArray())!["type"]!.GetValue<string>());
+        Assert.Equal("image", Assert.Single(info["media"]!.AsArray())!["kind"]!.GetValue<string>());
         Assert.Equal("Check the numbers.", Assert.Single(info["comments"]!.AsArray())!["text"]!.GetValue<string>());
         Assert.True(info["notes"]![0]!["present"]!.GetValue<bool>());
         Assert.Equal("Finance", info["properties"]!["author"]!.GetValue<string>());
@@ -40,13 +40,13 @@ public sealed class SlidesResultContractTests : IDisposable
         CreateDeck(_workspace.File("deck.pptx"));
 
         JsonNode read = Succeeds(_workspace.Run(
-            "slides", "query", "slides", "deck.pptx", "--scope", "full", "--output-format", "json"));
+            "slides", "read", "deck.pptx", "--content", "full", "--output-format", "json"));
 
         JsonNode first = read["slides"]![0]!;
         // Evaluation mode cuts read text short, so only the presence of the notes is checked.
         Assert.NotNull(first["notes"]);
         Assert.Single(first["comments"]!.AsArray());
-        Assert.Contains(first["shapes"]!.AsArray(), static shape => shape!["type"]!.GetValue<string>() == "image");
+        Assert.Contains(first["shapes"]!.AsArray(), static shape => shape!["kind"]!.GetValue<string>() == "image");
         Assert.Contains(first["shapes"]!.AsArray(), static shape => shape!["runs"] is JsonArray);
     }
 

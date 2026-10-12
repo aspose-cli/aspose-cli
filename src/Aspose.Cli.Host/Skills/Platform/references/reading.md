@@ -17,7 +17,7 @@ diffed.
 | Rung | Command | Answers |
 |------|---------|---------|
 | 1. Structure | `<product> inspect` | Counts, names, ids, properties; `--detail` adds the sections you name, `--sample` a bounded sample |
-| 2. Window | `cells query range`, `pdf query pages`, `slides query slides`, `words query blocks` | The content of a selected range, pages, slides or blocks |
+| 2. Window | `cells query range`, `pdf query pages`, `slides read`, `words query blocks` | The content of a selected range, pages, slides or blocks |
 | 3. Search | `<product> query search` | Where a pattern occurs |
 | 4. Look | `review`, `<product> render` | What data cannot show: layout, clipping, overlap, charts |
 

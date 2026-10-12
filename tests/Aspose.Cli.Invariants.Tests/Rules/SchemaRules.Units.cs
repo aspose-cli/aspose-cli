@@ -52,7 +52,9 @@ internal static partial class ContractRules
         [("v2/slides/ops", "slidesRectInput", "width")] = Points,
         [("v2/slides/ops", "slidesRectInput", "x")] = Points,
         [("v2/slides/ops", "slidesRectInput", "y")] = Points,
-        [("v2/slides/ops", "slidesShapeStyleInput", "size")] = Points,
+        [("v2/slides/ops", "slidesShapeStyleInput", "fontSize")] = Points,
+        [("v2/slides/ops", "slidesSlideSizeInput", "height")] = Points,
+        [("v2/slides/ops", "slidesSlideSizeInput", "width")] = Points,
 
         [("v2/words/ops", "define_style", "size")] = Points,
         [("v2/words/ops", "define_style", "spaceAfter")] = Points,

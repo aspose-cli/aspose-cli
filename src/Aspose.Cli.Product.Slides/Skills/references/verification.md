@@ -7,8 +7,8 @@ This page covers what is specific to presentations.
 
 ```powershell
 aspose-cli slides inspect deck.revised.pptx --sample --detail layouts fonts notes sections properties --output-format json
-aspose-cli slides query slides deck.revised.pptx --slides 1- --scope full --notes --output-format json
-aspose-cli slides query search deck.revised.pptx --pattern TODO --scope all --output-format json
+aspose-cli slides read deck.revised.pptx --slides 1- --content full --notes --output-format json
+aspose-cli slides search deck.revised.pptx --pattern TODO --scope all --output-format json
 ```
 
 `--max-chars` bounds all returned title, text, run, note and comment text; addressing and
@@ -16,7 +16,7 @@ formatting metadata do not count.
 
 ### Charts and tables
 
-`query` reports a chart only as a shape and a table's cells as one text in reading order. A
+`slides read` reports a chart only as a shape and a table's cells as one text in reading order. A
 Markdown conversion reads both back by position: each table as a Markdown table, row by row
 and column by column, and each chart as its type, its title and a table of its values, one row
 per category and one column per series:

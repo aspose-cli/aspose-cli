@@ -6,29 +6,29 @@ namespace Aspose.Cli.Product.Slides.Tests;
 
 /// <summary>
 /// A slide's own background belongs to its design: a slide that takes another design, through
-/// <c>use-dest</c> or <c>apply_layout</c>, shows that design's background instead.
+/// <c>use-destination</c> or <c>set_layout</c>, shows that design's background instead.
 /// </summary>
 public sealed class SlidesBackgroundTests
 {
     private const string Beige = "#FFF4E0";
 
     [Theory]
-    [InlineData("use-dest", false)]
+    [InlineData("use-destination", false)]
     [InlineData("keep-source", true)]
-    public void AppendedSlide_KeepsItsOwnBackgroundOnlyWithItsOwnDesign(string masterPolicy, bool kept)
+    public void AppendedSlide_KeepsItsOwnBackgroundOnlyWithItsOwnDesign(string formatting, bool kept)
     {
         using var fixture = new SlidesEngineFixture();
         string source = BeigeDeck(fixture, "source.pptx");
         string destination = fixture.File("destination.pptx");
         SlidesCreate.Run(fixture.Session, new SlidesCreateRequest { Output = TestOutput.At(destination) });
-        string output = fixture.File($"merged-{masterPolicy}.pptx");
+        string output = fixture.File($"merged-{formatting}.pptx");
 
         SlidesEditResult result = SlidesEdit.Run(fixture.Session, new SlidesEditRequest
         {
             Input = destination,
             Batch = new SlidesOpsBatch
             {
-                Ops = [new AppendPresentationOp { Path = source, MasterPolicy = masterPolicy }],
+                Ops = [new ImportSlidesOp { Path = source, Formatting = formatting }],
             },
             Output = TestOutput.At(output),
         });
@@ -51,8 +51,8 @@ public sealed class SlidesBackgroundTests
             {
                 Ops =
                 [
-                    new AddSlideOp { Layout = "Title and Content" },
-                    new AddSlideOp { Layout = "Title and Content" },
+                    new InsertSlideOp { Layout = "Title and Content" },
+                    new InsertSlideOp { Layout = "Title and Content" },
                 ],
             },
             Output = TestOutput.At(input, overwrite: true),
@@ -75,9 +75,9 @@ public sealed class SlidesBackgroundTests
             {
                 Ops =
                 [
-                    new ApplyLayoutOp { Slides = "2-3", Layout = "Section Header" },
+                    new SetLayoutOp { Slides = "2-3", Layout = "Section Header" },
                     new SetBackgroundOp { Slides = "3", Color = Beige },
-                    new ApplyLayoutOp { Slides = "2", Layout = "Title and Content" },
+                    new SetLayoutOp { Slides = "2", Layout = "Title and Content" },
                 ],
             },
             Output = TestOutput.At(output),

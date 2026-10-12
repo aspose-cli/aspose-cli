@@ -108,8 +108,8 @@ public sealed class SlidesMutationAndSecurityTests
         {
             Ops =
             [
-                new AddSectionOp { Name = "Results", StartSlide = 1 },
-                new AddSectionOp { Name = "Results", StartSlide = 2 },
+                new InsertSectionOp { Name = "Results", At = 1 },
+                new InsertSectionOp { Name = "Results", At = 2 },
                 new SetNotesOp { Slide = 1, Text = "Saved" },
             ],
         };
@@ -175,7 +175,7 @@ public sealed class SlidesMutationAndSecurityTests
                 Input = output,
                 Password = new Secret("correct"),
                 Slides = PageRange.Parse("1"),
-                Scope = SlidesReadScopes.Full,
+                Content = SlidesReadContents.Full,
                 IncludeNotes = true,
             });
         Assert.NotNull(read.Slides[0].Notes);
@@ -198,7 +198,7 @@ public sealed class SlidesMutationAndSecurityTests
             {
                 Ops =
                 [
-                    new AddSectionOp { Name = "Results", StartSlide = 2 },
+                    new InsertSectionOp { Name = "Results", At = 2 },
                     .. licensed ? [new SlidesReplaceTextOp { Find = "Slide", Replace = "Q" }] : Array.Empty<SlidesOp>(),
                     new InsertShapeOp
                     {
@@ -348,7 +348,7 @@ public sealed class SlidesMutationAndSecurityTests
 
         SlidesReadResult read = SlidesRead.Run(
             fixture.Session,
-            new SlidesReadRequest { Input = output, Scope = SlidesReadScopes.Full });
+            new SlidesReadRequest { Input = output, Content = SlidesReadContents.Full });
         SlidesReviewAnalysis review = SlidesReviewAnalyzer.Analyze(
             read.Slides,
             slideWidth,

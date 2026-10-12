@@ -12,8 +12,8 @@ internal static class CreateCommand
     {
         var markdown = new Option<string?>("--from-markdown") { Description = "Markdown outline to author." }.WithInput(InputKind.File);
         var template = new Option<string?>("--template") { Description = "Presentation whose masters, layouts and theme are reused." }.WithInput(InputKind.File);
-        var size = new Option<string?>("--size") { Description = "Slide size; the template size is kept when omitted." }.WithInput(InputKind.None);
-        size.AcceptOnlyFromAmong("16x9", "4x3");
+        var slideSize = new Option<string?>("--slide-size") { Description = "Slide aspect ratio; the template size is kept when omitted." }.WithInput(InputKind.None);
+        slideSize.AcceptOnlyFromAmong([.. SlidesSlideSizePresets.All]);
         return new(
             "create",
             "Create a blank, template-based or Markdown-authored presentation.",
@@ -23,7 +23,7 @@ internal static class CreateCommand
                 Encrypt = SlidesInputs.EncryptedPresentation,
                 UsesFonts = true,
             },
-            [markdown, template, size],
+            [markdown, template, slideSize],
             (parse, standard) =>
             {
                 string? markdownPath = standard.InputFile(markdown);
@@ -35,7 +35,7 @@ internal static class CreateCommand
                     Output = output,
                     MarkdownPath = markdownPath,
                     TemplatePath = templatePath,
-                    Size = parse.GetValue(size),
+                    SlideSize = parse.GetValue(slideSize),
                     EncryptPassword = encryptPassword,
                 };
             },
@@ -44,7 +44,7 @@ internal static class CreateCommand
             Examples =
             [
                 "slides create deck.pptx --from-markdown outline.md --template brand.pptx",
-                "slides create blank.pptx --size 4x3",
+                "slides create blank.pptx --slide-size 4x3",
             ],
             Links =
             [

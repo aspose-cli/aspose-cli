@@ -14,7 +14,7 @@ Skill: start with `aspose-cli docs overview`.
 - A slide is addressed by its 1-based `slide` number or its stable `slideId`.
 - A shape is addressed within its slide by `shapeId` (persistent, slide-scoped), by
   case-sensitive `shapeName`, or by `placeholder` role (`title`, `body`, `subtitle`, `footer`).
-- `slides query slides --scope shapes` reports every one of these names exactly as the
+- `slides read --content shapes` reports every one of these names exactly as the
   operations accept them; `inspect` reports slide ids and shape counts, not shape ids.
 
 ## Workflow
@@ -34,7 +34,7 @@ Skill: start with `aspose-cli docs overview`.
 
    ```powershell
    aspose-cli slides inspect deck.pptx --sample --detail layouts fonts notes --output-format json
-   aspose-cli slides query slides deck.pptx --slides 1-5 --scope full --notes --output-format json
+   aspose-cli slides read deck.pptx --slides 1-5 --content full --notes --output-format json
    ```
 
 4. Put all related changes in one `slides edit` batch
@@ -69,7 +69,7 @@ Details: [design system](references/design-system.md).
   `edit` or `convert` output is `OPTION_INVALID`. Without it, a PPTX or PPTM output of an
   encrypted deck keeps its password, and any other document output is written without one and
   warns `ENCRYPTION_REMOVED`; slide images do not warn.
-- `query` does not see chart content or separate table cells; read them back from a Markdown
+- `slides read` and `slides search` do not see chart content or separate table cells; read them back from a Markdown
   conversion ([charts and tables](references/verification.md#charts-and-tables)).
 
 ## References

@@ -1,9 +1,9 @@
 {
-  "name": "slides append_presentation of a Word document named .pptx names that source and what it is",
+  "name": "slides import_slides of a Word document named .pptx names that source and what it is",
   "files": {
     "deck.pptx": { "fixture": "slides.pptx" },
     "renamed.pptx": { "fixture": "words.docx" },
-    "append.json": { "text": "{\"ops\":[{\"op\":\"append_presentation\",\"path\":\"renamed.pptx\"}]}" }
+    "append.json": { "text": "{\"ops\":[{\"op\":\"import_slides\",\"path\":\"renamed.pptx\"}]}" }
   },
   "steps": [
     {

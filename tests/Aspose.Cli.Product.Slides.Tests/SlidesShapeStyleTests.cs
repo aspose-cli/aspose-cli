@@ -7,7 +7,7 @@ using Xunit;
 namespace Aspose.Cli.Product.Slides.Tests;
 
 /// <summary>
-/// <c>set_shape_style</c> styles the text a shape shows, whatever kind of shape holds it, and
+/// <c>format_shape</c> styles the text a shape shows, whatever kind of shape holds it, and
 /// refuses a shape that has none rather than reporting a change it did not make.
 /// </summary>
 public sealed class SlidesShapeStyleTests
@@ -15,7 +15,7 @@ public sealed class SlidesShapeStyleTests
     private static readonly SlidesShapeStyleInput TextStyle = new()
     {
         Font = "Microsoft YaHei",
-        Size = 12,
+        FontSize = 12,
         Color = "#FFFFFF",
         Bold = true,
     };
@@ -30,10 +30,10 @@ public sealed class SlidesShapeStyleTests
             Rect = new SlidesRectInput { X = 40, Y = 120, Width = 400, Height = 120 },
             RowCount = 3,
             ColumnCount = 2,
-            Data = [["Metric", "Q3"], ["Revenue", "18,200"], ["Margin", "38.5%"]],
+            Values = [["Metric", "Q3"], ["Revenue", "18,200"], ["Margin", "38.5%"]],
         });
 
-        string output = Style(fixture, seed, "table.pptx", Shape<ITable>(seed), TextStyle with { Fill = "#102030", Line = "#405060" });
+        string output = Style(fixture, seed, "table.pptx", Shape<ITable>(seed), TextStyle with { FillColor = "#102030", Line = "#405060" });
 
         using var deck = new Presentation(output);
         ITable table = deck.Slides[0].Shapes.OfType<ITable>().Single();
@@ -138,7 +138,7 @@ public sealed class SlidesShapeStyleTests
             Assert.Equal("+mn-ea", format.EastAsianFont.FontName);
         }
 
-        SlidesReadResult read = SlidesRead.Run(fixture.Session, new SlidesReadRequest { Input = output, Scope = SlidesReadScopes.Full });
+        SlidesReadResult read = SlidesRead.Run(fixture.Session, new SlidesReadRequest { Input = output, Content = SlidesReadContents.Full });
         SlidesTextRunData run = read.Slides[0].Shapes
             .Where(static shape => shape.ShapeName?.StartsWith("rectangle", StringComparison.Ordinal) == true)
             .SelectMany(static shape => shape.Runs!)
@@ -193,7 +193,7 @@ public sealed class SlidesShapeStyleTests
         SlidesEdit.Run(fixture.Session, new SlidesEditRequest
         {
             Input = seed,
-            Batch = new SlidesOpsBatch { Ops = [new SetShapeStyleOp { Slide = 1, ShapeId = shapeId, Style = style }] },
+            Batch = new SlidesOpsBatch { Ops = [new FormatShapeOp { Slide = 1, ShapeId = shapeId, Style = style }] },
             Output = TestOutput.At(output),
         });
         return output;

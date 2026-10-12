@@ -15,7 +15,7 @@ internal sealed partial class SlidesMutationHandlers
         return 1;
     }
 
-    public long Apply(SetShapeStyleOp operation)
+    public long Apply(FormatShapeOp operation)
     {
         ApplyStyle(Shape, operation.Style);
         _touched.Add(Slide.SlideId);
@@ -41,17 +41,17 @@ internal sealed partial class SlidesMutationHandlers
     {
         IBasePortionFormat[]? text = TextFormats(shape);
         bool styleText = style.Font is not null || style.LatinFont is not null || style.EastAsianFont is not null
-            || style.Size is not null || style.Bold is not null || style.Color is not null;
+            || style.FontSize is not null || style.Bold is not null || style.Color is not null;
         if (styleText && text is null)
         {
             throw new OperationInvalidException(
                 $"Shape {shape.OfficeInteropShapeId} has no text to style.",
-                "Give a picture or other object only 'fill' and 'line'; text styles apply to shapes with text, tables and charts.");
+                "Give a picture or other object only 'fillColor' and 'line'; text styles apply to shapes with text, tables and charts.");
         }
 
-        if (style.Fill is not null)
+        if (style.FillColor is not null)
         {
-            SetSolid(Fills(shape), style.Fill);
+            SetSolid(Fills(shape), style.FillColor);
         }
 
         if (style.Line is not null)
@@ -80,9 +80,9 @@ internal sealed partial class SlidesMutationHandlers
                 format.ComplexScriptFont = new FontData(style.Font);
             }
 
-            if (style.Size is not null)
+            if (style.FontSize is not null)
             {
-                format.FontHeight = (float)style.Size.Value;
+                format.FontHeight = (float)style.FontSize.Value;
             }
 
             if (style.Bold is not null)
@@ -304,19 +304,18 @@ internal sealed partial class SlidesMutationHandlers
         SlideSizeScaleType scale = operation.ScaleContent
             ? SlideSizeScaleType.EnsureFit
             : SlideSizeScaleType.DoNotScale;
-        if (operation.Size is "16x9" or "4x3")
+        if (operation.SlideSize.Preset is { } preset)
         {
             _presentation.SlideSize.SetSize(
-                operation.Size == "16x9" ? SlideSizeType.OnScreen16x9 : SlideSizeType.OnScreen,
+                preset == SlidesSlideSizePresets.Widescreen ? SlideSizeType.OnScreen16x9 : SlideSizeType.OnScreen,
                 scale);
-        }
-        else if (operation.TryGetPoints(out float width, out float height))
-        {
-            _presentation.SlideSize.SetSize(width, height, scale);
         }
         else
         {
-            throw new OperationInvalidException($"Unsupported slide size '{operation.Size}'.");
+            _presentation.SlideSize.SetSize(
+                (float)operation.SlideSize.Width!.Value,
+                (float)operation.SlideSize.Height!.Value,
+                scale);
         }
 
         foreach (ISlide slide in _presentation.Slides)

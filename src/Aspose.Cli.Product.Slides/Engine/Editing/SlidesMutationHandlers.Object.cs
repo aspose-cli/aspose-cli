@@ -70,13 +70,13 @@ internal sealed partial class SlidesMutationHandlers
             operation.RowCount,
             operation.ColumnCount);
         NameInserted(table, "table");
-        if (operation.Data is not null)
+        if (operation.Values is not null)
         {
-            for (int row = 0; row < operation.Data.Count; row++)
+            for (int row = 0; row < operation.Values.Count; row++)
             {
-                for (int column = 0; column < operation.Data[row].Count; column++)
+                for (int column = 0; column < operation.Values[row].Count; column++)
                 {
-                    table[column, row].TextFrame.Text = operation.Data[row][column];
+                    table[column, row].TextFrame.Text = operation.Values[row][column];
                 }
             }
         }
@@ -97,13 +97,13 @@ internal sealed partial class SlidesMutationHandlers
             throw new OperationInvalidException($"Shape {Shape.OfficeInteropShapeId} is not a table.");
         }
 
-        if (operation.Row > table.Rows.Count || operation.Col > table.Columns.Count)
+        if (operation.Row > table.Rows.Count || operation.Column > table.Columns.Count)
         {
             throw new OperationInvalidException(
-                $"Table cell ({operation.Row},{operation.Col}) exceeds {table.Rows.Count} rows and {table.Columns.Count} columns.");
+                $"Table cell ({operation.Row},{operation.Column}) exceeds {table.Rows.Count} rows and {table.Columns.Count} columns.");
         }
 
-        table[operation.Col - 1, operation.Row - 1].TextFrame.Text = operation.Text;
+        table[operation.Column - 1, operation.Row - 1].TextFrame.Text = operation.Text;
         _touched.Add(Slide.SlideId);
         return 1;
     }
@@ -156,7 +156,7 @@ internal sealed partial class SlidesMutationHandlers
         return 1;
     }
 
-    public long Apply(UpdateChartDataOp operation)
+    public long Apply(SetChartDataOp operation)
     {
         if (Shape is not IChart chart)
         {

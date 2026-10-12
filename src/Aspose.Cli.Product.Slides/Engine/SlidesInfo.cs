@@ -32,8 +32,7 @@ internal static class SlidesInfo
             Presentation = new SlidesPresentationSummary
             {
                 SlideCount = presentation.Slides.Count,
-                WidthPoints = width,
-                HeightPoints = height,
+                SlideSize = SlidesSlideSizeInfo.Of(width, height),
                 Orientation = width > height ? "landscape" : height > width ? "portrait" : "square",
                 MasterCount = presentation.Masters.Count,
                 LayoutCount = presentation.LayoutSlides.Count,

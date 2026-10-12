@@ -7,7 +7,8 @@ Usage:
 
 Commands:
   inspect <file>  Show presentation structure, stable slide ids and metadata.
-  query           Read bounded presentation projections without mutating the source.
+  read <file>     Read a bounded slide-content window.
+  search <file>   Search presentation shape and speaker-notes text.
   convert <file>  Convert a presentation or selected slides.
   render <file>   Render one or more slides for visual verification.
   create <file>   Create a blank, template-based or Markdown-authored presentation.
@@ -20,7 +21,7 @@ Global options:
 Examples:
   aspose-cli slides create deck.pptx --from-markdown outline.md --template brand.pptx
   aspose-cli slides inspect deck.pptx --sample --detail masters layouts fonts notes
-  aspose-cli slides query slides deck.pptx --slides 1-5 --scope full --notes --output-format json
+  aspose-cli slides read deck.pptx --slides 1-5 --content full --notes --output-format json
   aspose-cli slides edit deck.pptx --ops deck-ops.json --out revised.pptx
   aspose-cli review revised.pptx --out revised.review
 
@@ -79,7 +80,7 @@ Arguments:
 Options:
   --from-markdown <from-markdown>  Markdown outline to author.
   --template <template>            Presentation whose masters, layouts and theme are reused.
-  --size <16x9|4x3>                Slide size; the template size is kept when omitted.
+  --slide-size <16x9|4x3>          Slide aspect ratio; the template size is kept when omitted.
   --overwrite                      Replace the output file if it already exists.
   --dry-run                        Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds.
   --encrypt <encrypt>              Password for the output presentation. Discouraged: visible in the process list; prefer --encrypt-env.
@@ -92,7 +93,7 @@ Global options:
 
 Examples:
   aspose-cli slides create deck.pptx --from-markdown outline.md --template brand.pptx
-  aspose-cli slides create blank.pptx --size 4x3
+  aspose-cli slides create blank.pptx --slide-size 4x3
 
 Learn more:
   aspose-cli docs slides/deck-from-outline  a deck from a Markdown outline
@@ -181,7 +182,7 @@ Arguments:
 
 Options:
   --sample                       Include a bounded sample: each slide's title and up to 240 characters of its text. Default: off.
-  --detail <detail>              Extra sections to include; repeat for more. notes: presence and character count, with the text from query slides --notes. Values: comments, fonts, layouts, masters, media, notes, properties, sections.
+  --detail <detail>              Extra sections to include; repeat for more. notes: presence and character count, with the text from 'slides read --notes'. Values: comments, fonts, layouts, masters, media, notes, properties, sections.
   --password <password>          Password for the presentation. Discouraged: visible in the process list; prefer --password-env.
   --password-env <password-env>  Name of an environment variable holding the password for the presentation.
   --password-stdin               Read the password for the presentation from the first line of stdin.
@@ -198,59 +199,19 @@ Learn more:
   aspose-cli docs reading          reading every product within bounded windows
 
 
-## aspose-cli slides query --help
-Description:
-  Read bounded presentation projections without mutating the source.
-
-Usage:
-  aspose-cli slides query [command]
-
-Commands:
-  slides <file>  Read a bounded slide-content window.
-  search <file>  Search presentation shape and speaker-notes text.
-
-Global options:
-  -h/--help, --output-format, -q/--quiet, -v/--verbose, --license, --license-mode, --workdir, --timeout, --max-input-bytes (see aspose-cli --help)
-
-
-## aspose-cli slides query search --help
-Description:
-  Search presentation shape and speaker-notes text.
-
-Usage:
-  aspose-cli slides query search <file> --pattern <pattern> [options]
-
-Arguments:
-  <file>  Presentation file path.
-
-Options:
-  --pattern <pattern> (REQUIRED)  Text to find, or a regular expression with --regex.
-  --regex                         Treat the pattern as a culture-invariant regular expression with a one-second budget.
-  --case-sensitive                Match letter case exactly.
-  --scope <all|notes|shapes>      Search scope: the shape text, the speaker notes or both. [default: all]
-  --max-hits <max-hits>           Maximum returned hits. Range: 1-10000. [default: 100]
-  --skip <skip>                   Matches to pass over before the returned hits; a truncated search's window.next sets it. [default: 0]
-  --password <password>           Password for the presentation. Discouraged: visible in the process list; prefer --password-env.
-  --password-env <password-env>   Name of an environment variable holding the password for the presentation.
-  --password-stdin                Read the password for the presentation from the first line of stdin.
-
-Global options:
-  -h/--help, --output-format, -q/--quiet, -v/--verbose, --license, --license-mode, --workdir, --timeout, --max-input-bytes (see aspose-cli --help)
-
-
-## aspose-cli slides query slides --help
+## aspose-cli slides read --help
 Description:
   Read a bounded slide-content window.
 
 Usage:
-  aspose-cli slides query slides <file> [options]
+  aspose-cli slides read <file> [options]
 
 Arguments:
   <file>  Presentation file path.
 
 Options:
   --slides <slides>              Slides to process: 1-based numbers and ranges such as 1-3,7,9-, or all. Default: the first 10 slides.
-  --scope <full|shapes|text>     Projection scope: how much of each slide to return. [default: shapes]
+  --content <full|shapes|text>   Projection depth: how much of each slide to return. [default: shapes]
   --max-chars <max-chars>        Maximum characters returned, counting every returned title, text, run, note and comment, repeats included. Range: 1-10000000. [default: 20000]
   --notes                        Include speaker notes for returned slides.
   --password <password>          Password for the presentation. Discouraged: visible in the process list; prefer --password-env.
@@ -259,6 +220,14 @@ Options:
 
 Global options:
   -h/--help, --output-format, -q/--quiet, -v/--verbose, --license, --license-mode, --workdir, --timeout, --max-input-bytes (see aspose-cli --help)
+
+Examples:
+  aspose-cli slides read deck.pptx --slides 1-5 --output-format json
+  aspose-cli slides read deck.pptx --slides 2 --content full --notes --output-format json
+
+Learn more:
+  aspose-cli docs slides/verification  slide read-back and visual review
+  aspose-cli docs reading              reading every product within bounded windows
 
 
 ## aspose-cli slides render --help
@@ -293,5 +262,38 @@ Examples:
 
 Learn more:
   aspose-cli docs slides/verification  slide read-back and visual review
+
+
+## aspose-cli slides search --help
+Description:
+  Search presentation shape and speaker-notes text.
+
+Usage:
+  aspose-cli slides search <file> --pattern <pattern> [options]
+
+Arguments:
+  <file>  Presentation file path.
+
+Options:
+  --pattern <pattern> (REQUIRED)  Text to find, or a regular expression with --regex.
+  --regex                         Treat the pattern as a culture-invariant regular expression with a one-second budget.
+  --case-sensitive                Match letter case exactly.
+  --scope <all|notes|shapes>      Search scope: the shape text, the speaker notes or both. [default: all]
+  --max-hits <max-hits>           Maximum returned hits. Range: 1-10000. [default: 100]
+  --skip <skip>                   Matches to pass over before the returned hits; a truncated search's window.next sets it. [default: 0]
+  --password <password>           Password for the presentation. Discouraged: visible in the process list; prefer --password-env.
+  --password-env <password-env>   Name of an environment variable holding the password for the presentation.
+  --password-stdin                Read the password for the presentation from the first line of stdin.
+
+Global options:
+  -h/--help, --output-format, -q/--quiet, -v/--verbose, --license, --license-mode, --workdir, --timeout, --max-input-bytes (see aspose-cli --help)
+
+Examples:
+  aspose-cli slides search deck.pptx --pattern TODO --output-format json
+  aspose-cli slides search deck.pptx --pattern "Q[1-4]" --regex --scope notes
+
+Learn more:
+  aspose-cli docs slides/verification  slide read-back and visual review
+  aspose-cli docs reading              reading every product within bounded windows
 
 
