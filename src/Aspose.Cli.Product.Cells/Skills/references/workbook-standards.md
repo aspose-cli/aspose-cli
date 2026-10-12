@@ -66,10 +66,12 @@ aspose-cli cells edit book.xlsx --in-place --ops '{"ops":[
 ]}'
 ```
 
-A format only bites on a real value: `set_values` types exactly what you
-send, so `"2026-04-03"` stays text and ignores a date format. Write dates
-as `=DATE(2026,4,3)` formulas or date serials — `read` shows
-`"t": "datetime"` when you got it right.
+A format only bites on a real value: `set_values` stores every string as
+text, so `"2026-04-03"`, and `"=DATE(2026,4,3)"` too, stays text and ignores
+a date format. Write a date as a formula with `set_formula`
+(`"formula":"=DATE(2026,4,3)"`, or `--set "Sales!C2==DATE(2026,4,3)"`) or as
+a date serial number, and give the cell a date format: `read` shows
+`"t": "number"` until the format is set and `"t": "datetime"` after.
 
 The CSV import is the exception, and the contrast decides how much work you
 owe: `convert` coerces ISO-8601 dates into real datetimes *and* applies
@@ -106,7 +108,7 @@ aspose-cli cells edit book.xlsx --in-place --ops '{"ops":[
 ]}'
 ```
 
-**A bigger font does not re-fit its row.** `format_range {"size":16}` on a
+**A bigger font does not re-fit its row.** `format_range {"fontSize":16}` on a
 title leaves the row at its old height and the render comes back with the
 glyph tops shaved off — on every sheet you did it to. `read` cannot catch
 this: the value is perfectly intact. Auto-fit the row by OMITTING `height`:
@@ -237,7 +239,9 @@ aspose-cli cells edit book.xlsx --in-place --ops '{"ops":[
 ]}'
 ```
 
-`margins` (points) and `scalePercent` are set the same way; prove the pagination
+`set_print_area` replaces the print titles too: a later call without
+`titleRows` clears them. `margins` (points) and `scalePercent` are set the
+same way; prove the pagination
 with a PDF convert before delivery.
 
 ## The model color language

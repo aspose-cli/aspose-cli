@@ -11,7 +11,7 @@ overview adds the checks specific to its documents.
     values came from the engine
 [ ] Edits: every OP_NO_EFFECT warning explained; no change reported that was
     not read back
-[ ] Leftovers: a search (`cells query search`, `pdf search`, `slides search`,
+[ ] Leftovers: a search (`cells search`, `pdf search`, `slides search`,
     `words search`) finds no TBD / TODO / {{...}} placeholders
 [ ] Product checks: the semantic checks the product Skill names pass
 [ ] Visual: review ran into a new directory and every image it lists was

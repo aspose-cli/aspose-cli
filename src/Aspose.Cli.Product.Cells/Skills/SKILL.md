@@ -16,8 +16,12 @@ specific to workbooks.
 1. Read the numbers you report with `cells read`.
 2. If a number can be computed from other cells, write a formula; the engine
    recalculates after every edit.
-3. Name the sheet on every read, render and operation (`--sheet`, `"sheet"`);
-   sheet names match case-insensitively.
+3. Name the sheet on every read, search, render and operation: `--sheet` on
+   `cells read` and `cells search`, a sheet-qualified `--range Sales!A1:G20`
+   on `cells render`, `"sheet"` in an operation. Sheet names match
+   case-insensitively. `cells convert --sheets` and `cells render --sheets`
+   take positions from `cells inspect` (`2`, `1-3`, `all`), never names;
+   `cells create --sheets` names the sheets it creates.
 4. An open-ended request ("make me a sales sheet") gets the full deliverable:
    realistic data, a Detail sheet and a designed Dashboard sheet
    (`aspose-cli docs cells/design-system`).
@@ -33,17 +37,15 @@ aspose-cli cells read book.xlsx --sheet Sales --range A1:F50 --output-format jso
 aspose-cli cells search book.xlsx --pattern "Total" --output-format json
 ```
 
-- `--detail` adds `names` (`workbook.definedNames`), `errors`
-  (`workbook.formulaErrors`), `validation` (`workbook.validations`),
-  `layout` (`workbook.layouts`: frozen panes, outline groups, AutoFilter,
-  print area and titles, page setup other than paper size and margins),
-  `fonts`, `tables`, `charts` and `pivots`.
-- `--sample` shows display values for layout only. `read` and its `t`
-  field (`string`, `number`, `boolean`, `datetime`, `error`, `empty`) are the
-  type authority.
-- `--content values` (default), `formulas` (adds `f`), `styles` (a
-  deduplicated style pool) or `full`. Style fields read back under the names
-  `format_range` writes.
+- `cells inspect --help` lists the `--detail` sections, and
+  `aspose-cli schema v2/cells/inspect-result` their fields. An operation
+  field's `x-readBack` in `aspose-cli schema v2/cells/ops` names the read
+  property that reports it, or says no read reports it yet.
+- `--sample` shows display values for layout only; `cells read` and its `t`
+  field are the type authority.
+- `cells read --content` picks what each cell carries besides its value:
+  `formulas` adds `f`, `styles` a deduplicated style pool whose fields have
+  the names `format_range` writes.
 - Give explicit bounds; `A:A` is refused. A read larger than `--max-cells`,
   with or without `--range`, returns its first window and a `window.next`
   command for the next one. Follow each `window.next`.
@@ -78,7 +80,12 @@ aspose-cli cells edit book.xlsx --in-place --set "Sales!B3=42" --set "Sales!G2==
 aspose-cli schema v2/cells/ops --operation format_range
 ```
 
-- `set_formula` over a range uses Excel fill semantics.
+- `set_formula` over a range uses Excel fill semantics. `set_values` stores
+  every string as text, one that starts with `=` included; write formulas with
+  `set_formula` or a `--set` value that starts with `=`.
+- Judge whether an operation took effect from an `OP_NO_EFFECT` warning, not
+  from its `itemsAffected` count, and read back what you report
+  (`aspose-cli docs editing`, Reading the outcome).
 - `copy_range` copies within the workbook; data from another file comes in
   with `import_range` or `import_sheet` (`aspose-cli docs cells/editing`,
   Combining workbooks).
@@ -132,7 +139,7 @@ Warning sheets, data-export limits and their fixes:
 |---------|-----------------|
 | Inline `--ops` JSON in PowerShell | Write the ops to a file, or use `--set` for single cells; why: `aspose-cli docs troubleshooting`, Windows PowerShell |
 | A workbook open in Excel | The in-place save fails with `OUTPUT_UNWRITABLE`; ask the user to close it |
-| `set_values` with `"2026-04-03"` | Stored as text; write `=DATE(2026,4,3)` |
+| A date written as `"2026-04-03"` or `"=DATE(2026,4,3)"` in `set_values` | Both are stored as text; write `=DATE(2026,4,3)` with `set_formula` (or `--set "Sales!B2==DATE(2026,4,3)"`), then give the cells a date `numberFormat` such as `yyyy-mm-dd`: `cells read` reports `"t": "datetime"` only once the format is set |
 | A bigger font on a title row | The row keeps its height; auto-fit it with `resize_rows` and no `height` |
 | Text written into a new workbook | Columns keep the default width, so long text is cut off by the next cell; size them with `resize_columns` (no `widthChars` auto-fits) |
 | `cells compare` after a formatting session | `identical: true` is correct: it compares values and formula text only |

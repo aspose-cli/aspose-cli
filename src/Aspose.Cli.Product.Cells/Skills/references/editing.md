@@ -18,16 +18,16 @@ Cells semantics, ordering rules and recipes.
 | Cell data | `set_values` writes a matrix; `set_formula` fills a formula over a range; `clear_range`; `copy_range` within the workbook |
 | Other workbooks | `import_range` copies a range from another file; `import_sheet` copies a whole sheet |
 | Formatting | `format_range` sets only the style fields given; `set_borders` |
-| Rows and columns | `insert_rows`, `delete_rows`, `insert_columns`, `delete_columns`, `resize_rows`, `resize_columns`, `merge_cells`, `unmerge_cells`, `group_rows`, `ungroup_rows`, `group_columns`, `ungroup_columns`, `freeze_panes` |
+| Rows and columns | `insert_rows`, `delete_rows`, `insert_columns`, `delete_columns`, `resize_rows`, `resize_columns`, `merge_cells`, `unmerge_cells`, `group_rows`, `ungroup_rows`, `group_columns`, `ungroup_columns`, `freeze_panes`, `unfreeze_panes` |
 | Sheets | `insert_sheet`, `rename_sheet`, `delete_sheet`, `move_sheet`, `set_sheet_visibility`, `set_active_sheet` |
-| Workbook look | `set_default_font`, `set_tab_color`, `set_sheet_view` |
+| Workbook look | `set_default_font`, `set_tab_color`, `clear_tab_color`, `set_sheet_view` |
 | Charts and sparklines | `insert_chart`, `set_chart`, `delete_chart`, `add_sparkline` |
 | Pivot tables | `insert_pivot`, `refresh_pivot` |
-| Tables, filtering, sorting | `define_table`, `set_autofilter`, `sort_range`, `delete_duplicates` |
+| Tables, filtering, sorting | `define_table`, `set_autofilter`, `clear_autofilter`, `sort_range`, `delete_duplicates` |
 | Input rules | `set_validation`, `clear_validation`, `add_conditional_format`, `clear_conditional_formats` |
 | Names, notes, links | `define_name`, `delete_name`, `add_comment`, `set_comment`, `delete_comment`, `set_hyperlink`, `delete_hyperlink` |
 | Pictures | `insert_image` |
-| Print and PDF | `set_page_setup`, `set_print_area` |
+| Print and PDF | `set_page_setup`, `set_print_area`, `clear_print_area` |
 | Protection | `protect_sheet`, `unprotect_sheet`, `protect_workbook`, `unprotect_workbook` |
 
 ## Common operations
@@ -97,8 +97,12 @@ Run `--dry-run` first for a large or destructive batch (`delete_sheet`,
 
 ## Values and formulas
 
-- Numbers stay numbers: send `1200`, never `"1200"`. Dates:
-  `aspose-cli docs cells/workbook-standards`, Number formats.
+- `set_values` stores each JSON string as text, whatever it looks like:
+  `"1200"`, `"TRUE"`, `"2026-04-03"` and `"=DATE(2026,4,3)"` all read back
+  `"t": "string"`. Send numbers and Booleans as JSON numbers and Booleans, and
+  formulas with `set_formula`, or `--set`, where a value that starts with `=`
+  is a formula. Dates: `aspose-cli docs cells/workbook-standards`, Number
+  formats.
 - `set_formula` writes the formula of the range's top-left cell and fills it:
   relative references shift per cell, `$` references stay. Every cell
   evaluates like Excel 365: array arithmetic inside a function covers the
@@ -291,42 +295,41 @@ show in renders and reads; give the location column a header.
   preview, never `render` or PDF output. Draw `set_borders` when a grid must
   appear in a render.
 - `set_page_setup` header and footer text fills the center section only.
+- `set_print_area` replaces the sheet's print area with what it gives: title
+  rows or columns it omits are cleared, so repeat `titleRows` in every call
+  that should keep them.
 
 ## Output formats and encryption
 
-`cells edit` writes xlsx, xltx, xlsm, xltm, xlsb, xls, ods, csv, tsv, html and mhtml; use
-`cells convert` for other formats. HTML output embeds its images. Editing an
-encrypted workbook keeps its password in xlsx, xltx, xlsm, xltm, xlsb, xls and ods output;
-`--encrypt-env` changes it. Other outputs cannot be encrypted: they drop the
-encryption with an `ENCRYPTION_REMOVED` warning, and `--encrypt-env`
-on them is `OPTION_INVALID`. A single-sheet output of a multi-sheet workbook
-reports `SHEETS_DROPPED`. `cells create` and `cells convert` follow the same
-rules. Their results state `output.encrypted`, and `cells inspect` reports
-`input.encrypted` for the file it opened.
+`aspose-cli capabilities cells` lists the formats `cells edit` writes; use
+`cells convert` for the others. HTML output embeds its images. Encryption
+follows the shared rule (`aspose-cli docs editing`). Of the Cells outputs,
+xlsx, xltx, xlsm, xltm, xlsb, xls and ods can be encrypted: an encrypted
+workbook keeps its password in them, and `--encrypt-env` changes it. Every
+other output, csv, tsv, html, mhtml, pdf, xps, json and md included, cannot:
+it drops the encryption with an `ENCRYPTION_REMOVED` warning, and
+`--encrypt-env` on it is `OPTION_INVALID`. A single-sheet output of a multi-sheet workbook reports
+`SHEETS_DROPPED`. `cells create` and `cells convert` follow the same rules.
 
 ## Built-in verification
 
-`cells edit --verify` compares a temporary snapshot of the input with the staged
-output before publishing and reports `verification` with `directChanges`,
-`formulaResultChanges`, `otherChanges`, `formulaErrors` and `issues`.
-`checkedOps` lists the operations whose changes the comparison read back: those
-that write cell values or formulas, or add, remove or rename a sheet, on a named
-sheet among the first 16 targets of the batch. Formula
-errors, sheet loss, grid truncation, imported formulas whose results changed
-(`EXTERNAL_LINK_CACHE_MISSING`) or an incomplete scan keep the edited file
-and exit 8 with `verification.ok: false`. Issue codes: `FORMULA_ERRORS` (the
-edited workbook has formula errors; `location` is the cell when there is one;
-`#NAME?` usually means a localized or misspelled function name, and the hint
-asks for English function names; with or without `--verify`, the warning
-`FORMULA_FUNCTION_UNKNOWN` names each unknown function and, when one is a
-single edit away, the closest known function),
-`LIST_TRUNCATED` (`formulaErrors` holds only the first 1000), or the code of a
-completeness warning such as `SHEETS_DROPPED`; `capabilities` lists every
-code. A formula error whose input cell had the same formula and the same
-error carries `preexisting: true`; it still fails verification, so fix it or
-tell the user it predates the edit. An edit that changes more than 1000 cells,
+`cells edit --verify` compares a temporary snapshot of the input with the
+staged output before publishing and reports `verification`
+(`aspose-cli schema v2/cells/edit-result`). `checkedOps` lists the operations
+whose changes the comparison read back: those that write cell values or
+formulas, or add, remove or rename a sheet, on a named sheet among the first
+16 targets of the batch. Formula errors, sheet loss, grid truncation,
+imported formulas whose results changed or an incomplete scan keep the edited
+file and exit 8 with `verification.ok: false`; each issue's code is one that
+`aspose-cli capabilities cells` lists. `FORMULA_ERRORS` is the common one:
+`#NAME?` usually means a localized or misspelled function name, which
+`FORMULA_FUNCTION_UNKNOWN` names with or without `--verify`.
+
+A formula error whose input cell had the same formula and the same error
+carries `preexisting: true`; it still fails verification, so fix it or tell
+the user it predates the edit. An edit that changes more than 1000 cells,
 such as a large `sort_range`, lists only the first 1000 changes with
 `truncated: true`; the checks still cover every cell, so it passes when they
-find nothing. A reopen error, budget failure or
-cancellation aborts publication. `--verify` needs the final recalculation, so
-it cannot accompany `--dry-run` or `--no-recalc`.
+find nothing. A reopen error, budget failure or cancellation aborts
+publication. `--verify` needs the final recalculation, so it cannot accompany
+`--dry-run` or `--no-recalc`.

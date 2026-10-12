@@ -108,7 +108,7 @@ aspose-cli cells edit book.xlsx --in-place --ops '{"ops":[
 The `resize_rows` with no `height` auto-fits row 1 to the 16pt title —
 forgetting it ships shaved glyph tops (`aspose-cli docs cells/workbook-standards`,
 Fonts). For a heavier, document-like opening, swap the title's style for a
-full-width band: `{"bg":"#1F3864","color":"#FFFFFF","bold":true,"size":16}`
+full-width band: `{"fillColor":"#1F3864","color":"#FFFFFF","bold":true,"fontSize":16}`
 over `A1:Q1` — fill and text color as a pair, per the next section.
 
 ## 4. Header treatment
@@ -130,7 +130,7 @@ aspose-cli cells edit book.xlsx --in-place --ops '{"ops":[
 
 The fixed 22 holds ONE line. `wrap` is there so a long header folds instead
 of truncating — but once a header actually wraps, auto-fit the header row
-(`resize_rows` with `from: 1` and no `height`) in the same batch that sets
+(`resize_rows` with `first: 1` and no `height`) in the same batch that sets
 the final column widths: measured at 192 dpi, a wrapped second line under a
 fixed 22 renders clipped, while the auto-fit grows the row so two- and
 three-line headers come back whole. The data area never reuses the header's

@@ -65,7 +65,7 @@ with `next` keeps each result small.
 
 ## Search paging
 
-A search (`cells query search`, `pdf search`, `slides search`, `words search`) returns at most its `--max-hits` budget of hits in document
+A search (`cells search`, `pdf search`, `slides search`, `words search`) returns at most its `--max-hits` budget of hits in document
 order. A truncated search's `window.next` repeats the search with `--skip`
 past the hits already returned.
 

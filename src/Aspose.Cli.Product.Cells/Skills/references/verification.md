@@ -84,7 +84,7 @@ and fade to near white. What survives is a different, real character:
 
 A digit inside a CJK string renders through the substituted CJK font and
 loses its strokes too, while a Latin-only `2026-07-17` beside it stays crisp.
-At 150 and 192 DPI the strokes are solid. When text looks corrupt, query the
+At 150 and 192 DPI the strokes are solid. When text looks corrupt, read the
 cell first; if the value is right, check the DPI, font availability and layout
 before diagnosing corruption. A CJK sheet declaring only Arial passes
 `fonts check` with `allAvailable: true` and renders through substitution.
@@ -128,11 +128,10 @@ aspose-cli cells compare book.backup.xlsx book.xlsx --output-format json
   validation or freeze panes. After a formatting, chart or layout session,
   `identical: true` is the correct result; confirm that work from the
   `sizeBytes` change and a Tier 2 render, and never report "nothing changed"
-  from the diff. `cells inspect --detail layout` reads back `freezePanes`,
-  row and column groups, `autofilter`, `printArea` and `pageSetup` (page
-  size, orientation, scaling, margins, center header and footer) in
-  `workbook.layouts`, one entry per sheet, each object named after its
-  operation and holding that operation's fields.
+  from the diff. Read layout and page setup back with
+  `cells inspect --detail layout`; the `x-readBack` of each operation field
+  in `aspose-cli schema v2/cells/ops` names the property that reports it, or
+  says that no read reports it yet, so confirm that field in a render.
 - Read the whole list. Any difference you did not intend, such as a shifted
   formula or a cleared cell, is a finding to fix before delivery.
 - A renamed sheet pairs with the sheet it was (they keep one internal sheet
