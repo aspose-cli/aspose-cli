@@ -114,6 +114,7 @@ Options:
   --ops <ops>                    The ops JSON, an object with ops or the bare array of operations: a path to the document, '-' to read it from stdin, or the document itself when the value starts with { or [ (inline). To name a file whose name starts with '[', prefix it with ./ . At most 10000 operations. Vocabulary: aspose-cli schema v2/slides/ops.
   --if-match <if-match>          Require the current input SHA-256 fingerprint before editing.
   --best-effort                  Keep successful operations, report failures, and exit 8.
+  --verify                       Read the staged output back and check the slide order, titles, shape text, body paragraphs, notes, layouts, hidden slides, footers, transitions, sections, properties, slide size and replaced text each operation left.
   -o, --out <out>                Output path. Default: the input path with '.out' inserted before the extension.
   --overwrite                    Replace the output file if it already exists.
   --in-place                     Modify the input file itself atomically.
@@ -131,12 +132,13 @@ Global options:
   -h/--help, --output-format, -q/--quiet, -v/--verbose, --license, --license-mode, --workdir, --timeout, --max-input-bytes (see aspose-cli --help)
 
 Examples:
-  aspose-cli slides edit deck.pptx --ops deck-ops.json --out revised.pptx
+  aspose-cli slides edit deck.pptx --ops deck-ops.json --out revised.pptx --verify
   aspose-cli slides edit deck.pptx --in-place --backup --ops deck-ops.json
 
 Learn more:
-  aspose-cli docs slides/editing   atomic presentation operations
-  aspose-cli schema v2/slides/ops  the operation JSON schema
+  aspose-cli docs slides/editing       atomic presentation operations
+  aspose-cli schema v2/slides/ops      the operation JSON schema
+  aspose-cli docs slides/verification  what --verify reads back
 
 
 ## aspose-cli slides extract --help

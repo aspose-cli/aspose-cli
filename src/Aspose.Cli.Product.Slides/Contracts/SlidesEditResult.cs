@@ -25,12 +25,27 @@ public sealed record SlidesEditResult() : EngineResultEnvelope("edit-result", 2)
     /// <summary>The backup of the replaced presentation; only for an in-place edit that kept one.</summary>
     public BackupInfo? Backup { get; init; }
 
-    /// <summary>The stable ids of the slides the batch changed, ascending; omitted when it changed none.</summary>
+    /// <summary>The 1-based numbers of the output's slides the batch changed, ascending; omitted when it changed none.</summary>
     [UniqueItems]
     [Minimum(1)]
-    public IReadOnlyList<uint>? SlidesTouched { get; init; }
+    public IReadOnlyList<int>? SlidesTouched { get; init; }
 
-    /// <summary>Whether an operation failed.</summary>
+    /// <summary>
+    /// Present with <c>--verify</c>: the staged output read back against the slide order, slide
+    /// titles, shape text, body paragraphs, notes, layouts, hidden slides, footers, transitions,
+    /// sections, document properties, slide size and replaced text the operations left.
+    /// </summary>
+    public SlidesEditVerification? Verification { get; init; }
+
+    /// <summary>Whether an operation failed or the read-back found a difference.</summary>
     [JsonIgnore]
-    public bool HasFailures => Applied.Any(static op => op.Status == "failed");
+    public bool HasFailures => Applied.Any(static op => op.Status == OpStatuses.Failed)
+        || Verification is { Ok: false };
 }
+
+/// <summary>
+/// What <c>--verify</c> read back from the staged output: the slide order, slide titles, shape
+/// text, body paragraphs, notes, layouts, hidden slides, footers, transitions, sections,
+/// document properties, slide size and replaced text.
+/// </summary>
+public sealed record SlidesEditVerification : EditVerification;

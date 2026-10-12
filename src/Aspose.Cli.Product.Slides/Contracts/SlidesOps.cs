@@ -53,27 +53,6 @@ public static class SlidesShapeKinds
     public const string Chevron = "chevron";
 }
 
-/// <summary>The charts <c>insert_chart</c> creates.</summary>
-public static class SlidesChartKinds
-{
-    public const string Bar = "bar";
-    public const string Column = "column";
-    public const string Line = "line";
-    public const string Pie = "pie";
-    public const string Scatter = "scatter";
-}
-
-/// <summary>The slide transitions <c>set_transition</c> applies.</summary>
-public static class SlidesTransitionKinds
-{
-    public const string None = "none";
-    public const string Fade = "fade";
-    public const string Push = "push";
-    public const string Wipe = "wipe";
-    public const string Split = "split";
-    public const string Cover = "cover";
-}
-
 /// <summary>A rectangle in presentation points from the top-left origin.</summary>
 public sealed record SlidesRectInput
 {
@@ -108,15 +87,15 @@ public sealed record SlidesSlideSizeInput
 /// <summary>One body paragraph; its bullets and spacing come from the placeholder's level.</summary>
 public sealed record SlidesParagraphInput
 {
-    [ReadBack("read-result.schema.json#/$defs/slidesShapeData/properties/text")]
+    [ReadBack("read-result.schema.json#/$defs/slidesParagraphData/properties/text")]
     public required string Text { get; init; }
 
     /// <summary>The 1-based outline level, 1 for a top-level paragraph.</summary>
-    [NotReadBack]
+    [ReadBack("read-result.schema.json#/$defs/slidesParagraphData/properties/level")]
     [Minimum(1), Maximum(9)] public int Level { get; init; } = 1;
 
     /// <summary>Whether the paragraph shows its level's bullet; false writes a plain paragraph without one.</summary>
-    [NotReadBack]
+    [ReadBack("read-result.schema.json#/$defs/slidesParagraphData/properties/bullet")]
     public bool Bullet { get; init; } = true;
 }
 
@@ -126,10 +105,11 @@ public sealed record SlidesShapeStyleInput
 {
     /// <summary>The solid fill color of the shape.</summary>
     [MistakenFor("fill")]
-    [NotReadBack]
+    [ReadBack("read-result.schema.json#/$defs/slidesShapeData/properties/fillColor")]
     [HexColor] public string? FillColor { get; init; }
 
-    [NotReadBack]
+    /// <summary>The solid outline color of the shape.</summary>
+    [ReadBack("read-result.schema.json#/$defs/slidesShapeData/properties/line")]
     [HexColor] public string? Line { get; init; }
 
     /// <summary>A font name for Latin, East Asian and complex-script text.</summary>
@@ -142,7 +122,7 @@ public sealed record SlidesShapeStyleInput
     /// "+mj-lt" or body font "+mn-lt", which returns the text to the template's font.
     /// </summary>
     [Pattern(@"^(?:\+m[jn]-lt$|[^+])", Meaning = "must be a font name, or \"+mj-lt\" or \"+mn-lt\" for the theme's Latin heading or body font")]
-    [NotReadBack]
+    [ReadBack("read-result.schema.json#/$defs/slidesTextRunData/properties/latinFont")]
     public string? LatinFont { get; init; }
 
     /// <summary>
@@ -251,7 +231,7 @@ public sealed record SetBackgroundOp : SlidesOp
     /// <summary>The slides to change; every slide when omitted.</summary>
     [PageRange] public string? Slides { get; init; }
 
-    [NotReadBack]
+    [ReadBack("read-result.schema.json#/$defs/slidesBackgroundData/properties/color")]
     [HexColor] public string? Color { get; init; }
 
     /// <summary>The picture, relative to the working directory.</summary>
@@ -298,7 +278,7 @@ public sealed record ImportSlidesOp : SlidesOp
 [Operation("set_title")]
 public sealed record SetTitleOp : SlideTargetOp
 {
-    [ReadBack("inspect-result.schema.json#/$defs/slidesSlideInfo/properties/title")]
+    [ReadBack("read-result.schema.json#/$defs/slidesShapeData/properties/text")]
     public required string Text { get; init; }
 }
 
@@ -419,15 +399,15 @@ public sealed record SlidesInsertTableOp : SlideTargetOp
     [ReadBack("read-result.schema.json#/$defs/slidesShapeData/properties/rect")]
     public required SlidesRectInput Rect { get; init; }
 
-    [NotReadBack]
+    [ReadBack("read-result.schema.json#/$defs/slidesShapeData/properties/rowCount")]
     [Minimum(1), Maximum(MaxRows)] public required int RowCount { get; init; }
 
-    [NotReadBack]
+    [ReadBack("read-result.schema.json#/$defs/slidesShapeData/properties/columnCount")]
     [Minimum(1), Maximum(MaxCols)] public required int ColumnCount { get; init; }
 
     /// <summary>Cell text by row, at most rowCount rows of at most columnCount cells each.</summary>
     [MistakenFor("data")]
-    [NotReadBack]
+    [ReadBack("read-result.schema.json#/$defs/slidesShapeData/properties/values")]
     public IReadOnlyList<IReadOnlyList<string>>? Values { get; init; }
 
     /// <inheritdoc />
@@ -451,7 +431,7 @@ public sealed record SlidesSetTableCellOp : ShapeTargetOp
     [NotState]
     [Minimum(1)] public required int Column { get; init; }
 
-    [NotReadBack]
+    [ReadBackByPosition]
     public required string Text { get; init; }
 }
 
@@ -463,20 +443,20 @@ public sealed record SlidesSetTableCellOp : ShapeTargetOp
 public sealed record InsertChartOp : SlideTargetOp
 {
     [MistakenFor("type", "chartType")]
-    [NotReadBack]
+    [ReadBack("read-result.schema.json#/$defs/slidesChartData/properties/kind")]
     [AllowedValues(typeof(SlidesChartKinds))] public required string Kind { get; init; }
 
     [MistakenFor("box", "bounds")]
     [ReadBack("read-result.schema.json#/$defs/slidesShapeData/properties/rect")]
     public required SlidesRectInput Rect { get; init; }
 
-    [NotReadBack]
+    [ReadBack("read-result.schema.json#/$defs/slidesChartData/properties/categories")]
     [MinItems(1), MaxItems(1000)] public required IReadOnlyList<string> Categories { get; init; }
 
-    [NotReadBack]
+    [ReadBack("read-result.schema.json#/$defs/slidesChartData/properties/series")]
     [MinItems(1), MaxItems(50)] public required IReadOnlyList<SlidesChartSeriesInput> Series { get; init; }
 
-    [NotReadBack]
+    [ReadBack("read-result.schema.json#/$defs/slidesChartData/properties/title")]
     public string? Title { get; init; }
 
     /// <inheritdoc />
@@ -498,10 +478,10 @@ public sealed record InsertChartOp : SlideTargetOp
 [AtLeastOneOf("categories", "series")]
 public sealed record SetChartDataOp : ShapeTargetOp
 {
-    [NotReadBack]
+    [ReadBack("read-result.schema.json#/$defs/slidesChartData/properties/categories")]
     [MinItems(1), MaxItems(1000)] public IReadOnlyList<string>? Categories { get; init; }
 
-    [NotReadBack]
+    [ReadBack("read-result.schema.json#/$defs/slidesChartData/properties/series")]
     [MinItems(1), MaxItems(50)] public IReadOnlyList<SlidesChartSeriesInput>? Series { get; init; }
 
     /// <inheritdoc />
@@ -560,13 +540,13 @@ public sealed record SetFooterOp : SlidesOp
     /// <summary>The slides to change; every slide when omitted.</summary>
     [PageRange] public string? Slides { get; init; }
 
-    [NotReadBack]
+    [ReadBack("read-result.schema.json#/$defs/slidesFooterData/properties/text")]
     public string? Text { get; init; }
 
-    [NotReadBack]
+    [ReadBack("read-result.schema.json#/$defs/slidesFooterData/properties/showNumber")]
     public bool? ShowNumber { get; init; }
 
-    [NotReadBack]
+    [ReadBack("read-result.schema.json#/$defs/slidesFooterData/properties/showDate")]
     public bool? ShowDate { get; init; }
 }
 
@@ -577,11 +557,11 @@ public sealed record SetTransitionOp : SlidesOp
 {
     [PageRange] public required string Slides { get; init; }
 
-    [NotReadBack]
+    [ReadBack("read-result.schema.json#/$defs/slidesTransitionData/properties/kind")]
     [AllowedValues(typeof(SlidesTransitionKinds))] public string? Kind { get; init; }
 
     /// <summary>The transition duration in milliseconds.</summary>
-    [NotReadBack]
+    [ReadBack("read-result.schema.json#/$defs/slidesTransitionData/properties/durationMs")]
     [Minimum(0), Maximum(60000)] public int? DurationMs { get; init; }
 }
 

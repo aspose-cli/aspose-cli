@@ -130,4 +130,10 @@ public static class NoEffectReasons
     /// before and after it found no difference.
     /// </summary>
     public const string NoChange = "no-change";
+
+    /// <summary>
+    /// Evaluation mode read the text the operation looks in cut short, so the operation could not
+    /// look at that text; a license lifts the cut.
+    /// </summary>
+    public const string EvaluationTruncated = "evaluation-truncated";
 }

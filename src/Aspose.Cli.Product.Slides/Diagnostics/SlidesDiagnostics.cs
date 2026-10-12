@@ -20,6 +20,15 @@ internal static class SlidesDiagnostics
     /// <summary>A slide that took another design lost its own background.</summary>
     internal static readonly WarningCode SlideBackgroundReset = new("SLIDE_BACKGROUND_RESET");
 
+    /// <summary>The verified output does not hold the slides in the order the batch left them.</summary>
+    internal static readonly DiagnosticDescriptor SlideOrderMismatch = DiagnosticDescriptor.Verification("SLIDE_ORDER_MISMATCH");
+
+    /// <summary>A slide of the verified output does not show the title, text, notes, layout, visibility or sections the batch set.</summary>
+    internal static readonly DiagnosticDescriptor SlideContentMismatch = DiagnosticDescriptor.Verification("SLIDE_CONTENT_MISMATCH");
+
+    /// <summary>The verified output does not hold the document properties or slide size the batch set.</summary>
+    internal static readonly DiagnosticDescriptor PresentationSettingMismatch = DiagnosticDescriptor.Verification("PRESENTATION_SETTING_MISMATCH");
+
     internal static IReadOnlyList<DiagnosticDescriptor> All { get; } =
     [
         DiagnosticDescriptor.Error(SlideNotFound),
@@ -30,6 +39,9 @@ internal static class SlidesDiagnostics
         DiagnosticDescriptor.Warning(ChartTitleOverlaid),
         DiagnosticDescriptor.Warning(TableOverflow),
         DiagnosticDescriptor.Warning(SlideBackgroundReset),
+        SlideOrderMismatch,
+        SlideContentMismatch,
+        PresentationSettingMismatch,
     ];
 
     private static ErrorCode Validation(string code) =>

@@ -8,28 +8,25 @@ namespace Aspose.Cli.Product.Slides.Engine.Editing;
 // Shape geometry and styles, footers, transitions, document properties and slide size.
 internal sealed partial class SlidesMutationHandlers
 {
-    public long Apply(DeleteShapeOp operation)
+    public ValueTuple Apply(DeleteShapeOp operation)
     {
         Slide.Shapes.Remove(Shape);
-        _touched.Add(Slide.SlideId);
-        return 1;
+        return default;
     }
 
-    public long Apply(FormatShapeOp operation)
+    public ValueTuple Apply(FormatShapeOp operation)
     {
         ApplyStyle(Shape, operation.Style);
-        _touched.Add(Slide.SlideId);
-        return 1;
+        return default;
     }
 
-    public long Apply(SetShapeBoundsOp operation)
+    public ValueTuple Apply(SetShapeBoundsOp operation)
     {
         Shape.X = (float)(operation.X ?? Shape.X);
         Shape.Y = (float)(operation.Y ?? Shape.Y);
         Shape.Width = (float)(operation.Width ?? Shape.Width);
         Shape.Height = (float)(operation.Height ?? Shape.Height);
-        _touched.Add(Slide.SlideId);
-        return 1;
+        return default;
     }
 
     /// <summary>
@@ -102,7 +99,7 @@ internal sealed partial class SlidesMutationHandlers
     /// runs, or a chart's text with that of its title, legend, axes and shown data labels, which
     /// can each override the chart's own. Null for a shape that shows no text.
     /// </summary>
-    private static IBasePortionFormat[]? TextFormats(IShape shape) => shape switch
+    internal static IBasePortionFormat[]? TextFormats(IShape shape) => shape switch
     {
         IAutoShape { TextFrame: { } frame } => Runs(frame).ToArray(),
         ITable table => Cells(table).SelectMany(static cell => Runs(cell.TextFrame)).ToArray(),
@@ -151,16 +148,16 @@ internal sealed partial class SlidesMutationHandlers
 
     private static IEnumerable<ICell> Cells(ITable table) => table.Rows.SelectMany(static row => row);
 
-    private static IEnumerable<IFillFormat> Fills(IShape shape) => shape is ITable table
+    internal static IEnumerable<IFillFormat> Fills(IShape shape) => shape is ITable table
         ? Cells(table).Select(static cell => cell.CellFormat.FillFormat)
-        : [shape.FillFormat];
+        : shape.FillFormat is { } fill ? [fill] : [];
 
-    private static IEnumerable<ILineFillFormat> Lines(IShape shape) => shape is ITable table
+    internal static IEnumerable<ILineFillFormat> Lines(IShape shape) => shape is ITable table
         ? Cells(table).SelectMany(static cell => new[]
         {
             cell.CellFormat.BorderTop, cell.CellFormat.BorderBottom, cell.CellFormat.BorderLeft, cell.CellFormat.BorderRight,
         }).Select(static border => border.FillFormat)
-        : [shape.LineFormat.FillFormat];
+        : shape.LineFormat?.FillFormat is { } line ? [line] : [];
 
     private static void SetSolid(IEnumerable<IFillFormat> fills, string color)
     {
@@ -180,12 +177,10 @@ internal sealed partial class SlidesMutationHandlers
         }
     }
 
-    public long Apply(SetFooterOp operation)
+    public ValueTuple Apply(SetFooterOp operation)
     {
-        long changed = 0;
         foreach (ISlide slide in Slides)
         {
-            string before = FooterState(slide);
             IBaseSlideHeaderFooterManager manager = slide.HeaderFooterManager.AsIBaseSlideHeaderFooterManager;
             if (operation.Text is not null)
             {
@@ -204,24 +199,10 @@ internal sealed partial class SlidesMutationHandlers
             }
 
             FillEmptyFooters(slide, operation);
-            if (FooterState(slide) != before)
-            {
-                _touched.Add(slide.SlideId);
-                changed++;
-            }
         }
 
-        return changed;
+        return default;
     }
-
-    /// <summary>
-    /// The footer, number and date placeholders a slide shows, with their text. A slide whose
-    /// layout has none of them, as a title layout often hides footers, shows nothing new.
-    /// </summary>
-    private static string FooterState(ISlide slide) => string.Join('\n', slide.Shapes
-        .Where(static shape => shape.Placeholder?.Type
-            is PlaceholderType.Footer or PlaceholderType.SlideNumber or PlaceholderType.DateAndTime)
-        .Select(static shape => $"{shape.Placeholder!.Type}:{(shape as IAutoShape)?.TextFrame?.Text}"));
 
     // A footer placeholder activated from the layout starts empty; give it the requested text.
     private static void FillEmptyFooters(ISlide slide, SetFooterOp op)
@@ -242,7 +223,7 @@ internal sealed partial class SlidesMutationHandlers
     }
 
 
-    public long Apply(SetTransitionOp operation)
+    public ValueTuple Apply(SetTransitionOp operation)
     {
         foreach (ISlide slide in Slides)
         {
@@ -264,13 +245,12 @@ internal sealed partial class SlidesMutationHandlers
             {
                 slide.SlideShowTransition.Duration = operation.DurationMs.Value;
             }
-            _touched.Add(slide.SlideId);
         }
 
-        return Slides.Count;
+        return default;
     }
 
-    public long Apply(SlidesSetPropertiesOp operation)
+    public ValueTuple Apply(SlidesSetPropertiesOp operation)
     {
         if (operation.Title is not null)
         {
@@ -296,10 +276,10 @@ internal sealed partial class SlidesMutationHandlers
         {
             _presentation.DocumentProperties.Company = operation.Company;
         }
-        return 1;
+        return default;
     }
 
-    public long Apply(SetSlideSizeOp operation)
+    public ValueTuple Apply(SetSlideSizeOp operation)
     {
         SlideSizeScaleType scale = operation.ScaleContent
             ? SlideSizeScaleType.EnsureFit
@@ -318,10 +298,6 @@ internal sealed partial class SlidesMutationHandlers
                 scale);
         }
 
-        foreach (ISlide slide in _presentation.Slides)
-        {
-            _touched.Add(slide.SlideId);
-        }
-        return _presentation.Slides.Count;
+        return default;
     }
 }

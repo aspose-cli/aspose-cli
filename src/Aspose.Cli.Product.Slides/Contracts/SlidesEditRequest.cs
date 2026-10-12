@@ -12,6 +12,8 @@ public sealed record SlidesEditRequest
     /// <summary>The resolved output: its format, path, overwrite permission and in-place backup.</summary>
     public required ResolvedOutput Output { get; init; }
     public EditCommandOptions Options { get; init; } = new();
+    /// <summary>Whether the staged output is read back against the effect of each operation (<c>--verify</c>).</summary>
+    public bool Verify { get; init; }
     public Secret? Password { get; init; }
     public Secret? EncryptPassword { get; init; }
     /// <summary>The secrets the operations name by environment variable, by variable name.</summary>

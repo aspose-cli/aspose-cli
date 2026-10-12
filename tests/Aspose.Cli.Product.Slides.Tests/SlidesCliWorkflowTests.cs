@@ -182,6 +182,38 @@ public sealed class SlidesCliWorkflowTests : IDisposable
     }
 
     /// <summary>
+    /// --verify reads the staged output back: the operations with a read-back are checked, the
+    /// others are not, and an operation that changed nothing reports 0 with OP_NO_EFFECT.
+    /// </summary>
+    [Fact]
+    public void Verify_ChecksTheOperationsItCanReadBack()
+    {
+        CreateDeck(_workspace.File("deck.pptx"));
+        File.WriteAllText(_workspace.File("ops.json"), """
+            {"ops":[
+              {"id":"hide","op":"set_slide_hidden","slides":"1","hidden":true},
+              {"id":"props","op":"set_properties","title":"Q3"},
+              {"id":"style","op":"set_background","slides":"1","color":"#336699"},
+              {"id":"again","op":"set_slide_hidden","slides":"1","hidden":true}
+            ]}
+            """);
+
+        CliResult edit = _workspace.Run("slides", "edit", "deck.pptx", "--ops", "ops.json", "--out", "verified.pptx", "--verify", "--output-format", "json");
+
+        Assert.True(edit.ExitCode == 0, edit.StdErr);
+        JsonNode result = JsonNode.Parse(edit.StdOut)!;
+        JsonNode verification = result["verification"]!;
+        Assert.True(verification["ok"]!.GetValue<bool>());
+        Assert.Empty(verification["issues"]!.AsArray());
+        Assert.Equal(["props", "again"], verification["checkedOps"]!.AsArray().Select(static id => id!.GetValue<string>()));
+        Assert.Equal([1L, 1L, 1L, 0L], result["applied"]!.AsArray().Select(static outcome => outcome!["itemsAffected"]!.GetValue<long>()));
+        Assert.Equal(["slide/1"], result["applied"]![0]!["targets"]!.AsArray().Select(static target => target!.GetValue<string>()));
+        Assert.Equal(["property/title"], result["applied"]![1]!["targets"]!.AsArray().Select(static target => target!.GetValue<string>()));
+        Assert.Contains("OP_NO_EFFECT", WarningCodes(result));
+        Assert.Equal([1], result["slidesTouched"]!.AsArray().Select(static slide => slide!.GetValue<int>()));
+    }
+
+    /// <summary>
     /// Evaluation mode cuts read text short, so replace_text still replaces the text it sees and
     /// discloses EVALUATION_INPUT_TRUNCATED only when the text in its scope was cut: long speaker
     /// notes are cut, and a scope without them reports nothing.

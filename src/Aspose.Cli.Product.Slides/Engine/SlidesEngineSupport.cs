@@ -79,6 +79,13 @@ internal static class SlidesEngineSupport
                     AltText = EmptyToNull(shape.AlternativeText),
                     Text = text,
                     Runs = full ? Runs(shape, ref remaining, ref contentTruncated) : null,
+                    Paragraphs = full ? SlidesStateProjection.Paragraphs(shape, ref remaining, ref contentTruncated) : null,
+                    FillColor = full ? SlidesStateProjection.FillColor(shape) : null,
+                    Line = full ? SlidesStateProjection.Line(shape) : null,
+                    RowCount = full && shape is ITable rows ? rows.Rows.Count : null,
+                    ColumnCount = full && shape is ITable columns ? columns.Columns.Count : null,
+                    Values = full && shape is ITable table ? SlidesStateProjection.Values(table, ref remaining, ref contentTruncated) : null,
+                    Chart = full && shape is IChart chart ? SlidesStateProjection.Chart(chart, ref remaining, ref contentTruncated) : null,
                     ZOrder = zOrder++,
                     HasOpaqueFill = SlidesReviewProjection.HasOpaqueFill(shape),
                     TextRect = full ? SlidesReviewProjection.TextRect(shape) : null,
@@ -116,6 +123,7 @@ internal static class SlidesEngineSupport
                 });
             }
         }
+        SlidesFooterData? footer = full ? SlidesStateProjection.Footer(slide, ref remaining, ref contentTruncated) : null;
         return new SlidesSlideData
         {
             Slide = number,
@@ -127,6 +135,9 @@ internal static class SlidesEngineSupport
             Shapes = shapes,
             Notes = notes,
             Comments = projectedComments,
+            Background = full ? SlidesStateProjection.Background(slide) : null,
+            Transition = full ? SlidesStateProjection.Transition(slide) : null,
+            Footer = footer,
             ContentTruncated = contentTruncated,
         };
     }
@@ -289,6 +300,7 @@ internal static class SlidesEngineSupport
                     Text = text,
                     Font = EmptyToNull(effective.LatinFont?.FontName),
                     EastAsianFont = EmptyToNull(effective.EastAsianFont?.FontName),
+                    LatinFont = EmptyToNull(portion.PortionFormat.LatinFont?.FontName),
                     FontSize = effective.FontHeight,
                     Bold = effective.FontBold,
                     Italic = effective.FontItalic,
