@@ -208,20 +208,20 @@ public sealed class SlidesRendererGoldenTests
         {
             Input = new InputInfo { Path = "deck.pptx", Format = "pptx", SizeBytes = 50_000, Fingerprint = new FileFingerprint { Sha256 = new string('0', 64) }, Encrypted = false },
             Window = new ResultWindow { Unit = "slide", Returned = 2, Total = 2, Truncated = false },
-            Scope = "text",
+            Content = "text",
             SlideCount = 2,
             Slides =
             [
                 new SlidesSlideData
                 {
                     Slide = 1, SlideId = 256, Title = "Welcome", Text = ["Welcome", "Agenda"],
-                    Shapes = [new SlidesShapeData { ShapeId = 2, Type = "autoShape", Text = "Shape text", Rect = rect }],
+                    Shapes = [new SlidesShapeData { ShapeId = 2, Kind = "autoShape", Text = "Shape text", Rect = rect }],
                     Notes = "Say hello", ContentTruncated = false,
                 },
                 new SlidesSlideData
                 {
                     Slide = 2, SlideId = 257,
-                    Shapes = [new SlidesShapeData { ShapeId = 3, Type = "picture", Rect = rect }],
+                    Shapes = [new SlidesShapeData { ShapeId = 3, Kind = "picture", Rect = rect }],
                     ContentTruncated = false,
                 },
             ],
@@ -272,7 +272,7 @@ public sealed class SlidesRendererGoldenTests
         Input = new InputInfo { Path = @"C:\decks\deck.pptx", Format = "pptx", SizeBytes = 50_000, Fingerprint = new FileFingerprint { Sha256 = new string('0', 64) }, Encrypted = false },
         Presentation = new SlidesPresentationSummary
         {
-            SlideCount = 3, WidthPoints = 960, HeightPoints = 540.004, Orientation = "landscape",
+            SlideCount = 3, SlideSize = SlidesSlideSizeInfo.Of(960, 540.004), Orientation = "landscape",
             MasterCount = 1, LayoutCount = 11, SectionCount = 2, CommentCount = 1, MediaCount = 1, HasMacros = false,
         },
         Slides =
@@ -298,8 +298,8 @@ public sealed class SlidesRendererGoldenTests
         ],
         Media =
         [
-            new SlidesMediaInfo { Index = 0, Type = "image", ContentType = "image/png", SizeBytes = 2_048 },
-            new SlidesMediaInfo { Index = 1, Type = "audio", SizeBytes = 1_048_576 },
+            new SlidesMediaInfo { Index = 0, Kind = "image", ContentType = "image/png", SizeBytes = 2_048 },
+            new SlidesMediaInfo { Index = 1, Kind = "audio", SizeBytes = 1_048_576 },
         ],
         Notes = [new SlidesNotesInfo { Slide = 1, Present = true, CharacterCount = 9 }],
         Comments = [new SlidesCommentInfo { Slide = 1, Author = "Ann", Text = "Check the date" }],

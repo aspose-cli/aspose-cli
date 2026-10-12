@@ -25,7 +25,7 @@ internal static class SlidesRead
             SlidesSlideData projected = ProjectSlide(
                 presentation.Slides[number - 1],
                 number,
-                request.Scope,
+                request.Content,
                 request.IncludeNotes,
                 comments,
                 ref remaining);
@@ -45,7 +45,7 @@ internal static class SlidesRead
         return new SlidesReadResult
         {
             Input = Source(request.Input, loaded),
-            Scope = request.Scope,
+            Content = request.Content,
             SlideCount = presentation.Slides.Count,
             Slides = slides,
             Window = new ResultWindow

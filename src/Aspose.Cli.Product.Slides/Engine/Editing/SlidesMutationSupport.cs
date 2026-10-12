@@ -10,7 +10,7 @@ namespace Aspose.Cli.Product.Slides.Engine.Editing;
 /// <summary>Resolves mutation targets and translates handler failures.</summary>
 internal static class SlidesMutationSupport
 {
-    private const string ShapeListing = "'slides query slides --scope shapes' lists each shape's id, name and role";
+    private const string ShapeListing = "'slides read --content shapes' lists each shape's id, name and role";
 
     internal static ISlide ResolveSlide(Presentation presentation, SlideTargetOp op)
     {

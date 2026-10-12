@@ -3,7 +3,8 @@
     "id": "slides",
     "verbs": [
       "inspect",
-      "query",
+      "read",
+      "search",
       "convert",
       "render",
       "create",
@@ -36,36 +37,36 @@
         "command": "edit",
         "inputSchema": "v2/slides/ops",
         "operationSchema": "aspose-cli schema v2/slides/ops --operation <op>",
-        "contractFingerprint": "sha256:5c3f87041f6ee29b6f21e71247122608aa070e12be855e76a536b50911404e13",
+        "contractFingerprint": "sha256:ddad7ab3d4a73b19fc6928108ceacf5b8dfcd3cb73fe4eaa883d8bca8c8c818c",
         "maximumOperationCount": 10000,
         "ops": [
-          "add_section",
-          "add_slide",
-          "append_presentation",
-          "apply_layout",
+          "copy_slide",
           "delete_shape",
           "delete_slides",
-          "duplicate_slide",
+          "format_shape",
+          "import_slides",
           "insert_chart",
           "insert_image",
+          "insert_section",
           "insert_shape",
+          "insert_slide",
           "insert_table",
           "move_slide",
           "replace_text",
           "set_background",
           "set_body",
+          "set_chart_data",
           "set_footer",
+          "set_layout",
           "set_notes",
           "set_properties",
           "set_shape_bounds",
-          "set_shape_style",
           "set_slide_hidden",
           "set_slide_size",
           "set_table_cell",
           "set_text",
           "set_title",
-          "set_transition",
-          "update_chart_data"
+          "set_transition"
         ]
       }
     ],
@@ -984,7 +985,7 @@
             "description": "Replace the output file if it already exists."
           },
           {
-            "name": "--size",
+            "name": "--slide-size",
             "aliases": [],
             "type": "string",
             "minimumArity": 1,
@@ -999,7 +1000,7 @@
             ],
             "secret": false,
             "valueSource": "command-line",
-            "description": "Slide size; the template size is kept when omitted."
+            "description": "Slide aspect ratio; the template size is kept when omitted."
           },
           {
             "name": "--template",
@@ -1499,7 +1500,7 @@
             ],
             "secret": false,
             "valueSource": "command-line",
-            "description": "Extra sections to include; repeat for more. notes: presence and character count, with the text from query slides --notes."
+            "description": "Extra sections to include; repeat for more. notes: presence and character count, with the text from 'slides read --notes'."
           },
           {
             "name": "--password",
@@ -1586,198 +1587,32 @@
         ]
       },
       {
-        "path": "slides query",
-        "name": "query",
-        "aliases": [],
-        "description": "Read bounded presentation projections without mutating the source.",
-        "hidden": false,
-        "options": [],
-        "arguments": []
-      },
-      {
-        "path": "slides query search",
-        "name": "search",
-        "aliases": [],
-        "description": "Search presentation shape and speaker-notes text.",
-        "hidden": false,
-        "options": [
-          {
-            "name": "--case-sensitive",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "false",
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Match letter case exactly."
-          },
-          {
-            "name": "--max-hits",
-            "aliases": [],
-            "type": "integer",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "100",
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Maximum returned hits. Range: 1-10000."
-          },
-          {
-            "name": "--password",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": true,
-            "valueSource": "command-line",
-            "description": "Password for the presentation. Discouraged: visible in the process list; prefer --password-env."
-          },
-          {
-            "name": "--password-env",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": true,
-            "valueSource": "environment-variable-name",
-            "description": "Name of an environment variable holding the password for the presentation."
-          },
-          {
-            "name": "--password-stdin",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": true,
-            "valueSource": "stdin",
-            "description": "Read the password for the presentation from the first line of stdin."
-          },
-          {
-            "name": "--pattern",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": true,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Text to find, or a regular expression with --regex."
-          },
-          {
-            "name": "--regex",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "false",
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Treat the pattern as a culture-invariant regular expression with a one-second budget."
-          },
-          {
-            "name": "--scope",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "all",
-            "allowedValues": [
-              "all",
-              "notes",
-              "shapes"
-            ],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Search scope: the shape text, the speaker notes or both."
-          },
-          {
-            "name": "--skip",
-            "aliases": [],
-            "type": "integer",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "0",
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Matches to pass over before the returned hits; a truncated search's window.next sets it."
-          }
-        ],
-        "arguments": [
-          {
-            "name": "file",
-            "type": "string",
-            "inputKind": "file",
-            "valueSource": "command-line",
-            "secret": false,
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": true,
-            "hasDefault": false,
-            "allowedValues": [],
-            "description": "Presentation file path."
-          }
-        ]
-      },
-      {
-        "path": "slides query slides",
-        "name": "slides",
+        "path": "slides read",
+        "name": "read",
         "aliases": [],
         "description": "Read a bounded slide-content window.",
         "hidden": false,
         "options": [
+          {
+            "name": "--content",
+            "aliases": [],
+            "type": "string",
+            "minimumArity": 1,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": true,
+            "default": "shapes",
+            "allowedValues": [
+              "full",
+              "shapes",
+              "text"
+            ],
+            "secret": false,
+            "valueSource": "command-line",
+            "description": "Projection depth: how much of each slide to return."
+          },
           {
             "name": "--max-chars",
             "aliases": [],
@@ -1860,26 +1695,6 @@
             "secret": true,
             "valueSource": "stdin",
             "description": "Read the password for the presentation from the first line of stdin."
-          },
-          {
-            "name": "--scope",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "shapes",
-            "allowedValues": [
-              "full",
-              "shapes",
-              "text"
-            ],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Projection scope: how much of each slide to return."
           },
           {
             "name": "--slides",
@@ -2102,6 +1917,183 @@
             "secret": false,
             "valueSource": "command-line",
             "description": "Exact raster width in pixels; replaces --dpi. Range: 64-20000."
+          }
+        ],
+        "arguments": [
+          {
+            "name": "file",
+            "type": "string",
+            "inputKind": "file",
+            "valueSource": "command-line",
+            "secret": false,
+            "minimumArity": 1,
+            "maximumArity": 1,
+            "required": true,
+            "hasDefault": false,
+            "allowedValues": [],
+            "description": "Presentation file path."
+          }
+        ]
+      },
+      {
+        "path": "slides search",
+        "name": "search",
+        "aliases": [],
+        "description": "Search presentation shape and speaker-notes text.",
+        "hidden": false,
+        "options": [
+          {
+            "name": "--case-sensitive",
+            "aliases": [],
+            "type": "boolean",
+            "minimumArity": 0,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": true,
+            "default": "false",
+            "allowedValues": [
+              "false",
+              "true"
+            ],
+            "secret": false,
+            "valueSource": "command-line",
+            "description": "Match letter case exactly."
+          },
+          {
+            "name": "--max-hits",
+            "aliases": [],
+            "type": "integer",
+            "minimumArity": 1,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": true,
+            "default": "100",
+            "allowedValues": [],
+            "secret": false,
+            "valueSource": "command-line",
+            "description": "Maximum returned hits. Range: 1-10000."
+          },
+          {
+            "name": "--password",
+            "aliases": [],
+            "type": "string",
+            "minimumArity": 1,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": false,
+            "allowedValues": [],
+            "secret": true,
+            "valueSource": "command-line",
+            "description": "Password for the presentation. Discouraged: visible in the process list; prefer --password-env."
+          },
+          {
+            "name": "--password-env",
+            "aliases": [],
+            "type": "string",
+            "minimumArity": 1,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": false,
+            "allowedValues": [],
+            "secret": true,
+            "valueSource": "environment-variable-name",
+            "description": "Name of an environment variable holding the password for the presentation."
+          },
+          {
+            "name": "--password-stdin",
+            "aliases": [],
+            "type": "boolean",
+            "minimumArity": 0,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": true,
+            "allowedValues": [
+              "false",
+              "true"
+            ],
+            "secret": true,
+            "valueSource": "stdin",
+            "description": "Read the password for the presentation from the first line of stdin."
+          },
+          {
+            "name": "--pattern",
+            "aliases": [],
+            "type": "string",
+            "minimumArity": 1,
+            "maximumArity": 1,
+            "required": true,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": false,
+            "allowedValues": [],
+            "secret": false,
+            "valueSource": "command-line",
+            "description": "Text to find, or a regular expression with --regex."
+          },
+          {
+            "name": "--regex",
+            "aliases": [],
+            "type": "boolean",
+            "minimumArity": 0,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": true,
+            "default": "false",
+            "allowedValues": [
+              "false",
+              "true"
+            ],
+            "secret": false,
+            "valueSource": "command-line",
+            "description": "Treat the pattern as a culture-invariant regular expression with a one-second budget."
+          },
+          {
+            "name": "--scope",
+            "aliases": [],
+            "type": "string",
+            "minimumArity": 1,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": true,
+            "default": "all",
+            "allowedValues": [
+              "all",
+              "notes",
+              "shapes"
+            ],
+            "secret": false,
+            "valueSource": "command-line",
+            "description": "Search scope: the shape text, the speaker notes or both."
+          },
+          {
+            "name": "--skip",
+            "aliases": [],
+            "type": "integer",
+            "minimumArity": 1,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": true,
+            "default": "0",
+            "allowedValues": [],
+            "secret": false,
+            "valueSource": "command-line",
+            "description": "Matches to pass over before the returned hits; a truncated search's window.next sets it."
           }
         ],
         "arguments": [
@@ -2813,7 +2805,7 @@
           "additionalProperties": false,
           "properties": {
             "name": {
-              "description": "The layout's name, which add_slide and apply_layout accept as layout.",
+              "description": "The layout's name, which insert_slide and set_layout accept as layout.",
               "type": "string"
             },
             "master": {
@@ -2852,7 +2844,7 @@
           "type": "object",
           "required": [
             "index",
-            "type",
+            "kind",
             "sizeBytes"
           ],
           "additionalProperties": false,
@@ -2862,7 +2854,7 @@
               "type": "integer",
               "minimum": 1
             },
-            "type": {
+            "kind": {
               "description": "The kind of media.",
               "type": "string",
               "enum": [
@@ -2913,8 +2905,7 @@
           "type": "object",
           "required": [
             "slideCount",
-            "widthPoints",
-            "heightPoints",
+            "slideSize",
             "orientation",
             "masterCount",
             "layoutCount",
@@ -2930,15 +2921,9 @@
               "type": "integer",
               "minimum": 0
             },
-            "widthPoints": {
-              "description": "The slide width in points.",
-              "type": "number",
-              "minimum": 0
-            },
-            "heightPoints": {
-              "description": "The slide height in points.",
-              "type": "number",
-              "minimum": 0
+            "slideSize": {
+              "description": "The slide size, in points.",
+              "$ref": "#/$defs/slidesSlideSizeInfo"
             },
             "orientation": {
               "description": "Whether slides are wider than tall, taller than wide, or square.",
@@ -3065,6 +3050,35 @@
               "minimum": 0
             }
           }
+        },
+        "slidesSlideSizeInfo": {
+          "description": "The slide size in points (72 per inch): both dimensions, and the preset they match. An operation that sets the slide size takes a preset or both dimensions under the same names.",
+          "type": "object",
+          "required": [
+            "width",
+            "height"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "preset": {
+              "description": "The preset the dimensions match; omitted when they match none.",
+              "type": "string",
+              "enum": [
+                "16x9",
+                "4x3"
+              ]
+            },
+            "width": {
+              "description": "The slide width in points.",
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "height": {
+              "description": "The slide height in points.",
+              "type": "number",
+              "exclusiveMinimum": 0
+            }
+          }
         }
       }
     },
@@ -3098,16 +3112,7 @@
           "items": {
             "oneOf": [
               {
-                "$ref": "#/$defs/add_section"
-              },
-              {
-                "$ref": "#/$defs/add_slide"
-              },
-              {
-                "$ref": "#/$defs/append_presentation"
-              },
-              {
-                "$ref": "#/$defs/apply_layout"
+                "$ref": "#/$defs/copy_slide"
               },
               {
                 "$ref": "#/$defs/delete_shape"
@@ -3116,7 +3121,10 @@
                 "$ref": "#/$defs/delete_slides"
               },
               {
-                "$ref": "#/$defs/duplicate_slide"
+                "$ref": "#/$defs/format_shape"
+              },
+              {
+                "$ref": "#/$defs/import_slides"
               },
               {
                 "$ref": "#/$defs/insert_chart"
@@ -3125,7 +3133,13 @@
                 "$ref": "#/$defs/insert_image"
               },
               {
+                "$ref": "#/$defs/insert_section"
+              },
+              {
                 "$ref": "#/$defs/insert_shape"
+              },
+              {
+                "$ref": "#/$defs/insert_slide"
               },
               {
                 "$ref": "#/$defs/insert_table"
@@ -3143,7 +3157,13 @@
                 "$ref": "#/$defs/set_body"
               },
               {
+                "$ref": "#/$defs/set_chart_data"
+              },
+              {
                 "$ref": "#/$defs/set_footer"
+              },
+              {
+                "$ref": "#/$defs/set_layout"
               },
               {
                 "$ref": "#/$defs/set_notes"
@@ -3153,9 +3173,6 @@
               },
               {
                 "$ref": "#/$defs/set_shape_bounds"
-              },
-              {
-                "$ref": "#/$defs/set_shape_style"
               },
               {
                 "$ref": "#/$defs/set_slide_hidden"
@@ -3174,9 +3191,6 @@
               },
               {
                 "$ref": "#/$defs/set_transition"
-              },
-              {
-                "$ref": "#/$defs/update_chart_data"
               }
             ]
           }
@@ -3188,37 +3202,8 @@
           "type": "string",
           "pattern": "^[A-Za-z][A-Za-z0-9._-]{0,63}$"
         },
-        "add_section": {
-          "description": "Starts a new section at a slide; section names are unique.",
-          "type": "object",
-          "required": [
-            "op",
-            "name",
-            "startSlide"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "id": {
-              "$ref": "#/$defs/id"
-            },
-            "op": {
-              "const": "add_section"
-            },
-            "name": {
-              "type": "string",
-              "pattern": "\\S",
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/slides/inspect-result.schema.json#/$defs/slidesSectionInfo/properties/name"
-            },
-            "startSlide": {
-              "description": "The 1-based number of the section's first slide.",
-              "type": "integer",
-              "minimum": 1,
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/slides/inspect-result.schema.json#/$defs/slidesSectionInfo/properties/startSlide"
-            }
-          }
-        },
-        "add_slide": {
-          "description": "Adds an empty slide.",
+        "copy_slide": {
+          "description": "Inserts a copy of one slide.",
           "type": "object",
           "required": [
             "op"
@@ -3229,83 +3214,43 @@
               "$ref": "#/$defs/id"
             },
             "op": {
-              "const": "add_slide"
+              "const": "copy_slide"
             },
-            "layout": {
-              "description": "The layout name, matched case-insensitively; the first layout when omitted.",
-              "type": "string",
-              "pattern": "\\S",
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/slides/inspect-result.schema.json#/$defs/slidesSlideInfo/properties/layout"
+            "slide": {
+              "description": "The 1-based slide number.",
+              "type": "integer",
+              "minimum": 1,
+              "x-readBack": "not-state"
+            },
+            "slideId": {
+              "description": "The stable slide id reported by slides inspect and slides read.",
+              "type": "integer",
+              "minimum": 1,
+              "x-readBack": "not-state"
             },
             "at": {
-              "description": "The 1-based position of the new slide, at most the slide count plus one; the end when omitted.",
+              "description": "The 1-based position of the copy, at most the slide count plus one; the end when omitted.",
               "type": "integer",
               "minimum": 1,
               "x-readBack": "not-state"
             }
-          }
-        },
-        "append_presentation": {
-          "description": "Appends every slide of another presentation.",
-          "type": "object",
-          "required": [
-            "op",
-            "path"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "id": {
-              "$ref": "#/$defs/id"
-            },
-            "op": {
-              "const": "append_presentation"
-            },
-            "path": {
-              "description": "The source presentation, relative to the working directory.",
-              "type": "string",
-              "minLength": 1,
-              "pattern": "\\S",
-              "x-readBack": "not-state"
-            },
-            "masterPolicy": {
-              "description": "Whether appended slides keep their own masters, or take the destination's first master and show its layouts' backgrounds instead of their own.",
-              "type": "string",
-              "enum": [
-                "keep-source",
-                "use-dest"
-              ],
-              "default": "keep-source",
-              "x-readBack": "not-state"
+          },
+          "allOf": [
+            {
+              "oneOf": [
+                {
+                  "required": [
+                    "slide"
+                  ]
+                },
+                {
+                  "required": [
+                    "slideId"
+                  ]
+                }
+              ]
             }
-          }
-        },
-        "apply_layout": {
-          "description": "Applies a layout to slides, which drop their own background to show the layout's.",
-          "type": "object",
-          "required": [
-            "op",
-            "slides",
-            "layout"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "id": {
-              "$ref": "#/$defs/id"
-            },
-            "op": {
-              "const": "apply_layout"
-            },
-            "slides": {
-              "$ref": "#/$defs/pages",
-              "x-readBack": "not-state"
-            },
-            "layout": {
-              "description": "The layout name, matched case-insensitively.",
-              "type": "string",
-              "pattern": "\\S",
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/slides/inspect-result.schema.json#/$defs/slidesSlideInfo/properties/layout"
-            }
-          }
+          ]
         },
         "delete_shape": {
           "description": "Deletes one shape.",
@@ -3328,13 +3273,13 @@
               "x-readBack": "not-state"
             },
             "slideId": {
-              "description": "The stable slide id reported by inspect and query slides.",
+              "description": "The stable slide id reported by slides inspect and slides read.",
               "type": "integer",
               "minimum": 1,
               "x-readBack": "not-state"
             },
             "shapeId": {
-              "description": "The persistent slide-scoped shapeId returned by query slides; not a shape position.",
+              "description": "The persistent slide-scoped shapeId returned by slides read; not a shape position.",
               "type": "integer",
               "minimum": 1,
               "x-readBack": "not-state"
@@ -3346,7 +3291,7 @@
               "x-readBack": "not-state"
             },
             "placeholder": {
-              "description": "The placeholder role, as query slides reports it.",
+              "description": "The placeholder role, as slides read reports it.",
               "type": "string",
               "enum": [
                 "title",
@@ -3414,11 +3359,12 @@
             }
           }
         },
-        "duplicate_slide": {
-          "description": "Inserts a copy of one slide.",
+        "format_shape": {
+          "description": "Formats one shape and every run of its text. A table's fill, line and text are those of all its cells; a chart's fill and line are its chart area's, and its text includes the title, legend, axes and data labels. A shape without text, such as a picture, refuses text styles.",
           "type": "object",
           "required": [
-            "op"
+            "op",
+            "style"
           ],
           "additionalProperties": false,
           "properties": {
@@ -3426,7 +3372,7 @@
               "$ref": "#/$defs/id"
             },
             "op": {
-              "const": "duplicate_slide"
+              "const": "format_shape"
             },
             "slide": {
               "description": "The 1-based slide number.",
@@ -3435,16 +3381,36 @@
               "x-readBack": "not-state"
             },
             "slideId": {
-              "description": "The stable slide id reported by inspect and query slides.",
+              "description": "The stable slide id reported by slides inspect and slides read.",
               "type": "integer",
               "minimum": 1,
               "x-readBack": "not-state"
             },
-            "at": {
-              "description": "The 1-based position of the copy, at most the slide count plus one; the end when omitted.",
+            "shapeId": {
+              "description": "The persistent slide-scoped shapeId returned by slides read; not a shape position.",
               "type": "integer",
               "minimum": 1,
               "x-readBack": "not-state"
+            },
+            "shapeName": {
+              "description": "The shape name, matched case-sensitively.",
+              "type": "string",
+              "pattern": "\\S",
+              "x-readBack": "not-state"
+            },
+            "placeholder": {
+              "description": "The placeholder role, as slides read reports it.",
+              "type": "string",
+              "enum": [
+                "title",
+                "body",
+                "subtitle",
+                "footer"
+              ],
+              "x-readBack": "not-state"
+            },
+            "style": {
+              "$ref": "#/$defs/slidesShapeStyleInput"
             }
           },
           "allOf": [
@@ -3461,8 +3427,68 @@
                   ]
                 }
               ]
+            },
+            {
+              "oneOf": [
+                {
+                  "required": [
+                    "shapeId"
+                  ]
+                },
+                {
+                  "required": [
+                    "shapeName"
+                  ]
+                },
+                {
+                  "required": [
+                    "placeholder"
+                  ]
+                }
+              ]
             }
           ]
+        },
+        "import_slides": {
+          "description": "Inserts every slide of another presentation at the end.",
+          "type": "object",
+          "required": [
+            "op",
+            "path"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/id"
+            },
+            "op": {
+              "const": "import_slides"
+            },
+            "path": {
+              "description": "The source presentation, relative to the working directory.",
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S",
+              "x-readBack": "not-state"
+            },
+            "formatting": {
+              "description": "Whether imported slides keep their own masters (keep-source), or take the destination's first master and show its layouts' backgrounds instead of their own (use-destination).",
+              "type": "string",
+              "enum": [
+                "keep-source",
+                "use-destination"
+              ],
+              "default": "keep-source",
+              "x-readBack": "not-state"
+            },
+            "sourcePasswordEnv": {
+              "description": "The environment variable that holds the source presentation's open password, for an encrypted source.",
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S",
+              "x-readBack": "not-state"
+            }
+          }
         },
         "insert_chart": {
           "description": "Inserts a chart. Every series has one value per category, and a scatter series has one x value per value.",
@@ -3489,7 +3515,7 @@
               "x-readBack": "not-state"
             },
             "slideId": {
-              "description": "The stable slide id reported by inspect and query slides.",
+              "description": "The stable slide id reported by slides inspect and slides read.",
               "type": "integer",
               "minimum": 1,
               "x-readBack": "not-state"
@@ -3571,7 +3597,7 @@
               "x-readBack": "not-state"
             },
             "slideId": {
-              "description": "The stable slide id reported by inspect and query slides.",
+              "description": "The stable slide id reported by slides inspect and slides read.",
               "type": "integer",
               "minimum": 1,
               "x-readBack": "not-state"
@@ -3611,6 +3637,35 @@
             }
           ]
         },
+        "insert_section": {
+          "description": "Inserts a new section that starts at a slide; section names are unique.",
+          "type": "object",
+          "required": [
+            "op",
+            "name",
+            "at"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/id"
+            },
+            "op": {
+              "const": "insert_section"
+            },
+            "name": {
+              "type": "string",
+              "pattern": "\\S",
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/slides/inspect-result.schema.json#/$defs/slidesSectionInfo/properties/name"
+            },
+            "at": {
+              "description": "The 1-based number of the section's first slide, at most the slide count.",
+              "type": "integer",
+              "minimum": 1,
+              "x-readBack": "not-state"
+            }
+          }
+        },
         "insert_shape": {
           "description": "Inserts a shape.",
           "type": "object",
@@ -3634,7 +3689,7 @@
               "x-readBack": "not-state"
             },
             "slideId": {
-              "description": "The stable slide id reported by inspect and query slides.",
+              "description": "The stable slide id reported by slides inspect and slides read.",
               "type": "integer",
               "minimum": 1,
               "x-readBack": "not-state"
@@ -3679,8 +3734,36 @@
             }
           ]
         },
+        "insert_slide": {
+          "description": "Inserts an empty slide.",
+          "type": "object",
+          "required": [
+            "op"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/id"
+            },
+            "op": {
+              "const": "insert_slide"
+            },
+            "layout": {
+              "description": "The layout name, matched case-insensitively; the first layout when omitted.",
+              "type": "string",
+              "pattern": "\\S",
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/slides/inspect-result.schema.json#/$defs/slidesSlideInfo/properties/layout"
+            },
+            "at": {
+              "description": "The 1-based position of the new slide, at most the slide count plus one; the end when omitted.",
+              "type": "integer",
+              "minimum": 1,
+              "x-readBack": "not-state"
+            }
+          }
+        },
         "insert_table": {
-          "description": "Inserts a table with equal rows and columns; data fills it from the top-left cell.",
+          "description": "Inserts a table with equal rows and columns; values fill it from the top-left cell.",
           "type": "object",
           "required": [
             "op",
@@ -3703,7 +3786,7 @@
               "x-readBack": "not-state"
             },
             "slideId": {
-              "description": "The stable slide id reported by inspect and query slides.",
+              "description": "The stable slide id reported by slides inspect and slides read.",
               "type": "integer",
               "minimum": 1,
               "x-readBack": "not-state"
@@ -3724,7 +3807,7 @@
               "maximum": 50,
               "x-readBack": "unread"
             },
-            "data": {
+            "values": {
               "description": "Cell text by row, at most rowCount rows of at most columnCount cells each.",
               "type": "array",
               "items": {
@@ -3775,7 +3858,7 @@
               "x-readBack": "not-state"
             },
             "slideId": {
-              "description": "The stable slide id reported by inspect and query slides.",
+              "description": "The stable slide id reported by slides inspect and slides read.",
               "type": "integer",
               "minimum": 1,
               "x-readBack": "not-state"
@@ -3836,7 +3919,8 @@
               "default": false,
               "x-readBack": "not-state"
             },
-            "matchCase": {
+            "caseSensitive": {
+              "description": "Whether find matches letter case exactly.",
               "type": "boolean",
               "default": false,
               "x-readBack": "not-state"
@@ -3876,12 +3960,12 @@
               "$ref": "#/$defs/color",
               "x-readBack": "unread"
             },
-            "imagePath": {
+            "path": {
               "description": "The picture, relative to the working directory.",
               "type": "string",
               "minLength": 1,
               "pattern": "\\S",
-              "x-readBack": "unread"
+              "x-readBack": "not-state"
             }
           },
           "allOf": [
@@ -3894,7 +3978,7 @@
                 },
                 {
                   "required": [
-                    "imagePath"
+                    "path"
                   ]
                 }
               ]
@@ -3923,7 +4007,7 @@
               "x-readBack": "not-state"
             },
             "slideId": {
-              "description": "The stable slide id reported by inspect and query slides.",
+              "description": "The stable slide id reported by slides inspect and slides read.",
               "type": "integer",
               "minimum": 1,
               "x-readBack": "not-state"
@@ -3947,6 +4031,124 @@
                 {
                   "required": [
                     "slideId"
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        "set_chart_data": {
+          "description": "Replaces the categories or series of a chart in its embedded workbook. When both are given, every series has one value per category.",
+          "type": "object",
+          "required": [
+            "op"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/id"
+            },
+            "op": {
+              "const": "set_chart_data"
+            },
+            "slide": {
+              "description": "The 1-based slide number.",
+              "type": "integer",
+              "minimum": 1,
+              "x-readBack": "not-state"
+            },
+            "slideId": {
+              "description": "The stable slide id reported by slides inspect and slides read.",
+              "type": "integer",
+              "minimum": 1,
+              "x-readBack": "not-state"
+            },
+            "shapeId": {
+              "description": "The persistent slide-scoped shapeId returned by slides read; not a shape position.",
+              "type": "integer",
+              "minimum": 1,
+              "x-readBack": "not-state"
+            },
+            "shapeName": {
+              "description": "The shape name, matched case-sensitively.",
+              "type": "string",
+              "pattern": "\\S",
+              "x-readBack": "not-state"
+            },
+            "placeholder": {
+              "description": "The placeholder role, as slides read reports it.",
+              "type": "string",
+              "enum": [
+                "title",
+                "body",
+                "subtitle",
+                "footer"
+              ],
+              "x-readBack": "not-state"
+            },
+            "categories": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 1000,
+              "items": {
+                "type": "string"
+              },
+              "x-readBack": "unread"
+            },
+            "series": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 50,
+              "items": {
+                "$ref": "#/$defs/slidesChartSeriesInput"
+              },
+              "x-readBack": "unread"
+            }
+          },
+          "allOf": [
+            {
+              "oneOf": [
+                {
+                  "required": [
+                    "slide"
+                  ]
+                },
+                {
+                  "required": [
+                    "slideId"
+                  ]
+                }
+              ]
+            },
+            {
+              "oneOf": [
+                {
+                  "required": [
+                    "shapeId"
+                  ]
+                },
+                {
+                  "required": [
+                    "shapeName"
+                  ]
+                },
+                {
+                  "required": [
+                    "placeholder"
+                  ]
+                }
+              ]
+            },
+            {
+              "anyOf": [
+                {
+                  "required": [
+                    "categories"
+                  ]
+                },
+                {
+                  "required": [
+                    "series"
                   ]
                 }
               ]
@@ -4007,6 +4209,34 @@
             }
           ]
         },
+        "set_layout": {
+          "description": "Sets the layout of slides, which drop their own background to show the layout's.",
+          "type": "object",
+          "required": [
+            "op",
+            "slides",
+            "layout"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/id"
+            },
+            "op": {
+              "const": "set_layout"
+            },
+            "slides": {
+              "$ref": "#/$defs/pages",
+              "x-readBack": "not-state"
+            },
+            "layout": {
+              "description": "The layout name, matched case-insensitively.",
+              "type": "string",
+              "pattern": "\\S",
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/slides/inspect-result.schema.json#/$defs/slidesSlideInfo/properties/layout"
+            }
+          }
+        },
         "set_notes": {
           "description": "Replaces a slide's speaker-note text.",
           "type": "object",
@@ -4029,7 +4259,7 @@
               "x-readBack": "not-state"
             },
             "slideId": {
-              "description": "The stable slide id reported by inspect and query slides.",
+              "description": "The stable slide id reported by slides inspect and slides read.",
               "type": "integer",
               "minimum": 1,
               "x-readBack": "not-state"
@@ -4144,13 +4374,13 @@
               "x-readBack": "not-state"
             },
             "slideId": {
-              "description": "The stable slide id reported by inspect and query slides.",
+              "description": "The stable slide id reported by slides inspect and slides read.",
               "type": "integer",
               "minimum": 1,
               "x-readBack": "not-state"
             },
             "shapeId": {
-              "description": "The persistent slide-scoped shapeId returned by query slides; not a shape position.",
+              "description": "The persistent slide-scoped shapeId returned by slides read; not a shape position.",
               "type": "integer",
               "minimum": 1,
               "x-readBack": "not-state"
@@ -4162,7 +4392,7 @@
               "x-readBack": "not-state"
             },
             "placeholder": {
-              "description": "The placeholder role, as query slides reports it.",
+              "description": "The placeholder role, as slides read reports it.",
               "type": "string",
               "enum": [
                 "title",
@@ -4253,96 +4483,6 @@
             }
           ]
         },
-        "set_shape_style": {
-          "description": "Styles one shape and every run of its text. A table's fill, line and text are those of all its cells; a chart's fill and line are its chart area's, and its text includes the title, legend, axes and data labels. A shape without text, such as a picture, refuses text styles.",
-          "type": "object",
-          "required": [
-            "op",
-            "style"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "id": {
-              "$ref": "#/$defs/id"
-            },
-            "op": {
-              "const": "set_shape_style"
-            },
-            "slide": {
-              "description": "The 1-based slide number.",
-              "type": "integer",
-              "minimum": 1,
-              "x-readBack": "not-state"
-            },
-            "slideId": {
-              "description": "The stable slide id reported by inspect and query slides.",
-              "type": "integer",
-              "minimum": 1,
-              "x-readBack": "not-state"
-            },
-            "shapeId": {
-              "description": "The persistent slide-scoped shapeId returned by query slides; not a shape position.",
-              "type": "integer",
-              "minimum": 1,
-              "x-readBack": "not-state"
-            },
-            "shapeName": {
-              "description": "The shape name, matched case-sensitively.",
-              "type": "string",
-              "pattern": "\\S",
-              "x-readBack": "not-state"
-            },
-            "placeholder": {
-              "description": "The placeholder role, as query slides reports it.",
-              "type": "string",
-              "enum": [
-                "title",
-                "body",
-                "subtitle",
-                "footer"
-              ],
-              "x-readBack": "not-state"
-            },
-            "style": {
-              "$ref": "#/$defs/slidesShapeStyleInput"
-            }
-          },
-          "allOf": [
-            {
-              "oneOf": [
-                {
-                  "required": [
-                    "slide"
-                  ]
-                },
-                {
-                  "required": [
-                    "slideId"
-                  ]
-                }
-              ]
-            },
-            {
-              "oneOf": [
-                {
-                  "required": [
-                    "shapeId"
-                  ]
-                },
-                {
-                  "required": [
-                    "shapeName"
-                  ]
-                },
-                {
-                  "required": [
-                    "placeholder"
-                  ]
-                }
-              ]
-            }
-          ]
-        },
         "set_slide_hidden": {
           "description": "Hides or shows slides in a slide show.",
           "type": "object",
@@ -4374,7 +4514,7 @@
           "type": "object",
           "required": [
             "op",
-            "size"
+            "slideSize"
           ],
           "additionalProperties": false,
           "properties": {
@@ -4384,11 +4524,10 @@
             "op": {
               "const": "set_slide_size"
             },
-            "size": {
-              "description": "16x9, 4x3, or WxHpt such as 800x450pt; each side is 72 through 7200 points.",
-              "type": "string",
-              "pattern": "^(16x9|4x3|[0-9]+(?:\\.[0-9]+)?x[0-9]+(?:\\.[0-9]+)?pt)$",
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/slides/inspect-result.schema.json#/$defs/slidesPresentationSummary/properties/widthPoints"
+            "slideSize": {
+              "description": "The new slide size.",
+              "$ref": "#/$defs/slidesSlideSizeInput",
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/slides/inspect-result.schema.json#/$defs/slidesPresentationSummary/properties/slideSize"
             },
             "scaleContent": {
               "description": "Whether the content is scaled to fit the new size rather than kept at its position.",
@@ -4404,7 +4543,7 @@
           "required": [
             "op",
             "row",
-            "col",
+            "column",
             "text"
           ],
           "additionalProperties": false,
@@ -4422,13 +4561,13 @@
               "x-readBack": "not-state"
             },
             "slideId": {
-              "description": "The stable slide id reported by inspect and query slides.",
+              "description": "The stable slide id reported by slides inspect and slides read.",
               "type": "integer",
               "minimum": 1,
               "x-readBack": "not-state"
             },
             "shapeId": {
-              "description": "The persistent slide-scoped shapeId returned by query slides; not a shape position.",
+              "description": "The persistent slide-scoped shapeId returned by slides read; not a shape position.",
               "type": "integer",
               "minimum": 1,
               "x-readBack": "not-state"
@@ -4440,7 +4579,7 @@
               "x-readBack": "not-state"
             },
             "placeholder": {
-              "description": "The placeholder role, as query slides reports it.",
+              "description": "The placeholder role, as slides read reports it.",
               "type": "string",
               "enum": [
                 "title",
@@ -4456,7 +4595,7 @@
               "minimum": 1,
               "x-readBack": "not-state"
             },
-            "col": {
+            "column": {
               "description": "The 1-based column.",
               "type": "integer",
               "minimum": 1,
@@ -4525,13 +4664,13 @@
               "x-readBack": "not-state"
             },
             "slideId": {
-              "description": "The stable slide id reported by inspect and query slides.",
+              "description": "The stable slide id reported by slides inspect and slides read.",
               "type": "integer",
               "minimum": 1,
               "x-readBack": "not-state"
             },
             "shapeId": {
-              "description": "The persistent slide-scoped shapeId returned by query slides; not a shape position.",
+              "description": "The persistent slide-scoped shapeId returned by slides read; not a shape position.",
               "type": "integer",
               "minimum": 1,
               "x-readBack": "not-state"
@@ -4543,7 +4682,7 @@
               "x-readBack": "not-state"
             },
             "placeholder": {
-              "description": "The placeholder role, as query slides reports it.",
+              "description": "The placeholder role, as slides read reports it.",
               "type": "string",
               "enum": [
                 "title",
@@ -4616,7 +4755,7 @@
               "x-readBack": "not-state"
             },
             "slideId": {
-              "description": "The stable slide id reported by inspect and query slides.",
+              "description": "The stable slide id reported by slides inspect and slides read.",
               "type": "integer",
               "minimum": 1,
               "x-readBack": "not-state"
@@ -4699,124 +4838,6 @@
             }
           ]
         },
-        "update_chart_data": {
-          "description": "Replaces the categories or series of a chart in its embedded workbook. When both are given, every series has one value per category.",
-          "type": "object",
-          "required": [
-            "op"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "id": {
-              "$ref": "#/$defs/id"
-            },
-            "op": {
-              "const": "update_chart_data"
-            },
-            "slide": {
-              "description": "The 1-based slide number.",
-              "type": "integer",
-              "minimum": 1,
-              "x-readBack": "not-state"
-            },
-            "slideId": {
-              "description": "The stable slide id reported by inspect and query slides.",
-              "type": "integer",
-              "minimum": 1,
-              "x-readBack": "not-state"
-            },
-            "shapeId": {
-              "description": "The persistent slide-scoped shapeId returned by query slides; not a shape position.",
-              "type": "integer",
-              "minimum": 1,
-              "x-readBack": "not-state"
-            },
-            "shapeName": {
-              "description": "The shape name, matched case-sensitively.",
-              "type": "string",
-              "pattern": "\\S",
-              "x-readBack": "not-state"
-            },
-            "placeholder": {
-              "description": "The placeholder role, as query slides reports it.",
-              "type": "string",
-              "enum": [
-                "title",
-                "body",
-                "subtitle",
-                "footer"
-              ],
-              "x-readBack": "not-state"
-            },
-            "categories": {
-              "type": "array",
-              "minItems": 1,
-              "maxItems": 1000,
-              "items": {
-                "type": "string"
-              },
-              "x-readBack": "unread"
-            },
-            "series": {
-              "type": "array",
-              "minItems": 1,
-              "maxItems": 50,
-              "items": {
-                "$ref": "#/$defs/slidesChartSeriesInput"
-              },
-              "x-readBack": "unread"
-            }
-          },
-          "allOf": [
-            {
-              "oneOf": [
-                {
-                  "required": [
-                    "slide"
-                  ]
-                },
-                {
-                  "required": [
-                    "slideId"
-                  ]
-                }
-              ]
-            },
-            {
-              "oneOf": [
-                {
-                  "required": [
-                    "shapeId"
-                  ]
-                },
-                {
-                  "required": [
-                    "shapeName"
-                  ]
-                },
-                {
-                  "required": [
-                    "placeholder"
-                  ]
-                }
-              ]
-            },
-            {
-              "anyOf": [
-                {
-                  "required": [
-                    "categories"
-                  ]
-                },
-                {
-                  "required": [
-                    "series"
-                  ]
-                }
-              ]
-            }
-          ]
-        },
         "color": {
           "type": "string",
           "pattern": "^#[0-9A-Fa-f]{6}$"
@@ -4869,11 +4890,11 @@
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/slides/read-result.schema.json#/$defs/slidesShapeData/properties/text"
             },
             "level": {
-              "description": "The outline level, 0 for a top-level paragraph.",
+              "description": "The 1-based outline level, 1 for a top-level paragraph.",
               "type": "integer",
-              "minimum": 0,
-              "maximum": 8,
-              "default": 0,
+              "minimum": 1,
+              "maximum": 9,
+              "default": 1,
               "x-readBack": "unread"
             },
             "bullet": {
@@ -4918,7 +4939,8 @@
           "type": "object",
           "additionalProperties": false,
           "properties": {
-            "fill": {
+            "fillColor": {
+              "description": "The solid fill color of the shape.",
               "$ref": "#/$defs/color",
               "x-readBack": "unread"
             },
@@ -4944,12 +4966,12 @@
               "pattern": "^(?:\\+m[jn]-ea$|[^+])",
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/slides/read-result.schema.json#/$defs/slidesTextRunData/properties/eastAsianFont"
             },
-            "size": {
+            "fontSize": {
               "description": "The font size in points.",
               "type": "number",
               "exclusiveMinimum": 0,
               "maximum": 400,
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/slides/read-result.schema.json#/$defs/slidesTextRunData/properties/size"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/slides/read-result.schema.json#/$defs/slidesTextRunData/properties/fontSize"
             },
             "color": {
               "description": "The text color.",
@@ -4966,19 +4988,76 @@
               "minProperties": 1
             }
           ]
+        },
+        "slidesSlideSizeInput": {
+          "description": "The size of the slides in points (72 per inch): a preset, or both the width and the height, each 72 through 7200 points.",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "preset": {
+              "description": "The preset; omitted when the width and height are given.",
+              "type": "string",
+              "enum": [
+                "16x9",
+                "4x3"
+              ]
+            },
+            "width": {
+              "description": "The slide width in points, given with the height instead of a preset.",
+              "type": "number",
+              "minimum": 72,
+              "maximum": 7200
+            },
+            "height": {
+              "description": "The slide height in points, given with the width instead of a preset.",
+              "type": "number",
+              "minimum": 72,
+              "maximum": 7200
+            }
+          },
+          "allOf": [
+            {
+              "oneOf": [
+                {
+                  "required": [
+                    "preset"
+                  ]
+                },
+                {
+                  "required": [
+                    "width"
+                  ]
+                }
+              ]
+            },
+            {
+              "dependentRequired": {
+                "width": [
+                  "height"
+                ]
+              }
+            },
+            {
+              "dependentRequired": {
+                "height": [
+                  "width"
+                ]
+              }
+            }
+          ]
         }
       }
     },
     "v2/slides/read-result": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "$id": "https://schemas.aspose.com/aspose-cli/v2/slides/read-result.schema.json",
-      "description": "Result of slides query slides: a window of slides with their content at the requested scope.",
+      "description": "Result of slides read: a window of slides with their content at the requested depth.",
       "type": "object",
       "required": [
         "schema",
         "schemaVersion",
         "input",
-        "scope",
+        "content",
         "slideCount",
         "slides",
         "window"
@@ -4997,7 +5076,7 @@
           "description": "The presentation read.",
           "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
         },
-        "scope": {
+        "content": {
           "description": "How much of each slide was projected: text the text blocks, shapes every shape with its text and geometry, full also text runs, notes and comments.",
           "type": "string",
           "enum": [
@@ -5088,7 +5167,7 @@
           "type": "object",
           "required": [
             "shapeId",
-            "type",
+            "kind",
             "rect"
           ],
           "additionalProperties": false,
@@ -5102,7 +5181,7 @@
               "description": "The shape's name, which edit operations accept as shapeName; omitted when it has none.",
               "type": "string"
             },
-            "type": {
+            "kind": {
               "description": "What the shape is: placeholder for any placeholder, then chart, table, audio, video, image, group, or shape for any other shape.",
               "type": "string",
               "enum": [
@@ -5144,7 +5223,7 @@
               "type": "string"
             },
             "runs": {
-              "description": "The shape's text runs with their effective formatting; only at scope full, and omitted for a shape without text.",
+              "description": "The shape's text runs with their effective formatting; only with --content full, and omitted for a shape without text.",
               "type": "array",
               "items": {
                 "$ref": "#/$defs/slidesTextRunData"
@@ -5190,25 +5269,25 @@
               "type": "string"
             },
             "text": {
-              "description": "The text of each shape that has text, in shape order; only at scope text.",
+              "description": "The text of each shape that has text, in shape order; only with --content text.",
               "type": "array",
               "items": {
                 "type": "string"
               }
             },
             "shapes": {
-              "description": "The slide's top-level shapes in z-order; empty at scope text.",
+              "description": "The slide's top-level shapes in z-order; empty with --content text.",
               "type": "array",
               "items": {
                 "$ref": "#/$defs/slidesShapeData"
               }
             },
             "notes": {
-              "description": "The speaker notes; at scope full or with --notes, and omitted when the slide has none.",
+              "description": "The speaker notes; with --content full or --notes, and omitted when the slide has none.",
               "type": "string"
             },
             "comments": {
-              "description": "The slide's comments; only at scope full.",
+              "description": "The slide's comments; only with --content full.",
               "type": "array",
               "items": {
                 "$ref": "#/$defs/slidesCommentData"
@@ -5240,7 +5319,7 @@
               "description": "The font of the run's Chinese, Japanese and Korean text.",
               "type": "string"
             },
-            "size": {
+            "fontSize": {
               "description": "The font size in points.",
               "type": "number"
             },
@@ -5323,25 +5402,35 @@
           "description": "One rendered slide image.",
           "type": "object",
           "required": [
-            "slide",
-            "slideId",
-            "output"
+            "path",
+            "format",
+            "sizeBytes",
+            "fingerprint",
+            "slide"
           ],
           "additionalProperties": false,
           "properties": {
+            "path": {
+              "description": "Absolute path of the produced file.",
+              "type": "string"
+            },
+            "format": {
+              "description": "Format id of the produced file, e.g. png.",
+              "type": "string"
+            },
+            "sizeBytes": {
+              "description": "File size in bytes.",
+              "type": "integer",
+              "minimum": 0
+            },
+            "fingerprint": {
+              "description": "SHA-256 identity of the published file.",
+              "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/file-fingerprint.schema.json"
+            },
             "slide": {
               "description": "The 1-based slide number.",
               "type": "integer",
               "minimum": 1
-            },
-            "slideId": {
-              "description": "The stable slide id.",
-              "type": "integer",
-              "minimum": 1
-            },
-            "output": {
-              "description": "The image written for the slide.",
-              "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/output.schema.json"
             }
           }
         }
@@ -5350,7 +5439,7 @@
     "v2/slides/search-result": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "$id": "https://schemas.aspose.com/aspose-cli/v2/slides/search-result.schema.json",
-      "description": "Result of slides query search: the matches in shape text and speaker notes.",
+      "description": "Result of slides search: the matches in shape text and speaker notes.",
       "type": "object",
       "required": [
         "schema",

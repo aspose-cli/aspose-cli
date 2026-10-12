@@ -14,4 +14,6 @@ public sealed record SlidesEditRequest
     public EditCommandOptions Options { get; init; } = new();
     public Secret? Password { get; init; }
     public Secret? EncryptPassword { get; init; }
+    /// <summary>The secrets the operations name by environment variable, by variable name.</summary>
+    public IReadOnlyDictionary<string, Secret>? OpSecrets { get; init; }
 }

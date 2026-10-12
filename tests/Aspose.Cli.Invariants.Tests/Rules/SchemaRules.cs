@@ -63,7 +63,6 @@ internal static partial class ContractRules
         [("v2/cells/ops", "set_page_setup", "paperSize")] = "pageSize",
         [("v2/pdf/ops", "insert_blank_page", "size")] = "pageSize",
         [("v2/pdf/ops", "set_page_size", "size")] = "pageSize",
-        [("v2/slides/ops", "set_slide_size", "size")] = "slideSize",
         [("v2/words/ops", "pageSetupInput", "size")] = "pageSize",
     };
 
@@ -205,7 +204,7 @@ internal static partial class ContractRules
         {
             foreach (string name in shapes[product.Id].Keys.Order(StringComparer.Ordinal))
             {
-                yield return Check("C-R20", $"{product.OpsSchemaId} field {name}", () => ProductFieldTypes(shapes[product.Id][name]));
+                yield return Check("C-R20", $"{product.OpsSchemaId} field {name}", () => ProductFieldTypes(product.OpsSchemaId!, name, shapes[product.Id][name]));
             }
         }
         foreach (string name in shapes.Values.SelectMany(static fields => fields.Keys).Distinct().Order(StringComparer.Ordinal))
@@ -357,10 +356,35 @@ internal static partial class ContractRules
 
     private static readonly Regex ConstraintPath = new(@"(anyOf|oneOf|allOf)\[|\.(if|then|else|not)(\.|\[|$)", RegexOptions.CultureInvariant);
 
-    private static IEnumerable<string> ProductFieldTypes(SortedDictionary<string, List<string>> shapes) =>
-        shapes.Count < 2
+    private static IEnumerable<string> ProductFieldTypes(string schema, string name, SortedDictionary<string, List<string>> shapes)
+    {
+        string[] places = [.. shapes.Values.SelectMany(static owners => owners).Order(StringComparer.Ordinal)];
+        if (ShapedByTheirObject.TryGetValue((schema, name), out (string[] Definitions, string Reason) exception))
+        {
+            if (shapes.Count > 1 && places.SequenceEqual(exception.Definitions.Order(StringComparer.Ordinal), StringComparer.Ordinal))
+            {
+                return [];
+            }
+
+            return [$"the {name} exception for {string.Join(", ", exception.Definitions)} no longer matches ({string.Join(", ", places)}); update or remove it"];
+        }
+
+        return shapes.Count < 2
             ? []
             : [.. shapes.Select(static shape => $"{shape.Key} in {string.Join(", ", shape.Value.Take(3))}{(shape.Value.Count > 3 ? $" and {shape.Value.Count - 3} more" : string.Empty)}")];
+    }
+
+    /// <summary>
+    /// C-R20 exceptions to one type per field name within a product's ops: fields whose shape
+    /// follows the object they name, by ops schema and field name, with exactly the definitions
+    /// that declare them and why.
+    /// </summary>
+    private static readonly Dictionary<(string Schema, string Field), (string[] Definitions, string Reason)> ShapedByTheirObject = new()
+    {
+        [("v2/slides/ops", "values")] = (
+            ["insert_table", "slidesChartSeriesInput"],
+            "values are the values of the object they name, shaped as that object is: a table's a two-dimensional grid, a chart series' a one-dimensional array"),
+    };
 
     /// <summary>The products whose fields of one name agree among themselves but not with another product's; a product that disagrees with itself has its own case.</summary>
     private static IEnumerable<string> CrossProductFieldTypes(Dictionary<string, Dictionary<string, SortedDictionary<string, List<string>>>> shapes, string name)

@@ -18,7 +18,7 @@ internal static class SlidesCreate
             ? SlidesPresentationLoader.OpenDefaultTemplate()
             : session.Loader.Open(request.TemplatePath, password: null);
         Presentation presentation = template.Presentation;
-        ApplySlideSize(presentation, request.Size);
+        ApplySlideSize(presentation, request.SlideSize);
         IReadOnlyList<Warning> authoring = [];
         if (request.MarkdownPath is not null)
         {

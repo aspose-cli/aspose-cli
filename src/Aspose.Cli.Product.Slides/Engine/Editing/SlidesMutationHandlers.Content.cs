@@ -1,6 +1,5 @@
 using System.Text;
 using System.Text.RegularExpressions;
-using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Text;
 using Aspose.Slides;
 using static Aspose.Cli.Product.Slides.Engine.SlidesEngineSupport;
@@ -27,19 +26,17 @@ internal sealed partial class SlidesMutationHandlers
     /// children and SmartArt nodes) and speaker notes. Only the matched characters change:
     /// replacement text takes the formatting of the first matched character, and every
     /// other run and paragraph keeps its own formatting. Evaluation mode reads longer text as
-    /// its first characters and a truncation notice, so the operation is refused when it would
-    /// search such text rather than reporting that nothing matched; the watermark text box an
-    /// evaluation save added is left alone.
+    /// its first characters and a truncation notice: a paragraph it cut short is left as it is,
+    /// since writing back what was read would lose the rest of its text, and the result
+    /// discloses the cut with EVALUATION_INPUT_TRUNCATED. The watermark text box an evaluation
+    /// save added is left alone.
     /// </summary>
     public long Apply(SlidesReplaceTextOp operation)
     {
-        Regex? regex = operation.Regex ? SafeRegex.Create(operation.Find, operation.MatchCase) : null;
+        Regex? regex = operation.Regex ? SafeRegex.Create(operation.Find, operation.CaseSensitive) : null;
         if (_evaluation && _presentation.Slides.SelectMany(slide => Frames(slide, operation.Scope)).Any(static frame => CutByEvaluation(frame.Text)))
         {
-            throw CliErrors.EvaluationLimit(
-                "Evaluation mode lets replace_text see only the first characters of longer text, so it cannot find or replace the presentation's text.",
-                "Aspose.Slides",
-                "use set_text, set_title or set_body, which replace a shape's whole text without matching it");
+            _readInput();
         }
 
         long count = 0;
@@ -47,6 +44,7 @@ internal sealed partial class SlidesMutationHandlers
         {
             long replaced = Frames(slide, operation.Scope)
                 .SelectMany(static frame => frame.Paragraphs)
+                .Where(paragraph => !_evaluation || !CutByEvaluation(paragraph.Text))
                 .Sum(paragraph => (long)Replace(paragraph, operation, regex));
             if (replaced > 0)
             {
@@ -61,7 +59,7 @@ internal sealed partial class SlidesMutationHandlers
             _warnings.Add(SlidesOp.Catalog.NoEffect(operation, NoEffectReasons.NoMatch,
                 $"Operation {operation.Id} (replace_text) matched no text in scope '{operation.Scope}', so nothing was replaced.") with
             {
-                Hint = "Search with 'slides query search' and the same pattern and scope; --scope all also covers speaker notes. "
+                Hint = "Search with 'slides search' and the same pattern and scope; --scope all also covers speaker notes. "
                     + "Chart text and alternative text are never matched.",
             });
         }
@@ -158,7 +156,7 @@ internal sealed partial class SlidesMutationHandlers
                 .ToArray();
         }
 
-        StringComparison comparison = op.MatchCase
+        StringComparison comparison = op.CaseSensitive
             ? StringComparison.Ordinal
             : StringComparison.OrdinalIgnoreCase;
         var matches = new List<(int, int, string)>();

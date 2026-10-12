@@ -58,13 +58,8 @@ public sealed record SlidesPresentationSummary
     [Minimum(0)]
     public required int SlideCount { get; init; }
 
-    /// <summary>The slide width in points.</summary>
-    [Minimum(0)]
-    public required double WidthPoints { get; init; }
-
-    /// <summary>The slide height in points.</summary>
-    [Minimum(0)]
-    public required double HeightPoints { get; init; }
+    /// <summary>The slide size, in points.</summary>
+    public required SlidesSlideSizeInfo SlideSize { get; init; }
 
     /// <summary>Whether slides are wider than tall, taller than wide, or square.</summary>
     [AllowedValues("landscape", "portrait", "square")]
@@ -153,7 +148,7 @@ public sealed record SlidesMasterInfo
 /// <summary>One layout and its direct slide usage.</summary>
 public sealed record SlidesLayoutInfo
 {
-    /// <summary>The layout's name, which add_slide and apply_layout accept as layout.</summary>
+    /// <summary>The layout's name, which insert_slide and set_layout accept as layout.</summary>
     public required string Name { get; init; }
 
     /// <summary>The name of the master the layout belongs to; omitted when it has none.</summary>
@@ -176,7 +171,7 @@ public sealed record SlidesMediaInfo
 
     /// <summary>The kind of media.</summary>
     [AllowedValues("image", "audio", "video")]
-    public required string Type { get; init; }
+    public required string Kind { get; init; }
 
     /// <summary>The MIME type the presentation states for the item; omitted when it states none.</summary>
     public string? ContentType { get; init; }
@@ -228,4 +223,31 @@ public sealed record SlidesSectionInfo
     /// <summary>The 1-based number of the section's first slide; 0 when the section holds no slides.</summary>
     [Minimum(0)]
     public required int StartSlide { get; init; }
+}
+
+/// <summary>
+/// The slide size in points (72 per inch): both dimensions, and the preset they match. An
+/// operation that sets the slide size takes a preset or both dimensions under the same names.
+/// </summary>
+public sealed record SlidesSlideSizeInfo
+{
+    /// <summary>The preset the dimensions match; omitted when they match none.</summary>
+    [AllowedValues(typeof(SlidesSlideSizePresets))]
+    public string? Preset { get; init; }
+
+    /// <summary>The slide width in points.</summary>
+    [ExclusiveMinimum(0)]
+    public required double Width { get; init; }
+
+    /// <summary>The slide height in points.</summary>
+    [ExclusiveMinimum(0)]
+    public required double Height { get; init; }
+
+    /// <summary>The size of a slide <paramref name="width"/> by <paramref name="height"/> points, with the preset it matches.</summary>
+    internal static SlidesSlideSizeInfo Of(double width, double height) => new()
+    {
+        Preset = SlidesSlideSizePresets.Matching(width, height),
+        Width = width,
+        Height = height,
+    };
 }

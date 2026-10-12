@@ -7,14 +7,14 @@ The error envelope, exit codes, not-found details and general diagnosis are shar
 - `CHART_DATA_INVALID`: the message names the cause; only a chart that cannot be updated in
   place needs `insert_chart` (Charts in [Slides editing](editing.md)).
 - `OP_NO_EFFECT` (`details.reason` `no-match`): `replace_text` found nothing in its `scope` and changed nothing. Run
-  `slides query search` with the same pattern and scope; chart text and alternative text are
+  `slides search` with the same pattern and scope; chart text and alternative text are
   never matched.
 - `REMOTE_RESOURCES_BLOCKED`: a linked picture, linked media file or external chart workbook
   was left out of the output. Network addresses are never fetched; only ordinary files beneath
   the presentation's directory are read. Embed the media, or place the file beside the deck and
   link it by relative path, then review the incomplete rendering.
 - A template-based deck looks wrong: check which masters and layouts were kept and whether
-  `append_presentation` used `keep-source` or `use-dest` as its `masterPolicy`.
-  `use-dest` and `apply_layout` replace a slide's own background with its layout's, and a
+  `import_slides` used `keep-source` or `use-destination` as its `formatting`.
+  `use-destination` and `set_layout` replace a slide's own background with its layout's, and a
   `SLIDE_BACKGROUND_RESET` warning names the slides that had one; `set_background` sets one
   again, for appended slides in a later batch.

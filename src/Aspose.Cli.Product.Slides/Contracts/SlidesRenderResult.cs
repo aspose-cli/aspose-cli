@@ -26,16 +26,16 @@ public sealed record SlidesRenderResult() : EngineResultEnvelope("render-result"
 }
 
 /// <summary>One rendered slide image.</summary>
-public sealed record SlidesSlideOutput
+public sealed record SlidesSlideOutput : OutputItem
 {
+    /// <summary>Describes the image written for a slide.</summary>
+    /// <param name="file">The published image, as <c>FileObjects.Output</c> describes it.</param>
+    internal SlidesSlideOutput(OutputInfo file)
+        : base(file)
+    {
+    }
+
     /// <summary>The 1-based slide number.</summary>
     [Minimum(1)]
     public required int Slide { get; init; }
-
-    /// <summary>The stable slide id.</summary>
-    [Minimum(1)]
-    public required uint SlideId { get; init; }
-
-    /// <summary>The image written for the slide.</summary>
-    public required OutputInfo Output { get; init; }
 }

@@ -20,6 +20,8 @@ internal sealed partial class SlidesMutationHandlers : ISlidesOpHandler<long>
     private readonly ISet<uint> _touched;
     private readonly ICollection<Warning> _warnings;
     private readonly bool _evaluation;
+    private readonly Action _readInput;
+    private readonly IReadOnlyDictionary<string, Secret>? _secrets;
 
     /// <summary>Creates the handlers of one operation.</summary>
     /// <param name="inputs">Reads and charges the files that operations read.</param>
@@ -29,6 +31,8 @@ internal sealed partial class SlidesMutationHandlers : ISlidesOpHandler<long>
     /// <param name="touched">Receives the ids of the slides the operation changes.</param>
     /// <param name="warnings">Receives what the operation reports about its result.</param>
     /// <param name="evaluation">Whether the engine runs in evaluation mode, which cuts text short when it is read.</param>
+    /// <param name="secrets">The secrets the operations name by environment variable.</param>
+    /// <param name="readInput">Tells the write pipeline that the operation read the presentation's text, which discloses text evaluation mode cut short.</param>
     internal SlidesMutationHandlers(
         InputSource inputs,
         SlidesPresentationLoader loader,
@@ -36,7 +40,9 @@ internal sealed partial class SlidesMutationHandlers : ISlidesOpHandler<long>
         ResolvedSlidesOp target,
         ISet<uint> touched,
         ICollection<Warning> warnings,
-        bool evaluation)
+        bool evaluation,
+        IReadOnlyDictionary<string, Secret>? secrets,
+        Action readInput)
     {
         _inputs = inputs;
         _loader = loader;
@@ -45,6 +51,8 @@ internal sealed partial class SlidesMutationHandlers : ISlidesOpHandler<long>
         _touched = touched;
         _warnings = warnings;
         _evaluation = evaluation;
+        _readInput = readInput;
+        _secrets = secrets;
     }
 
     /// <summary>The resolved target slide of a slide or shape operation.</summary>
@@ -87,9 +95,9 @@ internal sealed partial class SlidesMutationHandlers : ISlidesOpHandler<long>
         ISlide? slide = op switch
         {
             SlideTargetOp target => ResolveSlide(presentation, target),
-            AddSectionOp value => value.StartSlide <= presentation.Slides.Count
-                ? presentation.Slides[value.StartSlide - 1]
-                : throw SlideNotFound(value.StartSlide, presentation.Slides.Count),
+            InsertSectionOp value => value.At <= presentation.Slides.Count
+                ? presentation.Slides[value.At - 1]
+                : throw SlideNotFound(value.At, presentation.Slides.Count),
             _ => null,
         };
         IShape? shape = op is ShapeTargetOp shapeTarget
@@ -99,7 +107,7 @@ internal sealed partial class SlidesMutationHandlers : ISlidesOpHandler<long>
         {
             DeleteSlidesOp value => ResolveSlides(presentation, value.Slides),
             SetSlideHiddenOp value => ResolveSlides(presentation, value.Slides),
-            ApplyLayoutOp value => ResolveSlides(presentation, value.Slides),
+            SetLayoutOp value => ResolveSlides(presentation, value.Slides),
             SetBackgroundOp value => ResolveOptionalSlides(presentation, value.Slides),
             SetFooterOp value => ResolveOptionalSlides(presentation, value.Slides),
             SetTransitionOp value => ResolveSlides(presentation, value.Slides),
@@ -107,8 +115,8 @@ internal sealed partial class SlidesMutationHandlers : ISlidesOpHandler<long>
         };
         ILayoutSlide? layout = op switch
         {
-            AddSlideOp { Layout: not null } value => ResolveLayout(presentation, value.Layout),
-            ApplyLayoutOp value => ResolveLayout(presentation, value.Layout),
+            InsertSlideOp { Layout: not null } value => ResolveLayout(presentation, value.Layout),
+            SetLayoutOp value => ResolveLayout(presentation, value.Layout),
             _ => null,
         };
         // Detached shapes may no longer expose their SDK identity. Keep the receipt target

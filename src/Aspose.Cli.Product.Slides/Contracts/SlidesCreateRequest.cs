@@ -9,6 +9,7 @@ public sealed record SlidesCreateRequest
     public required ResolvedOutput Output { get; init; }
     public string? MarkdownPath { get; init; }
     public string? TemplatePath { get; init; }
-    public string? Size { get; init; }
+    /// <summary>The slide size preset, one of <see cref="SlidesSlideSizePresets.All"/>; null keeps the template's size.</summary>
+    public string? SlideSize { get; init; }
     public Secret? EncryptPassword { get; init; }
 }

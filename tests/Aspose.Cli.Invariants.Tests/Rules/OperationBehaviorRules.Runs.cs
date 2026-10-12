@@ -89,12 +89,12 @@ internal static partial class OperationRuns
         }
         if (sample.Shape is { } type)
         {
-            // The read of the operation's slide lists each shape with its id and type.
+            // The read of the operation's slide lists each shape with its id and kind.
             CliCommand read = CliCatalog.Current.Commands.First(command => IsRead(command, sample.Product) && command.Has("--slides"));
             string slide = operation["slide"]!.ToJsonString();
             RuleRun slides = workspace.Json([.. read.Tokens, based, "--slides", slide]);
             JsonNode? shape = (slides.Document?["slides"]?[0]?["shapes"] as JsonArray ?? [])
-                .FirstOrDefault(item => item?["type"]?.GetValue<string>() == type);
+                .FirstOrDefault(item => item?["kind"]?.GetValue<string>() == type);
             if (shape?["shapeId"] is not { } id)
             {
                 return (null, operation, $"the setup added no {type} on slide {slide}: {(slides.ExitCode == 0 ? "none listed" : slides.Describe())}");
@@ -199,9 +199,14 @@ internal static partial class OperationRuns
         {
             args.Add("--sample");
         }
-        if (command.Option("--scope") is { } scope && scope.AllowedValues.Contains("full"))
+        // The deepest projection a read offers: its --content depth, or a --scope that names one.
+        foreach (string depth in new[] { "--content", "--scope" })
         {
-            args.AddRange(["--scope", "full"]);
+            if (command.Option(depth) is { } projection && projection.AllowedValues.Contains("full"))
+            {
+                args.AddRange([depth, "full"]);
+                break;
+            }
         }
         if (command.Has("--notes"))
         {

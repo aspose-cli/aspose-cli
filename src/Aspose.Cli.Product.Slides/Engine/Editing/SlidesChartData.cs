@@ -12,7 +12,7 @@ namespace Aspose.Cli.Product.Slides.Engine.Editing;
 /// </summary>
 internal static class SlidesChartData
 {
-    internal static void Update(IChart chart, UpdateChartDataOp op)
+    internal static void Update(IChart chart, SetChartDataOp op)
     {
         IChartData data = chart.ChartData;
         IChartSeries[] existing = data.Series.ToArray();
@@ -46,7 +46,7 @@ internal static class SlidesChartData
         ChartType? unsupported = types.Cast<ChartType?>().FirstOrDefault(static type => !IsSupported(type!.Value));
         if (unsupported is not null)
         {
-            throw Unsupported($"{unsupported} charts are not supported by update_chart_data");
+            throw Unsupported($"{unsupported} charts are not supported by set_chart_data");
         }
 
         if (types.Any(ChartTypeCharacterizer.IsChartTypeScatter) && !types.All(ChartTypeCharacterizer.IsChartTypeScatter))
@@ -70,7 +70,7 @@ internal static class SlidesChartData
 
     private static bool IsScatter(IChart chart) => ChartTypeCharacterizer.IsChartTypeScatter(chart.Type);
 
-    private static void UpdateCategories(IChartData data, IChartSeries[] existing, UpdateChartDataOp op, ChartType chartType)
+    private static void UpdateCategories(IChartData data, IChartSeries[] existing, SetChartDataOp op, ChartType chartType)
     {
         IChartCategory[] categories = data.Categories.ToArray();
         if (categories.Length > 0 && (!data.Categories.UseCells || data.Categories.GroupingLevelCount > 1))
@@ -164,7 +164,7 @@ internal static class SlidesChartData
         }
     }
 
-    private static void UpdateScatter(IChartData data, IChartSeries[] existing, UpdateChartDataOp op, ChartType chartType)
+    private static void UpdateScatter(IChartData data, IChartSeries[] existing, SetChartDataOp op, ChartType chartType)
     {
         if (op.Categories is not null)
         {

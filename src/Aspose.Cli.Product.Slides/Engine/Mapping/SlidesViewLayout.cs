@@ -25,7 +25,7 @@ internal static class SlidesViewLayout
             elements.Add(new ViewElement
             {
                 Id = "shape-" + shape.OfficeInteropShapeId.ToString(CultureInfo.InvariantCulture),
-                Kind = ShapeTypeName(shape),
+                Kind = ShapeKind(shape),
                 Label = Label(shape),
                 Digest = Digest(shape),
                 Box = new ViewBox(
@@ -56,7 +56,7 @@ internal static class SlidesViewLayout
 
     private static void Append(StringBuilder canonical, IShape shape)
     {
-        canonical.Append(ShapeTypeName(shape)).Append('|').Append(shape.Name)
+        canonical.Append(ShapeKind(shape)).Append('|').Append(shape.Name)
             .Append('|').Append(Number(shape.X)).Append('|').Append(Number(shape.Y))
             .Append('|').Append(Number(shape.Width)).Append('|').Append(Number(shape.Height))
             .Append('|').Append(Number(shape.Rotation)).Append('|').Append(shape.Hidden ? 'h' : '-');

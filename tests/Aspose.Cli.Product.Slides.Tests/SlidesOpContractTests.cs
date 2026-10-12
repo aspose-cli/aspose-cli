@@ -19,22 +19,22 @@ public sealed class SlidesOpContractTests
     [InlineData("""{"op":"set_text","slide":1,"text":"x"}""")]
     [InlineData("""{"op":"set_text","slide":1,"shapeName":"","text":"x"}""")]
     [InlineData("""{"op":"delete_slides","slides":"0"}""")]
-    [InlineData("""{"op":"set_background","color":"#FFFFFF","imagePath":"a.png"}""")]
-    [InlineData("""{"op":"set_body","slide":1,"paragraphs":[{"text":"x","level":9}]}""")]
+    [InlineData("""{"op":"set_background","color":"#FFFFFF","path":"a.png"}""")]
+    [InlineData("""{"op":"set_body","slide":1,"paragraphs":[{"text":"x","level":10}]}""")]
     [InlineData("""{"op":"insert_table","slide":1,"rect":{"x":0,"y":0,"width":10,"height":10},"rowCount":101,"columnCount":1}""")]
     [InlineData("""{"op":"set_transition","slides":"1"}""")]
-    [InlineData("""{"op":"set_shape_style","slide":1,"shapeId":2,"style":{}}""")]
+    [InlineData("""{"op":"format_shape","slide":1,"shapeId":2,"style":{}}""")]
     [InlineData("""{"op":"set_footer"}""")]
-    [InlineData("""{"op":"set_slide_size","size":"1e3x450pt"}""")]
-    [InlineData("""{"op":"add_section","name":" ","startSlide":1}""")]
+    [InlineData("""{"op":"set_slide_size","slideSize":{"preset":"16x9","width":800,"height":450}}""")]
+    [InlineData("""{"op":"insert_section","name":" ","at":1}""")]
     [InlineData("""{"op":"set_text","slide":1,"shapeName":" ","text":"x"}""")]
-    [InlineData("""{"op":"apply_layout","slides":"1","layout":" "}""")]
-    [InlineData("""{"op":"add_slide","layout":""}""")]
-    [InlineData("""{"op":"append_presentation","path":" "}""")]
-    [InlineData("""{"op":"set_shape_style","slide":1,"shapeId":2,"style":{"font":"+mn-lt"}}""")]
-    [InlineData("""{"op":"set_shape_style","slide":1,"shapeId":2,"style":{"latinFont":"+mn-ea"}}""")]
-    [InlineData("""{"op":"set_shape_style","slide":1,"shapeId":2,"style":{"eastAsianFont":"+mj-lt"}}""")]
-    [InlineData("""{"op":"set_shape_style","slide":1,"shapeId":2,"style":{"latinFont":""}}""")]
+    [InlineData("""{"op":"set_layout","slides":"1","layout":" "}""")]
+    [InlineData("""{"op":"insert_slide","layout":""}""")]
+    [InlineData("""{"op":"import_slides","path":" "}""")]
+    [InlineData("""{"op":"format_shape","slide":1,"shapeId":2,"style":{"font":"+mn-lt"}}""")]
+    [InlineData("""{"op":"format_shape","slide":1,"shapeId":2,"style":{"latinFont":"+mn-ea"}}""")]
+    [InlineData("""{"op":"format_shape","slide":1,"shapeId":2,"style":{"eastAsianFont":"+mj-lt"}}""")]
+    [InlineData("""{"op":"format_shape","slide":1,"shapeId":2,"style":{"latinFont":""}}""")]
     public void ParserAndSchema_RejectTheSameInvalidOperation(string operation)
     {
         string batch = $$"""{"ops":[{{operation}}]}""";
@@ -47,9 +47,9 @@ public sealed class SlidesOpContractTests
 
     [Theory]
     [InlineData("""{"op":"set_text","slideId":256,"placeholder":"body","text":"x"}""")]
-    [InlineData("""{"op":"set_shape_style","slide":1,"shapeId":2,"style":{"bold":false}}""")]
-    [InlineData("""{"op":"set_shape_style","slide":1,"shapeId":2,"style":{"latinFont":"+mj-lt","eastAsianFont":"+mn-ea"}}""")]
-    [InlineData("""{"op":"set_shape_style","slide":1,"shapeId":2,"style":{"font":"Microsoft YaHei","latinFont":"Calibri"}}""")]
+    [InlineData("""{"op":"format_shape","slide":1,"shapeId":2,"style":{"bold":false}}""")]
+    [InlineData("""{"op":"format_shape","slide":1,"shapeId":2,"style":{"latinFont":"+mj-lt","eastAsianFont":"+mn-ea"}}""")]
+    [InlineData("""{"op":"format_shape","slide":1,"shapeId":2,"style":{"font":"Microsoft YaHei","latinFont":"Calibri"}}""")]
     [InlineData("""{"op":"set_footer","showNumber":false}""")]
     [InlineData("""{"op":"insert_chart","slide":1,"kind":"scatter","rect":{"x":0,"y":0,"width":10,"height":10},"categories":["a"],"series":[{"name":"s","values":[1],"xValues":[2]}]}""")]
     [InlineData("""{"op":"replace_text","find":" ","replace":"_"}""")]
@@ -65,12 +65,46 @@ public sealed class SlidesOpContractTests
     [Theory]
     [InlineData("""{"op":"replace_text","find":"(","replace":"x","regex":true}""")]
     [InlineData("""{"op":"insert_chart","slide":1,"kind":"bar","rect":{"x":0,"y":0,"width":10,"height":10},"categories":["a","b"],"series":[{"name":"s","values":[1]}]}""")]
-    [InlineData("""{"op":"insert_table","slide":1,"rect":{"x":0,"y":0,"width":10,"height":10},"rowCount":1,"columnCount":1,"data":[["a","b"]]}""")]
+    [InlineData("""{"op":"insert_table","slide":1,"rect":{"x":0,"y":0,"width":10,"height":10},"rowCount":1,"columnCount":1,"values":[["a","b"]]}""")]
     public void Parser_RejectsWhatTheOperationSummaryStates(string operation)
     {
         CliException error = Assert.Throws<CliException>(() => Parse($$"""{"ops":[{{operation}}]}"""));
 
         Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
+    }
+
+    [Theory]
+    [InlineData("add_slide", "insert_slide")]
+    [InlineData("append_presentation", "import_slides")]
+    [InlineData("apply_layout", "set_layout")]
+    [InlineData("duplicate_slide", "copy_slide")]
+    [InlineData("set_shape_style", "format_shape")]
+    [InlineData("update_chart_data", "set_chart_data")]
+    [InlineData("add_section", "insert_section")]
+    public void RenamedOperation_IsRefusedWithItsNewName(string old, string renamed)
+    {
+        CliException error = Assert.Throws<CliException>(() => Parse($$"""{"ops":[{"op":"{{old}}"}]}"""));
+
+        Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
+        Assert.Equal(renamed, (string?)error.Details!["suggestions"]![0]);
+    }
+
+    [Theory]
+    [InlineData("""{"op":"insert_section","name":"A","startSlide":1}""", "at")]
+    [InlineData("""{"op":"replace_text","find":"a","replace":"b","matchCase":true}""", "caseSensitive")]
+    [InlineData("""{"op":"set_background","imagePath":"a.png"}""", "path")]
+    [InlineData("""{"op":"import_slides","path":"a.pptx","masterPolicy":"keep-source"}""", "formatting")]
+    [InlineData("""{"op":"insert_table","slide":1,"rect":{"x":0,"y":0,"width":10,"height":10},"rowCount":1,"columnCount":1,"data":[["a"]]}""", "values")]
+    [InlineData("""{"op":"set_table_cell","slide":1,"shapeId":2,"row":1,"col":1,"text":"a"}""", "column")]
+    [InlineData("""{"op":"set_slide_size","size":"16x9"}""", "slideSize")]
+    [InlineData("""{"op":"format_shape","slide":1,"shapeId":2,"style":{"fill":"#FFFFFF"}}""", "fillColor")]
+    [InlineData("""{"op":"format_shape","slide":1,"shapeId":2,"style":{"size":12}}""", "fontSize")]
+    public void RenamedField_IsRefusedWithItsNewName(string operation, string renamed)
+    {
+        CliException error = Assert.Throws<CliException>(() => Parse($$"""{"ops":[{{operation}}]}"""));
+
+        Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
+        Assert.Equal(renamed, (string?)error.Details!["suggestions"]![0]);
     }
 
     private static bool IsSchemaValid(string json)

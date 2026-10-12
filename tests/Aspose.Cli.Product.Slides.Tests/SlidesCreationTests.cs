@@ -56,7 +56,7 @@ public sealed class SlidesCreationTests
         using var fixture = new SlidesEngineFixture();
         string output = fixture.File($"sized-{size}.pptx");
 
-        SlidesCreate.Run(fixture.Session, new SlidesCreateRequest { Output = TestOutput.At(output), Size = size });
+        SlidesCreate.Run(fixture.Session, new SlidesCreateRequest { Output = TestOutput.At(output), SlideSize = size });
 
         using var deck = new Presentation(output);
         Assert.Equal(width, deck.SlideSize.Size.Width);
@@ -364,7 +364,7 @@ public sealed class SlidesCreationTests
                         Rect = new SlidesRectInput { X = 40, Y = 150, Width = 640, Height = 240 },
                         RowCount = rows,
                         ColumnCount = 2,
-                        Data = [.. Enumerable.Range(1, rows).Select(static row => (IReadOnlyList<string>)[$"Item {row}", "Team"])],
+                        Values = [.. Enumerable.Range(1, rows).Select(static row => (IReadOnlyList<string>)[$"Item {row}", "Team"])],
                     },
                 ],
             },

@@ -21,7 +21,7 @@ public sealed class SlidesCliWorkflowTests : IDisposable
             () => info = _workspace.Run(
                 "slides", "inspect", "deck.pptx", "--output-format", "json"),
             () => read = _workspace.Run(
-                "slides", "query", "slides", "deck.pptx", "--slides", "1", "--output-format", "json"),
+                "slides", "read", "deck.pptx", "--slides", "1", "--output-format", "json"),
             () => convert = _workspace.Run(
                 "slides", "convert", "deck.pptx", "--to", "png",
                 "--slides", "1", "--out", "slide.png", "--output-format", "json"));
@@ -117,9 +117,9 @@ public sealed class SlidesCliWorkflowTests : IDisposable
         }
 
         CliResult window = _workspace.Run(
-            "slides", "query", "slides", "four.pptx", "--slides", "1,2,4", "--max-chars", "20", "--output-format", "json");
+            "slides", "read", "four.pptx", "--slides", "1,2,4", "--max-chars", "20", "--output-format", "json");
         CliResult single = _workspace.Run(
-            "slides", "query", "slides", "four.pptx", "--max-chars", "4", "--notes", "--output-format", "json");
+            "slides", "read", "four.pptx", "--max-chars", "4", "--notes", "--output-format", "json");
 
         // Evaluation mode may add watermark text, so the cut point comes from the response.
         Assert.True(window.ExitCode == 0, window.StdErr);
@@ -131,12 +131,12 @@ public sealed class SlidesCliWorkflowTests : IDisposable
         int resume = Array.IndexOf(selection, last["slide"]!.GetValue<int>()) + (cut ? 0 : 1);
         int budget = cut && returned.Count == 1 ? 40 : 20;
         Assert.EndsWith(
-            $" --slides {Aspose.Cli.Sdk.Addressing.PageRange.Describe(selection[resume..])} --scope shapes --max-chars {budget} --output-format json",
+            $" --slides {Aspose.Cli.Sdk.Addressing.PageRange.Describe(selection[resume..])} --content shapes --max-chars {budget} --output-format json",
             read["window"]!["next"]!.GetValue<string>(),
             StringComparison.Ordinal);
         Assert.True(single.ExitCode == 0, single.StdErr);
         Assert.EndsWith(
-            " --slides 1-4 --scope shapes --notes --max-chars 8 --output-format json",
+            " --slides 1-4 --content shapes --notes --max-chars 8 --output-format json",
             JsonNode.Parse(single.StdOut)!["window"]!["next"]!.GetValue<string>(),
             StringComparison.Ordinal);
     }
@@ -150,9 +150,9 @@ public sealed class SlidesCliWorkflowTests : IDisposable
         CliResult all = null!, first = null!;
         Parallel.Invoke(
             () => all = _workspace.Run(
-                "slides", "query", "search", "deck.pptx", "--pattern", "Slide", "--scope", "shapes", "--output-format", "json"),
+                "slides", "search", "deck.pptx", "--pattern", "Slide", "--scope", "shapes", "--output-format", "json"),
             () => first = _workspace.Run(
-                "slides", "query", "search", "deck.pptx", "--pattern", "Slide", "--scope", "shapes",
+                "slides", "search", "deck.pptx", "--pattern", "Slide", "--scope", "shapes",
                 "--max-hits", "2", "--output-format", "json"));
 
         Assert.True(all.ExitCode == 0, all.StdErr);
@@ -182,11 +182,12 @@ public sealed class SlidesCliWorkflowTests : IDisposable
     }
 
     /// <summary>
-    /// Evaluation mode cuts read text short, so replace_text refuses only when the text in its
-    /// scope was cut: short shape text is replaced while long speaker notes stay out of scope.
+    /// Evaluation mode cuts read text short, so replace_text still replaces the text it sees and
+    /// discloses EVALUATION_INPUT_TRUNCATED only when the text in its scope was cut: long speaker
+    /// notes are cut, and a scope without them reports nothing.
     /// </summary>
     [Fact]
-    public void Evaluation_ReplaceTextRefusesOnlyWhenTheTextInItsScopeWasCutShort()
+    public void Evaluation_ReplaceTextDisclosesOnlyWhenTheTextInItsScopeWasCutShort()
     {
         using (var presentation = new Presentation())
         {
@@ -205,10 +206,14 @@ public sealed class SlidesCliWorkflowTests : IDisposable
             "--license-mode", "evaluation", "--output-format", "json");
 
         Assert.True(shapes.ExitCode == 0, shapes.StdErr);
-        Assert.Equal(1, JsonNode.Parse(shapes.StdOut)!["applied"]![0]!["itemsAffected"]!.GetValue<long>());
-        Assert.Equal(7, all.ExitCode);
-        Assert.Equal("EVALUATION_LIMIT", JsonNode.Parse(all.StdErr)!["error"]!["code"]!.GetValue<string>());
-        Assert.False(File.Exists(_workspace.File("all.pptx")));
+        JsonNode shapesResult = JsonNode.Parse(shapes.StdOut)!;
+        Assert.Equal(1, shapesResult["applied"]![0]!["itemsAffected"]!.GetValue<long>());
+        Assert.DoesNotContain("EVALUATION_INPUT_TRUNCATED", WarningCodes(shapesResult));
+        Assert.True(all.ExitCode == 0, all.StdErr);
+        JsonNode allResult = JsonNode.Parse(all.StdOut)!;
+        Assert.Equal(1, allResult["applied"]![0]!["itemsAffected"]!.GetValue<long>());
+        Assert.Contains("EVALUATION_INPUT_TRUNCATED", WarningCodes(allResult));
+        Assert.True(File.Exists(_workspace.File("all.pptx")));
     }
 
     /// <summary>
@@ -235,4 +240,7 @@ public sealed class SlidesCliWorkflowTests : IDisposable
     }
 
     public void Dispose() => _workspace.Dispose();
+
+    private static string[] WarningCodes(JsonNode result) =>
+        [.. result["warnings"]?.AsArray().Select(static warning => warning!["code"]!.GetValue<string>()) ?? []];
 }

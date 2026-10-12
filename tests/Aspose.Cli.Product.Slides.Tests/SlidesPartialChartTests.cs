@@ -22,7 +22,7 @@ public sealed class SlidesPartialChartTests
             Input = seed,
             Batch = new SlidesOpsBatch
             {
-                Ops = [new UpdateChartDataOp { Slide = 1, ShapeId = id, Categories = ["C", "D"] }],
+                Ops = [new SetChartDataOp { Slide = 1, ShapeId = id, Categories = ["C", "D"] }],
             },
             Output = TestOutput.At(output),
         });
@@ -46,7 +46,7 @@ public sealed class SlidesPartialChartTests
             Input = seed,
             Batch = new SlidesOpsBatch
             {
-                Ops = [new UpdateChartDataOp { Slide = 1, ShapeId = ChartId(seed), Categories = ["C", "D"] }],
+                Ops = [new SetChartDataOp { Slide = 1, ShapeId = ChartId(seed), Categories = ["C", "D"] }],
             },
             Output = TestOutput.At(output),
         }));
@@ -68,7 +68,7 @@ public sealed class SlidesPartialChartTests
             {
                 Ops =
                 [
-                    new UpdateChartDataOp
+                    new SetChartDataOp
                     {
                         Slide = 1, ShapeId = ChartId(seed),
                         Series = [new SlidesChartSeriesInput { Name = "New", Values = [50, 60], XValues = [5, 6] }],
@@ -98,7 +98,7 @@ public sealed class SlidesPartialChartTests
         {
             Ops =
             [
-                new UpdateChartDataOp
+                new SetChartDataOp
                 {
                     Slide = 1, ShapeId = ChartId(seed),
                     Series = [new SlidesChartSeriesInput { Name = "Bad", Values = [50, 60] }],

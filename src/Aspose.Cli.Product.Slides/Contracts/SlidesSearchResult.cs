@@ -2,7 +2,7 @@ using System.Text.Json.Serialization;
 
 namespace Aspose.Cli.Product.Slides.Contracts;
 
-/// <summary>Result of <c>slides query search</c>: the matches in shape text and speaker notes.</summary>
+/// <summary>Result of <c>slides search</c>: the matches in shape text and speaker notes.</summary>
 public sealed record SlidesSearchResult() : WindowedResultEnvelope("search-result", 2)
 {
     /// <summary>The searched presentation.</summary>

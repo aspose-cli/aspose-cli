@@ -38,9 +38,8 @@ public sealed class SlidesModule : IProductModule
             .Guard(static (_, run) => SlidesStandardOutput.Muted(run))
             .Describe("Presentation automation with slide, layout and notes semantics.", Help)
             .Command(InspectCommand.Create, SlidesInfo.Run)
-            .Group("query", "Read bounded presentation projections without mutating the source.", static query => query
-                .Command(ReadCommand.Create, SlidesRead.Run)
-                .Command(SearchCommand.Create, SlidesSearch.Run))
+            .Command(ReadCommand.Create, SlidesRead.Run)
+            .Command(SearchCommand.Create, SlidesSearch.Run)
             .Command(ConvertCommand.Create, SlidesExport.Convert)
             .Command(RenderCommand.Create, SlidesExport.Render)
             .Command(CreateCommand.Create, SlidesCreate.Run)
@@ -53,7 +52,7 @@ public sealed class SlidesModule : IProductModule
         [
             "slides create deck.pptx --from-markdown outline.md --template brand.pptx",
             "slides inspect deck.pptx --sample --detail masters layouts fonts notes",
-            "slides query slides deck.pptx --slides 1-5 --scope full --notes --output-format json",
+            "slides read deck.pptx --slides 1-5 --content full --notes --output-format json",
             "slides edit deck.pptx --ops deck-ops.json --out revised.pptx",
             "review revised.pptx --out revised.review",
         ],

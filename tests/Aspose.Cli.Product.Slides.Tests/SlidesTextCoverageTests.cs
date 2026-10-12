@@ -37,6 +37,31 @@ public sealed class SlidesTextCoverageTests
     }
 
     [Fact]
+    public void Read_KeepsAShapesParagraphsOnTheirOwnLines()
+    {
+        using var fixture = new SlidesEngineFixture();
+        string input = fixture.File("lines.pptx");
+        using (var deck = new Presentation())
+        {
+            IAutoShape box = deck.Slides[0].Shapes.AddAutoShape(ShapeType.Rectangle, 10, 10, 200, 100);
+            box.TextFrame.Text = "q";
+            box.TextFrame.Paragraphs.Add(new Paragraph { Text = "x y" });
+            deck.Save(input, SaveFormat.Pptx);
+        }
+
+        SlidesReadResult read = SlidesRead.Run(fixture.Session, new SlidesReadRequest { Input = input });
+        SlidesSearchResult search = SlidesSearch.Run(fixture.Session, new SlidesSearchRequest
+        {
+            Input = input,
+            Query = new Sdk.Text.SearchQuery(Sdk.Text.TextSearch.Create("q", regex: false, caseSensitive: false), 10, SlidesSearchScopes.Shapes),
+        });
+
+        SlidesShapeData shape = Assert.Single(read.Slides[0].Shapes, static shape => !shape.EvaluationWatermark);
+        Assert.Equal("q\nx y", shape.Text);
+        Assert.Contains("q\nx y", Assert.Single(search.Hits).Text, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void ReplaceText_ThatMatchesNothing_WarnsWithoutRepeatingTheFindText()
     {
         using var fixture = new SlidesEngineFixture();
@@ -64,7 +89,7 @@ public sealed class SlidesTextCoverageTests
         Assert.Equal(NoEffectReasons.NoMatch, warning.Details["reason"]!.GetValue<string>());
         Assert.Contains("'notes'", warning.Message, StringComparison.Ordinal);
         Assert.DoesNotContain("bc", warning.Message, StringComparison.Ordinal);
-        Assert.Contains("slides query search", warning.Hint, StringComparison.Ordinal);
+        Assert.Contains("slides search", warning.Hint, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -81,7 +106,7 @@ public sealed class SlidesTextCoverageTests
             {
                 Ops =
                 [
-                    new SlidesReplaceTextOp { Find = "q", Replace = "z", MatchCase = true },
+                    new SlidesReplaceTextOp { Find = "q", Replace = "z", CaseSensitive = true },
                     new SlidesReplaceTextOp { Find = "(t)y", Replace = "$1Y", Regex = true },
                 ],
             },
@@ -109,7 +134,7 @@ public sealed class SlidesTextCoverageTests
 
         SlidesReadResult read = SlidesRead.Run(
             fixture.Session,
-            new SlidesReadRequest { Input = input, Scope = SlidesReadScopes.Full });
+            new SlidesReadRequest { Input = input, Content = SlidesReadContents.Full });
         SlidesSearchResult search = SlidesSearch.Run(
             fixture.Session,
             new SlidesSearchRequest { Input = input, Query = new SearchQuery(TextSearch.Create("q", regex: false, caseSensitive: true), 100, SlidesSearchScopes.Shapes) });
@@ -118,10 +143,10 @@ public sealed class SlidesTextCoverageTests
             new SlidesExtractRequest { Input = input, Output = new ResolvedDirectory(fixture.File("text")), What = SlidesExtractKinds.Text });
 
         SlidesShapeData[] shapes = Assert.Single(read.Slides).Shapes.ToArray();
-        Assert.Contains(shapes, static shape => shape.Type == "table" && shape.Text == "tq ty");
-        Assert.Contains(shapes, static shape => shape.Type == "group" && shape.Text == "gq");
+        Assert.Contains(shapes, static shape => shape.Kind == "table" && shape.Text == "tq\nty");
+        Assert.Contains(shapes, static shape => shape.Kind == "group" && shape.Text == "gq");
         Assert.Contains(shapes, static shape => shape.Text == "sq");
-        Assert.Contains(shapes, static shape => shape.Type == "table" && shape.Runs?.Count == 2);
+        Assert.Contains(shapes, static shape => shape.Kind == "table" && shape.Runs?.Count == 2);
         Assert.Equal(3, search.Hits.Count);
         string text = File.ReadAllText(Assert.Single(extract.Items).Path);
         Assert.Contains("tq", text, StringComparison.Ordinal);
@@ -172,7 +197,7 @@ public sealed class SlidesTextCoverageTests
             source.Save(input, SaveFormat.Pptx);
         }
 
-        SlidesReadResult read = SlidesRead.Run(fixture.Session, new SlidesReadRequest { Input = input, Scope = SlidesReadScopes.Full });
+        SlidesReadResult read = SlidesRead.Run(fixture.Session, new SlidesReadRequest { Input = input, Content = SlidesReadContents.Full });
 
         Assert.Equal(
             ["#1B2A41", "#000000"],
@@ -194,7 +219,7 @@ public sealed class SlidesTextCoverageTests
             source.Save(input, SaveFormat.Pptx);
         }
 
-        SlidesReadResult read = SlidesRead.Run(fixture.Session, new SlidesReadRequest { Input = input, Scope = SlidesReadScopes.Full });
+        SlidesReadResult read = SlidesRead.Run(fixture.Session, new SlidesReadRequest { Input = input, Content = SlidesReadContents.Full });
 
         SlidesTextRunData run = Assert.Single(read.Slides[0].Shapes.Single(static shape => !shape.EvaluationWatermark).Runs!);
         Assert.Equal("Calibri", run.Font);
@@ -202,7 +227,7 @@ public sealed class SlidesTextCoverageTests
     }
 
     [Fact]
-    public void ReplaceText_RefusesTextThatEvaluationModeCutShort()
+    public void ReplaceText_LeavesTextThatEvaluationModeCutShortAsItIs()
     {
         using var fixture = new SlidesEngineFixture();
         string input = fixture.CreatePresentation("long-text.pptx", slides: 1);
@@ -216,10 +241,10 @@ public sealed class SlidesTextCoverageTests
             return;
         }
 
-        CliException error = Assert.Throws<CliException>(() => SlidesEdit.Run(fixture.Session, request));
-        Assert.Equal(ErrorCodes.EvaluationLimit, error.Code);
-        Assert.Contains("replace_text", error.Message, StringComparison.Ordinal);
-        Assert.False(File.Exists(output));
+        // Writing back what evaluation mode read would lose the rest of the text, so the cut
+        // paragraph is left alone; the CLI discloses the cut (see SlidesCliWorkflowTests).
+        Assert.Equal(0, Assert.Single(SlidesEdit.Run(fixture.Session, request).Applied).ItemsAffected);
+        Assert.True(File.Exists(output));
     }
 
     private static IAutoShape Styled(Presentation deck) =>

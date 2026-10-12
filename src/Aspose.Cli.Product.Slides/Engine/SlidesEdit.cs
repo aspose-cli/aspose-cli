@@ -26,7 +26,7 @@ internal static class SlidesEdit
         IReadOnlyList<SlidesMutationHandlers.ResolvedSlidesOp> resolved = SlidesMutationHandlers.ResolveBatch(presentation, batch);
         var touched = new HashSet<uint>();
         var warnings = new List<Warning>();
-        IReadOnlyList<BoundedOperationOutcome> outcomes = ApplyOperations(session, presentation, resolved, request.Options.BestEffort, touched, warnings, state);
+        IReadOnlyList<BoundedOperationOutcome> outcomes = ApplyOperations(session, presentation, resolved, request.Options.BestEffort, touched, warnings, state, request.OpSecrets);
         EditPublication publication = Publish(session, loaded, request, format, precondition);
 
         return new SlidesEditResult
@@ -52,7 +52,8 @@ internal static class SlidesEdit
         bool bestEffort,
         ISet<uint> touched,
         ICollection<Warning> warnings,
-        LicenseState state) =>
+        LicenseState state,
+        IReadOnlyDictionary<string, Secret>? secrets) =>
         BoundedOperationRunner.Run(
             SlidesOp.Catalog,
             resolved.Select(static item => item.Op).ToArray(),
@@ -63,7 +64,15 @@ internal static class SlidesEdit
                 SlidesMutationHandlers.ResolvedSlidesOp item = resolved[index];
                 var operationTouched = new SortedSet<uint>();
                 long affected = new SlidesMutationHandlers(
-                    session.Budgets.Inputs, session.Loader, presentation, item, operationTouched, warnings, state == LicenseState.Evaluation).Run();
+                    session.Budgets.Inputs,
+                    session.Loader,
+                    presentation,
+                    item,
+                    operationTouched,
+                    warnings,
+                    state == LicenseState.Evaluation,
+                    secrets,
+                    () => session.Outputs.ReadInput(presentation)).Run();
                 touched.UnionWith(operationTouched);
                 return new AppliedOperation(affected, OperationTargets(item, operationTouched));
             },
@@ -111,6 +120,8 @@ internal static class SlidesEdit
         if (!request.Options.DryRun)
         {
             Presentation presentation = loaded.Presentation;
+            // PPTX and PPTM, the formats an edit writes, keep the input's password unless
+            // --encrypt replaces it.
             Encrypt(presentation, request.EncryptPassword);
             bool encrypted = presentation.ProtectionManager.IsEncrypted;
             using OutputSet<Presentation> transaction = session.Outputs.BeginSet([request.Output.Directory], "slides-edit");

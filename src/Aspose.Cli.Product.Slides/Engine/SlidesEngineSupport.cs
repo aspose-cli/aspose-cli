@@ -43,18 +43,18 @@ internal static class SlidesEngineSupport
     internal static SlidesSlideData ProjectSlide(
         ISlide slide,
         int number,
-        string scope,
+        string content,
         bool includeNotes,
         IReadOnlyList<IComment> comments,
         ref int remaining)
     {
-        bool includeShapes = scope is SlidesReadScopes.Shapes or SlidesReadScopes.Full;
+        bool includeShapes = content is SlidesReadContents.Shapes or SlidesReadContents.Full;
         bool contentTruncated = false;
         string? title = Take(Title(slide), ref remaining, ref contentTruncated);
-        var textBlocks = scope == SlidesReadScopes.Text ? new List<string>() : null;
+        var textBlocks = content == SlidesReadContents.Text ? new List<string>() : null;
         var shapes = new List<SlidesShapeData>();
         int zOrder = 0;
-        bool full = scope == SlidesReadScopes.Full;
+        bool full = content == SlidesReadContents.Full;
         foreach (IShape shape in slide.Shapes)
         {
             string? sourceText = ShapeText(shape);
@@ -74,7 +74,7 @@ internal static class SlidesEngineSupport
                 {
                     ShapeId = shape.OfficeInteropShapeId,
                     ShapeName = EmptyToNull(shape.Name),
-                    Type = ShapeTypeName(shape),
+                    Kind = ShapeKind(shape),
                     Placeholder = SlidesPlaceholders.Role(shape.Placeholder?.Type),
                     AltText = EmptyToNull(shape.AlternativeText),
                     Text = text,
@@ -96,10 +96,10 @@ internal static class SlidesEngineSupport
                 });
             }
         }
-        string? notes = scope == SlidesReadScopes.Full || includeNotes
+        string? notes = content == SlidesReadContents.Full || includeNotes
             ? Take(Notes(slide), ref remaining, ref contentTruncated)
             : null;
-        var projectedComments = scope == SlidesReadScopes.Full ? new List<SlidesCommentData>() : null;
+        var projectedComments = content == SlidesReadContents.Full ? new List<SlidesCommentData>() : null;
         if (projectedComments is not null)
         {
             foreach (IComment comment in comments.Where(comment => ReferenceEquals(comment.Slide, slide)))
@@ -138,7 +138,12 @@ internal static class SlidesEngineSupport
             return null;
         }
 
-        string clean = string.Join(" ", value.Split(default(string[]), StringSplitOptions.RemoveEmptyEntries));
+        // Each line keeps its words, one space apart; the lines stay apart, as inspect and search show them.
+        string clean = string.Join(
+            "\n",
+            value.Split('\n')
+                .Select(static line => string.Join(" ", line.Split(default(string[]), StringSplitOptions.RemoveEmptyEntries)))
+                .Where(static line => line.Length > 0));
         if (clean.Length <= remaining)
         {
             remaining -= clean.Length;
@@ -284,7 +289,7 @@ internal static class SlidesEngineSupport
                     Text = text,
                     Font = EmptyToNull(effective.LatinFont?.FontName),
                     EastAsianFont = EmptyToNull(effective.EastAsianFont?.FontName),
-                    Size = effective.FontHeight,
+                    FontSize = effective.FontHeight,
                     Bold = effective.FontBold,
                     Italic = effective.FontItalic,
                     Color = effective.FillFormat.FillType == FillType.Solid
@@ -297,7 +302,7 @@ internal static class SlidesEngineSupport
         return runs.Count == 0 ? null : runs;
     }
 
-    internal static string ShapeTypeName(IShape shape) => shape switch
+    internal static string ShapeKind(IShape shape) => shape switch
     {
         _ when shape.Placeholder is not null => "placeholder",
         IChart => "chart",
@@ -351,7 +356,7 @@ internal static class SlidesEngineSupport
             media.Add(new SlidesMediaInfo
             {
                 Index = media.Count + 1,
-                Type = "image",
+                Kind = "image",
                 ContentType = EmptyToNull(image.ContentType),
                 SizeBytes = image.BinaryData.LongLength,
             });
@@ -362,7 +367,7 @@ internal static class SlidesEngineSupport
             media.Add(new SlidesMediaInfo
             {
                 Index = media.Count + 1,
-                Type = "audio",
+                Kind = "audio",
                 ContentType = EmptyToNull(audio.ContentType),
                 SizeBytes = audio.BinaryData.LongLength,
             });
@@ -373,7 +378,7 @@ internal static class SlidesEngineSupport
             media.Add(new SlidesMediaInfo
             {
                 Index = media.Count + 1,
-                Type = "video",
+                Kind = "video",
                 ContentType = EmptyToNull(video.ContentType),
                 SizeBytes = video.BinaryData.LongLength,
             });
@@ -431,23 +436,15 @@ internal static class SlidesEngineSupport
     /// Resizes the canvas and scales masters, layouts and slides with it, so inherited
     /// placeholder geometry (footers, slide numbers, dates) stays inside the new canvas.
     /// </summary>
-    internal static void ApplySlideSize(Presentation presentation, string? size)
+    internal static void ApplySlideSize(Presentation presentation, string? preset)
     {
-        if (size is null)
+        if (preset is null)
         {
             return;
         }
 
         presentation.SlideSize.SetSize(
-            size switch
-            {
-                "16x9" => SlideSizeType.OnScreen16x9,
-                "4x3" => SlideSizeType.OnScreen,
-                _ => throw Sdk.Errors.CliErrors.OptionInvalid(
-                    "--size",
-                    $"unsupported slide size '{size}'",
-                    "Use 16x9 or 4x3."),
-            },
+            preset == SlidesSlideSizePresets.Widescreen ? SlideSizeType.OnScreen16x9 : SlideSizeType.OnScreen,
             SlideSizeScaleType.EnsureFit);
     }
 
