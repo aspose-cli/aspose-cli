@@ -40,17 +40,7 @@ public abstract record ShapeTargetOp : SlideTargetOp
     [Pattern(@"\S")] public string? ShapeName { get; init; }
 
     /// <summary>The placeholder role, as <c>slides read</c> reports it.</summary>
-    [AllowedValues("title", "body", "subtitle", "footer")] public string? Placeholder { get; init; }
-}
-
-/// <summary>The shapes <c>insert_shape</c> draws.</summary>
-public static class SlidesShapeKinds
-{
-    public const string Rectangle = "rectangle";
-    public const string RoundedRectangle = "rounded-rectangle";
-    public const string Ellipse = "ellipse";
-    public const string Line = "line";
-    public const string Chevron = "chevron";
+    [AllowedValues(typeof(SlidesPlaceholderRoles))] public string? Placeholder { get; init; }
 }
 
 /// <summary>A rectangle in presentation points from the top-left origin.</summary>
@@ -348,7 +338,7 @@ public sealed record SlidesReplaceTextOp : SlidesOp
 [Operation("set_notes")]
 public sealed record SetNotesOp : SlideTargetOp
 {
-    [ReadBack("read-result.schema.json#/$defs/slidesSlideData/properties/notes")]
+    [ReadBack("read-result.schema.json#/$defs/slidesNotesData/properties/text")]
     public required string Text { get; init; }
 }
 
@@ -372,9 +362,10 @@ public sealed record SlidesInsertImageOp : SlideTargetOp
 [Operation("insert_shape")]
 public sealed record InsertShapeOp : SlideTargetOp
 {
-    [MistakenFor("type", "shapeType")]
-    [NotReadBack]
-    [AllowedValues(typeof(SlidesShapeKinds))] public required string Kind { get; init; }
+    /// <summary>The shape's geometry.</summary>
+    [MistakenFor("kind", "type", "shapeType")]
+    [ReadBack("read-result.schema.json#/$defs/slidesShapeData/properties/geometry")]
+    [AllowedValues(typeof(SlidesShapeGeometries))] public required string Geometry { get; init; }
 
     [MistakenFor("box", "bounds")]
     [ReadBack("read-result.schema.json#/$defs/slidesShapeData/properties/rect")]

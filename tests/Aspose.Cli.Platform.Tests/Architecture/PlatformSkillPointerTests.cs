@@ -5,8 +5,8 @@ using Xunit;
 namespace Aspose.Cli.Architecture.Tests;
 
 /// <summary>
-/// The platform Skill points to the CLI's own description of the contract instead of restating
-/// it: capabilities lists the codes with their exit codes, the error-payload schema the details
+/// The platform Skill, and each product Skill rewritten to the same rule, points to the CLI's own
+/// description of the contract instead of restating it: capabilities lists the codes with their exit codes, the error-payload schema the details
 /// keys, and each result schema its fields. A restated catalog goes stale silently when the
 /// contract changes, so the Skill holds no catalog: no run of four or more list items or table
 /// rows that each start with a contract name, such as an error code, a details key, a result
@@ -19,12 +19,18 @@ public sealed partial class PlatformSkillPointerTests
     /// <summary>The fewest consecutive entries keyed by a contract name that make a catalog.</summary>
     private const int CatalogEntries = 4;
 
-    private static readonly string Platform = Path.Combine(RepositoryPaths.Root, "src", "Aspose.Cli.Host", "Skills", "Platform");
+    /// <summary>The Skills the rule covers: the platform's, and each product's once it points to capabilities and schemas.</summary>
+    public static TheoryData<string> Skills { get; } =
+    [
+        Path.Combine("src", "Aspose.Cli.Host", "Skills", "Platform"),
+        Path.Combine("src", "Aspose.Cli.Product.Slides", "Skills"),
+    ];
 
-    [Fact]
-    public void PlatformSkill_HoldsNoCatalogOfContractNames()
+    [Theory]
+    [MemberData(nameof(Skills))]
+    public void Skill_HoldsNoCatalogOfContractNames(string skill)
     {
-        string[] files = [.. Directory.EnumerateFiles(Platform, "*.md", SearchOption.AllDirectories).Order(StringComparer.Ordinal)];
+        string[] files = [.. Directory.EnumerateFiles(Path.Combine(RepositoryPaths.Root, skill), "*.md", SearchOption.AllDirectories).Order(StringComparer.Ordinal)];
         Assert.NotEmpty(files);
 
         var catalogs = new List<string>();
@@ -59,7 +65,7 @@ public sealed partial class PlatformSkillPointerTests
         }
 
         Assert.True(catalogs.Count == 0,
-            "The platform Skill restates no catalog of codes, details keys, result fields or exit codes; point to "
+            "A Skill restates no catalog of codes, details keys, result fields or exit codes; point to "
             + "'aspose-cli capabilities', 'aspose-cli schema <id>' or the error's details instead:"
             + Environment.NewLine + string.Join(Environment.NewLine, catalogs));
     }

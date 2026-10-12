@@ -20,7 +20,7 @@ internal static class ConvertCommand
                 Output = OutputTarget.File("Output path; defaults to a sibling using the target extension; several slides as images write <stem>.<slide>.<ext> beside it."),
                 Encrypt = SlidesInputs.EncryptedPresentation,
                 UsesFonts = true,
-                Target = TargetFormat.Convert($"Target presentation export format. PNG and JPEG use {RenderPixelGuard.DefaultDpi} DPI; use slides render for custom dimensions.", SlidesFormats.Definitions),
+                Target = TargetFormat.Convert($"Target presentation export format. PNG and JPEG use {RenderPixelGuard.DefaultDpi} DPI; use 'slides render' for custom dimensions.", SlidesFormats.Definitions),
             },
             [.. slides.Options],
             (parse, standard) =>

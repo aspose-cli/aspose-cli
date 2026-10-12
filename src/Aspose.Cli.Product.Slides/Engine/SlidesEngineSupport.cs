@@ -76,6 +76,7 @@ internal static class SlidesEngineSupport
                     ShapeName = EmptyToNull(shape.Name),
                     Kind = ShapeKind(shape),
                     Placeholder = SlidesPlaceholders.Role(shape.Placeholder?.Type),
+                    Geometry = Geometry(shape),
                     AltText = EmptyToNull(shape.AlternativeText),
                     Text = text,
                     Runs = full ? Runs(shape, ref remaining, ref contentTruncated) : null,
@@ -133,7 +134,7 @@ internal static class SlidesEngineSupport
             Title = title,
             Text = textBlocks,
             Shapes = shapes,
-            Notes = notes,
+            Notes = notes is null ? null : new SlidesNotesData { Text = notes },
             Comments = projectedComments,
             Background = full ? SlidesStateProjection.Background(slide) : null,
             Transition = full ? SlidesStateProjection.Transition(slide) : null,
@@ -313,6 +314,19 @@ internal static class SlidesEngineSupport
 
         return runs.Count == 0 ? null : runs;
     }
+
+    /// <summary>The geometry of an autoshape that insert_shape draws, or null.</summary>
+    internal static string? Geometry(IShape shape) => shape is IAutoShape auto && auto.Placeholder is null
+        ? auto.ShapeType switch
+        {
+            ShapeType.Rectangle => SlidesShapeGeometries.Rectangle,
+            ShapeType.RoundCornerRectangle => SlidesShapeGeometries.RoundedRectangle,
+            ShapeType.Ellipse => SlidesShapeGeometries.Ellipse,
+            ShapeType.Line => SlidesShapeGeometries.Line,
+            ShapeType.Chevron => SlidesShapeGeometries.Chevron,
+            _ => null,
+        }
+        : null;
 
     internal static string ShapeKind(IShape shape) => shape switch
     {

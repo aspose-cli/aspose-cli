@@ -51,7 +51,7 @@ public sealed record SlidesSlideData
     public required IReadOnlyList<SlidesShapeData> Shapes { get; init; }
 
     /// <summary>The speaker notes; with <c>--content full</c> or <c>--notes</c>, and omitted when the slide has none.</summary>
-    public string? Notes { get; init; }
+    public SlidesNotesData? Notes { get; init; }
 
     /// <summary>The slide's comments; only with <c>--content full</c>.</summary>
     public IReadOnlyList<SlidesCommentData>? Comments { get; init; }
@@ -70,7 +70,8 @@ public sealed record SlidesSlideData
 
     /// <summary>
     /// Whether the shared max-chars budget cut this slide's content. The budget covers title,
-    /// text, runs, requested notes and comments, including repeated projections; re-read this
+    /// text, runs, paragraphs, table cells, chart labels, footer, requested notes and comments,
+    /// including repeated projections; re-read this
     /// slide with a larger budget for the omitted content.
     /// </summary>
     public required bool ContentTruncated { get; init; }
@@ -99,9 +100,16 @@ public sealed record SlidesShapeData
     /// when it is one they name; omitted for a shape that is not a placeholder. Roles outside
     /// the listed ones are the engine's placeholder type in lower case.
     /// </summary>
-    [AllowedValues("title", "body", "subtitle", "footer", "date", "slide-number")]
+    [AllowedValues(typeof(SlidesPlaceholderRoles))]
     [OpenEnum("^[a-z]+$")]
     public string? Placeholder { get; init; }
+
+    /// <summary>
+    /// The geometry of an autoshape, which insert_shape accepts as geometry; omitted for any
+    /// other shape and for a geometry no operation draws.
+    /// </summary>
+    [AllowedValues(typeof(SlidesShapeGeometries))]
+    public string? Geometry { get; init; }
 
     /// <summary>The shape's alternative text, which screen readers and exported PDFs carry.</summary>
     public string? AltText { get; init; }
@@ -304,4 +312,11 @@ public sealed record SlidesFooterData
 
     /// <summary>Whether the slide shows the date.</summary>
     public required bool ShowDate { get; init; }
+}
+
+/// <summary>A slide's speaker notes.</summary>
+public sealed record SlidesNotesData
+{
+    /// <summary>The notes' text, cut short when the max-chars budget runs out.</summary>
+    public required string Text { get; init; }
 }

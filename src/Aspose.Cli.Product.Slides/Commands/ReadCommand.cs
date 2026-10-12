@@ -17,7 +17,7 @@ internal static class ReadCommand
         }.WithInput(InputKind.None);
         content.AcceptOnlyFromAmong([.. SlidesReadContents.All]);
         var maxChars = new MaxCharactersOption(
-            "every returned title, text, run, note and comment, repeats included");
+            "every returned title, text, run, paragraph, table cell, chart label, footer, note and comment, repeats included");
         var notes = new Option<bool>("--notes") { Description = "Include speaker notes for returned slides." };
         return new(
             "read",
@@ -76,7 +76,7 @@ internal static class ReadCommand
 
             if (slide.Notes is not null)
             {
-                surface.Out.WriteLine($"notes: {slide.Notes}");
+                surface.Out.WriteLine($"notes: {slide.Notes.Text}");
             }
         }
     }

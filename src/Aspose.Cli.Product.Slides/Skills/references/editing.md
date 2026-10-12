@@ -15,10 +15,19 @@ aspose-cli schema v2/slides/ops --operation insert_chart
   shape deleted earlier fails the operation that targets it. Moving a slide keeps its `slideId`.
 - `shapeId` is persistent within its slide, not a position or a presentation-wide counter; pair
   it with that slide's `slide` or `slideId`. Reading a different slide window does not change
-  ids. Read new ids after duplicating slides or appending a presentation.
+  ids. Read new ids after copying or importing slides.
 - Shape selectors address top-level shapes; a group is one shape and its children are not
   addressed separately. A `shapeName` or `placeholder` role that several shapes on the slide
   share is refused; use the `shapeId`.
+
+Each operation's outcome says what it changed: `itemsAffected` counts the objects whose state
+changed and `targets` addresses them (`slide/3`, `slide/3/shape/7`, `slide/3/notes`,
+`section/Intro`, `property/title`, `presentation/slide-size`); an operation that changed
+nothing reports 0 with `OP_NO_EFFECT` and no target. `slidesTouched` lists the numbers of the
+output's changed slides. A section's address is its name as `slides inspect --detail sections`
+reports it, with only a slash, a percent sign, a control character and white space at either
+end written as `%XX` of their UTF-8 bytes: `section/Q3 Results`, `section/业绩回顾`,
+`section/Plan%2FBudget`.
 
 ## Operations by task
 
@@ -31,8 +40,8 @@ aspose-cli schema v2/slides/ops --operation insert_chart
 | Data | `set_chart_data` |
 | Document | `set_properties` |
 
-Inserted shapes, pictures, tables and charts are named by kind and shapeId, such as
-`rectangle 5`. `set_shape_bounds` moves or resizes a shape in place, keeping its id, name,
+Inserted shapes, pictures, tables and charts are named by their geometry or kind and their
+shapeId, such as `rectangle 5`. `set_shape_bounds` moves or resizes a shape in place, keeping its id, name,
 style and text; omitted sides keep their values. Use it when a review finding asks to move or
 enlarge a shape. `insert_table` reports a table whose rows grow past its `rect` as a
 `TABLE_OVERFLOW` warning; `format_shape` on a table styles every cell, so a smaller `fontSize`
@@ -54,8 +63,8 @@ data-label text. A picture has no text, so a text style on it fails with `OPS_IN
   own line; lines are separated by line feeds.
 - `replace_text` matches within one paragraph at a time, in shapes and speaker notes. Only the
   matched characters change: the replacement takes the formatting of the first matched
-  character, and other runs keep theirs. In evaluation mode, truncated text in its `scope`
-  makes `replace_text` fail with `EVALUATION_LIMIT`.
+  character, and other runs keep theirs. In evaluation mode a paragraph that evaluation mode
+  cut short is left as it is, and the result warns `EVALUATION_INPUT_TRUNCATED`.
 - `set_notes` replaces speaker-note text. `inspect --detail notes` reports only presence and
   character counts; read note text with `slides read --notes` or `extract --what notes`.
 - `set_footer` uses the layout's own footer, number and date placeholders; their position and

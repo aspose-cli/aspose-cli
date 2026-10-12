@@ -1494,34 +1494,6 @@
       "actual": "enum in pageSetupInput; number in define_style, format_text, set_default_font"
     },
     {
-      "case": "C-R18 | v2/slides/inspect-result",
-      "invariant": "C-R18",
-      "rule": "C-R18",
-      "cause": "slides-empty-section-start-slide-zero",
-      "actual": "slidesSectionInfo.startSlide: minimum 0, not 1"
-    },
-    {
-      "case": "C-R38 | src/Aspose.Cli.Product.Slides",
-      "invariant": "C-R38",
-      "rule": "C-R38",
-      "cause": "slides-extract-hint-names-out-for-out-dir",
-      "actual": "Engine/SlidesInfo.cs: 'slides extract' has no option '--out'"
-    },
-    {
-      "case": "C-R21 | v2/slides/ops#set_notes",
-      "invariant": "C-R21",
-      "rule": "C-R21",
-      "cause": "slides-read-names-differ-from-op-fields",
-      "actual": "text: read back as notes"
-    },
-    {
-      "case": "C-R21 | v2/slides/ops#insert_shape",
-      "invariant": "C-R21",
-      "rule": "C-R21",
-      "cause": "slides-state-not-read-back",
-      "actual": "kind: no read reports it"
-    },
-    {
       "case": "C-R20 | v2/cells/ops#import_range secrets",
       "invariant": "C-R20",
       "rule": "C-R20",
@@ -1555,13 +1527,6 @@
       "rule": "C-R38",
       "cause": "source-writes-commands-bare",
       "actual": "Contracts/PdfOps.cs: 'pdf inspect' is written bare; quote it or write aspose-cli before it"
-    },
-    {
-      "case": "C-R38 | src/Aspose.Cli.Product.Slides bare commands",
-      "invariant": "C-R38",
-      "rule": "C-R38",
-      "cause": "source-writes-commands-bare",
-      "actual": "Commands/ConvertCommand.cs: 'slides render' is written bare; quote it or write aspose-cli before it"
     },
     {
       "case": "C-R20 | v2/words/ops#set_table_cell spelling",

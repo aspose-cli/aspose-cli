@@ -5,11 +5,20 @@ This page covers what is specific to presentations.
 
 ## Read-back of an edit
 
-`slides edit --verify` reads the staged output back and reports `verification`: the slide
-order, slide titles, shape text, speaker notes, layouts, hidden slides, sections, document
-properties and slide size each operation left. `checkedOps` lists only the operations whose
-effect was read back; styles, pictures, charts and tables are not, so check them with the
-content reads and the review below. In evaluation mode no text is read back.
+`slides edit --verify` reads the staged output back and reports `verification` for the slides
+each operation addressed when the batch started. It reads back the slide order (`insert_slide`,
+`delete_slides`, `move_slide`, `copy_slide`, `import_slides`), titles, shape text, body
+paragraphs with their levels and bullets, speaker notes, layouts, hidden slides, footers,
+transitions, sections, document properties, the slide size, and for `replace_text` how often
+its find text and replacement occur in its scope. `format_shape`, `set_shape_bounds`,
+`set_background`, `delete_shape`, the inserted pictures, shapes, tables and charts,
+`set_table_cell` and `set_chart_data` are not read back: check them with the content reads and
+the review below. `checkedOps` lists only the operations whose effect was read back, and an
+operation a later one of the batch changed again is left out, except for the slide order and
+the sections: their expectations build on each other, so an earlier `insert_slide`,
+`import_slides`, `move_slide` or `insert_section` is checked with the latest one. An empty list with `ok: true`
+means nothing was read back, not that every operation was confirmed. In evaluation mode no text
+is read back.
 
 ## Content
 
@@ -19,15 +28,17 @@ aspose-cli slides read deck.revised.pptx --slides 1- --content full --notes --ou
 aspose-cli slides search deck.revised.pptx --pattern TODO --scope all --output-format json
 ```
 
-`--max-chars` bounds all returned title, text, run, note and comment text; addressing and
+`--max-chars` bounds all returned text, including paragraphs, table cells, chart labels and notes; addressing and
 formatting metadata do not count.
 
 ### Charts and tables
 
-`slides read` reports a chart only as a shape and a table's cells as one text in reading order. A
-Markdown conversion reads both back by position: each table as a Markdown table, row by row
-and column by column, and each chart as its type, its title and a table of its values, one row
-per category and one column per series:
+`slides read --content full` reports each table's `rowCount`, `columnCount` and cell `values`
+by row, and each chart's `chart` with its kind, title, categories and series values, under
+the names `insert_table`, `set_table_cell`, `insert_chart` and `set_chart_data` write; the
+read schema (`aspose-cli schema v2/slides/read-result`) describes every field. A Markdown
+conversion reads both back too, each table as a Markdown table and each chart as a table of
+its values:
 
 ```powershell
 aspose-cli slides convert deck.revised.pptx --to md --slides 4-6 --out deck.revised.md --output-format json

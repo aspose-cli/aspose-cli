@@ -220,9 +220,9 @@ public sealed record SlidesSectionInfo
     [Pattern("^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")]
     public required string SectionId { get; init; }
 
-    /// <summary>The 1-based number of the section's first slide; 0 when the section holds no slides.</summary>
-    [Minimum(0)]
-    public required int StartSlide { get; init; }
+    /// <summary>The 1-based number of the section's first slide; omitted when the section holds no slides.</summary>
+    [Minimum(1)]
+    public int? StartSlide { get; init; }
 }
 
 /// <summary>

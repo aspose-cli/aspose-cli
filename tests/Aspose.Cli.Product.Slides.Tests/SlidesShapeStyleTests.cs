@@ -86,7 +86,7 @@ public sealed class SlidesShapeStyleTests
         string seed = Seed(fixture, "fonts-seed.pptx", new InsertShapeOp
         {
             Slide = 1,
-            Kind = "rectangle",
+            Geometry = "rectangle",
             Rect = new SlidesRectInput { X = 40, Y = 120, Width = 400, Height = 80 },
             Text = "中文 Latin",
         });
@@ -111,7 +111,7 @@ public sealed class SlidesShapeStyleTests
         string seed = Seed(fixture, "theme-seed.pptx", new InsertShapeOp
         {
             Slide = 1,
-            Kind = "rectangle",
+            Geometry = "rectangle",
             Rect = new SlidesRectInput { X = 40, Y = 120, Width = 400, Height = 80 },
             Text = "中文 Latin",
             Style = new SlidesShapeStyleInput { Font = "Comic Sans MS" },
