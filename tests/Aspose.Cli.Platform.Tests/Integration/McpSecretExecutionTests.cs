@@ -103,7 +103,7 @@ public sealed class McpSecretExecutionTests
         string ops = product switch
         {
             "cells" => $$"""{"ops":[{"op":"protect_sheet","sheet":"Data","passwordEnv":"{{Variable}}"}]}""",
-            "pdf" => $$"""{"ops":[{"op":"encrypt","ownerPasswordEnv":"{{Variable}}","userPasswordEnv":"USER_PASSWORD"}]}""",
+            "pdf" => $$"""{"ops":[{"op":"encrypt_document","ownerPasswordEnv":"{{Variable}}","userPasswordEnv":"USER_PASSWORD"}]}""",
             _ => $$"""{"ops":[{"op":"protect","mode":"readOnly","passwordEnv":"{{Variable}}"}]}""",
         };
         File.WriteAllText(workspace.File("ops.json"), ops);
@@ -192,7 +192,7 @@ public sealed class McpSecretExecutionTests
             "cells" => ("xlsx", new[] { "--sheets", "Data" },
                 $$"""{"ops":[{"op":"protect_sheet","sheet":"Data","passwordEnv":"{{name}}"},{"op":"set_values","sheet":"Data","range":"A1","values":[[42]]}]}"""),
             "pdf" => ("pdf", ["--from-text", "content.txt"],
-                $$"""{"ops":[{"op":"encrypt","ownerPasswordEnv":"{{name}}"},{"op":"set_metadata","title":"Kept"}]}"""),
+                $$"""{"ops":[{"op":"encrypt_document","ownerPasswordEnv":"{{name}}"},{"op":"set_properties","title":"Kept"}]}"""),
             _ => ("docx", ["--text", "content.txt"],
                 $$"""{"ops":[{"op":"protect","mode":"readOnly","passwordEnv":"{{name}}"},{"op":"set_text","at":{"block":1},"text":"Kept"}]}"""),
         };

@@ -37,7 +37,7 @@ internal static class PdfEdit
             PdfOp.Catalog, batch.Ops, request.Options.BestEffort, deadline: null, model, verifier, PdfSnapshots.PageUnit);
         // PDF-ENCRYPTED-INFO-TEXT: document information set in this batch survives only an
         // encryption applied to a reopened copy.
-        EncryptPdfOp? encryptCopy = batch.Ops.Any(static op => op is SetMetadataOp) ? model.Encryption : null;
+        EncryptDocumentOp? encryptCopy = batch.Ops.Any(static op => op is SetPropertiesOp) ? model.Encryption : null;
         PdfNavigationCensus navigation = PdfNavigationCensus.Degraded(
             navigationBefore, PdfNavigationCensus.Unresolved(loaded.Document));
         Publication publication;
@@ -57,7 +57,7 @@ internal static class PdfEdit
 
         if (navigation.ToWarning(
                 "no longer lead to a page: they targeted deleted pages, or moved pages at a position with a coordinate of 0, which the SDK cannot tell apart from an omitted one",
-                "Re-create the affected bookmarks (add_bookmark) and links (add_link) after the page change, or reorder pages before adding navigation.")
+                "Re-create the affected bookmarks (add_bookmark) and links (add_hyperlink) after the page change, or reorder pages before adding navigation.")
             is { } degraded)
         {
             warnings.Add(degraded);
@@ -85,7 +85,7 @@ internal static class PdfEdit
         Document document,
         PdfEditRequest request,
         Secret? outputPassword,
-        EncryptPdfOp? encryptCopy,
+        EncryptDocumentOp? encryptCopy,
         FileWritePrecondition precondition,
         PdfEditVerifier? verifier,
         AppliedBatch applied,
@@ -143,7 +143,7 @@ internal static class PdfEdit
     /// copy, the document is saved without encryption, reopened and encrypted, so the document
     /// information the batch set is written as read from a file.
     /// </summary>
-    private static void Save(Document document, string path, EncryptPdfOp? encryptCopy, IReadOnlyDictionary<string, Secret>? secrets)
+    private static void Save(Document document, string path, EncryptDocumentOp? encryptCopy, IReadOnlyDictionary<string, Secret>? secrets)
     {
         if (encryptCopy is null)
         {
@@ -162,8 +162,8 @@ internal static class PdfEdit
     /// <summary>
     /// Aspose.PDF writes the creator, producer and modification date into every PDF it saves
     /// (<see cref="PdfSnapshots.SaveStamped"/>), so an operation that removed the document
-    /// information, or set one of those entries, leaves them in the output; its targets leave them
-    /// out, and this says why they remain.
+    /// information leaves them in the output; its targets leave them out, and this says why they
+    /// remain.
     /// </summary>
     private static Warning? MetadataRewritten(IReadOnlyList<PdfOp> ops, IReadOnlyList<BoundedOperationOutcome> outcomes)
     {
@@ -171,8 +171,7 @@ internal static class PdfEdit
         string[] ids = [.. ops
             .Where(op => op.Id is { } id && applied.Contains(id) && op switch
             {
-                RemoveMetadataOp remove => remove.DocumentInfo,
-                SetMetadataOp set => set.Custom?.Keys.Any(PdfSnapshots.SaveStamped.Contains) == true,
+                ClearPropertiesOp remove => remove.DocumentInfo,
                 _ => false,
             })
             .Select(static op => $"'{op.Id}'")];
@@ -247,12 +246,12 @@ internal static class PdfEdit
             return null;
         }
 
-        string? encryption = encryptOption ? "--encrypt" : applied.LastOrDefault(static op => op is "encrypt" or "decrypt");
+        string? encryption = encryptOption ? "--encrypt" : applied.LastOrDefault(static op => op is "encrypt_document" or "decrypt_document");
         string output = encryption switch
         {
             "--encrypt" => $"The output {(dryRun ? "would open" : "opens")} only with the --encrypt password, which grants every permission.",
-            "decrypt" => $"The output {(dryRun ? "would not be encrypted, so it would no longer restrict" : "is not encrypted, so it no longer restricts")} anyone.",
-            "encrypt" => $"The output {(dryRun ? "would be" : "is")} encrypted with the passwords and permissions the encrypt operation set.",
+            "decrypt_document" => $"The output {(dryRun ? "would not be encrypted, so it would no longer restrict" : "is not encrypted, so it no longer restricts")} anyone.",
+            "encrypt_document" => $"The output {(dryRun ? "would be" : "is")} encrypted with the passwords and permissions the encrypt operation set.",
             _ => $"The output {(dryRun ? "would keep" : "keeps")} the input's encryption and permissions; edit with the owner password to change them.",
         };
         string opened = openPassword
@@ -267,9 +266,9 @@ internal static class PdfEdit
 
     private static bool Permitted(string op, Permissions granted) => op switch
     {
-        "encrypt" or "decrypt" => false,
+        "encrypt_document" or "decrypt_document" => false,
         "set_form_field" => (granted & (Permissions.ModifyContent | Permissions.FillForm | Permissions.ModifyTextAnnotations)) != 0,
-        "rotate_pages" or "delete_pages" or "move_pages" or "insert_pages_from" or "insert_blank_page" or "add_bookmark" =>
+        "rotate_pages" or "delete_pages" or "move_pages" or "import_pages" or "insert_page" or "add_bookmark" =>
             (granted & (Permissions.ModifyContent | Permissions.AssembleDocument)) != 0,
         _ => granted.HasFlag(Permissions.ModifyContent),
     };

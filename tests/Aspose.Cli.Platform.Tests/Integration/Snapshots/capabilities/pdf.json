@@ -42,37 +42,37 @@
         "command": "edit",
         "inputSchema": "v2/pdf/ops",
         "operationSchema": "aspose-cli schema v2/pdf/ops --operation <op>",
-        "contractFingerprint": "sha256:183b743fbbd3e7724eaaaae4493a907ce7de448512652b049e545404440b23bf",
+        "contractFingerprint": "sha256:c0502f4688e7d8b7176a9151657945ec213eba1185f1a76bb1b6e8fea1b5a1ed",
         "maximumOperationCount": 10000,
         "ops": [
           "add_attachment",
           "add_bookmark",
           "add_footer_text",
           "add_header_text",
-          "add_link",
+          "add_hyperlink",
           "add_page_numbers",
           "add_stamp_image",
           "add_watermark_image",
           "add_watermark_text",
+          "clear_properties",
           "crop_pages",
-          "decrypt",
+          "decrypt_document",
+          "delete_attachment",
           "delete_bookmarks",
           "delete_pages",
-          "encrypt",
+          "encrypt_document",
           "flatten_forms",
-          "insert_blank_page",
-          "insert_pages_from",
+          "import_pages",
+          "insert_page",
           "move_pages",
-          "optimize",
+          "optimize_document",
           "redact_area",
           "redact_text",
-          "remove_attachment",
-          "remove_metadata",
           "rotate_pages",
           "set_form_field",
-          "set_metadata",
           "set_page_labels",
-          "set_page_size"
+          "set_page_size",
+          "set_properties"
         ]
       }
     ],
@@ -2801,6 +2801,13 @@
   ],
   "diagnostics": [
     {
+      "code": "ATTACHMENT_MISMATCH",
+      "owner": "pdf",
+      "severity": "warning",
+      "category": "verification",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
       "code": "ATTACHMENT_NOT_FOUND",
       "owner": "pdf",
       "severity": "error",
@@ -2809,12 +2816,33 @@
       "detailsSchemaId": "v2/common/not-found-details"
     },
     {
+      "code": "BOOKMARK_MISMATCH",
+      "owner": "pdf",
+      "severity": "warning",
+      "category": "verification",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
+      "code": "FIELD_NOT_FLATTENED",
+      "owner": "pdf",
+      "severity": "warning",
+      "category": "verification",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
       "code": "FIELD_NOT_FOUND",
       "owner": "pdf",
       "severity": "error",
       "exitCode": 4,
       "category": "validation",
       "detailsSchemaId": "v2/common/not-found-details"
+    },
+    {
+      "code": "FIELD_VALUE_MISMATCH",
+      "owner": "pdf",
+      "severity": "warning",
+      "category": "verification",
+      "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
       "code": "FORM_XFA_UNSUPPORTED",
@@ -2846,6 +2874,13 @@
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
+      "code": "PAGE_COUNT_MISMATCH",
+      "owner": "pdf",
+      "severity": "warning",
+      "category": "verification",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
       "code": "PDFA_CONVERSION_FAILED",
       "owner": "pdf",
       "severity": "error",
@@ -2861,56 +2896,14 @@
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
-      "code": "PDF_ATTACHMENT_MISMATCH",
+      "code": "PROPERTIES_MISMATCH",
       "owner": "pdf",
       "severity": "warning",
       "category": "verification",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
-      "code": "PDF_BOOKMARK_MISMATCH",
-      "owner": "pdf",
-      "severity": "warning",
-      "category": "verification",
-      "detailsSchemaId": "v2/common/diagnostic-details"
-    },
-    {
-      "code": "PDF_FIELD_NOT_FLATTENED",
-      "owner": "pdf",
-      "severity": "warning",
-      "category": "verification",
-      "detailsSchemaId": "v2/common/diagnostic-details"
-    },
-    {
-      "code": "PDF_FIELD_VALUE_MISMATCH",
-      "owner": "pdf",
-      "severity": "warning",
-      "category": "verification",
-      "detailsSchemaId": "v2/common/diagnostic-details"
-    },
-    {
-      "code": "PDF_METADATA_MISMATCH",
-      "owner": "pdf",
-      "severity": "warning",
-      "category": "verification",
-      "detailsSchemaId": "v2/common/diagnostic-details"
-    },
-    {
-      "code": "PDF_PAGE_COUNT_MISMATCH",
-      "owner": "pdf",
-      "severity": "warning",
-      "category": "verification",
-      "detailsSchemaId": "v2/common/diagnostic-details"
-    },
-    {
-      "code": "PDF_REDACTED_TEXT_FOUND",
-      "owner": "pdf",
-      "severity": "warning",
-      "category": "verification",
-      "detailsSchemaId": "v2/common/diagnostic-details"
-    },
-    {
-      "code": "PDF_VERIFICATION_INCOMPLETE",
+      "code": "REDACTED_TEXT_FOUND",
       "owner": "pdf",
       "severity": "warning",
       "category": "verification",
@@ -2936,6 +2929,13 @@
       "severity": "error",
       "exitCode": 3,
       "category": "input",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
+      "code": "VERIFICATION_INCOMPLETE",
+      "owner": "pdf",
+      "severity": "warning",
+      "category": "verification",
       "detailsSchemaId": "v2/common/diagnostic-details"
     }
   ],
@@ -3141,7 +3141,7 @@
           }
         },
         "verification": {
-          "description": "Present with --verify: the staged output read back against the effect of each form, redaction, bookmark, metadata, attachment and page operation.",
+          "description": "Present with --verify: the staged output read back against the effect of each form, redaction, bookmark, property, attachment and page operation.",
           "$ref": "#/$defs/pdfEditVerification"
         },
         "license": {
@@ -3372,7 +3372,7 @@
           }
         },
         "properties": {
-          "description": "Document information and XMP properties as the file stores them, with --detail properties; XMP keys start with xmp:. creationDate and modificationDate are ISO 8601 with a fraction of a second only when it is not zero, as XMP writes dates (2026-10-01T06:01:53Z): in UTC ending in Z when the stored date states an offset, without Z when it states none, and the stored text unchanged when it is not a PDF date.",
+          "description": "Document information and XMP properties as the file stores them, with --detail properties; a custom document information entry keeps its own key (info: before it when it spells a reported name), and XMP keys start with xmp:. creationDate and modificationDate are ISO 8601 with a fraction of a second only when it is not zero, as XMP writes dates (2026-10-01T06:01:53Z): in UTC ending in Z when the stored date states an offset, without Z when it states none, and the stored text unchanged when it is not a PDF date.",
           "type": "object",
           "additionalProperties": {
             "type": [
@@ -3403,7 +3403,7 @@
           "additionalProperties": false,
           "properties": {
             "name": {
-              "description": "The attachment's file name, which remove_attachment accepts.",
+              "description": "The attachment's file name, which delete_attachment accepts.",
               "type": "string"
             },
             "mimeType": {
@@ -3572,7 +3572,7 @@
           "required": [
             "title",
             "level",
-            "index"
+            "bookmark"
           ],
           "additionalProperties": false,
           "properties": {
@@ -3585,8 +3585,8 @@
               "type": "integer",
               "minimum": 1
             },
-            "index": {
-              "description": "The bookmark's 1-based positions from the top level down, joined by '/': 2/1 is the first child of the second top-level bookmark. delete_bookmarks.indexes and add_bookmark.parent accept it.",
+            "bookmark": {
+              "description": "The bookmark's address: its 1-based positions from the top level down, joined by '/', so 2/1 is the first child of the second top-level bookmark. delete_bookmarks.bookmarks and add_bookmark.parent take it.",
               "type": "string",
               "pattern": "^[1-9][0-9]*(/[1-9][0-9]*)*$"
             },
@@ -3602,8 +3602,7 @@
           "type": "object",
           "required": [
             "page",
-            "widthPoints",
-            "heightPoints",
+            "pageSize",
             "rotation",
             "mediaBox",
             "cropBox"
@@ -3615,25 +3614,16 @@
               "type": "integer",
               "minimum": 1
             },
-            "widthPoints": {
-              "description": "The width of the visible page in points.",
-              "type": "number",
-              "exclusiveMinimum": 0
-            },
-            "heightPoints": {
-              "description": "The height of the visible page in points.",
-              "type": "number",
-              "exclusiveMinimum": 0
+            "pageSize": {
+              "description": "The size of the visible page, as insert_page and set_page_size set it.",
+              "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/page-size.schema.json"
             },
             "rotation": {
-              "description": "Clockwise page rotation in degrees.",
-              "type": "integer",
-              "enum": [
-                0,
-                90,
-                180,
-                270
-              ]
+              "description": "Clockwise page rotation in degrees, a quarter turn at a time: 0, 90, 180 or 270.",
+              "type": "number",
+              "minimum": 0,
+              "maximum": 270,
+              "multipleOf": 90
             },
             "mediaBox": {
               "description": "The page's media box, the full physical page.",
@@ -3650,7 +3640,7 @@
           "type": "object",
           "required": [
             "startPage",
-            "style",
+            "numberStyle",
             "startingValue"
           ],
           "additionalProperties": false,
@@ -3660,11 +3650,11 @@
               "type": "integer",
               "minimum": 1
             },
-            "style": {
-              "description": "The numbering style, one of the values set_page_labels accepts.",
+            "numberStyle": {
+              "description": "How the label numbers are written, one of the values set_page_labels accepts.",
               "type": "string",
               "enum": [
-                "arabic",
+                "decimal",
                 "roman-upper",
                 "roman-lower",
                 "letters-upper",
@@ -3687,21 +3677,14 @@
           "description": "One distinct page size and how many pages of the document have it.",
           "type": "object",
           "required": [
-            "widthPoints",
-            "heightPoints",
+            "pageSize",
             "pageCount"
           ],
           "additionalProperties": false,
           "properties": {
-            "widthPoints": {
-              "description": "The page width in points.",
-              "type": "number",
-              "exclusiveMinimum": 0
-            },
-            "heightPoints": {
-              "description": "The page height in points.",
-              "type": "number",
-              "exclusiveMinimum": 0
+            "pageSize": {
+              "description": "The size of the visible page.",
+              "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/page-size.schema.json"
             },
             "pageCount": {
               "description": "How many pages have this size.",
@@ -3992,7 +3975,7 @@
                 "$ref": "#/$defs/add_header_text"
               },
               {
-                "$ref": "#/$defs/add_link"
+                "$ref": "#/$defs/add_hyperlink"
               },
               {
                 "$ref": "#/$defs/add_page_numbers"
@@ -4007,10 +3990,16 @@
                 "$ref": "#/$defs/add_watermark_text"
               },
               {
+                "$ref": "#/$defs/clear_properties"
+              },
+              {
                 "$ref": "#/$defs/crop_pages"
               },
               {
-                "$ref": "#/$defs/decrypt"
+                "$ref": "#/$defs/decrypt_document"
+              },
+              {
+                "$ref": "#/$defs/delete_attachment"
               },
               {
                 "$ref": "#/$defs/delete_bookmarks"
@@ -4019,22 +4008,22 @@
                 "$ref": "#/$defs/delete_pages"
               },
               {
-                "$ref": "#/$defs/encrypt"
+                "$ref": "#/$defs/encrypt_document"
               },
               {
                 "$ref": "#/$defs/flatten_forms"
               },
               {
-                "$ref": "#/$defs/insert_blank_page"
+                "$ref": "#/$defs/import_pages"
               },
               {
-                "$ref": "#/$defs/insert_pages_from"
+                "$ref": "#/$defs/insert_page"
               },
               {
                 "$ref": "#/$defs/move_pages"
               },
               {
-                "$ref": "#/$defs/optimize"
+                "$ref": "#/$defs/optimize_document"
               },
               {
                 "$ref": "#/$defs/redact_area"
@@ -4043,25 +4032,19 @@
                 "$ref": "#/$defs/redact_text"
               },
               {
-                "$ref": "#/$defs/remove_attachment"
-              },
-              {
-                "$ref": "#/$defs/remove_metadata"
-              },
-              {
                 "$ref": "#/$defs/rotate_pages"
               },
               {
                 "$ref": "#/$defs/set_form_field"
               },
               {
-                "$ref": "#/$defs/set_metadata"
-              },
-              {
                 "$ref": "#/$defs/set_page_labels"
               },
               {
                 "$ref": "#/$defs/set_page_size"
+              },
+              {
+                "$ref": "#/$defs/set_properties"
               }
             ]
           }
@@ -4130,8 +4113,10 @@
               "const": "add_bookmark"
             },
             "title": {
+              "description": "The bookmark's title; it must not contain '/', which joins the positions of a bookmark address.",
               "type": "string",
               "minLength": 1,
+              "pattern": "^[^/]*$",
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/pdf/inspect-result.schema.json#/$defs/pdfOutlineItem/properties/title"
             },
             "page": {
@@ -4140,7 +4125,7 @@
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/pdf/inspect-result.schema.json#/$defs/pdfOutlineItem/properties/page"
             },
             "parent": {
-              "description": "The index of the parent bookmark, as pdf inspect --detail outline reports it: 1-based positions joined by '/', so \"2/1\" is the first child of the second top-level bookmark. The new bookmark is appended after the parent's existing children, or after the existing top-level bookmarks when omitted, so no existing index changes.",
+              "description": "The parent bookmark, as pdf inspect --detail outline reports it: 1-based positions joined by '/', so \"2/1\" is the first child of the second top-level bookmark. The new bookmark is appended after the parent's existing children, or after the existing top-level bookmarks when omitted, so no existing bookmark address changes.",
               "type": "string",
               "pattern": "^[1-9][0-9]*(/[1-9][0-9]*)*$",
               "x-readBack": "not-state"
@@ -4172,7 +4157,7 @@
               "minLength": 1,
               "x-readBack": "unread"
             },
-            "position": {
+            "placement": {
               "type": "string",
               "enum": [
                 "top-left",
@@ -4217,7 +4202,7 @@
               "minLength": 1,
               "x-readBack": "unread"
             },
-            "position": {
+            "placement": {
               "type": "string",
               "enum": [
                 "top-left",
@@ -4237,7 +4222,7 @@
             }
           }
         },
-        "add_link": {
+        "add_hyperlink": {
           "description": "Adds a clickable link area to one page.",
           "type": "object",
           "required": [
@@ -4252,7 +4237,7 @@
               "$ref": "#/$defs/id"
             },
             "op": {
-              "const": "add_link"
+              "const": "add_hyperlink"
             },
             "page": {
               "type": "integer",
@@ -4288,13 +4273,13 @@
               "$ref": "#/$defs/pages",
               "x-readBack": "not-state"
             },
-            "format": {
+            "text": {
               "description": "The text; {n} is the number, counted over the selected pages from start, and {N} the document's page count.",
               "type": "string",
               "default": "Page {n} of {N}",
               "x-readBack": "unread"
             },
-            "position": {
+            "placement": {
               "type": "string",
               "enum": [
                 "top-left",
@@ -4438,7 +4423,7 @@
               "type": "string",
               "x-readBack": "unread"
             },
-            "size": {
+            "fontSize": {
               "description": "The font size in points.",
               "type": "number",
               "exclusiveMinimum": 0,
@@ -4458,9 +4443,9 @@
               "x-readBack": "unread"
             },
             "rotation": {
-              "description": "The angle in degrees, counterclockwise.",
+              "description": "The angle in degrees, clockwise; the default -45 rises from the bottom left to the top right.",
               "type": "number",
-              "default": 45,
+              "default": -45,
               "x-readBack": "unread"
             },
             "layer": {
@@ -4471,6 +4456,34 @@
               ],
               "default": "over",
               "x-readBack": "unread"
+            }
+          }
+        },
+        "clear_properties": {
+          "description": "Clears the document properties: the document information entries and the XMP metadata.",
+          "type": "object",
+          "required": [
+            "op"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/id"
+            },
+            "op": {
+              "const": "clear_properties"
+            },
+            "xmp": {
+              "description": "Whether the XMP metadata stream is removed.",
+              "type": "boolean",
+              "default": true,
+              "x-readBack": "not-state"
+            },
+            "documentInfo": {
+              "description": "Whether the document information dictionary is cleared.",
+              "type": "boolean",
+              "default": true,
+              "x-readBack": "not-state"
             }
           }
         },
@@ -4510,7 +4523,7 @@
             }
           }
         },
-        "decrypt": {
+        "decrypt_document": {
           "description": "Removes the document's encryption; an unencrypted document is unchanged.",
           "type": "object",
           "required": [
@@ -4522,12 +4535,34 @@
               "$ref": "#/$defs/id"
             },
             "op": {
-              "const": "decrypt"
+              "const": "decrypt_document"
+            }
+          }
+        },
+        "delete_attachment": {
+          "description": "Deletes a document attachment by name.",
+          "type": "object",
+          "required": [
+            "op",
+            "name"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/id"
+            },
+            "op": {
+              "const": "delete_attachment"
+            },
+            "name": {
+              "type": "string",
+              "minLength": 1,
+              "x-readBack": "not-state"
             }
           }
         },
         "delete_bookmarks": {
-          "description": "Deletes the listed bookmarks with their children, or every bookmark. An index must not repeat or lie inside another listed bookmark, which already deletes its children.",
+          "description": "Deletes the listed bookmarks with their children, or every bookmark when none are listed. A bookmark must not repeat or lie inside another listed bookmark, which already deletes its children.",
           "type": "object",
           "required": [
             "op"
@@ -4540,8 +4575,8 @@
             "op": {
               "const": "delete_bookmarks"
             },
-            "indexes": {
-              "description": "The indexes of the bookmarks, as pdf inspect --detail outline reports them: 1-based positions joined by '/', so \"2/1\" is the first child of the second top-level bookmark. Every index resolves against the outline as it stands before this operation, so their order does not matter, and all of them are deleted together; later operations in the batch address the renumbered outline.",
+            "bookmarks": {
+              "description": "The bookmarks, as pdf inspect --detail outline reports them: 1-based positions joined by '/', so \"2/1\" is the first child of the second top-level bookmark; every bookmark when omitted. Every address resolves against the outline as it stands before this operation, so their order does not matter, and all of them are deleted together; later operations in the batch address the renumbered outline.",
               "type": "array",
               "minItems": 1,
               "items": {
@@ -4549,35 +4584,8 @@
                 "pattern": "^[1-9][0-9]*(/[1-9][0-9]*)*$"
               },
               "x-readBack": "not-state"
-            },
-            "all": {
-              "description": "Whether every bookmark is deleted.",
-              "type": "boolean",
-              "default": false,
-              "x-readBack": "not-state"
             }
-          },
-          "allOf": [
-            {
-              "oneOf": [
-                {
-                  "required": [
-                    "indexes"
-                  ]
-                },
-                {
-                  "required": [
-                    "all"
-                  ],
-                  "properties": {
-                    "all": {
-                      "const": true
-                    }
-                  }
-                }
-              ]
-            }
-          ]
+          }
         },
         "delete_pages": {
           "description": "Deletes pages; a PDF must keep at least one page.",
@@ -4600,7 +4608,7 @@
             }
           }
         },
-        "encrypt": {
+        "encrypt_document": {
           "description": "Encrypts the document with AES-256; the published file needs the user password to open when one is set.",
           "type": "object",
           "required": [
@@ -4613,7 +4621,7 @@
               "$ref": "#/$defs/id"
             },
             "op": {
-              "const": "encrypt"
+              "const": "encrypt_document"
             },
             "userPasswordEnv": {
               "description": "The environment variable that holds the password to open the document; anyone can open it when omitted.",
@@ -4661,35 +4669,7 @@
             }
           }
         },
-        "insert_blank_page": {
-          "description": "Inserts one blank page.",
-          "type": "object",
-          "required": [
-            "op",
-            "at"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "id": {
-              "$ref": "#/$defs/id"
-            },
-            "op": {
-              "const": "insert_blank_page"
-            },
-            "at": {
-              "description": "The 1-based position of the new page, at most the page count plus one.",
-              "type": "integer",
-              "minimum": 1,
-              "x-readBack": "not-state"
-            },
-            "size": {
-              "$ref": "#/$defs/pageSize",
-              "default": "A4",
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/pdf/inspect-result.schema.json#/$defs/pdfPageInfo/properties/widthPoints"
-            }
-          }
-        },
-        "insert_pages_from": {
+        "import_pages": {
           "description": "Inserts pages of another PDF.",
           "type": "object",
           "required": [
@@ -4703,7 +4683,7 @@
               "$ref": "#/$defs/id"
             },
             "op": {
-              "const": "insert_pages_from"
+              "const": "import_pages"
             },
             "path": {
               "description": "The source PDF, relative to the working directory.",
@@ -4723,12 +4703,40 @@
               "minimum": 1,
               "x-readBack": "not-state"
             },
-            "passwordEnv": {
+            "sourcePasswordEnv": {
               "description": "The environment variable that holds the source PDF's password.",
               "type": "string",
               "minLength": 1,
               "pattern": "\\S",
               "x-readBack": "not-state"
+            }
+          }
+        },
+        "insert_page": {
+          "description": "Inserts one blank page.",
+          "type": "object",
+          "required": [
+            "op",
+            "at"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/id"
+            },
+            "op": {
+              "const": "insert_page"
+            },
+            "at": {
+              "description": "The 1-based position of the new page, at most the page count plus one.",
+              "type": "integer",
+              "minimum": 1,
+              "x-readBack": "not-state"
+            },
+            "pageSize": {
+              "description": "The size of the new page; an a4 page when omitted.",
+              "$ref": "#/$defs/pageSizeInput",
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/pdf/inspect-result.schema.json#/$defs/pdfPageInfo/properties/pageSize"
             }
           }
         },
@@ -4760,7 +4768,7 @@
             }
           }
         },
-        "optimize": {
+        "optimize_document": {
           "description": "Optimizes the document's resources; image options recompress images.",
           "type": "object",
           "required": [
@@ -4772,7 +4780,7 @@
               "$ref": "#/$defs/id"
             },
             "op": {
-              "const": "optimize"
+              "const": "optimize_document"
             },
             "downsampleImagesDpi": {
               "description": "The largest image resolution kept, in dots per inch.",
@@ -4842,7 +4850,7 @@
           "type": "object",
           "required": [
             "op",
-            "pattern"
+            "find"
           ],
           "additionalProperties": false,
           "properties": {
@@ -4852,14 +4860,14 @@
             "op": {
               "const": "redact_text"
             },
-            "pattern": {
+            "find": {
               "description": "The text to find, matched case-sensitively. Literal text also matches with up to two spaces, never a line break, where an East Asian character meets a character that is not East Asian, such as a digit or Latin letter, as extracted text can hold there.",
               "type": "string",
               "minLength": 1,
               "x-readBack": "not-state"
             },
             "regex": {
-              "description": "Whether the pattern is a .NET regular expression rather than literal text.",
+              "description": "Whether find is a .NET regular expression rather than literal text.",
               "type": "boolean",
               "default": false,
               "x-readBack": "not-state"
@@ -4876,63 +4884,13 @@
             }
           }
         },
-        "remove_attachment": {
-          "description": "Removes a document attachment by name.",
-          "type": "object",
-          "required": [
-            "op",
-            "name"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "id": {
-              "$ref": "#/$defs/id"
-            },
-            "op": {
-              "const": "remove_attachment"
-            },
-            "name": {
-              "type": "string",
-              "minLength": 1,
-              "x-readBack": "not-state"
-            }
-          }
-        },
-        "remove_metadata": {
-          "description": "Removes document metadata.",
-          "type": "object",
-          "required": [
-            "op"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "id": {
-              "$ref": "#/$defs/id"
-            },
-            "op": {
-              "const": "remove_metadata"
-            },
-            "xmp": {
-              "description": "Whether the XMP metadata stream is removed.",
-              "type": "boolean",
-              "default": true,
-              "x-readBack": "not-state"
-            },
-            "documentInfo": {
-              "description": "Whether the document information dictionary is cleared.",
-              "type": "boolean",
-              "default": true,
-              "x-readBack": "not-state"
-            }
-          }
-        },
         "rotate_pages": {
           "description": "Rotates pages to an absolute angle.",
           "type": "object",
           "required": [
             "op",
             "pages",
-            "angle"
+            "rotation"
           ],
           "additionalProperties": false,
           "properties": {
@@ -4946,15 +4904,12 @@
               "$ref": "#/$defs/pages",
               "x-readBack": "not-state"
             },
-            "angle": {
-              "description": "The rotation in degrees, clockwise; 0 sets a page upright.",
-              "type": "integer",
-              "enum": [
-                0,
-                90,
-                180,
-                270
-              ],
+            "rotation": {
+              "description": "The rotation in degrees, clockwise, a quarter turn at a time: 0, 90, 180 or 270; 0 sets a page upright.",
+              "type": "number",
+              "minimum": 0,
+              "maximum": 270,
+              "multipleOf": 90,
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/pdf/inspect-result.schema.json#/$defs/pdfPageInfo/properties/rotation"
             }
           }
@@ -4990,46 +4945,6 @@
             }
           }
         },
-        "set_metadata": {
-          "description": "Sets document information entries; omitted entries keep their values.",
-          "type": "object",
-          "required": [
-            "op"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "id": {
-              "$ref": "#/$defs/id"
-            },
-            "op": {
-              "const": "set_metadata"
-            },
-            "title": {
-              "type": "string",
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/pdf/inspect-result.schema.json#/properties/properties/additionalProperties"
-            },
-            "author": {
-              "type": "string",
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/pdf/inspect-result.schema.json#/properties/properties/additionalProperties"
-            },
-            "subject": {
-              "type": "string",
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/pdf/inspect-result.schema.json#/properties/properties/additionalProperties"
-            },
-            "keywords": {
-              "type": "string",
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/pdf/inspect-result.schema.json#/properties/properties/additionalProperties"
-            },
-            "custom": {
-              "description": "Custom document information entries by name.",
-              "type": "object",
-              "additionalProperties": {
-                "type": "string"
-              },
-              "x-readBack": "unread"
-            }
-          }
-        },
         "set_page_labels": {
           "description": "Sets page-label ranges, which change navigation labels, not visible page text; each start page appears once.",
           "type": "object",
@@ -5055,12 +4970,12 @@
           }
         },
         "set_page_size": {
-          "description": "Sets pages to a named size.",
+          "description": "Sets pages to a page size.",
           "type": "object",
           "required": [
             "op",
             "pages",
-            "size"
+            "pageSize"
           ],
           "additionalProperties": false,
           "properties": {
@@ -5074,9 +4989,9 @@
               "$ref": "#/$defs/pages",
               "x-readBack": "not-state"
             },
-            "size": {
-              "$ref": "#/$defs/pageSize",
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/pdf/inspect-result.schema.json#/$defs/pdfPageInfo/properties/widthPoints"
+            "pageSize": {
+              "$ref": "#/$defs/pageSizeInput",
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/pdf/inspect-result.schema.json#/$defs/pdfPageInfo/properties/pageSize"
             },
             "scaleContent": {
               "description": "Whether the content is scaled to the new size rather than kept at its position.",
@@ -5086,17 +5001,107 @@
             }
           }
         },
+        "set_properties": {
+          "description": "Sets document information entries; omitted entries keep their values.",
+          "type": "object",
+          "required": [
+            "op"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/id"
+            },
+            "op": {
+              "const": "set_properties"
+            },
+            "title": {
+              "type": "string",
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/pdf/inspect-result.schema.json#/properties/properties/additionalProperties"
+            },
+            "author": {
+              "type": "string",
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/pdf/inspect-result.schema.json#/properties/properties/additionalProperties"
+            },
+            "subject": {
+              "type": "string",
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/pdf/inspect-result.schema.json#/properties/properties/additionalProperties"
+            },
+            "keywords": {
+              "type": "string",
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/pdf/inspect-result.schema.json#/properties/properties/additionalProperties"
+            },
+            "custom": {
+              "description": "Custom document information entries by name, which pdf inspect --detail properties reports under the same names. A name must not be one of the standard entries, which the fields above or the engine set, in any case, nor start with info: or xmp:.",
+              "type": "object",
+              "additionalProperties": {
+                "type": "string"
+              },
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/pdf/inspect-result.schema.json#/properties/properties/additionalProperties"
+            }
+          }
+        },
         "color": {
           "type": "string",
           "pattern": "^#[0-9A-Fa-f]{6}$"
         },
-        "pageSize": {
-          "type": "string",
-          "enum": [
-            "A3",
-            "A4",
-            "Letter",
-            "Legal"
+        "pageSizeInput": {
+          "description": "The size of a page in points (72 per inch) as an operation sets it: a preset, in portrait, or both the width and the height. A read reports it as a page size under the same names.",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "preset": {
+              "description": "The preset, in portrait; omitted when the width and height are given.",
+              "type": "string",
+              "enum": [
+                "a3",
+                "a4",
+                "a5",
+                "letter",
+                "legal",
+                "tabloid"
+              ]
+            },
+            "width": {
+              "description": "The page width in points, given with the height instead of a preset.",
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "height": {
+              "description": "The page height in points, given with the width instead of a preset.",
+              "type": "number",
+              "exclusiveMinimum": 0
+            }
+          },
+          "allOf": [
+            {
+              "oneOf": [
+                {
+                  "required": [
+                    "preset"
+                  ]
+                },
+                {
+                  "required": [
+                    "width"
+                  ]
+                }
+              ]
+            },
+            {
+              "dependentRequired": {
+                "width": [
+                  "height"
+                ]
+              }
+            },
+            {
+              "dependentRequired": {
+                "height": [
+                  "width"
+                ]
+              }
+            }
           ]
         },
         "pages": {
@@ -5118,18 +5123,19 @@
               "minimum": 1,
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/pdf/inspect-result.schema.json#/$defs/pdfPageLabelInfo/properties/startPage"
             },
-            "style": {
+            "numberStyle": {
+              "description": "How the label numbers are written; none labels the pages with the prefix alone.",
               "type": "string",
               "enum": [
-                "arabic",
+                "decimal",
                 "roman-upper",
                 "roman-lower",
                 "letters-upper",
                 "letters-lower",
                 "none"
               ],
-              "default": "arabic",
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/pdf/inspect-result.schema.json#/$defs/pdfPageLabelInfo/properties/style"
+              "default": "decimal",
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/pdf/inspect-result.schema.json#/$defs/pdfPageLabelInfo/properties/numberStyle"
             },
             "prefix": {
               "description": "Text placed before each label value.",

@@ -25,14 +25,14 @@ public sealed class PdfEditVerificationTests
         {
             Ops =
             [
-                new InsertBlankPageOp { At = 3 },
+                new InsertPageOp { At = 3 },
                 new SetFormFieldOp { Name = "Customer", Value = "Contoso" },
-                new RedactTextOp { Pattern = "Secret" },
+                new RedactTextOp { Find = "Secret" },
                 new AddBookmarkOp { Title = "Appendix", Page = 2 },
                 new AddBookmarkOp { Title = "Detail", Page = 1, Parent = "1" },
-                new SetMetadataOp { Title = "Quarterly", Author = "Ops", Custom = new Dictionary<string, string> { ["Reviewed"] = "yes" } },
+                new SetPropertiesOp { Title = "Quarterly", Author = "Ops", Custom = new Dictionary<string, string> { ["Reviewed"] = "yes" } },
                 new AddAttachmentOp { Path = attachment },
-                new RemoveAttachmentOp { Name = "old.txt" },
+                new DeleteAttachmentOp { Name = "old.txt" },
             ],
         }, "verified.pdf"));
 
@@ -53,7 +53,7 @@ public sealed class PdfEditVerificationTests
             Ops =
             [
                 new AddBookmarkOp { Title = "Appendix", Page = 2 },
-                new DeleteBookmarksOp { Indexes = ["1"] },
+                new DeleteBookmarksOp { Bookmarks = ["1"] },
                 new AddBookmarkOp { Title = "Closing", Page = 1 },
             ],
         }, "renumbered.pdf"));
@@ -91,15 +91,15 @@ public sealed class PdfEditVerificationTests
         {
             Ops =
             [
-                new DeleteBookmarksOp { Indexes = ["1"] },
+                new DeleteBookmarksOp { Bookmarks = ["1"] },
                 new DeletePagesOp { Pages = "2" },
-                new RemoveMetadataOp(),
-                new SetMetadataOp { Title = "After removal" },
+                new ClearPropertiesOp(),
+                new SetPropertiesOp { Title = "After removal" },
             ],
         }, "deleted.pdf"));
 
         Assert.True(result.Verification!.Ok, string.Join("; ", result.Verification.Issues.Select(static issue => issue.Message)));
-        // remove_metadata has no reliable read-back: saving writes the producer and dates again.
+        // clear_properties has no reliable read-back: saving writes the producer and dates again.
         Assert.Equal(["op-0001", "op-0002", "op-0004"], result.Verification.CheckedOps);
     }
 
@@ -113,14 +113,14 @@ public sealed class PdfEditVerificationTests
         {
             Ops =
             [
-                new RedactTextOp { Pattern = "Secret" },
+                new RedactTextOp { Find = "Secret" },
                 new AddHeaderTextOp { Text = "Secret draft", Pages = "1" },
             ],
         }, "readded.pdf"));
 
         VerificationIssue issue = Assert.Single(result.Verification!.Issues);
-        Assert.Equal("PDF_REDACTED_TEXT_FOUND", issue.Code);
-        Assert.Equal("pdf/page/1", issue.Location);
+        Assert.Equal("REDACTED_TEXT_FOUND", issue.Code);
+        Assert.Equal("page/1", issue.Location);
         Assert.StartsWith("Operation 'op-0001' (redact_text): ", issue.Message, StringComparison.Ordinal);
         Assert.DoesNotContain("Secret", issue.Message, StringComparison.Ordinal);
         Assert.False(result.Verification.Ok);
@@ -132,7 +132,7 @@ public sealed class PdfEditVerificationTests
         Commands.EditCommand.Table(result, new Sdk.Extensibility.Output.TableSurface(writer, Sdk.Extensibility.Output.TableFormat.Plain));
         string text = writer.ToString();
         Assert.Contains("verification: needs attention", text, StringComparison.Ordinal);
-        Assert.Contains("PDF_REDACTED_TEXT_FOUND [pdf/page/1]: Operation 'op-0001' (redact_text)", text, StringComparison.Ordinal);
+        Assert.Contains("REDACTED_TEXT_FOUND [page/1]: Operation 'op-0001' (redact_text)", text, StringComparison.Ordinal);
         Assert.Contains("hint: ", text, StringComparison.Ordinal);
     }
 
@@ -145,7 +145,7 @@ public sealed class PdfEditVerificationTests
         // The evaluation watermark reads "Evaluation Only. Created with Aspose.PDF. ...".
         PdfEditResult result = PdfEdit.Run(fixture.Session, Request(fixture, input, new PdfOpsBatch
         {
-            Ops = [new RedactTextOp { Pattern = "Created with" }],
+            Ops = [new RedactTextOp { Find = "Created with" }],
         }, "watermark.pdf"));
 
         Assert.True(result.Verification!.Ok, string.Join("; ", result.Verification.Issues.Select(static issue => issue.Message)));
@@ -166,13 +166,13 @@ public sealed class PdfEditVerificationTests
         {
             Ops =
             [
-                new RedactTextOp { Pattern = "Created with" },
+                new RedactTextOp { Find = "Created with" },
                 new AddHeaderTextOp { Text = "Created with care", Pages = "1" },
             ],
         }, "header.pdf"));
 
         VerificationIssue issue = Assert.Single(result.Verification!.Issues);
-        Assert.Equal("PDF_REDACTED_TEXT_FOUND", issue.Code);
+        Assert.Equal("REDACTED_TEXT_FOUND", issue.Code);
         Assert.Contains("page 1 of the output still has 1 match(es)", issue.Message, StringComparison.Ordinal);
     }
 
@@ -202,13 +202,13 @@ public sealed class PdfEditVerificationTests
 
         using var document = new Document(input);
         var verifier = new PdfEditVerifier(document);
-        verifier.Record(new RedactTextOp { Id = "op-0001", Pattern = "(a+)+$", Regex = true }, new AppliedOperation(0, []));
+        verifier.Record(new RedactTextOp { Id = "op-0001", Find = "(a+)+$", Regex = true }, new AppliedOperation(0, []));
 
         VerificationFacts verification = verifier.Verify(document, fixture.LicenseState, deadline: null);
 
         VerificationIssue issue = Assert.Single(verification.Issues);
-        Assert.Equal("PDF_VERIFICATION_INCOMPLETE", issue.Code);
-        Assert.Equal("pdf/page/1", issue.Location);
+        Assert.Equal("VERIFICATION_INCOMPLETE", issue.Code);
+        Assert.Equal("page/1", issue.Location);
         Assert.Empty(verification.Checked);
     }
 
@@ -219,10 +219,10 @@ public sealed class PdfEditVerificationTests
         "redact_text",
         "add_bookmark",
         "delete_bookmarks",
-        "set_metadata",
+        "set_properties",
         "add_attachment",
-        "remove_attachment",
-        "insert_blank_page",
+        "delete_attachment",
+        "insert_page",
         "delete_pages",
     ];
 
@@ -242,16 +242,16 @@ public sealed class PdfEditVerificationTests
         var verifier = new PdfEditVerifier(document);
         (PdfOp op, long affected, string code) = operation switch
         {
-            "set_form_field" => ((PdfOp)new SetFormFieldOp { Name = "Customer", Value = "Contoso" }, 1L, "PDF_FIELD_VALUE_MISMATCH"),
-            "flatten_forms" => (new FlattenFormsOp { Fields = ["Customer"] }, 1L, "PDF_FIELD_NOT_FLATTENED"),
-            "redact_text" => (new RedactTextOp { Pattern = "Secret" }, 1L, "PDF_REDACTED_TEXT_FOUND"),
-            "add_bookmark" => (new AddBookmarkOp { Title = "Appendix", Page = 2 }, 1L, "PDF_BOOKMARK_MISMATCH"),
-            "delete_bookmarks" => (new DeleteBookmarksOp { Indexes = ["1"] }, 1L, "PDF_BOOKMARK_MISMATCH"),
-            "set_metadata" => (new SetMetadataOp { Title = "Quarterly" }, 1L, "PDF_METADATA_MISMATCH"),
-            "add_attachment" => (new AddAttachmentOp { Path = attachment }, 1L, "PDF_ATTACHMENT_MISMATCH"),
-            "remove_attachment" => (new RemoveAttachmentOp { Name = "old.txt" }, 1L, "PDF_ATTACHMENT_MISMATCH"),
-            "insert_blank_page" => (new InsertBlankPageOp { At = 3 }, 1L, "PDF_PAGE_COUNT_MISMATCH"),
-            "delete_pages" => (new DeletePagesOp { Pages = "2" }, 1L, "PDF_PAGE_COUNT_MISMATCH"),
+            "set_form_field" => ((PdfOp)new SetFormFieldOp { Name = "Customer", Value = "Contoso" }, 1L, "FIELD_VALUE_MISMATCH"),
+            "flatten_forms" => (new FlattenFormsOp { Fields = ["Customer"] }, 1L, "FIELD_NOT_FLATTENED"),
+            "redact_text" => (new RedactTextOp { Find = "Secret" }, 1L, "REDACTED_TEXT_FOUND"),
+            "add_bookmark" => (new AddBookmarkOp { Title = "Appendix", Page = 2 }, 1L, "BOOKMARK_MISMATCH"),
+            "delete_bookmarks" => (new DeleteBookmarksOp { Bookmarks = ["1"] }, 1L, "BOOKMARK_MISMATCH"),
+            "set_properties" => (new SetPropertiesOp { Title = "Quarterly" }, 1L, "PROPERTIES_MISMATCH"),
+            "add_attachment" => (new AddAttachmentOp { Path = attachment }, 1L, "ATTACHMENT_MISMATCH"),
+            "delete_attachment" => (new DeleteAttachmentOp { Name = "old.txt" }, 1L, "ATTACHMENT_MISMATCH"),
+            "insert_page" => (new InsertPageOp { At = 3 }, 1L, "PAGE_COUNT_MISMATCH"),
+            "delete_pages" => (new DeletePagesOp { Pages = "2" }, 1L, "PAGE_COUNT_MISMATCH"),
             _ => throw new ArgumentOutOfRangeException(nameof(operation)),
         };
 
@@ -260,6 +260,25 @@ public sealed class PdfEditVerificationTests
 
         Assert.Contains(verification.Issues, issue => issue.Code == code);
         Assert.Equal(["op-0001"], verification.Checked);
+    }
+
+    /// <summary>A missing property is located under the name its target and its read back give it.</summary>
+    [Fact]
+    public void Verify_LocatesAMissingPropertyAsItsTargetNamesIt()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = CreateDocument(fixture);
+        using var document = new Document(input);
+        var verifier = new PdfEditVerifier(document);
+
+        verifier.Record(
+            new SetPropertiesOp { Id = "op-0001", Title = "Quarterly", Custom = new Dictionary<string, string> { ["Department"] = "Sales" } },
+            new AppliedOperation(2, []));
+        VerificationFacts verification = verifier.Verify(document, fixture.LicenseState, deadline: null);
+
+        Assert.Equal(
+            ["property/Department", "property/title"],
+            verification.Issues.Where(static issue => issue.Code == "PROPERTIES_MISMATCH").Select(static issue => issue.Location).Order(StringComparer.Ordinal));
     }
 
     [Fact]
@@ -272,8 +291,8 @@ public sealed class PdfEditVerificationTests
         {
             Ops =
             [
-                new SetMetadataOp { Title = "First" },
-                new SetMetadataOp { Title = "Second" },
+                new SetPropertiesOp { Title = "First" },
+                new SetPropertiesOp { Title = "Second" },
                 new SetFormFieldOp { Name = "Customer", Value = "Contoso" },
                 new FlattenFormsOp(),
             ],
@@ -293,7 +312,7 @@ public sealed class PdfEditVerificationTests
 
         PdfEditResult result = PdfEdit.Run(fixture.Session, Request(fixture, input, new PdfOpsBatch
         {
-            Ops = [new FlattenFormsOp(), new InsertPagesFromOp { Path = source, At = 3 }],
+            Ops = [new FlattenFormsOp(), new ImportPagesOp { Path = source, At = 3 }],
         }, "inserted.pdf"));
 
         Assert.True(result.Verification!.Ok, string.Join("; ", result.Verification.Issues.Select(static issue => issue.Message)));
@@ -311,7 +330,7 @@ public sealed class PdfEditVerificationTests
             Input = input,
             Batch = new PdfOpsBatch
             {
-                Ops = [new SetMetadataOp { Title = "Plain" }],
+                Ops = [new SetPropertiesOp { Title = "Plain" }],
             },
             Output = TestOutput.At(fixture.File("plain.pdf")),
         });

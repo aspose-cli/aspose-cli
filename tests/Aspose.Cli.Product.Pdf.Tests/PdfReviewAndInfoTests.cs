@@ -129,9 +129,9 @@ public sealed class PdfReviewAndInfoTests
             {
                 Ops =
                 [
-                    new RedactTextOp { Pattern = "Jane Roe", Pages = "1" },
+                    new RedactTextOp { Find = "Jane Roe", Pages = "1" },
                     // Nothing follows "order." on its line, so no text moves under its cover.
-                    new RedactTextOp { Pattern = "order.", Pages = "2" },
+                    new RedactTextOp { Find = "order.", Pages = "2" },
                 ],
             },
             Output = TestOutput.At(output),

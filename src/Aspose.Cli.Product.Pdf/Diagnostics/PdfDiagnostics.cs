@@ -38,31 +38,31 @@ internal static class PdfDiagnostics
     internal static readonly WarningCode RedactionTextMoved = new("REDACTION_TEXT_MOVED");
 
     /// <summary>A form field of the output does not hold the value set_form_field set.</summary>
-    internal static readonly DiagnosticDescriptor FieldValueMismatch = DiagnosticDescriptor.Verification("PDF_FIELD_VALUE_MISMATCH");
+    internal static readonly DiagnosticDescriptor FieldValueMismatch = DiagnosticDescriptor.Verification("FIELD_VALUE_MISMATCH");
 
     /// <summary>The output still has a form field that flatten_forms flattened.</summary>
-    internal static readonly DiagnosticDescriptor FieldNotFlattened = DiagnosticDescriptor.Verification("PDF_FIELD_NOT_FLATTENED");
+    internal static readonly DiagnosticDescriptor FieldNotFlattened = DiagnosticDescriptor.Verification("FIELD_NOT_FLATTENED");
 
     /// <summary>The output still contains text that redact_text redacted.</summary>
-    internal static readonly DiagnosticDescriptor RedactedTextFound = DiagnosticDescriptor.Verification("PDF_REDACTED_TEXT_FOUND");
+    internal static readonly DiagnosticDescriptor RedactedTextFound = DiagnosticDescriptor.Verification("REDACTED_TEXT_FOUND");
 
     /// <summary>The output's bookmarks differ from what the bookmark operations left.</summary>
-    internal static readonly DiagnosticDescriptor BookmarkMismatch = DiagnosticDescriptor.Verification("PDF_BOOKMARK_MISMATCH");
+    internal static readonly DiagnosticDescriptor BookmarkMismatch = DiagnosticDescriptor.Verification("BOOKMARK_MISMATCH");
 
-    /// <summary>A document information entry differs from what set_metadata set.</summary>
-    internal static readonly DiagnosticDescriptor MetadataMismatch = DiagnosticDescriptor.Verification("PDF_METADATA_MISMATCH");
+    /// <summary>A document property differs from what set_properties set.</summary>
+    internal static readonly DiagnosticDescriptor PropertiesMismatch = DiagnosticDescriptor.Verification("PROPERTIES_MISMATCH");
 
     /// <summary>An attachment is missing, still present or a different size than the batch left it.</summary>
-    internal static readonly DiagnosticDescriptor AttachmentMismatch = DiagnosticDescriptor.Verification("PDF_ATTACHMENT_MISMATCH");
+    internal static readonly DiagnosticDescriptor AttachmentMismatch = DiagnosticDescriptor.Verification("ATTACHMENT_MISMATCH");
 
     /// <summary>The output's page count differs from what the page operations left.</summary>
-    internal static readonly DiagnosticDescriptor PageCountMismatch = DiagnosticDescriptor.Verification("PDF_PAGE_COUNT_MISMATCH");
+    internal static readonly DiagnosticDescriptor PageCountMismatch = DiagnosticDescriptor.Verification("PAGE_COUNT_MISMATCH");
 
     /// <summary>A PDF/A check found a problem: the issue code of <c>pdf validate</c>.</summary>
     internal static readonly DiagnosticDescriptor PdfaNonconformance = DiagnosticDescriptor.Verification(PdfComplianceIssue.NonconformanceCode);
 
     /// <summary>An operation's effect could not be read back, so it was not checked.</summary>
-    internal static readonly DiagnosticDescriptor VerificationIncomplete = DiagnosticDescriptor.Verification("PDF_VERIFICATION_INCOMPLETE");
+    internal static readonly DiagnosticDescriptor VerificationIncomplete = DiagnosticDescriptor.Verification("VERIFICATION_INCOMPLETE");
 
     internal static IReadOnlyList<DiagnosticDescriptor> All { get; } =
     [
@@ -71,7 +71,7 @@ internal static class PdfDiagnostics
         FieldNotFlattened,
         RedactedTextFound,
         BookmarkMismatch,
-        MetadataMismatch,
+        PropertiesMismatch,
         AttachmentMismatch,
         PageCountMismatch,
         VerificationIncomplete,

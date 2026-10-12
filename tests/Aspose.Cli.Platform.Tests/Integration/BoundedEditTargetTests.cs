@@ -99,10 +99,10 @@ public sealed partial class BoundedEditTargetTests
             var ops = new JsonArray();
             for (int page = 0; page < Bound; page++)
             {
-                ops.Add(new JsonObject { ["op"] = "insert_blank_page", ["at"] = 1 });
+                ops.Add(new JsonObject { ["op"] = "insert_page", ["at"] = 1 });
             }
-            ops.Add(new JsonObject { ["op"] = "rotate_pages", ["pages"] = $"1-{Bound}", ["angle"] = 90 });
-            ops.Add(new JsonObject { ["op"] = "rotate_pages", ["pages"] = "1-", ["angle"] = 180 });
+            ops.Add(new JsonObject { ["op"] = "rotate_pages", ["pages"] = $"1-{Bound}", ["rotation"] = 90 });
+            ops.Add(new JsonObject { ["op"] = "rotate_pages", ["pages"] = "1-", ["rotation"] = 180 });
             return ("input.pdf", ops);
         });
         yield return ("slides", workspace => (Create(workspace, "slides", "input.pptx", "--from-markdown",

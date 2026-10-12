@@ -128,7 +128,7 @@ public sealed class PdfNavigationTests
         PdfEditResult result = PdfEdit.Run(fixture.Session, new PdfEditRequest
         {
             Input = input,
-            Batch = new PdfOpsBatch { Ops = [new SetMetadataOp { Title = "Kept" }, new RotatePagesOp { Pages = "3", Angle = 90 }] },
+            Batch = new PdfOpsBatch { Ops = [new SetPropertiesOp { Title = "Kept" }, new RotatePagesOp { Pages = "3", Rotation = 90 }] },
             Output = TestOutput.At(fixture.File("metadata.out.pdf")),
         });
 
@@ -144,7 +144,7 @@ public sealed class PdfNavigationTests
         PdfEditResult result = PdfEdit.Run(fixture.Session, new PdfEditRequest
         {
             Input = input,
-            Batch = new PdfOpsBatch { Ops = [new SetMetadataOp { Title = "Kept" }] },
+            Batch = new PdfOpsBatch { Ops = [new SetPropertiesOp { Title = "Kept" }] },
             Output = TestOutput.At(fixture.File("attachments.out.pdf")),
         });
 

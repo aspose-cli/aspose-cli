@@ -442,6 +442,42 @@ public sealed class PdfKnownIssueTests
         }
     }
 
+    [LicensedFact]
+    public void Sign_SwapsTheRectangleOfAPageRotatedByAQuarterTurn()
+    {
+        using var fixture = new PdfEngineFixture();
+        string certificate = fixture.CreateCertificate("pw");
+        var placed = new Dictionary<int, Rectangle>();
+        foreach ((int degrees, Rotation rotation) in new[] { (0, Rotation.None), (90, Rotation.on90), (180, Rotation.on180) })
+        {
+            string input = fixture.File($"page-{degrees}.pdf");
+            using (var document = new Document())
+            {
+                Page page = document.Pages.Add();
+                page.SetPageSize(400, 600);
+                page.Rotate = rotation;
+                document.Save(input);
+            }
+
+            string output = fixture.File($"signed-{degrees}.pdf");
+            using (var document = new Document(input))
+            using (var facade = new Aspose.Pdf.Facades.PdfFileSignature(document))
+            {
+                facade.Sign(1, true, new System.Drawing.Rectangle(10, 20, 100, 30), new Aspose.Pdf.Forms.PKCS7(certificate, "pw"));
+                facade.Save(output);
+            }
+
+            using var signed = new Document(output);
+            placed[degrees] = signed.Form.Fields[0].Rect;
+        }
+
+        static string Describe(Rectangle rect) => $"{rect.LLX},{rect.LLY},{rect.Width},{rect.Height}";
+        KnownIssue.Reproduces(
+            "PDF-SIGN-RECT-ROTATED",
+            Describe(placed[0]) == "10,20,100,30" && Describe(placed[180]) == "10,20,100,30" && Describe(placed[90]) == "20,10,30,100",
+            $"the rectangle 10,20,100,30 lands at {Describe(placed[0])} unrotated, {Describe(placed[90])} at 90 degrees and {Describe(placed[180])} at 180 degrees");
+    }
+
     /// <summary>One page and two bookmarks: one omits every coordinate, one names 0.</summary>
     private static void WriteDestinationDocument(string path)
     {

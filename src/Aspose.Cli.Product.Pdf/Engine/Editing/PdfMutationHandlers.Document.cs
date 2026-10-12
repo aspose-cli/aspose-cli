@@ -11,7 +11,7 @@ namespace Aspose.Cli.Product.Pdf.Engine.Editing;
 // Document metadata, navigation, forms and security.
 internal sealed partial class PdfMutationHandlers
 {
-    public ValueTuple Apply(SetMetadataOp operation)
+    public ValueTuple Apply(SetPropertiesOp operation)
     {
         if (operation.Title is not null)
         {
@@ -43,7 +43,7 @@ internal sealed partial class PdfMutationHandlers
         return default;
     }
 
-    public ValueTuple Apply(RemoveMetadataOp operation)
+    public ValueTuple Apply(ClearPropertiesOp operation)
     {
         if (operation.DocumentInfo)
         {
@@ -84,15 +84,15 @@ internal sealed partial class PdfMutationHandlers
 
     public ValueTuple Apply(DeleteBookmarksOp operation)
     {
-        if (operation.All)
+        if (operation.Bookmarks is null)
         {
             _document.Outlines.Delete();
             return default;
         }
 
-        // Resolve every index against the outline as it stands before any deletion, so a
+        // Resolve every address against the outline as it stands before any deletion, so a
         // missing one changes nothing and the order of the list does not matter.
-        OutlineItemCollection[] items = [.. operation.Indexes!.Select(index => Outline(_document.Outlines, index))];
+        OutlineItemCollection[] items = [.. operation.Bookmarks.Select(address => Outline(_document.Outlines, address))];
         foreach (OutlineItemCollection item in items)
         {
             DeleteOutline(item);
@@ -120,7 +120,7 @@ internal sealed partial class PdfMutationHandlers
         return default;
     }
 
-    public ValueTuple Apply(RemoveAttachmentOp operation)
+    public ValueTuple Apply(DeleteAttachmentOp operation)
     {
         // FindByName throws an engine exception for a missing name; match the names query reports.
         string[] names = AttachmentNames(_document);
@@ -142,7 +142,7 @@ internal sealed partial class PdfMutationHandlers
             {
                 Prefix = range.Prefix,
                 StartingValue = range.StartingValue,
-                NumberingStyle = PdfPageLabelStyles.FromStyle(range.Style),
+                NumberingStyle = PdfPageLabelStyles.FromStyle(range.NumberStyle),
             });
         }
 
@@ -183,14 +183,14 @@ internal sealed partial class PdfMutationHandlers
         return default;
     }
 
-    public ValueTuple Apply(EncryptPdfOp operation)
+    public ValueTuple Apply(EncryptDocumentOp operation)
     {
         Encrypt(_document, operation, _secrets);
         return default;
     }
 
     /// <summary>Encrypts a document with AES-256 and the passwords and permissions an operation names.</summary>
-    internal static void Encrypt(Document document, EncryptPdfOp operation, IReadOnlyDictionary<string, Secret>? secrets)
+    internal static void Encrypt(Document document, EncryptDocumentOp operation, IReadOnlyDictionary<string, Secret>? secrets)
     {
         string owner = OperationSecrets.Resolve(secrets, operation.OwnerPasswordEnv)?.Reveal()!;
         string user = OperationSecrets.Resolve(secrets, operation.UserPasswordEnv)?.Reveal() ?? string.Empty;
@@ -237,7 +237,7 @@ internal sealed partial class PdfMutationHandlers
         document.Encrypt(user, owner, permissions, CryptoAlgorithm.AESx256);
     }
 
-    public ValueTuple Apply(DecryptPdfOp operation)
+    public ValueTuple Apply(DecryptDocumentOp operation)
     {
         if (_document.IsEncrypted)
         {
@@ -247,7 +247,7 @@ internal sealed partial class PdfMutationHandlers
         return default;
     }
 
-    public ValueTuple Apply(OptimizePdfOp operation)
+    public ValueTuple Apply(OptimizeDocumentOp operation)
     {
         var options = new OptimizationOptions
         {

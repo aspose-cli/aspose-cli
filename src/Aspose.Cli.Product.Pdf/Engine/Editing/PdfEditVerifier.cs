@@ -77,10 +77,10 @@ internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
             case RedactTextOp redact:
                 _redactions.Add(new RedactionExpectation(
                     id,
-                    TextPattern(redact.Pattern, redact.Regex, caseSensitive: true),
+                    TextPattern(redact.Find, redact.Regex, caseSensitive: true),
                     redact.Pages is null ? null : PdfMutationSupport.Resolve(document, redact.Pages)));
                 break;
-            case SetMetadataOp metadata:
+            case SetPropertiesOp metadata:
                 Expect(metadata.Title, "Title");
                 Expect(metadata.Author, "Author");
                 Expect(metadata.Subject, "Subject");
@@ -99,7 +99,7 @@ internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
                 }
 
                 break;
-            case RemoveMetadataOp { DocumentInfo: true }:
+            case ClearPropertiesOp { DocumentInfo: true }:
                 foreach (string key in _metadata.Keys.ToArray())
                 {
                     Drop(_metadata, key);
@@ -119,7 +119,7 @@ internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
                         ? contents.Length
                         : null));
                 break;
-            case RemoveAttachmentOp attachment:
+            case DeleteAttachmentOp attachment:
                 Drop(_addedAttachments, attachment.Name);
                 _removedAttachments[attachment.Name] = id;
                 break;
@@ -135,14 +135,14 @@ internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
                 _incomplete.UnionWith(_bookmarks.Select(static bookmark => bookmark.Id));
                 _bookmarks.Clear();
                 break;
-            case InsertBlankPageOp:
-            case InsertPagesFromOp:
+            case InsertPageOp:
+            case ImportPagesOp:
             case DeletePagesOp:
             case MovePagesOp:
                 _expectedPages += operation switch
                 {
-                    InsertBlankPageOp => 1,
-                    InsertPagesFromOp => (int)affected,
+                    InsertPageOp => 1,
+                    ImportPagesOp => (int)affected,
                     DeletePagesOp => -(int)affected,
                     _ => 0,
                 };
@@ -168,7 +168,7 @@ internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
                     }
                 }
 
-                if (operation is InsertPagesFromOp)
+                if (operation is ImportPagesOp)
                 {
                     // The inserted pages may bring form fields of their own.
                     _incomplete.UnionWith(_flattened.Select(static flatten => flatten.Id));
@@ -207,7 +207,7 @@ internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
                 PdfDiagnostics.PageCountMismatch,
                 _pageOps,
                 $"the output has {output.Pages.Count} page(s); they should leave {_expectedPages}",
-                location: "pdf/pages",
+                location: "page/all",
                 hint: "Inspect the output with 'pdf inspect' and repeat the page operations on the original."));
         }
     }
@@ -227,7 +227,7 @@ internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
                     field is null
                         ? $"form field '{name}' is not in the output"
                         : $"form field '{name}' reads '{actual}' in the output, not '{expected.Value}'",
-                    location: $"pdf/form/{name}",
+                    location: $"field/{name}",
                     hint: "Read the field with 'pdf inspect --detail forms' and check the value against the field's options."));
             }
         }
@@ -249,7 +249,7 @@ internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
                     PdfDiagnostics.FieldNotFlattened,
                     [flatten.Id],
                     $"the output still has the form field(s) {string.Join(", ", remaining.Select(static name => $"'{name}'"))}",
-                    location: "pdf/form",
+                    location: "field/all",
                     hint: "List the remaining fields with 'pdf inspect --detail forms' and flatten them again."));
             }
         }
@@ -282,7 +282,7 @@ internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
             deadline?.ThrowIfExpired("pdf-verify");
             string text = ExtractText(output.Pages[number], PdfReadContents.Text);
             string? watermark = license == LicenseState.Evaluation ? Watermark(output.Pages[number]) : null;
-            string location = string.Create(CultureInfo.InvariantCulture, $"pdf/page/{number}");
+            string location = string.Create(CultureInfo.InvariantCulture, $"page/{number}");
             foreach (RedactionExpectation redaction in _redactions.Where(redaction => redaction.Pages?.Contains(number) ?? true))
             {
                 int remaining;
@@ -331,7 +331,7 @@ internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
                 PdfDiagnostics.BookmarkMismatch,
                 _bookmarkOps,
                 $"the output has {count} bookmark(s); they should leave {_expectedBookmarks}",
-                location: "pdf/bookmark",
+                location: "bookmark/all",
                 hint: "Compare 'pdf inspect --detail outline' of the input and the output."));
         }
 
@@ -348,7 +348,7 @@ internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
                     item is null
                         ? $"the output has no bookmark {bookmark.Index}, where it added '{bookmark.Title}'"
                         : $"bookmark {bookmark.Index} of the output is '{item.Title}' on page {page}, not '{bookmark.Title}' on page {bookmark.Page}",
-                    location: $"pdf/bookmark/{bookmark.Index}",
+                    location: $"bookmark/{bookmark.Index}",
                     hint: "Compare 'pdf inspect --detail outline' of the output with the batch."));
             }
         }
@@ -363,10 +363,10 @@ internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
             if (!string.Equals(actual ?? string.Empty, expected.Value, StringComparison.Ordinal))
             {
                 issues.Add(Issue(
-                    PdfDiagnostics.MetadataMismatch,
+                    PdfDiagnostics.PropertiesMismatch,
                     [expected.Id],
                     $"document information '{key}' reads '{actual}' in the output, not '{expected.Value}'",
-                    location: $"pdf/metadata/{key}",
+                    location: $"property/{PdfPropertyNames.Reported(key)}",
                     hint: "Inspect the output with 'pdf inspect --detail properties'."));
             }
         }
@@ -412,7 +412,7 @@ internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
                     PdfDiagnostics.AttachmentMismatch,
                     [id],
                     problem,
-                    location: $"pdf/attachment/{name}",
+                    location: $"attachment/{name}",
                     hint: "List the attachments with 'pdf inspect --detail attachments' and extract them with 'pdf extract --what attachments' to compare."));
             }
         }

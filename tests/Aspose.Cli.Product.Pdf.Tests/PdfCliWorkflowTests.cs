@@ -80,7 +80,7 @@ public sealed class PdfCliWorkflowTests : IDisposable
         }
         byte[] original = File.ReadAllBytes(input);
         const string operations =
-            """{"ops":[{"op":"set_metadata","title":"Changed"},{"op":"linearize"}]}""";
+            """{"ops":[{"op":"set_properties","title":"Changed"},{"op":"linearize"}]}""";
         List<string> arguments =
         [
             "pdf", "edit", "source.pdf", "--ops", operations,

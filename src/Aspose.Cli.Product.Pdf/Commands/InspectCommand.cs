@@ -62,7 +62,7 @@ internal static class InspectCommand
                 + string.Join(
                     ", ",
                     pdf.DistinctPageSizes.Select(static size =>
-                        $"{TableText.Points(size.WidthPoints)} x {TableText.Points(size.HeightPoints)} pt ({size.PageCount})")));
+                        $"{TableText.Points(size.PageSize.Width)} x {TableText.Points(size.PageSize.Height)} pt ({size.PageCount})")));
         }
 
         if (result.PageLabels is { Count: > 0 } labels)
@@ -72,7 +72,7 @@ internal static class InspectCommand
                 + string.Join(
                     ", ",
                     labels.Select(static label =>
-                        $"p{label.StartPage} {label.Prefix ?? string.Empty}{label.Style} from {label.StartingValue}")));
+                        $"p{label.StartPage} {label.Prefix ?? string.Empty}{label.NumberStyle} from {label.StartingValue}")));
         }
 
         if (result.Pages is { Count: > 0 } pages)
@@ -82,8 +82,8 @@ internal static class InspectCommand
             {
                 table.AddRow(
                     TableText.Int(page.Page),
-                    $"{TableText.Points(page.WidthPoints)} x {TableText.Points(page.HeightPoints)}",
-                    TableText.Int(page.Rotation));
+                    $"{TableText.Points(page.PageSize.Width)} x {TableText.Points(page.PageSize.Height)}",
+                    TableText.Points(page.Rotation));
             }
 
             table.WriteTo(surface.Out, surface.Format);
@@ -95,10 +95,10 @@ internal static class InspectCommand
     /// <summary>The sections --detail asked for, in the order the JSON result lists them.</summary>
     private static void Sections(PdfInspectResult result, TableSurface surface)
     {
-        ResultText.Table(surface, "outline", result.Outline, ["index", "title", "page"],
+        ResultText.Table(surface, "outline", result.Outline, ["bookmark", "title", "page"],
             static item =>
             [
-                item.Index,
+                item.Bookmark,
                 new string(' ', 2 * (item.Level - 1)) + item.Title,
                 item.Page?.ToString(CultureInfo.InvariantCulture),
             ]);

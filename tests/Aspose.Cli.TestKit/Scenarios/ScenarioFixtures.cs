@@ -44,7 +44,7 @@ public static class ScenarioFixtures
     private static readonly Dictionary<string, string> Operations = new(StringComparer.Ordinal)
     {
         ["cells"] = """{"ops":[{"op":"set_values","sheet":"Sheet1","range":"D1","values":[["edited"]]}]}""",
-        ["pdf"] = """{"ops":[{"op":"set_metadata","title":"Edited"}]}""",
+        ["pdf"] = """{"ops":[{"op":"set_properties","title":"Edited"}]}""",
         ["slides"] = """{"ops":[{"op":"set_properties","title":"Edited"}]}""",
         ["words"] = """{"ops":[{"op":"set_properties","title":"Edited"}]}""",
     };
@@ -151,7 +151,7 @@ public static class ScenarioFixtures
         if (product == "pdf")
         {
             File.WriteAllText(workspace.File("ops.json"),
-                $$"""{"ops":[{"op":"encrypt","userPasswordEnv":"{{PasswordVariable}}","ownerPasswordEnv":"{{PasswordVariable}}"}]}""");
+                $$"""{"ops":[{"op":"encrypt_document","userPasswordEnv":"{{PasswordVariable}}","ownerPasswordEnv":"{{PasswordVariable}}"}]}""");
         }
         Require(workspace.RunWithEnv(environment, args));
         return File.ReadAllBytes(workspace.File(target));

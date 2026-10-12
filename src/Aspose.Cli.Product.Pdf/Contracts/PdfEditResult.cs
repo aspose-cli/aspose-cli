@@ -32,7 +32,7 @@ public sealed record PdfEditResult() : EngineResultEnvelope("edit-result", 2), I
 
     /// <summary>
     /// Present with <c>--verify</c>: the staged output read back against the effect of each form,
-    /// redaction, bookmark, metadata, attachment and page operation.
+    /// redaction, bookmark, property, attachment and page operation.
     /// </summary>
     public PdfEditVerification? Verification { get; init; }
 

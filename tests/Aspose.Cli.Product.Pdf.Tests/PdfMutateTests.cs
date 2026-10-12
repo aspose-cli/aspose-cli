@@ -27,8 +27,8 @@ public sealed class PdfMutateTests
             {
                 Ops =
                 [
-                    new AddPageNumbersOp { Format = "第 {n} 页 / 共 {N} 页", Position = PdfPositions.BottomRight },
-                    new AddHeaderTextOp { Text = "机密文件", Position = PdfPositions.TopLeft },
+                    new AddPageNumbersOp { Text = "第 {n} 页 / 共 {N} 页", Placement = PdfPlacements.BottomRight },
+                    new AddHeaderTextOp { Text = "机密文件", Placement = PdfPlacements.TopLeft },
                 ],
             },
             Output = TestOutput.At(output),
@@ -74,8 +74,8 @@ public sealed class PdfMutateTests
         double width = angle is 90 or 270 ? 570 : 380;
         double height = angle is 90 or 270 ? 380 : 570;
         PdfPageInfo geometry = Assert.Single(PdfInfo.Run(fixture.Session, new PdfInspectRequest { Input = input, IncludePreview = true }).Pages!);
-        Assert.Equal(width, geometry.WidthPoints);
-        Assert.Equal(height, geometry.HeightPoints);
+        Assert.Equal(width, geometry.PageSize.Width);
+        Assert.Equal(height, geometry.PageSize.Height);
         Assert.InRange(rect.X, 0, width - rect.Width);
         Assert.InRange(rect.Y, 0, height - rect.Height);
         string output = fixture.File($"coordinates-{angle}.out.pdf");
@@ -115,7 +115,7 @@ public sealed class PdfMutateTests
             Input = input,
             Batch = new PdfOpsBatch
             {
-                Ops = [new RotatePagesOp { Pages = "1-2", Angle = 0 }],
+                Ops = [new RotatePagesOp { Pages = "1-2", Rotation = 0 }],
             },
             Output = TestOutput.At(output),
         });
@@ -146,7 +146,7 @@ public sealed class PdfMutateTests
         PdfEditResult edited = PdfEdit.Run(fixture.Session, new PdfEditRequest
         {
             Input = input,
-            Batch = new PdfOpsBatch { Ops = [new RedactTextOp { Pattern = pattern, Regex = regex }] },
+            Batch = new PdfOpsBatch { Ops = [new RedactTextOp { Find = pattern, Regex = regex }] },
             Output = TestOutput.At(output),
         });
         Assert.Equal(1, Assert.Single(edited.Applied).ItemsAffected);
@@ -171,7 +171,7 @@ public sealed class PdfMutateTests
                 [
                     new AddWatermarkTextOp { Text = "DRAFT", Pages = "1" },
                     new AddWatermarkImageOp { Path = image, Pages = "2", Scale = 0.1 },
-                    new AddPageNumbersOp { Format = "{n}/{N}" },
+                    new AddPageNumbersOp { Text = "{n}/{N}" },
                     new AddHeaderTextOp { Text = "Header" },
                     new AddFooterTextOp { Text = "Footer" },
                     new AddStampImageOp
@@ -180,13 +180,13 @@ public sealed class PdfMutateTests
                         Path = image,
                         Rect = new PdfRectInput { X = 20, Y = 20, Width = 20, Height = 20 },
                     },
-                    new AddLinkOp
+                    new AddHyperlinkOp
                     {
                         Page = 1,
                         Url = "https://example.com",
                         Rect = new PdfRectInput { X = 20, Y = 60, Width = 120, Height = 20 },
                     },
-                    new RedactTextOp { Pattern = "Portable", Pages = "1" },
+                    new RedactTextOp { Find = "Portable", Pages = "1" },
                     new RedactAreaOp
                     {
                         Page = 2,
@@ -267,7 +267,7 @@ public sealed class PdfMutateTests
             {
                 Ops =
                 [
-                    new SetMetadataOp
+                    new SetPropertiesOp
                     {
                         Title = "Report",
                         Author = "CLI",
@@ -278,7 +278,7 @@ public sealed class PdfMutateTests
                     new AddAttachmentOp { Path = defaultNamedAttachment },
                     new SetPageLabelsOp
                     {
-                        Ranges = [new PdfPageLabelRange { StartPage = 1, Style = "roman-lower", Prefix = "A-" }],
+                        Ranges = [new PdfPageLabelRange { StartPage = 1, NumberStyle = "roman-lower", Prefix = "A-" }],
                     },
                 ],
             },
@@ -316,10 +316,10 @@ public sealed class PdfMutateTests
             {
                 Ops =
                 [
-                    new RemoveMetadataOp(),
-                    new DeleteBookmarksOp { All = true },
-                    new RemoveAttachmentOp { Name = logicalName },
-                    new RemoveAttachmentOp { Name = Path.GetFileName(defaultNamedAttachment) },
+                    new ClearPropertiesOp(),
+                    new DeleteBookmarksOp(),
+                    new DeleteAttachmentOp { Name = logicalName },
+                    new DeleteAttachmentOp { Name = Path.GetFileName(defaultNamedAttachment) },
                 ],
             },
             Output = TestOutput.At(final),
@@ -446,7 +446,7 @@ public sealed class PdfMutateTests
             {
                 Ops =
                 [
-                    new EncryptPdfOp
+                    new EncryptDocumentOp
                     {
                         UserPasswordEnv = "PDF_USER",
                         OwnerPasswordEnv = "PDF_OWNER",
@@ -476,7 +476,7 @@ public sealed class PdfMutateTests
         PdfEdit.Run(fixture.Session, new PdfEditRequest
         {
             Input = encrypted,
-            Batch = new PdfOpsBatch { Ops = [new DecryptPdfOp()] },
+            Batch = new PdfOpsBatch { Ops = [new DecryptDocumentOp()] },
             Output = TestOutput.At(plain),
             Password = new Secret("owner"),
         });
@@ -502,8 +502,8 @@ public sealed class PdfMutateTests
             {
                 Ops =
                 [
-                    new SetMetadataOp { Author = "张伟", Subject = "采购申请", Custom = new Dictionary<string, string> { ["Dept"] = "采购部" } },
-                    new EncryptPdfOp { OwnerPasswordEnv = "PDF_OWNER", Permissions = new PdfPermissionsInput { Print = true } },
+                    new SetPropertiesOp { Author = "张伟", Subject = "采购申请", Custom = new Dictionary<string, string> { ["Dept"] = "采购部" } },
+                    new EncryptDocumentOp { OwnerPasswordEnv = "PDF_OWNER", Permissions = new PdfPermissionsInput { Print = true } },
                 ],
             },
             Output = TestOutput.At(output),
@@ -541,7 +541,7 @@ public sealed class PdfMutateTests
         CliException error = Assert.Throws<CliException>(() => PdfEdit.Run(fixture.Session, new PdfEditRequest
         {
             Input = input,
-            Batch = new PdfOpsBatch { Ops = [new SetMetadataOp { Subject = "采购申请" }, new RotatePagesOp { Pages = "1", Angle = 90 }] },
+            Batch = new PdfOpsBatch { Ops = [new SetPropertiesOp { Subject = "采购申请" }, new RotatePagesOp { Pages = "1", Rotation = 90 }] },
             Output = TestOutput.At(output),
             Password = new Secret("owner"),
         }));
@@ -552,9 +552,9 @@ public sealed class PdfMutateTests
             {
                 Ops =
                 [
-                    .. decryptFirst ? new PdfOp[] { new DecryptPdfOp() } : [],
-                    new SetMetadataOp { Subject = "采购申请", Keywords = "Café" },
-                    new EncryptPdfOp { OwnerPasswordEnv = "PDF_OWNER" },
+                    .. decryptFirst ? new PdfOp[] { new DecryptDocumentOp() } : [],
+                    new SetPropertiesOp { Subject = "采购申请", Keywords = "Café" },
+                    new EncryptDocumentOp { OwnerPasswordEnv = "PDF_OWNER" },
                 ],
             },
             Output = TestOutput.At(output),
@@ -563,7 +563,7 @@ public sealed class PdfMutateTests
         });
 
         Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
-        Assert.Contains("encrypt", error.Hint, StringComparison.Ordinal);
+        Assert.Contains("encrypt_document", error.Hint, StringComparison.Ordinal);
         using var reopened = new Document(output, "owner");
         Assert.True(reopened.IsEncrypted);
         Assert.Equal("采购申请", reopened.Info.Subject);
@@ -577,12 +577,12 @@ public sealed class PdfMutateTests
     [InlineData("reader", Permissions.PrintDocument | Permissions.AssembleDocument, "rotate", null)]
     [InlineData("reader", Permissions.PrintDocument | Permissions.AssembleDocument, "metadata", "keeps the input's encryption")]
     [InlineData("reader", Permissions.PrintDocument | Permissions.ModifyTextAnnotations, "rotate", "keeps the input's encryption")]
-    [InlineData("reader", Permissions.PrintDocument | Permissions.FillForm, "decrypt", "is not encrypted")]
-    [InlineData("reader", Permissions.PrintDocument | Permissions.FillForm, "encrypt", "encrypt operation set")]
+    [InlineData("reader", Permissions.PrintDocument | Permissions.FillForm, "decrypt_document", "is not encrypted")]
+    [InlineData("reader", Permissions.PrintDocument | Permissions.FillForm, "encrypt_document", "encrypt operation set")]
     [InlineData("reader", Permissions.PrintDocument | Permissions.ModifyContent, "metadata", null)]
-    [InlineData("reader", Permissions.PrintDocument | Permissions.ModifyContent, "decrypt", "is not encrypted")]
+    [InlineData("reader", Permissions.PrintDocument | Permissions.ModifyContent, "decrypt_document", "is not encrypted")]
     [InlineData("owner", Permissions.PrintDocument | Permissions.FillForm, "metadata", null)]
-    [InlineData("owner", Permissions.PrintDocument, "decrypt", null)]
+    [InlineData("owner", Permissions.PrintDocument, "decrypt_document", null)]
     public void Edit_DisclosesAModificationItsUserPermissionsForbid(
         string password, Permissions granted, string change, string? hint)
     {
@@ -606,11 +606,11 @@ public sealed class PdfMutateTests
                 [
                     change switch
                     {
-                        "metadata" => new SetMetadataOp { Title = "Changed" },
+                        "metadata" => new SetPropertiesOp { Title = "Changed" },
                         "field" => new SetFormFieldOp { Name = "Customer", Value = "Contoso" },
-                        "rotate" => new RotatePagesOp { Pages = "1", Angle = 90 },
-                        "decrypt" => new DecryptPdfOp(),
-                        _ => new EncryptPdfOp
+                        "rotate" => new RotatePagesOp { Pages = "1", Rotation = 90 },
+                        "decrypt_document" => new DecryptDocumentOp(),
+                        _ => new EncryptDocumentOp
                         {
                             UserPasswordEnv = "PDF_USER",
                             OwnerPasswordEnv = "PDF_OWNER",
@@ -652,14 +652,14 @@ public sealed class PdfMutateTests
             Input = input,
             Batch = new PdfOpsBatch
             {
-                Ops = [new SetMetadataOp { Title = "Changed" }],
+                Ops = [new SetPropertiesOp { Title = "Changed" }],
             },
             Output = TestOutput.At(fixture.File("owner-only.out.pdf")),
         });
 
         Warning warning = Assert.Single(result.Warnings!, static item => item.Code == WarningCodes.ProtectionNotEnforced);
         Assert.StartsWith(
-            "The input has no open password and was opened without its owner password, so its reader permissions apply; they do not allow set_metadata;",
+            "The input has no open password and was opened without its owner password, so its reader permissions apply; they do not allow set_properties;",
             warning.Message,
             StringComparison.Ordinal);
         Assert.DoesNotContain("user password", warning.Message, StringComparison.Ordinal);
@@ -676,7 +676,7 @@ public sealed class PdfMutateTests
             Input = input,
             Batch = new PdfOpsBatch
             {
-                Ops = [new SetMetadataOp { Title = "Changed" }, new DecryptPdfOp()],
+                Ops = [new SetPropertiesOp { Title = "Changed" }, new DecryptDocumentOp()],
             },
             Output = TestOutput.At(output),
             Password = new Secret("reader"),
@@ -684,7 +684,7 @@ public sealed class PdfMutateTests
         });
 
         Warning warning = Assert.Single(result.Warnings!, static item => item.Code == WarningCodes.ProtectionNotEnforced);
-        Assert.Contains("do not allow set_metadata, decrypt;", warning.Message, StringComparison.Ordinal);
+        Assert.Contains("do not allow set_properties, decrypt_document;", warning.Message, StringComparison.Ordinal);
         Assert.Contains("would change it", warning.Message, StringComparison.Ordinal);
         Assert.DoesNotContain("changed it", warning.Message, StringComparison.Ordinal);
         Assert.Contains("would not be encrypted", warning.Hint, StringComparison.Ordinal);
@@ -701,8 +701,8 @@ public sealed class PdfMutateTests
         {
             Ops =
             [
-                new SetMetadataOp { Title = "Changed" },
-                new RemoveAttachmentOp { Name = "missing.bin" },
+                new SetPropertiesOp { Title = "Changed" },
+                new DeleteAttachmentOp { Name = "missing.bin" },
             ],
         };
 
@@ -723,7 +723,7 @@ public sealed class PdfMutateTests
         });
         Assert.True(partial.HasFailures);
         Assert.Equal([OpStatuses.Ok, OpStatuses.Failed], partial.Applied.Select(static item => item.Status));
-        Assert.Equal(["metadata/title"], partial.Applied[0].Targets);
+        Assert.Equal(["property/title"], partial.Applied[0].Targets);
         Assert.Equal(["attachment/missing.bin"], partial.Applied[1].Targets);
         Assert.Equal("ATTACHMENT_NOT_FOUND", partial.Applied[1].Error!.Code);
         Assert.Equal("missing.bin", partial.Applied[1].Error!.Details!["requested"]!.GetValue<string>());
@@ -739,7 +739,7 @@ public sealed class PdfMutateTests
             Input = input,
             Batch = new PdfOpsBatch
             {
-                Ops = [new RotatePagesOp { Pages = "1", Angle = 90 }],
+                Ops = [new RotatePagesOp { Pages = "1", Rotation = 90 }],
             },
             Output = TestOutput.At(dryOutput),
             Options = new EditCommandOptions { DryRun = true },
@@ -775,7 +775,7 @@ public sealed class PdfMutateTests
             {
                 Ops =
                 [
-                    new OptimizePdfOp
+                    new OptimizeDocumentOp
                     {
                         DownsampleImagesDpi = 72,
                         ImageQuality = 30,
@@ -905,9 +905,9 @@ public sealed class PdfMutateTests
             {
                 Ops =
                 [
-                    new DeleteBookmarksOp { Indexes = ["9"] },
-                    new DeleteBookmarksOp { Indexes = ["1/5"] },
-                    new DeleteBookmarksOp { Indexes = ["9/1"] },
+                    new DeleteBookmarksOp { Bookmarks = ["9"] },
+                    new DeleteBookmarksOp { Bookmarks = ["1/5"] },
+                    new DeleteBookmarksOp { Bookmarks = ["9/1"] },
                     new AddBookmarkOp { Title = "Detail", Page = 1, Parent = "2/1" },
                 ],
             },
@@ -952,7 +952,7 @@ public sealed class PdfMutateTests
         });
 
         PdfOutlineItem[] outline = OutlineOf(fixture, outlined);
-        Assert.Equal(["1 Intro 1", "1/1 Scope 2"], outline.Select(static item => $"{item.Index} {item.Title} {item.Page}"));
+        Assert.Equal(["1 Intro 1", "1/1 Scope 2"], outline.Select(static item => $"{item.Bookmark} {item.Title} {item.Page}"));
 
         string edited = fixture.File("indexes.edited.pdf");
         PdfEdit.Run(fixture.Session, new PdfEditRequest
@@ -962,8 +962,8 @@ public sealed class PdfMutateTests
             {
                 Ops =
                 [
-                    new DeleteBookmarksOp { Indexes = [outline[1].Index] },
-                    new AddBookmarkOp { Title = "Detail", Page = outline[1].Page!.Value, Parent = outline[0].Index },
+                    new DeleteBookmarksOp { Bookmarks = [outline[1].Bookmark] },
+                    new AddBookmarkOp { Title = "Detail", Page = outline[1].Page!.Value, Parent = outline[0].Bookmark },
                 ],
             },
             Output = TestOutput.At(edited),
@@ -971,7 +971,7 @@ public sealed class PdfMutateTests
 
         Assert.Equal(
             ["1 Intro 1", "1/1 Detail 2"],
-            OutlineOf(fixture, edited).Select(static item => $"{item.Index} {item.Title} {item.Page}"));
+            OutlineOf(fixture, edited).Select(static item => $"{item.Bookmark} {item.Title} {item.Page}"));
     }
 
     [Fact]
@@ -986,7 +986,7 @@ public sealed class PdfMutateTests
             document.Outlines.Add(Bookmark(document, "A/B", 3));
         });
         PdfOutlineItem slashed = Assert.Single(OutlineOf(fixture, input), static item => item.Title == "A/B");
-        Assert.Equal("2", slashed.Index);
+        Assert.Equal("2", slashed.Bookmark);
 
         string edited = fixture.File("slash.edited.pdf");
         PdfEdit.Run(fixture.Session, new PdfEditRequest
@@ -994,14 +994,14 @@ public sealed class PdfMutateTests
             Input = input,
             Batch = new PdfOpsBatch
             {
-                Ops = [new DeleteBookmarksOp { Indexes = [slashed.Index] }],
+                Ops = [new DeleteBookmarksOp { Bookmarks = [slashed.Bookmark] }],
             },
             Output = TestOutput.At(edited),
         });
 
         Assert.Equal(
             ["1 A 1", "1/1 B 2"],
-            OutlineOf(fixture, edited).Select(static item => $"{item.Index} {item.Title} {item.Page}"));
+            OutlineOf(fixture, edited).Select(static item => $"{item.Bookmark} {item.Title} {item.Page}"));
     }
 
     [Fact]
@@ -1023,8 +1023,8 @@ public sealed class PdfMutateTests
             {
                 Ops =
                 [
-                    new DeleteBookmarksOp { Indexes = [outline[1].Index] },
-                    new AddBookmarkOp { Title = "Detail", Page = 3, Parent = outline[0].Index },
+                    new DeleteBookmarksOp { Bookmarks = [outline[1].Bookmark] },
+                    new AddBookmarkOp { Title = "Detail", Page = 3, Parent = outline[0].Bookmark },
                 ],
             },
             Output = TestOutput.At(edited),
@@ -1032,7 +1032,7 @@ public sealed class PdfMutateTests
 
         Assert.Equal(
             ["1 Results 1", "1/1 Detail 3"],
-            OutlineOf(fixture, edited).Select(static item => $"{item.Index} {item.Title} {item.Page}"));
+            OutlineOf(fixture, edited).Select(static item => $"{item.Bookmark} {item.Title} {item.Page}"));
     }
 
     [Fact]
@@ -1055,8 +1055,8 @@ public sealed class PdfMutateTests
             {
                 Ops =
                 [
-                    new AddBookmarkOp { Title = "Child", Page = 3, Parent = outline[0].Index },
-                    new DeleteBookmarksOp { Indexes = [outline[1].Index] },
+                    new AddBookmarkOp { Title = "Child", Page = 3, Parent = outline[0].Bookmark },
+                    new DeleteBookmarksOp { Bookmarks = [outline[1].Bookmark] },
                 ],
             },
             Output = TestOutput.At(edited),
@@ -1064,7 +1064,7 @@ public sealed class PdfMutateTests
 
         Assert.Equal(
             ["1  1", "1/1 Child 3"],
-            OutlineOf(fixture, edited).Select(static item => $"{item.Index} {item.Title} {item.Page}"));
+            OutlineOf(fixture, edited).Select(static item => $"{item.Bookmark} {item.Title} {item.Page}"));
     }
 
     [Fact]
@@ -1084,14 +1084,14 @@ public sealed class PdfMutateTests
             Input = input,
             Batch = new PdfOpsBatch
             {
-                Ops = [new DeleteBookmarksOp { Indexes = ["1"] }, new DeleteBookmarksOp { Indexes = ["1"] }],
+                Ops = [new DeleteBookmarksOp { Bookmarks = ["1"] }, new DeleteBookmarksOp { Bookmarks = ["1"] }],
             },
             Output = TestOutput.At(edited),
         });
 
         Assert.Equal(
             ["1 Third 3"],
-            OutlineOf(fixture, edited).Select(static item => $"{item.Index} {item.Title} {item.Page}"));
+            OutlineOf(fixture, edited).Select(static item => $"{item.Bookmark} {item.Title} {item.Page}"));
     }
 
     [Fact]
@@ -1113,14 +1113,14 @@ public sealed class PdfMutateTests
             Input = input,
             Batch = new PdfOpsBatch
             {
-                Ops = [new DeleteBookmarksOp { Indexes = ["2"] }],
+                Ops = [new DeleteBookmarksOp { Bookmarks = ["2"] }],
             },
             Output = TestOutput.At(edited),
         });
 
         Assert.Equal(
             ["1 Parent 1", "1/1 Results 2", "2 Tail 1"],
-            OutlineOf(fixture, edited).Select(static item => $"{item.Index} {item.Title} {item.Page}"));
+            OutlineOf(fixture, edited).Select(static item => $"{item.Bookmark} {item.Title} {item.Page}"));
     }
 
     [Fact]
@@ -1140,14 +1140,14 @@ public sealed class PdfMutateTests
             Input = input,
             Batch = new PdfOpsBatch
             {
-                Ops = [new DeleteBookmarksOp { Indexes = ["1", "2"] }],
+                Ops = [new DeleteBookmarksOp { Bookmarks = ["1", "2"] }],
             },
             Output = TestOutput.At(edited),
         });
 
         Assert.Equal(
             ["1 Results 3"],
-            OutlineOf(fixture, edited).Select(static item => $"{item.Index} {item.Title} {item.Page}"));
+            OutlineOf(fixture, edited).Select(static item => $"{item.Bookmark} {item.Title} {item.Page}"));
     }
 
     [Fact]
@@ -1162,14 +1162,14 @@ public sealed class PdfMutateTests
             Input = input,
             Batch = new PdfOpsBatch
             {
-                Ops = [new DeleteBookmarksOp { Indexes = ["4/1", "2/1"] }],
+                Ops = [new DeleteBookmarksOp { Bookmarks = ["4/1", "2/1"] }],
             },
             Output = TestOutput.At(edited),
         });
 
         Assert.Equal(
             ["1 First 1", "2 Second 2", "3 Third 3", "4 Fourth 1", "4/1 Fourth.B 3"],
-            OutlineOf(fixture, edited).Select(static item => $"{item.Index} {item.Title} {item.Page}"));
+            OutlineOf(fixture, edited).Select(static item => $"{item.Bookmark} {item.Title} {item.Page}"));
     }
 
     [Fact]
@@ -1190,14 +1190,14 @@ public sealed class PdfMutateTests
             Input = input,
             Batch = new PdfOpsBatch
             {
-                Ops = [new DeleteBookmarksOp { Indexes = ["1"] }],
+                Ops = [new DeleteBookmarksOp { Bookmarks = ["1"] }],
             },
             Output = TestOutput.At(edited),
         });
 
         Assert.Equal(
             ["1 Results 3"],
-            OutlineOf(fixture, edited).Select(static item => $"{item.Index} {item.Title} {item.Page}"));
+            OutlineOf(fixture, edited).Select(static item => $"{item.Bookmark} {item.Title} {item.Page}"));
     }
 
     /// <summary>
@@ -1218,7 +1218,7 @@ public sealed class PdfMutateTests
             Input = input,
             Batch = new PdfOpsBatch
             {
-                Ops = [new DeleteBookmarksOp { Indexes = [first, second] }],
+                Ops = [new DeleteBookmarksOp { Bookmarks = [first, second] }],
             },
             Output = TestOutput.At(edited),
         });
@@ -1228,7 +1228,7 @@ public sealed class PdfMutateTests
         Assert.Equal(["bookmark/2", "bookmark/2/1", "bookmark/3"], result.Applied[0].Targets);
         Assert.Equal(
             ["1 First 1", "2 Fourth 1", "2/1 Fourth.A 2", "2/2 Fourth.B 3"],
-            OutlineOf(fixture, edited).Select(static item => $"{item.Index} {item.Title} {item.Page}"));
+            OutlineOf(fixture, edited).Select(static item => $"{item.Bookmark} {item.Title} {item.Page}"));
     }
 
     [Fact]
@@ -1243,7 +1243,7 @@ public sealed class PdfMutateTests
             Input = input,
             Batch = new PdfOpsBatch
             {
-                Ops = [new DeleteBookmarksOp { All = true }],
+                Ops = [new DeleteBookmarksOp()],
             },
             Output = TestOutput.At(edited),
         });
@@ -1278,7 +1278,7 @@ public sealed class PdfMutateTests
             Input = input,
             Batch = new PdfOpsBatch
             {
-                Ops = [new DeleteBookmarksOp { Indexes = [.. Enumerable.Range(1, 101).Select(static index => $"{index}")] }],
+                Ops = [new DeleteBookmarksOp { Bookmarks = [.. Enumerable.Range(1, 101).Select(static index => $"{index}")] }],
             },
             Output = TestOutput.At(edited),
         });
@@ -1299,7 +1299,7 @@ public sealed class PdfMutateTests
             Input = input,
             Batch = new PdfOpsBatch
             {
-                Ops = [new DeleteBookmarksOp { Indexes = ["1", "2/5"] }],
+                Ops = [new DeleteBookmarksOp { Bookmarks = ["1", "2/5"] }],
             },
             Output = TestOutput.At(fixture.File("partial.failed.pdf")),
         }));
@@ -1314,7 +1314,7 @@ public sealed class PdfMutateTests
             {
                 Ops =
                 [
-                    new DeleteBookmarksOp { Indexes = ["1", "2/5"] },
+                    new DeleteBookmarksOp { Bookmarks = ["1", "2/5"] },
                     new AddBookmarkOp { Title = "Added", Page = 1, Parent = "1" },
                 ],
             },
@@ -1328,7 +1328,7 @@ public sealed class PdfMutateTests
         Assert.Equal(["bookmark/1/1"], result.Applied[1].Targets);
         Assert.Equal(
             ["1 First 1", "1/1 Added 1", "2 Second 2", "2/1 Second.A 2", "3 Third 3", "4 Fourth 1", "4/1 Fourth.A 2", "4/2 Fourth.B 3"],
-            OutlineOf(fixture, edited).Select(static item => $"{item.Index} {item.Title} {item.Page}"));
+            OutlineOf(fixture, edited).Select(static item => $"{item.Bookmark} {item.Title} {item.Page}"));
     }
 
     /// <summary>Four top-level bookmarks; the second has one child and the fourth two.</summary>
@@ -1379,13 +1379,13 @@ public sealed class PdfMutateTests
             {
                 Ops =
                 [
-                    new AddLinkOp
+                    new AddHyperlinkOp
                     {
                         Page = 5,
                         Rect = new PdfRectInput { X = 10, Y = 10, Width = 20, Height = 20 },
                         Url = "https://example.com/",
                     },
-                    new InsertBlankPageOp { At = 5 },
+                    new InsertPageOp { At = 5 },
                 ],
             },
             Output = TestOutput.At(fixture.File("short.out.pdf")),
@@ -1635,7 +1635,7 @@ public sealed class PdfMutateTests
             Input = input,
             Batch = new PdfOpsBatch
             {
-                Ops = [new RedactTextOp { Pattern = "Portable", FillColor = fillColor }],
+                Ops = [new RedactTextOp { Find = "Portable", FillColor = fillColor }],
             },
             Output = TestOutput.At(output),
         });
@@ -1663,8 +1663,8 @@ public sealed class PdfMutateTests
             {
                 Ops =
                 [
-                    new RedactTextOp { Pattern = "Portable" },
-                    new RedactTextOp { Pattern = "ID 4711", Pages = "1" },
+                    new RedactTextOp { Find = "Portable" },
+                    new RedactTextOp { Find = "ID 4711", Pages = "1" },
                 ],
             },
             Output = TestOutput.At(fixture.File("unmatched.out.pdf")),
@@ -1702,11 +1702,11 @@ public sealed class PdfMutateTests
             {
                 Ops =
                 [
-                    new RedactTextOp { Pattern = "Jane Roe", Pages = "1" },
+                    new RedactTextOp { Find = "Jane Roe", Pages = "1" },
                     // "Jane Roe" spans x 110.7-162.0 on the baseline at y 720.
                     new RedactAreaOp { Page = 2, Rect = new PdfRectInput { X = 110, Y = 58, Width = 52, Height = 20 } },
                     // Nothing follows "order." on its line.
-                    new RedactTextOp { Pattern = "order.", Pages = "3" },
+                    new RedactTextOp { Find = "order.", Pages = "3" },
                 ],
             },
             Output = TestOutput.At(fixture.File("runs.out.pdf")),
@@ -1738,7 +1738,7 @@ public sealed class PdfMutateTests
         PdfEditResult result = PdfEdit.Run(fixture.Session, new PdfEditRequest
         {
             Input = input,
-            Batch = new PdfOpsBatch { Ops = [new RedactTextOp { Pattern = @"\d{18}|555\d{4}", Regex = true }] },
+            Batch = new PdfOpsBatch { Ops = [new RedactTextOp { Find = @"\d{18}|555\d{4}", Regex = true }] },
             Output = TestOutput.At(output),
             Verify = true,
         });
@@ -1770,7 +1770,7 @@ public sealed class PdfMutateTests
         PdfEditResult result = PdfEdit.Run(fixture.Session, new PdfEditRequest
         {
             Input = input,
-            Batch = new PdfOpsBatch { Ops = [new RedactTextOp { Pattern = @"555\d{4}", Regex = true }] },
+            Batch = new PdfOpsBatch { Ops = [new RedactTextOp { Find = @"555\d{4}", Regex = true }] },
             Output = TestOutput.At(output),
         });
 
@@ -1831,7 +1831,7 @@ public sealed class PdfMutateTests
         PdfEditResult edited = PdfEdit.Run(fixture.Session, new PdfEditRequest
         {
             Input = input,
-            Batch = new PdfOpsBatch { Ops = [new RedactTextOp { Pattern = "2026年10月31日" }] },
+            Batch = new PdfOpsBatch { Ops = [new RedactTextOp { Find = "2026年10月31日" }] },
             Output = TestOutput.At(output),
             Verify = true,
         });
@@ -1873,7 +1873,7 @@ public sealed class PdfMutateTests
         PdfEditResult edited = PdfEdit.Run(fixture.Session, new PdfEditRequest
         {
             Input = input,
-            Batch = new PdfOpsBatch { Ops = [new RedactTextOp { Pattern = "2026年10月" }] },
+            Batch = new PdfOpsBatch { Ops = [new RedactTextOp { Find = "2026年10月" }] },
             Output = TestOutput.At(fixture.File("twolines.out.pdf")),
             Verify = true,
         });

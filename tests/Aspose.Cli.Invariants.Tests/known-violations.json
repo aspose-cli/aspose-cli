@@ -808,13 +808,6 @@
       "actual": "styleData.size: a font size is named fontSize; styleData.bg: a fill is named fillColor"
     },
     {
-      "case": "C-R20 | v2/pdf/ops#add_watermark_text fixednames",
-      "invariant": "C-R20",
-      "rule": "C-R20",
-      "cause": "font-size-not-named-font-size",
-      "actual": "size: a font size is named fontSize"
-    },
-    {
       "case": "C-R20 | v2/words/document-read fixednames",
       "invariant": "C-R20",
       "rule": "C-R20",
@@ -934,27 +927,6 @@
       "actual": "zoom: measured in percent; name it *Percent"
     },
     {
-      "case": "C-R19 | v2/pdf/ops#decrypt",
-      "invariant": "C-R19",
-      "rule": "C-R19",
-      "cause": "op-name-without-noun",
-      "actual": "op decrypt is not <verb>_<noun> with a verb of the rule's table"
-    },
-    {
-      "case": "C-R19 | v2/pdf/ops#encrypt",
-      "invariant": "C-R19",
-      "rule": "C-R19",
-      "cause": "op-name-without-noun",
-      "actual": "op encrypt is not <verb>_<noun> with a verb of the rule's table"
-    },
-    {
-      "case": "C-R19 | v2/pdf/ops#optimize",
-      "invariant": "C-R19",
-      "rule": "C-R19",
-      "cause": "op-name-without-noun",
-      "actual": "op optimize is not <verb>_<noun> with a verb of the rule's table"
-    },
-    {
       "case": "C-R19 | v2/words/ops#protect",
       "invariant": "C-R19",
       "rule": "C-R19",
@@ -1025,20 +997,6 @@
       "actual": "op remove_hyperlink is not <verb>_<noun> with a verb of the rule's table"
     },
     {
-      "case": "C-R19 | v2/pdf/ops#remove_attachment",
-      "invariant": "C-R19",
-      "rule": "C-R19",
-      "cause": "op-verb-remove",
-      "actual": "op remove_attachment is not <verb>_<noun> with a verb of the rule's table"
-    },
-    {
-      "case": "C-R19 | v2/pdf/ops#remove_metadata",
-      "invariant": "C-R19",
-      "rule": "C-R19",
-      "cause": "op-verb-remove",
-      "actual": "op remove_metadata is not <verb>_<noun> with a verb of the rule's table"
-    },
-    {
       "case": "C-R19 | v2/words/ops#remove_comments",
       "invariant": "C-R19",
       "rule": "C-R19",
@@ -1071,7 +1029,7 @@
       "invariant": "C-R20",
       "rule": "C-R20",
       "cause": "ops-field-types-differ-across-products",
-      "actual": "cells string; pdf string; words enum"
+      "actual": "cells string; words enum"
     },
     {
       "case": "C-R20 | ops field location across products",
@@ -1123,53 +1081,11 @@
       "actual": "paperSize: a page size is named pageSize"
     },
     {
-      "case": "C-R20 | v2/pdf/ops#insert_blank_page fixednames",
-      "invariant": "C-R20",
-      "rule": "C-R20",
-      "cause": "page-size-not-named-page-size",
-      "actual": "size: a page size is named pageSize"
-    },
-    {
-      "case": "C-R20 | v2/pdf/ops#set_page_size fixednames",
-      "invariant": "C-R20",
-      "rule": "C-R20",
-      "cause": "page-size-not-named-page-size",
-      "actual": "size: a page size is named pageSize"
-    },
-    {
       "case": "C-R20 | v2/words/ops#pageSetupInput fixednames",
       "invariant": "C-R20",
       "rule": "C-R20",
       "cause": "page-size-not-named-page-size",
       "actual": "size: a page size is named pageSize"
-    },
-    {
-      "case": "C-R21 | pdf insert_blank_page reads back",
-      "invariant": "C-R21",
-      "rule": "C-R21",
-      "cause": "page-size-read-as-width-and-height-points",
-      "actual": "size \"Letter\" does not read back as widthPoints in pdf inspect"
-    },
-    {
-      "case": "C-R21 | pdf set_page_size reads back",
-      "invariant": "C-R21",
-      "rule": "C-R21",
-      "cause": "page-size-read-as-width-and-height-points",
-      "actual": "size \"Letter\" does not read back as widthPoints in pdf inspect"
-    },
-    {
-      "case": "C-R21 | v2/pdf/ops#insert_blank_page",
-      "invariant": "C-R21",
-      "rule": "C-R21",
-      "cause": "page-size-read-as-width-and-height-points",
-      "actual": "size: read back as widthPoints; size: writes enum(A3,A4,Legal,Letter), reads number"
-    },
-    {
-      "case": "C-R21 | v2/pdf/ops#set_page_size",
-      "invariant": "C-R21",
-      "rule": "C-R21",
-      "cause": "page-size-read-as-width-and-height-points",
-      "actual": "size: read back as widthPoints; size: writes enum(A3,A4,Legal,Letter), reads number"
     },
     {
       "case": "C-R21 | v2/words/ops#add_section",
@@ -1200,13 +1116,6 @@
       "actual": "setup.size \"letter\" does not read back as widthPoints in words inspect"
     },
     {
-      "case": "C-R17 | v2/pdf/ops#pageSize",
-      "invariant": "C-R17",
-      "rule": "C-R17",
-      "cause": "pdf-page-size-values-uppercase",
-      "actual": "the schema: enum values A3, A4, Letter, Legal are not lowercase kebab-case"
-    },
-    {
       "case": "C-R21 | pdf crop_pages reads back",
       "invariant": "C-R21",
       "rule": "C-R21",
@@ -1221,13 +1130,6 @@
       "actual": "rect: read back as cropBox; rect: writes object{height,width,x,y}, reads object{bottom,left,right,top}"
     },
     {
-      "case": "C-R21 | v2/pdf/ops#rotate_pages",
-      "invariant": "C-R21",
-      "rule": "C-R21",
-      "cause": "pdf-read-names-differ-from-op-fields",
-      "actual": "angle: read back as rotation"
-    },
-    {
       "case": "C-R21 | v2/pdf/ops#add_attachment",
       "invariant": "C-R21",
       "rule": "C-R21",
@@ -1239,28 +1141,21 @@
       "invariant": "C-R21",
       "rule": "C-R21",
       "cause": "pdf-state-not-read-back",
-      "actual": "text: no read reports it; position: no read reports it; font: no read reports it"
+      "actual": "text: no read reports it; placement: no read reports it; font: no read reports it"
     },
     {
       "case": "C-R21 | v2/pdf/ops#add_header_text",
       "invariant": "C-R21",
       "rule": "C-R21",
       "cause": "pdf-state-not-read-back",
-      "actual": "text: no read reports it; position: no read reports it; font: no read reports it"
-    },
-    {
-      "case": "C-R21 | v2/pdf/ops#add_link",
-      "invariant": "C-R21",
-      "rule": "C-R21",
-      "cause": "pdf-state-not-read-back",
-      "actual": "rect: no read reports it; url: no read reports it"
+      "actual": "text: no read reports it; placement: no read reports it; font: no read reports it"
     },
     {
       "case": "C-R21 | v2/pdf/ops#add_page_numbers",
       "invariant": "C-R21",
       "rule": "C-R21",
       "cause": "pdf-state-not-read-back",
-      "actual": "format: no read reports it; position: no read reports it; start: no read reports it; font: no read reports it"
+      "actual": "text: no read reports it; placement: no read reports it; start: no read reports it; font: no read reports it"
     },
     {
       "case": "C-R21 | v2/pdf/ops#add_stamp_image",
@@ -1281,21 +1176,7 @@
       "invariant": "C-R21",
       "rule": "C-R21",
       "cause": "pdf-state-not-read-back",
-      "actual": "text: no read reports it; font: no read reports it; size: no read reports it; color: no read reports it; opacity: no read reports it; rotation: no read reports it; layer: no read reports it"
-    },
-    {
-      "case": "C-R21 | v2/pdf/ops#set_metadata",
-      "invariant": "C-R21",
-      "rule": "C-R21",
-      "cause": "pdf-state-not-read-back",
-      "actual": "custom: no read reports it"
-    },
-    {
-      "case": "C-R28 | pdf code names",
-      "invariant": "C-R28",
-      "rule": "C-R28",
-      "cause": "pdf-verification-codes-have-a-product-prefix",
-      "actual": "PDF_ATTACHMENT_MISMATCH: a verification code carries no product prefix (PDF_); PDF_BOOKMARK_MISMATCH: a verification code carries no product prefix (PDF_); PDF_FIELD_NOT_FLATTENED: a verification code carries no product prefix (PDF_); PDF_F..."
+      "actual": "text: no read reports it; font: no read reports it; fontSize: no read reports it; color: no read reports it; opacity: no read reports it; rotation: no read reports it; layer: no read reports it"
     },
     {
       "case": "C-R01 | cells",
@@ -1354,13 +1235,6 @@
       "actual": "hits[] does not require text (it has snippet)"
     },
     {
-      "case": "C-R20 | v2/pdf/ops field size",
-      "invariant": "C-R20",
-      "rule": "C-R20",
-      "cause": "size-names-font-and-page-size",
-      "actual": "enum in insert_blank_page, set_page_size; number in add_watermark_text"
-    },
-    {
       "case": "C-R20 | v2/words/ops field size",
       "invariant": "C-R20",
       "rule": "C-R20",
@@ -1382,25 +1256,11 @@
       "actual": "passwordEnv: the source file's password is named sourcePasswordEnv"
     },
     {
-      "case": "C-R20 | v2/pdf/ops#insert_pages_from secrets",
-      "invariant": "C-R20",
-      "rule": "C-R20",
-      "cause": "source-password-named-password-env",
-      "actual": "passwordEnv: the source file's password is named sourcePasswordEnv"
-    },
-    {
       "case": "C-R38 | src/Aspose.Cli.Product.Cells bare commands",
       "invariant": "C-R38",
       "rule": "C-R38",
       "cause": "source-writes-commands-bare",
       "actual": "Engine/Mapping/RowShifts.cs: 'cells edit' is written bare; quote it or write aspose-cli before it"
-    },
-    {
-      "case": "C-R38 | src/Aspose.Cli.Product.Pdf bare commands",
-      "invariant": "C-R38",
-      "rule": "C-R38",
-      "cause": "source-writes-commands-bare",
-      "actual": "Contracts/PdfOps.cs: 'pdf inspect' is written bare; quote it or write aspose-cli before it"
     },
     {
       "case": "C-R20 | v2/words/ops#set_table_cell spelling",
@@ -1730,6 +1590,13 @@
       "rule": "C-R30",
       "cause": "words-targets-not-unit-address",
       "actual": "targets outside <unit>/<address>: add_section document; add_watermark document; set_default_font document; set_footer document; set_header document; set_page_numbers document; set_page_setup document; set_properties document"
+    },
+    {
+      "case": "C-R21 | v2/pdf/ops#add_hyperlink",
+      "invariant": "C-R21",
+      "rule": "C-R21",
+      "cause": "pdf-state-not-read-back",
+      "actual": "rect: no read reports it; url: no read reports it"
     }
   ]
 }

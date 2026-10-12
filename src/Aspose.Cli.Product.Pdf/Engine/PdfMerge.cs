@@ -50,7 +50,7 @@ internal static class PdfMerge
                 new Warning(WarningCodes.LossyConversion, $"Attachment '{name}' of '{path}' was left out: an earlier input has an attachment of that name, which the merged document keeps.")
                 {
                     Location = $"{path} attachment {name}",
-                    Hint = "Rename the attachment in that input (remove_attachment, then add_attachment with another name) and merge again, or deliver the file alongside the merged PDF.",
+                    Hint = "Rename the attachment in that input (delete_attachment, then add_attachment with another name) and merge again, or deliver the file alongside the merged PDF.",
                     AffectsCompleteness = true,
                 }));
             if (PortfolioNotKept(source, path) is { } portfolio)
@@ -75,7 +75,7 @@ internal static class PdfMerge
         }
         if (navigation.ToWarning(
                 "lost their exact target: merged bookmarks open their page at Fit zoom, and named destinations are not carried into the merged document",
-                "Re-create location-sensitive bookmarks (add_bookmark) and links (add_link) on the merged PDF.")
+                "Re-create location-sensitive bookmarks (add_bookmark) and links (add_hyperlink) on the merged PDF.")
             is { } degraded)
         {
             warnings.Add(degraded);

@@ -36,8 +36,8 @@ internal static partial class ContractRules
         [("v2/cells/ops", "set_sheet_view", "zoom")] = "percent",
         [("v2/cells/ops", "styleData", "size")] = Points,
 
-        [("v2/pdf/ops", "add_watermark_text", "size")] = Points,
-        [("v2/pdf/ops", "optimize", "downsampleImagesDpi")] = "dpi",
+        [("v2/pdf/ops", "add_watermark_text", "fontSize")] = Points,
+        [("v2/pdf/ops", "optimize_document", "downsampleImagesDpi")] = "dpi",
         [("v2/pdf/ops", "pdfRectInput", "height")] = Points,
         [("v2/pdf/ops", "pdfRectInput", "width")] = Points,
         [("v2/pdf/ops", "pdfRectInput", "x")] = Points,

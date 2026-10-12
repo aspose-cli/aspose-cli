@@ -27,9 +27,9 @@ public sealed class PdfRendererGoldenTests
             2     841.89 x 595.28  90
 
             outline:
-            index  title    page
-            1      Intro    1
-            1.1      Scope  -
+            bookmark  title    page
+            1         Intro    1
+            1.1         Scope  -
 
             forms:
             acro: 4 field(s), read-only
@@ -84,7 +84,7 @@ public sealed class PdfRendererGoldenTests
 
             ### outline
 
-            | index | title | page |
+            | bookmark | title | page |
             | --- | --- | --- |
             | 1 | Intro | 1 |
             | 1.1 |   Scope | - |
@@ -268,8 +268,8 @@ public sealed class PdfRendererGoldenTests
             PageCount = 3,
             DistinctPageSizes =
             [
-                new PdfPageSizeSummary { WidthPoints = 612, HeightPoints = 792, PageCount = 2 },
-                new PdfPageSizeSummary { WidthPoints = 595.276, HeightPoints = 841.89, PageCount = 1 },
+                new PdfPageSizeSummary { PageSize = PageSizeInfo.Of(612, 792), PageCount = 2 },
+                new PdfPageSizeSummary { PageSize = PageSizeInfo.Of(595.276, 841.89), PageCount = 1 },
             ],
             Version = "1.7",
             Encrypted = false,
@@ -292,26 +292,26 @@ public sealed class PdfRendererGoldenTests
             [
                 new PdfPageInfo
                 {
-                    Page = 1, WidthPoints = 612, HeightPoints = 792, Rotation = 0,
+                    Page = 1, PageSize = PageSizeInfo.Of(612, 792), Rotation = 0,
                     MediaBox = new PdfBox { Left = 0, Bottom = 0, Right = 612, Top = 792 },
                     CropBox = new PdfBox { Left = 0, Bottom = 0, Right = 612, Top = 792 },
                 },
                 new PdfPageInfo
                 {
-                    Page = 2, WidthPoints = 841.89, HeightPoints = 595.276, Rotation = 90,
+                    Page = 2, PageSize = PageSizeInfo.Of(841.89, 595.276), Rotation = 90,
                     MediaBox = new PdfBox { Left = 0, Bottom = 0, Right = 595.276, Top = 841.89 },
                     CropBox = new PdfBox { Left = 0, Bottom = 0, Right = 595.276, Top = 841.89 },
                 },
             ],
             PageLabels =
             [
-                new PdfPageLabelInfo { StartPage = 1, Style = "roman", Prefix = "A-", StartingValue = 1 },
-                new PdfPageLabelInfo { StartPage = 3, Style = "decimal", StartingValue = 1 },
+                new PdfPageLabelInfo { StartPage = 1, NumberStyle = "roman", Prefix = "A-", StartingValue = 1 },
+                new PdfPageLabelInfo { StartPage = 3, NumberStyle = "decimal", StartingValue = 1 },
             ],
             Outline =
             [
-                new PdfOutlineItem { Index = "1", Title = "Intro", Level = 1, Page = 1 },
-                new PdfOutlineItem { Index = "1.1", Title = "Scope", Level = 2 },
+                new PdfOutlineItem { Bookmark = "1", Title = "Intro", Level = 1, Page = 1 },
+                new PdfOutlineItem { Bookmark = "1.1", Title = "Scope", Level = 2 },
             ],
             Forms = new PdfFormInfo { Kind = "acro", FieldCount = 4, ReadOnly = true, Fields = [] },
             Attachments =

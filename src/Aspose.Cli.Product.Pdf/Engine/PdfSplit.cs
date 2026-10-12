@@ -69,7 +69,7 @@ internal static class PdfSplit
 
         if (new PdfNavigationCensus(bookmarks, links, namedDestinations).ToWarning(
                 "lost their exact target in the parts: bookmarks open their page at Fit zoom, links to a page of another part lead nowhere, and named destinations are not carried into the parts",
-                "Re-create location-sensitive bookmarks (add_bookmark) and links (add_link) on the parts that need them.")
+                "Re-create location-sensitive bookmarks (add_bookmark) and links (add_hyperlink) on the parts that need them.")
             is { } degraded)
         {
             warnings.Add(degraded);

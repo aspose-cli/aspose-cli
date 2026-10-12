@@ -60,7 +60,7 @@ public sealed class PdfOutputEncryptionTests : IDisposable
     public void EditThatDecrypts_DisclosesTheRemovedEncryption()
     {
         JsonNode result = Succeeds(Run("pdf", "edit", "locked.pdf", "--password-env", "PDF_USER",
-            "--ops", """[{"op":"decrypt"}]""", "--out", "decrypted.pdf"));
+            "--ops", """[{"op":"decrypt_document"}]""", "--out", "decrypted.pdf"));
 
         Assert.False(Encrypted(_workspace.File("decrypted.pdf")));
         Assert.False(result["output"]!["encrypted"]!.GetValue<bool>());
@@ -235,7 +235,7 @@ public sealed class PdfOutputEncryptionTests : IDisposable
     [Fact]
     public void EncryptOnAnEncryptedInput_KeepsDocumentInformationBeyondLatin1()
     {
-        JsonNode result = Succeeds(Run("pdf", "edit", "owner-only.pdf", "--ops", """[{"op":"set_metadata","title":"采购申请"}]""",
+        JsonNode result = Succeeds(Run("pdf", "edit", "owner-only.pdf", "--ops", """[{"op":"set_properties","title":"采购申请"}]""",
             "--out", "edited.pdf", "--encrypt-env", "PDF_NEW"));
 
         Assert.True(result["output"]!["encrypted"]!.GetValue<bool>());
@@ -254,7 +254,7 @@ public sealed class PdfOutputEncryptionTests : IDisposable
         OpensOnlyWithTheNewPassword(_workspace.File("merged.pdf"));
     }
 
-    private const string Metadata = """[{"op":"set_metadata","title":"Edited"}]""";
+    private const string Metadata = """[{"op":"set_properties","title":"Edited"}]""";
 
     private CliResult Run(params string[] arguments) =>
         _workspace.RunWithEnv(Passwords, [.. arguments, "--output-format", "json"]);

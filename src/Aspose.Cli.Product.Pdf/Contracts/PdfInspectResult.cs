@@ -58,7 +58,8 @@ public sealed record PdfInspectResult() : EngineResultEnvelope("inspect-result",
 
     /// <summary>
     /// Document information and XMP properties as the file stores them, with
-    /// <c>--detail properties</c>; XMP keys start with <c>xmp:</c>. <c>creationDate</c> and
+    /// <c>--detail properties</c>; a custom document information entry keeps its own key
+    /// (<c>info:</c> before it when it spells a reported name), and XMP keys start with <c>xmp:</c>. <c>creationDate</c> and
     /// <c>modificationDate</c> are ISO 8601 with a fraction of a second only when it is not zero,
     /// as XMP writes dates (<c>2026-10-01T06:01:53Z</c>): in UTC ending in <c>Z</c> when the stored
     /// date states an offset, without <c>Z</c> when it states none, and the stored text unchanged
@@ -120,13 +121,8 @@ public sealed record PdfSummary
 /// <summary>One distinct page size and how many pages of the document have it.</summary>
 public sealed record PdfPageSizeSummary
 {
-    /// <summary>The page width in points.</summary>
-    [ExclusiveMinimum(0)]
-    public required double WidthPoints { get; init; }
-
-    /// <summary>The page height in points.</summary>
-    [ExclusiveMinimum(0)]
-    public required double HeightPoints { get; init; }
+    /// <summary>The size of the visible page.</summary>
+    public required PageSizeInfo PageSize { get; init; }
 
     /// <summary>How many pages have this size.</summary>
     [Minimum(1)]
@@ -140,17 +136,12 @@ public sealed record PdfPageInfo
     [Minimum(1)]
     public required int Page { get; init; }
 
-    /// <summary>The width of the visible page in points.</summary>
-    [ExclusiveMinimum(0)]
-    public required double WidthPoints { get; init; }
+    /// <summary>The size of the visible page, as <c>insert_page</c> and <c>set_page_size</c> set it.</summary>
+    public required PageSizeInfo PageSize { get; init; }
 
-    /// <summary>The height of the visible page in points.</summary>
-    [ExclusiveMinimum(0)]
-    public required double HeightPoints { get; init; }
-
-    /// <summary>Clockwise page rotation in degrees.</summary>
-    [AllowedValues(0, 90, 180, 270)]
-    public required int Rotation { get; init; }
+    /// <summary>Clockwise page rotation in degrees, a quarter turn at a time: 0, 90, 180 or 270.</summary>
+    [Minimum(0), Maximum(270), MultipleOf(90)]
+    public required double Rotation { get; init; }
 
     /// <summary>The page's media box, the full physical page.</summary>
     public required PdfBox MediaBox { get; init; }
@@ -166,9 +157,9 @@ public sealed record PdfPageLabelInfo
     [Minimum(1)]
     public required int StartPage { get; init; }
 
-    /// <summary>The numbering style, one of the values <c>set_page_labels</c> accepts.</summary>
-    [AllowedValues("arabic", "roman-upper", "roman-lower", "letters-upper", "letters-lower", "none")]
-    public required string Style { get; init; }
+    /// <summary>How the label numbers are written, one of the values <c>set_page_labels</c> accepts.</summary>
+    [AllowedValues(typeof(PageNumberStyles))]
+    public required string NumberStyle { get; init; }
 
     /// <summary>The text put before each label's number; absent when there is none.</summary>
     public string? Prefix { get; init; }
@@ -205,12 +196,12 @@ public sealed record PdfOutlineItem
     public required int Level { get; init; }
 
     /// <summary>
-    /// The bookmark's 1-based positions from the top level down, joined by '/': <c>2/1</c> is the
-    /// first child of the second top-level bookmark. <c>delete_bookmarks.indexes</c> and
-    /// <c>add_bookmark.parent</c> accept it.
+    /// The bookmark's address: its 1-based positions from the top level down, joined by '/', so
+    /// <c>2/1</c> is the first child of the second top-level bookmark. <c>delete_bookmarks.bookmarks</c>
+    /// and <c>add_bookmark.parent</c> take it.
     /// </summary>
     [Pattern("^[1-9][0-9]*(/[1-9][0-9]*)*$")]
-    public required string Index { get; init; }
+    public required string Bookmark { get; init; }
 
     /// <summary>The page the bookmark opens; omitted when its destination is not a page of the document.</summary>
     [Minimum(1)]
@@ -286,7 +277,7 @@ public sealed record PdfFormField
 /// <summary>One embedded file.</summary>
 public sealed record PdfAttachmentInfo
 {
-    /// <summary>The attachment's file name, which <c>remove_attachment</c> accepts.</summary>
+    /// <summary>The attachment's file name, which <c>delete_attachment</c> accepts.</summary>
     public required string Name { get; init; }
 
     /// <summary>The attachment's media type; absent when the file does not state one.</summary>

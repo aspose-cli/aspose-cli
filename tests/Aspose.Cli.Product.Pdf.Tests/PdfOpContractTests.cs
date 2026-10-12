@@ -16,38 +16,42 @@ public sealed class PdfOpContractTests
         SchemaTestRegistry.CreateOptions()));
 
     [Theory]
-    [InlineData("""{"op":"insert_blank_page","at":1,"size":"LETTER"}""")]
+    [InlineData("""{"op":"insert_page","at":1,"pageSize":{"preset":"LETTER"}}""")]
+    [InlineData("""{"op":"set_page_size","pages":"1","pageSize":{"preset":"A4"}}""")]
+    [InlineData("""{"op":"set_page_size","pages":"1","pageSize":{"width":300}}""")]
+    [InlineData("""{"op":"set_page_size","pages":"1","pageSize":{"preset":"a4","width":300,"height":400}}""")]
     [InlineData("""{"op":"set_page_size","pages":"1","size":"a4"}""")]
     [InlineData("""{"op":"crop_pages","pages":"1","rect":{"x":-1,"y":0,"width":10,"height":10}}""")]
     [InlineData("""{"op":"redact_area","page":1,"rect":{"x":0,"y":-5,"width":10,"height":10}}""")]
-    [InlineData("""{"op":"add_link","page":1,"rect":{"x":0,"y":0,"width":10,"height":10},"url":"ftp://example.com/a"}""")]
-    [InlineData("""{"op":"add_link","page":1,"rect":{"x":0,"y":0,"width":10,"height":10},"url":"file:///etc/passwd"}""")]
-    [InlineData("""{"op":"add_link","page":1,"rect":{"x":0,"y":0,"width":10,"height":10},"url":"javascript:alert(1)"}""")]
-    [InlineData("""{"op":"redact_text","pattern":""}""")]
-    [InlineData("""{"op":"rotate_pages","pages":"0","angle":90}""")]
+    [InlineData("""{"op":"add_hyperlink","page":1,"rect":{"x":0,"y":0,"width":10,"height":10},"url":"ftp://example.com/a"}""")]
+    [InlineData("""{"op":"add_hyperlink","page":1,"rect":{"x":0,"y":0,"width":10,"height":10},"url":"file:///etc/passwd"}""")]
+    [InlineData("""{"op":"add_hyperlink","page":1,"rect":{"x":0,"y":0,"width":10,"height":10},"url":"javascript:alert(1)"}""")]
+    [InlineData("""{"op":"redact_text","find":""}""")]
+    [InlineData("""{"op":"rotate_pages","pages":"0","rotation":90}""")]
     [InlineData("""{"op":"flatten_forms","fields":[""]}""")]
     [InlineData("""{"op":"flatten_forms","fields":[]}""")]
     [InlineData("""{"op":"flatten_forms","all":true}""")]
     [InlineData("""{"op":"add_attachment","path":" "}""")]
     [InlineData("""{"op":"add_attachment","path":"scan.png","mimeType":"png"}""")]
     [InlineData("""{"op":"add_attachment","path":"scan.png","mimeType":"image/png; q=1"}""")]
-    [InlineData("""{"op":"set_metadata","custom":{"author":null}}""")]
+    [InlineData("""{"op":"set_properties","custom":{"author":null}}""")]
     [InlineData("""{"op":"add_bookmark","title":"Intro","page":1,"parent":""}""")]
     [InlineData("""{"op":"add_bookmark","title":"Intro","page":1,"parent":"1/"}""")]
-    [InlineData("""{"op":"delete_bookmarks","indexes":[""]}""")]
-    [InlineData("""{"op":"delete_bookmarks","indexes":["0"]}""")]
-    [InlineData("""{"op":"delete_bookmarks","indexes":["01"]}""")]
-    [InlineData("""{"op":"delete_bookmarks","indexes":["1/"]}""")]
-    [InlineData("""{"op":"delete_bookmarks","indexes":["/1"]}""")]
-    [InlineData("""{"op":"delete_bookmarks","indexes":["a"]}""")]
-    [InlineData("""{"op":"delete_bookmarks","indexes":["1//2"]}""")]
-    [InlineData("""{"op":"delete_bookmarks","indexes":["1/0"]}""")]
-    [InlineData("""{"op":"delete_bookmarks","indexes":["1"],"all":true}""")]
-    [InlineData("""{"op":"delete_bookmarks"}""")]
+    [InlineData("""{"op":"add_bookmark","title":"Q1/Q2","page":1}""")]
+    [InlineData("""{"op":"delete_bookmarks","bookmarks":[""]}""")]
+    [InlineData("""{"op":"delete_bookmarks","bookmarks":["0"]}""")]
+    [InlineData("""{"op":"delete_bookmarks","bookmarks":["01"]}""")]
+    [InlineData("""{"op":"delete_bookmarks","bookmarks":["1/"]}""")]
+    [InlineData("""{"op":"delete_bookmarks","bookmarks":["/1"]}""")]
+    [InlineData("""{"op":"delete_bookmarks","bookmarks":["a"]}""")]
+    [InlineData("""{"op":"delete_bookmarks","bookmarks":["1//2"]}""")]
+    [InlineData("""{"op":"delete_bookmarks","bookmarks":["1/0"]}""")]
+    [InlineData("""{"op":"delete_bookmarks","all":true}""")]
+    [InlineData("""{"op":"delete_bookmarks","indexes":["1"]}""")]
     [InlineData("""{"op":"delete_bookmarks","path":"Intro"}""")]
     [InlineData("""{"op":"delete_bookmarks","index":"1"}""")]
-    [InlineData("""{"op":"delete_bookmarks","indexes":[]}""")]
-    [InlineData("""{"op":"delete_bookmarks","indexes":"1"}""")]
+    [InlineData("""{"op":"delete_bookmarks","bookmarks":[]}""")]
+    [InlineData("""{"op":"delete_bookmarks","bookmarks":"1"}""")]
     public void ParserAndSchema_RejectTheSameInvalidOperation(string operation)
     {
         string batch = $$"""{"ops":[{{operation}}]}""";
@@ -59,14 +63,14 @@ public sealed class PdfOpContractTests
     }
 
     [Theory]
-    [InlineData("""{"op":"insert_blank_page","at":1,"size":"Letter"}""")]
+    [InlineData("""{"op":"insert_page","at":1,"pageSize":{"preset":"letter"}}""")]
     [InlineData("""{"op":"crop_pages","pages":"1","rect":{"x":0,"y":0,"width":10,"height":10}}""")]
-    [InlineData("""{"op":"add_link","page":1,"rect":{"x":0,"y":0,"width":10,"height":10},"url":"https://example.com/a"}""")]
-    [InlineData("""{"op":"add_link","page":1,"rect":{"x":0,"y":0,"width":10,"height":10},"url":"mailto:team@example.com"}""")]
+    [InlineData("""{"op":"add_hyperlink","page":1,"rect":{"x":0,"y":0,"width":10,"height":10},"url":"https://example.com/a"}""")]
+    [InlineData("""{"op":"add_hyperlink","page":1,"rect":{"x":0,"y":0,"width":10,"height":10},"url":"mailto:team@example.com"}""")]
     [InlineData("""{"op":"flatten_forms"}""")]
-    [InlineData("""{"op":"delete_bookmarks","indexes":["2/1"],"all":false}""")]
-    [InlineData("""{"op":"delete_bookmarks","all":true}""")]
-    [InlineData("""{"op":"add_bookmark","title":"I/O","page":1,"parent":"10/2"}""")]
+    [InlineData("""{"op":"delete_bookmarks","bookmarks":["2/1"]}""")]
+    [InlineData("""{"op":"delete_bookmarks"}""")]
+    [InlineData("""{"op":"add_bookmark","title":"Inputs and outputs","page":1,"parent":"10/2"}""")]
     public void ParserAndSchema_AcceptTheSameValidOperation(string operation)
     {
         string batch = $$"""{"ops":[{{operation}}]}""";
@@ -77,13 +81,13 @@ public sealed class PdfOpContractTests
     }
 
     [Theory]
-    [InlineData("""["2","2"]""", "indexes must not repeat \"2\"")]
-    [InlineData("""["2/1","2"]""", "indexes must not list \"2/1\" with \"2\": deleting bookmark 2 already deletes its children")]
-    [InlineData("""["1","3/2/1","3"]""", "indexes must not list \"3/2/1\" with \"3\": deleting bookmark 3 already deletes its children")]
-    public void DeleteBookmarks_RefusesAnIndexAnotherListedIndexAlreadyDeletes(string indexes, string reason)
+    [InlineData("""["2","2"]""", "bookmarks must not repeat \"2\"")]
+    [InlineData("""["2/1","2"]""", "bookmarks must not list \"2/1\" with \"2\": deleting bookmark 2 already deletes its children")]
+    [InlineData("""["1","3/2/1","3"]""", "bookmarks must not list \"3/2/1\" with \"3\": deleting bookmark 3 already deletes its children")]
+    public void DeleteBookmarks_RefusesABookmarkAnotherListedBookmarkAlreadyDeletes(string bookmarks, string reason)
     {
         CliException error = Assert.Throws<CliException>(() => Parse(
-            $$"""{"ops":[{"op":"delete_bookmarks","indexes":{{indexes}}}]}"""));
+            $$"""{"ops":[{"op":"delete_bookmarks","bookmarks":{{bookmarks}}}]}"""));
 
         Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
         Assert.Contains(reason, error.Message, StringComparison.Ordinal);
@@ -94,18 +98,18 @@ public sealed class PdfOpContractTests
         Assert.Equal(
             ["1", "10", "2/1", "2/10"],
             Assert.IsType<DeleteBookmarksOp>(Assert.Single(Parse(
-                """{"ops":[{"op":"delete_bookmarks","indexes":["1","10","2/1","2/10"]}]}""").Ops)).Indexes!);
+                """{"ops":[{"op":"delete_bookmarks","bookmarks":["1","10","2/1","2/10"]}]}""").Ops)).Bookmarks!);
 
     [Theory]
-    [InlineData("""{"op":"delete_bookmarks","indexes":["1","Results"]}""", "indexes[1]")]
+    [InlineData("""{"op":"delete_bookmarks","bookmarks":["1","Results"]}""", "bookmarks[1]")]
     [InlineData("""{"op":"add_bookmark","title":"Intro","page":1,"parent":"Results"}""", "parent")]
-    public void BookmarkIndexes_ExplainWhereAnIndexComesFrom(string operation, string field)
+    public void BookmarkAddresses_ExplainWhereAnAddressComesFrom(string operation, string field)
     {
         CliException error = Assert.Throws<CliException>(() => Parse($$"""{"ops":[{{operation}}]}"""));
 
         Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
         Assert.Contains(
-            $"{field} must be a bookmark index as pdf inspect --detail outline reports it",
+            $"{field} must be a bookmark address as 'pdf inspect --detail outline' reports it",
             error.Message,
             StringComparison.Ordinal);
     }
@@ -116,7 +120,7 @@ public sealed class PdfOpContractTests
     public void RedactText_RejectsAnExpressionThatMatchesTheEmptyString(string pattern)
     {
         CliException error = Assert.Throws<CliException>(() => Parse(
-            $$"""{"ops":[{"op":"redact_text","regex":true,"pattern":{{JsonSerializer.Serialize(pattern)}}}]}"""));
+            $$"""{"ops":[{"op":"redact_text","regex":true,"find":{{JsonSerializer.Serialize(pattern)}}}]}"""));
 
         Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
         Assert.Contains("empty string", error.Message, StringComparison.Ordinal);
@@ -170,6 +174,61 @@ public sealed class PdfOpContractTests
     {
         using JsonDocument document = JsonDocument.Parse(json);
         return Schema.Value.Evaluate(document.RootElement).IsValid;
+    }
+
+    [Theory]
+    [InlineData("add_link", "add_hyperlink")]
+    [InlineData("decrypt", "decrypt_document")]
+    [InlineData("encrypt", "encrypt_document")]
+    [InlineData("optimize", "optimize_document")]
+    [InlineData("insert_blank_page", "insert_page")]
+    [InlineData("insert_pages_from", "import_pages")]
+    [InlineData("remove_attachment", "delete_attachment")]
+    [InlineData("remove_metadata", "clear_properties")]
+    [InlineData("set_metadata", "set_properties")]
+    public void RenamedOperation_RefusesItsOldNameAndSuggestsTheNewOne(string old, string renamed)
+    {
+        CliException error = Assert.Throws<CliException>(() => Parse($$"""{"ops":[{"op":"{{old}}"}]}"""));
+
+        Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
+        Assert.Equal(renamed, error.Details!["suggestions"]!.AsArray()[0]!.GetValue<string>());
+    }
+
+    [Theory]
+    [InlineData("""{"op":"rotate_pages","pages":"1","angle":90}""", "rotation")]
+    [InlineData("""{"op":"set_page_size","pages":"1","size":"a4"}""", "pageSize")]
+    [InlineData("""{"op":"insert_page","at":1,"size":"a4"}""", "pageSize")]
+    [InlineData("""{"op":"add_watermark_text","text":"DRAFT","size":12}""", "fontSize")]
+    [InlineData("""{"op":"add_page_numbers","format":"{n}"}""", "text")]
+    [InlineData("""{"op":"add_header_text","text":"Head","position":"top-left"}""", "placement")]
+    [InlineData("""{"op":"add_footer_text","text":"Foot","position":"bottom-left"}""", "placement")]
+    [InlineData("""{"op":"add_page_numbers","position":"bottom-left"}""", "placement")]
+    [InlineData("""{"op":"import_pages","path":"other.pdf","at":1,"passwordEnv":"SOURCE"}""", "sourcePasswordEnv")]
+    [InlineData("""{"op":"delete_bookmarks","indexes":["1"]}""", "bookmarks")]
+    [InlineData("""{"op":"redact_text","pattern":"secret"}""", "find")]
+    [InlineData("""{"op":"set_page_labels","ranges":[{"startPage":1,"style":"decimal"}]}""", "numberStyle")]
+    public void RenamedField_RefusesItsOldNameAndSuggestsTheNewOne(string operation, string renamed)
+    {
+        CliException error = Assert.Throws<CliException>(() => Parse($$"""{"ops":[{{operation}}]}"""));
+
+        Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
+        Assert.Equal(renamed, error.Details!["suggestions"]!.AsArray()[0]!.GetValue<string>());
+    }
+
+    [Theory]
+    [InlineData("Title", "Set it with the title field instead.")]
+    [InlineData("AUTHOR", "Set it with the author field instead.")]
+    [InlineData("producer", "drop it from custom")]
+    [InlineData("modificationDate", "drop it from custom")]
+    [InlineData("info:Department", "without the info: or xmp: prefix")]
+    [InlineData("XMP:dc:title", "without the info: or xmp: prefix")]
+    public void SetProperties_RefusesACustomKeyThatAStandardEntryOrAReportedNameTakes(string key, string hint)
+    {
+        CliException error = Assert.Throws<CliException>(() => Parse(
+            $$$"""{"ops":[{"op":"set_properties","custom":{"{{{key}}}":"value"}}]}"""));
+
+        Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
+        Assert.Contains(hint, error.Hint, StringComparison.Ordinal);
     }
 
     private static PdfOpsBatch Parse(string json) =>

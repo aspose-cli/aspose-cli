@@ -15,20 +15,20 @@ aspose-cli pdf edit report.pdf --ops report-ops.json --out report.review.pdf --v
 
 ## Operations by task
 
-- Pages: `insert_blank_page`, `insert_pages_from` (pages of another PDF),
-  `delete_pages`, `move_pages`, `rotate_pages` (absolute angle; 0 sets a page upright),
+- Pages: `insert_page`, `import_pages` (pages of another PDF),
+  `delete_pages`, `move_pages`, `rotate_pages` (absolute clockwise `rotation`; 0 sets a page upright),
   `set_page_size`, `crop_pages` (the visible crop box; `box: "media"` sets the physical
   media box).
 - Stamps: `add_header_text`, `add_footer_text`, `add_page_numbers`,
   `add_watermark_text`, `add_watermark_image`, `add_stamp_image`.
-- Navigation: `add_bookmark`, `delete_bookmarks`, `add_link`,
+- Navigation: `add_bookmark`, `delete_bookmarks`, `add_hyperlink`,
   `set_page_labels`.
 - Forms: `set_form_field`, `flatten_forms`
   ([forms and security](forms-security.md)).
-- Security: `encrypt`, `decrypt`.
+- Security: `encrypt_document`, `decrypt_document`.
 - Redaction: `redact_text`, `redact_area`.
-- Document: `set_metadata`, `remove_metadata`, `add_attachment`,
-  `remove_attachment`, `optimize`.
+- Document: `set_properties`, `clear_properties`, `add_attachment`,
+  `delete_attachment`, `optimize_document`.
 
 ## Targets and ordering
 
@@ -36,26 +36,28 @@ Each operation resolves its pages against the document as the earlier
 operations of the batch left it: an insert, delete or move changes the pages
 that later operations name. `pdf inspect` and `pdf read` report targets
 under the names the operations take: each page's `page`, each label range's
-`startPage`, `style`, `prefix` and `startingValue`, and each bookmark's `page`
-and `index`, the 1-based positions joined by `/` that `delete_bookmarks.indexes`
-and `add_bookmark.parent` accept: `"2/1"` is the first child of the second
-top-level bookmark. Titles are never parsed, so bookmarks with duplicate titles,
-titles containing `/` or empty titles are addressed the same way.
+`startPage`, `numberStyle`, `prefix` and `startingValue`, each page's `pageSize`
+and `rotation`, and each bookmark's `page` and `bookmark`, the address of 1-based
+positions joined by `/` that `delete_bookmarks.bookmarks` and `add_bookmark.parent`
+accept: `"2/1"` is the first child of the second top-level bookmark. Titles are
+never parsed, so bookmarks with duplicate or empty titles are addressed the same
+way; `add_bookmark` refuses a title that contains `/`.
 
 Bookmarks follow the same rule as pages. `add_bookmark` always adds the last child
 of its parent, or the last top-level bookmark, so it never renumbers
-existing bookmarks. Like `delete_pages.pages`, `delete_bookmarks.indexes`
-resolves every index against the outline as it stands before the operation,
-then removes them all with their children; a missing index removes none of
-them. List every bookmark to delete in one `delete_bookmarks` operation, with
-indexes read from one `pdf inspect --detail outline`; list a parent without its
+existing bookmarks. Like `delete_pages.pages`, `delete_bookmarks.bookmarks`
+resolves every address against the outline as it stands before the operation,
+then removes them all with their children; a missing address removes none of
+them, and omitting `bookmarks` removes every bookmark. List every bookmark to
+delete in one `delete_bookmarks` operation, with addresses read from one
+`pdf inspect --detail outline`; list a parent without its
 children. Later operations of the batch see the renumbered outline; put
 `add_bookmark` operations that name a parent before the deletion, or reinspect
 and edit in a second batch.
 
 Each applied operation's `itemsAffected` counts the objects it changed and its
-`targets` name them: pages as `page/<n>`, bookmarks as `bookmark/<index>`, and
-`metadata/<key>`, `attachment/<name>`, `page-label/<start page>`,
+`targets` name them: pages as `page/<n>`, bookmarks as `bookmark/<address>`, and
+`property/<key>`, `attachment/<name>`, `page-label/<start page>`,
 `field/<name>` and `security/encryption`. A deleted page or bookmark keeps the
 address it had before the deletion, and a deleted bookmark counts with each of
 its children. A page counts once however much changed on it, such as every
@@ -64,9 +66,10 @@ and an `OP_NO_EFFECT` warning. Past 100 targets, an operation reports one range
 per unit that covers them, such as `page/1-150`.
 
 Aspose.PDF writes `creator`, `producer` and `modificationDate` into every PDF
-it saves, so no operation removes or sets them: `remove_metadata` leaves them
-out of its `targets` and warns `METADATA_REWRITTEN`, as does a `set_metadata`
-whose `custom` sets `Creator`, `Producer` or `ModDate`.
+it saves, so no operation removes or sets them: `clear_properties` leaves them
+out of its `targets` and warns `METADATA_REWRITTEN`. A `set_properties` `custom`
+key must not name a standard entry, in any case, nor start with `info:` or `xmp:`; a
+custom entry reads back under its own key.
 
 Rectangles must lie within the visible page box. Reinspect geometry and review
 after changing crop, size or rotation, because later rectangles follow the new
@@ -91,7 +94,7 @@ another part moves up in its place, and links to another part lead nowhere.
 Each part keeps the page labels its pages had, such as `South-1` to `South-3`.
 Each publishes its output with
 a `NAVIGATION_DEGRADED` warning that counts the entries that no longer lead where
-they did. Re-create them with `add_bookmark` and `add_link`, or reorder pages
+they did. Re-create them with `add_bookmark` and `add_hyperlink`, or reorder pages
 before adding navigation, then follow the destination checks in
 [verification](verification.md).
 
@@ -183,7 +186,7 @@ The grid exists only in the rendered image; the PDF is never changed.
 
 ## Other effects
 
-`optimize` can lower image quality and unembed fonts; compare file sizes and
+`optimize_document` can lower image quality and unembed fonts; compare file sizes and
 look at the affected pages. It always stores identical streams once, so a merge
 of files that each embed the same font keeps one copy; image settings do not
 shrink a file whose size is its fonts (`pdf inspect --detail fonts` shows

@@ -212,7 +212,7 @@ public sealed class PdfArtifactWorkflowTests
                         Ranges =
                         [
                             new PdfPageLabelRange { StartPage = 1, Prefix = "East-" },
-                            new PdfPageLabelRange { StartPage = 3, Prefix = "South-", Style = "roman-lower", StartingValue = 5 },
+                            new PdfPageLabelRange { StartPage = 3, Prefix = "South-", NumberStyle = "roman-lower", StartingValue = 5 },
                         ],
                     },
                 ],
@@ -228,9 +228,9 @@ public sealed class PdfArtifactWorkflowTests
         });
 
         Assert.Equal(
-            ["1:East-arabic2 2:South-roman-lower5", "1:East-arabic1 2:South-roman-lower6"],
+            ["1:East-decimal2 2:South-roman-lower5", "1:East-decimal1 2:South-roman-lower6"],
             split.Outputs.Select(part => string.Join(" ", PdfInfo.Run(fixture.Session, new PdfInspectRequest { Input = part.Path }).PageLabels!
-                .Select(static label => $"{label.StartPage}:{label.Prefix}{label.Style}{label.StartingValue}"))));
+                .Select(static label => $"{label.StartPage}:{label.Prefix}{label.NumberStyle}{label.StartingValue}"))));
     }
 
     private static OutlineItemCollection Bookmark(
