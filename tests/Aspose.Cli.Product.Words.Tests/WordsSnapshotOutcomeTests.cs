@@ -64,7 +64,7 @@ public sealed class WordsSnapshotOutcomeTests
     {
         using var fixture = new WordsFixture();
 
-        WordsEditResult result = Edit(fixture, fixture.CreateReport(), new SetHeaderOp { Section = 1, Paragraphs = ["Draft"] });
+        WordsEditResult result = Edit(fixture, fixture.CreateReport(), new SetHeaderOp { Section = 1, Paragraphs = [new WordsParagraphInput { Text = "Draft" }] });
 
         Assert.Equal(["section/1"], Assert.Single(result.Applied).Targets);
     }

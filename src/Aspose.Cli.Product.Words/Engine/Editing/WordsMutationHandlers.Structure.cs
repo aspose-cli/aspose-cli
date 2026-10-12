@@ -132,7 +132,7 @@ internal sealed partial class WordsMutationHandlers
             var replacement = new HeaderFooter(_document, type);
             section.HeadersFooters.Add(replacement);
             IEnumerable<Node> blocks = markdown is null
-                ? operation.Paragraphs!.Select(text => (Node)PlainParagraph(text, replaced, isHeader))
+                ? operation.Paragraphs!.Select(input => (Node)HeaderFooterParagraph(input, replaced, isHeader))
                 : WordsMarkdownImport.Blocks(_document, markdown);
             foreach (Node block in blocks)
             {
@@ -172,6 +172,18 @@ internal sealed partial class WordsMutationHandlers
         }
 
         return null;
+    }
+
+    /// <summary>A header or footer paragraph: its text in the format of the one it replaces, in its own style when it names one.</summary>
+    private Paragraph HeaderFooterParagraph(WordsParagraphInput input, Paragraph? replaced, bool isHeader)
+    {
+        Paragraph paragraph = PlainParagraph(input.Text, replaced, isHeader);
+        if (input.Style is { } style)
+        {
+            ApplyParagraphStyle(_document, paragraph, style);
+        }
+
+        return paragraph;
     }
 
     /// <summary>A header or footer paragraph of text in the format of the one it replaces.</summary>

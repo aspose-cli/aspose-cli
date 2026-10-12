@@ -122,8 +122,8 @@ public sealed class WordsModuleTests
     [InlineData("""{"op":"replace_text","find":"a","replace":"b"}""", """{"scope":"body"}""")]
     [InlineData("""{"op":"insert_image","at":{"block":1},"position":"after","path":"image.png"}""", """{"inline":true}""")]
     [InlineData("""{"op":"insert_toc","at":{"block":1},"position":"after"}""", """{"maxLevel":3}""")]
-    [InlineData("""{"op":"set_header","paragraphs":["Header"]}""", """{"kind":"primary"}""")]
-    [InlineData("""{"op":"set_footer","paragraphs":["Footer"]}""", """{"kind":"primary"}""")]
+    [InlineData("""{"op":"set_header","paragraphs":[{"text":"Header"}]}""", """{"kind":"primary"}""")]
+    [InlineData("""{"op":"set_footer","paragraphs":[{"text":"Footer"}]}""", """{"kind":"primary"}""")]
     [InlineData("""{"op":"set_page_numbers"}""", """{"location":"footer","alignment":"center"}""")]
     [InlineData("""{"op":"import_sections","path":"other.docx"}""", """{"formatting":"keep-source"}""")]
     [InlineData("""{"op":"refresh_fields"}""", """{"what":"all"}""")]
@@ -199,6 +199,7 @@ public sealed class WordsModuleTests
     [InlineData("""{"op":"set_default_font","font":"Arial","size":12}""", "fontSize")]
     [InlineData("""{"op":"set_page_setup","size":"a4"}""", "pageSize")]
     [InlineData("""{"op":"set_page_numbers","format":"decimal"}""", "numberStyle")]
+    [InlineData("""{"op":"insert_paragraphs","at":{"block":1},"position":"after","paragraphs":[{"text":"a","listLevel":1}]}""", "list")]
     public void RenamedField_IsRefusedWithItsNewName(string operation, string renamed)
     {
         CliException error = Assert.Throws<CliException>(() => Parse($$"""{"ops":[{{operation}}]}"""));
@@ -211,7 +212,9 @@ public sealed class WordsModuleTests
     [InlineData("""{"op":"format_text","target":{"block":1},"color":"red"}""")]
     [InlineData("""{"op":"format_text","target":{"block":1},"highlight":"yellow"}""")]
     [InlineData("""{"op":"set_list","target":{"block":1},"kind":"bullet","level":0}""")]
-    [InlineData("""{"op":"insert_paragraphs","at":{"block":1},"position":"after","paragraphs":[{"text":"a","listLevel":0}]}""")]
+    [InlineData("""{"op":"insert_paragraphs","at":{"block":1},"position":"after","paragraphs":[{"text":"a","list":{"level":0}}]}""")]
+    [InlineData("""{"op":"set_header","paragraphs":[{"text":"a","list":{"level":1}}]}""")]
+    [InlineData("""{"op":"set_properties","custom":{"Title":"x"}}""")]
     [InlineData("""{"op":"protect_document","protection":"readOnly"}""")]
     [InlineData("""{"op":"set_page_numbers","numberStyle":"upperRoman"}""")]
     [InlineData("""{"op":"import_sections","path":"a.docx","formatting":"keepSource"}""")]

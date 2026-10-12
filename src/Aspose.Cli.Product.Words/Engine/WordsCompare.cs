@@ -35,7 +35,7 @@ internal static class WordsCompare
         }
 
         Document compared = leftLoaded.Document.Clone();
-        compared.Compare(rightLoaded.Document, request.Author ?? "Aspose CLI", DateTime.Now, new CompareOptions
+        compared.Compare(rightLoaded.Document, request.Author ?? "Aspose CLI", DateTime.UtcNow, new CompareOptions
         {
             IgnoreFormatting = request.IgnoreFormatting,
             Granularity = request.Granularity == "char" ? Granularity.CharLevel : Granularity.WordLevel,

@@ -18,7 +18,7 @@ public sealed class WordsOpContractTests
     [InlineData("""{"op":"set_text","target":{"block":1,"find":"Intro"},"text":"a"}""")]
     [InlineData("""{"op":"set_text","target":{"find":""},"text":"a"}""")]
     [InlineData("""{"op":"insert_markdown","at":{"block":1},"position":"after","markdown":""}""")]
-    [InlineData("""{"op":"set_header","paragraphs":["a"],"markdown":"b"}""")]
+    [InlineData("""{"op":"set_header","paragraphs":[{"text":"a"}],"markdown":"b"}""")]
     [InlineData("""{"op":"accept_revisions","author":""}""")]
     [InlineData("""{"op":"format_text","target":{"block":1},"fontSize":null}""")]
     [InlineData("""{"op":"set_watermark","path":"logo.png","color":"#FF0000"}""")]

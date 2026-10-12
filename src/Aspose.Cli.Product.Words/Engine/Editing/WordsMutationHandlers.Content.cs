@@ -145,14 +145,14 @@ internal sealed partial class WordsMutationHandlers
     {
         Node cursor = Anchor;
         Paragraph? before = (operation.Position == "after" ? Anchor : Anchor.PreviousSibling) as Paragraph;
-        Aspose.Words.Lists.List? created = null;
+        var created = new Dictionary<string, Aspose.Words.Lists.List>(StringComparer.Ordinal);
         var continued = new Dictionary<Paragraph, Paragraph?>();
         foreach (WordsParagraphInput input in operation.Paragraphs)
         {
             Aspose.Words.Lists.List? list = null;
             Paragraph? peer = null;
             // The input level is 1-based; the SDK numbers levels from 0.
-            if (input.ListLevel is int listLevel)
+            if (input.List?.Level is int listLevel)
             {
                 Node? previous = operation.Position == "after" ? cursor : Anchor.PreviousSibling;
                 (list, peer) = ListAt(listLevel - 1, previous, operation.Position == "after" ? cursor.NextSibling : Anchor);
@@ -174,9 +174,12 @@ internal sealed partial class WordsMutationHandlers
                 ApplyParagraphStyle(_document, paragraph, input.Style);
             }
 
-            if (input.ListLevel is int level)
+            if (input.List is { Level: int level } wanted)
             {
-                paragraph.ListFormat.List = list ?? (created ??= _document.Lists.Add(ListTemplate.BulletDefault));
+                string kind = wanted.Kind ?? "bullet";
+                paragraph.ListFormat.List = list ?? (created.TryGetValue(kind, out Aspose.Words.Lists.List? started)
+                    ? started
+                    : created[kind] = _document.Lists.Add(kind == "number" ? ListTemplate.NumberDefault : ListTemplate.BulletDefault));
                 paragraph.ListFormat.ListLevelNumber = level - 1;
                 if (peer is not null && HasOwnIndent(peer))
                 {

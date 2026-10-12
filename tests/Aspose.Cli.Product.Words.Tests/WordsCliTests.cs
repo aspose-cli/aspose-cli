@@ -39,7 +39,7 @@ public sealed class WordsCliTests : IDisposable
               "ops": [
                 { "op": "set_text", "target": { "block": 2 }, "text": "Updated clause." },
                 { "op": "insert_toc", "at": { "block": 2 }, "position": "after" },
-                { "op": "set_header", "paragraphs": ["Document header"] }
+                { "op": "set_header", "paragraphs": [{ "text": "Document header" }] }
               ]
             }
             """;

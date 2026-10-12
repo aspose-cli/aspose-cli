@@ -95,14 +95,12 @@ public sealed class WordsTextScopeTests : IClassFixture<WordsFixture>
                 Output = TestOutput.At(_fixture.Temp.File("named-headers-out.docx")),
             });
 
-        Assert.Equivalent(
-            new[]
-            {
-                new WordsHeaderFooterData { Location = "header", Kind = "primary", Paragraphs = ["Contract needle", "Confidential"] },
-                new WordsHeaderFooterData { Location = "footer", Kind = "first", Paragraphs = ["Cover needle"] },
-            },
-            Assert.Single(info.Sections!).HeadersFooters.Where(static item => item.Paragraphs.Any(static text => text.Length > 0)),
-            strict: true);
+        // In any order: evaluation mode's primary footer moves the stories of the section around.
+        Assert.Equal(
+            ["footer/first: Cover needle", "header/primary: Contract needle|Confidential"],
+            Assert.Single(info.Sections!).HeadersFooters.Where(static item => item.Paragraphs.Any(static paragraph => paragraph.Text.Length > 0))
+                .Select(static item => $"{item.Location}/{item.Kind}: {string.Join("|", item.Paragraphs.Select(static paragraph => paragraph.Text))}")
+                .Order(StringComparer.Ordinal));
         // Evaluation mode adds a primary footer, which moves the stories of the section around.
         Assert.Equal(
             [(null, null), ("footer", "first"), ("header", "primary")],

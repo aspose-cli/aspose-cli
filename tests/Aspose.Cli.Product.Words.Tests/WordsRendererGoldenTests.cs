@@ -65,7 +65,7 @@ public sealed class WordsRendererGoldenTests
             tables:
             block  rows  columns  style
             6      3     2        Table Grid
-            9      1     1        -
+            9      1     1        Table Normal
 
             properties:
             name     value
@@ -149,7 +149,7 @@ public sealed class WordsRendererGoldenTests
             | block | rows | columns | style |
             | --- | --- | --- | --- |
             | 6 | 3 | 2 | Table Grid |
-            | 9 | 1 | 1 | - |
+            | 9 | 1 | 1 | Table Normal |
 
             ### properties
 
@@ -318,7 +318,7 @@ public sealed class WordsRendererGoldenTests
                 Margins = new WordsMarginData { Top = 72, Right = 89.85, Bottom = 72.004, Left = 0.125 },
                 HeadersFooters =
                 [
-                    new WordsHeaderFooterData { Location = "header", Kind = "primary", Paragraphs = ["Quarterly report", "Draft"] },
+                    new WordsHeaderFooterData { Location = "header", Kind = "primary", Paragraphs = [new WordsParagraphData { Text = "Quarterly report" }, new WordsParagraphData { Text = "Draft" }] },
                     new WordsHeaderFooterData { Location = "footer", Kind = "first", Paragraphs = [] },
                 ],
             },
@@ -344,7 +344,7 @@ public sealed class WordsRendererGoldenTests
         Comments = [new WordsCommentData { Author = "Ann", Text = "Check the totals", Block = 3 }],
         Revisions =
         [
-            new WordsRevisionData { Revision = 0, Kind = "insertion", Author = "Ann", Date = "2026-09-28T08:30:00Z", Block = 2, Text = "new text" },
+            new WordsRevisionData { Revision = 0, Kind = "insertion", Author = "Ann", Date = new DateTimeOffset(2026, 9, 28, 8, 30, 0, TimeSpan.Zero), Block = 2, Text = "new text" },
             new WordsRevisionData { Revision = 1, Kind = "format-change", Author = "Bob", Scope = "headers-footers" },
         ],
         Images =
@@ -355,7 +355,7 @@ public sealed class WordsRendererGoldenTests
         Tables =
         [
             new WordsTableData { Block = 6, RowCount = 3, ColumnCount = 2, KeepTogether = false, AllowRowBreakAcrossPages = true, HeaderRowCount = 0, KeepWithNext = false, TableStyle = "Table Grid" },
-            new WordsTableData { Block = 9, RowCount = 1, ColumnCount = 1, KeepTogether = false, AllowRowBreakAcrossPages = true, HeaderRowCount = 0, KeepWithNext = false },
+            new WordsTableData { Block = 9, RowCount = 1, ColumnCount = 1, TableStyle = "Table Normal", KeepTogether = false, AllowRowBreakAcrossPages = true, HeaderRowCount = 0, KeepWithNext = false },
         ],
         Properties = new Dictionary<string, string?> { ["Title"] = "Report", ["Author"] = "Ann", ["Subject"] = null },
         Fonts = ["Calibri", "Times New Roman"],

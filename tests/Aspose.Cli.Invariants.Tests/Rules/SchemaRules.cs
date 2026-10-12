@@ -401,20 +401,64 @@ internal static partial class ContractRules
             "values are the values of the object they name, shaped as that object is: a range's or a table's a two-dimensional grid, a chart series' a one-dimensional array, a pivot's its value fields"),
     };
 
+    /// <summary>
+    /// C-R20 exceptions to one shape per field name across products where one product's object
+    /// has an optional field of its own model and the fields both have stay the same: by field
+    /// name, with exactly the product definitions that declare it, the product and its own field,
+    /// and why (user decision 2026-10-12). The shared fields of the objects keep their own
+    /// cross-product cases, such as <c>list</c> with its <c>kind</c> and <c>level</c>.
+    /// </summary>
+    private static readonly Dictionary<string, (string[] Places, string Product, string Field, string Reason)> OwnFieldAcrossProducts = new(StringComparer.Ordinal)
+    {
+        ["paragraphs"] = (
+            ["slides set_body", "words insert_paragraphs", "words set_footer", "words set_header"],
+            "words",
+            "style",
+            "a Words paragraph names its paragraph style, which a slide paragraph has no model for; text and list are the same in both"),
+    };
+
     /// <summary>The products whose fields of one name agree among themselves but not with another product's; a product that disagrees with itself has its own case.</summary>
     private static IEnumerable<string> CrossProductFieldTypes(Dictionary<string, Dictionary<string, SortedDictionary<string, List<string>>>> shapes, string name)
     {
+        string[] Places() =>
+        [
+            .. shapes.Where(pair => pair.Value.ContainsKey(name))
+                .SelectMany(pair => pair.Value[name].Values.SelectMany(static owners => owners).Select(owner => $"{pair.Key} {owner}"))
+                .Order(StringComparer.Ordinal),
+        ];
+
         if (ShapedByTheirObjectAcrossProducts.TryGetValue(name, out (string[] Places, string Reason) exception))
         {
-            string[] places =
-            [
-                .. shapes.Where(pair => pair.Value.ContainsKey(name))
-                    .SelectMany(pair => pair.Value[name].Values.SelectMany(static owners => owners).Select(owner => $"{pair.Key} {owner}"))
-                    .Order(StringComparer.Ordinal),
-            ];
+            string[] places = Places();
             return places.SequenceEqual(exception.Places.Order(StringComparer.Ordinal), StringComparer.Ordinal)
                 ? []
                 : [$"the {name} exception across products for {string.Join(", ", exception.Places)} no longer matches ({string.Join(", ", places)}); update or remove it"];
+        }
+
+        if (OwnFieldAcrossProducts.TryGetValue(name, out (string[] Places, string Product, string Field, string Reason) own))
+        {
+            string[] places = Places();
+            if (!places.SequenceEqual(own.Places.Order(StringComparer.Ordinal), StringComparer.Ordinal))
+            {
+                return [$"the {name} exception across products for {string.Join(", ", own.Places)} no longer matches ({string.Join(", ", places)}); update or remove it"];
+            }
+
+            // Each product declares one shape, and the one product's, without its own field, is the others'.
+            (string Product, string Shape)[] declared =
+            [
+                .. shapes.Where(pair => pair.Value.ContainsKey(name))
+                    .SelectMany(pair => pair.Value[name].Keys.Select(shape => (pair.Key, shape))),
+            ];
+            string? field = declared.Where(item => item.Product == own.Product).Select(static item => item.Shape).FirstOrDefault();
+            if (field is null || !ObjectFields(field).Contains(own.Field, StringComparer.Ordinal))
+            {
+                return [$"the {name} exception across products expects {own.Product} to declare {own.Field}, which it no longer does; update or remove it"];
+            }
+
+            string[] compared = [.. declared.Select(item => item.Product == own.Product ? WithoutField(item.Shape, own.Field) : item.Shape).Distinct()];
+            return compared.Length == 1
+                ? []
+                : [.. declared.Select(static item => $"{item.Product} {item.Shape}")];
         }
 
         (string Product, string Shape)[] uniform =
@@ -426,6 +470,15 @@ internal static partial class ContractRules
             ? [.. uniform.Select(static item => $"{item.Product} {item.Shape}")]
             : [];
     }
+
+    /// <summary>The fields an object shape such as <c>array of object{list,style,text}</c> lists.</summary>
+    private static string[] ObjectFields(string shape) =>
+        ObjectShape.Match(shape) is { Success: true } match ? match.Groups["fields"].Value.Split(',') : [];
+
+    private static string WithoutField(string shape, string field) =>
+        ObjectShape.Replace(shape, match => "object{" + string.Join(",", match.Groups["fields"].Value.Split(',').Where(name => name != field)) + "}", 1);
+
+    private static readonly Regex ObjectShape = new(@"object\{(?<fields>[^{}]*)\}", RegexOptions.CultureInvariant);
 
     private static IEnumerable<InvariantCase> R29(CliCatalog catalog)
     {

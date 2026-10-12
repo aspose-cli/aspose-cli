@@ -223,10 +223,10 @@ public sealed class WordsTrackChangesTests
 
         Assert.Equal(
             [
-                new WordsRevisionData { Revision = 1, Kind = "deletion", Author = "Alice Legal", Date = "2026-09-01T10:30:00", Scope = "body", Block = 1, Text = "thirty" },
-                new WordsRevisionData { Revision = 2, Kind = "insertion", Author = "Alice Legal", Date = "2026-09-01T10:30:00", Scope = "body", Block = 1, Text = "sixty" },
-                new WordsRevisionData { Revision = 3, Kind = "deletion", Author = "Bob Counsel", Date = "2026-09-02T08:00:00", Scope = "body", Block = 2, Text = "This clause is removed." },
-                new WordsRevisionData { Revision = 4, Kind = "insertion", Author = "Bob Counsel", Date = "2026-09-02T08:00:00", Scope = "body", Block = 2, Text = "New governing law clause." },
+                new WordsRevisionData { Revision = 1, Kind = "deletion", Author = "Alice Legal", Date = new DateTimeOffset(2026, 9, 1, 10, 30, 0, TimeSpan.Zero), Scope = "body", Block = 1, Text = "thirty" },
+                new WordsRevisionData { Revision = 2, Kind = "insertion", Author = "Alice Legal", Date = new DateTimeOffset(2026, 9, 1, 10, 30, 0, TimeSpan.Zero), Scope = "body", Block = 1, Text = "sixty" },
+                new WordsRevisionData { Revision = 3, Kind = "deletion", Author = "Bob Counsel", Date = new DateTimeOffset(2026, 9, 2, 8, 0, 0, TimeSpan.Zero), Scope = "body", Block = 2, Text = "This clause is removed." },
+                new WordsRevisionData { Revision = 4, Kind = "insertion", Author = "Bob Counsel", Date = new DateTimeOffset(2026, 9, 2, 8, 0, 0, TimeSpan.Zero), Scope = "body", Block = 2, Text = "New governing law clause." },
             ],
             info.Revisions);
     }
@@ -256,8 +256,8 @@ public sealed class WordsTrackChangesTests
 
         WordsInspectResult info = WordsInspect.Run(fixture.Session, new WordsInspectRequest { Input = input, Details = ["revisions"] });
 
-        const string AnnDate = "2026-09-01T10:00:00";
-        const string BobDate = "2026-09-02T08:00:00";
+        DateTimeOffset AnnDate = new DateTimeOffset(2026, 9, 1, 10, 0, 0, TimeSpan.Zero);
+        DateTimeOffset BobDate = new DateTimeOffset(2026, 9, 2, 8, 0, 0, TimeSpan.Zero);
         Assert.Equal(
             [
                 new WordsRevisionData { Revision = 1, Kind = "moving", Author = "Ann", Date = AnnDate, Scope = "body", Block = 2, Text = "Alpha beta gamma." },

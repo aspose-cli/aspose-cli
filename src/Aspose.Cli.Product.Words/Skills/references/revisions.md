@@ -19,8 +19,8 @@ aspose-cli words inspect contract.docx --detail revisions --output-format json
 
 ```json
 "revisions": [
-  { "revision": 1, "kind": "deletion", "author": "Alice Legal", "date": "2026-09-01T10:30:00", "scope": "body", "block": 1, "text": "thirty" },
-  { "revision": 2, "kind": "insertion", "author": "Alice Legal", "date": "2026-09-01T10:30:00", "scope": "body", "block": 1, "text": "sixty" }
+  { "revision": 1, "kind": "deletion", "author": "Alice Legal", "date": "2026-09-01T10:30:00+00:00", "scope": "body", "block": 1, "text": "thirty" },
+  { "revision": 2, "kind": "insertion", "author": "Alice Legal", "date": "2026-09-01T10:30:00+00:00", "scope": "body", "block": 1, "text": "sixty" }
 ]
 ```
 
@@ -42,7 +42,7 @@ aspose-cli words inspect contract.docx --detail revisions --output-format json
   A move is listed twice, once at its source and once at its destination, each
   with the moved text. A paragraph mark inserted or deleted on its own, as when
   a paragraph is split or joined, has no `text`.
-- `date` is the time the document records, without a time zone; it is absent
+- `date` is the time the document records, in UTC as Word stores it; it is absent
   when the document records none. `block` is the body block that holds the
   change or anchors the comment or note that holds it; it is absent in headers
   and footers and for style definitions.

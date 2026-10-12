@@ -10,7 +10,7 @@ namespace Aspose.Cli.Product.Words.Engine.Editing;
 /// </summary>
 internal sealed class WordsRevisionTracking(Document document, string author)
 {
-    private readonly DateTime _time = DateTime.Now;
+    private readonly DateTime _time = DateTime.UtcNow;
 
     internal void Start() => document.StartTrackRevisions(author, _time);
 
