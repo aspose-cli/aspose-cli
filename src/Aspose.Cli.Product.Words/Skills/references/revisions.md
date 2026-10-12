@@ -1,6 +1,6 @@
 # Revisions and comparison
 
-Before editing, inspect `document.revisionsPresent`, `document.revisionAuthors`,
+Before editing, inspect `document.hasRevisions`, `document.revisionAuthors`,
 `document.commentCount`,
 `document.protection` and `document.signed` in the `words inspect` result.
 Editing or converting a document that already has revisions reports
@@ -19,21 +19,21 @@ aspose-cli words inspect contract.docx --detail revisions --output-format json
 
 ```json
 "revisions": [
-  { "revision": 1, "type": "deletion", "author": "Alice Legal", "date": "2026-09-01T10:30:00", "scope": "body", "block": 1, "text": "thirty" },
-  { "revision": 2, "type": "insertion", "author": "Alice Legal", "date": "2026-09-01T10:30:00", "scope": "body", "block": 1, "text": "sixty" }
+  { "revision": 1, "kind": "deletion", "author": "Alice Legal", "date": "2026-09-01T10:30:00", "scope": "body", "block": 1, "text": "thirty" },
+  { "revision": 2, "kind": "insertion", "author": "Alice Legal", "date": "2026-09-01T10:30:00", "scope": "body", "block": 1, "text": "sixty" }
 ]
 ```
 
 - `revision` numbers the changes from 1 in document order.
 - One entry is one change: adjacent runs and paragraph marks that one author
   inserted, deleted or moved are listed together, except inside comment text,
-  where each run and paragraph mark is its own entry. `type` is `insertion`, `deletion`,
-  `formatChange`, `styleDefinitionChange` or `moving`.
+  where each run and paragraph mark is its own entry. `kind` is `insertion`, `deletion`,
+  `format-change`, `style-definition-change` or `moving`.
 - `document.revisionCount` counts the revisions the document stores, one per
   run, paragraph mark or other changed node, so it is usually larger than the
   number of entries: a two-run insertion is one entry and two revisions.
-- `scope` names the story that holds the change, as `query search` names its
-  scopes: `body`, `headersFooters`, `footnotes` or `comments`. A change inside a
+- `scope` names the story that holds the change, as `search` names its
+  scopes: `body`, `headers-footers`, `footnotes` or `comments`. A change inside a
   comment's text belongs to the comment, not to the body around it, even though
   its `block` is the block that anchors the comment. Style definition changes
   have no `scope`.
@@ -94,6 +94,6 @@ Japanese text has no spaces between words, so a one-character edit marks the
 whole run of text; pass `--granularity char` to mark only the changed
 characters.
 
-The result counts the revisions by type and lists up to 50 `samples`, one per
-revision run or paragraph mark, with the `type` names `--detail revisions`
+The result counts the revisions by kind and lists up to 50 `samples`, one per
+revision run or paragraph mark, with the `kind` names `--detail revisions`
 uses; a paragraph mark's sample has no `text`.

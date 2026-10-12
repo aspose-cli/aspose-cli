@@ -108,7 +108,7 @@ public sealed partial class BoundedEditTargetTests
         yield return ("slides", workspace => (Create(workspace, "slides", "input.pptx", "--from-markdown",
             string.Join("\n\n", Enumerable.Range(1, Bound + 1).Select(static slide =>
                 $"# Slide {slide}\n\n- Hello {slide}{(slide <= Bound ? " Mark" : string.Empty)}"))), Replacements()));
-        yield return ("words", workspace => (Create(workspace, "words", "input.docx", "--markdown",
+        yield return ("words", workspace => (Create(workspace, "words", "input.docx", "--from-markdown",
             string.Join("\n\n", Enumerable.Range(1, Bound + 1).Select(static block =>
                 $"Hello {block}{(block <= Bound ? " Mark" : string.Empty)}"))), Replacements()));
     }

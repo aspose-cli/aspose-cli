@@ -20,13 +20,17 @@ public sealed record WordsRenderResult() : EngineResultEnvelope("render-result",
     public int? Dpi { get; init; }
 }
 
-/// <summary>One rendered page.</summary>
-public sealed record WordsPageOutput
+/// <summary>One rendered page and its image file.</summary>
+public sealed record WordsPageOutput : OutputItem
 {
+    /// <summary>Describes the image file of a page.</summary>
+    /// <param name="file">The published image, as <c>FileObjects.Output</c> describes it.</param>
+    public WordsPageOutput(OutputInfo file)
+        : base(file)
+    {
+    }
+
     /// <summary>The 1-based page.</summary>
     [Minimum(1)]
     public required int Page { get; init; }
-
-    /// <summary>The page's image file.</summary>
-    public required OutputInfo Output { get; init; }
 }

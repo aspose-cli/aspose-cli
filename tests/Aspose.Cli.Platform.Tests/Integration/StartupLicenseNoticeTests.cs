@@ -148,7 +148,7 @@ public sealed class StartupLicenseNoticeTests
     {
         using var workspace = new TempWorkspace();
         File.WriteAllText(workspace.File("source.md"), "# Project delivery\n\nApproved client scope.\n");
-        CliResult result = workspace.Run("words", "create", "brief.docx", "--markdown", "source.md",
+        CliResult result = workspace.Run("words", "create", "brief.docx", "--from-markdown", "source.md",
             "--timeout", "30", "--output-format", "table");
 
         Assert.Equal(0, result.ExitCode);

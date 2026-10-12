@@ -363,7 +363,7 @@ public sealed class PdfCliWorkflowTests : IDisposable
     public void Merge_OfAWordDocumentNamedPdf_NamesThatInputAndWhatItIs()
     {
         File.WriteAllText(_workspace.File("doc.md"), "# Title\n\nFirst paragraph.\n");
-        Assert.Equal(0, _workspace.Run("words", "create", "doc.docx", "--markdown", "doc.md", "--output-format", "json").ExitCode);
+        Assert.Equal(0, _workspace.Run("words", "create", "doc.docx", "--from-markdown", "doc.md", "--output-format", "json").ExitCode);
         File.Move(_workspace.File("doc.docx"), _workspace.File("renamed.pdf"));
         using (var document = new Document())
         {

@@ -44,7 +44,7 @@ public sealed class WordsRendererGoldenTests
             Calibri, Times New Roman
 
             fields:
-            block  type  code    result
+            block  kind  code    result
             -      PAGE   PAGE   1
             1      TOC   -       -
 
@@ -53,9 +53,9 @@ public sealed class WordsRendererGoldenTests
             3      Ann     Check the totals
 
             revisions:
-            revision  block  type          author  date                  text
-            0         2      insertion     Ann     2026-09-28T08:30:00Z  new text
-            1         -      formatChange  Bob     -                     -
+            revision  block  kind           author  date                  text
+            0         2      insertion      Ann     2026-09-28T08:30:00Z  new text
+            1         -      format-change  Bob     -                     -
 
             images:
             block  name  size
@@ -119,7 +119,7 @@ public sealed class WordsRendererGoldenTests
 
             ### fields
 
-            | block | type | code | result |
+            | block | kind | code | result |
             | --- | --- | --- | --- |
             | - | PAGE |  PAGE  | 1 |
             | 1 | TOC | - | - |
@@ -132,10 +132,10 @@ public sealed class WordsRendererGoldenTests
 
             ### revisions
 
-            | revision | block | type | author | date | text |
+            | revision | block | kind | author | date | text |
             | --- | --- | --- | --- | --- | --- |
             | 0 | 2 | insertion | Ann | 2026-09-28T08:30:00Z | new text |
-            | 1 | - | formatChange | Bob | - | - |
+            | 1 | - | format-change | Bob | - | - |
 
             ### images
 
@@ -236,13 +236,13 @@ public sealed class WordsRendererGoldenTests
         {
             Input = new InputInfo { Path = "report.docx", Format = "docx", SizeBytes = 10_240, Fingerprint = new FileFingerprint { Sha256 = new string('0', 64) }, Encrypted = false },
             Window = new ResultWindow { Unit = "block", Returned = 2, Total = 12, Truncated = true },
-            Scope = "body",
+            Content = "text",
             BlockCount = 12,
             Blocks =
             [
-                new WordsBlockData { Block = 0, Type = "paragraph", Section = 0, Style = "Heading 1", Text = "Summary" },
-                new WordsBlockData { Block = 1, Type = "paragraph", Section = 0, Text = "" },
-                new WordsBlockData { Block = 2, Type = "table", Section = 0, RowCount = 3, ColumnCount = 2 },
+                new WordsBlockData { Block = 0, Kind = "paragraph", Section = 0, Style = "Heading 1", Text = "Summary" },
+                new WordsBlockData { Block = 1, Kind = "paragraph", Section = 0, Text = "" },
+                new WordsBlockData { Block = 2, Kind = "table", Section = 0, RowCount = 3, ColumnCount = 2 },
             ],
         };
 
@@ -250,8 +250,8 @@ public sealed class WordsRendererGoldenTests
 
         RenderedText.Equal(
             """
-            report.docx (scope body, 12 blocks in the document)
-            block  type       section  style      text
+            report.docx (content text, 12 blocks in the document)
+            block  kind       section  style      text
             0      paragraph  0        Heading 1  Summary
             1      paragraph  0        -          -
             2      table      0        -          [3x2 table]
@@ -303,8 +303,8 @@ public sealed class WordsRendererGoldenTests
         Document = new WordsDocumentSummary
         {
             SectionCount = 2, BlockCount = 12, ParagraphCount = 10, TableCount = 2, PageCount = 3, WordCount = 456,
-            RevisionsPresent = true, RevisionCount = 1, RevisionAuthors = ["Ann"], CommentCount = 1,
-            Protection = "none", Signed = false, HasMacros = true,
+            HasRevisions = true, RevisionCount = 1, RevisionAuthors = ["Ann"], CommentCount = 1,
+            Signed = false, HasMacros = true,
         },
     };
 
@@ -337,20 +337,20 @@ public sealed class WordsRendererGoldenTests
         Styles = ["Normal", "Heading 1"],
         Fields =
         [
-            new WordsFieldData { Type = "PAGE", Scope = "headersFooters", Code = " PAGE ", Result = "1" },
-            new WordsFieldData { Type = "TOC", Scope = "body", Block = 1 },
+            new WordsFieldData { Kind = "PAGE", Scope = "headers-footers", Code = " PAGE ", Result = "1" },
+            new WordsFieldData { Kind = "TOC", Scope = "body", Block = 1 },
         ],
         Bookmarks = [],
         Comments = [new WordsCommentData { Author = "Ann", Text = "Check the totals", Block = 3 }],
         Revisions =
         [
-            new WordsRevisionData { Revision = 0, Type = "insertion", Author = "Ann", Date = "2026-09-28T08:30:00Z", Block = 2, Text = "new text" },
-            new WordsRevisionData { Revision = 1, Type = "formatChange", Author = "Bob", Scope = "headersFooters" },
+            new WordsRevisionData { Revision = 0, Kind = "insertion", Author = "Ann", Date = "2026-09-28T08:30:00Z", Block = 2, Text = "new text" },
+            new WordsRevisionData { Revision = 1, Kind = "format-change", Author = "Bob", Scope = "headers-footers" },
         ],
         Images =
         [
             new WordsImageData { Scope = "body", Block = 4, Name = "Logo", Width = 120.5, Height = 60 },
-            new WordsImageData { Scope = "headersFooters", Width = 10, Height = 10.333 },
+            new WordsImageData { Scope = "headers-footers", Width = 10, Height = 10.333 },
         ],
         Tables =
         [

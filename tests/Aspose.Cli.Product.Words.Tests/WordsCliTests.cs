@@ -12,7 +12,7 @@ public sealed class WordsCliTests : IDisposable
     public void Convert_RefusesPagesForAFormatThatIsNotFixedPage()
     {
         File.WriteAllText(_workspace.File("source.md"), "# Contract\n\nClause.\n");
-        Assert.Equal(0, _workspace.Run("words", "create", "contract.docx", "--markdown", "source.md").ExitCode);
+        Assert.Equal(0, _workspace.Run("words", "create", "contract.docx", "--from-markdown", "source.md").ExitCode);
 
         CliResult refused = _workspace.Run("words", "convert", "contract.docx", "--to", "html", "--pages", "1", "--out", "contract.html", "--output-format", "json");
 
@@ -31,7 +31,7 @@ public sealed class WordsCliTests : IDisposable
             _workspace.File("source.md"),
             "# Contract\n\nOriginal clause.\n");
         Assert.Equal(0, _workspace.Run(
-            "words", "create", "contract.docx", "--markdown", "source.md").ExitCode);
+            "words", "create", "contract.docx", "--from-markdown", "source.md").ExitCode);
 
         const string operations =
             """
@@ -48,7 +48,7 @@ public sealed class WordsCliTests : IDisposable
             "words", "edit", "contract.docx", "--ops", "-",
             "--in-place", "--verify", "--output-format", "json");
         CliResult read = _workspace.Run(
-            "words", "query", "blocks", "contract.docx", "--blocks", "2", "--output-format", "json");
+            "words", "read", "contract.docx", "--blocks", "2", "--output-format", "json");
 
         Assert.True(edited.ExitCode == 0, edited.StdErr);
         Assert.True(JsonNode.Parse(edited.StdOut)!["verification"]!["ok"]!.GetValue<bool>());
@@ -218,57 +218,69 @@ public sealed class WordsCliTests : IDisposable
     }
 
     [Fact]
-    public void Create_RejectsBlankWithTemplate()
+    public void Create_RejectsTwoContentSources()
     {
-        File.WriteAllBytes(_workspace.File("template.docx"), []);
+        File.WriteAllText(_workspace.File("source.md"), "# Title\n");
+        File.WriteAllText(_workspace.File("source.txt"), "Title\n");
 
         CliResult result = _workspace.Run(
-            "words", "create", "out.docx", "--blank", "--template", "template.docx", "--output-format", "json");
+            "words", "create", "out.docx", "--from-markdown", "source.md", "--from-text", "source.txt", "--output-format", "json");
 
         Assert.Equal(2, result.ExitCode);
+        Assert.Equal("USAGE_ERROR", JsonNode.Parse(result.StdErr)!["error"]!["code"]!.GetValue<string>());
         Assert.False(File.Exists(_workspace.File("out.docx")));
     }
 
     [Fact]
-    public void QueryBlocks_NextKeepsANonContiguousRangeAndTheSectionFilter()
+    public void Create_WithoutAContentSourceOrTemplate_WritesABlankDocument()
+    {
+        CliResult result = _workspace.Run("words", "create", "blank.docx", "--output-format", "json");
+
+        Assert.True(result.ExitCode == 0, result.StdErr);
+        Assert.True(File.Exists(_workspace.File("blank.docx")));
+        Assert.Equal("docx", JsonNode.Parse(result.StdOut)!["output"]!["format"]!.GetValue<string>());
+    }
+
+    [Fact]
+    public void Read_NextKeepsANonContiguousRangeAndTheSectionFilter()
     {
         File.WriteAllText(_workspace.File("source.md"), "# Title\n\nOne.\n\nTwo.\n\nThree.\n\nFour.\n");
-        Assert.Equal(0, _workspace.Run("words", "create", "notes.docx", "--markdown", "source.md").ExitCode);
+        Assert.Equal(0, _workspace.Run("words", "create", "notes.docx", "--from-markdown", "source.md").ExitCode);
 
         // Both queries only read the document, so they run at once.
         CliResult spread = null!, section = null!;
         Parallel.Invoke(
             () => spread = _workspace.Run(
-                "words", "query", "blocks", "notes.docx", "--blocks", "1,3,5", "--max-blocks", "1", "--output-format", "json"),
+                "words", "read", "notes.docx", "--blocks", "1,3,5", "--max-blocks", "1", "--output-format", "json"),
             () => section = _workspace.Run(
-                "words", "query", "blocks", "notes.docx", "--section", "1", "--blocks", "2-3", "--max-blocks", "1", "--output-format", "json"));
+                "words", "read", "notes.docx", "--section", "1", "--blocks", "2-3", "--max-blocks", "1", "--output-format", "json"));
 
         Assert.True(spread.ExitCode == 0, spread.StdErr);
         Assert.EndsWith(
-            " --blocks 3,5 --scope text --max-chars 20000 --max-blocks 1 --output-format json",
+            " --blocks 3,5 --content text --max-chars 20000 --max-blocks 1 --output-format json",
             JsonNode.Parse(spread.StdOut)!["window"]!["next"]!.GetValue<string>(),
             StringComparison.Ordinal);
         Assert.True(section.ExitCode == 0, section.StdErr);
         JsonNode read = JsonNode.Parse(section.StdOut)!;
         Assert.Equal(2, Assert.Single(read["blocks"]!.AsArray())!["block"]!.GetValue<int>());
         Assert.EndsWith(
-            " --blocks 3 --section 1 --scope text --max-chars 20000 --max-blocks 1 --output-format json",
+            " --blocks 3 --section 1 --content text --max-chars 20000 --max-blocks 1 --output-format json",
             read["window"]!["next"]!.GetValue<string>(),
             StringComparison.Ordinal);
     }
 
     [Fact]
-    public void QuerySearch_WindowNextReturnsTheFollowingHits()
+    public void Search_WindowNextReturnsTheFollowingHits()
     {
         File.WriteAllText(_workspace.File("source.md"), "needle one\n\nneedle two\n\nneedle three\n");
-        Assert.Equal(0, _workspace.Run("words", "create", "notes.docx", "--markdown", "source.md").ExitCode);
+        Assert.Equal(0, _workspace.Run("words", "create", "notes.docx", "--from-markdown", "source.md").ExitCode);
 
         CliResult first = _workspace.Run(
-            "words", "query", "search", "notes.docx", "--pattern", "needle", "--max-hits", "2", "--output-format", "json");
+            "words", "search", "notes.docx", "--pattern", "needle", "--max-hits", "2", "--output-format", "json");
 
         Assert.True(first.ExitCode == 0, first.StdErr);
         JsonNode page = JsonNode.Parse(first.StdOut)!;
-        Assert.Equal(["needle one", "needle two"], Snippets(page));
+        Assert.Equal(["needle one", "needle two"], HitTexts(page));
         JsonNode window = page["window"]!;
         Assert.Equal("hit", window["unit"]!.GetValue<string>());
         Assert.Equal(2, window["returned"]!.GetValue<int>());
@@ -280,7 +292,7 @@ public sealed class WordsCliTests : IDisposable
 
         Assert.True(second.ExitCode == 0, second.StdErr);
         JsonNode rest = JsonNode.Parse(second.StdOut)!;
-        Assert.Equal(["needle three"], Snippets(rest));
+        Assert.Equal(["needle three"], HitTexts(rest));
         Assert.False(rest["window"]!["truncated"]!.GetValue<bool>());
         Assert.Null(rest["window"]!["next"]);
     }
@@ -289,7 +301,7 @@ public sealed class WordsCliTests : IDisposable
     public void Edit_RejectsABadSetDirectiveBeforeReadingOpsFromStdin()
     {
         File.WriteAllText(_workspace.File("source.md"), "# Contract\n");
-        Assert.Equal(0, _workspace.Run("words", "create", "contract.docx", "--markdown", "source.md").ExitCode);
+        Assert.Equal(0, _workspace.Run("words", "create", "contract.docx", "--from-markdown", "source.md").ExitCode);
 
         CliResult edited = _workspace.RunWithInput(
             "not json",
@@ -305,7 +317,7 @@ public sealed class WordsCliTests : IDisposable
     public void Edit_RejectsTrackChangesWithoutAnAuthorBeforeReadingOpsFromStdin()
     {
         File.WriteAllText(_workspace.File("source.md"), "# Contract\n");
-        Assert.Equal(0, _workspace.Run("words", "create", "contract.docx", "--markdown", "source.md").ExitCode);
+        Assert.Equal(0, _workspace.Run("words", "create", "contract.docx", "--from-markdown", "source.md").ExitCode);
 
         CliResult edited = _workspace.RunWithInput(
             "not json",
@@ -362,11 +374,11 @@ public sealed class WordsCliTests : IDisposable
         Assert.Equal(
             expected,
             string.Join('|', JsonNode.Parse(compared.StdOut)!["samples"]!.AsArray()
-                .Select(static sample => $"{sample!["type"]!.GetValue<string>()}:{sample["text"]?.GetValue<string>()}")));
+                .Select(static sample => $"{sample!["kind"]!.GetValue<string>()}:{sample["text"]?.GetValue<string>()}")));
     }
 
     public void Dispose() => _workspace.Dispose();
 
-    private static IEnumerable<string> Snippets(JsonNode result) =>
-        result["hits"]!.AsArray().Select(static hit => hit!["snippet"]!.GetValue<string>());
+    private static IEnumerable<string> HitTexts(JsonNode result) =>
+        result["hits"]!.AsArray().Select(static hit => hit!["text"]!.GetValue<string>());
 }

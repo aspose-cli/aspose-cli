@@ -10,7 +10,7 @@ public sealed class ProductPublicationTests
 {
     public static TheoryData<string, string, string[], string> EditCases => new()
     {
-        { "words", "docx", ["--text", "source.txt"], """{"ops":[{"op":"set_text","at":{"find":"Anchor"},"text":"Edited"}]}""" },
+        { "words", "docx", ["--from-text", "source.txt"], """{"ops":[{"op":"set_text","at":{"find":"Anchor"},"text":"Edited"}]}""" },
         { "slides", "pptx", ["--from-markdown", "source.md"], """{"ops":[{"op":"set_title","slide":1,"text":"Edited"}]}""" },
         { "pdf", "pdf", ["--from-text", "source.txt"], """{"ops":[{"op":"set_properties","title":"Edited"}]}""" },
     };
@@ -49,7 +49,7 @@ public sealed class ProductPublicationTests
     {
         using var workspace = new TempWorkspace();
         string[] timeout = supervised ? ["--timeout", "60"] : [];
-        string document = CreateInput(workspace, "words", "docx", ["--text", "source.txt"]);
+        string document = CreateInput(workspace, "words", "docx", ["--from-text", "source.txt"]);
         string deck = CreateInput(workspace, "slides", "pptx", ["--from-markdown", "source.md"]);
 
         CliResult converted = workspace.Run(["words", "convert", document, "--to", "pdf", "--out", workspace.File("converted.pdf"),
@@ -87,7 +87,7 @@ public sealed class ProductPublicationTests
     public void WordsVerificationReadsTheCandidateInBothExecutionModes(bool supervised)
     {
         using var workspace = new TempWorkspace();
-        string input = CreateInput(workspace, "words", "docx", ["--text", "source.txt"]);
+        string input = CreateInput(workspace, "words", "docx", ["--from-text", "source.txt"]);
         CliResult edited = workspace.Run(["words", "edit", input,
             "--ops", """{"ops":[{"op":"set_text","at":{"find":"Anchor"},"text":"Edited"}]}""",
             "--out", workspace.File("edited.docx"), "--verify", "--output-format", "json",

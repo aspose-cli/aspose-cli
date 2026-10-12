@@ -7,7 +7,7 @@ using static Aspose.Cli.Product.Words.Engine.WordsEngineSupport;
 
 namespace Aspose.Cli.Product.Words.Engine;
 
-/// <summary>Serves <c>words query search</c>: bounded content search of document scopes.</summary>
+/// <summary>Serves <c>words search</c>: bounded content search of document scopes.</summary>
 internal static class WordsSearch
 {
     /// <summary>Searches selected document scopes within the configured hit budget.</summary>
@@ -52,7 +52,7 @@ internal static class WordsSearch
             Scope = scope,
             Location = place?.Location,
             Kind = place?.Kind,
-            Snippet = TextSearch.Truncate(text, 300),
+            Text = TextSearch.Truncate(text, 300),
         };
     }
 }

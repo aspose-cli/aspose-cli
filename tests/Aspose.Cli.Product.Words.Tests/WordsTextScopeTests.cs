@@ -6,7 +6,7 @@ using Xunit;
 
 namespace Aspose.Cli.Product.Words.Tests;
 
-/// <summary>query search and replace_text read the same stories for the same scope name.</summary>
+/// <summary>words search and replace_text read the same stories for the same scope name.</summary>
 public sealed class WordsTextScopeTests : IClassFixture<WordsFixture>
 {
     private readonly WordsFixture _fixture;
@@ -15,7 +15,7 @@ public sealed class WordsTextScopeTests : IClassFixture<WordsFixture>
 
     [Theory]
     [InlineData("body", new[] { "Body needle", "Box needle" })]
-    [InlineData("headersFooters", new[] { "Header needle", "Footer needle" })]
+    [InlineData("headers-footers", new[] { "Header needle", "Footer needle" })]
     [InlineData("footnotes", new[] { "Footnote needle" })]
     [InlineData("comments", new[] { "Comment needle" })]
     public void Search_FindsEachStoryOnlyInItsOwnScope(string scope, string[] expected)
@@ -25,7 +25,7 @@ public sealed class WordsTextScopeTests : IClassFixture<WordsFixture>
         WordsSearchResult result = WordsSearch.Run(_fixture.Session, WordsFixture.Search(input, "needle", scope));
 
         Assert.All(result.Hits, hit => Assert.Equal(scope, hit.Scope));
-        Assert.Equal(expected.Order(), result.Hits.SelectMany(static hit => Needles(hit.Snippet)).Order());
+        Assert.Equal(expected.Order(), result.Hits.SelectMany(static hit => Needles(hit.Text)).Order());
     }
 
     [Fact]
@@ -37,7 +37,7 @@ public sealed class WordsTextScopeTests : IClassFixture<WordsFixture>
 
         Assert.Equal(
             ["Body needle", "Box needle", "Comment needle", "Footer needle", "Footnote needle", "Header needle"],
-            result.Hits.SelectMany(static hit => Needles(hit.Snippet)).Order());
+            result.Hits.SelectMany(static hit => Needles(hit.Text)).Order());
     }
 
     [Fact]
@@ -63,10 +63,10 @@ public sealed class WordsTextScopeTests : IClassFixture<WordsFixture>
         WordsSearchHit body = Assert.Single(result.Hits, static hit => hit.Scope == "body");
         Assert.Equal(2, body.Section);
         Assert.NotNull(body.Block);
-        WordsSearchHit[] headers = result.Hits.Where(static hit => hit.Scope == "headersFooters").ToArray();
+        WordsSearchHit[] headers = result.Hits.Where(static hit => hit.Scope == "headers-footers").ToArray();
         Assert.Equal([1, 2], headers.Select(static hit => hit.Section));
         Assert.All(headers, static hit => Assert.Null(hit.Block));
-        Assert.Contains("Contract 2 needle", headers[1].Snippet, StringComparison.Ordinal);
+        Assert.Contains("Contract 2 needle", headers[1].Text, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -113,7 +113,7 @@ public sealed class WordsTextScopeTests : IClassFixture<WordsFixture>
 
     [Theory]
     [InlineData("body", new[] { "Body pin", "Box pin" })]
-    [InlineData("headersFooters", new[] { "Header pin", "Footer pin" })]
+    [InlineData("headers-footers", new[] { "Header pin", "Footer pin" })]
     [InlineData("footnotes", new[] { "Footnote pin" })]
     [InlineData("comments", new[] { "Comment pin" })]
     [InlineData("all", new[] { "Body pin", "Box pin", "Header pin", "Footer pin", "Footnote pin", "Comment pin" })]

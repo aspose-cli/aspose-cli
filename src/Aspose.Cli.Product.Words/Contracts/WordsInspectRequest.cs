@@ -5,7 +5,6 @@ public sealed record WordsInspectRequest
 {
     /// <summary>The document to open.</summary>
     public required string Input { get; init; }
-    public bool IncludePreview { get; init; }
     public IReadOnlyList<string>? Details { get; init; }
     public Secret? Password { get; init; }
 }

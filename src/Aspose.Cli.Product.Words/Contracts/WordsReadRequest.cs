@@ -7,15 +7,16 @@ public sealed record WordsReadRequest
     public required string Input { get; init; }
     public PageRange? Blocks { get; init; }
     public int? Section { get; init; }
-    public string Scope { get; init; } = "text";
+    /// <summary>How much of each block to return, one of <see cref="WordsReadContents"/>.</summary>
+    public string Content { get; init; } = WordsReadContents.Text;
     /// <summary>Returned document-content character budget, including repeated projections.</summary>
     public int MaxCharacters { get; init; } = 20_000;
     public int MaxBlocks { get; init; } = 200;
     public Secret? Password { get; init; }
 }
 
-/// <summary>Words read scopes.</summary>
-public static class WordsReadScopes
+/// <summary>How much of each block <c>words read --content</c> returns.</summary>
+public static class WordsReadContents
 {
     public const string Text = "text";
     public const string Outline = "outline";

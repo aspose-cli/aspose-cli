@@ -6,10 +6,10 @@ examples/edit-contract-safely. [contract.md](contract.md) is a synthetic contrac
 Termination heading.
 
 ```powershell
-aspose-cli words create contract.docx --markdown contract.md --output-format json
+aspose-cli words create contract.docx --from-markdown contract.md --output-format json
 aspose-cli words inspect contract.docx --detail outline bookmarks comments --output-format json
 aspose-cli words edit contract.docx --ops update-ops.json --out contract.review.docx --track-changes --author "Legal Ops" --verify --output-format json
-aspose-cli words query search contract.review.docx --pattern "forty-five" --output-format json
+aspose-cli words search contract.review.docx --pattern "forty-five" --output-format json
 aspose-cli words inspect contract.review.docx --detail comments --output-format json
 aspose-cli review contract.review.docx --out contract.review --output-format json
 ```

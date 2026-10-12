@@ -484,6 +484,10 @@ internal static partial class ContractRules
         {
             yield return sample;
         }
+        foreach (InvariantCase sample in SplitUnits(catalog))
+        {
+            yield return sample;
+        }
     }
 
     /// <summary>What one C-R31 case judges of a result's file objects, each a fix of its own.</summary>
@@ -600,11 +604,31 @@ internal static partial class ContractRules
         {
             yield return $"{property.Path}[]: not flat ({string.Join(", ", nested)})";
         }
-        if (extra.Length > 1)
+        if (UnitsARunChooses.TryGetValue((id, property.Path), out (string[] Units, string Reason) exception))
+        {
+            // The listed units are optional and exactly these, or the exception no longer matches.
+            string[] declaredUnits = [.. extra.Order(StringComparer.Ordinal)];
+            if (!declaredUnits.SequenceEqual(exception.Units.Order(StringComparer.Ordinal)) || extra.Any(name => required.Contains(name)))
+            {
+                yield return $"{property.Path}[]: declares {string.Join(", ", extra)}, not the optional units {string.Join(", ", exception.Units)} its exception lists";
+            }
+        }
+        else if (extra.Length > 1)
         {
             yield return $"{property.Path}[]: {string.Join(", ", extra)} beside the file fields, not one unit field";
         }
     }
+
+    /// <summary>
+    /// The outputs lists whose items name one of several units, the one a run chooses; every item
+    /// of a run names the same one. The generated schemas cannot state that the units exclude each
+    /// other, so the run sample <c>SplitUnits</c> checks it.
+    /// </summary>
+    private static readonly Dictionary<(string Schema, string Path), (string[] Units, string Reason)> UnitsARunChooses = new()
+    {
+        [("v2/words/split-result", "outputs")] = (["section", "pages", "blocks"],
+            "words split divides by sections, pages or Heading 1 paragraphs, and each part names the section, pages or blocks it holds (user decision 2026-10-12)"),
+    };
 
     private static IEnumerable<InvariantCase> R32(CliCatalog catalog)
     {

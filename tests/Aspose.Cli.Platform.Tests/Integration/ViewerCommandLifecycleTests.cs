@@ -141,6 +141,6 @@ public sealed class ViewerCommandLifecycleTests
     private static void CreateDocument(TempWorkspace workspace, string file)
     {
         File.WriteAllText(workspace.File("report.md"), "# Report\n\nOne paragraph.\n");
-        workspace.Run("words", "create", file, "--markdown", "report.md", "--output-format", "json").Succeeded();
+        workspace.Run("words", "create", file, "--from-markdown", "report.md", "--output-format", "json").Succeeded();
     }
 }

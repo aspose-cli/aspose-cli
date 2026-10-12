@@ -29,8 +29,41 @@ internal static partial class ContractRules
         }
     }
 
-    /// <summary>Runs one invocation in a fresh workspace under the run's license mode and reports every file path of its result that is not absolute.</summary>
-    private static IEnumerable<string> RelativePaths(Invocation invocation)
+    /// <summary>
+    /// The words split run of each <c>--by</c>: every item of its <c>outputs</c> names exactly one
+    /// unit beside the file fields, the same in every item, as the schema check cannot tell.
+    /// </summary>
+    private static IEnumerable<InvariantCase> SplitUnits(CliCatalog catalog)
+    {
+        if (catalog.Commands.FirstOrDefault(static item => item.Words == "words split") is not { } command
+            || command.Option("--by") is not { AllowedValues.Count: > 0 } by)
+        {
+            yield break;
+        }
+
+        yield return Check("C-R31", $"{command} units", () => by.AllowedValues.SelectMany(value =>
+        {
+            Invocation invocation = Invocation.For(command, omit: "--by").Add("--by", value);
+            if (RunSample(invocation, out string? failure) is not { } document)
+            {
+                return [$"--by {value}: {failure}"];
+            }
+            string[][] units =
+            [
+                .. (document["outputs"] as JsonArray ?? []).Select(static item =>
+                    item is JsonObject output ? output.Select(static pair => pair.Key).Where(static name => !FileCore.Contains(name)).ToArray() : []),
+            ];
+            string[] distinct = [.. units.SelectMany(static names => names).Distinct(StringComparer.Ordinal)];
+            return units.Length == 0
+                ? [$"--by {value}: no outputs"]
+                : units.Any(static names => names.Length != 1) || distinct.Length != 1
+                    ? [$"--by {value}: outputs[] name {string.Join(", ", distinct)}, not one unit the same in every item"]
+                    : (IEnumerable<string>)[];
+        }), shard: InvariantCases.ShardOf(command));
+    }
+
+    /// <summary>Runs one invocation in a fresh workspace under the run's license mode and returns its result, or null with why.</summary>
+    private static JsonObject? RunSample(Invocation invocation, out string? failure)
     {
         using var workspace = new TempWorkspace();
         ScenarioLicense.Project(workspace.Path);
@@ -46,7 +79,19 @@ internal static partial class ContractRules
             .Run(workspace.Path, string.Empty, [.. invocation.Args, "--output-format", "json"]);
         if (result.ExitCode != 0 || JsonNode.Parse(result.StdOut) is not JsonObject document)
         {
-            return [$"the sample exited {result.ExitCode} without a result"];
+            failure = $"the sample exited {result.ExitCode} without a result";
+            return null;
+        }
+        failure = null;
+        return document;
+    }
+
+    /// <summary>Runs one invocation and reports every file path of its result that is not absolute.</summary>
+    private static IEnumerable<string> RelativePaths(Invocation invocation)
+    {
+        if (RunSample(invocation, out string? failure) is not { } document)
+        {
+            return [failure!];
         }
         var problems = new List<string>();
         Visit(document, string.Empty, member: null);

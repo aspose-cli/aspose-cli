@@ -140,7 +140,7 @@ left and first-line indents when it sets its own, as RTF conversions often do;
 otherwise it follows the list level's indents like its neighbours. When no list
 numbers the level there, or the anchor is no list item, it joins one new bullet
 list shared by the operation's list paragraphs. Check `listLabel`,
-`paragraphFormat` and `runs` in `words query blocks --scope full` against its
+`paragraphFormat` and `runs` in `words read --content full` against its
 neighbours'.
 
 A paragraph with `style`, inserted Markdown and a table's text take their font
@@ -159,7 +159,7 @@ those blocks `format_text` with the same `font`, `latinFont` and
 `eastAsianFont` fields, for example
 `{"op":"format_text","target":{"blocks":"26-36"},"latinFont":"Arial","eastAsianFont":"SimSun"}`. Read them
 back as each run's `latinFont` and `eastAsianFont` in
-`words query blocks --scope full`; its `font` is the East Asian font when the
+`words read --content full`; its `font` is the East Asian font when the
 run starts with a Chinese, Japanese or Korean character, otherwise the Latin
 font.
 

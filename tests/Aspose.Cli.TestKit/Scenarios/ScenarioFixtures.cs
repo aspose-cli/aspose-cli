@@ -116,7 +116,7 @@ public static class ScenarioFixtures
                 Require(workspace.Run("slides", "create", file, "--from-markdown", "source.md", "--output-format", "json"));
                 break;
             case "words":
-                Require(workspace.Run("words", "create", file, "--markdown", "source.md", "--output-format", "json"));
+                Require(workspace.Run("words", "create", file, "--from-markdown", "source.md", "--output-format", "json"));
                 break;
         }
         return File.ReadAllBytes(workspace.File(file));

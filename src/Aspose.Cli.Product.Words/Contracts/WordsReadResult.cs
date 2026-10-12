@@ -3,8 +3,8 @@ using System.Text.Json.Serialization;
 namespace Aspose.Cli.Product.Words.Contracts;
 
 /// <summary>
-/// Windowed block projection returned by <c>words query blocks</c>. Its <c>window</c> counts
-/// blocks: the total is the blocks the range, section and scope select. <c>window.next</c>
+/// Windowed block projection returned by <c>words read</c>. Its <c>window</c> counts
+/// blocks: the total is the blocks the range, section and content select. <c>window.next</c>
 /// starts again at a block whose content was truncated and doubles <c>--max-chars</c> when that
 /// block alone exceeded the budget.
 /// </summary>
@@ -14,11 +14,11 @@ public sealed record WordsReadResult() : WindowedResultEnvelope("read-result", 2
     [JsonPropertyOrder(-49)]
     public required InputInfo Input { get; init; }
 
-    /// <summary>The projection, as <c>--scope</c> chose it.</summary>
-    [AllowedValues(typeof(WordsReadScopes))]
-    public required string Scope { get; init; }
+    /// <summary>How much of each block the read returns, as <c>--content</c> chose it.</summary>
+    [AllowedValues(typeof(WordsReadContents))]
+    public required string Content { get; init; }
 
-    /// <summary>The document's block count, whatever the range, section and scope select.</summary>
+    /// <summary>The document's block count, whatever the range, section and content select.</summary>
     [Minimum(0)]
     public required int BlockCount { get; init; }
 
@@ -35,7 +35,7 @@ public sealed record WordsBlockData
 
     /// <summary>Whether the block is a paragraph or a table.</summary>
     [AllowedValues("paragraph", "table")]
-    public required string Type { get; init; }
+    public required string Kind { get; init; }
 
     /// <summary>The 1-based section that holds the block.</summary>
     [Minimum(1)]
@@ -60,11 +60,11 @@ public sealed record WordsBlockData
 
     /// <summary>
     /// The runs of the visible text, in order: their text joins to the paragraph's text, without
-    /// field codes, deleted text or anchored comments and footnotes. Returned in full scope.
+    /// field codes, deleted text or anchored comments and footnotes. Returned with <c>--content full</c>.
     /// </summary>
     public IReadOnlyList<WordsRunData>? Runs { get; init; }
 
-    /// <summary>The paragraph's indents, spacing and alignment, returned in full scope.</summary>
+    /// <summary>The paragraph's indents, spacing and alignment, returned with <c>--content full</c>.</summary>
     public WordsParagraphFormatData? ParagraphFormat { get; init; }
 
     /// <summary>The images in a paragraph.</summary>
@@ -118,8 +118,8 @@ public sealed record WordsBlockImageData
 }
 
 /// <summary>
-/// The format a paragraph has, from its own settings and its style, in points; returned in
-/// full scope.
+/// The format a paragraph has, from its own settings and its style, in points; returned with
+/// <c>--content full</c>.
 /// </summary>
 public sealed record WordsParagraphFormatData
 {
@@ -142,14 +142,14 @@ public sealed record WordsParagraphFormatData
     public required double SpaceAfter { get; init; }
 
     /// <summary>How <c>lineSpacing</c> is measured.</summary>
-    [AllowedValues("atLeast", "exactly", "multiple")]
+    [AllowedValues("at-least", "exactly", "multiple")]
     public required string LineSpacingRule { get; init; }
 
     /// <summary>Lines for the multiple rule, where 1 is single spacing; points otherwise.</summary>
     public required double LineSpacing { get; init; }
 }
 
-/// <summary>One run of a paragraph's visible text and its formatting, returned in full scope.</summary>
+/// <summary>One run of a paragraph's visible text and its formatting, returned with <c>--content full</c>.</summary>
 public sealed record WordsRunData
 {
     /// <summary>The run's text.</summary>

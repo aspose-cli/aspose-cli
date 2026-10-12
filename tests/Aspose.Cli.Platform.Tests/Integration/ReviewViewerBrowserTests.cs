@@ -326,7 +326,7 @@ public sealed class ReviewViewerBrowserTests(ITestOutputHelper output)
             Enumerable.Range(1, 4).Select(chapter =>
                 $"## Chapter {chapter} results\n\n"
                 + string.Concat(Enumerable.Repeat(paragraph + "\n\n", 5)))));
-        workspace.Run("words", "create", "report.docx", "--markdown", "report.md", "--output-format", "json").Succeeded();
+        workspace.Run("words", "create", "report.docx", "--from-markdown", "report.md", "--output-format", "json").Succeeded();
     }
 
     /// <summary>Three slides: the second carries speaker notes and the third is hidden.</summary>

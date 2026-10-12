@@ -7,7 +7,7 @@ using Xunit;
 namespace Aspose.Cli.Product.Words.Tests;
 
 /// <summary>
-/// Blocks, search snippets and text addresses read the text a reader sees: field results
+/// Blocks, search hit text and text addresses read the text a reader sees: field results
 /// rather than codes, no text a tracked change deletes, and no comment or footnote text
 /// inside the paragraph that anchors it.
 /// </summary>
@@ -24,7 +24,7 @@ public sealed class WordsVisibleTextTests : IClassFixture<WordsFixture>
     {
         string input = CreateAnnotatedParagraph();
 
-        WordsReadResult read = WordsRead.Run(_fixture.Session, new WordsReadRequest { Input = input, Scope = "text" });
+        WordsReadResult read = WordsRead.Run(_fixture.Session, new WordsReadRequest { Input = input, Content = "text" });
 
         Assert.Equal(Visible, read.Blocks[0].Text);
     }
@@ -34,13 +34,13 @@ public sealed class WordsVisibleTextTests : IClassFixture<WordsFixture>
     {
         string input = CreateAnnotatedParagraph();
 
-        WordsReadResult read = WordsRead.Run(_fixture.Session, new WordsReadRequest { Input = input, Scope = "full" });
+        WordsReadResult read = WordsRead.Run(_fixture.Session, new WordsReadRequest { Input = input, Content = "full" });
 
         Assert.Equal(Visible, string.Concat(read.Blocks[0].Runs!.Select(static run => run.Text)));
     }
 
     [Fact]
-    public void SearchSnippetsAndFindAddresses_UseTheSameVisibleText()
+    public void SearchHitTextAndFindAddresses_UseTheSameVisibleText()
     {
         string input = CreateAnnotatedParagraph();
 
@@ -56,7 +56,7 @@ public sealed class WordsVisibleTextTests : IClassFixture<WordsFixture>
                 Output = TestOutput.At(_fixture.Temp.File("anchor.docx")),
             }));
 
-        Assert.Equal(Visible, Assert.Single(link.Hits).Snippet);
+        Assert.Equal(Visible, Assert.Single(link.Hits).Text);
         Assert.Empty(code.Hits);
         Assert.Empty(deleted.Hits);
         Assert.Equal(WordsDiagnostics.AnchorNotFound, anchor.Code);
@@ -102,7 +102,7 @@ public sealed class WordsVisibleTextTests : IClassFixture<WordsFixture>
     {
         string input = CreateNumberedClauses();
 
-        WordsReadResult read = WordsRead.Run(_fixture.Session, new WordsReadRequest { Input = input, Scope = "full" });
+        WordsReadResult read = WordsRead.Run(_fixture.Session, new WordsReadRequest { Input = input, Content = "full" });
 
         Assert.Equal(["1.", "1.1", "1.2"], read.Blocks.Select(static block => block.ListLabel));
         Assert.Equal("First clause", read.Blocks[1].Text);
@@ -131,7 +131,7 @@ public sealed class WordsVisibleTextTests : IClassFixture<WordsFixture>
             What = "text",
         });
 
-        Assert.Equal("1.2 Second clause", Assert.Single(search.Hits).Snippet);
+        Assert.Equal("1.2 Second clause", Assert.Single(search.Hits).Text);
         Assert.Equal("1. Scope\n1.1 First clause\n1.2 Changed clause", File.ReadAllText(Assert.Single(extracted.Items).Path));
     }
 

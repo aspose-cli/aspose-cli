@@ -35,7 +35,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
         {
             Input = input,
             Blocks = PageRange.Parse("1"),
-            Scope = "full",
+            Content = "full",
             MaxCharacters = budget,
         }).Blocks);
         int characters = (block.Text?.Length ?? 0) + (block.Runs?.Sum(static run => run.Text.Length) ?? 0);
@@ -56,7 +56,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
         WordsReadResult first = WordsRead.Run(_fixture.Session, new WordsReadRequest
         {
             Input = input,
-            Scope = "full",
+            Content = "full",
             MaxBlocks = 2,
             MaxCharacters = 1000,
         });
@@ -64,14 +64,14 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
         {
             Input = input,
             Blocks = PageRange.Parse("3-"),
-            Scope = "text",
+            Content = "text",
             MaxBlocks = 100,
             MaxCharacters = 10_000,
         });
 
         Assert.Equal(info.Document.BlockCount, first.Blocks.Count + rest.Blocks.Count);
         Assert.Equal(1, info.Outline![0].Block);
-        WordsBlockData table = Assert.Single(rest.Blocks, block => block.Type == "table");
+        WordsBlockData table = Assert.Single(rest.Blocks, block => block.Kind == "table");
         Assert.Equal(2, table.RowCount);
         Assert.Equal(2, table.ColumnCount);
         Assert.Equal("Metric", table.Cells![0][0]);
@@ -104,7 +104,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
         Warning warning = Assert.Single(info.Warnings!, static warning => warning.Code == WarningCodes.ListTruncated);
         Assert.Equal("outline", warning.Location);
         Assert.Contains("first 1000 of 1001", warning.Message, StringComparison.Ordinal);
-        Assert.Contains("words query blocks --scope outline", warning.Hint, StringComparison.Ordinal);
+        Assert.Contains("words read --content outline", warning.Hint, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -409,15 +409,20 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
         builder.ParagraphFormat.SpaceAfter = 8;
         builder.ParagraphFormat.LineSpacingRule = LineSpacingRule.Multiple;
         builder.ParagraphFormat.LineSpacing = 18;
-        builder.Write("Clause text.");
+        builder.Writeln("Clause text.");
+        builder.ParagraphFormat.LineSpacingRule = LineSpacingRule.AtLeast;
+        builder.ParagraphFormat.LineSpacing = 14;
+        builder.Write("Minimum spacing.");
         builder.Document.Save(input);
 
-        WordsReadResult full = WordsRead.Run(_fixture.Session, new WordsReadRequest { Input = input, Scope = "full" });
-        WordsReadResult text = WordsRead.Run(_fixture.Session, new WordsReadRequest { Input = input, Scope = "text" });
+        WordsReadResult full = WordsRead.Run(_fixture.Session, new WordsReadRequest { Input = input, Content = "full" });
+        WordsReadResult text = WordsRead.Run(_fixture.Session, new WordsReadRequest { Input = input, Content = "text" });
 
         WordsParagraphFormatData format = full.Blocks.Single(static block => block.Text == "Clause text.").ParagraphFormat!;
         Assert.Equal(("justify", 20d, -10d, 8d, "multiple", 1.5),
             (format.Alignment, format.LeftIndent, format.FirstLineIndent, format.SpaceAfter, format.LineSpacingRule, format.LineSpacing));
+        WordsParagraphFormatData minimum = full.Blocks.Single(static block => block.Text == "Minimum spacing.").ParagraphFormat!;
+        Assert.Equal(("at-least", 14d), (minimum.LineSpacingRule, minimum.LineSpacing));
         Assert.All(text.Blocks, static block => Assert.Null(block.ParagraphFormat));
     }
 
@@ -434,7 +439,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
         builder.Write(" for 员工");
         builder.Document.Save(input);
 
-        WordsReadResult full = WordsRead.Run(_fixture.Session, new WordsReadRequest { Input = input, Scope = "full" });
+        WordsReadResult full = WordsRead.Run(_fixture.Session, new WordsReadRequest { Input = input, Content = "full" });
 
         // The SDK's single font name is that of the run's first character.
         IReadOnlyList<WordsRunData> runs = full.Blocks.Single(static block => block.Text == "员工手册 (Handbook) for 员工").Runs!;
@@ -504,7 +509,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
             Output = TestOutput.At(output),
         });
 
-        WordsReadResult full = WordsRead.Run(_fixture.Session, new WordsReadRequest { Input = output, Scope = "full" });
+        WordsReadResult full = WordsRead.Run(_fixture.Session, new WordsReadRequest { Input = output, Content = "full" });
         Assert.Equal(
             [("Arial", "SimSun"), ("SimHei", "SimSun")],
             full.Blocks.Where(static block => block.Text?.StartsWith('第') == true).Select(static block => (block.Runs![0].LatinFont, block.Runs![0].EastAsianFont)));
@@ -563,7 +568,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
         WordsReadResult read = WordsRead.Run(_fixture.Session, new WordsReadRequest
         {
             Input = input,
-            Scope = "text",
+            Content = "text",
             MaxBlocks = 20,
             MaxCharacters = 10_000,
         });
@@ -874,7 +879,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
         WordsReadResult read = WordsRead.Run(_fixture.Session, new WordsReadRequest
         {
             Input = output,
-            Scope = "text",
+            Content = "text",
             MaxBlocks = 20,
             MaxCharacters = 10_000,
         });
@@ -1359,10 +1364,21 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
 
         Assert.Equal(["table-001.csv:2", "table-002.csv:4"], result.Items.Select(static item => $"{Path.GetFileName(item.Path)}:{item.Block}"));
         Assert.All(result.Items, static item => Assert.Equal("table", item.Kind));
-        byte[] bytes = File.ReadAllBytes(result.Items[0].Path);
-        Assert.Equal([0xEF, 0xBB, 0xBF], bytes[..3]);
-        Assert.Equal("岗位,\"人数, 备注\"\r\n\"Engineer \"\"senior\"\"\",3\r\n", File.ReadAllText(result.Items[0].Path));
+        // UTF-8 without a byte order mark unless one is asked for.
+        const string First = "岗位,\"人数, 备注\"\r\n\"Engineer \"\"senior\"\"\",3\r\n";
+        Assert.Equal(System.Text.Encoding.UTF8.GetBytes(First), File.ReadAllBytes(result.Items[0].Path));
         Assert.Equal("\"Line one\nLine two\nLine three\"\r\n", File.ReadAllText(result.Items[1].Path));
+
+        WordsExtractResult marked = WordsExtract.Run(_fixture.Session, new WordsExtractRequest
+        {
+            Input = input,
+            Output = new ResolvedDirectory(_fixture.Temp.File("tables-bom")),
+            What = "tables",
+            ByteOrderMark = true,
+        });
+
+        Assert.All(marked.Items, static item => Assert.Equal([0xEF, 0xBB, 0xBF], File.ReadAllBytes(item.Path)[..3]));
+        Assert.Equal(First, File.ReadAllText(marked.Items[0].Path));
     }
 
     /// <summary>Writes a table of one row per item of <paramref name="rows"/>, each cell its text.</summary>

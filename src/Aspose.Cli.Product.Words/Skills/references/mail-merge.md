@@ -41,7 +41,7 @@ listing each field with its 1-based row numbers, such as
 `Salary: record 2; Bonus: records 1, 3`. A row number is also the merged copy,
 or with `regions` the region repetition, that has the gap. Each merged copy
 appends the template's sections, so with a one-section template record N is
-section N of the output: read it with `words query blocks <file> --section N`.
+section N of the output: read it with `words read <file> --section N`.
 A template of S sections puts record N in sections `(N-1)*S+1` to `N*S`.
 With `regions` only the fields inside the region are checked. A JSON empty
 string is a value and is not reported, and `--verify` still reports `ok`. A

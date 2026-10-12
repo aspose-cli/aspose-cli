@@ -73,7 +73,7 @@ internal static class WordsExtract
             int number = 0;
             foreach (BlockEntry entry in index.Entries.Where(static entry => entry.Node is Table))
             {
-                byte[] bytes = Csv((Table)entry.Node);
+                byte[] bytes = Csv((Table)entry.Node, request.ByteOrderMark);
                 string path = guard.WriteAllBytes($"table-{++number:000}.csv", bytes);
                 items.Add(new WordsExtractedItem { Path = path, Kind = "table", SizeBytes = bytes.LongLength, Block = entry.Index });
             }
@@ -95,13 +95,13 @@ internal static class WordsExtract
     }
 
     /// <summary>
-    /// A table as RFC 4180 CSV in UTF-8 with a byte order mark, which spreadsheet programs need
-    /// to read it as UTF-8: one record per row and one field per cell, the cell's visible text
+    /// A table as RFC 4180 CSV in UTF-8, with a byte order mark when asked, which spreadsheet
+    /// programs need to read it as UTF-8: one record per row and one field per cell, the cell's visible text
     /// with a line break between its paragraphs and for each manual line break. Merged cells stay as the document stores them:
     /// a cell spanning columns can be one field, so rows can have different field counts, and a
     /// cell a merge covers is an empty field.
     /// </summary>
-    private static byte[] Csv(Table table)
+    private static byte[] Csv(Table table, bool byteOrderMark)
     {
         var csv = new System.Text.StringBuilder();
         foreach (Row row in table.Rows)
@@ -110,7 +110,8 @@ internal static class WordsExtract
             csv.Append("\r\n");
         }
 
-        return [.. System.Text.Encoding.UTF8.GetPreamble(), .. System.Text.Encoding.UTF8.GetBytes(csv.ToString())];
+        byte[] text = System.Text.Encoding.UTF8.GetBytes(csv.ToString());
+        return byteOrderMark ? [.. System.Text.Encoding.UTF8.GetPreamble(), .. text] : text;
 
         static string Field(string text) =>
             text.AsSpan().IndexOfAny(",\"\r\n") < 0 ? text : $"\"{text.Replace("\"", "\"\"", StringComparison.Ordinal)}\"";

@@ -7,7 +7,7 @@
   },
   "steps": [
     {
-      "args": ["words", "create", "blank.xml", "--blank", "--encrypt-env", "NEW_PASSWORD"],
+      "args": ["words", "create", "blank.xml", "--encrypt-env", "NEW_PASSWORD"],
       "env": { "NEW_PASSWORD": "Scenario-New-Secret-7d2a" },
       "expect": {
         "exitCode": 2,
@@ -22,7 +22,7 @@
       }
     },
     {
-      "args": ["words", "create", "markdown.xml", "--markdown", "source.md", "--encrypt-env", "NEW_PASSWORD"],
+      "args": ["words", "create", "markdown.xml", "--from-markdown", "source.md", "--encrypt-env", "NEW_PASSWORD"],
       "env": { "NEW_PASSWORD": "Scenario-New-Secret-7d2a" },
       "expect": {
         "exitCode": 2,
@@ -33,7 +33,7 @@
       }
     },
     {
-      "args": ["words", "create", "text.xml", "--text", "source.txt", "--encrypt-env", "NEW_PASSWORD"],
+      "args": ["words", "create", "text.xml", "--from-text", "source.txt", "--encrypt-env", "NEW_PASSWORD"],
       "env": { "NEW_PASSWORD": "Scenario-New-Secret-7d2a" },
       "expect": {
         "exitCode": 2,
@@ -44,7 +44,7 @@
       }
     },
     {
-      "args": ["words", "create", "templated.xml", "--markdown", "source.md", "--template", "template.xml", "--encrypt-env", "NEW_PASSWORD"],
+      "args": ["words", "create", "templated.xml", "--from-markdown", "source.md", "--template", "template.xml", "--encrypt-env", "NEW_PASSWORD"],
       "env": { "NEW_PASSWORD": "Scenario-New-Secret-7d2a" },
       "expect": {
         "exitCode": 2,
@@ -55,7 +55,7 @@
       }
     },
     {
-      "args": ["words", "create", "literal.xml", "--blank", "--encrypt", "Scenario-New-Secret-7d2a"],
+      "args": ["words", "create", "literal.xml", "--encrypt", "Scenario-New-Secret-7d2a"],
       "expect": {
         "exitCode": 2,
         "error": "OPTION_INVALID",
@@ -67,7 +67,7 @@
       }
     },
     {
-      "args": ["words", "create", "plain.xml", "--blank"],
+      "args": ["words", "create", "plain.xml"],
       "expect": { "exitCode": 0, "json": [{ "path": "output.format", "equals": "flatopc" }], "files": { "present": ["plain.xml"] } }
     }
   ]

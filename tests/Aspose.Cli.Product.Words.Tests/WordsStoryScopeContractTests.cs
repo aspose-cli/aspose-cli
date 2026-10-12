@@ -55,8 +55,8 @@ public sealed class WordsStoryScopeContractTests : IDisposable
         JsonObject result = JsonNode.Parse(inspected.StdOut)!.AsObject();
         Assert.Equal(Id, PublishedSchemas.IdOf(result["schema"]!.GetValue<string>()));
         var problems = new List<string>();
-        CheckScopes(result, "fields", ["body", "comments", "footnotes", "headersFooters"], problems);
-        CheckScopes(result, "images", ["body", "headersFooters"], problems);
+        CheckScopes(result, "fields", ["body", "comments", "footnotes", "headers-footers"], problems);
+        CheckScopes(result, "images", ["body", "headers-footers"], problems);
         Assert.True(problems.Count == 0, string.Join(Environment.NewLine, problems));
     }
 

@@ -33,7 +33,8 @@ internal static class WordsSplit
                         }
                     }
 
-                    writer.Stage(part, index + 1, $"section-{index + 1}");
+                    int section = index + 1;
+                    writer.Stage(part, section, file => new WordsPartOutput(file) { Section = section });
                 }
 
                 break;
@@ -43,7 +44,8 @@ internal static class WordsSplit
                 writer.Number(numbers);
                 foreach ((IReadOnlyList<int> pages, int number) in groups.Zip(numbers))
                 {
-                    writer.Stage(ExtractPages(loaded.Document, pages), number, pages.Count == 1 ? $"page-{pages[0]}" : "pages-" + PageRange.Describe(pages));
+                    string held = PageRange.Describe(pages)!;
+                    writer.Stage(ExtractPages(loaded.Document, pages), number, file => new WordsPartOutput(file) { Pages = held });
                 }
 
                 break;
@@ -54,7 +56,7 @@ internal static class WordsSplit
                 throw new InvalidOperationException($"words split does not divide by {request.Plan.By}.");
         }
 
-        IReadOnlyList<WordsSplitOutput> outputs = writer.Commit();
+        IReadOnlyList<WordsPartOutput> outputs = writer.Commit();
         return new WordsSplitResult
         {
             Input = InfoProjection.Source(request.Input, loaded),
@@ -141,7 +143,8 @@ internal static class WordsSplit
             }
 
             part.EnsureMinimum();
-            writer.Stage(part, group + 1, $"blocks-{start}-{end}");
+            string blocks = PageRange.Describe(Enumerable.Range(start, end - start + 1))!;
+            writer.Stage(part, group + 1, file => new WordsPartOutput(file) { Blocks = blocks });
             part.Cleanup();
         }
     }

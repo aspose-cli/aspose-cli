@@ -333,7 +333,7 @@ internal static class WordsEdit
             outputPassword);
         int fieldCount = reopened.Document.Range.Fields.Count;
         int revisionCount = reopened.Document.Revisions.Count;
-        string protection = WordsProtection.ToMode(reopened.Document.ProtectionType);
+        string? protection = WordsProtection.ToMode(reopened.Document.ProtectionType);
         if (fieldCount != expected.FieldCount)
         {
             issues.Add(VerificationIssues.Of(
@@ -354,7 +354,7 @@ internal static class WordsEdit
         {
             issues.Add(VerificationIssues.Of(
                 WordsDiagnostics.ProtectionChanged,
-                $"Protection changed during save/reopen: expected {expected.Protection}, found {protection}.",
+                $"Protection changed during save/reopen: expected {expected.Protection ?? "none"}, found {protection ?? "none"}.",
                 hint: KeepStateHint("protection", format, WordsFormats.WordIds)));
         }
 
@@ -433,7 +433,7 @@ internal static class WordsEdit
         return EnvelopeParts.CombineWarnings(extra);
     }
 
-    private sealed record ExpectedDocumentState(int FieldCount, int RevisionCount, string Protection, IReadOnlyList<string> CheckedOps);
+    private sealed record ExpectedDocumentState(int FieldCount, int RevisionCount, string? Protection, IReadOnlyList<string> CheckedOps);
 
     /// <summary>
     /// The ids, in batch order, of the applied operations whose effect verification reads back:

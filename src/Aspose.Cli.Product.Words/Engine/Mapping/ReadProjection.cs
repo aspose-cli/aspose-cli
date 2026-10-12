@@ -32,7 +32,7 @@ internal static class ReadProjection
             }
         }
 
-        if (request.Scope == "outline")
+        if (request.Content == WordsReadContents.Outline)
         {
             candidates = candidates.Where(static entry => entry.Node is Paragraph p && InfoProjection.HeadingLevel(p) is not null).ToArray();
         }
@@ -46,7 +46,7 @@ internal static class ReadProjection
                 break;
             }
             int available = remainingCharacters;
-            WordsBlockData block = ProjectBlock(entry, request.Scope, ref available);
+            WordsBlockData block = ProjectBlock(entry, request.Content, ref available);
             if (blocks.Count > 0 && block.ContentTruncated)
             {
                 break;
@@ -58,7 +58,7 @@ internal static class ReadProjection
         return new WordsReadResult
         {
             Input = InfoProjection.Source(path, loaded),
-            Scope = request.Scope,
+            Content = request.Content,
             Blocks = blocks,
             BlockCount = index.Count,
             Window = new ResultWindow
@@ -71,7 +71,7 @@ internal static class ReadProjection
         };
     }
 
-    private static WordsBlockData ProjectBlock(BlockEntry entry, string scope, ref int remaining)
+    private static WordsBlockData ProjectBlock(BlockEntry entry, string content, ref int remaining)
     {
         bool truncated = false;
         if (entry.Node is Paragraph paragraph)
@@ -81,7 +81,7 @@ internal static class ReadProjection
             // The runs leave out the leading page breaks the text leaves out.
             int skipped = visible.Length - text.Length;
             text = Take(text, ref remaining, ref truncated);
-            var runs = scope == "full" ? new List<WordsRunData>() : null;
+            var runs = content == WordsReadContents.Full ? new List<WordsRunData>() : null;
             if (runs is not null)
             {
                 foreach (Run run in WordsText.VisibleRuns(paragraph))
@@ -113,7 +113,7 @@ internal static class ReadProjection
             return new WordsBlockData
             {
                 Block = entry.Index,
-                Type = "paragraph",
+                Kind = "paragraph",
                 Section = entry.Section,
                 ListLabel = WordsText.ListNumber(paragraph),
                 Text = text,
@@ -158,7 +158,7 @@ internal static class ReadProjection
         return new WordsBlockData
         {
             Block = entry.Index,
-            Type = "table",
+            Kind = "table",
             Section = entry.Section,
             RowCount = table.Rows.Count,
             ColumnCount = table.Rows.Count == 0 ? 0 : table.Rows.Cast<Row>().Max(static row => row.Cells.Count),
@@ -175,7 +175,7 @@ internal static class ReadProjection
         FirstLineIndent = format.FirstLineIndent,
         SpaceBefore = format.SpaceBefore,
         SpaceAfter = format.SpaceAfter,
-        LineSpacingRule = JsonNamingPolicy.CamelCase.ConvertName(format.LineSpacingRule.ToString()),
+        LineSpacingRule = JsonNamingPolicy.KebabCaseLower.ConvertName(format.LineSpacingRule.ToString()),
         // The SDK states a multiple in points of 12 per line.
         LineSpacing = format.LineSpacingRule == LineSpacingRule.Multiple ? format.LineSpacing / 12 : format.LineSpacing,
     };

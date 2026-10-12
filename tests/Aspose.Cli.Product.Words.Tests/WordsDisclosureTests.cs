@@ -37,7 +37,7 @@ public sealed class WordsDisclosureTests
         using LoadedDocument loaded = loader.Open(input, null);
         var index = new DocumentBlockIndex(loaded.Document, loaded.Evaluation);
         WordsReadResult read = (WordsReadResult)outputs.Disclose(
-            WordsRead.Run(WordsActivation.Session(outputs, budgets), new WordsReadRequest { Input = input, Scope = "text" }));
+            WordsRead.Run(WordsActivation.Session(outputs, budgets), new WordsReadRequest { Input = input, Content = "text" }));
 
         bool evaluation = state == LicenseState.Evaluation;
         // The SDK discloses the truncation notice of an input read in evaluation mode only.
@@ -503,7 +503,7 @@ public sealed class WordsDisclosureTests
         });
 
         Assert.Contains(split.Warnings ?? [], static warning => warning.Code == WordsDiagnostics.MacrosDropped);
-        Assert.False(new Document(Assert.Single(split.Outputs).Output.Path).HasMacros);
+        Assert.False(new Document(Assert.Single(split.Outputs).Path).HasMacros);
         Assert.Contains(compared.Warnings ?? [], static warning => warning.Code == WordsDiagnostics.MacrosDropped);
         Assert.False(new Document(compared.Output!.Path).HasMacros);
     }
@@ -562,14 +562,14 @@ public sealed class WordsDisclosureTests
         });
 
         Assert.Equal(2, result.Outputs.Count);
-        foreach (WordsSplitOutput part in result.Outputs)
+        foreach (WordsPartOutput part in result.Outputs)
         {
-            var document = new Document(part.Output.Path);
+            var document = new Document(part.Path);
             Assert.Equal(PaperSize.A5, document.FirstSection.PageSetup.PaperSize);
             Assert.Equal("Brand", document.FirstSection.HeadersFooters[HeaderFooterType.HeaderPrimary].GetText().Trim());
         }
 
-        Assert.DoesNotContain("Body Two", new Document(result.Outputs[0].Output.Path).GetText(), StringComparison.Ordinal);
+        Assert.DoesNotContain("Body Two", new Document(result.Outputs[0].Path).GetText(), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -601,9 +601,9 @@ public sealed class WordsDisclosureTests
             Plan = new Sdk.Addressing.SplitPlan(Sdk.Addressing.SplitBy.Heading1, null, null, null),
         });
 
-        Assert.Equal(["blocks-1-1", "blocks-2-3", "blocks-4-5"], result.Outputs.Select(static part => part.Source));
+        Assert.Equal(["1", "2-3", "4-5"], result.Outputs.Select(static part => part.Blocks));
         string[] texts = result.Outputs
-            .Select(part => string.Join("|", WordsRead.Run(fixture.Session, new WordsReadRequest { Input = part.Output.Path })
+            .Select(part => string.Join("|", WordsRead.Run(fixture.Session, new WordsReadRequest { Input = part.Path })
                 .Blocks.Select(static block => block.Text)))
             .ToArray();
         Assert.Equal(["Contents", "One|Body One", "Two|Body Two"], texts);

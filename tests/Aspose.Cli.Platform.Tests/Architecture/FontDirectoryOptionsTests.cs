@@ -44,8 +44,8 @@ public sealed class FontDirectoryOptionsTests
         ["slides edit"] = true,
         ["slides extract"] = false,
         ["words inspect"] = true, // the page count lays out the document
-        ["words query blocks"] = false,
-        ["words query search"] = false,
+        ["words read"] = false,
+        ["words search"] = false,
         ["words create"] = true, // fixed-page outputs are laid out
         ["words edit"] = true, // field and TOC updates lay out the document
         ["words compare"] = true, // the redline can be a fixed-page output

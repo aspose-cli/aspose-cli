@@ -96,7 +96,7 @@ public sealed class McpSecretExecutionTests
         {
             "cells" => [product, "create", input, "--sheets", "Data"],
             "pdf" => [product, "create", input, "--from-text", "content.txt"],
-            _ => [product, "create", input, "--text", "content.txt"],
+            _ => [product, "create", input, "--from-text", "content.txt"],
         };
         CliResult created = workspace.Run([.. create, "--output-format", "json"]);
         Assert.True(created.ExitCode == 0, created.StdErr);
@@ -193,7 +193,7 @@ public sealed class McpSecretExecutionTests
                 $$"""{"ops":[{"op":"protect_sheet","sheet":"Data","passwordEnv":"{{name}}"},{"op":"set_values","sheet":"Data","range":"A1","values":[[42]]}]}"""),
             "pdf" => ("pdf", ["--from-text", "content.txt"],
                 $$"""{"ops":[{"op":"encrypt_document","ownerPasswordEnv":"{{name}}"},{"op":"set_properties","title":"Kept"}]}"""),
-            _ => ("docx", ["--text", "content.txt"],
+            _ => ("docx", ["--from-text", "content.txt"],
                 $$"""{"ops":[{"op":"protect","mode":"readOnly","passwordEnv":"{{name}}"},{"op":"set_text","at":{"block":1},"text":"Kept"}]}"""),
         };
         string input = "input." + extension;

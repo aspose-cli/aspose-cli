@@ -5,7 +5,7 @@ using static Aspose.Cli.Product.Words.Engine.WordsEngineSupport;
 
 namespace Aspose.Cli.Product.Words.Engine;
 
-/// <summary>Serves <c>words query blocks</c>: a bounded structural projection of a document.</summary>
+/// <summary>Serves <c>words read</c>: a bounded structural projection of a document.</summary>
 internal static class WordsRead
 {
     /// <summary>Reads a bounded structural projection of a document.</summary>

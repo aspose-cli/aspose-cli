@@ -12,12 +12,12 @@ namespace Aspose.Cli.Product.Words.Engine;
 internal sealed class WordsSplitWriter : IDisposable
 {
     /// <summary>The format every part is written in.</summary>
-    private static readonly FormatDescriptor Docx = WordsFormats.Definitions.Named(FormatUse.Convert, "docx")!;
+    private static readonly FormatDescriptor Docx = WordsFormats.SplitParts[0];
 
     private readonly ResolvedDirectory _output;
     private readonly string _stem;
     private readonly OutputSet<Document> _transaction;
-    private readonly List<StagedPart> _parts = [];
+    private readonly List<Func<OutputInfo, WordsPartOutput>> _parts = [];
     private readonly Secret? _password;
     private Dictionary<int, string> _paths = [];
 
@@ -37,11 +37,13 @@ internal sealed class WordsSplitWriter : IDisposable
     public void Number(IReadOnlyList<int> numbers) =>
         _paths = numbers.Zip(_output.Parts(_stem, "docx", numbers)).ToDictionary(static pair => pair.First, static pair => pair.Second);
 
-    /// <summary>Stages the part numbered <paramref name="number"/>, one of those <see cref="Number"/> named.</summary>
-    public void Stage(Document document, int number, string source)
+    /// <summary>
+    /// Stages the part numbered <paramref name="number"/>, one of those <see cref="Number"/> named;
+    /// <paramref name="describe"/> states what of the document it holds beside its file.
+    /// </summary>
+    public void Stage(Document document, int number, Func<OutputInfo, WordsPartOutput> describe)
     {
         string target = _paths[number];
-        int index = _parts.Count + 1;
         WordsSavePipeline.RemoveMacrosUnlessKept(document, "docx");
         _transaction.Stage(
             target,
@@ -49,26 +51,14 @@ internal sealed class WordsSplitWriter : IDisposable
             document,
             staged => document.Save(staged, WordsSavePipeline.Options(Docx.Id, _password)),
             encrypted: _password is not null);
-        _parts.Add(new StagedPart(index, source, target));
+        _parts.Add(describe);
     }
 
-    public IReadOnlyList<WordsSplitOutput> Commit()
+    public IReadOnlyList<WordsPartOutput> Commit()
     {
         IReadOnlyList<PublishedFile> files = _transaction.Commit();
-        return _parts.Select((part, index) => new WordsSplitOutput
-        {
-            Index = part.Index,
-            Source = part.Source,
-            Output = FileObjects.Output(files[index], Docx, encrypted: _password is not null),
-        }).ToArray();
+        return _parts.Select((describe, index) => describe(FileObjects.Output(files[index], Docx, encrypted: _password is not null))).ToArray();
     }
 
     public void Dispose() => _transaction.Dispose();
-
-    private sealed class StagedPart(int index, string source, string target)
-    {
-        public int Index { get; } = index;
-        public string Source { get; } = source;
-        public string Target { get; } = target;
-    }
 }

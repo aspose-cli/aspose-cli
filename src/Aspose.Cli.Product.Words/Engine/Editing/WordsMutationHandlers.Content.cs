@@ -53,7 +53,7 @@ internal sealed partial class WordsMutationHandlers
             _warnings.Add(WordsOp.Catalog.NoEffect(operation, NoEffectReasons.NoMatch,
                 $"Operation {operation.Id} (replace_text) matched no text in scope '{operation.Scope}', so nothing was replaced.") with
             {
-                Hint = "Search with 'words query search' and the same pattern and scope, or --scope all for headers, footers, "
+                Hint = "Search with 'words search' and the same pattern and scope, or --scope all for headers, footers, "
                     + "footnotes and comments. Field codes and text a tracked change deletes are never matched.",
             });
         }

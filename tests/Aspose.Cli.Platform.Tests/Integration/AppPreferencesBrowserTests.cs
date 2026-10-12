@@ -23,7 +23,7 @@ public sealed class AppPreferencesBrowserTests(ITestOutputHelper output)
             await ExpectDraft(ui, "sheets", false);
 
             File.WriteAllText(ui.App.Workspace.File("text.txt"), "Draft ownership");
-            Assert.Equal(0, ui.App.Workspace.Run("words", "create", "draft.docx", "--text", "text.txt").ExitCode);
+            Assert.Equal(0, ui.App.Workspace.Run("words", "create", "draft.docx", "--from-text", "text.txt").ExitCode);
             ui.App.Open("draft.docx");
             await ui.Poll();
             await ExpectDraft(ui, "pages", false);
