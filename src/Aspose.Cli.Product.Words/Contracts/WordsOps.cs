@@ -12,7 +12,7 @@ public sealed record WordsOpsBatch : BoundedOperationEnvelope<WordsOp>;
 /// document as it was before the first operation, so an insertion does not shift a later
 /// operation's anchor.
 /// </summary>
-[OperationVocabulary("ops", JsonContext = typeof(WordsOpsJsonContext), Addresses = new[] { "at", "position", "target", "section", "path", "passwordEnv" })]
+[OperationVocabulary("ops", JsonContext = typeof(WordsOpsJsonContext), Addresses = new[] { "at", "position", "target", "section", "path", "passwordEnv", "sourcePasswordEnv" })]
 [JsonConverter(typeof(OperationJsonConverter<WordsOp>))]
 public abstract partial record WordsOp : BoundedOperation;
 
@@ -61,16 +61,18 @@ public sealed record WordsParagraphInput
     [ReadBack("read-result.schema.json#/$defs/wordsBlockData/properties/style")]
     [MinLength(1)] public string? Style { get; init; }
 
-    /// <summary>Makes the paragraph a list item at this level. When the anchor is a list item, it joins the anchor's list if that list defines the level, else the list of the nearest item at this level under the same parent, and without style continues that list's nearest existing item at this level, if any, with the indents it sets on itself. When the anchor is no list item, or no such list exists, it joins one new bullet list.</summary>
+    /// <summary>Makes the paragraph a list item at this 1-based level. When the anchor is a list item, it joins the anchor's list if that list defines the level, else the list of the nearest item at this level under the same parent, and without style continues that list's nearest existing item at this level, if any, with the indents it sets on itself. When the anchor is no list item, or no such list exists, it joins one new bullet list.</summary>
     [NotReadBack]
-    [Minimum(0), Maximum(8)] public int? ListLevel { get; init; }
+    [Minimum(1), Maximum(9)] public int? ListLevel { get; init; }
 }
 
 /// <summary>Page size, orientation, margins and column settings; omitted settings keep their values.</summary>
 public sealed record WordsPageSetupInput
 {
-    [ReadBack("inspect-result.schema.json#/$defs/wordsSectionData/properties/widthPoints")]
-    [AllowedValues("a3", "a4", "a5", "letter", "legal")] public string? Size { get; init; }
+    /// <summary>The page size: a preset, or its width and height in points; the orientation decides which side is long, so a landscape page is wider than it is high.</summary>
+    [MistakenFor("size")]
+    [ReadBack("inspect-result.schema.json#/$defs/wordsSectionData/properties/pageSize")]
+    public PageSizeInput? PageSize { get; init; }
 
     [ReadBack("inspect-result.schema.json#/$defs/wordsSectionData/properties/orientation")]
     [AllowedValues(typeof(WordsPageOrientations))] public string? Orientation { get; init; }
@@ -110,8 +112,9 @@ public sealed record ReplaceTextOp : WordsOp
     [NotState]
     public bool Regex { get; init; }
 
+    [MistakenFor("matchCase")]
     [NotState]
-    public bool MatchCase { get; init; }
+    public bool CaseSensitive { get; init; }
 
     [NotState]
     public bool WholeWord { get; init; }
@@ -132,7 +135,8 @@ public sealed record ReplaceTextOp : WordsOp
 [Operation("set_text")]
 public sealed record SetTextOp : WordsOp
 {
-    public required WordsTarget At { get; init; }
+    [MistakenFor("at")]
+    public required WordsTarget Target { get; init; }
 
     [ReadBack("read-result.schema.json#/$defs/wordsBlockData/properties/text")]
     public required string Text { get; init; }
@@ -204,7 +208,7 @@ public sealed record InsertImageOp : WordsOp
     public bool Inline { get; init; } = true;
 }
 
-/// <summary>Inserts a table at a block boundary; cells must fit the table's rows and columns.</summary>
+/// <summary>Inserts a table at a block boundary; values must fit the table's rows and columns.</summary>
 [Operation("insert_table")]
 public sealed record InsertTableOp : WordsOp
 {
@@ -220,18 +224,20 @@ public sealed record InsertTableOp : WordsOp
     [Minimum(1), Maximum(63)] public required int ColumnCount { get; init; }
 
     /// <summary>Cell text by row, then column; cells beyond it stay empty.</summary>
-    [ReadBack("read-result.schema.json#/$defs/wordsBlockData/properties/cells")]
-    public IReadOnlyList<IReadOnlyList<string>>? Cells { get; init; }
+    [MistakenFor("cells")]
+    [ReadBack("read-result.schema.json#/$defs/wordsBlockData/properties/values")]
+    public IReadOnlyList<IReadOnlyList<string>>? Values { get; init; }
 
     /// <summary>An existing table style.</summary>
-    [ReadBack("inspect-result.schema.json#/$defs/wordsTableData/properties/style")]
-    [MinLength(1)] public string? Style { get; init; }
+    [MistakenFor("style")]
+    [ReadBack("inspect-result.schema.json#/$defs/wordsTableData/properties/tableStyle")]
+    [MinLength(1)] public string? TableStyle { get; init; }
 
     /// <inheritdoc />
     protected override BoundedOperation Validated()
     {
-        OperationInvalidException.Require(Cells is null || Cells.Count <= RowCount, "cells has more rows than the table");
-        OperationInvalidException.Require(Cells is null || Cells.All(row => row.Count <= ColumnCount), "cells has more columns than the table");
+        OperationInvalidException.Require(Values is null || Values.Count <= RowCount, "values has more rows than the table");
+        OperationInvalidException.Require(Values is null || Values.All(row => row.Count <= ColumnCount), "values has more columns than the table");
         return this;
     }
 }
@@ -240,15 +246,17 @@ public sealed record InsertTableOp : WordsOp
 [Operation("set_table_cell")]
 public sealed record SetTableCellOp : WordsOp
 {
-    public required WordsTarget At { get; init; }
+    [MistakenFor("at")]
+    public required WordsTarget Target { get; init; }
 
     [NotState]
     [Minimum(1)] public required int Row { get; init; }
 
+    [MistakenFor("col")]
     [NotState]
-    [Minimum(1)] public required int Col { get; init; }
+    [Minimum(1)] public required int Column { get; init; }
 
-    [ReadBackByPosition] // Reads back as cells[row][col] of the table block.
+    [ReadBackByPosition] // Reads back as cells[row][column] of the table block.
     public required string Text { get; init; }
 }
 
@@ -284,11 +292,13 @@ public sealed record RepeatTableRowOp : WordsOp
 /// keepTogether true also stops rows breaking, so it cannot be combined with
 /// allowRowBreakAcrossPages true.
 /// </summary>
-[Operation("format_table")]
+[Operation("set_table_pagination")]
+[MistakenFor("format_table")]
 [AtLeastOneOf("keepTogether", "allowRowBreakAcrossPages", "headerRowCount", "keepWithNext")]
-public sealed record FormatTableOp : WordsOp
+public sealed record SetTablePaginationOp : WordsOp
 {
-    public required WordsTarget At { get; init; }
+    [MistakenFor("at")]
+    public required WordsTarget Target { get; init; }
 
     /// <summary>
     /// true keeps the whole table on one page when it fits: no row breaks across pages, and
@@ -371,16 +381,16 @@ public sealed record InsertFieldOp : WordsOp
     [MinLength(1)] public required string Code { get; init; }
 }
 
-/// <summary>Adds an empty section at the start, the end or after a section.</summary>
-[Operation("add_section")]
-[PresentWhen("after", "position", "after")]
-public sealed record AddSectionOp : WordsOp
+/// <summary>Inserts an empty section before or after a section.</summary>
+[Operation("insert_section")]
+[MistakenFor("add_section")]
+public sealed record InsertSectionOp : WordsOp
 {
-    [AllowedValues("start", "end", "after")] public string Position { get; init; } = "end";
+    /// <summary>The 1-based section number the new section goes before or after, as position says.</summary>
+    [MistakenFor("after")]
+    [Minimum(1)] public required int At { get; init; }
 
-    /// <summary>The 1-based section the new section follows; set exactly when position is after.</summary>
-    [NotState]
-    [Minimum(1)] public int? After { get; init; }
+    [WordsPosition] public required string Position { get; init; }
 
     /// <summary>Page setup applied over the neighbouring section's.</summary>
     public WordsPageSetupInput? PageSetup { get; init; }
@@ -393,14 +403,30 @@ public sealed record DeleteSectionOp : WordsOp
     [Minimum(1)] public required int Section { get; init; }
 }
 
-/// <summary>Applies page setup to one section, or to every section.</summary>
+/// <summary>Applies page setup to one section, or to every section; omitted settings keep their values.</summary>
 [Operation("set_page_setup")]
+[AtLeastOneOf("pageSize", "orientation", "margins", "columnCount")]
 public sealed record SetPageSetupOp : WordsOp
 {
     /// <summary>The 1-based section; every section when omitted.</summary>
     [Minimum(1)] public int? Section { get; init; }
 
-    public required WordsPageSetupInput Setup { get; init; }
+    /// <summary>The page size: a preset, or its width and height in points; the orientation decides which side is long, so a landscape page is wider than it is high.</summary>
+    [MistakenFor("size", "setup")]
+    [ReadBack("inspect-result.schema.json#/$defs/wordsSectionData/properties/pageSize")]
+    public PageSizeInput? PageSize { get; init; }
+
+    [ReadBack("inspect-result.schema.json#/$defs/wordsSectionData/properties/orientation")]
+    [AllowedValues(typeof(WordsPageOrientations))] public string? Orientation { get; init; }
+
+    [ReadBack("inspect-result.schema.json#/$defs/wordsSectionData/properties/margins")]
+    public WordsMarginInput? Margins { get; init; }
+
+    [NotReadBack]
+    [Minimum(1)] public int? ColumnCount { get; init; }
+
+    /// <summary>The settings as one page setup.</summary>
+    internal WordsPageSetupInput Setup => new() { PageSize = PageSize, Orientation = Orientation, Margins = Margins, ColumnCount = ColumnCount };
 }
 
 /// <summary>Replaces one kind of header or footer with paragraphs or with Markdown.</summary>
@@ -443,8 +469,10 @@ public sealed record SetPageNumbersOp : WordsOp
     [NotReadBack]
     [AllowedValues("left", "center", "right")] public string Alignment { get; init; } = "center";
 
+    /// <summary>How the page numbers are written; the section's numbering keeps its style when omitted.</summary>
+    [MistakenFor("format")]
     [NotReadBack]
-    [AllowedValues("decimal", "upperRoman", "lowerRoman", "upperLetter", "lowerLetter")] public string? Format { get; init; }
+    [AllowedValues(typeof(PageNumberStyles))] public string? NumberStyle { get; init; }
 
     /// <summary>The number of the section's first page; numbering continues when omitted.</summary>
     [NotReadBack]
@@ -467,12 +495,13 @@ public sealed record FormatTextOp : WordsOp
     public bool? Underline { get; init; }
 
     /// <summary>The font size in points.</summary>
-    [ReadBack("read-result.schema.json#/$defs/wordsRunData/properties/size")]
-    [ExclusiveMinimum(0)] public double? Size { get; init; }
+    [MistakenFor("size")]
+    [ReadBack("read-result.schema.json#/$defs/wordsRunData/properties/fontSize")]
+    [ExclusiveMinimum(0)] public double? FontSize { get; init; }
 
-    /// <summary>A #RRGGBB or named color.</summary>
+    /// <summary>The text color, as #RRGGBB.</summary>
     [ReadBack("read-result.schema.json#/$defs/wordsRunData/properties/color")]
-    public string? Color { get; init; }
+    [HexColor] public string? Color { get; init; }
 
     /// <summary>The font of Latin and East Asian text.</summary>
     [ReadBack("read-result.schema.json#/$defs/wordsRunData/properties/font")]
@@ -486,9 +515,9 @@ public sealed record FormatTextOp : WordsOp
     [ReadBack("read-result.schema.json#/$defs/wordsRunData/properties/eastAsianFont")]
     [MinLength(1)] public string? EastAsianFont { get; init; }
 
-    /// <summary>A #RRGGBB or named highlight color.</summary>
+    /// <summary>The highlight color, as #RRGGBB.</summary>
     [NotReadBack]
-    public string? Highlight { get; init; }
+    [HexColor] public string? Highlight { get; init; }
 }
 
 /// <summary>Applies an existing paragraph style to target blocks.</summary>
@@ -524,15 +553,16 @@ public sealed record DefineStyleOp : WordsOp
     [MinLength(1)] public string? EastAsianFont { get; init; }
 
     /// <summary>The font size in points.</summary>
+    [MistakenFor("size")]
     [NotReadBack]
-    [ExclusiveMinimum(0)] public double? Size { get; init; }
+    [ExclusiveMinimum(0)] public double? FontSize { get; init; }
 
     [NotReadBack]
     public bool? Bold { get; init; }
 
-    /// <summary>A #RRGGBB or named color.</summary>
+    /// <summary>The text color, as #RRGGBB.</summary>
     [NotReadBack]
-    public string? Color { get; init; }
+    [HexColor] public string? Color { get; init; }
 
     /// <summary>Space before the paragraph, in points.</summary>
     [NotReadBack]
@@ -544,16 +574,18 @@ public sealed record DefineStyleOp : WordsOp
 }
 
 /// <summary>Makes the paragraphs of target blocks one new bullet or numbered list.</summary>
-[Operation("apply_list")]
-public sealed record ApplyListOp : WordsOp
+[Operation("set_list")]
+[MistakenFor("apply_list")]
+public sealed record SetListOp : WordsOp
 {
     public required WordsTarget Target { get; init; }
 
     [NotReadBack]
     [AllowedValues("bullet", "number")] public required string Kind { get; init; }
 
+    /// <summary>The 1-based list level.</summary>
     [NotReadBack]
-    [Minimum(0), Maximum(8)] public int Level { get; init; }
+    [Minimum(1), Maximum(9)] public int Level { get; init; } = 1;
 }
 
 /// <summary>Sets the font of every paragraph and character style.</summary>
@@ -574,8 +606,9 @@ public sealed record SetDefaultFontOp : WordsOp
     [MinLength(1)] public string? EastAsianFont { get; init; }
 
     /// <summary>The font size in points; sizes are kept when omitted.</summary>
+    [MistakenFor("size")]
     [NotReadBack]
-    [ExclusiveMinimum(0)] public double? Size { get; init; }
+    [ExclusiveMinimum(0)] public double? FontSize { get; init; }
 }
 
 /// <summary>Sets built-in and custom document properties; omitted properties keep their values.</summary>
@@ -599,53 +632,60 @@ public sealed record SetPropertiesOp : WordsOp
     public IReadOnlyDictionary<string, string?>? Custom { get; init; }
 }
 
-/// <summary>Adds a text or image watermark; color and font apply to a text watermark only.</summary>
-[Operation("add_watermark")]
-[ExactlyOneOf("text", "imagePath")]
+/// <summary>Sets the text or image watermark, replacing any the document has; color and font apply to a text watermark only.</summary>
+[Operation("set_watermark")]
+[MistakenFor("add_watermark")]
+[ExactlyOneOf("text", "path")]
 [DependentRequired("color", "text")]
 [DependentRequired("font", "text")]
-public sealed record AddWatermarkOp : WordsOp
+public sealed record SetWatermarkOp : WordsOp
 {
     /// <summary>The watermark text; Word holds at most 200 characters.</summary>
     [NotReadBack]
     [MinLength(1), MaxLength(200)] public string? Text { get; init; }
 
     /// <summary>The watermark image, relative to the working directory.</summary>
+    [MistakenFor("imagePath")]
     [NotReadBack]
-    [InputPath] public string? ImagePath { get; init; }
+    [InputPath] public string? Path { get; init; }
 
     /// <summary>Semi-transparent text or a washed-out image.</summary>
     [NotReadBack]
     public bool Faded { get; init; } = true;
 
-    /// <summary>A #RRGGBB or named text color.</summary>
+    /// <summary>The text color, as #RRGGBB.</summary>
     [NotReadBack]
-    public string? Color { get; init; }
+    [HexColor] public string? Color { get; init; }
 
     /// <summary>The text font; when omitted, East Asian text takes the default East Asian font of a Chinese, Japanese or Korean document, or else Microsoft YaHei.</summary>
     [NotReadBack]
     [MinLength(1)] public string? Font { get; init; }
 }
 
-/// <summary>Removes the document watermark.</summary>
-[Operation("remove_watermark")]
-public sealed record RemoveWatermarkOp : WordsOp;
+/// <summary>Deletes the document watermark.</summary>
+[Operation("delete_watermark")]
+[MistakenFor("remove_watermark")]
+public sealed record DeleteWatermarkOp : WordsOp;
 
 /// <summary>Restricts editing of the document.</summary>
-[Operation("protect")]
-public sealed record ProtectOp : WordsOp
+[Operation("protect_document")]
+[MistakenFor("protect")]
+public sealed record ProtectDocumentOp : WordsOp
 {
-    [AllowedValues(WordsProtectionModes.ReadOnly, WordsProtectionModes.Comments, WordsProtectionModes.TrackedChanges, WordsProtectionModes.Forms)]
+    /// <summary>The editing restriction.</summary>
+    [MistakenFor("mode")]
+    [AllowedValues(typeof(WordsProtectionModes))]
     [ReadBack("inspect-result.schema.json#/$defs/wordsDocumentSummary/properties/protection")]
-    public required string Mode { get; init; }
+    public required string Protection { get; init; }
 
     /// <summary>The environment variable that holds the protection password; no password when omitted.</summary>
     [SecretEnv] public string? PasswordEnv { get; init; }
 }
 
 /// <summary>Removes document protection.</summary>
-[Operation("unprotect")]
-public sealed record UnprotectOp : WordsOp
+[Operation("unprotect_document")]
+[MistakenFor("unprotect")]
+public sealed record UnprotectDocumentOp : WordsOp
 {
     /// <summary>The environment variable that holds the protection password.</summary>
     [SecretEnv] public string? PasswordEnv { get; init; }
@@ -690,7 +730,8 @@ public sealed record RejectRevisionsOp : RevisionDecisionOp;
 [Operation("add_comment")]
 public sealed record AddCommentOp : WordsOp
 {
-    public required WordsTarget At { get; init; }
+    [MistakenFor("at")]
+    public required WordsTarget Target { get; init; }
 
     [ReadBack("inspect-result.schema.json#/$defs/wordsCommentData/properties/author")]
     [MinLength(1)] public required string Author { get; init; }
@@ -699,47 +740,57 @@ public sealed record AddCommentOp : WordsOp
     public required string Text { get; init; }
 }
 
-/// <summary>Removes comments: all, or one author's.</summary>
-[Operation("remove_comments")]
-public sealed record RemoveCommentsOp : WordsOp
+/// <summary>Deletes comments: all, or one author's.</summary>
+[Operation("delete_comments")]
+[MistakenFor("remove_comments")]
+public sealed record DeleteCommentsOp : WordsOp
 {
-    /// <summary>The author whose comments are removed; a name no comment has changes nothing and reports OP_NO_EFFECT.</summary>
+    /// <summary>The author whose comments are deleted; a name no comment has changes nothing and reports OP_NO_EFFECT.</summary>
     [NotState]
     [MinLength(1)] public string? Author { get; init; }
 }
 
 /// <summary>Appends the sections of a local document, each with the headers and footers it defines; a kind it does not define continues from the section before it.</summary>
-[Operation("append_document")]
-public sealed record AppendDocumentOp : WordsOp
+[Operation("import_sections")]
+[MistakenFor("append_document")]
+public sealed record ImportSectionsOp : WordsOp
 {
     /// <summary>The document, relative to the working directory.</summary>
     [InputPath] public required string Path { get; init; }
 
-    /// <summary>Which definition a style both documents name takes: the appended document's (keepSource) or this document's (useDestination). Headers and footers are not styles and come with their sections either way.</summary>
+    /// <summary>Which definition a style both documents name takes: the imported document's (keep-source) or this document's (use-destination). Headers and footers are not styles and come with their sections either way.</summary>
+    [MistakenFor("importFormatMode")]
     [NotState]
-    [AllowedValues("keepSource", "useDestination")] public string ImportFormatMode { get; init; } = "keepSource";
+    [AllowedValues(typeof(FormattingModes))] public string Formatting { get; init; } = FormattingModes.KeepSource;
+
+    /// <summary>The environment variable that holds the source document's open password, for an encrypted source.</summary>
+    [MistakenFor("passwordEnv")]
+    [NotState]
+    [SecretEnv] public string? SourcePasswordEnv { get; init; }
 }
 
-/// <summary>Runs a mail merge from a data file or inline rows: one copy of the document per row, or one region repeated per row.</summary>
+/// <summary>Runs a mail merge from a data file or items: one copy of the document per row, or one region repeated per row.</summary>
 [Operation("mail_merge")]
-[ExactlyOneOf("path", "inline")]
+[ExactlyOneOf("path", "items")]
 public sealed record MailMergeOp : WordsOp
 {
     /// <summary>A JSON array of flat objects, or a CSV file with a header row, relative to the working directory; it must hold at least one row.</summary>
     [InputPath] public string? Path { get; init; }
 
     /// <summary>Merge rows of field values by field name, read as a data file's are: a number or Boolean merges as its JSON text.</summary>
+    [MistakenFor("inline")]
     [NotState]
-    [MinItems(1), JsonScalar] public IReadOnlyList<IReadOnlyDictionary<string, object?>>? Inline { get; init; }
+    [MinItems(1), JsonScalar] public IReadOnlyList<IReadOnlyDictionary<string, object?>>? Items { get; init; }
 
     /// <summary>Whether the rows repeat the template's one TableStart/TableEnd region.</summary>
     [NotState]
     public bool Regions { get; init; }
 }
 
-/// <summary>Updates the tables of contents, or every field and the page layout.</summary>
-[Operation("update_fields")]
-public sealed record UpdateFieldsOp : WordsOp
+/// <summary>Refreshes the tables of contents, or every field and the page layout.</summary>
+[Operation("refresh_fields")]
+[MistakenFor("update_fields")]
+public sealed record RefreshFieldsOp : WordsOp
 {
     [NotState]
     [AllowedValues("all", "toc")] public string What { get; init; } = "all";
@@ -749,14 +800,14 @@ public sealed record UpdateFieldsOp : WordsOp
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull, WriteIndented = true)]
 [JsonSerializable(typeof(AcceptRevisionsOp))]
 [JsonSerializable(typeof(AddCommentOp))]
-[JsonSerializable(typeof(AddSectionOp))]
-[JsonSerializable(typeof(AddWatermarkOp))]
-[JsonSerializable(typeof(AppendDocumentOp))]
-[JsonSerializable(typeof(ApplyListOp))]
+[JsonSerializable(typeof(InsertSectionOp))]
+[JsonSerializable(typeof(SetWatermarkOp))]
+[JsonSerializable(typeof(ImportSectionsOp))]
+[JsonSerializable(typeof(SetListOp))]
 [JsonSerializable(typeof(DefineStyleOp))]
 [JsonSerializable(typeof(DeleteBlocksOp))]
 [JsonSerializable(typeof(DeleteSectionOp))]
-[JsonSerializable(typeof(FormatTableOp))]
+[JsonSerializable(typeof(SetTablePaginationOp))]
 [JsonSerializable(typeof(FormatTextOp))]
 [JsonSerializable(typeof(InsertBookmarkOp))]
 [JsonSerializable(typeof(InsertBreakOp))]
@@ -768,10 +819,10 @@ public sealed record UpdateFieldsOp : WordsOp
 [JsonSerializable(typeof(InsertTableOp))]
 [JsonSerializable(typeof(InsertTocOp))]
 [JsonSerializable(typeof(MailMergeOp))]
-[JsonSerializable(typeof(ProtectOp))]
+[JsonSerializable(typeof(ProtectDocumentOp))]
 [JsonSerializable(typeof(RejectRevisionsOp))]
-[JsonSerializable(typeof(RemoveCommentsOp))]
-[JsonSerializable(typeof(RemoveWatermarkOp))]
+[JsonSerializable(typeof(DeleteCommentsOp))]
+[JsonSerializable(typeof(DeleteWatermarkOp))]
 [JsonSerializable(typeof(RepeatTableRowOp))]
 [JsonSerializable(typeof(ReplaceTextOp))]
 [JsonSerializable(typeof(SetDefaultFontOp))]
@@ -783,6 +834,6 @@ public sealed record UpdateFieldsOp : WordsOp
 [JsonSerializable(typeof(SetStyleOp))]
 [JsonSerializable(typeof(SetTableCellOp))]
 [JsonSerializable(typeof(SetTextOp))]
-[JsonSerializable(typeof(UnprotectOp))]
-[JsonSerializable(typeof(UpdateFieldsOp))]
+[JsonSerializable(typeof(UnprotectDocumentOp))]
+[JsonSerializable(typeof(RefreshFieldsOp))]
 internal sealed partial class WordsOpsJsonContext : JsonSerializerContext;

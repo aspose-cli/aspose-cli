@@ -52,7 +52,7 @@ public sealed class WordsVisibleTextTests : IClassFixture<WordsFixture>
             new WordsEditRequest
             {
                 Input = input,
-                Batch = new WordsOpsBatch { Ops = [new SetTextOp { At = new WordsTarget { Find = "example.com" }, Text = "x" }] },
+                Batch = new WordsOpsBatch { Ops = [new SetTextOp { Target = new WordsTarget { Find = "example.com" }, Text = "x" }] },
                 Output = TestOutput.At(_fixture.Temp.File("anchor.docx")),
             }));
 
@@ -121,7 +121,7 @@ public sealed class WordsVisibleTextTests : IClassFixture<WordsFixture>
             new WordsEditRequest
             {
                 Input = input,
-                Batch = new WordsOpsBatch { Ops = [new SetTextOp { At = new WordsTarget { Find = "1.2 Second" }, Text = "Changed clause" }] },
+                Batch = new WordsOpsBatch { Ops = [new SetTextOp { Target = new WordsTarget { Find = "1.2 Second" }, Text = "Changed clause" }] },
                 Output = TestOutput.At(output),
             });
         WordsExtractResult extracted = WordsExtract.Run(_fixture.Session, new WordsExtractRequest

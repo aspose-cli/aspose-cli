@@ -89,7 +89,7 @@ public sealed record WordsBlockData
     /// The text of each cell by row; a numbered list paragraph in a cell starts with its number
     /// and a space.
     /// </summary>
-    public IReadOnlyList<IReadOnlyList<string>>? Cells { get; init; }
+    public IReadOnlyList<IReadOnlyList<string>>? Values { get; init; }
 
     /// <summary>
     /// Returned document text shares the max-chars budget, including repeated projections.
@@ -168,7 +168,7 @@ public sealed record WordsRunData
     public string? EastAsianFont { get; init; }
 
     /// <summary>The font size in points.</summary>
-    public double? Size { get; init; }
+    public double? FontSize { get; init; }
 
     /// <summary>Whether the run is bold.</summary>
     public bool? Bold { get; init; }

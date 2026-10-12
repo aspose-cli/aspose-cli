@@ -41,7 +41,7 @@ public sealed class WordsEditSafetyTests
         WordsEdit.Run(fixture.Session, new WordsEditRequest
         {
             Input = input,
-            Batch = new WordsOpsBatch { Ops = [new UpdateFieldsOp()] },
+            Batch = new WordsOpsBatch { Ops = [new RefreshFieldsOp()] },
             Output = TestOutput.At(output),
         });
 
@@ -131,11 +131,11 @@ public sealed class WordsEditSafetyTests
             new WordsEditRequest
             {
                 Input = fixture.CreateReport(),
-                Batch = new WordsOpsBatch { Ops = [new ProtectOp { Mode = "readOnly", PasswordEnv = "PROTECT_PASSWORD" }] },
+                Batch = new WordsOpsBatch { Ops = [new ProtectDocumentOp { Protection = "read-only", PasswordEnv = "PROTECT_PASSWORD" }] },
                 Output = TestOutput.At(protectedPath),
                 OpSecrets = secrets,
             });
-        Assert.Equal("readOnly", WordsInspect.Run(fixture.Session, new WordsInspectRequest { Input = protectedPath }).Document.Protection);
+        Assert.Equal("read-only", WordsInspect.Run(fixture.Session, new WordsInspectRequest { Input = protectedPath }).Document.Protection);
 
         CliException wrong = Assert.Throws<CliException>(() => WordsEdit.Run(
             fixture.Session,
@@ -162,7 +162,7 @@ public sealed class WordsEditSafetyTests
         Assert.Null(WordsInspect.Run(fixture.Session, new WordsInspectRequest { Input = output }).Document.Protection);
 
         static WordsOpsBatch Unprotect(string variable) =>
-            new() { Ops = [new UnprotectOp { PasswordEnv = variable }] };
+            new() { Ops = [new UnprotectDocumentOp { PasswordEnv = variable }] };
     }
 
     [Theory]
@@ -224,7 +224,7 @@ public sealed class WordsEditSafetyTests
     {
         using var workspace = new TempWorkspace();
         File.WriteAllText(workspace.File("source.txt"), "Seed");
-        File.WriteAllText(workspace.File("ops.json"), """{"ops":[{"op":"set_text","at":{"block":1},"text":"Safe"}]}""");
+        File.WriteAllText(workspace.File("ops.json"), """{"ops":[{"op":"set_text","target":{"block":1},"text":"Safe"}]}""");
         var environment = new Dictionary<string, string?> { ["WORDS_EDIT_SECRET"] = OriginalPassword };
         CliResult created = workspace.RunWithEnv(environment, "words", "create", "secret.docx", "--from-text", "source.txt", "--encrypt-env", "WORDS_EDIT_SECRET", "--output-format", "json");
         Assert.True(created.ExitCode == 0, created.StdErr);
@@ -242,6 +242,6 @@ public sealed class WordsEditSafetyTests
 
     private static WordsOpsBatch TextBatch() => new()
     {
-        Ops = [new SetTextOp { At = new WordsTarget { Block = 1 }, Text = "Safe" }],
+        Ops = [new SetTextOp { Target = new WordsTarget { Block = 1 }, Text = "Safe" }],
     };
 }

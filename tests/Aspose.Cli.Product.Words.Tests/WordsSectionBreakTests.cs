@@ -45,7 +45,7 @@ public sealed class WordsSectionBreakTests
         string input = CreateA4(fixture);
         string output = fixture.Temp.File("added.docx");
 
-        WordsEdit.Run(fixture.Session, new WordsEditRequest { Input = input, Batch = new WordsOpsBatch { Ops = [new AddSectionOp()] }, Output = TestOutput.At(output) });
+        WordsEdit.Run(fixture.Session, new WordsEditRequest { Input = input, Batch = new WordsOpsBatch { Ops = [new InsertSectionOp { At = 1, Position = "after" }] }, Output = TestOutput.At(output) });
 
         var document = new Document(output);
         Section added = document.LastSection;

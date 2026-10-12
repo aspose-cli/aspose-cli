@@ -18,14 +18,14 @@ internal static class WordsOperationSample
             {
                 Find = "draft",
                 Replace = "final",
-                MatchCase = true,
+                CaseSensitive = true,
                 WholeWord = true,
                 Scope = "body",
                 MaxReplacementCount = 2,
             },
             new SetTextOp
             {
-                At = new WordsTarget { Block = 1 },
+                Target = new WordsTarget { Block = 1 },
                 Text = "Executive summary",
             },
             new InsertParagraphsOp
@@ -34,7 +34,7 @@ internal static class WordsOperationSample
                 Position = "after",
                 Paragraphs =
                 [
-                    new WordsParagraphInput { Text = "Inserted paragraph", Style = "Normal", ListLevel = 0 },
+                    new WordsParagraphInput { Text = "Inserted paragraph", Style = "Normal", ListLevel = 1 },
                 ],
             },
             new InsertMarkdownOp
@@ -68,14 +68,14 @@ internal static class WordsOperationSample
                 Position = "after",
                 RowCount = 2,
                 ColumnCount = 2,
-                Cells = [["Metric", "Value"], ["Revenue", "120"]],
-                Style = "Table Grid",
+                Values = [["Metric", "Value"], ["Revenue", "120"]],
+                TableStyle = "Table Grid",
             },
             new SetTableCellOp
             {
-                At = new WordsTarget { Block = 4 },
+                Target = new WordsTarget { Block = 4 },
                 Row = 2,
-                Col = 2,
+                Column = 2,
                 Text = "125",
             },
             new RepeatTableRowOp
@@ -87,9 +87,9 @@ internal static class WordsOperationSample
                     new Dictionary<string, object?> { ["code"] = "A-100", ["name"] = "Widget" },
                 ],
             },
-            new FormatTableOp
+            new SetTablePaginationOp
             {
-                At = new WordsTarget { Block = 4 },
+                Target = new WordsTarget { Block = 4 },
                 KeepTogether = true,
                 HeaderRowCount = 1,
                 KeepWithNext = true,
@@ -118,13 +118,13 @@ internal static class WordsOperationSample
                 Position = "after",
                 Code = "DATE",
             },
-            new AddSectionOp
+            new InsertSectionOp
             {
+                At = 1,
                 Position = "after",
-                After = 1,
                 PageSetup = new WordsPageSetupInput
                 {
-                    Size = "a4",
+                    PageSize = new PageSizeInput { Preset = "a4" },
                     Orientation = "landscape",
                     Margins = new WordsMarginInput { Top = 48, Right = 54, Bottom = 48, Left = 54 },
                     ColumnCount = 2,
@@ -134,13 +134,10 @@ internal static class WordsOperationSample
             new SetPageSetupOp
             {
                 Section = 1,
-                Setup = new WordsPageSetupInput
-                {
-                    Size = "letter",
-                    Orientation = "portrait",
-                    Margins = new WordsMarginInput { Top = 72, Right = 72, Bottom = 72, Left = 72 },
-                    ColumnCount = 1,
-                },
+                PageSize = new PageSizeInput { Preset = "letter" },
+                Orientation = "portrait",
+                Margins = new WordsMarginInput { Top = 72, Right = 72, Bottom = 72, Left = 72 },
+                ColumnCount = 1,
             },
             new SetHeaderOp
             {
@@ -159,7 +156,7 @@ internal static class WordsOperationSample
                 Section = 1,
                 Location = "footer",
                 Alignment = "center",
-                Format = "decimal",
+                NumberStyle = "decimal",
                 Start = 1,
             },
             new FormatTextOp
@@ -168,12 +165,12 @@ internal static class WordsOperationSample
                 Bold = true,
                 Italic = false,
                 Underline = true,
-                Size = 12,
+                FontSize = 12,
                 Color = "#1F4E79",
                 Font = "Arial",
                 LatinFont = "Calibri",
                 EastAsianFont = "SimSun",
-                Highlight = "yellow",
+                Highlight = "#FFFF00",
             },
             new SetStyleOp
             {
@@ -187,19 +184,19 @@ internal static class WordsOperationSample
                 Font = "Arial",
                 LatinFont = "Calibri",
                 EastAsianFont = "SimSun",
-                Size = 11,
+                FontSize = 11,
                 Bold = true,
                 Color = "#1F4E79",
                 SpaceBefore = 6,
                 SpaceAfter = 6,
             },
-            new ApplyListOp
+            new SetListOp
             {
                 Target = new WordsTarget { Blocks = "7-9" },
                 Kind = "number",
                 Level = 1,
             },
-            new SetDefaultFontOp { Font = "Arial", LatinFont = "Calibri", EastAsianFont = "SimSun", Size = 11 },
+            new SetDefaultFontOp { Font = "Arial", LatinFont = "Calibri", EastAsianFont = "SimSun", FontSize = 11 },
             new SetPropertiesOp
             {
                 Title = "Quarterly report",
@@ -208,39 +205,39 @@ internal static class WordsOperationSample
                 Keywords = "quarterly,finance",
                 Custom = new Dictionary<string, string?> { ["Status"] = "Final", ["Reviewer"] = null },
             },
-            new AddWatermarkOp
+            new SetWatermarkOp
             {
                 Text = "DRAFT",
                 Faded = false,
                 Color = "#808080",
                 Font = "Arial",
             },
-            new RemoveWatermarkOp(),
-            new ProtectOp { Mode = "readOnly", PasswordEnv = "WORDS_PROTECT_PASSWORD" },
-            new UnprotectOp { PasswordEnv = "WORDS_PROTECT_PASSWORD" },
+            new DeleteWatermarkOp(),
+            new ProtectDocumentOp { Protection = "read-only", PasswordEnv = "WORDS_PROTECT_PASSWORD" },
+            new UnprotectDocumentOp { PasswordEnv = "WORDS_PROTECT_PASSWORD" },
             new AcceptRevisionsOp { Author = "Reviewer" },
             new RejectRevisionsOp { Author = "External" },
             new AddCommentOp
             {
-                At = new WordsTarget { Block = 2 },
+                Target = new WordsTarget { Block = 2 },
                 Author = "Reviewer",
                 Text = "Verify this figure.",
             },
-            new RemoveCommentsOp { Author = "Reviewer" },
-            new AppendDocumentOp
+            new DeleteCommentsOp { Author = "Reviewer" },
+            new ImportSectionsOp
             {
                 Path = "appendix.docx",
-                ImportFormatMode = "keepSource",
+                Formatting = "keep-source",
             },
             new MailMergeOp
             {
-                Inline =
+                Items =
                 [
                     new Dictionary<string, object?> { ["FirstName"] = "Ava" },
                 ],
                 Regions = false,
             },
-            new UpdateFieldsOp { What = "all" },
+            new RefreshFieldsOp { What = "all" },
         ],
     };
 }

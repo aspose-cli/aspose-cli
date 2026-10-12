@@ -215,7 +215,7 @@ internal static class JsonContractDiagnostics
     }
 
     private static JsonException Expected(string path, string kind) =>
-        new(path.Length == 0 ? $"the document must be {kind}" : $"{path} must be {kind}");
+        path.Length == 0 ? new JsonException($"the document must be {kind}") : new ValueKindException(path, $"{path} must be {kind}");
 
     private static string Join(string path, string name) => path.Length == 0 ? name : $"{path}.{name}";
 }

@@ -19,9 +19,9 @@ are in `aspose-cli docs editing`.
 - `REVISION_NOT_FOUND`: a `revisions` number of `accept_revisions` or
   `reject_revisions` goes past the changes `words inspect --detail revisions`
   lists.
-- `PASSWORD_INVALID` from `unprotect`: its `passwordEnv` password was wrong
+- `PASSWORD_INVALID` from `unprotect_document`: its `passwordEnv` password was wrong
   ([editing](editing.md#protection-and-encryption)).
-- `DOCUMENT_HAS_REVISIONS`: `words compare` inputs must be revision-free; list
+- `REVISIONS_UNRESOLVED`: `words compare` inputs must be revision-free; list
   the revisions with `words inspect --detail revisions` ([revisions](revisions.md)).
 - `OPTION_INVALID` from a tracked batch: the batch contains an operation that
   cannot be recorded as a revision ([editing](editing.md)).
@@ -34,7 +34,7 @@ are in `aspose-cli docs editing`.
   input had; disclose them ([revisions](revisions.md)).
 - `OP_NO_EFFECT`: the operation `details.id` and `details.op` name changed
   nothing (`details.reason` `no-match`). For `accept_revisions`,
-  `reject_revisions` or `remove_comments`, no revision or comment has that
+  `reject_revisions` or `delete_comments`, no revision or comment has that
   `author`; names match exactly, and the hint lists the document's. Do not
   report the decision as made; correct the name and run the batch again. For
   `replace_text`, nothing in its `scope` matched. Search with `words search`

@@ -104,7 +104,7 @@ public sealed class McpSecretExecutionTests
         {
             "cells" => $$"""{"ops":[{"op":"protect_sheet","sheet":"Data","passwordEnv":"{{Variable}}"}]}""",
             "pdf" => $$"""{"ops":[{"op":"encrypt_document","ownerPasswordEnv":"{{Variable}}","userPasswordEnv":"USER_PASSWORD"}]}""",
-            _ => $$"""{"ops":[{"op":"protect","mode":"readOnly","passwordEnv":"{{Variable}}"}]}""",
+            _ => $$"""{"ops":[{"op":"protect_document","protection":"read-only","passwordEnv":"{{Variable}}"}]}""",
         };
         File.WriteAllText(workspace.File("ops.json"), ops);
         string value = source switch { "file" => "ops.json", "stdin" => "-", _ => ops };
@@ -171,7 +171,7 @@ public sealed class McpSecretExecutionTests
             {
                 string unprotect = product == "cells"
                     ? $$"""{"ops":[{"op":"unprotect_sheet","sheet":"Data","passwordEnv":"{{Variable}}"}]}"""
-                    : $$"""{"ops":[{"op":"unprotect","passwordEnv":"{{Variable}}"}]}""";
+                    : $$"""{"ops":[{"op":"unprotect_document","passwordEnv":"{{Variable}}"}]}""";
                 AssertSuccess(await server.Execute([product, "edit", output, "--ops", unprotect,
                     "--out", $"checked-{mode}.{extension}", "--dry-run", "--output-format=json"]));
             }
@@ -194,7 +194,7 @@ public sealed class McpSecretExecutionTests
             "pdf" => ("pdf", ["--from-text", "content.txt"],
                 $$"""{"ops":[{"op":"encrypt_document","ownerPasswordEnv":"{{name}}"},{"op":"set_properties","title":"Kept"}]}"""),
             _ => ("docx", ["--from-text", "content.txt"],
-                $$"""{"ops":[{"op":"protect","mode":"readOnly","passwordEnv":"{{name}}"},{"op":"set_text","at":{"block":1},"text":"Kept"}]}"""),
+                $$"""{"ops":[{"op":"protect_document","protection":"read-only","passwordEnv":"{{name}}"},{"op":"set_text","target":{"block":1},"text":"Kept"}]}"""),
         };
         string input = "input." + extension;
         CliResult created = workspace.Run([product, "create", input, .. create]);

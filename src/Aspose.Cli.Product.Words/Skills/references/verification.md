@@ -39,7 +39,7 @@ comments or footnotes it changed, then each header and footer it changed as
 and sections it addressed or inserted, of replaced text, and of the content
 that took the place of removed blocks; a header or footer change touches every
 page of its section. An operation whose only target is `document`, such as
-`add_watermark` or `mail_merge`, can change any page. An operation that
+`set_watermark` or `mail_merge`, can change any page. An operation that
 changed more than 100 blocks reports its `blocks/<ranges>` instead, or
 `document`. Whether an operation took effect comes from `OP_NO_EFFECT` and a
 read-back, not from `itemsAffected` alone (`aspose-cli docs editing`).
@@ -54,7 +54,7 @@ checks that most often need action:
   breaks or empty paragraphs; remove them rather than adding more breaks.
 - A table split across pages, such as a last row pushed onto the next page,
   is not a check: look for it on the rendered pages. Fix it with
-  `format_table` and `keepTogether: true` (or `headerRowCount` for a long
+  `set_table_pagination` and `keepTogether: true` (or `headerRowCount` for a long
   table) rather than a page break, then run `review` again
   ([editing](editing.md)).
 - `WORDS_OBJECT_OUTSIDE_PAGE`: a floating image or shape crosses the page edge.
@@ -70,7 +70,7 @@ checks that most often need action:
   without a license adds the marks itself.
 - `WORDS_COMMENTS_PRESENT` (info): the document keeps comments
   (`document.commentCount` in `words inspect`); disclose them, and remove them
-  with `remove_comments` only when the user asks.
+  with `delete_comments` only when the user asks.
 
 `words render` exports page images for delivery. It takes the format from
 `--to`, or from the `--out` extension when `--to` is omitted.

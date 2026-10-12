@@ -93,7 +93,7 @@ internal static class EditCommand
 
         return new SetTextOp
         {
-            At = new WordsTarget { Bookmark = value[BookmarkPrefix.Length..equals] },
+            Target = new WordsTarget { Bookmark = value[BookmarkPrefix.Length..equals] },
             Text = value[(equals + 1)..],
         };
     }

@@ -11,23 +11,17 @@ namespace Aspose.Cli.Product.Words.Engine.Editing;
 internal sealed partial class WordsMutationHandlers
 {
     /// <summary>
-    /// Adds an empty section that starts with the page setup of its neighbour (the section it
-    /// follows, or the first section for <c>start</c>), as Word does, instead of SDK defaults.
+    /// Inserts an empty section that starts with the page setup of its neighbour (the section
+    /// <c>at</c> names, before or after which it goes), as Word does, instead of SDK defaults.
     /// Without its own headers and footers it continues its neighbour's.
     /// </summary>
-    public long Apply(AddSectionOp operation)
+    public long Apply(InsertSectionOp operation)
     {
-        Section? after = Sections.FirstOrDefault();
-        Section reference = operation.Position switch
-        {
-            "after" => after ?? throw Invalid("add_section position 'after' requires an original section target"),
-            "start" => _document.FirstSection,
-            _ => _document.LastSection,
-        };
+        Section reference = Sections.FirstOrDefault() ?? throw Invalid("insert_section requires an original section at");
         Section section = EmptyLike(reference);
-        if (operation.Position == "start")
+        if (operation.Position == "before")
         {
-            _document.PrependChild(section);
+            _document.InsertBefore(section, reference);
         }
         else
         {
@@ -232,16 +226,17 @@ internal sealed partial class WordsMutationHandlers
                 section.PageSetup.PageStartingNumber = start;
             }
 
-            if (operation.Format is not null)
+            if (operation.NumberStyle is not null)
             {
-                section.PageSetup.PageNumberStyle = operation.Format switch
+                section.PageSetup.PageNumberStyle = operation.NumberStyle switch
                 {
-                    "decimal" => NumberStyle.Arabic,
-                    "upperRoman" => NumberStyle.UppercaseRoman,
-                    "lowerRoman" => NumberStyle.LowercaseRoman,
-                    "upperLetter" => NumberStyle.UppercaseLetter,
-                    "lowerLetter" => NumberStyle.LowercaseLetter,
-                    _ => throw Invalid($"unknown page number format '{operation.Format}'"),
+                    PageNumberStyles.Decimal => NumberStyle.Arabic,
+                    PageNumberStyles.RomanUpper => NumberStyle.UppercaseRoman,
+                    PageNumberStyles.RomanLower => NumberStyle.LowercaseRoman,
+                    PageNumberStyles.LettersUpper => NumberStyle.UppercaseLetter,
+                    PageNumberStyles.LettersLower => NumberStyle.LowercaseLetter,
+                    PageNumberStyles.None => NumberStyle.None,
+                    _ => throw Invalid($"unknown page number style '{operation.NumberStyle}'"),
                 };
             }
         }
@@ -250,12 +245,12 @@ internal sealed partial class WordsMutationHandlers
         return Sections.Count;
     }
 
-    public long Apply(AppendDocumentOp operation)
+    public long Apply(ImportSectionsOp operation)
     {
-        using LoadedDocument loaded = _loader.Open(operation.Path, null);
+        using LoadedDocument loaded = _loader.Open(operation.Path, OperationSecrets.Resolve(_secrets, operation.SourcePasswordEnv));
         _outputs.Neutralize(loaded.Document);
 
-        ImportFormatMode mode = operation.ImportFormatMode == "useDestination"
+        ImportFormatMode mode = operation.Formatting == FormattingModes.UseDestination
             ? ImportFormatMode.UseDestinationStyles
             : ImportFormatMode.KeepSourceFormatting;
         _document.AppendDocument(loaded.Document, mode);

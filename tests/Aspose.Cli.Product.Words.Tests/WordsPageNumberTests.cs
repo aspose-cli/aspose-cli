@@ -83,9 +83,9 @@ public sealed class WordsPageNumberTests : IClassFixture<WordsFixture>
             {
                 Ops =
                 [
-                    new SetPageNumbersOp { Location = location, Alignment = "right", Section = 2, Start = 7, Format = "lowerRoman" },
-                    new SetPageNumbersOp { Location = location, Alignment = "center", Section = 2, Start = 9, Format = "upperRoman" },
-                    new UpdateFieldsOp(),
+                    new SetPageNumbersOp { Location = location, Alignment = "right", Section = 2, Start = 7, NumberStyle = "roman-lower" },
+                    new SetPageNumbersOp { Location = location, Alignment = "center", Section = 2, Start = 9, NumberStyle = "roman-upper" },
+                    new RefreshFieldsOp(),
                 ],
             },
             Output = TestOutput.At(output),

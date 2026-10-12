@@ -24,7 +24,7 @@ internal sealed partial class WordsMutationHandlers
         var callback = new ScopedReplacingCallback(operation.MaxReplacementCount, _changed);
         var options = new FindReplaceOptions
         {
-            MatchCase = operation.MatchCase,
+            MatchCase = operation.CaseSensitive,
             FindWholeWordsOnly = operation.WholeWord,
             // A regex replacement honors $1 and ${name}; a literal one is inserted verbatim.
             UseSubstitutions = operation.Regex,
@@ -33,8 +33,8 @@ internal sealed partial class WordsMutationHandlers
             ReplacingCallback = callback,
         };
         Regex pattern = operation.Regex
-            ? SafeRegex.Create(operation.Find, operation.MatchCase)
-            : new Regex(Regex.Escape(operation.Find), operation.MatchCase ? RegexOptions.CultureInvariant : RegexOptions.IgnoreCase | RegexOptions.CultureInvariant, SafeRegex.DefaultTimeout);
+            ? SafeRegex.Create(operation.Find, operation.CaseSensitive)
+            : new Regex(Regex.Escape(operation.Find), operation.CaseSensitive ? RegexOptions.CultureInvariant : RegexOptions.IgnoreCase | RegexOptions.CultureInvariant, SafeRegex.DefaultTimeout);
 
         long replaced = 0;
         foreach ((CompositeNode story, _) in WordsStories.In(_document, operation.Scope).ToArray())
@@ -116,7 +116,7 @@ internal sealed partial class WordsMutationHandlers
     {
         // A bookmark owns exactly its enclosed range, wherever it sits (mid-paragraph or in a
         // table cell). Only that range changes; the bookmark and its surroundings remain.
-        if (operation.At.Bookmark is { } name)
+        if (operation.Target.Bookmark is { } name)
         {
             Bookmark bookmark = _document.Range.Bookmarks[name]
                 ?? throw Invalid($"bookmark '{name}' was removed by an earlier operation");
@@ -163,10 +163,11 @@ internal sealed partial class WordsMutationHandlers
         {
             Aspose.Words.Lists.List? list = null;
             Paragraph? peer = null;
+            // The input level is 1-based; the SDK numbers levels from 0.
             if (input.ListLevel is int listLevel)
             {
                 Node? previous = operation.Position == "after" ? cursor : Anchor.PreviousSibling;
-                (list, peer) = ListAt(listLevel, previous, operation.Position == "after" ? cursor.NextSibling : Anchor);
+                (list, peer) = ListAt(listLevel - 1, previous, operation.Position == "after" ? cursor.NextSibling : Anchor);
                 if (peer is not null && continued.TryGetValue(peer, out Paragraph? source))
                 {
                     peer = source;
@@ -188,7 +189,7 @@ internal sealed partial class WordsMutationHandlers
             if (input.ListLevel is int level)
             {
                 paragraph.ListFormat.List = list ?? (created ??= _document.Lists.Add(ListTemplate.BulletDefault));
-                paragraph.ListFormat.ListLevelNumber = level;
+                paragraph.ListFormat.ListLevelNumber = level - 1;
                 if (peer is not null && HasOwnIndent(peer))
                 {
                     paragraph.ParagraphFormat.LeftIndent = peer.ParagraphFormat.LeftIndent;

@@ -49,7 +49,7 @@ public sealed class WordsResourceLoadingTests
         WordsEdit.Run(fixture.Session, new WordsEditRequest
         {
             Input = input,
-            Batch = new WordsOpsBatch { Ops = [new UpdateFieldsOp()] },
+            Batch = new WordsOpsBatch { Ops = [new RefreshFieldsOp()] },
             Output = TestOutput.At(output),
         });
 
@@ -81,7 +81,7 @@ public sealed class WordsResourceLoadingTests
                 Ops =
                 [
                     new InsertImageOp { At = new WordsTarget { Block = 1 }, Position = "after", Path = svg },
-                    new UpdateFieldsOp(),
+                    new RefreshFieldsOp(),
                 ],
             },
             Output = TestOutput.At(edited),

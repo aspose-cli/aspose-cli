@@ -137,7 +137,7 @@ internal sealed partial class WordsMutationHandlers
         return 1;
     }
 
-    public long Apply(AddWatermarkOp operation)
+    public long Apply(SetWatermarkOp operation)
     {
         if (operation.Text is not null)
         {
@@ -169,7 +169,7 @@ internal sealed partial class WordsMutationHandlers
         // The image is an admitted, size-bounded input, checked to decode before the engine
         // embeds it. The engine decodes it into a bitmap it keeps, whose pixels are charged to the
         // memory budget from the header.
-        byte[] image = OperationImages.Read(_inputs, operation.ImagePath!);
+        byte[] image = OperationImages.Read(_inputs, operation.Path!);
         using (SKCodec? codec = SKCodec.Create(new SKMemoryStream(image)))
         {
             if (codec is not null)
@@ -186,20 +186,20 @@ internal sealed partial class WordsMutationHandlers
         return 1;
     }
 
-    public long Apply(RemoveWatermarkOp operation)
+    public long Apply(DeleteWatermarkOp operation)
     {
         _document.Watermark.Remove();
         return 1;
     }
 
-    public long Apply(ProtectOp operation)
+    public long Apply(ProtectDocumentOp operation)
     {
         string? password = OperationSecrets.Resolve(_secrets, operation.PasswordEnv)?.Reveal();
-        _document.Protect(WordsProtection.FromMode(operation.Mode), password ?? string.Empty);
+        _document.Protect(WordsProtection.FromMode(operation.Protection), password ?? string.Empty);
         return 1;
     }
 
-    public long Apply(UnprotectOp operation)
+    public long Apply(UnprotectDocumentOp operation)
     {
         string? password = OperationSecrets.Resolve(_secrets, operation.PasswordEnv)?.Reveal();
         if (password is null)
@@ -340,7 +340,7 @@ internal sealed partial class WordsMutationHandlers
         }
     }
 
-    public long Apply(RemoveCommentsOp operation)
+    public long Apply(DeleteCommentsOp operation)
     {
         Comment[] all = [.. _document.GetChildNodes(NodeType.Comment, true).Cast<Comment>()];
         Comment[] comments = all
@@ -370,7 +370,7 @@ internal sealed partial class WordsMutationHandlers
 
     public long Apply(MailMergeOp operation)
     {
-        IReadOnlyList<IReadOnlyDictionary<string, string?>> rows = operation.Inline is { } inline
+        IReadOnlyList<IReadOnlyDictionary<string, string?>> rows = operation.Items is { } inline
             ? MergeRows(inline)
             : ReadMergeRows(operation.Path!, _inputs);
         if (rows.Count == 0)
@@ -526,7 +526,7 @@ internal sealed partial class WordsMutationHandlers
         document.MailMerge.ExecuteWithRegions(table);
     }
 
-    public long Apply(UpdateFieldsOp operation)
+    public long Apply(RefreshFieldsOp operation)
     {
         if (operation.What == "toc")
         {

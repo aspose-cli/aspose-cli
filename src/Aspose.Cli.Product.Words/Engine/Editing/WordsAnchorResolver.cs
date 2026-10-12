@@ -105,7 +105,7 @@ internal static class WordsAnchorResolver
 
     private static IReadOnlyList<Section> ResolveSections(Document document, WordsOp op) => op switch
     {
-        AddSectionOp { Position: "after", After: int after } => [WordsSections.Get(document, after)],
+        InsertSectionOp value => [WordsSections.Get(document, value.At)],
         DeleteSectionOp value => [WordsSections.Get(document, value.Section)],
         SetPageSetupOp value => SelectSections(document, value.Section),
         SetHeaderOp value => SelectSections(document, value.Section),
@@ -297,24 +297,24 @@ internal static class WordsAnchorResolver
 
     private static WordsTarget? TargetOf(WordsOp op) => op switch
     {
-        SetTextOp value => value.At,
+        SetTextOp value => value.Target,
         InsertParagraphsOp value => value.At,
         InsertMarkdownOp value => value.At,
         DeleteBlocksOp value => value.Target,
         InsertBreakOp value => value.At,
         InsertImageOp value => value.At,
         InsertTableOp value => value.At,
-        SetTableCellOp value => value.At,
+        SetTableCellOp value => value.Target,
         RepeatTableRowOp value => value.At,
-        FormatTableOp value => value.At,
+        SetTablePaginationOp value => value.Target,
         InsertTocOp value => value.At,
         InsertBookmarkOp value => value.At,
         InsertHyperlinkOp value => value.At,
         InsertFieldOp value => value.At,
         FormatTextOp value => value.Target,
         SetStyleOp value => value.Target,
-        ApplyListOp value => value.Target,
-        AddCommentOp value => value.At,
+        SetListOp value => value.Target,
+        AddCommentOp value => value.Target,
         _ => null,
     };
 

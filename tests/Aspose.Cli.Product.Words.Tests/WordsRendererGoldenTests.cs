@@ -22,9 +22,9 @@ public sealed class WordsRendererGoldenTests
             revisions: 1   protection: none   signed: no   macros: yes
 
             sections:
-            section  orientation  page size           margins (t/r/b/l)
-            0        portrait     612 x 792 pt        72/89.85/72/0.13 pt
-            1        landscape    841.89 x 595.28 pt  36/36/36/36 pt
+            section  orientation  page size              margins (t/r/b/l)
+            0        portrait     letter 612 x 792 pt    72/89.85/72/0.13 pt
+            1        landscape    a4 841.89 x 595.28 pt  36/36/36/36 pt
             section  location  kind     paragraphs
             0        header    primary  Quarterly report | Draft
             0        footer    first    -
@@ -91,8 +91,8 @@ public sealed class WordsRendererGoldenTests
 
             | section | orientation | page size | margins (t/r/b/l) |
             | --- | --- | --- | --- |
-            | 0 | portrait | 612 x 792 pt | 72/89.85/72/0.13 pt |
-            | 1 | landscape | 841.89 x 595.28 pt | 36/36/36/36 pt |
+            | 0 | portrait | letter 612 x 792 pt | 72/89.85/72/0.13 pt |
+            | 1 | landscape | a4 841.89 x 595.28 pt | 36/36/36/36 pt |
             | section | location | kind | paragraphs |
             | --- | --- | --- | --- |
             | 0 | header | primary | Quarterly report \| Draft |
@@ -314,7 +314,7 @@ public sealed class WordsRendererGoldenTests
         [
             new WordsSectionData
             {
-                Section = 0, Orientation = "portrait", WidthPoints = 612, HeightPoints = 792,
+                Section = 0, Orientation = "portrait", PageSize = PageSizeInfo.Of(612, 792),
                 Margins = new WordsMarginData { Top = 72, Right = 89.85, Bottom = 72.004, Left = 0.125 },
                 HeadersFooters =
                 [
@@ -324,7 +324,7 @@ public sealed class WordsRendererGoldenTests
             },
             new WordsSectionData
             {
-                Section = 1, Orientation = "landscape", WidthPoints = 841.89, HeightPoints = 595.276,
+                Section = 1, Orientation = "landscape", PageSize = PageSizeInfo.Of(841.89, 595.276),
                 Margins = new WordsMarginData { Top = 36, Right = 36, Bottom = 36, Left = 36 },
                 HeadersFooters = [],
             },
@@ -354,7 +354,7 @@ public sealed class WordsRendererGoldenTests
         ],
         Tables =
         [
-            new WordsTableData { Block = 6, RowCount = 3, ColumnCount = 2, Style = "Table Grid" },
+            new WordsTableData { Block = 6, RowCount = 3, ColumnCount = 2, TableStyle = "Table Grid" },
             new WordsTableData { Block = 9, RowCount = 1, ColumnCount = 1 },
         ],
         Properties = new Dictionary<string, string?> { ["Title"] = "Report", ["Author"] = "Ann", ["Subject"] = null },

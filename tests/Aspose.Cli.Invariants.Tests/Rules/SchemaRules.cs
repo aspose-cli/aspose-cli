@@ -61,7 +61,6 @@ internal static partial class ContractRules
     private static readonly Dictionary<(string Schema, string Definition, string Field), string> PageSizeFields = new()
     {
         [("v2/cells/ops", "set_page_setup", "paperSize")] = "pageSize",
-        [("v2/words/ops", "wordsPageSetupInput", "size")] = "pageSize",
     };
 
     private static readonly HashSet<string> FillNames = new(StringComparer.Ordinal) { "bg", "bgColor", "background", "backgroundColor", "fill", "fillColour" };
@@ -93,6 +92,7 @@ internal static partial class ContractRules
         [("v2/slides/read-result", "slidesTransitionData.kind")] = "reads back the transition kind none that set_transition writes",
         [("v2/pdf/ops", "pdfPageLabelRange.numberStyle")] = "a page-label range of style none labels its pages with the prefix alone, a numbering style of its own",
         [("v2/pdf/inspect-result", "pdfPageLabelInfo.numberStyle")] = "reads back the page-label style none that set_page_labels writes",
+        [("v2/words/ops", "set_page_numbers.numberStyle")] = "a numberStyle of none numbers the pages without a visible number, a numbering style of its own as PageNumberStyles names it",
     };
 
     /// <summary>C-R33: boolean names that say "contains" or a state without has&lt;Noun&gt; or an adjective.</summary>
@@ -380,14 +380,42 @@ internal static partial class ContractRules
     /// </summary>
     private static readonly Dictionary<(string Schema, string Field), (string[] Definitions, string Reason)> ShapedByTheirObject = new()
     {
+        [("v2/words/ops", "at")] = (
+            ["insert_bookmark", "insert_break", "insert_field", "insert_hyperlink", "insert_image", "insert_markdown", "insert_paragraphs", "insert_section", "insert_table", "insert_toc", "repeat_table_row"],
+            "at names where the new content goes in the object it addresses: a block address for the content of a section's body, the 1-based section number for insert_section, as slides insert_section names a slide"),
         [("v2/slides/ops", "values")] = (
             ["insert_table", "slidesChartSeriesInput"],
             "values are the values of the object they name, shaped as that object is: a table's a two-dimensional grid, a chart series' a one-dimensional array"),
     };
 
+    /// <summary>
+    /// C-R20 exceptions to one type per field name across products: fields whose shape follows the
+    /// object they name, by field name, with exactly the product definitions that declare them and
+    /// why (user decision 2026-10-12).
+    /// </summary>
+    private static readonly Dictionary<string, (string[] Places, string Reason)> ShapedByTheirObjectAcrossProducts = new(StringComparer.Ordinal)
+    {
+        ["values"] = (
+            ["cells create_pivot", "cells set_values", "slides insert_table", "slides slidesChartSeriesInput", "words insert_table"],
+            "values are the values of the object they name, shaped as that object is: a range's or a table's a two-dimensional grid, a chart series' a one-dimensional array, a pivot's its value fields"),
+    };
+
     /// <summary>The products whose fields of one name agree among themselves but not with another product's; a product that disagrees with itself has its own case.</summary>
     private static IEnumerable<string> CrossProductFieldTypes(Dictionary<string, Dictionary<string, SortedDictionary<string, List<string>>>> shapes, string name)
     {
+        if (ShapedByTheirObjectAcrossProducts.TryGetValue(name, out (string[] Places, string Reason) exception))
+        {
+            string[] places =
+            [
+                .. shapes.Where(pair => pair.Value.ContainsKey(name))
+                    .SelectMany(pair => pair.Value[name].Values.SelectMany(static owners => owners).Select(owner => $"{pair.Key} {owner}"))
+                    .Order(StringComparer.Ordinal),
+            ];
+            return places.SequenceEqual(exception.Places.Order(StringComparer.Ordinal), StringComparer.Ordinal)
+                ? []
+                : [$"the {name} exception across products for {string.Join(", ", exception.Places)} no longer matches ({string.Join(", ", places)}); update or remove it"];
+        }
+
         (string Product, string Shape)[] uniform =
         [
             .. shapes.Where(pair => pair.Value.TryGetValue(name, out var fields) && fields.Count == 1)

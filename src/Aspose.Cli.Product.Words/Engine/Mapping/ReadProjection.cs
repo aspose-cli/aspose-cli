@@ -103,7 +103,7 @@ internal static class ReadProjection
                         Font = run.Font.Name,
                         LatinFont = run.Font.NameAscii,
                         EastAsianFont = run.Font.NameFarEast,
-                        Size = run.Font.Size,
+                        FontSize = run.Font.Size,
                         Bold = run.Font.Bold,
                         Italic = run.Font.Italic,
                         Color = $"#{run.Font.Color.ToArgb() & 0xffffff:X6}",
@@ -162,7 +162,7 @@ internal static class ReadProjection
             Section = entry.Section,
             RowCount = table.Rows.Count,
             ColumnCount = table.Rows.Count == 0 ? 0 : table.Rows.Cast<Row>().Max(static row => row.Cells.Count),
-            Cells = rows,
+            Values = rows,
             ContentTruncated = truncated,
         };
     }

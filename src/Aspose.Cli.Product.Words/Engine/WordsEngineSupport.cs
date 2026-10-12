@@ -137,7 +137,7 @@ internal static class WordsEngineSupport
         {
             yield return new Warning(WarningCodes.LossyConversion, string.Create(CultureInfo.InvariantCulture, $"The {format} output writes the text of {comments} comment(s) into the body text, where it reads as document text."))
             {
-                Hint = $"To leave the comments out, apply remove_comments with 'aspose-cli words edit' and a .{format} --out; keep a DOCX copy to keep them.",
+                Hint = $"To leave the comments out, apply delete_comments with 'aspose-cli words edit' and a .{format} --out; keep a DOCX copy to keep them.",
             };
         }
 

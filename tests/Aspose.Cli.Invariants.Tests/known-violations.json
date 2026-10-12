@@ -808,34 +808,6 @@
       "actual": "styleData.size: a font size is named fontSize; styleData.bg: a fill is named fillColor"
     },
     {
-      "case": "C-R20 | v2/words/read-result fixednames",
-      "invariant": "C-R20",
-      "rule": "C-R20",
-      "cause": "font-size-not-named-font-size",
-      "actual": "wordsRunData.size: a font size is named fontSize"
-    },
-    {
-      "case": "C-R20 | v2/words/ops#define_style fixednames",
-      "invariant": "C-R20",
-      "rule": "C-R20",
-      "cause": "font-size-not-named-font-size",
-      "actual": "size: a font size is named fontSize"
-    },
-    {
-      "case": "C-R20 | v2/words/ops#format_text fixednames",
-      "invariant": "C-R20",
-      "rule": "C-R20",
-      "cause": "font-size-not-named-font-size",
-      "actual": "size: a font size is named fontSize"
-    },
-    {
-      "case": "C-R20 | v2/words/ops#set_default_font fixednames",
-      "invariant": "C-R20",
-      "rule": "C-R20",
-      "cause": "font-size-not-named-font-size",
-      "actual": "size: a font size is named fontSize"
-    },
-    {
       "case": "C-R36 | cells formats",
       "invariant": "C-R36",
       "rule": "C-R36",
@@ -913,34 +885,6 @@
       "actual": "zoom: measured in percent; name it *Percent"
     },
     {
-      "case": "C-R19 | v2/words/ops#protect",
-      "invariant": "C-R19",
-      "rule": "C-R19",
-      "cause": "op-name-without-noun",
-      "actual": "op protect is not <verb>_<noun> with a verb of the rule's table"
-    },
-    {
-      "case": "C-R19 | v2/words/ops#unprotect",
-      "invariant": "C-R19",
-      "rule": "C-R19",
-      "cause": "op-name-without-noun",
-      "actual": "op unprotect is not <verb>_<noun> with a verb of the rule's table"
-    },
-    {
-      "case": "C-R19 | v2/words/ops#append_document",
-      "invariant": "C-R19",
-      "rule": "C-R19",
-      "cause": "op-verb-append",
-      "actual": "op append_document is not <verb>_<noun> with a verb of the rule's table"
-    },
-    {
-      "case": "C-R19 | v2/words/ops#apply_list",
-      "invariant": "C-R19",
-      "rule": "C-R19",
-      "cause": "op-verb-apply",
-      "actual": "op apply_list is not <verb>_<noun> with a verb of the rule's table"
-    },
-    {
       "case": "C-R19 | v2/cells/ops#create_chart",
       "invariant": "C-R19",
       "rule": "C-R19",
@@ -983,39 +927,11 @@
       "actual": "op remove_hyperlink is not <verb>_<noun> with a verb of the rule's table"
     },
     {
-      "case": "C-R19 | v2/words/ops#remove_comments",
-      "invariant": "C-R19",
-      "rule": "C-R19",
-      "cause": "op-verb-remove",
-      "actual": "op remove_comments is not <verb>_<noun> with a verb of the rule's table"
-    },
-    {
-      "case": "C-R19 | v2/words/ops#remove_watermark",
-      "invariant": "C-R19",
-      "rule": "C-R19",
-      "cause": "op-verb-remove",
-      "actual": "op remove_watermark is not <verb>_<noun> with a verb of the rule's table"
-    },
-    {
       "case": "C-R19 | v2/cells/ops#update_chart",
       "invariant": "C-R19",
       "rule": "C-R19",
       "cause": "op-verb-update",
       "actual": "op update_chart is not <verb>_<noun> with a verb of the rule's table"
-    },
-    {
-      "case": "C-R19 | v2/words/ops#update_fields",
-      "invariant": "C-R19",
-      "rule": "C-R19",
-      "cause": "op-verb-update",
-      "actual": "op update_fields is not <verb>_<noun> with a verb of the rule's table"
-    },
-    {
-      "case": "C-R20 | ops field format across products",
-      "invariant": "C-R20",
-      "rule": "C-R20",
-      "cause": "ops-field-types-differ-across-products",
-      "actual": "cells string; words enum"
     },
     {
       "case": "C-R20 | ops field location across products",
@@ -1046,39 +962,18 @@
       "actual": "paperSize: a page size is named pageSize"
     },
     {
-      "case": "C-R20 | v2/words/ops#wordsPageSetupInput fixednames",
-      "invariant": "C-R20",
-      "rule": "C-R20",
-      "cause": "page-size-not-named-page-size",
-      "actual": "size: a page size is named pageSize"
-    },
-    {
-      "case": "C-R21 | v2/words/ops#add_section",
+      "case": "C-R21 | v2/words/ops#insert_section",
       "invariant": "C-R21",
       "rule": "C-R21",
       "cause": "page-size-read-as-width-and-height-points",
-      "actual": "pageSetup.size: read back as widthPoints; pageSetup.size: writes enum(a3,a4,a5,legal,letter), reads number; pageSetup.columnCount: no read reports it"
+      "actual": "pageSetup.columnCount: no read reports it"
     },
     {
       "case": "C-R21 | v2/words/ops#set_page_setup",
       "invariant": "C-R21",
       "rule": "C-R21",
       "cause": "page-size-read-as-width-and-height-points",
-      "actual": "setup.size: read back as widthPoints; setup.size: writes enum(a3,a4,a5,legal,letter), reads number; setup.columnCount: no read reports it"
-    },
-    {
-      "case": "C-R21 | words add_section reads back",
-      "invariant": "C-R21",
-      "rule": "C-R21",
-      "cause": "page-size-read-as-width-and-height-points",
-      "actual": "pageSetup.size \"letter\" does not read back as widthPoints in words inspect"
-    },
-    {
-      "case": "C-R21 | words set_page_setup reads back",
-      "invariant": "C-R21",
-      "rule": "C-R21",
-      "cause": "page-size-read-as-width-and-height-points",
-      "actual": "setup.size \"letter\" does not read back as widthPoints in words inspect"
+      "actual": "columnCount: no read reports it"
     },
     {
       "case": "C-R01 | cells",
@@ -1116,13 +1011,6 @@
       "actual": "hits[] does not require text (it has value)"
     },
     {
-      "case": "C-R20 | v2/words/ops field size",
-      "invariant": "C-R20",
-      "rule": "C-R20",
-      "cause": "size-names-font-and-page-size",
-      "actual": "enum in wordsPageSetupInput; number in define_style, format_text, set_default_font"
-    },
-    {
       "case": "C-R20 | v2/cells/ops#import_range secrets",
       "invariant": "C-R20",
       "rule": "C-R20",
@@ -1142,13 +1030,6 @@
       "rule": "C-R38",
       "cause": "source-writes-commands-bare",
       "actual": "Engine/Mapping/RowShifts.cs: 'cells edit' is written bare; quote it or write aspose-cli before it"
-    },
-    {
-      "case": "C-R20 | v2/words/ops#set_table_cell spelling",
-      "invariant": "C-R20",
-      "rule": "C-R20",
-      "cause": "table-cell-col-abbreviated",
-      "actual": "col: abbreviated name"
     },
     {
       "case": "C-R20 | v2/cells/ops#add_sparkline variants",
@@ -1186,55 +1067,6 @@
       "actual": "chartInfo.type: a variant named type, not kind; validationInfo.type: a variant named type, not kind"
     },
     {
-      "case": "C-R19 | words add_watermark applied twice",
-      "invariant": "C-R19",
-      "rule": "C-R19",
-      "cause": "words-add-watermark-replaces",
-      "actual": "applied twice, it leaves the same package parts and the same inspect and read results as applied once: the second replaces the first"
-    },
-    {
-      "case": "C-R17 | v2/words/inspect-result",
-      "invariant": "C-R17",
-      "rule": "C-R17",
-      "cause": "words-enum-values-camel-case",
-      "actual": "wordsDocumentSummary.protection: enum values readOnly, trackedChanges are not lowercase kebab-case"
-    },
-    {
-      "case": "C-R17 | v2/words/edit-result",
-      "invariant": "C-R17",
-      "rule": "C-R17",
-      "cause": "words-enum-values-camel-case",
-      "actual": "wordsEditVerification.protection: enum values readOnly, trackedChanges are not lowercase kebab-case"
-    },
-    {
-      "case": "C-R17 | v2/words/ops#append_document",
-      "invariant": "C-R17",
-      "rule": "C-R17",
-      "cause": "words-enum-values-camel-case",
-      "actual": "importFormatMode: enum values keepSource, useDestination are not lowercase kebab-case"
-    },
-    {
-      "case": "C-R17 | v2/words/ops#protect",
-      "invariant": "C-R17",
-      "rule": "C-R17",
-      "cause": "words-enum-values-camel-case",
-      "actual": "mode: enum values readOnly, trackedChanges are not lowercase kebab-case"
-    },
-    {
-      "case": "C-R17 | v2/words/ops#set_page_numbers",
-      "invariant": "C-R17",
-      "rule": "C-R17",
-      "cause": "words-enum-values-camel-case",
-      "actual": "format: enum values upperRoman, lowerRoman, upperLetter, lowerLetter are not lowercase kebab-case"
-    },
-    {
-      "case": "C-R20 | v2/words/ops field inline",
-      "invariant": "C-R20",
-      "rule": "C-R20",
-      "cause": "words-field-types-disagree",
-      "actual": "array of object in mail_merge; boolean in insert_image"
-    },
-    {
       "case": "C-R20 | v2/words/ops field paragraphs",
       "invariant": "C-R20",
       "rule": "C-R20",
@@ -1242,32 +1074,18 @@
       "actual": "array of object{listLevel,style,text} in insert_paragraphs; array of string in set_footer, set_header"
     },
     {
-      "case": "C-R30 | words remove_watermark on a document without a watermark",
+      "case": "C-R30 | words delete_watermark on a document without a watermark",
       "invariant": "C-R30",
       "rule": "C-R30",
       "cause": "words-items-affected-not-from-snapshots",
       "actual": "itemsAffected is above 0 but the output has the same package parts and the same inspect and read results as the input"
     },
     {
-      "case": "C-R30 | words update_fields",
+      "case": "C-R30 | words refresh_fields",
       "invariant": "C-R30",
       "rule": "C-R30",
       "cause": "words-items-affected-not-from-snapshots",
       "actual": "itemsAffected is above 0 but the output has the same package parts and the same inspect and read results as the input"
-    },
-    {
-      "case": "C-R18 | v2/words/ops#apply_list",
-      "invariant": "C-R18",
-      "rule": "C-R18",
-      "cause": "words-list-level-zero-based",
-      "actual": "level: minimum 0, not 1"
-    },
-    {
-      "case": "C-R18 | v2/words/ops#wordsParagraphInput",
-      "invariant": "C-R18",
-      "rule": "C-R18",
-      "cause": "words-list-level-zero-based",
-      "actual": "listLevel: minimum 0, not 1"
     },
     {
       "case": "C-R21 | v2/words/ops#insert_break",
@@ -1277,13 +1095,6 @@
       "actual": "kind: read back as breakAfter"
     },
     {
-      "case": "C-R21 | v2/words/ops#protect",
-      "invariant": "C-R21",
-      "rule": "C-R21",
-      "cause": "words-read-names-differ-from-op-fields",
-      "actual": "mode: read back as protection"
-    },
-    {
       "case": "C-R33 | v2/words/inspect-result names",
       "invariant": "C-R33",
       "rule": "C-R33",
@@ -1291,14 +1102,14 @@
       "actual": "wordsRevisionData.date: a timestamp without format date-time"
     },
     {
-      "case": "C-R21 | v2/words/ops#add_watermark",
+      "case": "C-R21 | v2/words/ops#set_watermark",
       "invariant": "C-R21",
       "rule": "C-R21",
       "cause": "words-state-not-read-back",
-      "actual": "text: no read reports it; imagePath: no read reports it; faded: no read reports it; color: no read reports it; font: no read reports it"
+      "actual": "text: no read reports it; path: no read reports it; faded: no read reports it; color: no read reports it; font: no read reports it"
     },
     {
-      "case": "C-R21 | v2/words/ops#apply_list",
+      "case": "C-R21 | v2/words/ops#set_list",
       "invariant": "C-R21",
       "rule": "C-R21",
       "cause": "words-state-not-read-back",
@@ -1309,10 +1120,10 @@
       "invariant": "C-R21",
       "rule": "C-R21",
       "cause": "words-state-not-read-back",
-      "actual": "basedOn: no read reports it; font: no read reports it; latinFont: no read reports it; eastAsianFont: no read reports it; size: no read reports it; bold: no read reports it; color: no read reports it; spaceBefore: no read reports it; spaceAf..."
+      "actual": "basedOn: no read reports it; font: no read reports it; latinFont: no read reports it; eastAsianFont: no read reports it; fontSize: no read reports it; bold: no read reports it; color: no read reports it; spaceBefore: no read reports it; spa..."
     },
     {
-      "case": "C-R21 | v2/words/ops#format_table",
+      "case": "C-R21 | v2/words/ops#set_table_pagination",
       "invariant": "C-R21",
       "rule": "C-R21",
       "cause": "words-state-not-read-back",
@@ -1358,14 +1169,14 @@
       "invariant": "C-R21",
       "rule": "C-R21",
       "cause": "words-state-not-read-back",
-      "actual": "font: no read reports it; latinFont: no read reports it; eastAsianFont: no read reports it; size: no read reports it"
+      "actual": "font: no read reports it; latinFont: no read reports it; eastAsianFont: no read reports it; fontSize: no read reports it"
     },
     {
       "case": "C-R21 | v2/words/ops#set_page_numbers",
       "invariant": "C-R21",
       "rule": "C-R21",
       "cause": "words-state-not-read-back",
-      "actual": "location: no read reports it; alignment: no read reports it; format: no read reports it; start: no read reports it"
+      "actual": "location: no read reports it; alignment: no read reports it; numberStyle: no read reports it; start: no read reports it"
     },
     {
       "case": "C-R21 | v2/words/ops#set_properties",
@@ -1386,14 +1197,14 @@
       "invariant": "C-R21",
       "rule": "C-R21",
       "cause": "words-state-not-read-back",
-      "actual": "style \"Table Normal\" does not read back as style in words inspect"
+      "actual": "tableStyle \"Table Normal\" does not read back as tableStyle in words inspect"
     },
     {
       "case": "C-R30 | words targets read <unit>/<address>",
       "invariant": "C-R30",
       "rule": "C-R30",
       "cause": "words-targets-not-unit-address",
-      "actual": "targets outside <unit>/<address>: add_section document; add_watermark document; set_default_font document; set_footer document; set_header document; set_page_numbers document; set_page_setup document; set_properties document"
+      "actual": "targets outside <unit>/<address>: set_default_font document; set_footer document; set_header document; set_page_numbers document; set_page_setup document; set_properties document; set_watermark document"
     }
   ]
 }

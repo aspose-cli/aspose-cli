@@ -424,7 +424,7 @@ fails, delete the issue's section, the code that names it and the test, then upd
   `TxtSaveOptions` and `MarkdownSaveOptions` have no option to leave comments out.
 - **CLI behavior:** `words convert` and `words edit` with a `txt` or `md` output warn
   `LOSSY_CONVERSION` with the number of comments written into the body.
-- **Workaround:** add `remove_comments` to a `words edit` batch whose `--out` is the text file.
+- **Workaround:** add `delete_comments` to a `words edit` batch whose `--out` is the text file.
 - **Reproduction:** [WordsKnownIssueTests](tests/Aspose.Cli.Product.Words.Tests/WordsKnownIssueTests.cs)
 
 ### WORDS-TEXT-DELETIONS

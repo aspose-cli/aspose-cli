@@ -25,7 +25,7 @@ public sealed class WordsTrackChangesTests
                     [
                         new ReplaceTextOp { Find = "twelve", Replace = "fifteen" },
                         new FormatTextOp { Target = new WordsTarget { Block = 1 }, Bold = true },
-                        new SetPageSetupOp { Setup = new WordsPageSetupInput { Orientation = "landscape" } },
+                        new SetPageSetupOp { Orientation = "landscape" },
                     ],
                 },
                 Output = TestOutput.At(output),
@@ -55,7 +55,7 @@ public sealed class WordsTrackChangesTests
                     Ops =
                     [
                         new ReplaceTextOp { Find = "twelve", Replace = "fifteen" },
-                        new AddCommentOp { At = new WordsTarget { Block = 1 }, Author = "Reviewer", Text = "Check" },
+                        new AddCommentOp { Target = new WordsTarget { Block = 1 }, Author = "Reviewer", Text = "Check" },
                     ],
                 },
                 Output = TestOutput.At(output),
@@ -82,7 +82,7 @@ public sealed class WordsTrackChangesTests
                 Ops =
                 [
                     new ReplaceTextOp { Find = "twelve", Replace = "fifteen" },
-                    new AddCommentOp { At = new WordsTarget { Block = 2 }, Author = "Reviewer", Text = "Check the figure." },
+                    new AddCommentOp { Target = new WordsTarget { Block = 2 }, Author = "Reviewer", Text = "Check the figure." },
                 ],
             },
             Output = TestOutput.At(commented),
@@ -101,7 +101,7 @@ public sealed class WordsTrackChangesTests
         WordsEdit.Run(fixture.Session, tracked with
         {
             Input = commented,
-            Batch = new WordsOpsBatch { Ops = [new RemoveCommentsOp()] },
+            Batch = new WordsOpsBatch { Ops = [new DeleteCommentsOp()] },
             Output = TestOutput.At(removed),
         });
         var document = new Document(removed);

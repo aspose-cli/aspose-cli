@@ -80,7 +80,7 @@ A decision by number fails with `OPS_INVALID` before anything changes when:
   engine can only decide together. The message names the numbers to list.
 ## Comparing
 
-`words compare` refuses inputs that already contain revisions (`DOCUMENT_HAS_REVISIONS`); list them with `--detail revisions` above. To compare anyway, make reviewed copies first, explicitly accept or reject revisions there, then compare:
+`words compare` refuses inputs that already contain revisions (`REVISIONS_UNRESOLVED`); list them with `--detail revisions` above. To compare anyway, make reviewed copies first, explicitly accept or reject revisions there, then compare:
 
 ```powershell
 aspose-cli words compare original.docx changed.docx --out redline.docx --author "Legal Review" --output-format json

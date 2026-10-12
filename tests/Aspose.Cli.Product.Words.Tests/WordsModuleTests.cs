@@ -29,7 +29,7 @@ public sealed class WordsModuleTests
     [Fact]
     public void OperationObjects_RejectUnknownNestedFields() =>
         AssertOperationObjectIsStrict<WordsOp>(
-            """{"op":"set_text","at":{"block":1},"text":"hello"}""", "at");
+            """{"op":"set_text","target":{"block":1},"text":"hello"}""", "target");
 
     [Fact]
     public Task EveryDefaultInputFormatHasPositiveRoutingEvidence() =>
@@ -69,38 +69,30 @@ public sealed class WordsModuleTests
     }
 
     [Fact]
-    public void PageSizes_SchemaAndRuntimeStayAligned()
+    public void PageSize_TakesTheSharedPresetsOrWidthAndHeight()
     {
-        ProductResourceCatalog resources =
-            ProductCatalog.Build([new WordsModule()]).Resources;
-        JsonNode schema = JsonNode.Parse(resources.Read("v2/words/ops"))!;
-        string[] declaredSizes = schema["$defs"]!["wordsPageSetupInput"]!["properties"]!
-            ["size"]!["enum"]!.AsArray()
-            .Select(static value => value!.GetValue<string>())
-            .ToArray();
-        string[] expectedSizes = ["a3", "a4", "a5", "letter", "legal"];
-
-        Assert.Equal(expectedSizes, declaredSizes);
-        foreach (string size in declaredSizes)
+        foreach (string preset in new[] { "a3", "a4", "a5", "letter", "legal", "tabloid" })
         {
-            WordsOpsBatch batch = Parse(
-                "{\"ops\":[{\"op\":\"set_page_setup\",\"setup\":{\"size\":\""
-                + size
-                + "\"}}]}");
-            Assert.Equal(size, Assert.IsType<SetPageSetupOp>(batch.Ops[0]).Setup.Size);
+            WordsOpsBatch batch = Parse($$$"""{"ops":[{"op":"set_page_setup","pageSize":{"preset":"{{{preset}}}"}}]}""");
+            Assert.Equal(preset, Assert.IsType<SetPageSetupOp>(batch.Ops[0]).PageSize!.Preset);
         }
 
+        SetPageSetupOp custom = Assert.IsType<SetPageSetupOp>(Parse(
+            """{"ops":[{"op":"set_page_setup","pageSize":{"width":500,"height":700}}]}""").Ops[0]);
+        Assert.Equal((500d, 700d), custom.PageSize!.Dimensions());
         Assert.Throws<CliException>(() => Parse(
-            """{"ops":[{"op":"set_page_setup","setup":{"size":"A4"}}]}"""));
+            """{"ops":[{"op":"set_page_setup","pageSize":{"preset":"A4"}}]}"""));
         Assert.Throws<CliException>(() => Parse(
-            """{"ops":[{"op":"set_page_setup","setup":{"size":"tabloid"}}]}"""));
+            """{"ops":[{"op":"set_page_setup","pageSize":{"preset":"a4","width":500,"height":700}}]}"""));
+        Assert.Throws<CliException>(() => Parse(
+            """{"ops":[{"op":"set_page_setup","setup":{"size":"a4"}}]}"""));
     }
 
     [Fact]
     public void ProtectionTypes_ReadAsNoneOrTheProtectMode()
     {
         JsonNode schema = JsonNode.Parse(ProductCatalog.Build([new WordsModule()]).Resources.Read("v2/words/ops"))!;
-        string[] modes = schema["$defs"]!["protect"]!["properties"]!["mode"]!["enum"]!.AsArray()
+        string[] modes = schema["$defs"]!["protect_document"]!["properties"]!["protection"]!["enum"]!.AsArray()
             .Select(static value => value!.GetValue<string>())
             .ToArray();
 
@@ -130,14 +122,14 @@ public sealed class WordsModuleTests
     [InlineData("""{"op":"replace_text","find":"a","replace":"b"}""", """{"scope":"body"}""")]
     [InlineData("""{"op":"insert_image","at":{"block":1},"position":"after","path":"image.png"}""", """{"inline":true}""")]
     [InlineData("""{"op":"insert_toc","at":{"block":1},"position":"after"}""", """{"maxLevel":3}""")]
-    [InlineData("""{"op":"add_section"}""", """{"position":"end"}""")]
     [InlineData("""{"op":"set_header","paragraphs":["Header"]}""", """{"kind":"primary"}""")]
     [InlineData("""{"op":"set_footer","paragraphs":["Footer"]}""", """{"kind":"primary"}""")]
     [InlineData("""{"op":"set_page_numbers"}""", """{"location":"footer","alignment":"center"}""")]
-    [InlineData("""{"op":"append_document","path":"other.docx"}""", """{"importFormatMode":"keepSource"}""")]
-    [InlineData("""{"op":"update_fields"}""", """{"what":"all"}""")]
-    [InlineData("""{"op":"add_watermark","text":"DRAFT"}""", """{"faded":true}""")]
-    [InlineData("""{"op":"add_watermark","text":"DRAFT","faded":false}""", """{"faded":false}""")]
+    [InlineData("""{"op":"import_sections","path":"other.docx"}""", """{"formatting":"keep-source"}""")]
+    [InlineData("""{"op":"refresh_fields"}""", """{"what":"all"}""")]
+    [InlineData("""{"op":"set_list","target":{"block":1},"kind":"bullet"}""", """{"level":1}""")]
+    [InlineData("""{"op":"set_watermark","text":"DRAFT"}""", """{"faded":true}""")]
+    [InlineData("""{"op":"set_watermark","text":"DRAFT","faded":false}""", """{"faded":false}""")]
     [InlineData("""{"op":"insert_image","at":{"block":1},"position":"after","path":"image.png","inline":false}""", """{"inline":false}""")]
     [InlineData("""{"op":"insert_toc","at":{"block":1},"position":"after","maxLevel":0}""", """{"maxLevel":0}""")]
     public void OperationFields_PreserveDefaultsAndExplicitValues(string input, string expected) =>
@@ -154,7 +146,7 @@ public sealed class WordsModuleTests
     [Theory]
     [InlineData("text", 0)]
     [InlineData("text", 201)]
-    [InlineData("imagePath", 0)]
+    [InlineData("path", 0)]
     public void Watermark_OutsideTheSchemaLimitsIsAnInvalidOperation(string field, int length)
     {
         var error = Assert.Throws<CliException>(() => Parse(Watermark(field, length)));
@@ -163,10 +155,73 @@ public sealed class WordsModuleTests
 
     [Fact]
     public void Watermark_AcceptsTheLongestTextTheSchemaAllows() =>
-        Assert.Equal(200, Assert.IsType<AddWatermarkOp>(Parse(Watermark("text", 200)).Ops[0]).Text!.Length);
+        Assert.Equal(200, Assert.IsType<SetWatermarkOp>(Parse(Watermark("text", 200)).Ops[0]).Text!.Length);
 
     private static string Watermark(string field, int length) =>
-        $$"""{"ops":[{"op":"add_watermark","{{field}}":"{{new string('x', length)}}"}]}""";
+        $$"""{"ops":[{"op":"set_watermark","{{field}}":"{{new string('x', length)}}"}]}""";
+
+    [Theory]
+    [InlineData("add_section", "insert_section")]
+    [InlineData("append_document", "import_sections")]
+    [InlineData("apply_list", "set_list")]
+    [InlineData("protect", "protect_document")]
+    [InlineData("unprotect", "unprotect_document")]
+    [InlineData("remove_comments", "delete_comments")]
+    [InlineData("remove_watermark", "delete_watermark")]
+    [InlineData("add_watermark", "set_watermark")]
+    [InlineData("update_fields", "refresh_fields")]
+    [InlineData("format_table", "set_table_pagination")]
+    public void RenamedOperation_IsRefusedWithItsNewName(string old, string renamed)
+    {
+        CliException error = Assert.Throws<CliException>(() => Parse($$"""{"ops":[{"op":"{{old}}"}]}"""));
+
+        Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
+        Assert.Equal(renamed, (string?)error.Details!["suggestions"]![0]);
+    }
+
+    [Theory]
+    [InlineData("""{"op":"insert_section","after":1,"position":"after"}""", "at")]
+    [InlineData("""{"op":"import_sections","path":"a.docx","importFormatMode":"keepSource"}""", "formatting")]
+    [InlineData("""{"op":"import_sections","path":"a.docx","passwordEnv":"P"}""", "sourcePasswordEnv")]
+    [InlineData("""{"op":"protect_document","mode":"read-only"}""", "protection")]
+    [InlineData("""{"op":"set_watermark","imagePath":"a.png"}""", "path")]
+    [InlineData("""{"op":"set_table_cell","target":{"block":1},"row":1,"col":1,"text":"a"}""", "column")]
+    [InlineData("""{"op":"set_table_cell","at":{"block":1},"row":1,"column":1,"text":"a"}""", "target")]
+    [InlineData("""{"op":"set_text","at":{"block":1},"text":"a"}""", "target")]
+    [InlineData("""{"op":"add_comment","at":{"block":1},"author":"A","text":"a"}""", "target")]
+    [InlineData("""{"op":"set_table_pagination","at":{"block":1},"keepTogether":true}""", "target")]
+    [InlineData("""{"op":"insert_table","at":{"block":1},"position":"after","rowCount":1,"columnCount":1,"cells":[["a"]]}""", "values")]
+    [InlineData("""{"op":"insert_table","at":{"block":1},"position":"after","rowCount":1,"columnCount":1,"style":"Table Grid"}""", "tableStyle")]
+    [InlineData("""{"op":"replace_text","find":"a","replace":"b","matchCase":true}""", "caseSensitive")]
+    [InlineData("""{"op":"mail_merge","inline":[{"a":"b"}]}""", "items")]
+    [InlineData("""{"op":"format_text","target":{"block":1},"size":12}""", "fontSize")]
+    [InlineData("""{"op":"define_style","name":"A","size":12}""", "fontSize")]
+    [InlineData("""{"op":"set_default_font","font":"Arial","size":12}""", "fontSize")]
+    [InlineData("""{"op":"set_page_setup","size":"a4"}""", "pageSize")]
+    [InlineData("""{"op":"set_page_numbers","format":"decimal"}""", "numberStyle")]
+    public void RenamedField_IsRefusedWithItsNewName(string operation, string renamed)
+    {
+        CliException error = Assert.Throws<CliException>(() => Parse($$"""{"ops":[{{operation}}]}"""));
+
+        Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
+        Assert.Equal(renamed, (string?)error.Details!["suggestions"]![0]);
+    }
+
+    [Theory]
+    [InlineData("""{"op":"format_text","target":{"block":1},"color":"red"}""")]
+    [InlineData("""{"op":"format_text","target":{"block":1},"highlight":"yellow"}""")]
+    [InlineData("""{"op":"set_list","target":{"block":1},"kind":"bullet","level":0}""")]
+    [InlineData("""{"op":"insert_paragraphs","at":{"block":1},"position":"after","paragraphs":[{"text":"a","listLevel":0}]}""")]
+    [InlineData("""{"op":"protect_document","protection":"readOnly"}""")]
+    [InlineData("""{"op":"set_page_numbers","numberStyle":"upperRoman"}""")]
+    [InlineData("""{"op":"import_sections","path":"a.docx","formatting":"keepSource"}""")]
+    [InlineData("""{"op":"insert_section","at":0,"position":"after"}""")]
+    public void OldValueForms_AreInvalidOperations(string operation)
+    {
+        CliException error = Assert.Throws<CliException>(() => Parse($$"""{"ops":[{{operation}}]}"""));
+
+        Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
+    }
 
     private static WordsOpsBatch Parse(string json) =>
         WordsOp.Catalog.Parse<WordsOpsBatch>(json, Aspose.Cli.Generated.ProductJsonContext.Definition);

@@ -160,7 +160,7 @@ public sealed class WordsDisclosureTests
         // One LOSSY_CONVERSION names the restrictions; the format's own one names other features.
         Warning lost = Assert.Single(text.Warnings ?? [], static warning => warning.Code == WarningCodes.LossyConversion
             && Regex.IsMatch(warning.Message + warning.Hint, "restrict|protect", RegexOptions.IgnoreCase));
-        Assert.Contains("cannot keep the readOnly editing restrictions", lost.Message, StringComparison.Ordinal);
+        Assert.Contains("cannot keep the read-only editing restrictions", lost.Message, StringComparison.Ordinal);
         Warning restriction = Assert.Single(text.Warnings ?? [], static warning => warning.Code == WarningCodes.ProtectionNotEnforced);
         Assert.DoesNotContain("output keeps", restriction.Hint, StringComparison.Ordinal);
         Assert.DoesNotContain(word.Warnings ?? [], static warning => warning.Code == WarningCodes.LossyConversion);
@@ -187,7 +187,7 @@ public sealed class WordsDisclosureTests
         });
 
         Assert.Equal(lost, (converted.Warnings ?? []).Any(static warning => warning.Code == WarningCodes.LossyConversion
-            && warning.Message.Contains("cannot keep the readOnly editing restrictions", StringComparison.Ordinal)));
+            && warning.Message.Contains("cannot keep the read-only editing restrictions", StringComparison.Ordinal)));
     }
 
     [Fact]
@@ -375,7 +375,7 @@ public sealed class WordsDisclosureTests
             Input = input,
             Batch = new WordsOpsBatch
             {
-                Ops = [new RemoveCommentsOp(), new AcceptRevisionsOp()],
+                Ops = [new DeleteCommentsOp(), new AcceptRevisionsOp()],
             },
             Output = TestOutput.At(output),
         });

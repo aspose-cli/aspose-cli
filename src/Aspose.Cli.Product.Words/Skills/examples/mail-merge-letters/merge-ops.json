@@ -7,7 +7,7 @@
       "path": "recipients.csv"
     },
     {
-      "op": "update_fields",
+      "op": "refresh_fields",
       "what": "all"
     }
   ]

@@ -74,8 +74,8 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
         WordsBlockData table = Assert.Single(rest.Blocks, block => block.Kind == "table");
         Assert.Equal(2, table.RowCount);
         Assert.Equal(2, table.ColumnCount);
-        Assert.Equal("Metric", table.Cells![0][0]);
-        Assert.Equal("120", table.Cells[1][1]);
+        Assert.Equal("Metric", table.Values![0][0]);
+        Assert.Equal("120", table.Values[1][1]);
         Assert.True(first.Window!.Truncated);
         Assert.Equal("block", first.Window.Unit);
         Assert.Equal(first.Blocks.Count, first.Window.Returned);
@@ -149,7 +149,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
                 [
                     new ReplaceTextOp { Find = "Revenue", Replace = "Income" },
                     new DeleteBlocksOp { Target = new WordsTarget { Block = 99 } },
-                    new SetTextOp { At = new WordsTarget { Block = 1 }, Text = "Kept" },
+                    new SetTextOp { Target = new WordsTarget { Block = 1 }, Text = "Kept" },
                 ],
             },
             Output = TestOutput.At(output),
@@ -211,7 +211,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
         CliException section = Assert.Throws<CliException>(() =>
             WordsRead.Run(_fixture.Session, new WordsReadRequest { Input = input, Section = 5 }));
         CliException occurrence = Assert.Throws<CliException>(() => Edit(input, "occurrence",
-            new SetTextOp { At = new WordsTarget { Find = "revenue", Nth = 5 }, Text = "x" }));
+            new SetTextOp { Target = new WordsTarget { Find = "revenue", Nth = 5 }, Text = "x" }));
 
         Assert.Equal(WordsDiagnostics.SectionNotFound, section.Code);
         Assert.Equal("5", section.Details!["requested"]!.GetValue<string>());
@@ -239,9 +239,9 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
         document.Save(input);
 
         CliException bookmark = Assert.Throws<CliException>(() => Edit(input, "bookmark",
-            new SetTextOp { At = new WordsTarget { Bookmark = "Sumary" }, Text = "x" }));
+            new SetTextOp { Target = new WordsTarget { Bookmark = "Sumary" }, Text = "x" }));
         CliException heading = Assert.Throws<CliException>(() => Edit(input, "heading",
-            new SetTextOp { At = new WordsTarget { Heading = "Quartely report" }, Text = "x" }));
+            new SetTextOp { Target = new WordsTarget { Heading = "Quartely report" }, Text = "x" }));
         CliException style = Assert.Throws<CliException>(() => Edit(input, "style",
             new SetStyleOp { Target = new WordsTarget { Block = 1 }, Style = "heading 7x" }));
 
@@ -271,9 +271,9 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
         document.Save(input);
 
         CliException find = Assert.Throws<CliException>(() => Edit(input, "find",
-            new SetTextOp { At = new WordsTarget { Find = "第六条 合同解除" }, Text = "x" }));
+            new SetTextOp { Target = new WordsTarget { Find = "第六条 合同解除" }, Text = "x" }));
         CliException heading = Assert.Throws<CliException>(() => Edit(input, "heading-missing",
-            new SetTextOp { At = new WordsTarget { Heading = "第六条 合同解除" }, Text = "x" }));
+            new SetTextOp { Target = new WordsTarget { Heading = "第六条 合同解除" }, Text = "x" }));
 
         Assert.Equal(WordsDiagnostics.AnchorNotFound, find.Code);
         Assert.Equal("Operation op-0001 (set_text) failed: No text '第六条 合同解除' was found.", find.Message);
@@ -530,9 +530,9 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
         document.Save(input);
 
         CliException contents = Assert.Throws<CliException>(() => Edit(input, "contents",
-            new SetTextOp { At = new WordsTarget { Find = "请假流成" }, Text = "x" }));
+            new SetTextOp { Target = new WordsTarget { Find = "请假流成" }, Text = "x" }));
         CliException spaces = Assert.Throws<CliException>(() => Edit(input, "spaces",
-            new SetTextOp { At = new WordsTarget { Find = "第三条 劳动报酬" }, Text = "x" }));
+            new SetTextOp { Target = new WordsTarget { Find = "第三条 劳动报酬" }, Text = "x" }));
 
         Assert.StartsWith("Block 2 holds the closest text: '2.2 请假流程';", contents.Hint, StringComparison.Ordinal);
         Assert.StartsWith("Block 3 holds the closest text: '第三条　劳动报酬", spaces.Hint, StringComparison.Ordinal);
@@ -597,7 +597,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
             new WordsEditRequest
             {
                 Input = input,
-                Batch = new WordsOpsBatch { Ops = [new AppendDocumentOp { Path = input }] },
+                Batch = new WordsOpsBatch { Ops = [new ImportSectionsOp { Path = input }] },
                 Output = TestOutput.At(appended),
             });
         WordsEdit.Run(
@@ -611,7 +611,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
                     [
                         new MailMergeOp
                         {
-                            Inline = [new Dictionary<string, object?> { ["Name"] = "Ava" }, new Dictionary<string, object?> { ["Name"] = "Noah" }],
+                            Items = [new Dictionary<string, object?> { ["Name"] = "Ava" }, new Dictionary<string, object?> { ["Name"] = "Noah" }],
                         },
                     ],
                 },
@@ -866,7 +866,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
                     Position = "after",
                     Paragraphs = [new WordsParagraphInput { Text = "Inserted" }],
                 },
-                new SetTextOp { At = new WordsTarget { Block = 2 }, Text = "Original second block changed" },
+                new SetTextOp { Target = new WordsTarget { Block = 2 }, Text = "Original second block changed" },
             ],
         };
 
@@ -901,7 +901,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
             [
                 new ReplaceTextOp { Find = "Alpha", Replace = "First" },
                 new ReplaceTextOp { Find = "Gamma", Replace = "Third" },
-                new AddCommentOp { At = new WordsTarget { Find = "Beta" }, Author = "Reviewer", Text = "Check" },
+                new AddCommentOp { Target = new WordsTarget { Find = "Beta" }, Author = "Reviewer", Text = "Check" },
             ],
         };
 
@@ -969,7 +969,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
             new WordsEditRequest
             {
                 Input = input,
-                Batch = new WordsOpsBatch { Ops = [new AddWatermarkOp { Text = text, Font = font }] },
+                Batch = new WordsOpsBatch { Ops = [new SetWatermarkOp { Text = text, Font = font }] },
                 Output = TestOutput.At(output),
             });
 
@@ -989,7 +989,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
             new WordsEditRequest
             {
                 Input = input,
-                Batch = new WordsOpsBatch { Ops = [new AddWatermarkOp { Text = "内部资料" }] },
+                Batch = new WordsOpsBatch { Ops = [new SetWatermarkOp { Text = "内部资料" }] },
                 Output = TestOutput.At(output),
             });
 
@@ -1066,7 +1066,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
             Ops =
             [
                 new DeleteBlocksOp { Target = new WordsTarget { Block = 2 } },
-                new SetTextOp { At = new WordsTarget { Block = 2 }, Text = "too late" },
+                new SetTextOp { Target = new WordsTarget { Block = 2 }, Text = "too late" },
             ],
         };
 
@@ -1133,7 +1133,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
                     [
                         new MailMergeOp
                         {
-                            Inline =
+                            Items =
                             [
                                 new Dictionary<string, object?> { ["FirstName"] = "Ava" },
                                 new Dictionary<string, object?> { ["FirstName"] = "Noah" },
@@ -1223,7 +1223,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
             Input = input,
             Batch = new WordsOpsBatch
             {
-                Ops = [new SetTextOp { At = new WordsTarget { Blocks = "1-2" }, Text = "Replaced" }],
+                Ops = [new SetTextOp { Target = new WordsTarget { Blocks = "1-2" }, Text = "Replaced" }],
             },
             Output = TestOutput.At(output),
             Options = new EditCommandOptions { BestEffort = true },
