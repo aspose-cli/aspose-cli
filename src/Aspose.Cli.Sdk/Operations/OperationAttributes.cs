@@ -89,6 +89,15 @@ public static class ReadBackKinds
     public const string NotState = "not-state";
 }
 
+/// <summary>
+/// Marks a top-level partial record that the operations of several vocabularies take as a field,
+/// such as <see cref="PageSizeInput"/>. The operation generator describes it once, where it is
+/// declared, as the record's generated static <c>Contract</c>, and a vocabulary of another
+/// assembly refers to that description; a field that holds it states its own read-back.
+/// </summary>
+[AttributeUsage(AttributeTargets.Class, Inherited = false)]
+public sealed class OperationInputAttribute : Attribute;
+
 /// <summary>Declares one operation of a vocabulary by its stable wire name.</summary>
 /// <param name="name">The value of the operation's <c>op</c> discriminator.</param>
 [AttributeUsage(AttributeTargets.Class, Inherited = false)]

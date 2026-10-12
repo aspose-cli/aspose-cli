@@ -6,8 +6,8 @@ namespace Aspose.Cli.Sdk.Analyzers;
 
 /// <summary>
 /// Extracts the operation contracts of every <c>[OperationVocabulary]</c> base record into
-/// descriptors and generates the vocabulary's catalog, handler interface and dispatch, and
-/// describes the result records of the compilation (see <see cref="ResultContractWriter"/>). It
+/// descriptors and generates the vocabulary's catalog, handler interface and dispatch, describes
+/// each <c>[OperationInput]</c> record once as its own generated contract, and describes the result records of the compilation (see <see cref="ResultContractWriter"/>). It
 /// only reads facts from the records; validation, schema writing and default filling live in the SDK.
 /// </summary>
 [Generator]
@@ -44,6 +44,7 @@ public sealed class OperationContractGenerator : IIncrementalGenerator
     {
         IncrementalValueProvider<ImmutableArray<INamedTypeSymbol>> vocabularies = Records(context, "OperationVocabularyAttribute");
         IncrementalValueProvider<ImmutableArray<INamedTypeSymbol>> operations = Records(context, "OperationAttribute");
+        IncrementalValueProvider<ImmutableArray<INamedTypeSymbol>> inputs = Records(context, "OperationInputAttribute");
         IncrementalValueProvider<ImmutableArray<(IPropertySymbol Property, Location Location)>> constantLists = context.SyntaxProvider
             .ForAttributeWithMetadataName(
                 Contracts + "AllowedValuesAttribute",
@@ -55,8 +56,9 @@ public sealed class OperationContractGenerator : IIncrementalGenerator
             .SelectMany(static (found, _) => found)
             .Collect();
         context.RegisterSourceOutput(
-            vocabularies.Combine(operations).Combine(constantLists).Combine(context.CompilationProvider),
-            static (production, input) => Emit(production, input.Left.Left.Left, input.Left.Left.Right, input.Left.Right, input.Right));
+            vocabularies.Combine(operations).Combine(inputs).Combine(constantLists).Combine(context.CompilationProvider),
+            static (production, input) => Emit(
+                production, input.Left.Left.Left.Left, input.Left.Left.Left.Right, input.Left.Left.Right, input.Left.Right, input.Right));
     }
 
     private static IncrementalValueProvider<ImmutableArray<INamedTypeSymbol>> Records(IncrementalGeneratorInitializationContext context, string attribute) =>
@@ -71,6 +73,7 @@ public sealed class OperationContractGenerator : IIncrementalGenerator
         SourceProductionContext production,
         ImmutableArray<INamedTypeSymbol> declaredVocabularies,
         ImmutableArray<INamedTypeSymbol> declaredOperations,
+        ImmutableArray<INamedTypeSymbol> declaredInputs,
         ImmutableArray<(IPropertySymbol Property, Location Location)> constantLists,
         Compilation compilation)
     {
@@ -114,6 +117,17 @@ public sealed class OperationContractGenerator : IIncrementalGenerator
         }
 
         var described = new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default);
+        foreach (INamedTypeSymbol input in declaredInputs.Distinct<INamedTypeSymbol>(SymbolEqualityComparer.Default))
+        {
+            var writer = new VocabularyWriter(compilation, input, [], Report);
+            if (writer.WriteInput() is { } source)
+            {
+                production.AddSource(input.Name + ".OperationInput.g.cs", SourceText.From(source, Encoding.UTF8));
+            }
+
+            described.UnionWith(writer.Records);
+        }
+
         foreach (KeyValuePair<INamedTypeSymbol, List<(string Name, INamedTypeSymbol Type)>> vocabulary in vocabularies)
         {
             var writer = new VocabularyWriter(compilation, vocabulary.Key, vocabulary.Value, Report);
