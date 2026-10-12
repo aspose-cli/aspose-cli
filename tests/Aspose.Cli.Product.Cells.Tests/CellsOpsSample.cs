@@ -20,7 +20,7 @@ internal static class CellsOpsSample
             new CopyRangeOp { From = "Sales!A1:C3", To = "Summary!B2" },
             new ImportRangeOp { Sheet = "Summary", Path = "D:/data/eu_raw.xlsx", From = "Totals!A2:D8", To = "F2" },
             new ImportSheetOp { Sheet = "Totals", Path = "D:/data/eu_raw.xlsx", Name = "EU", Position = 1 },
-            new FormatRangeOp { Range = "A1:E1", Style = new StyleData { Bold = true, Bg = "#1F4E79" } },
+            new FormatRangeOp { Range = "A1:E1", Style = new CellsStyleData { Bold = true, Bg = "#1F4E79" } },
             new MergeCellsOp { Range = "A1:E1" },
             new UnmergeCellsOp { Range = "A1:E1" },
             new InsertRowsOp { At = 2, Count = 3 },
@@ -37,7 +37,7 @@ internal static class CellsOpsSample
             new CreateChartOp
             {
                 Sheet = "Sales",
-                Type = ChartTypes.Column,
+                Type = CellsChartTypes.Column,
                 DataRange = "A1:C5",
                 At = "E2:L18",
                 Title = "Quarterly Sales",
@@ -50,8 +50,8 @@ internal static class CellsOpsSample
                 Rows = ["Region"],
                 Values =
                 [
-                    new PivotValueField { Field = "Q1" },
-                    new PivotValueField { Field = "Q2", Function = PivotFunctions.Average },
+                    new CellsPivotValueField { Field = "Q1" },
+                    new CellsPivotValueField { Field = "Q2", Function = CellsPivotFunctions.Average },
                 ],
             },
             new SetPageSetupOp
@@ -60,7 +60,7 @@ internal static class CellsOpsSample
                 Orientation = "landscape",
                 PaperSize = "a4",
                 FitToWidth = 1,
-                Margins = new Margins { Top = 0.75, Bottom = 0.75 },
+                Margins = new CellsMargins { Top = 0.75, Bottom = 0.75 },
                 Header = "&CQuarterly Report",
                 Footer = "&CPage &P of &N",
             },
@@ -73,15 +73,15 @@ internal static class CellsOpsSample
             {
                 Sheet = "Sales",
                 Range = "A2:D20",
-                By = [new SortKey { Column = "B", Order = SortOrders.Desc }, new SortKey { Column = "A" }],
+                By = [new CellsSortKey { Column = "B", Order = CellsSortOrders.Desc }, new CellsSortKey { Column = "A" }],
                 HasHeader = false,
             },
             new SetValidationOp
             {
                 Sheet = "Sales",
                 Range = "C2:C100",
-                Type = ValidationTypes.WholeNumber,
-                Operator = ValidationOperators.Between,
+                Type = CellsValidationTypes.WholeNumber,
+                Operator = CellsValidationOperators.Between,
                 Value1 = "0",
                 Value2 = "1000000",
                 ErrorMessage = "Enter a positive amount",
@@ -92,7 +92,7 @@ internal static class CellsOpsSample
             new AddCommentOp { Sheet = "Sales", Cell = "B2", Text = "Verify Q1", Author = "Finance" },
             new EditCommentOp { Sheet = "Sales", Cell = "B2", Text = "Verified" },
             new DeleteCommentOp { Sheet = "Sales", Cell = "C3" },
-            new ProtectSheetOp { Sheet = "Sales", PasswordEnv = "SHEET_PWD", Allow = [ProtectActions.Sort, ProtectActions.AutoFilter] },
+            new ProtectSheetOp { Sheet = "Sales", PasswordEnv = "SHEET_PWD", Allow = [CellsProtectActions.Sort, CellsProtectActions.AutoFilter] },
             new UnprotectSheetOp { Sheet = "Archive", PasswordEnv = "SHEET_PWD" },
             new GroupRowsOp { Sheet = "Sales", From = 2, To = 5, Collapse = true },
             new UngroupRowsOp { Sheet = "Sales", From = 2, To = 5 },
@@ -104,13 +104,13 @@ internal static class CellsOpsSample
             new UnprotectWorkbookOp { PasswordEnv = "BOOK_PWD" },
             new SetHyperlinkOp { Sheet = "Sales", Cell = "A1", Target = "Summary!A1", Display = "Go to summary" },
             new RemoveHyperlinkOp { Sheet = "Sales", Cell = "B2" },
-            new UpdateChartOp { Sheet = "Sales", Index = 0, Title = "Revised", Type = ChartTypes.Bar },
+            new UpdateChartOp { Sheet = "Sales", Index = 0, Title = "Revised", Type = CellsChartTypes.Bar },
             new AddConditionalFormatOp
             {
                 Sheet = "Sales",
                 Range = "C2:C100",
-                Rule = new ConditionalRule { Kind = ConditionalRuleKinds.CellValue, Operator = ValidationOperators.GreaterThan, Value1 = "1000" },
-                Style = new ConditionalStyle { Bg = "#FFC7CE" },
+                Rule = new CellsConditionalRule { Kind = CellsConditionalRuleKinds.CellValue, Operator = CellsValidationOperators.GreaterThan, Value1 = "1000" },
+                Style = new CellsConditionalStyle { Bg = "#FFC7CE" },
             },
             new ClearConditionalFormatsOp { Sheet = "Sales", Range = "D2:D100" },
             new MoveSheetOp { Sheet = "Summary", Position = 1 },
@@ -118,8 +118,8 @@ internal static class CellsOpsSample
             {
                 Sheet = "Sales",
                 Range = "A1:D5",
-                Edges = [BorderEdges.Outline, BorderEdges.Inside],
-                Style = BorderLineStyles.Thin,
+                Edges = [CellsBorderEdges.Outline, CellsBorderEdges.Inside],
+                Style = CellsBorderLineStyles.Thin,
                 Color = "#000000",
             },
             new SetDefaultFontOp { Font = "Aptos", Size = 11 },
@@ -131,7 +131,7 @@ internal static class CellsOpsSample
                 Sheet = "Sales",
                 DataRange = "B2:E5",
                 Location = "F2:F5",
-                Type = SparklineTypes.Line,
+                Type = CellsSparklineTypes.Line,
             },
             new SetActiveSheetOp { Sheet = "Sales" },
         ],

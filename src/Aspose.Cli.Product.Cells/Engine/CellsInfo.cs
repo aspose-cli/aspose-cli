@@ -9,7 +9,7 @@ namespace Aspose.Cli.Product.Cells.Engine;
 /// <summary><c>cells inspect</c>: the structural summary of a workbook (projection ladder step one).</summary>
 internal static class CellsInfo
 {
-    public static WorkbookInfoResult Run(CellsSession session, InfoRequest request)
+    public static CellsInspectResult Run(CellsSession session, CellsInspectRequest request)
     {
         ArgumentNullException.ThrowIfNull(session);
         ArgumentNullException.ThrowIfNull(request);
@@ -19,10 +19,10 @@ internal static class CellsInfo
         using LoadedWorkbook loaded = session.Loader.Open(request.Input, request.Password);
         Workbook workbook = loaded.Workbook;
 
-        (WorkbookSummary summary, Warning? errorsTruncated) =
+        (CellsWorkbookSummary summary, Warning? errorsTruncated) =
             InfoProjection.Summarize(session.Budgets, workbook, request);
 
-        return new WorkbookInfoResult
+        return new CellsInspectResult
         {
             Input = BuildSource(request.Input, loaded),
             Workbook = summary,

@@ -13,7 +13,7 @@ namespace Aspose.Cli.Product.Cells.Commands;
 /// </summary>
 internal static class RenderCommand
 {
-    public static CommandDefinition<RenderRequest, RenderResult> Create()
+    public static CommandDefinition<CellsRenderRequest, CellsRenderResult> Create()
     {
         var sheet = new Option<string?>("--sheet")
         {
@@ -63,7 +63,7 @@ internal static class RenderCommand
 
                 (string? sheetName, RangeRef? range) = SheetRangeInput.Resolve(
                     parse.GetValue(sheet), parse.GetValue(rangeOption));
-                return new RenderRequest
+                return new CellsRenderRequest
                 {
                     Input = standard.Input,
                     Output = output,
@@ -90,7 +90,7 @@ internal static class RenderCommand
         };
     }
 
-    internal static void Table(RenderResult render, TableSurface surface)
+    internal static void Table(CellsRenderResult render, TableSurface surface)
     {
         if (render.Outputs is { } outputs)
         {
@@ -106,7 +106,7 @@ internal static class RenderCommand
         ResultText.Produced(surface, render.Output, Describe(render));
     }
 
-    private static string Describe(RenderResult render)
+    private static string Describe(CellsRenderResult render)
     {
         var parts = new List<string>(3) { $"sheet {render.Sheet}" };
         if (render.Range is { } range)

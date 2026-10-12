@@ -19,10 +19,10 @@ public sealed record SetBordersOp : CellsOp
     /// edges, horizontal and vertical inner lines, or all (the full grid).
     /// </summary>
     [NotReadBack]
-    [MinItems(1), AllowedValues(typeof(BorderEdges))] public required IReadOnlyList<string> Edges { get; init; }
+    [MinItems(1), AllowedValues(typeof(CellsBorderEdges))] public required IReadOnlyList<string> Edges { get; init; }
 
     [NotReadBack]
-    [AllowedValues(typeof(BorderLineStyles))] public string Style { get; init; } = BorderLineStyles.Thin;
+    [AllowedValues(typeof(CellsBorderLineStyles))] public string Style { get; init; } = CellsBorderLineStyles.Thin;
 
     [NotReadBack]
     [HexColor] public string Color { get; init; } = "#000000";
@@ -33,7 +33,7 @@ public sealed record SetBordersOp : CellsOp
         // Inner edges alone on a single cell would draw nothing, a silent no-op the caller reads as success.
         OperationInvalidException.Require(
             A1.ParseRange(Range).Range.CellCount > 1
-                || Edges.Any(static edge => edge is not (BorderEdges.Inside or BorderEdges.Horizontal or BorderEdges.Vertical)),
+                || Edges.Any(static edge => edge is not (CellsBorderEdges.Inside or CellsBorderEdges.Horizontal or CellsBorderEdges.Vertical)),
             $"a single-cell range has no inner boundaries, so edges [{string.Join(", ", Edges)}] would draw nothing",
             "Use outline (or top/bottom/left/right) on a single cell, or a multi-cell range for inside borders.");
         return this;
@@ -41,7 +41,7 @@ public sealed record SetBordersOp : CellsOp
 }
 
 /// <summary>Accepted values of <see cref="SetBordersOp.Edges"/>.</summary>
-public static class BorderEdges
+public static class CellsBorderEdges
 {
     /// <summary>The four outer edges of the range.</summary>
     public const string Outline = "outline";
@@ -65,7 +65,7 @@ public static class BorderEdges
 }
 
 /// <summary>Accepted values of <see cref="SetBordersOp.Style"/>.</summary>
-public static class BorderLineStyles
+public static class CellsBorderLineStyles
 {
     public const string Hair = "hair";
     public const string Thin = "thin";

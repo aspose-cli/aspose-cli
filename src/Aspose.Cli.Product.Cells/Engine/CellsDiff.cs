@@ -9,7 +9,7 @@ namespace Aspose.Cli.Product.Cells.Engine;
 /// <summary><c>cells compare</c>: the stored values, and formulas in scope, that differ between two workbooks.</summary>
 internal static class CellsDiff
 {
-    public static DiffResult Run(CellsSession session, DiffRequest request)
+    public static CellsCompareResult Run(CellsSession session, CellsCompareRequest request)
     {
         ArgumentNullException.ThrowIfNull(session);
         ArgumentNullException.ThrowIfNull(request);
@@ -23,9 +23,9 @@ internal static class CellsDiff
         Workbook right = other.Workbook;
 
         DiffComparer.Result diff = DiffComparer.Compare(
-            session.Budgets, left, right, includeFormulas: request.Scope == DiffScope.Formulas, request.MaxDiffs);
+            session.Budgets, left, right, includeFormulas: request.Scope == CellsCompareScope.Formulas, request.MaxDiffs);
 
-        return new DiffResult
+        return new CellsCompareResult
         {
             Left = BuildSource(request.Left, loaded),
             Right = BuildSource(request.Right, other),

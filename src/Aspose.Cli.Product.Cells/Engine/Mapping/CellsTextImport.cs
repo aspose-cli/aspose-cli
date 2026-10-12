@@ -22,7 +22,7 @@ internal static partial class CellsTextImport
     internal static (Encoding Encoding, CultureInfo Culture) Resolve(
         string path,
         char separator,
-        TextImportOptions? options,
+        CellsTextImportOptions? options,
         ResourceBudgetLedger budgets)
     {
         Encoding encoding = ResolveEncoding(path, options?.Encoding, budgets);

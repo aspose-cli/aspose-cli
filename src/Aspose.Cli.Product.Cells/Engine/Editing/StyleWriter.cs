@@ -20,7 +20,7 @@ internal static class StyleWriter
     /// opened from disk — always, for this CLI — <c>CreateStyle</c> returns a
     /// style whose font, number format and alignment already count as set.
     /// </summary>
-    public static (Style Style, StyleFlag Flag) Build(Workbook workbook, StyleData data)
+    public static (Style Style, StyleFlag Flag) Build(Workbook workbook, CellsStyleData data)
     {
         Style style = workbook.CreateStyle();
         return (style, Apply(style, data));
@@ -30,7 +30,7 @@ internal static class StyleWriter
     /// Applies the style core onto an existing engine style, reporting which
     /// fields were touched. The style is mutated in place.
     /// </summary>
-    public static StyleFlag Apply(Style style, StyleData data)
+    public static StyleFlag Apply(Style style, CellsStyleData data)
     {
         var flag = new StyleFlag();
 
@@ -81,9 +81,9 @@ internal static class StyleWriter
         {
             style.HorizontalAlignment = horizontal switch
             {
-                HorizontalAlignments.Left => TextAlignmentType.Left,
-                HorizontalAlignments.Center => TextAlignmentType.Center,
-                HorizontalAlignments.Right => TextAlignmentType.Right,
+                CellsHorizontalAlignments.Left => TextAlignmentType.Left,
+                CellsHorizontalAlignments.Center => TextAlignmentType.Center,
+                CellsHorizontalAlignments.Right => TextAlignmentType.Right,
                 _ => throw new ArgumentOutOfRangeException(
                     nameof(data), horizontal, "Horizontal alignment is missing from the engine mapper."),
             };
@@ -94,9 +94,9 @@ internal static class StyleWriter
         {
             style.VerticalAlignment = vertical switch
             {
-                VerticalAlignments.Top => TextAlignmentType.Top,
-                VerticalAlignments.Middle => TextAlignmentType.Center,
-                VerticalAlignments.Bottom => TextAlignmentType.Bottom,
+                CellsVerticalAlignments.Top => TextAlignmentType.Top,
+                CellsVerticalAlignments.Middle => TextAlignmentType.Center,
+                CellsVerticalAlignments.Bottom => TextAlignmentType.Bottom,
                 _ => throw new ArgumentOutOfRangeException(
                     nameof(data), vertical, "Vertical alignment is missing from the engine mapper."),
             };

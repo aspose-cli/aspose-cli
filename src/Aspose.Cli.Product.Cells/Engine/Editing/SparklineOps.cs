@@ -85,9 +85,9 @@ internal static class SparklineOps
     /// </summary>
     private static SparklineType ToType(string type) => type switch
     {
-        SparklineTypes.Line => SparklineType.Line,
-        SparklineTypes.Column => SparklineType.Column,
-        SparklineTypes.WinLoss => SparklineType.WinLoss,
+        CellsSparklineTypes.Line => SparklineType.Line,
+        CellsSparklineTypes.Column => SparklineType.Column,
+        CellsSparklineTypes.WinLoss => SparklineType.WinLoss,
         _ => throw new ArgumentOutOfRangeException(
             nameof(type), type, "Sparkline type is missing from the engine mapper."),
     };

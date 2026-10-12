@@ -14,12 +14,12 @@ internal static class SearchMatcher
     private const int MaxValueLength = 200;
 
     /// <summary>Searches every sheet, or only the already resolved <paramref name="sheetIndex"/>.</summary>
-    public static SearchHits<SearchHit> Find(
-        ResourceBudgetLedger budgets, Workbook workbook, SearchRequest request, int? sheetIndex)
+    public static SearchHits<CellsSearchHit> Find(
+        ResourceBudgetLedger budgets, Workbook workbook, CellsSearchRequest request, int? sheetIndex)
     {
-        SearchHits<SearchHit> hits = request.Query.Collect<SearchHit>();
-        bool inValues = request.In is SearchIn.Values or SearchIn.Both;
-        bool inFormulas = request.In is SearchIn.Formulas or SearchIn.Both;
+        SearchHits<CellsSearchHit> hits = request.Query.Collect<CellsSearchHit>();
+        bool inValues = request.In is CellsSearchIn.Values or CellsSearchIn.Both;
+        bool inFormulas = request.In is CellsSearchIn.Formulas or CellsSearchIn.Both;
         TextSearch query = request.Query.Text;
 
         foreach (Worksheet sheet in workbook.Worksheets)
@@ -48,7 +48,7 @@ internal static class SearchMatcher
                     continue;
                 }
 
-                bool kept = hits.Offer(() => new SearchHit
+                bool kept = hits.Offer(() => new CellsSearchHit
                 {
                     Sheet = sheet.Name,
                     Cell = A1.FormatCell(new CellRef(cell.Row, cell.Column)),

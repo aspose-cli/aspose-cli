@@ -8,7 +8,7 @@ namespace Aspose.Cli.Product.Cells.Contracts;
 /// window counts the returned hits and, when more match, carries the command that returns
 /// the next ones.
 /// </summary>
-public sealed record SearchResult() : WindowedResultEnvelope("search-result", 2)
+public sealed record CellsSearchResult() : WindowedResultEnvelope("search-result", 2)
 {
     /// <summary>The searched file.</summary>
     [JsonPropertyOrder(-50)]
@@ -20,11 +20,11 @@ public sealed record SearchResult() : WindowedResultEnvelope("search-result", 2)
 
     /// <summary>Matching cells.</summary>
     [JsonPropertyOrder(-48)]
-    public required IReadOnlyList<SearchHit> Hits { get; init; }
+    public required IReadOnlyList<CellsSearchHit> Hits { get; init; }
 }
 
 /// <summary>One matching cell.</summary>
-public sealed record SearchHit
+public sealed record CellsSearchHit
 {
     /// <summary>Sheet the cell is on.</summary>
     public required string Sheet { get; init; }

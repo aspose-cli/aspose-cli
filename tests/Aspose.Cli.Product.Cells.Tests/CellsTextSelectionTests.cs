@@ -28,14 +28,14 @@ public sealed class CellsTextSelectionTests : IClassFixture<CellsTextSelectionFi
         byte[] sentinel = "existing report must remain intact"u8.ToArray();
         File.WriteAllBytes(output, sentinel);
         byte[] sourceBytes = File.ReadAllBytes(source);
-        var request = new ConvertRequest
+        var request = new CellsConvertRequest
         {
             Input = source,
             Output = TestOutput.At(output, format: format, overwrite: true),
             SheetName = "Detail",
         };
 
-        ConvertResult result = CellsConvert.Run(_fixture.Session, request);
+        CellsConvertResult result = CellsConvert.Run(_fixture.Session, request);
         Assert.Equal("Detail", result.Sheet);
         string text = File.ReadAllText(output);
         Assert.Contains("SO-001", text, StringComparison.Ordinal);
@@ -52,7 +52,7 @@ public sealed class CellsTextSelectionTests : IClassFixture<CellsTextSelectionFi
     {
         string source = _sources.DashboardActive;
         string output = _fixture.Temp.File($"text-first.{format}");
-        ConvertResult result = CellsConvert.Run(_fixture.Session, new ConvertRequest
+        CellsConvertResult result = CellsConvert.Run(_fixture.Session, new CellsConvertRequest
         {
             Input = source,
             Output = TestOutput.At(output, format: format, overwrite: true),
@@ -73,7 +73,7 @@ public sealed class CellsTextSelectionTests : IClassFixture<CellsTextSelectionFi
     {
         string source = _sources.DetailActive;
         string output = _fixture.Temp.File($"text-default.{format}");
-        ConvertResult result = CellsConvert.Run(_fixture.Session, new ConvertRequest
+        CellsConvertResult result = CellsConvert.Run(_fixture.Session, new CellsConvertRequest
         {
             Input = source,
             Output = TestOutput.At(output, format: format, overwrite: true),

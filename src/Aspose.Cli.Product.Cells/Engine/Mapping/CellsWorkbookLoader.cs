@@ -86,7 +86,7 @@ internal sealed class CellsWorkbookLoader(ResourceBudgetLedger resourceBudgets, 
     internal LoadedWorkbook Open(
         string path,
         Secret? password,
-        TextImportOptions? textImport = null,
+        CellsTextImportOptions? textImport = null,
         bool calculateOnOpen = true)
     {
         InputSizeGuard.Ensure(resourceBudgets, path);
@@ -104,7 +104,7 @@ internal sealed class CellsWorkbookLoader(ResourceBudgetLedger resourceBudgets, 
     private LoadedWorkbook OpenCore(
         string path,
         Secret? password,
-        TextImportOptions? textImport,
+        CellsTextImportOptions? textImport,
         bool published,
         bool calculateOnOpen,
         string? resourceSource = null)
@@ -188,7 +188,7 @@ internal sealed class CellsWorkbookLoader(ResourceBudgetLedger resourceBudgets, 
     internal bool IsLoadFailure(Exception exception) =>
         !(outputs?.IsEvaluation == true && CellsEvaluationProfile.IsOpenLimit(exception));
 
-    private LoadPlan ResolveLoadPlan(string path, TextImportOptions? textImport, bool published)
+    private LoadPlan ResolveLoadPlan(string path, CellsTextImportOptions? textImport, bool published)
     {
         LoadPlan plan = ResolveFormatPlan(path);
         if (plan.Separator is not { } separator)

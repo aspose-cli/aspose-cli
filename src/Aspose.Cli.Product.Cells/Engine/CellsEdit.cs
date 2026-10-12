@@ -13,7 +13,7 @@ namespace Aspose.Cli.Product.Cells.Engine;
 /// <summary><c>cells edit</c>: opens a workbook, applies an ops batch atomically and publishes the result.</summary>
 internal static class CellsEdit
 {
-    public static EditResult Run(CellsSession session, EditRequest request)
+    public static CellsEditResult Run(CellsSession session, CellsEditRequest request)
     {
         ArgumentNullException.ThrowIfNull(session);
         ArgumentNullException.ThrowIfNull(request);
@@ -89,7 +89,7 @@ internal static class CellsEdit
             transaction.Commit();
         }
 
-        return new EditResult
+        return new CellsEditResult
         {
             Input = input,
             Output = saved?.Output,

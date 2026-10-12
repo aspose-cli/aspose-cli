@@ -7,7 +7,7 @@ namespace Aspose.Cli.Product.Cells.Contracts;
 /// Result of <c>aspose-cli cells render</c>: a visual image of one sheet (or a
 /// range of it), the primary way for an agent to "look at" a spreadsheet.
 /// </summary>
-public sealed record RenderResult() : EngineResultEnvelope("render-result", 2)
+public sealed record CellsRenderResult() : EngineResultEnvelope("render-result", 2)
 {
     /// <summary>The rendered input file.</summary>
     [JsonPropertyOrder(-50)]
@@ -33,11 +33,11 @@ public sealed record RenderResult() : EngineResultEnvelope("render-result", 2)
     /// <c>sheet</c> describe the first rendered sheet — a stable summary for
     /// single-output consumers.
     /// </summary>
-    public IReadOnlyList<SheetRenderOutput>? Outputs { get; init; }
+    public IReadOnlyList<CellsSheetOutput>? Outputs { get; init; }
 }
 
 /// <summary>One rendered sheet of a render of every visible sheet.</summary>
-public sealed record SheetRenderOutput
+public sealed record CellsSheetOutput
 {
     /// <summary>Name of the rendered sheet.</summary>
     public required string Sheet { get; init; }

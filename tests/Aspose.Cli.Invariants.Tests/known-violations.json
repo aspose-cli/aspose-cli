@@ -11,7 +11,7 @@
       "actual": "applied twice, it leaves the same package parts and the same inspect and read results as applied once: the second replaces the first"
     },
     {
-      "case": "C-R17 | v2/cells/ops#conditionalRule",
+      "case": "C-R17 | v2/cells/ops#cellsConditionalRule",
       "invariant": "C-R17",
       "rule": "C-R17",
       "cause": "cells-enum-values-camel-case",
@@ -32,39 +32,39 @@
       "actual": "type: enum values wholeNumber, textLength are not lowercase kebab-case; operator: enum values notBetween, notEqual, greaterThan, lessThan, greaterOrEqual, lessOrEqual are not lowercase kebab-case"
     },
     {
-      "case": "C-R17 | v2/cells/workbook-info",
+      "case": "C-R17 | v2/cells/inspect-result",
       "invariant": "C-R17",
       "rule": "C-R17",
       "cause": "cells-enum-values-camel-case",
-      "actual": "validationInfo.type.anyOf[0]: enum values wholeNumber, textLength are not lowercase kebab-case"
+      "actual": "cellsValidationInfo.type.anyOf[0]: enum values wholeNumber, textLength are not lowercase kebab-case"
     },
     {
       "case": "C-R20 | v2/cells/ops field bottom",
       "invariant": "C-R20",
       "rule": "C-R20",
       "cause": "cells-field-types-disagree",
-      "actual": "boolean in conditionalRule; number in margins"
+      "actual": "boolean in cellsConditionalRule; number in cellsMargins"
     },
     {
       "case": "C-R20 | v2/cells/ops field footer",
       "invariant": "C-R20",
       "rule": "C-R20",
       "cause": "cells-field-types-disagree",
-      "actual": "number in margins; string in set_page_setup"
+      "actual": "number in cellsMargins; string in set_page_setup"
     },
     {
       "case": "C-R20 | v2/cells/ops field header",
       "invariant": "C-R20",
       "rule": "C-R20",
       "cause": "cells-field-types-disagree",
-      "actual": "number in margins; string in set_page_setup"
+      "actual": "number in cellsMargins; string in set_page_setup"
     },
     {
       "case": "C-R20 | v2/cells/ops field position",
       "invariant": "C-R20",
       "rule": "C-R20",
       "cause": "cells-field-types-disagree",
-      "actual": "enum in chartLegend; integer in add_sheet, import_sheet, move_sheet"
+      "actual": "enum in cellsChartLegend; integer in add_sheet, import_sheet, move_sheet"
     },
     {
       "case": "C-R20 | v2/cells/ops field values",
@@ -130,11 +130,11 @@
       "actual": "to: to ends a from-to range; a range names its ends first and last"
     },
     {
-      "case": "C-R33 | v2/cells/workbook-info names",
+      "case": "C-R33 | v2/cells/inspect-result names",
       "invariant": "C-R33",
       "rule": "C-R33",
       "cause": "cells-has-vba-not-has-macros",
-      "actual": "workbookSummary.hasVba: the other products name this fact hasMacros"
+      "actual": "cellsWorkbookSummary.hasVba: the other products name this fact hasMacros"
     },
     {
       "case": "C-R30 | cells add_comment",
@@ -591,18 +591,18 @@
       "actual": "index: minimum 0, not 1"
     },
     {
-      "case": "C-R18 | v2/cells/workbook-info",
+      "case": "C-R18 | v2/cells/inspect-result",
       "invariant": "C-R18",
       "rule": "C-R18",
       "cause": "cells-sheet-and-chart-positions-zero-based",
-      "actual": "chartInfo.index: minimum 0, not 1; sheetInfo.position: minimum 0, not 1"
+      "actual": "cellsChartInfo.index: minimum 0, not 1; cellsSheetInfo.position: minimum 0, not 1"
     },
     {
-      "case": "C-R18 | v2/cells/workbook-read",
+      "case": "C-R18 | v2/cells/read-result",
       "invariant": "C-R18",
       "rule": "C-R18",
       "cause": "cells-sheet-and-chart-positions-zero-based",
-      "actual": "sheetProjection.position: minimum 0, not 1"
+      "actual": "cellsSheetProjection.position: minimum 0, not 1"
     },
     {
       "case": "C-R21 | v2/cells/ops#add_comment",
@@ -731,25 +731,25 @@
       "actual": "title: no read reports it; dataRange: no read reports it; seriesInRows: no read reports it; legend: no read reports it; axisTitles: no read reports it; seriesColors: no read reports it; dataLabels: no read reports it"
     },
     {
-      "case": "C-R20 | v2/cells/ops#conditionalStyle spelling",
+      "case": "C-R20 | v2/cells/ops#cellsConditionalStyle spelling",
       "invariant": "C-R20",
       "rule": "C-R20",
       "cause": "cells-style-abbreviated-names",
       "actual": "bg: abbreviated name"
     },
     {
-      "case": "C-R20 | v2/cells/ops#styleData spelling",
+      "case": "C-R20 | v2/cells/ops#cellsStyleData spelling",
       "invariant": "C-R20",
       "rule": "C-R20",
       "cause": "cells-style-abbreviated-names",
       "actual": "bg: abbreviated name; hAlign: abbreviated name; vAlign: abbreviated name"
     },
     {
-      "case": "C-R20 | v2/cells/workbook-read spelling",
+      "case": "C-R20 | v2/cells/read-result spelling",
       "invariant": "C-R20",
       "rule": "C-R20",
       "cause": "cells-style-abbreviated-names",
-      "actual": "styleData.bg: abbreviated name; styleData.hAlign: abbreviated name; styleData.vAlign: abbreviated name"
+      "actual": "cellsStyleData.bg: abbreviated name; cellsStyleData.hAlign: abbreviated name; cellsStyleData.vAlign: abbreviated name"
     },
     {
       "case": "C-R20 | v2/cells/ops field style",
@@ -780,7 +780,7 @@
       "actual": "cells compare --compare: a banned name; what a compare compares is --content."
     },
     {
-      "case": "C-R20 | v2/cells/ops#conditionalStyle fixednames",
+      "case": "C-R20 | v2/cells/ops#cellsConditionalStyle fixednames",
       "invariant": "C-R20",
       "rule": "C-R20",
       "cause": "fill-not-named-fill-color",
@@ -794,18 +794,18 @@
       "actual": "size: a font size is named fontSize"
     },
     {
-      "case": "C-R20 | v2/cells/ops#styleData fixednames",
+      "case": "C-R20 | v2/cells/ops#cellsStyleData fixednames",
       "invariant": "C-R20",
       "rule": "C-R20",
       "cause": "font-size-not-named-font-size",
       "actual": "size: a font size is named fontSize; bg: a fill is named fillColor"
     },
     {
-      "case": "C-R20 | v2/cells/workbook-read fixednames",
+      "case": "C-R20 | v2/cells/read-result fixednames",
       "invariant": "C-R20",
       "rule": "C-R20",
       "cause": "font-size-not-named-font-size",
-      "actual": "styleData.size: a font size is named fontSize; styleData.bg: a fill is named fillColor"
+      "actual": "cellsStyleData.size: a font size is named fontSize; cellsStyleData.bg: a fill is named fillColor"
     },
     {
       "case": "C-R36 | cells formats",
@@ -857,7 +857,7 @@
       "actual": "height: measured in pixels; name it *Pixels; width: measured in pixels; name it *Pixels"
     },
     {
-      "case": "C-R20 | v2/cells/ops#margins units",
+      "case": "C-R20 | v2/cells/ops#cellsMargins units",
       "invariant": "C-R20",
       "rule": "C-R20",
       "cause": "measure-names-without-unit",
@@ -1046,11 +1046,11 @@
       "actual": "type: a variant named type, not kind"
     },
     {
-      "case": "C-R20 | v2/cells/workbook-info variants",
+      "case": "C-R20 | v2/cells/inspect-result variants",
       "invariant": "C-R20",
       "rule": "C-R20",
       "cause": "variant-field-named-type",
-      "actual": "chartInfo.type: a variant named type, not kind; validationInfo.type: a variant named type, not kind"
+      "actual": "cellsChartInfo.type: a variant named type, not kind; cellsValidationInfo.type: a variant named type, not kind"
     }
   ]
 }

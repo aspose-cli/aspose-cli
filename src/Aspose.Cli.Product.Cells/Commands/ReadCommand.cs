@@ -16,7 +16,7 @@ internal static class ReadCommand
     private const int MinMaxCells = 1;
     private const int MaxMaxCells = 1_000_000;
 
-    public static CommandDefinition<ReadRequest, WorkbookReadResult> Create()
+    public static CommandDefinition<CellsReadRequest, CellsReadResult> Create()
     {
         var sheet = new Option<string?>("--sheet")
         {
@@ -35,9 +35,9 @@ internal static class ReadCommand
         var scopeOption = new Option<string>("--scope")
         {
             Description = "Projection scope: formulas adds f; the style scope adds styleId and the style pool.",
-            DefaultValueFactory = _ => ReadScopes.Values,
+            DefaultValueFactory = _ => CellsReadScopes.Values,
         }.WithInput(InputKind.None);
-        scopeOption.AcceptOnlyFromAmong(ReadScopes.Values, ReadScopes.Formulas, ReadScopes.Styles, ReadScopes.Full);
+        scopeOption.AcceptOnlyFromAmong(CellsReadScopes.Values, CellsReadScopes.Formulas, CellsReadScopes.Styles, CellsReadScopes.Full);
         var maxCellsOption = new Option<int>("--max-cells")
         {
             Description = "Cell budget per call.",
@@ -51,7 +51,7 @@ internal static class ReadCommand
             (parse, standard) =>
             {
                 int maxCells = parse.GetInRange(maxCellsOption, "Keep the budget modest; page through large sheets with each window.next command instead.");
-                string scope = parse.GetValue(scopeOption) ?? ReadScopes.Values;
+                string scope = parse.GetValue(scopeOption) ?? CellsReadScopes.Values;
                 (string? sheetName, RangeRef? range) = SheetRangeInput.Resolve(
                     parse.GetValue(sheet), parse.GetValue(rangeOption));
                 RangeRef? scan = parse.GetValue(scanOption) is { } region ? A1.ParseRange(region).Range : null;
@@ -67,7 +67,7 @@ internal static class ReadCommand
                             + " and follow each window.next command, or raise --max-cells.");
                 }
 
-                return new ReadRequest
+                return new CellsReadRequest
                 {
                     Input = input,
                     SheetName = sheetName,
@@ -98,9 +98,9 @@ internal static class ReadCommand
         };
     }
 
-    internal static void Table(WorkbookReadResult read, TableSurface surface)
+    internal static void Table(CellsReadResult read, TableSurface surface)
     {
-        SheetProjection sheet = read.Sheet;
+        CellsSheetProjection sheet = read.Sheet;
         var headline = new List<string> { sheet.Name };
         if (sheet.Range is { } returned)
         {
@@ -146,7 +146,7 @@ internal static class ReadCommand
         }
     }
 
-    private static string? FormatCellValue(CellData cell) => cell.V switch
+    private static string? FormatCellValue(CellsCellData cell) => cell.V switch
     {
         null => null,
         bool value => value ? "TRUE" : "FALSE",

@@ -26,12 +26,12 @@ internal static class SortFilterOps
         sorter.Clear();
         sorter.HasHeaders = op.HasHeader;
 
-        foreach (SortKey key in op.By)
+        foreach (CellsSortKey key in op.By)
         {
             int column = A1.ParseColumn(key.Column);
             sorter.AddKey(
                 column,
-                key.Order == SortOrders.Desc ? SortOrder.Descending : SortOrder.Ascending);
+                key.Order == CellsSortOrders.Desc ? SortOrder.Descending : SortOrder.Ascending);
         }
 
         sorter.Sort(sheet.Cells, range.Start.Row, range.Start.Column, range.End.Row, range.End.Column);

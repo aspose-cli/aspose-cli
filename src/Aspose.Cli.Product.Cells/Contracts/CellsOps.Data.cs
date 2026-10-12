@@ -10,7 +10,7 @@ namespace Aspose.Cli.Product.Cells.Contracts;
 public sealed record SetAutoFilterOp : CellsOp
 {
     /// <summary>The range to filter, including its header row, such as A1:D20; required unless off is true.</summary>
-    [ReadBack("workbook-info.schema.json#/$defs/sheetLayoutInfo/properties/autoFilter")]
+    [ReadBack("inspect-result.schema.json#/$defs/cellsSheetLayoutInfo/properties/autoFilter")]
     [A1Range] public string? Range { get; init; }
 
     /// <summary>Whether the sheet's AutoFilter is removed instead of added.</summary>
@@ -27,7 +27,7 @@ public sealed record SortRangeOp : CellsOp
 
     /// <summary>The sort keys, primary first; each column lies inside the range.</summary>
     [NotState]
-    [MinItems(1)] public required IReadOnlyList<SortKey> By { get; init; }
+    [MinItems(1)] public required IReadOnlyList<CellsSortKey> By { get; init; }
 
     /// <summary>Whether the first row is a header that stays in place.</summary>
     [NotState]
@@ -38,7 +38,7 @@ public sealed record SortRangeOp : CellsOp
     {
         // The engine sorts by an absolute column; one outside the range would silently sort nothing.
         RangeRef range = A1.ParseRange(Range).Range;
-        foreach (SortKey key in By)
+        foreach (CellsSortKey key in By)
         {
             int column = A1.ParseColumn(key.Column);
             OperationInvalidException.Require(column >= range.Start.Column && column <= range.End.Column,
@@ -50,15 +50,15 @@ public sealed record SortRangeOp : CellsOp
 }
 
 /// <summary>One sort key of a sort_range operation.</summary>
-public sealed record SortKey
+public sealed record CellsSortKey
 {
     [A1Column] public required string Column { get; init; }
 
-    [AllowedValues(typeof(SortOrders))] public string Order { get; init; } = SortOrders.Asc;
+    [AllowedValues(typeof(CellsSortOrders))] public string Order { get; init; } = CellsSortOrders.Asc;
 }
 
-/// <summary>Accepted values of <see cref="SortKey.Order"/>.</summary>
-public static class SortOrders
+/// <summary>Accepted values of <see cref="CellsSortKey.Order"/>.</summary>
+public static class CellsSortOrders
 {
     public const string Asc = "asc";
     public const string Desc = "desc";
@@ -75,11 +75,11 @@ public sealed record SetValidationOp : CellsOp
     /// <summary>The range to validate, such as B2:B100.</summary>
     [A1Range] public required string Range { get; init; }
 
-    [ReadBack("workbook-info.schema.json#/$defs/validationInfo/properties/type")]
-    [AllowedValues(typeof(ValidationTypes))] public required string Type { get; init; }
+    [ReadBack("inspect-result.schema.json#/$defs/cellsValidationInfo/properties/type")]
+    [AllowedValues(typeof(CellsValidationTypes))] public required string Type { get; init; }
 
     [NotReadBack]
-    [AllowedValues(typeof(ValidationOperators))] public string? Operator { get; init; }
+    [AllowedValues(typeof(CellsValidationOperators))] public string? Operator { get; init; }
 
     /// <summary>The first bound (the lower bound for between), or the formula of a custom validation.</summary>
     [NotReadBack]
@@ -117,7 +117,7 @@ public sealed record SetValidationOp : CellsOp
     {
         switch (Type)
         {
-            case ValidationTypes.List:
+            case CellsValidationTypes.List:
                 OperationInvalidException.Require((ListItems is null) != (ListSource is null),
                     "a 'list' validation needs exactly one of 'listItems' or 'listSource'");
                 if (ListItems is { } items)
@@ -129,13 +129,13 @@ public sealed record SetValidationOp : CellsOp
                 }
 
                 break;
-            case ValidationTypes.Custom:
+            case CellsValidationTypes.Custom:
                 OperationInvalidException.Require(Value1 is not null, "a 'custom' validation needs 'value1' set to a formula");
                 break;
             default:
                 OperationInvalidException.Require(Operator is not null, "'operator' is required for this validation type");
                 OperationInvalidException.Require(Value1 is not null, "'value1' is required");
-                OperationInvalidException.Require(Operator is not (ValidationOperators.Between or ValidationOperators.NotBetween) || Value2 is not null,
+                OperationInvalidException.Require(Operator is not (CellsValidationOperators.Between or CellsValidationOperators.NotBetween) || Value2 is not null,
                     "'between'/'notBetween' need 'value2' as the upper bound");
                 break;
         }
@@ -182,19 +182,8 @@ public sealed record RemoveDuplicatesOp : CellsOp
     }
 }
 
-/// <summary>Accepted values of <see cref="SetValidationOp.Type"/>.</summary>
-public static class ValidationTypes
-{
-    public const string List = "list";
-    public const string WholeNumber = "wholeNumber";
-    public const string Decimal = "decimal";
-    public const string Date = "date";
-    public const string TextLength = "textLength";
-    public const string Custom = "custom";
-}
-
 /// <summary>Accepted values of <see cref="SetValidationOp.Operator"/>.</summary>
-public static class ValidationOperators
+public static class CellsValidationOperators
 {
     public const string Between = "between";
     public const string NotBetween = "notBetween";

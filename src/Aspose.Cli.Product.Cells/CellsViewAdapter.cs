@@ -39,14 +39,14 @@ internal sealed class CellsViewAdapter : IProductViewAdapter<CellsSession>
         ViewRenderRequest request,
         ViewManifest rendered)
     {
-        WorkbookInfoResult info = CellsInfo.Run(session, new InfoRequest
+        CellsInspectResult info = CellsInfo.Run(session, new CellsInspectRequest
         {
             Input = filePath,
-            Details = [InfoDetails.Errors],
+            Details = [CellsInspectDetails.Errors],
             Password = request.Password,
         });
         CellsReviewLayout layout = CellsView.Layout(session, filePath, request.Password);
-        SheetInfo[] visible = info.Workbook.Sheets
+        CellsSheetInfo[] visible = info.Workbook.Sheets
             .Where(static sheet => !sheet.Hidden)
             .ToArray();
         var warnings = new List<Warning>(info.Warnings ?? []);
@@ -90,20 +90,20 @@ internal sealed class CellsViewAdapter : IProductViewAdapter<CellsSession>
     }
 
     private static List<ReviewFinding> Findings(
-        WorkbookInfoResult info,
+        CellsInspectResult info,
         CellsReviewLayout layout,
-        IReadOnlyList<SheetInfo> visible,
+        IReadOnlyList<CellsSheetInfo> visible,
         int renderedCount)
     {
         var findings = new List<ReviewFinding>();
         IReadOnlyDictionary<string, CellsReviewSheetLayout> layoutBySheet =
             layout.Sheets.ToDictionary(static sheet => sheet.Name, StringComparer.Ordinal);
-        foreach (SheetInfo sheet in info.Workbook.Sheets.Where(static sheet => sheet.Hidden))
+        foreach (CellsSheetInfo sheet in info.Workbook.Sheets.Where(static sheet => sheet.Hidden))
         {
             findings.Add(SheetFinding(CellsReviewChecks.SheetHidden, sheet.Name,
                 $"Hidden worksheet '{sheet.Name}' is excluded from visual evidence."));
         }
-        foreach (SheetInfo sheet in visible.Where(sheet =>
+        foreach (CellsSheetInfo sheet in visible.Where(sheet =>
                      sheet.UsedRange is null
                      && !layoutBySheet[sheet.Name].HasVisualObjects))
         {
@@ -116,7 +116,7 @@ internal sealed class CellsViewAdapter : IProductViewAdapter<CellsSession>
         {
             AddLayoutFindings(findings, sheet);
         }
-        foreach (CellError error in info.Workbook.FormulaErrors ?? [])
+        foreach (CellsCellError error in info.Workbook.FormulaErrors ?? [])
         {
             findings.Add(SheetFinding(CellsReviewChecks.FormulaError, error.Sheet,
                 $"Formula evaluates to {error.Error}.",

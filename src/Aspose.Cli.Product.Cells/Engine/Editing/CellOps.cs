@@ -80,10 +80,10 @@ internal static class CellOps
 
         switch (op.What)
         {
-            case ClearTargets.Formats:
+            case CellsClearTargets.Formats:
                 sheet.Cells.ClearFormats(area);
                 break;
-            case ClearTargets.Everything:
+            case CellsClearTargets.Everything:
                 sheet.Cells.ClearRange(area);
                 break;
             default:

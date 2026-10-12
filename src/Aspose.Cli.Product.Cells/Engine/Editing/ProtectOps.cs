@@ -83,25 +83,25 @@ internal static class ProtectOps
     {
         switch (action)
         {
-            case ProtectActions.FormatCells:
+            case CellsProtectActions.FormatCells:
                 protection.AllowFormattingCell = true;
                 break;
-            case ProtectActions.InsertRows:
+            case CellsProtectActions.InsertRows:
                 protection.AllowInsertingRow = true;
                 break;
-            case ProtectActions.InsertColumns:
+            case CellsProtectActions.InsertColumns:
                 protection.AllowInsertingColumn = true;
                 break;
-            case ProtectActions.DeleteRows:
+            case CellsProtectActions.DeleteRows:
                 protection.AllowDeletingRow = true;
                 break;
-            case ProtectActions.DeleteColumns:
+            case CellsProtectActions.DeleteColumns:
                 protection.AllowDeletingColumn = true;
                 break;
-            case ProtectActions.Sort:
+            case CellsProtectActions.Sort:
                 protection.AllowSorting = true;
                 break;
-            case ProtectActions.AutoFilter:
+            case CellsProtectActions.AutoFilter:
                 protection.AllowFiltering = true;
                 break;
             default:

@@ -13,8 +13,8 @@ namespace Aspose.Cli.Product.Cells.Contracts;
 [Operation("create_chart")]
 public sealed record CreateChartOp : CellsOp
 {
-    [ReadBack("workbook-info.schema.json#/$defs/chartInfo/properties/type")]
-    [AllowedValues(typeof(ChartTypes))] public required string Type { get; init; }
+    [ReadBack("inspect-result.schema.json#/$defs/cellsChartInfo/properties/type")]
+    [AllowedValues(typeof(CellsChartTypes))] public required string Type { get; init; }
 
     /// <summary>
     /// The data to plot, including headers, such as A1:C5. It may name another sheet, such as
@@ -34,10 +34,10 @@ public sealed record CreateChartOp : CellsOp
     public bool SeriesInRows { get; init; }
 
     [NotReadBack]
-    public ChartLegend? Legend { get; init; }
+    public CellsChartLegend? Legend { get; init; }
 
     [NotReadBack]
-    public ChartAxisTitles? AxisTitles { get; init; }
+    public CellsChartAxisTitles? AxisTitles { get; init; }
 
     /// <summary>
     /// Series colors in series order; a pie's slices count as the series. Colors beyond the
@@ -47,7 +47,7 @@ public sealed record CreateChartOp : CellsOp
     [MinItems(1), HexColor] public IReadOnlyList<string>? SeriesColors { get; init; }
 
     [NotReadBack]
-    public ChartDataLabels? DataLabels { get; init; }
+    public CellsChartDataLabels? DataLabels { get; init; }
 
     /// <inheritdoc />
     protected override BoundedOperation Validated()
@@ -62,19 +62,8 @@ public sealed record CreateChartOp : CellsOp
     /// Rejects axis titles on a pie chart, which has no axes. update_chart checks it when the
     /// operation names the type; otherwise the engine, which learns the real type, enforces it.
     /// </summary>
-    internal static void RequireAxesForTitles(string? type, ChartAxisTitles? axisTitles) =>
-        OperationInvalidException.Require(type != ChartTypes.Pie || axisTitles is null, "a 'pie' chart has no axes; omit 'axisTitles'");
-}
-
-/// <summary>Accepted values of <see cref="CreateChartOp.Type"/>.</summary>
-public static class ChartTypes
-{
-    public const string Column = "column";
-    public const string Bar = "bar";
-    public const string Line = "line";
-    public const string Pie = "pie";
-    public const string Scatter = "scatter";
-    public const string Area = "area";
+    internal static void RequireAxesForTitles(string? type, CellsChartAxisTitles? axisTitles) =>
+        OperationInvalidException.Require(type != CellsChartTypes.Pie || axisTitles is null, "a 'pie' chart has no axes; omit 'axisTitles'");
 }
 
 /// <summary>
@@ -82,15 +71,15 @@ public static class ChartTypes
 /// the legend with visible false.
 /// </summary>
 [MinProperties(1)]
-public sealed record ChartLegend
+public sealed record CellsChartLegend
 {
     public bool? Visible { get; init; }
 
-    [AllowedValues(typeof(LegendPositions))] public string? Position { get; init; }
+    [AllowedValues(typeof(CellsLegendPositions))] public string? Position { get; init; }
 }
 
-/// <summary>Accepted values of <see cref="ChartLegend.Position"/>.</summary>
-public static class LegendPositions
+/// <summary>Accepted values of <see cref="CellsChartLegend.Position"/>.</summary>
+public static class CellsLegendPositions
 {
     public const string Right = "right";
     public const string Bottom = "bottom";
@@ -100,7 +89,7 @@ public static class LegendPositions
 
 /// <summary>The axis titles of a chart; only the fields present are applied. Pie charts have no axes.</summary>
 [MinProperties(1)]
-public sealed record ChartAxisTitles
+public sealed record CellsChartAxisTitles
 {
     /// <summary>The title of the category (X) axis.</summary>
     public string? Category { get; init; }
@@ -111,7 +100,7 @@ public sealed record ChartAxisTitles
 
 /// <summary>The data labels of a chart's series; only the fields present are applied.</summary>
 [MinProperties(1)]
-public sealed record ChartDataLabels
+public sealed record CellsChartDataLabels
 {
     /// <summary>Whether each point's value shows next to it.</summary>
     public bool? Visible { get; init; }
@@ -138,7 +127,7 @@ public sealed record CreatePivotOp : CellsOp
     [A1Cell] public required string At { get; init; }
 
     /// <summary>The pivot table name; generated when omitted.</summary>
-    [ReadBack("workbook-info.schema.json#/$defs/pivotInfo/properties/name")]
+    [ReadBack("inspect-result.schema.json#/$defs/cellsPivotInfo/properties/name")]
     public string? Name { get; init; }
 
     /// <summary>The header names of the row fields.</summary>
@@ -151,7 +140,7 @@ public sealed record CreatePivotOp : CellsOp
 
     /// <summary>The value fields with their aggregation; two or more are columns, after the column fields, as in Excel.</summary>
     [NotReadBack]
-    [MinItems(1)] public required IReadOnlyList<PivotValueField> Values { get; init; }
+    [MinItems(1)] public required IReadOnlyList<CellsPivotValueField> Values { get; init; }
 
     /// <summary>
     /// The caption language: en keeps the engine's English captions (Sum of X, Grand Total);
@@ -159,11 +148,11 @@ public sealed record CreatePivotOp : CellsOp
     /// when a row, column or value field name contains a Han character, otherwise en.
     /// </summary>
     [NotReadBack]
-    [AllowedValues(typeof(PivotCaptionLanguages))] public string Captions { get; init; } = PivotCaptionLanguages.Auto;
+    [AllowedValues(typeof(CellsPivotCaptionLanguages))] public string Captions { get; init; } = CellsPivotCaptionLanguages.Auto;
 }
 
 /// <summary>Accepted values of <see cref="CreatePivotOp.Captions"/>.</summary>
-public static class PivotCaptionLanguages
+public static class CellsPivotCaptionLanguages
 {
     public const string Auto = "auto";
     public const string English = "en";
@@ -171,12 +160,12 @@ public static class PivotCaptionLanguages
 }
 
 /// <summary>One aggregated value field of a pivot table.</summary>
-public sealed record PivotValueField
+public sealed record CellsPivotValueField
 {
     /// <summary>The header name of the source column.</summary>
     [Pattern(@"\S")] public required string Field { get; init; }
 
-    [AllowedValues(typeof(PivotFunctions))] public string Function { get; init; } = PivotFunctions.Sum;
+    [AllowedValues(typeof(CellsPivotFunctions))] public string Function { get; init; } = CellsPivotFunctions.Sum;
 
     /// <summary>The number format code of the field, such as #,##0.</summary>
     [Pattern(@"\S")] public string? NumberFormat { get; init; }
@@ -185,8 +174,8 @@ public sealed record PivotValueField
     [Pattern(@"\S")] public string? Label { get; init; }
 }
 
-/// <summary>Accepted values of <see cref="PivotValueField.Function"/>.</summary>
-public static class PivotFunctions
+/// <summary>Accepted values of <see cref="CellsPivotValueField.Function"/>.</summary>
+public static class CellsPivotFunctions
 {
     public const string Sum = "sum";
     public const string Count = "count";
@@ -238,7 +227,7 @@ public sealed record CreateTableOp : CellsOp
     /// '\' first, then letters, digits, '.', '_', '\' or '?'; never text that reads as a cell
     /// reference such as T1 or R1C1. Generated when omitted.
     /// </summary>
-    [ReadBack("workbook-info.schema.json#/$defs/tableInfo/properties/name")]
+    [ReadBack("inspect-result.schema.json#/$defs/cellsTableInfo/properties/name")]
     [MinLength(1), MaxLength(255)] public string? Name { get; init; }
 
     /// <summary>
@@ -336,18 +325,18 @@ public sealed record UpdateChartOp : CellsOp
     [NotReadBack]
     [A1Reference] public string? DataRange { get; init; }
 
-    [ReadBack("workbook-info.schema.json#/$defs/chartInfo/properties/type")]
-    [AllowedValues(typeof(ChartTypes))] public string? Type { get; init; }
+    [ReadBack("inspect-result.schema.json#/$defs/cellsChartInfo/properties/type")]
+    [AllowedValues(typeof(CellsChartTypes))] public string? Type { get; init; }
 
     /// <summary>Whether series are plotted from rows rather than columns.</summary>
     [NotReadBack]
     public bool? SeriesInRows { get; init; }
 
     [NotReadBack]
-    public ChartLegend? Legend { get; init; }
+    public CellsChartLegend? Legend { get; init; }
 
     [NotReadBack]
-    public ChartAxisTitles? AxisTitles { get; init; }
+    public CellsChartAxisTitles? AxisTitles { get; init; }
 
     /// <summary>
     /// Series colors in series order; a pie's slices count as the series. Colors beyond the
@@ -357,7 +346,7 @@ public sealed record UpdateChartOp : CellsOp
     [MinItems(1), HexColor] public IReadOnlyList<string>? SeriesColors { get; init; }
 
     [NotReadBack]
-    public ChartDataLabels? DataLabels { get; init; }
+    public CellsChartDataLabels? DataLabels { get; init; }
 
     /// <inheritdoc />
     protected override BoundedOperation Validated()

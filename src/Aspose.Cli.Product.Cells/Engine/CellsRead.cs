@@ -9,7 +9,7 @@ namespace Aspose.Cli.Product.Cells.Engine;
 /// <summary><c>cells query range</c>: a windowed projection of one sheet's cells (ladder step two).</summary>
 internal static class CellsRead
 {
-    public static WorkbookReadResult Run(CellsSession session, ReadRequest request)
+    public static CellsReadResult Run(CellsSession session, CellsReadRequest request)
     {
         ArgumentNullException.ThrowIfNull(session);
         ArgumentNullException.ThrowIfNull(request);
@@ -18,10 +18,10 @@ internal static class CellsRead
         LicenseState licenseState = session.Outputs.License;
         using LoadedWorkbook loaded = session.Loader.Open(request.Input, request.Password);
         Workbook workbook = loaded.Workbook;
-        (SheetProjection sheet, IReadOnlyDictionary<string, StyleData>? styles, ResultWindow window) =
+        (CellsSheetProjection sheet, IReadOnlyDictionary<string, CellsStyleData>? styles, ResultWindow window) =
             ReadProjection.Project(session.Budgets, workbook, request);
 
-        return new WorkbookReadResult
+        return new CellsReadResult
         {
             Input = BuildSource(request.Input, loaded),
             Scope = request.Scope,

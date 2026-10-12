@@ -86,31 +86,31 @@ internal static class BorderOps
         {
             switch (edge)
             {
-                case BorderEdges.Outline:
+                case CellsBorderEdges.Outline:
                     top = bottom = left = right = true;
                     break;
-                case BorderEdges.Inside:
+                case CellsBorderEdges.Inside:
                     horizontal = vertical = true;
                     break;
-                case BorderEdges.Top:
+                case CellsBorderEdges.Top:
                     top = true;
                     break;
-                case BorderEdges.Bottom:
+                case CellsBorderEdges.Bottom:
                     bottom = true;
                     break;
-                case BorderEdges.Left:
+                case CellsBorderEdges.Left:
                     left = true;
                     break;
-                case BorderEdges.Right:
+                case CellsBorderEdges.Right:
                     right = true;
                     break;
-                case BorderEdges.Horizontal:
+                case CellsBorderEdges.Horizontal:
                     horizontal = true;
                     break;
-                case BorderEdges.Vertical:
+                case CellsBorderEdges.Vertical:
                     vertical = true;
                     break;
-                case BorderEdges.Everything:
+                case CellsBorderEdges.Everything:
                     top = bottom = left = right = horizontal = vertical = true;
                     break;
                 default:
@@ -146,13 +146,13 @@ internal static class BorderOps
 
     private static CellBorderType ToLineType(string style) => style switch
     {
-        BorderLineStyles.Hair => CellBorderType.Hair,
-        BorderLineStyles.Thin => CellBorderType.Thin,
-        BorderLineStyles.Medium => CellBorderType.Medium,
-        BorderLineStyles.Thick => CellBorderType.Thick,
-        BorderLineStyles.Double => CellBorderType.Double,
-        BorderLineStyles.Dashed => CellBorderType.Dashed,
-        BorderLineStyles.Dotted => CellBorderType.Dotted,
+        CellsBorderLineStyles.Hair => CellBorderType.Hair,
+        CellsBorderLineStyles.Thin => CellBorderType.Thin,
+        CellsBorderLineStyles.Medium => CellBorderType.Medium,
+        CellsBorderLineStyles.Thick => CellBorderType.Thick,
+        CellsBorderLineStyles.Double => CellBorderType.Double,
+        CellsBorderLineStyles.Dashed => CellBorderType.Dashed,
+        CellsBorderLineStyles.Dotted => CellBorderType.Dotted,
         _ => throw new ArgumentOutOfRangeException(
             nameof(style), style, "Border line style is missing from the engine mapper."),
     };

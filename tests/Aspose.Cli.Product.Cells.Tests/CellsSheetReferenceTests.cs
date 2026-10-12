@@ -80,7 +80,7 @@ public sealed class CellsSheetReferenceTests : IClassFixture<CellsFixture>
     [InlineData("O'Brien", "O'Brien")]
     public void Sparklines_AcceptSheetNamesWithApostrophes(string dataSheet, string hostSheet)
     {
-        string created = CellsCreate.Run(_fixture.Session, new NewWorkbookRequest
+        string created = CellsCreate.Run(_fixture.Session, new CellsCreateRequest
         {
             Output = TestOutput.At(_fixture.Temp.File("apostrophe.xlsx"), overwrite: true),
             SheetNames = dataSheet == hostSheet ? [dataSheet] : [dataSheet, hostSheet],
@@ -165,9 +165,9 @@ public sealed class CellsSheetReferenceTests : IClassFixture<CellsFixture>
     {
         string source = Seed("Data");
 
-        SearchResult result = CellsSearch.Run(_fixture.Session, new SearchRequest { Input = source, Query = CellsFixture.Search("East"), SheetName = sheet });
+        CellsSearchResult result = CellsSearch.Run(_fixture.Session, new CellsSearchRequest { Input = source, Query = CellsFixture.Search("East"), SheetName = sheet });
 
-        SearchHit hit = Assert.Single(result.Hits);
+        CellsSearchHit hit = Assert.Single(result.Hits);
         Assert.Equal(("Data", "A2"), (hit.Sheet, hit.Cell));
     }
 
@@ -175,7 +175,7 @@ public sealed class CellsSheetReferenceTests : IClassFixture<CellsFixture>
     public void SearchSheetFilter_ReportsAMissingSheet()
     {
         CliException error = Assert.Throws<CliException>(() =>
-            CellsSearch.Run(_fixture.Session, new SearchRequest { Input = Seed("Data"), Query = CellsFixture.Search("East"), SheetName = "Nope" }));
+            CellsSearch.Run(_fixture.Session, new CellsSearchRequest { Input = Seed("Data"), Query = CellsFixture.Search("East"), SheetName = "Nope" }));
 
         Assert.Equal(CellsDiagnostics.SheetNotFound, error.Code);
     }
@@ -232,7 +232,7 @@ public sealed class CellsSheetReferenceTests : IClassFixture<CellsFixture>
 
     private string Seed(string dataSheet)
     {
-        string created = CellsCreate.Run(_fixture.Session, new NewWorkbookRequest
+        string created = CellsCreate.Run(_fixture.Session, new CellsCreateRequest
         {
             Output = TestOutput.At(_fixture.Temp.File("references.xlsx"), overwrite: true),
             SheetNames = [dataSheet, "Dash"],
@@ -245,5 +245,5 @@ public sealed class CellsSheetReferenceTests : IClassFixture<CellsFixture>
 
     private string Apply(string path, string operations, string output) =>
         CellsEdit.Run(_fixture.Session,
-            new EditRequest { Input = path, Batch = CellsOp.Catalog.Parse<CellsOpsBatch>(operations, Aspose.Cli.Generated.ProductJsonContext.Definition), Output = TestOutput.At(_fixture.Temp.File(output), overwrite: true) }).Output!.Path;
+            new CellsEditRequest { Input = path, Batch = CellsOp.Catalog.Parse<CellsOpsBatch>(operations, Aspose.Cli.Generated.ProductJsonContext.Definition), Output = TestOutput.At(_fixture.Temp.File(output), overwrite: true) }).Output!.Path;
 }

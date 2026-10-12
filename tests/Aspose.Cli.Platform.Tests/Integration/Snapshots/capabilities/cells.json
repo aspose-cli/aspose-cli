@@ -37,7 +37,7 @@
         "command": "edit",
         "inputSchema": "v2/cells/ops",
         "operationSchema": "aspose-cli schema v2/cells/ops --operation <op>",
-        "contractFingerprint": "sha256:324eb795648fce1d97f07bdd4829f162cc9b206101083b67fc53168e1a36e8f2",
+        "contractFingerprint": "sha256:f8ddae6661cd8f0418f0b0499a88076a8be45ac9d287616f6e6f7cc68973d781",
         "maximumOperationCount": 10000,
         "ops": [
           "add_comment",
@@ -2598,6 +2598,246 @@
     }
   ],
   "schemas": {
+    "v2/cells/compare-result": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "$id": "https://schemas.aspose.com/aspose-cli/v2/cells/compare-result.schema.json",
+      "description": "Result of aspose-cli cells compare: a structural comparison of two workbooks. A completed comparison succeeds (exit 0) even when the workbooks differ: the verdict is identical, not a failure, which lets a caller (or the eval harness) use compare as a verifier.",
+      "type": "object",
+      "required": [
+        "schema",
+        "schemaVersion",
+        "left",
+        "right",
+        "identical",
+        "summary"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "schema": {
+          "description": "URI of the JSON schema this result conforms to.",
+          "const": "https://schemas.aspose.com/aspose-cli/v2/cells/compare-result.schema.json"
+        },
+        "schemaVersion": {
+          "description": "Version of this result contract.",
+          "const": 2
+        },
+        "left": {
+          "description": "The left (baseline) file.",
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
+        },
+        "right": {
+          "description": "The right (candidate) file.",
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
+        },
+        "identical": {
+          "description": "True when the two workbooks are equal within the compared scope.",
+          "type": "boolean"
+        },
+        "summary": {
+          "description": "Aggregate counts of what differs.",
+          "$ref": "#/$defs/cellsCompareSummary"
+        },
+        "sheets": {
+          "description": "Per-sheet differences; omitted when the workbooks are identical. The listed cells stop at the diff budget, which a LIST_TRUNCATED warning discloses.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/cellsSheetDiff"
+          }
+        },
+        "license": {
+          "description": "License mode the engine ran under; omitted when it ran licensed.",
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/license.schema.json"
+        },
+        "warnings": {
+          "description": "Warnings the agent is expected to act on (for example EVALUATION_MODE: tell the user about the evaluation watermark). Omitted when empty.",
+          "type": "array",
+          "items": {
+            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
+          }
+        }
+      },
+      "$defs": {
+        "cellsCellDiff": {
+          "description": "Difference of one cell.",
+          "type": "object",
+          "required": [
+            "cell"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "cell": {
+              "description": "Cell address, e.g. B2.",
+              "type": "string"
+            },
+            "left": {
+              "description": "The left side; omitted when the cell is empty there.",
+              "$ref": "#/$defs/cellsCellSide"
+            },
+            "right": {
+              "description": "The right side; omitted when the cell is empty there.",
+              "$ref": "#/$defs/cellsCellSide"
+            }
+          }
+        },
+        "cellsCellSide": {
+          "description": "One side of a changed cell: its canonical stored value and optional formula. Dates are raw numeric serials; an absent empty side is omitted.",
+          "type": "object",
+          "required": [
+            "t"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "t": {
+              "description": "Stored type: empty, number, string, boolean or error. Dates are numbers.",
+              "type": "string",
+              "enum": [
+                "empty",
+                "number",
+                "string",
+                "boolean",
+                "error"
+              ]
+            },
+            "v": {
+              "description": "Canonical stored value: a number (raw Excel serials regardless of date formatting), a string, a boolean or an error literal; omitted for an empty cell."
+            },
+            "f": {
+              "description": "Formula, when present and in scope.",
+              "type": "string"
+            }
+          },
+          "oneOf": [
+            {
+              "properties": {
+                "t": {
+                  "const": "empty"
+                },
+                "v": {
+                  "type": "null"
+                }
+              }
+            },
+            {
+              "required": [
+                "v"
+              ],
+              "properties": {
+                "t": {
+                  "const": "number"
+                },
+                "v": {
+                  "type": "number"
+                }
+              }
+            },
+            {
+              "required": [
+                "v"
+              ],
+              "properties": {
+                "t": {
+                  "enum": [
+                    "string",
+                    "error"
+                  ]
+                },
+                "v": {
+                  "type": "string"
+                }
+              }
+            },
+            {
+              "required": [
+                "v"
+              ],
+              "properties": {
+                "t": {
+                  "const": "boolean"
+                },
+                "v": {
+                  "type": "boolean"
+                }
+              }
+            }
+          ]
+        },
+        "cellsCompareSummary": {
+          "description": "Aggregate counts of a workbook comparison.",
+          "type": "object",
+          "required": [
+            "sheetsAdded",
+            "sheetsRemoved",
+            "sheetsRenamed",
+            "sheetsModified",
+            "cellsDiffering"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "sheetsAdded": {
+              "description": "Sheets present only on the right.",
+              "type": "integer",
+              "minimum": 0
+            },
+            "sheetsRemoved": {
+              "description": "Sheets present only on the left.",
+              "type": "integer",
+              "minimum": 0
+            },
+            "sheetsRenamed": {
+              "description": "Sheets the right holds under a new name, paired with the left sheet by their internal sheet id.",
+              "type": "integer",
+              "minimum": 0
+            },
+            "sheetsModified": {
+              "description": "Shared sheets whose cells differ.",
+              "type": "integer",
+              "minimum": 0
+            },
+            "cellsDiffering": {
+              "description": "Total differing cells across all shared and renamed sheets: the true count even when a LIST_TRUNCATED warning reports that --max-diffs capped the listed cells.",
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "cellsSheetDiff": {
+          "description": "Difference of one sheet.",
+          "type": "object",
+          "required": [
+            "name",
+            "status"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "description": "Sheet name.",
+              "type": "string"
+            },
+            "status": {
+              "description": "One of added, removed, modified or renamed: a sheet both sides hold under different names, paired by its internal id.",
+              "type": "string",
+              "enum": [
+                "added",
+                "removed",
+                "modified",
+                "renamed"
+              ]
+            },
+            "from": {
+              "description": "The sheet's name on the left, for a renamed sheet.",
+              "type": "string"
+            },
+            "cells": {
+              "description": "Differing cells, for a modified or renamed sheet.",
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/cellsCellDiff"
+              }
+            }
+          }
+        }
+      }
+    },
     "v2/cells/convert-result": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "$id": "https://schemas.aspose.com/aspose-cli/v2/cells/convert-result.schema.json",
@@ -2691,246 +2931,6 @@
         }
       }
     },
-    "v2/cells/diff-result": {
-      "$schema": "https://json-schema.org/draft/2020-12/schema",
-      "$id": "https://schemas.aspose.com/aspose-cli/v2/cells/diff-result.schema.json",
-      "description": "Result of aspose-cli cells compare: a structural comparison of two workbooks. A completed comparison succeeds (exit 0) even when the workbooks differ: the verdict is identical, not a failure, which lets a caller (or the eval harness) use compare as a verifier.",
-      "type": "object",
-      "required": [
-        "schema",
-        "schemaVersion",
-        "left",
-        "right",
-        "identical",
-        "summary"
-      ],
-      "additionalProperties": false,
-      "properties": {
-        "schema": {
-          "description": "URI of the JSON schema this result conforms to.",
-          "const": "https://schemas.aspose.com/aspose-cli/v2/cells/diff-result.schema.json"
-        },
-        "schemaVersion": {
-          "description": "Version of this result contract.",
-          "const": 2
-        },
-        "left": {
-          "description": "The left (baseline) file.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
-        },
-        "right": {
-          "description": "The right (candidate) file.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
-        },
-        "identical": {
-          "description": "True when the two workbooks are equal within the compared scope.",
-          "type": "boolean"
-        },
-        "summary": {
-          "description": "Aggregate counts of what differs.",
-          "$ref": "#/$defs/diffSummary"
-        },
-        "sheets": {
-          "description": "Per-sheet differences; omitted when the workbooks are identical. The listed cells stop at the diff budget, which a LIST_TRUNCATED warning discloses.",
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/sheetDiff"
-          }
-        },
-        "license": {
-          "description": "License mode the engine ran under; omitted when it ran licensed.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/license.schema.json"
-        },
-        "warnings": {
-          "description": "Warnings the agent is expected to act on (for example EVALUATION_MODE: tell the user about the evaluation watermark). Omitted when empty.",
-          "type": "array",
-          "items": {
-            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
-          }
-        }
-      },
-      "$defs": {
-        "cellDiff": {
-          "description": "Difference of one cell.",
-          "type": "object",
-          "required": [
-            "cell"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "cell": {
-              "description": "Cell address, e.g. B2.",
-              "type": "string"
-            },
-            "left": {
-              "description": "The left side; omitted when the cell is empty there.",
-              "$ref": "#/$defs/cellSide"
-            },
-            "right": {
-              "description": "The right side; omitted when the cell is empty there.",
-              "$ref": "#/$defs/cellSide"
-            }
-          }
-        },
-        "cellSide": {
-          "description": "One side of a changed cell: its canonical stored value and optional formula. Dates are raw numeric serials; an absent empty side is omitted.",
-          "type": "object",
-          "required": [
-            "t"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "t": {
-              "description": "Stored type: empty, number, string, boolean or error. Dates are numbers.",
-              "type": "string",
-              "enum": [
-                "empty",
-                "number",
-                "string",
-                "boolean",
-                "error"
-              ]
-            },
-            "v": {
-              "description": "Canonical stored value: a number (raw Excel serials regardless of date formatting), a string, a boolean or an error literal; omitted for an empty cell."
-            },
-            "f": {
-              "description": "Formula, when present and in scope.",
-              "type": "string"
-            }
-          },
-          "oneOf": [
-            {
-              "properties": {
-                "t": {
-                  "const": "empty"
-                },
-                "v": {
-                  "type": "null"
-                }
-              }
-            },
-            {
-              "required": [
-                "v"
-              ],
-              "properties": {
-                "t": {
-                  "const": "number"
-                },
-                "v": {
-                  "type": "number"
-                }
-              }
-            },
-            {
-              "required": [
-                "v"
-              ],
-              "properties": {
-                "t": {
-                  "enum": [
-                    "string",
-                    "error"
-                  ]
-                },
-                "v": {
-                  "type": "string"
-                }
-              }
-            },
-            {
-              "required": [
-                "v"
-              ],
-              "properties": {
-                "t": {
-                  "const": "boolean"
-                },
-                "v": {
-                  "type": "boolean"
-                }
-              }
-            }
-          ]
-        },
-        "diffSummary": {
-          "description": "Aggregate counts of a workbook comparison.",
-          "type": "object",
-          "required": [
-            "sheetsAdded",
-            "sheetsRemoved",
-            "sheetsRenamed",
-            "sheetsModified",
-            "cellsDiffering"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "sheetsAdded": {
-              "description": "Sheets present only on the right.",
-              "type": "integer",
-              "minimum": 0
-            },
-            "sheetsRemoved": {
-              "description": "Sheets present only on the left.",
-              "type": "integer",
-              "minimum": 0
-            },
-            "sheetsRenamed": {
-              "description": "Sheets the right holds under a new name, paired with the left sheet by their internal sheet id.",
-              "type": "integer",
-              "minimum": 0
-            },
-            "sheetsModified": {
-              "description": "Shared sheets whose cells differ.",
-              "type": "integer",
-              "minimum": 0
-            },
-            "cellsDiffering": {
-              "description": "Total differing cells across all shared and renamed sheets: the true count even when a LIST_TRUNCATED warning reports that --max-diffs capped the listed cells.",
-              "type": "integer",
-              "minimum": 0
-            }
-          }
-        },
-        "sheetDiff": {
-          "description": "Difference of one sheet.",
-          "type": "object",
-          "required": [
-            "name",
-            "status"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "name": {
-              "description": "Sheet name.",
-              "type": "string"
-            },
-            "status": {
-              "description": "One of added, removed, modified or renamed: a sheet both sides hold under different names, paired by its internal id.",
-              "type": "string",
-              "enum": [
-                "added",
-                "removed",
-                "modified",
-                "renamed"
-              ]
-            },
-            "from": {
-              "description": "The sheet's name on the left, for a renamed sheet.",
-              "type": "string"
-            },
-            "cells": {
-              "description": "Differing cells, for a modified or renamed sheet.",
-              "type": "array",
-              "items": {
-                "$ref": "#/$defs/cellDiff"
-              }
-            }
-          }
-        }
-      }
-    },
     "v2/cells/edit-result": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "$id": "https://schemas.aspose.com/aspose-cli/v2/cells/edit-result.schema.json",
@@ -3013,7 +3013,7 @@
         }
       },
       "$defs": {
-        "cellError": {
+        "cellsCellError": {
           "description": "A cell whose formula evaluates to an error — a delivery-time QA signal.",
           "type": "object",
           "required": [
@@ -3044,7 +3044,7 @@
             }
           }
         },
-        "cellSide": {
+        "cellsCellSide": {
           "description": "One side of a changed cell: its canonical stored value and optional formula. Dates are raw numeric serials; an absent empty side is omitted.",
           "type": "object",
           "required": [
@@ -3164,35 +3164,35 @@
               "description": "Targets requested by the operations in this invocation.",
               "type": "array",
               "items": {
-                "$ref": "#/$defs/verificationTarget"
+                "$ref": "#/$defs/cellsVerificationTarget"
               }
             },
             "directChanges": {
               "description": "Changes inside a requested operation target.",
               "type": "array",
               "items": {
-                "$ref": "#/$defs/verifiedCellChange"
+                "$ref": "#/$defs/cellsVerifiedCellChange"
               }
             },
             "formulaResultChanges": {
               "description": "Cells whose formula text stayed the same while the calculated result changed.",
               "type": "array",
               "items": {
-                "$ref": "#/$defs/verifiedCellChange"
+                "$ref": "#/$defs/cellsVerifiedCellChange"
               }
             },
             "otherChanges": {
               "description": "Changes that could not be reliably attributed to a requested target or formula recalculation.",
               "type": "array",
               "items": {
-                "$ref": "#/$defs/verificationOtherChange"
+                "$ref": "#/$defs/cellsVerificationOtherChange"
               }
             },
             "formulaErrors": {
               "description": "Formula errors found anywhere in the edited workbook.",
               "type": "array",
               "items": {
-                "$ref": "#/$defs/cellError"
+                "$ref": "#/$defs/cellsCellError"
               }
             },
             "truncated": {
@@ -3201,7 +3201,7 @@
             }
           }
         },
-        "verificationOtherChange": {
+        "cellsVerificationOtherChange": {
           "description": "A changed cell or worksheet that could not be classified as a direct or formula-result change.",
           "type": "object",
           "required": [
@@ -3230,15 +3230,15 @@
             },
             "left": {
               "description": "Cell before the edit; omitted when absent or sheet-level.",
-              "$ref": "#/$defs/cellSide"
+              "$ref": "#/$defs/cellsCellSide"
             },
             "right": {
               "description": "Cell after the edit; omitted when absent or sheet-level.",
-              "$ref": "#/$defs/cellSide"
+              "$ref": "#/$defs/cellsCellSide"
             }
           }
         },
-        "verificationTarget": {
+        "cellsVerificationTarget": {
           "description": "An operation target included in post-edit verification.",
           "type": "object",
           "additionalProperties": false,
@@ -3253,7 +3253,7 @@
             }
           }
         },
-        "verifiedCellChange": {
+        "cellsVerifiedCellChange": {
           "description": "Before-and-after values for one verified cell.",
           "type": "object",
           "required": [
@@ -3272,11 +3272,567 @@
             },
             "left": {
               "description": "Cell before the edit; omitted when it was empty.",
-              "$ref": "#/$defs/cellSide"
+              "$ref": "#/$defs/cellsCellSide"
             },
             "right": {
               "description": "Cell after the edit; omitted when it is empty.",
-              "$ref": "#/$defs/cellSide"
+              "$ref": "#/$defs/cellsCellSide"
+            }
+          }
+        }
+      }
+    },
+    "v2/cells/inspect-result": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "$id": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json",
+      "description": "Result of aspose-cli cells inspect: a compact structural summary designed as the first step of the projection ladder (metadata before structure, structure before values). Never contains full cell data.",
+      "type": "object",
+      "required": [
+        "schema",
+        "schemaVersion",
+        "input",
+        "workbook"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "schema": {
+          "description": "URI of the JSON schema this result conforms to.",
+          "const": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json"
+        },
+        "schemaVersion": {
+          "description": "Version of this result contract.",
+          "const": 2
+        },
+        "input": {
+          "description": "The inspected file.",
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
+        },
+        "workbook": {
+          "description": "Workbook-level summary.",
+          "$ref": "#/$defs/cellsWorkbookSummary"
+        },
+        "license": {
+          "description": "License mode the engine ran under; omitted when it ran licensed.",
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/license.schema.json"
+        },
+        "warnings": {
+          "description": "Warnings the agent is expected to act on (for example EVALUATION_MODE: tell the user about the evaluation watermark). Omitted when empty.",
+          "type": "array",
+          "items": {
+            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
+          }
+        }
+      },
+      "$defs": {
+        "cellsCellError": {
+          "description": "A cell whose formula evaluates to an error — a delivery-time QA signal.",
+          "type": "object",
+          "required": [
+            "sheet",
+            "cell",
+            "error"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "sheet": {
+              "description": "Sheet the cell is on.",
+              "type": "string"
+            },
+            "cell": {
+              "description": "Cell address, e.g. C7.",
+              "type": "string"
+            },
+            "error": {
+              "description": "The error value, e.g. #REF!, #DIV/0!, #VALUE!.",
+              "type": "string"
+            },
+            "preexisting": {
+              "description": "true in edit verification when the input cell had the same formula and the same error value; omitted otherwise.",
+              "type": "boolean",
+              "enum": [
+                true
+              ]
+            }
+          }
+        },
+        "cellsChartInfo": {
+          "description": "A chart in a workbook.",
+          "type": "object",
+          "required": [
+            "sheet",
+            "index",
+            "name",
+            "type"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "sheet": {
+              "description": "Sheet the chart is on.",
+              "type": "string"
+            },
+            "index": {
+              "description": "The zero-based index of the chart on its sheet, as update_chart and delete_chart take it.",
+              "type": "integer",
+              "minimum": 0
+            },
+            "name": {
+              "description": "The chart's name.",
+              "type": "string"
+            },
+            "type": {
+              "description": "The chart type: a create_chart type such as column, or the lower-camel engine name of a type outside that vocabulary, such as columnStacked.",
+              "type": "string",
+              "anyOf": [
+                {
+                  "enum": [
+                    "column",
+                    "bar",
+                    "line",
+                    "pie",
+                    "scatter",
+                    "area"
+                  ]
+                },
+                {
+                  "pattern": "^[a-z][A-Za-z0-9]*$"
+                }
+              ]
+            }
+          }
+        },
+        "cellsColumnGroupInfo": {
+          "description": "A column outline group.",
+          "type": "object",
+          "required": [
+            "from",
+            "to",
+            "level",
+            "collapsed"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "from": {
+              "description": "The first column of the group.",
+              "type": "string"
+            },
+            "to": {
+              "description": "The last column of the group.",
+              "type": "string"
+            },
+            "level": {
+              "description": "The outline level, 1 for the outermost group.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "collapsed": {
+              "description": "true when every column of the group is hidden, as a collapsed group's columns are.",
+              "type": "boolean"
+            }
+          }
+        },
+        "cellsDefinedNameInfo": {
+          "description": "A workbook-scoped defined name.",
+          "type": "object",
+          "required": [
+            "name",
+            "refersTo"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "description": "The name.",
+              "type": "string"
+            },
+            "refersTo": {
+              "description": "What it refers to (a range or formula).",
+              "type": "string"
+            }
+          }
+        },
+        "cellsPivotInfo": {
+          "description": "A pivot table in a workbook.",
+          "type": "object",
+          "required": [
+            "sheet",
+            "name",
+            "range"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "sheet": {
+              "description": "Sheet the pivot table is on.",
+              "type": "string"
+            },
+            "name": {
+              "description": "The pivot table's name.",
+              "type": "string"
+            },
+            "range": {
+              "description": "A1 range the pivot report covers.",
+              "type": "string"
+            }
+          }
+        },
+        "cellsRowGroupInfo": {
+          "description": "A row outline group.",
+          "type": "object",
+          "required": [
+            "from",
+            "to",
+            "level",
+            "collapsed"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "from": {
+              "description": "The first row of the group (1-based).",
+              "type": "integer",
+              "minimum": 1
+            },
+            "to": {
+              "description": "The last row of the group (1-based).",
+              "type": "integer",
+              "minimum": 1
+            },
+            "level": {
+              "description": "The outline level, 1 for the outermost group.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "collapsed": {
+              "description": "true when every row of the group is hidden, as a collapsed group's rows are.",
+              "type": "boolean"
+            }
+          }
+        },
+        "cellsSheetInfo": {
+          "description": "Structural summary of one worksheet.",
+          "type": "object",
+          "required": [
+            "name",
+            "position",
+            "rowCount",
+            "columnCount",
+            "hidden",
+            "protected",
+            "passwordProtected",
+            "chartCount",
+            "pivotTableCount"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "description": "Sheet name, exactly as shown in Excel.",
+              "type": "string"
+            },
+            "position": {
+              "description": "Zero-based position in the tab order, as add_sheet and move_sheet take it.",
+              "type": "integer",
+              "minimum": 0
+            },
+            "usedRange": {
+              "description": "A1 range covering all cells that hold data (e.g. A1:G120); omitted for empty sheets.",
+              "type": "string"
+            },
+            "rowCount": {
+              "description": "Number of data rows inside usedRange.",
+              "type": "integer",
+              "minimum": 0
+            },
+            "columnCount": {
+              "description": "Number of data columns inside usedRange.",
+              "type": "integer",
+              "minimum": 0
+            },
+            "hidden": {
+              "description": "true when the sheet is hidden.",
+              "type": "boolean"
+            },
+            "protected": {
+              "description": "true when the sheet is protected: Excel then lets users change only unlocked cells and the actions the protection allows. Edits are not held to it; see PROTECTION_NOT_ENFORCED.",
+              "type": "boolean"
+            },
+            "passwordProtected": {
+              "description": "true when removing the sheet's protection needs a password.",
+              "type": "boolean"
+            },
+            "chartCount": {
+              "description": "Number of charts on the sheet.",
+              "type": "integer",
+              "minimum": 0
+            },
+            "pivotTableCount": {
+              "description": "Number of pivot tables on the sheet.",
+              "type": "integer",
+              "minimum": 0
+            },
+            "preview": {
+              "description": "Optional sample of display values (first rows of the used range), present only when --sample was requested. Row-major; a null entry is an empty cell.",
+              "type": "array",
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                }
+              }
+            }
+          }
+        },
+        "cellsSheetLayoutInfo": {
+          "description": "The view and print layout of one sheet, in the terms of the operations that set it: freeze_panes, group_rows, group_columns, set_autofilter, set_print_area and set_page_setup. A field is omitted when the sheet does not have that setting.",
+          "type": "object",
+          "required": [
+            "sheet",
+            "orientation"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "sheet": {
+              "description": "The sheet's name.",
+              "type": "string"
+            },
+            "freezePanes": {
+              "description": "The top-left cell of the scrolling pane when panes are frozen, as freeze_panes takes it: A2 freezes row 1, B2 row 1 and column A.",
+              "type": "string"
+            },
+            "rowGroups": {
+              "description": "Row outline groups, outer levels first, each a run of rows at its level or deeper.",
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/cellsRowGroupInfo"
+              }
+            },
+            "columnGroups": {
+              "description": "Column outline groups, outer levels first, each a run of columns at its level or deeper.",
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/cellsColumnGroupInfo"
+              }
+            },
+            "autoFilter": {
+              "description": "The range the sheet's AutoFilter covers, header row included.",
+              "type": "string"
+            },
+            "printArea": {
+              "description": "The print area, such as A1:H50; several areas are comma-separated.",
+              "type": "string"
+            },
+            "titleRows": {
+              "description": "The rows repeated on every printed page, such as 1:2.",
+              "type": "string"
+            },
+            "titleColumns": {
+              "description": "The columns repeated on every printed page, such as A:B.",
+              "type": "string"
+            },
+            "orientation": {
+              "description": "The page orientation: portrait or landscape.",
+              "type": "string",
+              "enum": [
+                "portrait",
+                "landscape"
+              ]
+            },
+            "fitToWidth": {
+              "description": "The number of pages the printout fits across, 0 automatic; present when it fits to pages.",
+              "type": "integer",
+              "minimum": 0
+            },
+            "fitToHeight": {
+              "description": "The number of pages the printout fits down, 0 automatic; present when it fits to pages.",
+              "type": "integer",
+              "minimum": 0
+            },
+            "scale": {
+              "description": "The zoom percentage; present when the printout does not fit to pages.",
+              "type": "integer"
+            },
+            "header": {
+              "description": "The center header text, with Excel codes such as &P.",
+              "type": "string"
+            },
+            "footer": {
+              "description": "The center footer text, with Excel codes such as &P and &N.",
+              "type": "string"
+            }
+          }
+        },
+        "cellsTableInfo": {
+          "description": "A table (list object) in a workbook.",
+          "type": "object",
+          "required": [
+            "sheet",
+            "name",
+            "range"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "sheet": {
+              "description": "Sheet the table is on.",
+              "type": "string"
+            },
+            "name": {
+              "description": "The table's display name.",
+              "type": "string"
+            },
+            "range": {
+              "description": "A1 range the table covers, e.g. A1:D20.",
+              "type": "string"
+            }
+          }
+        },
+        "cellsValidationInfo": {
+          "description": "A data validation in a workbook.",
+          "type": "object",
+          "required": [
+            "sheet",
+            "range",
+            "type"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "sheet": {
+              "description": "Sheet the validation is on.",
+              "type": "string"
+            },
+            "range": {
+              "description": "A1 range the validation applies to.",
+              "type": "string"
+            },
+            "type": {
+              "description": "The validation type: a set_validation type such as list or wholeNumber, or the lower-camel engine name of a type outside that vocabulary, such as anyValue.",
+              "type": "string",
+              "anyOf": [
+                {
+                  "enum": [
+                    "list",
+                    "wholeNumber",
+                    "decimal",
+                    "date",
+                    "textLength",
+                    "custom"
+                  ]
+                },
+                {
+                  "pattern": "^[a-z][A-Za-z0-9]*$"
+                }
+              ]
+            }
+          }
+        },
+        "cellsWorkbookSummary": {
+          "description": "Structural summary of a workbook.",
+          "type": "object",
+          "required": [
+            "name",
+            "sheetCount",
+            "sheets",
+            "hasVba",
+            "definedNameCount",
+            "structureProtected",
+            "structurePasswordProtected"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "description": "File name without directory, e.g. report.xlsx.",
+              "type": "string"
+            },
+            "sheetCount": {
+              "description": "Total number of worksheets, including hidden ones.",
+              "type": "integer",
+              "minimum": 0
+            },
+            "sheets": {
+              "description": "Per-sheet summaries, in workbook order.",
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/cellsSheetInfo"
+              }
+            },
+            "hasVba": {
+              "description": "true when the workbook contains VBA macros.",
+              "type": "boolean"
+            },
+            "definedNameCount": {
+              "description": "Number of defined names in the workbook.",
+              "type": "integer",
+              "minimum": 0
+            },
+            "structureProtected": {
+              "description": "true when the workbook structure is protected: Excel then refuses to add, delete, rename, move or hide sheets. Edits are not held to it; see PROTECTION_NOT_ENFORCED.",
+              "type": "boolean"
+            },
+            "structurePasswordProtected": {
+              "description": "true when removing the structure protection needs a password.",
+              "type": "boolean"
+            },
+            "author": {
+              "description": "Document author from built-in properties; omitted when empty.",
+              "type": "string"
+            },
+            "title": {
+              "description": "Document title from built-in properties; omitted when empty.",
+              "type": "string"
+            },
+            "definedNames": {
+              "description": "Defined names; present only with --detail names.",
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/cellsDefinedNameInfo"
+              }
+            },
+            "formulaErrors": {
+              "description": "Cells whose formula evaluates to an error; present only with --detail errors.",
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/cellsCellError"
+              }
+            },
+            "fonts": {
+              "description": "Distinct font names used in the workbook; present only with --detail fonts.",
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "tables": {
+              "description": "Tables (list objects); present only with --detail tables.",
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/cellsTableInfo"
+              }
+            },
+            "charts": {
+              "description": "Charts; present only with --detail charts.",
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/cellsChartInfo"
+              }
+            },
+            "pivots": {
+              "description": "Pivot tables; present only with --detail pivots.",
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/cellsPivotInfo"
+              }
+            },
+            "validations": {
+              "description": "Data validations; present only with --detail validation.",
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/cellsValidationInfo"
+              }
+            },
+            "layouts": {
+              "description": "The layout of every sheet, in workbook order; present only with --detail layout.",
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/cellsSheetLayoutInfo"
+              }
             }
           }
         }
@@ -3560,12 +4116,12 @@
               "x-readBack": "not-state"
             },
             "rule": {
-              "$ref": "#/$defs/conditionalRule",
+              "$ref": "#/$defs/cellsConditionalRule",
               "x-readBack": "unread"
             },
             "style": {
               "description": "The style matching cells receive.",
-              "$ref": "#/$defs/conditionalStyle",
+              "$ref": "#/$defs/cellsConditionalStyle",
               "x-readBack": "unread"
             }
           }
@@ -3594,13 +4150,13 @@
               "description": "The name of the new sheet.",
               "type": "string",
               "pattern": "\\S",
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/workbook-info.schema.json#/$defs/sheetInfo/properties/name"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsSheetInfo/properties/name"
             },
             "position": {
               "description": "The zero-based position; appended when omitted.",
               "type": "integer",
               "minimum": 0,
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/workbook-info.schema.json#/$defs/sheetInfo/properties/position"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsSheetInfo/properties/position"
             }
           }
         },
@@ -3810,7 +4366,7 @@
                 "scatter",
                 "area"
               ],
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/workbook-info.schema.json#/$defs/chartInfo/properties/type"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsChartInfo/properties/type"
             },
             "dataRange": {
               "description": "The data to plot, including headers, such as A1:C5. It may name another sheet, such as Data!A1:C5, so a chart on a dashboard sheet can plot a data sheet.",
@@ -3833,11 +4389,11 @@
               "x-readBack": "unread"
             },
             "legend": {
-              "$ref": "#/$defs/chartLegend",
+              "$ref": "#/$defs/cellsChartLegend",
               "x-readBack": "unread"
             },
             "axisTitles": {
-              "$ref": "#/$defs/chartAxisTitles",
+              "$ref": "#/$defs/cellsChartAxisTitles",
               "x-readBack": "unread"
             },
             "seriesColors": {
@@ -3850,7 +4406,7 @@
               "x-readBack": "unread"
             },
             "dataLabels": {
-              "$ref": "#/$defs/chartDataLabels",
+              "$ref": "#/$defs/cellsChartDataLabels",
               "x-readBack": "unread"
             }
           }
@@ -3890,7 +4446,7 @@
             "name": {
               "description": "The pivot table name; generated when omitted.",
               "type": "string",
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/workbook-info.schema.json#/$defs/pivotInfo/properties/name"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsPivotInfo/properties/name"
             },
             "rows": {
               "description": "The header names of the row fields.",
@@ -3915,7 +4471,7 @@
               "type": "array",
               "minItems": 1,
               "items": {
-                "$ref": "#/$defs/pivotValueField"
+                "$ref": "#/$defs/cellsPivotValueField"
               },
               "x-readBack": "unread"
             },
@@ -3962,7 +4518,7 @@
               "type": "string",
               "minLength": 1,
               "maxLength": 255,
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/workbook-info.schema.json#/$defs/tableInfo/properties/name"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsTableInfo/properties/name"
             },
             "style": {
               "description": "A built-in table style (TableStyleLight1-21, TableStyleMedium1-28, TableStyleDark1-11), such as TableStyleMedium2, or a custom table style the workbook defines.",
@@ -4003,13 +4559,13 @@
               "description": "The name, such as TaxRate.",
               "type": "string",
               "pattern": "\\S",
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/workbook-info.schema.json#/$defs/definedNameInfo/properties/name"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsDefinedNameInfo/properties/name"
             },
             "refersTo": {
               "description": "The sheet-qualified range the name refers to, such as Config!$B$2.",
               "type": "string",
               "pattern": "\\S",
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/workbook-info.schema.json#/$defs/definedNameInfo/properties/refersTo"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsDefinedNameInfo/properties/refersTo"
             }
           }
         },
@@ -4281,7 +4837,7 @@
               "x-readBack": "not-state"
             },
             "style": {
-              "$ref": "#/$defs/styleData"
+              "$ref": "#/$defs/cellsStyleData"
             }
           }
         },
@@ -4308,7 +4864,7 @@
             "cell": {
               "description": "The anchor cell.",
               "$ref": "#/$defs/cell",
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/workbook-info.schema.json#/$defs/sheetLayoutInfo/properties/freezePanes"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsSheetLayoutInfo/properties/freezePanes"
             }
           }
         },
@@ -4346,7 +4902,7 @@
               "description": "Whether the new group is collapsed.",
               "type": "boolean",
               "default": false,
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/workbook-info.schema.json#/$defs/columnGroupInfo/properties/collapsed"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsColumnGroupInfo/properties/collapsed"
             }
           }
         },
@@ -4386,7 +4942,7 @@
               "description": "Whether the new group is collapsed.",
               "type": "boolean",
               "default": false,
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/workbook-info.schema.json#/$defs/rowGroupInfo/properties/collapsed"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsRowGroupInfo/properties/collapsed"
             }
           }
         },
@@ -4479,13 +5035,13 @@
               "description": "The name of the new sheet; the source sheet's name when omitted. A name this workbook already uses is refused.",
               "type": "string",
               "pattern": "\\S",
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/workbook-info.schema.json#/$defs/sheetInfo/properties/name"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsSheetInfo/properties/name"
             },
             "position": {
               "description": "The zero-based position of the new sheet; appended when omitted.",
               "type": "integer",
               "minimum": 0,
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/workbook-info.schema.json#/$defs/sheetInfo/properties/position"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsSheetInfo/properties/position"
             },
             "passwordEnv": {
               "description": "The environment variable that holds the source's open password, for an encrypted source.",
@@ -4661,7 +5217,7 @@
               "description": "The zero-based destination in the tab order; a value past the last sheet moves it to the end.",
               "type": "integer",
               "minimum": 0,
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/workbook-info.schema.json#/$defs/sheetInfo/properties/position"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsSheetInfo/properties/position"
             }
           },
           "allOf": [
@@ -4869,7 +5425,7 @@
               "description": "The new name.",
               "type": "string",
               "pattern": "\\S",
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/workbook-info.schema.json#/$defs/sheetInfo/properties/name"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsSheetInfo/properties/name"
             }
           },
           "allOf": [
@@ -5016,7 +5572,7 @@
             "range": {
               "description": "The range to filter, including its header row, such as A1:D20; required unless off is true.",
               "$ref": "#/$defs/range",
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/workbook-info.schema.json#/$defs/sheetLayoutInfo/properties/autoFilter"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsSheetLayoutInfo/properties/autoFilter"
             },
             "off": {
               "description": "Whether the sheet's AutoFilter is removed instead of added.",
@@ -5266,7 +5822,7 @@
                 "portrait",
                 "landscape"
               ],
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/workbook-info.schema.json#/$defs/sheetLayoutInfo/properties/orientation"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsSheetLayoutInfo/properties/orientation"
             },
             "paperSize": {
               "type": "string",
@@ -5284,34 +5840,34 @@
               "description": "The number of pages the printout fits across; 0 is automatic.",
               "type": "integer",
               "minimum": 0,
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/workbook-info.schema.json#/$defs/sheetLayoutInfo/properties/fitToWidth"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsSheetLayoutInfo/properties/fitToWidth"
             },
             "fitToHeight": {
               "description": "The number of pages the printout fits down; 0 is automatic.",
               "type": "integer",
               "minimum": 0,
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/workbook-info.schema.json#/$defs/sheetLayoutInfo/properties/fitToHeight"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsSheetLayoutInfo/properties/fitToHeight"
             },
             "scale": {
               "description": "The zoom percentage; ignored when the printout fits to pages.",
               "type": "integer",
               "minimum": 10,
               "maximum": 400,
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/workbook-info.schema.json#/$defs/sheetLayoutInfo/properties/scale"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsSheetLayoutInfo/properties/scale"
             },
             "margins": {
-              "$ref": "#/$defs/margins",
+              "$ref": "#/$defs/cellsMargins",
               "x-readBack": "unread"
             },
             "header": {
               "description": "The center header text, with Excel codes such as &P (page) and &N (pages).",
               "type": "string",
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/workbook-info.schema.json#/$defs/sheetLayoutInfo/properties/header"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsSheetLayoutInfo/properties/header"
             },
             "footer": {
               "description": "The center footer text, with Excel codes such as &P and &N.",
               "type": "string",
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/workbook-info.schema.json#/$defs/sheetLayoutInfo/properties/footer"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsSheetLayoutInfo/properties/footer"
             }
           },
           "allOf": [
@@ -5383,19 +5939,19 @@
             "range": {
               "description": "The print area, such as A1:H50.",
               "$ref": "#/$defs/range",
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/workbook-info.schema.json#/$defs/sheetLayoutInfo/properties/printArea"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsSheetLayoutInfo/properties/printArea"
             },
             "titleRows": {
               "description": "The rows repeated on every printed page, such as 1:2 or 1.",
               "type": "string",
               "pattern": "^\\$?[0-9]+(:\\$?[0-9]+)?$",
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/workbook-info.schema.json#/$defs/sheetLayoutInfo/properties/titleRows"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsSheetLayoutInfo/properties/titleRows"
             },
             "titleColumns": {
               "description": "The columns repeated on every printed page, such as A:B or A.",
               "type": "string",
               "pattern": "^\\$?[A-Za-z]{1,3}(:\\$?[A-Za-z]{1,3})?$",
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/workbook-info.schema.json#/$defs/sheetLayoutInfo/properties/titleColumns"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsSheetLayoutInfo/properties/titleColumns"
             }
           }
         },
@@ -5481,7 +6037,7 @@
             "hidden": {
               "description": "Whether the sheet is hidden.",
               "type": "boolean",
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/workbook-info.schema.json#/$defs/sheetInfo/properties/hidden"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsSheetInfo/properties/hidden"
             }
           },
           "allOf": [
@@ -5558,7 +6114,7 @@
                 "textLength",
                 "custom"
               ],
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/workbook-info.schema.json#/$defs/validationInfo/properties/type"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsValidationInfo/properties/type"
             },
             "operator": {
               "type": "string",
@@ -5697,7 +6253,7 @@
               "type": "array",
               "minItems": 1,
               "items": {
-                "$ref": "#/$defs/sortKey"
+                "$ref": "#/$defs/cellsSortKey"
               },
               "x-readBack": "not-state"
             },
@@ -5908,7 +6464,7 @@
                 "scatter",
                 "area"
               ],
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/workbook-info.schema.json#/$defs/chartInfo/properties/type"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsChartInfo/properties/type"
             },
             "seriesInRows": {
               "description": "Whether series are plotted from rows rather than columns.",
@@ -5916,11 +6472,11 @@
               "x-readBack": "unread"
             },
             "legend": {
-              "$ref": "#/$defs/chartLegend",
+              "$ref": "#/$defs/cellsChartLegend",
               "x-readBack": "unread"
             },
             "axisTitles": {
-              "$ref": "#/$defs/chartAxisTitles",
+              "$ref": "#/$defs/cellsChartAxisTitles",
               "x-readBack": "unread"
             },
             "seriesColors": {
@@ -5933,7 +6489,7 @@
               "x-readBack": "unread"
             },
             "dataLabels": {
-              "$ref": "#/$defs/chartDataLabels",
+              "$ref": "#/$defs/cellsChartDataLabels",
               "x-readBack": "unread"
             }
           },
@@ -6005,7 +6561,7 @@
           "description": "One A1 cell on the operation's sheet, such as B2; name another sheet with the operation's sheet field.",
           "pattern": "^[^!:]+$"
         },
-        "chartAxisTitles": {
+        "cellsChartAxisTitles": {
           "description": "The axis titles of a chart; only the fields present are applied. Pie charts have no axes.",
           "type": "object",
           "additionalProperties": false,
@@ -6025,7 +6581,7 @@
             }
           ]
         },
-        "chartDataLabels": {
+        "cellsChartDataLabels": {
           "description": "The data labels of a chart's series; only the fields present are applied.",
           "type": "object",
           "additionalProperties": false,
@@ -6045,7 +6601,7 @@
             }
           ]
         },
-        "chartLegend": {
+        "cellsChartLegend": {
           "description": "The legend of a chart; only the fields present are applied. There is no none position: hide the legend with visible false.",
           "type": "object",
           "additionalProperties": false,
@@ -6069,16 +6625,7 @@
             }
           ]
         },
-        "color": {
-          "type": "string",
-          "pattern": "^#[0-9A-Fa-f]{6}$"
-        },
-        "column": {
-          "type": "string",
-          "description": "Column letters from A to XFD, such as B or AA.",
-          "pattern": "^[A-Za-z]{1,3}$"
-        },
-        "conditionalRule": {
+        "cellsConditionalRule": {
           "description": "A conditional-formatting rule; the fields it uses depend on its kind.",
           "type": "object",
           "required": [
@@ -6168,7 +6715,7 @@
             }
           }
         },
-        "conditionalStyle": {
+        "cellsConditionalStyle": {
           "description": "The differential style a conditional format gives matching cells. Excel applies only font emphasis, colors and the number format there; format_range sets fonts, sizes, alignment, wrapping and indents. It sets at least one field.",
           "type": "object",
           "additionalProperties": false,
@@ -6209,7 +6756,7 @@
             }
           ]
         },
-        "margins": {
+        "cellsMargins": {
           "description": "Page margins in inches; only the sides present are applied, and at least one is set.",
           "type": "object",
           "additionalProperties": false,
@@ -6247,7 +6794,7 @@
             }
           ]
         },
-        "pivotValueField": {
+        "cellsPivotValueField": {
           "description": "One aggregated value field of a pivot table.",
           "type": "object",
           "required": [
@@ -6283,17 +6830,7 @@
             }
           }
         },
-        "range": {
-          "type": "string",
-          "description": "An A1 cell or range on the operation's sheet, such as B2 or B2:D10; name another sheet with the operation's sheet field. Whole rows and columns are not ranges.",
-          "pattern": "^[^!]+$"
-        },
-        "reference": {
-          "type": "string",
-          "description": "An A1 cell or range on the operation's sheet, such as A1:C10, or on another sheet, such as Data!A1:C10 or 'My Sheet'!A1:C10.",
-          "pattern": "\\S"
-        },
-        "sortKey": {
+        "cellsSortKey": {
           "description": "One sort key of a sort_range operation.",
           "type": "object",
           "required": [
@@ -6314,7 +6851,7 @@
             }
           }
         },
-        "styleData": {
+        "cellsStyleData": {
           "description": "Cell formatting. A read reports the fields a cell's style sets; an edit changes only the fields it sets and preserves the rest, and must set at least one.",
           "type": "object",
           "additionalProperties": false,
@@ -6323,40 +6860,40 @@
               "description": "The font family name.",
               "type": "string",
               "pattern": "\\S",
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/workbook-read.schema.json#/$defs/styleData/properties/font"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/read-result.schema.json#/$defs/cellsStyleData/properties/font"
             },
             "size": {
               "description": "The font size in points; fractional sizes such as 10.5 are kept.",
               "type": "number",
               "minimum": 1,
               "maximum": 409,
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/workbook-read.schema.json#/$defs/styleData/properties/size"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/read-result.schema.json#/$defs/cellsStyleData/properties/size"
             },
             "bold": {
               "description": "Whether the text is bold.",
               "type": "boolean",
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/workbook-read.schema.json#/$defs/styleData/properties/bold"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/read-result.schema.json#/$defs/cellsStyleData/properties/bold"
             },
             "italic": {
               "description": "Whether the text is italic.",
               "type": "boolean",
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/workbook-read.schema.json#/$defs/styleData/properties/italic"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/read-result.schema.json#/$defs/cellsStyleData/properties/italic"
             },
             "color": {
               "description": "The text color.",
               "$ref": "#/$defs/color",
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/workbook-read.schema.json#/$defs/styleData/properties/color"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/read-result.schema.json#/$defs/cellsStyleData/properties/color"
             },
             "bg": {
               "description": "The solid background fill color.",
               "$ref": "#/$defs/color",
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/workbook-read.schema.json#/$defs/styleData/properties/bg"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/read-result.schema.json#/$defs/cellsStyleData/properties/bg"
             },
             "numberFormat": {
               "description": "The number format code, such as 0.0%.",
               "type": "string",
               "minLength": 1,
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/workbook-read.schema.json#/$defs/styleData/properties/numberFormat"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/read-result.schema.json#/$defs/cellsStyleData/properties/numberFormat"
             },
             "hAlign": {
               "description": "The horizontal alignment of the text.",
@@ -6366,7 +6903,7 @@
                 "center",
                 "right"
               ],
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/workbook-read.schema.json#/$defs/styleData/properties/hAlign"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/read-result.schema.json#/$defs/cellsStyleData/properties/hAlign"
             },
             "vAlign": {
               "description": "The vertical alignment of the text.",
@@ -6376,34 +6913,34 @@
                 "middle",
                 "bottom"
               ],
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/workbook-read.schema.json#/$defs/styleData/properties/vAlign"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/read-result.schema.json#/$defs/cellsStyleData/properties/vAlign"
             },
             "wrap": {
               "description": "Whether text wraps within the cell.",
               "type": "boolean",
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/workbook-read.schema.json#/$defs/styleData/properties/wrap"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/read-result.schema.json#/$defs/cellsStyleData/properties/wrap"
             },
             "underline": {
               "description": "Whether the text has a single underline.",
               "type": "boolean",
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/workbook-read.schema.json#/$defs/styleData/properties/underline"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/read-result.schema.json#/$defs/cellsStyleData/properties/underline"
             },
             "strikethrough": {
               "description": "Whether the text is struck through.",
               "type": "boolean",
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/workbook-read.schema.json#/$defs/styleData/properties/strikethrough"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/read-result.schema.json#/$defs/cellsStyleData/properties/strikethrough"
             },
             "indent": {
               "description": "The indent level; 0 removes the indent.",
               "type": "integer",
               "minimum": 0,
               "maximum": 250,
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/workbook-read.schema.json#/$defs/styleData/properties/indent"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/read-result.schema.json#/$defs/cellsStyleData/properties/indent"
             },
             "locked": {
               "description": "Whether Excel keeps the cell read-only once its sheet is protected. Every cell is locked unless set false, as for the input cells of a protected form; a read reports only false.",
               "type": "boolean",
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/workbook-read.schema.json#/$defs/styleData/properties/locked"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/read-result.schema.json#/$defs/cellsStyleData/properties/locked"
             }
           },
           "allOf": [
@@ -6411,6 +6948,25 @@
               "minProperties": 1
             }
           ]
+        },
+        "color": {
+          "type": "string",
+          "pattern": "^#[0-9A-Fa-f]{6}$"
+        },
+        "column": {
+          "type": "string",
+          "description": "Column letters from A to XFD, such as B or AA.",
+          "pattern": "^[A-Za-z]{1,3}$"
+        },
+        "range": {
+          "type": "string",
+          "description": "An A1 cell or range on the operation's sheet, such as B2 or B2:D10; name another sheet with the operation's sheet field. Whole rows and columns are not ranges.",
+          "pattern": "^[^!]+$"
+        },
+        "reference": {
+          "type": "string",
+          "description": "An A1 cell or range on the operation's sheet, such as A1:C10, or on another sheet, such as Data!A1:C10 or 'My Sheet'!A1:C10.",
+          "pattern": "\\S"
         },
         "webLink": {
           "type": "string",
@@ -6420,741 +6976,9 @@
         }
       }
     },
-    "v2/cells/render-result": {
+    "v2/cells/read-result": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
-      "$id": "https://schemas.aspose.com/aspose-cli/v2/cells/render-result.schema.json",
-      "description": "Result of aspose-cli cells render: a visual image of one sheet (or a range of it), the primary way for an agent to \"look at\" a spreadsheet.",
-      "type": "object",
-      "required": [
-        "schema",
-        "schemaVersion",
-        "input",
-        "output",
-        "sheet"
-      ],
-      "additionalProperties": false,
-      "properties": {
-        "schema": {
-          "description": "URI of the JSON schema this result conforms to.",
-          "const": "https://schemas.aspose.com/aspose-cli/v2/cells/render-result.schema.json"
-        },
-        "schemaVersion": {
-          "description": "Version of this result contract.",
-          "const": 2
-        },
-        "input": {
-          "description": "The rendered input file.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
-        },
-        "output": {
-          "description": "The produced image file.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/output.schema.json"
-        },
-        "sheet": {
-          "description": "Name of the rendered sheet.",
-          "type": "string"
-        },
-        "range": {
-          "description": "A1 range that was rendered; omitted when the whole sheet was rendered.",
-          "type": "string"
-        },
-        "dpi": {
-          "description": "Raster resolution in dots per inch; omitted for vector output.",
-          "type": "integer",
-          "minimum": 36,
-          "maximum": 1200
-        },
-        "outputs": {
-          "description": "Per-sheet output files of a render of every visible sheet, the default or --all-sheets, in workbook order. Omitted for a render of a named sheet or a range. When present, output and sheet describe the first rendered sheet — a stable summary for single-output consumers.",
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/sheetRenderOutput"
-          }
-        },
-        "license": {
-          "description": "License mode the engine ran under; omitted when it ran licensed.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/license.schema.json"
-        },
-        "warnings": {
-          "description": "Warnings the agent is expected to act on (for example EVALUATION_MODE: tell the user about the evaluation watermark). Omitted when empty.",
-          "type": "array",
-          "items": {
-            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
-          }
-        }
-      },
-      "$defs": {
-        "sheetRenderOutput": {
-          "description": "One rendered sheet of a render of every visible sheet.",
-          "type": "object",
-          "required": [
-            "sheet",
-            "path",
-            "sizeBytes"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "sheet": {
-              "description": "Name of the rendered sheet.",
-              "type": "string"
-            },
-            "path": {
-              "description": "Absolute path of the produced image file.",
-              "type": "string"
-            },
-            "sizeBytes": {
-              "description": "Size of the produced image file in bytes.",
-              "type": "integer",
-              "minimum": 0
-            }
-          }
-        }
-      }
-    },
-    "v2/cells/search-result": {
-      "$schema": "https://json-schema.org/draft/2020-12/schema",
-      "$id": "https://schemas.aspose.com/aspose-cli/v2/cells/search-result.schema.json",
-      "description": "Result of aspose-cli cells query search: one window of cell hits for a pattern. Hits are ordered by sheet then row-major, so output is deterministic; the envelope's window counts the returned hits and, when more match, carries the command that returns the next ones.",
-      "type": "object",
-      "required": [
-        "schema",
-        "schemaVersion",
-        "input",
-        "pattern",
-        "hits",
-        "window"
-      ],
-      "additionalProperties": false,
-      "properties": {
-        "schema": {
-          "description": "URI of the JSON schema this result conforms to.",
-          "const": "https://schemas.aspose.com/aspose-cli/v2/cells/search-result.schema.json"
-        },
-        "schemaVersion": {
-          "description": "Version of this result contract.",
-          "const": 2
-        },
-        "input": {
-          "description": "The searched file.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
-        },
-        "pattern": {
-          "description": "The pattern that was searched for (echoed back).",
-          "type": "string"
-        },
-        "hits": {
-          "description": "Matching cells.",
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/searchHit"
-          }
-        },
-        "window": {
-          "description": "The window of the read or search: how much it returned and how to continue.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/result-window.schema.json"
-        },
-        "license": {
-          "description": "License mode the engine ran under; omitted when it ran licensed.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/license.schema.json"
-        },
-        "warnings": {
-          "description": "Warnings the agent is expected to act on (for example EVALUATION_MODE: tell the user about the evaluation watermark). Omitted when empty.",
-          "type": "array",
-          "items": {
-            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
-          }
-        }
-      },
-      "$defs": {
-        "searchHit": {
-          "description": "One matching cell.",
-          "type": "object",
-          "required": [
-            "sheet",
-            "cell",
-            "value"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "sheet": {
-              "description": "Sheet the cell is on.",
-              "type": "string"
-            },
-            "cell": {
-              "description": "Cell address, e.g. B7.",
-              "type": "string"
-            },
-            "value": {
-              "description": "Display value of the cell (truncated for long text).",
-              "type": "string"
-            },
-            "formula": {
-              "description": "Formula, when the cell has one.",
-              "type": "string"
-            }
-          }
-        }
-      }
-    },
-    "v2/cells/workbook-info": {
-      "$schema": "https://json-schema.org/draft/2020-12/schema",
-      "$id": "https://schemas.aspose.com/aspose-cli/v2/cells/workbook-info.schema.json",
-      "description": "Result of aspose-cli cells inspect: a compact structural summary designed as the first step of the projection ladder (metadata before structure, structure before values). Never contains full cell data.",
-      "type": "object",
-      "required": [
-        "schema",
-        "schemaVersion",
-        "input",
-        "workbook"
-      ],
-      "additionalProperties": false,
-      "properties": {
-        "schema": {
-          "description": "URI of the JSON schema this result conforms to.",
-          "const": "https://schemas.aspose.com/aspose-cli/v2/cells/workbook-info.schema.json"
-        },
-        "schemaVersion": {
-          "description": "Version of this result contract.",
-          "const": 2
-        },
-        "input": {
-          "description": "The inspected file.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
-        },
-        "workbook": {
-          "description": "Workbook-level summary.",
-          "$ref": "#/$defs/workbookSummary"
-        },
-        "license": {
-          "description": "License mode the engine ran under; omitted when it ran licensed.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/license.schema.json"
-        },
-        "warnings": {
-          "description": "Warnings the agent is expected to act on (for example EVALUATION_MODE: tell the user about the evaluation watermark). Omitted when empty.",
-          "type": "array",
-          "items": {
-            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
-          }
-        }
-      },
-      "$defs": {
-        "cellError": {
-          "description": "A cell whose formula evaluates to an error — a delivery-time QA signal.",
-          "type": "object",
-          "required": [
-            "sheet",
-            "cell",
-            "error"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "sheet": {
-              "description": "Sheet the cell is on.",
-              "type": "string"
-            },
-            "cell": {
-              "description": "Cell address, e.g. C7.",
-              "type": "string"
-            },
-            "error": {
-              "description": "The error value, e.g. #REF!, #DIV/0!, #VALUE!.",
-              "type": "string"
-            },
-            "preexisting": {
-              "description": "true in edit verification when the input cell had the same formula and the same error value; omitted otherwise.",
-              "type": "boolean",
-              "enum": [
-                true
-              ]
-            }
-          }
-        },
-        "chartInfo": {
-          "description": "A chart in a workbook.",
-          "type": "object",
-          "required": [
-            "sheet",
-            "index",
-            "name",
-            "type"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "sheet": {
-              "description": "Sheet the chart is on.",
-              "type": "string"
-            },
-            "index": {
-              "description": "The zero-based index of the chart on its sheet, as update_chart and delete_chart take it.",
-              "type": "integer",
-              "minimum": 0
-            },
-            "name": {
-              "description": "The chart's name.",
-              "type": "string"
-            },
-            "type": {
-              "description": "The chart type: a create_chart type such as column, or the lower-camel engine name of a type outside that vocabulary, such as columnStacked.",
-              "type": "string",
-              "anyOf": [
-                {
-                  "enum": [
-                    "column",
-                    "bar",
-                    "line",
-                    "pie",
-                    "scatter",
-                    "area"
-                  ]
-                },
-                {
-                  "pattern": "^[a-z][A-Za-z0-9]*$"
-                }
-              ]
-            }
-          }
-        },
-        "columnGroupInfo": {
-          "description": "A column outline group.",
-          "type": "object",
-          "required": [
-            "from",
-            "to",
-            "level",
-            "collapsed"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "from": {
-              "description": "The first column of the group.",
-              "type": "string"
-            },
-            "to": {
-              "description": "The last column of the group.",
-              "type": "string"
-            },
-            "level": {
-              "description": "The outline level, 1 for the outermost group.",
-              "type": "integer",
-              "minimum": 1
-            },
-            "collapsed": {
-              "description": "true when every column of the group is hidden, as a collapsed group's columns are.",
-              "type": "boolean"
-            }
-          }
-        },
-        "definedNameInfo": {
-          "description": "A workbook-scoped defined name.",
-          "type": "object",
-          "required": [
-            "name",
-            "refersTo"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "name": {
-              "description": "The name.",
-              "type": "string"
-            },
-            "refersTo": {
-              "description": "What it refers to (a range or formula).",
-              "type": "string"
-            }
-          }
-        },
-        "pivotInfo": {
-          "description": "A pivot table in a workbook.",
-          "type": "object",
-          "required": [
-            "sheet",
-            "name",
-            "range"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "sheet": {
-              "description": "Sheet the pivot table is on.",
-              "type": "string"
-            },
-            "name": {
-              "description": "The pivot table's name.",
-              "type": "string"
-            },
-            "range": {
-              "description": "A1 range the pivot report covers.",
-              "type": "string"
-            }
-          }
-        },
-        "rowGroupInfo": {
-          "description": "A row outline group.",
-          "type": "object",
-          "required": [
-            "from",
-            "to",
-            "level",
-            "collapsed"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "from": {
-              "description": "The first row of the group (1-based).",
-              "type": "integer",
-              "minimum": 1
-            },
-            "to": {
-              "description": "The last row of the group (1-based).",
-              "type": "integer",
-              "minimum": 1
-            },
-            "level": {
-              "description": "The outline level, 1 for the outermost group.",
-              "type": "integer",
-              "minimum": 1
-            },
-            "collapsed": {
-              "description": "true when every row of the group is hidden, as a collapsed group's rows are.",
-              "type": "boolean"
-            }
-          }
-        },
-        "sheetInfo": {
-          "description": "Structural summary of one worksheet.",
-          "type": "object",
-          "required": [
-            "name",
-            "position",
-            "rowCount",
-            "columnCount",
-            "hidden",
-            "protected",
-            "passwordProtected",
-            "chartCount",
-            "pivotTableCount"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "name": {
-              "description": "Sheet name, exactly as shown in Excel.",
-              "type": "string"
-            },
-            "position": {
-              "description": "Zero-based position in the tab order, as add_sheet and move_sheet take it.",
-              "type": "integer",
-              "minimum": 0
-            },
-            "usedRange": {
-              "description": "A1 range covering all cells that hold data (e.g. A1:G120); omitted for empty sheets.",
-              "type": "string"
-            },
-            "rowCount": {
-              "description": "Number of data rows inside usedRange.",
-              "type": "integer",
-              "minimum": 0
-            },
-            "columnCount": {
-              "description": "Number of data columns inside usedRange.",
-              "type": "integer",
-              "minimum": 0
-            },
-            "hidden": {
-              "description": "true when the sheet is hidden.",
-              "type": "boolean"
-            },
-            "protected": {
-              "description": "true when the sheet is protected: Excel then lets users change only unlocked cells and the actions the protection allows. Edits are not held to it; see PROTECTION_NOT_ENFORCED.",
-              "type": "boolean"
-            },
-            "passwordProtected": {
-              "description": "true when removing the sheet's protection needs a password.",
-              "type": "boolean"
-            },
-            "chartCount": {
-              "description": "Number of charts on the sheet.",
-              "type": "integer",
-              "minimum": 0
-            },
-            "pivotTableCount": {
-              "description": "Number of pivot tables on the sheet.",
-              "type": "integer",
-              "minimum": 0
-            },
-            "preview": {
-              "description": "Optional sample of display values (first rows of the used range), present only when --sample was requested. Row-major; a null entry is an empty cell.",
-              "type": "array",
-              "items": {
-                "type": "array",
-                "items": {
-                  "type": [
-                    "string",
-                    "null"
-                  ]
-                }
-              }
-            }
-          }
-        },
-        "sheetLayoutInfo": {
-          "description": "The view and print layout of one sheet, in the terms of the operations that set it: freeze_panes, group_rows, group_columns, set_autofilter, set_print_area and set_page_setup. A field is omitted when the sheet does not have that setting.",
-          "type": "object",
-          "required": [
-            "sheet",
-            "orientation"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "sheet": {
-              "description": "The sheet's name.",
-              "type": "string"
-            },
-            "freezePanes": {
-              "description": "The top-left cell of the scrolling pane when panes are frozen, as freeze_panes takes it: A2 freezes row 1, B2 row 1 and column A.",
-              "type": "string"
-            },
-            "rowGroups": {
-              "description": "Row outline groups, outer levels first, each a run of rows at its level or deeper.",
-              "type": "array",
-              "items": {
-                "$ref": "#/$defs/rowGroupInfo"
-              }
-            },
-            "columnGroups": {
-              "description": "Column outline groups, outer levels first, each a run of columns at its level or deeper.",
-              "type": "array",
-              "items": {
-                "$ref": "#/$defs/columnGroupInfo"
-              }
-            },
-            "autoFilter": {
-              "description": "The range the sheet's AutoFilter covers, header row included.",
-              "type": "string"
-            },
-            "printArea": {
-              "description": "The print area, such as A1:H50; several areas are comma-separated.",
-              "type": "string"
-            },
-            "titleRows": {
-              "description": "The rows repeated on every printed page, such as 1:2.",
-              "type": "string"
-            },
-            "titleColumns": {
-              "description": "The columns repeated on every printed page, such as A:B.",
-              "type": "string"
-            },
-            "orientation": {
-              "description": "The page orientation: portrait or landscape.",
-              "type": "string",
-              "enum": [
-                "portrait",
-                "landscape"
-              ]
-            },
-            "fitToWidth": {
-              "description": "The number of pages the printout fits across, 0 automatic; present when it fits to pages.",
-              "type": "integer",
-              "minimum": 0
-            },
-            "fitToHeight": {
-              "description": "The number of pages the printout fits down, 0 automatic; present when it fits to pages.",
-              "type": "integer",
-              "minimum": 0
-            },
-            "scale": {
-              "description": "The zoom percentage; present when the printout does not fit to pages.",
-              "type": "integer"
-            },
-            "header": {
-              "description": "The center header text, with Excel codes such as &P.",
-              "type": "string"
-            },
-            "footer": {
-              "description": "The center footer text, with Excel codes such as &P and &N.",
-              "type": "string"
-            }
-          }
-        },
-        "tableInfo": {
-          "description": "A table (list object) in a workbook.",
-          "type": "object",
-          "required": [
-            "sheet",
-            "name",
-            "range"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "sheet": {
-              "description": "Sheet the table is on.",
-              "type": "string"
-            },
-            "name": {
-              "description": "The table's display name.",
-              "type": "string"
-            },
-            "range": {
-              "description": "A1 range the table covers, e.g. A1:D20.",
-              "type": "string"
-            }
-          }
-        },
-        "validationInfo": {
-          "description": "A data validation in a workbook.",
-          "type": "object",
-          "required": [
-            "sheet",
-            "range",
-            "type"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "sheet": {
-              "description": "Sheet the validation is on.",
-              "type": "string"
-            },
-            "range": {
-              "description": "A1 range the validation applies to.",
-              "type": "string"
-            },
-            "type": {
-              "description": "The validation type: a set_validation type such as list or wholeNumber, or the lower-camel engine name of a type outside that vocabulary, such as anyValue.",
-              "type": "string",
-              "anyOf": [
-                {
-                  "enum": [
-                    "list",
-                    "wholeNumber",
-                    "decimal",
-                    "date",
-                    "textLength",
-                    "custom"
-                  ]
-                },
-                {
-                  "pattern": "^[a-z][A-Za-z0-9]*$"
-                }
-              ]
-            }
-          }
-        },
-        "workbookSummary": {
-          "description": "Structural summary of a workbook.",
-          "type": "object",
-          "required": [
-            "name",
-            "sheetCount",
-            "sheets",
-            "hasVba",
-            "definedNameCount",
-            "structureProtected",
-            "structurePasswordProtected"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "name": {
-              "description": "File name without directory, e.g. report.xlsx.",
-              "type": "string"
-            },
-            "sheetCount": {
-              "description": "Total number of worksheets, including hidden ones.",
-              "type": "integer",
-              "minimum": 0
-            },
-            "sheets": {
-              "description": "Per-sheet summaries, in workbook order.",
-              "type": "array",
-              "items": {
-                "$ref": "#/$defs/sheetInfo"
-              }
-            },
-            "hasVba": {
-              "description": "true when the workbook contains VBA macros.",
-              "type": "boolean"
-            },
-            "definedNameCount": {
-              "description": "Number of defined names in the workbook.",
-              "type": "integer",
-              "minimum": 0
-            },
-            "structureProtected": {
-              "description": "true when the workbook structure is protected: Excel then refuses to add, delete, rename, move or hide sheets. Edits are not held to it; see PROTECTION_NOT_ENFORCED.",
-              "type": "boolean"
-            },
-            "structurePasswordProtected": {
-              "description": "true when removing the structure protection needs a password.",
-              "type": "boolean"
-            },
-            "author": {
-              "description": "Document author from built-in properties; omitted when empty.",
-              "type": "string"
-            },
-            "title": {
-              "description": "Document title from built-in properties; omitted when empty.",
-              "type": "string"
-            },
-            "definedNames": {
-              "description": "Defined names; present only with --detail names.",
-              "type": "array",
-              "items": {
-                "$ref": "#/$defs/definedNameInfo"
-              }
-            },
-            "formulaErrors": {
-              "description": "Cells whose formula evaluates to an error; present only with --detail errors.",
-              "type": "array",
-              "items": {
-                "$ref": "#/$defs/cellError"
-              }
-            },
-            "fonts": {
-              "description": "Distinct font names used in the workbook; present only with --detail fonts.",
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            },
-            "tables": {
-              "description": "Tables (list objects); present only with --detail tables.",
-              "type": "array",
-              "items": {
-                "$ref": "#/$defs/tableInfo"
-              }
-            },
-            "charts": {
-              "description": "Charts; present only with --detail charts.",
-              "type": "array",
-              "items": {
-                "$ref": "#/$defs/chartInfo"
-              }
-            },
-            "pivots": {
-              "description": "Pivot tables; present only with --detail pivots.",
-              "type": "array",
-              "items": {
-                "$ref": "#/$defs/pivotInfo"
-              }
-            },
-            "validations": {
-              "description": "Data validations; present only with --detail validation.",
-              "type": "array",
-              "items": {
-                "$ref": "#/$defs/validationInfo"
-              }
-            },
-            "layouts": {
-              "description": "The layout of every sheet, in workbook order; present only with --detail layout.",
-              "type": "array",
-              "items": {
-                "$ref": "#/$defs/sheetLayoutInfo"
-              }
-            }
-          }
-        }
-      }
-    },
-    "v2/cells/workbook-read": {
-      "$schema": "https://json-schema.org/draft/2020-12/schema",
-      "$id": "https://schemas.aspose.com/aspose-cli/v2/cells/workbook-read.schema.json",
+      "$id": "https://schemas.aspose.com/aspose-cli/v2/cells/read-result.schema.json",
       "description": "Result of aspose-cli cells query range: a budgeted projection of one sheet's cell data. The envelope's window counts cells: how many the read returned, how many the read covers, and for a planned scan (a default read over the used range, or a page generated for an explicit range too large for one read) the ready-to-run command that returns the next page. The file on disk remains the primary artifact — this JSON is a view of it, never a round-trip format.",
       "type": "object",
       "required": [
@@ -7169,7 +6993,7 @@
       "properties": {
         "schema": {
           "description": "URI of the JSON schema this result conforms to.",
-          "const": "https://schemas.aspose.com/aspose-cli/v2/cells/workbook-read.schema.json"
+          "const": "https://schemas.aspose.com/aspose-cli/v2/cells/read-result.schema.json"
         },
         "schemaVersion": {
           "description": "Version of this result contract.",
@@ -7191,13 +7015,13 @@
         },
         "sheet": {
           "description": "Projection of the requested sheet.",
-          "$ref": "#/$defs/sheetProjection"
+          "$ref": "#/$defs/cellsSheetProjection"
         },
         "styles": {
           "description": "Style pool referenced by styleId in cells; present only for the styles and full scopes. Pooling styles keeps repeated formatting from bloating the payload.",
           "type": "object",
           "additionalProperties": {
-            "$ref": "#/$defs/styleData"
+            "$ref": "#/$defs/cellsStyleData"
           }
         },
         "window": {
@@ -7217,7 +7041,7 @@
         }
       },
       "$defs": {
-        "cellData": {
+        "cellsCellData": {
           "description": "One cell in a projection. Empty cells are {\"t\":\"empty\"}.",
           "type": "object",
           "required": [
@@ -7305,7 +7129,7 @@
             }
           ]
         },
-        "sheetProjection": {
+        "cellsSheetProjection": {
           "description": "Budgeted cell data of one sheet.",
           "type": "object",
           "required": [
@@ -7337,13 +7161,13 @@
               "items": {
                 "type": "array",
                 "items": {
-                  "$ref": "#/$defs/cellData"
+                  "$ref": "#/$defs/cellsCellData"
                 }
               }
             }
           }
         },
-        "styleData": {
+        "cellsStyleData": {
           "description": "Cell formatting. A read reports the fields a cell's style sets; an edit changes only the fields it sets and preserves the rest, and must set at least one.",
           "type": "object",
           "additionalProperties": false,
@@ -7421,6 +7245,182 @@
             "locked": {
               "description": "Whether Excel keeps the cell read-only once its sheet is protected. Every cell is locked unless set false, as for the input cells of a protected form; a read reports only false.",
               "type": "boolean"
+            }
+          }
+        }
+      }
+    },
+    "v2/cells/render-result": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "$id": "https://schemas.aspose.com/aspose-cli/v2/cells/render-result.schema.json",
+      "description": "Result of aspose-cli cells render: a visual image of one sheet (or a range of it), the primary way for an agent to \"look at\" a spreadsheet.",
+      "type": "object",
+      "required": [
+        "schema",
+        "schemaVersion",
+        "input",
+        "output",
+        "sheet"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "schema": {
+          "description": "URI of the JSON schema this result conforms to.",
+          "const": "https://schemas.aspose.com/aspose-cli/v2/cells/render-result.schema.json"
+        },
+        "schemaVersion": {
+          "description": "Version of this result contract.",
+          "const": 2
+        },
+        "input": {
+          "description": "The rendered input file.",
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
+        },
+        "output": {
+          "description": "The produced image file.",
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/output.schema.json"
+        },
+        "sheet": {
+          "description": "Name of the rendered sheet.",
+          "type": "string"
+        },
+        "range": {
+          "description": "A1 range that was rendered; omitted when the whole sheet was rendered.",
+          "type": "string"
+        },
+        "dpi": {
+          "description": "Raster resolution in dots per inch; omitted for vector output.",
+          "type": "integer",
+          "minimum": 36,
+          "maximum": 1200
+        },
+        "outputs": {
+          "description": "Per-sheet output files of a render of every visible sheet, the default or --all-sheets, in workbook order. Omitted for a render of a named sheet or a range. When present, output and sheet describe the first rendered sheet — a stable summary for single-output consumers.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/cellsSheetOutput"
+          }
+        },
+        "license": {
+          "description": "License mode the engine ran under; omitted when it ran licensed.",
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/license.schema.json"
+        },
+        "warnings": {
+          "description": "Warnings the agent is expected to act on (for example EVALUATION_MODE: tell the user about the evaluation watermark). Omitted when empty.",
+          "type": "array",
+          "items": {
+            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
+          }
+        }
+      },
+      "$defs": {
+        "cellsSheetOutput": {
+          "description": "One rendered sheet of a render of every visible sheet.",
+          "type": "object",
+          "required": [
+            "sheet",
+            "path",
+            "sizeBytes"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "sheet": {
+              "description": "Name of the rendered sheet.",
+              "type": "string"
+            },
+            "path": {
+              "description": "Absolute path of the produced image file.",
+              "type": "string"
+            },
+            "sizeBytes": {
+              "description": "Size of the produced image file in bytes.",
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        }
+      }
+    },
+    "v2/cells/search-result": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "$id": "https://schemas.aspose.com/aspose-cli/v2/cells/search-result.schema.json",
+      "description": "Result of aspose-cli cells query search: one window of cell hits for a pattern. Hits are ordered by sheet then row-major, so output is deterministic; the envelope's window counts the returned hits and, when more match, carries the command that returns the next ones.",
+      "type": "object",
+      "required": [
+        "schema",
+        "schemaVersion",
+        "input",
+        "pattern",
+        "hits",
+        "window"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "schema": {
+          "description": "URI of the JSON schema this result conforms to.",
+          "const": "https://schemas.aspose.com/aspose-cli/v2/cells/search-result.schema.json"
+        },
+        "schemaVersion": {
+          "description": "Version of this result contract.",
+          "const": 2
+        },
+        "input": {
+          "description": "The searched file.",
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
+        },
+        "pattern": {
+          "description": "The pattern that was searched for (echoed back).",
+          "type": "string"
+        },
+        "hits": {
+          "description": "Matching cells.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/cellsSearchHit"
+          }
+        },
+        "window": {
+          "description": "The window of the read or search: how much it returned and how to continue.",
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/result-window.schema.json"
+        },
+        "license": {
+          "description": "License mode the engine ran under; omitted when it ran licensed.",
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/license.schema.json"
+        },
+        "warnings": {
+          "description": "Warnings the agent is expected to act on (for example EVALUATION_MODE: tell the user about the evaluation watermark). Omitted when empty.",
+          "type": "array",
+          "items": {
+            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
+          }
+        }
+      },
+      "$defs": {
+        "cellsSearchHit": {
+          "description": "One matching cell.",
+          "type": "object",
+          "required": [
+            "sheet",
+            "cell",
+            "value"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "sheet": {
+              "description": "Sheet the cell is on.",
+              "type": "string"
+            },
+            "cell": {
+              "description": "Cell address, e.g. B7.",
+              "type": "string"
+            },
+            "value": {
+              "description": "Display value of the cell (truncated for long text).",
+              "type": "string"
+            },
+            "formula": {
+              "description": "Formula, when the cell has one.",
+              "type": "string"
             }
           }
         }

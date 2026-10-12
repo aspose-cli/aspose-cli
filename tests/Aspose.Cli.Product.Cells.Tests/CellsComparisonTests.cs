@@ -25,7 +25,7 @@ public sealed class CellsComparisonTests
         dated.SetStyle(style);
         Assert.True(Compare(left, right).Identical);
         dated.PutValue("2023-03-15", false);
-        CellDiff diff = Assert.Single(Assert.Single(Compare(left, right).Sheets).Cells!);
+        CellsCellDiff diff = Assert.Single(Assert.Single(Compare(left, right).Sheets).Cells!);
         Assert.Equal("number", diff.Left!.T);
         Assert.Equal(45000d, diff.Left.V);
         Assert.Equal("string", diff.Right!.T);
@@ -40,7 +40,7 @@ public sealed class CellsComparisonTests
         left.CalculateFormula();
         right.Worksheets[0].Cells["A1"].PutValue("'#DIV/0!", false);
         Assert.Equal(CellValueType.IsString, right.Worksheets[0].Cells["A1"].Type);
-        CellDiff diff = Assert.Single(Assert.Single(Compare(left, right, formulas: false).Sheets).Cells!);
+        CellsCellDiff diff = Assert.Single(Assert.Single(Compare(left, right, formulas: false).Sheets).Cells!);
         Assert.Equal("error", diff.Left!.T);
         Assert.Equal("string", diff.Right!.T);
         Assert.Equal(diff.Left.V, diff.Right.V);
@@ -52,7 +52,7 @@ public sealed class CellsComparisonTests
         using var left = new Workbook();
         using var right = new Workbook();
         right.Worksheets[0].Cells["A1"].PutValue(string.Empty, false);
-        CellDiff diff = Assert.Single(Assert.Single(Compare(left, right).Sheets).Cells!);
+        CellsCellDiff diff = Assert.Single(Assert.Single(Compare(left, right).Sheets).Cells!);
         Assert.Null(diff.Left);
         Assert.Equal("string", diff.Right!.T);
         Assert.Equal(string.Empty, diff.Right.V);
@@ -73,7 +73,7 @@ public sealed class CellsComparisonTests
         Assert.True(Compare(left, right, formulas: false).Identical);
         Assert.False(Compare(left, right, formulas: true).Identical);
         right.Worksheets[0].Cells["A1"].SetFormula("=1+1", "42");
-        CellDiff diff = Assert.Single(Assert.Single(Compare(left, right).Sheets).Cells!);
+        CellsCellDiff diff = Assert.Single(Assert.Single(Compare(left, right).Sheets).Cells!);
         Assert.Equal("number", diff.Left!.T);
         Assert.Equal("string", diff.Right!.T);
         Assert.Equal(diff.Left.F, diff.Right.F);
@@ -87,7 +87,7 @@ public sealed class CellsComparisonTests
         using var left = new Workbook();
         using var right = new Workbook();
         right.Worksheets[0].Cells["A1"].Formula = "=B1";
-        CellDiff diff = Assert.Single(Assert.Single(Compare(left, right).Sheets).Cells!);
+        CellsCellDiff diff = Assert.Single(Assert.Single(Compare(left, right).Sheets).Cells!);
         Assert.Null(diff.Left);
         Assert.Equal("empty", diff.Right!.T);
         Assert.Null(diff.Right.V);
@@ -310,7 +310,7 @@ public sealed class CellsComparisonTests
         Assert.Equal(["Data:removed:", "Renamed:renamed:Second", "Other:added:"],
             result.Sheets.Where(static sheet => !sheet.Name.StartsWith("Evaluation", StringComparison.Ordinal))
                 .Select(static sheet => $"{sheet.Name}:{sheet.Status}:{sheet.From}"));
-        CellDiff cell = Assert.Single(result.Sheets.Single(static sheet => sheet.Status == "renamed").Cells!);
+        CellsCellDiff cell = Assert.Single(result.Sheets.Single(static sheet => sheet.Status == "renamed").Cells!);
         Assert.Equal(("A1", "before", "after"), (cell.Cell, cell.Left!.V, cell.Right!.V));
         Assert.Equal(1, result.Summary.SheetsRenamed);
         Assert.False(result.Identical);

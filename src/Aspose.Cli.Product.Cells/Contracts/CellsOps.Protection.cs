@@ -14,7 +14,7 @@ public sealed record ProtectSheetOp : CellsOp
 
     /// <summary>The actions users may still perform.</summary>
     [NotReadBack]
-    [AllowedValues(typeof(ProtectActions))] public IReadOnlyList<string> Allow { get; init; } = [];
+    [AllowedValues(typeof(CellsProtectActions))] public IReadOnlyList<string> Allow { get; init; } = [];
 }
 
 /// <summary>Removes sheet protection.</summary>
@@ -42,7 +42,7 @@ public sealed record UnprotectWorkbookOp : CellsOp
 }
 
 /// <summary>Accepted items of <see cref="ProtectSheetOp.Allow"/>.</summary>
-public static class ProtectActions
+public static class CellsProtectActions
 {
     public const string FormatCells = "formatCells";
     public const string InsertRows = "insertRows";

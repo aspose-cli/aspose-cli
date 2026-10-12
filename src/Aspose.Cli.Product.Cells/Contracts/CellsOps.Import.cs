@@ -30,7 +30,7 @@ public sealed record ImportRangeOp : CellsOp
     /// copy_range does.
     /// </summary>
     [NotState]
-    [AllowedValues(typeof(ImportContents))] public string Content { get; init; } = ImportContents.Values;
+    [AllowedValues(typeof(CellsImportContents))] public string Content { get; init; } = CellsImportContents.Values;
 
     /// <summary>The environment variable that holds the source's open password, for an encrypted source.</summary>
     [SecretEnv] public string? PasswordEnv { get; init; }
@@ -44,7 +44,7 @@ public sealed record ImportRangeOp : CellsOp
 }
 
 /// <summary>Accepted values of <see cref="ImportRangeOp.Content"/>.</summary>
-public static class ImportContents
+public static class CellsImportContents
 {
     public const string Values = "values";
     public const string Everything = "all";
@@ -71,11 +71,11 @@ public sealed record ImportSheetOp : CellsOp
     [InputPath, Pattern(@"\S")] public required string Path { get; init; }
 
     /// <summary>The name of the new sheet; the source sheet's name when omitted. A name this workbook already uses is refused.</summary>
-    [ReadBack("workbook-info.schema.json#/$defs/sheetInfo/properties/name")]
+    [ReadBack("inspect-result.schema.json#/$defs/cellsSheetInfo/properties/name")]
     [Pattern(@"\S")] public string? Name { get; init; }
 
     /// <summary>The zero-based position of the new sheet; appended when omitted.</summary>
-    [ReadBack("workbook-info.schema.json#/$defs/sheetInfo/properties/position")]
+    [ReadBack("inspect-result.schema.json#/$defs/cellsSheetInfo/properties/position")]
     [Minimum(0)] public int? Position { get; init; }
 
     /// <summary>The environment variable that holds the source's open password, for an encrypted source.</summary>

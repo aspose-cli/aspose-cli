@@ -10,26 +10,26 @@ namespace Aspose.Cli.Product.Cells.Engine.Mapping;
 /// </summary>
 internal static class SheetLayoutProjection
 {
-    public static IReadOnlyList<SheetLayoutInfo> Build(ResourceBudgetLedger budgets, Workbook workbook) =>
+    public static IReadOnlyList<CellsSheetLayoutInfo> Build(ResourceBudgetLedger budgets, Workbook workbook) =>
         [.. workbook.Worksheets.Cast<Worksheet>().Select(sheet => Build(budgets, sheet))];
 
-    private static SheetLayoutInfo Build(ResourceBudgetLedger budgets, Worksheet sheet)
+    private static CellsSheetLayoutInfo Build(ResourceBudgetLedger budgets, Worksheet sheet)
     {
         PageSetup page = sheet.PageSetup;
         bool fitsToPages = !page.IsPercentScale;
-        return new SheetLayoutInfo
+        return new CellsSheetLayoutInfo
         {
             Sheet = sheet.Name,
             FreezePanes = sheet.GetFreezedPanes(out int row, out int column, out _, out _)
                 ? A1.FormatCell(new CellRef(row, column))
                 : null,
             RowGroups = NullIfEmpty(Groups(budgets, RowLevels(sheet),
-                static (first, last, level, collapsed) => new RowGroupInfo
+                static (first, last, level, collapsed) => new CellsRowGroupInfo
                 {
                     From = first + 1, To = last + 1, Level = level, Collapsed = collapsed,
                 })),
             ColumnGroups = NullIfEmpty(Groups(budgets, ColumnLevels(sheet),
-                static (first, last, level, collapsed) => new ColumnGroupInfo
+                static (first, last, level, collapsed) => new CellsColumnGroupInfo
                 {
                     From = A1.ColumnName(first), To = A1.ColumnName(last), Level = level, Collapsed = collapsed,
                 })),
@@ -38,8 +38,8 @@ internal static class SheetLayoutProjection
             TitleRows = Reference(page.PrintTitleRows),
             TitleColumns = Reference(page.PrintTitleColumns),
             Orientation = page.Orientation == PageOrientationType.Landscape
-                ? PageOrientations.Landscape
-                : PageOrientations.Portrait,
+                ? CellsPageOrientations.Landscape
+                : CellsPageOrientations.Portrait,
             FitToWidth = fitsToPages ? page.FitToPagesWide : null,
             FitToHeight = fitsToPages ? page.FitToPagesTall : null,
             Scale = fitsToPages ? null : page.Zoom,

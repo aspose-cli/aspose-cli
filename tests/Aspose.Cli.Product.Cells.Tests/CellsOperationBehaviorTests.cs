@@ -328,7 +328,7 @@ public sealed class CellsOperationBehaviorTests : IClassFixture<CellsFixture>
         (string ops, Action<Workbook> assert) = Cases[name];
         string source = _fixture.CreateSalesWorkbook("behavior.xlsx");
 
-        EditResult result = Apply(source, ops, "behavior.out.xlsx");
+        CellsEditResult result = Apply(source, ops, "behavior.out.xlsx");
 
         Assert.All(result.Applied, static outcome => Assert.Equal(OpStatuses.Ok, outcome.Status));
         using var workbook = new Workbook(result.Output!.Path);
@@ -359,8 +359,8 @@ public sealed class CellsOperationBehaviorTests : IClassFixture<CellsFixture>
     public void BestEffort_ARejectedPivotLeavesNoPivotBehind()
     {
         string source = _fixture.CreateSalesWorkbook("pivot-rollback.xlsx");
-        EditResult result = CellsEdit.Run(_fixture.Session,
-            new EditRequest
+        CellsEditResult result = CellsEdit.Run(_fixture.Session,
+            new CellsEditRequest
             {
                 Input = source,
                 Batch = Parse("""
@@ -385,8 +385,8 @@ public sealed class CellsOperationBehaviorTests : IClassFixture<CellsFixture>
     public void BestEffort_AxisTitlesOnAnExistingPieChangeNothing()
     {
         string source = _fixture.CreateSalesWorkbook("pie.xlsx");
-        EditResult result = CellsEdit.Run(_fixture.Session,
-            new EditRequest
+        CellsEditResult result = CellsEdit.Run(_fixture.Session,
+            new CellsEditRequest
             {
                 Input = source,
                 Batch = Parse("""
@@ -498,7 +498,7 @@ public sealed class CellsOperationBehaviorTests : IClassFixture<CellsFixture>
     private static CellsOpsBatch Parse(string json) =>
         CellsOp.Catalog.Parse<CellsOpsBatch>(json, Aspose.Cli.Generated.ProductJsonContext.Definition);
 
-    private EditResult Apply(string path, string operations, string output) =>
+    private CellsEditResult Apply(string path, string operations, string output) =>
         CellsEdit.Run(_fixture.Session,
-            new EditRequest { Input = path, Batch = Parse($$"""{ "ops": [ {{operations}} ] }"""), Output = TestOutput.At(_fixture.Temp.File(output), overwrite: true) });
+            new CellsEditRequest { Input = path, Batch = Parse($$"""{ "ops": [ {{operations}} ] }"""), Output = TestOutput.At(_fixture.Temp.File(output), overwrite: true) });
 }

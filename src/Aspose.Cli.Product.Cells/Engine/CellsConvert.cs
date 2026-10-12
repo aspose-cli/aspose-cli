@@ -10,7 +10,7 @@ namespace Aspose.Cli.Product.Cells.Engine;
 /// <summary><c>cells convert</c>: a workbook saved in another document format.</summary>
 internal static class CellsConvert
 {
-    public static ConvertResult Run(CellsSession session, ConvertRequest request)
+    public static CellsConvertResult Run(CellsSession session, CellsConvertRequest request)
     {
         ArgumentNullException.ThrowIfNull(session);
         ArgumentNullException.ThrowIfNull(request);
@@ -82,7 +82,7 @@ internal static class CellsConvert
             saver.CountRefFormulas(workbook),
             request.Output.Format.Id);
 
-        return new ConvertResult
+        return new CellsConvertResult
         {
             Input = input,
             Output = FileObjects.Output(written, request.Output.Format, savePlan.Encrypts),

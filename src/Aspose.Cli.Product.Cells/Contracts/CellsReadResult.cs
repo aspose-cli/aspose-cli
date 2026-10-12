@@ -10,7 +10,7 @@ namespace Aspose.Cli.Product.Cells.Contracts;
 /// returns the next page. The file on disk remains the primary artifact — this JSON is a
 /// view of it, never a round-trip format.
 /// </summary>
-public sealed record WorkbookReadResult() : WindowedResultEnvelope("workbook-read", 2)
+public sealed record CellsReadResult() : WindowedResultEnvelope("read-result", 2)
 {
     /// <summary>The projected file.</summary>
     [JsonPropertyOrder(-49)]
@@ -18,44 +18,22 @@ public sealed record WorkbookReadResult() : WindowedResultEnvelope("workbook-rea
 
     /// <summary>The scope that was projected.</summary>
     [JsonPropertyOrder(-48)]
-    [AllowedValues(typeof(ReadScopes))]
+    [AllowedValues(typeof(CellsReadScopes))]
     public required string Scope { get; init; }
 
     /// <summary>Projection of the requested sheet.</summary>
-    public required SheetProjection Sheet { get; init; }
+    public required CellsSheetProjection Sheet { get; init; }
 
     /// <summary>
     /// Style pool referenced by <c>styleId</c> in cells; present only for the
     /// <c>styles</c> and <c>full</c> scopes. Pooling styles keeps repeated
     /// formatting from bloating the payload.
     /// </summary>
-    public IReadOnlyDictionary<string, StyleData>? Styles { get; init; }
-}
-
-/// <summary>Accepted values of the read scope.</summary>
-public static class ReadScopes
-{
-    /// <summary>Cell values and types only (the default).</summary>
-    public const string Values = "values";
-
-    /// <summary>Values plus formulas.</summary>
-    public const string Formulas = "formulas";
-
-    /// <summary>Values plus style references and the style pool.</summary>
-    public const string Styles = "styles";
-
-    /// <summary>Values, formulas, styles.</summary>
-    public const string Full = "full";
-
-    /// <summary>Whether a scope carries formulas.</summary>
-    internal static bool IncludesFormulas(string scope) => scope is Formulas or Full;
-
-    /// <summary>Whether a scope carries styles.</summary>
-    internal static bool IncludesStyles(string scope) => scope is Styles or Full;
+    public IReadOnlyDictionary<string, CellsStyleData>? Styles { get; init; }
 }
 
 /// <summary>Budgeted cell data of one sheet.</summary>
-public sealed record SheetProjection
+public sealed record CellsSheetProjection
 {
     /// <summary>Sheet name, exactly as shown in Excel.</summary>
     public required string Name { get; init; }
@@ -77,25 +55,25 @@ public sealed record SheetProjection
     /// Row-major cell matrix covering exactly <c>range</c>. Omitted when the sheet
     /// is empty or a default read over the cell budget returned only a summary.
     /// </summary>
-    public IReadOnlyList<IReadOnlyList<CellData>>? Cells { get; init; }
+    public IReadOnlyList<IReadOnlyList<CellsCellData>>? Cells { get; init; }
 }
 
 /// <summary>One cell in a projection. Empty cells are <c>{"t":"empty"}</c>.</summary>
-public sealed record CellData
+public sealed record CellsCellData
 {
     /// <summary>
     /// The cell value: string, number, boolean, an ISO 8601 string for
     /// date/time values, the error literal (e.g. <c>#DIV/0!</c>) for error
     /// cells, or omitted for empty cells.
     /// </summary>
-    [OneOfBy("t", CellValueTypes.String, CellValueTypes.DateTime, CellValueTypes.Error, Type = "string")]
-    [OneOfBy("t", CellValueTypes.Number, Type = "number")]
-    [OneOfBy("t", CellValueTypes.Boolean, Type = "boolean")]
-    [OneOfBy("t", CellValueTypes.Empty)]
+    [OneOfBy("t", CellsCellValueTypes.String, CellsCellValueTypes.DateTime, CellsCellValueTypes.Error, Type = "string")]
+    [OneOfBy("t", CellsCellValueTypes.Number, Type = "number")]
+    [OneOfBy("t", CellsCellValueTypes.Boolean, Type = "boolean")]
+    [OneOfBy("t", CellsCellValueTypes.Empty)]
     public object? V { get; init; }
 
     /// <summary>Value type.</summary>
-    [AllowedValues(typeof(CellValueTypes))]
+    [AllowedValues(typeof(CellsCellValueTypes))]
     public required string T { get; init; }
 
     /// <summary>Formula in A1 notation (with leading <c>=</c>); only in formula-bearing scopes.</summary>
@@ -105,8 +83,8 @@ public sealed record CellData
     public string? StyleId { get; init; }
 }
 
-/// <summary>Accepted values of <see cref="CellData.T"/>.</summary>
-public static class CellValueTypes
+/// <summary>Accepted values of <see cref="CellsCellData.T"/>.</summary>
+public static class CellsCellValueTypes
 {
     /// <summary>Text.</summary>
     public const string String = "string";

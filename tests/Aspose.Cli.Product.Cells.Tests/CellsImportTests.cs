@@ -133,7 +133,7 @@ public sealed class CellsImportTests : IClassFixture<CellsFixture>
     {
         string source = CreateSource("counted-source.xlsx");
 
-        EditResult result = ApplyResult(
+        CellsEditResult result = ApplyResult(
             _fixture.CreateSalesWorkbook("counted.xlsx"),
             $$"""
             { "op": "add_sheet", "name": "Blank" },
@@ -187,8 +187,8 @@ public sealed class CellsImportTests : IClassFixture<CellsFixture>
     public void ImportSheet_BestEffortFailureLeavesNoSheetBehind()
     {
         string source = CreateSource("best-effort-source.xlsx");
-        EditResult result = CellsEdit.Run(_fixture.Session,
-            new EditRequest
+        CellsEditResult result = CellsEdit.Run(_fixture.Session,
+            new CellsEditRequest
             {
                 Input = _fixture.CreateSalesWorkbook("best-effort.xlsx"),
                 Batch = Parse($$"""
@@ -276,7 +276,7 @@ public sealed class CellsImportTests : IClassFixture<CellsFixture>
     {
         string source = CreateUncachedLinkSource(sheet + "-uncached-source.xlsx");
 
-        EditResult result = ApplyResult(
+        CellsEditResult result = ApplyResult(
             _fixture.CreateSalesWorkbook(sheet + "-uncached.xlsx"),
             operation.Replace("\"{source}\"", Json(source), StringComparison.Ordinal));
 
@@ -290,7 +290,7 @@ public sealed class CellsImportTests : IClassFixture<CellsFixture>
     {
         string source = CreateUncachedLinkSource("verify-uncached-source.xlsx");
 
-        EditResult result = ApplyResult(
+        CellsEditResult result = ApplyResult(
             _fixture.CreateSalesWorkbook("verify-uncached.xlsx"),
             $$"""{ "op": "import_sheet", "sheet": "Linked", "path": {{Json(source)}} }""",
             verify: true);
@@ -306,7 +306,7 @@ public sealed class CellsImportTests : IClassFixture<CellsFixture>
     {
         string source = CreateUncachedLinkSource("no-recalc-uncached-source.xlsx");
 
-        EditResult result = ApplyResult(
+        CellsEditResult result = ApplyResult(
             _fixture.CreateSalesWorkbook("no-recalc-uncached.xlsx"),
             $$"""{ "op": "import_sheet", "sheet": "Linked", "path": {{Json(source)}} }""",
             recalculate: false);
@@ -322,7 +322,7 @@ public sealed class CellsImportTests : IClassFixture<CellsFixture>
     {
         string source = CreateUncachedLinkSource("outside-uncached-source.xlsx");
 
-        EditResult result = ApplyResult(
+        CellsEditResult result = ApplyResult(
             _fixture.CreateSalesWorkbook("outside-uncached.xlsx"),
             $$"""{ "op": "import_range", "sheet": "Second", "path": {{Json(source)}}, "from": "Linked!B1:B2", "to": "Second!B2", "content": "all" }""");
 
@@ -352,7 +352,7 @@ public sealed class CellsImportTests : IClassFixture<CellsFixture>
     {
         string source = CreateThirdPartyLinkedSource("linked-cached-warning");
 
-        EditResult result = ApplyResult(
+        CellsEditResult result = ApplyResult(
             _fixture.CreateSalesWorkbook("linked-cached-warning-target.xlsx"),
             $$"""{ "op": "import_sheet", "sheet": "Linked", "path": {{Json(source)}} }""");
 
@@ -373,7 +373,7 @@ public sealed class CellsImportTests : IClassFixture<CellsFixture>
 
         string passwordEnv = password is null ? string.Empty : """, "passwordEnv": "SOURCE_PWD" """;
         CliException error = Assert.Throws<CliException>(() => CellsEdit.Run(_fixture.Session,
-            new EditRequest
+            new CellsEditRequest
             {
                 Input = _fixture.CreateSalesWorkbook($"encrypted-{code}-target.xlsx"),
                 Batch = Parse($$"""{ "ops": [ { "op": "import_sheet", "sheet": "Totals", "path": {{Json(source)}}{{passwordEnv}} } ] }"""),
@@ -542,10 +542,10 @@ public sealed class CellsImportTests : IClassFixture<CellsFixture>
 
     private Workbook Apply(string path, string operations) => new(ApplyResult(path, operations).Output!.Path);
 
-    private EditResult ApplyResult(string path, string operations, bool recalculate = true, bool verify = false)
+    private CellsEditResult ApplyResult(string path, string operations, bool recalculate = true, bool verify = false)
     {
-        EditResult result = CellsEdit.Run(_fixture.Session,
-            new EditRequest { Input = path, Batch = Parse($$"""{ "ops": [ {{operations}} ] }"""), Output = TestOutput.At(_fixture.Temp.File(Path.GetFileNameWithoutExtension(path) + ".out.xlsx"), overwrite: true), Recalculate = recalculate, Verify = verify });
+        CellsEditResult result = CellsEdit.Run(_fixture.Session,
+            new CellsEditRequest { Input = path, Batch = Parse($$"""{ "ops": [ {{operations}} ] }"""), Output = TestOutput.At(_fixture.Temp.File(Path.GetFileNameWithoutExtension(path) + ".out.xlsx"), overwrite: true), Recalculate = recalculate, Verify = verify });
         Assert.All(result.Applied, static outcome => Assert.Equal(OpStatuses.Ok, outcome.Status));
         return result;
     }
