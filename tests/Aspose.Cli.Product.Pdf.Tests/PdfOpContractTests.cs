@@ -19,7 +19,7 @@ public sealed class PdfOpContractTests
     [InlineData("""{"op":"insert_page","at":1,"pageSize":{"preset":"LETTER"}}""")]
     [InlineData("""{"op":"set_page_size","pages":"1","pageSize":{"preset":"A4"}}""")]
     [InlineData("""{"op":"set_page_size","pages":"1","pageSize":{"width":300}}""")]
-    [InlineData("""{"op":"set_page_size","pages":"1","pageSize":{"preset":"a4","width":300,"height":400}}""")]
+    [InlineData("""{"op":"set_page_size","pages":"1","pageSize":{"preset":"a4","height":400}}""")]
     [InlineData("""{"op":"set_page_size","pages":"1","size":"a4"}""")]
     [InlineData("""{"op":"crop_pages","pages":"1","rect":{"x":-1,"y":0,"width":10,"height":10}}""")]
     [InlineData("""{"op":"redact_area","page":1,"rect":{"x":0,"y":-5,"width":10,"height":10}}""")]
@@ -52,6 +52,8 @@ public sealed class PdfOpContractTests
     [InlineData("""{"op":"delete_bookmarks","index":"1"}""")]
     [InlineData("""{"op":"delete_bookmarks","bookmarks":[]}""")]
     [InlineData("""{"op":"delete_bookmarks","bookmarks":"1"}""")]
+    [InlineData("""{"op":"add_watermark_image","path":"image.png","scalePercent":12.5}""")]
+    [InlineData("""{"op":"add_watermark_image","path":"image.png","scalePercent":0}""")]
     public void ParserAndSchema_RejectTheSameInvalidOperation(string operation)
     {
         string batch = $$"""{"ops":[{{operation}}]}""";
@@ -78,6 +80,17 @@ public sealed class PdfOpContractTests
         _ = Parse(batch);
 
         Assert.True(IsSchemaValid(batch), "The schema rejected an operation the parser accepts.");
+    }
+
+    [Fact]
+    public void WatermarkImage_RefusesAFractionalScalePercentAsAWholeNumberPercentage()
+    {
+        CliException error = Assert.Throws<CliException>(() => Parse(
+            """{"ops":[{"op":"add_watermark_image","path":"image.png","scalePercent":12.5}]}"""));
+
+        Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
+        Assert.Contains("scalePercent must be a whole number", error.Message, StringComparison.Ordinal);
+        Assert.Contains("whole-number percentage", error.Hint, StringComparison.Ordinal);
     }
 
     [Theory]

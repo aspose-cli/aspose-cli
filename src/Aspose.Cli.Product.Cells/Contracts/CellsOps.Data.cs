@@ -4,23 +4,22 @@ namespace Aspose.Cli.Product.Cells.Contracts;
 
 // Ops for the data-cleaning pipeline: filtering, sorting and validation.
 
-/// <summary>Adds an AutoFilter over a range, or removes the sheet's AutoFilter.</summary>
-[Operation("set_autofilter")]
-[AtLeastOneOf("range", "off")]
-public sealed record SetAutoFilterOp : CellsOp
+/// <summary>Sets the sheet's AutoFilter over a range; clear_autofilter removes it.</summary>
+[Operation("set_autofilter", Hint = "To remove the AutoFilter, use clear_autofilter.")]
+public sealed record SetAutoFilterOp : CellsSheetOp
 {
-    /// <summary>The range to filter, including its header row, such as A1:D20; required unless off is true.</summary>
-    [ReadBack("inspect-result.schema.json#/$defs/cellsSheetLayoutInfo/properties/autoFilter")]
-    [A1Range] public string? Range { get; init; }
-
-    /// <summary>Whether the sheet's AutoFilter is removed instead of added.</summary>
-    [NotState]
-    public bool Off { get; init; }
+    /// <summary>The range to filter, including its header row, such as A1:D20.</summary>
+    [ReadBack("inspect-result.schema.json#/$defs/cellsAutofilterInfo/properties/range")]
+    [A1Range] public required string Range { get; init; }
 }
+
+/// <summary>Removes the sheet's AutoFilter.</summary>
+[Operation("clear_autofilter")]
+public sealed record ClearAutoFilterOp : CellsSheetOp;
 
 /// <summary>Sorts a range in place by one or more of its columns.</summary>
 [Operation("sort_range")]
-public sealed record SortRangeOp : CellsOp
+public sealed record SortRangeOp : CellsSheetOp
 {
     /// <summary>The range to sort, such as A2:D100.</summary>
     [A1Range] public required string Range { get; init; }
@@ -66,17 +65,18 @@ public static class CellsSortOrders
 
 /// <summary>
 /// Applies data validation, a dropdown list or an input constraint, to a range. A list takes
-/// exactly one of listItems and listSource; custom takes its formula in value1; the other types
-/// take an operator and value1, and value2 too for between and notBetween.
+/// exactly one of listItems and listSource; custom takes its formula in value1; the other kinds
+/// take an operator and value1, and value2 too for between and not-between.
 /// </summary>
 [Operation("set_validation")]
-public sealed record SetValidationOp : CellsOp
+public sealed record SetValidationOp : CellsSheetOp
 {
     /// <summary>The range to validate, such as B2:B100.</summary>
     [A1Range] public required string Range { get; init; }
 
+    [MistakenFor("type")]
     [ReadBack("inspect-result.schema.json#/$defs/cellsValidationInfo/properties/kind")]
-    [AllowedValues(typeof(CellsValidationTypes))] public required string Type { get; init; }
+    [AllowedValues(typeof(CellsValidationTypes))] public required string Kind { get; init; }
 
     [NotReadBack]
     [AllowedValues(typeof(CellsValidationOperators))] public string? Operator { get; init; }
@@ -85,7 +85,7 @@ public sealed record SetValidationOp : CellsOp
     [NotReadBack]
     [Pattern(@"\S")] public string? Value1 { get; init; }
 
-    /// <summary>The upper bound for between and notBetween.</summary>
+    /// <summary>The upper bound for between and not-between.</summary>
     [NotReadBack]
     [Pattern(@"\S")] public string? Value2 { get; init; }
 
@@ -115,7 +115,7 @@ public sealed record SetValidationOp : CellsOp
     /// <inheritdoc />
     protected override BoundedOperation Validated()
     {
-        switch (Type)
+        switch (Kind)
         {
             case CellsValidationTypes.List:
                 OperationInvalidException.Require((ListItems is null) != (ListSource is null),
@@ -133,10 +133,10 @@ public sealed record SetValidationOp : CellsOp
                 OperationInvalidException.Require(Value1 is not null, "a 'custom' validation needs 'value1' set to a formula");
                 break;
             default:
-                OperationInvalidException.Require(Operator is not null, "'operator' is required for this validation type");
+                OperationInvalidException.Require(Operator is not null, "'operator' is required for this validation kind");
                 OperationInvalidException.Require(Value1 is not null, "'value1' is required");
                 OperationInvalidException.Require(Operator is not (CellsValidationOperators.Between or CellsValidationOperators.NotBetween) || Value2 is not null,
-                    "'between'/'notBetween' need 'value2' as the upper bound");
+                    "'between'/'not-between' need 'value2' as the upper bound");
                 break;
         }
 
@@ -146,15 +146,16 @@ public sealed record SetValidationOp : CellsOp
 
 /// <summary>Removes all data validation whose area overlaps a range.</summary>
 [Operation("clear_validation")]
-public sealed record ClearValidationOp : CellsOp
+public sealed record ClearValidationOp : CellsSheetOp
 {
     /// <summary>The range to clear validation from, such as B2:B100.</summary>
     [A1Range] public required string Range { get; init; }
 }
 
 /// <summary>Removes duplicate rows from a range, comparing every column or the listed ones.</summary>
-[Operation("remove_duplicates")]
-public sealed record RemoveDuplicatesOp : CellsOp
+[Operation("delete_duplicates")]
+[MistakenFor("remove_duplicates")]
+public sealed record DeleteDuplicatesOp : CellsSheetOp
 {
     /// <summary>The range to de-duplicate, including any header row, such as A1:D100.</summary>
     [A1Range] public required string Range { get; init; }
@@ -186,11 +187,11 @@ public sealed record RemoveDuplicatesOp : CellsOp
 public static class CellsValidationOperators
 {
     public const string Between = "between";
-    public const string NotBetween = "notBetween";
+    public const string NotBetween = "not-between";
     public const string Equal = "equal";
-    public const string NotEqual = "notEqual";
-    public const string GreaterThan = "greaterThan";
-    public const string LessThan = "lessThan";
-    public const string GreaterOrEqual = "greaterOrEqual";
-    public const string LessOrEqual = "lessOrEqual";
+    public const string NotEqual = "not-equal";
+    public const string GreaterThan = "greater-than";
+    public const string LessThan = "less-than";
+    public const string GreaterOrEqual = "greater-or-equal";
+    public const string LessOrEqual = "less-or-equal";
 }

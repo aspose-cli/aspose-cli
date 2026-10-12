@@ -40,7 +40,7 @@ internal static class StyleWriter
             flag.FontName = true;
         }
 
-        if (data.Size is { } size)
+        if (data.FontSize is { } size)
         {
             style.Font.DoubleSize = size;
             flag.FontSize = true;
@@ -64,7 +64,7 @@ internal static class StyleWriter
             flag.FontColor = true;
         }
 
-        if (data.Bg is { } background)
+        if (data.FillColor is { } background)
         {
             style.ForegroundColor = ParseHex(background);
             style.Pattern = BackgroundType.Solid;
@@ -77,7 +77,7 @@ internal static class StyleWriter
             flag.NumberFormat = true;
         }
 
-        if (data.HAlign is { } horizontal)
+        if (data.Alignment is { } horizontal)
         {
             style.HorizontalAlignment = horizontal switch
             {
@@ -90,7 +90,7 @@ internal static class StyleWriter
             flag.HorizontalAlignment = true;
         }
 
-        if (data.VAlign is { } vertical)
+        if (data.VerticalAlignment is { } vertical)
         {
             style.VerticalAlignment = vertical switch
             {

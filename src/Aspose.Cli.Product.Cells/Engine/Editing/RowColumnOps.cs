@@ -44,8 +44,8 @@ internal static class RowColumnOps
 
     public static long? ResizeRows(Worksheet sheet, ResizeRowsOp op)
     {
-        int first = op.From - 1;
-        int last = (op.To ?? op.From) - 1;
+        int first = op.First - 1;
+        int last = (op.Last ?? op.First) - 1;
 
         if (op.Height is { } height)
         {
@@ -64,10 +64,10 @@ internal static class RowColumnOps
 
     public static long? ResizeColumns(Worksheet sheet, ResizeColumnsOp op)
     {
-        int first = ColumnIndex(op.From);
-        int last = op.To is { } to ? ColumnIndex(to) : first;
+        int first = ColumnIndex(op.First);
+        int last = op.Last is { } to ? ColumnIndex(to) : first;
 
-        if (op.Width is { } width)
+        if (op.WidthChars is { } width)
         {
             for (int column = first; column <= last; column++)
             {

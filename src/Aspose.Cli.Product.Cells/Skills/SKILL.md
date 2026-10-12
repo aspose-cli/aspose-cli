@@ -66,7 +66,7 @@ aspose-cli cells search book.xlsx --pattern "Total" --output-format json
     { "op": "set_values", "sheet": "Sales", "range": "A6", "values": [["South", 500, 600]] },
     { "op": "set_formula", "sheet": "Sales", "range": "E2:E6", "formula": "=SUM(B2:D2)" },
     { "op": "format_range", "sheet": "Sales", "range": "A1:E1",
-      "style": { "bold": true, "bg": "#1F4E79", "color": "#FFFFFF" } },
+      "style": { "bold": true, "fillColor": "#1F4E79", "color": "#FFFFFF" } },
     { "op": "freeze_panes", "sheet": "Sales", "cell": "A2" }
   ]
 }
@@ -134,7 +134,7 @@ Warning sheets, data-export limits and their fixes:
 | A workbook open in Excel | The in-place save fails with `OUTPUT_UNWRITABLE`; ask the user to close it |
 | `set_values` with `"2026-04-03"` | Stored as text; write `=DATE(2026,4,3)` |
 | A bigger font on a title row | The row keeps its height; auto-fit it with `resize_rows` and no `height` |
-| Text written into a new workbook | Columns keep the default width, so long text is cut off by the next cell; size them with `resize_columns` (no `width` auto-fits) |
+| Text written into a new workbook | Columns keep the default width, so long text is cut off by the next cell; size them with `resize_columns` (no `widthChars` auto-fits) |
 | `cells compare` after a formatting session | `identical: true` is correct: it compares values and formula text only |
 
 ## Routing

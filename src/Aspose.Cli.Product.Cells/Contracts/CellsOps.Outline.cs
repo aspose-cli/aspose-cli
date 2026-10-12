@@ -6,74 +6,84 @@ namespace Aspose.Cli.Product.Cells.Contracts;
 
 /// <summary>Groups a span of rows into an outline level.</summary>
 [Operation("group_rows")]
-public sealed record GroupRowsOp : CellsOp
+public sealed record GroupRowsOp : CellsSheetOp
 {
     /// <summary>The first row of the group (1-based).</summary>
-    [Minimum(1)] public required int From { get; init; }
+    [MistakenFor("from")]
+    [Minimum(1)] public required int First { get; init; }
 
-    /// <summary>The last row of the group (1-based), not above from; from when omitted.</summary>
-    [Minimum(1)] public int? To { get; init; }
+    /// <summary>The last row of the group (1-based), not above first; first when omitted.</summary>
+    [MistakenFor("to")]
+    [Minimum(1)] public int? Last { get; init; }
 
     /// <summary>Whether the new group is collapsed.</summary>
+    [MistakenFor("collapse")]
     [ReadBack("inspect-result.schema.json#/$defs/cellsRowGroupInfo/properties/collapsed")]
-    public bool Collapse { get; init; }
+    public bool Collapsed { get; init; }
 
     /// <inheritdoc />
-    protected override BoundedOperation Validated() => RowSpan.Check(this, From, To);
+    protected override BoundedOperation Validated() => RowSpan.Check(this, First, Last);
 }
 
 /// <summary>Removes one outline level from a span of rows.</summary>
 [Operation("ungroup_rows")]
-public sealed record UngroupRowsOp : CellsOp
+public sealed record UngroupRowsOp : CellsSheetOp
 {
     /// <summary>The first row of the span (1-based).</summary>
-    [Minimum(1)] public required int From { get; init; }
+    [MistakenFor("from")]
+    [Minimum(1)] public required int First { get; init; }
 
-    /// <summary>The last row of the span (1-based), not above from; from when omitted.</summary>
-    [Minimum(1)] public int? To { get; init; }
+    /// <summary>The last row of the span (1-based), not above first; first when omitted.</summary>
+    [MistakenFor("to")]
+    [Minimum(1)] public int? Last { get; init; }
 
     /// <inheritdoc />
-    protected override BoundedOperation Validated() => RowSpan.Check(this, From, To);
+    protected override BoundedOperation Validated() => RowSpan.Check(this, First, Last);
 }
 
 /// <summary>Groups a span of columns into an outline level.</summary>
 [Operation("group_columns")]
-public sealed record GroupColumnsOp : CellsOp
+public sealed record GroupColumnsOp : CellsSheetOp
 {
     /// <summary>The first column of the group.</summary>
-    [A1Column] public required string From { get; init; }
+    [MistakenFor("from")]
+    [A1Column] public required string First { get; init; }
 
-    /// <summary>The last column of the group, not left of from; from when omitted.</summary>
-    [A1Column] public string? To { get; init; }
+    /// <summary>The last column of the group, not left of first; first when omitted.</summary>
+    [MistakenFor("to")]
+    [A1Column] public string? Last { get; init; }
 
     /// <summary>Whether the new group is collapsed.</summary>
+    [MistakenFor("collapse")]
     [ReadBack("inspect-result.schema.json#/$defs/cellsColumnGroupInfo/properties/collapsed")]
-    public bool Collapse { get; init; }
+    public bool Collapsed { get; init; }
 
     /// <inheritdoc />
-    protected override BoundedOperation Validated() => ColumnSpan.Check(this, From, To);
+    protected override BoundedOperation Validated() => ColumnSpan.Check(this, First, Last);
 }
 
 /// <summary>Removes one outline level from a span of columns.</summary>
 [Operation("ungroup_columns")]
-public sealed record UngroupColumnsOp : CellsOp
+public sealed record UngroupColumnsOp : CellsSheetOp
 {
     /// <summary>The first column of the span.</summary>
-    [A1Column] public required string From { get; init; }
+    [MistakenFor("from")]
+    [A1Column] public required string First { get; init; }
 
-    /// <summary>The last column of the span, not left of from; from when omitted.</summary>
-    [A1Column] public string? To { get; init; }
+    /// <summary>The last column of the span, not left of first; first when omitted.</summary>
+    [MistakenFor("to")]
+    [A1Column] public string? Last { get; init; }
 
     /// <inheritdoc />
-    protected override BoundedOperation Validated() => ColumnSpan.Check(this, From, To);
+    protected override BoundedOperation Validated() => ColumnSpan.Check(this, First, Last);
 }
 
 /// <summary>The rule of a span of rows: it must not end above its first row.</summary>
 internal static class RowSpan
 {
-    public static CellsOp Check(CellsOp operation, int from, int? to)
+    public static CellsOp Check(CellsOp operation, int first, int? last)
     {
-        OperationInvalidException.Require(to is null || to >= from, "'to' must not be smaller than 'from'");
+        OperationInvalidException.Require(last is null || last >= first, "'last' must not be smaller than 'first'");
         return operation;
     }
 }
@@ -81,9 +91,9 @@ internal static class RowSpan
 /// <summary>The rule of a span of columns: it must not end left of its first column.</summary>
 internal static class ColumnSpan
 {
-    public static CellsOp Check(CellsOp operation, string from, string? to)
+    public static CellsOp Check(CellsOp operation, string first, string? last)
     {
-        OperationInvalidException.Require(to is null || A1.ParseColumn(to) >= A1.ParseColumn(from), "'to' must not be left of 'from'");
+        OperationInvalidException.Require(last is null || A1.ParseColumn(last) >= A1.ParseColumn(first), "'last' must not be left of 'first'");
         return operation;
     }
 }

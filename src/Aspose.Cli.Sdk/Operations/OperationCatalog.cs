@@ -21,6 +21,7 @@ public sealed class OperationCatalog<TOp>
     private readonly Dictionary<string, OperationDescriptor> _byName = new(StringComparer.Ordinal);
     private readonly Dictionary<Type, OperationDescriptor> _byType = [];
     private readonly Dictionary<string, string> _byMistakenName = new(StringComparer.OrdinalIgnoreCase);
+    private readonly string[] _common;
     private readonly GeneratedOperationSchema _schema;
 
     // Writes an operation document for a command line: a placeholder such as <VARIABLE> stays as it is.
@@ -66,6 +67,12 @@ public sealed class OperationCatalog<TOp>
         }
 
         Names = [.. ordered.Select(static operation => operation.Record.Name)];
+        _common = (typeof(TOp).GetCustomAttributes(typeof(OperationVocabularyAttribute), inherit: false)
+            .OfType<OperationVocabularyAttribute>().FirstOrDefault()?.Common) ?? [];
+        if (_common.FirstOrDefault(name => !_byName.ContainsKey(name)) is { } unknown)
+        {
+            throw new ArgumentException($"The vocabulary's common operation '{unknown}' is not one of its operations.", nameof(operations));
+        }
         foreach (OperationRecord record in ordered.Select(static operation => operation.Record))
         {
             foreach (string mistaken in record.MistakenFor)
@@ -453,14 +460,40 @@ public sealed class OperationCatalog<TOp>
     private CliException InvalidAt(JsonElement ops, IReadOnlyList<string> ids, int index, JsonException failure) =>
         NameAt(ops, index) is { } name && !_byName.ContainsKey(name)
             ? OperationErrors.UnknownAt(ids[index], failure.Message, DefaultHint,
-                Mistake.Of(name, Names, meant: Closest(name, ops[index])))
+                Mistake.Of(name, ByRelevance(name), meant: Closest(name, ops[index])))
             : OperationErrors.InvalidAt(
-                ids[index], KnownNameAt(ops, index), failure.Message, KindHint(KnownNameAt(ops, index), failure) ?? DefaultHint, field: failure as AllowedFieldsException);
+                ids[index], KnownNameAt(ops, index), failure.Message, KindHint(KnownNameAt(ops, index), failure) ?? HintFor(KnownNameAt(ops, index)), field: failure as AllowedFieldsException);
+
+    /// <summary>
+    /// The operation names in the order an error for the unknown <paramref name="name"/> lists
+    /// them: the closest names, then the vocabulary's common operations, then the names that share
+    /// a word with it, such as its verb or its noun, then the rest in published order.
+    /// </summary>
+    private IEnumerable<string> ByRelevance(string name)
+    {
+        string[] words = name.Split('_', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        return NameSuggestions.Closest(name, Names)
+            .Concat(_common)
+            .Concat(Names.Where(candidate => candidate.Split('_').Intersect(words, StringComparer.OrdinalIgnoreCase).Any()))
+            .Concat(Names)
+            .Distinct(StringComparer.Ordinal);
+    }
+
+    /// <summary>
+    /// The hint of an entry the serializer could not read: the operation's own
+    /// (<see cref="OperationAttribute.Hint"/>) before the default.
+    /// </summary>
+    private string HintFor(string? name) =>
+        name is not null && _byName[name].Record.Type.GetCustomAttributes(typeof(OperationAttribute), inherit: false)
+            .OfType<OperationAttribute>().FirstOrDefault()?.Hint is { } hint
+            ? $"{hint} {DefaultHint}"
+            : DefaultHint;
 
     /// <summary>
     /// For a field of an operation whose value has the wrong kind, what the field is, from its
-    /// description, before the default hint: an <c>at</c> that is a section number in one
-    /// operation and a block address in another is otherwise only "must be a whole number".
+    /// description, before the operation's hint (<see cref="HintFor"/>): an <c>at</c> that is a
+    /// section number in one operation and a block address in another is otherwise only "must be
+    /// a whole number".
     /// </summary>
     private string? KindHint(string? name, JsonException failure)
     {
@@ -473,7 +506,7 @@ public sealed class OperationCatalog<TOp>
         string meaning = description.StartsWith("The ", StringComparison.Ordinal) || description.StartsWith("A ", StringComparison.Ordinal) || description.StartsWith("An ", StringComparison.Ordinal)
             ? $"'{field}' is {char.ToLowerInvariant(description[0])}{description[1..]}"
             : $"'{field}': {description}";
-        return $"{meaning.TrimEnd('.')}. {DefaultHint}";
+        return $"{meaning.TrimEnd('.')}. {HintFor(name)}";
     }
 
     private string? KnownNameAt(JsonElement ops, int index) =>

@@ -11,28 +11,28 @@ internal static class OutlineOps
 {
     public static long? GroupRows(Worksheet sheet, GroupRowsOp op)
     {
-        sheet.Cells.GroupRows(op.From - 1, (op.To ?? op.From) - 1, op.Collapse);
+        sheet.Cells.GroupRows(op.First - 1, (op.Last ?? op.First) - 1, op.Collapsed);
         return null;
     }
 
     public static long? UngroupRows(Worksheet sheet, UngroupRowsOp op)
     {
-        sheet.Cells.UngroupRows(op.From - 1, (op.To ?? op.From) - 1);
+        sheet.Cells.UngroupRows(op.First - 1, (op.Last ?? op.First) - 1);
         return null;
     }
 
     public static long? GroupColumns(Worksheet sheet, GroupColumnsOp op)
     {
-        int first = ColumnIndex(op.From);
-        int last = op.To is { } to ? ColumnIndex(to) : first;
-        sheet.Cells.GroupColumns(first, last, op.Collapse);
+        int first = ColumnIndex(op.First);
+        int last = op.Last is { } to ? ColumnIndex(to) : first;
+        sheet.Cells.GroupColumns(first, last, op.Collapsed);
         return null;
     }
 
     public static long? UngroupColumns(Worksheet sheet, UngroupColumnsOp op)
     {
-        int first = ColumnIndex(op.From);
-        int last = op.To is { } to ? ColumnIndex(to) : first;
+        int first = ColumnIndex(op.First);
+        int last = op.Last is { } to ? ColumnIndex(to) : first;
         sheet.Cells.UngroupColumns(first, last);
         return null;
     }

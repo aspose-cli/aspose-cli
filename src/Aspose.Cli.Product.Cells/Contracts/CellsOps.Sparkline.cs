@@ -9,7 +9,7 @@ namespace Aspose.Cli.Product.Cells.Contracts;
 /// in one cell of location.
 /// </summary>
 [Operation("add_sparkline")]
-public sealed record AddSparklineOp : CellsOp
+public sealed record AddSparklineOp : CellsSheetOp
 {
     /// <summary>
     /// The data to plot, such as B2:E10. It may name another sheet, such as Data!B2:E10, so
@@ -27,8 +27,9 @@ public sealed record AddSparklineOp : CellsOp
     [A1Range] public required string Location { get; init; }
 
     /// <summary>winloss draws equal-height columns above or below the axis by sign.</summary>
+    [MistakenFor("type")]
     [NotReadBack]
-    [AllowedValues(typeof(CellsSparklineTypes))] public string Type { get; init; } = CellsSparklineTypes.Line;
+    [AllowedValues(typeof(CellsSparklineTypes))] public string Kind { get; init; } = CellsSparklineTypes.Line;
 
     /// <summary>The series color; the engine default when omitted.</summary>
     [NotReadBack]
@@ -44,7 +45,7 @@ public sealed record AddSparklineOp : CellsOp
     }
 }
 
-/// <summary>Accepted values of <see cref="AddSparklineOp.Type"/>.</summary>
+/// <summary>Accepted values of <see cref="AddSparklineOp.Kind"/>.</summary>
 public static class CellsSparklineTypes
 {
     public const string Line = "line";

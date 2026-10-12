@@ -22,7 +22,7 @@ public sealed class CellsPivotCalculationTests : IClassFixture<CellsFixture>
                 "values": [["Region","Units","Revenue","Period"],["North",2,null,null],["South",3,null,null]] },
               { "op": "set_formula", "sheet": "Data", "range": "C2:C3", "formula": "=B2*100" },
               { "op": "set_formula", "sheet": "Data", "range": "D2:D3", "formula": "=IF(B2<3,\"Jan\",\"Feb\")" },
-              { "op": "create_pivot", "sheet": "Pivot", "sourceRange": "Data!A1:D3", "at": "A1",
+              { "op": "insert_pivot", "sheet": "Pivot", "sourceRange": "Data!A1:D3", "at": "A1",
                 "rows": ["Region"], "columns": ["Period"], "values": [{ "field": "Revenue" }] }
             ] }
             """, "pivot-formula-create.out.xlsx");
@@ -51,7 +51,7 @@ public sealed class CellsPivotCalculationTests : IClassFixture<CellsFixture>
               { "op": "set_values", "sheet": "Data", "range": "A1",
                 "values": [["Region","Units","Revenue"],["North",2,null],["South",3,null]] },
               { "op": "set_formula", "sheet": "Data", "range": "C2:C3", "formula": "=B2*100" },
-              { "op": "create_pivot", "sheet": "Pivot", "sourceRange": "Data!A1:C3", "at": "A1",
+              { "op": "insert_pivot", "sheet": "Pivot", "sourceRange": "Data!A1:C3", "at": "A1",
                 "name": "ByRegion", "rows": ["Region"], "values": [{ "field": "Revenue" }] }
             ] }
             """, "pivot-formula-refresh.seeded.xlsx");
@@ -84,15 +84,15 @@ public sealed class CellsPivotCalculationTests : IClassFixture<CellsFixture>
             { "ops": [
               { "op": "set_values", "sheet": "Data", "range": "A1",
                 "values": [["Region","Revenue"],["North",100],["South",200]] },
-              { "op": "create_pivot", "sheet": "Pivot", "sourceRange": "Data!A1:B3", "at": "A5",
+              { "op": "insert_pivot", "sheet": "Pivot", "sourceRange": "Data!A1:B3", "at": "A5",
                 "rows": ["Region"], "values": [{ "field": "Revenue", "numberFormat": "#,##0.00" }] },
               { "op": "set_values", "sheet": "Pivot", "range": "A1",
                 "values": [["A long management report title must not resize the region column on refresh"]] },
-              { "op": "format_range", "sheet": "Pivot", "range": "A1", "style": { "size": 16, "bold": true } },
+              { "op": "format_range", "sheet": "Pivot", "range": "A1", "style": { "fontSize": 16, "bold": true } },
               { "op": "format_range", "sheet": "Pivot", "range": "A5:B5",
-                "style": { "bg": "#1F3864", "color": "#FFFFFF", "bold": true } },
-              { "op": "resize_columns", "sheet": "Pivot", "from": "A", "width": 18 },
-              { "op": "resize_columns", "sheet": "Pivot", "from": "B", "width": 16 }
+                "style": { "fillColor": "#1F3864", "color": "#FFFFFF", "bold": true } },
+              { "op": "resize_columns", "sheet": "Pivot", "first": "A", "widthChars": 18 },
+              { "op": "resize_columns", "sheet": "Pivot", "first": "B", "widthChars": 16 }
             ] }
             """, "pivot-refresh-format.seeded.xlsx");
         double labelWidth;
@@ -137,7 +137,7 @@ public sealed class CellsPivotCalculationTests : IClassFixture<CellsFixture>
             { "ops": [
               { "op": "set_values", "sheet": "Data", "range": "A1",
                 "values": [["地区","产品","不含税净额"],["北京","甲",10],["上海","乙",20]] },
-              { "op": "create_pivot", "sheet": "Pivot", "sourceRange": "Data!A1:C3", "at": "A1",
+              { "op": "insert_pivot", "sheet": "Pivot", "sourceRange": "Data!A1:C3", "at": "A1",
                 "rows": ["地区"], "columns": ["产品"],
                 "values": [{ "field": "不含税净额" }, { "field": "不含税净额", "function": "average", "label": "平均净额" }] }
             ] }

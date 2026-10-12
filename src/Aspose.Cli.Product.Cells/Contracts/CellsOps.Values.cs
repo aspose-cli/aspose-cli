@@ -10,7 +10,7 @@ namespace Aspose.Cli.Product.Cells.Contracts;
 /// anchor; a larger range must match the matrix dimensions exactly.
 /// </summary>
 [Operation("set_values")]
-public sealed record SetValuesOp : CellsOp
+public sealed record SetValuesOp : CellsSheetOp
 {
     /// <summary>The anchor cell or the exact target range, such as B2 or B2:D4.</summary>
     [A1Range] public required string Range { get; init; }
@@ -40,7 +40,7 @@ public sealed record SetValuesOp : CellsOp
 /// into the cells beside and below it, or shows #SPILL! when they are not empty.
 /// </summary>
 [Operation("set_formula")]
-public sealed record SetFormulaOp : CellsOp
+public sealed record SetFormulaOp : CellsSheetOp
 {
     /// <summary>The range to fill, such as C2:C100.</summary>
     [A1Range] public required string Range { get; init; }
@@ -52,7 +52,7 @@ public sealed record SetFormulaOp : CellsOp
 
 /// <summary>Clears the contents, the formatting or both of a range.</summary>
 [Operation("clear_range")]
-public sealed record ClearRangeOp : CellsOp
+public sealed record ClearRangeOp : CellsSheetOp
 {
     /// <summary>The range to clear, such as B2:D10.</summary>
     [A1Range] public required string Range { get; init; }
@@ -72,7 +72,7 @@ public static class CellsClearTargets
 
 /// <summary>Copies a range with its values, formulas and formatting to an anchor cell.</summary>
 [Operation("copy_range")]
-public sealed record CopyRangeOp : CellsOp
+public sealed record CopyRangeOp : CellsSheetOp
 {
     /// <summary>The source range; it may name another sheet.</summary>
     [A1Reference] public required string From { get; init; }
@@ -94,7 +94,7 @@ public sealed record CopyRangeOp : CellsOp
 /// </summary>
 [Operation("format_range")]
 [MistakenFor("set_style", "format_cells")]
-public sealed record FormatRangeOp : CellsOp
+public sealed record FormatRangeOp : CellsSheetOp
 {
     /// <summary>The range to format, such as B2:D10.</summary>
     [A1Range] public required string Range { get; init; }
@@ -104,7 +104,7 @@ public sealed record FormatRangeOp : CellsOp
 
 /// <summary>Merges a range into one cell.</summary>
 [Operation("merge_cells")]
-public sealed record MergeCellsOp : CellsOp
+public sealed record MergeCellsOp : CellsSheetOp
 {
     /// <summary>The range to merge, such as A1:C1.</summary>
     [A1Range] public required string Range { get; init; }
@@ -112,7 +112,7 @@ public sealed record MergeCellsOp : CellsOp
 
 /// <summary>Splits a merged range.</summary>
 [Operation("unmerge_cells")]
-public sealed record UnmergeCellsOp : CellsOp
+public sealed record UnmergeCellsOp : CellsSheetOp
 {
     /// <summary>The merged range to split, such as A1:C1.</summary>
     [A1Range] public required string Range { get; init; }

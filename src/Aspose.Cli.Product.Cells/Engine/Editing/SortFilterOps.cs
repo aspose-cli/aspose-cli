@@ -7,15 +7,16 @@ internal static class SortFilterOps
 {
     public static long? SetAutoFilter(Worksheet sheet, SetAutoFilterOp op)
     {
-        if (op.Off)
-        {
-            sheet.RemoveAutoFilter();
-            return null;
-        }
-
-        // The parser guarantees Range is set unless Off is true.
-        sheet.AutoFilter.Range = op.Range!;
+        sheet.AutoFilter.Range = op.Range;
         return null;
+    }
+
+    /// <summary>Removes the AutoFilter; 1 when the sheet had one, null when there was nothing to remove.</summary>
+    public static long? ClearAutoFilter(Worksheet sheet)
+    {
+        bool had = !string.IsNullOrEmpty(sheet.AutoFilter.Range);
+        sheet.RemoveAutoFilter();
+        return had ? 1 : null;
     }
 
     public static long? SortRange(Workbook workbook, Worksheet sheet, SortRangeOp op)

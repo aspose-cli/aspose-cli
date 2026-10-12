@@ -84,10 +84,10 @@ public sealed class CellsOperationsTests : IClassFixture<CellsFixture>
             { "ops": [
               { "op": "set_values", "sheet": "Data", "range": "A1", "values": [[10],[20],[30]] },
               { "op": "add_conditional_format", "sheet": "Data", "range": "A1:A3",
-                "rule": { "kind": "cellValue", "operator": "greaterThan", "value1": "15" },
-                "style": { "bg": "#FFC7CE" } },
+                "rule": { "kind": "cell-value", "operator": "greater-than", "value1": "15" },
+                "style": { "fillColor": "#FFC7CE" } },
               { "op": "add_conditional_format", "sheet": "Data", "range": "B1:B3",
-                "rule": { "kind": "colorScale", "minColor": "#FFFFFF", "maxColor": "#FF0000" } }
+                "rule": { "kind": "color-scale", "minColor": "#FFFFFF", "maxColor": "#FF0000" } }
             ] }
             """,
             "conditional.out.xlsx");
@@ -121,11 +121,11 @@ public sealed class CellsOperationsTests : IClassFixture<CellsFixture>
             { "ops": [
               { "op": "set_values", "sheet": "Data", "range": "A1", "values": [["关注", "关注", "a\"b"]] },
               { "op": "add_conditional_format", "sheet": "Data", "range": "A1",
-                "rule": { "kind": "cellValue", "operator": "equal", "value1": "关注" }, "style": { "bg": "#FFEB9C" } },
+                "rule": { "kind": "cell-value", "operator": "equal", "value1": "关注" }, "style": { "fillColor": "#FFEB9C" } },
               { "op": "add_conditional_format", "sheet": "Data", "range": "B1",
-                "rule": { "kind": "cellValue", "operator": "equal", "value1": "\"关注\"" }, "style": { "bg": "#FFEB9C" } },
+                "rule": { "kind": "cell-value", "operator": "equal", "value1": "\"关注\"" }, "style": { "fillColor": "#FFEB9C" } },
               { "op": "add_conditional_format", "sheet": "Data", "range": "C1",
-                "rule": { "kind": "cellValue", "operator": "equal", "value1": "\"a\"\"b\"" }, "style": { "bg": "#FFEB9C" } }
+                "rule": { "kind": "cell-value", "operator": "equal", "value1": "\"a\"\"b\"" }, "style": { "fillColor": "#FFEB9C" } }
             ] }
             """,
             "conditional-text.out.xlsx");
@@ -136,8 +136,8 @@ public sealed class CellsOperationsTests : IClassFixture<CellsFixture>
     }
 
     [Theory]
-    [InlineData("""{ "op": "create_pivot", "sheet": "Pivot", "sourceRange": "Data!A1:B3", "at": "A1", "values": [{ "field": "Ghost" }] }""")]
-    [InlineData("""{ "op": "create_pivot", "sheet": "Pivot", "sourceRange": "Data!A1:B3", "at": "A1", "rows": ["Ghost"], "values": [{ "field": "Amount" }] }""")]
+    [InlineData("""{ "op": "insert_pivot", "sheet": "Pivot", "sourceRange": "Data!A1:B3", "at": "A1", "values": [{ "field": "Ghost" }] }""")]
+    [InlineData("""{ "op": "insert_pivot", "sheet": "Pivot", "sourceRange": "Data!A1:B3", "at": "A1", "rows": ["Ghost"], "values": [{ "field": "Amount" }] }""")]
     public void PivotWithUnknownField_IsAnActionableOperationsError(string pivotOperation)
     {
         string created = CellsCreate.Run(_fixture.Session, new CellsCreateRequest
@@ -170,7 +170,7 @@ public sealed class CellsOperationsTests : IClassFixture<CellsFixture>
             { "ops": [
               { "op": "set_values", "sheet": "Data", "range": "A5", "values": [[1234.5,99],[7,8]] },
               { "op": "format_range", "sheet": "Data", "range": "A5:B6",
-                "style": { "bg": "#FFF2CC", "font": "Verdana", "size": 12, "bold": true, "numberFormat": "0.00" } }
+                "style": { "fillColor": "#FFF2CC", "font": "Verdana", "fontSize": 12, "bold": true, "numberFormat": "0.00" } }
             ] }
             """,
             "borders.styled.xlsx").Output!.Path;
@@ -215,7 +215,7 @@ public sealed class CellsOperationsTests : IClassFixture<CellsFixture>
             source,
             """
             { "ops": [
-              { "op": "format_range", "sheet": "Data", "range": "B2:C2", "style": { "locked": false, "bg": "#FFF2CC" } },
+              { "op": "format_range", "sheet": "Data", "range": "B2:C2", "style": { "locked": false, "fillColor": "#FFF2CC" } },
               { "op": "protect_sheet", "sheet": "Data" }
             ] }
             """,
@@ -250,11 +250,11 @@ public sealed class CellsOperationsTests : IClassFixture<CellsFixture>
             source,
             """
             { "ops": [
-              { "op": "create_chart", "sheet": "Data", "type": "column", "dataRange": "A1:C3", "at": "E2:L18",
+              { "op": "insert_chart", "sheet": "Data", "kind": "column", "dataRange": "A1:C3", "at": "E2:L18",
                 "title": "Quarterly", "legend": { "visible": true, "position": "right" },
                 "axisTitles": { "category": "Region", "value": "Sales (USD)" },
                 "seriesColors": ["#C00000", "#00B050"],
-                "dataLabels": { "visible": true, "format": "#,##0" } }
+                "dataLabels": { "visible": true, "numberFormat": "#,##0" } }
             ] }
             """,
             "chart.out.xlsx").Output!.Path;
@@ -288,8 +288,8 @@ public sealed class CellsOperationsTests : IClassFixture<CellsFixture>
                 ["Jan",1,2,3,4,5,6,7],["Feb",2,3,4,5,6,7,8],["Mar",3,4,5,6,7,8,9]] },
               { "op": "set_values", "sheet": "Data", "range": "J1:K6", "values": [
                 ["Region","Sales"],["East",5],["North",4],["South",3],["West",2],["Central",1]] },
-              { "op": "create_chart", "sheet": "Data", "type": "column", "dataRange": "A1:H4", "at": "A8:H24" },
-              { "op": "create_chart", "sheet": "Data", "type": "pie", "dataRange": "J1:K6", "at": "J8:P24" }
+              { "op": "insert_chart", "sheet": "Data", "kind": "column", "dataRange": "A1:H4", "at": "A8:H24" },
+              { "op": "insert_chart", "sheet": "Data", "kind": "pie", "dataRange": "J1:K6", "at": "J8:P24" }
             ] }
             """,
             "palette.out.xlsx").Output!.Path;
@@ -313,7 +313,7 @@ public sealed class CellsOperationsTests : IClassFixture<CellsFixture>
               { "op": "format_range", "sheet": "Data", "range": "B2:B3", "style": { "numberFormat": "#,##0.00" } },
               { "op": "add_conditional_format", "sheet": "Data", "range": "A2:C3",
                 "rule": { "kind": "formula", "value1": "$C2=\"OVERDUE\"" },
-                "style": { "bg": "#FFC7CE" } }
+                "style": { "fillColor": "#FFC7CE" } }
             ] }
             """,
             "formula-format.out.xlsx");
@@ -349,7 +349,7 @@ public sealed class CellsOperationsTests : IClassFixture<CellsFixture>
               { "op": "set_values", "sheet": "Second", "range": "B2",
                 "values": [[1,-2,3,4],[5,6,-7,8],[9,10,11,-12]] },
               { "op": "add_sparkline", "sheet": "Second", "dataRange": "B2:E4", "location": "F2:F4",
-                "type": "winloss", "color": "#1F4E79" }
+                "kind": "winloss", "color": "#1F4E79" }
             ] }
             """,
             "sparkline.out.xlsx").Output!.Path;
@@ -371,8 +371,8 @@ public sealed class CellsOperationsTests : IClassFixture<CellsFixture>
             """
             { "ops": [
               { "op": "set_page_setup", "sheet": "Data",
-                "margins": { "top": 1, "bottom": 1.25, "left": 0.5,
-                             "right": 0.5, "header": 0.3, "footer": 0.3 } }
+                "margins": { "top": 72, "bottom": 90, "left": 36,
+                             "right": 36, "header": 21.6, "footer": 21.6 } }
             ] }
             """,
             "margins.out.xlsx").Output!.Path;
@@ -404,7 +404,7 @@ public sealed class CellsOperationsTests : IClassFixture<CellsFixture>
             { "ops": [
               { "op": "set_values", "sheet": "Data", "range": "A1",
                 "values": [["Item","Amount"],["Alpha",{{first}}],["Beta",{{second}}],["Gamma",{{third}}]] },
-              { "op": "create_chart", "sheet": "Data", "type": "{{kind}}",
+              { "op": "insert_chart", "sheet": "Data", "kind": "{{kind}}",
                 "dataRange": "A1:B4", "at": "D2:K18", "title": "Amount" }
             ] }
             """,
@@ -423,7 +423,7 @@ public sealed class CellsOperationsTests : IClassFixture<CellsFixture>
             { "ops": [
               { "op": "set_values", "sheet": "Data", "range": "A1",
                 "values": [["Item","Amount"],["Alpha",95],["Beta",100],["Gamma",105]] },
-              { "op": "create_chart", "sheet": "Data", "type": "column",
+              { "op": "insert_chart", "sheet": "Data", "kind": "column",
                 "dataRange": "A1:B4", "at": "D2:K18", "title": "Amount" }
             ] }
             """,
@@ -438,7 +438,7 @@ public sealed class CellsOperationsTests : IClassFixture<CellsFixture>
 
         string output = Apply(
             seeded,
-            """{ "ops": [ { "op": "update_chart", "sheet": "Data", "index": 1, "title": "Revised" } ] }""",
+            """{ "ops": [ { "op": "set_chart", "sheet": "Data", "index": 1, "title": "Revised" } ] }""",
             "axis-explicit.out.xlsx").Output!.Path;
 
         Assert.Equal("50", ReadValueAxisMinimum(output));

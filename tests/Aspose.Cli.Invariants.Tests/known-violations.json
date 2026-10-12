@@ -11,34 +11,6 @@
       "actual": "applied twice, it leaves the same package parts and the same inspect and read results as applied once: the second replaces the first"
     },
     {
-      "case": "C-R17 | v2/cells/ops#cellsConditionalRule",
-      "invariant": "C-R17",
-      "rule": "C-R17",
-      "cause": "cells-enum-values-camel-case",
-      "actual": "kind: enum values cellValue, colorScale, dataBar, topBottom, iconSet are not lowercase kebab-case; operator: enum values notBetween, notEqual, greaterThan, lessThan, greaterOrEqual, lessOrEqual are not lowercase kebab-case; iconSet: enum va..."
-    },
-    {
-      "case": "C-R17 | v2/cells/ops#protect_sheet",
-      "invariant": "C-R17",
-      "rule": "C-R17",
-      "cause": "cells-enum-values-camel-case",
-      "actual": "allow[]: enum values formatCells, insertRows, insertColumns, deleteRows, deleteColumns, autoFilter are not lowercase kebab-case"
-    },
-    {
-      "case": "C-R17 | v2/cells/ops#set_validation",
-      "invariant": "C-R17",
-      "rule": "C-R17",
-      "cause": "cells-enum-values-camel-case",
-      "actual": "type: enum values wholeNumber, textLength are not lowercase kebab-case; operator: enum values notBetween, notEqual, greaterThan, lessThan, greaterOrEqual, lessOrEqual are not lowercase kebab-case"
-    },
-    {
-      "case": "C-R17 | v2/cells/inspect-result",
-      "invariant": "C-R17",
-      "rule": "C-R17",
-      "cause": "cells-enum-values-camel-case",
-      "actual": "cellsValidationInfo.kind.anyOf[0]: enum values wholeNumber, textLength are not lowercase kebab-case"
-    },
-    {
       "case": "C-R20 | v2/cells/ops field bottom",
       "invariant": "C-R20",
       "rule": "C-R20",
@@ -67,49 +39,7 @@
       "actual": "to: to ends a from-to range; a range names its ends first and last"
     },
     {
-      "case": "C-R20 | v2/cells/ops#group_columns ranges",
-      "invariant": "C-R20",
-      "rule": "C-R20",
-      "cause": "cells-from-to-ranges",
-      "actual": "to: to ends a from-to range; a range names its ends first and last"
-    },
-    {
-      "case": "C-R20 | v2/cells/ops#group_rows ranges",
-      "invariant": "C-R20",
-      "rule": "C-R20",
-      "cause": "cells-from-to-ranges",
-      "actual": "to: to ends a from-to range; a range names its ends first and last"
-    },
-    {
       "case": "C-R20 | v2/cells/ops#import_range ranges",
-      "invariant": "C-R20",
-      "rule": "C-R20",
-      "cause": "cells-from-to-ranges",
-      "actual": "to: to ends a from-to range; a range names its ends first and last"
-    },
-    {
-      "case": "C-R20 | v2/cells/ops#resize_columns ranges",
-      "invariant": "C-R20",
-      "rule": "C-R20",
-      "cause": "cells-from-to-ranges",
-      "actual": "to: to ends a from-to range; a range names its ends first and last"
-    },
-    {
-      "case": "C-R20 | v2/cells/ops#resize_rows ranges",
-      "invariant": "C-R20",
-      "rule": "C-R20",
-      "cause": "cells-from-to-ranges",
-      "actual": "to: to ends a from-to range; a range names its ends first and last"
-    },
-    {
-      "case": "C-R20 | v2/cells/ops#ungroup_columns ranges",
-      "invariant": "C-R20",
-      "rule": "C-R20",
-      "cause": "cells-from-to-ranges",
-      "actual": "to: to ends a from-to range; a range names its ends first and last"
-    },
-    {
-      "case": "C-R20 | v2/cells/ops#ungroup_rows ranges",
       "invariant": "C-R20",
       "rule": "C-R20",
       "cause": "cells-from-to-ranges",
@@ -143,20 +73,6 @@
       "actual": "itemsAffected is above 0 but the output has the same package parts and the same inspect and read results as the input"
     },
     {
-      "case": "C-R30 | cells create_chart",
-      "invariant": "C-R30",
-      "rule": "C-R30",
-      "cause": "cells-items-affected-not-from-snapshots",
-      "actual": "itemsAffected is 0 without an OP_NO_EFFECT warning"
-    },
-    {
-      "case": "C-R30 | cells create_pivot",
-      "invariant": "C-R30",
-      "rule": "C-R30",
-      "cause": "cells-items-affected-not-from-snapshots",
-      "actual": "itemsAffected is 0 without an OP_NO_EFFECT warning"
-    },
-    {
       "case": "C-R30 | cells define_name",
       "invariant": "C-R30",
       "rule": "C-R30",
@@ -185,6 +101,13 @@
       "actual": "itemsAffected is 0 without an OP_NO_EFFECT warning"
     },
     {
+      "case": "C-R30 | cells delete_hyperlink",
+      "invariant": "C-R30",
+      "rule": "C-R30",
+      "cause": "cells-items-affected-not-from-snapshots",
+      "actual": "itemsAffected is 0 without an OP_NO_EFFECT warning"
+    },
+    {
       "case": "C-R30 | cells delete_name",
       "invariant": "C-R30",
       "rule": "C-R30",
@@ -200,13 +123,6 @@
     },
     {
       "case": "C-R30 | cells delete_sheet",
-      "invariant": "C-R30",
-      "rule": "C-R30",
-      "cause": "cells-items-affected-not-from-snapshots",
-      "actual": "itemsAffected is 0 without an OP_NO_EFFECT warning"
-    },
-    {
-      "case": "C-R30 | cells edit_comment",
       "invariant": "C-R30",
       "rule": "C-R30",
       "cause": "cells-items-affected-not-from-snapshots",
@@ -234,6 +150,13 @@
       "actual": "itemsAffected is 0 without an OP_NO_EFFECT warning"
     },
     {
+      "case": "C-R30 | cells insert_chart",
+      "invariant": "C-R30",
+      "rule": "C-R30",
+      "cause": "cells-items-affected-not-from-snapshots",
+      "actual": "itemsAffected is 0 without an OP_NO_EFFECT warning"
+    },
+    {
       "case": "C-R30 | cells insert_columns",
       "invariant": "C-R30",
       "rule": "C-R30",
@@ -242,6 +165,13 @@
     },
     {
       "case": "C-R30 | cells insert_image",
+      "invariant": "C-R30",
+      "rule": "C-R30",
+      "cause": "cells-items-affected-not-from-snapshots",
+      "actual": "itemsAffected is 0 without an OP_NO_EFFECT warning"
+    },
+    {
+      "case": "C-R30 | cells insert_pivot",
       "invariant": "C-R30",
       "rule": "C-R30",
       "cause": "cells-items-affected-not-from-snapshots",
@@ -283,13 +213,6 @@
       "actual": "itemsAffected is 0 without an OP_NO_EFFECT warning"
     },
     {
-      "case": "C-R30 | cells remove_hyperlink",
-      "invariant": "C-R30",
-      "rule": "C-R30",
-      "cause": "cells-items-affected-not-from-snapshots",
-      "actual": "itemsAffected is 0 without an OP_NO_EFFECT warning"
-    },
-    {
       "case": "C-R30 | cells rename_sheet",
       "invariant": "C-R30",
       "rule": "C-R30",
@@ -319,6 +242,20 @@
     },
     {
       "case": "C-R30 | cells set_autofilter",
+      "invariant": "C-R30",
+      "rule": "C-R30",
+      "cause": "cells-items-affected-not-from-snapshots",
+      "actual": "itemsAffected is 0 without an OP_NO_EFFECT warning"
+    },
+    {
+      "case": "C-R30 | cells set_chart",
+      "invariant": "C-R30",
+      "rule": "C-R30",
+      "cause": "cells-items-affected-not-from-snapshots",
+      "actual": "itemsAffected is 0 without an OP_NO_EFFECT warning"
+    },
+    {
+      "case": "C-R30 | cells set_comment",
       "invariant": "C-R30",
       "rule": "C-R30",
       "cause": "cells-items-affected-not-from-snapshots",
@@ -409,83 +346,6 @@
       "actual": "itemsAffected is 0 without an OP_NO_EFFECT warning"
     },
     {
-      "case": "C-R30 | cells update_chart",
-      "invariant": "C-R30",
-      "rule": "C-R30",
-      "cause": "cells-items-affected-not-from-snapshots",
-      "actual": "itemsAffected is 0 without an OP_NO_EFFECT warning"
-    },
-    {
-      "case": "C-R21 | v2/cells/ops#set_page_setup",
-      "invariant": "C-R21",
-      "rule": "C-R21",
-      "cause": "cells-page-setup-paper-and-margins-unread",
-      "actual": "paperSize: no read reports it; margins: no read reports it"
-    },
-    {
-      "case": "C-R21 | v2/cells/ops#freeze_panes",
-      "invariant": "C-R21",
-      "rule": "C-R21",
-      "cause": "cells-read-names-differ-from-op-fields",
-      "actual": "cell: read back as freezePanes"
-    },
-    {
-      "case": "C-R21 | v2/cells/ops#group_columns",
-      "invariant": "C-R21",
-      "rule": "C-R21",
-      "cause": "cells-read-names-differ-from-op-fields",
-      "actual": "collapse: read back as collapsed"
-    },
-    {
-      "case": "C-R21 | v2/cells/ops#group_rows",
-      "invariant": "C-R21",
-      "rule": "C-R21",
-      "cause": "cells-read-names-differ-from-op-fields",
-      "actual": "collapse: read back as collapsed"
-    },
-    {
-      "case": "C-R21 | v2/cells/ops#rename_sheet",
-      "invariant": "C-R21",
-      "rule": "C-R21",
-      "cause": "cells-read-names-differ-from-op-fields",
-      "actual": "to: read back as name"
-    },
-    {
-      "case": "C-R21 | v2/cells/ops#set_autofilter",
-      "invariant": "C-R21",
-      "rule": "C-R21",
-      "cause": "cells-read-names-differ-from-op-fields",
-      "actual": "range: read back as autoFilter"
-    },
-    {
-      "case": "C-R21 | v2/cells/ops#set_print_area",
-      "invariant": "C-R21",
-      "rule": "C-R21",
-      "cause": "cells-read-names-differ-from-op-fields",
-      "actual": "range: read back as printArea"
-    },
-    {
-      "case": "C-R20 | v2/cells/ops field at",
-      "invariant": "C-R20",
-      "rule": "C-R20",
-      "cause": "cells-row-and-cell-fields-share-names",
-      "actual": "integer in add_sheet, delete_rows, import_sheet and 1 more; string in create_chart, create_pivot, delete_columns and 2 more"
-    },
-    {
-      "case": "C-R20 | v2/cells/ops field from",
-      "invariant": "C-R20",
-      "rule": "C-R20",
-      "cause": "cells-row-and-cell-fields-share-names",
-      "actual": "integer in group_rows, resize_rows, ungroup_rows; string in copy_range, group_columns, import_range and 2 more"
-    },
-    {
-      "case": "C-R20 | v2/cells/ops field to",
-      "invariant": "C-R20",
-      "rule": "C-R20",
-      "cause": "cells-row-and-cell-fields-share-names",
-      "actual": "integer in group_rows, move_sheet, resize_rows and 1 more; string in copy_range, group_columns, import_range and 3 more"
-    },
-    {
       "case": "C-R19 | cells set_validation applied twice",
       "invariant": "C-R19",
       "rule": "C-R19",
@@ -511,35 +371,21 @@
       "invariant": "C-R21",
       "rule": "C-R21",
       "cause": "cells-state-not-read-back",
-      "actual": "dataRange: no read reports it; location: no read reports it; type: no read reports it; color: no read reports it"
+      "actual": "dataRange: no read reports it; location: no read reports it; kind: no read reports it; color: no read reports it"
     },
     {
-      "case": "C-R21 | v2/cells/ops#create_chart",
+      "case": "C-R21 | v2/cells/ops#define_table",
       "invariant": "C-R21",
       "rule": "C-R21",
       "cause": "cells-state-not-read-back",
-      "actual": "type: read back as kind; dataRange: no read reports it; title: no read reports it; seriesInRows: no read reports it; legend: no read reports it; axisTitles: no read reports it; seriesColors: no read reports it; dataLabels: no read reports i..."
+      "actual": "tableStyle: no read reports it; totalsRow: no read reports it"
     },
     {
-      "case": "C-R21 | v2/cells/ops#create_pivot",
+      "case": "C-R21 | v2/cells/ops#insert_chart",
       "invariant": "C-R21",
       "rule": "C-R21",
       "cause": "cells-state-not-read-back",
-      "actual": "sourceRange: no read reports it; rows: no read reports it; columns: no read reports it; values: no read reports it; captions: no read reports it"
-    },
-    {
-      "case": "C-R21 | v2/cells/ops#create_table",
-      "invariant": "C-R21",
-      "rule": "C-R21",
-      "cause": "cells-state-not-read-back",
-      "actual": "style: no read reports it; totalsRow: no read reports it"
-    },
-    {
-      "case": "C-R21 | v2/cells/ops#edit_comment",
-      "invariant": "C-R21",
-      "rule": "C-R21",
-      "cause": "cells-state-not-read-back",
-      "actual": "text: no read reports it; author: no read reports it"
+      "actual": "dataRange: no read reports it; title: no read reports it; seriesInRows: no read reports it; legend: no read reports it; axisTitles: no read reports it; seriesColors: no read reports it; dataLabels: no read reports it"
     },
     {
       "case": "C-R21 | v2/cells/ops#insert_image",
@@ -547,6 +393,13 @@
       "rule": "C-R21",
       "cause": "cells-state-not-read-back",
       "actual": "width: no read reports it; height: no read reports it"
+    },
+    {
+      "case": "C-R21 | v2/cells/ops#insert_pivot",
+      "invariant": "C-R21",
+      "rule": "C-R21",
+      "cause": "cells-state-not-read-back",
+      "actual": "sourceRange: no read reports it; rows: no read reports it; columns: no read reports it; values: no read reports it; captions: no read reports it"
     },
     {
       "case": "C-R21 | v2/cells/ops#protect_sheet",
@@ -560,7 +413,7 @@
       "invariant": "C-R21",
       "rule": "C-R21",
       "cause": "cells-state-not-read-back",
-      "actual": "width: no read reports it"
+      "actual": "widthChars: no read reports it"
     },
     {
       "case": "C-R21 | v2/cells/ops#resize_rows",
@@ -574,14 +427,28 @@
       "invariant": "C-R21",
       "rule": "C-R21",
       "cause": "cells-state-not-read-back",
-      "actual": "edges: no read reports it; style: no read reports it; color: no read reports it"
+      "actual": "edges: no read reports it; lineStyle: no read reports it; color: no read reports it"
+    },
+    {
+      "case": "C-R21 | v2/cells/ops#set_chart",
+      "invariant": "C-R21",
+      "rule": "C-R21",
+      "cause": "cells-state-not-read-back",
+      "actual": "title: no read reports it; dataRange: no read reports it; seriesInRows: no read reports it; legend: no read reports it; axisTitles: no read reports it; seriesColors: no read reports it; dataLabels: no read reports it"
+    },
+    {
+      "case": "C-R21 | v2/cells/ops#set_comment",
+      "invariant": "C-R21",
+      "rule": "C-R21",
+      "cause": "cells-state-not-read-back",
+      "actual": "text: no read reports it; author: no read reports it"
     },
     {
       "case": "C-R21 | v2/cells/ops#set_default_font",
       "invariant": "C-R21",
       "rule": "C-R21",
       "cause": "cells-state-not-read-back",
-      "actual": "font: no read reports it; size: no read reports it"
+      "actual": "font: no read reports it; fontSize: no read reports it"
     },
     {
       "case": "C-R21 | v2/cells/ops#set_hyperlink",
@@ -609,49 +476,21 @@
       "invariant": "C-R21",
       "rule": "C-R21",
       "cause": "cells-state-not-read-back",
-      "actual": "type: read back as kind; operator: no read reports it; value1: no read reports it; value2: no read reports it; listItems: no read reports it; listSource: no read reports it; inputMessage: no read reports it; errorMessage: no read reports it..."
-    },
-    {
-      "case": "C-R21 | v2/cells/ops#update_chart",
-      "invariant": "C-R21",
-      "rule": "C-R21",
-      "cause": "cells-state-not-read-back",
-      "actual": "title: no read reports it; dataRange: no read reports it; type: read back as kind; seriesInRows: no read reports it; legend: no read reports it; axisTitles: no read reports it; seriesColors: no read reports it; dataLabels: no read reports i..."
-    },
-    {
-      "case": "C-R20 | v2/cells/ops#cellsConditionalStyle spelling",
-      "invariant": "C-R20",
-      "rule": "C-R20",
-      "cause": "cells-style-abbreviated-names",
-      "actual": "bg: abbreviated name"
-    },
-    {
-      "case": "C-R20 | v2/cells/ops#cellsStyleData spelling",
-      "invariant": "C-R20",
-      "rule": "C-R20",
-      "cause": "cells-style-abbreviated-names",
-      "actual": "bg: abbreviated name; hAlign: abbreviated name; vAlign: abbreviated name"
-    },
-    {
-      "case": "C-R20 | v2/cells/read-result spelling",
-      "invariant": "C-R20",
-      "rule": "C-R20",
-      "cause": "cells-style-abbreviated-names",
-      "actual": "cellsStyleData.bg: abbreviated name; cellsStyleData.hAlign: abbreviated name; cellsStyleData.vAlign: abbreviated name"
+      "actual": "operator: no read reports it; value1: no read reports it; value2: no read reports it; listItems: no read reports it; listSource: no read reports it; inputMessage: no read reports it; errorMessage: no read reports it; allowBlank: no read rep..."
     },
     {
       "case": "C-R20 | v2/cells/ops field style",
       "invariant": "C-R20",
       "rule": "C-R20",
       "cause": "cells-style-has-three-types",
-      "actual": "enum in set_borders; object{bg,bold,color,font,hAlign,indent,italic,locked,numberFormat,size,strikethrough,underline,vAlign,wrap} in format_range; object{bg,bold,color,italic,numberFormat,strikethrough,underline} in add_conditional_format; ..."
+      "actual": "object{alignment,bold,color,fillColor,font,fontSize,indent,italic,locked,numberFormat,strikethrough,underline,verticalAlignment,wrap} in format_range; object{bold,color,fillColor,italic,numberFormat,strikethrough,underline} in add_condition..."
     },
     {
       "case": "C-R30 | cells targets read <unit>/<address>",
       "invariant": "C-R30",
       "rule": "C-R30",
       "cause": "cells-targets-not-unit-address",
-      "actual": "targets outside <unit>/<address>: add_comment Sheet1!A1; add_conditional_format Sheet1!B2:B3; add_sheet Extra; add_sparkline Sheet1!C2; format_range Sheet1!A1:B1; set_autofilter Sheet1!A1:B3; set_borders Sheet1!A1:B3; set_formula Sheet1!C2;..."
+      "actual": "targets outside <unit>/<address>: add_comment Sheet1!A1; add_conditional_format Sheet1!B2:B3; add_sparkline Sheet1!C2; format_range Sheet1!A1:B1; set_autofilter Sheet1!A1:B3; set_borders Sheet1!A1:B3; set_formula Sheet1!C2; set_hyperlink Sh..."
     },
     {
       "case": "C-R38 | src/Aspose.Cli.Product.Cells",
@@ -661,130 +500,11 @@
       "actual": "Contracts/JsonValueMatrix.cs: '--data' is no option of any command"
     },
     {
-      "case": "C-R20 | v2/cells/ops#cellsConditionalStyle fixednames",
-      "invariant": "C-R20",
-      "rule": "C-R20",
-      "cause": "fill-not-named-fill-color",
-      "actual": "bg: a fill is named fillColor"
-    },
-    {
-      "case": "C-R20 | v2/cells/ops#set_default_font fixednames",
-      "invariant": "C-R20",
-      "rule": "C-R20",
-      "cause": "font-size-not-named-font-size",
-      "actual": "size: a font size is named fontSize"
-    },
-    {
-      "case": "C-R20 | v2/cells/ops#cellsStyleData fixednames",
-      "invariant": "C-R20",
-      "rule": "C-R20",
-      "cause": "font-size-not-named-font-size",
-      "actual": "size: a font size is named fontSize; bg: a fill is named fillColor"
-    },
-    {
-      "case": "C-R20 | v2/cells/read-result fixednames",
-      "invariant": "C-R20",
-      "rule": "C-R20",
-      "cause": "font-size-not-named-font-size",
-      "actual": "cellsStyleData.size: a font size is named fontSize; cellsStyleData.bg: a fill is named fillColor"
-    },
-    {
-      "case": "C-R20 | v2/cells/ops field height",
-      "invariant": "C-R20",
-      "rule": "C-R20",
-      "cause": "measure-names-without-unit",
-      "actual": "integer in insert_image; number in resize_rows"
-    },
-    {
-      "case": "C-R20 | v2/cells/ops field width",
-      "invariant": "C-R20",
-      "rule": "C-R20",
-      "cause": "measure-names-without-unit",
-      "actual": "integer in insert_image; number in resize_columns"
-    },
-    {
-      "case": "C-R20 | v2/cells/ops#insert_image units",
-      "invariant": "C-R20",
-      "rule": "C-R20",
-      "cause": "measure-names-without-unit",
-      "actual": "height: measured in pixels; name it *Pixels; width: measured in pixels; name it *Pixels"
-    },
-    {
-      "case": "C-R20 | v2/cells/ops#cellsMargins units",
-      "invariant": "C-R20",
-      "rule": "C-R20",
-      "cause": "measure-names-without-unit",
-      "actual": "bottom: measured in inches; name it *Inches; footer: measured in inches; name it *Inches; header: measured in inches; name it *Inches; left: measured in inches; name it *Inches; right: measured in inches; name it *Inches; top: measured in i..."
-    },
-    {
-      "case": "C-R20 | v2/cells/ops#resize_columns units",
-      "invariant": "C-R20",
-      "rule": "C-R20",
-      "cause": "measure-names-without-unit",
-      "actual": "width: measured in characters; name it *Chars"
-    },
-    {
-      "case": "C-R20 | v2/cells/ops#set_page_setup units",
-      "invariant": "C-R20",
-      "rule": "C-R20",
-      "cause": "measure-names-without-unit",
-      "actual": "scale: measured in percent; name it *Percent"
-    },
-    {
       "case": "C-R20 | v2/cells/ops#set_sheet_view units",
       "invariant": "C-R20",
       "rule": "C-R20",
       "cause": "measure-names-without-unit",
       "actual": "zoom: measured in percent; name it *Percent"
-    },
-    {
-      "case": "C-R19 | v2/cells/ops#create_chart",
-      "invariant": "C-R19",
-      "rule": "C-R19",
-      "cause": "op-verb-create",
-      "actual": "op create_chart is not <verb>_<noun> with a verb of the rule's table"
-    },
-    {
-      "case": "C-R19 | v2/cells/ops#create_pivot",
-      "invariant": "C-R19",
-      "rule": "C-R19",
-      "cause": "op-verb-create",
-      "actual": "op create_pivot is not <verb>_<noun> with a verb of the rule's table"
-    },
-    {
-      "case": "C-R19 | v2/cells/ops#create_table",
-      "invariant": "C-R19",
-      "rule": "C-R19",
-      "cause": "op-verb-create",
-      "actual": "op create_table is not <verb>_<noun> with a verb of the rule's table"
-    },
-    {
-      "case": "C-R19 | v2/cells/ops#edit_comment",
-      "invariant": "C-R19",
-      "rule": "C-R19",
-      "cause": "op-verb-edit",
-      "actual": "op edit_comment is not <verb>_<noun> with a verb of the rule's table"
-    },
-    {
-      "case": "C-R19 | v2/cells/ops#remove_duplicates",
-      "invariant": "C-R19",
-      "rule": "C-R19",
-      "cause": "op-verb-remove",
-      "actual": "op remove_duplicates is not <verb>_<noun> with a verb of the rule's table"
-    },
-    {
-      "case": "C-R19 | v2/cells/ops#remove_hyperlink",
-      "invariant": "C-R19",
-      "rule": "C-R19",
-      "cause": "op-verb-remove",
-      "actual": "op remove_hyperlink is not <verb>_<noun> with a verb of the rule's table"
-    },
-    {
-      "case": "C-R19 | v2/cells/ops#update_chart",
-      "invariant": "C-R19",
-      "rule": "C-R19",
-      "cause": "op-verb-update",
-      "actual": "op update_chart is not <verb>_<noun> with a verb of the rule's table"
     },
     {
       "case": "C-R20 | ops field location across products",
@@ -801,60 +521,11 @@
       "actual": "cells object{bottom,footer,header,left,right,top}; words object{bottom,left,right,top}"
     },
     {
-      "case": "C-R20 | v2/cells/ops#set_page_setup fixednames",
-      "invariant": "C-R20",
-      "rule": "C-R20",
-      "cause": "page-size-not-named-page-size",
-      "actual": "paperSize: a page size is named pageSize"
-    },
-    {
-      "case": "C-R20 | v2/cells/ops#import_range secrets",
-      "invariant": "C-R20",
-      "rule": "C-R20",
-      "cause": "source-password-named-password-env",
-      "actual": "passwordEnv: the source file's password is named sourcePasswordEnv"
-    },
-    {
-      "case": "C-R20 | v2/cells/ops#import_sheet secrets",
-      "invariant": "C-R20",
-      "rule": "C-R20",
-      "cause": "source-password-named-password-env",
-      "actual": "passwordEnv: the source file's password is named sourcePasswordEnv"
-    },
-    {
       "case": "C-R38 | src/Aspose.Cli.Product.Cells bare commands",
       "invariant": "C-R38",
       "rule": "C-R38",
       "cause": "source-writes-commands-bare",
       "actual": "Engine/Mapping/RowShifts.cs: 'cells edit' is written bare; quote it or write aspose-cli before it"
-    },
-    {
-      "case": "C-R20 | v2/cells/ops#add_sparkline variants",
-      "invariant": "C-R20",
-      "rule": "C-R20",
-      "cause": "variant-field-named-type",
-      "actual": "type: a variant named type, not kind"
-    },
-    {
-      "case": "C-R20 | v2/cells/ops#create_chart variants",
-      "invariant": "C-R20",
-      "rule": "C-R20",
-      "cause": "variant-field-named-type",
-      "actual": "type: a variant named type, not kind"
-    },
-    {
-      "case": "C-R20 | v2/cells/ops#set_validation variants",
-      "invariant": "C-R20",
-      "rule": "C-R20",
-      "cause": "variant-field-named-type",
-      "actual": "type: a variant named type, not kind"
-    },
-    {
-      "case": "C-R20 | v2/cells/ops#update_chart variants",
-      "invariant": "C-R20",
-      "rule": "C-R20",
-      "cause": "variant-field-named-type",
-      "actual": "type: a variant named type, not kind"
     }
   ]
 }

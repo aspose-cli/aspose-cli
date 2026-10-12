@@ -83,7 +83,7 @@ public sealed record CellsSheetInfo
     /// <summary>Sheet name, exactly as shown in Excel.</summary>
     public required string Name { get; init; }
 
-    /// <summary>1-based position in the tab order, as add_sheet and move_sheet take it.</summary>
+    /// <summary>1-based position in the tab order, as insert_sheet and move_sheet take it.</summary>
     [Minimum(1)]
     public required int Position { get; init; }
 
@@ -133,20 +133,17 @@ public sealed record CellsSheetInfo
 }
 
 /// <summary>
-/// The view and print layout of one sheet, in the terms of the operations that set it:
-/// freeze_panes, group_rows, group_columns, set_autofilter, set_print_area and set_page_setup.
-/// A field is omitted when the sheet does not have that setting.
+/// The view and print layout of one sheet, read as the objects the operations that set it name:
+/// freeze_panes, group_rows, group_columns, set_autofilter, set_print_area and set_page_setup,
+/// each with the fields of its operation. An object is omitted when the sheet does not have it.
 /// </summary>
 public sealed record CellsSheetLayoutInfo
 {
     /// <summary>The sheet's name.</summary>
     public required string Sheet { get; init; }
 
-    /// <summary>
-    /// The top-left cell of the scrolling pane when panes are frozen, as freeze_panes takes it:
-    /// <c>A2</c> freezes row 1, <c>B2</c> row 1 and column A.
-    /// </summary>
-    public string? FreezePanes { get; init; }
+    /// <summary>The frozen panes, as freeze_panes sets them.</summary>
+    public CellsFreezePanesInfo? FreezePanes { get; init; }
 
     /// <summary>Row outline groups, outer levels first, each a run of rows at its level or deeper.</summary>
     public IReadOnlyList<CellsRowGroupInfo>? RowGroups { get; init; }
@@ -154,21 +151,55 @@ public sealed record CellsSheetLayoutInfo
     /// <summary>Column outline groups, outer levels first, each a run of columns at its level or deeper.</summary>
     public IReadOnlyList<CellsColumnGroupInfo>? ColumnGroups { get; init; }
 
-    /// <summary>The range the sheet's AutoFilter covers, header row included.</summary>
-    public string? AutoFilter { get; init; }
+    /// <summary>The sheet's AutoFilter, as set_autofilter sets it.</summary>
+    public CellsAutofilterInfo? Autofilter { get; init; }
 
-    /// <summary>The print area, such as <c>A1:H50</c>; several areas are comma-separated.</summary>
-    public string? PrintArea { get; init; }
+    /// <summary>The print area and print titles, as set_print_area sets them.</summary>
+    public CellsPrintAreaInfo? PrintArea { get; init; }
 
-    /// <summary>The rows repeated on every printed page, such as <c>1:2</c>.</summary>
+    /// <summary>The page setup, as set_page_setup sets it.</summary>
+    public required CellsPageSetupInfo PageSetup { get; init; }
+}
+
+/// <summary>A sheet's frozen panes.</summary>
+public sealed record CellsFreezePanesInfo
+{
+    /// <summary>The top-left cell of the scrolling pane: <c>A2</c> freezes row 1, <c>B2</c> row 1 and column A.</summary>
+    public required string Cell { get; init; }
+}
+
+/// <summary>A sheet's AutoFilter.</summary>
+public sealed record CellsAutofilterInfo
+{
+    /// <summary>The range the AutoFilter covers, header row included.</summary>
+    public required string Range { get; init; }
+}
+
+/// <summary>A sheet's print area and the rows and columns repeated on every printed page.</summary>
+public sealed record CellsPrintAreaInfo
+{
+    /// <summary>The print area, such as <c>A1:H50</c>; several areas are comma-separated. Omitted when only titles are set.</summary>
+    public string? Range { get; init; }
+
+    /// <summary>The rows repeated on every printed page, such as <c>$1:$2</c>.</summary>
     public string? TitleRows { get; init; }
 
-    /// <summary>The columns repeated on every printed page, such as <c>A:B</c>.</summary>
+    /// <summary>The columns repeated on every printed page, such as <c>$A:$B</c>.</summary>
     public string? TitleColumns { get; init; }
+}
 
+/// <summary>A sheet's page setup for printing and PDF export.</summary>
+public sealed record CellsPageSetupInfo
+{
     /// <summary>The page orientation: <c>portrait</c> or <c>landscape</c>.</summary>
     [AllowedValues(typeof(CellsPageOrientations))]
     public required string Orientation { get; init; }
+
+    /// <summary>The page size as the page is laid out: in landscape the width is the longer side, so it writes back unchanged with the orientation.</summary>
+    public required PageSizeInfo PageSize { get; init; }
+
+    /// <summary>The zoom percentage; present when the printout does not fit to pages.</summary>
+    public int? ScalePercent { get; init; }
 
     /// <summary>The number of pages the printout fits across, 0 automatic; present when it fits to pages.</summary>
     [Minimum(0)]
@@ -178,13 +209,13 @@ public sealed record CellsSheetLayoutInfo
     [Minimum(0)]
     public int? FitToHeight { get; init; }
 
-    /// <summary>The zoom percentage; present when the printout does not fit to pages.</summary>
-    public int? Scale { get; init; }
+    /// <summary>The page margins in points, every side.</summary>
+    public required CellsMargins Margins { get; init; }
 
-    /// <summary>The center header text, with Excel codes such as &amp;P.</summary>
+    /// <summary>The center header text, with Excel codes such as &amp;P; omitted when empty.</summary>
     public string? Header { get; init; }
 
-    /// <summary>The center footer text, with Excel codes such as &amp;P and &amp;N.</summary>
+    /// <summary>The center footer text, with Excel codes such as &amp;P and &amp;N; omitted when empty.</summary>
     public string? Footer { get; init; }
 }
 
@@ -193,11 +224,11 @@ public sealed record CellsRowGroupInfo
 {
     /// <summary>The first row of the group (1-based).</summary>
     [Minimum(1)]
-    public required int From { get; init; }
+    public required int First { get; init; }
 
     /// <summary>The last row of the group (1-based).</summary>
     [Minimum(1)]
-    public required int To { get; init; }
+    public required int Last { get; init; }
 
     /// <summary>The outline level, 1 for the outermost group.</summary>
     [Minimum(1)]
@@ -211,10 +242,10 @@ public sealed record CellsRowGroupInfo
 public sealed record CellsColumnGroupInfo
 {
     /// <summary>The first column of the group.</summary>
-    public required string From { get; init; }
+    public required string First { get; init; }
 
     /// <summary>The last column of the group.</summary>
-    public required string To { get; init; }
+    public required string Last { get; init; }
 
     /// <summary>The outline level, 1 for the outermost group.</summary>
     [Minimum(1)]
@@ -253,7 +284,7 @@ public sealed record CellsChartInfo
     /// <summary>Sheet the chart is on.</summary>
     public required string Sheet { get; init; }
 
-    /// <summary>The 1-based index of the chart on its sheet, as update_chart and delete_chart take it.</summary>
+    /// <summary>The 1-based index of the chart on its sheet, as set_chart and delete_chart take it.</summary>
     [Minimum(1)]
     public required int Index { get; init; }
 
@@ -261,7 +292,7 @@ public sealed record CellsChartInfo
     public required string Name { get; init; }
 
     /// <summary>
-    /// The chart kind: a create_chart type such as <c>column</c>, or the lower-camel engine name
+    /// The chart kind: a insert_chart type such as <c>column</c>, or the lower-camel engine name
     /// of a type outside that vocabulary, such as <c>columnStacked</c>.
     /// </summary>
     [AllowedValues(typeof(CellsChartTypes)), OpenEnum("^[a-z][A-Za-z0-9]*$")]
@@ -291,9 +322,9 @@ public sealed record CellsValidationInfo
     public required string Range { get; init; }
 
     /// <summary>
-    /// The validation kind: a set_validation type such as <c>list</c> or <c>wholeNumber</c>, or
-    /// the lower-camel engine name of a type outside that vocabulary, such as <c>anyValue</c>.
+    /// The validation kind: a set_validation kind such as <c>list</c> or <c>whole-number</c>, or
+    /// the lower-kebab engine name of a kind outside that vocabulary, such as <c>any-value</c>.
     /// </summary>
-    [AllowedValues(typeof(CellsValidationTypes)), OpenEnum("^[a-z][A-Za-z0-9]*$")]
+    [AllowedValues(typeof(CellsValidationTypes)), OpenEnum("^[a-z][a-z0-9]*(-[a-z0-9]+)*$")]
     public required string Kind { get; init; }
 }

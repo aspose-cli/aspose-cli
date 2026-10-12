@@ -1,6 +1,6 @@
 namespace Aspose.Cli.Product.Cells.Contracts;
 
-/// <summary>Accepted values of <see cref="CellsStyleData.VAlign"/>.</summary>
+/// <summary>Accepted values of <see cref="CellsStyleData.VerticalAlignment"/>.</summary>
 public static class CellsVerticalAlignments
 {
     public const string Top = "top";

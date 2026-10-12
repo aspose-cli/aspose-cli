@@ -9,7 +9,7 @@ namespace Aspose.Cli.Product.Cells.Contracts;
 /// the cells' formatting is preserved. A single cell has no inner lines, so it needs an outer edge.
 /// </summary>
 [Operation("set_borders")]
-public sealed record SetBordersOp : CellsOp
+public sealed record SetBordersOp : CellsSheetOp
 {
     /// <summary>The range to border, such as B2:D10.</summary>
     [A1Range] public required string Range { get; init; }
@@ -21,8 +21,9 @@ public sealed record SetBordersOp : CellsOp
     [NotReadBack]
     [MinItems(1), AllowedValues(typeof(CellsBorderEdges))] public required IReadOnlyList<string> Edges { get; init; }
 
+    [MistakenFor("style")]
     [NotReadBack]
-    [AllowedValues(typeof(CellsBorderLineStyles))] public string Style { get; init; } = CellsBorderLineStyles.Thin;
+    [AllowedValues(typeof(CellsBorderLineStyles))] public string LineStyle { get; init; } = CellsBorderLineStyles.Thin;
 
     [NotReadBack]
     [HexColor] public string Color { get; init; } = "#000000";
@@ -64,7 +65,7 @@ public static class CellsBorderEdges
     public const string Everything = "all";
 }
 
-/// <summary>Accepted values of <see cref="SetBordersOp.Style"/>.</summary>
+/// <summary>Accepted values of <see cref="SetBordersOp.LineStyle"/>.</summary>
 public static class CellsBorderLineStyles
 {
     public const string Hair = "hair";

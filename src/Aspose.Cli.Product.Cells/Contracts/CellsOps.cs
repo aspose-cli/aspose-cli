@@ -13,9 +13,17 @@ public sealed record CellsOpsBatch : BoundedOperationEnvelope<CellsOp>;
 /// the active sheet; rows are 1-based numbers, columns are letters, and cells and ranges use A1
 /// notation on that sheet unless a field says it may name another sheet.
 /// </summary>
-[OperationVocabulary("ops", JsonContext = typeof(CellsOpsJsonContext), Addresses = new[] { "sheet", "range", "cell", "at", "from", "to", "index", "path", "passwordEnv" })]
+[OperationVocabulary("ops", JsonContext = typeof(CellsOpsJsonContext), Addresses = new[] { "sheet", "sourceSheet", "range", "cell", "at", "from", "to", "first", "last", "index", "path", "passwordEnv", "sourcePasswordEnv" },
+    Common = new[] { "set_values", "set_formula", "format_range", "resize_columns", "insert_chart", "insert_sheet", "rename_sheet", "freeze_panes", "set_borders", "merge_cells", "set_autofilter", "define_table", "sort_range", "add_conditional_format", "set_validation", "insert_pivot", "set_page_setup" })]
 [JsonConverter(typeof(OperationJsonConverter<CellsOp>))]
 public abstract partial record CellsOp : BoundedOperation
+{
+    /// <summary>The sheet the operation targets; null for the active sheet or an operation on the workbook.</summary>
+    internal string? TargetSheet => this is CellsSheetOp sheetOp ? sheetOp.Sheet : null;
+}
+
+/// <summary>An operation on one sheet, named by its sheet field.</summary>
+public abstract record CellsSheetOp : CellsOp
 {
     /// <summary>The target sheet; the active sheet when omitted.</summary>
     public virtual string? Sheet { get; init; }
@@ -25,15 +33,18 @@ public abstract partial record CellsOp : BoundedOperation
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull, WriteIndented = true)]
 [JsonSerializable(typeof(AddCommentOp))]
 [JsonSerializable(typeof(AddConditionalFormatOp))]
-[JsonSerializable(typeof(AddSheetOp))]
+[JsonSerializable(typeof(InsertSheetOp))]
 [JsonSerializable(typeof(AddSparklineOp))]
+[JsonSerializable(typeof(ClearAutoFilterOp))]
 [JsonSerializable(typeof(ClearConditionalFormatsOp))]
+[JsonSerializable(typeof(ClearPrintAreaOp))]
 [JsonSerializable(typeof(ClearRangeOp))]
+[JsonSerializable(typeof(ClearTabColorOp))]
 [JsonSerializable(typeof(ClearValidationOp))]
 [JsonSerializable(typeof(CopyRangeOp))]
-[JsonSerializable(typeof(CreateChartOp))]
-[JsonSerializable(typeof(CreatePivotOp))]
-[JsonSerializable(typeof(CreateTableOp))]
+[JsonSerializable(typeof(InsertChartOp))]
+[JsonSerializable(typeof(InsertPivotOp))]
+[JsonSerializable(typeof(DefineTableOp))]
 [JsonSerializable(typeof(DefineNameOp))]
 [JsonSerializable(typeof(DeleteChartOp))]
 [JsonSerializable(typeof(DeleteColumnsOp))]
@@ -41,7 +52,7 @@ public abstract partial record CellsOp : BoundedOperation
 [JsonSerializable(typeof(DeleteNameOp))]
 [JsonSerializable(typeof(DeleteRowsOp))]
 [JsonSerializable(typeof(DeleteSheetOp))]
-[JsonSerializable(typeof(EditCommentOp))]
+[JsonSerializable(typeof(SetCommentOp))]
 [JsonSerializable(typeof(FormatRangeOp))]
 [JsonSerializable(typeof(FreezePanesOp))]
 [JsonSerializable(typeof(GroupColumnsOp))]
@@ -56,8 +67,8 @@ public abstract partial record CellsOp : BoundedOperation
 [JsonSerializable(typeof(ProtectSheetOp))]
 [JsonSerializable(typeof(ProtectWorkbookOp))]
 [JsonSerializable(typeof(RefreshPivotOp))]
-[JsonSerializable(typeof(RemoveDuplicatesOp))]
-[JsonSerializable(typeof(RemoveHyperlinkOp))]
+[JsonSerializable(typeof(DeleteDuplicatesOp))]
+[JsonSerializable(typeof(DeleteHyperlinkOp))]
 [JsonSerializable(typeof(RenameSheetOp))]
 [JsonSerializable(typeof(ResizeColumnsOp))]
 [JsonSerializable(typeof(ResizeRowsOp))]
@@ -77,8 +88,9 @@ public abstract partial record CellsOp : BoundedOperation
 [JsonSerializable(typeof(SortRangeOp))]
 [JsonSerializable(typeof(UngroupColumnsOp))]
 [JsonSerializable(typeof(UngroupRowsOp))]
+[JsonSerializable(typeof(UnfreezePanesOp))]
 [JsonSerializable(typeof(UnmergeCellsOp))]
 [JsonSerializable(typeof(UnprotectSheetOp))]
 [JsonSerializable(typeof(UnprotectWorkbookOp))]
-[JsonSerializable(typeof(UpdateChartOp))]
+[JsonSerializable(typeof(SetChartOp))]
 internal sealed partial class CellsOpsJsonContext : JsonSerializerContext;

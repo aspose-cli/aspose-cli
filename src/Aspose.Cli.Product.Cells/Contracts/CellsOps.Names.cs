@@ -6,6 +6,7 @@ namespace Aspose.Cli.Product.Cells.Contracts;
 
 /// <summary>Creates or replaces a workbook-scoped defined name (a named range).</summary>
 [Operation("define_name")]
+[MistakenFor("add_name", "create_name")]
 public sealed record DefineNameOp : CellsOp
 {
     /// <summary>The name, such as TaxRate.</summary>

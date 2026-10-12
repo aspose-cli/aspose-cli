@@ -79,10 +79,10 @@ Microsoft YaHei for CJK-primary workbooks:
 
 ```sh
 aspose-cli cells edit book.xlsx --in-place --ops '{"ops":[
-  {"op":"set_default_font","font":"Calibri","size":11}
+  {"op":"set_default_font","font":"Calibri","fontSize":11}
 ]}'
 # CJK-primary workbook instead:
-#   {"op":"set_default_font","font":"DengXian","size":11}
+#   {"op":"set_default_font","font":"DengXian","fontSize":11}
 ```
 
 ## 3. Title band
@@ -99,9 +99,9 @@ across empty neighbors and looks identical:
 aspose-cli cells edit book.xlsx --in-place --ops '{"ops":[
   {"op":"set_values","sheet":"Dashboard","range":"B1","values":[["Sales Performance"]]},
   {"op":"set_values","sheet":"Dashboard","range":"B2","values":[["Revenue in US$ 000s · FY2026 Jan–Jun · source: CRM export"]]},
-  {"op":"format_range","sheet":"Dashboard","range":"B1","style":{"bold":true,"size":16,"color":"#1F3864"}},
-  {"op":"format_range","sheet":"Dashboard","range":"B2","style":{"size":9,"color":"#808080"}},
-  {"op":"resize_rows","sheet":"Dashboard","from":1}
+  {"op":"format_range","sheet":"Dashboard","range":"B1","style":{"bold":true,"fontSize":16,"color":"#1F3864"}},
+  {"op":"format_range","sheet":"Dashboard","range":"B2","style":{"fontSize":9,"color":"#808080"}},
+  {"op":"resize_rows","sheet":"Dashboard","first":1}
 ]}'
 ```
 
@@ -121,9 +121,9 @@ freeze exactly at the label/data boundary:
 
 ```sh
 aspose-cli cells edit book.xlsx --in-place --ops '{"ops":[
-  {"op":"format_range","sheet":"Data","range":"A1:I1","style":{"bold":true,"bg":"#1F3864","color":"#FFFFFF","wrap":true}},
-  {"op":"resize_rows","sheet":"Data","from":1,"height":22},
-  {"op":"set_borders","sheet":"Data","range":"A1:I1","edges":["bottom"],"style":"medium","color":"#1F3864"},
+  {"op":"format_range","sheet":"Data","range":"A1:I1","style":{"bold":true,"fillColor":"#1F3864","color":"#FFFFFF","wrap":true}},
+  {"op":"resize_rows","sheet":"Data","first":1,"height":22},
+  {"op":"set_borders","sheet":"Data","range":"A1:I1","edges":["bottom"],"lineStyle":"medium","color":"#1F3864"},
   {"op":"freeze_panes","sheet":"Data","cell":"A2"}
 ]}'
 ```
@@ -153,9 +153,9 @@ column gaps carry the vertical structure.
 
 ```sh
 aspose-cli cells edit book.xlsx --in-place --ops '{"ops":[
-  {"op":"set_borders","sheet":"Data","range":"A2:I7","edges":["horizontal"],"style":"hair","color":"#D9D9D9"},
-  {"op":"set_borders","sheet":"Data","range":"A8:I8","edges":["top"],"style":"thin"},
-  {"op":"set_borders","sheet":"Data","range":"A8:I8","edges":["bottom"],"style":"double"}
+  {"op":"set_borders","sheet":"Data","range":"A2:I7","edges":["horizontal"],"lineStyle":"hair","color":"#D9D9D9"},
+  {"op":"set_borders","sheet":"Data","range":"A8:I8","edges":["top"],"lineStyle":"thin"},
+  {"op":"set_borders","sheet":"Data","range":"A8:I8","edges":["bottom"],"lineStyle":"double"}
 ]}'
 ```
 
@@ -172,7 +172,7 @@ brings its own header treatment and banding:
 
 ```sh
 aspose-cli cells edit book.xlsx --in-place --ops '{"ops":[
-  {"op":"create_table","sheet":"Data","range":"A1:I7","name":"Orders","style":"TableStyleMedium2"}
+  {"op":"define_table","sheet":"Data","range":"A1:I7","name":"Orders","tableStyle":"TableStyleMedium2"}
 ]}'
 ```
 
@@ -182,37 +182,37 @@ band manually — a formula rule, striping every other row:
 
 ```sh
 aspose-cli cells edit book.xlsx --in-place --ops '{"ops":[
-  {"op":"add_conditional_format","sheet":"Data","range":"A2:I7","rule":{"kind":"formula","value1":"=MOD(ROW(),2)=0"},"style":{"bg":"#F7F7F7"}}
+  {"op":"add_conditional_format","sheet":"Data","range":"A2:I7","rule":{"kind":"formula","value1":"=MOD(ROW(),2)=0"},"style":{"fillColor":"#F7F7F7"}}
 ]}'
 ```
 
 Banding OR air — never both: either zebra stripes at default row height, or
 no stripes and generous rows (18-20pt at 11pt body). Emphasis inside a table
 is semantic and scarce (a sheet where everything is highlighted says
-nothing), and the rules below are a menu, not a stack — a `dataBar` under a
-`topBottom` font color on the same column paints the number over the bar,
+nothing), and the rules below are a menu, not a stack — a `data-bar` under a
+`top-bottom` font color on the same column paints the number over the bar,
 busily (measured); pick the one that carries the message:
 
 ```sh
 aspose-cli cells edit book.xlsx --in-place --ops '{"ops":[
-  {"op":"add_conditional_format","sheet":"Data","range":"H2:H7","rule":{"kind":"dataBar","barColor":"#4472C4"}},
-  {"op":"add_conditional_format","sheet":"Data","range":"A2:I7","rule":{"kind":"formula","value1":"=$H2>5000"},"style":{"bg":"#FFF2CC"}},
-  {"op":"add_conditional_format","sheet":"Data","range":"H2:H7","rule":{"kind":"topBottom","rank":3},"style":{"bold":true,"color":"#548235"}}
+  {"op":"add_conditional_format","sheet":"Data","range":"H2:H7","rule":{"kind":"data-bar","barColor":"#4472C4"}},
+  {"op":"add_conditional_format","sheet":"Data","range":"A2:I7","rule":{"kind":"formula","value1":"=$H2>5000"},"style":{"fillColor":"#FFF2CC"}},
+  {"op":"add_conditional_format","sheet":"Data","range":"H2:H7","rule":{"kind":"top-bottom","rank":3},"style":{"bold":true,"color":"#548235"}}
 ]}'
 ```
 
-- The money/magnitude column of a register gets a `dataBar` in the accent —
+- The money/magnitude column of a register gets a `data-bar` in the accent —
   the one-glance answer to "where is the weight".
 - A `formula` rule with a `$`-pinned column (`=$H2>5000`) highlights the
   WHOLE row from one cell's condition, and as the later rule its fill wins
   over the zebra stripe (`aspose-cli docs cells/editing`, Conditional
   formatting).
-- `topBottom` (`rank`, plus `percent`/`bottom`) flags the top or bottom N
+- `top-bottom` (`rank`, plus `percent`/`bottom`) flags the top or bottom N
   without hardcoding a threshold.
-- `iconSet` (`arrows3`, `trafficLights3`, `symbols3`, `rating4`, `rating5`)
+- `icon-set` (`arrows-3`, `traffic-lights-3`, `symbols-3`, `rating-4`, `rating-5`)
   suits bounded scores and RAG status — icons survive grayscale printing and
   colorblindness, the preferred second cue next to red/green (section 9 puts
-  `arrows3` on KPI deltas).
+  `arrows-3` on KPI deltas).
 
 ## 7. Number and unit discipline
 
@@ -250,8 +250,8 @@ fails the discipline (`aspose-cli docs cells/editing`, Pivot tables):
 
 ```sh
 aspose-cli cells edit book.xlsx --in-place --ops '{"ops":[
-  {"op":"add_sheet","name":"Pivot"},
-  {"op":"create_pivot","sheet":"Pivot","sourceRange":"Data!A1:I7","at":"A1","rows":["Region"],"values":[{"field":"Amount","numberFormat":"#,##0;(#,##0);\"-\""}]}
+  {"op":"insert_sheet","name":"Pivot"},
+  {"op":"insert_pivot","sheet":"Pivot","sourceRange":"Data!A1:I7","at":"A1","rows":["Region"],"values":[{"field":"Amount","numberFormat":"#,##0;(#,##0);\"-\""}]}
 ]}'
 ```
 
@@ -268,7 +268,7 @@ Selection is by data shape, not preference:
 | correlation | scatter | dual-axis overlay |
 | single KPI now | KPI card + sparkline (section 9) | gauge |
 
-`create_chart` already applies a modern default (`aspose-cli docs
+`insert_chart` already applies a modern default (`aspose-cli docs
 cells/editing`, Charts); its series colors are S1-S6 in the default theme.
 Do NOT re-specify it. What you DO set:
 
@@ -282,12 +282,12 @@ Do NOT re-specify it. What you DO set:
   token-styled dashboard's main series, actual `#4472C4` vs plan/prior-year
   `#A5A5A5`, an alarm series `#C00000`. The default palette is fine for a
   standalone chart; choose colors when they separate meanings.
-- `dataLabels` only when the chart has <= 6 points, always with a `format`.
+- `dataLabels` only when the chart has <= 6 points, always with a `numberFormat`.
 
 ```sh
 aspose-cli cells edit book.xlsx --in-place --ops '{"ops":[
   {"op":"set_values","sheet":"Dashboard","range":"B30","values":[["Month","2026-01","2026-02","2026-03","2026-04","2026-05","2026-06"],["Revenue",180,210,235,228,265,300]]},
-  {"op":"create_chart","sheet":"Dashboard","type":"column","dataRange":"B30:H31","at":"B8:H22","seriesInRows":true,"title":"Monthly revenue · US$ 000s · FY2026 H1","legend":{"visible":false},"axisTitles":{"category":"Month","value":"Revenue (US$ 000s)"},"seriesColors":["#4472C4"]}
+  {"op":"insert_chart","sheet":"Dashboard","kind":"column","dataRange":"B30:H31","at":"B8:H22","seriesInRows":true,"title":"Monthly revenue · US$ 000s · FY2026 H1","legend":{"visible":false},"axisTitles":{"category":"Month","value":"Revenue (US$ 000s)"},"seriesColors":["#4472C4"]}
 ]}'
 ```
 
@@ -299,7 +299,7 @@ its rows listed ascending (`aspose-cli docs cells/editing`, Charts):
 ```sh
 aspose-cli cells edit book.xlsx --in-place --ops '{"ops":[
   {"op":"set_values","sheet":"Dashboard","range":"B33","values":[["Region","Revenue"],["West",187],["South",233],["East",298],["North",412]]},
-  {"op":"create_chart","sheet":"Dashboard","type":"bar","dataRange":"B33:C37","at":"J8:P22","title":"Revenue by region · US$ 000s · FY2026 H1","legend":{"visible":false},"dataLabels":{"visible":true,"format":"#,##0"},"seriesColors":["#4472C4"]}
+  {"op":"insert_chart","sheet":"Dashboard","kind":"bar","dataRange":"B33:C37","at":"J8:P22","title":"Revenue by region · US$ 000s · FY2026 H1","legend":{"visible":false},"dataLabels":{"visible":true,"numberFormat":"#,##0"},"seriesColors":["#4472C4"]}
 ]}'
 ```
 
@@ -332,26 +332,26 @@ column edges; blocks separate by whitespace, not boxes. One KPI card:
 
 ```sh
 aspose-cli cells edit book.xlsx --in-place --ops '{"ops":[
-  {"op":"resize_columns","sheet":"Dashboard","from":"A","width":2},
-  {"op":"resize_columns","sheet":"Dashboard","from":"B","width":16},
-  {"op":"resize_columns","sheet":"Dashboard","from":"C","width":10},
+  {"op":"resize_columns","sheet":"Dashboard","first":"A","widthChars":2},
+  {"op":"resize_columns","sheet":"Dashboard","first":"B","widthChars":16},
+  {"op":"resize_columns","sheet":"Dashboard","first":"C","widthChars":10},
   {"op":"set_values","sheet":"Dashboard","range":"B4","values":[["Revenue (US$ 000s)"]]},
-  {"op":"format_range","sheet":"Dashboard","range":"B4","style":{"size":9,"color":"#808080"}},
+  {"op":"format_range","sheet":"Dashboard","range":"B4","style":{"fontSize":9,"color":"#808080"}},
   {"op":"set_formula","sheet":"Dashboard","range":"B5","formula":"=SUM(C31:H31)"},
-  {"op":"format_range","sheet":"Dashboard","range":"B5","style":{"bold":true,"size":20,"color":"#1F3864","numberFormat":"#,##0;(#,##0);\"-\""}},
+  {"op":"format_range","sheet":"Dashboard","range":"B5","style":{"bold":true,"fontSize":20,"color":"#1F3864","numberFormat":"#,##0;(#,##0);\"-\""}},
   {"op":"set_formula","sheet":"Dashboard","range":"B6","formula":"=IFERROR(H31/G31-1,0)"},
-  {"op":"format_range","sheet":"Dashboard","range":"B6","style":{"size":9,"numberFormat":"+0.0%;-0.0%;0.0%"}},
-  {"op":"add_conditional_format","sheet":"Dashboard","range":"B6","rule":{"kind":"cellValue","operator":"greaterOrEqual","value1":"0"},"style":{"color":"#548235"}},
-  {"op":"add_conditional_format","sheet":"Dashboard","range":"B6","rule":{"kind":"cellValue","operator":"lessThan","value1":"0"},"style":{"color":"#C00000"}},
-  {"op":"add_conditional_format","sheet":"Dashboard","range":"B6","rule":{"kind":"iconSet","iconSet":"arrows3"}},
-  {"op":"add_sparkline","sheet":"Dashboard","dataRange":"C31:H31","location":"C5","type":"line","color":"#4472C4"},
-  {"op":"resize_rows","sheet":"Dashboard","from":5}
+  {"op":"format_range","sheet":"Dashboard","range":"B6","style":{"fontSize":9,"numberFormat":"+0.0%;-0.0%;0.0%"}},
+  {"op":"add_conditional_format","sheet":"Dashboard","range":"B6","rule":{"kind":"cell-value","operator":"greater-or-equal","value1":"0"},"style":{"color":"#548235"}},
+  {"op":"add_conditional_format","sheet":"Dashboard","range":"B6","rule":{"kind":"cell-value","operator":"less-than","value1":"0"},"style":{"color":"#C00000"}},
+  {"op":"add_conditional_format","sheet":"Dashboard","range":"B6","rule":{"kind":"icon-set","iconSet":"arrows-3"}},
+  {"op":"add_sparkline","sheet":"Dashboard","dataRange":"C31:H31","location":"C5","kind":"line","color":"#4472C4"},
+  {"op":"resize_rows","sheet":"Dashboard","first":5}
 ]}'
 ```
 
 The KPI number is a formula against the data — never a pasted value. The
 delta carries three redundant cues (sign in the format, semantic color,
-`arrows3` icon), so it survives grayscale and colorblind readers. A width-12
+`arrows-3` icon), so it survives grayscale and colorblind readers. A width-12
 column shows a six-figure KPI at 20pt as `#####` (probe-measured); width 16
 holds it — which is why the card columns above are 16. Sparkline types:
 `line` for trend, `column` for period volumes, `winloss` for above/below. A
@@ -369,7 +369,7 @@ aspose-cli cells edit book.xlsx --in-place --ops '{"ops":[
   {"op":"set_tab_color","sheet":"Data","color":"#808080"},
   {"op":"move_sheet","sheet":"Dashboard","to":1},
   {"op":"set_sheet_view","sheet":"Dashboard","gridlines":false},
-  {"op":"set_page_setup","sheet":"Dashboard","orientation":"landscape","paperSize":"a4","fitToWidth":1,"fitToHeight":1},
+  {"op":"set_page_setup","sheet":"Dashboard","orientation":"landscape","pageSize":{"preset":"a4"},"fitToWidth":1,"fitToHeight":1},
   {"op":"set_print_area","sheet":"Dashboard","range":"A1:Q37"}
 ]}'
 ```

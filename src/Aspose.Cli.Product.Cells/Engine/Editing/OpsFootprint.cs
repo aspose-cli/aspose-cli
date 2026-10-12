@@ -84,9 +84,9 @@ internal static class OpsFootprint
 
     /// <summary>Whether the verification diff, which compares cell values, formulas and sheets, sees what the operation does.</summary>
     private static bool Diffed(CellsOp op) =>
-        op is SetValuesOp or SetFormulaOp or ClearRangeOp or SortRangeOp or RemoveDuplicatesOp
+        op is SetValuesOp or SetFormulaOp or ClearRangeOp or SortRangeOp or DeleteDuplicatesOp
             or CopyRangeOp or ImportRangeOp or InsertRowsOp or DeleteRowsOp or InsertColumnsOp or DeleteColumnsOp
-            or AddSheetOp or ImportSheetOp or RenameSheetOp or DeleteSheetOp;
+            or InsertSheetOp or ImportSheetOp or RenameSheetOp or DeleteSheetOp;
 
     /// <summary>
     /// Cells an operation writes, charged against the cells budget before it runs: the
@@ -109,14 +109,14 @@ internal static class OpsFootprint
     {
         SetValuesOp or SetFormulaOp or ClearRangeOp or FormatRangeOp or MergeCellsOp
             or UnmergeCellsOp or SortRangeOp or SetValidationOp or ClearValidationOp
-            or RemoveDuplicatesOp or CreateTableOp or AddConditionalFormatOp
+            or DeleteDuplicatesOp or DefineTableOp or AddConditionalFormatOp
             or ClearConditionalFormatsOp or SetBordersOp or SetAutoFilterOp or SetPrintAreaOp
             or AddSparklineOp => RangeTarget(op),
-        CopyRangeOp or ImportRangeOp or AddCommentOp or EditCommentOp or DeleteCommentOp or SetHyperlinkOp
-            or RemoveHyperlinkOp or InsertRowsOp or DeleteRowsOp or InsertColumnsOp or DeleteColumnsOp
+        CopyRangeOp or ImportRangeOp or AddCommentOp or SetCommentOp or DeleteCommentOp or SetHyperlinkOp
+            or DeleteHyperlinkOp or InsertRowsOp or DeleteRowsOp or InsertColumnsOp or DeleteColumnsOp
             or ResizeRowsOp or ResizeColumnsOp or GroupRowsOp or UngroupRowsOp
             or GroupColumnsOp or UngroupColumnsOp => CellOrStructureTarget(op),
-        AddSheetOp or ImportSheetOp or RenameSheetOp or DeleteSheetOp or SetSheetVisibilityOp or MoveSheetOp
+        InsertSheetOp or ImportSheetOp or RenameSheetOp or DeleteSheetOp or SetSheetVisibilityOp or MoveSheetOp
             or FreezePanesOp or ProtectSheetOp or UnprotectSheetOp or SetPageSetupOp
             or SetTabColorOp or SetSheetViewOp or SetActiveSheetOp => SheetTarget(op),
         _ => ObjectOrWorkbookTarget(op),
@@ -137,8 +137,8 @@ internal static class OpsFootprint
         SortRangeOp o => new CellsEditTarget(o.Sheet, o.Range),
         SetValidationOp o => new CellsEditTarget(o.Sheet, o.Range),
         ClearValidationOp o => new CellsEditTarget(o.Sheet, o.Range),
-        RemoveDuplicatesOp o => new CellsEditTarget(o.Sheet, o.Range),
-        CreateTableOp o => new CellsEditTarget(o.Sheet, o.Range),
+        DeleteDuplicatesOp o => new CellsEditTarget(o.Sheet, o.Range),
+        DefineTableOp o => new CellsEditTarget(o.Sheet, o.Range),
         AddConditionalFormatOp o => new CellsEditTarget(o.Sheet, o.Range),
         ClearConditionalFormatsOp o => new CellsEditTarget(o.Sheet, o.Range),
         SetBordersOp o => new CellsEditTarget(o.Sheet, o.Range),
@@ -160,10 +160,10 @@ internal static class OpsFootprint
 
         // Single-cell ops spotlight their cell.
         AddCommentOp o => new CellsEditTarget(o.Sheet, o.Cell),
-        EditCommentOp o => new CellsEditTarget(o.Sheet, o.Cell),
+        SetCommentOp o => new CellsEditTarget(o.Sheet, o.Cell),
         DeleteCommentOp o => new CellsEditTarget(o.Sheet, o.Cell),
         SetHyperlinkOp o => new CellsEditTarget(o.Sheet, o.Cell),
-        RemoveHyperlinkOp o => new CellsEditTarget(o.Sheet, o.Cell),
+        DeleteHyperlinkOp o => new CellsEditTarget(o.Sheet, o.Cell),
 
         // Row/column structure shifts everything below or to the right, and
         // A1 has no whole-row/column form — spotlight the sheet.
@@ -185,11 +185,11 @@ internal static class OpsFootprint
         // Sheet-level ops spotlight the affected sheet as a whole. For
         // add/rename the sheet worth looking at is the one that exists after
         // the edit: the new sheet's name, the renamed sheet's new name.
-        AddSheetOp o => new CellsEditTarget(o.Name, null),
+        InsertSheetOp o => new CellsEditTarget(o.Name, null),
         // An imported sheet is named after its source sheet unless it is given a name; the
         // source's first sheet is known only once the source is open.
-        ImportSheetOp o => new CellsEditTarget(o.Name ?? o.Sheet, null),
-        RenameSheetOp o => new CellsEditTarget(o.To, null),
+        ImportSheetOp o => new CellsEditTarget(o.Name ?? o.SourceSheet, null),
+        RenameSheetOp o => new CellsEditTarget(o.Name, null),
         DeleteSheetOp o => new CellsEditTarget(o.Sheet, null),
         SetSheetVisibilityOp o => new CellsEditTarget(o.Sheet, null),
         MoveSheetOp o => new CellsEditTarget(o.Sheet, null),
@@ -207,10 +207,10 @@ internal static class OpsFootprint
     {
         // Embedded objects land on their sheet; without an explicit sheet
         // there is nothing precise enough to point at.
-        CreateChartOp o => SheetLevelOrNone(o),
-        UpdateChartOp o => SheetLevelOrNone(o),
+        InsertChartOp o => SheetLevelOrNone(o),
+        SetChartOp o => SheetLevelOrNone(o),
         DeleteChartOp o => SheetLevelOrNone(o),
-        CreatePivotOp o => SheetLevelOrNone(o),
+        InsertPivotOp o => SheetLevelOrNone(o),
         RefreshPivotOp o => SheetLevelOrNone(o),
         InsertImageOp o => SheetLevelOrNone(o),
 
@@ -228,7 +228,7 @@ internal static class OpsFootprint
     };
 
     private static CellsEditTarget? SheetLevelOrNone(CellsOp op) =>
-        op.Sheet is null ? null : new CellsEditTarget(op.Sheet, null);
+        op.TargetSheet is null ? null : new CellsEditTarget(op.TargetSheet, null);
 
     /// <summary>
     /// The destination of a copy: its anchor, or the source range's size at the anchor when

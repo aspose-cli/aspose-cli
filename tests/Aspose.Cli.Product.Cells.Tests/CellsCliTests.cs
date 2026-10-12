@@ -166,7 +166,7 @@ public sealed class CellsCliTests : IDisposable
               { "op": "set_values", "sheet": "Data", "range": "A1:B3", "values": [["Region","Sales"],["East",10],["West",20]] },
               { "op": "set_formula", "sheet": "Data", "range": "C2", "formula": "=1/0" },
               { "op": "define_name", "name": "SalesTotal", "refersTo": "=Data!$B$2:$B$3" },
-              { "op": "create_chart", "sheet": "Data", "type": "column", "dataRange": "A1:B3", "at": "E2:J12", "title": "Sales" }
+              { "op": "insert_chart", "sheet": "Data", "kind": "column", "dataRange": "A1:B3", "at": "E2:J12", "title": "Sales" }
             ] }
             """);
         CliResult edited = _workspace.Run("cells", "edit", "book.xlsx", "--ops", "ops.json", "--in-place", "--output-format", "json");
@@ -273,7 +273,7 @@ public sealed class CellsCliTests : IDisposable
 
         CliResult renamed = _workspace.Run(
             "cells", "edit", "book.xlsx", "--in-place", "--output-format", "json", "--ops",
-            """{"ops":[{"op":"rename_sheet","sheet":"Data","name":"Sales"}]}""");
+            """{"ops":[{"op":"rename_sheet","sheet":"Data","to":"Sales"}]}""");
         CliResult sorted = _workspace.Run(
             "cells", "edit", "book.xlsx", "--in-place", "--output-format", "json", "--ops",
             """{"ops":[{"op":"sort_range","sheet":"Data","range":"A1:B4","by":[{"column":"A","direction":"desc"}]}]}""");
@@ -281,10 +281,10 @@ public sealed class CellsCliTests : IDisposable
         Assert.Equal(4, renamed.ExitCode);
         JsonNode rename = JsonNode.Parse(renamed.StdErr)!["error"]!;
         Assert.Equal("OPS_INVALID", rename["code"]!.GetValue<string>());
-        Assert.Equal("unknown field 'name'", rename["details"]!["reason"]!.GetValue<string>());
-        Assert.Equal(["op", "id", "sheet", "to"],
+        Assert.Equal("unknown field 'to'", rename["details"]!["reason"]!.GetValue<string>());
+        Assert.Equal(["op", "id", "sheet", "name"],
             rename["details"]!["available"]!.AsArray().Select(static item => item!.GetValue<string>()));
-        Assert.Equal(["to"], rename["details"]!["suggestions"]!.AsArray().Select(static item => item!.GetValue<string>()));
+        Assert.Equal(["name"], rename["details"]!["suggestions"]!.AsArray().Select(static item => item!.GetValue<string>()));
         JsonNode sort = JsonNode.Parse(sorted.StdErr)!["error"]!["details"]!;
         Assert.Equal("unknown field 'by[0].direction'", sort["reason"]!.GetValue<string>());
         Assert.Equal(["column", "order"], sort["available"]!.AsArray().Select(static item => item!.GetValue<string>()));

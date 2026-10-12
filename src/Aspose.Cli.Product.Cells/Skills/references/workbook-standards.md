@@ -20,15 +20,15 @@ instead (`aspose-cli docs troubleshooting`, Windows PowerShell).
 Widths are saved in the file; nothing re-fits when the user opens it, and a
 value wider than its column shows truncated or as `###`. Every column a
 human reads gets an explicit width (characters): label columns 24–32, dates
-and formatted numbers 11–14, short codes 6–10. Omitting `width` auto-fits
+and formatted numbers 11–14, short codes 6–10. Omitting `widthChars` auto-fits
 to today's content — a floor, not a standard: next month's entry still
 truncates.
 
 ```sh
 aspose-cli cells edit book.xlsx --in-place --ops '{"ops":[
-  {"op":"resize_columns","sheet":"Sales","from":"A","width":28},
-  {"op":"resize_columns","sheet":"Sales","from":"B","width":8},
-  {"op":"resize_columns","sheet":"Sales","from":"C","to":"G","width":12}
+  {"op":"resize_columns","sheet":"Sales","first":"A","widthChars":28},
+  {"op":"resize_columns","sheet":"Sales","first":"B","widthChars":8},
+  {"op":"resize_columns","sheet":"Sales","first":"C","last":"G","widthChars":12}
 ]}'
 ```
 
@@ -98,10 +98,10 @@ taller, and frozen so they survive scrolling:
 
 ```sh
 aspose-cli cells edit book.xlsx --in-place --ops '{"ops":[
-  {"op":"set_default_font","font":"Calibri","size":11},
-  {"op":"format_range","sheet":"Sales","range":"A1:G12","style":{"font":"Calibri","size":11}},
-  {"op":"format_range","sheet":"Sales","range":"A1:G1","style":{"bold":true,"bg":"#1F4E79","color":"#FFFFFF"}},
-  {"op":"resize_rows","sheet":"Sales","from":1,"height":20},
+  {"op":"set_default_font","font":"Calibri","fontSize":11},
+  {"op":"format_range","sheet":"Sales","range":"A1:G12","style":{"font":"Calibri","fontSize":11}},
+  {"op":"format_range","sheet":"Sales","range":"A1:G1","style":{"bold":true,"fillColor":"#1F4E79","color":"#FFFFFF"}},
+  {"op":"resize_rows","sheet":"Sales","first":1,"height":20},
   {"op":"freeze_panes","sheet":"Sales","cell":"A2"}
 ]}'
 ```
@@ -113,7 +113,7 @@ this: the value is perfectly intact. Auto-fit the row by OMITTING `height`:
 
 ```sh
 aspose-cli cells edit book.xlsx --in-place --ops '{"ops":[
-  {"op":"resize_rows","sheet":"Sales","from":1}
+  {"op":"resize_rows","sheet":"Sales","first":1}
 ]}'
 ```
 
@@ -169,8 +169,8 @@ It does not check the CLI's own writes (`aspose-cli docs cells/editing`).
 
 ```sh
 aspose-cli cells edit book.xlsx --in-place --ops '{"ops":[
-  {"op":"set_validation","sheet":"Sales","range":"B2:B9","type":"list","listItems":["HW","SW","SVC"],"inputMessage":"Product line code"},
-  {"op":"set_validation","sheet":"Config","range":"B1","type":"decimal","operator":"between","value1":"0","value2":"1","errorMessage":"VAT rate is a fraction between 0 and 1"}
+  {"op":"set_validation","sheet":"Sales","range":"B2:B9","kind":"list","listItems":["HW","SW","SVC"],"inputMessage":"Product line code"},
+  {"op":"set_validation","sheet":"Config","range":"B1","kind":"decimal","operator":"between","value1":"0","value2":"1","errorMessage":"VAT rate is a fraction between 0 and 1"}
 ]}'
 ```
 
@@ -180,18 +180,18 @@ Highlight only exceptions a reader must act on — a sheet where everything
 is colored says nothing. A rule's `style` is differential: it overrides the
 fields you set on matching cells and leaves the rest — a money or percent
 column keeps its number format and font under the highlight. Use
-`colorScale` or `dataBar` when the message is magnitude rather than a
-threshold; an `iconSet` rule (`arrows3`, `trafficLights3`, …) reads well on
+`color-scale` or `data-bar` when the message is magnitude rather than a
+threshold; an `icon-set` rule (`arrows-3`, `traffic-lights-3`, …) reads well on
 a short status or delta column, but its thresholds are automatic equal
-bands (thirds for a 3-icon set, quarters for `rating4`, fifths for
-`rating5`) — use it only when that split is actually the message, and
+bands (thirds for a 3-icon set, quarters for `rating-4`, fifths for
+`rating-5`) — use it only when that split is actually the message, and
 never beside a color scale saying the same thing.
 
 ```sh
 aspose-cli cells edit book.xlsx --in-place --ops '{"ops":[
   {"op":"add_conditional_format","sheet":"Sales","range":"F2:F9",
-   "rule":{"kind":"cellValue","operator":"lessThan","value1":"1000"},
-   "style":{"color":"#9C0006","bg":"#FFC7CE"}}
+   "rule":{"kind":"cell-value","operator":"less-than","value1":"1000"},
+   "style":{"color":"#9C0006","fillColor":"#FFC7CE"}}
 ]}'
 ```
 
@@ -209,7 +209,7 @@ dropdowns, use `set_autofilter`.
 
 ```sh
 aspose-cli cells edit book.xlsx --in-place --ops '{"ops":[
-  {"op":"create_table","sheet":"Data","range":"A1:D13","name":"Orders","style":"TableStyleMedium2"}
+  {"op":"define_table","sheet":"Data","range":"A1:D13","name":"Orders","tableStyle":"TableStyleMedium2"}
 ]}'
 ```
 
@@ -221,7 +221,7 @@ summary sheet — portrait, fitted to one page, a page footer:
 
 ```sh
 aspose-cli cells edit book.xlsx --in-place --ops '{"ops":[
-  {"op":"set_page_setup","sheet":"Sales","orientation":"portrait","paperSize":"a4",
+  {"op":"set_page_setup","sheet":"Sales","orientation":"portrait","pageSize":{"preset":"a4"},
    "fitToWidth":1,"fitToHeight":1,"footer":"page &P of &N"},
   {"op":"set_print_area","sheet":"Sales","range":"A1:G12"}
 ]}'
@@ -237,7 +237,7 @@ aspose-cli cells edit book.xlsx --in-place --ops '{"ops":[
 ]}'
 ```
 
-`margins` (inches) and `scale` are set the same way; prove the pagination
+`margins` (points) and `scalePercent` are set the same way; prove the pagination
 with a PDF convert before delivery.
 
 ## The model color language
@@ -251,14 +251,14 @@ safe to change.
 ```sh
 aspose-cli cells edit book.xlsx --in-place --ops '{"ops":[
   {"op":"format_range","sheet":"Sales","range":"D2:E9","style":{"color":"#0000FF"}},
-  {"op":"format_range","sheet":"Config","range":"B1","style":{"color":"#0000FF","bg":"#FFF2CC"}}
+  {"op":"format_range","sheet":"Config","range":"B1","style":{"color":"#0000FF","fillColor":"#FFF2CC"}}
 ]}'
 ```
 
 ## Limits
 
 - No calculation settings (iterative calculation, manual mode).
-- `create_chart` plots one contiguous `dataRange`, so "header + two
+- `insert_chart` plots one contiguous `dataRange`, so "header + two
   non-adjacent rows" (`A1:F1,A3:F4`) is not directly chartable — mirror the
   rows into a contiguous helper block with formulas and chart that, keeping
   the block live:
@@ -268,7 +268,7 @@ aspose-cli cells edit book.xlsx --in-place --ops '{"ops":[
   {"op":"set_formula","sheet":"Data","range":"A7:F7","formula":"=A1"},
   {"op":"set_formula","sheet":"Data","range":"A8:F8","formula":"=A2"},
   {"op":"set_formula","sheet":"Data","range":"A9:F9","formula":"=A4"},
-  {"op":"create_chart","sheet":"Data","type":"column","dataRange":"A7:F9","at":"H2:P18",
+  {"op":"insert_chart","sheet":"Data","kind":"column","dataRange":"A7:F9","at":"H2:P18",
    "title":"Revenue vs Profit","seriesInRows":true}
 ]}'
 ```

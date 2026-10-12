@@ -60,15 +60,15 @@ internal sealed class CellsMutationHandlers : ICellsOpHandler<long?>
     private static bool ReadsComputedValues(CellsOp op) => op switch
     {
         ResizeRowsOp resize => resize.Height is null,
-        ResizeColumnsOp resize => resize.Width is null,
-        SortRangeOp or RemoveDuplicatesOp or CreatePivotOp or RefreshPivotOp => true,
+        ResizeColumnsOp resize => resize.WidthChars is null,
+        SortRangeOp or DeleteDuplicatesOp or InsertPivotOp or RefreshPivotOp => true,
         _ => false,
     };
 
     /// <summary>True once an operation that names no sheet was applied to the active sheet.</summary>
     internal bool DefaultedToActiveSheet { get; private set; }
 
-    private Worksheet Sheet(CellsOp op)
+    private Worksheet Sheet(CellsSheetOp op)
     {
         DefaultedToActiveSheet |= op.Sheet is null;
         return Sheets.Resolve(_workbook, op);
@@ -78,9 +78,17 @@ internal sealed class CellsMutationHandlers : ICellsOpHandler<long?>
 
     public long? Apply(AddConditionalFormatOp operation) => ConditionalFormatOps.AddConditionalFormat(Sheet(operation), operation);
 
-    public long? Apply(AddSheetOp operation) => SheetOps.AddSheet(_workbook, operation);
+    public long? Apply(InsertSheetOp operation) => SheetOps.AddSheet(_workbook, operation);
 
     public long? Apply(AddSparklineOp operation) => SparklineOps.AddSparkline(_workbook, Sheet(operation), operation);
+
+    public long? Apply(ClearAutoFilterOp operation) => SortFilterOps.ClearAutoFilter(Sheet(operation));
+
+    public long? Apply(ClearPrintAreaOp operation) => PageSetupOps.ClearPrintArea(Sheet(operation));
+
+    public long? Apply(ClearTabColorOp operation) => LookOps.ClearTabColor(Sheet(operation));
+
+    public long? Apply(UnfreezePanesOp operation) => SheetOps.Unfreeze(Sheet(operation));
 
     public long? Apply(ClearConditionalFormatsOp operation) => ConditionalFormatOps.ClearConditionalFormats(Sheet(operation), operation);
 
@@ -90,11 +98,11 @@ internal sealed class CellsMutationHandlers : ICellsOpHandler<long?>
 
     public long? Apply(CopyRangeOp operation) => CellOps.Copy(Sheet(operation), operation);
 
-    public long? Apply(CreateChartOp operation) => ChartPivotOps.CreateChart(Sheet(operation), operation);
+    public long? Apply(InsertChartOp operation) => ChartPivotOps.CreateChart(Sheet(operation), operation);
 
-    public long? Apply(CreatePivotOp operation) => ChartPivotOps.CreatePivot(Sheet(operation), operation);
+    public long? Apply(InsertPivotOp operation) => ChartPivotOps.CreatePivot(Sheet(operation), operation);
 
-    public long? Apply(CreateTableOp operation) => TableOps.CreateTable(Sheet(operation), operation);
+    public long? Apply(DefineTableOp operation) => TableOps.CreateTable(Sheet(operation), operation);
 
     public long? Apply(DefineNameOp operation) => NameOps.DefineName(_workbook, operation);
 
@@ -110,7 +118,7 @@ internal sealed class CellsMutationHandlers : ICellsOpHandler<long?>
 
     public long? Apply(DeleteSheetOp operation) => SheetOps.DeleteSheet(_workbook, Sheet(operation));
 
-    public long? Apply(EditCommentOp operation) => CommentOps.EditComment(Sheet(operation), operation);
+    public long? Apply(SetCommentOp operation) => CommentOps.EditComment(Sheet(operation), operation);
 
     public long? Apply(FormatRangeOp operation) => CellOps.Format(_workbook, Sheet(operation), operation);
 
@@ -122,7 +130,6 @@ internal sealed class CellsMutationHandlers : ICellsOpHandler<long?>
 
     public long? Apply(ImportRangeOp operation) => ImportOps.ImportRange(Sheet(operation), operation, _sources);
 
-    // The operation's sheet names the source sheet, not a sheet of this workbook.
     public long? Apply(ImportSheetOp operation) => ImportOps.ImportSheet(_workbook, operation, _sources);
 
     public long? Apply(InsertColumnsOp operation) => RowColumnOps.InsertColumns(Sheet(operation), operation);
@@ -141,9 +148,9 @@ internal sealed class CellsMutationHandlers : ICellsOpHandler<long?>
 
     public long? Apply(RefreshPivotOp operation) => ChartPivotOps.RefreshPivot(Sheet(operation), operation);
 
-    public long? Apply(RemoveDuplicatesOp operation) => DedupeOps.RemoveDuplicates(Sheet(operation), operation);
+    public long? Apply(DeleteDuplicatesOp operation) => DedupeOps.RemoveDuplicates(Sheet(operation), operation);
 
-    public long? Apply(RemoveHyperlinkOp operation) => HyperlinkOps.RemoveHyperlink(Sheet(operation), operation);
+    public long? Apply(DeleteHyperlinkOp operation) => HyperlinkOps.RemoveHyperlink(Sheet(operation), operation);
 
     public long? Apply(RenameSheetOp operation) => SheetOps.RenameSheet(Sheet(operation), operation);
 
@@ -157,7 +164,6 @@ internal sealed class CellsMutationHandlers : ICellsOpHandler<long?>
 
     public long? Apply(SetBordersOp operation) => BorderOps.SetBorders(_workbook, Sheet(operation), operation);
 
-    // Workbook-scoped: the operation's sheet is deliberately not resolved.
     public long? Apply(SetDefaultFontOp operation) => LookOps.SetDefaultFont(_workbook, operation);
 
     /// <summary>The anchor cells set_formula wrote, which the batch checks for unknown functions.</summary>
@@ -198,5 +204,5 @@ internal sealed class CellsMutationHandlers : ICellsOpHandler<long?>
 
     public long? Apply(UnprotectWorkbookOp operation) => ProtectOps.UnprotectWorkbook(_workbook, operation, _secrets);
 
-    public long? Apply(UpdateChartOp operation) => ChartPivotOps.UpdateChart(Sheet(operation), operation);
+    public long? Apply(SetChartOp operation) => ChartPivotOps.UpdateChart(Sheet(operation), operation);
 }

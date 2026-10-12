@@ -22,7 +22,7 @@ internal static class LookOps
     {
         Style style = workbook.DefaultStyle;
         style.Font.Name = op.Font;
-        if (op.Size is { } size)
+        if (op.FontSize is { } size)
         {
             style.Font.DoubleSize = size;
         }
@@ -38,8 +38,16 @@ internal static class LookOps
     /// </summary>
     public static long? SetTabColor(Worksheet sheet, SetTabColorOp op)
     {
-        sheet.TabColor = op.Color is { } color ? StyleWriter.ParseHex(color) : System.Drawing.Color.Empty;
+        sheet.TabColor = StyleWriter.ParseHex(op.Color);
         return null;
+    }
+
+    /// <summary>Removes the tab color; 1 when the sheet had one, null when there was nothing to remove.</summary>
+    public static long? ClearTabColor(Worksheet sheet)
+    {
+        bool had = !sheet.TabColor.IsEmpty;
+        sheet.TabColor = System.Drawing.Color.Empty;
+        return had ? 1 : null;
     }
 
     /// <summary>Applies the view fields that are present; the rest stay as they are.</summary>

@@ -99,7 +99,7 @@ public sealed class CellsImportTests : IClassFixture<CellsFixture>
 
         using Workbook result = Apply(
             _fixture.CreateSalesWorkbook("sheet.xlsx"),
-            $$"""{ "op": "import_sheet", "sheet": "Totals", "path": {{Json(source)}}, "name": "EU", "at": 2 }""");
+            $$"""{ "op": "import_sheet", "sourceSheet": "Totals", "path": {{Json(source)}}, "name": "EU", "at": 2 }""");
 
         Assert.Equal("EU", result.Worksheets[1].Name);
         Aspose.Cells.Cells cells = result.Worksheets["EU"].Cells;
@@ -118,8 +118,8 @@ public sealed class CellsImportTests : IClassFixture<CellsFixture>
         using Workbook result = Apply(
             _fixture.CreateSalesWorkbook("rates.xlsx"),
             $$"""
-            { "op": "import_sheet", "sheet": "Rates", "path": {{Json(source)}} },
-            { "op": "import_sheet", "sheet": "Totals", "path": {{Json(source)}} }
+            { "op": "import_sheet", "sourceSheet": "Rates", "path": {{Json(source)}} },
+            { "op": "import_sheet", "sourceSheet": "Totals", "path": {{Json(source)}} }
             """);
 
         Aspose.Cells.Cells cells = result.Worksheets["Totals"].Cells;
@@ -136,8 +136,8 @@ public sealed class CellsImportTests : IClassFixture<CellsFixture>
         CellsEditResult result = ApplyResult(
             _fixture.CreateSalesWorkbook("counted.xlsx"),
             $$"""
-            { "op": "add_sheet", "name": "Blank" },
-            { "op": "import_sheet", "sheet": "Totals", "path": {{Json(source)}} }
+            { "op": "insert_sheet", "name": "Blank" },
+            { "op": "import_sheet", "sourceSheet": "Totals", "path": {{Json(source)}} }
             """);
 
         Assert.Equal([1L, 1L], result.Applied.Select(static outcome => outcome.ItemsAffected));
@@ -164,7 +164,7 @@ public sealed class CellsImportTests : IClassFixture<CellsFixture>
 
         using Workbook result = Apply(
             book,
-            $$"""{ "op": "import_sheet", "sheet": "Data", "path": {{Json(book)}}, "name": "Data copy" }""");
+            $$"""{ "op": "import_sheet", "sourceSheet": "Data", "path": {{Json(book)}}, "name": "Data copy" }""");
 
         Assert.Equal("=SUM(B2:B2)", result.Worksheets["Data copy"].Cells["B3"].Formula);
         Assert.Equal("Region", result.Worksheets["Data"].Cells["A1"].StringValue);
@@ -177,7 +177,7 @@ public sealed class CellsImportTests : IClassFixture<CellsFixture>
 
         CliException error = Assert.Throws<CliException>(() => Apply(
             _fixture.CreateSalesWorkbook("taken.xlsx"),
-            $$"""{ "op": "import_sheet", "sheet": "Totals", "path": {{Json(source)}}, "name": "second" }"""));
+            $$"""{ "op": "import_sheet", "sourceSheet": "Totals", "path": {{Json(source)}}, "name": "second" }"""));
 
         Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
         Assert.Contains("'Second'", error.Details!["reason"]!.GetValue<string>(), StringComparison.Ordinal);
@@ -193,7 +193,7 @@ public sealed class CellsImportTests : IClassFixture<CellsFixture>
                 Input = _fixture.CreateSalesWorkbook("best-effort.xlsx"),
                 Batch = Parse($$"""
                 { "ops": [
-                  { "op": "import_sheet", "sheet": "Totals", "path": {{Json(source)}}, "name": "Data" },
+                  { "op": "import_sheet", "sourceSheet": "Totals", "path": {{Json(source)}}, "name": "Data" },
                   { "op": "set_values", "sheet": "Second", "range": "A2", "values": [["after"]] }
                 ] }
                 """),
@@ -207,7 +207,7 @@ public sealed class CellsImportTests : IClassFixture<CellsFixture>
     }
 
     [Theory]
-    [InlineData("""{ "op": "import_sheet", "sheet": "Ghost", "path": "{source}" }""")]
+    [InlineData("""{ "op": "import_sheet", "sourceSheet": "Ghost", "path": "{source}" }""")]
     [InlineData("""{ "op": "import_range", "sheet": "Data", "path": "{source}", "from": "Ghost!A1:B2", "to": "E1" }""")]
     public void AMissingSourceSheet_ListsTheSourcesSheets(string operation)
     {
@@ -244,7 +244,7 @@ public sealed class CellsImportTests : IClassFixture<CellsFixture>
 
         CliException error = Assert.Throws<CliException>(() => Apply(
             target,
-            $$"""{ "op": "import_sheet", "sheet": "Totals", "path": {{Json(source)}} }"""));
+            $$"""{ "op": "import_sheet", "sourceSheet": "Totals", "path": {{Json(source)}} }"""));
 
         Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
         Assert.Contains("'Rate'", error.Details!["reason"]!.GetValue<string>(), StringComparison.Ordinal);
@@ -252,7 +252,7 @@ public sealed class CellsImportTests : IClassFixture<CellsFixture>
 
     [Theory]
     [InlineData("""{ "op": "import_range", "sheet": "Second", "path": "{source}", "from": "Linked!A1", "to": "Second!B2", "content": "all" }""", "Second", "B2")]
-    [InlineData("""{ "op": "import_sheet", "sheet": "Linked", "path": "{source}" }""", "Linked", "A1")]
+    [InlineData("""{ "op": "import_sheet", "sourceSheet": "Linked", "path": "{source}" }""", "Linked", "A1")]
     public void Import_AReferenceToAThirdWorkbookKeepsItsLinkAndCachedResultWithoutReadingIt(
         string operation, string sheet, string cell)
     {
@@ -271,7 +271,7 @@ public sealed class CellsImportTests : IClassFixture<CellsFixture>
 
     [Theory]
     [InlineData("""{ "op": "import_range", "sheet": "Second", "path": "{source}", "from": "Linked!A1:A2", "to": "Second!B2", "content": "all" }""", "Second", "B2")]
-    [InlineData("""{ "op": "import_sheet", "sheet": "Linked", "path": "{source}", "name": "Copied" }""", "Copied", "A1")]
+    [InlineData("""{ "op": "import_sheet", "sourceSheet": "Linked", "path": "{source}", "name": "Copied" }""", "Copied", "A1")]
     public void Import_WarnsWhenALinkWithoutCachedValuesNoLongerEvaluatesToAnError(string operation, string sheet, string cell)
     {
         string source = CreateUncachedLinkSource(sheet + "-uncached-source.xlsx");
@@ -292,7 +292,7 @@ public sealed class CellsImportTests : IClassFixture<CellsFixture>
 
         CellsEditResult result = ApplyResult(
             _fixture.CreateSalesWorkbook("verify-uncached.xlsx"),
-            $$"""{ "op": "import_sheet", "sheet": "Linked", "path": {{Json(source)}} }""",
+            $$"""{ "op": "import_sheet", "sourceSheet": "Linked", "path": {{Json(source)}} }""",
             verify: true);
 
         Assert.False(result.Verification!.Ok);
@@ -308,7 +308,7 @@ public sealed class CellsImportTests : IClassFixture<CellsFixture>
 
         CellsEditResult result = ApplyResult(
             _fixture.CreateSalesWorkbook("no-recalc-uncached.xlsx"),
-            $$"""{ "op": "import_sheet", "sheet": "Linked", "path": {{Json(source)}} }""",
+            $$"""{ "op": "import_sheet", "sourceSheet": "Linked", "path": {{Json(source)}} }""",
             recalculate: false);
 
         using var output = new Workbook(result.Output!.Path);
@@ -354,7 +354,7 @@ public sealed class CellsImportTests : IClassFixture<CellsFixture>
 
         CellsEditResult result = ApplyResult(
             _fixture.CreateSalesWorkbook("linked-cached-warning-target.xlsx"),
-            $$"""{ "op": "import_sheet", "sheet": "Linked", "path": {{Json(source)}} }""");
+            $$"""{ "op": "import_sheet", "sourceSheet": "Linked", "path": {{Json(source)}} }""");
 
         Assert.DoesNotContain(result.Warnings ?? [], static warning => warning.Code.Name == "EXTERNAL_LINK_CACHE_MISSING");
     }
@@ -371,19 +371,19 @@ public sealed class CellsImportTests : IClassFixture<CellsFixture>
             workbook.Save(source, SaveFormat.Xlsx);
         }
 
-        string passwordEnv = password is null ? string.Empty : """, "passwordEnv": "SOURCE_PWD" """;
+        string passwordEnv = password is null ? string.Empty : """, "sourcePasswordEnv": "SOURCE_PWD" """;
         CliException error = Assert.Throws<CliException>(() => CellsEdit.Run(_fixture.Session,
             new CellsEditRequest
             {
                 Input = _fixture.CreateSalesWorkbook($"encrypted-{code}-target.xlsx"),
-                Batch = Parse($$"""{ "ops": [ { "op": "import_sheet", "sheet": "Totals", "path": {{Json(source)}}{{passwordEnv}} } ] }"""),
+                Batch = Parse($$"""{ "ops": [ { "op": "import_sheet", "sourceSheet": "Totals", "path": {{Json(source)}}{{passwordEnv}} } ] }"""),
                 Output = TestOutput.At(_fixture.Temp.File($"encrypted-{code}.out.xlsx"), overwrite: true),
                 OpSecrets = password is null ? null : new Dictionary<string,
                 Secret> { ["SOURCE_PWD"] = new(password) },
             }));
 
         Assert.Equal(code, error.Code.Name);
-        Assert.Contains("\"passwordEnv\"", error.Hint, StringComparison.Ordinal);
+        Assert.Contains("\"sourcePasswordEnv\"", error.Hint, StringComparison.Ordinal);
         Assert.DoesNotContain("--password-env", error.Hint, StringComparison.Ordinal);
         Assert.Equal(source, error.Details!["path"]!.GetValue<string>());
     }
@@ -418,8 +418,8 @@ public sealed class CellsImportTests : IClassFixture<CellsFixture>
         using Workbook result = Apply(
             target,
             $$"""
-            { "op": "import_sheet", "sheet": "Rates", "path": {{Json(source)}} },
-            { "op": "import_sheet", "sheet": "Totals", "path": {{Json(source)}} }
+            { "op": "import_sheet", "sourceSheet": "Rates", "path": {{Json(source)}} },
+            { "op": "import_sheet", "sourceSheet": "Totals", "path": {{Json(source)}} }
             """);
 
         Assert.Equal("=B4*Rates!A1", result.Worksheets["Totals"].Cells["B5"].Formula);

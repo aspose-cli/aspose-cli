@@ -5,7 +5,7 @@ secrets work as in every product: `aspose-cli docs editing`. The fields, types,
 defaults and allowed values of each operation come from the generated schema:
 
 ```
-aspose-cli schema v2/cells/ops --operation create_chart
+aspose-cli schema v2/cells/ops --operation insert_chart
 ```
 
 This page names the operations by task and adds what the schema cannot state:
@@ -19,13 +19,13 @@ Cells semantics, ordering rules and recipes.
 | Other workbooks | `import_range` copies a range from another file; `import_sheet` copies a whole sheet |
 | Formatting | `format_range` sets only the style fields given; `set_borders` |
 | Rows and columns | `insert_rows`, `delete_rows`, `insert_columns`, `delete_columns`, `resize_rows`, `resize_columns`, `merge_cells`, `unmerge_cells`, `group_rows`, `ungroup_rows`, `group_columns`, `ungroup_columns`, `freeze_panes` |
-| Sheets | `add_sheet`, `rename_sheet`, `delete_sheet`, `move_sheet`, `set_sheet_visibility`, `set_active_sheet` |
+| Sheets | `insert_sheet`, `rename_sheet`, `delete_sheet`, `move_sheet`, `set_sheet_visibility`, `set_active_sheet` |
 | Workbook look | `set_default_font`, `set_tab_color`, `set_sheet_view` |
-| Charts and sparklines | `create_chart`, `update_chart`, `delete_chart`, `add_sparkline` |
-| Pivot tables | `create_pivot`, `refresh_pivot` |
-| Tables, filtering, sorting | `create_table`, `set_autofilter`, `sort_range`, `remove_duplicates` |
+| Charts and sparklines | `insert_chart`, `set_chart`, `delete_chart`, `add_sparkline` |
+| Pivot tables | `insert_pivot`, `refresh_pivot` |
+| Tables, filtering, sorting | `define_table`, `set_autofilter`, `sort_range`, `delete_duplicates` |
 | Input rules | `set_validation`, `clear_validation`, `add_conditional_format`, `clear_conditional_formats` |
-| Names, notes, links | `define_name`, `delete_name`, `add_comment`, `edit_comment`, `delete_comment`, `set_hyperlink`, `remove_hyperlink` |
+| Names, notes, links | `define_name`, `delete_name`, `add_comment`, `set_comment`, `delete_comment`, `set_hyperlink`, `delete_hyperlink` |
 | Pictures | `insert_image` |
 | Print and PDF | `set_page_setup`, `set_print_area` |
 | Protection | `protect_sheet`, `unprotect_sheet`, `protect_workbook`, `unprotect_workbook` |
@@ -36,14 +36,14 @@ The field names of these operations are the ones most often guessed wrong:
 
 ```json
 { "ops": [
-  { "op": "rename_sheet", "sheet": "Sheet1", "to": "Data" },
-  { "op": "add_sheet", "name": "Summary", "at": 1 },
+  { "op": "rename_sheet", "sheet": "Sheet1", "name": "Data" },
+  { "op": "insert_sheet", "name": "Summary", "at": 1 },
   { "op": "move_sheet", "sheet": "Data", "to": 1 },
   { "op": "sort_range", "sheet": "Data", "range": "A1:D100", "hasHeader": true,
     "by": [ { "column": "C", "order": "desc" }, { "column": "A" } ] },
   { "op": "insert_rows", "sheet": "Data", "at": 2, "count": 3 },
-  { "op": "resize_rows", "sheet": "Data", "from": 1, "to": 1, "height": 24 },
-  { "op": "resize_columns", "sheet": "Data", "from": "A", "to": "D" },
+  { "op": "resize_rows", "sheet": "Data", "first": 1, "last": 1, "height": 24 },
+  { "op": "resize_columns", "sheet": "Data", "first": "A", "last": "D" },
   { "op": "set_sheet_view", "sheet": "Data", "gridlines": false, "zoom": 90 }
 ] }
 ```
@@ -53,7 +53,7 @@ The field names of these operations are the ones most often guessed wrong:
 - An operation's `sheet` defaults to the active sheet; name it every time.
 - Range fields are unqualified A1 on the operation's sheet. Only the fields
   whose schema description says so (`copy_range.from`/`to`,
-  `import_range.from`/`to`, `create_pivot.sourceRange`, the chart and
+  `import_range.from`/`to`, `insert_pivot.sourceRange`, the chart and
   sparkline `dataRange`, `set_hyperlink.target`) take another sheet. Write
   the sheet name as it appears (`P&L!A1:B9`, `'My Sheet'!A1`); the CLI quotes
   it for the engine.
@@ -66,7 +66,7 @@ The field names of these operations are the ones most often guessed wrong:
 
 The whole workbook calculates once after the complete batch, including
 `--set` writes; `--no-recalc` skips it. Auto-fit resizing, `sort_range`,
-`remove_duplicates`, `create_pivot` and `refresh_pivot` calculate the batch's
+`delete_duplicates`, `insert_pivot` and `refresh_pivot` calculate the batch's
 earlier edits first, so they see current formula results. Reads show what
 Excel shows on opening: a workbook that asks to be calculated when opened (as
 openpyxl, pandas and many exporters write them, with no stored results) is
@@ -160,15 +160,15 @@ cells:
   (`='[fx.xlsx]Rates'!$B$2`), relative to the output's folder; the edit warns
   `EXTERNAL_LINK_RELATIVE`, so keep the linked file beside the output. To use
   the linked values, bring them in with `import_range` instead.
-- An encrypted source needs `passwordEnv`. Sources open once per batch; the
+- An encrypted source needs `sourcePasswordEnv`. Sources open once per batch; the
   edited file can be a source, read as it is on disk before the edit.
 
 ## Charts
 
-    { "op": "create_chart", "sheet": "Data", "type": "column",
+    { "op": "insert_chart", "sheet": "Data", "kind": "column",
       "dataRange": "A1:C5", "at": "E2:L18", "title": "Quarterly Sales" }
 
-- `create_chart` applies a modern look by itself: no plot-area fill, no outer
+- `insert_chart` applies a modern look by itself: no plot-area fill, no outer
   border, a bottom legend, slim column and bar gaps, light value-axis
   gridlines and a distinct color per series (per slice of a pie): the
   workbook theme's six accents, then darker and lighter variants. A
@@ -183,7 +183,7 @@ cells:
   columns by 15 rows reads well.
 - A bar chart plots the first source row at the bottom: list a ranking's rows
   ascending so it reads largest-first from the top.
-- `update_chart` and `delete_chart` address a chart by `index` or `name` as
+- `set_chart` and `delete_chart` address a chart by `index` or `name` as
   `cells inspect --detail charts` lists them. Chart names need not be unique;
   address a shared name by `index`. An update leaves the value axis as it is.
 - Chart fonts, axis bounds and category or percentage labels are not
@@ -191,14 +191,14 @@ cells:
 
 ## Pivot tables
 
-    { "op": "create_pivot", "sheet": "Pivot",
+    { "op": "insert_pivot", "sheet": "Pivot",
       "sourceRange": "Data!A1:D100", "at": "A1",
       "rows": ["Region"], "columns": ["Quarter"],
       "values": [ { "field": "Sales", "numberFormat": "#,##0" },
                   { "field": "Units", "function": "average" } ] }
 
 - Fields are the header names of the source range's first row.
-- Put a pivot on its own sheet (`add_sheet` in the same batch) so it cannot
+- Put a pivot on its own sheet (`insert_sheet` in the same batch) so it cannot
   collide with data. An omitted `name` becomes `PivotTableN`, the first number
   the workbook does not use.
 - Give each value field a `numberFormat`; without one the aggregates render
@@ -230,13 +230,13 @@ highlights whole rows from one status column:
 { "ops": [
   { "op": "add_conditional_format", "range": "A2:F100",
     "rule": { "kind": "formula", "value1": "=$F2=\"OVERDUE\"" },
-    "style": { "bg": "#FFC7CE" } }
+    "style": { "fillColor": "#FFC7CE" } }
 ] }
 ```
 
 Row 2 tests `$F2`, row 3 tests `$F3`. Without the `$` the tested column
 drifts right with the rule; with `$F$2` every row tests one cell and the rule
-still applies cleanly, answering a different question. `cellValue` bounds
+still applies cleanly, answering a different question. `cell-value` bounds
 also accept an `=`-led formula: `"value1": "=$B2"` over `A2:A4` flags each
 value that exceeds its own row's target in `B`. When two fill rules match one
 cell, the later rule's fill wins.
@@ -248,7 +248,7 @@ or order.
 ## Sparklines
 
     { "op": "add_sparkline", "dataRange": "B2:E10", "location": "F2:F10",
-      "type": "line", "color": "#1F4E79" }
+      "kind": "line", "color": "#1F4E79" }
 
 The location's cell count decides the fan-out: one sparkline per data row, or
 per data column. A sparkline cell must lie inside the sheet's used range to
@@ -256,7 +256,7 @@ show in renders and reads; give the location column a header.
 
 ## Tables, validation, links and pictures
 
-- `create_table` brings its own filter dropdowns and banding: never add
+- `define_table` brings its own filter dropdowns and banding: never add
   `set_autofilter` or a painted header over the same range. An unknown style
   name fails with `STYLE_NOT_FOUND`.
 - Validation constrains a person typing in Excel, not the CLI: an ops batch or

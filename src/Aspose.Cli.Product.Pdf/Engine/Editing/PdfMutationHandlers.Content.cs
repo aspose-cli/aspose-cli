@@ -54,7 +54,7 @@ internal sealed partial class PdfMutationHandlers
             {
                 Background = operation.Layer == PdfLayers.Under,
                 Opacity = operation.Opacity,
-                Zoom = operation.ScalePercent / 100,
+                Zoom = operation.ScalePercent / 100.0,
                 HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment = VerticalAlignment.Center,
             };

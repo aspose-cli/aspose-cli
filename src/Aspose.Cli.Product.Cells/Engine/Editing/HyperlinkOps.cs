@@ -21,7 +21,7 @@ internal static class HyperlinkOps
         return null;
     }
 
-    public static long? RemoveHyperlink(Worksheet sheet, RemoveHyperlinkOp op)
+    public static long? RemoveHyperlink(Worksheet sheet, DeleteHyperlinkOp op)
     {
         CellRef cell = A1.ParseCell(op.Cell);
         for (int i = 0; i < sheet.Hyperlinks.Count; i++)

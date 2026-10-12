@@ -37,7 +37,7 @@ public sealed record CellsSheetProjection
     /// <summary>Sheet name, exactly as shown in Excel.</summary>
     public required string Name { get; init; }
 
-    /// <summary>1-based position in the tab order, as add_sheet and move_sheet take it.</summary>
+    /// <summary>1-based position in the tab order, as insert_sheet and move_sheet take it.</summary>
     [Minimum(1)]
     public required int Position { get; init; }
 

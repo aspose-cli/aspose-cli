@@ -6,7 +6,7 @@ namespace Aspose.Cli.Product.Cells.Contracts;
 
 /// <summary>Adds a note (comment) to a cell.</summary>
 [Operation("add_comment")]
-public sealed record AddCommentOp : CellsOp
+public sealed record AddCommentOp : CellsSheetOp
 {
     /// <summary>The cell to annotate, such as B2.</summary>
     [A1Cell] public required string Cell { get; init; }
@@ -20,8 +20,9 @@ public sealed record AddCommentOp : CellsOp
 }
 
 /// <summary>Replaces the text of a cell's comment.</summary>
-[Operation("edit_comment")]
-public sealed record EditCommentOp : CellsOp
+[Operation("set_comment")]
+[MistakenFor("edit_comment")]
+public sealed record SetCommentOp : CellsSheetOp
 {
     /// <summary>The cell whose comment changes.</summary>
     [A1Cell] public required string Cell { get; init; }
@@ -37,7 +38,7 @@ public sealed record EditCommentOp : CellsOp
 
 /// <summary>Removes a cell's comment.</summary>
 [Operation("delete_comment")]
-public sealed record DeleteCommentOp : CellsOp
+public sealed record DeleteCommentOp : CellsSheetOp
 {
     /// <summary>The cell whose comment is removed.</summary>
     [A1Cell] public required string Cell { get; init; }

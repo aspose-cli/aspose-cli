@@ -1,6 +1,7 @@
 using System.Text.Json.Nodes;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Extensibility;
+using Aspose.Cli.Sdk.Operations;
 using Xunit;
 
 namespace Aspose.Cli.Product.Words.Tests;
@@ -83,7 +84,10 @@ public sealed class WordsModuleTests
         Assert.Throws<CliException>(() => Parse(
             """{"ops":[{"op":"set_page_setup","pageSize":{"preset":"A4"}}]}"""));
         Assert.Throws<CliException>(() => Parse(
-            """{"ops":[{"op":"set_page_setup","pageSize":{"preset":"a4","width":500,"height":700}}]}"""));
+            """{"ops":[{"op":"set_page_setup","pageSize":{"preset":"a4","width":500}}]}"""));
+        SetPageSetupOp mismatched = Assert.IsType<SetPageSetupOp>(Parse(
+            """{"ops":[{"op":"set_page_setup","pageSize":{"preset":"a4","width":500,"height":700}}]}""").Ops[0]);
+        Assert.Throws<OperationInvalidException>(() => mismatched.PageSize!.Dimensions());
         Assert.Throws<CliException>(() => Parse(
             """{"ops":[{"op":"set_page_setup","setup":{"size":"a4"}}]}"""));
     }

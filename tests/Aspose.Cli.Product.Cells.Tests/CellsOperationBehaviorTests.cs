@@ -106,7 +106,7 @@ public sealed class CellsOperationBehaviorTests : IClassFixture<CellsFixture>
             """{ "op": "delete_columns", "sheet": "Data", "at": "B" }""",
             static workbook => Assert.Equal("Q2", workbook.Worksheets["Data"].Cells["B1"].StringValue)),
         ["resize_rows"] = (
-            """{ "op": "resize_rows", "sheet": "Data", "from": 1, "to": 2, "height": 30 }""",
+            """{ "op": "resize_rows", "sheet": "Data", "first": 1, "last": 2, "height": 30 }""",
             static workbook =>
             {
                 Aspose.Cells.Cells cells = workbook.Worksheets["Data"].Cells;
@@ -115,7 +115,7 @@ public sealed class CellsOperationBehaviorTests : IClassFixture<CellsFixture>
                 Assert.NotEqual(30d, cells.GetRowHeight(2));
             }),
         ["resize_columns"] = (
-            """{ "op": "resize_columns", "sheet": "Data", "from": "B", "to": "C", "width": 20 }""",
+            """{ "op": "resize_columns", "sheet": "Data", "first": "B", "last": "C", "widthChars": 20 }""",
             static workbook =>
             {
                 Aspose.Cells.Cells cells = workbook.Worksheets["Data"].Cells;
@@ -123,11 +123,11 @@ public sealed class CellsOperationBehaviorTests : IClassFixture<CellsFixture>
                 Assert.Equal(20d, cells.GetColumnWidth(2));
                 Assert.NotEqual(20d, cells.GetColumnWidth(0));
             }),
-        ["add_sheet"] = (
-            """{ "op": "add_sheet", "name": "Summary", "at": 1 }""",
+        ["insert_sheet"] = (
+            """{ "op": "insert_sheet", "name": "Summary", "at": 1 }""",
             static workbook => Assert.Equal(["Summary", "Data", "Second", "Backstage"], SheetNames(workbook))),
         ["rename_sheet"] = (
-            """{ "op": "set_formula", "sheet": "Data", "range": "D1", "formula": "=Second!A1" }, { "op": "rename_sheet", "sheet": "Second", "to": "Notes" }""",
+            """{ "op": "set_formula", "sheet": "Data", "range": "D1", "formula": "=Second!A1" }, { "op": "rename_sheet", "sheet": "Second", "name": "Notes" }""",
             static workbook =>
             {
                 Assert.Equal(["Data", "Notes", "Backstage"], SheetNames(workbook));
@@ -170,12 +170,12 @@ public sealed class CellsOperationBehaviorTests : IClassFixture<CellsFixture>
             """{ "op": "set_autofilter", "sheet": "Data", "range": "A1:C3" }""",
             static workbook => Assert.Equal("A1:C3", workbook.Worksheets["Data"].AutoFilter.Range)),
         ["set_autofilter off"] = (
-            """{ "op": "set_autofilter", "sheet": "Data", "range": "A1:C3" }, { "op": "set_autofilter", "sheet": "Data", "off": true }""",
+            """{ "op": "set_autofilter", "sheet": "Data", "range": "A1:C3" }, { "op": "clear_autofilter", "sheet": "Data"}""",
             static workbook => Assert.True(string.IsNullOrEmpty(workbook.Worksheets["Data"].AutoFilter.Range))),
-        ["remove_duplicates"] = (
+        ["delete_duplicates"] = (
             """
             { "op": "set_values", "sheet": "Second", "range": "A1", "values": [["Name","Team"],["Ann","A"],["Ann","A"],["Bob","B"]] },
-            { "op": "remove_duplicates", "sheet": "Second", "range": "A1:B4", "hasHeader": true }
+            { "op": "delete_duplicates", "sheet": "Second", "range": "A1:B4", "hasHeader": true }
             """,
             static workbook =>
             {
@@ -184,7 +184,7 @@ public sealed class CellsOperationBehaviorTests : IClassFixture<CellsFixture>
                 Assert.Equal(string.Empty, cells["A4"].StringValue);
             }),
         ["set_validation"] = (
-            """{ "op": "set_validation", "sheet": "Data", "range": "B2:C9", "type": "wholeNumber", "operator": "between", "value1": "0", "value2": "100", "errorMessage": "0 to 100" }""",
+            """{ "op": "set_validation", "sheet": "Data", "range": "B2:C9", "kind": "whole-number", "operator": "between", "value1": "0", "value2": "100", "errorMessage": "0 to 100" }""",
             static workbook =>
             {
                 Validation validation = Assert.Single(workbook.Worksheets["Data"].Validations.Cast<Validation>());
@@ -196,7 +196,7 @@ public sealed class CellsOperationBehaviorTests : IClassFixture<CellsFixture>
                 Assert.Equal((1, 1, 8, 2), (area.StartRow, area.StartColumn, area.EndRow, area.EndColumn));
             }),
         ["clear_validation"] = (
-            """{ "op": "set_validation", "sheet": "Data", "range": "B2:B9", "type": "decimal", "operator": "greaterThan", "value1": "0" }, { "op": "clear_validation", "sheet": "Data", "range": "B2:B9" }""",
+            """{ "op": "set_validation", "sheet": "Data", "range": "B2:B9", "kind": "decimal", "operator": "greater-than", "value1": "0" }, { "op": "clear_validation", "sheet": "Data", "range": "B2:B9" }""",
             static workbook => Assert.Empty(workbook.Worksheets["Data"].Validations.Cast<Validation>().SelectMany(static v => v.Areas))),
         ["define_name"] = (
             """{ "op": "define_name", "name": "Rate", "refersTo": "Data!$B$2" }""",
@@ -211,14 +211,14 @@ public sealed class CellsOperationBehaviorTests : IClassFixture<CellsFixture>
                 Comment comment = workbook.Worksheets["Data"].Comments["B2"];
                 Assert.Equal(("Check Q1", "Finance"), (comment.Note, comment.Author));
             }),
-        ["edit_comment"] = (
-            """{ "op": "add_comment", "sheet": "Data", "cell": "B2", "text": "Check Q1" }, { "op": "edit_comment", "sheet": "Data", "cell": "B2", "text": "Checked" }""",
+        ["set_comment"] = (
+            """{ "op": "add_comment", "sheet": "Data", "cell": "B2", "text": "Check Q1" }, { "op": "set_comment", "sheet": "Data", "cell": "B2", "text": "Checked" }""",
             static workbook => Assert.Equal("Checked", workbook.Worksheets["Data"].Comments["B2"].Note)),
         ["delete_comment"] = (
             """{ "op": "add_comment", "sheet": "Data", "cell": "B2", "text": "Check Q1" }, { "op": "delete_comment", "sheet": "Data", "cell": "B2" }""",
             static workbook => Assert.Empty(workbook.Worksheets["Data"].Comments)),
         ["group_rows"] = (
-            """{ "op": "group_rows", "sheet": "Data", "from": 2, "to": 3, "collapse": true }""",
+            """{ "op": "group_rows", "sheet": "Data", "first": 2, "last": 3, "collapsed": true }""",
             static workbook =>
             {
                 Aspose.Cells.Cells cells = workbook.Worksheets["Data"].Cells;
@@ -227,17 +227,17 @@ public sealed class CellsOperationBehaviorTests : IClassFixture<CellsFixture>
                 Assert.Equal(0, cells.Rows[0].GroupLevel);
             }),
         ["ungroup_rows"] = (
-            """{ "op": "group_rows", "sheet": "Data", "from": 2, "to": 3 }, { "op": "ungroup_rows", "sheet": "Data", "from": 2, "to": 3 }""",
+            """{ "op": "group_rows", "sheet": "Data", "first": 2, "last": 3 }, { "op": "ungroup_rows", "sheet": "Data", "first": 2, "last": 3 }""",
             static workbook => Assert.Equal(0, workbook.Worksheets["Data"].Cells.Rows[1].GroupLevel)),
         ["group_columns"] = (
-            """{ "op": "group_columns", "sheet": "Data", "from": "B", "to": "C" }""",
+            """{ "op": "group_columns", "sheet": "Data", "first": "B", "last": "C" }""",
             static workbook =>
             {
                 ColumnCollection columns = workbook.Worksheets["Data"].Cells.Columns;
                 Assert.Equal((0, 1, 1), (columns[0].GroupLevel, columns[1].GroupLevel, columns[2].GroupLevel));
             }),
         ["ungroup_columns"] = (
-            """{ "op": "group_columns", "sheet": "Data", "from": "B", "to": "C" }, { "op": "ungroup_columns", "sheet": "Data", "from": "B", "to": "C" }""",
+            """{ "op": "group_columns", "sheet": "Data", "first": "B", "last": "C" }, { "op": "ungroup_columns", "sheet": "Data", "first": "B", "last": "C" }""",
             static workbook => Assert.Equal(0, workbook.Worksheets["Data"].Cells.Columns[1].GroupLevel)),
         ["set_hyperlink"] = (
             """{ "op": "set_hyperlink", "sheet": "Data", "cell": "E1", "url": "https://example.com/report", "display": "Open" }""",
@@ -248,8 +248,8 @@ public sealed class CellsOperationBehaviorTests : IClassFixture<CellsFixture>
                 Assert.Equal("https://example.com/report", link.Address);
                 Assert.Equal("Open", data.Cells["E1"].StringValue);
             }),
-        ["remove_hyperlink"] = (
-            """{ "op": "set_hyperlink", "sheet": "Data", "cell": "E1", "url": "https://example.com" }, { "op": "remove_hyperlink", "sheet": "Data", "cell": "E1" }""",
+        ["delete_hyperlink"] = (
+            """{ "op": "set_hyperlink", "sheet": "Data", "cell": "E1", "url": "https://example.com" }, { "op": "delete_hyperlink", "sheet": "Data", "cell": "E1" }""",
             static workbook => Assert.Empty(workbook.Worksheets["Data"].Hyperlinks)),
         ["protect_workbook"] = (
             """{ "op": "protect_workbook" }""",
@@ -261,7 +261,7 @@ public sealed class CellsOperationBehaviorTests : IClassFixture<CellsFixture>
             """{ "op": "protect_sheet", "sheet": "Data" }, { "op": "unprotect_sheet", "sheet": "Data" }""",
             static workbook => Assert.False(workbook.Worksheets["Data"].IsProtected)),
         ["set_default_font"] = (
-            """{ "op": "set_default_font", "font": "Georgia", "size": 12 }""",
+            """{ "op": "set_default_font", "font": "Georgia", "fontSize": 12 }""",
             static workbook =>
             {
                 Assert.Equal(("Georgia", 12d), (workbook.DefaultStyle.Font.Name, workbook.DefaultStyle.Font.DoubleSize));
@@ -282,7 +282,7 @@ public sealed class CellsOperationBehaviorTests : IClassFixture<CellsFixture>
                 Assert.Equal((false, 90, false), (data.IsGridlinesVisible, data.Zoom, data.IsRowColumnHeadersVisible));
             }),
         ["set_page_setup"] = (
-            """{ "op": "set_page_setup", "sheet": "Data", "orientation": "landscape", "paperSize": "a4", "fitToWidth": 1, "fitToHeight": 0, "footer": "Page &P" }""",
+            """{ "op": "set_page_setup", "sheet": "Data", "orientation": "landscape", "pageSize": { "preset": "a4" }, "fitToWidth": 1, "fitToHeight": 0, "footer": "Page &P" }""",
             static workbook =>
             {
                 PageSetup setup = workbook.Worksheets["Data"].PageSetup;
@@ -292,8 +292,8 @@ public sealed class CellsOperationBehaviorTests : IClassFixture<CellsFixture>
             }),
         ["delete_chart"] = (
             """
-            { "op": "create_chart", "sheet": "Data", "type": "column", "dataRange": "A1:C2", "at": "E2:K12" },
-            { "op": "create_chart", "sheet": "Data", "type": "line", "dataRange": "A1:C2", "at": "E14:K24" },
+            { "op": "insert_chart", "sheet": "Data", "kind": "column", "dataRange": "A1:C2", "at": "E2:K12" },
+            { "op": "insert_chart", "sheet": "Data", "kind": "line", "dataRange": "A1:C2", "at": "E14:K24" },
             { "op": "delete_chart", "sheet": "Data", "index": 1 }
             """,
             static workbook =>
@@ -303,7 +303,7 @@ public sealed class CellsOperationBehaviorTests : IClassFixture<CellsFixture>
             }),
         ["refresh_pivot"] = (
             """
-            { "op": "create_pivot", "sheet": "Second", "sourceRange": "Data!A1:C2", "at": "D1", "name": "Sales", "rows": ["Region"], "values": [{ "field": "Q1" }] },
+            { "op": "insert_pivot", "sheet": "Second", "sourceRange": "Data!A1:C2", "at": "D1", "name": "Sales", "rows": ["Region"], "values": [{ "field": "Q1" }] },
             { "op": "set_values", "sheet": "Data", "range": "B2", "values": [[4000]] },
             { "op": "refresh_pivot", "sheet": "Second", "name": "sales" }
             """,
@@ -342,8 +342,8 @@ public sealed class CellsOperationBehaviorTests : IClassFixture<CellsFixture>
         string output = Apply(
             source,
             """
-            { "op": "create_pivot", "sheet": "Second", "sourceRange": "Data!A1:C2", "at": "D1", "rows": ["Region"], "values": [{ "field": "Q1" }] },
-            { "op": "format_range", "sheet": "Second", "range": "D1:E1", "style": { "bg": "#1F4E79", "color": "#FFFFFF" } },
+            { "op": "insert_pivot", "sheet": "Second", "sourceRange": "Data!A1:C2", "at": "D1", "rows": ["Region"], "values": [{ "field": "Q1" }] },
+            { "op": "format_range", "sheet": "Second", "range": "D1:E1", "style": { "fillColor": "#1F4E79", "color": "#FFFFFF" } },
             { "op": "format_range", "sheet": "Second", "range": "D1:E1", "style": { "bold": true } }
             """,
             "pivot-format.out.xlsx").Output!.Path;
@@ -365,7 +365,7 @@ public sealed class CellsOperationBehaviorTests : IClassFixture<CellsFixture>
                 Input = source,
                 Batch = Parse("""
                 { "ops": [
-                  { "op": "create_pivot", "sheet": "Second", "sourceRange": "Data!A1:C2", "at": "D1", "rows": ["Region"], "values": [{ "field": "Ghost" }] },
+                  { "op": "insert_pivot", "sheet": "Second", "sourceRange": "Data!A1:C2", "at": "D1", "rows": ["Region"], "values": [{ "field": "Ghost" }] },
                   { "op": "set_values", "sheet": "Second", "range": "A2", "values": [["after"]] }
                 ] }
                 """),
@@ -391,8 +391,8 @@ public sealed class CellsOperationBehaviorTests : IClassFixture<CellsFixture>
                 Input = source,
                 Batch = Parse("""
                 { "ops": [
-                  { "op": "create_chart", "sheet": "Data", "type": "pie", "dataRange": "A1:B2", "at": "E2:K12", "title": "Share" },
-                  { "op": "update_chart", "sheet": "Data", "index": 1, "title": "Changed", "axisTitles": { "value": "USD" } }
+                  { "op": "insert_chart", "sheet": "Data", "kind": "pie", "dataRange": "A1:B2", "at": "E2:K12", "title": "Share" },
+                  { "op": "set_chart", "sheet": "Data", "index": 1, "title": "Changed", "axisTitles": { "value": "USD" } }
                 ] }
                 """),
                 Output = TestOutput.At(_fixture.Temp.File("pie.out.xlsx"), overwrite: true),
@@ -407,7 +407,7 @@ public sealed class CellsOperationBehaviorTests : IClassFixture<CellsFixture>
     [Theory]
     [InlineData("""
         { "op": "add_comment", "sheet": "Data", "cell": "C3", "text": "x" },
-        { "op": "edit_comment", "sheet": "Data", "cell": "B2", "text": "x" }
+        { "op": "set_comment", "sheet": "Data", "cell": "B2", "text": "x" }
         """, "COMMENT_NOT_FOUND", "B2", "C3", null)]
     [InlineData("""
         { "op": "add_comment", "sheet": "Data", "cell": "C3", "text": "x" },
@@ -415,14 +415,14 @@ public sealed class CellsOperationBehaviorTests : IClassFixture<CellsFixture>
         """, "COMMENT_NOT_FOUND", "B2", "C3", null)]
     [InlineData("""
         { "op": "set_hyperlink", "sheet": "Data", "cell": "E1", "url": "https://example.com" },
-        { "op": "remove_hyperlink", "sheet": "Data", "cell": "B2" }
+        { "op": "delete_hyperlink", "sheet": "Data", "cell": "B2" }
         """, "HYPERLINK_NOT_FOUND", "B2", "E1", null)]
     [InlineData("""
         { "op": "define_name", "name": "Rate", "refersTo": "Data!$B$2" },
         { "op": "delete_name", "name": "Rates" }
         """, "NAME_NOT_FOUND", "Rates", "Rate", "Rate")]
     [InlineData("""
-        { "op": "create_pivot", "sheet": "Second", "sourceRange": "Data!A1:C2", "at": "D1", "name": "Sales", "rows": ["Region"], "values": [{ "field": "Q1" }] },
+        { "op": "insert_pivot", "sheet": "Second", "sourceRange": "Data!A1:C2", "at": "D1", "name": "Sales", "rows": ["Region"], "values": [{ "field": "Q1" }] },
         { "op": "refresh_pivot", "sheet": "Second", "name": "Ghost" }
         """, "PIVOT_NOT_FOUND", "Ghost", "Sales", null)]
     public void AnOperationWithoutItsTarget_ListsTheTargetsTheDocumentHas(
@@ -439,12 +439,24 @@ public sealed class CellsOperationBehaviorTests : IClassFixture<CellsFixture>
     }
 
     [Fact]
+    public void SetCommentOnACellWithoutOne_PointsToAddComment()
+    {
+        CliException error = Assert.Throws<CliException>(() => Apply(
+            _fixture.CreateSalesWorkbook($"set-comment-{Guid.NewGuid():N}.xlsx"),
+            """{ "op": "set_comment", "sheet": "Data", "cell": "B2", "text": "x" }""",
+            $"set-comment-{Guid.NewGuid():N}.out.xlsx"));
+
+        Assert.Equal("COMMENT_NOT_FOUND", error.Code.Name);
+        Assert.Contains("use add_comment", error.Hint, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void AChartIndexPastTheSheetsCharts_ReportsHowManyTheSheetHas()
     {
         CliException error = Assert.Throws<CliException>(() => Apply(
             _fixture.CreateSalesWorkbook("missing-chart.xlsx"),
             """
-            { "op": "create_chart", "sheet": "Data", "type": "column", "dataRange": "A1:C2", "at": "E2:K12" },
+            { "op": "insert_chart", "sheet": "Data", "kind": "column", "dataRange": "A1:C2", "at": "E2:K12" },
             { "op": "delete_chart", "sheet": "Data", "index": 2 }
             """,
             "missing-chart.out.xlsx"));

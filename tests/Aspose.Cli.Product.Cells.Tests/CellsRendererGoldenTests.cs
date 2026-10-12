@@ -54,9 +54,9 @@ public sealed class CellsRendererGoldenTests
             Data   1      Chart 1  column
 
             layouts:
-            sheet        freeze  row groups                 column groups  filter  print area  titles   page              header  footer
-            Data         B2      2:20 L1, 3:4 L2 collapsed  B:C L1         A1:C9   A1:C9       1:1 A:A  landscape 85%     &P      Page &P of &N
-            Empty sheet  -       -                          -              -       -           -        portrait fit 1x0  -       -
+            sheet        freeze  row groups                 column groups  filter  print area  titles   page                  header  footer
+            Data         B2      2:20 L1, 3:4 L2 collapsed  B:C L1         A1:C9   A1:C9       1:1 A:A  letter landscape 85%  &P      Page &P of &N
+            Empty sheet  -       -                          -              -       -           -        a4 portrait fit 1x0   -       -
             """,
             text);
     }
@@ -119,8 +119,8 @@ public sealed class CellsRendererGoldenTests
 
             | sheet | freeze | row groups | column groups | filter | print area | titles | page | header | footer |
             | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-            | Data | B2 | 2:20 L1, 3:4 L2 collapsed | B:C L1 | A1:C9 | A1:C9 | 1:1 A:A | landscape 85% | &P | Page &P of &N |
-            | Empty sheet | - | - | - | - | - | - | portrait fit 1x0 | - | - |
+            | Data | B2 | 2:20 L1, 3:4 L2 collapsed | B:C L1 | A1:C9 | A1:C9 | 1:1 A:A | letter landscape 85% | &P | Page &P of &N |
+            | Empty sheet | - | - | - | - | - | - | a4 portrait fit 1x0 | - | - |
             """,
             text);
     }
@@ -361,25 +361,41 @@ public sealed class CellsRendererGoldenTests
                     new CellsSheetLayoutInfo
                     {
                         Sheet = "Data",
-                        FreezePanes = "B2",
+                        FreezePanes = new CellsFreezePanesInfo { Cell = "B2" },
                         RowGroups =
                         [
-                            new CellsRowGroupInfo { From = 2, To = 20, Level = 1, Collapsed = false },
-                            new CellsRowGroupInfo { From = 3, To = 4, Level = 2, Collapsed = true },
+                            new CellsRowGroupInfo { First = 2, Last = 20, Level = 1, Collapsed = false },
+                            new CellsRowGroupInfo { First = 3, Last = 4, Level = 2, Collapsed = true },
                         ],
-                        ColumnGroups = [new CellsColumnGroupInfo { From = "B", To = "C", Level = 1, Collapsed = false }],
-                        AutoFilter = "A1:C9",
-                        PrintArea = "A1:C9",
-                        TitleRows = "1:1",
-                        TitleColumns = "A:A",
-                        Orientation = "landscape",
-                        Scale = 85,
-                        Header = "&P",
-                        Footer = "Page &P of &N",
+                        ColumnGroups = [new CellsColumnGroupInfo { First = "B", Last = "C", Level = 1, Collapsed = false }],
+                        Autofilter = new CellsAutofilterInfo { Range = "A1:C9" },
+                        PrintArea = new CellsPrintAreaInfo { Range = "A1:C9", TitleRows = "1:1", TitleColumns = "A:A" },
+                        PageSetup = new CellsPageSetupInfo
+                        {
+                            Orientation = "landscape",
+                            PageSize = PageSizeInfo.Of(792, 612),
+                            ScalePercent = 85,
+                            Margins = Margins,
+                            Header = "&P",
+                            Footer = "Page &P of &N",
+                        },
                     },
-                    new CellsSheetLayoutInfo { Sheet = "Empty sheet", Orientation = "portrait", FitToWidth = 1, FitToHeight = 0 },
+                    new CellsSheetLayoutInfo
+                    {
+                        Sheet = "Empty sheet",
+                        PageSetup = new CellsPageSetupInfo
+                        {
+                            Orientation = "portrait",
+                            PageSize = PageSizeInfo.Of(595.28, 841.89),
+                            FitToWidth = 1,
+                            FitToHeight = 0,
+                            Margins = Margins,
+                        },
+                    },
                 ],
             },
         };
     }
+
+    private static readonly CellsMargins Margins = new() { Top = 54, Bottom = 54, Left = 50.4, Right = 50.4, Header = 21.6, Footer = 21.6 };
 }

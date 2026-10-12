@@ -23,7 +23,8 @@ public sealed class PageSizeInputTests
     [InlineData("""{"width":300,"height":400.5}""", true)]
     [InlineData("""{"preset":"a4","width":300}""", false)]
     [InlineData("""{"preset":"a4","height":300}""", false)]
-    [InlineData("""{"preset":"a4","width":300,"height":400}""", false)]
+    [InlineData("""{"preset":"a4","width":300,"height":400}""", true)]
+    [InlineData("""{"preset":"a4","width":841.89,"height":595.28}""", true)]
     [InlineData("""{"width":300}""", false)]
     [InlineData("""{"height":300}""", false)]
     [InlineData("""{}""", false)]
@@ -41,7 +42,8 @@ public sealed class PageSizeInputTests
     }
 
     [Theory]
-    [InlineData("""{"preset":"a4","width":300}""", "pageSize must set exactly one of: preset, width")]
+    [InlineData("""{"preset":"a4","width":300}""", "pageSize must set height when it sets width")]
+    [InlineData("""{}""", "pageSize must set at least one of: preset, width")]
     [InlineData("""{"width":300}""", "pageSize must set height when it sets width")]
     [InlineData("""{"preset":"b5"}""", "pageSize.preset does not accept 'b5'")]
     [InlineData("""{"width":0,"height":400}""", "pageSize.width must be greater than 0")]
@@ -60,7 +62,7 @@ public sealed class PageSizeInputTests
         Assert.Equal(0, properties["width"]!["exclusiveMinimum"]!.GetValue<int>());
         Assert.Equal(0, properties["height"]!["exclusiveMinimum"]!.GetValue<int>());
         Assert.Equal(
-            """[{"oneOf":[{"required":["preset"]},{"required":["width"]}]},{"dependentRequired":{"width":["height"]}},{"dependentRequired":{"height":["width"]}}]""",
+            """[{"anyOf":[{"required":["preset"]},{"required":["width"]}]},{"dependentRequired":{"width":["height"]}},{"dependentRequired":{"height":["width"]}}]""",
             input["allOf"]!.ToJsonString());
         Assert.StartsWith("The size of a page in points", input["description"]!.GetValue<string>(), StringComparison.Ordinal);
         Assert.False(string.IsNullOrEmpty(properties["width"]!["description"]?.GetValue<string>()));
@@ -71,6 +73,22 @@ public sealed class PageSizeInputTests
     {
         Assert.Equal(PageSizePresets.Dimensions(PageSizePresets.Letter), new PageSizeInput { Preset = PageSizePresets.Letter }.Dimensions());
         Assert.Equal((300d, 400.5d), new PageSizeInput { Width = 300, Height = 400.5 }.Dimensions());
+    }
+
+    [Theory]
+    [InlineData(841.89, 595.28)]
+    [InlineData(595.28, 841.89)]
+    [InlineData(595, 842)]
+    public void APresetWithItsOwnSize_ReadsAsItWasReportedInEitherOrientation(double width, double height) =>
+        Assert.Equal((width, height), new PageSizeInput { Preset = PageSizePresets.A4, Width = width, Height = height }.Dimensions());
+
+    [Fact]
+    public void APresetWithAnotherPapersSize_IsRefused()
+    {
+        OperationInvalidException error = Assert.Throws<OperationInvalidException>(
+            static () => new PageSizeInput { Preset = PageSizePresets.A4, Width = 612, Height = 792 }.Dimensions());
+
+        Assert.Equal("pageSize names a4 but measures 612 by 792 points, which is not a4 in either orientation", error.Message);
     }
 
     private static string Parse(string operation)
