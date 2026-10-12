@@ -298,7 +298,8 @@ public sealed class WordsFieldAndReviewTests
             Output = TestOutput.At(output),
         });
 
-        Assert.All(result.Applied, static applied => Assert.Equal(2L, applied.ItemsAffected));
+        // Each decision changed the one paragraph that held its revisions.
+        Assert.All(result.Applied, static applied => Assert.Equal(1L, applied.ItemsAffected));
         var document = new Document(output);
         // Under evaluation the body starts with the engine's banner.
         Assert.Contains("Payment in 15 days. Cap is 20%. IP stays with us.", document.FirstSection.Body.Paragraphs.Cast<Paragraph>().Select(static paragraph => paragraph.GetText().Trim()));

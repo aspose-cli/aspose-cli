@@ -49,7 +49,7 @@
         "command": "edit",
         "inputSchema": "v2/words/ops",
         "operationSchema": "aspose-cli schema v2/words/ops --operation <op>",
-        "contractFingerprint": "sha256:d494706fa3b780aaea1d6b1e6e5056627aa1eff92b48ab39452d3c916390b632",
+        "contractFingerprint": "sha256:69291ff27f6b6440a334b4509369674541185df8f8a6e6adcd4b318aad2df588",
         "maximumOperationCount": 10000,
         "ops": [
           "accept_revisions",
@@ -3437,7 +3437,7 @@
           "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/backup.schema.json"
         },
         "pagesTouched": {
-          "description": "The output pages the batch changed: those of the blocks and sections the operations addressed or inserted, of replaced text, and of the content that took the place of removed blocks. An operation whose only target is document can change any page.",
+          "description": "The output pages that hold what the batch changed: the pages of each changed block, and for a removed block the page of the content that took its place; every page of a section whose page setup, headers or footers changed; every page for the watermark; and the pages of the text in a changed style. Absent when the batch changed nothing on a page, such as only document properties or the editing restriction.",
           "type": "array",
           "uniqueItems": true,
           "items": {
@@ -3656,10 +3656,10 @@
           }
         },
         "styles": {
-          "description": "The names of the styles the document defines, in ordinal order; returned with --detail styles.",
+          "description": "The styles the document defines, in ordinal order of their names; returned with --detail styles.",
           "type": "array",
           "items": {
-            "type": "string"
+            "$ref": "#/$defs/wordsStyleData"
           }
         },
         "fields": {
@@ -3845,6 +3845,10 @@
             "hasMacros": {
               "description": "Whether the document holds macros (a VBA project); an output other than docm, dotm, doc, dot or wordml drops them and reports MACROS_DROPPED.",
               "type": "boolean"
+            },
+            "watermark": {
+              "description": "The watermark the document's headers draw; absent without one.",
+              "$ref": "#/$defs/wordsWatermarkData"
             }
           }
         },
@@ -3883,6 +3887,11 @@
             "result": {
               "description": "The result a reader sees, with the results of nested fields in place of their codes.",
               "type": "string"
+            },
+            "maxLevel": {
+              "description": "The deepest heading level a table of contents lists, as insert_toc maxLevel sets it; absent for other fields.",
+              "type": "integer",
+              "minimum": 1
             }
           }
         },
@@ -4018,6 +4027,47 @@
             }
           }
         },
+        "wordsPageNumbersData": {
+          "description": "A section's page numbering, as set_page_numbers sets it.",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "location": {
+              "description": "Whether the primary header or, without one there, the primary footer holds the PAGE field; absent when neither does.",
+              "type": "string",
+              "enum": [
+                "header",
+                "footer"
+              ]
+            },
+            "alignment": {
+              "description": "The alignment of the paragraph that holds the PAGE field; absent without one.",
+              "type": "string",
+              "enum": [
+                "left",
+                "center",
+                "right"
+              ]
+            },
+            "numberStyle": {
+              "description": "How the page numbers are written.",
+              "type": "string",
+              "enum": [
+                "decimal",
+                "roman-upper",
+                "roman-lower",
+                "letters-upper",
+                "letters-lower",
+                "none"
+              ]
+            },
+            "start": {
+              "description": "The number of the section's first page when its numbering restarts; absent when it continues.",
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
         "wordsRevisionData": {
           "description": "One tracked change in document order: its 1-based number, which accept_revisions and reject_revisions accept, its kind, author, the date the document records and the text it inserts, deletes or moves.",
           "type": "object",
@@ -4081,6 +4131,8 @@
             "orientation",
             "pageSize",
             "margins",
+            "columnCount",
+            "pageNumbers",
             "headersFooters"
           ],
           "additionalProperties": false,
@@ -4106,6 +4158,15 @@
               "description": "The page margins.",
               "$ref": "#/$defs/wordsMarginData"
             },
+            "columnCount": {
+              "description": "The number of text columns.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "pageNumbers": {
+              "description": "The section's page numbering: its style, its first number when it restarts, and the PAGE field that shows it.",
+              "$ref": "#/$defs/wordsPageNumbersData"
+            },
             "headersFooters": {
               "description": "The headers and footers the section defines itself; a kind it does not define continues from the previous section.",
               "type": "array",
@@ -4115,13 +4176,78 @@
             }
           }
         },
+        "wordsStyleData": {
+          "description": "One style the document defines, under the names define_style sets it with.",
+          "type": "object",
+          "required": [
+            "name",
+            "kind"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "description": "The style's name.",
+              "type": "string"
+            },
+            "kind": {
+              "description": "What the style formats.",
+              "type": "string",
+              "enum": [
+                "paragraph",
+                "character",
+                "table",
+                "list"
+              ]
+            },
+            "basedOn": {
+              "description": "The style it is based on; absent for none.",
+              "type": "string"
+            },
+            "font": {
+              "description": "The font of its Latin and East Asian text.",
+              "type": "string"
+            },
+            "latinFont": {
+              "description": "The font of its Latin text.",
+              "type": "string"
+            },
+            "eastAsianFont": {
+              "description": "The font of its Chinese, Japanese and Korean text.",
+              "type": "string"
+            },
+            "fontSize": {
+              "description": "The font size in points.",
+              "type": "number"
+            },
+            "bold": {
+              "description": "Whether its text is bold.",
+              "type": "boolean"
+            },
+            "color": {
+              "description": "Its text color, as #RRGGBB; absent for automatic.",
+              "type": "string"
+            },
+            "spaceBefore": {
+              "description": "The space before a paragraph of the style, in points.",
+              "type": "number"
+            },
+            "spaceAfter": {
+              "description": "The space after a paragraph of the style, in points.",
+              "type": "number"
+            }
+          }
+        },
         "wordsTableData": {
           "description": "One table block.",
           "type": "object",
           "required": [
             "block",
             "rowCount",
-            "columnCount"
+            "columnCount",
+            "keepTogether",
+            "allowRowBreakAcrossPages",
+            "headerRowCount",
+            "keepWithNext"
           ],
           "additionalProperties": false,
           "properties": {
@@ -4144,6 +4270,58 @@
               "description": "The table style the table uses, accepted by insert_table's tableStyle; omitted for the default Table Normal style.",
               "type": "string",
               "minLength": 1
+            },
+            "keepTogether": {
+              "description": "Whether the whole table keeps on one page when it fits, as set_table_pagination keepTogether sets it.",
+              "type": "boolean"
+            },
+            "allowRowBreakAcrossPages": {
+              "description": "Whether the text of every row may split across a page break.",
+              "type": "boolean"
+            },
+            "headerRowCount": {
+              "description": "The first rows repeated as a heading on every page the table spans.",
+              "type": "integer",
+              "minimum": 0
+            },
+            "keepWithNext": {
+              "description": "Whether the table keeps with the paragraph after it.",
+              "type": "boolean"
+            }
+          }
+        },
+        "wordsWatermarkData": {
+          "description": "A watermark, as set_watermark sets it.",
+          "type": "object",
+          "required": [
+            "kind",
+            "faded"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "description": "Whether it draws text or an image.",
+              "type": "string",
+              "enum": [
+                "text",
+                "image"
+              ]
+            },
+            "text": {
+              "description": "A text watermark's text.",
+              "type": "string"
+            },
+            "font": {
+              "description": "A text watermark's font.",
+              "type": "string"
+            },
+            "color": {
+              "description": "A text watermark's color, as #RRGGBB.",
+              "type": "string"
+            },
+            "faded": {
+              "description": "Whether the text is semi-transparent or the image washed out.",
+              "type": "boolean"
             }
           }
         }
@@ -4389,52 +4567,52 @@
             "basedOn": {
               "type": "string",
               "minLength": 1,
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/inspect-result.schema.json#/$defs/wordsStyleData/properties/basedOn"
             },
             "font": {
               "description": "The font of Latin and East Asian text.",
               "type": "string",
               "minLength": 1,
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/inspect-result.schema.json#/$defs/wordsStyleData/properties/font"
             },
             "latinFont": {
               "description": "The font of Latin text, in place of font's.",
               "type": "string",
               "minLength": 1,
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/inspect-result.schema.json#/$defs/wordsStyleData/properties/latinFont"
             },
             "eastAsianFont": {
               "description": "The font of Chinese, Japanese and Korean text, in place of font's.",
               "type": "string",
               "minLength": 1,
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/inspect-result.schema.json#/$defs/wordsStyleData/properties/eastAsianFont"
             },
             "fontSize": {
               "description": "The font size in points.",
               "type": "number",
               "exclusiveMinimum": 0,
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/inspect-result.schema.json#/$defs/wordsStyleData/properties/fontSize"
             },
             "bold": {
               "type": "boolean",
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/inspect-result.schema.json#/$defs/wordsStyleData/properties/bold"
             },
             "color": {
               "description": "The text color, as #RRGGBB.",
               "$ref": "#/$defs/color",
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/inspect-result.schema.json#/$defs/wordsStyleData/properties/color"
             },
             "spaceBefore": {
               "description": "Space before the paragraph, in points.",
               "type": "number",
               "minimum": 0,
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/inspect-result.schema.json#/$defs/wordsStyleData/properties/spaceBefore"
             },
             "spaceAfter": {
               "description": "Space after the paragraph, in points.",
               "type": "number",
               "minimum": 0,
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/inspect-result.schema.json#/$defs/wordsStyleData/properties/spaceAfter"
             }
           }
         },
@@ -4548,7 +4726,7 @@
             },
             "underline": {
               "type": "boolean",
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/read-result.schema.json#/$defs/wordsRunData/properties/underline"
             },
             "fontSize": {
               "description": "The font size in points.",
@@ -4582,7 +4760,7 @@
             "highlight": {
               "description": "The highlight color, as #RRGGBB.",
               "$ref": "#/$defs/color",
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/read-result.schema.json#/$defs/wordsRunData/properties/highlight"
             }
           }
         },
@@ -4754,7 +4932,7 @@
             },
             "url": {
               "$ref": "#/$defs/webLink",
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/read-result.schema.json#/$defs/wordsRunData/properties/url"
             }
           }
         },
@@ -4806,7 +4984,7 @@
               "description": "Whether the image sits in the text line rather than floating with square wrapping.",
               "type": "boolean",
               "default": true,
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/read-result.schema.json#/$defs/wordsBlockImageData/properties/inline"
             }
           }
         },
@@ -4996,7 +5174,7 @@
               "minimum": 1,
               "maximum": 9,
               "default": 3,
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/inspect-result.schema.json#/$defs/wordsFieldData/properties/maxLevel"
             }
           }
         },
@@ -5301,25 +5479,25 @@
               "description": "The font of Latin and East Asian text.",
               "type": "string",
               "minLength": 1,
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/inspect-result.schema.json#/$defs/wordsStyleData/properties/font"
             },
             "latinFont": {
               "description": "The font of Latin text, in place of font's.",
               "type": "string",
               "minLength": 1,
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/inspect-result.schema.json#/$defs/wordsStyleData/properties/latinFont"
             },
             "eastAsianFont": {
               "description": "The font of Chinese, Japanese and Korean text, in place of font's.",
               "type": "string",
               "minLength": 1,
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/inspect-result.schema.json#/$defs/wordsStyleData/properties/eastAsianFont"
             },
             "fontSize": {
               "description": "The font size in points; sizes are kept when omitted.",
               "type": "number",
               "exclusiveMinimum": 0,
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/inspect-result.schema.json#/$defs/wordsStyleData/properties/fontSize"
             }
           },
           "allOf": [
@@ -5492,7 +5670,7 @@
                 "bullet",
                 "number"
               ],
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/read-result.schema.json#/$defs/wordsListData/properties/kind"
             },
             "level": {
               "description": "The 1-based list level.",
@@ -5500,7 +5678,7 @@
               "minimum": 1,
               "maximum": 9,
               "default": 1,
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/read-result.schema.json#/$defs/wordsListData/properties/level"
             }
           }
         },
@@ -5531,7 +5709,7 @@
                 "footer"
               ],
               "default": "footer",
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/inspect-result.schema.json#/$defs/wordsPageNumbersData/properties/location"
             },
             "alignment": {
               "type": "string",
@@ -5541,7 +5719,7 @@
                 "right"
               ],
               "default": "center",
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/inspect-result.schema.json#/$defs/wordsPageNumbersData/properties/alignment"
             },
             "numberStyle": {
               "description": "How the page numbers are written; the section's numbering keeps its style when omitted.",
@@ -5554,13 +5732,13 @@
                 "letters-lower",
                 "none"
               ],
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/inspect-result.schema.json#/$defs/wordsPageNumbersData/properties/numberStyle"
             },
             "start": {
               "description": "The number of the section's first page; numbering continues when omitted.",
               "type": "integer",
               "minimum": 0,
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/inspect-result.schema.json#/$defs/wordsPageNumbersData/properties/start"
             }
           }
         },
@@ -5604,7 +5782,7 @@
             "columnCount": {
               "type": "integer",
               "minimum": 1,
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/inspect-result.schema.json#/$defs/wordsSectionData/properties/columnCount"
             }
           },
           "allOf": [
@@ -5673,7 +5851,7 @@
                   "null"
                 ]
               },
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/inspect-result.schema.json#/properties/properties"
             }
           }
         },
@@ -5764,23 +5942,23 @@
             "keepTogether": {
               "description": "true keeps the whole table on one page when it fits: no row breaks across pages, and every paragraph keeps with the next except the last paragraph of each last-row cell. false clears keep-with-next on those same paragraphs and leaves the row setting.",
               "type": "boolean",
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/inspect-result.schema.json#/$defs/wordsTableData/properties/keepTogether"
             },
             "allowRowBreakAcrossPages": {
               "description": "Whether the text of each row may split across a page break.",
               "type": "boolean",
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/inspect-result.schema.json#/$defs/wordsTableData/properties/allowRowBreakAcrossPages"
             },
             "headerRowCount": {
               "description": "The first rows repeated as a heading on every page the table spans; 0 clears it. At most the table's row count.",
               "type": "integer",
               "minimum": 0,
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/inspect-result.schema.json#/$defs/wordsTableData/properties/headerRowCount"
             },
             "keepWithNext": {
               "description": "Whether the last paragraph of each last-row cell keeps with the paragraph after the table, keeping the table with it.",
               "type": "boolean",
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/inspect-result.schema.json#/$defs/wordsTableData/properties/keepWithNext"
             }
           },
           "allOf": [
@@ -5855,31 +6033,31 @@
               "type": "string",
               "minLength": 1,
               "maxLength": 200,
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/inspect-result.schema.json#/$defs/wordsWatermarkData/properties/text"
             },
             "path": {
               "description": "The watermark image, relative to the working directory.",
               "type": "string",
               "minLength": 1,
               "pattern": "\\S",
-              "x-readBack": "unread"
+              "x-readBack": "not-state"
             },
             "faded": {
               "description": "Semi-transparent text or a washed-out image.",
               "type": "boolean",
               "default": true,
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/inspect-result.schema.json#/$defs/wordsWatermarkData/properties/faded"
             },
             "color": {
               "description": "The text color, as #RRGGBB.",
               "$ref": "#/$defs/color",
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/inspect-result.schema.json#/$defs/wordsWatermarkData/properties/color"
             },
             "font": {
               "description": "The text font; when omitted, East Asian text takes the default East Asian font of a Chinese, Japanese or Korean document, or else Microsoft YaHei.",
               "type": "string",
               "minLength": 1,
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/inspect-result.schema.json#/$defs/wordsWatermarkData/properties/font"
             }
           },
           "allOf": [
@@ -6065,7 +6243,7 @@
             "columnCount": {
               "type": "integer",
               "minimum": 1,
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/inspect-result.schema.json#/$defs/wordsSectionData/properties/columnCount"
             }
           }
         },
@@ -6092,7 +6270,7 @@
               "type": "integer",
               "minimum": 1,
               "maximum": 9,
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/read-result.schema.json#/$defs/wordsListData/properties/level"
             }
           }
         },
@@ -6295,6 +6473,10 @@
                 "$ref": "#/$defs/wordsBlockImageData"
               }
             },
+            "list": {
+              "description": "A list paragraph's list: bullets or numbers, and its 1-based level.",
+              "$ref": "#/$defs/wordsListData"
+            },
             "breakAfter": {
               "description": "The break that follows this block: a page break, including one that starts the next paragraph, or a section break after the last block of a section.",
               "type": "string",
@@ -6335,7 +6517,8 @@
           "required": [
             "block",
             "width",
-            "height"
+            "height",
+            "inline"
           ],
           "additionalProperties": false,
           "properties": {
@@ -6357,6 +6540,34 @@
               "description": "The height in points.",
               "type": "number",
               "minimum": 0
+            },
+            "inline": {
+              "description": "Whether the image sits in the text line rather than floating.",
+              "type": "boolean"
+            }
+          }
+        },
+        "wordsListData": {
+          "description": "The list a paragraph belongs to, as set_list sets it.",
+          "type": "object",
+          "required": [
+            "kind",
+            "level"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "description": "Whether the list shows bullets or numbers.",
+              "type": "string",
+              "enum": [
+                "bullet",
+                "number"
+              ]
+            },
+            "level": {
+              "description": "The paragraph's 1-based level in the list.",
+              "type": "integer",
+              "minimum": 1
             }
           }
         },
@@ -6452,6 +6663,18 @@
             },
             "color": {
               "description": "A #RRGGBB color.",
+              "type": "string"
+            },
+            "underline": {
+              "description": "Whether the run is underlined.",
+              "type": "boolean"
+            },
+            "highlight": {
+              "description": "The highlight color, as #RRGGBB; absent without a highlight.",
+              "type": "string"
+            },
+            "url": {
+              "description": "The address of the hyperlink whose text the run is; absent elsewhere.",
               "type": "string"
             }
           }

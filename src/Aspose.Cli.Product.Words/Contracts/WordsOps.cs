@@ -62,7 +62,7 @@ public sealed record WordsParagraphInput
     [MinLength(1)] public string? Style { get; init; }
 
     /// <summary>Makes the paragraph a list item at this 1-based level. When the anchor is a list item, it joins the anchor's list if that list defines the level, else the list of the nearest item at this level under the same parent, and without style continues that list's nearest existing item at this level, if any, with the indents it sets on itself. When the anchor is no list item, or no such list exists, it joins one new bullet list.</summary>
-    [NotReadBack]
+    [ReadBack("read-result.schema.json#/$defs/wordsListData/properties/level")]
     [Minimum(1), Maximum(9)] public int? ListLevel { get; init; }
 }
 
@@ -80,7 +80,7 @@ public sealed record WordsPageSetupInput
     [ReadBack("inspect-result.schema.json#/$defs/wordsSectionData/properties/margins")]
     public WordsMarginInput? Margins { get; init; }
 
-    [NotReadBack]
+    [ReadBack("inspect-result.schema.json#/$defs/wordsSectionData/properties/columnCount")]
     [Minimum(1)] public int? ColumnCount { get; init; }
 }
 
@@ -204,7 +204,7 @@ public sealed record InsertImageOp : WordsOp
     [ExclusiveMinimum(0)] public double? Height { get; init; }
 
     /// <summary>Whether the image sits in the text line rather than floating with square wrapping.</summary>
-    [NotReadBack]
+    [ReadBack("read-result.schema.json#/$defs/wordsBlockImageData/properties/inline")]
     public bool Inline { get; init; } = true;
 }
 
@@ -305,19 +305,19 @@ public sealed record SetTablePaginationOp : WordsOp
     /// every paragraph keeps with the next except the last paragraph of each last-row cell.
     /// false clears keep-with-next on those same paragraphs and leaves the row setting.
     /// </summary>
-    [NotReadBack]
+    [ReadBack("inspect-result.schema.json#/$defs/wordsTableData/properties/keepTogether")]
     public bool? KeepTogether { get; init; }
 
     /// <summary>Whether the text of each row may split across a page break.</summary>
-    [NotReadBack]
+    [ReadBack("inspect-result.schema.json#/$defs/wordsTableData/properties/allowRowBreakAcrossPages")]
     public bool? AllowRowBreakAcrossPages { get; init; }
 
     /// <summary>The first rows repeated as a heading on every page the table spans; 0 clears it. At most the table's row count.</summary>
-    [NotReadBack]
+    [ReadBack("inspect-result.schema.json#/$defs/wordsTableData/properties/headerRowCount")]
     [Minimum(0)] public int? HeaderRowCount { get; init; }
 
     /// <summary>Whether the last paragraph of each last-row cell keeps with the paragraph after the table, keeping the table with it.</summary>
-    [NotReadBack]
+    [ReadBack("inspect-result.schema.json#/$defs/wordsTableData/properties/keepWithNext")]
     public bool? KeepWithNext { get; init; }
 
     /// <inheritdoc />
@@ -339,7 +339,7 @@ public sealed record InsertTocOp : WordsOp
     [WordsPosition] public required string Position { get; init; }
 
     /// <summary>The deepest heading level listed.</summary>
-    [NotReadBack]
+    [ReadBack("inspect-result.schema.json#/$defs/wordsFieldData/properties/maxLevel")]
     [Minimum(1), Maximum(9)] public int MaxLevel { get; init; } = 3;
 }
 
@@ -364,7 +364,7 @@ public sealed record InsertHyperlinkOp : WordsOp
     [ReadBack("read-result.schema.json#/$defs/wordsRunData/properties/text")]
     public required string Text { get; init; }
 
-    [NotReadBack]
+    [ReadBack("read-result.schema.json#/$defs/wordsRunData/properties/url")]
     [WebLink] public required string Url { get; init; }
 }
 
@@ -422,7 +422,7 @@ public sealed record SetPageSetupOp : WordsOp
     [ReadBack("inspect-result.schema.json#/$defs/wordsSectionData/properties/margins")]
     public WordsMarginInput? Margins { get; init; }
 
-    [NotReadBack]
+    [ReadBack("inspect-result.schema.json#/$defs/wordsSectionData/properties/columnCount")]
     [Minimum(1)] public int? ColumnCount { get; init; }
 
     /// <summary>The settings as one page setup.</summary>
@@ -463,19 +463,19 @@ public sealed record SetPageNumbersOp : WordsOp
     /// <summary>The 1-based section; every section when omitted.</summary>
     [Minimum(1)] public int? Section { get; init; }
 
-    [NotReadBack]
+    [ReadBack("inspect-result.schema.json#/$defs/wordsPageNumbersData/properties/location")]
     [AllowedValues(typeof(WordsHeaderFooterLocations))] public string Location { get; init; } = WordsHeaderFooterLocations.Footer;
 
-    [NotReadBack]
+    [ReadBack("inspect-result.schema.json#/$defs/wordsPageNumbersData/properties/alignment")]
     [AllowedValues("left", "center", "right")] public string Alignment { get; init; } = "center";
 
     /// <summary>How the page numbers are written; the section's numbering keeps its style when omitted.</summary>
     [MistakenFor("format")]
-    [NotReadBack]
+    [ReadBack("inspect-result.schema.json#/$defs/wordsPageNumbersData/properties/numberStyle")]
     [AllowedValues(typeof(PageNumberStyles))] public string? NumberStyle { get; init; }
 
     /// <summary>The number of the section's first page; numbering continues when omitted.</summary>
-    [NotReadBack]
+    [ReadBack("inspect-result.schema.json#/$defs/wordsPageNumbersData/properties/start")]
     [Minimum(0)] public int? Start { get; init; }
 }
 
@@ -491,7 +491,7 @@ public sealed record FormatTextOp : WordsOp
     [ReadBack("read-result.schema.json#/$defs/wordsRunData/properties/italic")]
     public bool? Italic { get; init; }
 
-    [NotReadBack]
+    [ReadBack("read-result.schema.json#/$defs/wordsRunData/properties/underline")]
     public bool? Underline { get; init; }
 
     /// <summary>The font size in points.</summary>
@@ -516,7 +516,7 @@ public sealed record FormatTextOp : WordsOp
     [MinLength(1)] public string? EastAsianFont { get; init; }
 
     /// <summary>The highlight color, as #RRGGBB.</summary>
-    [NotReadBack]
+    [ReadBack("read-result.schema.json#/$defs/wordsRunData/properties/highlight")]
     [HexColor] public string? Highlight { get; init; }
 }
 
@@ -537,39 +537,39 @@ public sealed record DefineStyleOp : WordsOp
     [NotState]
     [MinLength(1)] public required string Name { get; init; }
 
-    [NotReadBack]
+    [ReadBack("inspect-result.schema.json#/$defs/wordsStyleData/properties/basedOn")]
     [MinLength(1)] public string? BasedOn { get; init; }
 
     /// <summary>The font of Latin and East Asian text.</summary>
-    [NotReadBack]
+    [ReadBack("inspect-result.schema.json#/$defs/wordsStyleData/properties/font")]
     [MinLength(1)] public string? Font { get; init; }
 
     /// <summary>The font of Latin text, in place of font's.</summary>
-    [NotReadBack]
+    [ReadBack("inspect-result.schema.json#/$defs/wordsStyleData/properties/latinFont")]
     [MinLength(1)] public string? LatinFont { get; init; }
 
     /// <summary>The font of Chinese, Japanese and Korean text, in place of font's.</summary>
-    [NotReadBack]
+    [ReadBack("inspect-result.schema.json#/$defs/wordsStyleData/properties/eastAsianFont")]
     [MinLength(1)] public string? EastAsianFont { get; init; }
 
     /// <summary>The font size in points.</summary>
     [MistakenFor("size")]
-    [NotReadBack]
+    [ReadBack("inspect-result.schema.json#/$defs/wordsStyleData/properties/fontSize")]
     [ExclusiveMinimum(0)] public double? FontSize { get; init; }
 
-    [NotReadBack]
+    [ReadBack("inspect-result.schema.json#/$defs/wordsStyleData/properties/bold")]
     public bool? Bold { get; init; }
 
     /// <summary>The text color, as #RRGGBB.</summary>
-    [NotReadBack]
+    [ReadBack("inspect-result.schema.json#/$defs/wordsStyleData/properties/color")]
     [HexColor] public string? Color { get; init; }
 
     /// <summary>Space before the paragraph, in points.</summary>
-    [NotReadBack]
+    [ReadBack("inspect-result.schema.json#/$defs/wordsStyleData/properties/spaceBefore")]
     [Minimum(0)] public double? SpaceBefore { get; init; }
 
     /// <summary>Space after the paragraph, in points.</summary>
-    [NotReadBack]
+    [ReadBack("inspect-result.schema.json#/$defs/wordsStyleData/properties/spaceAfter")]
     [Minimum(0)] public double? SpaceAfter { get; init; }
 }
 
@@ -580,11 +580,11 @@ public sealed record SetListOp : WordsOp
 {
     public required WordsTarget Target { get; init; }
 
-    [NotReadBack]
+    [ReadBack("read-result.schema.json#/$defs/wordsListData/properties/kind")]
     [AllowedValues("bullet", "number")] public required string Kind { get; init; }
 
     /// <summary>The 1-based list level.</summary>
-    [NotReadBack]
+    [ReadBack("read-result.schema.json#/$defs/wordsListData/properties/level")]
     [Minimum(1), Maximum(9)] public int Level { get; init; } = 1;
 }
 
@@ -594,20 +594,20 @@ public sealed record SetListOp : WordsOp
 public sealed record SetDefaultFontOp : WordsOp
 {
     /// <summary>The font of Latin and East Asian text.</summary>
-    [NotReadBack]
+    [ReadBack("inspect-result.schema.json#/$defs/wordsStyleData/properties/font")]
     [MinLength(1)] public string? Font { get; init; }
 
     /// <summary>The font of Latin text, in place of font's.</summary>
-    [NotReadBack]
+    [ReadBack("inspect-result.schema.json#/$defs/wordsStyleData/properties/latinFont")]
     [MinLength(1)] public string? LatinFont { get; init; }
 
     /// <summary>The font of Chinese, Japanese and Korean text, in place of font's.</summary>
-    [NotReadBack]
+    [ReadBack("inspect-result.schema.json#/$defs/wordsStyleData/properties/eastAsianFont")]
     [MinLength(1)] public string? EastAsianFont { get; init; }
 
     /// <summary>The font size in points; sizes are kept when omitted.</summary>
     [MistakenFor("size")]
-    [NotReadBack]
+    [ReadBack("inspect-result.schema.json#/$defs/wordsStyleData/properties/fontSize")]
     [ExclusiveMinimum(0)] public double? FontSize { get; init; }
 }
 
@@ -628,7 +628,7 @@ public sealed record SetPropertiesOp : WordsOp
     public string? Keywords { get; init; }
 
     /// <summary>Custom properties by name; a null value removes the property.</summary>
-    [NotReadBack]
+    [ReadBack("inspect-result.schema.json#/properties/properties")]
     public IReadOnlyDictionary<string, string?>? Custom { get; init; }
 }
 
@@ -641,24 +641,24 @@ public sealed record SetPropertiesOp : WordsOp
 public sealed record SetWatermarkOp : WordsOp
 {
     /// <summary>The watermark text; Word holds at most 200 characters.</summary>
-    [NotReadBack]
+    [ReadBack("inspect-result.schema.json#/$defs/wordsWatermarkData/properties/text")]
     [MinLength(1), MaxLength(200)] public string? Text { get; init; }
 
     /// <summary>The watermark image, relative to the working directory.</summary>
     [MistakenFor("imagePath")]
-    [NotReadBack]
+    [NotState]
     [InputPath] public string? Path { get; init; }
 
     /// <summary>Semi-transparent text or a washed-out image.</summary>
-    [NotReadBack]
+    [ReadBack("inspect-result.schema.json#/$defs/wordsWatermarkData/properties/faded")]
     public bool Faded { get; init; } = true;
 
     /// <summary>The text color, as #RRGGBB.</summary>
-    [NotReadBack]
+    [ReadBack("inspect-result.schema.json#/$defs/wordsWatermarkData/properties/color")]
     [HexColor] public string? Color { get; init; }
 
     /// <summary>The text font; when omitted, East Asian text takes the default East Asian font of a Chinese, Japanese or Korean document, or else Microsoft YaHei.</summary>
-    [NotReadBack]
+    [ReadBack("inspect-result.schema.json#/$defs/wordsWatermarkData/properties/font")]
     [MinLength(1)] public string? Font { get; init; }
 }
 

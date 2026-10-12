@@ -178,7 +178,7 @@ public sealed class WordsTableEditingTests : IClassFixture<WordsFixture>
             Author = trackChanges ? "Contract desk" : null,
         });
 
-        Assert.Equal(3, Assert.Single(result.Applied).ItemsAffected);
+        Assert.Equal(1, Assert.Single(result.Applied).ItemsAffected);
         var changed = new Document(output);
         if (trackChanges)
         {
@@ -340,7 +340,8 @@ public sealed class WordsTableEditingTests : IClassFixture<WordsFixture>
             Output = TestOutput.At(output),
         });
 
-        Assert.Equal(0, Assert.Single(result.Applied).ItemsAffected);
+        // The table block changed: its template row is gone.
+        Assert.Equal(1, Assert.Single(result.Applied).ItemsAffected);
         Assert.Equal([["Code", "Name", "Price"], ["Total", "", "19.50"]], CellTexts(FirstTable(new Document(output))));
     }
 
@@ -362,7 +363,8 @@ public sealed class WordsTableEditingTests : IClassFixture<WordsFixture>
             Output = TestOutput.At(output),
         });
 
-        Assert.Equal(0, Assert.Single(result.Applied).ItemsAffected);
+        // The table block changed: its template row is gone.
+        Assert.Equal(1, Assert.Single(result.Applied).ItemsAffected);
         Assert.Equal([["Code", "Name", "Price"], ["Total", "", "19.50"]], CellTexts(FirstTable(new Document(output))));
     }
 
@@ -384,7 +386,7 @@ public sealed class WordsTableEditingTests : IClassFixture<WordsFixture>
             Output = TestOutput.At(output),
         });
 
-        Assert.Equal(2, Assert.Single(result.Applied).ItemsAffected);
+        Assert.Equal(1, Assert.Single(result.Applied).ItemsAffected);
         Assert.Equal(
             [["Code", "Name", "Price"], ["A-100", "Widget, large", "12.50 USD"], ["B-200", "Gadget", "7 USD"], ["Total", "", "19.50"]],
             CellTexts(FirstTable(new Document(output))));
@@ -477,7 +479,7 @@ public sealed class WordsTableEditingTests : IClassFixture<WordsFixture>
             Output = TestOutput.At(output),
         });
 
-        Assert.Equal(6, Assert.Single(result.Applied).ItemsAffected);
+        Assert.Equal(1, Assert.Single(result.Applied).ItemsAffected);
         var changed = new Document(output);
         (int start, int end) = PageSpan(changed);
         Assert.Equal(start, end);
@@ -523,7 +525,7 @@ public sealed class WordsTableEditingTests : IClassFixture<WordsFixture>
             Output = TestOutput.At(output),
         });
 
-        Assert.Equal([6L, 1L], result.Applied.Select(static applied => applied.ItemsAffected));
+        Assert.Equal([1L, 1L], result.Applied.Select(static applied => applied.ItemsAffected));
         Table table = FirstTable(new Document(output));
         Assert.Equal([true, false, false, false, false, false], table.Rows.Cast<Row>().Select(static row => row.RowFormat.HeadingFormat));
         Assert.All(table.Rows.Cast<Row>(), static row => Assert.True(row.RowFormat.AllowBreakAcrossPages));

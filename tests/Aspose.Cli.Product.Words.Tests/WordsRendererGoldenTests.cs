@@ -314,7 +314,7 @@ public sealed class WordsRendererGoldenTests
         [
             new WordsSectionData
             {
-                Section = 0, Orientation = "portrait", PageSize = PageSizeInfo.Of(612, 792),
+                Section = 0, Orientation = "portrait", PageSize = PageSizeInfo.Of(612, 792), ColumnCount = 1, PageNumbers = new WordsPageNumbersData(),
                 Margins = new WordsMarginData { Top = 72, Right = 89.85, Bottom = 72.004, Left = 0.125 },
                 HeadersFooters =
                 [
@@ -324,7 +324,7 @@ public sealed class WordsRendererGoldenTests
             },
             new WordsSectionData
             {
-                Section = 1, Orientation = "landscape", PageSize = PageSizeInfo.Of(841.89, 595.276),
+                Section = 1, Orientation = "landscape", PageSize = PageSizeInfo.Of(841.89, 595.276), ColumnCount = 1, PageNumbers = new WordsPageNumbersData(),
                 Margins = new WordsMarginData { Top = 36, Right = 36, Bottom = 36, Left = 36 },
                 HeadersFooters = [],
             },
@@ -334,7 +334,7 @@ public sealed class WordsRendererGoldenTests
             new WordsOutlineItem { Block = 0, HeadingLevel = 1, Text = "Summary" },
             new WordsOutlineItem { Block = 5, HeadingLevel = 2, Text = "Details" },
         ],
-        Styles = ["Normal", "Heading 1"],
+        Styles = [new WordsStyleData { Name = "Normal", Kind = "paragraph" }, new WordsStyleData { Name = "Heading 1", Kind = "paragraph" }],
         Fields =
         [
             new WordsFieldData { Kind = "PAGE", Scope = "headers-footers", Code = " PAGE ", Result = "1" },
@@ -354,8 +354,8 @@ public sealed class WordsRendererGoldenTests
         ],
         Tables =
         [
-            new WordsTableData { Block = 6, RowCount = 3, ColumnCount = 2, TableStyle = "Table Grid" },
-            new WordsTableData { Block = 9, RowCount = 1, ColumnCount = 1 },
+            new WordsTableData { Block = 6, RowCount = 3, ColumnCount = 2, KeepTogether = false, AllowRowBreakAcrossPages = true, HeaderRowCount = 0, KeepWithNext = false, TableStyle = "Table Grid" },
+            new WordsTableData { Block = 9, RowCount = 1, ColumnCount = 1, KeepTogether = false, AllowRowBreakAcrossPages = true, HeaderRowCount = 0, KeepWithNext = false },
         ],
         Properties = new Dictionary<string, string?> { ["Title"] = "Report", ["Author"] = "Ann", ["Subject"] = null },
         Fonts = ["Calibri", "Times New Roman"],

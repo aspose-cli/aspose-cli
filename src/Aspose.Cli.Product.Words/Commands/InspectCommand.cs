@@ -61,7 +61,7 @@ internal static class InspectCommand
         RenderSections(result.Sections, surface);
         ResultText.Table(surface, "outline", result.Outline, ["block", "level", "heading"],
             static item => [TableText.Int(item.Block), TableText.Int(item.HeadingLevel), item.Text]);
-        ResultText.List(surface, "styles", result.Styles);
+        ResultText.List(surface, "styles", result.Styles?.Select(static style => style.Name).ToArray());
         ResultText.List(surface, "bookmarks", result.Bookmarks);
         ResultText.List(surface, "fonts", result.Fonts);
         ResultText.Table(surface, "fields", result.Fields, ["block", "kind", "code", "result"],

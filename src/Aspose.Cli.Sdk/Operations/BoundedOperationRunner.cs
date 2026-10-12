@@ -73,7 +73,11 @@ public static class BoundedOperationRunner
     /// Runs every operation of a validated batch through the product's object model: the SDK
     /// snapshots the objects each operation can change before and after it, and an operation's
     /// <c>itemsAffected</c> is the number of objects that changed and its <c>targets</c> their
-    /// addresses, where they are in the output, or in the input for removed ones. More than
+    /// addresses in order, where they are in the output, or in the input for removed ones: an
+    /// object the engine keeps by instance (<see cref="IOperationModel{TOp}.Positions"/>) is
+    /// placed where the output of the whole batch holds it, so a later operation that moved it
+    /// does not leave a stale address, and one a later operation removed has its address in the
+    /// input of the batch. More than
     /// <see cref="BoundedOperationOutcome.MaximumTargets"/> addresses shorten to one per unit
     /// that covers them all, such as <c>page/1-150</c>. An operation that applied but changed
     /// nothing warns <c>OP_NO_EFFECT</c>.
@@ -105,13 +109,15 @@ public static class BoundedOperationRunner
         var pages = new SortedSet<int>();
         var recorded = new List<string>();
         var unrecorded = new HashSet<string>(StringComparer.Ordinal);
+        Dictionary<string, Dictionary<object, int>> input = Index(model.Positions());
+        var changed = new Dictionary<int, IReadOnlyList<ObjectChange>>();
         IReadOnlyList<BoundedOperationOutcome> outcomes = Execute(
             catalog,
             operations,
             bestEffort,
             deadline,
             model.GetType().Assembly,
-            (operation, _) =>
+            (operation, index) =>
             {
                 OperationSnapshot before = model.Snapshot(operation);
                 model.Apply(operation);
@@ -132,6 +138,7 @@ public static class BoundedOperationRunner
                 }
 
                 IReadOnlyList<ObjectChange> changes = OperationSnapshot.Compare(before, after);
+                changed[index] = changes;
                 if (pageUnit is not null)
                 {
                     pages.UnionWith(changes
@@ -168,7 +175,84 @@ public static class BoundedOperationRunner
                     }
                 }
             });
-        return new AppliedBatch(outcomes, warnings, [.. pages], recorded, unrecorded);
+        Dictionary<string, Dictionary<object, int>> output = input.Count == 0 ? input : Index(model.Positions());
+        var placed = new Dictionary<int, IReadOnlyList<ChangedObject>>();
+        foreach ((int index, IReadOnlyList<ObjectChange> changes) in changed)
+        {
+            placed[index] = [.. changes.Select(change => Place(change, input, output))];
+        }
+
+        outcomes = [.. outcomes.Select((outcome, index) => outcome.Status == OpStatuses.Ok && placed.TryGetValue(index, out IReadOnlyList<ChangedObject>? objects)
+            ? outcome with { Targets = Covered(InOrder(objects.Select(static item => item.Address))) }
+            : outcome)];
+        return new AppliedBatch(outcomes, warnings, [.. pages], Batch(placed), recorded, unrecorded);
+    }
+
+    /// <summary>Each unit's objects by instance, with their 0-based positions.</summary>
+    private static Dictionary<string, Dictionary<object, int>> Index(IReadOnlyDictionary<string, IReadOnlyList<object>> positions) =>
+        positions.ToDictionary(
+            static unit => unit.Key,
+            static unit =>
+            {
+                var index = new Dictionary<object, int>(ReferenceEqualityComparer.Instance);
+                for (int position = 0; position < unit.Value.Count; position++)
+                {
+                    index.TryAdd(unit.Value[position], position);
+                }
+
+                return index;
+            },
+            StringComparer.Ordinal);
+
+    /// <summary>
+    /// A changed object at its address in the output, or in the input when the batch removed it;
+    /// one the batch both inserted and removed keeps the address its operation reported.
+    /// </summary>
+    private static ChangedObject Place(ObjectChange change, Dictionary<string, Dictionary<object, int>> input, Dictionary<string, Dictionary<object, int>> output)
+    {
+        if (change.Identity is not { } identity)
+        {
+            return new ChangedObject(change.Address, null, change.InOutput);
+        }
+
+        string unit = change.Address[..change.Address.IndexOf('/', StringComparison.Ordinal)];
+        return output.TryGetValue(unit, out Dictionary<object, int>? now) && now.TryGetValue(identity, out int position)
+            ? new ChangedObject($"{unit}/{(position + 1).ToString(System.Globalization.CultureInfo.InvariantCulture)}", identity, InOutput: true)
+            : input.TryGetValue(unit, out Dictionary<object, int>? before) && before.TryGetValue(identity, out position)
+                ? new ChangedObject($"{unit}/{(position + 1).ToString(System.Globalization.CultureInfo.InvariantCulture)}", identity, InOutput: false)
+                : new ChangedObject(change.Address, identity, InOutput: false);
+    }
+
+    /// <summary>Every object the batch changed once: by instance where it has one, else by address, which keeps whether its last change left it in the output.</summary>
+    private static IReadOnlyList<ChangedObject> Batch(Dictionary<int, IReadOnlyList<ChangedObject>> placed)
+    {
+        var byIdentity = new Dictionary<object, ChangedObject>(ReferenceEqualityComparer.Instance);
+        var byAddress = new Dictionary<string, ChangedObject>(StringComparer.Ordinal);
+        foreach (ChangedObject item in placed.OrderBy(static pair => pair.Key).SelectMany(static pair => pair.Value))
+        {
+            if (item.Identity is { } identity)
+            {
+                byIdentity[identity] = item;
+            }
+            else
+            {
+                byAddress[item.Address] = item;
+            }
+        }
+
+        ChangedObject[] all = [.. byIdentity.Values, .. byAddress.Values];
+        string[] order = [.. InOrder(all.Select(static item => item.Address))];
+        return [.. all.OrderBy(item => Array.IndexOf(order, item.Address))];
+    }
+
+    /// <summary>Addresses once each, unit by unit in the order the units first appear, and by number within a unit.</summary>
+    private static IReadOnlyList<string> InOrder(IEnumerable<string> addresses)
+    {
+        string[] distinct = [.. addresses.Distinct(StringComparer.Ordinal)];
+        List<string> units = [.. distinct.Select(Unit).Distinct(StringComparer.Ordinal)];
+        return [.. distinct.OrderBy(address => units.IndexOf(Unit(address))).ThenBy(static address => OperationSnapshot.FirstNumber(address) ?? int.MaxValue)];
+
+        static string Unit(string address) => address[..address.IndexOf('/', StringComparison.Ordinal)];
     }
 
     private static IReadOnlyList<string> Covered(IReadOnlyList<string> targets) =>

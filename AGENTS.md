@@ -65,7 +65,7 @@ the fixed distribution identity; the generated projections and the solution come
 | D4 | Error construction | SDK error factories alone build shared codes | `DecisionOwnershipTests` D4; `FreeTextErrorFactoryTests` |
 | D5 | Secrets | SDK `Secret`: redacted when printed, revealed only in an engine adapter | `DecisionOwnershipTests` D5: products read no environment variable; passwords outside the engine are `Secret`; `HostSecretTests`: the Host holds no password as a string and no Host record holds a token as a string; its local-service frames and files carry both as a redacted `WireSecret` |
 | D6 | Evaluation detection and disclosure | The SDK write pipeline resolves the license once and derives disclosure by comparing input and output marks; a product supplies only its evaluation-mark recognizer | `EvaluationOwnershipTests`; the evaluation invariant |
-| D7 | Truthful results: affected counts, targets, pages, no match | The SDK runner applies a batch through the product's `IOperationModel`: it snapshots the objects each operation can change before and after it and derives `itemsAffected`, `targets`, the pages touched and `OP_NO_EFFECT` for zero; with `--verify` it records each applied operation through the product's `IEditVerifier` and builds the verification core from the product's read-back (`AppliedBatch.Verified`). PDF and Slides apply their batches this way; Cells and Words still count in their handlers until their product tasks move them, after which `AppliedOperation` is constructed only by the SDK | `OperationSnapshotTests`, `BoundedOperationModelTests`; invariant C-R30: `itemsAffected` is 0 exactly when the result warns `OP_NO_EFFECT`, and above 0 only when the output changed |
+| D7 | Truthful results: affected counts, targets, pages, no match | The SDK runner applies a batch through the product's `IOperationModel`: it snapshots the objects each operation can change before and after it and derives `itemsAffected`, `targets`, the pages touched and `OP_NO_EFFECT` for zero; with `--verify` it records each applied operation through the product's `IEditVerifier` and builds the verification core from the product's read-back (`AppliedBatch.Verified`). PDF, Slides and Words apply their batches this way; Cells still counts in its handlers until its product task moves it, after which `AppliedOperation` is constructed only by the SDK | `OperationSnapshotTests`, `BoundedOperationModelTests`; invariant C-R30: `itemsAffected` is 0 exactly when the result warns `OP_NO_EFFECT`, and above 0 only when the output changed |
 | D8 | Input loading: recognition, passwords, corruption | The SDK load result and error translation; a product supplies the engine call and an exception classifier | `InputLoadingOwnershipTests` |
 | D9 | Read and write vocabulary | Each operation field declares whether it is state and where a read result reports it (`[ReadBack]`, `[NotReadBack]`, `[ReadBackByPosition]`, `[NotState]`, or the vocabulary's `Addresses`); the ops schema publishes it as the field's `x-readBack`. Planned: one object model per product, where the fields an operation writes are a subset of the read result with the same names and meanings | The operation generator (`APCLI012`) refuses an unclassified field; invariant C-R21 checks each declared read path's name and value domain and reads back what each sample wrote |
 | D10 | Human-readable output | SDK `ResultText`: sections, produced files, touched parts and the verification; a missing value is `-` | `ResultTextTests`, the product renderer golden tests, `TableRendererCoverageTests`, `ProductRendererCoverageTests` |
@@ -140,10 +140,16 @@ weaken a check or remove a supported operation to make a test pass.
   `BoundedOperationOutcome.MaximumTargets`. An operation that lists more reports a degenerate
   form instead: through an `IOperationModel`, one range per unit that covers them all, such as
   `page/1-150` (`<unit>/all` for named objects); a product that still counts reports the document
-  root address, or range addresses that cover every changed part (Words reports
-  `blocks/<ranges>` and the changed `section/...` targets, and `document` when it addressed no
-  range or that list is still too long). `BoundedOperationRunner` throws
-  `InvalidOperationException` when a product without a degenerate form exceeds the cap.
+  root address, or range addresses that cover every changed part. `BoundedOperationRunner` throws
+  `InvalidOperationException` when a product without a degenerate form exceeds the cap. Objects a
+  product snapshots with `OperationSnapshot.AddObjects` are compared by the instance the engine
+  keeps them as (an instance the engine replaced with one of the same state did not change) and
+  named by their number in the output of the whole batch, or in its input when the batch removed
+  them (`IOperationModel.Positions`). Targets are grouped by unit in the order each unit first
+  appears and numbered addresses ascend within a unit; named objects such as `style/` and
+  `property/` keep the snapshot's order. A removed object and a changed one can share a number,
+  one in the input and one in the output, and then the targets list one address fewer than
+  `itemsAffected` counts.
 
 ## Contract conventions
 

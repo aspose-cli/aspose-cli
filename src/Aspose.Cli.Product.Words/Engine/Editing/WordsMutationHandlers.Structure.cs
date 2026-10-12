@@ -15,7 +15,7 @@ internal sealed partial class WordsMutationHandlers
     /// <c>at</c> names, before or after which it goes), as Word does, instead of SDK defaults.
     /// Without its own headers and footers it continues its neighbour's.
     /// </summary>
-    public long Apply(InsertSectionOp operation)
+    public ValueTuple Apply(InsertSectionOp operation)
     {
         Section reference = Sections.FirstOrDefault() ?? throw Invalid("insert_section requires an original section at");
         Section section = EmptyLike(reference);
@@ -35,14 +35,14 @@ internal sealed partial class WordsMutationHandlers
             ApplyPageSetup(section, operation.PageSetup);
         }
 
-        return 1;
+        return default;
     }
 
     /// <summary>
     /// Splits the anchor's section at a block boundary: the blocks from the boundary on move
     /// into a new section with the same page setup, which continues the headers and footers.
     /// </summary>
-    private static long InsertSectionBreak(Node anchor, string position)
+    private static void InsertSectionBreak(Node anchor, string position)
     {
         if (anchor.ParentNode is not Body)
         {
@@ -61,7 +61,6 @@ internal sealed partial class WordsMutationHandlers
 
         EndWithParagraph(owner.Body);
         EndWithParagraph(section.Body);
-        return 1;
     }
 
     private static Section EmptyLike(Section reference)
@@ -81,7 +80,7 @@ internal sealed partial class WordsMutationHandlers
         }
     }
 
-    public long Apply(DeleteSectionOp operation)
+    public ValueTuple Apply(DeleteSectionOp operation)
     {
         Section section = Sections[0];
         if (_document.Sections.Count == 1)
@@ -90,22 +89,30 @@ internal sealed partial class WordsMutationHandlers
         }
 
         section.Remove();
-        return 1;
+        return default;
     }
 
-    public long Apply(SetPageSetupOp operation)
+    public ValueTuple Apply(SetPageSetupOp operation)
     {
         foreach (Section current in Sections)
         {
             ApplyPageSetup(current, operation.Setup);
         }
 
-        return Sections.Count;
+        return default;
     }
 
-    public long Apply(SetHeaderOp operation) => SetHeaderFooter(operation, isHeader: true);
+    public ValueTuple Apply(SetHeaderOp operation)
+    {
+        SetHeaderFooter(operation, isHeader: true);
+        return default;
+    }
 
-    public long Apply(SetFooterOp operation) => SetHeaderFooter(operation, isHeader: false);
+    public ValueTuple Apply(SetFooterOp operation)
+    {
+        SetHeaderFooter(operation, isHeader: false);
+        return default;
+    }
 
     /// <summary>
     /// Replaces one kind of header or footer in each section with plain paragraphs or imported
@@ -113,7 +120,7 @@ internal sealed partial class WordsMutationHandlers
     /// shows, such as a right alignment, or take Word's Header or Footer style when there is none. A
     /// first-page or even-page kind also turns on the section setting that shows it.
     /// </summary>
-    private long SetHeaderFooter(HeaderFooterOp operation, bool isHeader)
+    private void SetHeaderFooter(HeaderFooterOp operation, bool isHeader)
     {
         string kind = operation.Kind;
         Document? markdown = operation.Markdown is null ? null : _loader.OpenMarkdown(operation.Markdown, _loaded);
@@ -146,8 +153,6 @@ internal sealed partial class WordsMutationHandlers
                 section.PageSetup.OddAndEvenPagesHeaderFooter = true;
             }
         }
-
-        return Sections.Count;
     }
 
     /// <summary>
@@ -191,7 +196,7 @@ internal sealed partial class WordsMutationHandlers
         return paragraph;
     }
 
-    public long Apply(SetPageNumbersOp operation)
+    public ValueTuple Apply(SetPageNumbersOp operation)
     {
         foreach (Section section in Sections)
         {
@@ -242,10 +247,10 @@ internal sealed partial class WordsMutationHandlers
         }
 
         _document.UpdatePageLayout();
-        return Sections.Count;
+        return default;
     }
 
-    public long Apply(ImportSectionsOp operation)
+    public ValueTuple Apply(ImportSectionsOp operation)
     {
         using LoadedDocument loaded = _loader.Open(operation.Path, OperationSecrets.Resolve(_secrets, operation.SourcePasswordEnv));
         _outputs.Neutralize(loaded.Document);
@@ -254,7 +259,7 @@ internal sealed partial class WordsMutationHandlers
             ? ImportFormatMode.UseDestinationStyles
             : ImportFormatMode.KeepSourceFormatting;
         _document.AppendDocument(loaded.Document, mode);
-        return 1;
+        return default;
     }
 }
 

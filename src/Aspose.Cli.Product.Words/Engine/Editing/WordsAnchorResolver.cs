@@ -19,7 +19,6 @@ internal static class WordsAnchorResolver
     {
         var resolved = new List<ResolvedWordsOp>(batch.Ops.Count);
         IReadOnlyList<RevisionChange>? changes = null;
-        bool edited = false;
         for (int position = 0; position < batch.Ops.Count; position++)
         {
             WordsOp op = batch.Ops[position];
@@ -27,15 +26,8 @@ internal static class WordsAnchorResolver
             {
                 if (op is RevisionDecisionOp { Revisions: { } numbers })
                 {
-                    // An edit can split or rebuild the runs a change consists of, leaving part of
-                    // the change undecided, so numbered decisions come first.
-                    if (edited)
-                    {
-                        throw new OperationInvalidException(
-                            "with revisions it must come before every operation other than a revision decision",
-                            "Put the revision decisions first in the batch, or run them in a batch of their own; their numbers always name the changes the input lists.");
-                    }
-
+                    // The numbers name the changes the input lists; the model refuses a numbered
+                    // decision after an edit that applied, which can split those changes.
                     changes ??= InfoProjection.RevisionChanges(document);
                     RevisionChange[] selected = SelectRevisions(changes, numbers);
                     Node[] changed = [.. selected.SelectMany(static change => change.Members)
@@ -44,7 +36,6 @@ internal static class WordsAnchorResolver
                     continue;
                 }
 
-                edited |= op is not RevisionDecisionOp;
                 WordsTarget? target = TargetOf(op);
                 IReadOnlyList<Node> nodes = target is null
                     ? []
@@ -57,7 +48,7 @@ internal static class WordsAnchorResolver
             }
         }
 
-        return RefuseDeleteConflicts(resolved);
+        return resolved;
     }
 
     // The changes inspect --detail revisions numbers, each once, in document order.
@@ -123,7 +114,7 @@ internal static class WordsAnchorResolver
             || operation.Sections.Any(section => !ReferenceEquals(section.ParentNode, document)))
         {
             throw new OperationInvalidException(
-                "it references an original object removed by an earlier operation", DeleteConflictHint);
+                "it references an object deleted by an earlier operation", DeleteConflictHint);
         }
     }
 
@@ -244,56 +235,9 @@ internal static class WordsAnchorResolver
 
     private static string WithoutSpaces(string text) => string.Concat(text.Where(static c => !char.IsWhiteSpace(c)));
 
-    /// <summary>
-    /// The addresses of the original blocks that hold <paramref name="nodes"/>, followed by the
-    /// headers and footers that hold them, as <c>section/{n}/{location}/{kind}</c>.
-    /// </summary>
-    internal static IReadOnlyList<string> Targets(
-        DocumentBlockIndex index,
-        IReadOnlyList<Node> nodes)
-    {
-        int[] blocks = nodes
-            .Select(index.FindBlock)
-            .OfType<int>()
-            .Distinct()
-            .Order()
-            .ToArray();
-        string[] headersFooters = nodes
-            .Select(static node => node.GetAncestor(NodeType.HeaderFooter))
-            .OfType<HeaderFooter>()
-            .Distinct()
-            .Select(static headerFooter =>
-            {
-                (string location, string kind) = WordsStories.PlaceOf(headerFooter);
-                return $"section/{WordsStories.SectionOf(headerFooter)}/{location}/{kind}";
-            })
-            .ToArray();
-        string[] targets = [.. blocks.Select(static block => $"block/{block}"), .. headersFooters];
-        return targets.Length == 0 ? [DocumentTarget] : targets;
-    }
-
-    /// <summary>
-    /// What an operation that changed more blocks than an outcome lists reports instead: the block
-    /// ranges it addressed followed by the headers and footers it changed, or the whole document
-    /// when it addressed no range or that list would itself exceed the outcome's target cap.
-    /// </summary>
-    internal static IReadOnlyList<string> DegenerateTargets(WordsOp op, IReadOnlyList<string> targets)
-    {
-        if (TargetOf(op)?.Blocks is not { Length: > 0 } ranges)
-        {
-            return [DocumentTarget];
-        }
-
-        string[] degenerate =
-        [
-            $"blocks/{ranges}",
-            .. targets.Where(static target => target.StartsWith("section/", StringComparison.Ordinal)),
-        ];
-        return degenerate.Length <= BoundedOperationOutcome.MaximumTargets ? degenerate : [DocumentTarget];
-    }
-
-    /// <summary>The whole document, the target of an operation that names no block.</summary>
-    private const string DocumentTarget = "document";
+    /// <summary>The addresses of the original blocks that hold <paramref name="nodes"/>, as <c>block/{n}</c>.</summary>
+    internal static IReadOnlyList<string> Targets(DocumentBlockIndex index, IReadOnlyList<Node> nodes) =>
+        [.. nodes.Select(index.FindBlock).OfType<int>().Distinct().Order().Select(static block => $"block/{block}")];
 
     private static WordsTarget? TargetOf(WordsOp op) => op switch
     {
@@ -317,60 +261,6 @@ internal static class WordsAnchorResolver
         AddCommentOp value => value.Target,
         _ => null,
     };
-
-    /// <summary>
-    /// Fails each operation that addresses what an earlier operation deletes; an operation
-    /// that already failed deletes nothing.
-    /// </summary>
-    private static IReadOnlyList<ResolvedWordsOp> RefuseDeleteConflicts(IReadOnlyList<ResolvedWordsOp> resolved)
-    {
-        var checkedOps = new List<ResolvedWordsOp>(resolved.Count);
-        var deleted = new HashSet<Node>();
-        foreach (ResolvedWordsOp item in resolved)
-        {
-            if (item.Failure is null && Conflict(item, deleted) is { } reason)
-            {
-                checkedOps.Add(item with { Failure = new OperationInvalidException(reason, DeleteConflictHint) });
-                continue;
-            }
-
-            checkedOps.Add(item);
-            if (item.Failure is not null)
-            {
-                continue;
-            }
-
-            if (item.Op is DeleteSectionOp)
-            {
-                deleted.Add(item.Sections[0]);
-            }
-            else if (item.Op is DeleteBlocksOp)
-            {
-                deleted.UnionWith(item.Nodes);
-            }
-        }
-
-        return checkedOps;
-    }
-
-    private static string? Conflict(ResolvedWordsOp item, HashSet<Node> deleted)
-    {
-        foreach (Node target in item.Nodes.Concat<Node>(item.Sections))
-        {
-            for (Node? ancestor = target; ancestor is not null; ancestor = ancestor.ParentNode)
-            {
-                if (deleted.Contains(ancestor))
-                {
-                    return "it references an object deleted by an earlier operation";
-                }
-            }
-        }
-
-        return item.Op is DeleteSectionOp
-            && deleted.Any(node => ReferenceEquals(node.GetAncestor(NodeType.Section), item.Sections[0]))
-                ? "it overlaps an earlier block deletion"
-                : null;
-    }
 
     private const string DeleteConflictHint = "Split conflicting deletes and dependent edits into separate batches.";
 }

@@ -33,7 +33,25 @@ public interface IOperationModel<in TOp>
     /// nothing. Null for the general explanation.
     /// </summary>
     NoEffect? Explain(TOp operation) => null;
+
+    /// <summary>
+    /// The objects of each unit the snapshots add with <see cref="OperationSnapshot.AddObjects"/>,
+    /// as the instances the engine keeps them as, in their current order. The SDK reads them
+    /// before the first operation and after the last, and reports each changed object at its
+    /// position in the output, or in the input when the batch removed it. Empty for a product
+    /// that adds no such sequence.
+    /// </summary>
+    IReadOnlyDictionary<string, IReadOnlyList<object>> Positions() => new Dictionary<string, IReadOnlyList<object>>(StringComparer.Ordinal);
 }
+
+/// <summary>One object a batch changed.</summary>
+/// <param name="Address">
+/// Its address in the output, or, for an object the batch removed, in the input; an object of a
+/// sequence the engine does not keep by instance has the address its operation reported.
+/// </param>
+/// <param name="Identity">The instance the engine keeps the object as, or null for an object of a unit without one.</param>
+/// <param name="InOutput">Whether the object is in the output.</param>
+public sealed record ChangedObject(string Address, object? Identity, bool InOutput);
 
 /// <summary>Why an operation changed nothing: the <c>details.reason</c>, message and hint of its <c>OP_NO_EFFECT</c> warning.</summary>
 /// <param name="Reason">One of <see cref="NoEffectReasons"/>.</param>
@@ -80,12 +98,14 @@ public sealed class AppliedBatch
         IReadOnlyList<BoundedOperationOutcome> outcomes,
         IReadOnlyList<Warning> warnings,
         IReadOnlyList<int> pages,
+        IReadOnlyList<ChangedObject> changed,
         IReadOnlyList<string> recorded,
         IReadOnlySet<string> unrecorded)
     {
         Outcomes = outcomes;
         Warnings = warnings;
         Pages = pages;
+        Changed = changed;
         _recorded = recorded;
         _unrecorded = unrecorded;
     }
@@ -98,6 +118,9 @@ public sealed class AppliedBatch
 
     /// <summary>The numbers of the pages in the output that the batch changed, ascending; empty without a page unit.</summary>
     public IReadOnlyList<int> Pages { get; }
+
+    /// <summary>Every object the batch changed, once, in the order of its addresses.</summary>
+    public IReadOnlyList<ChangedObject> Changed { get; }
 
     /// <summary>
     /// The verification core from the product's read-back of the staged output: it passes

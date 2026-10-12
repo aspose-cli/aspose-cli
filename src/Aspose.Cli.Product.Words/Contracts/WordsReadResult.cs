@@ -70,6 +70,9 @@ public sealed record WordsBlockData
     /// <summary>The images in a paragraph.</summary>
     public IReadOnlyList<WordsBlockImageData>? Images { get; init; }
 
+    /// <summary>A list paragraph's list: bullets or numbers, and its 1-based level.</summary>
+    public WordsListData? List { get; init; }
+
     /// <summary>
     /// The break that follows this block: a page break, including one that starts the next
     /// paragraph, or a section break after the last block of a section.
@@ -115,6 +118,21 @@ public sealed record WordsBlockImageData
     /// <summary>The height in points.</summary>
     [Minimum(0)]
     public required double Height { get; init; }
+
+    /// <summary>Whether the image sits in the text line rather than floating.</summary>
+    public required bool Inline { get; init; }
+}
+
+/// <summary>The list a paragraph belongs to, as set_list sets it.</summary>
+public sealed record WordsListData
+{
+    /// <summary>Whether the list shows bullets or numbers.</summary>
+    [AllowedValues("bullet", "number")]
+    public required string Kind { get; init; }
+
+    /// <summary>The paragraph's 1-based level in the list.</summary>
+    [Minimum(1)]
+    public required int Level { get; init; }
 }
 
 /// <summary>
@@ -178,4 +196,13 @@ public sealed record WordsRunData
 
     /// <summary>A #RRGGBB color.</summary>
     public string? Color { get; init; }
+
+    /// <summary>Whether the run is underlined.</summary>
+    public bool? Underline { get; init; }
+
+    /// <summary>The highlight color, as #RRGGBB; absent without a highlight.</summary>
+    public string? Highlight { get; init; }
+
+    /// <summary>The address of the hyperlink whose text the run is; absent elsewhere.</summary>
+    public string? Url { get; init; }
 }

@@ -885,8 +885,9 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
         });
 
         Assert.All(result.Applied, item => Assert.Equal("ok", item.Status));
-        Assert.Equal(["block/1"], result.Applied[0].Targets);
-        Assert.Equal(["block/2"], result.Applied[1].Targets);
+        // Targets are where the changed blocks are in the output.
+        Assert.Equal(["block/2"], result.Applied[0].Targets);
+        Assert.Equal(["block/3"], result.Applied[1].Targets);
         Assert.Equal("Inserted", read.Blocks[1].Text);
         Assert.Equal("Original second block changed", read.Blocks[2].Text);
     }

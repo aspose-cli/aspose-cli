@@ -7,7 +7,7 @@ namespace Aspose.Cli.Product.Words.Engine.Editing;
 // Character formatting and styles.
 internal sealed partial class WordsMutationHandlers
 {
-    public long Apply(FormatTextOp operation)
+    public ValueTuple Apply(FormatTextOp operation)
     {
         long count = 0;
         foreach (Run run in Nodes.SelectMany(Descendants<Run>))
@@ -46,10 +46,10 @@ internal sealed partial class WordsMutationHandlers
             count++;
         }
 
-        return count;
+        return default;
     }
 
-    public long Apply(SetStyleOp operation)
+    public ValueTuple Apply(SetStyleOp operation)
     {
         Style style = GetStyle(_document, operation.Style);
         long count = 0;
@@ -59,10 +59,10 @@ internal sealed partial class WordsMutationHandlers
             count++;
         }
 
-        return count;
+        return default;
     }
 
-    public long Apply(DefineStyleOp operation)
+    public ValueTuple Apply(DefineStyleOp operation)
     {
         Style style = _document.Styles[operation.Name] ?? _document.Styles.Add(StyleType.Paragraph, operation.Name);
         if (operation.BasedOn is not null)
@@ -96,10 +96,10 @@ internal sealed partial class WordsMutationHandlers
             style.ParagraphFormat.SpaceAfter = operation.SpaceAfter.Value;
         }
 
-        return 1;
+        return default;
     }
 
-    public long Apply(SetDefaultFontOp operation)
+    public ValueTuple Apply(SetDefaultFontOp operation)
     {
         foreach (Style style in _document.Styles)
         {
@@ -113,7 +113,7 @@ internal sealed partial class WordsMutationHandlers
             }
         }
 
-        return 1;
+        return default;
     }
 
     // One font for every script, then the Latin (ASCII and other Latin) or East Asian font in its place.

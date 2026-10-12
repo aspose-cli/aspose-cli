@@ -85,12 +85,13 @@ public sealed class WordsSectionIdentityTests
     }
 
     [Fact]
-    public void SectionDeletion_RejectsAnEarlierOverlappingBlockDeletion()
+    public void SectionDeletion_AfterAnEarlierBlockDeletionInIt_DeletesTheSection()
     {
         using var fixture = new WordsFixture();
         string input = CreateSections(fixture);
         string output = fixture.Temp.File("overlap.docx");
-        Assert.Throws<CliException>(() => WordsEdit.Run(fixture.Session, new WordsEditRequest
+        int sections = new Document(input).Sections.Count;
+        WordsEditResult result = WordsEdit.Run(fixture.Session, new WordsEditRequest
         {
             Input = input,
             Batch = new WordsOpsBatch
@@ -102,8 +103,9 @@ public sealed class WordsSectionIdentityTests
                 ],
             },
             Output = TestOutput.At(output),
-        }));
-        Assert.False(File.Exists(output));
+        });
+        Assert.All(result.Applied, static applied => Assert.Equal(OpStatuses.Ok, applied.Status));
+        Assert.Equal(sections - 1, new Document(output).Sections.Count);
     }
 
     [Fact]

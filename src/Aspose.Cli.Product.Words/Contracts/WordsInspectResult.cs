@@ -18,8 +18,8 @@ public sealed record WordsInspectResult() : EngineResultEnvelope("inspect-result
     /// <summary>The headings in document order; returned with <c>--detail outline</c>.</summary>
     public IReadOnlyList<WordsOutlineItem>? Outline { get; init; }
 
-    /// <summary>The names of the styles the document defines, in ordinal order; returned with <c>--detail styles</c>.</summary>
-    public IReadOnlyList<string>? Styles { get; init; }
+    /// <summary>The styles the document defines, in ordinal order of their names; returned with <c>--detail styles</c>.</summary>
+    public IReadOnlyList<WordsStyleData>? Styles { get; init; }
 
     /// <summary>The fields in every story; returned with <c>--detail fields</c>.</summary>
     public IReadOnlyList<WordsFieldData>? Fields { get; init; }
@@ -116,6 +116,67 @@ public sealed record WordsDocumentSummary
     /// dot or wordml drops them and reports MACROS_DROPPED.
     /// </summary>
     public required bool HasMacros { get; init; }
+
+    /// <summary>The watermark the document's headers draw; absent without one.</summary>
+    public WordsWatermarkData? Watermark { get; init; }
+}
+
+/// <summary>A watermark, as set_watermark sets it.</summary>
+public sealed record WordsWatermarkData
+{
+    /// <summary>Whether it draws text or an image.</summary>
+    [AllowedValues("text", "image")]
+    public required string Kind { get; init; }
+
+    /// <summary>A text watermark's text.</summary>
+    public string? Text { get; init; }
+
+    /// <summary>A text watermark's font.</summary>
+    public string? Font { get; init; }
+
+    /// <summary>A text watermark's color, as #RRGGBB.</summary>
+    public string? Color { get; init; }
+
+    /// <summary>Whether the text is semi-transparent or the image washed out.</summary>
+    public required bool Faded { get; init; }
+}
+
+/// <summary>One style the document defines, under the names define_style sets it with.</summary>
+public sealed record WordsStyleData
+{
+    /// <summary>The style's name.</summary>
+    public required string Name { get; init; }
+
+    /// <summary>What the style formats.</summary>
+    [AllowedValues("paragraph", "character", "table", "list")]
+    public required string Kind { get; init; }
+
+    /// <summary>The style it is based on; absent for none.</summary>
+    public string? BasedOn { get; init; }
+
+    /// <summary>The font of its Latin and East Asian text.</summary>
+    public string? Font { get; init; }
+
+    /// <summary>The font of its Latin text.</summary>
+    public string? LatinFont { get; init; }
+
+    /// <summary>The font of its Chinese, Japanese and Korean text.</summary>
+    public string? EastAsianFont { get; init; }
+
+    /// <summary>The font size in points.</summary>
+    public double? FontSize { get; init; }
+
+    /// <summary>Whether its text is bold.</summary>
+    public bool? Bold { get; init; }
+
+    /// <summary>Its text color, as #RRGGBB; absent for automatic.</summary>
+    public string? Color { get; init; }
+
+    /// <summary>The space before a paragraph of the style, in points.</summary>
+    public double? SpaceBefore { get; init; }
+
+    /// <summary>The space after a paragraph of the style, in points.</summary>
+    public double? SpaceAfter { get; init; }
 }
 
 /// <summary>One document section.</summary>
@@ -134,6 +195,13 @@ public sealed record WordsSectionData
 
     /// <summary>The page margins.</summary>
     public required WordsMarginData Margins { get; init; }
+
+    /// <summary>The number of text columns.</summary>
+    [Minimum(1)]
+    public required int ColumnCount { get; init; }
+
+    /// <summary>The section's page numbering: its style, its first number when it restarts, and the PAGE field that shows it.</summary>
+    public required WordsPageNumbersData PageNumbers { get; init; }
 
     /// <summary>
     /// The headers and footers the section defines itself; a kind it does not define continues
@@ -213,6 +281,10 @@ public sealed record WordsFieldData
 
     /// <summary>The result a reader sees, with the results of nested fields in place of their codes.</summary>
     public string? Result { get; init; }
+
+    /// <summary>The deepest heading level a table of contents lists, as insert_toc maxLevel sets it; absent for other fields.</summary>
+    [Minimum(1)]
+    public int? MaxLevel { get; init; }
 }
 
 /// <summary>One comment.</summary>
@@ -324,4 +396,37 @@ public sealed record WordsTableData
     /// </summary>
     [MinLength(1)]
     public string? TableStyle { get; init; }
+
+    /// <summary>Whether the whole table keeps on one page when it fits, as set_table_pagination keepTogether sets it.</summary>
+    public required bool KeepTogether { get; init; }
+
+    /// <summary>Whether the text of every row may split across a page break.</summary>
+    public required bool AllowRowBreakAcrossPages { get; init; }
+
+    /// <summary>The first rows repeated as a heading on every page the table spans.</summary>
+    [Minimum(0)]
+    public required int HeaderRowCount { get; init; }
+
+    /// <summary>Whether the table keeps with the paragraph after it.</summary>
+    public required bool KeepWithNext { get; init; }
+}
+
+/// <summary>A section's page numbering, as set_page_numbers sets it.</summary>
+public sealed record WordsPageNumbersData
+{
+    /// <summary>Whether the primary header or, without one there, the primary footer holds the PAGE field; absent when neither does.</summary>
+    [AllowedValues(typeof(WordsHeaderFooterLocations))]
+    public string? Location { get; init; }
+
+    /// <summary>The alignment of the paragraph that holds the PAGE field; absent without one.</summary>
+    [AllowedValues("left", "center", "right")]
+    public string? Alignment { get; init; }
+
+    /// <summary>How the page numbers are written.</summary>
+    [AllowedValues(typeof(PageNumberStyles))]
+    public string? NumberStyle { get; init; }
+
+    /// <summary>The number of the section's first page when its numbering restarts; absent when it continues.</summary>
+    [Minimum(0)]
+    public int? Start { get; init; }
 }

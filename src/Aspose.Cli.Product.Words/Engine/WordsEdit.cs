@@ -1,5 +1,4 @@
 using System.Collections.Frozen;
-using System.Runtime.ExceptionServices;
 using Aspose.Cli.Product.Words.Engine.Editing;
 using Aspose.Cli.Product.Words.Engine.Mapping;
 using Aspose.Cli.Sdk.Diagnostics;
@@ -62,13 +61,12 @@ internal static class WordsEdit
             : null;
         tracking?.Start();
         var operationWarnings = new List<Warning>();
-        var changed = new List<Node>();
         var pageFields = new List<Field>();
-        IReadOnlyList<BoundedOperationOutcome> outcomes =
-            ApplyOperations(session, loaded, resolved, blocks, request, operationInputs, tracking, operationWarnings, changed, pageFields);
+        AppliedBatch applied = ApplyOperations(session, loaded, resolved, request, operationInputs, tracking, operationWarnings, pageFields);
+        IReadOnlyList<BoundedOperationOutcome> outcomes = applied.Outcomes;
         tracking?.Stop();
         UpdatePageFields(loaded.Document, pageFields);
-        IReadOnlyList<int> pagesTouched = TouchedPages(loaded.Document, blocksBefore, resolved, changed);
+        IReadOnlyList<int> pagesTouched = TouchedPages(loaded.Document, blocksBefore, applied.Changed);
 
         session.Loader.EnsureWithinBudgets(loaded.Document, loaded.Resources);
         WordsSavePipeline.RemoveMacrosUnlessKept(loaded.Document, format);
@@ -145,41 +143,28 @@ internal static class WordsEdit
         or SetTableCellOp or RepeatTableRowOp or InsertTocOp or InsertBookmarkOp or InsertHyperlinkOp or InsertFieldOp
         or AddCommentOp or DeleteCommentsOp or ImportSectionsOp;
 
-    private static IReadOnlyList<BoundedOperationOutcome> ApplyOperations(
+    private static AppliedBatch ApplyOperations(
         WordsSession session,
         LoadedDocument loaded,
         IReadOnlyList<ResolvedWordsOp> resolved,
-        DocumentBlockIndex blocks,
         WordsEditRequest request,
         InputResourceScope operationInputs,
         WordsRevisionTracking? tracking,
         List<Warning> warnings,
-        List<Node> changed,
         List<Field> pageFields)
     {
-        return BoundedOperationRunner.Run(
+        // The SDK snapshots what each operation can change before and after it, and derives its
+        // outcome and the OP_NO_EFFECT of one that changed nothing; the handlers count nothing.
+        var model = new WordsEditModel(loaded, resolved, item => new WordsMutationHandlers(
+            loaded, item, session.Outputs, session.Loader, session.Budgets.Inputs, operationInputs, request.OpSecrets, tracking, warnings, pageFields));
+        AppliedBatch applied = BoundedOperationRunner.Run(
             WordsOp.Catalog,
             resolved.Select(static item => item.Op).ToArray(),
             request.Options.BestEffort,
             deadline: null,
-            (_, index) =>
-            {
-                if (resolved[index].Failure is { } failure)
-                {
-                    ExceptionDispatchInfo.Capture(failure).Throw();
-                }
-
-                // An operation without a block address, such as replace_text, names the
-                // original blocks that hold the nodes it changed.
-                var nodes = new List<Node>();
-                long count = new WordsMutationHandlers(loaded, resolved[index], session.Outputs, session.Loader, session.Budgets.Inputs, operationInputs, request.OpSecrets, tracking, warnings, nodes, pageFields).Run();
-                changed.AddRange(nodes);
-                return new AppliedOperation(
-                    count,
-                    nodes.Count == 0 ? resolved[index].Targets : WordsAnchorResolver.Targets(blocks, nodes));
-            },
-            (_, index) => resolved[index].Targets,
-            WordsAnchorResolver.DegenerateTargets);
+            model);
+        warnings.AddRange(applied.Warnings);
+        return applied;
     }
 
     /// <summary>
@@ -244,49 +229,101 @@ internal static class WordsEdit
     }
 
     /// <summary>
-    /// The pages of the edited document that the batch changed: every page of the blocks and
-    /// sections the operations addressed, of the nodes they recorded as changed and of the blocks
-    /// they inserted, and for each block they removed, the page of the next original block that
-    /// remains. A change in a header or footer touches every page of its section.
+    /// The pages of the output that hold what the batch changed (<see cref="AppliedBatch.Changed"/>):
+    /// the pages of each changed block, and for a block it removed, the page of the next original
+    /// block that remains; every page of a section whose page setup, headers or footers changed;
+    /// every page for the watermark; and the pages of the text in a changed style or a style based
+    /// on it. Document properties and the editing restriction are on no page, so a batch that
+    /// changed nothing, or only those, touches none.
     /// </summary>
-    private static IReadOnlyList<int> TouchedPages(
-        Document document,
-        IReadOnlyList<Node> blocksBefore,
-        IReadOnlyList<ResolvedWordsOp> operations,
-        IEnumerable<Node> changed)
+    private static IReadOnlyList<int> TouchedPages(Document document, IReadOnlyList<Node> blocksBefore, IReadOnlyList<ChangedObject> changed)
     {
+        var pages = new SortedSet<int>();
+        if (changed.Count == 0)
+        {
+            return [];
+        }
+
         document.UpdatePageLayout();
         var collector = new LayoutCollector(document);
-        var before = new HashSet<Node>(blocksBefore);
-        var pages = new SortedSet<int>();
-        IEnumerable<Node> nodes = operations.SelectMany(static item => item.Nodes.Concat<Node>(item.Sections))
-            .Concat(changed)
-            .Concat(BodyBlocks(document).Where(block => !before.Contains(block)))
-            .Where(node => Attached(document, node))
-            .Select(static node => node.GetAncestor(NodeType.HeaderFooter)?.ParentNode ?? node)
-            .Distinct();
-        foreach (Node node in nodes)
+        var styles = new HashSet<string>(StringComparer.Ordinal);
+        foreach (ChangedObject item in changed)
         {
-            for (int page = collector.GetStartPageIndex(node); page > 0 && page <= collector.GetEndPageIndex(node); page++)
+            if (item.Identity is Node node && item.InOutput && Attached(document, node))
             {
-                pages.Add(page);
+                AddPages(collector, node, pages);
+            }
+            else if (item.Identity is Node removed && IndexOf(blocksBefore, removed) is int index and >= 0)
+            {
+                Node? next = blocksBefore.Skip(index + 1).FirstOrDefault(block => Attached(document, block));
+                if ((next is null ? document.PageCount : collector.GetStartPageIndex(next)) is > 0 and int page)
+                {
+                    pages.Add(page);
+                }
+            }
+            else if (item.Address == WordsSnapshots.WatermarkAddress)
+            {
+                pages.UnionWith(Enumerable.Range(1, document.PageCount));
+            }
+            else if (item.Address.StartsWith("style/", StringComparison.Ordinal))
+            {
+                styles.Add(item.Address);
             }
         }
 
-        Node? next = null;
-        for (int index = blocksBefore.Count - 1; index >= 0; index--)
+        if (styles.Count > 0)
         {
-            if (Attached(document, blocksBefore[index]))
+            foreach (Node node in document.GetChildNodes(NodeType.Any, true).Where(node => UsesStyle(document, node, styles)))
             {
-                next = blocksBefore[index];
-            }
-            else if ((next is null ? document.PageCount : collector.GetStartPageIndex(next)) is > 0 and int page)
-            {
-                pages.Add(page);
+                AddPages(collector, node.GetAncestor(NodeType.HeaderFooter)?.ParentNode ?? node, pages);
             }
         }
 
         return pages.ToArray();
+    }
+
+    private static void AddPages(LayoutCollector collector, Node node, SortedSet<int> pages)
+    {
+        for (int page = collector.GetStartPageIndex(node); page > 0 && page <= collector.GetEndPageIndex(node); page++)
+        {
+            pages.Add(page);
+        }
+    }
+
+    private static int IndexOf(IReadOnlyList<Node> nodes, Node node)
+    {
+        for (int index = 0; index < nodes.Count; index++)
+        {
+            if (ReferenceEquals(nodes[index], node))
+            {
+                return index;
+            }
+        }
+
+        return -1;
+    }
+
+    /// <summary>Whether a paragraph, run or table is in one of the styles, by their addresses, or in a style based on one.</summary>
+    private static bool UsesStyle(Document document, Node node, IReadOnlySet<string> styles)
+    {
+        string? name = node switch
+        {
+            Paragraph paragraph => paragraph.ParagraphFormat.StyleName,
+            Run run => run.Font.StyleName,
+            Aspose.Words.Tables.Table table => table.StyleName,
+            _ => null,
+        };
+        for (int depth = 0; !string.IsNullOrEmpty(name) && depth < 32; depth++)
+        {
+            if (styles.Contains(WordsSnapshots.StyleAddress(name)))
+            {
+                return true;
+            }
+
+            name = document.Styles[name]?.BaseStyleName;
+        }
+
+        return false;
     }
 
     private static IEnumerable<Node> BodyBlocks(Document document) =>

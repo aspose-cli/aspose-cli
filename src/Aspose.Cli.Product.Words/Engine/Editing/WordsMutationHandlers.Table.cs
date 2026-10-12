@@ -14,7 +14,7 @@ namespace Aspose.Cli.Product.Words.Engine.Editing;
 // Tables and lists.
 internal sealed partial class WordsMutationHandlers
 {
-    public long Apply(InsertTableOp operation)
+    public ValueTuple Apply(InsertTableOp operation)
     {
         Style? style = operation.TableStyle is null ? null : GetStyle(_document, operation.TableStyle);
 
@@ -45,10 +45,10 @@ internal sealed partial class WordsMutationHandlers
 
         Node cursor = Anchor;
         InsertRelative(Anchor, ref cursor, table, operation.Position);
-        return (long)operation.RowCount * operation.ColumnCount;
+        return default;
     }
 
-    public long Apply(SetTableCellOp operation)
+    public ValueTuple Apply(SetTableCellOp operation)
     {
         if (Nodes.Count != 1 || Nodes[0] is not Table table)
         {
@@ -86,10 +86,10 @@ internal sealed partial class WordsMutationHandlers
         builder.MoveTo(paragraph);
         builder.PopFont();
         builder.Write(operation.Text);
-        return 1;
+        return default;
     }
 
-    public long Apply(RepeatTableRowOp operation)
+    public ValueTuple Apply(RepeatTableRowOp operation)
     {
         if (Nodes.Count != 1 || Nodes[0] is not Table table)
         {
@@ -154,7 +154,7 @@ internal sealed partial class WordsMutationHandlers
             template.Remove();
         }
 
-        return rows.Length;
+        return default;
     }
 
     /// <summary>A <c>{{key}}</c> placeholder in one paragraph; spaces may surround the key.</summary>
@@ -215,7 +215,7 @@ internal sealed partial class WordsMutationHandlers
     /// follows the Aspose.Words guidance: rows do not break, and every paragraph keeps with the
     /// next except the end-of-cell paragraphs of the last row, which keepWithNext owns.
     /// </summary>
-    public long Apply(SetTablePaginationOp operation)
+    public ValueTuple Apply(SetTablePaginationOp operation)
     {
         if (Nodes.Count != 1 || Nodes[0] is not Table table)
         {
@@ -270,16 +270,14 @@ internal sealed partial class WordsMutationHandlers
             }
         }
 
-        return operation.KeepTogether is null && operation.AllowRowBreakAcrossPages is null && operation.HeaderRowCount is null
-            ? 1
-            : rows.Length;
+        return default;
 
         static bool IsCellEnd(Row row, Paragraph paragraph) => paragraph.ParentNode is Cell cell
             && cell.ParentRow == row
             && cell.LastParagraph == paragraph;
     }
 
-    public long Apply(SetListOp operation)
+    public ValueTuple Apply(SetListOp operation)
     {
         List list = _document.Lists.Add(operation.Kind == "bullet" ? ListTemplate.BulletDefault : ListTemplate.NumberDefault);
         long count = 0;
@@ -290,7 +288,7 @@ internal sealed partial class WordsMutationHandlers
             count++;
         }
 
-        return count;
+        return default;
     }
 }
 
