@@ -141,6 +141,129 @@ public sealed class OperationContractGeneratorTests
         Assert.DoesNotContain(reported, static item => item.At is "Page" or "Size" or "Sizes" or "Width" or "Height" or "Top");
     }
 
+    /// <summary>
+    /// A field may hold an operation input the SDK describes, such as its page size: the
+    /// vocabulary refers to the SDK's description, and the field states its own read-back.
+    /// </summary>
+    [Fact]
+    public void SdkOperationInput_IsReferencedAndClassifiedByItsField()
+    {
+        const string Declarations =
+            """
+            [OperationVocabulary("ops", JsonContext = typeof(PageJsonContext), Addresses = new[] { "page" })]
+            public abstract partial record PageOp : Aspose.Cli.Sdk.Contracts.BoundedOperation;
+
+            [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
+            [JsonSerializable(typeof(SetPageSizeOp))]
+            public partial class PageJsonContext : JsonSerializerContext;
+
+            """;
+        GeneratorDriverRunResult result = Run(
+            Declarations +
+            """
+            [Operation("set_page_size")]
+            public sealed record SetPageSizeOp : PageOp
+            {
+                public int Page { get; init; }
+                [ReadBack("sample-inspect-result.schema.json#/$defs/samplePageInfo/properties/pageSize")] public required PageSizeInput PageSize { get; init; }
+                public PageSizeInput? Fallback { get; init; }
+            }
+            """);
+
+        (string Message, string At)[] reported = [.. result.Diagnostics
+            .Where(static diagnostic => diagnostic.Id == "APCLI012" && diagnostic.Severity == DiagnosticSeverity.Error)
+            .Select(static diagnostic => (diagnostic.GetMessage(), diagnostic.Location.SourceTree!.GetText().ToString(diagnostic.Location.SourceSpan)))];
+        // The SDK's record classifies none of its fields, so a field without a classification of its own is reported.
+        Assert.Equal("Fallback", Assert.Single(reported).At);
+        Assert.Contains("'SetPageSizeOp.Fallback': classify the field for read-back (C-R21)", reported[0].Message, StringComparison.Ordinal);
+
+        GeneratorDriverRunResult classified = Run(
+            Declarations +
+            """
+            [Operation("set_page_size")]
+            public sealed record SetPageSizeOp : PageOp
+            {
+                public int Page { get; init; }
+                [ReadBack("sample-inspect-result.schema.json#/$defs/samplePageInfo/properties/pageSize")] public required PageSizeInput PageSize { get; init; }
+            }
+            """);
+
+        Assert.DoesNotContain(classified.Diagnostics, static diagnostic => diagnostic.Id == "APCLI012");
+        string source = Assert.Single(Assert.Single(classified.Results).GeneratedSources).SourceText.ToString();
+        string pageSize = source.Split('\n').Single(static line => line.Contains("Name = \"pageSize\"", StringComparison.Ordinal));
+        Assert.Contains("Record = global::Aspose.Cli.Sdk.Operations.PageSizeInput.Contract", pageSize, StringComparison.Ordinal);
+        Assert.Contains("ReadBack = \"sample-inspect-result.schema.json#/$defs/samplePageInfo/properties/pageSize\"", pageSize, StringComparison.Ordinal);
+    }
+
+    /// <summary>A record of another assembly is a field's value only when it is an operation input that assembly describes.</summary>
+    [Fact]
+    public void RecordOfAnotherAssembly_IsReportedUnlessItIsAnOperationInput()
+    {
+        GeneratorDriverRunResult result = Run(
+            """
+            [OperationVocabulary("ops", JsonContext = typeof(ForeignJsonContext))]
+            public abstract partial record ForeignOp : Aspose.Cli.Sdk.Contracts.BoundedOperation;
+
+            [Operation("size")]
+            public sealed record SizeOp : ForeignOp
+            {
+                [NotState] public PageSizeInfo? Size { get; init; }
+            }
+
+            [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
+            [JsonSerializable(typeof(SizeOp))]
+            public partial class ForeignJsonContext : JsonSerializerContext;
+            """);
+
+        Diagnostic reported = Assert.Single(result.Diagnostics, static diagnostic => diagnostic.Id == "APCLI012");
+        Assert.Contains("'SizeOp.Size': type 'Aspose.Cli.Sdk.Contracts.PageSizeInfo", reported.GetMessage(), StringComparison.Ordinal);
+        Assert.Contains("an [OperationInput] record of another assembly", reported.GetMessage(), StringComparison.Ordinal);
+    }
+
+    /// <summary>An operation input is described where it is declared, as its partial record's generated contract.</summary>
+    [Fact]
+    public void OperationInput_IsDescribedOnItsRecord()
+    {
+        const string Margin =
+            """
+            /// <summary>A margin.</summary>
+            [OperationInput]
+            [AtLeastOneOf("top", "bottom")]
+            public sealed partial record Margin
+            {
+                /// <summary>The top margin in points.</summary>
+                [Minimum(0)] public double? Top { get; init; }
+                [AllowedValues(typeof(Modes))] public string? Bottom { get; init; }
+            }
+
+            """;
+        GeneratorDriverRunResult result = Run(
+            Margin +
+            """
+            [OperationInput]
+            public sealed record Loose
+            {
+                public double? Left { get; init; }
+            }
+            """);
+
+        (string Message, string At)[] reported = [.. result.Diagnostics
+            .Where(static diagnostic => diagnostic.Id == "APCLI012" && diagnostic.Severity == DiagnosticSeverity.Error)
+            .Select(static diagnostic => (diagnostic.GetMessage(), diagnostic.Location.SourceTree!.GetText().ToString(diagnostic.Location.SourceSpan)))];
+        Assert.Equal("Loose", Assert.Single(reported).At);
+        Assert.Contains("Operation input 'Loose' must be a top-level, non-abstract partial record", reported[0].Message, StringComparison.Ordinal);
+
+        GeneratorDriverRunResult valid = Run(Margin);
+        Assert.DoesNotContain(valid.Diagnostics, static diagnostic => diagnostic.Id == "APCLI012");
+        string source = Assert.Single(Assert.Single(valid.Results).GeneratedSources).SourceText.ToString();
+        Assert.Contains("partial record Margin", source, StringComparison.Ordinal);
+        Assert.Contains("public static global::Aspose.Cli.Sdk.Operations.OperationRecord Contract { get; }", source, StringComparison.Ordinal);
+        Assert.Contains("Name = \"margin\", Description = \"A margin.\"", source, StringComparison.Ordinal);
+        Assert.Contains("Name = \"top\", Description = \"The top margin in points.\"", source, StringComparison.Ordinal);
+        Assert.Contains("AllowedValuesAttribute(new object[] { \"fast\", \"slow\" })", source, StringComparison.Ordinal);
+        Assert.Contains("Constraints = [new global::Aspose.Cli.Sdk.Operations.AtLeastOneOfAttribute(", source, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void OverrideWithConstraintOrDefault_IsReported()
     {

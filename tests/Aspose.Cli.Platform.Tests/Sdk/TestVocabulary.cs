@@ -138,6 +138,13 @@ public sealed record StampTextOp : TestOp
     [MinLength(1)] public required string Text { get; init; }
 }
 
+/// <summary>Sizes the pages, with the page size input every product shares.</summary>
+[Operation("size_pages")]
+public sealed record SizePagesOp : TestOp
+{
+    [NotReadBack] public required PageSizeInput PageSize { get; init; }
+}
+
 /// <summary>Reads a mode whose converter cannot read the value "unsupported".</summary>
 [Operation("probe")]
 public sealed record ProbeOp : TestOp
@@ -168,6 +175,7 @@ public sealed record TestBatch : BoundedOperationEnvelope<TestOp>;
 [JsonSerializable(typeof(SecretOp))]
 [JsonSerializable(typeof(SetOp))]
 [JsonSerializable(typeof(ShiftOp))]
+[JsonSerializable(typeof(SizePagesOp))]
 [JsonSerializable(typeof(StampImageOp))]
 [JsonSerializable(typeof(StampTextOp))]
 public sealed partial class TestOpsJsonContext : JsonSerializerContext;
