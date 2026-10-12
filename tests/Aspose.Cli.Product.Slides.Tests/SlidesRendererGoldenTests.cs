@@ -262,7 +262,7 @@ public sealed class SlidesRendererGoldenTests
             """
             wrote out.pptx (pptx, 52,000 bytes, 1 of 1 op(s) applied)
               [op-0001] set_text: ok (1 item(s))
-            slide ids touched: 256, 258
+            slides touched: 256, 258
             """,
             text);
     }

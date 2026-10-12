@@ -83,6 +83,8 @@ public sealed class SlidesTextCoverageTests
 
         // Only the first operation matched nothing: "bc" is on the slide, not in its notes.
         Assert.Equal([0L, 4L], result.Applied.Select(static outcome => outcome.ItemsAffected));
+        // SLD-4: an operation that changed nothing names no target, not the whole presentation.
+        Assert.Empty(result.Applied[0].Targets);
         Warning warning = Assert.Single(result.Warnings!, static warning => warning.Code == WarningCodes.OpNoEffect);
         Assert.Equal(result.Applied[0].Id, warning.Details!["id"]!.GetValue<string>());
         Assert.Equal("replace_text", warning.Details["op"]!.GetValue<string>());
@@ -242,8 +244,14 @@ public sealed class SlidesTextCoverageTests
         }
 
         // Writing back what evaluation mode read would lose the rest of the text, so the cut
-        // paragraph is left alone; the CLI discloses the cut (see SlidesCliWorkflowTests).
-        Assert.Equal(0, Assert.Single(SlidesEdit.Run(fixture.Session, request).Applied).ItemsAffected);
+        // paragraph is left alone; the CLI discloses the cut (see SlidesCliWorkflowTests), and
+        // the no-effect warning says the cut, not a missing match, is why nothing changed.
+        SlidesEditResult result = SlidesEdit.Run(fixture.Session, request);
+        Assert.Equal(0, Assert.Single(result.Applied).ItemsAffected);
+        Warning noEffect = Assert.Single(result.Warnings!, static warning => warning.Code == WarningCodes.OpNoEffect);
+        Assert.Equal(NoEffectReasons.EvaluationTruncated, noEffect.Details!["reason"]!.GetValue<string>());
+        Assert.Contains("license", noEffect.Hint, StringComparison.Ordinal);
+        Assert.DoesNotContain("Search with", noEffect.Hint, StringComparison.Ordinal);
         Assert.True(File.Exists(output));
     }
 

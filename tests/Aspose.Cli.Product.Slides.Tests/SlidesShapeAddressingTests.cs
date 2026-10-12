@@ -184,7 +184,7 @@ public sealed class SlidesShapeAddressingTests
             },
             Output = TestOutput.At(output),
         });
-        Assert.Equal([$"slide/{all.Slides[2].SlideId}/shape/{shape.ShapeId}"], edit.Applied[0].Targets);
+        Assert.Equal([$"slide/{all.Slides[2].Slide}/shape/{shape.ShapeId}"], edit.Applied[0].Targets);
         SlidesReadResult changed = SlidesRead.Run(fixture.Session, new SlidesReadRequest
         {
             Input = output,
@@ -250,7 +250,7 @@ public sealed class SlidesShapeAddressingTests
             },
             Output = TestOutput.At(output),
         });
-        Assert.Equal([$"slide/{read.Slides[0].SlideId}/shape/{groupId}"], removed.Applied[0].Targets);
+        Assert.Equal([$"slide/{read.Slides[0].Slide}/shape/{groupId}"], removed.Applied[0].Targets);
         SlidesReadResult final = SlidesRead.Run(fixture.Session, new SlidesReadRequest
         {
             Input = output,

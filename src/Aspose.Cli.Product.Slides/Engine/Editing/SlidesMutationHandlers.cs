@@ -8,16 +8,15 @@ namespace Aspose.Cli.Product.Slides.Engine.Editing;
 
 /// <summary>
 /// Applies one resolved presentation operation. Each operation has its handler in the
-/// structural, content, object or style part of this class, and returns the number of items
-/// it changed.
+/// structural, content, object or style part of this class; what it changed the SDK derives
+/// from the snapshots around it (<see cref="SlidesSnapshots"/>).
 /// </summary>
-internal sealed partial class SlidesMutationHandlers : ISlidesOpHandler<long>
+internal sealed partial class SlidesMutationHandlers : ISlidesOpHandler<ValueTuple>
 {
     private readonly InputSource _inputs;
     private readonly SlidesPresentationLoader _loader;
     private readonly Presentation _presentation;
     private readonly ResolvedSlidesOp _target;
-    private readonly ISet<uint> _touched;
     private readonly ICollection<Warning> _warnings;
     private readonly bool _evaluation;
     private readonly Action _readInput;
@@ -28,7 +27,6 @@ internal sealed partial class SlidesMutationHandlers : ISlidesOpHandler<long>
     /// <param name="loader">Opens the presentations that operations append.</param>
     /// <param name="presentation">The presentation being edited.</param>
     /// <param name="target">The operation with the targets it resolved before the batch started.</param>
-    /// <param name="touched">Receives the ids of the slides the operation changes.</param>
     /// <param name="warnings">Receives what the operation reports about its result.</param>
     /// <param name="evaluation">Whether the engine runs in evaluation mode, which cuts text short when it is read.</param>
     /// <param name="secrets">The secrets the operations name by environment variable.</param>
@@ -38,7 +36,6 @@ internal sealed partial class SlidesMutationHandlers : ISlidesOpHandler<long>
         SlidesPresentationLoader loader,
         Presentation presentation,
         ResolvedSlidesOp target,
-        ISet<uint> touched,
         ICollection<Warning> warnings,
         bool evaluation,
         IReadOnlyDictionary<string, Secret>? secrets,
@@ -48,7 +45,6 @@ internal sealed partial class SlidesMutationHandlers : ISlidesOpHandler<long>
         _loader = loader;
         _presentation = presentation;
         _target = target;
-        _touched = touched;
         _warnings = warnings;
         _evaluation = evaluation;
         _readInput = readInput;
@@ -72,10 +68,10 @@ internal sealed partial class SlidesMutationHandlers : ISlidesOpHandler<long>
     /// </summary>
     internal static IReadOnlyList<ResolvedSlidesOp> ResolveBatch(
         Presentation presentation,
-        SlidesOpsBatch batch)
+        IReadOnlyList<SlidesOp> batch)
     {
-        var resolved = new List<ResolvedSlidesOp>(batch.Ops.Count);
-        foreach (SlidesOp op in batch.Ops)
+        var resolved = new List<ResolvedSlidesOp>(batch.Count);
+        foreach (SlidesOp op in batch)
         {
             try
             {
@@ -129,26 +125,41 @@ internal sealed partial class SlidesMutationHandlers : ISlidesOpHandler<long>
     /// Aspose.Slides failure becomes an engine failure. A file the operation reads is opened
     /// through the SDK, which reports a file it cannot open.
     /// </summary>
-    internal long Run()
+    internal void Run()
     {
-        if (_target.Failure is not null)
+        EnsureLive(_presentation, _target);
+        Engine(() => _target.Op.Accept(this));
+    }
+
+    /// <summary>
+    /// Refuses an operation whose target could not be resolved before the batch, or whose
+    /// slide or shape an earlier operation of the batch deleted.
+    /// </summary>
+    internal static void EnsureLive(Presentation presentation, ResolvedSlidesOp target)
+    {
+        if (target.Failure is not null)
         {
-            ExceptionDispatchInfo.Throw(_target.Failure);
+            ExceptionDispatchInfo.Throw(target.Failure);
         }
 
+        if (target.Slide is not null && !presentation.Slides.Contains(target.Slide)
+            || target.Slides?.Any(slide => !presentation.Slides.Contains(slide)) == true)
+        {
+            throw new OperationInvalidException("A targeted slide was deleted by an earlier operation.");
+        }
+
+        if (target.Shape is not null && !target.Slide!.Shapes.Any(shape => ReferenceEquals(shape, target.Shape)))
+        {
+            throw new OperationInvalidException("A targeted shape was deleted by an earlier operation.");
+        }
+    }
+
+    /// <summary>Runs engine work, turning an Aspose.Slides failure into an engine failure.</summary>
+    internal static T Engine<T>(Func<T> work)
+    {
         try
         {
-            if (_target.Slide is not null && !_presentation.Slides.Contains(_target.Slide)
-                || _target.Slides?.Any(slide => !_presentation.Slides.Contains(slide)) == true)
-            {
-                throw new OperationInvalidException("A targeted slide was deleted by an earlier operation.");
-            }
-            if (_target.Shape is not null && !_target.Slide!.Shapes.Any(shape => ReferenceEquals(shape, _target.Shape)))
-            {
-                throw new OperationInvalidException("A targeted shape was deleted by an earlier operation.");
-            }
-
-            return _target.Op.Accept(this);
+            return work();
         }
         catch (Exception exception) when (
             exception.GetType().Assembly.GetName().Name?.StartsWith("Aspose.Slides", StringComparison.Ordinal) == true)

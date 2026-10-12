@@ -37,7 +37,7 @@
         "command": "edit",
         "inputSchema": "v2/slides/ops",
         "operationSchema": "aspose-cli schema v2/slides/ops --operation <op>",
-        "contractFingerprint": "sha256:ddad7ab3d4a73b19fc6928108ceacf5b8dfcd3cb73fe4eaa883d8bca8c8c818c",
+        "contractFingerprint": "sha256:10cb9632437bc96e43136765b58fe39189f95a96ce4f16ba12cc24d302984703",
         "maximumOperationCount": 10000,
         "ops": [
           "copy_slide",
@@ -1294,6 +1294,25 @@
             "secret": true,
             "valueSource": "stdin",
             "description": "Read the password for the presentation from the first line of stdin."
+          },
+          {
+            "name": "--verify",
+            "aliases": [],
+            "type": "boolean",
+            "minimumArity": 0,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": true,
+            "default": "false",
+            "allowedValues": [
+              "false",
+              "true"
+            ],
+            "secret": false,
+            "valueSource": "command-line",
+            "description": "Read the staged output back and check the slide order, titles, shape text, body paragraphs, notes, layouts, hidden slides, footers, transitions, sections, properties, slide size and replaced text each operation left."
           }
         ],
         "arguments": [
@@ -2333,6 +2352,13 @@
       "detailsSchemaId": "v2/common/not-found-details"
     },
     {
+      "code": "PRESENTATION_SETTING_MISMATCH",
+      "owner": "slides",
+      "severity": "warning",
+      "category": "verification",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
       "code": "SHAPE_NOT_FOUND",
       "owner": "slides",
       "severity": "error",
@@ -2348,12 +2374,26 @@
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
+      "code": "SLIDE_CONTENT_MISMATCH",
+      "owner": "slides",
+      "severity": "warning",
+      "category": "verification",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
       "code": "SLIDE_NOT_FOUND",
       "owner": "slides",
       "severity": "error",
       "exitCode": 4,
       "category": "validation",
       "detailsSchemaId": "v2/common/not-found-details"
+    },
+    {
+      "code": "SLIDE_ORDER_MISMATCH",
+      "owner": "slides",
+      "severity": "warning",
+      "category": "verification",
+      "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
       "code": "TABLE_OVERFLOW",
@@ -2527,13 +2567,17 @@
           "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/backup.schema.json"
         },
         "slidesTouched": {
-          "description": "The stable ids of the slides the batch changed, ascending; omitted when it changed none.",
+          "description": "The 1-based numbers of the output's slides the batch changed, ascending; omitted when it changed none.",
           "type": "array",
           "uniqueItems": true,
           "items": {
             "type": "integer",
             "minimum": 1
           }
+        },
+        "verification": {
+          "description": "Present with --verify: the staged output read back against the slide order, slide titles, shape text, body paragraphs, notes, layouts, hidden slides, footers, transitions, sections, document properties, slide size and replaced text the operations left.",
+          "$ref": "#/$defs/slidesEditVerification"
         },
         "license": {
           "description": "License mode the engine ran under; omitted when it ran licensed.",
@@ -2544,6 +2588,38 @@
           "type": "array",
           "items": {
             "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
+          }
+        }
+      },
+      "$defs": {
+        "slidesEditVerification": {
+          "description": "What --verify read back from the staged output: the slide order, slide titles, shape text, body paragraphs, notes, layouts, hidden slides, footers, transitions, sections, document properties, slide size and replaced text.",
+          "type": "object",
+          "required": [
+            "ok",
+            "issues",
+            "checkedOps"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "ok": {
+              "description": "Whether the verification found no issue.",
+              "type": "boolean"
+            },
+            "issues": {
+              "description": "The problems found, empty when ok is true.",
+              "type": "array",
+              "items": {
+                "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/verification-issue.schema.json"
+              }
+            },
+            "checkedOps": {
+              "description": "In batch order, the ids of the operations whose effect the verification read back from the staged output; an operation left out was not checked.",
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
           }
         }
       }
@@ -3529,7 +3605,7 @@
                 "pie",
                 "scatter"
               ],
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/slides/read-result.schema.json#/$defs/slidesChartData/properties/kind"
             },
             "rect": {
               "$ref": "#/$defs/slidesRectInput",
@@ -3542,7 +3618,7 @@
               "items": {
                 "type": "string"
               },
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/slides/read-result.schema.json#/$defs/slidesChartData/properties/categories"
             },
             "series": {
               "type": "array",
@@ -3551,11 +3627,11 @@
               "items": {
                 "$ref": "#/$defs/slidesChartSeriesInput"
               },
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/slides/read-result.schema.json#/$defs/slidesChartData/properties/series"
             },
             "title": {
               "type": "string",
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/slides/read-result.schema.json#/$defs/slidesChartData/properties/title"
             }
           },
           "allOf": [
@@ -3799,13 +3875,13 @@
               "type": "integer",
               "minimum": 1,
               "maximum": 100,
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/slides/read-result.schema.json#/$defs/slidesShapeData/properties/rowCount"
             },
             "columnCount": {
               "type": "integer",
               "minimum": 1,
               "maximum": 50,
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/slides/read-result.schema.json#/$defs/slidesShapeData/properties/columnCount"
             },
             "values": {
               "description": "Cell text by row, at most rowCount rows of at most columnCount cells each.",
@@ -3816,7 +3892,7 @@
                   "type": "string"
                 }
               },
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/slides/read-result.schema.json#/$defs/slidesShapeData/properties/values"
             }
           },
           "allOf": [
@@ -3958,7 +4034,7 @@
             },
             "color": {
               "$ref": "#/$defs/color",
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/slides/read-result.schema.json#/$defs/slidesBackgroundData/properties/color"
             },
             "path": {
               "description": "The picture, relative to the working directory.",
@@ -4093,7 +4169,7 @@
               "items": {
                 "type": "string"
               },
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/slides/read-result.schema.json#/$defs/slidesChartData/properties/categories"
             },
             "series": {
               "type": "array",
@@ -4102,7 +4178,7 @@
               "items": {
                 "$ref": "#/$defs/slidesChartSeriesInput"
               },
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/slides/read-result.schema.json#/$defs/slidesChartData/properties/series"
             }
           },
           "allOf": [
@@ -4176,15 +4252,15 @@
             },
             "text": {
               "type": "string",
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/slides/read-result.schema.json#/$defs/slidesFooterData/properties/text"
             },
             "showNumber": {
               "type": "boolean",
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/slides/read-result.schema.json#/$defs/slidesFooterData/properties/showNumber"
             },
             "showDate": {
               "type": "boolean",
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/slides/read-result.schema.json#/$defs/slidesFooterData/properties/showDate"
             }
           },
           "allOf": [
@@ -4603,7 +4679,7 @@
             },
             "text": {
               "type": "string",
-              "x-readBack": "unread"
+              "x-readBack": "position"
             }
           },
           "allOf": [
@@ -4762,7 +4838,7 @@
             },
             "text": {
               "type": "string",
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/slides/inspect-result.schema.json#/$defs/slidesSlideInfo/properties/title"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/slides/read-result.schema.json#/$defs/slidesShapeData/properties/text"
             }
           },
           "allOf": [
@@ -4811,14 +4887,14 @@
                 "split",
                 "cover"
               ],
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/slides/read-result.schema.json#/$defs/slidesTransitionData/properties/kind"
             },
             "durationMs": {
               "description": "The transition duration in milliseconds.",
               "type": "integer",
               "minimum": 0,
               "maximum": 60000,
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/slides/read-result.schema.json#/$defs/slidesTransitionData/properties/durationMs"
             }
           },
           "allOf": [
@@ -4887,7 +4963,7 @@
           "properties": {
             "text": {
               "type": "string",
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/slides/read-result.schema.json#/$defs/slidesShapeData/properties/text"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/slides/read-result.schema.json#/$defs/slidesParagraphData/properties/text"
             },
             "level": {
               "description": "The 1-based outline level, 1 for a top-level paragraph.",
@@ -4895,13 +4971,13 @@
               "minimum": 1,
               "maximum": 9,
               "default": 1,
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/slides/read-result.schema.json#/$defs/slidesParagraphData/properties/level"
             },
             "bullet": {
               "description": "Whether the paragraph shows its level's bullet; false writes a plain paragraph without one.",
               "type": "boolean",
               "default": true,
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/slides/read-result.schema.json#/$defs/slidesParagraphData/properties/bullet"
             }
           }
         },
@@ -4942,11 +5018,12 @@
             "fillColor": {
               "description": "The solid fill color of the shape.",
               "$ref": "#/$defs/color",
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/slides/read-result.schema.json#/$defs/slidesShapeData/properties/fillColor"
             },
             "line": {
+              "description": "The solid outline color of the shape.",
               "$ref": "#/$defs/color",
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/slides/read-result.schema.json#/$defs/slidesShapeData/properties/line"
             },
             "font": {
               "description": "A font name for Latin, East Asian and complex-script text.",
@@ -4958,7 +5035,7 @@
               "description": "The font of Latin text, in place of font's: a font name, or the theme's heading font \"+mj-lt\" or body font \"+mn-lt\", which returns the text to the template's font.",
               "type": "string",
               "pattern": "^(?:\\+m[jn]-lt$|[^+])",
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/slides/read-result.schema.json#/$defs/slidesTextRunData/properties/latinFont"
             },
             "eastAsianFont": {
               "description": "The font of Chinese, Japanese and Korean text, in place of font's: a font name, or the theme's heading font \"+mj-ea\" or body font \"+mn-ea\", which returns the text to the template's font.",
@@ -5114,6 +5191,87 @@
         }
       },
       "$defs": {
+        "slidesBackgroundData": {
+          "description": "A slide's own background.",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "color": {
+              "description": "The solid background color, as #RRGGBB; omitted for a picture or other fill.",
+              "type": "string",
+              "pattern": "^#[0-9A-F]{6}$"
+            }
+          }
+        },
+        "slidesChartData": {
+          "description": "A chart's kind, title and data.",
+          "type": "object",
+          "required": [
+            "categories",
+            "series"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "description": "The kind of chart; omitted for a kind no operation creates.",
+              "type": "string",
+              "enum": [
+                "bar",
+                "column",
+                "line",
+                "pie",
+                "scatter"
+              ]
+            },
+            "title": {
+              "description": "The chart's title text; omitted when it shows none of its own.",
+              "type": "string"
+            },
+            "categories": {
+              "description": "The category labels, in order.",
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "series": {
+              "description": "The series, in order.",
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/slidesChartSeriesData"
+              }
+            }
+          }
+        },
+        "slidesChartSeriesData": {
+          "description": "One chart series.",
+          "type": "object",
+          "required": [
+            "name",
+            "values"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "description": "The series name.",
+              "type": "string"
+            },
+            "values": {
+              "description": "The value of each point, in category order.",
+              "type": "array",
+              "items": {
+                "type": "number"
+              }
+            },
+            "xValues": {
+              "description": "The x value of each point of a scatter series; omitted for other series.",
+              "type": "array",
+              "items": {
+                "type": "number"
+              }
+            }
+          }
+        },
         "slidesCommentData": {
           "description": "One comment on a slide.",
           "type": "object",
@@ -5130,6 +5288,54 @@
             "text": {
               "description": "The comment's text, cut short when the max-chars budget runs out.",
               "type": "string"
+            }
+          }
+        },
+        "slidesFooterData": {
+          "description": "What a slide shows in its footer area.",
+          "type": "object",
+          "required": [
+            "showNumber",
+            "showDate"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "text": {
+              "description": "The text of the slide's footer placeholder; omitted when it shows none.",
+              "type": "string"
+            },
+            "showNumber": {
+              "description": "Whether the slide shows its number.",
+              "type": "boolean"
+            },
+            "showDate": {
+              "description": "Whether the slide shows the date.",
+              "type": "boolean"
+            }
+          }
+        },
+        "slidesParagraphData": {
+          "description": "One paragraph of a shape's text.",
+          "type": "object",
+          "required": [
+            "text",
+            "level",
+            "bullet"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "text": {
+              "description": "The paragraph's text.",
+              "type": "string"
+            },
+            "level": {
+              "description": "The 1-based outline level, 1 for a top-level paragraph.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "bullet": {
+              "description": "Whether the paragraph shows a bullet.",
+              "type": "boolean"
             }
           }
         },
@@ -5229,6 +5435,47 @@
                 "$ref": "#/$defs/slidesTextRunData"
               }
             },
+            "paragraphs": {
+              "description": "The paragraphs of a text shape with their outline level and bullet; only with --content full, and omitted for a shape without text of its own.",
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/slidesParagraphData"
+              }
+            },
+            "fillColor": {
+              "description": "The solid fill color, as #RRGGBB: a table's when every cell has the same one; only with --content full, and omitted without one solid fill.",
+              "type": "string",
+              "pattern": "^#[0-9A-F]{6}$"
+            },
+            "line": {
+              "description": "The solid outline color, as #RRGGBB: a table's when every cell border has the same one; only with --content full, and omitted without one solid outline.",
+              "type": "string",
+              "pattern": "^#[0-9A-F]{6}$"
+            },
+            "rowCount": {
+              "description": "How many rows a table has; only for a table with --content full.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "columnCount": {
+              "description": "How many columns a table has; only for a table with --content full.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "values": {
+              "description": "A table's cell text by row; only for a table with --content full.",
+              "type": "array",
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            },
+            "chart": {
+              "description": "A chart's kind, title and data; only for a chart with --content full.",
+              "$ref": "#/$defs/slidesChartData"
+            },
             "rect": {
               "description": "Where the shape is on the slide.",
               "$ref": "#/$defs/slidesRect"
@@ -5293,6 +5540,18 @@
                 "$ref": "#/$defs/slidesCommentData"
               }
             },
+            "background": {
+              "description": "The slide's own background; only with --content full, and omitted when the slide shows its layout's.",
+              "$ref": "#/$defs/slidesBackgroundData"
+            },
+            "transition": {
+              "description": "The slide-show transition into the slide, kind none when it has none, as set_transition writes it; only with --content full.",
+              "$ref": "#/$defs/slidesTransitionData"
+            },
+            "footer": {
+              "description": "What the slide shows in its footer area; only with --content full.",
+              "$ref": "#/$defs/slidesFooterData"
+            },
             "contentTruncated": {
               "description": "Whether the shared max-chars budget cut this slide's content. The budget covers title, text, runs, requested notes and comments, including repeated projections; re-read this slide with a larger budget for the omitted content.",
               "type": "boolean"
@@ -5315,6 +5574,10 @@
               "description": "The font of the run's Latin text.",
               "type": "string"
             },
+            "latinFont": {
+              "description": "The Latin font the run states itself, such as a theme font reference like +mn-lt; omitted when the run takes it from its paragraph, shape or theme.",
+              "type": "string"
+            },
             "eastAsianFont": {
               "description": "The font of the run's Chinese, Japanese and Korean text.",
               "type": "string"
@@ -5335,6 +5598,30 @@
               "description": "The solid color the text is drawn in, stated or inherited, as #RRGGBB; omitted for text without a solid fill.",
               "type": "string",
               "pattern": "^#[0-9A-F]{6}$"
+            }
+          }
+        },
+        "slidesTransitionData": {
+          "description": "The slide-show transition into a slide.",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "description": "The transition; omitted for a kind no operation sets.",
+              "type": "string",
+              "enum": [
+                "none",
+                "fade",
+                "push",
+                "wipe",
+                "split",
+                "cover"
+              ]
+            },
+            "durationMs": {
+              "description": "The transition duration in milliseconds; omitted when the slide states none.",
+              "type": "integer",
+              "minimum": 0
             }
           }
         }

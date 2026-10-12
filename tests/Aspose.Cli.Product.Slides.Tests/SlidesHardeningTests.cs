@@ -31,8 +31,8 @@ public sealed class SlidesHardeningTests
     [InlineData("text", 5, true)]
     [InlineData("text", 10, true)]
     [InlineData("text", 20, false)]
-    [InlineData("full", 25, true)]
-    [InlineData("full", 35, false)]
+    [InlineData("full", 35, true)]
+    [InlineData("full", 45, false)]
     public void Read_AccountsForEveryContentProjectionAndExactBoundaries(string scope, int budget, bool truncated)
     {
         TestLicense.Require("Aspose.Slides evaluation mode saves a watermark text box into every slide, which exact budget accounting would count.");
@@ -56,7 +56,8 @@ public sealed class SlidesHardeningTests
         });
         SlidesSlideData result = Assert.Single(read.Slides);
         int characters = (result.Title?.Length ?? 0) + (result.Text?.Sum(static text => text.Length) ?? 0)
-            + result.Shapes.Sum(static shape => (shape.Text?.Length ?? 0) + (shape.Runs?.Sum(static run => run.Text.Length) ?? 0))
+            + result.Shapes.Sum(static shape => (shape.Text?.Length ?? 0) + (shape.Runs?.Sum(static run => run.Text.Length) ?? 0)
+                + (shape.Paragraphs?.Sum(static paragraph => paragraph.Text.Length) ?? 0))
             + (result.Notes?.Length ?? 0) + (result.Comments?.Sum(static comment => comment.Text.Length) ?? 0);
         Assert.Equal(budget, characters);
         Assert.Equal(truncated, result.ContentTruncated);

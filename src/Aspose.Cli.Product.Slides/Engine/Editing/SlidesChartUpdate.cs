@@ -10,7 +10,7 @@ namespace Aspose.Cli.Product.Slides.Engine.Editing;
 /// formats survive; only added series and points take the chart's automatic style.
 /// Every precondition is checked before the first cell changes.
 /// </summary>
-internal static class SlidesChartData
+internal static class SlidesChartUpdate
 {
     internal static void Update(IChart chart, SetChartDataOp op)
     {
@@ -356,7 +356,7 @@ internal static class SlidesChartData
         && left.Row == right.Row
         && left.Column == right.Column;
 
-    private static double Number(object? value) =>
+    internal static double Number(object? value) =>
         double.TryParse(
             Convert.ToString(value, CultureInfo.InvariantCulture),
             NumberStyles.Float,

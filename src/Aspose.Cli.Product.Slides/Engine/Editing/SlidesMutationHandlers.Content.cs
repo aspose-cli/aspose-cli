@@ -9,7 +9,7 @@ namespace Aspose.Cli.Product.Slides.Engine.Editing;
 // Text and speaker notes.
 internal sealed partial class SlidesMutationHandlers
 {
-    public long Apply(SetTextOp operation)
+    public ValueTuple Apply(SetTextOp operation)
     {
         if (Shape is not IAutoShape { TextFrame: not null } auto)
         {
@@ -17,8 +17,7 @@ internal sealed partial class SlidesMutationHandlers
         }
 
         auto.TextFrame.Text = operation.Text;
-        _touched.Add(Slide.SlideId);
-        return 1;
+        return default;
     }
 
     /// <summary>
@@ -31,7 +30,7 @@ internal sealed partial class SlidesMutationHandlers
     /// discloses the cut with EVALUATION_INPUT_TRUNCATED. The watermark text box an evaluation
     /// save added is left alone.
     /// </summary>
-    public long Apply(SlidesReplaceTextOp operation)
+    public ValueTuple Apply(SlidesReplaceTextOp operation)
     {
         Regex? regex = operation.Regex ? SafeRegex.Create(operation.Find, operation.CaseSensitive) : null;
         if (_evaluation && _presentation.Slides.SelectMany(slide => Frames(slide, operation.Scope)).Any(static frame => CutByEvaluation(frame.Text)))
@@ -39,32 +38,16 @@ internal sealed partial class SlidesMutationHandlers
             _readInput();
         }
 
-        long count = 0;
-        foreach (ISlide slide in _presentation.Slides)
+        foreach (IParagraph paragraph in _presentation.Slides
+            .SelectMany(slide => Frames(slide, operation.Scope))
+            .SelectMany(static frame => frame.Paragraphs)
+            .Where(paragraph => !_evaluation || !CutByEvaluation(paragraph.Text))
+            .ToArray())
         {
-            long replaced = Frames(slide, operation.Scope)
-                .SelectMany(static frame => frame.Paragraphs)
-                .Where(paragraph => !_evaluation || !CutByEvaluation(paragraph.Text))
-                .Sum(paragraph => (long)Replace(paragraph, operation, regex));
-            if (replaced > 0)
-            {
-                count += replaced;
-                _touched.Add(slide.SlideId);
-            }
+            Replace(paragraph, operation, regex);
         }
 
-        // Like a verification issue, the warning never repeats the find text.
-        if (count == 0)
-        {
-            _warnings.Add(SlidesOp.Catalog.NoEffect(operation, NoEffectReasons.NoMatch,
-                $"Operation {operation.Id} (replace_text) matched no text in scope '{operation.Scope}', so nothing was replaced.") with
-            {
-                Hint = "Search with 'slides search' and the same pattern and scope; --scope all also covers speaker notes. "
-                    + "Chart text and alternative text are never matched.",
-            });
-        }
-
-        return count;
+        return default;
     }
 
     /// <summary>The text frames of a slide that a search scope reaches: its shapes, its speaker notes, or both.</summary>
@@ -170,12 +153,11 @@ internal sealed partial class SlidesMutationHandlers
         return matches;
     }
 
-    public long Apply(SetNotesOp operation)
+    public ValueTuple Apply(SetNotesOp operation)
     {
         INotesSlide notes = Slide.NotesSlideManager.NotesSlide
             ?? Slide.NotesSlideManager.AddNotesSlide();
         notes.NotesTextFrame!.Text = operation.Text;
-        _touched.Add(Slide.SlideId);
-        return 1;
+        return default;
     }
 }

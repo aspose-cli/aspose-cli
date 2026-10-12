@@ -3,6 +3,14 @@
 The delivery checklist and review protocol are shared: see `aspose-cli docs verification`.
 This page covers what is specific to presentations.
 
+## Read-back of an edit
+
+`slides edit --verify` reads the staged output back and reports `verification`: the slide
+order, slide titles, shape text, speaker notes, layouts, hidden slides, sections, document
+properties and slide size each operation left. `checkedOps` lists only the operations whose
+effect was read back; styles, pictures, charts and tables are not, so check them with the
+content reads and the review below. In evaluation mode no text is read back.
+
 ## Content
 
 ```powershell

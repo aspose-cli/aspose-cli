@@ -56,6 +56,18 @@ public sealed record SlidesSlideData
     /// <summary>The slide's comments; only with <c>--content full</c>.</summary>
     public IReadOnlyList<SlidesCommentData>? Comments { get; init; }
 
+    /// <summary>The slide's own background; only with <c>--content full</c>, and omitted when the slide shows its layout's.</summary>
+    public SlidesBackgroundData? Background { get; init; }
+
+    /// <summary>
+    /// The slide-show transition into the slide, kind <c>none</c> when it has none, as
+    /// set_transition writes it; only with <c>--content full</c>.
+    /// </summary>
+    public SlidesTransitionData? Transition { get; init; }
+
+    /// <summary>What the slide shows in its footer area; only with <c>--content full</c>.</summary>
+    public SlidesFooterData? Footer { get; init; }
+
     /// <summary>
     /// Whether the shared max-chars budget cut this slide's content. The budget covers title,
     /// text, runs, requested notes and comments, including repeated projections; re-read this
@@ -100,6 +112,40 @@ public sealed record SlidesShapeData
     /// <summary>The shape's text runs with their effective formatting; only with <c>--content full</c>, and omitted for a shape without text.</summary>
     public IReadOnlyList<SlidesTextRunData>? Runs { get; init; }
 
+    /// <summary>
+    /// The paragraphs of a text shape with their outline level and bullet; only with
+    /// <c>--content full</c>, and omitted for a shape without text of its own.
+    /// </summary>
+    public IReadOnlyList<SlidesParagraphData>? Paragraphs { get; init; }
+
+    /// <summary>
+    /// The solid fill color, as #RRGGBB: a table's when every cell has the same one; only with
+    /// <c>--content full</c>, and omitted without one solid fill.
+    /// </summary>
+    [Pattern("^#[0-9A-F]{6}$")]
+    public string? FillColor { get; init; }
+
+    /// <summary>
+    /// The solid outline color, as #RRGGBB: a table's when every cell border has the same one;
+    /// only with <c>--content full</c>, and omitted without one solid outline.
+    /// </summary>
+    [Pattern("^#[0-9A-F]{6}$")]
+    public string? Line { get; init; }
+
+    /// <summary>How many rows a table has; only for a table with <c>--content full</c>.</summary>
+    [Minimum(1)]
+    public int? RowCount { get; init; }
+
+    /// <summary>How many columns a table has; only for a table with <c>--content full</c>.</summary>
+    [Minimum(1)]
+    public int? ColumnCount { get; init; }
+
+    /// <summary>A table's cell text by row; only for a table with <c>--content full</c>.</summary>
+    public IReadOnlyList<IReadOnlyList<string>>? Values { get; init; }
+
+    /// <summary>A chart's kind, title and data; only for a chart with <c>--content full</c>.</summary>
+    public SlidesChartData? Chart { get; init; }
+
     /// <summary>Where the shape is on the slide.</summary>
     public required SlidesRect Rect { get; init; }
 
@@ -133,6 +179,12 @@ public sealed record SlidesTextRunData
 
     /// <summary>The font of the run's Latin text.</summary>
     public string? Font { get; init; }
+
+    /// <summary>
+    /// The Latin font the run states itself, such as a theme font reference like <c>+mn-lt</c>;
+    /// omitted when the run takes it from its paragraph, shape or theme.
+    /// </summary>
+    public string? LatinFont { get; init; }
 
     /// <summary>The font of the run's Chinese, Japanese and Korean text.</summary>
     public string? EastAsianFont { get; init; }
@@ -175,4 +227,81 @@ public sealed record SlidesCommentData
 
     /// <summary>The comment's text, cut short when the max-chars budget runs out.</summary>
     public required string Text { get; init; }
+}
+
+/// <summary>One paragraph of a shape's text.</summary>
+public sealed record SlidesParagraphData
+{
+    /// <summary>The paragraph's text.</summary>
+    public required string Text { get; init; }
+
+    /// <summary>The 1-based outline level, 1 for a top-level paragraph.</summary>
+    [Minimum(1)]
+    public required int Level { get; init; }
+
+    /// <summary>Whether the paragraph shows a bullet.</summary>
+    public required bool Bullet { get; init; }
+}
+
+/// <summary>A chart's kind, title and data.</summary>
+public sealed record SlidesChartData
+{
+    /// <summary>The kind of chart; omitted for a kind no operation creates.</summary>
+    [AllowedValues(typeof(SlidesChartKinds))]
+    public string? Kind { get; init; }
+
+    /// <summary>The chart's title text; omitted when it shows none of its own.</summary>
+    public string? Title { get; init; }
+
+    /// <summary>The category labels, in order.</summary>
+    public required IReadOnlyList<string> Categories { get; init; }
+
+    /// <summary>The series, in order.</summary>
+    public required IReadOnlyList<SlidesChartSeriesData> Series { get; init; }
+}
+
+/// <summary>One chart series.</summary>
+public sealed record SlidesChartSeriesData
+{
+    /// <summary>The series name.</summary>
+    public required string Name { get; init; }
+
+    /// <summary>The value of each point, in category order.</summary>
+    public required IReadOnlyList<double> Values { get; init; }
+
+    /// <summary>The x value of each point of a scatter series; omitted for other series.</summary>
+    public IReadOnlyList<double>? XValues { get; init; }
+}
+
+/// <summary>A slide's own background.</summary>
+public sealed record SlidesBackgroundData
+{
+    /// <summary>The solid background color, as #RRGGBB; omitted for a picture or other fill.</summary>
+    [Pattern("^#[0-9A-F]{6}$")]
+    public string? Color { get; init; }
+}
+
+/// <summary>The slide-show transition into a slide.</summary>
+public sealed record SlidesTransitionData
+{
+    /// <summary>The transition; omitted for a kind no operation sets.</summary>
+    [AllowedValues(typeof(SlidesTransitionKinds))]
+    public string? Kind { get; init; }
+
+    /// <summary>The transition duration in milliseconds; omitted when the slide states none.</summary>
+    [Minimum(0)]
+    public int? DurationMs { get; init; }
+}
+
+/// <summary>What a slide shows in its footer area.</summary>
+public sealed record SlidesFooterData
+{
+    /// <summary>The text of the slide's footer placeholder; omitted when it shows none.</summary>
+    public string? Text { get; init; }
+
+    /// <summary>Whether the slide shows its number.</summary>
+    public required bool ShowNumber { get; init; }
+
+    /// <summary>Whether the slide shows the date.</summary>
+    public required bool ShowDate { get; init; }
 }

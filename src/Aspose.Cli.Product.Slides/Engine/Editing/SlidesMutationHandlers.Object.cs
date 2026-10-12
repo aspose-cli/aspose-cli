@@ -9,7 +9,7 @@ namespace Aspose.Cli.Product.Slides.Engine.Editing;
 // Pictures, shapes, tables and charts.
 internal sealed partial class SlidesMutationHandlers
 {
-    public long Apply(SlidesInsertImageOp operation)
+    public ValueTuple Apply(SlidesInsertImageOp operation)
     {
         EnsureFile(operation.Path);
         IPPImage image = _presentation.Images.AddImage(OperationImages.Read(_inputs, operation.Path));
@@ -24,11 +24,10 @@ internal sealed partial class SlidesMutationHandlers
             picture.AlternativeText = operation.AltText;
         }
 
-        _touched.Add(Slide.SlideId);
-        return 1;
+        return default;
     }
 
-    public long Apply(InsertShapeOp operation)
+    public ValueTuple Apply(InsertShapeOp operation)
     {
         ShapeType type = operation.Kind switch
         {
@@ -55,11 +54,10 @@ internal sealed partial class SlidesMutationHandlers
         {
             ApplyStyle(shape, operation.Style);
         }
-        _touched.Add(Slide.SlideId);
-        return 1;
+        return default;
     }
 
-    public long Apply(SlidesInsertTableOp operation)
+    public ValueTuple Apply(SlidesInsertTableOp operation)
     {
         ITable table = SlidesAuthoring.AddTable(
             Slide,
@@ -86,11 +84,10 @@ internal sealed partial class SlidesMutationHandlers
             _warnings.Add(overflow);
         }
 
-        _touched.Add(Slide.SlideId);
-        return operation.RowCount * operation.ColumnCount;
+        return default;
     }
 
-    public long Apply(SlidesSetTableCellOp operation)
+    public ValueTuple Apply(SlidesSetTableCellOp operation)
     {
         if (Shape is not ITable table)
         {
@@ -104,11 +101,10 @@ internal sealed partial class SlidesMutationHandlers
         }
 
         table[operation.Column - 1, operation.Row - 1].TextFrame.Text = operation.Text;
-        _touched.Add(Slide.SlideId);
-        return 1;
+        return default;
     }
 
-    public long Apply(InsertChartOp operation)
+    public ValueTuple Apply(InsertChartOp operation)
     {
         ChartType type = ChartTypeFor(operation.Kind);
         IChart chart = Slide.Shapes.AddChart(
@@ -152,21 +148,19 @@ internal sealed partial class SlidesMutationHandlers
             }
         }
 
-        _touched.Add(Slide.SlideId);
-        return 1;
+        return default;
     }
 
-    public long Apply(SetChartDataOp operation)
+    public ValueTuple Apply(SetChartDataOp operation)
     {
         if (Shape is not IChart chart)
         {
             throw new OperationInvalidException($"Shape {Shape.OfficeInteropShapeId} is not a chart.");
         }
 
-        SlidesChartData.Update(chart, operation);
-        ApplyDataDrivenPresentation(chart, chart.Type, SlidesChartData.Values(chart));
-        _touched.Add(Slide.SlideId);
-        return 1;
+        SlidesChartUpdate.Update(chart, operation);
+        ApplyDataDrivenPresentation(chart, chart.Type, SlidesChartUpdate.Values(chart));
+        return default;
     }
 
     /// <summary>
@@ -176,7 +170,7 @@ internal sealed partial class SlidesMutationHandlers
     private static void NameInserted(IShape shape, string kind) =>
         shape.Name = string.Create(CultureInfo.InvariantCulture, $"{kind} {shape.OfficeInteropShapeId}");
 
-    /// <summary>Fills a newly inserted chart; existing charts are updated by <see cref="SlidesChartData"/>.</summary>
+    /// <summary>Fills a newly inserted chart; existing charts are updated by <see cref="SlidesChartUpdate"/>.</summary>
     private static void PopulateChart(
         IChart chart,
         ChartType type,

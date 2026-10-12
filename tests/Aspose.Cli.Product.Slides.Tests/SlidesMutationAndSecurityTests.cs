@@ -133,9 +133,9 @@ public sealed class SlidesMutationAndSecurityTests
         Assert.Equal(["ok", "failed", "ok"],
             result.Applied.Select(static operation => operation.Status));
         Assert.Equal(ErrorCodes.OpsInvalid.Name, result.Applied[1].Error!.Code);
-        Assert.Equal([$"slide/{slideIds[0]}"], result.Applied[0].Targets);
-        Assert.Equal([$"slide/{slideIds[1]}"], result.Applied[1].Targets);
-        Assert.Equal([$"slide/{slideIds[0]}"], result.Applied[2].Targets);
+        Assert.Equal(["section/Results"], result.Applied[0].Targets);
+        Assert.Equal(["section/Results"], result.Applied[1].Targets);
+        Assert.Equal(["slide/1/notes"], result.Applied[2].Targets);
         Assert.True(File.Exists(output));
         using var reopened = new Presentation(output);
         Assert.Contains(reopened.Sections, static section => section.Name == "Results");
@@ -258,8 +258,8 @@ public sealed class SlidesMutationAndSecurityTests
 
         BoundedOperationOutcome applied = Assert.Single(result.Applied);
         Assert.Equal(1, applied.ItemsAffected);
-        Assert.Equal([$"slide/{shown}"], applied.Targets);
-        Assert.Equal([shown], result.SlidesTouched);
+        Assert.Equal(["slide/2"], applied.Targets);
+        Assert.Equal([2], result.SlidesTouched);
     }
 
     [Fact]
