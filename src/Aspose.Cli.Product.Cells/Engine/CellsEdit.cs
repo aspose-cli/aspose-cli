@@ -47,8 +47,14 @@ internal static class CellsEdit
         using var importSources = new CellsImportSources(session.Loader, session.Budgets, request.OpSecrets);
         var protection = new CellsProtectionTracker();
         string[] linksBefore = LinkSources(workbook);
-        (IReadOnlyList<BoundedOperationOutcome> applied, bool defaultedToActiveSheet, IReadOnlyList<Cell> formulaAnchors) = ApplyOperations(
-            session.Budgets, workbook, batch, request.Options.BestEffort, request.OpSecrets, operationInputs, importSources, protection);
+        // The sheet an operation that names none addresses, as the batch finds it.
+        string activeSheet = Sheets.Resolve(workbook, sheetName: null).Name;
+        var model = new CellsEditModel(session.Budgets, workbook, request.OpSecrets, operationInputs, importSources, protection);
+        AppliedBatch batchOutcome = BoundedOperationRunner.Run(
+            CellsOp.Catalog, batch.Ops, request.Options.BestEffort, session.Budgets.Deadline, model);
+        IReadOnlyList<BoundedOperationOutcome> applied = batchOutcome.Outcomes;
+        bool defaultedToActiveSheet = model.DefaultedToActiveSheet;
+        IReadOnlyList<Cell> formulaAnchors = model.FormulaAnchors;
         Warning? skippedSheet = loaded.SkippedSheetWarning(defaultedToActiveSheet);
         Warning? unenforced = protection.Warning(output.Format);
         Warning? relativeLinks = RelativeLinkWarning(workbook, linksBefore);
@@ -71,7 +77,7 @@ internal static class CellsEdit
             saved = saver.Stage(transaction, workbook, savePlan, output, precondition, verifyReopen: true);
         }
 
-        Warning?[] editWarnings = [skippedSheet, unenforced, relativeLinks, unknownFunctions];
+        Warning?[] editWarnings = [.. batchOutcome.Warnings, skippedSheet, unenforced, relativeLinks, unknownFunctions];
         IReadOnlyList<Warning>? warnings = saved is null
             ? EnvelopeParts.CombineWarnings(loaded.Warnings(editWarnings), importSources.Warnings())
             : EnvelopeParts.CombineWarnings(
@@ -84,7 +90,7 @@ internal static class CellsEdit
             {
                 // Verification reports the warnings that make the output incomplete as issues.
                 verification = new CellsEditVerifier(session.Loader, session.Budgets).Verify(saved!.Candidate, baseline!.Path, filePath,
-                    request.Password, savePlan.OutputPassword, batch, applied, warnings);
+                    request.Password, savePlan.OutputPassword, batch, activeSheet, applied, warnings);
             }
             transaction.Commit();
         }
@@ -102,42 +108,6 @@ internal static class CellsEdit
             License = EnvelopeParts.License(licenseState),
             Warnings = warnings,
         };
-    }
-
-    /// <summary>
-    /// Runs the batch through the SDK runner, one handler call per operation, and says whether
-    /// an operation that names no sheet was applied to the active sheet. Each successful
-    /// operation that changed a protected sheet or structure is recorded in
-    /// <paramref name="protection"/>.
-    /// </summary>
-    private static (IReadOnlyList<BoundedOperationOutcome> Applied, bool DefaultedToActiveSheet, IReadOnlyList<Cell> FormulaAnchors) ApplyOperations(
-        ResourceBudgetLedger budgets,
-        Workbook workbook,
-        CellsOpsBatch batch,
-        bool bestEffort,
-        IReadOnlyDictionary<string, Secret>? secrets,
-        InputResourceScope inputs,
-        CellsImportSources sources,
-        CellsProtectionTracker protection)
-    {
-        var handlers = new CellsMutationHandlers(workbook, secrets, inputs, sources);
-        IReadOnlyList<BoundedOperationOutcome> applied = BoundedOperationRunner.Run(
-            CellsOp.Catalog,
-            batch.Ops,
-            bestEffort,
-            budgets.Deadline,
-            (op, _) =>
-            {
-                // Charge the cells an operation writes before it writes them: a tiny op over a
-                // whole sheet must fail on the budget, not after billions of assignments.
-                budgets.Consume(CellsBudgetDomains.Cells, OpsFootprint.CellCost(op), "items", "edit");
-                ProtectedChange protectedTarget = CellsProtectionTracker.Observe(workbook, op);
-                long affected = handlers.Run(op) ?? 0;
-                protection.Record(protectedTarget);
-                return new AppliedOperation(affected, OpsFootprint.OutcomeTargets(op));
-            },
-            (op, _) => OpsFootprint.OutcomeTargets(op));
-        return (applied, handlers.DefaultedToActiveSheet, handlers.FormulaAnchors);
     }
 
     private static string[] LinkSources(Workbook workbook) =>

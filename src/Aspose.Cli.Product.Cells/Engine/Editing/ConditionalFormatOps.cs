@@ -9,7 +9,7 @@ namespace Aspose.Cli.Product.Cells.Engine.Editing;
 /// </summary>
 internal static class ConditionalFormatOps
 {
-    public static long? AddConditionalFormat(Worksheet sheet, AddConditionalFormatOp op)
+    public static void AddConditionalFormat(Worksheet sheet, AddConditionalFormatOp op)
     {
         RangeRef range = A1.ParseRange(op.Range).Range;
         int cfIndex = sheet.ConditionalFormattings.Add();
@@ -90,8 +90,6 @@ internal static class ConditionalFormatOps
                     break;
                 }
         }
-
-        return range.CellCount;
     }
 
     /// <summary>
@@ -100,6 +98,16 @@ internal static class ConditionalFormatOps
     /// <c>TrafficLights32</c>, <c>Symbols3</c> vs <c>Symbols32</c>); the wire
     /// vocabulary picks the five canonical sets (probe-verified names).
     /// </summary>
+    /// <summary>The wire name of an engine icon set, or null for one outside the vocabulary.</summary>
+    internal static string? FromIconSetType(IconSetType type) =>
+        IconSets.FirstOrDefault(name => ToIconSetType(name) == type);
+
+    private static readonly string[] IconSets =
+    [
+        CellsIconSetNames.Arrows3, CellsIconSetNames.TrafficLights3, CellsIconSetNames.Symbols3,
+        CellsIconSetNames.Rating4, CellsIconSetNames.Rating5,
+    ];
+
     private static IconSetType ToIconSetType(string name) => name switch
     {
         CellsIconSetNames.Arrows3 => IconSetType.Arrows3,
@@ -140,11 +148,10 @@ internal static class ConditionalFormatOps
         condition.Style = differential;
     }
 
-    public static long? ClearConditionalFormats(Worksheet sheet, ClearConditionalFormatsOp op)
+    public static void ClearConditionalFormats(Worksheet sheet, ClearConditionalFormatsOp op)
     {
         RangeRef range = A1.ParseRange(op.Range).Range;
         sheet.ConditionalFormattings.RemoveArea(
             range.Start.Row, range.Start.Column, range.RowCount, range.ColumnCount);
-        return range.CellCount;
     }
 }

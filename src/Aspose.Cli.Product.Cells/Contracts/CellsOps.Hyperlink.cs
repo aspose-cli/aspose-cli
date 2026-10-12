@@ -4,7 +4,7 @@ namespace Aspose.Cli.Product.Cells.Contracts;
 
 // Cell hyperlinks: external URLs and internal cross-sheet references.
 
-/// <summary>Adds a hyperlink to one cell: an external URL or an internal target.</summary>
+/// <summary>Sets the hyperlink of one cell, an external URL or an internal target, replacing a link that covered it.</summary>
 [Operation("set_hyperlink")]
 [ExactlyOneOf("url", "target")]
 public sealed record SetHyperlinkOp : CellsSheetOp
@@ -13,15 +13,15 @@ public sealed record SetHyperlinkOp : CellsSheetOp
     [A1Cell] public required string Cell { get; init; }
 
     /// <summary>An external URL, such as https://example.com.</summary>
-    [NotReadBack]
+    [ReadBack("inspect-result.schema.json#/$defs/cellsHyperlinkInfo/properties/url")]
     [WebLink] public string? Url { get; init; }
 
     /// <summary>An internal target, such as Summary!A1.</summary>
-    [NotReadBack]
+    [ReadBack("inspect-result.schema.json#/$defs/cellsHyperlinkInfo/properties/target")]
     [A1Reference] public string? Target { get; init; }
 
     /// <summary>The text shown in the cell; the URL or target when omitted.</summary>
-    [NotReadBack]
+    [ReadBack("inspect-result.schema.json#/$defs/cellsHyperlinkInfo/properties/display")]
     public string? Display { get; init; }
 }
 

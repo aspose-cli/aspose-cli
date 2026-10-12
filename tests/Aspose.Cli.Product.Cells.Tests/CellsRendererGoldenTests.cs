@@ -324,6 +324,7 @@ public sealed class CellsRendererGoldenTests
             DefinedNameCount = 1,
             StructureProtected = true,
             StructurePasswordProtected = false,
+            DefaultFont = new CellsDefaultFontInfo { Font = "Calibri", FontSize = 11 },
             Sheets =
             [
                 new CellsSheetInfo
@@ -351,16 +352,17 @@ public sealed class CellsRendererGoldenTests
             {
                 DefinedNames = [new CellsDefinedNameInfo { Name = "Rate", RefersTo = "=Data!$B$2" }],
                 FormulaErrors = [],
-                Validations = [new CellsValidationInfo { Sheet = "Data", Range = "B2:B9", Kind = "list" }],
+                Validations = [new CellsValidationInfo { Sheet = "Data", Range = "B2:B9", Kind = "list", AllowBlank = true }],
                 Fonts = ["Calibri", "Arial"],
-                Tables = [new CellsTableInfo { Sheet = "Data", Name = "Sales", Range = "A1:C9" }],
-                Charts = [new CellsChartInfo { Sheet = "Data", Index = 1, Name = "Chart 1", Kind = "column" }],
+                Tables = [new CellsTableInfo { Sheet = "Data", Name = "Sales", Range = "A1:C9", TotalsRow = false }],
+                Charts = [new CellsChartInfo { Sheet = "Data", Index = 1, Name = "Chart 1", Kind = "column", SeriesInRows = false, Legend = new CellsChartLegend { Visible = true } }],
                 Pivots = null,
                 Layouts =
                 [
                     new CellsSheetLayoutInfo
                     {
                         Sheet = "Data",
+                        SheetView = View,
                         FreezePanes = new CellsFreezePanesInfo { Cell = "B2" },
                         RowGroups =
                         [
@@ -383,6 +385,7 @@ public sealed class CellsRendererGoldenTests
                     new CellsSheetLayoutInfo
                     {
                         Sheet = "Empty sheet",
+                        SheetView = View,
                         PageSetup = new CellsPageSetupInfo
                         {
                             Orientation = "portrait",
@@ -396,6 +399,8 @@ public sealed class CellsRendererGoldenTests
             },
         };
     }
+
+    private static readonly CellsSheetViewInfo View = new() { Gridlines = true, Zoom = 100, Headings = true };
 
     private static readonly CellsMargins Margins = new() { Top = 54, Bottom = 54, Left = 50.4, Right = 50.4, Header = 21.6, Footer = 21.6 };
 }

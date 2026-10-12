@@ -8,7 +8,7 @@ namespace Aspose.Cli.Product.Cells.Engine.Editing;
 /// <summary>Inserts pictures from a file, anchored at a cell.</summary>
 internal static class ImageOps
 {
-    public static long? InsertImage(Worksheet sheet, InsertImageOp op, InputResourceScope inputs)
+    public static void InsertImage(Worksheet sheet, InsertImageOp op, InputResourceScope inputs)
     {
         if (!File.Exists(op.Path))
         {
@@ -33,8 +33,6 @@ internal static class ImageOps
         {
             picture.Height = Pixels(height);
         }
-
-        return null;
     }
 
     private static int Pixels(double points) => Math.Max(1, (int)Math.Round(points * 96 / 72));

@@ -13,7 +13,7 @@ public sealed record ProtectSheetOp : CellsSheetOp
     [SecretEnv] public string? PasswordEnv { get; init; }
 
     /// <summary>The actions users may still perform.</summary>
-    [NotReadBack]
+    [ReadBack("inspect-result.schema.json#/$defs/cellsSheetProtectionInfo/properties/allow")]
     [AllowedValues(typeof(CellsProtectActions))] public IReadOnlyList<string> Allow { get; init; } = [];
 }
 

@@ -53,7 +53,7 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
     }
 
     [Fact]
-    public void RemoveDuplicates_ReportsTheRowsItRemoved()
+    public void DeleteDuplicates_CountsTheCellsItChanged()
     {
         string path = _fixture.CreateSalesWorkbook("dedupe-count.xlsx");
         CellsEditResult result = CellsEdit.Run(_fixture.Session,
@@ -65,7 +65,8 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
                 ]}
                 """), Output = TestOutput.At(_fixture.Temp.File("dedupe-count.out.xlsx")) });
 
-        Assert.Equal(2, result.Applied.Single(static outcome => outcome.Op == "delete_duplicates").ItemsAffected);
+        // Two of four data rows go: the third row now holds A-2, and the last two rows are empty.
+        Assert.Equal(6, result.Applied.Single(static outcome => outcome.Op == "delete_duplicates").ItemsAffected);
     }
 
     [Fact]
@@ -218,7 +219,7 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
         Assert.Equal(["A5", "B5", "A6", "B6"], verification.DirectChanges.Select(static change => change.Cell));
         Assert.Empty(verification.OtherChanges);
         Assert.Equal("A5:B6", Assert.Single(verification.RequestedTargets).Range);
-        Assert.Equal(["Data!A5:B6"], Assert.Single(result.Applied).Targets);
+        Assert.Equal(["cell/Data!A5", "cell/Data!B5", "cell/Data!A6", "cell/Data!B6"], Assert.Single(result.Applied).Targets);
     }
 
     [Fact]
@@ -611,6 +612,7 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
         }));
 
         Assert.Equal("OPS_INVALID", error.Code.Name);
+        Assert.Equal("Give a preset such as a4 or letter, or the width and height of a standard paper.", error.Hint);
     }
 
     [Fact]

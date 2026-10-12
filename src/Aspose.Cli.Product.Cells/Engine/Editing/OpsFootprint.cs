@@ -20,11 +20,19 @@ internal static class OpsFootprint
 
     /// <summary>
     /// Collects the distinct targets of <paramref name="batch"/>, in batch
-    /// order, capped at sixteen. A target's null sheet means the op ran on
-    /// the active sheet; a null range means the sheet as a whole.
+    /// order, capped at sixteen. A null range means the sheet as a whole.
     /// </summary>
     /// <param name="batch">The ops batch that was applied.</param>
-    public static IReadOnlyList<CellsEditTarget> Collect(CellsOpsBatch batch)
+    /// <param name="activeSheet">
+    /// The sheet an operation that names none ran on, as the batch found it before its first
+    /// operation; null leaves such a target's sheet null.
+    /// </param>
+    /// <param name="cellsOnly">
+    /// Whether only the operations that write cell values or formulas, or add, remove or rename
+    /// sheets, count: a change of a cell under any other target, such as frozen panes over the
+    /// whole sheet, is a recalculated result, not one the batch asked for.
+    /// </param>
+    public static IReadOnlyList<CellsEditTarget> Collect(CellsOpsBatch batch, string? activeSheet = null, bool cellsOnly = false)
     {
         ArgumentNullException.ThrowIfNull(batch);
 
@@ -32,10 +40,12 @@ internal static class OpsFootprint
         var seen = new HashSet<(string? Sheet, string? Range)>();
         foreach (CellsOp op in batch.Ops)
         {
-            if (TargetOf(op) is not { } target)
+            if ((cellsOnly && !Diffed(op)) || TargetOf(op) is not { } found)
             {
                 continue;
             }
+
+            CellsEditTarget target = found.Sheet is null && op is CellsSheetOp ? found with { Sheet = activeSheet } : found;
 
             // Sheet names and A1 references are case-insensitive in a workbook.
             if (!seen.Add((Fold(target.Sheet), Fold(target.Range))))
@@ -58,16 +68,18 @@ internal static class OpsFootprint
     /// applied operation that writes cell values or formulas or adds, removes or renames a sheet,
     /// which the diff of the staged output compares, and whose target names a sheet and is one of
     /// the <paramref name="footprint"/> targets, so the diff lists its cells as direct changes.
-    /// Formatting, view, object and workbook-level operations, an operation on the active sheet
-    /// and one beyond the sixteen targets are not checked.
+    /// Formatting, view, object and workbook-level operations and one beyond the sixteen targets
+    /// are not checked; an operation that names no sheet counts on <paramref name="activeSheet"/>.
     /// </summary>
     /// <param name="batch">The ops batch that was applied.</param>
     /// <param name="footprint">The targets <see cref="Collect"/> returned for the batch.</param>
     /// <param name="applied">The ids of the operations that were applied.</param>
+    /// <param name="activeSheet">The sheet an operation that names none ran on, as the batch found it.</param>
     internal static IReadOnlyList<string> Checked(
         CellsOpsBatch batch,
         IReadOnlyList<CellsEditTarget> footprint,
-        IReadOnlySet<string> applied)
+        IReadOnlySet<string> applied,
+        string? activeSheet = null)
     {
         ArgumentNullException.ThrowIfNull(batch);
         var diffed = new HashSet<(string? Sheet, string? Range)>(
@@ -76,7 +88,8 @@ internal static class OpsFootprint
         [
             .. batch.Ops
                 .Where(op => op.Id is { } id && applied.Contains(id) && Diffed(op)
-                    && TargetOf(op) is { Sheet: not null } target
+                    && TargetOf(op) is { } found
+                    && (found.Sheet is null && op is CellsSheetOp ? found with { Sheet = activeSheet } : found) is { Sheet: not null } target
                     && diffed.Contains((Fold(target.Sheet), Fold(target.Range))))
                 .Select(static op => op.Id!),
         ];
@@ -98,11 +111,6 @@ internal static class OpsFootprint
         ImportRangeOp import => A1.ParseRange(import.From).Range.CellCount,
         _ => TargetOf(op) is { Range: { } range } ? A1.ParseRange(range).Range.CellCount : 0,
     };
-
-    internal static IReadOnlyList<string> OutcomeTargets(CellsOp op) =>
-        TargetOf(op) is { Sheet: not null } target
-            ? [target.Range is null ? target.Sheet : $"{target.Sheet}!{target.Range}"]
-            : [];
 
     /// <summary>Maps one op to its spotlight target, or null when it has none.</summary>
     internal static CellsEditTarget? TargetOf(CellsOp op) => op switch

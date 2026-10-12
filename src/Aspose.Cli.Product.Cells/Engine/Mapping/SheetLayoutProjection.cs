@@ -20,9 +20,20 @@ internal static class SheetLayoutProjection
         return new CellsSheetLayoutInfo
         {
             Sheet = sheet.Name,
+            SheetView = new CellsSheetViewInfo
+            {
+                Gridlines = sheet.IsGridlinesVisible,
+                Zoom = sheet.Zoom,
+                Headings = sheet.IsRowColumnHeadersVisible,
+            },
+            TabColor = StylePool.ToHex(sheet.TabColor) is { } tab ? new CellsTabColorInfo { Color = tab } : null,
             FreezePanes = sheet.GetFreezedPanes(out int row, out int column, out _, out _)
                 ? new CellsFreezePanesInfo { Cell = A1.FormatCell(new CellRef(row, column)) }
                 : null,
+            RowHeights = NullIfEmpty(Runs(budgets, RowSizes(sheet),
+                static (first, last, height) => new CellsRowHeightInfo { First = first + 1, Last = last + 1, Height = height })),
+            ColumnWidths = NullIfEmpty(Runs(budgets, ColumnSizes(sheet),
+                static (first, last, width) => new CellsColumnWidthInfo { First = A1.ColumnName(first), Last = A1.ColumnName(last), WidthChars = width })),
             RowGroups = NullIfEmpty(Groups(budgets, RowLevels(sheet),
                 static (first, last, level, collapsed) => new CellsRowGroupInfo
                 {
@@ -34,6 +45,7 @@ internal static class SheetLayoutProjection
                     First = A1.ColumnName(first), Last = A1.ColumnName(last), Level = level, Collapsed = collapsed,
                 })),
             Autofilter = Reference(sheet.AutoFilter.Range) is { } filter ? new CellsAutofilterInfo { Range = filter } : null,
+            Protection = sheet.IsProtected ? new CellsSheetProtectionInfo { Allow = Editing.ProtectOps.Allowed(sheet.Protection) } : null,
             PrintArea = PrintArea(page),
             PageSetup = new CellsPageSetupInfo
             {
@@ -54,7 +66,11 @@ internal static class SheetLayoutProjection
                     Footer = Editing.PageSetupOps.Points(page.FooterMargin),
                 },
                 Header = Text(page.GetHeader(1)),
+                HeaderLeft = Text(page.GetHeader(0)),
+                HeaderRight = Text(page.GetHeader(2)),
                 Footer = Text(page.GetFooter(1)),
+                FooterLeft = Text(page.GetFooter(0)),
+                FooterRight = Text(page.GetFooter(2)),
             },
         };
     }
@@ -68,6 +84,63 @@ internal static class SheetLayoutProjection
         return range is null && rows is null && columns is null
             ? null
             : new CellsPrintAreaInfo { Range = range, TitleRows = rows, TitleColumns = columns };
+    }
+
+    // The height of each row given one of its own rather than fitted to its content, by index.
+    private static IEnumerable<(int Index, double Size)> RowSizes(Worksheet sheet)
+    {
+        foreach (Row row in sheet.Cells.Rows)
+        {
+            if (!row.IsHeightMatched)
+            {
+                yield return (row.Index, Math.Round(row.Height, 2));
+            }
+        }
+    }
+
+    // The width of each column other than the sheet's standard width, by index.
+    private static IEnumerable<(int Index, double Size)> ColumnSizes(Worksheet sheet)
+    {
+        double standard = Math.Round(sheet.Cells.StandardWidth, 2);
+        foreach (Column column in sheet.Cells.Columns)
+        {
+            double width = Math.Round(column.Width, 2);
+            if (width != standard)
+            {
+                yield return (column.Index, width);
+            }
+        }
+    }
+
+    // A run is adjacent rows or columns of one size.
+    private static List<T> Runs<T>(ResourceBudgetLedger budgets, IEnumerable<(int Index, double Size)> sizes, Func<int, int, double, T> create)
+    {
+        var entries = new List<(int Index, double Size)>();
+        foreach ((int Index, double Size) entry in sizes)
+        {
+            if (entries.Count % 1024 == 0)
+            {
+                budgets.Deadline.ThrowIfExpired("sheet-layout");
+            }
+
+            entries.Add(entry);
+        }
+
+        entries.Sort(static (left, right) => left.Index.CompareTo(right.Index));
+        var runs = new List<T>();
+        for (int start = 0; start < entries.Count;)
+        {
+            int end = start;
+            while (end + 1 < entries.Count && entries[end + 1].Index == entries[end].Index + 1 && entries[end + 1].Size == entries[start].Size)
+            {
+                end++;
+            }
+
+            runs.Add(create(entries[start].Index, entries[end].Index, entries[start].Size));
+            start = end + 1;
+        }
+
+        return runs;
     }
 
     // The outline level and hidden state of each row or column that has a level, by index.

@@ -18,31 +18,27 @@ internal static class RowColumnOps
     // structural operations therefore ask the engine to update references.
     private static readonly InsertOptions UpdateAll = new() { UpdateReference = true };
 
-    public static long? InsertRows(Worksheet sheet, InsertRowsOp op)
+    public static void InsertRows(Worksheet sheet, InsertRowsOp op)
     {
         sheet.Cells.InsertRows(op.At - 1, op.Count, UpdateAll);
-        return null;
     }
 
-    public static long? DeleteRows(Worksheet sheet, DeleteRowsOp op)
+    public static void DeleteRows(Worksheet sheet, DeleteRowsOp op)
     {
         sheet.Cells.DeleteRows(op.At - 1, op.Count, updateReference: true);
-        return null;
     }
 
-    public static long? InsertColumns(Worksheet sheet, InsertColumnsOp op)
+    public static void InsertColumns(Worksheet sheet, InsertColumnsOp op)
     {
         sheet.Cells.InsertColumns(ColumnIndex(op.At), op.Count, UpdateAll);
-        return null;
     }
 
-    public static long? DeleteColumns(Worksheet sheet, DeleteColumnsOp op)
+    public static void DeleteColumns(Worksheet sheet, DeleteColumnsOp op)
     {
         sheet.Cells.DeleteColumns(ColumnIndex(op.At), op.Count, updateReference: true);
-        return null;
     }
 
-    public static long? ResizeRows(Worksheet sheet, ResizeRowsOp op)
+    public static void ResizeRows(Worksheet sheet, ResizeRowsOp op)
     {
         int first = op.First - 1;
         int last = (op.Last ?? op.First) - 1;
@@ -58,11 +54,9 @@ internal static class RowColumnOps
         {
             sheet.AutoFitRows(first, last);
         }
-
-        return null;
     }
 
-    public static long? ResizeColumns(Worksheet sheet, ResizeColumnsOp op)
+    public static void ResizeColumns(Worksheet sheet, ResizeColumnsOp op)
     {
         int first = ColumnIndex(op.First);
         int last = op.Last is { } to ? ColumnIndex(to) : first;
@@ -78,8 +72,6 @@ internal static class RowColumnOps
         {
             sheet.AutoFitColumns(first, last);
         }
-
-        return null;
     }
 
     /// <summary>Column letters to zero-based index (validated by the parser).</summary>

@@ -64,7 +64,8 @@ public static class CellsSortOrders
 }
 
 /// <summary>
-/// Applies data validation, a dropdown list or an input constraint, to a range. A list takes
+/// Applies data validation, a dropdown list or an input constraint, to a range, replacing the
+/// validation the range had. A list takes
 /// exactly one of listItems and listSource; custom takes its formula in value1; the other kinds
 /// take an operator and value1, and value2 too for between and not-between.
 /// </summary>
@@ -78,38 +79,38 @@ public sealed record SetValidationOp : CellsSheetOp
     [ReadBack("inspect-result.schema.json#/$defs/cellsValidationInfo/properties/kind")]
     [AllowedValues(typeof(CellsValidationTypes))] public required string Kind { get; init; }
 
-    [NotReadBack]
+    [ReadBack("inspect-result.schema.json#/$defs/cellsValidationInfo/properties/operator")]
     [AllowedValues(typeof(CellsValidationOperators))] public string? Operator { get; init; }
 
     /// <summary>The first bound (the lower bound for between), or the formula of a custom validation.</summary>
-    [NotReadBack]
+    [ReadBack("inspect-result.schema.json#/$defs/cellsValidationInfo/properties/value1")]
     [Pattern(@"\S")] public string? Value1 { get; init; }
 
     /// <summary>The upper bound for between and not-between.</summary>
-    [NotReadBack]
+    [ReadBack("inspect-result.schema.json#/$defs/cellsValidationInfo/properties/value2")]
     [Pattern(@"\S")] public string? Value2 { get; init; }
 
     /// <summary>
     /// The dropdown items of a list. No item contains a comma or a double quote, and joined with
     /// commas they stay within Excel's 255 characters; use listSource for longer lists.
     /// </summary>
-    [NotReadBack]
+    [ReadBack("inspect-result.schema.json#/$defs/cellsValidationInfo/properties/listItems")]
     [MinItems(1), Pattern("^[^,\"]+$")] public IReadOnlyList<string>? ListItems { get; init; }
 
     /// <summary>The range a list reads its items from, such as Lists!A1:A20.</summary>
-    [NotReadBack]
+    [ReadBack("inspect-result.schema.json#/$defs/cellsValidationInfo/properties/listSource")]
     [Pattern(@"\S")] public string? ListSource { get; init; }
 
     /// <summary>The prompt shown when a validated cell is selected.</summary>
-    [NotReadBack]
+    [ReadBack("inspect-result.schema.json#/$defs/cellsValidationInfo/properties/inputMessage")]
     public string? InputMessage { get; init; }
 
     /// <summary>The message shown when a value is rejected.</summary>
-    [NotReadBack]
+    [ReadBack("inspect-result.schema.json#/$defs/cellsValidationInfo/properties/errorMessage")]
     public string? ErrorMessage { get; init; }
 
     /// <summary>Whether a validated cell may be left blank.</summary>
-    [NotReadBack]
+    [ReadBack("inspect-result.schema.json#/$defs/cellsValidationInfo/properties/allowBlank")]
     public bool AllowBlank { get; init; } = true;
 
     /// <inheritdoc />

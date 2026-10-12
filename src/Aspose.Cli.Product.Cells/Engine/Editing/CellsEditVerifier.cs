@@ -13,18 +13,21 @@ internal sealed class CellsEditVerifier(CellsWorkbookLoader loader, ResourceBudg
 
     internal CellsEditVerification Verify(StagedOutput staged,
         string baselinePath, string originalPath, Secret? inputPassword, Secret? outputPassword,
-        CellsOpsBatch batch, IReadOnlyList<BoundedOperationOutcome> applied, IReadOnlyList<Warning>? sourceWarnings) =>
+        CellsOpsBatch batch, string activeSheet, IReadOnlyList<BoundedOperationOutcome> applied, IReadOnlyList<Warning>? sourceWarnings) =>
         staged.Read(candidate => VerifyCandidate(candidate, baselinePath,
-            originalPath, inputPassword, outputPassword, batch, applied, sourceWarnings));
+            originalPath, inputPassword, outputPassword, batch, activeSheet, applied, sourceWarnings));
 
     private CellsEditVerification VerifyCandidate(string candidatePath,
         string baselinePath, string originalPath, Secret? inputPassword,
-        Secret? outputPassword, CellsOpsBatch batch, IReadOnlyList<BoundedOperationOutcome> applied,
+        Secret? outputPassword, CellsOpsBatch batch, string activeSheet, IReadOnlyList<BoundedOperationOutcome> applied,
         IReadOnlyList<Warning>? sourceWarnings)
     {
         using LoadedWorkbook baseline = loader.OpenPublishedCandidate(baselinePath, inputPassword, originalPath);
         using LoadedWorkbook candidate = loader.OpenPublishedCandidate(candidatePath, outputPassword);
-        IReadOnlyList<CellsEditTarget> footprint = OpsFootprint.Collect(batch);
+        // Targets as the batch found the workbook before its first operation: an operation that
+        // names no sheet ran on the sheet active then.
+        IReadOnlyList<CellsEditTarget> footprint = OpsFootprint.Collect(batch, activeSheet);
+        IReadOnlyList<CellsEditTarget> written = OpsFootprint.Collect(batch, activeSheet, cellsOnly: true);
         var direct = new List<CellsVerifiedCellChange>();
         var formulaResults = new List<CellsVerifiedCellChange>();
         var other = new List<CellsVerificationOtherChange>();
@@ -35,7 +38,7 @@ internal sealed class CellsEditVerifier(CellsWorkbookLoader loader, ResourceBudg
             includeFormulas: true, MaxDiffs);
         // The change lists are evidence capped at MaxDiffs cells (Truncated); they decide nothing,
         // so a large edit such as a sort still passes when the checks below find no issue.
-        Classify(diff, footprint, direct, formulaResults, other);
+        Classify(diff, written, direct, formulaResults, other);
         (IReadOnlyList<CellsCellError> errors, int errorTotal) = InfoProjection.ScanFormulaErrors(budgets, candidate.Workbook);
         errors = errors.Select(error => IsPreexisting(error, baseline.Workbook, candidate.Workbook)
             ? error with { Preexisting = true } : error).ToArray();
@@ -67,7 +70,7 @@ internal sealed class CellsEditVerifier(CellsWorkbookLoader loader, ResourceBudg
             CheckedOps = OpsFootprint.Checked(batch, footprint, applied
                 .Where(static outcome => outcome.Status == OpStatuses.Ok)
                 .Select(static outcome => outcome.Id)
-                .ToHashSet(StringComparer.Ordinal)),
+                .ToHashSet(StringComparer.Ordinal), activeSheet),
             RequestedTargets = footprint.Select(static target => new CellsVerificationTarget { Sheet = target.Sheet, Range = target.Range }).ToArray(),
             DirectChanges = direct, FormulaResultChanges = formulaResults, OtherChanges = other,
             FormulaErrors = errors,

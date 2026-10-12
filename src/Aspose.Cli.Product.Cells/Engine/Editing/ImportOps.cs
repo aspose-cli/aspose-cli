@@ -67,7 +67,7 @@ internal sealed class CellsImportSources(
 /// <summary>Imports a range or a whole sheet from another workbook file.</summary>
 internal static class ImportOps
 {
-    public static long ImportRange(Worksheet sheet, ImportRangeOp op, CellsImportSources sources)
+    public static void ImportRange(Worksheet sheet, ImportRangeOp op, CellsImportSources sources)
     {
         Workbook source = sources.Open(op.Path, op.SourcePasswordEnv);
         RangeSpec spec = A1.ParseRange(op.From);
@@ -92,11 +92,9 @@ internal static class ImportOps
         {
             WarnUncachedLinks(source, origin, toSheet, to.Start.Row - from.Start.Row, to.Start.Column - from.Start.Column, sources);
         }
-
-        return from.CellCount;
     }
 
-    public static long? ImportSheet(Workbook workbook, ImportSheetOp op, CellsImportSources sources)
+    public static void ImportSheet(Workbook workbook, ImportSheetOp op, CellsImportSources sources)
     {
         Workbook source = sources.Open(op.Path, op.SourcePasswordEnv);
         Worksheet origin = op.SourceSheet is { } sheetName ? Sheets.Resolve(source, sheetName) : source.Worksheets[0];
@@ -138,7 +136,6 @@ internal static class ImportOps
         }
 
         // The one sheet it adds.
-        return 1;
     }
 
     /// <summary>

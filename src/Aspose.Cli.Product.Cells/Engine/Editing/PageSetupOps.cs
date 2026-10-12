@@ -11,7 +11,7 @@ namespace Aspose.Cli.Product.Cells.Engine.Editing;
 /// </summary>
 internal static class PageSetupOps
 {
-    public static long? SetPageSetup(Worksheet sheet, SetPageSetupOp op)
+    public static void SetPageSetup(Worksheet sheet, SetPageSetupOp op)
     {
         PageSetup pageSetup = sheet.PageSetup;
         // A size no standard paper has is refused before anything changes.
@@ -58,11 +58,9 @@ internal static class PageSetupOps
         {
             pageSetup.SetFooter(1, footer);
         }
-
-        return null;
     }
 
-    public static long? SetPrintArea(Worksheet sheet, SetPrintAreaOp op)
+    public static void SetPrintArea(Worksheet sheet, SetPrintAreaOp op)
     {
         PageSetup pageSetup = sheet.PageSetup;
         pageSetup.PrintArea = op.Range;
@@ -70,19 +68,15 @@ internal static class PageSetupOps
         // The parser normalized the titles to Excel's absolute band form; titles omitted are removed.
         pageSetup.PrintTitleRows = op.TitleRows ?? string.Empty;
         pageSetup.PrintTitleColumns = op.TitleColumns ?? string.Empty;
-        return null;
     }
 
-    /// <summary>Removes the print area and titles; 1 when the sheet had any, null when there was nothing to remove.</summary>
-    public static long? ClearPrintArea(Worksheet sheet)
+    /// <summary>Removes the print area and titles.</summary>
+    public static void ClearPrintArea(Worksheet sheet)
     {
         PageSetup pageSetup = sheet.PageSetup;
-        bool had = !string.IsNullOrEmpty(pageSetup.PrintArea) || !string.IsNullOrEmpty(pageSetup.PrintTitleRows)
-            || !string.IsNullOrEmpty(pageSetup.PrintTitleColumns);
         pageSetup.PrintArea = string.Empty;
         pageSetup.PrintTitleRows = string.Empty;
         pageSetup.PrintTitleColumns = string.Empty;
-        return had ? 1 : null;
     }
 
     private static void ApplyMargins(PageSetup pageSetup, CellsMargins margins)

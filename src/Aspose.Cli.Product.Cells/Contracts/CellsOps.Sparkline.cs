@@ -15,7 +15,7 @@ public sealed record AddSparklineOp : CellsSheetOp
     /// The data to plot, such as B2:E10. It may name another sheet, such as Data!B2:E10, so
     /// sparklines on a dashboard sheet can plot a data sheet.
     /// </summary>
-    [NotReadBack]
+    [ReadBack("inspect-result.schema.json#/$defs/cellsSparklineInfo/properties/dataRange")]
     [A1Reference] public required string DataRange { get; init; }
 
     /// <summary>
@@ -23,16 +23,16 @@ public sealed record AddSparklineOp : CellsSheetOp
     /// data row (or column) lands in each location cell, so the cell count must match the data's
     /// row count (one per row) or column count (one per column).
     /// </summary>
-    [NotReadBack]
+    [ReadBack("inspect-result.schema.json#/$defs/cellsSparklineInfo/properties/location")]
     [A1Range] public required string Location { get; init; }
 
     /// <summary>winloss draws equal-height columns above or below the axis by sign.</summary>
     [MistakenFor("type")]
-    [NotReadBack]
+    [ReadBack("inspect-result.schema.json#/$defs/cellsSparklineInfo/properties/kind")]
     [AllowedValues(typeof(CellsSparklineTypes))] public string Kind { get; init; } = CellsSparklineTypes.Line;
 
     /// <summary>The series color; the engine default when omitted.</summary>
-    [NotReadBack]
+    [ReadBack("inspect-result.schema.json#/$defs/cellsSparklineInfo/properties/color")]
     [HexColor] public string? Color { get; init; }
 
     /// <inheritdoc />

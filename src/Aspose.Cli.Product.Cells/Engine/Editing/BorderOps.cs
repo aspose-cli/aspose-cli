@@ -15,7 +15,7 @@ namespace Aspose.Cli.Product.Cells.Engine.Editing;
 /// </summary>
 internal static class BorderOps
 {
-    public static long SetBorders(Workbook workbook, Worksheet sheet, SetBordersOp op)
+    public static void SetBorders(Workbook workbook, Worksheet sheet, SetBordersOp op)
     {
         RangeRef range = A1.ParseRange(op.Range).Range;
         CellBorderType line = ToLineType(op.LineStyle);
@@ -32,7 +32,7 @@ internal static class BorderOps
                 line, color);
             SubRange(sheet, range.Start.Row, range.Start.Column, range.RowCount, range.ColumnCount)
                 .ApplyStyle(style, flag);
-            return range.CellCount;
+            return;
         }
 
         Aspose.Cells.Range target = SubRange(sheet, range.Start.Row, range.Start.Column, range.RowCount, range.ColumnCount);
@@ -73,8 +73,6 @@ internal static class BorderOps
             SubRange(sheet, range.Start.Row, range.Start.Column, range.RowCount, range.ColumnCount - 1)
                 .ApplyStyle(style, flag);
         }
-
-        return range.CellCount;
     }
 
     /// <summary>Expands the edge tokens into the six primitive boundaries.</summary>

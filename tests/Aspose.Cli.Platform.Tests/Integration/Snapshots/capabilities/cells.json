@@ -38,7 +38,7 @@
         "command": "edit",
         "inputSchema": "v2/cells/ops",
         "operationSchema": "aspose-cli schema v2/cells/ops --operation <op>",
-        "contractFingerprint": "sha256:a668994502b2e3f6d7e969901ba2102e08dd0a5f01f29e3dfe43d32b14289712",
+        "contractFingerprint": "sha256:ab1a6de61c0c1ec4b9191f5b571725150160b9e76c1dd669feecc22ebc279f75",
         "maximumOperationCount": 10000,
         "ops": [
           "add_comment",
@@ -1576,17 +1576,22 @@
             "hasDefault": false,
             "allowedValues": [
               "charts",
+              "comments",
+              "conditional-formats",
               "errors",
               "fonts",
+              "hyperlinks",
+              "images",
               "layout",
               "names",
               "pivots",
+              "sparklines",
               "tables",
               "validation"
             ],
             "secret": false,
             "valueSource": "command-line",
-            "description": "Extra sections to include; repeat for more. names: defined names; errors: formula-error scan; layout: frozen panes, outline groups, filter, print area and page setup of each sheet."
+            "description": "Extra sections to include; repeat for more. names: defined names; errors: formula-error scan; conditional-formats: conditional-formatting rules; layout: view, tab color, frozen panes, sizes, outline groups, filter, protection, print area and page setup of each sheet."
           },
           {
             "name": "--password",
@@ -3336,6 +3341,36 @@
             }
           }
         },
+        "cellsChartAxisTitles": {
+          "description": "The axis titles of a chart; only the fields present are applied. Pie charts have no axes.",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "category": {
+              "description": "The title of the category (X) axis.",
+              "type": "string"
+            },
+            "value": {
+              "description": "The title of the value (Y) axis.",
+              "type": "string"
+            }
+          }
+        },
+        "cellsChartDataLabels": {
+          "description": "The data labels of a chart's series; only the fields present are applied.",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "visible": {
+              "description": "Whether each point's value shows next to it.",
+              "type": "boolean"
+            },
+            "numberFormat": {
+              "description": "The number format code of the labels, such as #,##0.",
+              "type": "string"
+            }
+          }
+        },
         "cellsChartInfo": {
           "description": "A chart in a workbook.",
           "type": "object",
@@ -3343,7 +3378,9 @@
             "sheet",
             "index",
             "name",
-            "kind"
+            "kind",
+            "seriesInRows",
+            "legend"
           ],
           "additionalProperties": false,
           "properties": {
@@ -3378,6 +3415,59 @@
                   "pattern": "^[a-z][A-Za-z0-9]*$"
                 }
               ]
+            },
+            "title": {
+              "description": "The chart title; omitted when the chart shows none or an automatic one.",
+              "type": "string"
+            },
+            "dataRange": {
+              "description": "The range the series plot, headers included, such as A1:C5: the smallest range covering every series' values, categories and name. It names the sheet only when that is not the chart's own. Omitted when no series plots cells.",
+              "type": "string"
+            },
+            "seriesInRows": {
+              "description": "Whether the series are plotted from rows rather than columns.",
+              "type": "boolean"
+            },
+            "legend": {
+              "description": "The legend: whether it shows, and its position when it is one of the four sides.",
+              "$ref": "#/$defs/cellsChartLegend"
+            },
+            "axisTitles": {
+              "description": "The axis titles; omitted when the chart has no axes or no axis title.",
+              "$ref": "#/$defs/cellsChartAxisTitles"
+            },
+            "seriesColors": {
+              "description": "The color of each series in series order; a pie's slices count as the series. Omitted when the chart has no series.",
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^#[0-9A-Fa-f]{6}$"
+              }
+            },
+            "dataLabels": {
+              "description": "The data labels of the first series; omitted when the chart has no series.",
+              "$ref": "#/$defs/cellsChartDataLabels"
+            }
+          }
+        },
+        "cellsChartLegend": {
+          "description": "The legend of a chart; only the fields present are applied. There is no none position: hide the legend with visible false.",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "visible": {
+              "description": "Whether the legend shows.",
+              "type": "boolean"
+            },
+            "position": {
+              "description": "The side of the chart the legend sits on.",
+              "type": "string",
+              "enum": [
+                "right",
+                "bottom",
+                "top",
+                "left"
+              ]
             }
           }
         },
@@ -3411,6 +3501,246 @@
             }
           }
         },
+        "cellsColumnWidthInfo": {
+          "description": "A run of adjacent columns of one width.",
+          "type": "object",
+          "required": [
+            "first",
+            "last",
+            "widthChars"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "first": {
+              "description": "The first column of the run.",
+              "type": "string"
+            },
+            "last": {
+              "description": "The last column of the run.",
+              "type": "string"
+            },
+            "widthChars": {
+              "description": "The width in characters of the default font's digit 0.",
+              "type": "number",
+              "minimum": 0
+            }
+          }
+        },
+        "cellsCommentInfo": {
+          "description": "A cell comment (note).",
+          "type": "object",
+          "required": [
+            "sheet",
+            "cell",
+            "text"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "sheet": {
+              "description": "Sheet the comment is on.",
+              "type": "string"
+            },
+            "cell": {
+              "description": "The cell the comment annotates.",
+              "type": "string"
+            },
+            "text": {
+              "description": "The comment text.",
+              "type": "string"
+            },
+            "author": {
+              "description": "The comment author; omitted when empty.",
+              "type": "string"
+            }
+          }
+        },
+        "cellsConditionalFormatInfo": {
+          "description": "One conditional-formatting rule, one entry per rule in the order the sheet holds them.",
+          "type": "object",
+          "required": [
+            "sheet",
+            "range",
+            "rule"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "sheet": {
+              "description": "Sheet the rule is on.",
+              "type": "string"
+            },
+            "range": {
+              "description": "The A1 range the rule formats; several areas are comma-separated.",
+              "type": "string"
+            },
+            "rule": {
+              "description": "The rule, in add_conditional_format's fields; a number reads without the leading = Excel stores.",
+              "$ref": "#/$defs/cellsConditionalRuleInfo"
+            },
+            "style": {
+              "description": "The style matching cells receive; omitted for the kinds that take none.",
+              "$ref": "#/$defs/cellsConditionalStyle"
+            }
+          }
+        },
+        "cellsConditionalRuleInfo": {
+          "description": "A conditional-formatting rule as a read reports it: add_conditional_format's fields the rule's kind uses.",
+          "type": "object",
+          "required": [
+            "kind"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "description": "The rule kind: an add_conditional_format kind such as cell-value, or the lower-kebab engine name of a kind outside that vocabulary, such as contains-text, whose other fields are not read.",
+              "type": "string",
+              "anyOf": [
+                {
+                  "enum": [
+                    "cell-value",
+                    "color-scale",
+                    "data-bar",
+                    "duplicates",
+                    "formula",
+                    "top-bottom",
+                    "icon-set"
+                  ]
+                },
+                {
+                  "pattern": "^[a-z][a-z0-9]*(-[a-z0-9]+)*$"
+                }
+              ]
+            },
+            "operator": {
+              "description": "The comparison of a cell-value rule.",
+              "type": "string",
+              "enum": [
+                "between",
+                "not-between",
+                "equal",
+                "not-equal",
+                "greater-than",
+                "less-than",
+                "greater-or-equal",
+                "less-or-equal"
+              ]
+            },
+            "value1": {
+              "description": "The comparison value of a cell-value rule (the lower bound for between), or the formula of a formula rule.",
+              "type": "string"
+            },
+            "value2": {
+              "description": "The upper bound of a between or not-between cell-value rule.",
+              "type": "string"
+            },
+            "minColor": {
+              "description": "The low-end color of a color-scale.",
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}$"
+            },
+            "midColor": {
+              "description": "The middle color of a 3-point color-scale.",
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}$"
+            },
+            "maxColor": {
+              "description": "The high-end color of a color-scale.",
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}$"
+            },
+            "barColor": {
+              "description": "The bar color of a data-bar.",
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}$"
+            },
+            "rank": {
+              "description": "The N of a top-bottom rule.",
+              "type": "integer"
+            },
+            "percent": {
+              "description": "Whether a top-bottom rank is a percentage of the range.",
+              "type": "boolean"
+            },
+            "bottom": {
+              "description": "Whether a top-bottom rule marks the bottom rather than the top.",
+              "type": "boolean"
+            },
+            "iconSet": {
+              "description": "The icons of an icon-set rule: an add_conditional_format icon set, or the lower-kebab engine name of one outside that vocabulary.",
+              "type": "string",
+              "anyOf": [
+                {
+                  "enum": [
+                    "arrows-3",
+                    "traffic-lights-3",
+                    "symbols-3",
+                    "rating-4",
+                    "rating-5"
+                  ]
+                },
+                {
+                  "pattern": "^[a-z][a-z0-9]*(-[a-z0-9]+)*$"
+                }
+              ]
+            }
+          }
+        },
+        "cellsConditionalStyle": {
+          "description": "The differential style a conditional format gives matching cells. Excel applies only font emphasis, colors and the number format there; format_range sets fonts, sizes, alignment, wrapping and indents. It sets at least one field.",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "bold": {
+              "description": "Whether the text is bold.",
+              "type": "boolean"
+            },
+            "italic": {
+              "description": "Whether the text is italic.",
+              "type": "boolean"
+            },
+            "underline": {
+              "description": "Whether the text has a single underline.",
+              "type": "boolean"
+            },
+            "strikethrough": {
+              "description": "Whether the text is struck through.",
+              "type": "boolean"
+            },
+            "color": {
+              "description": "The text color.",
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}$"
+            },
+            "fillColor": {
+              "description": "The solid background fill color.",
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}$"
+            },
+            "numberFormat": {
+              "description": "The number format code, such as 0.0%.",
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "cellsDefaultFontInfo": {
+          "description": "The workbook default (Normal style) font.",
+          "type": "object",
+          "required": [
+            "font",
+            "fontSize"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "font": {
+              "description": "The font family name.",
+              "type": "string"
+            },
+            "fontSize": {
+              "description": "The font size in points.",
+              "type": "number"
+            }
+          }
+        },
         "cellsDefinedNameInfo": {
           "description": "A workbook-scoped defined name.",
           "type": "object",
@@ -3441,6 +3771,74 @@
             "cell": {
               "description": "The top-left cell of the scrolling pane: A2 freezes row 1, B2 row 1 and column A.",
               "type": "string"
+            }
+          }
+        },
+        "cellsHyperlinkInfo": {
+          "description": "A hyperlink, with one of url and target.",
+          "type": "object",
+          "required": [
+            "sheet",
+            "range"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "sheet": {
+              "description": "Sheet the hyperlink is on.",
+              "type": "string"
+            },
+            "range": {
+              "description": "The A1 range the hyperlink covers.",
+              "type": "string"
+            },
+            "url": {
+              "description": "The external address: a URL, an e-mail address or a file.",
+              "type": "string"
+            },
+            "target": {
+              "description": "The internal target; it names the sheet only when that is not the hyperlink's own.",
+              "type": "string"
+            },
+            "display": {
+              "description": "The text shown in the cell; omitted when empty.",
+              "type": "string"
+            }
+          }
+        },
+        "cellsImageInfo": {
+          "description": "A picture on a sheet.",
+          "type": "object",
+          "required": [
+            "sheet",
+            "index",
+            "at",
+            "width",
+            "height"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "sheet": {
+              "description": "Sheet the picture is on.",
+              "type": "string"
+            },
+            "index": {
+              "description": "The 1-based index of the picture on its sheet.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "at": {
+              "description": "The top-left anchor cell.",
+              "type": "string"
+            },
+            "width": {
+              "description": "The width in points.",
+              "type": "number",
+              "minimum": 0
+            },
+            "height": {
+              "description": "The height in points.",
+              "type": "number",
+              "minimum": 0
             }
           }
         },
@@ -3525,8 +3923,24 @@
               "description": "The center header text, with Excel codes such as &P; omitted when empty.",
               "type": "string"
             },
+            "headerLeft": {
+              "description": "The left header text; omitted when empty.",
+              "type": "string"
+            },
+            "headerRight": {
+              "description": "The right header text; omitted when empty.",
+              "type": "string"
+            },
             "footer": {
               "description": "The center footer text, with Excel codes such as &P and &N; omitted when empty.",
+              "type": "string"
+            },
+            "footerLeft": {
+              "description": "The left footer text; omitted when empty.",
+              "type": "string"
+            },
+            "footerRight": {
+              "description": "The right footer text; omitted when empty.",
               "type": "string"
             }
           }
@@ -3537,7 +3951,8 @@
           "required": [
             "sheet",
             "name",
-            "range"
+            "range",
+            "captions"
           ],
           "additionalProperties": false,
           "properties": {
@@ -3551,6 +3966,82 @@
             },
             "range": {
               "description": "A1 range the pivot report covers.",
+              "type": "string"
+            },
+            "sourceRange": {
+              "description": "The source data, headers included; it names the sheet only when that is not the pivot's own.",
+              "type": "string"
+            },
+            "rows": {
+              "description": "The header names of the row fields; omitted when there are none.",
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "columns": {
+              "description": "The header names of the column fields; omitted when there are none.",
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "values": {
+              "description": "The value fields with their aggregation and caption; omitted when there are none.",
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/cellsPivotValueInfo"
+              }
+            },
+            "captions": {
+              "description": "The caption language: zh when the headers carry Excel's Simplified Chinese captions, otherwise en.",
+              "type": "string",
+              "enum": [
+                "auto",
+                "en",
+                "zh"
+              ]
+            }
+          }
+        },
+        "cellsPivotValueInfo": {
+          "description": "One value field of a pivot table, in insert_pivot's fields.",
+          "type": "object",
+          "required": [
+            "field",
+            "function",
+            "label"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "field": {
+              "description": "The header name of the source column.",
+              "type": "string"
+            },
+            "function": {
+              "description": "The aggregation: an insert_pivot function such as sum, or the lower-camel engine name of one outside that vocabulary, such as stdDev.",
+              "type": "string",
+              "anyOf": [
+                {
+                  "enum": [
+                    "sum",
+                    "count",
+                    "average",
+                    "max",
+                    "min"
+                  ]
+                },
+                {
+                  "pattern": "^[a-z][A-Za-z0-9]*$"
+                }
+              ]
+            },
+            "numberFormat": {
+              "description": "The number format code of the field; omitted when it has none.",
+              "type": "string"
+            },
+            "label": {
+              "description": "The caption of the value field.",
               "type": "string"
             }
           }
@@ -3603,6 +4094,33 @@
             "collapsed": {
               "description": "true when every row of the group is hidden, as a collapsed group's rows are.",
               "type": "boolean"
+            }
+          }
+        },
+        "cellsRowHeightInfo": {
+          "description": "A run of adjacent rows of one height.",
+          "type": "object",
+          "required": [
+            "first",
+            "last",
+            "height"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "first": {
+              "description": "The first row of the run (1-based).",
+              "type": "integer",
+              "minimum": 1
+            },
+            "last": {
+              "description": "The last row of the run (1-based).",
+              "type": "integer",
+              "minimum": 1
+            },
+            "height": {
+              "description": "The height in points.",
+              "type": "number",
+              "minimum": 0
             }
           }
         },
@@ -3683,10 +4201,11 @@
           }
         },
         "cellsSheetLayoutInfo": {
-          "description": "The view and print layout of one sheet, read as the objects the operations that set it name: freeze_panes, group_rows, group_columns, set_autofilter, set_print_area and set_page_setup, each with the fields of its operation. An object is omitted when the sheet does not have it.",
+          "description": "The view and print layout of one sheet, read as the objects the operations that set it name: set_sheet_view, set_tab_color, freeze_panes, resize_rows, resize_columns, group_rows, group_columns, set_autofilter, protect_sheet, set_print_area and set_page_setup, each with the fields of its operation. An object is omitted when the sheet does not have it.",
           "type": "object",
           "required": [
             "sheet",
+            "sheetView",
             "pageSetup"
           ],
           "additionalProperties": false,
@@ -3695,9 +4214,31 @@
               "description": "The sheet's name.",
               "type": "string"
             },
+            "sheetView": {
+              "description": "The on-screen view, as set_sheet_view sets it.",
+              "$ref": "#/$defs/cellsSheetViewInfo"
+            },
+            "tabColor": {
+              "description": "The tab color, as set_tab_color sets it.",
+              "$ref": "#/$defs/cellsTabColorInfo"
+            },
             "freezePanes": {
               "description": "The frozen panes, as freeze_panes sets them.",
               "$ref": "#/$defs/cellsFreezePanesInfo"
+            },
+            "rowHeights": {
+              "description": "Runs of adjacent rows of one height set apart from the content, as resize_rows sets them.",
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/cellsRowHeightInfo"
+              }
+            },
+            "columnWidths": {
+              "description": "Runs of adjacent columns of one width other than the sheet's standard width, as resize_columns sets them.",
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/cellsColumnWidthInfo"
+              }
             },
             "rowGroups": {
               "description": "Row outline groups, outer levels first, each a run of rows at its level or deeper.",
@@ -3717,6 +4258,10 @@
               "description": "The sheet's AutoFilter, as set_autofilter sets it.",
               "$ref": "#/$defs/cellsAutofilterInfo"
             },
+            "protection": {
+              "description": "The sheet's protection, as protect_sheet sets it; omitted when the sheet is not protected.",
+              "$ref": "#/$defs/cellsSheetProtectionInfo"
+            },
             "printArea": {
               "description": "The print area and print titles, as set_print_area sets them.",
               "$ref": "#/$defs/cellsPrintAreaInfo"
@@ -3727,13 +4272,125 @@
             }
           }
         },
+        "cellsSheetProtectionInfo": {
+          "description": "A protected sheet's protection.",
+          "type": "object",
+          "required": [
+            "allow"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "allow": {
+              "description": "The actions users may still perform, in the order protect_sheet lists them.",
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "format-cells",
+                  "insert-rows",
+                  "insert-columns",
+                  "delete-rows",
+                  "delete-columns",
+                  "sort",
+                  "autofilter"
+                ]
+              }
+            }
+          }
+        },
+        "cellsSheetViewInfo": {
+          "description": "A sheet's on-screen view.",
+          "type": "object",
+          "required": [
+            "gridlines",
+            "zoom",
+            "headings"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "gridlines": {
+              "description": "Whether the on-screen gridlines show.",
+              "type": "boolean"
+            },
+            "zoom": {
+              "description": "The zoom percentage.",
+              "type": "integer"
+            },
+            "headings": {
+              "description": "Whether the row numbers and column letters show.",
+              "type": "boolean"
+            }
+          }
+        },
+        "cellsSparklineInfo": {
+          "description": "A sparkline group.",
+          "type": "object",
+          "required": [
+            "sheet",
+            "kind",
+            "dataRange",
+            "location"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "sheet": {
+              "description": "Sheet the sparklines are drawn on.",
+              "type": "string"
+            },
+            "kind": {
+              "description": "The sparkline type: an add_sparkline kind, or the lower-case engine name of one outside that vocabulary.",
+              "type": "string",
+              "anyOf": [
+                {
+                  "enum": [
+                    "line",
+                    "column",
+                    "winloss"
+                  ]
+                },
+                {
+                  "pattern": "^[a-z][a-z0-9]*$"
+                }
+              ]
+            },
+            "color": {
+              "description": "The series color; omitted when the group has none.",
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}$"
+            },
+            "dataRange": {
+              "description": "The data the group plots, one range when the sparklines' data fill it, otherwise each sparkline's data, comma-separated; it names the sheet only when that is not the group's own.",
+              "type": "string"
+            },
+            "location": {
+              "description": "The cells the sparklines are drawn in: one range when they fill it, otherwise each cell, comma-separated, such as H2,H4,H5 after a row was inserted inside the group.",
+              "type": "string"
+            }
+          }
+        },
+        "cellsTabColorInfo": {
+          "description": "A sheet's tab color.",
+          "type": "object",
+          "required": [
+            "color"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "color": {
+              "description": "The tab color.",
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}$"
+            }
+          }
+        },
         "cellsTableInfo": {
           "description": "A table (list object) in a workbook.",
           "type": "object",
           "required": [
             "sheet",
             "name",
-            "range"
+            "range",
+            "totalsRow"
           ],
           "additionalProperties": false,
           "properties": {
@@ -3748,6 +4405,14 @@
             "range": {
               "description": "A1 range the table covers, e.g. A1:D20.",
               "type": "string"
+            },
+            "tableStyle": {
+              "description": "The table style, such as TableStyleMedium2; omitted when the table has none.",
+              "type": "string"
+            },
+            "totalsRow": {
+              "description": "Whether the table shows a totals row.",
+              "type": "boolean"
             }
           }
         },
@@ -3757,7 +4422,8 @@
           "required": [
             "sheet",
             "range",
-            "kind"
+            "kind",
+            "allowBlank"
           ],
           "additionalProperties": false,
           "properties": {
@@ -3787,6 +4453,51 @@
                   "pattern": "^[a-z][a-z0-9]*(-[a-z0-9]+)*$"
                 }
               ]
+            },
+            "operator": {
+              "description": "The comparison of a kind that compares; omitted for list and custom.",
+              "type": "string",
+              "enum": [
+                "between",
+                "not-between",
+                "equal",
+                "not-equal",
+                "greater-than",
+                "less-than",
+                "greater-or-equal",
+                "less-or-equal"
+              ]
+            },
+            "value1": {
+              "description": "The first bound (the lower bound for between), or the formula of a custom validation; a number reads without the leading = Excel stores. Omitted for a list.",
+              "type": "string"
+            },
+            "value2": {
+              "description": "The upper bound for between and not-between, read as value1 is.",
+              "type": "string"
+            },
+            "listItems": {
+              "description": "The dropdown items of a list given as items.",
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "listSource": {
+              "description": "The range a list reads its items from.",
+              "type": "string"
+            },
+            "inputMessage": {
+              "description": "The prompt shown when a validated cell is selected; omitted when none.",
+              "type": "string"
+            },
+            "errorMessage": {
+              "description": "The message shown when a value is rejected; omitted when none.",
+              "type": "string"
+            },
+            "allowBlank": {
+              "description": "Whether a validated cell may be left blank.",
+              "type": "boolean"
             }
           }
         },
@@ -3800,7 +4511,8 @@
             "hasMacros",
             "definedNameCount",
             "structureProtected",
-            "structurePasswordProtected"
+            "structurePasswordProtected",
+            "defaultFont"
           ],
           "additionalProperties": false,
           "properties": {
@@ -3844,6 +4556,10 @@
             "title": {
               "description": "Document title from built-in properties; omitted when empty.",
               "type": "string"
+            },
+            "defaultFont": {
+              "description": "The workbook default font, as set_default_font sets it.",
+              "$ref": "#/$defs/cellsDefaultFontInfo"
             },
             "definedNames": {
               "description": "Defined names; present only with --detail names.",
@@ -3892,6 +4608,41 @@
               "type": "array",
               "items": {
                 "$ref": "#/$defs/cellsValidationInfo"
+              }
+            },
+            "conditionalFormats": {
+              "description": "Conditional formats, one per rule; present only with --detail conditional-formats.",
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/cellsConditionalFormatInfo"
+              }
+            },
+            "sparklines": {
+              "description": "Sparkline groups; present only with --detail sparklines.",
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/cellsSparklineInfo"
+              }
+            },
+            "images": {
+              "description": "Pictures; present only with --detail images.",
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/cellsImageInfo"
+              }
+            },
+            "comments": {
+              "description": "Cell comments (notes); present only with --detail comments.",
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/cellsCommentInfo"
+              }
+            },
+            "hyperlinks": {
+              "description": "Hyperlinks; present only with --detail hyperlinks.",
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/cellsHyperlinkInfo"
               }
             },
             "layouts": {
@@ -4131,7 +4882,7 @@
           "pattern": "^[A-Za-z][A-Za-z0-9._-]{0,63}$"
         },
         "add_comment": {
-          "description": "Adds a note (comment) to a cell.",
+          "description": "Adds a note (comment) to a cell; on a cell that has one, the text is added to it as a new paragraph. set_comment replaces a comment's text.",
           "type": "object",
           "required": [
             "op",
@@ -4159,12 +4910,12 @@
             "text": {
               "type": "string",
               "minLength": 1,
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsCommentInfo/properties/text"
             },
             "author": {
               "description": "The comment author; the engine default when omitted.",
               "type": "string",
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsCommentInfo/properties/author"
             }
           }
         },
@@ -4196,12 +4947,12 @@
             },
             "rule": {
               "$ref": "#/$defs/cellsConditionalRule",
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsConditionalFormatInfo/properties/rule"
             },
             "style": {
               "description": "The style matching cells receive.",
               "$ref": "#/$defs/cellsConditionalStyle",
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsConditionalFormatInfo/properties/style"
             }
           }
         },
@@ -4229,12 +4980,12 @@
             "dataRange": {
               "description": "The data to plot, such as B2:E10. It may name another sheet, such as Data!B2:E10, so sparklines on a dashboard sheet can plot a data sheet.",
               "$ref": "#/$defs/reference",
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsSparklineInfo/properties/dataRange"
             },
             "location": {
               "description": "A single cell or a one-row or one-column strip, such as F2 or F2:F10. One sparkline per data row (or column) lands in each location cell, so the cell count must match the data's row count (one per row) or column count (one per column).",
               "$ref": "#/$defs/range",
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsSparklineInfo/properties/location"
             },
             "kind": {
               "description": "winloss draws equal-height columns above or below the axis by sign.",
@@ -4245,12 +4996,12 @@
                 "winloss"
               ],
               "default": "line",
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsSparklineInfo/properties/kind"
             },
             "color": {
               "description": "The series color; the engine default when omitted.",
               "$ref": "#/$defs/color",
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsSparklineInfo/properties/color"
             }
           }
         },
@@ -4508,13 +5259,13 @@
               "description": "A built-in table style (TableStyleLight1-21, TableStyleMedium1-28, TableStyleDark1-11), such as TableStyleMedium2, or a custom table style the workbook defines.",
               "type": "string",
               "minLength": 1,
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsTableInfo/properties/tableStyle"
             },
             "totalsRow": {
               "description": "Whether a totals row is added below the table.",
               "type": "boolean",
               "default": false,
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsTableInfo/properties/totalsRow"
             }
           }
         },
@@ -5065,7 +5816,7 @@
             "dataRange": {
               "description": "The data to plot, including headers, such as A1:C5. It may name another sheet, such as Data!A1:C5, so a chart on a dashboard sheet can plot a data sheet.",
               "$ref": "#/$defs/reference",
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsChartInfo/properties/dataRange"
             },
             "at": {
               "description": "The range of at least two cells the chart is placed over, such as E2:L18.",
@@ -5074,21 +5825,21 @@
             },
             "title": {
               "type": "string",
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsChartInfo/properties/title"
             },
             "seriesInRows": {
               "description": "Whether series are plotted from rows rather than columns.",
               "type": "boolean",
               "default": false,
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsChartInfo/properties/seriesInRows"
             },
             "legend": {
               "$ref": "#/$defs/cellsChartLegend",
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsChartInfo/properties/legend"
             },
             "axisTitles": {
               "$ref": "#/$defs/cellsChartAxisTitles",
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsChartInfo/properties/axisTitles"
             },
             "seriesColors": {
               "description": "Series colors in series order; a pie's slices count as the series. Colors beyond the series count are ignored.",
@@ -5097,11 +5848,11 @@
               "items": {
                 "$ref": "#/$defs/color"
               },
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsChartInfo/properties/seriesColors"
             },
             "dataLabels": {
               "$ref": "#/$defs/cellsChartDataLabels",
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsChartInfo/properties/dataLabels"
             }
           }
         },
@@ -5175,13 +5926,13 @@
               "description": "The width in points; the image's natural width when omitted.",
               "type": "number",
               "exclusiveMinimum": 0,
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsImageInfo/properties/width"
             },
             "height": {
               "description": "The height in points; the image's natural height when omitted.",
               "type": "number",
               "exclusiveMinimum": 0,
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsImageInfo/properties/height"
             }
           }
         },
@@ -5210,7 +5961,7 @@
             "sourceRange": {
               "description": "The source data including headers; it may name another sheet, such as Data!A1:D100.",
               "$ref": "#/$defs/reference",
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsPivotInfo/properties/sourceRange"
             },
             "at": {
               "description": "The top-left cell of the pivot table.",
@@ -5229,7 +5980,7 @@
               "items": {
                 "type": "string"
               },
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsPivotInfo/properties/rows"
             },
             "columns": {
               "description": "The header names of the column fields.",
@@ -5238,7 +5989,7 @@
               "items": {
                 "type": "string"
               },
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsPivotInfo/properties/columns"
             },
             "values": {
               "description": "The value fields with their aggregation; two or more are columns, after the column fields, as in Excel.",
@@ -5247,7 +5998,7 @@
               "items": {
                 "$ref": "#/$defs/cellsPivotValueField"
               },
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsPivotInfo/properties/values"
             },
             "captions": {
               "description": "The caption language: en keeps the engine's English captions (Sum of X, Grand Total); zh writes Excel's Simplified Chinese ones (求和项:X, 总计, 行标签, 列标签, 值); auto is zh when a row, column or value field name contains a Han character, otherwise en.",
@@ -5258,7 +6009,7 @@
                 "zh"
               ],
               "default": "auto",
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsPivotInfo/properties/captions"
             }
           }
         },
@@ -5434,7 +6185,7 @@
                 ]
               },
               "default": [],
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsSheetProtectionInfo/properties/allow"
             }
           }
         },
@@ -5561,7 +6312,7 @@
               "description": "The width in characters of the default font's digit 0; omitted auto-fits.",
               "type": "number",
               "minimum": 0,
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsColumnWidthInfo/properties/widthChars"
             }
           }
         },
@@ -5601,7 +6352,7 @@
               "description": "The height in points; omitted auto-fits.",
               "type": "number",
               "minimum": 0,
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsRowHeightInfo/properties/height"
             }
           }
         },
@@ -5764,12 +6515,12 @@
             },
             "title": {
               "type": "string",
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsChartInfo/properties/title"
             },
             "dataRange": {
               "description": "The new data to plot, including headers; it may name another sheet, such as Data!A1:C5.",
               "$ref": "#/$defs/reference",
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsChartInfo/properties/dataRange"
             },
             "kind": {
               "type": "string",
@@ -5786,15 +6537,15 @@
             "seriesInRows": {
               "description": "Whether series are plotted from rows rather than columns.",
               "type": "boolean",
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsChartInfo/properties/seriesInRows"
             },
             "legend": {
               "$ref": "#/$defs/cellsChartLegend",
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsChartInfo/properties/legend"
             },
             "axisTitles": {
               "$ref": "#/$defs/cellsChartAxisTitles",
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsChartInfo/properties/axisTitles"
             },
             "seriesColors": {
               "description": "Series colors in series order; a pie's slices count as the series. Colors beyond the series count are ignored.",
@@ -5803,11 +6554,11 @@
               "items": {
                 "$ref": "#/$defs/color"
               },
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsChartInfo/properties/seriesColors"
             },
             "dataLabels": {
               "$ref": "#/$defs/cellsChartDataLabels",
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsChartInfo/properties/dataLabels"
             }
           },
           "allOf": [
@@ -5903,12 +6654,12 @@
               "description": "The new comment text.",
               "type": "string",
               "minLength": 1,
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsCommentInfo/properties/text"
             },
             "author": {
               "description": "The new author; unchanged when omitted.",
               "type": "string",
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsCommentInfo/properties/author"
             }
           }
         },
@@ -5931,14 +6682,14 @@
               "description": "The font family name, such as Calibri; surrounding spaces are removed.",
               "type": "string",
               "pattern": "\\S",
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsDefaultFontInfo/properties/font"
             },
             "fontSize": {
               "description": "The font size in points; unchanged when omitted.",
               "type": "number",
               "minimum": 1,
               "maximum": 409,
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsDefaultFontInfo/properties/fontSize"
             }
           }
         },
@@ -5977,7 +6728,7 @@
           }
         },
         "set_hyperlink": {
-          "description": "Adds a hyperlink to one cell: an external URL or an internal target.",
+          "description": "Sets the hyperlink of one cell, an external URL or an internal target, replacing a link that covered it.",
           "type": "object",
           "required": [
             "op",
@@ -6004,17 +6755,17 @@
             "url": {
               "description": "An external URL, such as https://example.com.",
               "$ref": "#/$defs/webLink",
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsHyperlinkInfo/properties/url"
             },
             "target": {
               "description": "An internal target, such as Summary!A1.",
               "$ref": "#/$defs/reference",
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsHyperlinkInfo/properties/target"
             },
             "display": {
               "description": "The text shown in the cell; the URL or target when omitted.",
               "type": "string",
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsHyperlinkInfo/properties/display"
             }
           },
           "allOf": [
@@ -6208,19 +6959,19 @@
             "gridlines": {
               "description": "Whether the on-screen gridlines show; unchanged when omitted.",
               "type": "boolean",
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsSheetViewInfo/properties/gridlines"
             },
             "zoom": {
               "description": "The zoom percentage; unchanged when omitted.",
               "type": "integer",
               "minimum": 10,
               "maximum": 400,
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsSheetViewInfo/properties/zoom"
             },
             "headings": {
               "description": "Whether the row numbers and column letters show; unchanged when omitted.",
               "type": "boolean",
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsSheetViewInfo/properties/headings"
             }
           },
           "allOf": [
@@ -6306,12 +7057,12 @@
             "color": {
               "description": "The tab color.",
               "$ref": "#/$defs/color",
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsTabColorInfo/properties/color"
             }
           }
         },
         "set_validation": {
-          "description": "Applies data validation, a dropdown list or an input constraint, to a range. A list takes exactly one of listItems and listSource; custom takes its formula in value1; the other kinds take an operator and value1, and value2 too for between and not-between.",
+          "description": "Applies data validation, a dropdown list or an input constraint, to a range, replacing the validation the range had. A list takes exactly one of listItems and listSource; custom takes its formula in value1; the other kinds take an operator and value1, and value2 too for between and not-between.",
           "type": "object",
           "required": [
             "op",
@@ -6360,19 +7111,19 @@
                 "greater-or-equal",
                 "less-or-equal"
               ],
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsValidationInfo/properties/operator"
             },
             "value1": {
               "description": "The first bound (the lower bound for between), or the formula of a custom validation.",
               "type": "string",
               "pattern": "\\S",
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsValidationInfo/properties/value1"
             },
             "value2": {
               "description": "The upper bound for between and not-between.",
               "type": "string",
               "pattern": "\\S",
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsValidationInfo/properties/value2"
             },
             "listItems": {
               "description": "The dropdown items of a list. No item contains a comma or a double quote, and joined with commas they stay within Excel's 255 characters; use listSource for longer lists.",
@@ -6382,29 +7133,29 @@
                 "type": "string",
                 "pattern": "^[^,\"]+$"
               },
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsValidationInfo/properties/listItems"
             },
             "listSource": {
               "description": "The range a list reads its items from, such as Lists!A1:A20.",
               "type": "string",
               "pattern": "\\S",
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsValidationInfo/properties/listSource"
             },
             "inputMessage": {
               "description": "The prompt shown when a validated cell is selected.",
               "type": "string",
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsValidationInfo/properties/inputMessage"
             },
             "errorMessage": {
               "description": "The message shown when a value is rejected.",
               "type": "string",
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsValidationInfo/properties/errorMessage"
             },
             "allowBlank": {
               "description": "Whether a validated cell may be left blank.",
               "type": "boolean",
               "default": true,
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsValidationInfo/properties/allowBlank"
             }
           }
         },
@@ -6713,9 +7464,11 @@
           "additionalProperties": false,
           "properties": {
             "visible": {
+              "description": "Whether the legend shows.",
               "type": "boolean"
             },
             "position": {
+              "description": "The side of the chart the legend sits on.",
               "type": "string",
               "enum": [
                 "right",
@@ -6918,6 +7671,7 @@
               "pattern": "\\S"
             },
             "function": {
+              "description": "The aggregation of the field's values.",
               "type": "string",
               "enum": [
                 "sum",

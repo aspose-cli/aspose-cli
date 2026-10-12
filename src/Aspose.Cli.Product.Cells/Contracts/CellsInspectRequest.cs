@@ -43,12 +43,29 @@ public static class CellsInspectDetails
     /// <summary>Data validations in the workbook.</summary>
     public const string Validation = "validation";
 
+    /// <summary>Conditional-formatting rules in the workbook.</summary>
+    public const string ConditionalFormats = "conditional-formats";
+
+    /// <summary>Sparkline groups in the workbook.</summary>
+    public const string Sparklines = "sparklines";
+
+    /// <summary>Pictures in the workbook, with their size in points.</summary>
+    public const string Images = "images";
+
+    /// <summary>Cell comments (notes) in the workbook.</summary>
+    public const string Comments = "comments";
+
+    /// <summary>Hyperlinks in the workbook.</summary>
+    public const string Hyperlinks = "hyperlinks";
+
     /// <summary>
-    /// The layout of each sheet: frozen panes, outline groups, AutoFilter, print area and
-    /// titles, orientation, scaling, header and footer.
+    /// The layout of each sheet: view, tab color, frozen panes, row heights and column widths,
+    /// outline groups, AutoFilter, protection, print area and titles, orientation, scaling,
+    /// header and footer.
     /// </summary>
     public const string Layout = "layout";
 
     /// <summary>Every detail id, in documentation order.</summary>
-    public static IReadOnlyList<string> All { get; } = [Names, Errors, Fonts, Tables, Charts, Pivots, Validation, Layout];
+    public static IReadOnlyList<string> All { get; } =
+        [Names, Errors, Fonts, Tables, Charts, Pivots, Validation, ConditionalFormats, Sparklines, Images, Comments, Hyperlinks, Layout];
 }

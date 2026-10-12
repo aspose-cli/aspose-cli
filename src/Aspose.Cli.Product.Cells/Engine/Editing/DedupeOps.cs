@@ -8,7 +8,7 @@ namespace Aspose.Cli.Product.Cells.Engine.Editing;
 /// </summary>
 internal static class DedupeOps
 {
-    public static long? RemoveDuplicates(Worksheet sheet, DeleteDuplicatesOp op)
+    public static void RemoveDuplicates(Worksheet sheet, DeleteDuplicatesOp op)
     {
         RangeRef range = A1.ParseRange(op.Range).Range;
 
@@ -23,7 +23,6 @@ internal static class DedupeOps
             range.Start.Row, range.Start.Column, range.End.Row, range.End.Column, op.HasHeader, offsets);
 
         // The engine reports nothing; the removed rows are the filled rows that are gone.
-        return before - FilledRows(sheet.Cells, range);
     }
 
     private static int FilledRows(Aspose.Cells.Cells cells, RangeRef range)
