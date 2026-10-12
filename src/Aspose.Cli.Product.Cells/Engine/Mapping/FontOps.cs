@@ -48,7 +48,7 @@ internal static class FontOps
 
     /// <summary>
     /// Availability of each used font, with the substitute a render would pick
-    /// for any that is missing — the actionable half of the P-5 diagnostic.
+    /// for any that is missing — the actionable half of the font diagnostics.
     /// </summary>
     public static IReadOnlyList<FontAvailability> CheckAvailability(IEnumerable<string> usedFonts)
     {

@@ -989,11 +989,23 @@ public sealed class CliContractTests : IDisposable
         RegexOptions.CultureInvariant);
 
     /// <summary>
+    /// The numbers this repository gives its own requirements and rules, such as P-5, C-R26,
+    /// C-N115, C-B01 or (D7), which mean nothing to a reader of the help, the capabilities or a schema.
+    /// </summary>
+    private static readonly Regex InternalNumber = new(
+        @"\bP-[0-9]+\b|\bC-[RNB][0-9]+\b|\(D[0-9]+\)",
+        RegexOptions.CultureInvariant);
+
+    /// <summary>
     /// Compares output with its committed snapshot exactly. Line endings are compared as LF
-    /// because Git may check the snapshot out with CRLF.
+    /// because Git may check the snapshot out with CRLF. What a snapshot holds is published, so
+    /// it never names an internal requirement or rule number.
     /// </summary>
     private static void AssertSnapshot(string name, string actual)
     {
+        Assert.True(
+            !InternalNumber.IsMatch(actual),
+            $"Snapshot {name} publishes the internal number '{InternalNumber.Match(actual).Value}'; describe the behavior instead.");
         string path = Path.Combine(
             RepositoryPaths.Root, "tests", "Aspose.Cli.Platform.Tests", "Integration", "Snapshots", name);
         actual = actual.ReplaceLineEndings("\n");

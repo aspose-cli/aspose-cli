@@ -5,7 +5,7 @@ namespace Aspose.Cli.Sdk.Contracts;
 /// <summary>
 /// Result of <c>aspose-cli fonts list</c>: the font environment of each product engine — the
 /// default fallback font and the sources it scans. Answers "where does this build look for
-/// fonts, and what does it fall back to" so a "renders wrong on the server" problem (P-5) can be
+/// fonts, and what does it fall back to" so a "renders wrong on the server" problem can be
 /// traced to font configuration.
 /// </summary>
 public sealed record FontListResult() : EngineResultEnvelope("font-list", 2)
