@@ -1,3 +1,4 @@
+using System.Text.Json.Nodes;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
@@ -28,6 +29,9 @@ public abstract class OutputPipeline : ILicenseState
     private Warning? _inputTruncated;
     private Inspection? _view;
     private bool _encryptedInput;
+    private bool _openPassword;
+    private bool _decrypted;
+    private JsonObject? _restrictions;
     private readonly SortedSet<string> _plainCopies = new(StringComparer.Ordinal);
     private IReadOnlyList<FormatDescriptor> _formats = [];
 
@@ -103,11 +107,31 @@ public abstract class OutputPipeline : ILicenseState
     /// is disclosed as <c>ENCRYPTION_REMOVED</c>.
     /// </summary>
     /// <param name="encrypted">Whether the document is encrypted, including a PDF with only an owner password.</param>
-    public void Opened(bool encrypted)
+    /// <param name="openPassword">Whether an encrypted document needs a password to open, not only to change it.</param>
+    /// <param name="restrictions">
+    /// For an encrypted document, the fields of the operation that encrypts
+    /// (<see cref="Operations.EncryptsOutputAttribute"/>) that restrict a copy as the document is
+    /// restricted, such as the permissions it grants readers without the owner password.
+    /// </param>
+    public void Opened(bool encrypted, bool openPassword = true, JsonObject? restrictions = null)
     {
         lock (_sync)
         {
             _encryptedInput |= encrypted;
+            _openPassword |= encrypted && openPassword;
+            if (encrypted)
+            {
+                _restrictions ??= restrictions;
+            }
+        }
+    }
+
+    /// <summary>Records that the command removed the encryption because it was asked to, such as by an operation that decrypts.</summary>
+    public void Decrypted()
+    {
+        lock (_sync)
+        {
+            _decrypted = true;
         }
     }
 
@@ -124,7 +148,7 @@ public abstract class OutputPipeline : ILicenseState
     /// The hint of <c>ENCRYPTION_REMOVED</c> for the format ids of the unencrypted copies: the
     /// ways the command's tree offers to protect them; null for the general advice.
     /// </param>
-    internal ResultEnvelope DiscloseWith(ResultEnvelope result, Func<IReadOnlyList<string>, string>? protection)
+    internal ResultEnvelope DiscloseWith(ResultEnvelope result, Func<EncryptionLoss, string>? protection)
     {
         ArgumentNullException.ThrowIfNull(result);
         // A result that carries a disclosure already, such as a review whose view manifest
@@ -141,9 +165,12 @@ public abstract class OutputPipeline : ILicenseState
     /// copy of it without encryption; otherwise null.
     /// </summary>
     /// <param name="protection">Writes the hint for the format ids of the unencrypted copies; null for the general advice.</param>
-    internal Warning? EncryptionRemoved(Func<IReadOnlyList<string>, string>? protection = null)
+    internal Warning? EncryptionRemoved(Func<EncryptionLoss, string>? protection = null)
     {
         string[] formats;
+        bool openPassword;
+        bool decrypted;
+        JsonObject? restrictions;
         lock (_sync)
         {
             if (!_encryptedInput || _plainCopies.Count == 0)
@@ -152,13 +179,16 @@ public abstract class OutputPipeline : ILicenseState
             }
 
             formats = [.. _plainCopies];
+            openPassword = _openPassword;
+            decrypted = _decrypted;
+            restrictions = _restrictions;
         }
 
         return new Warning(
             WarningCodes.EncryptionRemoved,
             $"The {string.Join(", ", formats.Select(static format => $"'{format}'"))} output is not encrypted, although an input it was made from is: it opens without a password.")
         {
-            Hint = protection?.Invoke(formats) ?? "If the output must stay protected, write it in a format that can carry a password.",
+            Hint = protection?.Invoke(new EncryptionLoss(formats, openPassword, decrypted, restrictions)) ?? "If the output must stay protected, write it in a format that can carry a password.",
         };
     }
 

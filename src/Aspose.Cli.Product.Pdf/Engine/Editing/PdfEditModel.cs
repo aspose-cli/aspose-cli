@@ -107,6 +107,11 @@ internal sealed class PdfEditModel : IOperationModel<PdfOp>
                 + "its extracted text differs, for example by spaces between characters: match it with a regular expression "
                 + "that allows them (\\s*), or cover it with redact_area.",
         },
+        RedactAreaOp => new NoEffect(NoEffectReasons.NoMatch,
+            $"Operation {operation.Id} (redact_area) removed nothing: no character has its middle inside the area, and no image lies under it.")
+        {
+            Hint = "Take the area from the rect of a 'pdf search' hit, or measure it on 'pdf render --grid'; a character is removed when its middle lies inside the area.",
+        },
         FlattenFormsOp => new NoEffect(NoEffectReasons.NoMatch,
             $"Operation {operation.Id} (flatten_forms) found no form field to flatten."),
         DecryptDocumentOp => new NoEffect(NoEffectReasons.NoChange,

@@ -35,6 +35,11 @@ internal static class PdfEdit
             session.Loader, operationInputs, loaded.Document, batch.Ops, request.Password, request.EncryptPassword is not null, request.OpSecrets);
         AppliedBatch applied = BoundedOperationRunner.Run(
             PdfOp.Catalog, batch.Ops, request.Options.BestEffort, deadline: null, model, verifier, PdfSnapshots.PageUnit);
+        if (batch.Ops.Any(static op => op is DecryptDocumentOp))
+        {
+            session.Outputs.Decrypted();
+        }
+
         // PDF-ENCRYPTED-INFO-TEXT: document information set in this batch survives only an
         // encryption applied to a reopened copy.
         EncryptDocumentOp? encryptCopy = batch.Ops.Any(static op => op is SetPropertiesOp) ? model.Encryption : null;

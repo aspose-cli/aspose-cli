@@ -31,8 +31,32 @@ internal sealed class PdfDocumentLoader(
     {
         InputSizeGuard.Ensure(resourceBudgets, path);
         LoadedPdf loaded = OpenCore(path, password);
-        outputs?.Opened(loaded.Encrypted);
+        outputs?.Opened(loaded.Encrypted, loaded.HasOpenPassword, loaded.Encrypted ? Restrictions(loaded.Document) : null);
         return loaded;
+    }
+
+    /// <summary>
+    /// The <c>encrypt_document</c> fields that grant a copy what the document grants readers
+    /// without the owner password, named as <c>pdf inspect --detail permissions</c> names them.
+    /// </summary>
+    private static System.Text.Json.Nodes.JsonObject Restrictions(Document document)
+    {
+        var permissions = (Permissions)document.Permissions;
+        var granted = new PdfPermissionsInput
+        {
+            Print = permissions.HasFlag(Permissions.PrintDocument),
+            Copy = permissions.HasFlag(Permissions.ExtractContent),
+            Modify = permissions.HasFlag(Permissions.ModifyContent),
+            Annotate = permissions.HasFlag(Permissions.ModifyTextAnnotations),
+            FillForms = permissions.HasFlag(Permissions.FillForm),
+            ExtractAccessibility = permissions.HasFlag(Permissions.ExtractContentWithDisabilities),
+            Assemble = permissions.HasFlag(Permissions.AssembleDocument),
+            PrintHighResolution = permissions.HasFlag(Permissions.PrintingQuality),
+        };
+        return new System.Text.Json.Nodes.JsonObject
+        {
+            ["permissions"] = System.Text.Json.JsonSerializer.SerializeToNode(granted, PdfOpsJsonContext.Default.PdfPermissionsInput),
+        };
     }
 
     // Generated candidates are bounded by publication, not a second user-input admission.

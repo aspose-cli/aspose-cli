@@ -546,6 +546,28 @@ public sealed class PdfKnownIssueTests
             $"a cover over the text removes it {(upright ? "upright" : "not even upright")} and {(turned ? "also" : "not")} on a page rotated by 90 degrees");
     }
 
+    [LicensedFact]
+    public void TextSearch_OnAStampedPageWrapsItsContentInASavedGraphicsState()
+    {
+        using var fixture = new PdfEngineFixture();
+        string path = TextPage(fixture, "stamped.pdf");
+        using (var document = new Document(path))
+        {
+            document.Pages[1].AddStamp(new Aspose.Pdf.TextStamp("Internal") { Background = false });
+            document.Save(path);
+        }
+
+        using var reopened = new Document(path);
+        Page page = reopened.Pages[1];
+        string[] before = [.. page.Contents.Select(static op => op.ToString() ?? string.Empty)];
+        page.Accept(new Aspose.Pdf.Text.TextFragmentAbsorber("absent"));
+        string[] after = [.. page.Contents.Select(static op => op.ToString() ?? string.Empty)];
+        KnownIssue.Reproduces(
+            "PDF-TEXT-SEARCH-WRAPS-CONTENT",
+            after.Length == before.Length + 2 && after[0] == "q" && after[^1] == "Q" && after[1..^1].SequenceEqual(before),
+            $"a search left {after.Length} operators where there were {before.Length}");
+    }
+
     /// <summary>A 595 x 842 pt page with SECRET drawn upright at 80,500 pt in 20 pt type.</summary>
     private static string TextPage(PdfEngineFixture fixture, string fileName)
     {

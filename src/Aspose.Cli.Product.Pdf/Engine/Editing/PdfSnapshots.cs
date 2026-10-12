@@ -4,6 +4,7 @@ using System.Security.Cryptography;
 using System.Text;
 using Aspose.Pdf;
 using Aspose.Pdf.Annotations;
+using Aspose.Pdf.Operators;
 using static Aspose.Cli.Product.Pdf.Engine.PdfEngineSupport;
 using static Aspose.Cli.Product.Pdf.Engine.Editing.PdfMutationSupport;
 
@@ -296,7 +297,9 @@ internal sealed class PdfSnapshots(Document document, PdfPageIdentities pages, F
         Append(hash, string.Create(CultureInfo.InvariantCulture, $"{page.Rotate}|{Box(page.MediaBox)}|{Box(page.CropBox)}"));
         if (content)
         {
-            foreach (Operator operation in page.Contents)
+            // Searching a page's text can wrap its content in a saved graphics state
+            // (PDF-TEXT-SEARCH-WRAPS-CONTENT), which draws nothing different.
+            foreach (Operator operation in page.Contents.Where(static operation => operation is not (GSave or GRestore)))
             {
                 Append(hash, operation.ToString() ?? string.Empty);
             }

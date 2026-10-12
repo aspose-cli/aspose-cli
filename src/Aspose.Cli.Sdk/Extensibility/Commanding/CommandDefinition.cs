@@ -124,7 +124,7 @@ public sealed class CommandDefinition<TRequest, TResult>
     /// For an edit, the operation document that encrypts the edited document with the password
     /// a named environment variable holds, or null when its vocabulary has none.
     /// </summary>
-    internal Func<string, string?>? EncryptingDocument { get; init; }
+    internal Func<string?, bool, System.Text.Json.Nodes.JsonObject?, string?>? EncryptingDocument { get; init; }
 
     /// <summary>Every renderer the definition declares.</summary>
     internal IEnumerable<ProductOutputDefinition> Outputs()
@@ -196,7 +196,7 @@ public sealed class CommandDefinition<TRequest, TResult>
             }
 
             // The write pipeline discloses evaluation output for every product command alike.
-            return scope.Binding.Publishing.DiscloseWith(result, formats => ProtectionAdvice.Hint(parse, formats, invocation.ResolvedFile));
+            return scope.Binding.Publishing.DiscloseWith(result, loss => ProtectionAdvice.Hint(parse, loss, invocation.ResolvedFile));
         }
         catch (CliException error) when (invocation.ForPairedInput(error) is var restated && restated != error)
         {

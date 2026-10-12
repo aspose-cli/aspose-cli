@@ -153,6 +153,55 @@ public sealed class PdfMutateTests
         static bool IsInk(SKColor color) => color.Red < 128 && color.Green < 128 && color.Blue < 128;
     }
 
+    /// <summary>
+    /// Lines of text set 10 points apart, as create sets 10 pt text, have character boxes that
+    /// overlap the next line's: a redaction removes only what it was asked to, whichever way the
+    /// page is turned.
+    /// </summary>
+    [Theory]
+    [InlineData(0)]
+    [InlineData(90)]
+    [InlineData(180)]
+    [InlineData(270)]
+    public void Redaction_OnCloselySetLines_RemovesOnlyTheTextItSelects(int angle)
+    {
+        using var fixture = new PdfEngineFixture();
+        string text = fixture.File("contacts.txt");
+        File.WriteAllLines(text, ["Shanghai: Zhang 13812345678", "Hangzhou: Wang 13998765432", "Nanjing: Li 13700001111"]);
+        string created = fixture.File($"contacts-{angle}.created.pdf");
+        PdfCreate.Run(fixture.Session, new PdfCreateRequest { Output = TestOutput.At(created), TextPath = text });
+        string input = fixture.File($"contacts-{angle}.pdf");
+        PdfEdit.Run(fixture.Session, new PdfEditRequest
+        {
+            Input = created,
+            Batch = new PdfOpsBatch { Ops = [new RotatePagesOp { Pages = "1", Rotation = angle }] },
+            Output = TestOutput.At(input),
+        });
+        PdfRect wang = Assert.Single(PdfSearch.Run(fixture.Session, Find(input, "13998765432")).Hits).Rect;
+        PdfRect zhang = Assert.Single(PdfSearch.Run(fixture.Session, Find(input, "Zhang")).Hits).Rect;
+        Assert.True(Math.Abs(wang.X - zhang.X) > wang.Width || Math.Abs(wang.Y - zhang.Y) > 0, "The lines are not apart.");
+
+        foreach ((string name, PdfOp op, string removed) in new (string, PdfOp, string)[]
+        {
+            ("area", new RedactAreaOp { Page = 1, Rect = new PdfRectInput { X = wang.X, Y = wang.Y, Width = wang.Width, Height = wang.Height } }, "13998765432"),
+            ("text", new RedactTextOp { Find = "Zhang" }, "Zhang"),
+        })
+        {
+            string output = fixture.File($"contacts-{angle}-{name}.pdf");
+            PdfEdit.Run(fixture.Session, new PdfEditRequest
+            {
+                Input = input,
+                Batch = new PdfOpsBatch { Ops = [op] },
+                Output = TestOutput.At(output),
+            });
+            Assert.Empty(PdfSearch.Run(fixture.Session, Find(output, removed)).Hits);
+            foreach (string kept in new[] { "Shanghai", "Zhang", "13812345678", "Hangzhou", "Wang", "13998765432", "Nanjing", "Li 137", "13700001111" }.Where(kept => kept != removed))
+            {
+                Assert.True(PdfSearch.Run(fixture.Session, Find(output, kept)).Hits.Count == 1, $"redact {name} at {angle} degrees also removed {kept}.");
+            }
+        }
+    }
+
     [Fact]
     public void RotatePages_SetsARotatedPageUprightWithAngleZero()
     {
