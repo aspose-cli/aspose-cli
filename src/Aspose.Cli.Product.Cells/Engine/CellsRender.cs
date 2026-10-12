@@ -12,7 +12,7 @@ using static Aspose.Cli.Product.Cells.Engine.CellsEngineSupport;
 
 namespace Aspose.Cli.Product.Cells.Engine;
 
-/// <summary><c>cells render</c>: a sheet, a range of it, or every visible sheet drawn as images.</summary>
+/// <summary><c>cells render</c>: sheets, or a range of one, drawn as images.</summary>
 internal static class CellsRender
 {
     public static CellsRenderResult Run(CellsSession session, CellsRenderRequest request)
@@ -25,55 +25,142 @@ internal static class CellsRender
         using LoadedWorkbook loaded = session.Loader.Open(request.Input, request.Password);
         Workbook workbook = loaded.Workbook;
         InputInfo input = BuildSource(request.Input, loaded);
+        (IReadOnlyList<Worksheet> sheets, bool defaulted) = Select(workbook, request);
+        string? renderedRange = request.Range is { } range ? A1.FormatRange(range) : null;
 
-        if (request.AllSheets || (request.SheetName is null && request.Range is null))
-        {
-            return RenderAllSheets(session, workbook, input, request, licenseState, loaded);
-        }
-
-        Worksheet sheet = Sheets.Resolve(workbook, request.SheetName);
-        bool isRaster = CellsEngineFormats.IsRaster(request.Output.Format.Id);
-
-        // A hidden sheet renders to zero pages (and would crash the page-size
-        // probe below). The caller explicitly asked for THIS sheet, so reveal it
-        // in memory — the render never saves the workbook, so the file is
-        // untouched — turning a lookup/backing sheet into a real image.
-        // --all-sheets deliberately never reveals: it takes the workbook as a
-        // reader sees it.
-        if (!sheet.IsVisible)
+        // A hidden sheet renders to zero pages (and would crash the page-size probe). A sheet
+        // the caller selected is revealed in memory — the render never saves the workbook, so
+        // the file is untouched — turning a lookup or backing sheet into a real image. The
+        // default takes the workbook as a reader sees it and selects visible sheets only.
+        foreach (Worksheet sheet in sheets)
         {
             sheet.IsVisible = true;
         }
 
-        string? renderedRange = null;
-        if (request.Range is { } range)
+        IReadOnlyList<string> outputPaths = DerivePerSheetPaths(request.Output, sheets);
+        using OutputSet<Workbook> transaction = session.Outputs.BeginSet([request.Output.Directory], "cells-render");
+        var rendered = new List<CellsSheetOutput>();
+        var skipped = new List<string>();
+        CliException? firstSkip = null;
+        for (int i = 0; i < sheets.Count; i++)
         {
-            renderedRange = A1.FormatRange(range);
+            Worksheet sheet = sheets[i];
+            try
+            {
+                StagedOutput staged = StageSheet(session.Budgets, transaction, sheet, request, renderedRange, outputPaths[i]);
+                rendered.Add(new CellsSheetOutput(FileObjects.Output(staged.Published, request.Output.Format, encrypted: false))
+                {
+                    Sheet = sheet.Name,
+                });
+            }
+            catch (CliException ex) when (sheets.Count > 1
+                && (ex.Code == CellsDiagnostics.RenderEmpty || ex.Code == ErrorCodes.RenderFailed))
+            {
+                // Only this sheet's own content is at fault; its siblings can still render.
+                firstSkip ??= ex;
+                skipped.Add($"'{sheet.Name}' ({DescribeSkip(ex)})");
+            }
         }
 
-        using OutputSet<Workbook> transaction = session.Outputs.BeginSet([request.Output.Directory], "cells-render");
-        StagedOutput staged = StageSheet(session.Budgets, transaction, sheet, request, renderedRange, request.Output.Path);
+        if (rendered.Count == 0)
+        {
+            throw firstSkip ?? CellsErrors.RenderEmpty(Sheets.Resolve(workbook, sheetName: null).Name);
+        }
+
         transaction.Commit();
+        Warning? sheetsSkipped = skipped.Count == 0 ? null : new Warning(CellsDiagnostics.SheetsSkipped, $"Skipped {skipped.Count} sheet(s): {string.Join(", ", skipped)}.")
+        {
+            Hint = "Render a skipped sheet alone with --sheets to get the full error.",
+        };
 
         return new CellsRenderResult
         {
             Input = input,
-            Output = FileObjects.Output(staged.Published, request.Output.Format, encrypted: false),
-            Sheet = sheet.Name,
+            Outputs = rendered,
             Range = renderedRange,
-            Dpi = isRaster ? request.Dpi : null,
+            Dpi = CellsEngineFormats.IsRaster(request.Output.Format.Id) ? request.Dpi : null,
             License = EnvelopeParts.License(licenseState),
-            Warnings = EnvelopeParts.CombineWarnings(loaded.Resources.CoverageWarning, loaded.CalculatedOnOpen,
-                loaded.SkippedSheetWarning(request.SheetName is null)),
+            Warnings = loaded.Warnings(loaded.SkippedSheetWarning(defaulted), sheetsSkipped),
         };
     }
+
+    /// <summary>
+    /// The sheets a render draws, in workbook order, and whether it defaulted to the active
+    /// sheet. A range draws one sheet: the one it names, the one <c>--sheets</c> selects, or the
+    /// active sheet. Otherwise <c>--sheets</c> selects sheets by 1-based position; omitted or
+    /// <c>all</c>, it draws every visible sheet, leaving out the warning sheets an evaluation
+    /// save added, as every command's default does, unless the workbook shows nothing else.
+    /// </summary>
+    private static (IReadOnlyList<Worksheet> Sheets, bool Defaulted) Select(Workbook workbook, CellsRenderRequest request)
+    {
+        if (request.Sheets is null && request.SheetsText is { } byName)
+        {
+            throw Sheets.SelectedByName(workbook, byName, range: true);
+        }
+
+        bool all = request.Sheets is null || ReferenceEquals(request.Sheets, PageRange.All);
+        if (request.Range is not null)
+        {
+            if (request.SheetName is not null || all)
+            {
+                return ([Sheets.Resolve(workbook, request.SheetName)], request.SheetName is null);
+            }
+
+            IReadOnlyList<int> one = Positions(workbook, request);
+            if (one.Count != 1)
+            {
+                throw CliErrors.OptionInvalid(
+                    "--sheets",
+                    $"--range renders one sheet, but the selection holds {one.Count}",
+                    "Select one sheet, such as --sheets 2, or qualify the range, such as Sales!A1:G20.");
+            }
+
+            return ([workbook.Worksheets[one[0] - 1]], false);
+        }
+
+        if (!all)
+        {
+            return ([.. Positions(workbook, request).Select(position => workbook.Worksheets[position - 1])], false);
+        }
+
+        var visible = new List<Worksheet>();
+        foreach (Worksheet sheet in workbook.Worksheets)
+        {
+            if (sheet.IsVisible)
+            {
+                visible.Add(sheet);
+            }
+        }
+
+        if (visible.Any(static sheet => !CellsEvaluation.IsWarningSheet(sheet)))
+        {
+            visible.RemoveAll(CellsEvaluation.IsWarningSheet);
+        }
+
+        if (visible.Count > RenderSelection.MaximumParts)
+        {
+            throw CliErrors.SelectionTooLarge(
+                "--sheets",
+                "sheet",
+                visible.Count,
+                RenderSelection.MaximumParts,
+                $"Select at most {RenderSelection.MaximumParts} sheets, such as --sheets 1-{RenderSelection.MaximumParts}, or render part of one with --range.");
+        }
+
+        return (visible, false);
+    }
+
+    /// <summary>The 1-based positions a selection names, in workbook order, within the render limit.</summary>
+    private static IReadOnlyList<int> Positions(Workbook workbook, CellsRenderRequest request) =>
+        [.. Sheets.Selected(workbook, request.SheetsText, range: true,
+            () => RenderSelection.Resolve(request.Sheets!, workbook.Worksheets.Count, CellsDiagnostics.SheetNotFound, "sheet")).Distinct().Order()];
 
     /// <summary>
     /// The shared per-sheet render pipeline: build the renderer, refuse an
     /// empty sheet (<c>RENDER_EMPTY</c>), probe the raster size
     /// (<c>RENDER_TOO_LARGE</c>), write through the safe writer, and translate
     /// an engine rasterization crash into <c>RENDER_FAILED</c>. Both the
-    /// single-sheet path and <c>--all-sheets</c> run through it.
+    /// single-sheet path and a render of several sheets run through it.
     /// </summary>
     private static StagedOutput StageSheet(ResourceBudgetLedger budgets, OutputSet<Workbook> transaction, Worksheet sheet, CellsRenderRequest request, string? printArea, string outputPath)
     {
@@ -135,104 +222,6 @@ internal static class CellsRender
         }
     }
 
-    /// <summary>
-    /// The every-sheet path, the default and <c>--all-sheets</c>: renders every visible sheet, at most
-    /// <see cref="RenderSelection.MaximumParts"/>, each to its
-    /// own file derived from the single output path, in workbook order. A
-    /// hidden sheet is skipped silently by design — revealing is reserved for
-    /// an explicit <c>--sheet</c> request. A sheet only IT cannot produce
-    /// (empty, or its content defeats the rasterizer) is skipped and reported
-    /// in a <c>SHEETS_SKIPPED</c> warning; a caller mistake
-    /// (<c>OUTPUT_EXISTS</c>, <c>RENDER_TOO_LARGE</c>, …) fails the whole
-    /// command. If every candidate was skipped, the first skip reason is
-    /// rethrown so an all-empty workbook still surfaces <c>RENDER_EMPTY</c>.
-    /// The default, unlike <c>--all-sheets</c>, leaves out the warning sheets an
-    /// evaluation save added, as every command's default does, unless the
-    /// workbook shows nothing else.
-    /// </summary>
-    private static CellsRenderResult RenderAllSheets(
-        CellsSession session, Workbook workbook, InputInfo input, CellsRenderRequest request, LicenseState licenseState, LoadedWorkbook loaded)
-    {
-        var candidates = new List<Worksheet>();
-        foreach (Worksheet sheet in workbook.Worksheets)
-        {
-            if (sheet.IsVisible)
-            {
-                candidates.Add(sheet);
-            }
-        }
-
-        if (!request.AllSheets && candidates.Any(static sheet => !CellsEvaluation.IsWarningSheet(sheet)))
-        {
-            candidates.RemoveAll(CellsEvaluation.IsWarningSheet);
-        }
-
-        if (candidates.Count > RenderSelection.MaximumParts)
-        {
-            throw CliErrors.SelectionTooLarge(
-                "--sheet",
-                "sheet",
-                candidates.Count,
-                RenderSelection.MaximumParts,
-                "Render one sheet with --sheet, or part of one with --range.");
-        }
-
-        IReadOnlyList<string> outputPaths = DerivePerSheetPaths(request.Output, candidates);
-
-        using OutputSet<Workbook> transaction = session.Outputs.BeginSet([request.Output.Directory], "cells-render");
-        var rendered = new List<CellsSheetOutput>();
-        StagedOutput? first = null;
-        var skipped = new List<string>();
-        CliException? firstSkip = null;
-
-        for (int i = 0; i < candidates.Count; i++)
-        {
-            Worksheet sheet = candidates[i];
-            try
-            {
-                StagedOutput staged = StageSheet(session.Budgets, transaction, sheet, request, printArea: null, outputPaths[i]);
-                first ??= staged;
-                rendered.Add(new CellsSheetOutput
-                {
-                    Sheet = sheet.Name,
-                    Path = outputPaths[i],
-                    SizeBytes = staged.SizeBytes,
-                });
-            }
-            catch (CliException ex) when (
-                ex.Code == CellsDiagnostics.RenderEmpty || ex.Code == ErrorCodes.RenderFailed)
-            {
-                // Only this sheet's own content is at fault; its siblings can
-                // still render. Record the reason and carry on.
-                firstSkip ??= ex;
-                skipped.Add($"'{sheet.Name}' ({DescribeSkip(ex)})");
-            }
-        }
-
-        if (rendered.Count == 0)
-        {
-            throw firstSkip
-                ?? CellsErrors.RenderEmpty(Sheets.Resolve(workbook, sheetName: null).Name);
-        }
-
-        transaction.Commit();
-        Warning? sheetsSkipped = skipped.Count == 0 ? null : new Warning(CellsDiagnostics.SheetsSkipped, $"Skipped {skipped.Count} sheet(s): {string.Join(", ", skipped)}.")
-        {
-            Hint = "Render a skipped sheet alone with --sheet to get the full error.",
-        };
-
-        return new CellsRenderResult
-        {
-            Input = input,
-            Output = FileObjects.Output(first!.Published, request.Output.Format, encrypted: false),
-            Sheet = rendered[0].Sheet,
-            Dpi = CellsEngineFormats.IsRaster(request.Output.Format.Id) ? request.Dpi : null,
-            Outputs = rendered,
-            License = EnvelopeParts.License(licenseState),
-            Warnings = EnvelopeParts.CombineWarnings([.. loaded.Warnings() ?? [], sheetsSkipped]),
-        };
-    }
-
     /// <summary>The one-line reason a sheet was skipped, for the warning message.</summary>
     private static string DescribeSkip(CliException exception) =>
         exception.Code == ErrorCodes.RenderFailed
@@ -248,7 +237,7 @@ internal static class CellsRender
     /// replaced with one underscore (a run of them collapses to one) using a
     /// fixed, platform-independent set so the same workbook names the same
     /// files everywhere; a collision after sanitizing appends the sheet's
-    /// zero-based workbook index. A single sheet is written to the output path itself.
+    /// 1-based workbook position. A single sheet is written to the output path itself.
     /// </summary>
     private static IReadOnlyList<string> DerivePerSheetPaths(ResolvedOutput output, IReadOnlyList<Worksheet> sheets)
     {
@@ -264,13 +253,13 @@ internal static class CellsRender
             string label = SanitizeFileNamePart(sheets[i].Name);
             if (!taken.Add(label))
             {
-                label = $"{label}{sheets[i].Index}";
+                label = $"{label}{sheets[i].Index + 1}";
                 for (int suffix = 2; !taken.Add(label); suffix++)
                 {
                     // Degenerate double collision (a sheet literally named like
                     // another's fallback); keep appending until unique so two
                     // sheets can never target the same file.
-                    label = $"{SanitizeFileNamePart(sheets[i].Name)}{sheets[i].Index}-{suffix}";
+                    label = $"{SanitizeFileNamePart(sheets[i].Name)}{sheets[i].Index + 1}-{suffix}";
                 }
             }
 

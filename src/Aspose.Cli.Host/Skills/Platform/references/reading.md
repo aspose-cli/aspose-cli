@@ -17,8 +17,8 @@ diffed.
 | Rung | Command | Answers |
 |------|---------|---------|
 | 1. Structure | `<product> inspect` | Counts, names, ids, properties; `--detail` adds the sections you name, `--sample` a bounded sample |
-| 2. Window | `cells query range`, `pdf read`, `slides read`, `words read` | The content of a selected range, pages, slides or blocks |
-| 3. Search | `cells query search`, `pdf search`, `slides search`, `words search` | Where a pattern occurs |
+| 2. Window | `cells read`, `pdf read`, `slides read`, `words read` | The content of a selected range, pages, slides or blocks |
+| 3. Search | `cells search`, `pdf search`, `slides search`, `words search` | Where a pattern occurs |
 | 4. Look | `review`, `<product> render` | What data cannot show: layout, clipping, overlap, charts |
 
 Take addresses (sheet names, page and slide numbers, block numbers, shape ids)
@@ -45,7 +45,7 @@ Every bounded read and search reports `window` after its payload
   "unit": "hit",
   "returned": 2,
   "truncated": true,
-  "next": "aspose-cli cells query search \"C:\\work\\book.xlsx\" --pattern x --scope values --max-hits 2 --skip 2 --output-format json"
+  "next": "aspose-cli cells search \"C:\\work\\book.xlsx\" --pattern x --content values --max-hits 2 --skip 2 --output-format json"
 }
 ```
 

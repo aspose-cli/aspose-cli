@@ -13,7 +13,7 @@ specific to workbooks.
 
 ## Workbook rules
 
-1. Read the numbers you report with `cells query range`.
+1. Read the numbers you report with `cells read`.
 2. If a number can be computed from other cells, write a formula; the engine
    recalculates after every edit.
 3. Name the sheet on every read, render and operation (`--sheet`, `"sheet"`);
@@ -29,8 +29,8 @@ Structure first, then windows of one sheet:
 ```
 aspose-cli cells inspect book.xlsx --output-format compact
 aspose-cli cells inspect book.xlsx --sample --detail names errors --output-format json
-aspose-cli cells query range book.xlsx --sheet Sales --range A1:F50 --output-format json
-aspose-cli cells query search book.xlsx --pattern "Total" --output-format json
+aspose-cli cells read book.xlsx --sheet Sales --range A1:F50 --output-format json
+aspose-cli cells search book.xlsx --pattern "Total" --output-format json
 ```
 
 - `--detail` adds `names` (`workbook.definedNames`), `errors`
@@ -38,16 +38,15 @@ aspose-cli cells query search book.xlsx --pattern "Total" --output-format json
   `layout` (`workbook.layouts`: frozen panes, outline groups, AutoFilter,
   print area and titles, page setup other than paper size and margins),
   `fonts`, `tables`, `charts` and `pivots`.
-- `--sample` shows display values for layout only. `query range` and its `t`
+- `--sample` shows display values for layout only. `read` and its `t`
   field (`string`, `number`, `boolean`, `datetime`, `error`, `empty`) are the
   type authority.
-- `--scope values` (default), `formulas` (adds `f`), `styles` (a
+- `--content values` (default), `formulas` (adds `f`), `styles` (a
   deduplicated style pool) or `full`. Style fields read back under the names
   `format_range` writes.
-- Give explicit bounds; `A:A` is refused. A read without `--range` of a sheet
-  larger than `--max-cells` returns a summary and a `window.next` command for
-  the first page; an explicit `--range` larger than that fails with
-  `RANGE_TOO_LARGE`, and its hint is that command. Follow each `window.next`.
+- Give explicit bounds; `A:A` is refused. A read larger than `--max-cells`,
+  with or without `--range`, returns its first window and a `window.next`
+  command for the next one. Follow each `window.next`.
 - CSV and TSV inputs are read as UTF-8 with invariant number and date formats.
   A file that needs anything else is refused rather than misread:
   `INPUT_ENCODING_INVALID` for other encodings (typical of Chinese ERP exports),
@@ -94,10 +93,10 @@ aspose-cli schema v2/cells/ops --operation format_range
 
 | tier | check |
 |------|-------|
-| values | `cells query range` every changed range |
+| values | `cells read` every changed range |
 | visual | `aspose-cli review book.xlsx --out <new-dir> --output-format json`, then open every sheet image |
-| widths | `cells render --sheet S --range A1:G20` |
-| semantic | `cells inspect --detail errors` reports no formula errors; `cells query search` finds no placeholders |
+| widths | `cells render --range S!A1:G20` |
+| semantic | `cells inspect --detail errors` reports no formula errors; `cells search` finds no placeholders |
 | session | `cells compare book.backup.xlsx book.xlsx` lists only intended value and formula changes |
 
 Tiers and render facts: `aspose-cli docs cells/verification`.
@@ -106,13 +105,14 @@ Tiers and render facts: `aspose-cli docs cells/verification`.
 
 ```
 aspose-cli cells convert book.xlsx --to pdf
-aspose-cli cells convert book.xlsx --to csv --sheet Sales
-aspose-cli cells render book.xlsx --all-sheets --out book.png
+aspose-cli cells convert book.xlsx --to csv --sheets 2
+aspose-cli cells render book.xlsx --sheets all --out book.png
 ```
 
 `cells convert book.xlsx --to xltx` saves an Excel template (xltm keeps macros);
 new workbooks made from it in Excel start with its sheets, styles and protection.
-`cells convert` takes `--sheet` for csv, tsv, md and pdf. CSV and TSV output is
+`cells convert` takes `--sheets` (positions from `cells inspect`): one sheet
+for csv, tsv and md, any for pdf. CSV and TSV output is
 UTF-8 without a byte order mark; add `--bom` when a person will open the file in
 Excel, which otherwise misreads non-English text. A PDF that splits a
 chart across pages warns `CHART_SPLIT_ACROSS_PAGES` (review reports

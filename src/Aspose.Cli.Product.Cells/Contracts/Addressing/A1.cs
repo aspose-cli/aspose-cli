@@ -23,7 +23,7 @@ internal static class A1
     public const int MaxColumns = 16_384;
 
     /// <summary>Parses a range specification, optionally sheet-qualified.</summary>
-    /// <exception cref="CliException"><c>RANGE_INVALID</c> when the spec cannot be parsed.</exception>
+    /// <exception cref="CliException"><c>OPS_INVALID</c> when the spec cannot be parsed.</exception>
     public static RangeSpec ParseRange(string spec)
     {
         ArgumentNullException.ThrowIfNull(spec);
@@ -51,7 +51,7 @@ internal static class A1
     }
 
     /// <summary>Parses a single cell reference such as <c>B3</c> or <c>$B$3</c>.</summary>
-    /// <exception cref="CliException"><c>RANGE_INVALID</c> when the text is not a cell.</exception>
+    /// <exception cref="CliException"><c>OPS_INVALID</c> when the text is not a cell.</exception>
     public static CellRef ParseCell(string cell)
     {
         ArgumentNullException.ThrowIfNull(cell);
@@ -59,7 +59,7 @@ internal static class A1
     }
 
     /// <summary>Parses column letters (e.g. <c>B</c>, <c>AA</c>) to a zero-based column index.</summary>
-    /// <exception cref="CliException"><c>RANGE_INVALID</c> when the text is not a column.</exception>
+    /// <exception cref="CliException"><c>OPS_INVALID</c> when the text is not a column.</exception>
     public static int ParseColumn(string letters)
     {
         ArgumentNullException.ThrowIfNull(letters);
@@ -78,7 +78,7 @@ internal static class A1
     /// Parses a whole-row band such as <c>1:3</c>, <c>$1:$3</c> or <c>2</c> into its
     /// absolute form <c>$1:$3</c>, the only place whole rows are addressable.
     /// </summary>
-    /// <exception cref="CliException"><c>RANGE_INVALID</c> when the text is not a row band.</exception>
+    /// <exception cref="CliException"><c>OPS_INVALID</c> when the text is not a row band.</exception>
     public static string ParseRowBand(string band) => ParseBand(band, part =>
     {
         if (!int.TryParse(part, System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out int row)
@@ -94,7 +94,7 @@ internal static class A1
     /// Parses a whole-column band such as <c>A:B</c>, <c>$A:$B</c> or <c>C</c> into its
     /// absolute form <c>$A:$B</c>.
     /// </summary>
-    /// <exception cref="CliException"><c>RANGE_INVALID</c> when the text is not a column band.</exception>
+    /// <exception cref="CliException"><c>OPS_INVALID</c> when the text is not a column band.</exception>
     public static string ParseColumnBand(string band) => ParseBand(band, ParseColumn, ColumnName);
 
     private static string ParseBand(string band, Func<string, int> parse, Func<int, string> format)

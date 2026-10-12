@@ -124,7 +124,7 @@ public sealed class CellsOperationBehaviorTests : IClassFixture<CellsFixture>
                 Assert.NotEqual(20d, cells.GetColumnWidth(0));
             }),
         ["add_sheet"] = (
-            """{ "op": "add_sheet", "name": "Summary", "position": 0 }""",
+            """{ "op": "add_sheet", "name": "Summary", "at": 1 }""",
             static workbook => Assert.Equal(["Summary", "Data", "Second", "Backstage"], SheetNames(workbook))),
         ["rename_sheet"] = (
             """{ "op": "set_formula", "sheet": "Data", "range": "D1", "formula": "=Second!A1" }, { "op": "rename_sheet", "sheet": "Second", "to": "Notes" }""",
@@ -144,7 +144,7 @@ public sealed class CellsOperationBehaviorTests : IClassFixture<CellsFixture>
                 Assert.False(workbook.Worksheets["Second"].IsVisible);
             }),
         ["move_sheet"] = (
-            """{ "op": "move_sheet", "sheet": "Backstage", "position": 0 }""",
+            """{ "op": "move_sheet", "sheet": "Backstage", "to": 1 }""",
             static workbook => Assert.Equal(["Backstage", "Data", "Second"], SheetNames(workbook))),
         ["set_active_sheet"] = (
             """{ "op": "set_active_sheet", "sheet": "Second" }""",
@@ -294,7 +294,7 @@ public sealed class CellsOperationBehaviorTests : IClassFixture<CellsFixture>
             """
             { "op": "create_chart", "sheet": "Data", "type": "column", "dataRange": "A1:C2", "at": "E2:K12" },
             { "op": "create_chart", "sheet": "Data", "type": "line", "dataRange": "A1:C2", "at": "E14:K24" },
-            { "op": "delete_chart", "sheet": "Data", "index": 0 }
+            { "op": "delete_chart", "sheet": "Data", "index": 1 }
             """,
             static workbook =>
             {
@@ -392,7 +392,7 @@ public sealed class CellsOperationBehaviorTests : IClassFixture<CellsFixture>
                 Batch = Parse("""
                 { "ops": [
                   { "op": "create_chart", "sheet": "Data", "type": "pie", "dataRange": "A1:B2", "at": "E2:K12", "title": "Share" },
-                  { "op": "update_chart", "sheet": "Data", "index": 0, "title": "Changed", "axisTitles": { "value": "USD" } }
+                  { "op": "update_chart", "sheet": "Data", "index": 1, "title": "Changed", "axisTitles": { "value": "USD" } }
                 ] }
                 """),
                 Output = TestOutput.At(_fixture.Temp.File("pie.out.xlsx"), overwrite: true),
@@ -445,14 +445,14 @@ public sealed class CellsOperationBehaviorTests : IClassFixture<CellsFixture>
             _fixture.CreateSalesWorkbook("missing-chart.xlsx"),
             """
             { "op": "create_chart", "sheet": "Data", "type": "column", "dataRange": "A1:C2", "at": "E2:K12" },
-            { "op": "delete_chart", "sheet": "Data", "index": 1 }
+            { "op": "delete_chart", "sheet": "Data", "index": 2 }
             """,
             "missing-chart.out.xlsx"));
 
         Assert.Equal(CellsDiagnostics.ChartNotFound, error.Code);
-        Assert.Equal("1", error.Details!["requested"]!.GetValue<string>());
+        Assert.Equal("2", error.Details!["requested"]!.GetValue<string>());
         Assert.Equal(1, error.Details["availableCount"]!.GetValue<int>());
-        Assert.Contains("0 through 0", error.Hint, StringComparison.Ordinal);
+        Assert.Contains("1 through 1", error.Hint, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -476,7 +476,7 @@ public sealed class CellsOperationBehaviorTests : IClassFixture<CellsFixture>
             source, """{ "op": "delete_chart", "sheet": "Data", "name": "Revenue" }""", "chart-names.out.xlsx"));
 
         Assert.Equal(ErrorCodes.OpsInvalid, ambiguous.Code);
-        Assert.Contains("at indexes 0, 2", ambiguous.Details!["reason"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.Contains("at indexes 1, 3", ambiguous.Details!["reason"]!.GetValue<string>(), StringComparison.Ordinal);
         Assert.Equal(CellsDiagnostics.ChartNotFound, missing.Code);
         Assert.Equal(["Sales", "Costs", "Sales"], missing.Details!["available"]!.AsArray().Select(static name => name!.GetValue<string>()));
     }

@@ -124,16 +124,16 @@ internal static partial class ContractRules
                 {
                     yield return OutputNames(product, $"{render} {all.Name}", units: 2,
                         [.. render.Tokens, "<two>", all.Name, .. image, "--out", "page.png"],
-                        static names => [.. names.Select(static name => $"page.{name}.png")], perSheet: all.Name == "--all-sheets");
+                        static names => [.. names.Select(static name => $"page.{name}.png")], perSheet: render.Has("--sheets"));
                 }
                 else
                 {
                     yield return OutputNames(product, $"{render} of every unit by default", units: 2,
                         [.. render.Tokens, "<two>", .. image, "--out", "page.png"],
-                        static names => [.. names.Select(static name => $"page.{name}.png")]);
+                        static names => [.. names.Select(static name => $"page.{name}.png")], perSheet: render.Has("--sheets"));
                 }
                 // The seed document may hold more than one unit, so a selection names the first.
-                string[] first = render.Options.FirstOrDefault(static option => option.Name is "--pages" or "--slides") is { } selection
+                string[] first = render.Options.FirstOrDefault(static option => option.Name is "--pages" or "--slides" or "--sheets") is { } selection
                     ? [selection.Name, "1"]
                     : [];
                 yield return OutputNames(product, $"{render} one unit", units: 1,
@@ -247,9 +247,11 @@ internal static partial class ContractRules
         {
             return (null, [], run.Unjudged ? null : "building the document failed: " + run.Describe());
         }
-        // The sheets the product sees, which in evaluation mode include the warning sheets it adds.
+        // The sheets the product sees, less the warning sheets an evaluation save adds: inspect
+        // lists them, but every default sheet selection of Cells leaves them out, as a render of
+        // every sheet does, so a licensed and an evaluation run name the same files.
         RuleRun inspected = workspace.Json(product, "inspect", name);
-        return (name, [.. OperationRuns.Sheets(inspected.Document)], null);
+        return (name, [.. OperationRuns.Sheets(inspected.Document).Where(static sheet => !EvaluationWarningSheet().IsMatch(sheet))], null);
     }
 
     // ----- C-R15: a read or search over its budget truncates and continues -----------------------
@@ -767,6 +769,10 @@ internal static partial class ContractRules
     /// <summary>A target that names a unit, such as <c>slide</c>, then its address; a product name is not a unit.</summary>
     private static bool IsUnitAddress(string target, string[] products) =>
         UnitAddress().Match(target) is { Success: true } match && !products.Contains(match.Groups["unit"].Value);
+
+    /// <summary>The name of a warning sheet an evaluation save adds to a workbook.</summary>
+    [GeneratedRegex(@"^Evaluation Warning( \(\d+\))?$", RegexOptions.CultureInvariant)]
+    private static partial Regex EvaluationWarningSheet();
 
     [GeneratedRegex(@"^(?<unit>[a-z]+(?:-[a-z]+)*)/\S")]
     private static partial Regex UnitAddress();

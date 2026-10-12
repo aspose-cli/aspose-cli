@@ -17,7 +17,7 @@ public sealed partial class OptionRangeHelpTests
     private static readonly string[] Bounded =
     [
         "--dpi", "--grid", "--width", "--max-blocks", "--max-chars", "--max-hits", "--max-cells", "--max-diffs",
-        "--preview-rows", "--max-items", "--port", "--max-input-bytes",
+        "--sample-rows", "--max-items", "--port", "--max-input-bytes",
     ];
 
     [Fact]

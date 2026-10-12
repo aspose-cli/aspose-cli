@@ -36,7 +36,7 @@
       "invariant": "C-R17",
       "rule": "C-R17",
       "cause": "cells-enum-values-camel-case",
-      "actual": "cellsValidationInfo.type.anyOf[0]: enum values wholeNumber, textLength are not lowercase kebab-case"
+      "actual": "cellsValidationInfo.kind.anyOf[0]: enum values wholeNumber, textLength are not lowercase kebab-case"
     },
     {
       "case": "C-R20 | v2/cells/ops field bottom",
@@ -58,20 +58,6 @@
       "rule": "C-R20",
       "cause": "cells-field-types-disagree",
       "actual": "number in cellsMargins; string in set_page_setup"
-    },
-    {
-      "case": "C-R20 | v2/cells/ops field position",
-      "invariant": "C-R20",
-      "rule": "C-R20",
-      "cause": "cells-field-types-disagree",
-      "actual": "enum in cellsChartLegend; integer in add_sheet, import_sheet, move_sheet"
-    },
-    {
-      "case": "C-R20 | v2/cells/ops field values",
-      "invariant": "C-R20",
-      "rule": "C-R20",
-      "cause": "cells-field-types-disagree",
-      "actual": "array of array of boolean/number/string in set_values; array of object{field,function,label,numberFormat} in create_pivot"
     },
     {
       "case": "C-R20 | v2/cells/ops#copy_range ranges",
@@ -128,13 +114,6 @@
       "rule": "C-R20",
       "cause": "cells-from-to-ranges",
       "actual": "to: to ends a from-to range; a range names its ends first and last"
-    },
-    {
-      "case": "C-R33 | v2/cells/inspect-result names",
-      "invariant": "C-R33",
-      "rule": "C-R33",
-      "cause": "cells-has-vba-not-has-macros",
-      "actual": "cellsWorkbookSummary.hasVba: the other products name this fact hasMacros"
     },
     {
       "case": "C-R30 | cells add_comment",
@@ -444,41 +423,6 @@
       "actual": "paperSize: no read reports it; margins: no read reports it"
     },
     {
-      "case": "C-R28 | cells code names",
-      "invariant": "C-R28",
-      "rule": "C-R28",
-      "cause": "cells-partial-render-warning-has-a-product-prefix",
-      "actual": "CELLS_SHEET_PARTIALLY_RENDERED: a warning code carries no product prefix (CELLS_)"
-    },
-    {
-      "case": "C-R16 | cells query range --range all",
-      "invariant": "C-R16",
-      "rule": "C-R16",
-      "cause": "cells-range-all-unsupported",
-      "actual": "exit 4 RANGE_INVALID, expected 0: Invalid range 'all': 'all' is missing a row number (whole-column ranges are not supported; give explicit bounds like A1:A100)"
-    },
-    {
-      "case": "C-R16 | cells render --range all",
-      "invariant": "C-R16",
-      "rule": "C-R16",
-      "cause": "cells-range-all-unsupported",
-      "actual": "exit 4 RANGE_INVALID, expected 0: Invalid range 'all': 'all' is missing a row number (whole-column ranges are not supported; give explicit bounds like A1:A100)"
-    },
-    {
-      "case": "C-R16 | cells query range --range A1:!!",
-      "invariant": "C-R16",
-      "rule": "C-R16",
-      "cause": "cells-range-syntax-error-is-not-option-invalid",
-      "actual": "exit 4 RANGE_INVALID, expected 2: Invalid range 'A1:!!': missing cell range after the sheet name; RANGE_INVALID: Invalid range 'A1:!!': missing cell range after the sheet name, expected OPTION_INVALID"
-    },
-    {
-      "case": "C-R16 | cells render --range A1:!!",
-      "invariant": "C-R16",
-      "rule": "C-R16",
-      "cause": "cells-range-syntax-error-is-not-option-invalid",
-      "actual": "exit 4 RANGE_INVALID, expected 2: Invalid range 'A1:!!': missing cell range after the sheet name; RANGE_INVALID: Invalid range 'A1:!!': missing cell range after the sheet name, expected OPTION_INVALID"
-    },
-    {
       "case": "C-R21 | v2/cells/ops#freeze_panes",
       "invariant": "C-R21",
       "rule": "C-R21",
@@ -521,18 +465,11 @@
       "actual": "range: read back as printArea"
     },
     {
-      "case": "C-R15 | cells query range --range A1:B3 --max-cells 1",
-      "invariant": "C-R15",
-      "rule": "C-R15",
-      "cause": "cells-read-refuses-over-budget-range",
-      "actual": "exit 4 RANGE_TOO_LARGE, expected 0: The request covers 6 cells which exceeds the limit of 1.; window.truncated is missing, expected true; window.next is missing; window.unit is missing, expected \"cell\""
-    },
-    {
       "case": "C-R20 | v2/cells/ops field at",
       "invariant": "C-R20",
       "rule": "C-R20",
       "cause": "cells-row-and-cell-fields-share-names",
-      "actual": "integer in delete_rows, insert_rows; string in create_chart, create_pivot, delete_columns and 2 more"
+      "actual": "integer in add_sheet, delete_rows, import_sheet and 1 more; string in create_chart, create_pivot, delete_columns and 2 more"
     },
     {
       "case": "C-R20 | v2/cells/ops field from",
@@ -546,7 +483,7 @@
       "invariant": "C-R20",
       "rule": "C-R20",
       "cause": "cells-row-and-cell-fields-share-names",
-      "actual": "integer in group_rows, resize_rows, ungroup_rows; string in copy_range, group_columns, import_range and 3 more"
+      "actual": "integer in group_rows, move_sheet, resize_rows and 1 more; string in copy_range, group_columns, import_range and 3 more"
     },
     {
       "case": "C-R19 | cells set_validation applied twice",
@@ -554,55 +491,6 @@
       "rule": "C-R19",
       "cause": "cells-set-validation-appends",
       "actual": "applied twice, it leaves another state than applied once, from cells inspect: workbook.validations"
-    },
-    {
-      "case": "C-R18 | v2/cells/ops#add_sheet",
-      "invariant": "C-R18",
-      "rule": "C-R18",
-      "cause": "cells-sheet-and-chart-positions-zero-based",
-      "actual": "position: minimum 0, not 1"
-    },
-    {
-      "case": "C-R18 | v2/cells/ops#delete_chart",
-      "invariant": "C-R18",
-      "rule": "C-R18",
-      "cause": "cells-sheet-and-chart-positions-zero-based",
-      "actual": "index: minimum 0, not 1"
-    },
-    {
-      "case": "C-R18 | v2/cells/ops#import_sheet",
-      "invariant": "C-R18",
-      "rule": "C-R18",
-      "cause": "cells-sheet-and-chart-positions-zero-based",
-      "actual": "position: minimum 0, not 1"
-    },
-    {
-      "case": "C-R18 | v2/cells/ops#move_sheet",
-      "invariant": "C-R18",
-      "rule": "C-R18",
-      "cause": "cells-sheet-and-chart-positions-zero-based",
-      "actual": "position: minimum 0, not 1"
-    },
-    {
-      "case": "C-R18 | v2/cells/ops#update_chart",
-      "invariant": "C-R18",
-      "rule": "C-R18",
-      "cause": "cells-sheet-and-chart-positions-zero-based",
-      "actual": "index: minimum 0, not 1"
-    },
-    {
-      "case": "C-R18 | v2/cells/inspect-result",
-      "invariant": "C-R18",
-      "rule": "C-R18",
-      "cause": "cells-sheet-and-chart-positions-zero-based",
-      "actual": "cellsChartInfo.index: minimum 0, not 1; cellsSheetInfo.position: minimum 0, not 1"
-    },
-    {
-      "case": "C-R18 | v2/cells/read-result",
-      "invariant": "C-R18",
-      "rule": "C-R18",
-      "cause": "cells-sheet-and-chart-positions-zero-based",
-      "actual": "cellsSheetProjection.position: minimum 0, not 1"
     },
     {
       "case": "C-R21 | v2/cells/ops#add_comment",
@@ -630,7 +518,7 @@
       "invariant": "C-R21",
       "rule": "C-R21",
       "cause": "cells-state-not-read-back",
-      "actual": "dataRange: no read reports it; title: no read reports it; seriesInRows: no read reports it; legend: no read reports it; axisTitles: no read reports it; seriesColors: no read reports it; dataLabels: no read reports it"
+      "actual": "type: read back as kind; dataRange: no read reports it; title: no read reports it; seriesInRows: no read reports it; legend: no read reports it; axisTitles: no read reports it; seriesColors: no read reports it; dataLabels: no read reports i..."
     },
     {
       "case": "C-R21 | v2/cells/ops#create_pivot",
@@ -721,14 +609,14 @@
       "invariant": "C-R21",
       "rule": "C-R21",
       "cause": "cells-state-not-read-back",
-      "actual": "operator: no read reports it; value1: no read reports it; value2: no read reports it; listItems: no read reports it; listSource: no read reports it; inputMessage: no read reports it; errorMessage: no read reports it; allowBlank: no read rep..."
+      "actual": "type: read back as kind; operator: no read reports it; value1: no read reports it; value2: no read reports it; listItems: no read reports it; listSource: no read reports it; inputMessage: no read reports it; errorMessage: no read reports it..."
     },
     {
       "case": "C-R21 | v2/cells/ops#update_chart",
       "invariant": "C-R21",
       "rule": "C-R21",
       "cause": "cells-state-not-read-back",
-      "actual": "title: no read reports it; dataRange: no read reports it; seriesInRows: no read reports it; legend: no read reports it; axisTitles: no read reports it; seriesColors: no read reports it; dataLabels: no read reports it"
+      "actual": "title: no read reports it; dataRange: no read reports it; type: read back as kind; seriesInRows: no read reports it; legend: no read reports it; axisTitles: no read reports it; seriesColors: no read reports it; dataLabels: no read reports i..."
     },
     {
       "case": "C-R20 | v2/cells/ops#cellsConditionalStyle spelling",
@@ -773,13 +661,6 @@
       "actual": "Contracts/JsonValueMatrix.cs: '--data' is no option of any command"
     },
     {
-      "case": "C-R08 | cells compare",
-      "invariant": "C-R08",
-      "rule": "C-R08",
-      "cause": "compare-content-option-named-compare",
-      "actual": "cells compare --compare: a banned name; what a compare compares is --content."
-    },
-    {
       "case": "C-R20 | v2/cells/ops#cellsConditionalStyle fixednames",
       "invariant": "C-R20",
       "rule": "C-R20",
@@ -806,34 +687,6 @@
       "rule": "C-R20",
       "cause": "font-size-not-named-font-size",
       "actual": "cellsStyleData.size: a font size is named fontSize; cellsStyleData.bg: a fill is named fillColor"
-    },
-    {
-      "case": "C-R36 | cells formats",
-      "invariant": "C-R36",
-      "rule": "C-R36",
-      "cause": "format-ids-have-aliases",
-      "actual": "cells format md has the aliases markdown."
-    },
-    {
-      "case": "C-R34 | cells query range",
-      "invariant": "C-R34",
-      "rule": "C-R34",
-      "cause": "help-examples-and-links-not-declared",
-      "actual": "has no Learn more"
-    },
-    {
-      "case": "C-R34 | cells query search",
-      "invariant": "C-R34",
-      "rule": "C-R34",
-      "cause": "help-examples-and-links-not-declared",
-      "actual": "has no Learn more"
-    },
-    {
-      "case": "C-R08 | cells inspect",
-      "invariant": "C-R08",
-      "rule": "C-R08",
-      "cause": "inspect-preview-not-sample",
-      "actual": "cells inspect --preview-rows: a banned name; a sample is --sample or --sample-rows."
     },
     {
       "case": "C-R20 | v2/cells/ops field height",
@@ -948,53 +801,11 @@
       "actual": "cells object{bottom,footer,header,left,right,top}; words object{bottom,left,right,top}"
     },
     {
-      "case": "C-R31 | v2/cells/render-result outputs",
-      "invariant": "C-R31",
-      "rule": "C-R31",
-      "cause": "outputs-shapes-differ",
-      "actual": "outputs[]: lacks format, fingerprint"
-    },
-    {
       "case": "C-R20 | v2/cells/ops#set_page_setup fixednames",
       "invariant": "C-R20",
       "rule": "C-R20",
       "cause": "page-size-not-named-page-size",
       "actual": "paperSize: a page size is named pageSize"
-    },
-    {
-      "case": "C-R01 | cells",
-      "invariant": "C-R01",
-      "rule": "C-R01",
-      "cause": "query-is-a-third-command-level",
-      "actual": "cells query is a command group below the product; its subcommands are a third level.; cells query range is a third command level; a product command is `aspose-cli <product> <verb> <file...>`.; cells query search is a third command level; a ..."
-    },
-    {
-      "case": "C-R02 | cells",
-      "invariant": "C-R02",
-      "rule": "C-R02",
-      "cause": "query-is-a-third-command-level",
-      "actual": "cells query: 'query' is not a product verb (inspect, read, search, create, edit, convert, render, compare, extract, split, merge, sign, validate)."
-    },
-    {
-      "case": "C-R04 | cells query range budget hint",
-      "invariant": "C-R04",
-      "rule": "C-R04",
-      "cause": "range-too-large-hint-names-scan-range",
-      "actual": "the RANGE_TOO_LARGE hint names the hidden option --scan-range"
-    },
-    {
-      "case": "C-R08 | cells render",
-      "invariant": "C-R08",
-      "rule": "C-R08",
-      "cause": "render-all-option-not-selection-all",
-      "actual": "cells render --all-sheets: a banned name; a selection takes the value all, such as --pages all."
-    },
-    {
-      "case": "C-R32 | v2/cells/search-result hits",
-      "invariant": "C-R32",
-      "rule": "C-R32",
-      "cause": "search-hit-text-named-snippet-or-value",
-      "actual": "hits[] does not require text (it has value)"
     },
     {
       "case": "C-R20 | v2/cells/ops#import_range secrets",
@@ -1044,13 +855,6 @@
       "rule": "C-R20",
       "cause": "variant-field-named-type",
       "actual": "type: a variant named type, not kind"
-    },
-    {
-      "case": "C-R20 | v2/cells/inspect-result variants",
-      "invariant": "C-R20",
-      "rule": "C-R20",
-      "cause": "variant-field-named-type",
-      "actual": "cellsChartInfo.type: a variant named type, not kind; cellsValidationInfo.type: a variant named type, not kind"
     }
   ]
 }

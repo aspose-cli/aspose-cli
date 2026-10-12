@@ -381,6 +381,9 @@ internal static partial class ContractRules
     /// </summary>
     private static readonly Dictionary<(string Schema, string Field), (string[] Definitions, string Reason)> ShapedByTheirObject = new()
     {
+        [("v2/cells/ops", "values")] = (
+            ["create_pivot", "set_values"],
+            "values are the values of the object they fill (user, 2026-10-12): a range's a row-major matrix, a pivot table's its value fields"),
         [("v2/words/ops", "at")] = (
             ["insert_bookmark", "insert_break", "insert_field", "insert_hyperlink", "insert_image", "insert_markdown", "insert_paragraphs", "insert_section", "insert_table", "insert_toc", "repeat_table_row"],
             "at names where the new content goes in the object it addresses: a block address for the content of a section's body, the 1-based section number for insert_section, as slides insert_section names a slide"),

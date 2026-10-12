@@ -40,7 +40,7 @@ internal static class InfoProjection
             Name = Path.GetFileName(request.Input),
             SheetCount = sheets.Count,
             Sheets = sheets,
-            HasVba = workbook.HasMacro,
+            HasMacros = workbook.HasMacro,
             DefinedNameCount = DefinedNames.Of(workbook).Count(),
             StructureProtected = Sheets.StructureProtected(workbook),
             StructurePasswordProtected = Sheets.StructurePasswordProtected(workbook),
@@ -69,7 +69,7 @@ internal static class InfoProjection
         return new CellsSheetInfo
         {
             Name = sheet.Name,
-            Position = index,
+            Position = index + 1,
             UsedRange = usedRange is { } range ? A1.FormatRange(range) : null,
             RowCount = usedRange?.RowCount ?? 0,
             ColumnCount = usedRange?.ColumnCount ?? 0,
@@ -80,7 +80,7 @@ internal static class InfoProjection
             PivotTableCount = sheet.PivotTables.Count,
             // A used range implies data; its (0,0) origin makes End the old max row/column.
             Preview = request.IncludePreview && usedRange is { } previewRange
-                ? BuildPreview(sheet, previewRange, request.PreviewRows)
+                ? BuildPreview(sheet, previewRange, request.SampleRows)
                 : null,
         };
     }
@@ -129,7 +129,7 @@ internal static class InfoProjection
     /// <summary>How to read formula errors beyond a capped list.</summary>
     internal const string FormulaErrorsCappedHint =
         "Sheets scanned after the cap are not represented; read a sheet with "
-            + "'cells query range --sheet <name>' and look for cells of type error.";
+            + "'cells read --sheet <name>' and look for cells of type error.";
 
     /// <summary>Counts every stored error under the work budget and returns the first bounded sample.</summary>
     internal static (IReadOnlyList<CellsCellError> Errors, int Total) ScanFormulaErrors(
@@ -191,9 +191,9 @@ internal static class InfoProjection
                 charts.Add(new CellsChartInfo
                 {
                     Sheet = sheet.Name,
-                    Index = index,
+                    Index = index + 1,
                     Name = chart.Name,
-                    Type = VocabularyName(chart.Type),
+                    Kind = VocabularyName(chart.Type),
                 });
             }
         }
@@ -235,7 +235,7 @@ internal static class InfoProjection
                     {
                         Sheet = sheet.Name,
                         Range = FormatArea(area),
-                        Type = VocabularyName(validation.Type),
+                        Kind = VocabularyName(validation.Type),
                     });
                 }
             }

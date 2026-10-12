@@ -1,5 +1,6 @@
 using Aspose.Cells;
 using Aspose.Cli.Product.Cells.Contracts;
+using Aspose.Cli.Sdk.Addressing;
 using Xunit;
 
 namespace Aspose.Cli.Product.Cells.Tests;
@@ -32,11 +33,11 @@ public sealed class CellsTextSelectionTests : IClassFixture<CellsTextSelectionFi
         {
             Input = source,
             Output = TestOutput.At(output, format: format, overwrite: true),
-            SheetName = "Detail",
+            Sheets = PageRange.Parse("2"),
         };
 
         CellsConvertResult result = CellsConvert.Run(_fixture.Session, request);
-        Assert.Equal("Detail", result.Sheet);
+        Assert.Equal(["Detail"], result.Sheets);
         string text = File.ReadAllText(output);
         Assert.Contains("SO-001", text, StringComparison.Ordinal);
         Assert.DoesNotContain("Executive overview", text, StringComparison.Ordinal);
@@ -56,10 +57,10 @@ public sealed class CellsTextSelectionTests : IClassFixture<CellsTextSelectionFi
         {
             Input = source,
             Output = TestOutput.At(output, format: format, overwrite: true),
-            SheetName = "Dashboard",
+            Sheets = PageRange.Parse("1"),
         });
 
-        Assert.Equal("Dashboard", result.Sheet);
+        Assert.Equal(["Dashboard"], result.Sheets);
         string text = File.ReadAllText(output);
         Assert.Contains("Executive overview", text, StringComparison.Ordinal);
         Assert.DoesNotContain("SO-001", text, StringComparison.Ordinal);

@@ -830,6 +830,21 @@ public static partial class CliErrors
     }
 
     /// <summary>
+    /// A value of an operation field that does not parse, such as an A1 reference, raised by a
+    /// parser that operations and options share: <c>OPS_INVALID</c> with the reason in
+    /// <c>details.reason</c>, which an operation's field check quotes. A command that parses an
+    /// option with the same parser reports <see cref="OptionInvalid(string, string, string)"/> instead.
+    /// </summary>
+    /// <param name="message">The sentence that names the value and why it does not parse.</param>
+    /// <param name="reason">Why it does not parse, without the value's field.</param>
+    /// <param name="hint">The forms the value takes.</param>
+    public static CliException OperationValueInvalid(string message, string reason, string hint) => CliException.Create(
+        ErrorCodes.OpsInvalid,
+        message,
+        hint: hint,
+        details: new JsonObject { ["reason"] = reason });
+
+    /// <summary>
     /// An option or positional argument used wrongly. <paramref name="option"/> names an option
     /// such as <c>--pages</c>, stated in <c>details.option</c>, or an argument such as
     /// <c>file</c>, stated in <c>details.argument</c>.

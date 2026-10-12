@@ -2,7 +2,10 @@ using Aspose.Cells;
 
 namespace Aspose.Cli.Product.Cells.Engine.Mapping;
 
-/// <summary>A storage value for comparison, independent of display formatting and date systems.</summary>
+/// <summary>
+/// A storage value for comparison, independent of display formatting and date systems: a date
+/// compares as its serial number, so formatting a number as a date is no difference.
+/// </summary>
 internal readonly record struct ComparisonValue(string Type, object? Value)
 {
     internal static ComparisonValue From(Cell? cell) => cell?.Type switch
@@ -15,7 +18,12 @@ internal readonly record struct ComparisonValue(string Type, object? Value)
         _ => throw new InvalidDataException("The workbook contains an unsupported comparison value type."),
     };
 
-    internal CellsCellSide? Side(string? formula) =>
+    /// <summary>One side of a difference: a date reported as ISO 8601, as a read reports it.</summary>
+    /// <param name="cell">The cell the value came from.</param>
+    /// <param name="formula">The cell's formula, when in scope.</param>
+    internal CellsCellSide? Side(Cell? cell, string? formula) =>
         Type == CellsCellValueTypes.Empty && formula is null ? null
-            : new CellsCellSide { T = Type, V = Value, F = formula };
+            : cell?.Type == CellValueType.IsDateTime
+                ? new CellsCellSide { T = CellsCellSideTypes.DateTime, V = CellMapper.FormatDateTime(cell.DateTimeValue), F = formula }
+                : new CellsCellSide { T = Type, V = Value, F = formula };
 }

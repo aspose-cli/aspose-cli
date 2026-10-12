@@ -16,6 +16,7 @@ public sealed class CellsModuleTests
         {
             ["left"] = "a diff or verification change's value in the first file, not a page margin",
             ["right"] = "a diff or verification change's value in the second file, not a page margin",
+            ["position"] = "a sheet's place in the tab order, which add_sheet and move_sheet take as at and to, not a legend placement",
         };
 
     [Theory]
@@ -29,7 +30,7 @@ public sealed class CellsModuleTests
 
         Assert.Equal(
             ops["$defs"]![operation]!["properties"]!["type"]!["enum"]!.ToJsonString(),
-            read["$defs"]![info]!["properties"]!["type"]!["anyOf"]![0]!["enum"]!.ToJsonString());
+            read["$defs"]![info]!["properties"]!["kind"]!["anyOf"]![0]!["enum"]!.ToJsonString());
     }
 
     [Fact]

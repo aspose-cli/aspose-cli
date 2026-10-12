@@ -32,7 +32,7 @@ is executable — read the calc block in full scope and demand `f` on every
 non-empty cell:
 
 ```sh
-aspose-cli cells query range model.xlsx --sheet PnL --range B4:D14 --scope full --output-format json
+aspose-cli cells read model.xlsx --sheet PnL --range B4:D14 --content full --output-format json
 ```
 
 Adopt ONE sign convention up front, FAST-style, and state it on the
@@ -47,7 +47,7 @@ a magic constant buried in formula text (`=B7*0.25` instead of
 `=B7*TaxRate`), sweep formulas for the literal — must return zero hits:
 
 ```sh
-aspose-cli cells query search model.xlsx --pattern "0.25" --scope formulas --output-format json
+aspose-cli cells search model.xlsx --pattern "0.25" --content formulas --output-format json
 ```
 
 ## Build order
@@ -64,7 +64,7 @@ aspose-cli cells edit model.xlsx --in-place --ops '{"ops":[
   {"op":"set_formula","sheet":"PnL","range":"B4","formula":"=RevenueY1"},
   {"op":"set_formula","sheet":"PnL","range":"C4:D4","formula":"=B4*(1+GrowthRate)"}
 ]}'
-aspose-cli cells query range model.xlsx --sheet PnL --range B4:D4 --output-format json
+aspose-cli cells read model.xlsx --sheet PnL --range B4:D4 --output-format json
 ```
 
 reads back 1000, 1080, 1166.4 — computed, cross-sheet, one recalc, and
@@ -77,7 +77,7 @@ Any assumption referenced three or more times gets a `define_name` with a
 sheet-qualified absolute `refersTo` (`Assumptions!$B$4`). Formulas then
 read as the model's own language — `=B4*(1+GrowthRate)`,
 `=NPV(DiscountRate,PnL!B9:D9)` — instead of `=B4*(1+Assumptions!$B$4)`.
-Confirm with `--scope formulas` that the name really landed in the formula
+Confirm with `--content formulas` that the name really landed in the formula
 text (`"f": "=RevenueY1"`) and computes. Audit the list before delivery —
 `workbook.definedNames` holds every name and its `refersTo`:
 
@@ -115,11 +115,11 @@ Here B12 is closing cash and B13 equity, so the row proves the statements
 articulate. The delivery gate greps for failures and must return zero hits:
 
 ```sh
-aspose-cli cells query search model.xlsx --pattern "IMBALANCED|MISMATCH" --regex --output-format json
+aspose-cli cells search model.xlsx --pattern "IMBALANCED|MISMATCH" --regex --output-format json
 ```
 
 Keep the gate on the default values scope: the check formulas carry the
-failure token in their TEXT by design, so `--scope formulas` always "fails".
+failure token in their TEXT by design, so `--content formulas` always "fails".
 Verified: the clean model returns zero hits; hardcoding over one
 closing-cash formula flipped two checks plus the rollup, and the gate
 listed all three, sheet and cell.
@@ -144,7 +144,7 @@ re-prices the whole model:
 
 ```sh
 aspose-cli cells edit model.xlsx --in-place --set "Assumptions!B10=Upside"
-aspose-cli cells query range model.xlsx --sheet Summary --range B3 --output-format json
+aspose-cli cells read model.xlsx --sheet Summary --range B3 --output-format json
 ```
 
 The summary NPV moved 301.27 → 320.98, and back when B10 returned to
@@ -162,8 +162,8 @@ notices. Restore the base as the final step, then prove it with a read-back:
 
 ```sh
 aspose-cli cells edit model.xlsx --in-place --set "Assumptions!B10=Base"
-aspose-cli cells query range model.xlsx --sheet Assumptions --range B10 --output-format json
-aspose-cli cells query range model.xlsx --sheet Summary --range B3 --output-format json
+aspose-cli cells read model.xlsx --sheet Assumptions --range B10 --output-format json
+aspose-cli cells read model.xlsx --sheet Summary --range B3 --output-format json
 ```
 
 Both reads must show the state you started from — the selector back on `Base`
@@ -192,7 +192,7 @@ aspose-cli cells edit model.xlsx --in-place --ops '{"ops":[
 Read the grid back and check opposite corners against expectation — here
 Y3 revenue over Y1 revenue × growth: 882 / 1058 / 1323 / 1587 (the raw
 values carry floating-point noise such as `1057.9999999999998`; round with a
-number format), and `--scope formulas` shows each cell holding its own
+number format), and `--content formulas` shows each cell holding its own
 shifted anchors.
 
 ## Functions that behave
@@ -228,10 +228,10 @@ model-specific gates — each executable, each with a hard pass condition:
 
 ```sh
 aspose-cli cells inspect model.xlsx --detail errors --output-format json
-aspose-cli cells query search model.xlsx --pattern "IMBALANCED|MISMATCH" --regex --output-format json
-aspose-cli cells query range model.xlsx --sheet Summary --range B3:B6 --output-format json
-aspose-cli cells query range model.xlsx --sheet Assumptions --range B10 --output-format json
-aspose-cli cells render model.xlsx --sheet Summary --range A1:G20 --out summary-check.png
+aspose-cli cells search model.xlsx --pattern "IMBALANCED|MISMATCH" --regex --output-format json
+aspose-cli cells read model.xlsx --sheet Summary --range B3:B6 --output-format json
+aspose-cli cells read model.xlsx --sheet Assumptions --range B10 --output-format json
+aspose-cli cells render model.xlsx --range Summary!A1:G20 --out summary-check.png
 ```
 
 1. `workbook.formulaErrors` is empty — no `#N/A`, `#DIV/0!`, `#REF!`.

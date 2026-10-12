@@ -18,8 +18,8 @@ internal static class SearchMatcher
         ResourceBudgetLedger budgets, Workbook workbook, CellsSearchRequest request, int? sheetIndex)
     {
         SearchHits<CellsSearchHit> hits = request.Query.Collect<CellsSearchHit>();
-        bool inValues = request.In is CellsSearchIn.Values or CellsSearchIn.Both;
-        bool inFormulas = request.In is CellsSearchIn.Formulas or CellsSearchIn.Both;
+        bool inValues = request.In is CellsSearchIn.Values or CellsSearchIn.All;
+        bool inFormulas = request.In is CellsSearchIn.Formulas or CellsSearchIn.All;
         TextSearch query = request.Query.Text;
 
         foreach (Worksheet sheet in workbook.Worksheets)
@@ -57,7 +57,7 @@ internal static class SearchMatcher
                     // date hit is "2023-05-31" on every machine, deterministic
                     // and agreeing with read/convert, never using the
                     // zh month name the matching already normalized past).
-                    Value = TextSearch.Truncate(rawValue ?? display, MaxValueLength),
+                    Text = TextSearch.Truncate(rawValue ?? display, MaxValueLength),
                     Formula = formula,
                 });
                 if (!kept)

@@ -2,7 +2,7 @@ namespace Aspose.Cli.Product.Cells.Commands;
 
 /// <summary>
 /// Assembles the ready-to-run follow-up commands of a planned scan: a chain of
-/// <c>cells query range</c> pages that together cover one bounded region of a sheet.
+/// <c>cells read</c> pages that together cover one bounded region of a sheet.
 /// The engine returns the projection and its window; the command spells the follow-up
 /// with the shared continuation builder, so agents run it verbatim instead of computing
 /// ranges.
@@ -28,15 +28,11 @@ internal static class ScanContinuation
         RangeRef? used = result.Sheet.UsedRange is { } text ? A1.ParseRange(text).Range : null;
         ReadPlan plan = ReadWindowPlanner.Plan(range, scan, used, maxCells);
         return plan is { Next: { } next, Region: { } region }
-            ? Page(resume, result.Sheet.Name, next, region, result.Scope, maxCells)
+            ? Page(resume, result.Sheet.Name, next, region, result.Content, maxCells)
             : null;
     }
 
-    /// <summary>The first page of a scan over an explicit region too large for one read.</summary>
-    public static string First(ContinuationCommand resume, string? sheet, RangeRef region, string scope, int maxCells) =>
-        Page(resume, sheet, ReadWindowPlanner.FirstWindow(region, maxCells), region, scope, maxCells);
-
-    private static string Page(ContinuationCommand command, string? sheet, RangeRef window, RangeRef region, string scope, int maxCells)
+    private static string Page(ContinuationCommand command, string? sheet, RangeRef window, RangeRef region, string content, int maxCells)
     {
         if (sheet is not null)
         {
@@ -46,7 +42,7 @@ internal static class ScanContinuation
         return command
             .Option("--range", A1.FormatRange(window))
             .Option(ScanOption, A1.FormatRange(region))
-            .Option("--scope", scope)
+            .Option("--content", content)
             .Option("--max-cells", maxCells)
             .ToString();
     }

@@ -53,7 +53,7 @@ public sealed class McpProtocolTests
             AssertSuccess(await server.Execute(
                 ["cells", "edit", "book.xlsx", "--ops=-", "--in-place", "--output-format=json"], ops));
             JsonNode queried = await server.Execute(
-                ["cells", "query", "range", "book.xlsx", "--sheet", "Data", "--range", "A1", "--output-format=json"]);
+                ["cells", "read", "book.xlsx", "--sheet", "Data", "--range", "A1", "--output-format=json"]);
             AssertSuccess(queried);
             Assert.Equal(42, JsonNode.Parse(queried["result"]!["structuredContent"]!["stdout"]!.GetValue<string>())!["sheet"]!["cells"]![0]![0]!["v"]!.GetValue<int>());
         }

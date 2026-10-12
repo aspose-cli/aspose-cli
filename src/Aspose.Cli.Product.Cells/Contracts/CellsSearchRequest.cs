@@ -2,7 +2,7 @@ using Aspose.Cli.Sdk.Text;
 
 namespace Aspose.Cli.Product.Cells.Contracts;
 
-/// <summary>Options of <c>cells query search</c>.</summary>
+/// <summary>Options of <c>cells search</c>.</summary>
 public sealed record CellsSearchRequest
 {
     /// <summary>The workbook to search.</summary>
@@ -21,7 +21,7 @@ public sealed record CellsSearchRequest
     public Secret? Password { get; init; }
 }
 
-/// <summary>Where <c>cells query search</c> looks for matches.</summary>
+/// <summary>What <c>cells search</c> looks in for matches.</summary>
 public enum CellsSearchIn
 {
     /// <summary>Display values only.</summary>
@@ -31,5 +31,5 @@ public enum CellsSearchIn
     Formulas,
 
     /// <summary>Values and formulas.</summary>
-    Both,
+    All,
 }

@@ -25,7 +25,7 @@
       }
     },
     {
-      "args": ["cells", "query", "search", "edited.xlsx", "--pattern", "Total", "--sheet", "Sheet1"],
+      "args": ["cells", "search", "edited.xlsx", "--pattern", "Total", "--sheet", "Sheet1"],
       "expect": {
         "exitCode": 0,
         "files": { "nothingWritten": true }

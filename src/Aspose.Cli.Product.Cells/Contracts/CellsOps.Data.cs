@@ -75,7 +75,7 @@ public sealed record SetValidationOp : CellsOp
     /// <summary>The range to validate, such as B2:B100.</summary>
     [A1Range] public required string Range { get; init; }
 
-    [ReadBack("inspect-result.schema.json#/$defs/cellsValidationInfo/properties/type")]
+    [ReadBack("inspect-result.schema.json#/$defs/cellsValidationInfo/properties/kind")]
     [AllowedValues(typeof(CellsValidationTypes))] public required string Type { get; init; }
 
     [NotReadBack]

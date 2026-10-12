@@ -31,7 +31,7 @@ public sealed record CellsWorkbookSummary
     public required IReadOnlyList<CellsSheetInfo> Sheets { get; init; }
 
     /// <summary><c>true</c> when the workbook contains VBA macros.</summary>
-    public required bool HasVba { get; init; }
+    public required bool HasMacros { get; init; }
 
     /// <summary>Number of defined names in the workbook.</summary>
     [Minimum(0)]
@@ -83,8 +83,8 @@ public sealed record CellsSheetInfo
     /// <summary>Sheet name, exactly as shown in Excel.</summary>
     public required string Name { get; init; }
 
-    /// <summary>Zero-based position in the tab order, as add_sheet and move_sheet take it.</summary>
-    [Minimum(0)]
+    /// <summary>1-based position in the tab order, as add_sheet and move_sheet take it.</summary>
+    [Minimum(1)]
     public required int Position { get; init; }
 
     /// <summary>
@@ -253,19 +253,19 @@ public sealed record CellsChartInfo
     /// <summary>Sheet the chart is on.</summary>
     public required string Sheet { get; init; }
 
-    /// <summary>The zero-based index of the chart on its sheet, as update_chart and delete_chart take it.</summary>
-    [Minimum(0)]
+    /// <summary>The 1-based index of the chart on its sheet, as update_chart and delete_chart take it.</summary>
+    [Minimum(1)]
     public required int Index { get; init; }
 
     /// <summary>The chart's name.</summary>
     public required string Name { get; init; }
 
     /// <summary>
-    /// The chart type: a create_chart type such as <c>column</c>, or the lower-camel engine name
+    /// The chart kind: a create_chart type such as <c>column</c>, or the lower-camel engine name
     /// of a type outside that vocabulary, such as <c>columnStacked</c>.
     /// </summary>
     [AllowedValues(typeof(CellsChartTypes)), OpenEnum("^[a-z][A-Za-z0-9]*$")]
-    public required string Type { get; init; }
+    public required string Kind { get; init; }
 }
 
 /// <summary>A pivot table in a workbook.</summary>
@@ -291,9 +291,9 @@ public sealed record CellsValidationInfo
     public required string Range { get; init; }
 
     /// <summary>
-    /// The validation type: a set_validation type such as <c>list</c> or <c>wholeNumber</c>, or
+    /// The validation kind: a set_validation type such as <c>list</c> or <c>wholeNumber</c>, or
     /// the lower-camel engine name of a type outside that vocabulary, such as <c>anyValue</c>.
     /// </summary>
     [AllowedValues(typeof(CellsValidationTypes)), OpenEnum("^[a-z][A-Za-z0-9]*$")]
-    public required string Type { get; init; }
+    public required string Kind { get; init; }
 }

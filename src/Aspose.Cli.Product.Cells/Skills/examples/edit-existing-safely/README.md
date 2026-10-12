@@ -16,7 +16,7 @@ aspose-cli cells edit quarterly.xlsx --ops update-ops.json --in-place --backup -
 aspose-cli cells edit quarterly.xlsx --set "Q3!B3=500" --in-place --verify --output-format json
 
 # 3. Read the changed range back; dependent formulas recalculated.
-aspose-cli cells query range quarterly.xlsx --range Q3!A1:B4 --scope formulas --output-format json
+aspose-cli cells read quarterly.xlsx --range Q3!A1:B4 --content formulas --output-format json
 #    -> B1 1240, B2 44.5, B3 500; B4 v: 54680, f: "=B1*B2-B3"
 
 # 4. Review the result and open every sheet image it lists.

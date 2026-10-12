@@ -19,11 +19,11 @@ public sealed class CellsRendererGoldenTests
         RenderedText.Equal(
             """
             C:\data\report.xlsx (xlsx, 1,234,567 bytes)
-            sheets: 2   vba: no   defined names: 1   encrypted: yes   structure protected: yes
+            sheets: 2   macros: no   defined names: 1   encrypted: yes   structure protected: yes
 
             name         position  used range  rows  columns  hidden  protected  charts  pivots
-            Data         0         A1:C9       9     3        no      yes        1       0
-            Empty sheet  1         -           0     0        yes     no         0       0
+            Data         1         A1:C9       9     3        no      yes        1       0
+            Empty sheet  2         -           0     0        yes     no         0       0
 
             preview Data:
               Region | Sales | -
@@ -37,7 +37,7 @@ public sealed class CellsRendererGoldenTests
             -
 
             validations:
-            sheet  range  type
+            sheet  range  kind
             Data   B2:B9  list
 
             fonts:
@@ -50,8 +50,8 @@ public sealed class CellsRendererGoldenTests
             Data   Sales  A1:C9
 
             charts:
-            sheet  index  name     type
-            Data   0      Chart 1  column
+            sheet  index  name     kind
+            Data   1      Chart 1  column
 
             layouts:
             sheet        freeze  row groups                 column groups  filter  print area  titles   page              header  footer
@@ -69,12 +69,12 @@ public sealed class CellsRendererGoldenTests
         RenderedText.Equal(
             """
             C:\data\report.xlsx (xlsx, 1,234,567 bytes)
-            sheets: 2   vba: no   defined names: 1   encrypted: yes   structure protected: yes
+            sheets: 2   macros: no   defined names: 1   encrypted: yes   structure protected: yes
 
             | name | position | used range | rows | columns | hidden | protected | charts | pivots |
             | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-            | Data | 0 | A1:C9 | 9 | 3 | no | yes | 1 | 0 |
-            | Empty sheet | 1 | - | 0 | 0 | yes | no | 0 | 0 |
+            | Data | 1 | A1:C9 | 9 | 3 | no | yes | 1 | 0 |
+            | Empty sheet | 2 | - | 0 | 0 | yes | no | 0 | 0 |
 
             preview Data:
               Region | Sales | -
@@ -92,7 +92,7 @@ public sealed class CellsRendererGoldenTests
 
             ### validations
 
-            | sheet | range | type |
+            | sheet | range | kind |
             | --- | --- | --- |
             | Data | B2:B9 | list |
 
@@ -111,9 +111,9 @@ public sealed class CellsRendererGoldenTests
 
             ### charts
 
-            | sheet | index | name | type |
+            | sheet | index | name | kind |
             | --- | --- | --- | --- |
-            | Data | 0 | Chart 1 | column |
+            | Data | 1 | Chart 1 | column |
 
             ### layouts
 
@@ -141,11 +141,11 @@ public sealed class CellsRendererGoldenTests
         RenderedText.Equal(
             """
             C:\data\report.xlsx (xlsx, 1,234,567 bytes)
-            sheets: 2   vba: no   defined names: 1   encrypted: no   structure protected: yes
+            sheets: 2   macros: no   defined names: 1   encrypted: no   structure protected: yes
 
             name         position  used range  rows  columns  hidden  protected  charts  pivots
-            Data         0         A1:C9       9     3        no      yes        1       0
-            Empty sheet  1         -           0     0        yes     no         0       0
+            Data         1         A1:C9       9     3        no      yes        1       0
+            Empty sheet  2         -           0     0        yes     no         0       0
 
             preview Data:
               Region | Sales | -
@@ -186,11 +186,11 @@ public sealed class CellsRendererGoldenTests
         RenderedText.Equal(
             """
             C:\data\report.xlsx (xlsx, 1,234,567 bytes)
-            sheets: 2   vba: no   defined names: 1   encrypted: no   structure protected: yes
+            sheets: 2   macros: no   defined names: 1   encrypted: no   structure protected: yes
 
             name         position  used range  rows  columns  hidden  protected  charts  pivots
-            Data         0         A1:C9       9     3        no      yes        1       0
-            Empty sheet  1         -           0     0        yes     no         0       0
+            Data         1         A1:C9       9     3        no      yes        1       0
+            Empty sheet  2         -           0     0        yes     no         0       0
 
             preview Data:
               Region | Sales | -
@@ -206,11 +206,11 @@ public sealed class CellsRendererGoldenTests
         {
             Input = new InputInfo { Path = "book.xlsx", Format = "xlsx", SizeBytes = 2_048, Fingerprint = new FileFingerprint { Sha256 = new string('0', 64) }, Encrypted = false },
             Window = new ResultWindow { Unit = "cell", Returned = 4, Truncated = false },
-            Scope = CellsReadScopes.Values,
+            Content = CellsReadContents.Values,
             Sheet = new CellsSheetProjection
             {
                 Name = "Data",
-                Position = 0,
+                Position = 1,
                 UsedRange = "A1:C9",
                 Range = "B2:C3",
                 Cells =
@@ -320,7 +320,7 @@ public sealed class CellsRendererGoldenTests
         {
             Name = "report.xlsx",
             SheetCount = 2,
-            HasVba = false,
+            HasMacros = false,
             DefinedNameCount = 1,
             StructureProtected = true,
             StructurePasswordProtected = false,
@@ -328,13 +328,13 @@ public sealed class CellsRendererGoldenTests
             [
                 new CellsSheetInfo
                 {
-                    Name = "Data", Position = 0, UsedRange = "A1:C9", RowCount = 9, ColumnCount = 3, Hidden = false,
+                    Name = "Data", Position = 1, UsedRange = "A1:C9", RowCount = 9, ColumnCount = 3, Hidden = false,
                     Protected = true, PasswordProtected = false, ChartCount = 1, PivotTableCount = 0,
                     Preview = [["Region", "Sales", null], ["North", "1,200", "x"]],
                 },
                 new CellsSheetInfo
                 {
-                    Name = "Empty sheet", Position = 1, RowCount = 0, ColumnCount = 0, Hidden = true,
+                    Name = "Empty sheet", Position = 2, RowCount = 0, ColumnCount = 0, Hidden = true,
                     Protected = false, PasswordProtected = false, ChartCount = 0, PivotTableCount = 0,
                 },
             ],
@@ -351,10 +351,10 @@ public sealed class CellsRendererGoldenTests
             {
                 DefinedNames = [new CellsDefinedNameInfo { Name = "Rate", RefersTo = "=Data!$B$2" }],
                 FormulaErrors = [],
-                Validations = [new CellsValidationInfo { Sheet = "Data", Range = "B2:B9", Type = "list" }],
+                Validations = [new CellsValidationInfo { Sheet = "Data", Range = "B2:B9", Kind = "list" }],
                 Fonts = ["Calibri", "Arial"],
                 Tables = [new CellsTableInfo { Sheet = "Data", Name = "Sales", Range = "A1:C9" }],
-                Charts = [new CellsChartInfo { Sheet = "Data", Index = 0, Name = "Chart 1", Type = "column" }],
+                Charts = [new CellsChartInfo { Sheet = "Data", Index = 1, Name = "Chart 1", Kind = "column" }],
                 Pivots = null,
                 Layouts =
                 [

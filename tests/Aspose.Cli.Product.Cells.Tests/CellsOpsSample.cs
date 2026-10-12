@@ -19,7 +19,7 @@ internal static class CellsOpsSample
             new ClearRangeOp { Range = "F1:F10", What = "formats" },
             new CopyRangeOp { From = "Sales!A1:C3", To = "Summary!B2" },
             new ImportRangeOp { Sheet = "Summary", Path = "D:/data/eu_raw.xlsx", From = "Totals!A2:D8", To = "F2" },
-            new ImportSheetOp { Sheet = "Totals", Path = "D:/data/eu_raw.xlsx", Name = "EU", Position = 1 },
+            new ImportSheetOp { Sheet = "Totals", Path = "D:/data/eu_raw.xlsx", Name = "EU", At = 2 },
             new FormatRangeOp { Range = "A1:E1", Style = new CellsStyleData { Bold = true, Bg = "#1F4E79" } },
             new MergeCellsOp { Range = "A1:E1" },
             new UnmergeCellsOp { Range = "A1:E1" },
@@ -29,7 +29,7 @@ internal static class CellsOpsSample
             new DeleteColumnsOp { At = "F" },
             new ResizeColumnsOp { From = "B", To = "E" },
             new ResizeRowsOp { From = 1, Height = 24 },
-            new AddSheetOp { Name = "Summary", Position = 0 },
+            new AddSheetOp { Name = "Summary", At = 1 },
             new RenameSheetOp { Sheet = "Old", To = "Archive" },
             new DeleteSheetOp { Sheet = "Obsolete" },
             new SetSheetVisibilityOp { Sheet = "Archive", Hidden = true },
@@ -104,7 +104,7 @@ internal static class CellsOpsSample
             new UnprotectWorkbookOp { PasswordEnv = "BOOK_PWD" },
             new SetHyperlinkOp { Sheet = "Sales", Cell = "A1", Target = "Summary!A1", Display = "Go to summary" },
             new RemoveHyperlinkOp { Sheet = "Sales", Cell = "B2" },
-            new UpdateChartOp { Sheet = "Sales", Index = 0, Title = "Revised", Type = CellsChartTypes.Bar },
+            new UpdateChartOp { Sheet = "Sales", Index = 1, Title = "Revised", Type = CellsChartTypes.Bar },
             new AddConditionalFormatOp
             {
                 Sheet = "Sales",
@@ -113,7 +113,7 @@ internal static class CellsOpsSample
                 Style = new CellsConditionalStyle { Bg = "#FFC7CE" },
             },
             new ClearConditionalFormatsOp { Sheet = "Sales", Range = "D2:D100" },
-            new MoveSheetOp { Sheet = "Summary", Position = 1 },
+            new MoveSheetOp { Sheet = "Summary", To = 2 },
             new SetBordersOp
             {
                 Sheet = "Sales",
@@ -125,7 +125,7 @@ internal static class CellsOpsSample
             new SetDefaultFontOp { Font = "Aptos", Size = 11 },
             new SetTabColorOp { Sheet = "Sales", Color = "#4472C4" },
             new SetSheetViewOp { Sheet = "Sales", Gridlines = false, Zoom = 90, Headings = true },
-            new DeleteChartOp { Sheet = "Sales", Index = 0 },
+            new DeleteChartOp { Sheet = "Sales", Index = 1 },
             new AddSparklineOp
             {
                 Sheet = "Sales",

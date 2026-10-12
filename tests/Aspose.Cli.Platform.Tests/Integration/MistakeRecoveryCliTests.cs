@@ -131,8 +131,8 @@ public sealed class MistakeRecoveryCliTests : IDisposable
     /// not contain and for an unknown option alike.
     /// </summary>
     [Theory]
-    [InlineData("cells query range a.xlsx --range Shet1!A1:B2", "error SHEET_NOT_FOUND: ", "Did you mean 'Sheet1'?")]
-    [InlineData("cells query range a.xlsx --rnage Sheet1!A1", "error USAGE_ERROR: ", "Did you mean '--range'?")]
+    [InlineData("cells read a.xlsx --range Shet1!A1:B2", "error SHEET_NOT_FOUND: ", "Did you mean 'Sheet1'?")]
+    [InlineData("cells read a.xlsx --rnage Sheet1!A1", "error USAGE_ERROR: ", "Did you mean '--range'?")]
     public void TableOutput_AsksTheMistakesQuestionOnce(string commandLine, string error, string question)
     {
         Assert.Equal(0, _workspace.Run("cells", "create", "a.xlsx", "--output-format", "json").ExitCode);

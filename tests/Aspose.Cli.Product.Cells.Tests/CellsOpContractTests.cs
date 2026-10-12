@@ -38,7 +38,7 @@ public sealed class CellsOpContractTests : IClassFixture<CellsFixture>
     [InlineData("""{"op":"resize_columns","from":"B2"}""")]
     [InlineData("""{"op":"set_autofilter"}""")]
     [InlineData("""{"op":"set_page_setup"}""")]
-    [InlineData("""{"op":"update_chart","index":0,"name":"Sales","title":"Revised"}""")]
+    [InlineData("""{"op":"update_chart","index":1,"name":"Sales","title":"Revised"}""")]
     [InlineData("""{"op":"set_hyperlink","cell":"A1"}""")]
     [InlineData("""{"op":"set_hyperlink","cell":"A1","url":"docs/a"}""")]
     [InlineData("""{"op":"set_hyperlink","cell":"A1","url":"file:///c:/a.txt"}""")]
@@ -51,11 +51,11 @@ public sealed class CellsOpContractTests : IClassFixture<CellsFixture>
     [InlineData("""{"op":"create_chart","type":"line","dataRange":"A1:B3","at":"D2:H9","legend":{}}""")]
     [InlineData("""{"op":"set_sheet_view"}""")]
     [InlineData("""{"op":"set_values","range":"A1","values":[[]]}""")]
-    [InlineData("""{"op":"update_chart","index":0,"seriesInRows":false}""")]
+    [InlineData("""{"op":"update_chart","index":1,"seriesInRows":false}""")]
     [InlineData("""{"op":"import_range","path":"eu.xlsx","from":"A1:B2","to":"C1","content":"formulas"}""")]
     [InlineData("""{"op":"import_range","path":"eu.xlsx","to":"C1"}""")]
     [InlineData("""{"op":"import_sheet","path":" "}""")]
-    [InlineData("""{"op":"import_sheet","path":"eu.xlsx","position":-1}""")]
+    [InlineData("""{"op":"import_sheet","path":"eu.xlsx","at":0}""")]
     [InlineData("""{"op":"create_pivot","sourceRange":"A1:B9","at":"D1","values":[{"field":"X"}],"captions":"fr"}""")]
     [InlineData("""{"op":"create_pivot","sourceRange":"A1:B9","at":"D1","values":[{"field":"X","label":" "}]}""")]
     public void ParserAndSchema_RejectTheSameInvalidOperation(string operation)
@@ -81,7 +81,7 @@ public sealed class CellsOpContractTests : IClassFixture<CellsFixture>
     [InlineData("""{"op":"set_hyperlink","cell":"A1","url":"https://example.com/a"}""")]
     [InlineData("""{"op":"set_hyperlink","cell":"A1","url":"mailto:team@example.com"}""")]
     [InlineData("""{"op":"import_range","path":"eu.xlsx","from":"Totals!A2:D8","to":"Report!F2","content":"all","passwordEnv":"EU_PASSWORD"}""")]
-    [InlineData("""{"op":"import_sheet","path":"eu.csv","sheet":"eu","name":"EU","position":0}""")]
+    [InlineData("""{"op":"import_sheet","path":"eu.csv","sheet":"eu","name":"EU","at":1}""")]
     [InlineData("""{"op":"create_pivot","sourceRange":"A1:B9","at":"D1","values":[{"field":"净额","label":"净额合计"}],"captions":"zh"}""")]
     [InlineData("""{"op":"create_pivot","sourceRange":"A1:B9","at":"D1","values":[{"field":"Amount"}],"captions":"en"}""")]
     public void ParserAndSchema_AcceptTheSameValidOperation(string operation)
@@ -188,6 +188,19 @@ public sealed class CellsOpContractTests : IClassFixture<CellsFixture>
     {
         using JsonDocument document = JsonDocument.Parse(json);
         return Schema.Value.Evaluate(document.RootElement).IsValid;
+    }
+
+    [Theory]
+    [InlineData("""{"op":"add_sheet","name":"Summary","position":0}""", "at")]
+    [InlineData("""{"op":"import_sheet","path":"eu.xlsx","position":0}""", "at")]
+    [InlineData("""{"op":"move_sheet","sheet":"Data","position":0}""", "to")]
+    public void ARenamedSheetPositionField_IsRefusedAndSuggestsItsNewName(string operation, string field)
+    {
+        CliException error = Assert.Throws<CliException>(() => Parse($$"""{"ops":[{{operation}}]}"""));
+
+        Assert.Equal("OPS_INVALID", error.Code.Name);
+        Assert.Contains(field, error.Details!.ToJsonString(), StringComparison.Ordinal);
+        Assert.Contains($"Did you mean '{field}'", error.Hint, StringComparison.Ordinal);
     }
 
     private static CellsOpsBatch Parse(string json) =>

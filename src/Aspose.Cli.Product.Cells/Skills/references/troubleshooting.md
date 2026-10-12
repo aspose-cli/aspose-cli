@@ -13,17 +13,15 @@ to workbooks.
 | `INPUT_ENCODING_INVALID` | 3 | A CSV or TSV input is not UTF-8 and has no byte order mark; read as UTF-8 its text would be replaced. Import it with `cells convert data.csv --to xlsx --encoding <name>` (`gb18030` for Chinese Windows and ERP exports; `big5`, `shift_jis`, `windows-1252` for others), then work on the workbook. |
 | `FORMAT_AMBIGUOUS` | 6 | A CSV or TSV input writes decimal commas (`2,71`, `1.253,96`); invariant formats would read different numbers. Import it with `cells convert data.csv --to xlsx --culture de-DE` (or the culture the file comes from); the culture also reads its dates. `details.sample` and `details.line` name the first such value. |
 | `SHEET_NOT_FOUND`, `NAME_NOT_FOUND`, `CHART_NOT_FOUND`, `PIVOT_NOT_FOUND`, `COMMENT_NOT_FOUND`, `HYPERLINK_NOT_FOUND`, `STYLE_NOT_FOUND` | 4 | `details.available` lists sheets, defined names, the sheet's charts or pivots, the cells with comments, the areas hyperlinks cover, or table styles. Sheet names match case-insensitively, as in Excel; results report the stored spelling. A chart `index` past the last chart reports only `availableCount`. |
-| `RANGE_INVALID` | 4 | A command range such as `--range`. Use `C5`, `B2:D10`, `Sales!A1:C10` or `'My Sheet'!A1:C10`; whole rows and columns (`A:A`, `1:3`) are refused so output stays bounded. In an ops document the same mistake is `OPS_INVALID` with the field in `details.reason`. |
-| `RANGE_TOO_LARGE` | 4 | The range exceeds `--max-cells`. Run the first page the hint suggests and then each `window.next`, or raise `--max-cells` when you need everything. |
 | `RENDER_EMPTY` | 4 | The selected sheet has no content. Pick a sheet with data; `cells inspect` lists each sheet's used range. |
-| `EVALUATION_LIMIT` | 7 | Evaluation mode exports only the first worksheet to CSV, TSV or Markdown, and `--sheet` named another one. Nothing was written. Apply a Cells license, or select the first sheet if that is the data you want. |
+| `EVALUATION_LIMIT` | 7 | Evaluation mode exports only the first worksheet to CSV, TSV or Markdown, and `--sheets` selected another one. Nothing was written. Apply a Cells license, or select the first sheet if that is the data you want. |
 
 ## Warnings
 
 | code | meaning |
 |------|---------|
 | `SHEETS_DROPPED` | The output format holds one worksheet; it names the sheet kept. |
-| `SHEETS_SKIPPED` | A `render` of every sheet could not render some of them; render one alone with `--sheet` for its error. |
+| `SHEETS_SKIPPED` | A `render` of every sheet could not render some of them; render one alone with `--sheets` for its error. |
 | `DATA_TRUNCATED` | The target grid (for example xls, 65,536 rows) is smaller than the data; save to xlsx, xlsb or ods. |
 | `FORMULAS_BROKEN` | Formulas that referenced cells beyond the target grid became `#REF!`; save to xlsx or xlsb. |
 | `FORMULAS_CALCULATED_ON_OPEN` | The workbook asks to be calculated when opened and some formula results shown differ from the stored ones, usually because a tool wrote formulas without results. The values shown are the engine's, as Excel shows them; `cells edit` stores them. |
@@ -47,7 +45,7 @@ CSV import keeps every row, so `cells inspect` and `cells convert` warn
 `TEXT_TABLE_LAYOUT` for each finding, and each hint names the ranges to use:
 
 - Read the header row the message names with
-  `cells query range <file> --sheet "<sheet>" --range A3:F3` (a text file's
+  `cells read <file> --sheet "<sheet>" --range A3:F3` (a text file's
   one sheet is named after the file), and start data ranges, formulas and
   sorts on the row after it.
 - Give sorts, filters and charts the whole table range rather than a range
@@ -70,8 +68,8 @@ handle these effects:
   `EVALUATION_MODE` message names the warning sheets the output carries and which
   of them is active.
 - When a workbook's active sheet is such a warning sheet, in evaluation mode
-  every command that defaults to the active sheet (`query range` without `--sheet`,
-  `convert` to CSV, TSV or Markdown without `--sheet`, an operation without
+  every command that defaults to the active sheet (`read` without `--sheet`,
+  `convert` to CSV, TSV or Markdown without `--sheets`, an operation without
   `"sheet"`, the workbook preview) uses the first other sheet instead,
   preferring a visible one, and warns `ACTIVE_SHEET_SKIPPED` with the skipped
   sheet in `location`. With a license the active sheet stays the default,
@@ -96,11 +94,11 @@ handle these effects:
   `EVALUATION_MODE` message, or with a license `EVALUATION_INPUT_MARKED`, names them, and
   `review` then reports findings on those pages. A licensed edit or
   conversion to a workbook format keeps the warning sheets and warns
-  `EVALUATION_INPUT_MARKED` too. Export the content sheets with `--sheet` (PDF), or
+  `EVALUATION_INPUT_MARKED` too. Export the content sheets with `--sheets` (PDF), or
   rebuild the workbook and the export with a license.
-- CSV, TSV and Markdown export only the first worksheet. Without `--sheet` the
+- CSV, TSV and Markdown export only the first worksheet. Without `--sheets` the
   first sheet is written even when another one is active, and
-  `SHEETS_DROPPED` names it; `--sheet` naming another sheet fails with
+  `SHEETS_DROPPED` names it; `--sheets` selecting another sheet fails with
   `EVALUATION_LIMIT` and writes nothing.
 - `review` reports each warning sheet as `CELLS_EVALUATION_SHEET`, with or
   without a license.

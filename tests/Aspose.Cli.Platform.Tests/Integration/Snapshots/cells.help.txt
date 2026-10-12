@@ -7,12 +7,13 @@ Usage:
 
 Commands:
   inspect <file>          Show structure and metadata of a workbook.
-  query                   Read bounded workbook data without mutating the source file.
+  read <file>             Read cell data of one sheet as a windowed projection.
+  search <file>           Find cells whose value or formula matches a pattern.
   create <file>           Create a new workbook.
   edit <file>             Apply a batch of edit ops atomically. Editable outputs: xlsx, xltx, xlsm, xltm, xlsb, xls, ods, csv, tsv, html, mhtml.
-  compare <left> <right>  Compare stored workbook values and optional formula text; dates use raw serial numbers.
+  compare <left> <right>  Compare stored workbook values and optional formula text; dates are ISO 8601.
   convert <file>          Convert a workbook to another format.
-  render <file>           Render a sheet, a range, or every visible sheet to images.
+  render <file>           Render sheets, or a range of one, to images.
 
 Global options:
   -h/--help, --output-format, -q/--quiet, -v/--verbose, --license, --license-mode, --workdir, --timeout, --max-input-bytes (see aspose-cli --help)
@@ -29,7 +30,7 @@ Learn more:
 
 ## aspose-cli cells compare --help
 Description:
-  Compare stored workbook values and optional formula text; dates use raw serial numbers.
+  Compare stored workbook values and optional formula text; dates are ISO 8601.
 
 Usage:
   aspose-cli cells compare <left> <right> [options]
@@ -39,7 +40,7 @@ Arguments:
   <right>  Candidate workbook to compare against the baseline.
 
 Options:
-  --compare <formulas|values>                What to compare; formulas adds the formula text to the cell results. [default: formulas]
+  --content <formulas|values>                What to compare; formulas adds the formula text to the cell results. [default: formulas]
   --max-diffs <max-diffs>                    Maximum differing cells to list across the entire workbook. Range: 1-1000000. [default: 1000]
   --left-password <left-password>            Password for the baseline file. Discouraged: visible in the process list; prefer --left-password-env.
   --left-password-env <left-password-env>    Name of an environment variable holding the password for the baseline file.
@@ -53,7 +54,7 @@ Global options:
 
 Examples:
   aspose-cli cells compare old.xlsx new.xlsx --output-format json
-  aspose-cli cells compare old.xlsx new.xlsx --compare values --max-diffs 50
+  aspose-cli cells compare old.xlsx new.xlsx --content values --max-diffs 50
 
 Learn more:
   aspose-cli docs cells/verification  comparing a workbook before and after a change
@@ -71,7 +72,7 @@ Arguments:
 
 Options:
   --to <to>                      Target format: xlsx, xltx, xlsm, xltm, xlsb, xls, ods, csv, tsv, html, mhtml, pdf, xps, json, md. Default: the --out extension's format. Values: csv, html, json, md, mhtml, ods, pdf, tsv, xls, xlsb, xlsm, xlsx, xltm, xltx, xps.
-  --sheet <sheet>                Convert only this sheet (supported for csv, tsv, md, pdf).
+  --sheets <sheets>              Sheets to process: 1-based numbers and ranges such as 1-3,7,9-, or all. Default: every sheet, except a CSV, TSV or Markdown output, which holds the active sheet and takes one selected sheet; a PDF takes any selection.
   --encoding <encoding>          Text encoding of a CSV or TSV input, such as gb18030, big5, shift_jis or windows-1252. Default: its byte order mark, else UTF-8 (other bytes are refused).
   --culture <culture>            Culture whose number and date formats a CSV or TSV input uses, such as de-DE for '1.234,56'. Default: invariant formats (a decimal comma is refused).
   --bom                          Start a CSV or TSV output with a UTF-8 byte order mark, so Excel reads its non-English text correctly. Default: UTF-8 without one.
@@ -186,8 +187,8 @@ Arguments:
   <file>  Workbook to inspect (xlsx, xlsm, xlsb, xls, ods, csv, ...).
 
 Options:
-  --sample                       Include a bounded sample: display values of the first --preview-rows rows and up to 20 columns of each sheet, from A1. Default: off.
-  --preview-rows <preview-rows>  Number of preview rows per sheet. Range: 1-100. [default: 5]
+  --sample                       Include a bounded sample: display values of the first --sample-rows rows and up to 20 columns of each sheet, from A1. Default: off.
+  --sample-rows <sample-rows>    Number of sample rows per sheet. Only with --sample. Range: 1-100. [default: 5]
   --detail <detail>              Extra sections to include; repeat for more. names: defined names; errors: formula-error scan; layout: frozen panes, outline groups, filter, print area and page setup of each sheet. Values: charts, errors, fonts, layout, names, pivots, tables, validation.
   --password <password>          Password for the workbook. Discouraged: visible in the process list; prefer --password-env.
   --password-env <password-env>  Name of an environment variable holding the password for the workbook.
@@ -205,81 +206,40 @@ Learn more:
   aspose-cli docs reading         reading every product within bounded windows
 
 
-## aspose-cli cells query --help
-Description:
-  Read bounded workbook data without mutating the source file.
-
-Usage:
-  aspose-cli cells query [command]
-
-Commands:
-  range <file>   Read cell data of one sheet as a windowed projection.
-  search <file>  Find cells whose value or formula matches a pattern.
-
-Global options:
-  -h/--help, --output-format, -q/--quiet, -v/--verbose, --license, --license-mode, --workdir, --timeout, --max-input-bytes (see aspose-cli --help)
-
-
-## aspose-cli cells query range --help
+## aspose-cli cells read --help
 Description:
   Read cell data of one sheet as a windowed projection.
 
 Usage:
-  aspose-cli cells query range <file> [options]
+  aspose-cli cells read <file> [options]
 
 Arguments:
   <file>  Workbook to read.
 
 Options:
-  --sheet <sheet>                        Sheet to read. Default: the active sheet.
-  --range <range>                        Window to read, e.g. A1:F50 or Sales!A1:F50. Default: the used range, subject to --max-cells.
-  --scope <formulas|full|styles|values>  Projection scope: formulas adds f; the style scope adds styleId and the style pool. [default: values]
-  --max-cells <max-cells>                Cell budget per call. Range: 1-1000000. [default: 10000]
-  --password <password>                  Password for the workbook. Discouraged: visible in the process list; prefer --password-env.
-  --password-env <password-env>          Name of an environment variable holding the password for the workbook.
-  --password-stdin                       Read the password for the workbook from the first line of stdin.
+  --sheet <sheet>                          Sheet to read. Default: the active sheet.
+  --range <range>                          Window to read, e.g. A1:F50 or Sales!A1:F50, or all. Default: the used range, subject to --max-cells.
+  --content <formulas|full|styles|values>  What each cell carries besides its value and type: its formula f, its styleId and the style pool, or both. [default: values]
+  --max-cells <max-cells>                  Cell budget per call. Range: 1-1000000. [default: 10000]
+  --password <password>                    Password for the workbook. Discouraged: visible in the process list; prefer --password-env.
+  --password-env <password-env>            Name of an environment variable holding the password for the workbook.
+  --password-stdin                         Read the password for the workbook from the first line of stdin.
 
 Global options:
   -h/--help, --output-format, -q/--quiet, -v/--verbose, --license, --license-mode, --workdir, --timeout, --max-input-bytes (see aspose-cli --help)
 
 Examples:
-  aspose-cli cells query range book.xlsx --range Sales!A1:D10 --scope values --output-format json
-  aspose-cli cells query range book.xlsx --sheet Sales --scope formulas --output-format json
+  aspose-cli cells read book.xlsx --range Sales!A1:D10 --content values --output-format json
+  aspose-cli cells read book.xlsx --sheet Sales --content formulas --output-format json
 
-
-## aspose-cli cells query search --help
-Description:
-  Find cells whose value or formula matches a pattern.
-
-Usage:
-  aspose-cli cells query search <file> --pattern <pattern> [options]
-
-Arguments:
-  <file>  Workbook to search.
-
-Options:
-  --pattern <pattern> (REQUIRED)  Text to find, or a regular expression with --regex.
-  --regex                         Treat the pattern as a culture-invariant regular expression with a one-second budget.
-  --case-sensitive                Match letter case exactly.
-  --scope <both|formulas|values>  Where to search: the cell results, the formula text or both. [default: values]
-  --max-hits <max-hits>           Maximum returned hits. Range: 1-10000. [default: 100]
-  --skip <skip>                   Matches to pass over before the returned hits; a truncated search's window.next sets it. [default: 0]
-  --sheet <sheet>                 Restrict to one sheet. Default: all sheets.
-  --password <password>           Password for the workbook. Discouraged: visible in the process list; prefer --password-env.
-  --password-env <password-env>   Name of an environment variable holding the password for the workbook.
-  --password-stdin                Read the password for the workbook from the first line of stdin.
-
-Global options:
-  -h/--help, --output-format, -q/--quiet, -v/--verbose, --license, --license-mode, --workdir, --timeout, --max-input-bytes (see aspose-cli --help)
-
-Examples:
-  aspose-cli cells query search book.xlsx --pattern TODO --output-format json
-  aspose-cli cells query search book.xlsx --pattern SUM --scope formulas --max-hits 10
+Learn more:
+  aspose-cli docs cells/overview  what each Cells command is for
+  aspose-cli docs reading         reading every product within bounded windows
 
 
 ## aspose-cli cells render --help
 Description:
-  Render a sheet, a range, or every visible sheet to images.
+  Render sheets, or a range of one, to images.
 
 Usage:
   aspose-cli cells render <file> [options]
@@ -289,9 +249,8 @@ Arguments:
 
 Options:
   --to <jpeg|png|svg>            Image format. Default: the --out extension's format, else png.
-  --sheet <sheet>                Sheet to render. Default: every visible sheet, at most 20 per run.
-  --range <range>                Render only this range, e.g. A1:G20 or Sales!A1:G20.
-  --all-sheets                   Render every visible sheet, one image per sheet named <out-base>.<Sheet><ext>.
+  --sheets <sheets>              Sheets to process: 1-based numbers and ranges such as 1-3,7,9-, or all. Default: every visible sheet, at most 20 per run.
+  --range <range>                Render only this range of one sheet, e.g. A1:G20 or Sales!A1:G20, or all.
   --dpi <dpi>                    Raster resolution; ignored for vector formats. Range: 36-1200. [default: 192]
   -o, --out <out>                Output path. Default: the input path with the image extension. Several sheets write <stem>.<sheet>.<ext> beside it.
   --overwrite                    Replace the output file if it already exists.
@@ -306,11 +265,45 @@ Global options:
 
 Examples:
   aspose-cli cells render book.xlsx --range Sales!A1:G20 --out sales.png
-  aspose-cli cells render book.xlsx --sheet Dashboard --out dashboard.png
-  aspose-cli cells render book.xlsx --all-sheets --out check.png
+  aspose-cli cells render book.xlsx --sheets 2 --out dashboard.png
+  aspose-cli cells render book.xlsx --sheets all --out check.png
 
 Learn more:
   aspose-cli docs cells/verification  the spreadsheet delivery verification protocol
   aspose-cli docs cells/preview       previewing a workbook while it changes
+
+
+## aspose-cli cells search --help
+Description:
+  Find cells whose value or formula matches a pattern.
+
+Usage:
+  aspose-cli cells search <file> --pattern <pattern> [options]
+
+Arguments:
+  <file>  Workbook to search.
+
+Options:
+  --pattern <pattern> (REQUIRED)   Text to find, or a regular expression with --regex.
+  --regex                          Treat the pattern as a culture-invariant regular expression with a one-second budget.
+  --case-sensitive                 Match letter case exactly.
+  --content <all|formulas|values>  What to search: the cell results, the formula text or all of both. [default: values]
+  --max-hits <max-hits>            Maximum returned hits. Range: 1-10000. [default: 100]
+  --skip <skip>                    Matches to pass over before the returned hits; a truncated search's window.next sets it. [default: 0]
+  --sheet <sheet>                  Restrict to one sheet. Default: all sheets.
+  --password <password>            Password for the workbook. Discouraged: visible in the process list; prefer --password-env.
+  --password-env <password-env>    Name of an environment variable holding the password for the workbook.
+  --password-stdin                 Read the password for the workbook from the first line of stdin.
+
+Global options:
+  -h/--help, --output-format, -q/--quiet, -v/--verbose, --license, --license-mode, --workdir, --timeout, --max-input-bytes (see aspose-cli --help)
+
+Examples:
+  aspose-cli cells search book.xlsx --pattern TODO --output-format json
+  aspose-cli cells search book.xlsx --pattern SUM --content formulas --max-hits 10
+
+Learn more:
+  aspose-cli docs cells/overview  what each Cells command is for
+  aspose-cli docs reading         reading every product within bounded windows
 
 

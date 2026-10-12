@@ -22,11 +22,11 @@ images.
 Read every changed range back:
 
 ```
-aspose-cli cells query range book.xlsx --sheet Sales --range E2:E6 --scope values --output-format json
-aspose-cli cells query range book.xlsx --sheet Sales --range E2:E6 --scope formulas --output-format json
+aspose-cli cells read book.xlsx --sheet Sales --range E2:E6 --content values --output-format json
+aspose-cli cells read book.xlsx --sheet Sales --range E2:E6 --content formulas --output-format json
 ```
 
-- A formula has two faces: `--scope formulas` adds its text (`f`), `--scope
+- A formula has two faces: `--content formulas` adds its text (`f`), `--content
   values` shows its result as Excel shows it on opening: stored, or calculated
   when the workbook asks for that (`FORMULAS_CALCULATED_ON_OPEN`).
 - A cell of type `error` (`#DIV/0!`, `#REF!`) is a finding now.
@@ -36,17 +36,17 @@ aspose-cli cells query range book.xlsx --sheet Sales --range E2:E6 --scope formu
 
 ## Tier 2: visual
 
-`query range` returns full values, so it cannot see truncation, overlap or a
+`read` returns full values, so it cannot see truncation, overlap or a
 chart plotting the wrong block. Only a render can:
 
 ```
 aspose-cli review book.xlsx --out book.review-1 --output-format json
-aspose-cli cells render book.xlsx --sheet Sales --range A1:G20 --out zoom.png
+aspose-cli cells render book.xlsx --range Sales!A1:G20 --out zoom.png
 ```
 
 `review` renders one 192 DPI image per visible sheet; hidden sheets are not
 reviewed. A sheet too large for one image contributes its first rows, and the
-`CELLS_SHEET_PARTIALLY_RENDERED` warning names how many; the other sheets are
+`SHEET_PARTIALLY_RENDERED` warning names how many; the other sheets are
 still reviewed. Cells checks report codes such as `CELLS_FORMULA_ERROR`,
 `CELLS_POPULATED_COLUMNS_NARROW` and `CELLS_VALUES_CLIPPED` (text cut off by
 the next cell, or a number too wide to show in full, measured with Excel's
@@ -54,7 +54,7 @@ column widths). `CELLS_VALUES_CLIPPED` can miss East Asian text in a font
 without East Asian glyphs (Calibri, Arial): judge those columns in the image,
 or use a font such as Microsoft YaHei. For a file a person opens, the look
 also grades the design checklist in `aspose-cli docs cells/design-system`,
-section 12. Render large sheets as windows with `--sheet` and `--range`.
+section 12. Render large sheets as windows with a sheet-qualified `--range`.
 
 ### Judge widths from a `--range` render
 
@@ -103,12 +103,12 @@ While looking, check for:
 
 ```
 aspose-cli cells inspect book.xlsx --detail errors --output-format json
-aspose-cli cells query search book.xlsx --pattern "TBD|TODO|xxx|\{\{" --regex --output-format json
+aspose-cli cells search book.xlsx --pattern "TBD|TODO|xxx|\{\{" --regex --output-format json
 ```
 
 `workbook.formulaErrors` must be empty; guard a division that can meet zero
 or an empty cell with `IFERROR` or an `IF` on the denominator. The search
-covers every sheet and matches values; `--scope both` also searches formula
+covers every sheet and matches values; `--content all` also searches formula
 text. `hits` must be empty, or each hit is an intentional token you explain.
 Formula errors are not the only wrong numbers: a `SUM` over the wrong range
 returns a plausible value, so spot-check two or three computed cells against
@@ -120,8 +120,9 @@ what they should roughly be.
 aspose-cli cells compare book.backup.xlsx book.xlsx --output-format json
 ```
 
-- It compares stored cell values and formula text only (`--compare values`
-  ignores formula text). Dates compare as serial numbers, strings ordinally,
+- It compares stored cell values and formula text only (`--content values`
+  ignores formula text). Dates compare by their stored value and read as
+  ISO 8601, strings ordinally,
   and empty cells, empty strings, numbers, Booleans and errors are distinct.
 - It cannot see styling, widths, heights, charts, images, page setup,
   validation or freeze panes. After a formatting, chart or layout session,

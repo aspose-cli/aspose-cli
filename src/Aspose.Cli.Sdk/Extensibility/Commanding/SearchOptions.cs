@@ -8,13 +8,15 @@ namespace Aspose.Cli.Sdk.Extensibility.Commanding;
 /// <param name="Description">Help text naming what each scope covers.</param>
 /// <param name="Values">Accepted scope values.</param>
 /// <param name="Default">The scope used when the option is omitted.</param>
+/// <param name="Option">The option name, <c>--scope</c> unless the product names it <c>--content</c>.</param>
 public sealed record SearchScopeGrammar(
     string Description,
     IReadOnlyList<string> Values,
-    string Default);
+    string Default,
+    string Option = SearchOptions.ScopeOption);
 
 /// <summary>
-/// The one <c>query search</c> grammar: <c>--pattern</c>, <c>--regex</c>,
+/// The one <c>search</c> grammar: <c>--pattern</c>, <c>--regex</c>,
 /// <c>--case-sensitive</c>, <c>--max-hits</c>, <c>--skip</c> and an optional product-supplied
 /// <c>--scope</c>. Every product validates the pattern, the hit budget and paging the same way.
 /// </summary>
@@ -74,7 +76,7 @@ public sealed class SearchOptions
                 throw new ArgumentException("The default scope must be one of the accepted values.", nameof(scope));
             }
 
-            _scope = new Option<string>(ScopeOption)
+            _scope = new Option<string>(scope.Option)
             {
                 Description = scope.Description,
                 DefaultValueFactory = _ => scope.Default,
@@ -108,7 +110,7 @@ public sealed class SearchOptions
             .Flag(CaseSensitiveOption, query.Text.CaseSensitive);
         if (query.Scope is not null)
         {
-            resume.Option(ScopeOption, query.Scope);
+            resume.Option(query.ScopeOption ?? ScopeOption, query.Scope);
         }
 
         resume.Option(MaxHitsOption, query.MaxHits).Option(SkipOption, query.Skip + window.Returned);
@@ -137,6 +139,9 @@ public sealed class SearchOptions
                 parse.GetValue(_caseSensitive)),
             maxHits,
             _scope is null ? null : parse.GetRequiredValue(_scope),
-            skip);
+            skip)
+        {
+            ScopeOption = _scope?.Name,
+        };
     }
 }

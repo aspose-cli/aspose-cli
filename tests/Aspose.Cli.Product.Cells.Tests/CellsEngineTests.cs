@@ -1,5 +1,6 @@
 using Aspose.Cli.Product.Cells.Contracts;
 using Aspose.Cli.Product.Cells.Contracts.Addressing;
+using Aspose.Cli.Sdk.Addressing;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Xunit;
@@ -369,7 +370,7 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
         Assert.Null(data.Preview);
 
         Assert.True(FindSheet(result, "Backstage").Hidden);
-        Assert.False(result.Workbook.HasVba);
+        Assert.False(result.Workbook.HasMacros);
     }
 
     [Fact]
@@ -377,7 +378,7 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
     {
         string path = _fixture.CreateSalesWorkbook("preview.xlsx");
 
-        CellsInspectResult result = CellsInfo.Run(_fixture.Session, new CellsInspectRequest { Input = path, IncludePreview = true, PreviewRows = 2 });
+        CellsInspectResult result = CellsInfo.Run(_fixture.Session, new CellsInspectRequest { Input = path, IncludePreview = true, SampleRows = 2 });
 
         CellsSheetInfo data = FindSheet(result, "Data");
         Assert.NotNull(data.Preview);
@@ -494,9 +495,9 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
         CellsInspectResult result = CellsInfo.Run(_fixture.Session, new CellsInspectRequest { Input = path, Details = [CellsInspectDetails.Charts, CellsInspectDetails.Validation] });
 
         // What inspect reads is what create_chart, update_chart and set_validation accept.
-        Assert.Equal([.. chartTypes, "columnStacked"], result.Workbook.Charts!.Select(static chart => chart.Type));
-        Assert.Equal(Enumerable.Range(0, chartTypes.Length + 1), result.Workbook.Charts!.Select(static chart => chart.Index));
-        Assert.Equal(validationTypes, result.Workbook.Validations!.Select(static validation => validation.Type));
+        Assert.Equal([.. chartTypes, "columnStacked"], result.Workbook.Charts!.Select(static chart => chart.Kind));
+        Assert.Equal(Enumerable.Range(1, chartTypes.Length + 1), result.Workbook.Charts!.Select(static chart => chart.Index));
+        Assert.Equal(validationTypes, result.Workbook.Validations!.Select(static validation => validation.Kind));
     }
 
     [Fact]
@@ -749,7 +750,7 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
     }
 
     [Fact]
-    public void Convert_UnknownSheet_ThrowsSheetNotFoundWithAlternatives()
+    public void Convert_SheetPastTheLast_ThrowsSheetNotFoundWithTheCount()
     {
         string path = _fixture.CreateSalesWorkbook("bad-sheet.xlsx");
 
@@ -757,13 +758,12 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
         {
             Input = path,
             Output = TestOutput.At(_fixture.Temp.File("never.csv"), format: "csv"),
-            SheetName = "Dat",
+            Sheets = PageRange.Parse("9"),
         }));
 
         Assert.Equal("SHEET_NOT_FOUND", exception.Code.Name);
-        Assert.Equal("Dat", exception.Details!["requested"]!.GetValue<string>());
-        Assert.Contains("Data", exception.Details["available"]!.AsArray().Select(static name => name!.GetValue<string>()));
-        Assert.Equal("Data", exception.Details["suggestions"]![0]!.GetValue<string>());
+        Assert.NotNull(exception.Details!["requested"]);
+        Assert.NotNull(exception.Details["availableCount"]);
     }
 
     // The legacy xls grid is 65,536 rows × 256 columns. A modern source that
@@ -952,10 +952,68 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
             Dpi = 96,
         });
 
-        Assert.Equal("Data", result.Sheet);
+        Assert.Equal("Data", Assert.Single(result.Outputs).Sheet);
         Assert.Equal("A1:C3", result.Range);
         Assert.Equal(96, result.Dpi);
         Assert.True(HasHeader(output, [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]));
+    }
+
+    [Fact]
+    public void ConvertAndRender_SelectSeveralSheetsByPosition()
+    {
+        string path = _fixture.CreateSalesWorkbook("selected.xlsx");
+
+        CellsConvertResult pdf = CellsConvert.Run(_fixture.Session, new CellsConvertRequest
+        {
+            Input = path,
+            Output = TestOutput.At(_fixture.Temp.File("selected.pdf"), format: "pdf"),
+            Sheets = PageRange.Parse("1-2"),
+        });
+        CellsRenderResult images = CellsRender.Run(_fixture.Session, new CellsRenderRequest
+        {
+            Input = path,
+            Output = TestOutput.At(_fixture.Temp.File("selected.png"), format: "png"),
+            Sheets = PageRange.Parse("2,1"),
+            Dpi = 72,
+        });
+
+        Assert.Equal(["Data", "Second"], pdf.Sheets);
+        Assert.Equal(["Data", "Second"], images.Outputs.Select(static output => output.Sheet));
+        Assert.All(images.Outputs, static output =>
+        {
+            Assert.Equal("png", output.Format);
+            Assert.True(File.Exists(output.Path));
+            Assert.Equal(new FileInfo(output.Path).Length, output.SizeBytes);
+        });
+        Assert.Equal(
+            [_fixture.Temp.File("selected.Data.png"), _fixture.Temp.File("selected.Second.png")],
+            images.Outputs.Select(static output => output.Path));
+    }
+
+    [Fact]
+    public void Render_TwoSheetsThatNameOneFile_SuffixTheSecondWithItsPosition()
+    {
+        string path = _fixture.Temp.File("colliding.xlsx");
+        using (var workbook = new Aspose.Cells.Workbook())
+        {
+            workbook.Worksheets[0].Name = "A<B";
+            workbook.Worksheets[0].Cells["A1"].PutValue("first");
+            Aspose.Cells.Worksheet second = workbook.Worksheets[workbook.Worksheets.Add()];
+            second.Name = "A>B";
+            second.Cells["A1"].PutValue("second");
+            workbook.Save(path);
+        }
+
+        CellsRenderResult result = CellsRender.Run(_fixture.Session, new CellsRenderRequest
+        {
+            Input = path,
+            Output = TestOutput.At(_fixture.Temp.File("colliding.png"), format: "png"),
+            Dpi = 72,
+        });
+
+        Assert.Equal(
+            [_fixture.Temp.File("colliding.A_B.png"), _fixture.Temp.File("colliding.A_B2.png")],
+            result.Outputs.Select(static output => output.Path));
     }
 
     [Fact]
@@ -968,7 +1026,7 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
         {
             Input = path,
             Output = TestOutput.At(output, format: "svg"),
-            SheetName = "Data",
+            Sheets = PageRange.Parse("1"),
         });
 
         Assert.Null(result.Dpi);

@@ -1,4 +1,5 @@
 using System.CommandLine;
+using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.Extensibility.Output;
 
@@ -10,16 +11,16 @@ namespace Aspose.Cli.Product.Cells.Commands;
 /// </summary>
 internal static class InspectCommand
 {
-    private const int MaxPreviewRows = 100;
+    private const int MaxSampleRows = 100;
 
     public static CommandDefinition<CellsInspectRequest, CellsInspectResult> Create()
     {
-        var sample = new SampleOption($"display values of the first --preview-rows rows and up to {CellsSheetInfo.PreviewColumns} columns of each sheet, from A1");
-        var previewRows = new Option<int>("--preview-rows")
+        var sample = new SampleOption($"display values of the first --sample-rows rows and up to {CellsSheetInfo.PreviewColumns} columns of each sheet, from A1");
+        var sampleRows = new Option<int>("--sample-rows")
         {
-            Description = "Number of preview rows per sheet.",
+            Description = "Number of sample rows per sheet. Only with --sample.",
             DefaultValueFactory = _ => 5,
-        }.InRange(1, MaxPreviewRows);
+        }.InRange(1, MaxSampleRows);
         var detail = new DetailOption(CellsInspectDetails.All, new Dictionary<string, string>
         {
             [CellsInspectDetails.Names] = "defined names",
@@ -30,15 +31,22 @@ internal static class InspectCommand
             "inspect",
             "Show structure and metadata of a workbook.",
             new CommandTraits { Input = CellsInputs.Workbook("Workbook to inspect (xlsx, xlsm, xlsb, xls, ods, csv, ...).") },
-            [.. sample.Options, previewRows, .. detail.Options],
+            [.. sample.Options, sampleRows, .. detail.Options],
             (parse, standard) =>
             {
-                int rows = parse.GetInRange(previewRows, "Pass a smaller sample size; previews are meant to be cheap to read.");
+                int rows = parse.GetInRange(sampleRows, "Pass a smaller sample size; samples are meant to be cheap to read.");
+                if (!sample.Read(parse) && parse.GetResult(sampleRows) is { Implicit: false })
+                {
+                    throw CliErrors.OptionInvalid(
+                        sampleRows.Name,
+                        "--sample-rows sizes the sample, which only --sample includes",
+                        "Add --sample to include the sample, or drop --sample-rows.");
+                }
                 return new CellsInspectRequest
                 {
                     Input = standard.Input,
                     IncludePreview = sample.Read(parse),
-                    PreviewRows = rows,
+                    SampleRows = rows,
                     Details = detail.Read(parse),
                     Password = standard.InputPassword,
                 };
@@ -63,7 +71,7 @@ internal static class InspectCommand
         CellsWorkbookSummary workbook = info.Workbook;
         ResultText.Input(surface, info.Input);
         surface.Out.WriteLine(
-            $"sheets: {workbook.SheetCount}   vba: {TableText.YesNo(workbook.HasVba)}   defined names: {workbook.DefinedNameCount}   encrypted: {TableText.YesNo(info.Input.Encrypted == true)}   structure protected: {TableText.YesNo(workbook.StructureProtected)}");
+            $"sheets: {workbook.SheetCount}   macros: {TableText.YesNo(workbook.HasMacros)}   defined names: {workbook.DefinedNameCount}   encrypted: {TableText.YesNo(info.Input.Encrypted == true)}   structure protected: {TableText.YesNo(workbook.StructureProtected)}");
         surface.Out.WriteLine();
 
         var table = new TextTable("name", "position", "used range", "rows", "columns", "hidden", "protected", "charts", "pivots");
@@ -108,13 +116,13 @@ internal static class InspectCommand
             static name => [name.Name, name.RefersTo]);
         ResultText.Table(surface, "formula errors", workbook.FormulaErrors, ["sheet", "cell", "error"],
             static error => [error.Sheet, error.Cell, error.Error]);
-        ResultText.Table(surface, "validations", workbook.Validations, ["sheet", "range", "type"],
-            static validation => [validation.Sheet, validation.Range, validation.Type]);
+        ResultText.Table(surface, "validations", workbook.Validations, ["sheet", "range", "kind"],
+            static validation => [validation.Sheet, validation.Range, validation.Kind]);
         ResultText.Table(surface, "fonts", workbook.Fonts, ["font"], static font => [font]);
         ResultText.Table(surface, "tables", workbook.Tables, ["sheet", "name", "range"],
             static item => [item.Sheet, item.Name, item.Range]);
-        ResultText.Table(surface, "charts", workbook.Charts, ["sheet", "index", "name", "type"],
-            static chart => [chart.Sheet, TableText.Int(chart.Index), chart.Name, chart.Type]);
+        ResultText.Table(surface, "charts", workbook.Charts, ["sheet", "index", "name", "kind"],
+            static chart => [chart.Sheet, TableText.Int(chart.Index), chart.Name, chart.Kind]);
         ResultText.Table(surface, "pivots", workbook.Pivots, ["sheet", "name", "range"],
             static pivot => [pivot.Sheet, pivot.Name, pivot.Range]);
         ResultText.Table(surface, "layouts", workbook.Layouts,

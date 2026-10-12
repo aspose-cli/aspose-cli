@@ -124,9 +124,9 @@ internal static class ImportOps
             }
 
             WarnUncachedLinks(source, origin.Cells, sheet, 0, 0, sources);
-            if (op.Position is { } position)
+            if (op.At is { } at)
             {
-                sheet.MoveTo(position);
+                sheet.MoveTo(at - 1);
             }
         }
         catch

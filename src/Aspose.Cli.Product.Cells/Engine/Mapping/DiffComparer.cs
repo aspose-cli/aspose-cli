@@ -79,8 +79,8 @@ internal static class DiffComparer
                     cells.Add(new CellsCellDiff
                     {
                         Cell = A1.FormatCell(new CellRef(row, column)),
-                        Left = leftValue.Side(leftFormula),
-                        Right = rightValue.Side(rightFormula),
+                        Left = leftValue.Side(a, leftFormula),
+                        Right = rightValue.Side(b, rightFormula),
                     });
                 }
             }

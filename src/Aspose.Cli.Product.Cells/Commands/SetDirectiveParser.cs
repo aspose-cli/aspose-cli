@@ -69,7 +69,7 @@ internal static class SetDirectiveParser
         {
             spec = A1.ParseRange(target);
         }
-        catch (CliException ex) when (ex.Code == CellsDiagnostics.RangeInvalid)
+        catch (CliException ex) when (ex.Code == ErrorCodes.OpsInvalid)
         {
             throw Invalid(directive, ex.Message,
                 "The target must be a sheet-qualified single cell such as Sales!B3 " +

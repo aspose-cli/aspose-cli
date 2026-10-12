@@ -20,10 +20,10 @@ Detection is two cheap reads:
 
 ```sh
 aspose-cli cells inspect book.xlsx --detail fonts --output-format json
-aspose-cli cells query range book.xlsx --sheet Data --range A1:I3 --scope styles --output-format json
+aspose-cli cells read book.xlsx --sheet Data --range A1:I3 --content styles --output-format json
 ```
 
-`--scope styles` maps each cell to a deduplicated `styles` pool — sample the
+`--content styles` maps each cell to a deduplicated `styles` pool — sample the
 header rows' fills, fonts and number formats. Headers sharing a fill and a
 font are a design language: take the exact hexes from the pool, the font, the
 header treatment, and apply THIS document only where the file is silent.
@@ -367,7 +367,7 @@ aspose-cli cells edit book.xlsx --in-place --ops '{"ops":[
   {"op":"set_tab_color","sheet":"Dashboard","color":"#1F3864"},
   {"op":"set_tab_color","sheet":"Config","color":"#4472C4"},
   {"op":"set_tab_color","sheet":"Data","color":"#808080"},
-  {"op":"move_sheet","sheet":"Dashboard","position":0},
+  {"op":"move_sheet","sheet":"Dashboard","to":1},
   {"op":"set_sheet_view","sheet":"Dashboard","gridlines":false},
   {"op":"set_page_setup","sheet":"Dashboard","orientation":"landscape","paperSize":"a4","fitToWidth":1,"fitToHeight":1},
   {"op":"set_print_area","sheet":"Dashboard","range":"A1:Q37"}
@@ -438,7 +438,7 @@ one depends on it:
 
 ```sh
 aspose-cli review book.xlsx --out scratch/book.review-1 --output-format json
-aspose-cli cells render book.xlsx --sheet Data --range A1:I12 --out scratch/data.png --overwrite
+aspose-cli cells render book.xlsx --range Data!A1:I12 --out scratch/data.png --overwrite
 aspose-cli cells inspect book.xlsx --detail errors --output-format json
 ```
 

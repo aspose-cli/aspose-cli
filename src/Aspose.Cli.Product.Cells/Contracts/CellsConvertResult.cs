@@ -13,6 +13,7 @@ public sealed record CellsConvertResult() : EngineResultEnvelope("convert-result
     [JsonPropertyOrder(-49)]
     public required OutputInfo Output { get; init; }
 
-    /// <summary>Sheet the conversion was limited to, when <c>--sheet</c> was given.</summary>
-    public string? Sheet { get; init; }
+    /// <summary>The sheets the conversion was limited to, in workbook order, when <c>--sheets</c> selected some.</summary>
+    [MinItems(1)]
+    public IReadOnlyList<string>? Sheets { get; init; }
 }

@@ -91,20 +91,33 @@ internal static partial class ContractRules
     }
 
     /// <summary>
-    /// The hint of a too large <c>cells query range</c> request, which a source composes from
-    /// constants that the reading of the sources cannot see, names no hidden option.
+    /// A <c>cells read</c> over its cell budget, whose follow-up a source composes from constants
+    /// that the reading of the sources cannot see: it succeeds with its first window and a
+    /// window.next, and no message or hint it prints names a hidden option; only the generated
+    /// window.next carries one.
     /// </summary>
     private static InvariantCase HiddenInHintCase(CliCatalog catalog) =>
-        Check("C-R04", "cells query range budget hint", () =>
+        Check("C-R04", "cells read budget hint", () =>
         {
             string[] hidden = [.. HiddenOptions(catalog)];
             using var workspace = new TempWorkspace();
             File.WriteAllBytes(workspace.File("book.xlsx"), ScenarioFixtures.Read("cells.xlsx"));
-            CliResult result = workspace.Run("cells", "query", "range", "book.xlsx", "--range", "A1:Z100", "--max-cells", "10", "--output-format", "json");
-            JsonNode? error = JsonNode.Parse(result.StdOut.Length > 0 ? result.StdOut : result.StdErr)?["error"];
-            string text = $"{error?["message"]} {error?["hint"]}";
+            CliResult result = workspace.Run("cells", "read", "book.xlsx", "--range", "A1:Z100", "--max-cells", "1", "--output-format", "json");
+            if (result.ExitCode != 0 || JsonNode.Parse(result.StdOut.Length > 0 ? result.StdOut : result.StdErr) is not { } document
+                || document["error"] is not null)
+            {
+                return [$"a read over its budget failed with exit {result.ExitCode}: {result.StdErr.Trim()}"];
+            }
+
+            if (document["window"]?["next"] is null)
+            {
+                return ["a read over its budget gave no window.next"];
+            }
+
+            string text = string.Join(' ', (document["warnings"]?.AsArray() ?? [])
+                .Select(static warning => $"{warning?["message"]} {warning?["hint"]}"));
             return hidden.Where(name => OptionMention(name).IsMatch(text))
-                .Select(name => $"the {error?["code"]} hint names the hidden option {name}");
+                .Select(name => $"a warning of the read names the hidden option {name}");
         }, shard: "cells");
 
     /// <summary>The options that every command hides: a name some command shows is public.</summary>

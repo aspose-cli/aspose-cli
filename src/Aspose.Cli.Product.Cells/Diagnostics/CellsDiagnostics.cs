@@ -11,11 +11,6 @@ internal static class CellsDiagnostics
     internal static readonly ErrorCode PivotNotFound = ErrorCode.NotFound("PIVOT_NOT_FOUND");
     internal static readonly ErrorCode CommentNotFound = ErrorCode.NotFound("COMMENT_NOT_FOUND");
     internal static readonly ErrorCode HyperlinkNotFound = ErrorCode.NotFound("HYPERLINK_NOT_FOUND");
-    internal static readonly ErrorCode RangeInvalid =
-        new("RANGE_INVALID", ExitCode.ValidationError);
-    /// <summary>An explicit read range exceeds the --max-cells budget.</summary>
-    internal static readonly ErrorCode RangeTooLarge =
-        new("RANGE_TOO_LARGE", ExitCode.ValidationError);
     /// <summary>The selected sheet has no content to render.</summary>
     internal static readonly ErrorCode RenderEmpty =
         new("RENDER_EMPTY", ExitCode.ValidationError);
@@ -26,7 +21,7 @@ internal static class CellsDiagnostics
     internal static readonly WarningCode MhtmlResourceCoverageUnverified = new("MHTML_RESOURCE_COVERAGE_UNVERIFIED");
     internal static readonly WarningCode FormulasBroken = new("FORMULAS_BROKEN");
     internal static readonly WarningCode FormulasCalculatedOnOpen = new("FORMULAS_CALCULATED_ON_OPEN");
-    internal static readonly WarningCode SheetPartiallyRendered = new("CELLS_SHEET_PARTIALLY_RENDERED");
+    internal static readonly WarningCode SheetPartiallyRendered = new("SHEET_PARTIALLY_RENDERED");
     /// <summary>The active sheet is an evaluation warning sheet, so a command that names no sheet used another one.</summary>
     internal static readonly WarningCode ActiveSheetSkipped = new("ACTIVE_SHEET_SKIPPED");
 
@@ -65,8 +60,6 @@ internal static class CellsDiagnostics
         DiagnosticDescriptor.Error(PivotNotFound),
         DiagnosticDescriptor.Error(CommentNotFound),
         DiagnosticDescriptor.Error(HyperlinkNotFound),
-        DiagnosticDescriptor.Error(RangeInvalid),
-        DiagnosticDescriptor.Error(RangeTooLarge),
         DiagnosticDescriptor.Error(RenderEmpty),
         DiagnosticDescriptor.Warning(SheetsDropped),
         DiagnosticDescriptor.Warning(SheetsSkipped),

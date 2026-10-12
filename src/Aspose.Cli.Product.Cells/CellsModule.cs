@@ -37,9 +37,8 @@ public sealed class CellsModule : IProductModule
             .View(new CellsViewAdapter())
             .Describe("Spreadsheet operations (Excel and friends) with engine-grade fidelity.", Help)
             .Command(InspectCommand.Create, CellsInfo.Run)
-            .Group("query", "Read bounded workbook data without mutating the source file.", static query => query
-                .Command(ReadCommand.Create, CellsRead.Run)
-                .Command(SearchCommand.Create, CellsSearch.Run))
+            .Command(ReadCommand.Create, CellsRead.Run)
+            .Command(SearchCommand.Create, CellsSearch.Run)
             .Command(CreateCommand.Create, CellsCreate.Run)
             .Command(EditCommand.Create, CellsEdit.Run)
             .Command(CompareCommand.Create, CellsDiff.Run)

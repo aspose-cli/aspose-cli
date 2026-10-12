@@ -41,7 +41,7 @@ public sealed class CellsValueAndObjectTests : IClassFixture<CellsFixture>
             Input = output,
             SheetName = "Data",
             Range = A1.ParseRange("A1").Range,
-            Scope = CellsReadScopes.Full,
+            Content = CellsReadContents.Full,
             MaxCells = 1,
         });
         string styleId = Assert.IsType<string>(read.Sheet.Cells![0][0].StyleId);
@@ -108,7 +108,7 @@ public sealed class CellsValueAndObjectTests : IClassFixture<CellsFixture>
 
         string output = Apply(
             source,
-            """{ "ops": [ { "op": "update_chart", "sheet": "Data", "index": 0, "title": "Revised", "dataRange": "E1:F4" } ] }""",
+            """{ "ops": [ { "op": "update_chart", "sheet": "Data", "index": 1, "title": "Revised", "dataRange": "E1:F4" } ] }""",
             "axis-auto.out.xlsx");
 
         Assert.Null(ReadValueAxisMinimum(output));

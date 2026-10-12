@@ -100,7 +100,7 @@ internal static partial class ContractRules
     /// One failing invocation of each kind a caller meets, per product with a fixture and for the
     /// platform: a missing or corrupt input, an unknown option or command, a missing argument, an
     /// invalid option value, an unknown op or field and several invalid operations, a missing target,
-    /// an output or created file extension no format has, an input, read range or raster over its
+    /// an output or created file extension no format has, an input or raster over its
     /// budget, an evaluation export of a later worksheet and an output in another product's format.
     /// </summary>
     private static IEnumerable<DetailsSample> DetailsSamples(CliCatalog catalog)
@@ -187,11 +187,6 @@ internal static partial class ContractRules
                     Setup = [[.. edit.Args.Where(static arg => arg != "--dry-run"), "--in-place"]],
                     EvaluationOnly = true,
                 };
-            }
-
-            if (catalog.Commands.FirstOrDefault(command => command.Product == id && !command.Hidden && command.Has("--range")) is { } ranged)
-            {
-                yield return new DetailsSample($"{id} range over budget", id, Invocation.For(ranged, "--range").Add("--range", "A1:XFD1048576"));
             }
 
             CliCommand convert = catalog.Command($"{id} convert");

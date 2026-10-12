@@ -61,7 +61,7 @@ public sealed record ProductCapabilitiesSummary
 /// <summary>One product command and what it does.</summary>
 public sealed record CommandCapabilitiesSummary
 {
-    /// <summary>Product-relative command path, e.g. <c>query range</c>.</summary>
+    /// <summary>Product-relative command path, e.g. <c>read</c>.</summary>
     [MinLength(1)]
     public required string Command { get; init; }
 

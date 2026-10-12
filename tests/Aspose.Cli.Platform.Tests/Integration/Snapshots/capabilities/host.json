@@ -816,7 +816,7 @@
           "additionalProperties": false,
           "properties": {
             "path": {
-              "description": "Full command path, e.g. cells query range.",
+              "description": "Full command path, e.g. cells read.",
               "type": "string"
             },
             "name": {
@@ -1564,7 +1564,7 @@
           "additionalProperties": false,
           "properties": {
             "command": {
-              "description": "Product-relative command path, e.g. query range.",
+              "description": "Product-relative command path, e.g. read.",
               "type": "string",
               "minLength": 1
             },

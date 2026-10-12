@@ -1,3 +1,4 @@
+using Aspose.Cli.Sdk.Addressing;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Rendering;
 
@@ -12,19 +13,26 @@ public sealed record CellsRenderRequest
     /// <summary>The resolved output: its format, path and overwrite permission.</summary>
     public required ResolvedOutput Output { get; init; }
 
-    /// <summary>Sheet to render; the active sheet when null.</summary>
-    public string? SheetName { get; init; }
-
-    /// <summary>Restrict rendering to this range; the whole sheet when null.</summary>
-    public RangeRef? Range { get; init; }
+    /// <summary>
+    /// The sheets to render by 1-based position, each to its own file derived from
+    /// <see cref="Output"/> (<c>&lt;stem&gt;.&lt;sheet&gt;&lt;ext&gt;</c>) when there are several;
+    /// null or <c>all</c> renders every visible sheet. With <see cref="Range"/> it selects one sheet.
+    /// </summary>
+    public PageRange? Sheets { get; init; }
 
     /// <summary>
-    /// Render every visible sheet, each to its own file derived from
-    /// <see cref="Output"/> (<c>&lt;base&gt;.&lt;Sheet&gt;&lt;ext&gt;</c>).
-    /// Mutually exclusive with <see cref="SheetName"/> and <see cref="Range"/>;
-    /// the command layer enforces that before the request is built.
+    /// The <c>--sheets</c> value as given when it may name a sheet: with no <see cref="Sheets"/>
+    /// it names one, such as <c>Summary</c>, and is refused once the workbook is open, with each
+    /// sheet and its position; a selection past the last sheet that a sheet has as its name,
+    /// such as <c>2024</c>, is refused the same way.
     /// </summary>
-    public bool AllSheets { get; init; }
+    public string? SheetsText { get; init; }
+
+    /// <summary>The sheet <see cref="Range"/> names; the selected or the active sheet when null.</summary>
+    public string? SheetName { get; init; }
+
+    /// <summary>Restrict rendering to this range of one sheet; whole sheets when null.</summary>
+    public RangeRef? Range { get; init; }
 
     /// <summary>Raster resolution in dots per inch (ignored for vector formats).</summary>
     public int Dpi { get; init; } = RenderPixelGuard.DefaultDpi;

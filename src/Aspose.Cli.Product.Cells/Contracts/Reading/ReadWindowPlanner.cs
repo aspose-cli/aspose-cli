@@ -1,7 +1,7 @@
 namespace Aspose.Cli.Product.Cells.Contracts.Reading;
 
 /// <summary>One planned read: the range it returns, the region it covers, and the page after it.</summary>
-/// <param name="Window">The range returned as cells; null for a summary-only or empty read.</param>
+/// <param name="Window">The range returned as cells; null when the read covers no data.</param>
 /// <param name="Region">
 /// The cells the read covers: an explicit range, or for a planned scan the scanned region
 /// within the used range. Null when the sheet has no data to scan.
@@ -19,11 +19,11 @@ internal readonly record struct ReadPlan(RangeRef? Window, RangeRef? Region, Ran
 internal static class ReadWindowPlanner
 {
     /// <summary>
-    /// Plans a read. An explicit range without a scan region is a complete request: it is
-    /// returned whole and has no next page (the read command refuses one over the budget
-    /// before the engine opens the workbook). A default read scans the used range and a
-    /// generated page scans the region its command carries; an over-budget default read
-    /// degrades to a summary whose next page is the first window of the data.
+    /// Plans a read. A read within the budget returns its range whole: an explicit range as
+    /// requested, by default the used range. A read over the budget is a planned scan of the
+    /// data it covers (the used range, the part of an explicit range inside it, or the region a
+    /// generated page's command carries): it returns the first window, or the page its command
+    /// names, and the page after it.
     /// </summary>
     /// <param name="range">The explicit range, or the current page of a scan.</param>
     /// <param name="scan">The region a generated page belongs to; null otherwise.</param>
@@ -31,20 +31,20 @@ internal static class ReadWindowPlanner
     /// <param name="maxCells">The cell budget of one read.</param>
     public static ReadPlan Plan(RangeRef? range, RangeRef? scan, RangeRef? usedRange, int maxCells)
     {
-        if (range is { } requested && scan is null)
+        if (range is { } requested && scan is null && requested.CellCount <= maxCells)
         {
             return new ReadPlan(requested, requested, null);
         }
 
-        if (usedRange is not { } used)
+        if (usedRange is not { } used || Intersect(scan ?? range ?? used, used) is not { } region)
         {
-            return new ReadPlan(range, null, null);
+            return new ReadPlan(null, null, null);
         }
 
-        RangeRef? window = range ?? (used.CellCount <= maxCells ? used : null);
-        RangeRef? region = Intersect(scan ?? used, used);
-        RangeRef? next = region is { } bounds ? NextWindow(window, bounds, maxCells) : null;
-        return new ReadPlan(window, region, next);
+        RangeRef window = scan is not null && range is { } page
+            ? page
+            : region.CellCount <= maxCells ? region : FirstWindow(region, maxCells);
+        return new ReadPlan(window, region, NextWindow(window, region, maxCells));
     }
 
     /// <summary>First window of at most <paramref name="maxCells"/> cells inside a range.</summary>
@@ -59,8 +59,8 @@ internal static class ReadWindowPlanner
 
     /// <summary>
     /// The page after <paramref name="window"/> inside <paramref name="region"/>, or null when
-    /// the scan has covered everything it promises to. A summary (no window) continues with
-    /// the first window; otherwise the window shifts down one page of the same shape.
+    /// the scan has covered everything it promises to: the window shifts down one page of the
+    /// same shape.
     /// </summary>
     /// <remarks>
     /// A scan owes the caller the WHOLE region: when the budget is smaller than the region
@@ -68,33 +68,28 @@ internal static class ReadWindowPlanner
     /// having never returned the right-hand columns. So the scan moves to the next column
     /// band once its rows run out.
     /// </remarks>
-    private static RangeRef? NextWindow(RangeRef? window, RangeRef region, int maxCells)
+    private static RangeRef? NextWindow(RangeRef window, RangeRef region, int maxCells)
     {
-        if (window is not { } w)
-        {
-            return FirstWindow(region, maxCells);
-        }
-
-        if (w.Start.Column > region.End.Column)
+        if (window.Start.Column > region.End.Column)
         {
             return null;
         }
 
-        if (w.End.Row < region.End.Row)
+        if (window.End.Row < region.End.Row)
         {
             // More rows below the window: same shape, shifted down.
-            int nextStartRow = w.End.Row + 1;
-            int nextEndRow = Math.Min(nextStartRow + w.RowCount - 1, region.End.Row);
+            int nextStartRow = window.End.Row + 1;
+            int nextEndRow = Math.Min(nextStartRow + window.RowCount - 1, region.End.Row);
             return new RangeRef(
-                new CellRef(nextStartRow, w.Start.Column),
-                new CellRef(nextEndRow, w.End.Column));
+                new CellRef(nextStartRow, window.Start.Column),
+                new CellRef(nextEndRow, window.End.Column));
         }
 
-        if (w.End.Column < region.End.Column)
+        if (window.End.Column < region.End.Column)
         {
             // Rows exhausted but columns remain: start the next band at the top.
-            int startColumn = w.End.Column + 1;
-            int endColumn = Math.Min(startColumn + w.ColumnCount - 1, region.End.Column);
+            int startColumn = window.End.Column + 1;
+            int endColumn = Math.Min(startColumn + window.ColumnCount - 1, region.End.Column);
             int rows = Math.Min(region.RowCount, Math.Max(1, maxCells / (endColumn - startColumn + 1)));
             return new RangeRef(
                 new CellRef(region.Start.Row, startColumn),

@@ -47,7 +47,7 @@
       "commands": [
         {
           "command": "compare",
-          "description": "Compare stored workbook values and optional formula text; dates use raw serial numbers."
+          "description": "Compare stored workbook values and optional formula text; dates are ISO 8601."
         },
         {
           "command": "convert",
@@ -66,20 +66,16 @@
           "description": "Show structure and metadata of a workbook."
         },
         {
-          "command": "query",
-          "description": "Read bounded workbook data without mutating the source file."
-        },
-        {
-          "command": "query range",
+          "command": "read",
           "description": "Read cell data of one sheet as a windowed projection."
         },
         {
-          "command": "query search",
-          "description": "Find cells whose value or formula matches a pattern."
+          "command": "render",
+          "description": "Render sheets, or a range of one, to images."
         },
         {
-          "command": "render",
-          "description": "Render a sheet, a range, or every visible sheet to images."
+          "command": "search",
+          "description": "Find cells whose value or formula matches a pattern."
         }
       ],
       "operations": [
