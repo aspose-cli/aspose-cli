@@ -7,7 +7,7 @@ namespace Aspose.Cli.Product.Cells.Contracts;
 /// <summary>Adds a hyperlink to one cell: an external URL or an internal target.</summary>
 [Operation("set_hyperlink")]
 [ExactlyOneOf("url", "target")]
-public sealed record SetHyperlinkOp : CellsOp
+public sealed record SetHyperlinkOp : CellsSheetOp
 {
     /// <summary>The cell to link, such as B2.</summary>
     [A1Cell] public required string Cell { get; init; }
@@ -26,8 +26,9 @@ public sealed record SetHyperlinkOp : CellsOp
 }
 
 /// <summary>Removes the hyperlink covering a cell.</summary>
-[Operation("remove_hyperlink")]
-public sealed record RemoveHyperlinkOp : CellsOp
+[Operation("delete_hyperlink")]
+[MistakenFor("remove_hyperlink")]
+public sealed record DeleteHyperlinkOp : CellsSheetOp
 {
     /// <summary>A cell the hyperlink covers, such as B2.</summary>
     [A1Cell] public required string Cell { get; init; }

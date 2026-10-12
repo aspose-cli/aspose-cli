@@ -30,8 +30,8 @@ public sealed class CellsSheetReferenceTests : IClassFixture<CellsFixture>
             source,
             $$"""
             { "ops": [
-              { "op": "create_chart", "sheet": "Dash", "type": "column", "dataRange": "{{name}}!A1:B3", "at": "D2:J12" },
-              { "op": "create_pivot", "sheet": "Dash", "sourceRange": "{{name}}!A1:B3", "at": "A1",
+              { "op": "insert_chart", "sheet": "Dash", "kind": "column", "dataRange": "{{name}}!A1:B3", "at": "D2:J12" },
+              { "op": "insert_pivot", "sheet": "Dash", "sourceRange": "{{name}}!A1:B3", "at": "A1",
                 "rows": ["Region"], "values": [{ "field": "Amount" }] },
               { "op": "add_sparkline", "sheet": "Dash", "dataRange": "{{name}}!B2:B3", "location": "A10:A11" },
               { "op": "set_hyperlink", "sheet": "Dash", "cell": "A14", "target": "{{name}}!A1" }
@@ -59,8 +59,8 @@ public sealed class CellsSheetReferenceTests : IClassFixture<CellsFixture>
             source,
             $$"""
             { "ops": [
-              { "op": "create_chart", "sheet": "{{name}}", "type": "line", "dataRange": "A1:B3", "at": "D2:J12" },
-              { "op": "create_pivot", "sheet": "{{name}}", "sourceRange": "A1:B3", "at": "D20",
+              { "op": "insert_chart", "sheet": "{{name}}", "kind": "line", "dataRange": "A1:B3", "at": "D2:J12" },
+              { "op": "insert_pivot", "sheet": "{{name}}", "sourceRange": "A1:B3", "at": "D20",
                 "rows": ["Region"], "values": [{ "field": "Amount" }] },
               { "op": "add_sparkline", "sheet": "{{name}}", "dataRange": "B2:B3", "location": "C2:C3" }
             ] }
@@ -116,7 +116,7 @@ public sealed class CellsSheetReferenceTests : IClassFixture<CellsFixture>
         string source = Seed("Data");
         string output = Apply(
             source,
-            $$"""{ "ops": [ { "op": "add_sparkline", "sheet": "Data", "type": "{{type}}", "dataRange": "{{data}}", "location": "{{location}}" } ] }""",
+            $$"""{ "ops": [ { "op": "add_sparkline", "sheet": "Data", "kind": "{{type}}", "dataRange": "{{data}}", "location": "{{location}}" } ] }""",
             "one-call.out.xlsx");
 
         using var reference = new Workbook(source);
@@ -141,8 +141,8 @@ public sealed class CellsSheetReferenceTests : IClassFixture<CellsFixture>
     }
 
     [Theory]
-    [InlineData("""{ "op": "create_chart", "sheet": "Dash", "type": "column", "dataRange": "Nope!A1:B3", "at": "D2:J12" }""")]
-    [InlineData("""{ "op": "create_pivot", "sheet": "Dash", "sourceRange": "Nope!A1:B3", "at": "A1", "values": [{ "field": "Amount" }] }""")]
+    [InlineData("""{ "op": "insert_chart", "sheet": "Dash", "kind": "column", "dataRange": "Nope!A1:B3", "at": "D2:J12" }""")]
+    [InlineData("""{ "op": "insert_pivot", "sheet": "Dash", "sourceRange": "Nope!A1:B3", "at": "A1", "values": [{ "field": "Amount" }] }""")]
     [InlineData("""{ "op": "add_sparkline", "sheet": "Dash", "dataRange": "Nope!B2:B3", "location": "A10:A11" }""")]
     [InlineData("""{ "op": "set_hyperlink", "sheet": "Dash", "cell": "A1", "target": "Nope!A1" }""")]
     public void AReferenceToAMissingSheet_IsSheetNotFound(string operation)
@@ -198,9 +198,9 @@ public sealed class CellsSheetReferenceTests : IClassFixture<CellsFixture>
             source,
             """
             { "ops": [
-              { "op": "create_pivot", "sheet": "Dash", "sourceRange": "Data!A1:B3", "at": "A1", "rows": ["Region"], "values": [{ "field": "Amount" }] },
-              { "op": "create_pivot", "sheet": "Dash", "sourceRange": "Data!A1:B3", "at": "E1", "rows": ["Region"], "values": [{ "field": "Amount" }] },
-              { "op": "create_pivot", "sheet": "Data", "sourceRange": "A1:B3", "at": "E1", "values": [{ "field": "Amount" }] }
+              { "op": "insert_pivot", "sheet": "Dash", "sourceRange": "Data!A1:B3", "at": "A1", "rows": ["Region"], "values": [{ "field": "Amount" }] },
+              { "op": "insert_pivot", "sheet": "Dash", "sourceRange": "Data!A1:B3", "at": "E1", "rows": ["Region"], "values": [{ "field": "Amount" }] },
+              { "op": "insert_pivot", "sheet": "Data", "sourceRange": "A1:B3", "at": "E1", "values": [{ "field": "Amount" }] }
             ] }
             """,
             "pivot-names.out.xlsx");
@@ -215,7 +215,7 @@ public sealed class CellsSheetReferenceTests : IClassFixture<CellsFixture>
 
         CliException error = Assert.Throws<CliException>(() => Apply(
             output,
-            """{ "ops": [ { "op": "create_pivot", "sheet": "Dash", "sourceRange": "Data!A1:B3", "at": "J1", "name": "pivottable1", "values": [{ "field": "Amount" }] } ] }""",
+            """{ "ops": [ { "op": "insert_pivot", "sheet": "Dash", "sourceRange": "Data!A1:B3", "at": "J1", "name": "pivottable1", "values": [{ "field": "Amount" }] } ] }""",
             "pivot-duplicate.out.xlsx"));
         Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
         Assert.Contains("PivotTable1", error.Message, StringComparison.OrdinalIgnoreCase);

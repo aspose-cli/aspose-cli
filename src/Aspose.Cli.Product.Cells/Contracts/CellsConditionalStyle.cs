@@ -26,8 +26,8 @@ public sealed record CellsConditionalStyle
     [HexColor] public string? Color { get; init; }
 
     /// <summary>The solid background fill color.</summary>
-    [MistakenFor("backgroundColor", "bgColor", "fillColor", "background", "fill")]
-    [HexColor] public string? Bg { get; init; }
+    [MistakenFor("bg", "backgroundColor", "bgColor", "background", "fill")]
+    [HexColor] public string? FillColor { get; init; }
 
     /// <summary>The number format code, such as 0.0%.</summary>
     [MinLength(1)] public string? NumberFormat { get; init; }
@@ -40,7 +40,7 @@ public sealed record CellsConditionalStyle
         Underline = Underline,
         Strikethrough = Strikethrough,
         Color = Color,
-        Bg = Bg,
+        FillColor = FillColor,
         NumberFormat = NumberFormat,
     };
 }

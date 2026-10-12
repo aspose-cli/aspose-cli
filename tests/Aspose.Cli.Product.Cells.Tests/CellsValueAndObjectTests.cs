@@ -24,8 +24,8 @@ public sealed class CellsValueAndObjectTests : IClassFixture<CellsFixture>
             source,
             """
             { "ops": [
-              { "op": "set_default_font", "font": "Calibri", "size": 10.5 },
-              { "op": "format_range", "sheet": "Data", "range": "A1", "style": { "size": 11.5 } }
+              { "op": "set_default_font", "font": "Calibri", "fontSize": 10.5 },
+              { "op": "format_range", "sheet": "Data", "range": "A1", "style": { "fontSize": 11.5 } }
             ] }
             """,
             "font-size.out.xlsx");
@@ -45,7 +45,7 @@ public sealed class CellsValueAndObjectTests : IClassFixture<CellsFixture>
             MaxCells = 1,
         });
         string styleId = Assert.IsType<string>(read.Sheet.Cells![0][0].StyleId);
-        Assert.Equal(11.5, read.Styles![styleId].Size);
+        Assert.Equal(11.5, read.Styles![styleId].FontSize);
     }
 
     [Theory]
@@ -53,13 +53,13 @@ public sealed class CellsValueAndObjectTests : IClassFixture<CellsFixture>
     [InlineData("""["Say \"hi\"", "West"]""")]
     [InlineData("""["", "West"]""")]
     public void ListValidation_RejectsItemsExcelCannotStoreLiterally(string items) =>
-        AssertInvalid($$"""{ "op": "set_validation", "range": "A1:A9", "type": "list", "listItems": {{items}} }""");
+        AssertInvalid($$"""{ "op": "set_validation", "range": "A1:A9", "kind": "list", "listItems": {{items}} }""");
 
     [Fact]
     public void ListValidation_RejectsAListLongerThanExcelAllows()
     {
         string items = string.Join(",", Enumerable.Range(0, 26).Select(static index => $"\"Item{index:000}xxxx\""));
-        CliException error = AssertInvalid($$"""{ "op": "set_validation", "range": "A1:A9", "type": "list", "listItems": [{{items}}] }""");
+        CliException error = AssertInvalid($$"""{ "op": "set_validation", "range": "A1:A9", "kind": "list", "listItems": [{{items}}] }""");
         Assert.Contains("255", error.Message, StringComparison.Ordinal);
     }
 
@@ -69,7 +69,7 @@ public sealed class CellsValueAndObjectTests : IClassFixture<CellsFixture>
         string source = _fixture.CreateSalesWorkbook("list.xlsx");
         string output = Apply(
             source,
-            """{ "ops": [ { "op": "set_validation", "sheet": "Data", "range": "D2:D9", "type": "list", "listItems": ["Low", "Medium", "High"] } ] }""",
+            """{ "ops": [ { "op": "set_validation", "sheet": "Data", "range": "D2:D9", "kind": "list", "listItems": ["Low", "Medium", "High"] } ] }""",
             "list.out.xlsx");
 
         using (var workbook = new Workbook(output))
@@ -108,7 +108,7 @@ public sealed class CellsValueAndObjectTests : IClassFixture<CellsFixture>
 
         string output = Apply(
             source,
-            """{ "ops": [ { "op": "update_chart", "sheet": "Data", "index": 1, "title": "Revised", "dataRange": "E1:F4" } ] }""",
+            """{ "ops": [ { "op": "set_chart", "sheet": "Data", "index": 1, "title": "Revised", "dataRange": "E1:F4" } ] }""",
             "axis-auto.out.xlsx");
 
         Assert.Null(ReadValueAxisMinimum(output));
@@ -122,7 +122,7 @@ public sealed class CellsValueAndObjectTests : IClassFixture<CellsFixture>
         string source = _fixture.CreateSalesWorkbook($"table-{style}.xlsx");
         string output = Apply(
             source,
-            $$"""{ "ops": [ { "op": "create_table", "sheet": "Data", "range": "A1:C2", "name": "Sales", "style": "{{style}}", "totalsRow": true } ] }""",
+            $$"""{ "ops": [ { "op": "define_table", "sheet": "Data", "range": "A1:C2", "name": "Sales", "tableStyle": "{{style}}", "totalsRow": true } ] }""",
             $"table-{style}.out.xlsx");
 
         using var workbook = new Workbook(output);
@@ -145,7 +145,7 @@ public sealed class CellsValueAndObjectTests : IClassFixture<CellsFixture>
 
         string output = Apply(
             source,
-            """{ "ops": [ { "op": "create_table", "sheet": "Data", "range": "A1:C2", "style": "HouseStyle" } ] }""",
+            """{ "ops": [ { "op": "define_table", "sheet": "Data", "range": "A1:C2", "tableStyle": "HouseStyle" } ] }""",
             "table-custom.out.xlsx");
 
         using var reopened = new Workbook(output);
@@ -164,7 +164,7 @@ public sealed class CellsValueAndObjectTests : IClassFixture<CellsFixture>
 
         CliException error = Assert.Throws<CliException>(() => Apply(
             source,
-            $$"""{ "ops": [ { "op": "create_table", "sheet": "Data", "range": "A1:C2", "style": "{{style}}" } ] }""",
+            $$"""{ "ops": [ { "op": "define_table", "sheet": "Data", "range": "A1:C2", "tableStyle": "{{style}}" } ] }""",
             "table-bad.out.xlsx"));
 
         Assert.Equal(ErrorCodes.StyleNotFound, error.Code);
@@ -185,9 +185,9 @@ public sealed class CellsValueAndObjectTests : IClassFixture<CellsFixture>
     public void CreateTable_RejectsANameExcelRefusesBeforeAnyWorkbookOpens(string name)
     {
         CliException error = AssertInvalid(
-            $$"""{ "op": "create_table", "sheet": "Data", "range": "A1:C2", "name": "{{name}}" }""");
+            $$"""{ "op": "define_table", "sheet": "Data", "range": "A1:C2", "name": "{{name}}" }""");
 
-        Assert.Equal("create_table", error.Details!["op"]!.GetValue<string>());
+        Assert.Equal("define_table", error.Details!["op"]!.GetValue<string>());
         Assert.Contains(name, error.Details["reason"]!.GetValue<string>(), StringComparison.Ordinal);
     }
 
@@ -200,10 +200,10 @@ public sealed class CellsValueAndObjectTests : IClassFixture<CellsFixture>
     [InlineData("Übersicht")]
     public void CreateTable_AcceptsANameExcelAllows(string name) =>
         Assert.Single(Parse(
-            $$"""{ "ops": [ { "op": "create_table", "sheet": "Data", "range": "A1:C2", "name": "{{name}}" } ] }""").Ops);
+            $$"""{ "ops": [ { "op": "define_table", "sheet": "Data", "range": "A1:C2", "name": "{{name}}" } ] }""").Ops);
 
     [Theory]
-    [InlineData("""{ "op": "create_table", "sheet": "Data", "range": "A1:C2", "name": "Sales" }""")]
+    [InlineData("""{ "op": "define_table", "sheet": "Data", "range": "A1:C2", "name": "Sales" }""")]
     [InlineData("""{ "op": "define_name", "name": "Sales", "refersTo": "=Data!$A$1" }""")]
     public void CreateTable_RejectsANameTheWorkbookAlreadyUses(string first)
     {
@@ -213,7 +213,7 @@ public sealed class CellsValueAndObjectTests : IClassFixture<CellsFixture>
 
         CliException error = Assert.Throws<CliException>(() => Apply(
             source,
-            $$"""{ "ops": [ {{first}}, { "op": "create_table", "sheet": "Data", "range": "E1:F2", "name": "sales" } ] }""",
+            $$"""{ "ops": [ {{first}}, { "op": "define_table", "sheet": "Data", "range": "E1:F2", "name": "sales" } ] }""",
             "table-taken.out.xlsx"));
 
         Assert.Equal(ErrorCodes.OpsInvalid, error.Code);

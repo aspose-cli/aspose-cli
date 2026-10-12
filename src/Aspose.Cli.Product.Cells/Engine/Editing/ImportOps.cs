@@ -33,18 +33,18 @@ internal sealed class CellsImportSources(
 
     internal void Warn(Warning warning) => _imports.Add(warning);
 
-    internal Workbook Open(string path, string? passwordEnv)
+    internal Workbook Open(string path, string? sourcePasswordEnv)
     {
         if (!_opened.TryGetValue(path, out LoadedWorkbook? loaded))
         {
             try
             {
-                loaded = loader.Open(path, OperationSecrets.Resolve(secrets, passwordEnv));
+                loaded = loader.Open(path, OperationSecrets.Resolve(secrets, sourcePasswordEnv));
             }
             catch (CliException error) when (CliErrors.IsPasswordError(error))
             {
                 // The loader names the command's password option; a source's comes from its operation.
-                throw CliErrors.ForOperationSource(error, "passwordEnv");
+                throw CliErrors.ForOperationSource(error, "sourcePasswordEnv");
             }
 
             _opened.Add(path, loaded);
@@ -69,7 +69,7 @@ internal static class ImportOps
 {
     public static long ImportRange(Worksheet sheet, ImportRangeOp op, CellsImportSources sources)
     {
-        Workbook source = sources.Open(op.Path, op.PasswordEnv);
+        Workbook source = sources.Open(op.Path, op.SourcePasswordEnv);
         RangeSpec spec = A1.ParseRange(op.From);
         Worksheet fromSheet = spec.SheetName is { } sheetName ? Sheets.Resolve(source, sheetName) : source.Worksheets[0];
         RangeRef from = spec.Range;
@@ -98,8 +98,8 @@ internal static class ImportOps
 
     public static long? ImportSheet(Workbook workbook, ImportSheetOp op, CellsImportSources sources)
     {
-        Workbook source = sources.Open(op.Path, op.PasswordEnv);
-        Worksheet origin = op.Sheet is { } sheetName ? Sheets.Resolve(source, sheetName) : source.Worksheets[0];
+        Workbook source = sources.Open(op.Path, op.SourcePasswordEnv);
+        Worksheet origin = op.SourceSheet is { } sheetName ? Sheets.Resolve(source, sheetName) : source.Worksheets[0];
         string name = op.Name ?? origin.Name;
         if (Sheets.Names(workbook).FirstOrDefault(existing => string.Equals(existing, name, StringComparison.OrdinalIgnoreCase)) is { } taken)
         {

@@ -14,8 +14,9 @@ public sealed record CellsStyleData
     [Pattern(@"\S")] public string? Font { get; init; }
 
     /// <summary>The font size in points; fractional sizes such as 10.5 are kept.</summary>
-    [ReadBack("read-result.schema.json#/$defs/cellsStyleData/properties/size")]
-    [Minimum(1), Maximum(409)] public double? Size { get; init; }
+    [MistakenFor("size")]
+    [ReadBack("read-result.schema.json#/$defs/cellsStyleData/properties/fontSize")]
+    [Minimum(1), Maximum(409)] public double? FontSize { get; init; }
 
     /// <summary>Whether the text is bold.</summary>
     [ReadBack("read-result.schema.json#/$defs/cellsStyleData/properties/bold")]
@@ -30,22 +31,23 @@ public sealed record CellsStyleData
     [HexColor] public string? Color { get; init; }
 
     /// <summary>The solid background fill color.</summary>
-    [MistakenFor("backgroundColor", "bgColor", "fillColor", "background", "fill")]
-    [ReadBack("read-result.schema.json#/$defs/cellsStyleData/properties/bg")]
-    [HexColor] public string? Bg { get; init; }
+    [MistakenFor("bg", "backgroundColor", "bgColor", "background", "fill")]
+    [ReadBack("read-result.schema.json#/$defs/cellsStyleData/properties/fillColor")]
+    [HexColor] public string? FillColor { get; init; }
 
     /// <summary>The number format code, such as 0.0%.</summary>
     [ReadBack("read-result.schema.json#/$defs/cellsStyleData/properties/numberFormat")]
     [MinLength(1)] public string? NumberFormat { get; init; }
 
     /// <summary>The horizontal alignment of the text.</summary>
-    [MistakenFor("horizontalAlignment", "alignment", "align", "textAlign")]
-    [ReadBack("read-result.schema.json#/$defs/cellsStyleData/properties/hAlign")]
-    [AllowedValues(typeof(CellsHorizontalAlignments))] public string? HAlign { get; init; }
+    [MistakenFor("hAlign", "horizontalAlignment", "align", "textAlign")]
+    [ReadBack("read-result.schema.json#/$defs/cellsStyleData/properties/alignment")]
+    [AllowedValues(typeof(CellsHorizontalAlignments))] public string? Alignment { get; init; }
 
     /// <summary>The vertical alignment of the text.</summary>
-    [ReadBack("read-result.schema.json#/$defs/cellsStyleData/properties/vAlign")]
-    [AllowedValues(typeof(CellsVerticalAlignments))] public string? VAlign { get; init; }
+    [MistakenFor("vAlign", "valign")]
+    [ReadBack("read-result.schema.json#/$defs/cellsStyleData/properties/verticalAlignment")]
+    [AllowedValues(typeof(CellsVerticalAlignments))] public string? VerticalAlignment { get; init; }
 
     /// <summary>Whether text wraps within the cell.</summary>
     [ReadBack("read-result.schema.json#/$defs/cellsStyleData/properties/wrap")]

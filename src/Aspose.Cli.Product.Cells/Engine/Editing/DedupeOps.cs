@@ -8,7 +8,7 @@ namespace Aspose.Cli.Product.Cells.Engine.Editing;
 /// </summary>
 internal static class DedupeOps
 {
-    public static long? RemoveDuplicates(Worksheet sheet, RemoveDuplicatesOp op)
+    public static long? RemoveDuplicates(Worksheet sheet, DeleteDuplicatesOp op)
     {
         RangeRef range = A1.ParseRange(op.Range).Range;
 

@@ -55,12 +55,12 @@ public sealed class CellsImportCliTests : IClassFixture<CellsImportCliTests.Sour
         Assert.Equal(2000.5, Cell("C5")["v"]!.GetValue<double>());
         Assert.Null(Cell("C5")["f"]);
         Assert.Equal("#,##0.00", StyleOf("C3")["numberFormat"]!.GetValue<string>());
-        Assert.Null(StyleOf("C3")["bg"]);
+        Assert.Null(StyleOf("C3")["fillColor"]);
         // all: formulas as written and the fill; the Rates reference points at this workbook,
         // which has no Rates sheet.
         Assert.Equal("=SUM(F3:F4)", Cell("F5")["f"]!.GetValue<string>());
         Assert.Equal(2000.5, Cell("F5")["v"]!.GetValue<double>());
-        Assert.Equal("#FFF2CC", StyleOf("F3")["bg"]!.GetValue<string>());
+        Assert.Equal("#FFF2CC", StyleOf("F3")["fillColor"]!.GetValue<string>());
         Assert.Contains("#REF!", Cell("F6")["f"]!.GetValue<string>(), StringComparison.Ordinal);
         // An unqualified source range lies on the source's first sheet.
         Assert.Equal("first-sheet", Cell("H1")["v"]!.GetValue<string>());
@@ -76,8 +76,8 @@ public sealed class CellsImportCliTests : IClassFixture<CellsImportCliTests.Sour
             "cells", "edit", "report.xlsx", "--in-place", "--output-format", "json", "--ops",
             """
             {"ops":[
-              {"op":"import_sheet","sheet":"Rates","path":"eu.xlsx"},
-              {"op":"import_sheet","sheet":"Totals","path":"eu.xlsx","name":"EU","at":1},
+              {"op":"import_sheet","sourceSheet":"Rates","path":"eu.xlsx"},
+              {"op":"import_sheet","sourceSheet":"Totals","path":"eu.xlsx","name":"EU","at":1},
               {"op":"import_sheet","path":"it.csv","name":"IT"}
             ]}
             """).Succeeded();
@@ -103,14 +103,14 @@ public sealed class CellsImportCliTests : IClassFixture<CellsImportCliTests.Sour
 
         CliResult taken = _workspace.Run(
             "cells", "edit", "report.xlsx", "--in-place", "--output-format", "json", "--ops",
-            """{"ops":[{"op":"import_sheet","sheet":"Totals","path":"eu.xlsx","name":"eu"}]}""");
+            """{"ops":[{"op":"import_sheet","sourceSheet":"Totals","path":"eu.xlsx","name":"eu"}]}""");
         JsonNode error = JsonNode.Parse(taken.StdErr)!["error"]!;
         Assert.Equal("OPS_INVALID", error["code"]!.GetValue<string>());
         Assert.Contains("'EU'", error["details"]!["reason"]!.GetValue<string>(), StringComparison.Ordinal);
     }
 
     [Theory]
-    [InlineData("""{"ops":[{"op":"import_sheet","sheet":"Ghost","path":"eu.xlsx"}]}""")]
+    [InlineData("""{"ops":[{"op":"import_sheet","sourceSheet":"Ghost","path":"eu.xlsx"}]}""")]
     [InlineData("""{"ops":[{"op":"import_range","sheet":"Report","path":"eu.xlsx","from":"Ghost!A1:B2","to":"A1"}]}""")]
     public void AMissingSourceSheet_ListsTheSourcesSheets(string operations)
     {
@@ -149,7 +149,7 @@ public sealed class CellsImportCliTests : IClassFixture<CellsImportCliTests.Sour
                           {"op":"set_formula","sheet":"Totals","range":"B4","formula":"=SUM(B2:B3)"},
                           {"op":"set_formula","sheet":"Totals","range":"B5","formula":"=B4*Rates!A1"},
                           {"op":"set_values","sheet":"Rates","range":"A1","values":[[2]]},
-                          {"op":"format_range","sheet":"Totals","range":"B2:B4","style":{"numberFormat":"#,##0.00","bg":"#FFF2CC"}}
+                          {"op":"format_range","sheet":"Totals","range":"B2:B4","style":{"numberFormat":"#,##0.00","fillColor":"#FFF2CC"}}
                         ]}
                         """).Succeeded();
                 },

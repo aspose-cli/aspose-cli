@@ -6,7 +6,7 @@ namespace Aspose.Cli.Product.Cells.Contracts;
 
 /// <summary>Inserts rows before a row.</summary>
 [Operation("insert_rows")]
-public sealed record InsertRowsOp : CellsOp
+public sealed record InsertRowsOp : CellsSheetOp
 {
     /// <summary>The 1-based row to insert before.</summary>
     [Minimum(1)] public required int At { get; init; }
@@ -17,7 +17,7 @@ public sealed record InsertRowsOp : CellsOp
 
 /// <summary>Deletes rows starting at a row.</summary>
 [Operation("delete_rows")]
-public sealed record DeleteRowsOp : CellsOp
+public sealed record DeleteRowsOp : CellsSheetOp
 {
     /// <summary>The 1-based first row to delete.</summary>
     [Minimum(1)] public required int At { get; init; }
@@ -28,7 +28,7 @@ public sealed record DeleteRowsOp : CellsOp
 
 /// <summary>Inserts columns before a column.</summary>
 [Operation("insert_columns")]
-public sealed record InsertColumnsOp : CellsOp
+public sealed record InsertColumnsOp : CellsSheetOp
 {
     /// <summary>The column to insert before, such as C.</summary>
     [A1Column] public required string At { get; init; }
@@ -39,7 +39,7 @@ public sealed record InsertColumnsOp : CellsOp
 
 /// <summary>Deletes columns starting at a column.</summary>
 [Operation("delete_columns")]
-public sealed record DeleteColumnsOp : CellsOp
+public sealed record DeleteColumnsOp : CellsSheetOp
 {
     /// <summary>The first column to delete, such as C.</summary>
     [A1Column] public required string At { get; init; }
@@ -50,36 +50,41 @@ public sealed record DeleteColumnsOp : CellsOp
 
 /// <summary>Sets the height of a span of rows, or auto-fits them when height is omitted.</summary>
 [Operation("resize_rows")]
-public sealed record ResizeRowsOp : CellsOp
+public sealed record ResizeRowsOp : CellsSheetOp
 {
     /// <summary>The 1-based first row.</summary>
-    [Minimum(1)] public required int From { get; init; }
+    [MistakenFor("from")]
+    [Minimum(1)] public required int First { get; init; }
 
-    /// <summary>The 1-based last row, not above from; from when omitted.</summary>
-    [Minimum(1)] public int? To { get; init; }
+    /// <summary>The 1-based last row, not above first; first when omitted.</summary>
+    [MistakenFor("to")]
+    [Minimum(1)] public int? Last { get; init; }
 
     /// <summary>The height in points; omitted auto-fits.</summary>
     [NotReadBack]
     [Minimum(0)] public double? Height { get; init; }
 
     /// <inheritdoc />
-    protected override BoundedOperation Validated() => RowSpan.Check(this, From, To);
+    protected override BoundedOperation Validated() => RowSpan.Check(this, First, Last);
 }
 
-/// <summary>Sets the width of a span of columns, or auto-fits them when width is omitted.</summary>
+/// <summary>Sets the width of a span of columns, or auto-fits them when widthChars is omitted.</summary>
 [Operation("resize_columns")]
-public sealed record ResizeColumnsOp : CellsOp
+public sealed record ResizeColumnsOp : CellsSheetOp
 {
     /// <summary>The first column.</summary>
-    [A1Column] public required string From { get; init; }
+    [MistakenFor("from")]
+    [A1Column] public required string First { get; init; }
 
-    /// <summary>The last column, not left of from; from when omitted.</summary>
-    [A1Column] public string? To { get; init; }
+    /// <summary>The last column, not left of first; first when omitted.</summary>
+    [MistakenFor("to")]
+    [A1Column] public string? Last { get; init; }
 
-    /// <summary>The width in characters; omitted auto-fits.</summary>
+    /// <summary>The width in characters of the default font's digit 0; omitted auto-fits.</summary>
+    [MistakenFor("width")]
     [NotReadBack]
-    [Minimum(0)] public double? Width { get; init; }
+    [Minimum(0)] public double? WidthChars { get; init; }
 
     /// <inheritdoc />
-    protected override BoundedOperation Validated() => ColumnSpan.Check(this, From, To);
+    protected override BoundedOperation Validated() => ColumnSpan.Check(this, First, Last);
 }

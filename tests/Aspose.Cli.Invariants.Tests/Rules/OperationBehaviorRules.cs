@@ -34,7 +34,7 @@ internal static partial class ContractRules
     /// <summary>The operations that give a product's fixture a second page or sheet; null when the fixture has two units or the product merges.</summary>
     private static readonly Dictionary<string, string?> SecondUnit = new(StringComparer.Ordinal)
     {
-        ["cells"] = """[{"op":"add_sheet","name":"Extra"},{"op":"set_values","sheet":"Extra","range":"A1","values":[["Second sheet"]]}]""",
+        ["cells"] = """[{"op":"insert_sheet","name":"Extra"},{"op":"set_values","sheet":"Extra","range":"A1","values":[["Second sheet"]]}]""",
         ["pdf"] = null,
         ["slides"] = null,
         ["words"] = """[{"op":"insert_break","at":{"block":2},"position":"after","kind":"page"}]""",

@@ -23,16 +23,19 @@ internal static class ImageOps
         int index = sheet.Pictures.Add(anchor.Row, anchor.Column, new MemoryStream(image, writable: false));
         Picture picture = sheet.Pictures[index];
 
+        // The contract measures in points; the engine sizes a picture in pixels at 96 per inch.
         if (op.Width is { } width)
         {
-            picture.Width = width;
+            picture.Width = Pixels(width);
         }
 
         if (op.Height is { } height)
         {
-            picture.Height = height;
+            picture.Height = Pixels(height);
         }
 
         return null;
     }
+
+    private static int Pixels(double points) => Math.Max(1, (int)Math.Round(points * 96 / 72));
 }

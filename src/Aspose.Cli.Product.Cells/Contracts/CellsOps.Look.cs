@@ -5,7 +5,7 @@ namespace Aspose.Cli.Product.Cells.Contracts;
 // Workbook and sheet cosmetics: default font, tab colors, on-screen view.
 
 /// <summary>
-/// Sets the workbook default font; the operation's sheet is ignored. It changes the Normal
+/// Sets the workbook default font. It changes the Normal
 /// style every unstyled cell derives its font from and the unit column widths are measured in,
 /// so set it first in a new workbook, before content and column widths. Cells with an explicit
 /// font keep it.
@@ -18,21 +18,26 @@ public sealed record SetDefaultFontOp : CellsOp
     [Pattern(@"\S")] public required string Font { get; init; }
 
     /// <summary>The font size in points; unchanged when omitted.</summary>
+    [MistakenFor("size")]
     [NotReadBack]
-    [Minimum(1), Maximum(409)] public double? Size { get; init; }
+    [Minimum(1), Maximum(409)] public double? FontSize { get; init; }
 
     /// <inheritdoc />
     protected override BoundedOperation Validated() => this with { Font = Font.Trim() };
 }
 
-/// <summary>Sets a sheet's tab color, or removes it when color is omitted.</summary>
-[Operation("set_tab_color")]
-public sealed record SetTabColorOp : CellsOp
+/// <summary>Sets a sheet's tab color; clear_tab_color removes it.</summary>
+[Operation("set_tab_color", Hint = "To remove the tab color, use clear_tab_color.")]
+public sealed record SetTabColorOp : CellsSheetOp
 {
-    /// <summary>The tab color; omitted removes it.</summary>
+    /// <summary>The tab color.</summary>
     [NotReadBack]
-    [HexColor] public string? Color { get; init; }
+    [HexColor] public required string Color { get; init; }
 }
+
+/// <summary>Removes a sheet's tab color.</summary>
+[Operation("clear_tab_color")]
+public sealed record ClearTabColorOp : CellsSheetOp;
 
 /// <summary>
 /// Changes a sheet's on-screen view: at least one of gridlines, zoom and headings. These are
@@ -41,7 +46,7 @@ public sealed record SetTabColorOp : CellsOp
 /// </summary>
 [Operation("set_sheet_view")]
 [AtLeastOneOf("gridlines", "zoom", "headings")]
-public sealed record SetSheetViewOp : CellsOp
+public sealed record SetSheetViewOp : CellsSheetOp
 {
     /// <summary>Whether the on-screen gridlines show; unchanged when omitted.</summary>
     [NotReadBack]

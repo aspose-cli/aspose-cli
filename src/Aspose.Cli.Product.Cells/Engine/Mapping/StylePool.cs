@@ -52,20 +52,20 @@ internal sealed class StylePool
     internal static CellsStyleData Map(Style style) => new()
     {
         Font = style.Font.Name,
-        Size = style.Font.DoubleSize,
+        FontSize = style.Font.DoubleSize,
         Bold = style.Font.IsBold ? true : null,
         Italic = style.Font.IsItalic ? true : null,
         Color = ToHex(style.Font.Color),
-        Bg = style.Pattern == BackgroundType.None ? null : ToHex(style.ForegroundColor),
+        FillColor = style.Pattern == BackgroundType.None ? null : ToHex(style.ForegroundColor),
         NumberFormat = NumberFormatOf(style),
-        HAlign = style.HorizontalAlignment switch
+        Alignment = style.HorizontalAlignment switch
         {
             TextAlignmentType.Left => "left",
             TextAlignmentType.Center => "center",
             TextAlignmentType.Right => "right",
             _ => null,
         },
-        VAlign = style.VerticalAlignment switch
+        VerticalAlignment = style.VerticalAlignment switch
         {
             TextAlignmentType.Top => "top",
             TextAlignmentType.Center => "middle",

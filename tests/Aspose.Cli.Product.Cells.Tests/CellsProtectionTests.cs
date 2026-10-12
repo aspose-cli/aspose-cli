@@ -38,7 +38,7 @@ public sealed class CellsProtectionTests(CellsProtectionTests.ProtectedBook book
         Assert.Contains("protected sheet 'Data'", sheet.Message, StringComparison.Ordinal);
         Assert.Contains("keeps the protection", sheet.Hint, StringComparison.Ordinal);
 
-        Warning structure = Unenforced(book.Edit("protected-structure.csv", """{"op":"add_sheet","name":"Extra"}"""));
+        Warning structure = Unenforced(book.Edit("protected-structure.csv", """{"op":"insert_sheet","name":"Extra"}"""));
         Assert.Null(structure.Location);
         Assert.Contains("the protected workbook structure", structure.Message, StringComparison.Ordinal);
         Assert.Contains("A csv output does not keep the protection", structure.Hint, StringComparison.Ordinal);

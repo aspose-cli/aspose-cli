@@ -1,4 +1,4 @@
-﻿using System.Text.Json.Nodes;
+using System.Text.Json.Nodes;
 using Aspose.Cli.Sdk;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
@@ -115,9 +115,25 @@ public sealed class BoundedOperationPipelineTests
         Assert.Equal("op-0001", error.Details!["id"]!.GetValue<string>());
         Assert.Null(error.Details["op"]);
         Assert.Equal($"unknown op '{name}'", error.Details["reason"]!.GetValue<string>());
-        Assert.Equal(Catalog.Names, error.Details["available"]!.AsArray().Select(static item => item!.GetValue<string>()));
-        Assert.Equal($"Operation op-0001 is invalid: unknown op '{name}'. Must be one of: {string.Join(", ", Catalog.Names)}", error.Message);
+        string[] available = [.. error.Details["available"]!.AsArray().Select(static item => item!.GetValue<string>())];
+        Assert.Equal(Catalog.Names.Order(StringComparer.Ordinal), available.Order(StringComparer.Ordinal));
+        Assert.Equal($"Operation op-0001 is invalid: unknown op '{name}'. Must be one of: {string.Join(", ", available)}", error.Message);
         Assert.Equal(suggestion, error.Details["suggestions"]?[0]?.GetValue<string>());
+        if (suggestion is not null)
+        {
+            Assert.Equal(suggestion, available[0]);
+        }
+    }
+
+    [Fact]
+    public void Parse_ListsTheOperationsThatShareAWordWithAnUnknownOpFirst()
+    {
+        CliException error = Assert.Throws<CliException>(() => Catalog.Parse<TestBatch>(
+            """{"ops":[{"op":"zoom_text","value":1}]}""", TestContracts.Json));
+
+        string[] available = [.. error.Details!["available"]!.AsArray().Select(static item => item!.GetValue<string>())];
+        Assert.Equal("stamp_text", available[0]);
+        Assert.Equal(Catalog.Names.Where(static name => name != "stamp_text"), available.Skip(1));
     }
 
     [Theory]

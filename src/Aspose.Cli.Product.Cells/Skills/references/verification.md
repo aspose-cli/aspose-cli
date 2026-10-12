@@ -128,13 +128,11 @@ aspose-cli cells compare book.backup.xlsx book.xlsx --output-format json
   validation or freeze panes. After a formatting, chart or layout session,
   `identical: true` is the correct result; confirm that work from the
   `sizeBytes` change and a Tier 2 render, and never report "nothing changed"
-  from the diff. `cells inspect --detail layout` reads back frozen panes,
-  row and column groups, the AutoFilter, the print area and titles, and the
-  page orientation, `fitToWidth` and `fitToHeight` (or `scale` when the page
-  does not fit to pages) and the center header and footer
-  (`workbook.layouts`, one entry per sheet, in the fields the operations
-  take). It does not read back `set_page_setup`'s `paperSize` or `margins`;
-  confirm those in a PDF convert.
+  from the diff. `cells inspect --detail layout` reads back `freezePanes`,
+  row and column groups, `autofilter`, `printArea` and `pageSetup` (page
+  size, orientation, scaling, margins, center header and footer) in
+  `workbook.layouts`, one entry per sheet, each object named after its
+  operation and holding that operation's fields.
 - Read the whole list. Any difference you did not intend, such as a shifted
   formula or a cleared cell, is a finding to fix before delivery.
 - A renamed sheet pairs with the sheet it was (they keep one internal sheet

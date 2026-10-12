@@ -13,7 +13,7 @@ namespace Aspose.Cli.Product.Cells.Engine.Mapping;
 internal static class Sheets
 {
     /// <summary>Resolves the sheet an op targets (its <c>sheet</c> field).</summary>
-    public static Worksheet Resolve(Workbook workbook, CellsOp op) => Resolve(workbook, op.Sheet);
+    public static Worksheet Resolve(Workbook workbook, CellsOp op) => Resolve(workbook, op.TargetSheet);
 
     /// <summary>
     /// Resolves a sheet by name — the active sheet when the name is null — or

@@ -59,13 +59,13 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
         CellsEditResult result = CellsEdit.Run(_fixture.Session,
             new CellsEditRequest { Input = path, Batch = ParseOps("""
                 {"ops":[
-                  {"op":"add_sheet","name":"Orders"},
+                  {"op":"insert_sheet","name":"Orders"},
                   {"op":"set_values","sheet":"Orders","range":"A1","values":[["Order","Amount"],["A-1",10],["A-1",10],["A-2",20],["A-1",10]]},
-                  {"op":"remove_duplicates","sheet":"Orders","range":"A1:B5","hasHeader":true}
+                  {"op":"delete_duplicates","sheet":"Orders","range":"A1:B5","hasHeader":true}
                 ]}
                 """), Output = TestOutput.At(_fixture.Temp.File("dedupe-count.out.xlsx")) });
 
-        Assert.Equal(2, result.Applied.Single(static outcome => outcome.Op == "remove_duplicates").ItemsAffected);
+        Assert.Equal(2, result.Applied.Single(static outcome => outcome.Op == "delete_duplicates").ItemsAffected);
     }
 
     [Fact]
@@ -226,7 +226,7 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
     {
         string source = _fixture.CreateSalesWorkbook("verify-renamed.xlsx");
         CellsEditResult result = CellsEdit.Run(_fixture.Session,
-            new CellsEditRequest { Input = source, Batch = ParseOps("""{"ops":[{"op":"set_values","sheet":"Second","range":"A1","values":[["before"]]},{"op":"rename_sheet","sheet":"Second","to":"Notes"},{"op":"set_values","sheet":"Notes","range":"B1","values":[["after"]]}]}"""), Output = TestOutput.At(_fixture.Temp.File("verify-renamed.out.xlsx")), Verify = true });
+            new CellsEditRequest { Input = source, Batch = ParseOps("""{"ops":[{"op":"set_values","sheet":"Second","range":"A1","values":[["before"]]},{"op":"rename_sheet","sheet":"Second","name":"Notes"},{"op":"set_values","sheet":"Notes","range":"B1","values":[["after"]]}]}"""), Output = TestOutput.At(_fixture.Temp.File("verify-renamed.out.xlsx")), Verify = true });
 
         CellsEditVerification verification = result.Verification!;
         Assert.Equal(["Notes!A1", "Notes!B1"], verification.DirectChanges.Select(static change => $"{change.Sheet}!{change.Cell}"));
@@ -339,7 +339,7 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
                   {"op":"set_formula","sheet":"Second","range":"B1","formula":"=VLOKUP(1,A1:A2,1,FALSE)"},
                   {"op":"set_formula","sheet":"Data","range":"E6","formula":"=FOOBAR(1)"},
                   {"op":"set_active_sheet","sheet":"Second"},
-                  {"op":"rename_sheet","sheet":"Second","to":"Notes"},
+                  {"op":"rename_sheet","sheet":"Second","name":"Notes"},
                   {"op":"delete_rows","sheet":"Data","at":6},
                   {"op":"insert_rows","sheet":"Data","at":1,"count":2}
                 ]}
@@ -475,12 +475,12 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
         string[] chartTypes = [CellsChartTypes.Column, CellsChartTypes.Bar, CellsChartTypes.Line, CellsChartTypes.Pie, CellsChartTypes.Scatter, CellsChartTypes.Area];
         string[] validationTypes = [CellsValidationTypes.List, CellsValidationTypes.WholeNumber, CellsValidationTypes.Decimal, CellsValidationTypes.Date, CellsValidationTypes.TextLength, CellsValidationTypes.Custom];
         IEnumerable<string> charts = chartTypes.Select((type, index) =>
-            $$"""{"op":"create_chart","sheet":"Data","type":"{{type}}","dataRange":"A1:C2","at":"E{{1 + (index * 10)}}:J{{8 + (index * 10)}}"}""");
+            $$"""{"op":"insert_chart","sheet":"Data","kind":"{{type}}","dataRange":"A1:C2","at":"E{{1 + (index * 10)}}:J{{8 + (index * 10)}}"}""");
         IEnumerable<string> validations = validationTypes.Select((type, index) => type switch
         {
-            CellsValidationTypes.List => $$"""{"op":"set_validation","sheet":"Second","range":"B{{index + 1}}","type":"list","listItems":["a","b"]}""",
-            CellsValidationTypes.Custom => $$"""{"op":"set_validation","sheet":"Second","range":"B{{index + 1}}","type":"custom","value1":"=B{{index + 1}}>0"}""",
-            _ => $$"""{"op":"set_validation","sheet":"Second","range":"B{{index + 1}}","type":"{{type}}","operator":"greaterThan","value1":"=1"}""",
+            CellsValidationTypes.List => $$"""{"op":"set_validation","sheet":"Second","range":"B{{index + 1}}","kind":"list","listItems":["a","b"]}""",
+            CellsValidationTypes.Custom => $$"""{"op":"set_validation","sheet":"Second","range":"B{{index + 1}}","kind":"custom","value1":"=B{{index + 1}}>0"}""",
+            _ => $$"""{"op":"set_validation","sheet":"Second","range":"B{{index + 1}}","kind":"{{type}}","operator":"greater-than","value1":"=1"}""",
         });
         string path = _fixture.Temp.File("vocabulary.xlsx");
         CellsEdit.Run(_fixture.Session,
@@ -494,7 +494,7 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
 
         CellsInspectResult result = CellsInfo.Run(_fixture.Session, new CellsInspectRequest { Input = path, Details = [CellsInspectDetails.Charts, CellsInspectDetails.Validation] });
 
-        // What inspect reads is what create_chart, update_chart and set_validation accept.
+        // What inspect reads is what insert_chart, set_chart and set_validation accept.
         Assert.Equal([.. chartTypes, "columnStacked"], result.Workbook.Charts!.Select(static chart => chart.Kind));
         Assert.Equal(Enumerable.Range(1, chartTypes.Length + 1), result.Workbook.Charts!.Select(static chart => chart.Index));
         Assert.Equal(validationTypes, result.Workbook.Validations!.Select(static validation => validation.Kind));
@@ -508,10 +508,10 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
             new CellsEditRequest { Input = _fixture.CreateSalesWorkbook("layout-source.xlsx"), Batch = ParseOps("""
                 {"ops":[
                   {"op":"freeze_panes","sheet":"Data","cell":"B2"},
-                  {"op":"group_rows","sheet":"Data","from":2,"to":6},
-                  {"op":"group_rows","sheet":"Data","from":3,"to":4,"collapse":true},
-                  {"op":"group_rows","sheet":"Data","from":9,"to":10},
-                  {"op":"group_columns","sheet":"Data","from":"D","to":"E"},
+                  {"op":"group_rows","sheet":"Data","first":2,"last":6},
+                  {"op":"group_rows","sheet":"Data","first":3,"last":4,"collapsed":true},
+                  {"op":"group_rows","sheet":"Data","first":9,"last":10},
+                  {"op":"group_columns","sheet":"Data","first":"D","last":"E"},
                   {"op":"set_autofilter","sheet":"Data","range":"A1:C3"},
                   {"op":"set_print_area","sheet":"Data","range":"A1:C3","titleRows":"1"},
                   {"op":"set_page_setup","sheet":"Data","orientation":"landscape","fitToWidth":1,"fitToHeight":0,
@@ -522,22 +522,95 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
         CellsInspectResult result = CellsInfo.Run(_fixture.Session, new CellsInspectRequest { Input = path, Details = [CellsInspectDetails.Layout] });
 
         CellsSheetLayoutInfo data = Assert.Single(result.Workbook.Layouts!, static layout => layout.Sheet == "Data");
-        Assert.Equal("B2", data.FreezePanes);
+        Assert.Equal(new CellsFreezePanesInfo { Cell = "B2" }, data.FreezePanes);
         Assert.Equal(
             [(2, 6, 1, false), (9, 10, 1, false), (3, 4, 2, true)],
-            data.RowGroups!.Select(static group => (group.From, group.To, group.Level, group.Collapsed)));
-        Assert.Equal([("D", "E", 1, false)], data.ColumnGroups!.Select(static group => (group.From, group.To, group.Level, group.Collapsed)));
-        Assert.Equal("A1:C3", data.AutoFilter);
-        Assert.Equal("A1:C3", data.PrintArea);
-        Assert.Equal("1:1", data.TitleRows);
-        Assert.Null(data.TitleColumns);
-        Assert.Equal("landscape", data.Orientation);
-        Assert.Equal((1, 0, null), (data.FitToWidth, data.FitToHeight, data.Scale));
-        Assert.Equal(("Roster", "Page &P of &N"), (data.Header, data.Footer));
+            data.RowGroups!.Select(static group => (group.First, group.Last, group.Level, group.Collapsed)));
+        Assert.Equal([("D", "E", 1, false)], data.ColumnGroups!.Select(static group => (group.First, group.Last, group.Level, group.Collapsed)));
+        Assert.Equal(new CellsAutofilterInfo { Range = "A1:C3" }, data.Autofilter);
+        Assert.Equal(new CellsPrintAreaInfo { Range = "A1:C3", TitleRows = "1:1" }, data.PrintArea);
+        Assert.Equal("landscape", data.PageSetup.Orientation);
+        Assert.Equal((1, 0, null), (data.PageSetup.FitToWidth, data.PageSetup.FitToHeight, data.PageSetup.ScalePercent));
+        Assert.Equal(("Roster", "Page &P of &N"), (data.PageSetup.Header, data.PageSetup.Footer));
 
         CellsSheetLayoutInfo plain = Assert.Single(result.Workbook.Layouts!, static layout => layout.Sheet == "Second");
-        Assert.Equal(new CellsSheetLayoutInfo { Sheet = "Second", Orientation = "portrait", Scale = 100 }, plain);
+        Assert.Equal((null, null, null, null), (plain.FreezePanes, plain.Autofilter, plain.PrintArea, plain.RowGroups));
+        Assert.Equal(("portrait", 100), (plain.PageSetup.Orientation, plain.PageSetup.ScalePercent));
         Assert.Null(CellsInfo.Run(_fixture.Session, new CellsInspectRequest { Input = path }).Workbook.Layouts);
+    }
+
+    [Theory]
+    [InlineData("landscape", """{"width":792,"height":612}""", 792, 612)]
+    [InlineData("landscape", """{"width":612,"height":792}""", 792, 612)]
+    [InlineData("portrait", """{"width":516.24,"height":728.64}""", 516.24, 728.64)]
+    [InlineData("landscape", """{"preset":"a4"}""", 841.89, 595.28)]
+    public void PageSize_ReadsAsLaidOutAndWritesBackUnchanged(string orientation, string size, double width, double height)
+    {
+        string name = $"page-size-{Guid.NewGuid():N}";
+        string path = _fixture.CreateSalesWorkbook(name + ".xlsx");
+        string written = _fixture.Temp.File(name + ".out.xlsx");
+        CellsEdit.Run(_fixture.Session, new CellsEditRequest { Input = path, Batch = ParseOps($$"""
+            {"ops":[{"op":"set_page_setup","sheet":"Data","orientation":"{{orientation}}","pageSize":{{size}}}]}
+            """), Output = TestOutput.At(written) });
+
+        CellsPageSetupInfo read = Layout(written);
+        Assert.Equal((orientation, width, height), (read.Orientation, read.PageSize.Width, read.PageSize.Height));
+
+        string again = _fixture.Temp.File(name + ".again.xlsx");
+        CellsEdit.Run(_fixture.Session, new CellsEditRequest { Input = written, Batch = ParseOps($$$"""
+            {"ops":[{"op":"set_page_setup","sheet":"Data","orientation":"{{{read.Orientation}}}","pageSize":{"width":{{{read.PageSize.Width}}},"height":{{{read.PageSize.Height}}}}}]}
+            """), Output = TestOutput.At(again) });
+        Assert.Equal(read, Layout(again));
+
+        CellsPageSetupInfo Layout(string file) => Assert.Single(
+            CellsInfo.Run(_fixture.Session, new CellsInspectRequest { Input = file, Details = [CellsInspectDetails.Layout] }).Workbook.Layouts!,
+            static layout => layout.Sheet == "Data").PageSetup;
+    }
+
+    [Theory]
+    [InlineData("portrait", "letter")]
+    [InlineData("landscape", "a4")]
+    public void PageSize_AsAReadReportsIt_WritesBackUnchanged(string orientation, string preset)
+    {
+        string path = _fixture.CreateSalesWorkbook($"page-size-rt-{Guid.NewGuid():N}.xlsx");
+        string laid = CellsEdit.Run(_fixture.Session, new CellsEditRequest
+        {
+            Input = path,
+            Batch = ParseOps(PageSetup(orientation, $"{{\"preset\":\"{preset}\"}}")),
+            Output = TestOutput.At(_fixture.Temp.File($"page-size-rt-{Guid.NewGuid():N}.xlsx")),
+        }).Output!.Path;
+        PageSizeInfo read = PageSizeOf(laid);
+        Assert.NotNull(read.Preset);
+
+        string written = CellsEdit.Run(_fixture.Session, new CellsEditRequest
+        {
+            Input = laid,
+            Batch = ParseOps(PageSetup(orientation, System.Text.Json.JsonSerializer.Serialize(new { preset = read.Preset, width = read.Width, height = read.Height }))),
+            Output = TestOutput.At(_fixture.Temp.File($"page-size-rt-{Guid.NewGuid():N}.xlsx")),
+        }).Output!.Path;
+
+        Assert.Equal(read, PageSizeOf(written));
+
+        static string PageSetup(string orientation, string pageSize) =>
+            "{\"ops\":[{\"op\":\"set_page_setup\",\"sheet\":\"Data\",\"orientation\":\"" + orientation + "\",\"pageSize\":" + pageSize + "}]}";
+
+        PageSizeInfo PageSizeOf(string workbook) => CellsInfo.Run(_fixture.Session, new CellsInspectRequest { Input = workbook, Details = [CellsInspectDetails.Layout] })
+            .Workbook.Layouts!.Single(static layout => layout.Sheet == "Data").PageSetup.PageSize;
+    }
+
+    [Fact]
+    public void PageSize_ThatNoStandardPaperHas_IsRefused()
+    {
+        string path = _fixture.CreateSalesWorkbook("page-size-custom.xlsx");
+
+        CliException error = Assert.Throws<CliException>(() => CellsEdit.Run(_fixture.Session, new CellsEditRequest
+        {
+            Input = path,
+            Batch = ParseOps("""{"ops":[{"op":"set_page_setup","sheet":"Data","pageSize":{"width":500,"height":700}}]}"""),
+            Output = TestOutput.At(_fixture.Temp.File("page-size-custom.out.xlsx")),
+        }));
+
+        Assert.Equal("OPS_INVALID", error.Code.Name);
     }
 
     [Fact]

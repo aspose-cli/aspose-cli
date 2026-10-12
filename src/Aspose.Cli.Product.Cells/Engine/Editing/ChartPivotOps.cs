@@ -27,12 +27,12 @@ internal static class ChartPivotOps
         ThemeColorType.Accent4, ThemeColorType.Accent5, ThemeColorType.Accent6,
     ];
 
-    public static long? CreateChart(Worksheet sheet, CreateChartOp op)
+    public static long? CreateChart(Worksheet sheet, InsertChartOp op)
     {
         RangeRef placement = A1.ParseRange(op.At).Range;
         string dataRange = Sheets.Reference(sheet, op.DataRange);
         int chartIndex = sheet.Charts.Add(
-            ToChartType(op.Type),
+            ToChartType(op.Kind),
             placement.Start.Row,
             placement.Start.Column,
             placement.End.Row,
@@ -49,13 +49,13 @@ internal static class ChartPivotOps
         }
 
         // Defaults first, explicit cosmetics after — a user field always wins.
-        ApplyModernDefaults(chart, op.Type, sheet.Workbook);
+        ApplyModernDefaults(chart, op.Kind, sheet.Workbook);
         ApplyCosmetics(chart, op.Legend, op.AxisTitles, op.SeriesColors, op.DataLabels);
         EnsureHonestValueAxis(chart);
         return null;
     }
 
-    public static long? CreatePivot(Worksheet sheet, CreatePivotOp op)
+    public static long? CreatePivot(Worksheet sheet, InsertPivotOp op)
     {
         // An unqualified source refers to the op's sheet; the engine API
         // requires the qualified form.
@@ -128,7 +128,7 @@ internal static class ChartPivotOps
     /// that would do so is refused here and a generated Chinese caption takes the next free
     /// number, as the engine's own <c>Sum of X2</c> does.
     /// </summary>
-    private static void ApplyCaptions(PivotTable pivot, CreatePivotOp op, List<PivotField> dataFields)
+    private static void ApplyCaptions(PivotTable pivot, InsertPivotOp op, List<PivotField> dataFields)
     {
         bool chinese = op.Captions switch
         {
@@ -194,7 +194,7 @@ internal static class ChartPivotOps
     }
 
     private static OperationInvalidException LabelTaken(int index, string label, string owner) => new(
-        $"create_pivot values[{index}].label '{label}' repeats {owner}; Excel refuses a value field name that is already taken",
+        $"insert_pivot values[{index}].label '{label}' repeats {owner}; Excel refuses a value field name that is already taken",
         hint: "Give each value field a label that differs, ignoring case, from every source header and every other value field's caption.");
 
     /// <summary>Excel's Simplified Chinese value field prefixes, with its ASCII colon.</summary>
@@ -290,7 +290,7 @@ internal static class ChartPivotOps
             }
 
             throw new OperationInvalidException(
-                $"create_pivot references field '{field}', which is not a column of the source data; " +
+                $"insert_pivot references field '{field}', which is not a column of the source data; " +
                 $"available fields: {string.Join(", ", available)}",
                 hint: "Use one of the source header names (case-sensitive) for 'rows', 'columns' and 'values[].field'.");
         }
@@ -358,7 +358,7 @@ internal static class ChartPivotOps
         return null;
     }
 
-    public static long? UpdateChart(Worksheet sheet, UpdateChartOp op)
+    public static long? UpdateChart(Worksheet sheet, SetChartOp op)
     {
         Chart chart = sheet.Charts[ResolveChart(sheet, op.Index, op.Name)];
         string? dataRange = op.DataRange is { } text ? Sheets.Reference(sheet, text) : null;
@@ -366,12 +366,12 @@ internal static class ChartPivotOps
         // The engine silently drops axis-title writes on a pie-family chart. The
         // parser rejects pie+axisTitles only when the op sets the type; the type
         // the chart will carry is known here, before anything changes.
-        if (op.AxisTitles is not null && IsPieFamily(op.Type is { } target ? ToChartType(target) : chart.Type))
+        if (op.AxisTitles is not null && IsPieFamily(op.Kind is { } target ? ToChartType(target) : chart.Type))
         {
             throw new OperationInvalidException("a 'pie' chart has no axes; omit 'axisTitles'");
         }
 
-        if (op.Type is { } type)
+        if (op.Kind is { } type)
         {
             chart.Type = ToChartType(type);
         }
@@ -400,7 +400,7 @@ internal static class ChartPivotOps
     }
 
     /// <summary>
-    /// Resolves the index/name addressing shared by <c>update_chart</c> and
+    /// Resolves the index/name addressing shared by <c>set_chart</c> and
     /// <c>delete_chart</c> to the chart's collection index (delete needs the
     /// index, not the object). The parser guarantees exactly one of the two
     /// is present. Chart names need not be unique, so a name several charts
@@ -508,8 +508,8 @@ internal static class ChartPivotOps
     }
 
     /// <summary>
-    /// Applies the optional cosmetic fields shared by <c>create_chart</c> and
-    /// <c>update_chart</c>. Runs after the modern create defaults, so an
+    /// Applies the optional cosmetic fields shared by <c>insert_chart</c> and
+    /// <c>set_chart</c>. Runs after the modern create defaults, so an
     /// explicit field always overrides them.
     /// </summary>
     private static void ApplyCosmetics(
@@ -561,7 +561,7 @@ internal static class ChartPivotOps
                     series.DataLabels.ShowValue = visible;
                 }
 
-                if (labels.Format is { } format)
+                if (labels.NumberFormat is { } format)
                 {
                     // Setting the string format auto-clears NumberFormatLinked;
                     // the int-typed Number property is ignored.
@@ -637,7 +637,7 @@ internal static class ChartPivotOps
     /// <summary>
     /// Pie-family test (pie, 3-D/exploded/bar-of-pie variants, doughnut):
     /// the axis-less charts whose slices live in one series' points. Matched
-    /// by enum-name family because update_chart can meet any of the ~75
+    /// by enum-name family because set_chart can meet any of the ~75
     /// engine chart types in an existing workbook, not just the six the
     /// vocabulary creates.
     /// </summary>

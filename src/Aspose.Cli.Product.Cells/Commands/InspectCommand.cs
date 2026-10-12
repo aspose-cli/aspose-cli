@@ -130,17 +130,18 @@ internal static class InspectCommand
             static layout =>
             [
                 layout.Sheet,
-                layout.FreezePanes,
-                Groups(layout.RowGroups, static group => (Span: $"{group.From}:{group.To}", group.Level, group.Collapsed)),
-                Groups(layout.ColumnGroups, static group => (Span: $"{group.From}:{group.To}", group.Level, group.Collapsed)),
-                layout.AutoFilter,
-                layout.PrintArea,
-                string.Join(' ', new[] { layout.TitleRows, layout.TitleColumns }.OfType<string>()),
-                layout.Orientation + (layout.Scale is { } scale
-                    ? $" {scale}%"
-                    : $" fit {layout.FitToWidth}x{layout.FitToHeight}"),
-                layout.Header,
-                layout.Footer,
+                layout.FreezePanes?.Cell,
+                Groups(layout.RowGroups, static group => (Span: $"{group.First}:{group.Last}", group.Level, group.Collapsed)),
+                Groups(layout.ColumnGroups, static group => (Span: $"{group.First}:{group.Last}", group.Level, group.Collapsed)),
+                layout.Autofilter?.Range,
+                layout.PrintArea?.Range,
+                string.Join(' ', new[] { layout.PrintArea?.TitleRows, layout.PrintArea?.TitleColumns }.OfType<string>()),
+                $"{layout.PageSetup.PageSize.Preset ?? "custom"} {layout.PageSetup.Orientation}"
+                    + (layout.PageSetup.ScalePercent is { } scale
+                        ? $" {scale}%"
+                        : $" fit {layout.PageSetup.FitToWidth}x{layout.PageSetup.FitToHeight}"),
+                layout.PageSetup.Header,
+                layout.PageSetup.Footer,
             ]);
     }
 

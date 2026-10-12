@@ -21,31 +21,53 @@ internal static class SheetLayoutProjection
         {
             Sheet = sheet.Name,
             FreezePanes = sheet.GetFreezedPanes(out int row, out int column, out _, out _)
-                ? A1.FormatCell(new CellRef(row, column))
+                ? new CellsFreezePanesInfo { Cell = A1.FormatCell(new CellRef(row, column)) }
                 : null,
             RowGroups = NullIfEmpty(Groups(budgets, RowLevels(sheet),
                 static (first, last, level, collapsed) => new CellsRowGroupInfo
                 {
-                    From = first + 1, To = last + 1, Level = level, Collapsed = collapsed,
+                    First = first + 1, Last = last + 1, Level = level, Collapsed = collapsed,
                 })),
             ColumnGroups = NullIfEmpty(Groups(budgets, ColumnLevels(sheet),
                 static (first, last, level, collapsed) => new CellsColumnGroupInfo
                 {
-                    From = A1.ColumnName(first), To = A1.ColumnName(last), Level = level, Collapsed = collapsed,
+                    First = A1.ColumnName(first), Last = A1.ColumnName(last), Level = level, Collapsed = collapsed,
                 })),
-            AutoFilter = Reference(sheet.AutoFilter.Range),
-            PrintArea = Reference(page.PrintArea),
-            TitleRows = Reference(page.PrintTitleRows),
-            TitleColumns = Reference(page.PrintTitleColumns),
-            Orientation = page.Orientation == PageOrientationType.Landscape
-                ? CellsPageOrientations.Landscape
-                : CellsPageOrientations.Portrait,
-            FitToWidth = fitsToPages ? page.FitToPagesWide : null,
-            FitToHeight = fitsToPages ? page.FitToPagesTall : null,
-            Scale = fitsToPages ? null : page.Zoom,
-            Header = Text(page.GetHeader(1)),
-            Footer = Text(page.GetFooter(1)),
+            Autofilter = Reference(sheet.AutoFilter.Range) is { } filter ? new CellsAutofilterInfo { Range = filter } : null,
+            PrintArea = PrintArea(page),
+            PageSetup = new CellsPageSetupInfo
+            {
+                Orientation = page.Orientation == PageOrientationType.Landscape
+                    ? CellsPageOrientations.Landscape
+                    : CellsPageOrientations.Portrait,
+                PageSize = Editing.PageSetupOps.PageSize(page),
+                FitToWidth = fitsToPages ? page.FitToPagesWide : null,
+                FitToHeight = fitsToPages ? page.FitToPagesTall : null,
+                ScalePercent = fitsToPages ? null : page.Zoom,
+                Margins = new CellsMargins
+                {
+                    Top = Editing.PageSetupOps.Points(page.TopMargin),
+                    Bottom = Editing.PageSetupOps.Points(page.BottomMargin),
+                    Left = Editing.PageSetupOps.Points(page.LeftMargin),
+                    Right = Editing.PageSetupOps.Points(page.RightMargin),
+                    Header = Editing.PageSetupOps.Points(page.HeaderMargin),
+                    Footer = Editing.PageSetupOps.Points(page.FooterMargin),
+                },
+                Header = Text(page.GetHeader(1)),
+                Footer = Text(page.GetFooter(1)),
+            },
         };
+    }
+
+    /// <summary>The print area and print titles, or null when the sheet has none of them.</summary>
+    private static CellsPrintAreaInfo? PrintArea(PageSetup page)
+    {
+        string? range = Reference(page.PrintArea);
+        string? rows = Reference(page.PrintTitleRows);
+        string? columns = Reference(page.PrintTitleColumns);
+        return range is null && rows is null && columns is null
+            ? null
+            : new CellsPrintAreaInfo { Range = range, TitleRows = rows, TitleColumns = columns };
     }
 
     // The outline level and hidden state of each row or column that has a level, by index.

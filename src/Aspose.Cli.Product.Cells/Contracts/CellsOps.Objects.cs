@@ -10,11 +10,13 @@ namespace Aspose.Cli.Product.Cells.Contracts;
 /// Adds a native chart that plots a data range. A pie chart has no axes and rejects
 /// axisTitles; legend, axisTitles and dataLabels each set at least one field.
 /// </summary>
-[Operation("create_chart")]
-public sealed record CreateChartOp : CellsOp
+[Operation("insert_chart")]
+[MistakenFor("create_chart", "add_chart")]
+public sealed record InsertChartOp : CellsSheetOp
 {
+    [MistakenFor("type")]
     [ReadBack("inspect-result.schema.json#/$defs/cellsChartInfo/properties/kind")]
-    [AllowedValues(typeof(CellsChartTypes))] public required string Type { get; init; }
+    [AllowedValues(typeof(CellsChartTypes))] public required string Kind { get; init; }
 
     /// <summary>
     /// The data to plot, including headers, such as A1:C5. It may name another sheet, such as
@@ -54,16 +56,16 @@ public sealed record CreateChartOp : CellsOp
     {
         OperationInvalidException.Require(A1.ParseRange(At).Range.CellCount > 1,
             "'at' must be a range the chart is placed over, e.g. \"E2:L18\"");
-        RequireAxesForTitles(Type, AxisTitles);
+        RequireAxesForTitles(Kind, AxisTitles);
         return this;
     }
 
     /// <summary>
-    /// Rejects axis titles on a pie chart, which has no axes. update_chart checks it when the
-    /// operation names the type; otherwise the engine, which learns the real type, enforces it.
+    /// Rejects axis titles on a pie chart, which has no axes. set_chart checks it when the
+    /// operation names the kind; otherwise the engine, which learns the real kind, enforces it.
     /// </summary>
-    internal static void RequireAxesForTitles(string? type, CellsChartAxisTitles? axisTitles) =>
-        OperationInvalidException.Require(type != CellsChartTypes.Pie || axisTitles is null, "a 'pie' chart has no axes; omit 'axisTitles'");
+    internal static void RequireAxesForTitles(string? kind, CellsChartAxisTitles? axisTitles) =>
+        OperationInvalidException.Require(kind != CellsChartTypes.Pie || axisTitles is null, "a 'pie' chart has no axes; omit 'axisTitles'");
 }
 
 /// <summary>
@@ -106,7 +108,8 @@ public sealed record CellsChartDataLabels
     public bool? Visible { get; init; }
 
     /// <summary>The number format code of the labels, such as #,##0.</summary>
-    public string? Format { get; init; }
+    [MistakenFor("format")]
+    public string? NumberFormat { get; init; }
 }
 
 /// <summary>
@@ -116,8 +119,9 @@ public sealed record CellsChartDataLabels
 /// repeats a source header or another value field's caption, ignoring case, is refused, as
 /// Excel refuses it.
 /// </summary>
-[Operation("create_pivot")]
-public sealed record CreatePivotOp : CellsOp
+[Operation("insert_pivot")]
+[MistakenFor("create_pivot", "add_pivot")]
+public sealed record InsertPivotOp : CellsSheetOp
 {
     /// <summary>The source data including headers; it may name another sheet, such as Data!A1:D100.</summary>
     [NotReadBack]
@@ -151,7 +155,7 @@ public sealed record CreatePivotOp : CellsOp
     [AllowedValues(typeof(CellsPivotCaptionLanguages))] public string Captions { get; init; } = CellsPivotCaptionLanguages.Auto;
 }
 
-/// <summary>Accepted values of <see cref="CreatePivotOp.Captions"/>.</summary>
+/// <summary>Accepted values of <see cref="InsertPivotOp.Captions"/>.</summary>
 public static class CellsPivotCaptionLanguages
 {
     public const string Auto = "auto";
@@ -186,7 +190,8 @@ public static class CellsPivotFunctions
 
 /// <summary>Inserts a picture from a file, anchored at a cell.</summary>
 [Operation("insert_image")]
-public sealed record InsertImageOp : CellsOp
+[MistakenFor("add_image", "add_picture", "insert_picture")]
+public sealed record InsertImageOp : CellsSheetOp
 {
     /// <summary>The image file (png, jpeg, gif or bmp), relative to the working directory.</summary>
     [InputPath, Pattern(@"\S")] public required string Path { get; init; }
@@ -194,13 +199,13 @@ public sealed record InsertImageOp : CellsOp
     /// <summary>The top-left anchor cell, such as E2.</summary>
     [A1Cell] public required string At { get; init; }
 
-    /// <summary>The width in pixels; the image's natural width when omitted.</summary>
+    /// <summary>The width in points; the image's natural width when omitted.</summary>
     [NotReadBack]
-    [Minimum(1)] public int? Width { get; init; }
+    [ExclusiveMinimum(0)] public double? Width { get; init; }
 
-    /// <summary>The height in pixels; the image's natural height when omitted.</summary>
+    /// <summary>The height in points; the image's natural height when omitted.</summary>
     [NotReadBack]
-    [Minimum(1)] public int? Height { get; init; }
+    [ExclusiveMinimum(0)] public double? Height { get; init; }
 }
 
 /// <summary>
@@ -208,16 +213,17 @@ public sealed record InsertImageOp : CellsOp
 /// their own.
 /// </summary>
 [Operation("refresh_pivot")]
-public sealed record RefreshPivotOp : CellsOp
+public sealed record RefreshPivotOp : CellsSheetOp
 {
     /// <summary>The pivot table name; every pivot table on the sheet when omitted.</summary>
     [NotState]
     public string? Name { get; init; }
 }
 
-/// <summary>Turns a range into a native table with filtering, an optional style and an optional totals row.</summary>
-[Operation("create_table")]
-public sealed record CreateTableOp : CellsOp
+/// <summary>Defines a range as a native table with filtering, an optional table style and an optional totals row.</summary>
+[Operation("define_table")]
+[MistakenFor("create_table", "add_table")]
+public sealed record DefineTableOp : CellsSheetOp
 {
     /// <summary>The range to convert, including its header row, such as A1:D20.</summary>
     [A1Range] public required string Range { get; init; }
@@ -234,8 +240,9 @@ public sealed record CreateTableOp : CellsOp
     /// A built-in table style (TableStyleLight1-21, TableStyleMedium1-28, TableStyleDark1-11),
     /// such as TableStyleMedium2, or a custom table style the workbook defines.
     /// </summary>
+    [MistakenFor("style")]
     [NotReadBack]
-    [MinLength(1)] public string? Style { get; init; }
+    [MinLength(1)] public string? TableStyle { get; init; }
 
     /// <summary>Whether a totals row is added below the table.</summary>
     [NotReadBack]
@@ -302,14 +309,15 @@ public sealed record CreateTableOp : CellsOp
 
 /// <summary>
 /// Updates an existing chart, identified by exactly one of index and name, with at least one of
-/// title, dataRange, type, legend, axisTitles, seriesColors and dataLabels. seriesInRows applies
+/// title, dataRange, kind, legend, axisTitles, seriesColors and dataLabels. seriesInRows applies
 /// only together with dataRange; legend, axisTitles and dataLabels each set at least one field.
 /// </summary>
-[Operation("update_chart")]
+[Operation("set_chart")]
+[MistakenFor("update_chart")]
 [ExactlyOneOf("index", "name")]
-[AtLeastOneOf("title", "dataRange", "type", "legend", "axisTitles", "seriesColors", "dataLabels")]
+[AtLeastOneOf("title", "dataRange", "kind", "legend", "axisTitles", "seriesColors", "dataLabels")]
 [DependentRequired("seriesInRows", "dataRange")]
-public sealed record UpdateChartOp : CellsOp
+public sealed record SetChartOp : CellsSheetOp
 {
     /// <summary>The 1-based index of the chart on the sheet, as inspect --detail charts lists it.</summary>
     [Minimum(1)] public int? Index { get; init; }
@@ -325,8 +333,9 @@ public sealed record UpdateChartOp : CellsOp
     [NotReadBack]
     [A1Reference] public string? DataRange { get; init; }
 
+    [MistakenFor("type")]
     [ReadBack("inspect-result.schema.json#/$defs/cellsChartInfo/properties/kind")]
-    [AllowedValues(typeof(CellsChartTypes))] public string? Type { get; init; }
+    [AllowedValues(typeof(CellsChartTypes))] public string? Kind { get; init; }
 
     /// <summary>Whether series are plotted from rows rather than columns.</summary>
     [NotReadBack]
@@ -351,7 +360,7 @@ public sealed record UpdateChartOp : CellsOp
     /// <inheritdoc />
     protected override BoundedOperation Validated()
     {
-        CreateChartOp.RequireAxesForTitles(Type, AxisTitles);
+        InsertChartOp.RequireAxesForTitles(Kind, AxisTitles);
         return this;
     }
 }
@@ -359,7 +368,7 @@ public sealed record UpdateChartOp : CellsOp
 /// <summary>Removes a chart from a sheet, identified by exactly one of index and name.</summary>
 [Operation("delete_chart")]
 [ExactlyOneOf("index", "name")]
-public sealed record DeleteChartOp : CellsOp
+public sealed record DeleteChartOp : CellsSheetOp
 {
     /// <summary>The 1-based index of the chart on the sheet, as inspect --detail charts lists it.</summary>
     [Minimum(1)] public int? Index { get; init; }

@@ -107,7 +107,7 @@ fails, delete the issue's section, the code that names it and the test, then upd
   field's grand-total column with the word of `PivotGlobalizationSettings.GetTextOfTotal`
   before the caption (`Total Sum of Amount`); overriding the word gives `汇总 求和项:金额`, never
   Excel's Simplified Chinese form `求和项:金额汇总`, and no pivot caption property sets it.
-- **CLI behavior:** `create_pivot` keeps the engine's `Total <caption>` in every caption
+- **CLI behavior:** `insert_pivot` keeps the engine's `Total <caption>` in every caption
   language; `aspose-cli docs cells/editing` says so.
 - **Workaround:** leave out the column field, so the value fields are the columns and the one
   grand-total row reads `总计`, or summarize with `SUMIFS` formulas.

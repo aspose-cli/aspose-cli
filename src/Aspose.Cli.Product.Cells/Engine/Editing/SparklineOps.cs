@@ -53,7 +53,7 @@ internal static class SparklineOps
         // The contract keeps the location a one-row or one-column strip, so
         // sparkline i lands in its i-th cell. Tests pin the result to the
         // one-call Add's.
-        SparklineType type = ToType(op.Type);
+        SparklineType type = ToType(op.Kind);
         SparklineGroup group = sheet.SparklineGroups[sheet.SparklineGroups.Add(type)];
         group.PresetStyle = SparklinePresetStyleType.Style1;
         group.ShowNegativePoints = type == SparklineType.WinLoss;

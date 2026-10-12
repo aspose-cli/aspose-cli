@@ -39,7 +39,7 @@ internal sealed class CellsProtectionTracker
                 return default;
             // Structure protection covers adding, removing, renaming, moving and hiding sheets,
             // and protecting the structure again.
-            case AddSheetOp or ImportSheetOp or DeleteSheetOp or RenameSheetOp or MoveSheetOp
+            case InsertSheetOp or ImportSheetOp or DeleteSheetOp or RenameSheetOp or MoveSheetOp
                 or SetSheetVisibilityOp or SetTabColorOp or ProtectWorkbookOp:
                 return new ProtectedChange(null, Sheets.StructureProtected(workbook), KeptPassword: false);
             default:

@@ -106,8 +106,8 @@ aspose-cli cells edit model.xlsx --in-place --ops '{"ops":[
   {"op":"set_formula","sheet":"PnL","range":"B14:D14","formula":"=IF(ABS(B12-B13)<0.01,\"OK\",\"IMBALANCED\")"},
   {"op":"set_formula","sheet":"Summary","range":"B6","formula":"=IF(COUNTIF(PnL!B14:D14,\"IMBALANCED\")=0,\"OK\",\"IMBALANCED\")"},
   {"op":"add_conditional_format","sheet":"PnL","range":"B14:D14",
-   "rule":{"kind":"cellValue","operator":"equal","value1":"IMBALANCED"},
-   "style":{"color":"#9C0006","bg":"#FFC7CE"}}
+   "rule":{"kind":"cell-value","operator":"equal","value1":"IMBALANCED"},
+   "style":{"color":"#9C0006","fillColor":"#FFC7CE"}}
 ]}'
 ```
 
@@ -133,7 +133,7 @@ active column from a scenario table (`C12:E12` headers, `C13:E13` values):
 aspose-cli cells edit model.xlsx --in-place --ops '{"ops":[
   {"op":"set_values","sheet":"Assumptions","range":"C12","values":[["Base","Upside","Downside"],[0.08,0.15,0.02]]},
   {"op":"define_name","name":"Scenario","refersTo":"Assumptions!$B$10"},
-  {"op":"set_validation","sheet":"Assumptions","range":"B10","type":"list","listItems":["Base","Upside","Downside"],"inputMessage":"Active scenario"},
+  {"op":"set_validation","sheet":"Assumptions","range":"B10","kind":"list","listItems":["Base","Upside","Downside"],"inputMessage":"Active scenario"},
   {"op":"set_values","sheet":"Assumptions","range":"B10","values":[["Base"]]},
   {"op":"set_formula","sheet":"Assumptions","range":"B4","formula":"=INDEX(C13:E13,MATCH(Scenario,$C$12:$E$12,0))"}
 ]}'

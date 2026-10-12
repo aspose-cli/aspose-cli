@@ -4,7 +4,7 @@ using Xunit;
 namespace Aspose.Cli.Product.Cells.Tests;
 
 /// <summary>
-/// create_pivot captions through the built CLI. Every child process runs in evaluation mode,
+/// insert_pivot captions through the built CLI. Every child process runs in evaluation mode,
 /// so these cover the caption language and value labels where the licensed engine suite skips.
 /// </summary>
 public sealed class CellsPivotCaptionCliTests : IDisposable
@@ -19,7 +19,7 @@ public sealed class CellsPivotCaptionCliTests : IDisposable
     {
         CreateReport();
         Edit(ChineseData,
-            """{"op":"create_pivot","sheet":"Pivot","sourceRange":"Data!A1:D3","at":"A1","rows":["地区"],"columns":["产品"],"values":[{"field":"不含税净额"},{"field":"数量","function":"count"}]}""");
+            """{"op":"insert_pivot","sheet":"Pivot","sourceRange":"Data!A1:D3","at":"A1","rows":["地区"],"columns":["产品"],"values":[{"field":"不含税净额"},{"field":"数量","function":"count"}]}""");
 
         AssertChineseCaptions(Read("A1:G6"));
 
@@ -37,7 +37,7 @@ public sealed class CellsPivotCaptionCliTests : IDisposable
     {
         CreateReport();
         Edit(ChineseData,
-            """{"op":"create_pivot","sheet":"Pivot","sourceRange":"Data!A1:D3","at":"A1","rows":["地区"],"values":[{"field":"不含税净额"},{"field":"数量","function":"count"}]}""");
+            """{"op":"insert_pivot","sheet":"Pivot","sourceRange":"Data!A1:D3","at":"A1","rows":["地区"],"values":[{"field":"不含税净额"},{"field":"数量","function":"count"}]}""");
 
         string[][] cells = Read("A1:C6");
         Assert.Equal(["地区", "求和项:不含税净额", "计数项:数量"], cells[1]);
@@ -50,7 +50,7 @@ public sealed class CellsPivotCaptionCliTests : IDisposable
     {
         CreateReport();
         Edit(ChineseData,
-            """{"op":"create_pivot","sheet":"Pivot","sourceRange":"Data!A1:D3","at":"A1","rows":["地区"],"columns":["产品"],"values":[{"field":"不含税净额"},{"field":"数量","function":"count"}],"captions":"en"}""");
+            """{"op":"insert_pivot","sheet":"Pivot","sourceRange":"Data!A1:D3","at":"A1","rows":["地区"],"columns":["产品"],"values":[{"field":"不含税净额"},{"field":"数量","function":"count"}],"captions":"en"}""");
 
         string[][] cells = Read("A1:G6");
         Assert.Equal("Data", cells[0][2]);
@@ -64,7 +64,7 @@ public sealed class CellsPivotCaptionCliTests : IDisposable
     {
         CreateReport();
         Edit("""{"op":"set_values","sheet":"Data","range":"A1","values":[["Region","Product","Amount","Units"],["North","A",10.5,1],["South","B",20,2]]}""",
-            """{"op":"create_pivot","sheet":"Pivot","sourceRange":"Data!A1:D3","at":"A1","rows":["Region"],"columns":["Product"],"values":[{"field":"Amount"},{"field":"Units","function":"max"}]}""");
+            """{"op":"insert_pivot","sheet":"Pivot","sourceRange":"Data!A1:D3","at":"A1","rows":["Region"],"columns":["Product"],"values":[{"field":"Amount"},{"field":"Units","function":"max"}]}""");
 
         string[][] cells = Read("A1:G6");
         Assert.Equal("Data", cells[0][2]);
@@ -78,7 +78,7 @@ public sealed class CellsPivotCaptionCliTests : IDisposable
     {
         CreateReport();
         Edit(ChineseData,
-            """{"op":"create_pivot","sheet":"Pivot","sourceRange":"Data!A1:D3","at":"A1","rows":["地区"],"columns":["产品"],"values":[{"field":"不含税净额","label":"净额合计"},{"field":"数量","function":"average","label":"Average units"},{"field":"不含税净额","function":"min"}]}""");
+            """{"op":"insert_pivot","sheet":"Pivot","sourceRange":"Data!A1:D3","at":"A1","rows":["地区"],"columns":["产品"],"values":[{"field":"不含税净额","label":"净额合计"},{"field":"数量","function":"average","label":"Average units"},{"field":"不含税净额","function":"min"}]}""");
 
         string[][] cells = Read("A1:D6");
         Assert.Equal("总计", cells[5][0]);
@@ -96,7 +96,7 @@ public sealed class CellsPivotCaptionCliTests : IDisposable
 
         CliResult refused = _workspace.Run(
             "cells", "edit", "report.xlsx", "--out", "report.out.xlsx", "--output-format", "json", "--ops",
-            $$"""{"ops":[{"op":"create_pivot","sheet":"Pivot","sourceRange":"Data!A1:D3","at":"A1","rows":["地区"],"values":{{values}},"captions":"{{captions}}"}]}""");
+            $$"""{"ops":[{"op":"insert_pivot","sheet":"Pivot","sourceRange":"Data!A1:D3","at":"A1","rows":["地区"],"values":{{values}},"captions":"{{captions}}"}]}""");
 
         JsonNode error = JsonNode.Parse(refused.StdErr)!["error"]!;
         Assert.Equal("OPS_INVALID", error["code"]!.GetValue<string>());

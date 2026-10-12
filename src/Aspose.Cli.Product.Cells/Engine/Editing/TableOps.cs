@@ -8,10 +8,10 @@ namespace Aspose.Cli.Product.Cells.Engine.Editing;
 /// <summary>Turns ranges into native tables (ListObjects) with style and totals.</summary>
 internal static class TableOps
 {
-    public static long? CreateTable(Worksheet sheet, CreateTableOp op)
+    public static long? CreateTable(Worksheet sheet, DefineTableOp op)
     {
         RangeRef range = A1.ParseRange(op.Range).Range;
-        Action<ListObject>? applyStyle = op.Style is { } style ? ResolveStyle(sheet.Workbook, style) : null;
+        Action<ListObject>? applyStyle = op.TableStyle is { } style ? ResolveStyle(sheet.Workbook, style) : null;
         if (op.Name is { } requested)
         {
             RequireUnusedName(sheet.Workbook, requested);

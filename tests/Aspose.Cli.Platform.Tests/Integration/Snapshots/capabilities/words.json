@@ -49,7 +49,7 @@
         "command": "edit",
         "inputSchema": "v2/words/ops",
         "operationSchema": "aspose-cli schema v2/words/ops --operation <op>",
-        "contractFingerprint": "sha256:5e0082c74f3baa06ac1c2051e72e5c6e232dd20614d7267e496c09d6128f7aa9",
+        "contractFingerprint": "sha256:8118fa98c0f2bab90664310cd9db87db639bc4a845f316935db4cbf0cf3caf5e",
         "maximumOperationCount": 10000,
         "ops": [
           "accept_revisions",
@@ -6167,12 +6167,12 @@
           "pattern": "^#[0-9A-Fa-f]{6}$"
         },
         "pageSizeInput": {
-          "description": "The size of a page in points (72 per inch) as an operation sets it: a preset, in portrait, or both the width and the height. A read reports it as a page size under the same names.",
+          "description": "The size of a page in points (72 per inch) as an operation sets it: a preset, in portrait, or both the width and the height. A read reports it as a page size under the same names, with the preset the dimensions match, and writes back as it reads: given with the width and height, the preset must be the paper they measure in either orientation, and the width and height apply.",
           "type": "object",
           "additionalProperties": false,
           "properties": {
             "preset": {
-              "description": "The preset, in portrait; omitted when the width and height are given.",
+              "description": "The preset, in portrait; with the width and height, the paper they measure.",
               "type": "string",
               "enum": [
                 "a3",
@@ -6184,19 +6184,19 @@
               ]
             },
             "width": {
-              "description": "The page width in points, given with the height instead of a preset.",
+              "description": "The page width in points, given with the height.",
               "type": "number",
               "exclusiveMinimum": 0
             },
             "height": {
-              "description": "The page height in points, given with the width instead of a preset.",
+              "description": "The page height in points, given with the width.",
               "type": "number",
               "exclusiveMinimum": 0
             }
           },
           "allOf": [
             {
-              "oneOf": [
+              "anyOf": [
                 {
                   "required": [
                     "preset"

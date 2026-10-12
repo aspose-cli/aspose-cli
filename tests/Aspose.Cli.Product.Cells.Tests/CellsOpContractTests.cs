@@ -22,23 +22,23 @@ public sealed class CellsOpContractTests : IClassFixture<CellsFixture>
     public CellsOpContractTests(CellsFixture fixture) => _fixture = fixture;
 
     [Theory]
-    [InlineData("""{"op":"rename_sheet","to":"Archive"}""")]
-    [InlineData("""{"op":"ungroup_rows","from":2,"collapse":true}""")]
-    [InlineData("""{"op":"ungroup_columns","from":"B","collapse":true}""")]
-    [InlineData("""{"op":"format_range","range":"A1","style":{"hAlign":"justify"}}""")]
-    [InlineData("""{"op":"format_range","range":"A1","style":{"size":500}}""")]
+    [InlineData("""{"op":"rename_sheet","name":"Archive"}""")]
+    [InlineData("""{"op":"ungroup_rows","first":2,"collapse":true}""")]
+    [InlineData("""{"op":"ungroup_columns","first":"B","collapse":true}""")]
+    [InlineData("""{"op":"format_range","range":"A1","style":{"alignment":"justify"}}""")]
+    [InlineData("""{"op":"format_range","range":"A1","style":{"fontSize":500}}""")]
     [InlineData("""{"op":"format_range","range":"A1","style":{"font":""}}""")]
     [InlineData("""{"op":"format_range","range":"A1","style":{"numberFormat":""}}""")]
     [InlineData("""{"op":"add_conditional_format","range":"A1:A9","rule":{"kind":"duplicates"},"style":{"size":14}}""")]
     [InlineData("""{"op":"add_conditional_format","range":"A1:A9","rule":{"kind":"duplicates"},"style":{"font":"Arial","bold":true}}""")]
     [InlineData("""{"op":"add_conditional_format","range":"A1:A9","rule":{"kind":"duplicates"},"style":{"hAlign":"center"}}""")]
-    [InlineData("""{"op":"set_print_area","titleRows":"A1:B2"}""")]
-    [InlineData("""{"op":"set_print_area","titleColumns":"B2"}""")]
-    [InlineData("""{"op":"set_print_area","titleRows":"1:2:3"}""")]
-    [InlineData("""{"op":"resize_columns","from":"B2"}""")]
+    [InlineData("""{"op":"set_print_area","range":"A1:C3","titleRows":"A1:B2"}""")]
+    [InlineData("""{"op":"set_print_area","range":"A1:C3","titleColumns":"B2"}""")]
+    [InlineData("""{"op":"set_print_area","range":"A1:C3","titleRows":"1:2:3"}""")]
+    [InlineData("""{"op":"resize_columns","first":"B2"}""")]
     [InlineData("""{"op":"set_autofilter"}""")]
     [InlineData("""{"op":"set_page_setup"}""")]
-    [InlineData("""{"op":"update_chart","index":1,"name":"Sales","title":"Revised"}""")]
+    [InlineData("""{"op":"set_chart","index":1,"name":"Sales","title":"Revised"}""")]
     [InlineData("""{"op":"set_hyperlink","cell":"A1"}""")]
     [InlineData("""{"op":"set_hyperlink","cell":"A1","url":"docs/a"}""")]
     [InlineData("""{"op":"set_hyperlink","cell":"A1","url":"file:///c:/a.txt"}""")]
@@ -48,16 +48,16 @@ public sealed class CellsOpContractTests : IClassFixture<CellsFixture>
     [InlineData("""{"op":"format_range","range":"A1","style":{}}""")]
     [InlineData("""{"op":"add_conditional_format","range":"A1:A9","rule":{"kind":"duplicates"},"style":{}}""")]
     [InlineData("""{"op":"set_page_setup","margins":{}}""")]
-    [InlineData("""{"op":"create_chart","type":"line","dataRange":"A1:B3","at":"D2:H9","legend":{}}""")]
+    [InlineData("""{"op":"insert_chart","kind":"line","dataRange":"A1:B3","at":"D2:H9","legend":{}}""")]
     [InlineData("""{"op":"set_sheet_view"}""")]
     [InlineData("""{"op":"set_values","range":"A1","values":[[]]}""")]
-    [InlineData("""{"op":"update_chart","index":1,"seriesInRows":false}""")]
+    [InlineData("""{"op":"set_chart","index":1,"seriesInRows":false}""")]
     [InlineData("""{"op":"import_range","path":"eu.xlsx","from":"A1:B2","to":"C1","content":"formulas"}""")]
     [InlineData("""{"op":"import_range","path":"eu.xlsx","to":"C1"}""")]
     [InlineData("""{"op":"import_sheet","path":" "}""")]
     [InlineData("""{"op":"import_sheet","path":"eu.xlsx","at":0}""")]
-    [InlineData("""{"op":"create_pivot","sourceRange":"A1:B9","at":"D1","values":[{"field":"X"}],"captions":"fr"}""")]
-    [InlineData("""{"op":"create_pivot","sourceRange":"A1:B9","at":"D1","values":[{"field":"X","label":" "}]}""")]
+    [InlineData("""{"op":"insert_pivot","sourceRange":"A1:B9","at":"D1","values":[{"field":"X"}],"captions":"fr"}""")]
+    [InlineData("""{"op":"insert_pivot","sourceRange":"A1:B9","at":"D1","values":[{"field":"X","label":" "}]}""")]
     public void ParserAndSchema_RejectTheSameInvalidOperation(string operation)
     {
         string batch = $$"""{"ops":[{{operation}}]}""";
@@ -69,21 +69,21 @@ public sealed class CellsOpContractTests : IClassFixture<CellsFixture>
     }
 
     [Theory]
-    [InlineData("""{"op":"rename_sheet","sheet":"Data","to":"Archive"}""")]
-    [InlineData("""{"op":"group_rows","from":2,"to":4,"collapse":true}""")]
-    [InlineData("""{"op":"format_range","range":"A1","style":{"size":10.5,"hAlign":"center","indent":2}}""")]
-    [InlineData("""{"op":"add_conditional_format","range":"A1:A9","rule":{"kind":"duplicates"},"style":{"bold":true,"italic":true,"underline":true,"strikethrough":true,"color":"#C00000","bg":"#FFC7CE","numberFormat":"0.0"}}""")]
-    [InlineData("""{"op":"set_print_area","titleRows":"$1:$2","titleColumns":"A"}""")]
-    [InlineData("""{"op":"set_autofilter","off":true}""")]
-    [InlineData("""{"op":"update_chart","name":"Sales","title":"Revised"}""")]
+    [InlineData("""{"op":"rename_sheet","sheet":"Data","name":"Archive"}""")]
+    [InlineData("""{"op":"group_rows","first":2,"last":4,"collapsed":true}""")]
+    [InlineData("""{"op":"format_range","range":"A1","style":{"fontSize":10.5,"alignment":"center","indent":2}}""")]
+    [InlineData("""{"op":"add_conditional_format","range":"A1:A9","rule":{"kind":"duplicates"},"style":{"bold":true,"italic":true,"underline":true,"strikethrough":true,"color":"#C00000","fillColor":"#FFC7CE","numberFormat":"0.0"}}""")]
+    [InlineData("""{"op":"set_print_area","range":"A1:C3","titleRows":"$1:$2","titleColumns":"A"}""")]
+    [InlineData("""{"op":"clear_autofilter"}""")]
+    [InlineData("""{"op":"set_chart","name":"Sales","title":"Revised"}""")]
     [InlineData("""{"op":"set_sheet_view","gridlines":false}""")]
-    [InlineData("""{"op":"create_chart","type":"line","dataRange":"A1:B3","at":"D2:H9","legend":{"visible":false}}""")]
+    [InlineData("""{"op":"insert_chart","kind":"line","dataRange":"A1:B3","at":"D2:H9","legend":{"visible":false}}""")]
     [InlineData("""{"op":"set_hyperlink","cell":"A1","url":"https://example.com/a"}""")]
     [InlineData("""{"op":"set_hyperlink","cell":"A1","url":"mailto:team@example.com"}""")]
-    [InlineData("""{"op":"import_range","path":"eu.xlsx","from":"Totals!A2:D8","to":"Report!F2","content":"all","passwordEnv":"EU_PASSWORD"}""")]
-    [InlineData("""{"op":"import_sheet","path":"eu.csv","sheet":"eu","name":"EU","at":1}""")]
-    [InlineData("""{"op":"create_pivot","sourceRange":"A1:B9","at":"D1","values":[{"field":"净额","label":"净额合计"}],"captions":"zh"}""")]
-    [InlineData("""{"op":"create_pivot","sourceRange":"A1:B9","at":"D1","values":[{"field":"Amount"}],"captions":"en"}""")]
+    [InlineData("""{"op":"import_range","path":"eu.xlsx","from":"Totals!A2:D8","to":"Report!F2","content":"all","sourcePasswordEnv":"EU_PASSWORD"}""")]
+    [InlineData("""{"op":"import_sheet","path":"eu.csv","sourceSheet":"eu","name":"EU","at":1}""")]
+    [InlineData("""{"op":"insert_pivot","sourceRange":"A1:B9","at":"D1","values":[{"field":"净额","label":"净额合计"}],"captions":"zh"}""")]
+    [InlineData("""{"op":"insert_pivot","sourceRange":"A1:B9","at":"D1","values":[{"field":"Amount"}],"captions":"en"}""")]
     public void ParserAndSchema_AcceptTheSameValidOperation(string operation)
     {
         string batch = $$"""{"ops":[{{operation}}]}""";
@@ -96,11 +96,11 @@ public sealed class CellsOpContractTests : IClassFixture<CellsFixture>
     [Theory]
     [InlineData("""{"op":"merge_cells","range":"A1:B2","unexpected":true}""")]
     [InlineData("""{"op":"format_range","range":"A1","style":{"bold":true,"unexpected":true}}""")]
-    [InlineData("""{"op":"set_page_setup","margins":{"top":1,"unexpected":1}}""")]
-    [InlineData("""{"op":"create_chart","type":"pie","dataRange":"A1:B3","at":"D2:H9","legend":{"visible":true,"unexpected":1}}""")]
+    [InlineData("""{"op":"set_page_setup","margins":{"top":72,"unexpected":1}}""")]
+    [InlineData("""{"op":"insert_chart","kind":"pie","dataRange":"A1:B3","at":"D2:H9","legend":{"visible":true,"unexpected":1}}""")]
     [InlineData("""{"op":"add_conditional_format","range":"A1:A9","rule":{"kind":"duplicates","unexpected":1},"style":{"bold":true}}""")]
     [InlineData("""{"op":"sort_range","range":"A1:B9","by":[{"column":"A","unexpected":1}]}""")]
-    [InlineData("""{"op":"create_pivot","sourceRange":"A1:B9","at":"D1","values":[{"field":"X","unexpected":1}]}""")]
+    [InlineData("""{"op":"insert_pivot","sourceRange":"A1:B9","at":"D1","values":[{"field":"X","unexpected":1}]}""")]
     public void Schema_RejectsFieldsTheContractDoesNotKnow(string operation) =>
         Assert.False(IsSchemaValid($$"""{"ops":[{{operation}}]}"""));
 
@@ -135,8 +135,8 @@ public sealed class CellsOpContractTests : IClassFixture<CellsFixture>
     [Fact]
     public void CreatePivot_ChoosesTheCaptionLanguageByDefaultAndLeavesLabelsUnset()
     {
-        CreatePivotOp pivot = Assert.IsType<CreatePivotOp>(Assert.Single(
-            Parse("""{"ops":[{"op":"create_pivot","sourceRange":"A1:B9","at":"D1","values":[{"field":"X"}]}]}""").Ops));
+        InsertPivotOp pivot = Assert.IsType<InsertPivotOp>(Assert.Single(
+            Parse("""{"ops":[{"op":"insert_pivot","sourceRange":"A1:B9","at":"D1","values":[{"field":"X"}]}]}""").Ops));
 
         Assert.Equal(CellsPivotCaptionLanguages.Auto, pivot.Captions);
         Assert.Null(Assert.Single(pivot.Values).Label);
@@ -148,30 +148,36 @@ public sealed class CellsOpContractTests : IClassFixture<CellsFixture>
     [InlineData("$3:$1", "$1:$3")]
     public void PrintTitleRows_AreNormalizedToTheAbsoluteBand(string input, string expected)
     {
-        CellsOpsBatch batch = Parse($$"""{"ops":[{"op":"set_print_area","titleRows":"{{input}}"}]}""");
+        CellsOpsBatch batch = Parse($$"""{"ops":[{"op":"set_print_area","range":"A1:C3","titleRows":"{{input}}"}]}""");
 
         Assert.Equal(expected, Assert.IsType<SetPrintAreaOp>(Assert.Single(batch.Ops)).TitleRows);
     }
 
     [Fact]
-    public void PrintTitlesAlone_KeepThePrintAreaAndAnEmptyOpClearsIt()
+    public void SetPrintArea_ReplacesTheAreaAndTitlesAndClearPrintAreaRemovesThem()
     {
         string source = _fixture.CreateSalesWorkbook("print-area.xlsx");
-        string framed = Apply(source, """{"ops":[{"op":"set_print_area","sheet":"Data","range":"A1:C3"}]}""", "print-area.framed.xlsx");
-        string titled = Apply(framed, """{"ops":[{"op":"set_print_area","sheet":"Data","titleRows":"1","titleColumns":"A:B"}]}""", "print-area.titled.xlsx");
+        string titled = Apply(source, """{"ops":[{"op":"set_print_area","sheet":"Data","range":"A1:C3","titleRows":"1","titleColumns":"A:B"}]}""", "print-area.titled.xlsx");
+        string framed = Apply(titled, """{"ops":[{"op":"set_print_area","sheet":"Data","range":"A1:B2"}]}""", "print-area.framed.xlsx");
 
         using (var workbook = new Workbook(titled))
         {
             PageSetup setup = workbook.Worksheets["Data"].PageSetup;
-            Assert.Equal("A1:C3", setup.PrintArea);
-            Assert.Equal("$1:$1", setup.PrintTitleRows);
-            Assert.Equal("$A:$B", setup.PrintTitleColumns);
+            Assert.Equal(("A1:C3", "$1:$1", "$A:$B"), (setup.PrintArea, setup.PrintTitleRows, setup.PrintTitleColumns));
         }
 
-        string cleared = Apply(titled, """{"ops":[{"op":"set_print_area","sheet":"Data"}]}""", "print-area.cleared.xlsx");
+        using (var workbook = new Workbook(framed))
+        {
+            PageSetup setup = workbook.Worksheets["Data"].PageSetup;
+            Assert.Equal("A1:B2", setup.PrintArea);
+            Assert.True(string.IsNullOrEmpty(setup.PrintTitleRows) && string.IsNullOrEmpty(setup.PrintTitleColumns));
+        }
+
+        string cleared = Apply(titled, """{"ops":[{"op":"clear_print_area","sheet":"Data"}]}""", "print-area.cleared.xlsx");
         using var final = new Workbook(cleared);
-        Assert.True(string.IsNullOrEmpty(final.Worksheets["Data"].PageSetup.PrintArea));
-        Assert.Equal("$1:$1", final.Worksheets["Data"].PageSetup.PrintTitleRows);
+        PageSetup clearedSetup = final.Worksheets["Data"].PageSetup;
+        Assert.True(string.IsNullOrEmpty(clearedSetup.PrintArea) && string.IsNullOrEmpty(clearedSetup.PrintTitleRows)
+            && string.IsNullOrEmpty(clearedSetup.PrintTitleColumns));
     }
 
     [Theory]
@@ -181,7 +187,7 @@ public sealed class CellsOpContractTests : IClassFixture<CellsFixture>
     {
         using var workbook = new Workbook();
         Assert.Throws<ArgumentOutOfRangeException>(() =>
-            StyleWriter.Apply(workbook.CreateStyle(), new CellsStyleData { HAlign = horizontal, VAlign = vertical }));
+            StyleWriter.Apply(workbook.CreateStyle(), new CellsStyleData { Alignment = horizontal, VerticalAlignment = vertical }));
     }
 
     private static bool IsSchemaValid(string json)
@@ -191,7 +197,7 @@ public sealed class CellsOpContractTests : IClassFixture<CellsFixture>
     }
 
     [Theory]
-    [InlineData("""{"op":"add_sheet","name":"Summary","position":0}""", "at")]
+    [InlineData("""{"op":"insert_sheet","name":"Summary","position":0}""", "at")]
     [InlineData("""{"op":"import_sheet","path":"eu.xlsx","position":0}""", "at")]
     [InlineData("""{"op":"move_sheet","sheet":"Data","position":0}""", "to")]
     public void ARenamedSheetPositionField_IsRefusedAndSuggestsItsNewName(string operation, string field)
@@ -201,6 +207,66 @@ public sealed class CellsOpContractTests : IClassFixture<CellsFixture>
         Assert.Equal("OPS_INVALID", error.Code.Name);
         Assert.Contains(field, error.Details!.ToJsonString(), StringComparison.Ordinal);
         Assert.Contains($"Did you mean '{field}'", error.Hint, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("create_chart", "insert_chart")]
+    [InlineData("create_pivot", "insert_pivot")]
+    [InlineData("create_table", "define_table")]
+    [InlineData("edit_comment", "set_comment")]
+    [InlineData("remove_duplicates", "delete_duplicates")]
+    [InlineData("remove_hyperlink", "delete_hyperlink")]
+    [InlineData("update_chart", "set_chart")]
+    [InlineData("add_sheet", "insert_sheet")]
+    [InlineData("add_chart", "insert_chart")]
+    [InlineData("add_pivot", "insert_pivot")]
+    [InlineData("add_table", "define_table")]
+    [InlineData("add_image", "insert_image")]
+    [InlineData("add_name", "define_name")]
+    public void ARenamedOperation_IsRefusedAndSuggestsItsNewName(string old, string renamed)
+    {
+        CliException error = Assert.Throws<CliException>(() => Parse($$"""{"ops":[{"op":"{{old}}"}]}"""));
+
+        Assert.Equal("OPS_INVALID", error.Code.Name);
+        Assert.Equal(renamed, error.Details!["suggestions"]!.AsArray()[0]!.GetValue<string>());
+    }
+
+    [Theory]
+    [InlineData("""{"op":"rename_sheet","sheet":"S3","name":"华东/销售"}""", "holds '/'")]
+    [InlineData("""{"op":"insert_sheet","name":"Q1:Q2"}""", "holds ':'")]
+    [InlineData("""{"op":"insert_sheet","name":"'Quoted"}""", "apostrophe")]
+    [InlineData("""{"op":"rename_sheet","sheet":"S3","name":"history"}""", "History")]
+    [InlineData("""{"op":"import_sheet","path":"a.xlsx","name":"[draft]"}""", "holds '['")]
+    [InlineData("""{"op":"insert_sheet","name":"A name that is longer than thirty-one"}""", "31")]
+    public void ASheetNameExcelRefuses_IsAnOperationError(string operation, string reason)
+    {
+        CliException error = Assert.Throws<CliException>(() => Parse($$"""{"ops":[{{operation}}]}"""));
+
+        Assert.Equal("OPS_INVALID", error.Code.Name);
+        Assert.Contains(reason, error.Details!["reason"]!.GetValue<string>(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void AnUnknownOperation_ListsTheCommonOperationsFirst()
+    {
+        CliException error = Assert.Throws<CliException>(() => Parse("""{"ops":[{"op":"write_cells"}]}"""));
+
+        string[] available = [.. error.Details!["available"]!.AsArray().Select(static name => name!.GetValue<string>())];
+        Assert.True(error.Details["availableCount"]!.GetValue<int>() > available.Length);
+        Assert.True(Array.IndexOf(available, "set_values") is >= 0 and < 5, string.Join(", ", available));
+    }
+
+    [Theory]
+    [InlineData("""{"op":"set_autofilter","sheet":"Data","off":true}""", "clear_autofilter")]
+    [InlineData("""{"op":"set_tab_color","sheet":"Data"}""", "clear_tab_color")]
+    [InlineData("""{"op":"set_print_area","sheet":"Data","titleRows":"1"}""", "clear_print_area")]
+    [InlineData("""{"op":"freeze_panes","sheet":"Data","cell":"A1"}""", "unfreeze_panes")]
+    public void AnOperationThatWouldRemoveState_PointsAtTheOperationThatRemovesIt(string operation, string remover)
+    {
+        CliException error = Assert.Throws<CliException>(() => Parse($$"""{"ops":[{{operation}}]}"""));
+
+        Assert.Equal("OPS_INVALID", error.Code.Name);
+        Assert.Contains(remover, error.Hint, StringComparison.Ordinal);
     }
 
     private static CellsOpsBatch Parse(string json) =>

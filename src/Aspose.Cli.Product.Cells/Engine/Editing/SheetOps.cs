@@ -9,7 +9,7 @@ namespace Aspose.Cli.Product.Cells.Engine.Editing;
 /// </summary>
 internal static class SheetOps
 {
-    public static long? AddSheet(Workbook workbook, AddSheetOp op)
+    public static long? AddSheet(Workbook workbook, InsertSheetOp op)
     {
         int index = workbook.Worksheets.Add();
         Worksheet sheet = workbook.Worksheets[index];
@@ -24,7 +24,7 @@ internal static class SheetOps
 
     public static long? RenameSheet(Worksheet sheet, RenameSheetOp op)
     {
-        sheet.Name = op.To;
+        sheet.Name = op.Name;
         return null;
     }
 
@@ -57,23 +57,24 @@ internal static class SheetOps
     {
         // The engine re-scopes cross-sheet and 3-D references to the new tab
         // order. A position past the last sheet is clamped to the end, matching
-        // add_sheet's positioning; the parser guarantees to >= 1.
+        // insert_sheet's positioning; the parser guarantees to >= 1.
         sheet.MoveTo(op.To - 1);
         return null;
     }
 
     public static long? Freeze(Worksheet sheet, FreezePanesOp op)
     {
+        // The parser refuses A1, which freezes nothing.
         CellRef cell = A1.ParseCell(op.Cell);
-        if (cell is { Row: 0, Column: 0 })
-        {
-            sheet.UnFreezePanes();
-        }
-        else
-        {
-            sheet.FreezePanes(cell.Row, cell.Column, cell.Row, cell.Column);
-        }
-
+        sheet.FreezePanes(cell.Row, cell.Column, cell.Row, cell.Column);
         return null;
+    }
+
+    /// <summary>Removes frozen panes; 1 when the sheet had them, null when there was nothing to remove.</summary>
+    public static long? Unfreeze(Worksheet sheet)
+    {
+        bool had = sheet.GetFreezedPanes(out _, out _, out _, out _);
+        sheet.UnFreezePanes();
+        return had ? 1 : null;
     }
 }

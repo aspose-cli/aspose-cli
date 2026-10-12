@@ -7,7 +7,7 @@ namespace Aspose.Cli.Product.Cells.Contracts;
 
 /// <summary>Protects a sheet against edits: every action is locked except the ones allowed.</summary>
 [Operation("protect_sheet")]
-public sealed record ProtectSheetOp : CellsOp
+public sealed record ProtectSheetOp : CellsSheetOp
 {
     /// <summary>The environment variable that holds the protection password.</summary>
     [SecretEnv] public string? PasswordEnv { get; init; }
@@ -19,7 +19,7 @@ public sealed record ProtectSheetOp : CellsOp
 
 /// <summary>Removes sheet protection.</summary>
 [Operation("unprotect_sheet")]
-public sealed record UnprotectSheetOp : CellsOp
+public sealed record UnprotectSheetOp : CellsSheetOp
 {
     /// <summary>The environment variable that holds the current password of a password-protected sheet.</summary>
     [SecretEnv] public string? PasswordEnv { get; init; }
@@ -44,11 +44,11 @@ public sealed record UnprotectWorkbookOp : CellsOp
 /// <summary>Accepted items of <see cref="ProtectSheetOp.Allow"/>.</summary>
 public static class CellsProtectActions
 {
-    public const string FormatCells = "formatCells";
-    public const string InsertRows = "insertRows";
-    public const string InsertColumns = "insertColumns";
-    public const string DeleteRows = "deleteRows";
-    public const string DeleteColumns = "deleteColumns";
+    public const string FormatCells = "format-cells";
+    public const string InsertRows = "insert-rows";
+    public const string InsertColumns = "insert-columns";
+    public const string DeleteRows = "delete-rows";
+    public const string DeleteColumns = "delete-columns";
     public const string Sort = "sort";
-    public const string AutoFilter = "autoFilter";
+    public const string AutoFilter = "autofilter";
 }

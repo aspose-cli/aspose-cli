@@ -1,6 +1,6 @@
 namespace Aspose.Cli.Product.Cells.Contracts;
 
-/// <summary>Accepted values of <see cref="CreateChartOp.Type"/>.</summary>
+/// <summary>Accepted values of <see cref="InsertChartOp.Kind"/>.</summary>
 public static class CellsChartTypes
 {
     public const string Column = "column";

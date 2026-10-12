@@ -38,50 +38,54 @@
         "command": "edit",
         "inputSchema": "v2/cells/ops",
         "operationSchema": "aspose-cli schema v2/cells/ops --operation <op>",
-        "contractFingerprint": "sha256:c5e7bef4dfd77bf03ac3a8c09be90ee68b17f5a149e6ef7e161639d88e3c4d29",
+        "contractFingerprint": "sha256:a668994502b2e3f6d7e969901ba2102e08dd0a5f01f29e3dfe43d32b14289712",
         "maximumOperationCount": 10000,
         "ops": [
           "add_comment",
           "add_conditional_format",
-          "add_sheet",
           "add_sparkline",
+          "clear_autofilter",
           "clear_conditional_formats",
+          "clear_print_area",
           "clear_range",
+          "clear_tab_color",
           "clear_validation",
           "copy_range",
-          "create_chart",
-          "create_pivot",
-          "create_table",
           "define_name",
+          "define_table",
           "delete_chart",
           "delete_columns",
           "delete_comment",
+          "delete_duplicates",
+          "delete_hyperlink",
           "delete_name",
           "delete_rows",
           "delete_sheet",
-          "edit_comment",
           "format_range",
           "freeze_panes",
           "group_columns",
           "group_rows",
           "import_range",
           "import_sheet",
+          "insert_chart",
           "insert_columns",
           "insert_image",
+          "insert_pivot",
           "insert_rows",
+          "insert_sheet",
           "merge_cells",
           "move_sheet",
           "protect_sheet",
           "protect_workbook",
           "refresh_pivot",
-          "remove_duplicates",
-          "remove_hyperlink",
           "rename_sheet",
           "resize_columns",
           "resize_rows",
           "set_active_sheet",
           "set_autofilter",
           "set_borders",
+          "set_chart",
+          "set_comment",
           "set_default_font",
           "set_formula",
           "set_hyperlink",
@@ -93,12 +97,12 @@
           "set_validation",
           "set_values",
           "sort_range",
+          "unfreeze_panes",
           "ungroup_columns",
           "ungroup_rows",
           "unmerge_cells",
           "unprotect_sheet",
-          "unprotect_workbook",
-          "update_chart"
+          "unprotect_workbook"
         ]
       }
     ],
@@ -3287,6 +3291,20 @@
         }
       },
       "$defs": {
+        "cellsAutofilterInfo": {
+          "description": "A sheet's AutoFilter.",
+          "type": "object",
+          "required": [
+            "range"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "range": {
+              "description": "The range the AutoFilter covers, header row included.",
+              "type": "string"
+            }
+          }
+        },
         "cellsCellError": {
           "description": "A cell whose formula evaluates to an error — a delivery-time QA signal.",
           "type": "object",
@@ -3334,7 +3352,7 @@
               "type": "string"
             },
             "index": {
-              "description": "The 1-based index of the chart on its sheet, as update_chart and delete_chart take it.",
+              "description": "The 1-based index of the chart on its sheet, as set_chart and delete_chart take it.",
               "type": "integer",
               "minimum": 1
             },
@@ -3343,7 +3361,7 @@
               "type": "string"
             },
             "kind": {
-              "description": "The chart kind: a create_chart type such as column, or the lower-camel engine name of a type outside that vocabulary, such as columnStacked.",
+              "description": "The chart kind: a insert_chart type such as column, or the lower-camel engine name of a type outside that vocabulary, such as columnStacked.",
               "type": "string",
               "anyOf": [
                 {
@@ -3367,18 +3385,18 @@
           "description": "A column outline group.",
           "type": "object",
           "required": [
-            "from",
-            "to",
+            "first",
+            "last",
             "level",
             "collapsed"
           ],
           "additionalProperties": false,
           "properties": {
-            "from": {
+            "first": {
               "description": "The first column of the group.",
               "type": "string"
             },
-            "to": {
+            "last": {
               "description": "The last column of the group.",
               "type": "string"
             },
@@ -3412,6 +3430,107 @@
             }
           }
         },
+        "cellsFreezePanesInfo": {
+          "description": "A sheet's frozen panes.",
+          "type": "object",
+          "required": [
+            "cell"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "cell": {
+              "description": "The top-left cell of the scrolling pane: A2 freezes row 1, B2 row 1 and column A.",
+              "type": "string"
+            }
+          }
+        },
+        "cellsMargins": {
+          "description": "Page margins in points (72 per inch); only the sides present are applied, and at least one is set. A read reports every side.",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "top": {
+              "description": "The top margin.",
+              "type": "number",
+              "minimum": 0
+            },
+            "bottom": {
+              "description": "The bottom margin.",
+              "type": "number",
+              "minimum": 0
+            },
+            "left": {
+              "description": "The left margin.",
+              "type": "number",
+              "minimum": 0
+            },
+            "right": {
+              "description": "The right margin.",
+              "type": "number",
+              "minimum": 0
+            },
+            "header": {
+              "description": "The distance from the top of the page to the header.",
+              "type": "number",
+              "minimum": 0
+            },
+            "footer": {
+              "description": "The distance from the bottom of the page to the footer.",
+              "type": "number",
+              "minimum": 0
+            }
+          }
+        },
+        "cellsPageSetupInfo": {
+          "description": "A sheet's page setup for printing and PDF export.",
+          "type": "object",
+          "required": [
+            "orientation",
+            "pageSize",
+            "margins"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "orientation": {
+              "description": "The page orientation: portrait or landscape.",
+              "type": "string",
+              "enum": [
+                "portrait",
+                "landscape"
+              ]
+            },
+            "pageSize": {
+              "description": "The page size as the page is laid out: in landscape the width is the longer side, so it writes back unchanged with the orientation.",
+              "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/page-size.schema.json"
+            },
+            "scalePercent": {
+              "description": "The zoom percentage; present when the printout does not fit to pages.",
+              "type": "integer"
+            },
+            "fitToWidth": {
+              "description": "The number of pages the printout fits across, 0 automatic; present when it fits to pages.",
+              "type": "integer",
+              "minimum": 0
+            },
+            "fitToHeight": {
+              "description": "The number of pages the printout fits down, 0 automatic; present when it fits to pages.",
+              "type": "integer",
+              "minimum": 0
+            },
+            "margins": {
+              "description": "The page margins in points, every side.",
+              "$ref": "#/$defs/cellsMargins"
+            },
+            "header": {
+              "description": "The center header text, with Excel codes such as &P; omitted when empty.",
+              "type": "string"
+            },
+            "footer": {
+              "description": "The center footer text, with Excel codes such as &P and &N; omitted when empty.",
+              "type": "string"
+            }
+          }
+        },
         "cellsPivotInfo": {
           "description": "A pivot table in a workbook.",
           "type": "object",
@@ -3436,23 +3555,42 @@
             }
           }
         },
+        "cellsPrintAreaInfo": {
+          "description": "A sheet's print area and the rows and columns repeated on every printed page.",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "range": {
+              "description": "The print area, such as A1:H50; several areas are comma-separated. Omitted when only titles are set.",
+              "type": "string"
+            },
+            "titleRows": {
+              "description": "The rows repeated on every printed page, such as $1:$2.",
+              "type": "string"
+            },
+            "titleColumns": {
+              "description": "The columns repeated on every printed page, such as $A:$B.",
+              "type": "string"
+            }
+          }
+        },
         "cellsRowGroupInfo": {
           "description": "A row outline group.",
           "type": "object",
           "required": [
-            "from",
-            "to",
+            "first",
+            "last",
             "level",
             "collapsed"
           ],
           "additionalProperties": false,
           "properties": {
-            "from": {
+            "first": {
               "description": "The first row of the group (1-based).",
               "type": "integer",
               "minimum": 1
             },
-            "to": {
+            "last": {
               "description": "The last row of the group (1-based).",
               "type": "integer",
               "minimum": 1
@@ -3489,7 +3627,7 @@
               "type": "string"
             },
             "position": {
-              "description": "1-based position in the tab order, as add_sheet and move_sheet take it.",
+              "description": "1-based position in the tab order, as insert_sheet and move_sheet take it.",
               "type": "integer",
               "minimum": 1
             },
@@ -3545,11 +3683,11 @@
           }
         },
         "cellsSheetLayoutInfo": {
-          "description": "The view and print layout of one sheet, in the terms of the operations that set it: freeze_panes, group_rows, group_columns, set_autofilter, set_print_area and set_page_setup. A field is omitted when the sheet does not have that setting.",
+          "description": "The view and print layout of one sheet, read as the objects the operations that set it name: freeze_panes, group_rows, group_columns, set_autofilter, set_print_area and set_page_setup, each with the fields of its operation. An object is omitted when the sheet does not have it.",
           "type": "object",
           "required": [
             "sheet",
-            "orientation"
+            "pageSetup"
           ],
           "additionalProperties": false,
           "properties": {
@@ -3558,8 +3696,8 @@
               "type": "string"
             },
             "freezePanes": {
-              "description": "The top-left cell of the scrolling pane when panes are frozen, as freeze_panes takes it: A2 freezes row 1, B2 row 1 and column A.",
-              "type": "string"
+              "description": "The frozen panes, as freeze_panes sets them.",
+              "$ref": "#/$defs/cellsFreezePanesInfo"
             },
             "rowGroups": {
               "description": "Row outline groups, outer levels first, each a run of rows at its level or deeper.",
@@ -3575,51 +3713,17 @@
                 "$ref": "#/$defs/cellsColumnGroupInfo"
               }
             },
-            "autoFilter": {
-              "description": "The range the sheet's AutoFilter covers, header row included.",
-              "type": "string"
+            "autofilter": {
+              "description": "The sheet's AutoFilter, as set_autofilter sets it.",
+              "$ref": "#/$defs/cellsAutofilterInfo"
             },
             "printArea": {
-              "description": "The print area, such as A1:H50; several areas are comma-separated.",
-              "type": "string"
+              "description": "The print area and print titles, as set_print_area sets them.",
+              "$ref": "#/$defs/cellsPrintAreaInfo"
             },
-            "titleRows": {
-              "description": "The rows repeated on every printed page, such as 1:2.",
-              "type": "string"
-            },
-            "titleColumns": {
-              "description": "The columns repeated on every printed page, such as A:B.",
-              "type": "string"
-            },
-            "orientation": {
-              "description": "The page orientation: portrait or landscape.",
-              "type": "string",
-              "enum": [
-                "portrait",
-                "landscape"
-              ]
-            },
-            "fitToWidth": {
-              "description": "The number of pages the printout fits across, 0 automatic; present when it fits to pages.",
-              "type": "integer",
-              "minimum": 0
-            },
-            "fitToHeight": {
-              "description": "The number of pages the printout fits down, 0 automatic; present when it fits to pages.",
-              "type": "integer",
-              "minimum": 0
-            },
-            "scale": {
-              "description": "The zoom percentage; present when the printout does not fit to pages.",
-              "type": "integer"
-            },
-            "header": {
-              "description": "The center header text, with Excel codes such as &P.",
-              "type": "string"
-            },
-            "footer": {
-              "description": "The center footer text, with Excel codes such as &P and &N.",
-              "type": "string"
+            "pageSetup": {
+              "description": "The page setup, as set_page_setup sets it.",
+              "$ref": "#/$defs/cellsPageSetupInfo"
             }
           }
         },
@@ -3666,21 +3770,21 @@
               "type": "string"
             },
             "kind": {
-              "description": "The validation kind: a set_validation type such as list or wholeNumber, or the lower-camel engine name of a type outside that vocabulary, such as anyValue.",
+              "description": "The validation kind: a set_validation kind such as list or whole-number, or the lower-kebab engine name of a kind outside that vocabulary, such as any-value.",
               "type": "string",
               "anyOf": [
                 {
                   "enum": [
                     "list",
-                    "wholeNumber",
+                    "whole-number",
                     "decimal",
                     "date",
-                    "textLength",
+                    "text-length",
                     "custom"
                   ]
                 },
                 {
-                  "pattern": "^[a-z][A-Za-z0-9]*$"
+                  "pattern": "^[a-z][a-z0-9]*(-[a-z0-9]+)*$"
                 }
               ]
             }
@@ -3837,16 +3941,22 @@
                 "$ref": "#/$defs/add_conditional_format"
               },
               {
-                "$ref": "#/$defs/add_sheet"
+                "$ref": "#/$defs/add_sparkline"
               },
               {
-                "$ref": "#/$defs/add_sparkline"
+                "$ref": "#/$defs/clear_autofilter"
               },
               {
                 "$ref": "#/$defs/clear_conditional_formats"
               },
               {
+                "$ref": "#/$defs/clear_print_area"
+              },
+              {
                 "$ref": "#/$defs/clear_range"
+              },
+              {
+                "$ref": "#/$defs/clear_tab_color"
               },
               {
                 "$ref": "#/$defs/clear_validation"
@@ -3855,16 +3965,10 @@
                 "$ref": "#/$defs/copy_range"
               },
               {
-                "$ref": "#/$defs/create_chart"
-              },
-              {
-                "$ref": "#/$defs/create_pivot"
-              },
-              {
-                "$ref": "#/$defs/create_table"
-              },
-              {
                 "$ref": "#/$defs/define_name"
+              },
+              {
+                "$ref": "#/$defs/define_table"
               },
               {
                 "$ref": "#/$defs/delete_chart"
@@ -3876,6 +3980,12 @@
                 "$ref": "#/$defs/delete_comment"
               },
               {
+                "$ref": "#/$defs/delete_duplicates"
+              },
+              {
+                "$ref": "#/$defs/delete_hyperlink"
+              },
+              {
                 "$ref": "#/$defs/delete_name"
               },
               {
@@ -3883,9 +3993,6 @@
               },
               {
                 "$ref": "#/$defs/delete_sheet"
-              },
-              {
-                "$ref": "#/$defs/edit_comment"
               },
               {
                 "$ref": "#/$defs/format_range"
@@ -3906,13 +4013,22 @@
                 "$ref": "#/$defs/import_sheet"
               },
               {
+                "$ref": "#/$defs/insert_chart"
+              },
+              {
                 "$ref": "#/$defs/insert_columns"
               },
               {
                 "$ref": "#/$defs/insert_image"
               },
               {
+                "$ref": "#/$defs/insert_pivot"
+              },
+              {
                 "$ref": "#/$defs/insert_rows"
+              },
+              {
+                "$ref": "#/$defs/insert_sheet"
               },
               {
                 "$ref": "#/$defs/merge_cells"
@@ -3928,12 +4044,6 @@
               },
               {
                 "$ref": "#/$defs/refresh_pivot"
-              },
-              {
-                "$ref": "#/$defs/remove_duplicates"
-              },
-              {
-                "$ref": "#/$defs/remove_hyperlink"
               },
               {
                 "$ref": "#/$defs/rename_sheet"
@@ -3952,6 +4062,12 @@
               },
               {
                 "$ref": "#/$defs/set_borders"
+              },
+              {
+                "$ref": "#/$defs/set_chart"
+              },
+              {
+                "$ref": "#/$defs/set_comment"
               },
               {
                 "$ref": "#/$defs/set_default_font"
@@ -3987,6 +4103,9 @@
                 "$ref": "#/$defs/sort_range"
               },
               {
+                "$ref": "#/$defs/unfreeze_panes"
+              },
+              {
                 "$ref": "#/$defs/ungroup_columns"
               },
               {
@@ -4000,9 +4119,6 @@
               },
               {
                 "$ref": "#/$defs/unprotect_workbook"
-              },
-              {
-                "$ref": "#/$defs/update_chart"
               }
             ]
           }
@@ -4053,7 +4169,7 @@
           }
         },
         "add_conditional_format": {
-          "description": "Adds a conditional format over a range. Each rule kind needs its own fields: cellValue an operator and value1 (and value2 for between and notBetween); colorScale minColor and maxColor; dataBar barColor; formula value1, to which a missing leading = is added; topBottom rank, at most 100 with percent; iconSet iconSet. cellValue, duplicates, formula and topBottom need a style; iconSet takes none.",
+          "description": "Adds a conditional format over a range. Each rule kind needs its own fields: cell-value an operator and value1 (and value2 for between and not-between); color-scale minColor and maxColor; data-bar barColor; formula value1, to which a missing leading = is added; top-bottom rank, at most 100 with percent; icon-set iconSet. cell-value, duplicates, formula and top-bottom need a style; icon-set takes none.",
           "type": "object",
           "required": [
             "op",
@@ -4089,40 +4205,6 @@
             }
           }
         },
-        "add_sheet": {
-          "description": "Adds a sheet.",
-          "type": "object",
-          "required": [
-            "op",
-            "name"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "id": {
-              "$ref": "#/$defs/id"
-            },
-            "op": {
-              "const": "add_sheet"
-            },
-            "sheet": {
-              "description": "The target sheet; the active sheet when omitted.",
-              "type": "string",
-              "x-readBack": "not-state"
-            },
-            "name": {
-              "description": "The name of the new sheet.",
-              "type": "string",
-              "pattern": "\\S",
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsSheetInfo/properties/name"
-            },
-            "at": {
-              "description": "The 1-based position in the tab order, as inspect reports a sheet's position; appended when omitted, or when past the last sheet.",
-              "type": "integer",
-              "minimum": 1,
-              "x-readBack": "not-state"
-            }
-          }
-        },
         "add_sparkline": {
           "description": "Adds a sparkline group over a data block: one sparkline per data row (or column), each drawn in one cell of location.",
           "type": "object",
@@ -4154,7 +4236,7 @@
               "$ref": "#/$defs/range",
               "x-readBack": "unread"
             },
-            "type": {
+            "kind": {
               "description": "winloss draws equal-height columns above or below the axis by sign.",
               "type": "string",
               "enum": [
@@ -4169,6 +4251,27 @@
               "description": "The series color; the engine default when omitted.",
               "$ref": "#/$defs/color",
               "x-readBack": "unread"
+            }
+          }
+        },
+        "clear_autofilter": {
+          "description": "Removes the sheet's AutoFilter.",
+          "type": "object",
+          "required": [
+            "op"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/id"
+            },
+            "op": {
+              "const": "clear_autofilter"
+            },
+            "sheet": {
+              "description": "The target sheet; the active sheet when omitted.",
+              "type": "string",
+              "x-readBack": "not-state"
             }
           }
         },
@@ -4195,6 +4298,27 @@
             "range": {
               "description": "The range to clear conditional formatting from.",
               "$ref": "#/$defs/range",
+              "x-readBack": "not-state"
+            }
+          }
+        },
+        "clear_print_area": {
+          "description": "Removes a sheet's print area and its print titles.",
+          "type": "object",
+          "required": [
+            "op"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/id"
+            },
+            "op": {
+              "const": "clear_print_area"
+            },
+            "sheet": {
+              "description": "The target sheet; the active sheet when omitted.",
+              "type": "string",
               "x-readBack": "not-state"
             }
           }
@@ -4233,6 +4357,27 @@
                 "all"
               ],
               "default": "contents",
+              "x-readBack": "not-state"
+            }
+          }
+        },
+        "clear_tab_color": {
+          "description": "Removes a sheet's tab color.",
+          "type": "object",
+          "required": [
+            "op"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/id"
+            },
+            "op": {
+              "const": "clear_tab_color"
+            },
+            "sheet": {
+              "description": "The target sheet; the active sheet when omitted.",
+              "type": "string",
               "x-readBack": "not-state"
             }
           }
@@ -4297,14 +4442,13 @@
             }
           }
         },
-        "create_chart": {
-          "description": "Adds a native chart that plots a data range. A pie chart has no axes and rejects axisTitles; legend, axisTitles and dataLabels each set at least one field.",
+        "define_name": {
+          "description": "Creates or replaces a workbook-scoped defined name (a named range).",
           "type": "object",
           "required": [
             "op",
-            "type",
-            "dataRange",
-            "at"
+            "name",
+            "refersTo"
           ],
           "additionalProperties": false,
           "properties": {
@@ -4312,147 +4456,24 @@
               "$ref": "#/$defs/id"
             },
             "op": {
-              "const": "create_chart"
-            },
-            "sheet": {
-              "description": "The target sheet; the active sheet when omitted.",
-              "type": "string",
-              "x-readBack": "not-state"
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "column",
-                "bar",
-                "line",
-                "pie",
-                "scatter",
-                "area"
-              ],
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsChartInfo/properties/kind"
-            },
-            "dataRange": {
-              "description": "The data to plot, including headers, such as A1:C5. It may name another sheet, such as Data!A1:C5, so a chart on a dashboard sheet can plot a data sheet.",
-              "$ref": "#/$defs/reference",
-              "x-readBack": "unread"
-            },
-            "at": {
-              "description": "The range of at least two cells the chart is placed over, such as E2:L18.",
-              "$ref": "#/$defs/range",
-              "x-readBack": "not-state"
-            },
-            "title": {
-              "type": "string",
-              "x-readBack": "unread"
-            },
-            "seriesInRows": {
-              "description": "Whether series are plotted from rows rather than columns.",
-              "type": "boolean",
-              "default": false,
-              "x-readBack": "unread"
-            },
-            "legend": {
-              "$ref": "#/$defs/cellsChartLegend",
-              "x-readBack": "unread"
-            },
-            "axisTitles": {
-              "$ref": "#/$defs/cellsChartAxisTitles",
-              "x-readBack": "unread"
-            },
-            "seriesColors": {
-              "description": "Series colors in series order; a pie's slices count as the series. Colors beyond the series count are ignored.",
-              "type": "array",
-              "minItems": 1,
-              "items": {
-                "$ref": "#/$defs/color"
-              },
-              "x-readBack": "unread"
-            },
-            "dataLabels": {
-              "$ref": "#/$defs/cellsChartDataLabels",
-              "x-readBack": "unread"
-            }
-          }
-        },
-        "create_pivot": {
-          "description": "Adds a pivot table that summarizes a source range. Its captions (value field names, the grand total, the row, column and value headers) follow captions, whose auto default changes only pivots with Han field names; a value field's label always wins. A label that repeats a source header or another value field's caption, ignoring case, is refused, as Excel refuses it.",
-          "type": "object",
-          "required": [
-            "op",
-            "sourceRange",
-            "at",
-            "values"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "id": {
-              "$ref": "#/$defs/id"
-            },
-            "op": {
-              "const": "create_pivot"
-            },
-            "sheet": {
-              "description": "The target sheet; the active sheet when omitted.",
-              "type": "string",
-              "x-readBack": "not-state"
-            },
-            "sourceRange": {
-              "description": "The source data including headers; it may name another sheet, such as Data!A1:D100.",
-              "$ref": "#/$defs/reference",
-              "x-readBack": "unread"
-            },
-            "at": {
-              "description": "The top-left cell of the pivot table.",
-              "$ref": "#/$defs/cell",
-              "x-readBack": "not-state"
+              "const": "define_name"
             },
             "name": {
-              "description": "The pivot table name; generated when omitted.",
+              "description": "The name, such as TaxRate.",
               "type": "string",
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsPivotInfo/properties/name"
+              "pattern": "\\S",
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsDefinedNameInfo/properties/name"
             },
-            "rows": {
-              "description": "The header names of the row fields.",
-              "type": "array",
-              "minItems": 1,
-              "items": {
-                "type": "string"
-              },
-              "x-readBack": "unread"
-            },
-            "columns": {
-              "description": "The header names of the column fields.",
-              "type": "array",
-              "minItems": 1,
-              "items": {
-                "type": "string"
-              },
-              "x-readBack": "unread"
-            },
-            "values": {
-              "description": "The value fields with their aggregation; two or more are columns, after the column fields, as in Excel.",
-              "type": "array",
-              "minItems": 1,
-              "items": {
-                "$ref": "#/$defs/cellsPivotValueField"
-              },
-              "x-readBack": "unread"
-            },
-            "captions": {
-              "description": "The caption language: en keeps the engine's English captions (Sum of X, Grand Total); zh writes Excel's Simplified Chinese ones (求和项:X, 总计, 行标签, 列标签, 值); auto is zh when a row, column or value field name contains a Han character, otherwise en.",
+            "refersTo": {
+              "description": "The sheet-qualified range the name refers to, such as Config!$B$2.",
               "type": "string",
-              "enum": [
-                "auto",
-                "en",
-                "zh"
-              ],
-              "default": "auto",
-              "x-readBack": "unread"
+              "pattern": "\\S",
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsDefinedNameInfo/properties/refersTo"
             }
           }
         },
-        "create_table": {
-          "description": "Turns a range into a native table with filtering, an optional style and an optional totals row.",
+        "define_table": {
+          "description": "Defines a range as a native table with filtering, an optional table style and an optional totals row.",
           "type": "object",
           "required": [
             "op",
@@ -4464,7 +4485,7 @@
               "$ref": "#/$defs/id"
             },
             "op": {
-              "const": "create_table"
+              "const": "define_table"
             },
             "sheet": {
               "description": "The target sheet; the active sheet when omitted.",
@@ -4483,7 +4504,7 @@
               "maxLength": 255,
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsTableInfo/properties/name"
             },
-            "style": {
+            "tableStyle": {
               "description": "A built-in table style (TableStyleLight1-21, TableStyleMedium1-28, TableStyleDark1-11), such as TableStyleMedium2, or a custom table style the workbook defines.",
               "type": "string",
               "minLength": 1,
@@ -4494,41 +4515,6 @@
               "type": "boolean",
               "default": false,
               "x-readBack": "unread"
-            }
-          }
-        },
-        "define_name": {
-          "description": "Creates or replaces a workbook-scoped defined name (a named range).",
-          "type": "object",
-          "required": [
-            "op",
-            "name",
-            "refersTo"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "id": {
-              "$ref": "#/$defs/id"
-            },
-            "op": {
-              "const": "define_name"
-            },
-            "sheet": {
-              "description": "The target sheet; the active sheet when omitted.",
-              "type": "string",
-              "x-readBack": "not-state"
-            },
-            "name": {
-              "description": "The name, such as TaxRate.",
-              "type": "string",
-              "pattern": "\\S",
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsDefinedNameInfo/properties/name"
-            },
-            "refersTo": {
-              "description": "The sheet-qualified range the name refers to, such as Config!$B$2.",
-              "type": "string",
-              "pattern": "\\S",
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsDefinedNameInfo/properties/refersTo"
             }
           }
         },
@@ -4641,6 +4627,75 @@
             }
           }
         },
+        "delete_duplicates": {
+          "description": "Removes duplicate rows from a range, comparing every column or the listed ones.",
+          "type": "object",
+          "required": [
+            "op",
+            "range"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/id"
+            },
+            "op": {
+              "const": "delete_duplicates"
+            },
+            "sheet": {
+              "description": "The target sheet; the active sheet when omitted.",
+              "type": "string",
+              "x-readBack": "not-state"
+            },
+            "range": {
+              "description": "The range to de-duplicate, including any header row, such as A1:D100.",
+              "$ref": "#/$defs/range",
+              "x-readBack": "not-state"
+            },
+            "columns": {
+              "description": "The columns inside the range that define a duplicate; every column when omitted.",
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/$defs/column"
+              },
+              "x-readBack": "not-state"
+            },
+            "hasHeader": {
+              "description": "Whether the first row is a header that is kept.",
+              "type": "boolean",
+              "default": false,
+              "x-readBack": "not-state"
+            }
+          }
+        },
+        "delete_hyperlink": {
+          "description": "Removes the hyperlink covering a cell.",
+          "type": "object",
+          "required": [
+            "op",
+            "cell"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/id"
+            },
+            "op": {
+              "const": "delete_hyperlink"
+            },
+            "sheet": {
+              "description": "The target sheet; the active sheet when omitted.",
+              "type": "string",
+              "x-readBack": "not-state"
+            },
+            "cell": {
+              "description": "A cell the hyperlink covers, such as B2.",
+              "$ref": "#/$defs/cell",
+              "x-readBack": "not-state"
+            }
+          }
+        },
         "delete_name": {
           "description": "Removes a workbook-scoped defined name.",
           "type": "object",
@@ -4655,11 +4710,6 @@
             },
             "op": {
               "const": "delete_name"
-            },
-            "sheet": {
-              "description": "The target sheet; the active sheet when omitted.",
-              "type": "string",
-              "x-readBack": "not-state"
             },
             "name": {
               "type": "string",
@@ -4734,45 +4784,6 @@
             }
           ]
         },
-        "edit_comment": {
-          "description": "Replaces the text of a cell's comment.",
-          "type": "object",
-          "required": [
-            "op",
-            "cell",
-            "text"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "id": {
-              "$ref": "#/$defs/id"
-            },
-            "op": {
-              "const": "edit_comment"
-            },
-            "sheet": {
-              "description": "The target sheet; the active sheet when omitted.",
-              "type": "string",
-              "x-readBack": "not-state"
-            },
-            "cell": {
-              "description": "The cell whose comment changes.",
-              "$ref": "#/$defs/cell",
-              "x-readBack": "not-state"
-            },
-            "text": {
-              "description": "The new comment text.",
-              "type": "string",
-              "minLength": 1,
-              "x-readBack": "unread"
-            },
-            "author": {
-              "description": "The new author; unchanged when omitted.",
-              "type": "string",
-              "x-readBack": "unread"
-            }
-          }
-        },
         "format_range": {
           "description": "Formats a range. Only the style fields that are set change; the rest of the existing formatting is preserved. The style must set at least one field.",
           "type": "object",
@@ -4805,7 +4816,7 @@
           }
         },
         "freeze_panes": {
-          "description": "Freezes the panes above and left of a cell: B2 freezes row 1 and column A, and A1 unfreezes.",
+          "description": "Freezes the panes above and left of a cell: A2 freezes row 1, B2 row 1 and column A. unfreeze_panes removes frozen panes.",
           "type": "object",
           "required": [
             "op",
@@ -4825,9 +4836,9 @@
               "x-readBack": "not-state"
             },
             "cell": {
-              "description": "The anchor cell.",
+              "description": "The top-left cell of the scrolling pane; not A1, which freezes nothing.",
               "$ref": "#/$defs/cell",
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsSheetLayoutInfo/properties/freezePanes"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsFreezePanesInfo/properties/cell"
             }
           }
         },
@@ -4836,7 +4847,7 @@
           "type": "object",
           "required": [
             "op",
-            "from"
+            "first"
           ],
           "additionalProperties": false,
           "properties": {
@@ -4851,17 +4862,17 @@
               "type": "string",
               "x-readBack": "not-state"
             },
-            "from": {
+            "first": {
               "description": "The first column of the group.",
               "$ref": "#/$defs/column",
               "x-readBack": "not-state"
             },
-            "to": {
-              "description": "The last column of the group, not left of from; from when omitted.",
+            "last": {
+              "description": "The last column of the group, not left of first; first when omitted.",
               "$ref": "#/$defs/column",
               "x-readBack": "not-state"
             },
-            "collapse": {
+            "collapsed": {
               "description": "Whether the new group is collapsed.",
               "type": "boolean",
               "default": false,
@@ -4874,7 +4885,7 @@
           "type": "object",
           "required": [
             "op",
-            "from"
+            "first"
           ],
           "additionalProperties": false,
           "properties": {
@@ -4889,19 +4900,19 @@
               "type": "string",
               "x-readBack": "not-state"
             },
-            "from": {
+            "first": {
               "description": "The first row of the group (1-based).",
               "type": "integer",
               "minimum": 1,
               "x-readBack": "not-state"
             },
-            "to": {
-              "description": "The last row of the group (1-based), not above from; from when omitted.",
+            "last": {
+              "description": "The last row of the group (1-based), not above first; first when omitted.",
               "type": "integer",
               "minimum": 1,
               "x-readBack": "not-state"
             },
-            "collapse": {
+            "collapsed": {
               "description": "Whether the new group is collapsed.",
               "type": "boolean",
               "default": false,
@@ -4958,7 +4969,7 @@
               "default": "values",
               "x-readBack": "not-state"
             },
-            "passwordEnv": {
+            "sourcePasswordEnv": {
               "description": "The environment variable that holds the source's open password, for an encrypted source.",
               "type": "string",
               "minLength": 1,
@@ -4982,9 +4993,10 @@
             "op": {
               "const": "import_sheet"
             },
-            "sheet": {
+            "sourceSheet": {
               "description": "The source sheet to copy, in the source workbook; the source's first sheet when omitted.",
               "type": "string",
+              "pattern": "\\S",
               "x-readBack": "not-state"
             },
             "path": {
@@ -4995,9 +5007,10 @@
               "x-readBack": "not-state"
             },
             "name": {
-              "description": "The name of the new sheet; the source sheet's name when omitted. A name this workbook already uses is refused.",
+              "description": "The name of the new sheet, as Excel allows it (see CellsSheetNames); the source sheet's name when omitted. A name this workbook already uses is refused.",
               "type": "string",
               "pattern": "\\S",
+              "maxLength": 31,
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsSheetInfo/properties/name"
             },
             "at": {
@@ -5006,12 +5019,89 @@
               "minimum": 1,
               "x-readBack": "not-state"
             },
-            "passwordEnv": {
+            "sourcePasswordEnv": {
               "description": "The environment variable that holds the source's open password, for an encrypted source.",
               "type": "string",
               "minLength": 1,
               "pattern": "\\S",
               "x-readBack": "not-state"
+            }
+          }
+        },
+        "insert_chart": {
+          "description": "Adds a native chart that plots a data range. A pie chart has no axes and rejects axisTitles; legend, axisTitles and dataLabels each set at least one field.",
+          "type": "object",
+          "required": [
+            "op",
+            "kind",
+            "dataRange",
+            "at"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/id"
+            },
+            "op": {
+              "const": "insert_chart"
+            },
+            "sheet": {
+              "description": "The target sheet; the active sheet when omitted.",
+              "type": "string",
+              "x-readBack": "not-state"
+            },
+            "kind": {
+              "type": "string",
+              "enum": [
+                "column",
+                "bar",
+                "line",
+                "pie",
+                "scatter",
+                "area"
+              ],
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsChartInfo/properties/kind"
+            },
+            "dataRange": {
+              "description": "The data to plot, including headers, such as A1:C5. It may name another sheet, such as Data!A1:C5, so a chart on a dashboard sheet can plot a data sheet.",
+              "$ref": "#/$defs/reference",
+              "x-readBack": "unread"
+            },
+            "at": {
+              "description": "The range of at least two cells the chart is placed over, such as E2:L18.",
+              "$ref": "#/$defs/range",
+              "x-readBack": "not-state"
+            },
+            "title": {
+              "type": "string",
+              "x-readBack": "unread"
+            },
+            "seriesInRows": {
+              "description": "Whether series are plotted from rows rather than columns.",
+              "type": "boolean",
+              "default": false,
+              "x-readBack": "unread"
+            },
+            "legend": {
+              "$ref": "#/$defs/cellsChartLegend",
+              "x-readBack": "unread"
+            },
+            "axisTitles": {
+              "$ref": "#/$defs/cellsChartAxisTitles",
+              "x-readBack": "unread"
+            },
+            "seriesColors": {
+              "description": "Series colors in series order; a pie's slices count as the series. Colors beyond the series count are ignored.",
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/$defs/color"
+              },
+              "x-readBack": "unread"
+            },
+            "dataLabels": {
+              "$ref": "#/$defs/cellsChartDataLabels",
+              "x-readBack": "unread"
             }
           }
         },
@@ -5082,15 +5172,92 @@
               "x-readBack": "not-state"
             },
             "width": {
-              "description": "The width in pixels; the image's natural width when omitted.",
-              "type": "integer",
-              "minimum": 1,
+              "description": "The width in points; the image's natural width when omitted.",
+              "type": "number",
+              "exclusiveMinimum": 0,
               "x-readBack": "unread"
             },
             "height": {
-              "description": "The height in pixels; the image's natural height when omitted.",
-              "type": "integer",
-              "minimum": 1,
+              "description": "The height in points; the image's natural height when omitted.",
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "x-readBack": "unread"
+            }
+          }
+        },
+        "insert_pivot": {
+          "description": "Adds a pivot table that summarizes a source range. Its captions (value field names, the grand total, the row, column and value headers) follow captions, whose auto default changes only pivots with Han field names; a value field's label always wins. A label that repeats a source header or another value field's caption, ignoring case, is refused, as Excel refuses it.",
+          "type": "object",
+          "required": [
+            "op",
+            "sourceRange",
+            "at",
+            "values"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/id"
+            },
+            "op": {
+              "const": "insert_pivot"
+            },
+            "sheet": {
+              "description": "The target sheet; the active sheet when omitted.",
+              "type": "string",
+              "x-readBack": "not-state"
+            },
+            "sourceRange": {
+              "description": "The source data including headers; it may name another sheet, such as Data!A1:D100.",
+              "$ref": "#/$defs/reference",
+              "x-readBack": "unread"
+            },
+            "at": {
+              "description": "The top-left cell of the pivot table.",
+              "$ref": "#/$defs/cell",
+              "x-readBack": "not-state"
+            },
+            "name": {
+              "description": "The pivot table name; generated when omitted.",
+              "type": "string",
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsPivotInfo/properties/name"
+            },
+            "rows": {
+              "description": "The header names of the row fields.",
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string"
+              },
+              "x-readBack": "unread"
+            },
+            "columns": {
+              "description": "The header names of the column fields.",
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "string"
+              },
+              "x-readBack": "unread"
+            },
+            "values": {
+              "description": "The value fields with their aggregation; two or more are columns, after the column fields, as in Excel.",
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/$defs/cellsPivotValueField"
+              },
+              "x-readBack": "unread"
+            },
+            "captions": {
+              "description": "The caption language: en keeps the engine's English captions (Sum of X, Grand Total); zh writes Excel's Simplified Chinese ones (求和项:X, 总计, 行标签, 列标签, 值); auto is zh when a row, column or value field name contains a Han character, otherwise en.",
+              "type": "string",
+              "enum": [
+                "auto",
+                "en",
+                "zh"
+              ],
+              "default": "auto",
               "x-readBack": "unread"
             }
           }
@@ -5125,6 +5292,36 @@
               "type": "integer",
               "minimum": 1,
               "default": 1,
+              "x-readBack": "not-state"
+            }
+          }
+        },
+        "insert_sheet": {
+          "description": "Adds a sheet.",
+          "type": "object",
+          "required": [
+            "op",
+            "name"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/id"
+            },
+            "op": {
+              "const": "insert_sheet"
+            },
+            "name": {
+              "description": "The name of the new sheet, as Excel allows it (see CellsSheetNames).",
+              "type": "string",
+              "pattern": "\\S",
+              "maxLength": 31,
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsSheetInfo/properties/name"
+            },
+            "at": {
+              "description": "The 1-based position in the tab order, as inspect reports a sheet's position; appended when omitted, or when past the last sheet.",
+              "type": "integer",
+              "minimum": 1,
               "x-readBack": "not-state"
             }
           }
@@ -5227,13 +5424,13 @@
               "items": {
                 "type": "string",
                 "enum": [
-                  "formatCells",
-                  "insertRows",
-                  "insertColumns",
-                  "deleteRows",
-                  "deleteColumns",
+                  "format-cells",
+                  "insert-rows",
+                  "insert-columns",
+                  "delete-rows",
+                  "delete-columns",
                   "sort",
-                  "autoFilter"
+                  "autofilter"
                 ]
               },
               "default": [],
@@ -5254,11 +5451,6 @@
             },
             "op": {
               "const": "protect_workbook"
-            },
-            "sheet": {
-              "description": "The target sheet; the active sheet when omitted.",
-              "type": "string",
-              "x-readBack": "not-state"
             },
             "passwordEnv": {
               "description": "The environment variable that holds the protection password.",
@@ -5295,81 +5487,12 @@
             }
           }
         },
-        "remove_duplicates": {
-          "description": "Removes duplicate rows from a range, comparing every column or the listed ones.",
-          "type": "object",
-          "required": [
-            "op",
-            "range"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "id": {
-              "$ref": "#/$defs/id"
-            },
-            "op": {
-              "const": "remove_duplicates"
-            },
-            "sheet": {
-              "description": "The target sheet; the active sheet when omitted.",
-              "type": "string",
-              "x-readBack": "not-state"
-            },
-            "range": {
-              "description": "The range to de-duplicate, including any header row, such as A1:D100.",
-              "$ref": "#/$defs/range",
-              "x-readBack": "not-state"
-            },
-            "columns": {
-              "description": "The columns inside the range that define a duplicate; every column when omitted.",
-              "type": "array",
-              "minItems": 1,
-              "items": {
-                "$ref": "#/$defs/column"
-              },
-              "x-readBack": "not-state"
-            },
-            "hasHeader": {
-              "description": "Whether the first row is a header that is kept.",
-              "type": "boolean",
-              "default": false,
-              "x-readBack": "not-state"
-            }
-          }
-        },
-        "remove_hyperlink": {
-          "description": "Removes the hyperlink covering a cell.",
-          "type": "object",
-          "required": [
-            "op",
-            "cell"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "id": {
-              "$ref": "#/$defs/id"
-            },
-            "op": {
-              "const": "remove_hyperlink"
-            },
-            "sheet": {
-              "description": "The target sheet; the active sheet when omitted.",
-              "type": "string",
-              "x-readBack": "not-state"
-            },
-            "cell": {
-              "description": "A cell the hyperlink covers, such as B2.",
-              "$ref": "#/$defs/cell",
-              "x-readBack": "not-state"
-            }
-          }
-        },
         "rename_sheet": {
           "description": "Renames the sheet the operation's sheet field names.",
           "type": "object",
           "required": [
             "op",
-            "to"
+            "name"
           ],
           "additionalProperties": false,
           "properties": {
@@ -5384,10 +5507,11 @@
               "type": "string",
               "x-readBack": "not-state"
             },
-            "to": {
-              "description": "The new name.",
+            "name": {
+              "description": "The new name, as Excel allows it (see CellsSheetNames).",
               "type": "string",
               "pattern": "\\S",
+              "maxLength": 31,
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsSheetInfo/properties/name"
             }
           },
@@ -5404,11 +5528,11 @@
           ]
         },
         "resize_columns": {
-          "description": "Sets the width of a span of columns, or auto-fits them when width is omitted.",
+          "description": "Sets the width of a span of columns, or auto-fits them when widthChars is omitted.",
           "type": "object",
           "required": [
             "op",
-            "from"
+            "first"
           ],
           "additionalProperties": false,
           "properties": {
@@ -5423,18 +5547,18 @@
               "type": "string",
               "x-readBack": "not-state"
             },
-            "from": {
+            "first": {
               "description": "The first column.",
               "$ref": "#/$defs/column",
               "x-readBack": "not-state"
             },
-            "to": {
-              "description": "The last column, not left of from; from when omitted.",
+            "last": {
+              "description": "The last column, not left of first; first when omitted.",
               "$ref": "#/$defs/column",
               "x-readBack": "not-state"
             },
-            "width": {
-              "description": "The width in characters; omitted auto-fits.",
+            "widthChars": {
+              "description": "The width in characters of the default font's digit 0; omitted auto-fits.",
               "type": "number",
               "minimum": 0,
               "x-readBack": "unread"
@@ -5446,7 +5570,7 @@
           "type": "object",
           "required": [
             "op",
-            "from"
+            "first"
           ],
           "additionalProperties": false,
           "properties": {
@@ -5461,14 +5585,14 @@
               "type": "string",
               "x-readBack": "not-state"
             },
-            "from": {
+            "first": {
               "description": "The 1-based first row.",
               "type": "integer",
               "minimum": 1,
               "x-readBack": "not-state"
             },
-            "to": {
-              "description": "The 1-based last row, not above from; from when omitted.",
+            "last": {
+              "description": "The 1-based last row, not above first; first when omitted.",
               "type": "integer",
               "minimum": 1,
               "x-readBack": "not-state"
@@ -5514,10 +5638,11 @@
           ]
         },
         "set_autofilter": {
-          "description": "Adds an AutoFilter over a range, or removes the sheet's AutoFilter.",
+          "description": "Sets the sheet's AutoFilter over a range; clear_autofilter removes it.",
           "type": "object",
           "required": [
-            "op"
+            "op",
+            "range"
           ],
           "additionalProperties": false,
           "properties": {
@@ -5533,38 +5658,11 @@
               "x-readBack": "not-state"
             },
             "range": {
-              "description": "The range to filter, including its header row, such as A1:D20; required unless off is true.",
+              "description": "The range to filter, including its header row, such as A1:D20.",
               "$ref": "#/$defs/range",
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsSheetLayoutInfo/properties/autoFilter"
-            },
-            "off": {
-              "description": "Whether the sheet's AutoFilter is removed instead of added.",
-              "type": "boolean",
-              "default": false,
-              "x-readBack": "not-state"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsAutofilterInfo/properties/range"
             }
-          },
-          "allOf": [
-            {
-              "anyOf": [
-                {
-                  "required": [
-                    "range"
-                  ]
-                },
-                {
-                  "required": [
-                    "off"
-                  ],
-                  "properties": {
-                    "off": {
-                      "const": true
-                    }
-                  }
-                }
-              ]
-            }
-          ]
+          }
         },
         "set_borders": {
           "description": "Draws borders on a range, every named edge with the same line style and color; the rest of the cells' formatting is preserved. A single cell has no inner lines, so it needs an outer edge.",
@@ -5612,7 +5710,7 @@
               },
               "x-readBack": "unread"
             },
-            "style": {
+            "lineStyle": {
               "type": "string",
               "enum": [
                 "hair",
@@ -5633,8 +5731,189 @@
             }
           }
         },
+        "set_chart": {
+          "description": "Updates an existing chart, identified by exactly one of index and name, with at least one of title, dataRange, kind, legend, axisTitles, seriesColors and dataLabels. seriesInRows applies only together with dataRange; legend, axisTitles and dataLabels each set at least one field.",
+          "type": "object",
+          "required": [
+            "op"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/id"
+            },
+            "op": {
+              "const": "set_chart"
+            },
+            "sheet": {
+              "description": "The target sheet; the active sheet when omitted.",
+              "type": "string",
+              "x-readBack": "not-state"
+            },
+            "index": {
+              "description": "The 1-based index of the chart on the sheet, as inspect --detail charts lists it.",
+              "type": "integer",
+              "minimum": 1,
+              "x-readBack": "not-state"
+            },
+            "name": {
+              "description": "The chart name.",
+              "type": "string",
+              "pattern": "\\S",
+              "x-readBack": "not-state"
+            },
+            "title": {
+              "type": "string",
+              "x-readBack": "unread"
+            },
+            "dataRange": {
+              "description": "The new data to plot, including headers; it may name another sheet, such as Data!A1:C5.",
+              "$ref": "#/$defs/reference",
+              "x-readBack": "unread"
+            },
+            "kind": {
+              "type": "string",
+              "enum": [
+                "column",
+                "bar",
+                "line",
+                "pie",
+                "scatter",
+                "area"
+              ],
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsChartInfo/properties/kind"
+            },
+            "seriesInRows": {
+              "description": "Whether series are plotted from rows rather than columns.",
+              "type": "boolean",
+              "x-readBack": "unread"
+            },
+            "legend": {
+              "$ref": "#/$defs/cellsChartLegend",
+              "x-readBack": "unread"
+            },
+            "axisTitles": {
+              "$ref": "#/$defs/cellsChartAxisTitles",
+              "x-readBack": "unread"
+            },
+            "seriesColors": {
+              "description": "Series colors in series order; a pie's slices count as the series. Colors beyond the series count are ignored.",
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/$defs/color"
+              },
+              "x-readBack": "unread"
+            },
+            "dataLabels": {
+              "$ref": "#/$defs/cellsChartDataLabels",
+              "x-readBack": "unread"
+            }
+          },
+          "allOf": [
+            {
+              "oneOf": [
+                {
+                  "required": [
+                    "index"
+                  ]
+                },
+                {
+                  "required": [
+                    "name"
+                  ]
+                }
+              ]
+            },
+            {
+              "anyOf": [
+                {
+                  "required": [
+                    "title"
+                  ]
+                },
+                {
+                  "required": [
+                    "dataRange"
+                  ]
+                },
+                {
+                  "required": [
+                    "kind"
+                  ]
+                },
+                {
+                  "required": [
+                    "legend"
+                  ]
+                },
+                {
+                  "required": [
+                    "axisTitles"
+                  ]
+                },
+                {
+                  "required": [
+                    "seriesColors"
+                  ]
+                },
+                {
+                  "required": [
+                    "dataLabels"
+                  ]
+                }
+              ]
+            },
+            {
+              "dependentRequired": {
+                "seriesInRows": [
+                  "dataRange"
+                ]
+              }
+            }
+          ]
+        },
+        "set_comment": {
+          "description": "Replaces the text of a cell's comment.",
+          "type": "object",
+          "required": [
+            "op",
+            "cell",
+            "text"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/id"
+            },
+            "op": {
+              "const": "set_comment"
+            },
+            "sheet": {
+              "description": "The target sheet; the active sheet when omitted.",
+              "type": "string",
+              "x-readBack": "not-state"
+            },
+            "cell": {
+              "description": "The cell whose comment changes.",
+              "$ref": "#/$defs/cell",
+              "x-readBack": "not-state"
+            },
+            "text": {
+              "description": "The new comment text.",
+              "type": "string",
+              "minLength": 1,
+              "x-readBack": "unread"
+            },
+            "author": {
+              "description": "The new author; unchanged when omitted.",
+              "type": "string",
+              "x-readBack": "unread"
+            }
+          }
+        },
         "set_default_font": {
-          "description": "Sets the workbook default font; the operation's sheet is ignored. It changes the Normal style every unstyled cell derives its font from and the unit column widths are measured in, so set it first in a new workbook, before content and column widths. Cells with an explicit font keep it.",
+          "description": "Sets the workbook default font. It changes the Normal style every unstyled cell derives its font from and the unit column widths are measured in, so set it first in a new workbook, before content and column widths. Cells with an explicit font keep it.",
           "type": "object",
           "required": [
             "op",
@@ -5648,18 +5927,13 @@
             "op": {
               "const": "set_default_font"
             },
-            "sheet": {
-              "description": "The target sheet; the active sheet when omitted.",
-              "type": "string",
-              "x-readBack": "not-state"
-            },
             "font": {
               "description": "The font family name, such as Calibri; surrounding spaces are removed.",
               "type": "string",
               "pattern": "\\S",
               "x-readBack": "unread"
             },
-            "size": {
+            "fontSize": {
               "description": "The font size in points; unchanged when omitted.",
               "type": "number",
               "minimum": 1,
@@ -5785,52 +6059,45 @@
                 "portrait",
                 "landscape"
               ],
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsSheetLayoutInfo/properties/orientation"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsPageSetupInfo/properties/orientation"
             },
-            "paperSize": {
-              "type": "string",
-              "enum": [
-                "letter",
-                "legal",
-                "a3",
-                "a4",
-                "a5",
-                "tabloid"
-              ],
-              "x-readBack": "unread"
+            "pageSize": {
+              "description": "The paper size: a preset, turned by the orientation, or a width and height in points whose longer side is the width in landscape and the height in portrait, as a read reports it.",
+              "$ref": "#/$defs/pageSizeInput",
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsPageSetupInfo/properties/pageSize"
             },
             "fitToWidth": {
               "description": "The number of pages the printout fits across; 0 is automatic.",
               "type": "integer",
               "minimum": 0,
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsSheetLayoutInfo/properties/fitToWidth"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsPageSetupInfo/properties/fitToWidth"
             },
             "fitToHeight": {
               "description": "The number of pages the printout fits down; 0 is automatic.",
               "type": "integer",
               "minimum": 0,
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsSheetLayoutInfo/properties/fitToHeight"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsPageSetupInfo/properties/fitToHeight"
             },
-            "scale": {
+            "scalePercent": {
               "description": "The zoom percentage; ignored when the printout fits to pages.",
               "type": "integer",
               "minimum": 10,
               "maximum": 400,
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsSheetLayoutInfo/properties/scale"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsPageSetupInfo/properties/scalePercent"
             },
             "margins": {
               "$ref": "#/$defs/cellsMargins",
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsPageSetupInfo/properties/margins"
             },
             "header": {
               "description": "The center header text, with Excel codes such as &P (page) and &N (pages).",
               "type": "string",
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsSheetLayoutInfo/properties/header"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsPageSetupInfo/properties/header"
             },
             "footer": {
               "description": "The center footer text, with Excel codes such as &P and &N.",
               "type": "string",
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsSheetLayoutInfo/properties/footer"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsPageSetupInfo/properties/footer"
             }
           },
           "allOf": [
@@ -5843,7 +6110,7 @@
                 },
                 {
                   "required": [
-                    "paperSize"
+                    "pageSize"
                   ]
                 },
                 {
@@ -5858,7 +6125,7 @@
                 },
                 {
                   "required": [
-                    "scale"
+                    "scalePercent"
                   ]
                 },
                 {
@@ -5881,10 +6148,11 @@
           ]
         },
         "set_print_area": {
-          "description": "Sets the print area of a sheet and the rows and columns repeated on every printed page. Titles alone keep the current print area; an operation with no fields clears it.",
+          "description": "Sets the print area of a sheet and the rows and columns repeated on every printed page; titles omitted are removed. clear_print_area removes all three.",
           "type": "object",
           "required": [
-            "op"
+            "op",
+            "range"
           ],
           "additionalProperties": false,
           "properties": {
@@ -5902,19 +6170,19 @@
             "range": {
               "description": "The print area, such as A1:H50.",
               "$ref": "#/$defs/range",
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsSheetLayoutInfo/properties/printArea"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsPrintAreaInfo/properties/range"
             },
             "titleRows": {
               "description": "The rows repeated on every printed page, such as 1:2 or 1.",
               "type": "string",
               "pattern": "^\\$?[0-9]+(:\\$?[0-9]+)?$",
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsSheetLayoutInfo/properties/titleRows"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsPrintAreaInfo/properties/titleRows"
             },
             "titleColumns": {
               "description": "The columns repeated on every printed page, such as A:B or A.",
               "type": "string",
               "pattern": "^\\$?[A-Za-z]{1,3}(:\\$?[A-Za-z]{1,3})?$",
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsSheetLayoutInfo/properties/titleColumns"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsPrintAreaInfo/properties/titleColumns"
             }
           }
         },
@@ -6016,10 +6284,11 @@
           ]
         },
         "set_tab_color": {
-          "description": "Sets a sheet's tab color, or removes it when color is omitted.",
+          "description": "Sets a sheet's tab color; clear_tab_color removes it.",
           "type": "object",
           "required": [
-            "op"
+            "op",
+            "color"
           ],
           "additionalProperties": false,
           "properties": {
@@ -6035,19 +6304,19 @@
               "x-readBack": "not-state"
             },
             "color": {
-              "description": "The tab color; omitted removes it.",
+              "description": "The tab color.",
               "$ref": "#/$defs/color",
               "x-readBack": "unread"
             }
           }
         },
         "set_validation": {
-          "description": "Applies data validation, a dropdown list or an input constraint, to a range. A list takes exactly one of listItems and listSource; custom takes its formula in value1; the other types take an operator and value1, and value2 too for between and notBetween.",
+          "description": "Applies data validation, a dropdown list or an input constraint, to a range. A list takes exactly one of listItems and listSource; custom takes its formula in value1; the other kinds take an operator and value1, and value2 too for between and not-between.",
           "type": "object",
           "required": [
             "op",
             "range",
-            "type"
+            "kind"
           ],
           "additionalProperties": false,
           "properties": {
@@ -6067,14 +6336,14 @@
               "$ref": "#/$defs/range",
               "x-readBack": "not-state"
             },
-            "type": {
+            "kind": {
               "type": "string",
               "enum": [
                 "list",
-                "wholeNumber",
+                "whole-number",
                 "decimal",
                 "date",
-                "textLength",
+                "text-length",
                 "custom"
               ],
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsValidationInfo/properties/kind"
@@ -6083,13 +6352,13 @@
               "type": "string",
               "enum": [
                 "between",
-                "notBetween",
+                "not-between",
                 "equal",
-                "notEqual",
-                "greaterThan",
-                "lessThan",
-                "greaterOrEqual",
-                "lessOrEqual"
+                "not-equal",
+                "greater-than",
+                "less-than",
+                "greater-or-equal",
+                "less-or-equal"
               ],
               "x-readBack": "unread"
             },
@@ -6100,7 +6369,7 @@
               "x-readBack": "unread"
             },
             "value2": {
-              "description": "The upper bound for between and notBetween.",
+              "description": "The upper bound for between and not-between.",
               "type": "string",
               "pattern": "\\S",
               "x-readBack": "unread"
@@ -6228,12 +6497,33 @@
             }
           }
         },
+        "unfreeze_panes": {
+          "description": "Removes a sheet's frozen panes.",
+          "type": "object",
+          "required": [
+            "op"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/id"
+            },
+            "op": {
+              "const": "unfreeze_panes"
+            },
+            "sheet": {
+              "description": "The target sheet; the active sheet when omitted.",
+              "type": "string",
+              "x-readBack": "not-state"
+            }
+          }
+        },
         "ungroup_columns": {
           "description": "Removes one outline level from a span of columns.",
           "type": "object",
           "required": [
             "op",
-            "from"
+            "first"
           ],
           "additionalProperties": false,
           "properties": {
@@ -6248,13 +6538,13 @@
               "type": "string",
               "x-readBack": "not-state"
             },
-            "from": {
+            "first": {
               "description": "The first column of the span.",
               "$ref": "#/$defs/column",
               "x-readBack": "not-state"
             },
-            "to": {
-              "description": "The last column of the span, not left of from; from when omitted.",
+            "last": {
+              "description": "The last column of the span, not left of first; first when omitted.",
               "$ref": "#/$defs/column",
               "x-readBack": "not-state"
             }
@@ -6265,7 +6555,7 @@
           "type": "object",
           "required": [
             "op",
-            "from"
+            "first"
           ],
           "additionalProperties": false,
           "properties": {
@@ -6280,14 +6570,14 @@
               "type": "string",
               "x-readBack": "not-state"
             },
-            "from": {
+            "first": {
               "description": "The first row of the span (1-based).",
               "type": "integer",
               "minimum": 1,
               "x-readBack": "not-state"
             },
-            "to": {
-              "description": "The last row of the span (1-based), not above from; from when omitted.",
+            "last": {
+              "description": "The last row of the span (1-based), not above first; first when omitted.",
               "type": "integer",
               "minimum": 1,
               "x-readBack": "not-state"
@@ -6363,11 +6653,6 @@
             "op": {
               "const": "unprotect_workbook"
             },
-            "sheet": {
-              "description": "The target sheet; the active sheet when omitted.",
-              "type": "string",
-              "x-readBack": "not-state"
-            },
             "passwordEnv": {
               "description": "The environment variable that holds the current password of a password-protected workbook.",
               "type": "string",
@@ -6376,148 +6661,6 @@
               "x-readBack": "not-state"
             }
           }
-        },
-        "update_chart": {
-          "description": "Updates an existing chart, identified by exactly one of index and name, with at least one of title, dataRange, type, legend, axisTitles, seriesColors and dataLabels. seriesInRows applies only together with dataRange; legend, axisTitles and dataLabels each set at least one field.",
-          "type": "object",
-          "required": [
-            "op"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "id": {
-              "$ref": "#/$defs/id"
-            },
-            "op": {
-              "const": "update_chart"
-            },
-            "sheet": {
-              "description": "The target sheet; the active sheet when omitted.",
-              "type": "string",
-              "x-readBack": "not-state"
-            },
-            "index": {
-              "description": "The 1-based index of the chart on the sheet, as inspect --detail charts lists it.",
-              "type": "integer",
-              "minimum": 1,
-              "x-readBack": "not-state"
-            },
-            "name": {
-              "description": "The chart name.",
-              "type": "string",
-              "pattern": "\\S",
-              "x-readBack": "not-state"
-            },
-            "title": {
-              "type": "string",
-              "x-readBack": "unread"
-            },
-            "dataRange": {
-              "description": "The new data to plot, including headers; it may name another sheet, such as Data!A1:C5.",
-              "$ref": "#/$defs/reference",
-              "x-readBack": "unread"
-            },
-            "type": {
-              "type": "string",
-              "enum": [
-                "column",
-                "bar",
-                "line",
-                "pie",
-                "scatter",
-                "area"
-              ],
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsChartInfo/properties/kind"
-            },
-            "seriesInRows": {
-              "description": "Whether series are plotted from rows rather than columns.",
-              "type": "boolean",
-              "x-readBack": "unread"
-            },
-            "legend": {
-              "$ref": "#/$defs/cellsChartLegend",
-              "x-readBack": "unread"
-            },
-            "axisTitles": {
-              "$ref": "#/$defs/cellsChartAxisTitles",
-              "x-readBack": "unread"
-            },
-            "seriesColors": {
-              "description": "Series colors in series order; a pie's slices count as the series. Colors beyond the series count are ignored.",
-              "type": "array",
-              "minItems": 1,
-              "items": {
-                "$ref": "#/$defs/color"
-              },
-              "x-readBack": "unread"
-            },
-            "dataLabels": {
-              "$ref": "#/$defs/cellsChartDataLabels",
-              "x-readBack": "unread"
-            }
-          },
-          "allOf": [
-            {
-              "oneOf": [
-                {
-                  "required": [
-                    "index"
-                  ]
-                },
-                {
-                  "required": [
-                    "name"
-                  ]
-                }
-              ]
-            },
-            {
-              "anyOf": [
-                {
-                  "required": [
-                    "title"
-                  ]
-                },
-                {
-                  "required": [
-                    "dataRange"
-                  ]
-                },
-                {
-                  "required": [
-                    "type"
-                  ]
-                },
-                {
-                  "required": [
-                    "legend"
-                  ]
-                },
-                {
-                  "required": [
-                    "axisTitles"
-                  ]
-                },
-                {
-                  "required": [
-                    "seriesColors"
-                  ]
-                },
-                {
-                  "required": [
-                    "dataLabels"
-                  ]
-                }
-              ]
-            },
-            {
-              "dependentRequired": {
-                "seriesInRows": [
-                  "dataRange"
-                ]
-              }
-            }
-          ]
         },
         "cell": {
           "type": "string",
@@ -6553,7 +6696,7 @@
               "description": "Whether each point's value shows next to it.",
               "type": "boolean"
             },
-            "format": {
+            "numberFormat": {
               "description": "The number format code of the labels, such as #,##0.",
               "type": "string"
             }
@@ -6597,83 +6740,83 @@
           "additionalProperties": false,
           "properties": {
             "kind": {
-              "description": "cellValue compares values; colorScale and dataBar shade by value; duplicates marks repeated values; formula formats where a formula is true, anchored at the range's top-left cell and shifted per cell; topBottom marks the top or bottom N or N percent; iconSet draws icons with automatic thresholds.",
+              "description": "cell-value compares values; color-scale and data-bar shade by value; duplicates marks repeated values; formula formats where a formula is true, anchored at the range's top-left cell and shifted per cell; top-bottom marks the top or bottom N or N percent; icon-set draws icons with automatic thresholds.",
               "type": "string",
               "enum": [
-                "cellValue",
-                "colorScale",
-                "dataBar",
+                "cell-value",
+                "color-scale",
+                "data-bar",
                 "duplicates",
                 "formula",
-                "topBottom",
-                "iconSet"
+                "top-bottom",
+                "icon-set"
               ]
             },
             "operator": {
-              "description": "The comparison of a cellValue rule.",
+              "description": "The comparison of a cell-value rule.",
               "type": "string",
               "enum": [
                 "between",
-                "notBetween",
+                "not-between",
                 "equal",
-                "notEqual",
-                "greaterThan",
-                "lessThan",
-                "greaterOrEqual",
-                "lessOrEqual"
+                "not-equal",
+                "greater-than",
+                "less-than",
+                "greater-or-equal",
+                "less-or-equal"
               ]
             },
             "value1": {
-              "description": "The comparison value of a cellValue rule (the lower bound for between): a number, text as it is (Done) or quoted as in Excel (\"Done\"), or a formula after = (=$F$1). For a formula rule, the formula, which anchors at the range's top-left cell and shifts per cell ($ parts stay fixed).",
+              "description": "The comparison value of a cell-value rule (the lower bound for between): a number, text as it is (Done) or quoted as in Excel (\"Done\"), or a formula after = (=$F$1). For a formula rule, the formula, which anchors at the range's top-left cell and shifts per cell ($ parts stay fixed).",
               "type": "string",
               "pattern": "\\S"
             },
             "value2": {
-              "description": "The upper bound of a between or notBetween cellValue rule, written as value1 is.",
+              "description": "The upper bound of a between or not-between cell-value rule, written as value1 is.",
               "type": "string",
               "pattern": "\\S"
             },
             "minColor": {
-              "description": "The low-end color of a colorScale.",
+              "description": "The low-end color of a color-scale.",
               "$ref": "#/$defs/color"
             },
             "midColor": {
-              "description": "The middle color of a 3-point colorScale; a 2-point scale omits it.",
+              "description": "The middle color of a 3-point color-scale; a 2-point scale omits it.",
               "$ref": "#/$defs/color"
             },
             "maxColor": {
-              "description": "The high-end color of a colorScale.",
+              "description": "The high-end color of a color-scale.",
               "$ref": "#/$defs/color"
             },
             "barColor": {
-              "description": "The bar color of a dataBar.",
+              "description": "The bar color of a data-bar.",
               "$ref": "#/$defs/color"
             },
             "rank": {
-              "description": "The N of a topBottom rule: the top or bottom N values, or N percent.",
+              "description": "The N of a top-bottom rule: the top or bottom N values, or N percent.",
               "type": "integer",
               "minimum": 1,
               "maximum": 1000
             },
             "percent": {
-              "description": "Whether a topBottom rank is a percentage of the range.",
+              "description": "Whether a top-bottom rank is a percentage of the range.",
               "type": "boolean",
               "default": false
             },
             "bottom": {
-              "description": "Whether a topBottom rule marks the bottom rather than the top.",
+              "description": "Whether a top-bottom rule marks the bottom rather than the top.",
               "type": "boolean",
               "default": false
             },
             "iconSet": {
-              "description": "The icons of an iconSet rule.",
+              "description": "The icons of an icon-set rule.",
               "type": "string",
               "enum": [
-                "arrows3",
-                "trafficLights3",
-                "symbols3",
-                "rating4",
-                "rating5"
+                "arrows-3",
+                "traffic-lights-3",
+                "symbols-3",
+                "rating-4",
+                "rating-5"
               ]
             }
           }
@@ -6703,7 +6846,7 @@
               "description": "The text color.",
               "$ref": "#/$defs/color"
             },
-            "bg": {
+            "fillColor": {
               "description": "The solid background fill color.",
               "$ref": "#/$defs/color"
             },
@@ -6720,23 +6863,27 @@
           ]
         },
         "cellsMargins": {
-          "description": "Page margins in inches; only the sides present are applied, and at least one is set.",
+          "description": "Page margins in points (72 per inch); only the sides present are applied, and at least one is set. A read reports every side.",
           "type": "object",
           "additionalProperties": false,
           "properties": {
             "top": {
+              "description": "The top margin.",
               "type": "number",
               "minimum": 0
             },
             "bottom": {
+              "description": "The bottom margin.",
               "type": "number",
               "minimum": 0
             },
             "left": {
+              "description": "The left margin.",
               "type": "number",
               "minimum": 0
             },
             "right": {
+              "description": "The right margin.",
               "type": "number",
               "minimum": 0
             },
@@ -6825,12 +6972,12 @@
               "pattern": "\\S",
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/read-result.schema.json#/$defs/cellsStyleData/properties/font"
             },
-            "size": {
+            "fontSize": {
               "description": "The font size in points; fractional sizes such as 10.5 are kept.",
               "type": "number",
               "minimum": 1,
               "maximum": 409,
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/read-result.schema.json#/$defs/cellsStyleData/properties/size"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/read-result.schema.json#/$defs/cellsStyleData/properties/fontSize"
             },
             "bold": {
               "description": "Whether the text is bold.",
@@ -6847,10 +6994,10 @@
               "$ref": "#/$defs/color",
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/read-result.schema.json#/$defs/cellsStyleData/properties/color"
             },
-            "bg": {
+            "fillColor": {
               "description": "The solid background fill color.",
               "$ref": "#/$defs/color",
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/read-result.schema.json#/$defs/cellsStyleData/properties/bg"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/read-result.schema.json#/$defs/cellsStyleData/properties/fillColor"
             },
             "numberFormat": {
               "description": "The number format code, such as 0.0%.",
@@ -6858,7 +7005,7 @@
               "minLength": 1,
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/read-result.schema.json#/$defs/cellsStyleData/properties/numberFormat"
             },
-            "hAlign": {
+            "alignment": {
               "description": "The horizontal alignment of the text.",
               "type": "string",
               "enum": [
@@ -6866,9 +7013,9 @@
                 "center",
                 "right"
               ],
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/read-result.schema.json#/$defs/cellsStyleData/properties/hAlign"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/read-result.schema.json#/$defs/cellsStyleData/properties/alignment"
             },
-            "vAlign": {
+            "verticalAlignment": {
               "description": "The vertical alignment of the text.",
               "type": "string",
               "enum": [
@@ -6876,7 +7023,7 @@
                 "middle",
                 "bottom"
               ],
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/read-result.schema.json#/$defs/cellsStyleData/properties/vAlign"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/read-result.schema.json#/$defs/cellsStyleData/properties/verticalAlignment"
             },
             "wrap": {
               "description": "Whether text wraps within the cell.",
@@ -6920,6 +7067,65 @@
           "type": "string",
           "description": "Column letters from A to XFD, such as B or AA.",
           "pattern": "^[A-Za-z]{1,3}$"
+        },
+        "pageSizeInput": {
+          "description": "The size of a page in points (72 per inch) as an operation sets it: a preset, in portrait, or both the width and the height. A read reports it as a page size under the same names, with the preset the dimensions match, and writes back as it reads: given with the width and height, the preset must be the paper they measure in either orientation, and the width and height apply.",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "preset": {
+              "description": "The preset, in portrait; with the width and height, the paper they measure.",
+              "type": "string",
+              "enum": [
+                "a3",
+                "a4",
+                "a5",
+                "letter",
+                "legal",
+                "tabloid"
+              ]
+            },
+            "width": {
+              "description": "The page width in points, given with the height.",
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "height": {
+              "description": "The page height in points, given with the width.",
+              "type": "number",
+              "exclusiveMinimum": 0
+            }
+          },
+          "allOf": [
+            {
+              "anyOf": [
+                {
+                  "required": [
+                    "preset"
+                  ]
+                },
+                {
+                  "required": [
+                    "width"
+                  ]
+                }
+              ]
+            },
+            {
+              "dependentRequired": {
+                "width": [
+                  "height"
+                ]
+              }
+            },
+            {
+              "dependentRequired": {
+                "height": [
+                  "width"
+                ]
+              }
+            }
+          ]
         },
         "range": {
           "type": "string",
@@ -7106,7 +7312,7 @@
               "type": "string"
             },
             "position": {
-              "description": "1-based position in the tab order, as add_sheet and move_sheet take it.",
+              "description": "1-based position in the tab order, as insert_sheet and move_sheet take it.",
               "type": "integer",
               "minimum": 1
             },
@@ -7140,7 +7346,7 @@
               "type": "string",
               "pattern": "\\S"
             },
-            "size": {
+            "fontSize": {
               "description": "The font size in points; fractional sizes such as 10.5 are kept.",
               "type": "number",
               "minimum": 1,
@@ -7159,7 +7365,7 @@
               "type": "string",
               "pattern": "^#[0-9A-Fa-f]{6}$"
             },
-            "bg": {
+            "fillColor": {
               "description": "The solid background fill color.",
               "type": "string",
               "pattern": "^#[0-9A-Fa-f]{6}$"
@@ -7169,7 +7375,7 @@
               "type": "string",
               "minLength": 1
             },
-            "hAlign": {
+            "alignment": {
               "description": "The horizontal alignment of the text.",
               "type": "string",
               "enum": [
@@ -7178,7 +7384,7 @@
                 "right"
               ]
             },
-            "vAlign": {
+            "verticalAlignment": {
               "description": "The vertical alignment of the text.",
               "type": "string",
               "enum": [

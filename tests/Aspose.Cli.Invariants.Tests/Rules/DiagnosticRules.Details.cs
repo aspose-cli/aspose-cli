@@ -174,10 +174,10 @@ internal static partial class ContractRules
             }
 
             // Evaluation mode exports only the first worksheet to a text format.
-            if (product.Ops.Contains("add_sheet") && catalog.Command($"{id} convert").Has("--sheet"))
+            if (product.Ops.Contains("insert_sheet") && catalog.Command($"{id} convert").Has("--sheets"))
             {
-                Invocation edit = EditWith(id, extension, new JsonObject { ["op"] = "add_sheet", ["name"] = "Second" });
-                var export = new Invocation([id, "convert", edit.Input!, "--to", "csv", "--sheet", "Second"]);
+                Invocation edit = EditWith(id, extension, new JsonObject { ["op"] = "insert_sheet", ["name"] = "Second" });
+                var export = new Invocation([id, "convert", edit.Input!, "--to", "csv", "--sheets", "2"]);
                 foreach ((string file, ScenarioFile seed) in edit.Files)
                 {
                     export.Files[file] = seed;

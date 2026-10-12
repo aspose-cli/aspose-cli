@@ -16,11 +16,11 @@ public sealed class CellsModuleTests
         {
             ["left"] = "a diff or verification change's value in the first file, not a page margin",
             ["right"] = "a diff or verification change's value in the second file, not a page margin",
-            ["position"] = "a sheet's place in the tab order, which add_sheet and move_sheet take as at and to, not a legend placement",
+            ["position"] = "a sheet's place in the tab order, which insert_sheet and move_sheet take as at and to, not a legend placement",
         };
 
     [Theory]
-    [InlineData("cellsChartInfo", "create_chart")]
+    [InlineData("cellsChartInfo", "insert_chart")]
     [InlineData("cellsValidationInfo", "set_validation")]
     public void InspectedTypes_StateTheOperationVocabulary(string info, string operation)
     {
@@ -29,7 +29,7 @@ public sealed class CellsModuleTests
         JsonNode ops = JsonNode.Parse(catalog.Resources.Read("v2/cells/ops"))!;
 
         Assert.Equal(
-            ops["$defs"]![operation]!["properties"]!["type"]!["enum"]!.ToJsonString(),
+            ops["$defs"]![operation]!["properties"]!["kind"]!["enum"]!.ToJsonString(),
             read["$defs"]![info]!["properties"]!["kind"]!["anyOf"]![0]!["enum"]!.ToJsonString());
     }
 
@@ -44,7 +44,7 @@ public sealed class CellsModuleTests
     [Theory]
     [InlineData("""{"op":"set_formula","range":"A1","formula":null}""")]
     [InlineData("""{"op":"set_values","range":"A1","values":null}""")]
-    [InlineData("""{"op":"rename_sheet","sheet":"Sheet1","to":null}""")]
+    [InlineData("""{"op":"rename_sheet","sheet":"Sheet1","name":null}""")]
     public void NonNullableFields_RejectExplicitNullAsInvalidOperations(string operation)
     {
         var error = Assert.Throws<Aspose.Cli.Sdk.Errors.CliException>(() =>

@@ -1,4 +1,6 @@
+using System.Globalization;
 using Aspose.Cells;
+using Aspose.Cli.Sdk.Operations;
 
 namespace Aspose.Cli.Product.Cells.Engine.Editing;
 
@@ -12,6 +14,8 @@ internal static class PageSetupOps
     public static long? SetPageSetup(Worksheet sheet, SetPageSetupOp op)
     {
         PageSetup pageSetup = sheet.PageSetup;
+        // A size no standard paper has is refused before anything changes.
+        PaperSizeType? paper = op.PageSize is { } size ? Paper(pageSetup, size) : null;
 
         if (op.Orientation is { } orientation)
         {
@@ -20,9 +24,9 @@ internal static class PageSetupOps
                 : PageOrientationType.Portrait;
         }
 
-        if (op.PaperSize is { } paper)
+        if (paper is { } chosen)
         {
-            pageSetup.PaperSize = ToPaperSize(paper);
+            pageSetup.PaperSize = chosen;
         }
 
         if (op.FitToWidth is { } wide)
@@ -35,7 +39,7 @@ internal static class PageSetupOps
             pageSetup.FitToPagesTall = tall;
         }
 
-        if (op.Scale is { } scale)
+        if (op.ScalePercent is { } scale)
         {
             pageSetup.Zoom = scale;
         }
@@ -61,30 +65,24 @@ internal static class PageSetupOps
     public static long? SetPrintArea(Worksheet sheet, SetPrintAreaOp op)
     {
         PageSetup pageSetup = sheet.PageSetup;
+        pageSetup.PrintArea = op.Range;
 
-        // A range restricts printing to it; titles alone leave the print area as
-        // it is, and an op with no fields clears it.
-        if (op.Range is { } range)
-        {
-            pageSetup.PrintArea = range;
-        }
-        else if (op.TitleRows is null && op.TitleColumns is null)
-        {
-            pageSetup.PrintArea = string.Empty;
-        }
-
-        // The parser normalized the titles to Excel's absolute band form.
-        if (op.TitleRows is { } rows)
-        {
-            pageSetup.PrintTitleRows = rows;
-        }
-
-        if (op.TitleColumns is { } columns)
-        {
-            pageSetup.PrintTitleColumns = columns;
-        }
-
+        // The parser normalized the titles to Excel's absolute band form; titles omitted are removed.
+        pageSetup.PrintTitleRows = op.TitleRows ?? string.Empty;
+        pageSetup.PrintTitleColumns = op.TitleColumns ?? string.Empty;
         return null;
+    }
+
+    /// <summary>Removes the print area and titles; 1 when the sheet had any, null when there was nothing to remove.</summary>
+    public static long? ClearPrintArea(Worksheet sheet)
+    {
+        PageSetup pageSetup = sheet.PageSetup;
+        bool had = !string.IsNullOrEmpty(pageSetup.PrintArea) || !string.IsNullOrEmpty(pageSetup.PrintTitleRows)
+            || !string.IsNullOrEmpty(pageSetup.PrintTitleColumns);
+        pageSetup.PrintArea = string.Empty;
+        pageSetup.PrintTitleRows = string.Empty;
+        pageSetup.PrintTitleColumns = string.Empty;
+        return had ? 1 : null;
     }
 
     private static void ApplyMargins(PageSetup pageSetup, CellsMargins margins)
@@ -121,18 +119,76 @@ internal static class PageSetupOps
     }
 
     // Every Aspose.Cells PageSetup margin is measured in centimetres, while the op
-    // contract states inches. The unit is translated here, at the engine boundary.
-    private static double Centimetres(double inches) => inches * 2.54;
+    // contract states points. The unit is translated here, at the engine boundary.
+    private static double Centimetres(double points) => points / 72 * 2.54;
 
-    private static PaperSizeType ToPaperSize(string paper) => paper switch
+    /// <summary>A margin the engine stores in centimetres, in points to two decimals.</summary>
+    internal static double Points(double centimetres) => Math.Round(centimetres / 2.54 * 72, 2);
+
+    // The presets by the engine's paper sizes, whose dimensions the presets state exactly.
+    private static readonly (string Preset, PaperSizeType Paper)[] Presets =
+    [
+        (PageSizePresets.Letter, PaperSizeType.PaperLetter),
+        (PageSizePresets.Legal, PaperSizeType.PaperLegal),
+        (PageSizePresets.A3, PaperSizeType.PaperA3),
+        (PageSizePresets.A4, PaperSizeType.PaperA4),
+        (PageSizePresets.A5, PaperSizeType.PaperA5),
+        (PageSizePresets.Tabloid, PaperSizeType.PaperTabloid),
+    ];
+
+    // The engine reports a paper's size in inches to two decimals.
+    private const double PaperTolerance = 1.5;
+
+    /// <summary>
+    /// Sets the paper: a preset, turned by the orientation, or the standard paper whose size the
+    /// width and height give in either orientation. A workbook stores a paper size, not
+    /// dimensions, so a size no standard paper has is refused rather than saved as another.
+    /// </summary>
+    private static PaperSizeType Paper(PageSetup pageSetup, PageSizeInput size)
     {
-        CellsPaperSizes.Letter => PaperSizeType.PaperLetter,
-        CellsPaperSizes.Legal => PaperSizeType.PaperLegal,
-        CellsPaperSizes.A3 => PaperSizeType.PaperA3,
-        CellsPaperSizes.A4 => PaperSizeType.PaperA4,
-        CellsPaperSizes.A5 => PaperSizeType.PaperA5,
-        CellsPaperSizes.Tabloid => PaperSizeType.PaperTabloid,
-        _ => throw new ArgumentOutOfRangeException(
-            nameof(paper), paper, "Paper size is missing from the engine mapper."),
-    };
+        (double width, double height) = size.Dimensions();
+        string? preset = size.Preset ?? PageSizePresets.Matching(width, height);
+        if (preset is not null)
+        {
+            return Presets.First(item => item.Preset == preset).Paper;
+        }
+
+        PaperSizeType original = pageSetup.PaperSize;
+        try
+        {
+            foreach (PaperSizeType paper in Enum.GetValues<PaperSizeType>().Where(static paper => paper != PaperSizeType.Custom))
+            {
+                pageSetup.PaperSize = paper;
+                (double shorter, double longer) = Sides(pageSetup);
+                if (Math.Abs(shorter - Math.Min(width, height)) <= PaperTolerance && Math.Abs(longer - Math.Max(width, height)) <= PaperTolerance)
+                {
+                    return paper;
+                }
+            }
+        }
+        finally
+        {
+            pageSetup.PaperSize = original;
+        }
+
+        throw new OperationInvalidException(
+            string.Create(CultureInfo.InvariantCulture, $"a workbook stores a standard paper size, and no standard paper is {width} by {height} points"),
+            "Give a preset such as a4 or letter, or the width and height of a standard paper.");
+    }
+
+    /// <summary>The page size in points as the page is laid out: in landscape the width is the longer side.</summary>
+    internal static PageSizeInfo PageSize(PageSetup pageSetup)
+    {
+        (double shorter, double longer) = Presets.FirstOrDefault(item => item.Paper == pageSetup.PaperSize).Preset is { } preset
+            ? PageSizePresets.Dimensions(preset)
+            : Sides(pageSetup);
+        return pageSetup.Orientation == PageOrientationType.Landscape
+            ? PageSizeInfo.Of(longer, shorter)
+            : PageSizeInfo.Of(shorter, longer);
+    }
+
+    /// <summary>The shorter and the longer side of the paper in points, as the engine reports them.</summary>
+    private static (double Shorter, double Longer) Sides(PageSetup pageSetup) =>
+        (Math.Round(Math.Min(pageSetup.PaperWidth, pageSetup.PaperHeight) * 72, 2),
+            Math.Round(Math.Max(pageSetup.PaperWidth, pageSetup.PaperHeight) * 72, 2));
 }

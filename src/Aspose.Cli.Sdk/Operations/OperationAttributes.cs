@@ -30,6 +30,13 @@ public sealed class OperationVocabularyAttribute(string schemaId) : Attribute
     /// declares a read-back classification of its own.
     /// </summary>
     public string[]? Addresses { get; set; }
+
+    /// <summary>
+    /// The operations most documents use, most common first. An error for an unknown op lists
+    /// them right after the names closest to it, so a long vocabulary cut to the first names an
+    /// error lists still shows them.
+    /// </summary>
+    public string[]? Common { get; set; }
 }
 
 /// <summary>
@@ -105,6 +112,13 @@ public sealed class OperationAttribute(string name) : Attribute
 {
     /// <summary>The value of the operation's <c>op</c> discriminator.</summary>
     public string Name { get; } = name;
+
+    /// <summary>
+    /// What to do instead when an entry of this operation omits a required field or gives an
+    /// unknown one, such as the operation that removes what this one sets; it leads the hint of
+    /// the error. Null for none.
+    /// </summary>
+    public string? Hint { get; set; }
 }
 
 /// <summary>

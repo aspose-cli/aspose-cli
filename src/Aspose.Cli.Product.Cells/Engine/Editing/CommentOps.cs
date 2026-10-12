@@ -19,10 +19,11 @@ internal static class CommentOps
         return null;
     }
 
-    public static long? EditComment(Worksheet sheet, EditCommentOp op)
+    public static long? EditComment(Worksheet sheet, SetCommentOp op)
     {
         CellRef cell = A1.ParseCell(op.Cell);
-        Comment comment = sheet.Comments[cell.Row, cell.Column] ?? throw NotFound(sheet, op.Cell);
+        Comment comment = sheet.Comments[cell.Row, cell.Column]
+            ?? throw NotFound(sheet, op.Cell, $"set_comment changes a comment the cell has; to add one to {op.Cell}, use add_comment.");
 
         comment.Note = op.Text;
         if (op.Author is { } author)
@@ -49,7 +50,7 @@ internal static class CommentOps
     /// <c>COMMENT_NOT_FOUND</c> for a cell without a comment, listing the cells of the sheet
     /// that carry one in row-major order.
     /// </summary>
-    private static CliException NotFound(Worksheet sheet, string cell)
+    private static CliException NotFound(Worksheet sheet, string cell, string? hint = null)
     {
         var commented = new List<CellRef>(sheet.Comments.Count);
         foreach (Comment comment in sheet.Comments)
@@ -62,6 +63,6 @@ internal static class CommentOps
             .ThenBy(static at => at.Column)
             .Select(A1.FormatCell)
             .ToArray();
-        return CliErrors.NotFound(CellsDiagnostics.CommentNotFound, "comment", cell, cells);
+        return CliErrors.NotFound(CellsDiagnostics.CommentNotFound, "comment", cell, cells, hint);
     }
 }

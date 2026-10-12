@@ -241,10 +241,10 @@ public sealed record AddWatermarkImageOp : PdfOp
     [NotState]
     [Minimum(0), Maximum(1)] public double Opacity { get; init; } = 0.35;
 
-    /// <summary>The size of the image as a percentage of its own size.</summary>
+    /// <summary>The size of the image as a whole-number percentage of its own size, such as 50.</summary>
     [NotState]
     [MistakenFor("scale")]
-    [ExclusiveMinimum(0)] public double ScalePercent { get; init; } = 50;
+    [Minimum(1)] public int ScalePercent { get; init; } = 50;
 
     [NotState]
     [AllowedValues(typeof(PdfLayers))] public string Layer { get; init; } = PdfLayers.Over;

@@ -14,7 +14,7 @@ public sealed class CellsMutationBoundaryTests
         Assert.Equal(0, workspace.Run("cells", "create", "source.xlsx", "--sheets", "Data").ExitCode);
 
         CliResult edited = workspace.Run("cells", "edit", "source.xlsx", "--ops",
-            """{"ops":[{"op":"set_formula","sheet":"Data","range":"A1","formula":"=REPT(\"x\",40)"},{"op":"resize_columns","sheet":"Data","from":"A"}]}""",
+            """{"ops":[{"op":"set_formula","sheet":"Data","range":"A1","formula":"=REPT(\"x\",40)"},{"op":"resize_columns","sheet":"Data","first":"A"}]}""",
             "--out", "edited.xlsx", "--output-format", "json");
 
         Assert.True(edited.ExitCode == 0, edited.StdErr);

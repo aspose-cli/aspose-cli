@@ -5,12 +5,13 @@ namespace Aspose.Cli.Product.Cells.Contracts;
 // Ops that operate at the sheet level (add, rename, delete, visibility, panes, page layout).
 
 /// <summary>Adds a sheet.</summary>
-[Operation("add_sheet")]
-public sealed record AddSheetOp : CellsOp
+[Operation("insert_sheet")]
+[MistakenFor("add_sheet")]
+public sealed record InsertSheetOp : CellsOp
 {
-    /// <summary>The name of the new sheet.</summary>
+    /// <summary>The name of the new sheet, as Excel allows it (see <see cref="CellsSheetNames"/>).</summary>
     [ReadBack("inspect-result.schema.json#/$defs/cellsSheetInfo/properties/name")]
-    [Pattern(@"\S")] public required string Name { get; init; }
+    [Pattern(@"\S"), MaxLength(CellsSheetNames.MaxLength)] public required string Name { get; init; }
 
     /// <summary>
     /// The 1-based position in the tab order, as inspect reports a sheet's position; appended when
@@ -18,27 +19,67 @@ public sealed record AddSheetOp : CellsOp
     /// </summary>
     [MistakenFor("position")]
     [Minimum(1)] public int? At { get; init; }
+
+    /// <inheritdoc />
+    protected override BoundedOperation Validated()
+    {
+        CellsSheetNames.Require(Name);
+        return this;
+    }
 }
 
 /// <summary>Renames the sheet the operation's sheet field names.</summary>
 [Operation("rename_sheet")]
 [AtLeastOneOf("sheet")]
-public sealed record RenameSheetOp : CellsOp
+public sealed record RenameSheetOp : CellsSheetOp
 {
-    /// <summary>The new name.</summary>
+    /// <summary>The new name, as Excel allows it (see <see cref="CellsSheetNames"/>).</summary>
+    [MistakenFor("to")]
     [ReadBack("inspect-result.schema.json#/$defs/cellsSheetInfo/properties/name")]
-    [Pattern(@"\S")] public required string To { get; init; }
+    [Pattern(@"\S"), MaxLength(CellsSheetNames.MaxLength)] public required string Name { get; init; }
+
+    /// <inheritdoc />
+    protected override BoundedOperation Validated()
+    {
+        CellsSheetNames.Require(Name);
+        return this;
+    }
+}
+
+/// <summary>
+/// The sheet names Excel allows: at most 31 characters, none of : \ / ? * [ ], not starting or
+/// ending with an apostrophe, and not History, which Excel reserves.
+/// </summary>
+public static class CellsSheetNames
+{
+    /// <summary>The longest name Excel allows.</summary>
+    public const int MaxLength = 31;
+
+    private static readonly char[] Forbidden = [':', '\\', '/', '?', '*', '[', ']'];
+
+    /// <summary>Refuses a name Excel would not open, with what to change in it.</summary>
+    internal static void Require(string name)
+    {
+        const string Hint = "Excel refuses : \\ / ? * [ ] in a sheet name, an apostrophe at its start or end, the name History, and more than 31 characters; replace or drop them, e.g. 华东-销售.";
+        int forbidden = name.IndexOfAny(Forbidden);
+        OperationInvalidException.Require(forbidden < 0,
+            $"sheet name '{name}' holds '{(forbidden < 0 ? ' ' : name[forbidden])}', which Excel does not allow in a sheet name", Hint);
+        OperationInvalidException.Require(!name.StartsWith('\'') && !name.EndsWith('\''),
+            $"sheet name '{name}' starts or ends with an apostrophe, which Excel does not allow", Hint);
+        OperationInvalidException.Require(!string.Equals(name, "History", StringComparison.OrdinalIgnoreCase),
+            "Excel reserves the sheet name History", Hint);
+    }
 }
 
 /// <summary>Deletes the sheet the operation's sheet field names.</summary>
 [Operation("delete_sheet")]
 [AtLeastOneOf("sheet")]
-public sealed record DeleteSheetOp : CellsOp;
+public sealed record DeleteSheetOp : CellsSheetOp;
 
 /// <summary>Hides or shows the sheet the operation's sheet field names.</summary>
 [Operation("set_sheet_visibility")]
 [AtLeastOneOf("sheet")]
-public sealed record SetSheetVisibilityOp : CellsOp
+public sealed record SetSheetVisibilityOp : CellsSheetOp
 {
     /// <summary>Whether the sheet is hidden.</summary>
     [ReadBack("inspect-result.schema.json#/$defs/cellsSheetInfo/properties/hidden")]
@@ -51,7 +92,7 @@ public sealed record SetSheetVisibilityOp : CellsOp
 /// </summary>
 [Operation("set_active_sheet")]
 [AtLeastOneOf("sheet")]
-public sealed record SetActiveSheetOp : CellsOp;
+public sealed record SetActiveSheetOp : CellsSheetOp;
 
 /// <summary>
 /// Moves the sheet the operation's sheet field names to a position in the tab order.
@@ -59,7 +100,7 @@ public sealed record SetActiveSheetOp : CellsOp;
 /// </summary>
 [Operation("move_sheet")]
 [AtLeastOneOf("sheet")]
-public sealed record MoveSheetOp : CellsOp
+public sealed record MoveSheetOp : CellsSheetOp
 {
     /// <summary>
     /// The 1-based destination in the tab order, as inspect reports a sheet's position; a value
@@ -69,100 +110,99 @@ public sealed record MoveSheetOp : CellsOp
     [Minimum(1)] public required int To { get; init; }
 }
 
-/// <summary>Freezes the panes above and left of a cell: B2 freezes row 1 and column A, and A1 unfreezes.</summary>
-[Operation("freeze_panes")]
-public sealed record FreezePanesOp : CellsOp
+/// <summary>
+/// Freezes the panes above and left of a cell: A2 freezes row 1, B2 row 1 and column A.
+/// unfreeze_panes removes frozen panes.
+/// </summary>
+[Operation("freeze_panes", Hint = "To remove frozen panes, use unfreeze_panes.")]
+public sealed record FreezePanesOp : CellsSheetOp
 {
-    /// <summary>The anchor cell.</summary>
-    [ReadBack("inspect-result.schema.json#/$defs/cellsSheetLayoutInfo/properties/freezePanes")]
+    /// <summary>The top-left cell of the scrolling pane; not A1, which freezes nothing.</summary>
+    [ReadBack("inspect-result.schema.json#/$defs/cellsFreezePanesInfo/properties/cell")]
     [A1Cell] public required string Cell { get; init; }
+
+    /// <inheritdoc />
+    protected override BoundedOperation Validated()
+    {
+        OperationInvalidException.Require(A1.ParseCell(Cell) != new CellRef(0, 0),
+            "'A1' freezes nothing", "Freeze below or right of A1, such as A2 or B2; remove frozen panes with unfreeze_panes.");
+        return this;
+    }
 }
+
+/// <summary>Removes a sheet's frozen panes.</summary>
+[Operation("unfreeze_panes")]
+public sealed record UnfreezePanesOp : CellsSheetOp;
 
 /// <summary>
 /// Sets the page layout for printing and PDF export: at least one field, and margins set at
 /// least one side. Only the fields present are applied; the rest of the page setup is preserved.
 /// </summary>
 [Operation("set_page_setup")]
-[AtLeastOneOf("orientation", "paperSize", "fitToWidth", "fitToHeight", "scale", "margins", "header", "footer")]
-public sealed record SetPageSetupOp : CellsOp
+[AtLeastOneOf("orientation", "pageSize", "fitToWidth", "fitToHeight", "scalePercent", "margins", "header", "footer")]
+public sealed record SetPageSetupOp : CellsSheetOp
 {
-    [ReadBack("inspect-result.schema.json#/$defs/cellsSheetLayoutInfo/properties/orientation")]
+    [ReadBack("inspect-result.schema.json#/$defs/cellsPageSetupInfo/properties/orientation")]
     [AllowedValues(typeof(CellsPageOrientations))] public string? Orientation { get; init; }
 
-    [NotReadBack]
-    [AllowedValues(typeof(CellsPaperSizes))] public string? PaperSize { get; init; }
+    /// <summary>
+    /// The paper size: a preset, turned by the orientation, or a width and height in points whose
+    /// longer side is the width in landscape and the height in portrait, as a read reports it.
+    /// </summary>
+    [MistakenFor("paperSize")]
+    [ReadBack("inspect-result.schema.json#/$defs/cellsPageSetupInfo/properties/pageSize")]
+    public PageSizeInput? PageSize { get; init; }
 
     /// <summary>The number of pages the printout fits across; 0 is automatic.</summary>
-    [ReadBack("inspect-result.schema.json#/$defs/cellsSheetLayoutInfo/properties/fitToWidth")]
+    [ReadBack("inspect-result.schema.json#/$defs/cellsPageSetupInfo/properties/fitToWidth")]
     [Minimum(0)] public int? FitToWidth { get; init; }
 
     /// <summary>The number of pages the printout fits down; 0 is automatic.</summary>
-    [ReadBack("inspect-result.schema.json#/$defs/cellsSheetLayoutInfo/properties/fitToHeight")]
+    [ReadBack("inspect-result.schema.json#/$defs/cellsPageSetupInfo/properties/fitToHeight")]
     [Minimum(0)] public int? FitToHeight { get; init; }
 
     /// <summary>The zoom percentage; ignored when the printout fits to pages.</summary>
-    [ReadBack("inspect-result.schema.json#/$defs/cellsSheetLayoutInfo/properties/scale")]
-    [Minimum(10), Maximum(400)] public int? Scale { get; init; }
+    [MistakenFor("scale")]
+    [ReadBack("inspect-result.schema.json#/$defs/cellsPageSetupInfo/properties/scalePercent")]
+    [Minimum(10), Maximum(400)] public int? ScalePercent { get; init; }
 
-    [NotReadBack]
+    [ReadBack("inspect-result.schema.json#/$defs/cellsPageSetupInfo/properties/margins")]
     public CellsMargins? Margins { get; init; }
 
     /// <summary>The center header text, with Excel codes such as &amp;P (page) and &amp;N (pages).</summary>
-    [ReadBack("inspect-result.schema.json#/$defs/cellsSheetLayoutInfo/properties/header")]
+    [ReadBack("inspect-result.schema.json#/$defs/cellsPageSetupInfo/properties/header")]
     public string? Header { get; init; }
 
     /// <summary>The center footer text, with Excel codes such as &amp;P and &amp;N.</summary>
-    [ReadBack("inspect-result.schema.json#/$defs/cellsSheetLayoutInfo/properties/footer")]
+    [ReadBack("inspect-result.schema.json#/$defs/cellsPageSetupInfo/properties/footer")]
     public string? Footer { get; init; }
-}
 
-/// <summary>Page margins in inches; only the sides present are applied, and at least one is set.</summary>
-[MinProperties(1)]
-public sealed record CellsMargins
-{
-    [Minimum(0)] public double? Top { get; init; }
-
-    [Minimum(0)] public double? Bottom { get; init; }
-
-    [Minimum(0)] public double? Left { get; init; }
-
-    [Minimum(0)] public double? Right { get; init; }
-
-    /// <summary>The distance from the top of the page to the header.</summary>
-    [Minimum(0)] public double? Header { get; init; }
-
-    /// <summary>The distance from the bottom of the page to the footer.</summary>
-    [Minimum(0)] public double? Footer { get; init; }
-}
-
-/// <summary>Accepted values of <see cref="SetPageSetupOp.PaperSize"/>.</summary>
-public static class CellsPaperSizes
-{
-    public const string Letter = "letter";
-    public const string Legal = "legal";
-    public const string A3 = "a3";
-    public const string A4 = "a4";
-    public const string A5 = "a5";
-    public const string Tabloid = "tabloid";
+    /// <inheritdoc />
+    protected override BoundedOperation Validated()
+    {
+        // A preset given with a width and height that measure another paper is refused here, before anything runs.
+        _ = PageSize?.Dimensions();
+        return this;
+    }
 }
 
 /// <summary>
-/// Sets the print area of a sheet and the rows and columns repeated on every printed page.
-/// Titles alone keep the current print area; an operation with no fields clears it.
+/// Sets the print area of a sheet and the rows and columns repeated on every printed page;
+/// titles omitted are removed. clear_print_area removes all three.
 /// </summary>
-[Operation("set_print_area")]
-public sealed record SetPrintAreaOp : CellsOp
+[Operation("set_print_area", Hint = "To remove the print area and titles, use clear_print_area.")]
+public sealed record SetPrintAreaOp : CellsSheetOp
 {
     /// <summary>The print area, such as A1:H50.</summary>
-    [ReadBack("inspect-result.schema.json#/$defs/cellsSheetLayoutInfo/properties/printArea")]
-    [A1Range] public string? Range { get; init; }
+    [ReadBack("inspect-result.schema.json#/$defs/cellsPrintAreaInfo/properties/range")]
+    [A1Range] public required string Range { get; init; }
 
     /// <summary>The rows repeated on every printed page, such as 1:2 or 1.</summary>
-    [ReadBack("inspect-result.schema.json#/$defs/cellsSheetLayoutInfo/properties/titleRows")]
+    [ReadBack("inspect-result.schema.json#/$defs/cellsPrintAreaInfo/properties/titleRows")]
     [A1RowBand] public string? TitleRows { get; init; }
 
     /// <summary>The columns repeated on every printed page, such as A:B or A.</summary>
-    [ReadBack("inspect-result.schema.json#/$defs/cellsSheetLayoutInfo/properties/titleColumns")]
+    [ReadBack("inspect-result.schema.json#/$defs/cellsPrintAreaInfo/properties/titleColumns")]
     [A1ColumnBand] public string? TitleColumns { get; init; }
 
     /// <inheritdoc />
@@ -174,3 +214,7 @@ public sealed record SetPrintAreaOp : CellsOp
             TitleColumns = TitleColumns is { } columns ? A1.ParseColumnBand(columns) : null,
         };
 }
+
+/// <summary>Removes a sheet's print area and its print titles.</summary>
+[Operation("clear_print_area")]
+public sealed record ClearPrintAreaOp : CellsSheetOp;

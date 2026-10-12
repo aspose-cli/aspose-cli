@@ -14,7 +14,7 @@ internal static class ValidationOps
         Validation validation = sheet.Validations[sheet.Validations.Add(area)];
         validation.IgnoreBlank = op.AllowBlank;
 
-        switch (op.Type)
+        switch (op.Kind)
         {
             case CellsValidationTypes.List:
                 validation.Type = ValidationType.List;
@@ -38,7 +38,7 @@ internal static class ValidationOps
                 break;
 
             default:
-                validation.Type = ToType(op.Type);
+                validation.Type = ToType(op.Kind);
                 validation.Operator = ToOperator(op.Operator!); // required by the parser
                 validation.Formula1 = op.Value1;
                 if (op.Value2 is { } value2)

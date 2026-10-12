@@ -13,7 +13,7 @@ namespace Aspose.Cli.Product.Cells.Contracts;
 /// through it, so recalculation uses the values the link cached.
 /// </summary>
 [Operation("import_range")]
-public sealed record ImportRangeOp : CellsOp
+public sealed record ImportRangeOp : CellsSheetOp
 {
     /// <summary>The source workbook file, relative to the working directory.</summary>
     [InputPath, Pattern(@"\S")] public required string Path { get; init; }
@@ -33,7 +33,8 @@ public sealed record ImportRangeOp : CellsOp
     [AllowedValues(typeof(CellsImportContents))] public string Content { get; init; } = CellsImportContents.Values;
 
     /// <summary>The environment variable that holds the source's open password, for an encrypted source.</summary>
-    [SecretEnv] public string? PasswordEnv { get; init; }
+    [MistakenFor("passwordEnv")]
+    [SecretEnv] public string? SourcePasswordEnv { get; init; }
 
     /// <inheritdoc />
     protected override BoundedOperation Validated()
@@ -65,14 +66,19 @@ public static class CellsImportContents
 public sealed record ImportSheetOp : CellsOp
 {
     /// <summary>The source sheet to copy, in the source workbook; the source's first sheet when omitted.</summary>
-    public override string? Sheet { get; init; }
+    [MistakenFor("sheet")]
+    [NotState]
+    [Pattern(@"\S")] public string? SourceSheet { get; init; }
 
     /// <summary>The source workbook file, relative to the working directory.</summary>
     [InputPath, Pattern(@"\S")] public required string Path { get; init; }
 
-    /// <summary>The name of the new sheet; the source sheet's name when omitted. A name this workbook already uses is refused.</summary>
+    /// <summary>
+    /// The name of the new sheet, as Excel allows it (see <see cref="CellsSheetNames"/>); the source
+    /// sheet's name when omitted. A name this workbook already uses is refused.
+    /// </summary>
     [ReadBack("inspect-result.schema.json#/$defs/cellsSheetInfo/properties/name")]
-    [Pattern(@"\S")] public string? Name { get; init; }
+    [Pattern(@"\S"), MaxLength(CellsSheetNames.MaxLength)] public string? Name { get; init; }
 
     /// <summary>
     /// The 1-based position of the new sheet in the tab order, as inspect reports a sheet's
@@ -82,5 +88,17 @@ public sealed record ImportSheetOp : CellsOp
     [Minimum(1)] public int? At { get; init; }
 
     /// <summary>The environment variable that holds the source's open password, for an encrypted source.</summary>
-    [SecretEnv] public string? PasswordEnv { get; init; }
+    [MistakenFor("passwordEnv")]
+    [SecretEnv] public string? SourcePasswordEnv { get; init; }
+
+    /// <inheritdoc />
+    protected override BoundedOperation Validated()
+    {
+        if (Name is { } name)
+        {
+            CellsSheetNames.Require(name);
+        }
+
+        return this;
+    }
 }

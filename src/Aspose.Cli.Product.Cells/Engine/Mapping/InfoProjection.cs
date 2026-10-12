@@ -235,7 +235,7 @@ internal static class InfoProjection
                     {
                         Sheet = sheet.Name,
                         Range = FormatArea(area),
-                        Kind = VocabularyName(validation.Type),
+                        Kind = VocabularyName(validation.Type, JsonNamingPolicy.KebabCaseLower),
                     });
                 }
             }
@@ -245,13 +245,14 @@ internal static class InfoProjection
     }
 
     /// <summary>
-    /// Names an engine chart or validation type in the edit vocabulary. The create_chart and
-    /// set_validation values are the engine enum names in lower camel case, so a type the
-    /// operations accept reads back as that value and any other type keeps its engine name.
+    /// Names an engine chart or validation type in the edit vocabulary. The insert_chart values
+    /// are the engine enum names in lower camel case and the set_validation values in lower
+    /// kebab case, so a kind the operations accept reads back as that value and any other kind
+    /// keeps its engine name in the same case.
     /// </summary>
-    private static string VocabularyName<TEnum>(TEnum value)
+    private static string VocabularyName<TEnum>(TEnum value, JsonNamingPolicy? policy = null)
         where TEnum : struct, Enum =>
-        JsonNamingPolicy.CamelCase.ConvertName(value.ToString());
+        (policy ?? JsonNamingPolicy.CamelCase).ConvertName(value.ToString());
 
     private static string FormatArea(CellArea area) =>
         A1.FormatRange(new RangeRef(

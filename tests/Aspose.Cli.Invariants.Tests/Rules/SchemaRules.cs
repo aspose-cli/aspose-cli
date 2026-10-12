@@ -60,7 +60,6 @@ internal static partial class ContractRules
 
     private static readonly Dictionary<(string Schema, string Definition, string Field), string> PageSizeFields = new()
     {
-        [("v2/cells/ops", "set_page_setup", "paperSize")] = "pageSize",
     };
 
     private static readonly HashSet<string> FillNames = new(StringComparer.Ordinal) { "bg", "bgColor", "background", "backgroundColor", "fill", "fillColour" };
@@ -382,8 +381,20 @@ internal static partial class ContractRules
     private static readonly Dictionary<(string Schema, string Field), (string[] Definitions, string Reason)> ShapedByTheirObject = new()
     {
         [("v2/cells/ops", "values")] = (
-            ["create_pivot", "set_values"],
+            ["insert_pivot", "set_values"],
             "values are the values of the object they fill (user, 2026-10-12): a range's a row-major matrix, a pivot table's its value fields"),
+        [("v2/cells/ops", "at")] = (
+            ["delete_columns", "delete_rows", "import_sheet", "insert_chart", "insert_columns", "insert_image", "insert_pivot", "insert_rows", "insert_sheet"],
+            "at is a destination shaped as the unit it addresses (user, 2026-10-12): a sheet position, a row number, a column letter, or a cell or range anchor"),
+        [("v2/cells/ops", "to")] = (
+            ["copy_range", "import_range", "move_sheet"],
+            "to is a destination (user, 2026-10-12): a sheet position or a cell anchor"),
+        [("v2/cells/ops", "first")] = (
+            ["group_columns", "group_rows", "resize_columns", "resize_rows", "ungroup_columns", "ungroup_rows"],
+            "first ends a span of rows or of columns (user, 2026-10-12): a row number or a column letter"),
+        [("v2/cells/ops", "last")] = (
+            ["group_columns", "group_rows", "resize_columns", "resize_rows", "ungroup_columns", "ungroup_rows"],
+            "last ends a span of rows or of columns (user, 2026-10-12): a row number or a column letter"),
         [("v2/words/ops", "at")] = (
             ["insert_bookmark", "insert_break", "insert_field", "insert_hyperlink", "insert_image", "insert_markdown", "insert_paragraphs", "insert_section", "insert_table", "insert_toc", "repeat_table_row"],
             "at names where the new content goes in the object it addresses: a block address for the content of a section's body, the 1-based section number for insert_section, as slides insert_section names a slide"),
@@ -400,7 +411,7 @@ internal static partial class ContractRules
     private static readonly Dictionary<string, (string[] Places, string Reason)> ShapedByTheirObjectAcrossProducts = new(StringComparer.Ordinal)
     {
         ["values"] = (
-            ["cells create_pivot", "cells set_values", "slides insert_table", "slides slidesChartSeriesInput", "words insert_table"],
+            ["cells insert_pivot", "cells set_values", "slides insert_table", "slides slidesChartSeriesInput", "words insert_table"],
             "values are the values of the object they name, shaped as that object is: a range's or a table's a two-dimensional grid, a chart series' a one-dimensional array, a pivot's its value fields"),
     };
 
