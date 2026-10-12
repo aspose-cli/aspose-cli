@@ -175,7 +175,7 @@ output keeps them, as `EVALUATION_INPUT_MARKED`
 - [Mail merge](references/mail-merge.md)
 - [Verification](references/verification.md)
 - [What the viewer shows](references/preview.md)
-- [Words error codes](references/troubleshooting.md)
+- [Troubleshooting](references/troubleshooting.md)
 
 Examples: [report from Markdown](examples/report-from-markdown/README.md),
 [edit a contract safely](examples/edit-contract-safely/README.md),

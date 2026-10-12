@@ -24,32 +24,29 @@ aspose-cli words inspect contract.docx --detail revisions --output-format json
 ]
 ```
 
-- `revision` numbers the changes from 1 in document order.
-- One entry is one change: adjacent runs and paragraph marks that one author
-  inserted, deleted or moved are listed together, except inside comment text,
-  where each run and paragraph mark is its own entry. `kind` is `insertion`, `deletion`,
-  `format-change`, `style-definition-change` or `moving`.
-- `document.revisionCount` counts the revisions the document stores, one per
-  run, paragraph mark or other changed node, so it is usually larger than the
-  number of entries: a two-run insertion is one entry and two revisions.
-- `scope` names the story that holds the change, as `search` names its
-  scopes: `body`, `headers-footers`, `footnotes` or `comments`. A change inside a
-  comment's text belongs to the comment, not to the body around it, even though
-  its `block` is the block that anchors the comment. Style definition changes
-  have no `scope`.
-- `text` is the new text of an insertion and the original text of a deletion.
-  Format and style definition changes have no `text`; read the `block` instead.
-  A move is listed twice, once at its source and once at its destination, each
-  with the moved text. A paragraph mark inserted or deleted on its own, as when
-  a paragraph is split or joined, has no `text`.
-- `date` is the time the document records, in UTC as Word stores it; it is absent
-  when the document records none. `block` is the body block that holds the
-  change or anchors the comment or note that holds it; it is absent in headers
-  and footers and for style definitions.
-- A replacement is a deletion followed by an insertion by the same author in the
-  same block: read the pair above as "thirty" replaced by "sixty".
-- Long texts are cut at 300 characters; read the block for the full text. More
-  than 1000 changes carry a `LIST_TRUNCATED` warning.
+Each entry's fields are described in
+`aspose-cli schema v2/words/inspect-result`. Reading them:
+
+One entry is one change: adjacent runs and paragraph marks that one author
+inserted, deleted or moved are listed together, except inside comment text,
+where each run and paragraph mark is its own entry. So the document's
+`revisionCount`, one per run, paragraph mark or other changed node, is usually
+larger than the number of entries: a two-run insertion is one entry and two
+revisions. A replacement is a deletion followed by an insertion by the same
+author in the same block: read the pair above as "thirty" replaced by "sixty".
+A move is listed twice, once at its source and once at its destination, each
+with the moved text.
+
+A change inside a comment's text belongs to the comment's `scope`, not to the
+body around it, even though its `block` is the block that anchors the
+comment. Format and style definition changes have no `text`; read the
+`block` instead. A paragraph mark inserted or deleted on its own, as when a
+paragraph is split or joined, has no `text` either. The `date` is reported as
+UTC; Word stores the author's local time in this field, so a revision date
+Word wrote can be off from the true UTC by the author's time zone offset,
+while the revisions a `--track-changes` edit records carry the
+UTC time of the run. Long texts are cut at 300 characters; read the block for the
+full text. More than 1000 changes carry a `LIST_TRUNCATED` warning.
 
 ## Accepting and rejecting
 
@@ -69,15 +66,16 @@ changed, and its `targets` name them. Authors match exactly, as
 ] }
 ```
 
-A decision by number fails with `OPS_INVALID` before anything changes when:
+A decision by number fails with `OPS_INVALID`, changing nothing, when:
 
-- it comes after an operation that is not a revision decision, which could
-  split the runs of a change and leave part of it undecided. Put the
-  decisions first, or in a batch of their own;
+- it comes after an operation that applied and is not a revision decision,
+  which could split the runs of a change and leave part of it undecided. Put
+  the decisions first, or in a batch of their own;
 - an earlier decision in the batch already took one of its revisions;
 - it lists only some of the changes that share one node and type, such as a
   paragraph's format change and its mark's character format change, which the
   engine can only decide together. The message names the numbers to list.
+
 ## Comparing
 
 `words compare` refuses inputs that already contain revisions (`REVISIONS_UNRESOLVED`); list them with `--detail revisions` above. To compare anyway, make reviewed copies first, explicitly accept or reject revisions there, then compare:
