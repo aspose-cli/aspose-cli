@@ -2201,7 +2201,7 @@
     "v2/common/font-list": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "$id": "https://schemas.aspose.com/aspose-cli/v2/common/font-list.schema.json",
-      "description": "Result of aspose-cli fonts list: the font environment of each product engine — the default fallback font and the sources it scans. Answers \"where does this build look for fonts, and what does it fall back to\" so a \"renders wrong on the server\" problem (P-5) can be traced to font configuration.",
+      "description": "Result of aspose-cli fonts list: the font environment of each product engine — the default fallback font and the sources it scans. Answers \"where does this build look for fonts, and what does it fall back to\" so a \"renders wrong on the server\" problem can be traced to font configuration.",
       "type": "object",
       "required": [
         "schema",
