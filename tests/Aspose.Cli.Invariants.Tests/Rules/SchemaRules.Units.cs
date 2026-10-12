@@ -22,8 +22,6 @@ internal static partial class ContractRules
     private static readonly Dictionary<(string Schema, string Definition, string Field), string> MeasuredFields = new()
     {
         [("v2/cells/ops", "cellsMargins", "bottom")] = Points,
-        [("v2/cells/ops", "cellsMargins", "footer")] = Points,
-        [("v2/cells/ops", "cellsMargins", "header")] = Points,
         [("v2/cells/ops", "cellsMargins", "left")] = Points,
         [("v2/cells/ops", "cellsMargins", "right")] = Points,
         [("v2/cells/ops", "cellsMargins", "top")] = Points,
@@ -33,8 +31,10 @@ internal static partial class ContractRules
         [("v2/cells/ops", "resize_columns", "widthChars")] = "characters",
         [("v2/cells/ops", "resize_rows", "height")] = Points,
         [("v2/cells/ops", "set_default_font", "fontSize")] = Points,
+        [("v2/cells/ops", "set_page_setup", "footerMargin")] = Points,
+        [("v2/cells/ops", "set_page_setup", "headerMargin")] = Points,
         [("v2/cells/ops", "set_page_setup", "scalePercent")] = "percent",
-        [("v2/cells/ops", "set_sheet_view", "zoom")] = "percent",
+        [("v2/cells/ops", "set_sheet_view", "zoomPercent")] = "percent",
 
         [("v2/pdf/ops", "add_watermark_text", "fontSize")] = Points,
         [("v2/pdf/ops", "optimize_document", "downsampleImagesDpi")] = "dpi",

@@ -18,14 +18,14 @@ public sealed record SetBordersOp : CellsSheetOp
     /// The edges to draw: outline (the four outer edges), inside (the inner grid lines), single
     /// edges, horizontal and vertical inner lines, or all (the full grid).
     /// </summary>
-    [NotReadBack]
+    [NotState]
     [MinItems(1), AllowedValues(typeof(CellsBorderEdges))] public required IReadOnlyList<string> Edges { get; init; }
 
     [MistakenFor("style")]
-    [NotReadBack]
+    [ReadBack("read-result.schema.json#/$defs/cellsBorderData/properties/lineStyle")]
     [AllowedValues(typeof(CellsBorderLineStyles))] public string LineStyle { get; init; } = CellsBorderLineStyles.Thin;
 
-    [NotReadBack]
+    [ReadBack("read-result.schema.json#/$defs/cellsBorderData/properties/color")]
     [HexColor] public string Color { get; init; } = "#000000";
 
     /// <inheritdoc />

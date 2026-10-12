@@ -54,7 +54,7 @@ internal static class LookOps
             sheet.IsGridlinesVisible = gridlines;
         }
 
-        if (op.Zoom is { } zoom)
+        if (op.ZoomPercent is { } zoom)
         {
             // The setter silently ignores an out-of-range value and keeps the
             // old zoom (probe-verified); the ops parser guards 10-400.

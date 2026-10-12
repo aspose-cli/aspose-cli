@@ -516,7 +516,7 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
                   {"op":"set_autofilter","sheet":"Data","range":"A1:C3"},
                   {"op":"set_print_area","sheet":"Data","range":"A1:C3","titleRows":"1"},
                   {"op":"set_page_setup","sheet":"Data","orientation":"landscape","fitToWidth":1,"fitToHeight":0,
-                   "header":"Roster","footer":"Page &P of &N"}
+                   "headerCenter":"Roster","footerCenter":"Page &P of &N"}
                 ]}
                 """), Output = TestOutput.At(path) });
 
@@ -532,7 +532,7 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
         Assert.Equal(new CellsPrintAreaInfo { Range = "A1:C3", TitleRows = "1:1" }, data.PrintArea);
         Assert.Equal("landscape", data.PageSetup.Orientation);
         Assert.Equal((1, 0, null), (data.PageSetup.FitToWidth, data.PageSetup.FitToHeight, data.PageSetup.ScalePercent));
-        Assert.Equal(("Roster", "Page &P of &N"), (data.PageSetup.Header, data.PageSetup.Footer));
+        Assert.Equal(("Roster", "Page &P of &N"), (data.PageSetup.HeaderCenter, data.PageSetup.FooterCenter));
 
         CellsSheetLayoutInfo plain = Assert.Single(result.Workbook.Layouts!, static layout => layout.Sheet == "Second");
         Assert.Equal((null, null, null, null), (plain.FreezePanes, plain.Autofilter, plain.PrintArea, plain.RowGroups));

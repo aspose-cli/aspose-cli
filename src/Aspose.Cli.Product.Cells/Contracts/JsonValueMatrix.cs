@@ -3,7 +3,7 @@ using System.Text.Json;
 namespace Aspose.Cli.Product.Cells.Contracts;
 
 /// <summary>
-/// Normalizes JSON value matrices (from ops documents or <c>--data</c> files)
+/// Normalizes JSON value matrices (from ops documents)
 /// into plain CLR values, so engine adapters never see serializer types.
 /// </summary>
 internal static class JsonValueMatrix

@@ -40,12 +40,12 @@ public sealed record SetTabColorOp : CellsSheetOp
 public sealed record ClearTabColorOp : CellsSheetOp;
 
 /// <summary>
-/// Changes a sheet's on-screen view: at least one of gridlines, zoom and headings. These are
+/// Changes a sheet's on-screen view: at least one of gridlines, zoomPercent and headings. These are
 /// view settings for Excel and the live preview, not for the printed page or rendered images;
 /// draw borders (set_borders) when a grid must appear in renders.
 /// </summary>
 [Operation("set_sheet_view")]
-[AtLeastOneOf("gridlines", "zoom", "headings")]
+[AtLeastOneOf("gridlines", "zoomPercent", "headings")]
 public sealed record SetSheetViewOp : CellsSheetOp
 {
     /// <summary>Whether the on-screen gridlines show; unchanged when omitted.</summary>
@@ -53,8 +53,9 @@ public sealed record SetSheetViewOp : CellsSheetOp
     public bool? Gridlines { get; init; }
 
     /// <summary>The zoom percentage; unchanged when omitted.</summary>
-    [ReadBack("inspect-result.schema.json#/$defs/cellsSheetViewInfo/properties/zoom")]
-    [Minimum(10), Maximum(400)] public int? Zoom { get; init; }
+    [MistakenFor("zoom")]
+    [ReadBack("inspect-result.schema.json#/$defs/cellsSheetViewInfo/properties/zoomPercent")]
+    [Minimum(10), Maximum(400)] public int? ZoomPercent { get; init; }
 
     /// <summary>Whether the row numbers and column letters show; unchanged when omitted.</summary>
     [ReadBack("inspect-result.schema.json#/$defs/cellsSheetViewInfo/properties/headings")]

@@ -38,6 +38,36 @@ internal sealed class A1ReferenceAttribute() : ValueKindAttribute(
     protected override void Parse(string value) => A1.ParseRange(value);
 }
 
+/// <summary>Cells or ranges on the operation's sheet, one or more separated by commas.</summary>
+[AttributeUsage(AttributeTargets.Property)]
+internal sealed class A1RangeListAttribute() : ValueKindAttribute(
+    "must be A1 cells or ranges on the operation's sheet, separated by commas, such as F2:F10 or D5,D7,D8",
+    "^[^!]+$")
+{
+    protected override void Parse(string value)
+    {
+        foreach (string item in A1.SplitList(value))
+        {
+            A1.ParseRange(item);
+        }
+    }
+}
+
+/// <summary>Cells or ranges that may each name another sheet, one or more separated by commas.</summary>
+[AttributeUsage(AttributeTargets.Property)]
+internal sealed class A1ReferenceListAttribute() : ValueKindAttribute(
+    "must be A1 cells or ranges separated by commas, each optionally sheet-qualified, such as B2:E10 or Data!B5:C5,Data!B7:C7",
+    @"\S")
+{
+    protected override void Parse(string value)
+    {
+        foreach (string item in A1.SplitList(value))
+        {
+            A1.ParseRange(item);
+        }
+    }
+}
+
 /// <summary>Column letters.</summary>
 [AttributeUsage(AttributeTargets.Property)]
 internal sealed class A1ColumnAttribute() : ValueKindAttribute(

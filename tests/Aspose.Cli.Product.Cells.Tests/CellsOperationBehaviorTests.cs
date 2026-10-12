@@ -275,14 +275,14 @@ public sealed class CellsOperationBehaviorTests : IClassFixture<CellsFixture>
                 Assert.Equal((0x1F, 0x4E, 0x79), (color.R, color.G, color.B));
             }),
         ["set_sheet_view"] = (
-            """{ "op": "set_sheet_view", "sheet": "Data", "gridlines": false, "zoom": 90, "headings": false }""",
+            """{ "op": "set_sheet_view", "sheet": "Data", "gridlines": false, "zoomPercent": 90, "headings": false }""",
             static workbook =>
             {
                 Worksheet data = workbook.Worksheets["Data"];
                 Assert.Equal((false, 90, false), (data.IsGridlinesVisible, data.Zoom, data.IsRowColumnHeadersVisible));
             }),
         ["set_page_setup"] = (
-            """{ "op": "set_page_setup", "sheet": "Data", "orientation": "landscape", "pageSize": { "preset": "a4" }, "fitToWidth": 1, "fitToHeight": 0, "footer": "Page &P" }""",
+            """{ "op": "set_page_setup", "sheet": "Data", "orientation": "landscape", "pageSize": { "preset": "a4" }, "fitToWidth": 1, "fitToHeight": 0, "footerCenter": "Page &P" }""",
             static workbook =>
             {
                 PageSetup setup = workbook.Worksheets["Data"].PageSetup;

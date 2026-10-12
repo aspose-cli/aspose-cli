@@ -29,9 +29,9 @@ public sealed class CellsOpContractTests : IClassFixture<CellsFixture>
     [InlineData("""{"op":"format_range","range":"A1","style":{"fontSize":500}}""")]
     [InlineData("""{"op":"format_range","range":"A1","style":{"font":""}}""")]
     [InlineData("""{"op":"format_range","range":"A1","style":{"numberFormat":""}}""")]
-    [InlineData("""{"op":"add_conditional_format","range":"A1:A9","rule":{"kind":"duplicates"},"style":{"size":14}}""")]
-    [InlineData("""{"op":"add_conditional_format","range":"A1:A9","rule":{"kind":"duplicates"},"style":{"font":"Arial","bold":true}}""")]
-    [InlineData("""{"op":"add_conditional_format","range":"A1:A9","rule":{"kind":"duplicates"},"style":{"hAlign":"center"}}""")]
+    [InlineData("""{"op":"add_conditional_format","range":"A1:A9","rule":{"kind":"duplicates"},"matchStyle":{"size":14}}""")]
+    [InlineData("""{"op":"add_conditional_format","range":"A1:A9","rule":{"kind":"duplicates"},"matchStyle":{"font":"Arial","bold":true}}""")]
+    [InlineData("""{"op":"add_conditional_format","range":"A1:A9","rule":{"kind":"duplicates"},"matchStyle":{"hAlign":"center"}}""")]
     [InlineData("""{"op":"set_print_area","range":"A1:C3","titleRows":"A1:B2"}""")]
     [InlineData("""{"op":"set_print_area","range":"A1:C3","titleColumns":"B2"}""")]
     [InlineData("""{"op":"set_print_area","range":"A1:C3","titleRows":"1:2:3"}""")]
@@ -46,7 +46,7 @@ public sealed class CellsOpContractTests : IClassFixture<CellsFixture>
     [InlineData("""{"op":"add_comment","cell":"A1","text":""}""")]
     [InlineData("""{"op":"insert_image","path":"logo.png","at":"A1:B2"}""")]
     [InlineData("""{"op":"format_range","range":"A1","style":{}}""")]
-    [InlineData("""{"op":"add_conditional_format","range":"A1:A9","rule":{"kind":"duplicates"},"style":{}}""")]
+    [InlineData("""{"op":"add_conditional_format","range":"A1:A9","rule":{"kind":"duplicates"},"matchStyle":{}}""")]
     [InlineData("""{"op":"set_page_setup","margins":{}}""")]
     [InlineData("""{"op":"insert_chart","kind":"line","dataRange":"A1:B3","at":"D2:H9","legend":{}}""")]
     [InlineData("""{"op":"set_sheet_view"}""")]
@@ -69,10 +69,27 @@ public sealed class CellsOpContractTests : IClassFixture<CellsFixture>
     }
 
     [Theory]
+    [InlineData("""{"op":"format_range","range":"B2:C6,E2:F6","style":{"bold":true}}""", "range")]
+    [InlineData("""{"op":"set_values","range":"A1,C1","values":[[1]]}""", "range")]
+    [InlineData("""{"op":"clear_range","range":"A1:B2, D1:E2"}""", "range")]
+    [InlineData("""{"op":"add_comment","cell":"A1,B2","text":"x"}""", "cell")]
+    [InlineData("""{"op":"insert_chart","kind":"line","dataRange":"A1:B3,D1:E3","at":"G2:K9"}""", "dataRange")]
+    [InlineData("""{"op":"insert_chart","kind":"line","dataRange":"A1:B3","at":"G2:K9,G12:K19"}""", "at")]
+    public void ASingleRangeFieldGivenAList_SaysItTakesOneRange(string operation, string field)
+    {
+        CliException error = Assert.Throws<CliException>(() => Parse($$"""{"ops":[{{operation}}]}"""));
+
+        Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
+        Assert.Contains($"{field} must be", error.Message, StringComparison.Ordinal);
+        Assert.Contains("lists 2 ranges separated by commas, but takes one range", error.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain("separator", error.Message, StringComparison.Ordinal);
+    }
+
+    [Theory]
     [InlineData("""{"op":"rename_sheet","sheet":"Data","name":"Archive"}""")]
     [InlineData("""{"op":"group_rows","first":2,"last":4,"collapsed":true}""")]
     [InlineData("""{"op":"format_range","range":"A1","style":{"fontSize":10.5,"alignment":"center","indent":2}}""")]
-    [InlineData("""{"op":"add_conditional_format","range":"A1:A9","rule":{"kind":"duplicates"},"style":{"bold":true,"italic":true,"underline":true,"strikethrough":true,"color":"#C00000","fillColor":"#FFC7CE","numberFormat":"0.0"}}""")]
+    [InlineData("""{"op":"add_conditional_format","range":"A1:A9","rule":{"kind":"duplicates"},"matchStyle":{"bold":true,"italic":true,"underline":true,"strikethrough":true,"color":"#C00000","fillColor":"#FFC7CE","numberFormat":"0.0"}}""")]
     [InlineData("""{"op":"set_print_area","range":"A1:C3","titleRows":"$1:$2","titleColumns":"A"}""")]
     [InlineData("""{"op":"clear_autofilter"}""")]
     [InlineData("""{"op":"set_chart","name":"Sales","title":"Revised"}""")]
@@ -98,11 +115,20 @@ public sealed class CellsOpContractTests : IClassFixture<CellsFixture>
     [InlineData("""{"op":"format_range","range":"A1","style":{"bold":true,"unexpected":true}}""")]
     [InlineData("""{"op":"set_page_setup","margins":{"top":72,"unexpected":1}}""")]
     [InlineData("""{"op":"insert_chart","kind":"pie","dataRange":"A1:B3","at":"D2:H9","legend":{"visible":true,"unexpected":1}}""")]
-    [InlineData("""{"op":"add_conditional_format","range":"A1:A9","rule":{"kind":"duplicates","unexpected":1},"style":{"bold":true}}""")]
+    [InlineData("""{"op":"add_conditional_format","range":"A1:A9","rule":{"kind":"duplicates","unexpected":1},"matchStyle":{"bold":true}}""")]
     [InlineData("""{"op":"sort_range","range":"A1:B9","by":[{"column":"A","unexpected":1}]}""")]
     [InlineData("""{"op":"insert_pivot","sourceRange":"A1:B9","at":"D1","values":[{"field":"X","unexpected":1}]}""")]
     public void Schema_RejectsFieldsTheContractDoesNotKnow(string operation) =>
         Assert.False(IsSchemaValid($$"""{"ops":[{{operation}}]}"""));
+
+    [Fact]
+    public void AHeaderMarginInsideMargins_PointsToHeaderMargin()
+    {
+        CliException error = Assert.Throws<CliException>(() => Parse("""{"ops":[{"op":"set_page_setup","margins":{"top":72,"header":20}}]}"""));
+
+        Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
+        Assert.StartsWith("The header and footer distances are headerMargin and footerMargin, beside margins.", error.Hint, StringComparison.Ordinal);
+    }
 
     [Fact]
     public void A1Value_TheSchemaCannotStateIsInvalidWithTheParsersReason()

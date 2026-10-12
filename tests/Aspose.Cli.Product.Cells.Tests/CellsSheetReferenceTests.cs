@@ -33,7 +33,7 @@ public sealed class CellsSheetReferenceTests : IClassFixture<CellsFixture>
               { "op": "insert_chart", "sheet": "Dash", "kind": "column", "dataRange": "{{name}}!A1:B3", "at": "D2:J12" },
               { "op": "insert_pivot", "sheet": "Dash", "sourceRange": "{{name}}!A1:B3", "at": "A1",
                 "rows": ["Region"], "values": [{ "field": "Amount" }] },
-              { "op": "add_sparkline", "sheet": "Dash", "dataRange": "{{name}}!B2:B3", "location": "A10:A11" },
+              { "op": "add_sparkline", "sheet": "Dash", "dataRange": "{{name}}!B2:B3", "at": "A10:A11" },
               { "op": "set_hyperlink", "sheet": "Dash", "cell": "A14", "target": "{{name}}!A1" }
             ] }
             """,
@@ -62,7 +62,7 @@ public sealed class CellsSheetReferenceTests : IClassFixture<CellsFixture>
               { "op": "insert_chart", "sheet": "{{name}}", "kind": "line", "dataRange": "A1:B3", "at": "D2:J12" },
               { "op": "insert_pivot", "sheet": "{{name}}", "sourceRange": "A1:B3", "at": "D20",
                 "rows": ["Region"], "values": [{ "field": "Amount" }] },
-              { "op": "add_sparkline", "sheet": "{{name}}", "dataRange": "B2:B3", "location": "C2:C3" }
+              { "op": "add_sparkline", "sheet": "{{name}}", "dataRange": "B2:B3", "at": "C2:C3" }
             ] }
             """,
             "unqualified.out.xlsx");
@@ -91,7 +91,7 @@ public sealed class CellsSheetReferenceTests : IClassFixture<CellsFixture>
             $$"""
             { "ops": [
               { "op": "set_values", "sheet": "{{dataSheet}}", "range": "A1", "values": [[1,2,3],[4,5,6]] },
-              { "op": "add_sparkline", "sheet": "{{hostSheet}}", "dataRange": "{{quoted}}!A1:C2", "location": "E5:E6" }
+              { "op": "add_sparkline", "sheet": "{{hostSheet}}", "dataRange": "{{quoted}}!A1:C2", "at": "E5:E6" }
             ] }
             """,
             "apostrophe.out.xlsx");
@@ -116,7 +116,7 @@ public sealed class CellsSheetReferenceTests : IClassFixture<CellsFixture>
         string source = Seed("Data");
         string output = Apply(
             source,
-            $$"""{ "ops": [ { "op": "add_sparkline", "sheet": "Data", "kind": "{{type}}", "dataRange": "{{data}}", "location": "{{location}}" } ] }""",
+            $$"""{ "ops": [ { "op": "add_sparkline", "sheet": "Data", "kind": "{{type}}", "dataRange": "{{data}}", "at": "{{location}}" } ] }""",
             "one-call.out.xlsx");
 
         using var reference = new Workbook(source);
@@ -143,7 +143,7 @@ public sealed class CellsSheetReferenceTests : IClassFixture<CellsFixture>
     [Theory]
     [InlineData("""{ "op": "insert_chart", "sheet": "Dash", "kind": "column", "dataRange": "Nope!A1:B3", "at": "D2:J12" }""")]
     [InlineData("""{ "op": "insert_pivot", "sheet": "Dash", "sourceRange": "Nope!A1:B3", "at": "A1", "values": [{ "field": "Amount" }] }""")]
-    [InlineData("""{ "op": "add_sparkline", "sheet": "Dash", "dataRange": "Nope!B2:B3", "location": "A10:A11" }""")]
+    [InlineData("""{ "op": "add_sparkline", "sheet": "Dash", "dataRange": "Nope!B2:B3", "at": "A10:A11" }""")]
     [InlineData("""{ "op": "set_hyperlink", "sheet": "Dash", "cell": "A1", "target": "Nope!A1" }""")]
     public void AReferenceToAMissingSheet_IsSheetNotFound(string operation)
     {
@@ -229,6 +229,39 @@ public sealed class CellsSheetReferenceTests : IClassFixture<CellsFixture>
         CellArea area = pivot.TableRange1;
         Assert.Equal(expected, sheet.Cells[area.EndRow, area.EndColumn].DoubleValue);
     }
+
+    [Theory]
+    [InlineData("'Q1, Q2'!B2:B3", "A10:A11")]
+    [InlineData("'Q1, Q2'!A1:B1,'Q1, Q2'!A3:B3", "A10,A12")]
+    public void ReferencesToASheetWithACommaInItsName_ReadBackAndWriteBackAsTheSameObjects(string sparklineData, string at)
+    {
+        string operations = $$"""
+            { "ops": [
+              { "op": "insert_chart", "sheet": "Dash", "kind": "column", "dataRange": "'Q1, Q2'!A1:B3", "at": "D2:J12" },
+              { "op": "add_sparkline", "sheet": "Dash", "dataRange": "{{sparklineData}}", "at": "{{at}}" }
+            ] }
+            """;
+        CellsWorkbookSummary read = Inspect(Apply(Seed("Q1, Q2"), operations, "comma.out.xlsx"));
+        CellsChartInfo chart = Assert.Single(read.Charts!);
+        CellsSparklineInfo group = Assert.Single(read.Sparklines!);
+        Assert.Equal(("'Q1, Q2'!A1:B3", sparklineData, at), (chart.DataRange, group.DataRange, group.At));
+
+        CellsWorkbookSummary written = Inspect(Apply(Seed("Q1, Q2"), $$"""
+            { "ops": [
+              { "op": "insert_chart", "sheet": "Dash", "kind": "{{chart.Kind}}", "dataRange": "{{chart.DataRange}}", "at": "D2:J12" },
+              { "op": "add_sparkline", "sheet": "Dash", "dataRange": "{{group.DataRange}}", "at": "{{group.At}}", "kind": "{{group.Kind}}" }
+            ] }
+            """, "comma.again.xlsx"));
+
+        Assert.Equivalent(chart, Assert.Single(written.Charts!), strict: true);
+        Assert.Equivalent(group, Assert.Single(written.Sparklines!), strict: true);
+    }
+
+    private CellsWorkbookSummary Inspect(string path) => CellsInfo.Run(_fixture.Session, new CellsInspectRequest
+    {
+        Input = path,
+        Details = [CellsInspectDetails.Charts, CellsInspectDetails.Sparklines],
+    }).Workbook;
 
     private string Seed(string dataSheet)
     {

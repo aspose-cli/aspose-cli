@@ -38,7 +38,7 @@
         "command": "edit",
         "inputSchema": "v2/cells/ops",
         "operationSchema": "aspose-cli schema v2/cells/ops --operation <op>",
-        "contractFingerprint": "sha256:ab1a6de61c0c1ec4b9191f5b571725150160b9e76c1dd669feecc22ebc279f75",
+        "contractFingerprint": "sha256:4c41a7e3736216f948d83374f46c314272de2d4a89e4e03adfb57a6be2f90462",
         "maximumOperationCount": 10000,
         "ops": [
           "add_comment",
@@ -3576,7 +3576,7 @@
               "description": "The rule, in add_conditional_format's fields; a number reads without the leading = Excel stores.",
               "$ref": "#/$defs/cellsConditionalRuleInfo"
             },
-            "style": {
+            "matchStyle": {
               "description": "The style matching cells receive; omitted for the kinds that take none.",
               "$ref": "#/$defs/cellsConditionalStyle"
             }
@@ -3660,7 +3660,7 @@
               "description": "Whether a top-bottom rank is a percentage of the range.",
               "type": "boolean"
             },
-            "bottom": {
+            "fromBottom": {
               "description": "Whether a top-bottom rule marks the bottom rather than the top.",
               "type": "boolean"
             },
@@ -3866,16 +3866,6 @@
               "description": "The right margin.",
               "type": "number",
               "minimum": 0
-            },
-            "header": {
-              "description": "The distance from the top of the page to the header.",
-              "type": "number",
-              "minimum": 0
-            },
-            "footer": {
-              "description": "The distance from the bottom of the page to the footer.",
-              "type": "number",
-              "minimum": 0
             }
           }
         },
@@ -3885,7 +3875,9 @@
           "required": [
             "orientation",
             "pageSize",
-            "margins"
+            "margins",
+            "headerMargin",
+            "footerMargin"
           ],
           "additionalProperties": false,
           "properties": {
@@ -3919,7 +3911,15 @@
               "description": "The page margins in points, every side.",
               "$ref": "#/$defs/cellsMargins"
             },
-            "header": {
+            "headerMargin": {
+              "description": "The distance in points from the top of the page to the header.",
+              "type": "number"
+            },
+            "footerMargin": {
+              "description": "The distance in points from the bottom of the page to the footer.",
+              "type": "number"
+            },
+            "headerCenter": {
               "description": "The center header text, with Excel codes such as &P; omitted when empty.",
               "type": "string"
             },
@@ -3931,7 +3931,7 @@
               "description": "The right header text; omitted when empty.",
               "type": "string"
             },
-            "footer": {
+            "footerCenter": {
               "description": "The center footer text, with Excel codes such as &P and &N; omitted when empty.",
               "type": "string"
             },
@@ -4303,7 +4303,7 @@
           "type": "object",
           "required": [
             "gridlines",
-            "zoom",
+            "zoomPercent",
             "headings"
           ],
           "additionalProperties": false,
@@ -4312,7 +4312,7 @@
               "description": "Whether the on-screen gridlines show.",
               "type": "boolean"
             },
-            "zoom": {
+            "zoomPercent": {
               "description": "The zoom percentage.",
               "type": "integer"
             },
@@ -4329,7 +4329,7 @@
             "sheet",
             "kind",
             "dataRange",
-            "location"
+            "at"
           ],
           "additionalProperties": false,
           "properties": {
@@ -4362,7 +4362,7 @@
               "description": "The data the group plots, one range when the sparklines' data fill it, otherwise each sparkline's data, comma-separated; it names the sheet only when that is not the group's own.",
               "type": "string"
             },
-            "location": {
+            "at": {
               "description": "The cells the sparklines are drawn in: one range when they fill it, otherwise each cell, comma-separated, such as H2,H4,H5 after a row was inserted inside the group.",
               "type": "string"
             }
@@ -4432,7 +4432,7 @@
               "type": "string"
             },
             "range": {
-              "description": "A1 range the validation applies to.",
+              "description": "The A1 range the validation applies to; several areas of one validation are comma-separated.",
               "type": "string"
             },
             "kind": {
@@ -4920,7 +4920,7 @@
           }
         },
         "add_conditional_format": {
-          "description": "Adds a conditional format over a range. Each rule kind needs its own fields: cell-value an operator and value1 (and value2 for between and not-between); color-scale minColor and maxColor; data-bar barColor; formula value1, to which a missing leading = is added; top-bottom rank, at most 100 with percent; icon-set iconSet. cell-value, duplicates, formula and top-bottom need a style; icon-set takes none.",
+          "description": "Adds a conditional format over a range. Each rule kind needs its own fields: cell-value an operator and value1 (and value2 for between and not-between); color-scale minColor and maxColor; data-bar barColor; formula value1, to which a missing leading = is added; top-bottom rank, at most 100 with percent; icon-set iconSet. cell-value, duplicates, formula and top-bottom need a matchStyle; icon-set takes none.",
           "type": "object",
           "required": [
             "op",
@@ -4941,28 +4941,29 @@
               "x-readBack": "not-state"
             },
             "range": {
-              "description": "The range to format, such as B2:B100.",
-              "$ref": "#/$defs/range",
+              "description": "The range to format, such as B2:B100, or several separated by commas, such as B2:B10,D2:D10, as a read reports a rule over several areas: one rule formats them all.",
+              "type": "string",
+              "pattern": "^[^!]+$",
               "x-readBack": "not-state"
             },
             "rule": {
               "$ref": "#/$defs/cellsConditionalRule",
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsConditionalFormatInfo/properties/rule"
             },
-            "style": {
+            "matchStyle": {
               "description": "The style matching cells receive.",
               "$ref": "#/$defs/cellsConditionalStyle",
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsConditionalFormatInfo/properties/style"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsConditionalFormatInfo/properties/matchStyle"
             }
           }
         },
         "add_sparkline": {
-          "description": "Adds a sparkline group over a data block: one sparkline per data row (or column), each drawn in one cell of location.",
+          "description": "Adds a sparkline group over a data block: one sparkline per data row (or column), each drawn in one cell of at. A group a read reports as lists, such as at D5,D7,D8 over dataRange B5:C5,B7:C7,B8:C8, is written back with the same lists.",
           "type": "object",
           "required": [
             "op",
             "dataRange",
-            "location"
+            "at"
           ],
           "additionalProperties": false,
           "properties": {
@@ -4978,14 +4979,16 @@
               "x-readBack": "not-state"
             },
             "dataRange": {
-              "description": "The data to plot, such as B2:E10. It may name another sheet, such as Data!B2:E10, so sparklines on a dashboard sheet can plot a data sheet.",
-              "$ref": "#/$defs/reference",
+              "description": "The data to plot, such as B2:E10: one sparkline per row (or column) of it. It may name another sheet, such as Data!B2:E10, so sparklines on a dashboard sheet can plot a data sheet. A list separated by commas, such as B5:C5,B7:C7,B8:C8, gives each sparkline its own row or column of data, in the order of the cells of at.",
+              "type": "string",
+              "pattern": "\\S",
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsSparklineInfo/properties/dataRange"
             },
-            "location": {
-              "description": "A single cell or a one-row or one-column strip, such as F2 or F2:F10. One sparkline per data row (or column) lands in each location cell, so the cell count must match the data's row count (one per row) or column count (one per column).",
-              "$ref": "#/$defs/range",
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsSparklineInfo/properties/location"
+            "at": {
+              "description": "The cells the sparklines are drawn in, one each: a single cell or a one-row or one-column strip, such as F2 or F2:F10, or a list of them separated by commas, such as D5,D7,D8. Over one data block, the cell count must match its row count (one per row) or column count (one per column); over a list of data ranges, its range count.",
+              "type": "string",
+              "pattern": "^[^!]+$",
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsSparklineInfo/properties/at"
             },
             "kind": {
               "description": "winloss draws equal-height columns above or below the axis by sign.",
@@ -5047,8 +5050,9 @@
               "x-readBack": "not-state"
             },
             "range": {
-              "description": "The range to clear conditional formatting from.",
-              "$ref": "#/$defs/range",
+              "description": "The range to clear conditional formatting from, or several separated by commas, such as B2:B10,D2:D10.",
+              "type": "string",
+              "pattern": "^[^!]+$",
               "x-readBack": "not-state"
             }
           }
@@ -5100,7 +5104,7 @@
               "x-readBack": "not-state"
             },
             "what": {
-              "description": "What to clear: contents keeps the formatting, formats keeps the contents, all clears both.",
+              "description": "What to clear: contents keeps the formatting, formats keeps the contents, all clears both and the sparklines drawn in the range.",
               "type": "string",
               "enum": [
                 "contents",
@@ -5154,8 +5158,9 @@
               "x-readBack": "not-state"
             },
             "range": {
-              "description": "The range to clear validation from, such as B2:B100.",
-              "$ref": "#/$defs/range",
+              "description": "The range to clear validation from, such as B2:B100, or several separated by commas, such as B2:B10,D2:D10.",
+              "type": "string",
+              "pattern": "^[^!]+$",
               "x-readBack": "not-state"
             }
           }
@@ -6459,7 +6464,7 @@
                   "all"
                 ]
               },
-              "x-readBack": "unread"
+              "x-readBack": "not-state"
             },
             "lineStyle": {
               "type": "string",
@@ -6473,12 +6478,12 @@
                 "dotted"
               ],
               "default": "thin",
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/read-result.schema.json#/$defs/cellsBorderData/properties/lineStyle"
             },
             "color": {
               "$ref": "#/$defs/color",
               "default": "#000000",
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/read-result.schema.json#/$defs/cellsBorderData/properties/color"
             }
           }
         },
@@ -6840,15 +6845,27 @@
               "$ref": "#/$defs/cellsMargins",
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsPageSetupInfo/properties/margins"
             },
-            "header": {
+            "headerMargin": {
+              "description": "The distance in points from the top of the page to the header.",
+              "type": "number",
+              "minimum": 0,
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsPageSetupInfo/properties/headerMargin"
+            },
+            "footerMargin": {
+              "description": "The distance in points from the bottom of the page to the footer.",
+              "type": "number",
+              "minimum": 0,
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsPageSetupInfo/properties/footerMargin"
+            },
+            "headerCenter": {
               "description": "The center header text, with Excel codes such as &P (page) and &N (pages).",
               "type": "string",
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsPageSetupInfo/properties/header"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsPageSetupInfo/properties/headerCenter"
             },
-            "footer": {
+            "footerCenter": {
               "description": "The center footer text, with Excel codes such as &P and &N.",
               "type": "string",
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsPageSetupInfo/properties/footer"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsPageSetupInfo/properties/footerCenter"
             }
           },
           "allOf": [
@@ -6886,12 +6903,22 @@
                 },
                 {
                   "required": [
-                    "header"
+                    "headerMargin"
                   ]
                 },
                 {
                   "required": [
-                    "footer"
+                    "footerMargin"
+                  ]
+                },
+                {
+                  "required": [
+                    "headerCenter"
+                  ]
+                },
+                {
+                  "required": [
+                    "footerCenter"
                   ]
                 }
               ]
@@ -6919,8 +6946,9 @@
               "x-readBack": "not-state"
             },
             "range": {
-              "description": "The print area, such as A1:H50.",
-              "$ref": "#/$defs/range",
+              "description": "The print area, such as A1:H50, or several areas separated by commas, such as A1:B5,D1:E5, each printed on pages of its own.",
+              "type": "string",
+              "pattern": "^[^!]+$",
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsPrintAreaInfo/properties/range"
             },
             "titleRows": {
@@ -6938,7 +6966,7 @@
           }
         },
         "set_sheet_view": {
-          "description": "Changes a sheet's on-screen view: at least one of gridlines, zoom and headings. These are view settings for Excel and the live preview, not for the printed page or rendered images; draw borders (set_borders) when a grid must appear in renders.",
+          "description": "Changes a sheet's on-screen view: at least one of gridlines, zoomPercent and headings. These are view settings for Excel and the live preview, not for the printed page or rendered images; draw borders (set_borders) when a grid must appear in renders.",
           "type": "object",
           "required": [
             "op"
@@ -6961,12 +6989,12 @@
               "type": "boolean",
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsSheetViewInfo/properties/gridlines"
             },
-            "zoom": {
+            "zoomPercent": {
               "description": "The zoom percentage; unchanged when omitted.",
               "type": "integer",
               "minimum": 10,
               "maximum": 400,
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsSheetViewInfo/properties/zoom"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsSheetViewInfo/properties/zoomPercent"
             },
             "headings": {
               "description": "Whether the row numbers and column letters show; unchanged when omitted.",
@@ -6984,7 +7012,7 @@
                 },
                 {
                   "required": [
-                    "zoom"
+                    "zoomPercent"
                   ]
                 },
                 {
@@ -7083,8 +7111,9 @@
               "x-readBack": "not-state"
             },
             "range": {
-              "description": "The range to validate, such as B2:B100.",
-              "$ref": "#/$defs/range",
+              "description": "The range to validate, such as B2:B100, or several separated by commas, such as B2:B10,D2:D10, as a read reports a validation over several areas: one validation covers them all.",
+              "type": "string",
+              "pattern": "^[^!]+$",
               "x-readBack": "not-state"
             },
             "kind": {
@@ -7418,6 +7447,45 @@
           "description": "One A1 cell on the operation's sheet, such as B2; name another sheet with the operation's sheet field.",
           "pattern": "^[^!:]+$"
         },
+        "cellsBorderData": {
+          "description": "The line on one side of a cell.",
+          "type": "object",
+          "required": [
+            "side",
+            "lineStyle",
+            "color"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "side": {
+              "description": "The side of the cell.",
+              "type": "string",
+              "enum": [
+                "top",
+                "bottom",
+                "left",
+                "right"
+              ]
+            },
+            "lineStyle": {
+              "description": "The line style; a read reports a dash pattern outside the vocabulary, such as dash-dot, as dashed.",
+              "type": "string",
+              "enum": [
+                "hair",
+                "thin",
+                "medium",
+                "thick",
+                "double",
+                "dashed",
+                "dotted"
+              ]
+            },
+            "color": {
+              "description": "The line color.",
+              "$ref": "#/$defs/color"
+            }
+          }
+        },
         "cellsChartAxisTitles": {
           "description": "The axis titles of a chart; only the fields present are applied. Pie charts have no axes.",
           "type": "object",
@@ -7556,7 +7624,7 @@
               "type": "boolean",
               "default": false
             },
-            "bottom": {
+            "fromBottom": {
               "description": "Whether a top-bottom rule marks the bottom rather than the top.",
               "type": "boolean",
               "default": false
@@ -7637,16 +7705,6 @@
             },
             "right": {
               "description": "The right margin.",
-              "type": "number",
-              "minimum": 0
-            },
-            "header": {
-              "description": "The distance from the top of the page to the header.",
-              "type": "number",
-              "minimum": 0
-            },
-            "footer": {
-              "description": "The distance from the bottom of the page to the footer.",
               "type": "number",
               "minimum": 0
             }
@@ -7805,6 +7863,15 @@
               "description": "Whether Excel keeps the cell read-only once its sheet is protected. Every cell is locked unless set false, as for the input cells of a protected form; a read reports only false.",
               "type": "boolean",
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/read-result.schema.json#/$defs/cellsStyleData/properties/locked"
+            },
+            "borders": {
+              "description": "The cell's border lines, one per side that has one, in the order top, bottom, left, right. An edit draws each side it lists and leaves the other sides as they are; set_borders draws the outline and inner lines of a whole range.",
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/$defs/cellsBorderData"
+              },
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/read-result.schema.json#/$defs/cellsStyleData/properties/borders"
             }
           },
           "allOf": [
@@ -7964,6 +8031,46 @@
         }
       },
       "$defs": {
+        "cellsBorderData": {
+          "description": "The line on one side of a cell.",
+          "type": "object",
+          "required": [
+            "side",
+            "lineStyle",
+            "color"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "side": {
+              "description": "The side of the cell.",
+              "type": "string",
+              "enum": [
+                "top",
+                "bottom",
+                "left",
+                "right"
+              ]
+            },
+            "lineStyle": {
+              "description": "The line style; a read reports a dash pattern outside the vocabulary, such as dash-dot, as dashed.",
+              "type": "string",
+              "enum": [
+                "hair",
+                "thin",
+                "medium",
+                "thick",
+                "double",
+                "dashed",
+                "dotted"
+              ]
+            },
+            "color": {
+              "description": "The line color.",
+              "type": "string",
+              "pattern": "^#[0-9A-Fa-f]{6}$"
+            }
+          }
+        },
         "cellsCellData": {
           "description": "One cell in a projection. Empty cells are {\"t\":\"empty\"}.",
           "type": "object",
@@ -8168,6 +8275,14 @@
             "locked": {
               "description": "Whether Excel keeps the cell read-only once its sheet is protected. Every cell is locked unless set false, as for the input cells of a protected form; a read reports only false.",
               "type": "boolean"
+            },
+            "borders": {
+              "description": "The cell's border lines, one per side that has one, in the order top, bottom, left, right. An edit draws each side it lists and leaves the other sides as they are; set_borders draws the outline and inner lines of a whole range.",
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "$ref": "#/$defs/cellsBorderData"
+              }
             }
           }
         }

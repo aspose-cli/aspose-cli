@@ -71,4 +71,37 @@ public sealed record CellsStyleData
     /// </summary>
     [ReadBack("read-result.schema.json#/$defs/cellsStyleData/properties/locked")]
     public bool? Locked { get; init; }
+
+    /// <summary>
+    /// The cell's border lines, one per side that has one, in the order top, bottom, left, right.
+    /// An edit draws each side it lists and leaves the other sides as they are; set_borders draws
+    /// the outline and inner lines of a whole range.
+    /// </summary>
+    [ReadBack("read-result.schema.json#/$defs/cellsStyleData/properties/borders")]
+    [MinItems(1)] public IReadOnlyList<CellsBorderData>? Borders { get; init; }
+}
+
+/// <summary>The line on one side of a cell.</summary>
+public sealed record CellsBorderData
+{
+    /// <summary>The side of the cell.</summary>
+    [AllowedValues(typeof(CellsBorderSides))] public required string Side { get; init; }
+
+    /// <summary>
+    /// The line style; a read reports a dash pattern outside the vocabulary, such as dash-dot,
+    /// as dashed.
+    /// </summary>
+    [AllowedValues(typeof(CellsBorderLineStyles))] public required string LineStyle { get; init; }
+
+    /// <summary>The line color.</summary>
+    [HexColor] public required string Color { get; init; }
+}
+
+/// <summary>Accepted values of <see cref="CellsBorderData.Side"/>.</summary>
+public static class CellsBorderSides
+{
+    public const string Top = "top";
+    public const string Bottom = "bottom";
+    public const string Left = "left";
+    public const string Right = "right";
 }

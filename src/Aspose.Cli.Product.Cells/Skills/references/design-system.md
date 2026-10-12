@@ -182,7 +182,7 @@ band manually — a formula rule, striping every other row:
 
 ```sh
 aspose-cli cells edit book.xlsx --in-place --ops '{"ops":[
-  {"op":"add_conditional_format","sheet":"Data","range":"A2:I7","rule":{"kind":"formula","value1":"=MOD(ROW(),2)=0"},"style":{"fillColor":"#F7F7F7"}}
+  {"op":"add_conditional_format","sheet":"Data","range":"A2:I7","rule":{"kind":"formula","value1":"=MOD(ROW(),2)=0"},"matchStyle":{"fillColor":"#F7F7F7"}}
 ]}'
 ```
 
@@ -196,8 +196,8 @@ busily (measured); pick the one that carries the message:
 ```sh
 aspose-cli cells edit book.xlsx --in-place --ops '{"ops":[
   {"op":"add_conditional_format","sheet":"Data","range":"H2:H7","rule":{"kind":"data-bar","barColor":"#4472C4"}},
-  {"op":"add_conditional_format","sheet":"Data","range":"A2:I7","rule":{"kind":"formula","value1":"=$H2>5000"},"style":{"fillColor":"#FFF2CC"}},
-  {"op":"add_conditional_format","sheet":"Data","range":"H2:H7","rule":{"kind":"top-bottom","rank":3},"style":{"bold":true,"color":"#548235"}}
+  {"op":"add_conditional_format","sheet":"Data","range":"A2:I7","rule":{"kind":"formula","value1":"=$H2>5000"},"matchStyle":{"fillColor":"#FFF2CC"}},
+  {"op":"add_conditional_format","sheet":"Data","range":"H2:H7","rule":{"kind":"top-bottom","rank":3},"matchStyle":{"bold":true,"color":"#548235"}}
 ]}'
 ```
 
@@ -341,10 +341,10 @@ aspose-cli cells edit book.xlsx --in-place --ops '{"ops":[
   {"op":"format_range","sheet":"Dashboard","range":"B5","style":{"bold":true,"fontSize":20,"color":"#1F3864","numberFormat":"#,##0;(#,##0);\"-\""}},
   {"op":"set_formula","sheet":"Dashboard","range":"B6","formula":"=IFERROR(H31/G31-1,0)"},
   {"op":"format_range","sheet":"Dashboard","range":"B6","style":{"fontSize":9,"numberFormat":"+0.0%;-0.0%;0.0%"}},
-  {"op":"add_conditional_format","sheet":"Dashboard","range":"B6","rule":{"kind":"cell-value","operator":"greater-or-equal","value1":"0"},"style":{"color":"#548235"}},
-  {"op":"add_conditional_format","sheet":"Dashboard","range":"B6","rule":{"kind":"cell-value","operator":"less-than","value1":"0"},"style":{"color":"#C00000"}},
+  {"op":"add_conditional_format","sheet":"Dashboard","range":"B6","rule":{"kind":"cell-value","operator":"greater-or-equal","value1":"0"},"matchStyle":{"color":"#548235"}},
+  {"op":"add_conditional_format","sheet":"Dashboard","range":"B6","rule":{"kind":"cell-value","operator":"less-than","value1":"0"},"matchStyle":{"color":"#C00000"}},
   {"op":"add_conditional_format","sheet":"Dashboard","range":"B6","rule":{"kind":"icon-set","iconSet":"arrows-3"}},
-  {"op":"add_sparkline","sheet":"Dashboard","dataRange":"C31:H31","location":"C5","kind":"line","color":"#4472C4"},
+  {"op":"add_sparkline","sheet":"Dashboard","dataRange":"C31:H31","at":"C5","kind":"line","color":"#4472C4"},
   {"op":"resize_rows","sheet":"Dashboard","first":5}
 ]}'
 ```

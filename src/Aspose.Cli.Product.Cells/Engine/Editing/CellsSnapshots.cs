@@ -50,7 +50,12 @@ internal sealed class CellsSnapshots(Workbook workbook, Func<CellsOp, bool> appl
 
     public OperationSnapshot Apply(SetFormulaOp operation) => Cells(operation, operation.Range);
 
-    public OperationSnapshot Apply(ClearRangeOp operation) => Cells(operation, operation.Range);
+    public OperationSnapshot Apply(ClearRangeOp operation)
+    {
+        OperationSnapshot snapshot = Cells(operation, operation.Range);
+        AddSparklineGroups(snapshot, Sheet(operation));
+        return snapshot;
+    }
 
     public OperationSnapshot Apply(FormatRangeOp operation) => Cells(operation, operation.Range);
 
@@ -241,16 +246,16 @@ internal sealed class CellsSnapshots(Workbook workbook, Func<CellsOp, bool> appl
 
     /// <summary>The address of a cell, such as <c>cell/Sales!B2</c>.</summary>
     internal static string CellAddress(Worksheet sheet, int row, int column) =>
-        $"cell/{Named(sheet.Name)}!{A1.FormatCell(new CellRef(row, column))}";
+        $"cell/{SheetPart(sheet.Name)}!{A1.FormatCell(new CellRef(row, column))}";
 
     /// <summary>The address of a range of cells, such as <c>cell/Sales!B2:D10</c>, for an operation that did not apply.</summary>
-    internal static string RangeAddress(string sheet, string range) => $"cell/{Named(sheet)}!{range}";
+    internal static string RangeAddress(string sheet, string range) => $"cell/{SheetPart(sheet)}!{range}";
 
     /// <summary>
     /// A name as one segment of an address, with only the characters that would break the
     /// address escaped as %XX of their UTF-8 bytes: a slash, a percent sign, a control character,
     /// and white space at the start or end. Any other character, such as '!', an apostrophe, a
-    /// CJK letter or an inner space, stays as it is; the last '!' of a cell address ends the sheet.
+    /// CJK letter or an inner space, stays as it is.
     /// </summary>
     internal static string Named(string name)
     {
@@ -285,6 +290,12 @@ internal sealed class CellsSnapshots(Workbook workbook, Func<CellsOp, bool> appl
 
         return segment.ToString();
     }
+
+    /// <summary>
+    /// A sheet's name before the '!' of a cell, row, column or name address: as <see cref="Named"/>
+    /// writes it, with its own '!' escaped as %21 too, so the first '!' ends the sheet.
+    /// </summary>
+    internal static string SheetPart(string sheet) => Named(sheet).Replace("!", "%21", StringComparison.Ordinal);
 
     /// <summary>The address of an object of one sheet, such as <c>autofilter/Sales</c>.</summary>
     internal static string Address(string unit, Worksheet sheet) => Address(unit, sheet.Name);
@@ -376,7 +387,7 @@ internal sealed class CellsSnapshots(Workbook workbook, Func<CellsOp, bool> appl
                 && area.StartColumn <= range.End.Column && area.EndColumn >= range.Start.Column)
             {
                 string text = A1.FormatRange(new RangeRef(new CellRef(area.StartRow, area.StartColumn), new CellRef(area.EndRow, area.EndColumn)));
-                snapshot.Add($"merge/{Named(sheet.Name)}!{text}", "merged");
+                snapshot.Add($"merge/{SheetPart(sheet.Name)}!{text}", "merged");
             }
         }
     }
@@ -438,7 +449,7 @@ internal sealed class CellsSnapshots(Workbook workbook, Func<CellsOp, bool> appl
         foreach (Comment comment in sheet.Comments)
         {
             snapshot.Add(
-                $"comment/{Named(sheet.Name)}!{A1.FormatCell(new CellRef(comment.Row, comment.Column))}",
+                $"comment/{SheetPart(sheet.Name)}!{A1.FormatCell(new CellRef(comment.Row, comment.Column))}",
                 Join(comment.Author, comment.Note));
         }
 
@@ -452,14 +463,6 @@ internal sealed class CellsSnapshots(Workbook workbook, Func<CellsOp, bool> appl
     /// or in the input for one the operation removed. Cells that only move with their line, and
     /// formulas the engine rewrites to follow them, are not counted.
     /// </summary>
-    /// <remarks>
-    /// Which object went where is known only once the engine shifted them, so the snapshot before
-    /// the operation lists the objects as they are and the one after it completes both: it
-    /// matches each object with itself, by the engine's own object where it keeps one (a comment,
-    /// a link, a validation, a chart) and otherwise by where the shift should put it (a merged
-    /// area), and adds what the operation changed. An object the engine left as it was is in
-    /// neither, and an object removed and another moved into its place are two changes.
-    /// </remarks>
     private OperationSnapshot Shift(CellsSheetOp operation, bool rows, int at, int count, bool insert)
     {
         Worksheet sheet = Sheet(operation);
@@ -473,27 +476,48 @@ internal sealed class CellsSnapshots(Workbook workbook, Func<CellsOp, bool> appl
             }
         }
 
-        IReadOnlyList<Anchored> objects = AnchoredObjects(sheet);
-        if (!after)
+        return Tracked(operation, snapshot, AnchoredObjects(sheet), area => Moved(area, rows, at, count, insert));
+    }
+
+    /// <summary>
+    /// Objects an operation can move, resize, split, replace or remove, each counted once when it
+    /// changed: at its address in the output, or in the input for one the operation removed.
+    /// </summary>
+    /// <remarks>
+    /// Which object became which is known only once the operation ran, so the snapshot before it
+    /// lists the objects as they are and the one after it completes both: it matches each object
+    /// with itself, by the engine's own object where it keeps one (a comment, a link, a
+    /// validation, a chart), and otherwise by covering what the earlier one should cover after
+    /// the operation (a merged area, or a validation the operation replaced with an equal one),
+    /// and adds what the operation changed. An object left as it was is in neither, and an object
+    /// removed and another moved into its place are two changes.
+    /// </remarks>
+    /// <param name="operation">The operation being snapshot.</param>
+    /// <param name="snapshot">The snapshot to complete, before or after the operation.</param>
+    /// <param name="objects">The objects as they are now.</param>
+    /// <param name="moved">Where the operation should put an area, or null when it removes it.</param>
+    private OperationSnapshot Tracked(CellsOp operation, OperationSnapshot snapshot, IReadOnlyList<Anchored> objects, Func<CellArea, CellArea?> moved)
+    {
+        if (!applied(operation))
         {
-            _shifting = (operation, snapshot, objects);
+            _tracking = (operation, snapshot, objects);
             return snapshot;
         }
 
-        if (_shifting is not { } shifting || !ReferenceEquals(shifting.Operation, operation))
+        if (_tracking is not { } tracking || !ReferenceEquals(tracking.Operation, operation))
         {
-            throw new InvalidOperationException("The snapshot after a shift is taken after the snapshot before it.");
+            throw new InvalidOperationException("The snapshot after an operation is taken after the snapshot before it.");
         }
 
-        _shifting = null;
+        _tracking = null;
         string Place(Anchored item, bool predicted) => item.Areas is null ? item.Address : string.Join(",", item.Areas
-            .Select(area => predicted ? Moved(area, rows, at, count, insert) : area)
+            .Select(area => predicted ? moved(area) : area)
             .OfType<CellArea>()
             .Select(static area => Join(area.StartRow, area.StartColumn, area.EndRow, area.EndColumn)));
 
-        // Each object after the shift with itself before it: the engine's own object first, then
-        // what lands where the shift should put it.
-        var before = new List<Anchored>(shifting.Objects);
+        // Each object after the operation with itself before it: the engine's own object first,
+        // then what covers what the earlier one should.
+        var before = new List<Anchored>(tracking.Objects);
         var earlier = new Anchored?[objects.Count];
         for (int pass = 0; pass < 2; pass++)
         {
@@ -535,13 +559,13 @@ internal sealed class CellsSnapshots(Workbook workbook, Func<CellsOp, bool> appl
             }
         }
 
-        snapshot.AddSequence("shift-shared", shared);
-        shifting.Before.AddSequence("shift-removed", before.Select(static item => (item.Address, item.State)));
+        snapshot.AddSequence("tracked-shared", shared);
+        tracking.Before.AddSequence("tracked-removed", before.Select(static item => (item.Address, item.State)));
         return snapshot;
     }
 
-    // The objects of the sheet before the shift that is being snapshot, and that snapshot.
-    private (CellsOp Operation, OperationSnapshot Before, IReadOnlyList<Anchored> Objects)? _shifting;
+    // The objects before the operation being snapshot, and the snapshot taken before it.
+    private (CellsOp Operation, OperationSnapshot Before, IReadOnlyList<Anchored> Objects)? _tracking;
 
     /// <summary>One object anchored on a sheet: its unit, the engine's own object where it keeps one, the areas it covers, its address and state.</summary>
     private sealed record Anchored(string Unit, object? Engine, IReadOnlyList<CellArea>? Areas, string Address, string State);
@@ -659,16 +683,16 @@ internal sealed class CellsSnapshots(Workbook workbook, Func<CellsOp, bool> appl
             : start ? at : at - 1;
 
     private static string LineAddress(Worksheet sheet, bool rows, int line) => rows
-        ? string.Create(CultureInfo.InvariantCulture, $"row/{Named(sheet.Name)}!{line + 1}")
-        : $"column/{Named(sheet.Name)}!{A1.ColumnName(line)}";
+        ? string.Create(CultureInfo.InvariantCulture, $"row/{SheetPart(sheet.Name)}!{line + 1}")
+        : $"column/{SheetPart(sheet.Name)}!{A1.ColumnName(line)}";
 
     /// <summary>The address of an object of a sheet by the cells it covers, such as <c>merge/Sales!A1:C1</c>.</summary>
     private static string AreaAddress(string unit, Worksheet sheet, CellArea area) =>
-        $"{unit}/{Named(sheet.Name)}!{A1.FormatRange(new RangeRef(new CellRef(area.StartRow, area.StartColumn), new CellRef(area.EndRow, area.EndColumn)))}";
+        $"{unit}/{SheetPart(sheet.Name)}!{A1.FormatRange(new RangeRef(new CellRef(area.StartRow, area.StartColumn), new CellRef(area.EndRow, area.EndColumn)))}";
 
     /// <summary>A validation's address by the areas it applies to, such as <c>validation/Sales!B2:B9</c>.</summary>
     private static string ValidationAddress(Worksheet sheet, IEnumerable<CellArea> areas) =>
-        $"validation/{Named(sheet.Name)}!" + string.Join(",", areas.Select(static area =>
+        $"validation/{SheetPart(sheet.Name)}!" + string.Join(",", areas.Select(static area =>
             A1.FormatRange(new RangeRef(new CellRef(area.StartRow, area.StartColumn), new CellRef(area.EndRow, area.EndColumn)))));
 
     /// <summary>
@@ -689,7 +713,7 @@ internal sealed class CellsSnapshots(Workbook workbook, Func<CellsOp, bool> appl
         var snapshot = new OperationSnapshot();
         for (int row = first - 1; row <= (last ?? first) - 1; row++)
         {
-            snapshot.Add(string.Create(CultureInfo.InvariantCulture, $"row/{Named(sheet.Name)}!{row + 1}"), RowFacts(sheet, row));
+            snapshot.Add(string.Create(CultureInfo.InvariantCulture, $"row/{SheetPart(sheet.Name)}!{row + 1}"), RowFacts(sheet, row));
         }
 
         return snapshot;
@@ -701,7 +725,7 @@ internal sealed class CellsSnapshots(Workbook workbook, Func<CellsOp, bool> appl
         var snapshot = new OperationSnapshot();
         for (int column = A1.ParseColumn(first); column <= A1.ParseColumn(last ?? first); column++)
         {
-            snapshot.Add($"column/{Named(sheet.Name)}!{A1.ColumnName(column)}", ColumnFacts(sheet, column));
+            snapshot.Add($"column/{SheetPart(sheet.Name)}!{A1.ColumnName(column)}", ColumnFacts(sheet, column));
         }
 
         return snapshot;
@@ -770,7 +794,7 @@ internal sealed class CellsSnapshots(Workbook workbook, Func<CellsOp, bool> appl
         var snapshot = new OperationSnapshot();
         foreach (Name name in workbook.Worksheets.Names)
         {
-            string scope = name.SheetIndex > 0 ? Named(workbook.Worksheets[name.SheetIndex - 1].Name) + "!" : string.Empty;
+            string scope = name.SheetIndex > 0 ? SheetPart(workbook.Worksheets[name.SheetIndex - 1].Name) + "!" : string.Empty;
             snapshot.Add($"name/{scope}{Named(name.Text)}", name.RefersTo ?? string.Empty);
         }
 
@@ -778,23 +802,32 @@ internal sealed class CellsSnapshots(Workbook workbook, Func<CellsOp, bool> appl
     }
 
     /// <summary>
-    /// The sheet's validations by the areas each applies to: replacing one with the same rule over
-    /// the same cells changes nothing, wherever the engine puts it in its list.
+    /// The sheet's validations, each by the areas it applies to and its rule, tracked across the
+    /// operation (<see cref="Tracked"/>): a validation whose cells change is one change, and
+    /// replacing one with the same rule over the same cells changes nothing, wherever the engine
+    /// puts it in its list.
     /// </summary>
     private OperationSnapshot Validations(CellsSheetOp operation)
     {
         Worksheet sheet = Sheet(operation);
-        var snapshot = new OperationSnapshot();
-        // The rule as a read reports it: the engine stores a list given as items as ="a,b" and
-        // reads it back as a,b, so the raw formula of the same list differs after a save.
-        AddKeyed(snapshot, sheet.Validations.Cast<Validation>().Where(static validation => validation.Areas is { Length: > 0 }).Select(validation =>
+        var objects = new List<Anchored>();
+        foreach (Validation validation in sheet.Validations)
         {
-            CellsValidationInfo read = ObjectProjection.Validation(sheet, validation, validation.Areas.FirstOrDefault(), validation.Type.ToString());
-            return (ValidationAddress(sheet, validation.Areas), Join(
-                validation.Type, read.Operator, read.Value1, read.Value2, read.ListItems is { } items ? string.Join(",", items) : null,
-                read.ListSource, read.AllowBlank, validation.InCellDropDown, validation.ShowInput, read.InputMessage, validation.ShowError, read.ErrorMessage));
-        }));
-        return snapshot;
+            // A validation whose cells were all deleted applies to nothing: it is gone.
+            if (validation.Areas is not { Length: > 0 } areas)
+            {
+                continue;
+            }
+
+            // The rule as a read reports it: the engine stores a list given as items as ="a,b" and
+            // reads it back as a,b, so the raw formula of the same list differs after a save.
+            CellsValidationInfo read = ObjectProjection.Validation(sheet, validation, areas, validation.Type.ToString());
+            objects.Add(new Anchored("validation", validation, areas, ValidationAddress(sheet, areas), Join(
+                read.Range, validation.Type, read.Operator, read.Value1, read.Value2, read.ListItems is { } items ? string.Join(",", items) : null,
+                read.ListSource, read.AllowBlank, validation.InCellDropDown, validation.ShowInput, read.InputMessage, validation.ShowError, read.ErrorMessage)));
+        }
+
+        return Tracked(operation, new OperationSnapshot(), objects, static area => area);
     }
 
     private OperationSnapshot ConditionalFormats(CellsSheetOp operation)
@@ -822,10 +855,12 @@ internal sealed class CellsSnapshots(Workbook workbook, Func<CellsOp, bool> appl
             rules.Select((state, index) => (Indexed("conditional-format", sheet, index), state)));
     }
 
-    private OperationSnapshot Sparklines(CellsSheetOp operation)
+    private OperationSnapshot Sparklines(CellsSheetOp operation) => AddSparklineGroups(new OperationSnapshot(), Sheet(operation));
+
+    /// <summary>The sheet's sparkline groups in order, each by its kind, color and sparklines.</summary>
+    private static OperationSnapshot AddSparklineGroups(OperationSnapshot snapshot, Worksheet sheet)
     {
-        Worksheet sheet = Sheet(operation);
-        return new OperationSnapshot().AddSequence(Unit("sparkline-group", sheet), Enumerable.Range(0, sheet.SparklineGroups.Count)
+        return snapshot.AddSequence(Unit("sparkline-group", sheet), Enumerable.Range(0, sheet.SparklineGroups.Count)
             .Select(index =>
             {
                 SparklineGroup group = sheet.SparklineGroups[index];

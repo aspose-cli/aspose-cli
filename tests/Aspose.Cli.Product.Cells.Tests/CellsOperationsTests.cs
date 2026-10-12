@@ -85,7 +85,7 @@ public sealed class CellsOperationsTests : IClassFixture<CellsFixture>
               { "op": "set_values", "sheet": "Data", "range": "A1", "values": [[10],[20],[30]] },
               { "op": "add_conditional_format", "sheet": "Data", "range": "A1:A3",
                 "rule": { "kind": "cell-value", "operator": "greater-than", "value1": "15" },
-                "style": { "fillColor": "#FFC7CE" } },
+                "matchStyle": { "fillColor": "#FFC7CE" } },
               { "op": "add_conditional_format", "sheet": "Data", "range": "B1:B3",
                 "rule": { "kind": "color-scale", "minColor": "#FFFFFF", "maxColor": "#FF0000" } }
             ] }
@@ -121,11 +121,11 @@ public sealed class CellsOperationsTests : IClassFixture<CellsFixture>
             { "ops": [
               { "op": "set_values", "sheet": "Data", "range": "A1", "values": [["关注", "关注", "a\"b"]] },
               { "op": "add_conditional_format", "sheet": "Data", "range": "A1",
-                "rule": { "kind": "cell-value", "operator": "equal", "value1": "关注" }, "style": { "fillColor": "#FFEB9C" } },
+                "rule": { "kind": "cell-value", "operator": "equal", "value1": "关注" }, "matchStyle": { "fillColor": "#FFEB9C" } },
               { "op": "add_conditional_format", "sheet": "Data", "range": "B1",
-                "rule": { "kind": "cell-value", "operator": "equal", "value1": "\"关注\"" }, "style": { "fillColor": "#FFEB9C" } },
+                "rule": { "kind": "cell-value", "operator": "equal", "value1": "\"关注\"" }, "matchStyle": { "fillColor": "#FFEB9C" } },
               { "op": "add_conditional_format", "sheet": "Data", "range": "C1",
-                "rule": { "kind": "cell-value", "operator": "equal", "value1": "\"a\"\"b\"" }, "style": { "fillColor": "#FFEB9C" } }
+                "rule": { "kind": "cell-value", "operator": "equal", "value1": "\"a\"\"b\"" }, "matchStyle": { "fillColor": "#FFEB9C" } }
             ] }
             """,
             "conditional-text.out.xlsx");
@@ -313,7 +313,7 @@ public sealed class CellsOperationsTests : IClassFixture<CellsFixture>
               { "op": "format_range", "sheet": "Data", "range": "B2:B3", "style": { "numberFormat": "#,##0.00" } },
               { "op": "add_conditional_format", "sheet": "Data", "range": "A2:C3",
                 "rule": { "kind": "formula", "value1": "$C2=\"OVERDUE\"" },
-                "style": { "fillColor": "#FFC7CE" } }
+                "matchStyle": { "fillColor": "#FFC7CE" } }
             ] }
             """,
             "formula-format.out.xlsx");
@@ -348,7 +348,7 @@ public sealed class CellsOperationsTests : IClassFixture<CellsFixture>
             { "ops": [
               { "op": "set_values", "sheet": "Second", "range": "B2",
                 "values": [[1,-2,3,4],[5,6,-7,8],[9,10,11,-12]] },
-              { "op": "add_sparkline", "sheet": "Second", "dataRange": "B2:E4", "location": "F2:F4",
+              { "op": "add_sparkline", "sheet": "Second", "dataRange": "B2:E4", "at": "F2:F4",
                 "kind": "winloss", "color": "#1F4E79" }
             ] }
             """,
@@ -371,8 +371,8 @@ public sealed class CellsOperationsTests : IClassFixture<CellsFixture>
             """
             { "ops": [
               { "op": "set_page_setup", "sheet": "Data",
-                "margins": { "top": 72, "bottom": 90, "left": 36,
-                             "right": 36, "header": 21.6, "footer": 21.6 } }
+                "margins": { "top": 72, "bottom": 90, "left": 36, "right": 36 },
+                "headerMargin": 21.6, "footerMargin": 21.6 }
             ] }
             """,
             "margins.out.xlsx").Output!.Path;

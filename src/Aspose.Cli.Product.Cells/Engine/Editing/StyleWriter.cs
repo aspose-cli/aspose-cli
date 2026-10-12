@@ -133,6 +133,16 @@ internal static class StyleWriter
             flag.Locked = true;
         }
 
+        foreach (CellsBorderData border in data.Borders ?? [])
+        {
+            BorderType side = BorderOps.ToBorderType(border.Side);
+            style.SetBorder(side, BorderOps.ToLineType(border.LineStyle), ParseHex(border.Color));
+            flag.TopBorder |= side == BorderType.TopBorder;
+            flag.BottomBorder |= side == BorderType.BottomBorder;
+            flag.LeftBorder |= side == BorderType.LeftBorder;
+            flag.RightBorder |= side == BorderType.RightBorder;
+        }
+
         return flag;
     }
 

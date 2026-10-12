@@ -57,7 +57,7 @@ public sealed record ClearRangeOp : CellsSheetOp
     /// <summary>The range to clear, such as B2:D10.</summary>
     [A1Range] public required string Range { get; init; }
 
-    /// <summary>What to clear: contents keeps the formatting, formats keeps the contents, all clears both.</summary>
+    /// <summary>What to clear: contents keeps the formatting, formats keeps the contents, all clears both and the sparklines drawn in the range.</summary>
     [NotState]
     [AllowedValues(typeof(CellsClearTargets))] public string What { get; init; } = CellsClearTargets.Contents;
 }

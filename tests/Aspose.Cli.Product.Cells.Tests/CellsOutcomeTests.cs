@@ -135,7 +135,7 @@ public sealed class CellsOutcomeTests : IClassFixture<CellsFixture>
             """);
 
         Assert.Equal(
-            [["tab-color/%20lead%20"], ["cell/P&L 100%25!B2"], ["comment/a!b!C3"], ["cell/数据 表!A1"], ["row/P&L 100%25!1"], ["sheet/Extra"], ["chart/P&L 100%25/1"]],
+            [["tab-color/%20lead%20"], ["cell/P&L 100%25!B2"], ["comment/a%21b!C3"], ["cell/数据 表!A1"], ["row/P&L 100%25!1"], ["sheet/Extra"], ["chart/P&L 100%25/1"]],
             result.Applied.Select(static outcome => outcome.Targets));
     }
 
@@ -259,7 +259,7 @@ public sealed class CellsOutcomeTests : IClassFixture<CellsFixture>
         CellsEditResult seeded = Apply(path, """
             {"ops":[
               {"op":"set_values","sheet":"Data","range":"B5","values":[[1,2],[3,4],[5,6]]},
-              {"op":"add_sparkline","sheet":"Data","dataRange":"B5:C7","location":"D5:D7"},
+              {"op":"add_sparkline","sheet":"Data","dataRange":"B5:C7","at":"D5:D7"},
               {"op":"insert_rows","sheet":"Data","at":6}
             ]}
             """);
@@ -270,7 +270,7 @@ public sealed class CellsOutcomeTests : IClassFixture<CellsFixture>
             Details = [CellsInspectDetails.Sparklines],
         }).Workbook.Sparklines!);
 
-        Assert.Equal(("B5:C5,B7:C7,B8:C8", "D5,D7,D8"), (group.DataRange, group.Location));
+        Assert.Equal(("B5:C5,B7:C7,B8:C8", "D5,D7,D8"), (group.DataRange, group.At));
     }
 
     [Theory]
@@ -326,5 +326,205 @@ public sealed class CellsOutcomeTests : IClassFixture<CellsFixture>
         // The object on row 3 is removed and the one on row 4 moves to row 3: two changes at one address.
         Assert.Equal(new[] { "row/Data!3", place }.Order(StringComparer.Ordinal), outcome.Targets.Order(StringComparer.Ordinal));
         Assert.Equal(3, outcome.ItemsAffected);
+    }
+
+    private const string TwoValidations = """
+        {"op":"set_validation","sheet":"Data","range":"E2:E8","kind":"list","listItems":["a","b"]},
+        {"op":"set_validation","sheet":"Data","range":"G2:G4,I2:I4","kind":"whole-number","operator":"greater-than","value1":"0"}
+        """;
+
+    private const string OneRule = """
+        {"op":"add_conditional_format","sheet":"Data","range":"B5:D7","rule":{"kind":"cell-value","operator":"greater-than","value1":"1"},"matchStyle":{"bold":true}},
+        {"op":"add_conditional_format","sheet":"Data","range":"F5:F7","rule":{"kind":"cell-value","operator":"less-than","value1":"1"},"matchStyle":{"italic":true}}
+        """;
+
+    /// <summary>
+    /// An operation that changes the cells a validation or a conditional format covers changes
+    /// that one object once, at its address in the output, or in the input when it is gone.
+    /// </summary>
+    [Theory]
+    [InlineData(TwoValidations, """{"op":"clear_validation","sheet":"Data","range":"I2:I4,E2:E3"}""", new[] { "validation/Data!E4:E8", "validation/Data!G2:G4" })]
+    [InlineData(TwoValidations, """{"op":"clear_validation","sheet":"Data","range":"E2:E8"}""", new[] { "validation/Data!E2:E8" })]
+    [InlineData(TwoValidations, """{"op":"clear_validation","sheet":"Data","range":"E5"}""", new[] { "validation/Data!E2:E4,E6:E8" })]
+    [InlineData(TwoValidations, """{"op":"set_validation","sheet":"Data","range":"E4:E5","kind":"list","listItems":["c"]}""", new[] { "validation/Data!E2:E3,E6:E8", "validation/Data!E4:E5" })]
+    [InlineData(TwoValidations, """{"op":"set_validation","sheet":"Data","range":"E2:E8,G2:G4","kind":"list","listItems":["a","b"]}""", new[] { "validation/Data!E2:E8,G2:G4", "validation/Data!E2:E8", "validation/Data!I2:I4" })]
+    [InlineData(OneRule, """{"op":"clear_conditional_formats","sheet":"Data","range":"C5:C7"}""", new[] { "conditional-format/Data/1" })]
+    [InlineData(OneRule, """{"op":"clear_conditional_formats","sheet":"Data","range":"C5:C7,F5:F7"}""", new[] { "conditional-format/Data/1", "conditional-format/Data/2" })]
+    public void ChangingTheCellsOfAValidationOrAConditionalFormat_CountsEachObjectOnce(string seed, string operation, string[] targets)
+    {
+        string path = _fixture.CreateSalesWorkbook($"areas-{Guid.NewGuid():N}.xlsx");
+        CellsEditResult seeded = Apply(path, $$"""{"ops":[{{seed}}]}""");
+
+        BoundedOperationOutcome outcome = Assert.Single(Apply(seeded.Output!.Path, $$"""{"ops":[{{operation}}]}""").Applied);
+
+        Assert.Equal(targets.Order(StringComparer.Ordinal), outcome.Targets.Order(StringComparer.Ordinal));
+        Assert.Equal(targets.Length, outcome.ItemsAffected);
+    }
+
+    [Theory]
+    [InlineData("set_validation", """ "kind":"list","listItems":["a"] """)]
+    [InlineData("clear_validation", "")]
+    [InlineData("add_conditional_format", """ "rule":{"kind":"duplicates"},"matchStyle":{"bold":true} """)]
+    [InlineData("clear_conditional_formats", "")]
+    [InlineData("set_print_area", "")]
+    public void ARangeListWithAnEmptyOrQualifiedPart_IsRefusedWithTheListForm(string op, string fields)
+    {
+        string path = _fixture.CreateSalesWorkbook($"bad-list-{Guid.NewGuid():N}.xlsx");
+        string rest = fields.Trim().Length == 0 ? string.Empty : "," + fields.Trim();
+
+        foreach (string range in new[] { "B2:B4,,D2:D4", "B2:B4,D2:D4:E5", "Data!B2:B4" })
+        {
+            Aspose.Cli.Sdk.Errors.CliException refused = Assert.Throws<Aspose.Cli.Sdk.Errors.CliException>(() =>
+                Apply(path, $$"""{"ops":[{"op":"{{op}}","sheet":"Data","range":"{{range}}"{{rest}}}]}"""));
+
+            Assert.Equal("OPS_INVALID", refused.Code.Name);
+            Assert.Contains("separated by commas, such as F2:F10 or D5,D7,D8", refused.Message, StringComparison.Ordinal);
+        }
+    }
+
+    private const string SparklineData = """
+        {"op":"set_values","sheet":"Data","range":"E2","values":[[1,2],[null,null],[3,4],[5,6]]}
+        """;
+
+    private const string Sparklines = """
+        {"op":"add_sparkline","sheet":"Data","dataRange":"E2:F2,E4:F4,E5:F5","at":"G2,G4,G5","kind":"column","color":"#2E75B6"}
+        """;
+
+    private IReadOnlyList<CellsSparklineInfo> SparklinesOf(string path) =>
+        CellsInfo.Run(_fixture.Session, new CellsInspectRequest { Input = path, Details = [CellsInspectDetails.Sparklines] }).Workbook.Sparklines ?? [];
+
+    [Fact]
+    public void AddingTheSparklinesTheCellsAlreadyHold_ChangesNothingAndSaysSo()
+    {
+        string path = _fixture.CreateSalesWorkbook($"sparkline-same-{Guid.NewGuid():N}.xlsx");
+        CellsEditResult seeded = Apply(path, $$"""{"ops":[{{SparklineData}},{{Sparklines}}]}""");
+
+        CellsEditResult again = Apply(seeded.Output!.Path, $$"""{"ops":[{{Sparklines}}]}""");
+
+        Assert.Equal(0, Assert.Single(again.Applied).ItemsAffected);
+        Assert.Contains(again.Warnings ?? [], static warning => warning.Code.Name == "OP_NO_EFFECT");
+        Assert.Single(SparklinesOf(again.Output!.Path));
+    }
+
+    [Theory]
+    [InlineData("""{"op":"add_sparkline","sheet":"Data","dataRange":"E2:F2,E4:F4,E5:F5","at":"G2,G4,G5","kind":"line","color":"#2E75B6"}""", new[] { "G2", "G4:G5" })]
+    [InlineData("""{"op":"add_sparkline","sheet":"Data","dataRange":"E4:F4","at":"G4"}""", new[] { "G2", "G4:G5" })]
+    [InlineData("""{"op":"add_sparkline","sheet":"Data","dataRange":"E2:F2,E4:F4,E5:F5","at":"G2,G4,G5","kind":"column"}""", new[] { "G2", "G4:G5" })]
+    [InlineData("""{"op":"add_sparkline","sheet":"Data","dataRange":"E2:F5","at":"H2:H5","kind":"winloss"}""", new[] { "H2:H5" })]
+    public void AddingSparklinesOverCellsAnotherGroupIsDrawnIn_IsRefusedWithTheOperationsThatClearIt(string operation, string[] cleared)
+    {
+        string path = _fixture.CreateSalesWorkbook($"sparkline-overlap-{Guid.NewGuid():N}.xlsx");
+        string seeded = Apply(path, $$"""{"ops":[{{SparklineData}},{{Sparklines}},{"op":"add_sparkline","sheet":"Data","dataRange":"E2:F5","at":"H2:H5"}]}""").Output!.Path;
+
+        Aspose.Cli.Sdk.Errors.CliException refused = Assert.Throws<Aspose.Cli.Sdk.Errors.CliException>(() => Apply(seeded, $$"""{"ops":[{{operation}}]}"""));
+
+        // The hint gives the operations that clear the group, ready to run, and says they clear the cells' values too.
+        Assert.Equal("OPS_INVALID", refused.Code.Name);
+        Assert.Contains("sparkline group", refused.Message, StringComparison.Ordinal);
+        Assert.Contains("values", refused.Hint, StringComparison.Ordinal);
+        string[] clears = [.. System.Text.RegularExpressions.Regex.Matches(refused.Hint!, """\{"op":"clear_range"[^{}]*\}""").Select(static match => match.Value)];
+        Assert.Equal(cleared, clears.Select(static op => System.Text.Json.Nodes.JsonNode.Parse(op)!["range"]!.GetValue<string>()));
+        CellsEditResult clearedGroup = Apply(seeded, $$"""{"ops":[{{string.Join(",", clears)}}]}""");
+        Assert.Single(SparklinesOf(clearedGroup.Output!.Path));
+        CellsEditResult added = Apply(clearedGroup.Output!.Path, $$"""{"ops":[{{operation}}]}""");
+        Assert.Equal(1, Assert.Single(added.Applied).ItemsAffected);
+        Assert.Equal(2, SparklinesOf(added.Output!.Path).Count);
+    }
+
+    [Fact]
+    public void AddingSparklinesWithoutAColorOverAGroupOfAnotherColor_IsRefused()
+    {
+        string path = _fixture.CreateSalesWorkbook($"sparkline-color-{Guid.NewGuid():N}.xlsx");
+        string seeded = Apply(path, $$"""{"ops":[{{SparklineData}},{{Sparklines}}]}""").Output!.Path;
+
+        Aspose.Cli.Sdk.Errors.CliException refused = Assert.Throws<Aspose.Cli.Sdk.Errors.CliException>(() => Apply(seeded,
+            """{"ops":[{"op":"add_sparkline","sheet":"Data","dataRange":"E2:F2,E4:F4,E5:F5","at":"G2,G4,G5","kind":"column"}]}"""));
+
+        Assert.Equal("OPS_INVALID", refused.Code.Name);
+    }
+
+    [Fact]
+    public void AddingSparklinesWithoutAColorOverTheSameGroupInTheDefaultColor_ChangesNothing()
+    {
+        const string plain = """{"op":"add_sparkline","sheet":"Data","dataRange":"E2:F2,E4:F4,E5:F5","at":"G2,G4,G5","kind":"column"}""";
+        string path = _fixture.CreateSalesWorkbook($"sparkline-default-{Guid.NewGuid():N}.xlsx");
+        string seeded = Apply(path, $$"""{"ops":[{{SparklineData}},{{plain}}]}""").Output!.Path;
+
+        CellsEditResult again = Apply(seeded, $$"""{"ops":[{{plain}}]}""");
+
+        Assert.Equal(0, Assert.Single(again.Applied).ItemsAffected);
+        Assert.Contains(again.Warnings ?? [], static warning => warning.Code.Name == "OP_NO_EFFECT");
+    }
+
+    /// <summary>A workbook whose theme's first accent is red, so the default series color is not Office's.</summary>
+    private string RedThemeWorkbook() => Workbook("red-theme", static workbook =>
+    {
+        workbook.Worksheets[0].Name = "Data";
+        workbook.SetThemeColor(ThemeColorType.Accent1, System.Drawing.Color.FromArgb(255, 0, 0));
+    });
+
+    [Fact]
+    public void AddingSparklinesWithoutAColorAgainInAWorkbookOfAnotherTheme_ChangesNothing()
+    {
+        const string plain = """{"op":"add_sparkline","sheet":"Data","dataRange":"E2:F2,E4:F4,E5:F5","at":"G2,G4,G5","kind":"column"}""";
+        string seeded = Apply(RedThemeWorkbook(), $$"""{"ops":[{{SparklineData}},{{plain}}]}""").Output!.Path;
+
+        CellsEditResult again = Apply(seeded, $$"""{"ops":[{{plain}}]}""");
+        CellsEditResult twice = Apply(RedThemeWorkbook(), $$"""{"ops":[{{SparklineData}},{{plain}},{{plain}}]}""");
+
+        Assert.NotEqual("#4472C4", Assert.Single(SparklinesOf(seeded)).Color);
+        Assert.Equal(0, Assert.Single(again.Applied).ItemsAffected);
+        Assert.Contains(again.Warnings ?? [], static warning => warning.Code.Name == "OP_NO_EFFECT");
+        Assert.Equal(0, twice.Applied[^1].ItemsAffected);
+    }
+
+    [Fact]
+    public void AddingSparklinesWithoutAColorOverAGroupOfAColorGivenInAWorkbookOfAnotherTheme_IsRefused()
+    {
+        string seeded = Apply(RedThemeWorkbook(), $$"""{"ops":[{{SparklineData}},{{Sparklines}}]}""").Output!.Path;
+
+        Aspose.Cli.Sdk.Errors.CliException refused = Assert.Throws<Aspose.Cli.Sdk.Errors.CliException>(() => Apply(seeded,
+            """{"ops":[{"op":"add_sparkline","sheet":"Data","dataRange":"E2:F2,E4:F4,E5:F5","at":"G2,G4,G5","kind":"column"}]}"""));
+
+        Assert.Equal("OPS_INVALID", refused.Code.Name);
+    }
+
+    [Fact]
+    public void AddingSparklinesOverSeveralGroups_IsRefusedWithTheOperationsThatClearEachOfThem()
+    {
+        string path = _fixture.CreateSalesWorkbook($"sparkline-several-{Guid.NewGuid():N}.xlsx");
+        string seeded = Apply(path, $$"""{"ops":[{{SparklineData}},{{Sparklines}},{"op":"add_sparkline","sheet":"Data","dataRange":"E2:F5","at":"H2:H5"}]}""").Output!.Path;
+        const string across = """{"op":"add_sparkline","sheet":"Data","dataRange":"E2:F2","at":"G2:H2"}""";
+
+        Aspose.Cli.Sdk.Errors.CliException refused = Assert.Throws<Aspose.Cli.Sdk.Errors.CliException>(() => Apply(seeded, $$"""{"ops":[{{across}}]}"""));
+        string[] clears = [.. System.Text.RegularExpressions.Regex.Matches(refused.Hint!, """\{"op":"clear_range"[^{}]*\}""").Select(static match => match.Value)];
+
+        Assert.Equal(["G2", "G4:G5", "H2:H5"], clears.Select(static op => System.Text.Json.Nodes.JsonNode.Parse(op)!["range"]!.GetValue<string>()));
+        string cleared = Apply(seeded, $$"""{"ops":[{{string.Join(",", clears)}}]}""").Output!.Path;
+        Assert.Empty(SparklinesOf(cleared));
+        Assert.Equal(1, Assert.Single(Apply(cleared, $$"""{"ops":[{{across}}]}""").Applied).ItemsAffected);
+    }
+
+    [Theory]
+    [InlineData("G2:G5", 0)]
+    [InlineData("G4", 1)]
+    public void ClearingAllOfARange_RemovesTheSparklinesDrawnInIt(string range, int left)
+    {
+        string path = _fixture.CreateSalesWorkbook($"sparkline-clear-{Guid.NewGuid():N}.xlsx");
+        CellsEditResult seeded = Apply(path, $$"""{"ops":[{{SparklineData}},{{Sparklines}}]}""");
+
+        CellsEditResult contents = Apply(seeded.Output!.Path, $$"""{"ops":[{"op":"clear_range","sheet":"Data","range":"{{range}}"}]}""");
+        CellsEditResult all = Apply(seeded.Output!.Path, $$"""{"ops":[{"op":"clear_range","sheet":"Data","range":"{{range}}","what":"all"}]}""");
+
+        Assert.Single(SparklinesOf(contents.Output!.Path));
+        BoundedOperationOutcome outcome = Assert.Single(all.Applied);
+        Assert.Equal(["sparkline-group/Data/1"], outcome.Targets);
+        Assert.Equal(1, outcome.ItemsAffected);
+        IReadOnlyList<CellsSparklineInfo> after = SparklinesOf(all.Output!.Path);
+        Assert.Equal(left, after.Count);
+        if (left == 1)
+        {
+            Assert.Equal(("E2:F2,E5:F5", "G2,G5"), (after[0].DataRange, after[0].At));
+        }
     }
 }

@@ -11,12 +11,18 @@ namespace Aspose.Cli.Product.Cells.Engine.Mapping;
 /// </summary>
 internal sealed class StylePool
 {
-    private readonly Dictionary<CellsStyleData, string> _idsByStyle = [];
+    // Keyed by the style without its borders and the borders as text: a record compares its
+    // list of borders by reference.
+    private readonly Dictionary<(CellsStyleData Style, string Borders), string> _idsByStyle = [];
     private readonly Dictionary<string, CellsStyleData> _stylesById = [];
-    private readonly CellsStyleData _workbookDefault;
+    private readonly (CellsStyleData Style, string Borders) _workbookDefault;
 
     public StylePool(Workbook workbook) =>
-        _workbookDefault = Map(workbook.DefaultStyle);
+        _workbookDefault = Key(Map(workbook.DefaultStyle));
+
+    private static (CellsStyleData Style, string Borders) Key(CellsStyleData style) =>
+        (style with { Borders = null },
+         string.Join(";", (style.Borders ?? []).Select(static border => $"{border.Side} {border.LineStyle} {border.Color}")));
 
     /// <summary>Returns the pool id for a cell's style, or null for the default style.</summary>
     public string? GetId(Cell? cell)
@@ -27,19 +33,20 @@ internal sealed class StylePool
         }
 
         CellsStyleData mapped = Map(cell.GetStyle());
-        if (mapped == _workbookDefault)
+        (CellsStyleData Style, string Borders) key = Key(mapped);
+        if (key == _workbookDefault)
         {
             return null;
         }
 
-        if (_idsByStyle.TryGetValue(mapped, out string? existing))
+        if (_idsByStyle.TryGetValue(key, out string? existing))
         {
             return existing;
         }
 
         // Insertion order doubles as id order, keeping output deterministic.
         string id = "s" + _idsByStyle.Count.ToString(System.Globalization.CultureInfo.InvariantCulture);
-        _idsByStyle.Add(mapped, id);
+        _idsByStyle.Add(key, id);
         _stylesById.Add(id, mapped);
         return id;
     }
@@ -77,7 +84,24 @@ internal sealed class StylePool
         Strikethrough = style.Font.IsStrikeout ? true : null,
         Indent = style.IndentLevel == 0 ? null : style.IndentLevel,
         Locked = style.IsLocked ? null : false,
+        Borders = Borders(style),
     };
+
+    /// <summary>The sides of a style that have a line, in the order top, bottom, left, right.</summary>
+    private static IReadOnlyList<CellsBorderData>? Borders(Style style)
+    {
+        var borders = new List<CellsBorderData>(4);
+        foreach (string side in (string[])[CellsBorderSides.Top, CellsBorderSides.Bottom, CellsBorderSides.Left, CellsBorderSides.Right])
+        {
+            Border border = style.Borders[Editing.BorderOps.ToBorderType(side)];
+            if (Editing.BorderOps.FromLineType(border.LineStyle) is { } line)
+            {
+                borders.Add(new CellsBorderData { Side = side, LineStyle = line, Color = ToHex(border.Color) ?? "#000000" });
+            }
+        }
+
+        return borders.Count == 0 ? null : borders;
+    }
 
     private static string? NumberFormatOf(Style style)
     {
