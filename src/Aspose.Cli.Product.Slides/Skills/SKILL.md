@@ -13,7 +13,8 @@ Skill: start with `aspose-cli docs overview`.
 
 - A slide is addressed by its 1-based `slide` number or its stable `slideId`.
 - A shape is addressed within its slide by `shapeId` (persistent, slide-scoped), by
-  case-sensitive `shapeName`, or by `placeholder` role (`title`, `body`, `subtitle`, `footer`).
+  case-sensitive `shapeName`, or by `placeholder` role (`title`, `body`, `subtitle`, `footer`,
+  `date`, `slide-number`), the roles `slides read` reports.
 - `slides read --content shapes` reports every one of these names exactly as the
   operations accept them; `inspect` reports slide ids and shape counts, not shape ids.
 
@@ -41,7 +42,7 @@ Skill: start with `aspose-cli docs overview`.
    ([Slides editing](references/editing.md)):
 
    ```powershell
-   aspose-cli slides edit deck.pptx --ops deck-ops.json --out deck.revised.pptx --output-format json
+   aspose-cli slides edit deck.pptx --ops deck-ops.json --out deck.revised.pptx --verify --output-format json
    ```
 
 5. Verify before delivery ([Slides verification](references/verification.md), then the
@@ -69,8 +70,9 @@ Details: [design system](references/design-system.md).
   `edit` or `convert` output is `OPTION_INVALID`. Without it, a PPTX or PPTM output of an
   encrypted deck keeps its password, and any other document output is written without one and
   warns `ENCRYPTION_REMOVED`; slide images do not warn.
-- `slides read` and `slides search` do not see chart content or separate table cells; read them back from a Markdown
-  conversion ([charts and tables](references/verification.md#charts-and-tables)).
+- `slides read --content full` reports each table's cell `values` and each chart's data, and
+  the state the operations write under their field names; `slides search` does not see chart
+  text ([charts and tables](references/verification.md#charts-and-tables)).
 
 ## References
 
@@ -79,7 +81,7 @@ Details: [design system](references/design-system.md).
 - [Design system](references/design-system.md): templates and content rules
 - [Slides verification](references/verification.md): content reads, review checks, chart fidelity
 - [Slides preview](references/preview.md): what the viewer shows
-- [Slides troubleshooting](references/troubleshooting.md): Slides error codes
+- [Slides troubleshooting](references/troubleshooting.md): what to do when a Slides edit fails or looks wrong
 
 Examples: [deck from outline](examples/deck-from-outline/README.md),
 [edit a deck safely](examples/edit-deck-safely/README.md),

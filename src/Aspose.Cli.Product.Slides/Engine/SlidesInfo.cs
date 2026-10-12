@@ -47,7 +47,7 @@ internal static class SlidesInfo
                 {
                     Name = section.Name,
                     SectionId = section.SectionId.ToString("D"),
-                    StartSlide = FindSlideNumber(presentation, section.StartedFromSlide),
+                    StartSlide = FindSlideNumber(presentation, section.StartedFromSlide) is > 0 and var first ? first : null,
                 }).ToArray()
                 : null,
             Masters = Details(SlidesInspectDetails.Masters)
@@ -101,7 +101,7 @@ internal static class SlidesInfo
                             "media",
                             MediaListLimit,
                             media.Count,
-                            "Run 'aspose-cli slides extract <presentation> --what media --out <directory>' to export every media item."),
+                            "Run 'aspose-cli slides extract <presentation> --what media --out-dir <directory>' to export every media item."),
                     ]
                     : null),
         };

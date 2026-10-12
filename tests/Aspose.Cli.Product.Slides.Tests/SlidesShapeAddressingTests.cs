@@ -277,8 +277,8 @@ public sealed class SlidesShapeAddressingTests
             {
                 Ops =
                 [
-                    new InsertShapeOp { Slide = 1, Kind = "rectangle", Rect = rect },
-                    new InsertShapeOp { Slide = 1, Kind = "rectangle", Rect = rect },
+                    new InsertShapeOp { Slide = 1, Geometry = "rectangle", Rect = rect },
+                    new InsertShapeOp { Slide = 1, Geometry = "rectangle", Rect = rect },
                     new SlidesInsertImageOp { Slide = 1, Path = image, Rect = rect },
                     new SlidesInsertTableOp { Slide = 1, Rect = rect, RowCount = 1, ColumnCount = 1 },
                     new InsertChartOp

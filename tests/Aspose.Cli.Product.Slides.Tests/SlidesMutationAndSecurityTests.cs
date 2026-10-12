@@ -179,7 +179,7 @@ public sealed class SlidesMutationAndSecurityTests
                 IncludeNotes = true,
             });
         Assert.NotNull(read.Slides[0].Notes);
-        Assert.Contains("Safe", read.Slides[0].Notes!, StringComparison.Ordinal);
+        Assert.Contains("Safe", read.Slides[0].Notes!.Text, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -203,7 +203,7 @@ public sealed class SlidesMutationAndSecurityTests
                     new InsertShapeOp
                     {
                         Slide = 1,
-                        Kind = "rounded-rectangle",
+                        Geometry = "rounded-rectangle",
                         Rect = new SlidesRectInput { X = 80, Y = 140, Width = 240, Height = 80 },
                         Text = "Key",
                     },

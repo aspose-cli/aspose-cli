@@ -58,7 +58,7 @@ public sealed class SlidesHardeningTests
         int characters = (result.Title?.Length ?? 0) + (result.Text?.Sum(static text => text.Length) ?? 0)
             + result.Shapes.Sum(static shape => (shape.Text?.Length ?? 0) + (shape.Runs?.Sum(static run => run.Text.Length) ?? 0)
                 + (shape.Paragraphs?.Sum(static paragraph => paragraph.Text.Length) ?? 0))
-            + (result.Notes?.Length ?? 0) + (result.Comments?.Sum(static comment => comment.Text.Length) ?? 0);
+            + (result.Notes?.Text.Length ?? 0) + (result.Comments?.Sum(static comment => comment.Text.Length) ?? 0);
         Assert.Equal(budget, characters);
         Assert.Equal(truncated, result.ContentTruncated);
         Assert.Equal(truncated, read.Window!.Truncated);

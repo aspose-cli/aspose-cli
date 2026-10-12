@@ -1,20 +1,27 @@
 # Slides troubleshooting
 
 The error envelope, exit codes, not-found details and general diagnosis are shared: see
-`aspose-cli docs troubleshooting`.
+`aspose-cli docs troubleshooting`. Every Slides code, with its exit code, is listed by
+`aspose-cli capabilities slides`; this page says what to do about the ones a Slides edit
+commonly meets.
 
-- `LAYOUT_NOT_FOUND`: `slides inspect --detail layouts` lists layout names.
-- `CHART_DATA_INVALID`: the message names the cause; only a chart that cannot be updated in
-  place needs `insert_chart` (Charts in [Slides editing](editing.md)).
-- `OP_NO_EFFECT` (`details.reason` `no-match`): `replace_text` found nothing in its `scope` and changed nothing. Run
-  `slides search` with the same pattern and scope; chart text and alternative text are
-  never matched.
-- `REMOTE_RESOURCES_BLOCKED`: a linked picture, linked media file or external chart workbook
-  was left out of the output. Network addresses are never fetched; only ordinary files beneath
-  the presentation's directory are read. Embed the media, or place the file beside the deck and
-  link it by relative path, then review the incomplete rendering.
-- A template-based deck looks wrong: check which masters and layouts were kept and whether
-  `import_slides` used `keep-source` or `use-destination` as its `formatting`.
-  `use-destination` and `set_layout` replace a slide's own background with its layout's, and a
-  `SLIDE_BACKGROUND_RESET` warning names the slides that had one; `set_background` sets one
-  again, for appended slides in a later batch.
+A layout name an operation does not find is reported with the presentation's layout names in
+`details.available`; `slides inspect --detail layouts` lists them with their masters.
+
+A chart that cannot be updated in place fails with `CHART_DATA_INVALID`, whose message names
+the cause; only then recreate it with `insert_chart` (Charts in [Slides editing](editing.md)).
+
+When `replace_text` changes nothing, its `OP_NO_EFFECT` warning has `details.reason`
+`no-match`: run `slides search` with the same pattern and scope. Chart text and alternative
+text are never matched.
+
+`REMOTE_RESOURCES_BLOCKED` means a linked picture, linked media file or external chart workbook
+was left out of the output. Network addresses are never fetched; only ordinary files beneath
+the presentation's directory are read. Embed the media, or place the file beside the deck and
+link it by relative path, then review the incomplete rendering.
+
+When a template-based deck looks wrong, check which masters and layouts were kept and whether
+`import_slides` used `keep-source` or `use-destination` as its `formatting`.
+`use-destination` and `set_layout` replace a slide's own background with its layout's, and a
+`SLIDE_BACKGROUND_RESET` warning names the slides that had one; `set_background` sets one
+again, for imported slides in a later batch.

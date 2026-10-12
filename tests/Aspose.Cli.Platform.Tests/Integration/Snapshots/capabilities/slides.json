@@ -37,7 +37,7 @@
         "command": "edit",
         "inputSchema": "v2/slides/ops",
         "operationSchema": "aspose-cli schema v2/slides/ops --operation <op>",
-        "contractFingerprint": "sha256:10cb9632437bc96e43136765b58fe39189f95a96ce4f16ba12cc24d302984703",
+        "contractFingerprint": "sha256:bb28de536185f61673aff8134e483a62e92817e785f7a34c605803922fc3574c",
         "maximumOperationCount": 10000,
         "ops": [
           "copy_slide",
@@ -841,7 +841,7 @@
             ],
             "secret": false,
             "valueSource": "command-line",
-            "description": "Target presentation export format. PNG and JPEG use 192 DPI; use slides render for custom dimensions. Default: the --out extension's format."
+            "description": "Target presentation export format. PNG and JPEG use 192 DPI; use 'slides render' for custom dimensions. Default: the --out extension's format."
           }
         ],
         "arguments": [
@@ -1646,7 +1646,7 @@
             "allowedValues": [],
             "secret": false,
             "valueSource": "command-line",
-            "description": "Maximum characters returned, counting every returned title, text, run, note and comment, repeats included. Range: 1-10000000."
+            "description": "Maximum characters returned, counting every returned title, text, run, paragraph, table cell, chart label, footer, note and comment, repeats included. Range: 1-10000000."
           },
           {
             "name": "--notes",
@@ -3046,8 +3046,7 @@
           "type": "object",
           "required": [
             "name",
-            "sectionId",
-            "startSlide"
+            "sectionId"
           ],
           "additionalProperties": false,
           "properties": {
@@ -3061,9 +3060,9 @@
               "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
             },
             "startSlide": {
-              "description": "The 1-based number of the section's first slide; 0 when the section holds no slides.",
+              "description": "The 1-based number of the section's first slide; omitted when the section holds no slides.",
               "type": "integer",
-              "minimum": 0
+              "minimum": 1
             }
           }
         },
@@ -3373,7 +3372,9 @@
                 "title",
                 "body",
                 "subtitle",
-                "footer"
+                "footer",
+                "date",
+                "slide-number"
               ],
               "x-readBack": "not-state"
             }
@@ -3481,7 +3482,9 @@
                 "title",
                 "body",
                 "subtitle",
-                "footer"
+                "footer",
+                "date",
+                "slide-number"
               ],
               "x-readBack": "not-state"
             },
@@ -3747,7 +3750,7 @@
           "type": "object",
           "required": [
             "op",
-            "kind",
+            "geometry",
             "rect"
           ],
           "additionalProperties": false,
@@ -3770,7 +3773,8 @@
               "minimum": 1,
               "x-readBack": "not-state"
             },
-            "kind": {
+            "geometry": {
+              "description": "The shape's geometry.",
               "type": "string",
               "enum": [
                 "rectangle",
@@ -3779,7 +3783,7 @@
                 "line",
                 "chevron"
               ],
-              "x-readBack": "unread"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/slides/read-result.schema.json#/$defs/slidesShapeData/properties/geometry"
             },
             "rect": {
               "$ref": "#/$defs/slidesRectInput",
@@ -4158,7 +4162,9 @@
                 "title",
                 "body",
                 "subtitle",
-                "footer"
+                "footer",
+                "date",
+                "slide-number"
               ],
               "x-readBack": "not-state"
             },
@@ -4342,7 +4348,7 @@
             },
             "text": {
               "type": "string",
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/slides/read-result.schema.json#/$defs/slidesSlideData/properties/notes"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/slides/read-result.schema.json#/$defs/slidesNotesData/properties/text"
             }
           },
           "allOf": [
@@ -4474,7 +4480,9 @@
                 "title",
                 "body",
                 "subtitle",
-                "footer"
+                "footer",
+                "date",
+                "slide-number"
               ],
               "x-readBack": "not-state"
             },
@@ -4661,7 +4669,9 @@
                 "title",
                 "body",
                 "subtitle",
-                "footer"
+                "footer",
+                "date",
+                "slide-number"
               ],
               "x-readBack": "not-state"
             },
@@ -4764,7 +4774,9 @@
                 "title",
                 "body",
                 "subtitle",
-                "footer"
+                "footer",
+                "date",
+                "slide-number"
               ],
               "x-readBack": "not-state"
             },
@@ -5314,6 +5326,20 @@
             }
           }
         },
+        "slidesNotesData": {
+          "description": "A slide's speaker notes.",
+          "type": "object",
+          "required": [
+            "text"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "text": {
+              "description": "The notes' text, cut short when the max-chars budget runs out.",
+              "type": "string"
+            }
+          }
+        },
         "slidesParagraphData": {
           "description": "One paragraph of a shape's text.",
           "type": "object",
@@ -5418,6 +5444,17 @@
                 {
                   "pattern": "^[a-z]+$"
                 }
+              ]
+            },
+            "geometry": {
+              "description": "The geometry of an autoshape, which insert_shape accepts as geometry; omitted for any other shape and for a geometry no operation draws.",
+              "type": "string",
+              "enum": [
+                "rectangle",
+                "rounded-rectangle",
+                "ellipse",
+                "line",
+                "chevron"
               ]
             },
             "altText": {
@@ -5531,7 +5568,7 @@
             },
             "notes": {
               "description": "The speaker notes; with --content full or --notes, and omitted when the slide has none.",
-              "type": "string"
+              "$ref": "#/$defs/slidesNotesData"
             },
             "comments": {
               "description": "The slide's comments; only with --content full.",
@@ -5553,7 +5590,7 @@
               "$ref": "#/$defs/slidesFooterData"
             },
             "contentTruncated": {
-              "description": "Whether the shared max-chars budget cut this slide's content. The budget covers title, text, runs, requested notes and comments, including repeated projections; re-read this slide with a larger budget for the omitted content.",
+              "description": "Whether the shared max-chars budget cut this slide's content. The budget covers title, text, runs, paragraphs, table cells, chart labels, footer, requested notes and comments, including repeated projections; re-read this slide with a larger budget for the omitted content.",
               "type": "boolean"
             }
           }

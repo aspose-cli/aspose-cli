@@ -29,14 +29,14 @@ internal sealed partial class SlidesMutationHandlers
 
     public ValueTuple Apply(InsertShapeOp operation)
     {
-        ShapeType type = operation.Kind switch
+        ShapeType type = operation.Geometry switch
         {
-            SlidesShapeKinds.Rectangle => ShapeType.Rectangle,
-            SlidesShapeKinds.RoundedRectangle => ShapeType.RoundCornerRectangle,
-            SlidesShapeKinds.Ellipse => ShapeType.Ellipse,
-            SlidesShapeKinds.Line => ShapeType.Line,
-            SlidesShapeKinds.Chevron => ShapeType.Chevron,
-            _ => throw new OperationInvalidException($"Unknown shape kind '{operation.Kind}'."),
+            SlidesShapeGeometries.Rectangle => ShapeType.Rectangle,
+            SlidesShapeGeometries.RoundedRectangle => ShapeType.RoundCornerRectangle,
+            SlidesShapeGeometries.Ellipse => ShapeType.Ellipse,
+            SlidesShapeGeometries.Line => ShapeType.Line,
+            SlidesShapeGeometries.Chevron => ShapeType.Chevron,
+            _ => throw new OperationInvalidException($"Unknown shape geometry '{operation.Geometry}'."),
         };
         IAutoShape shape = Slide.Shapes.AddAutoShape(
             type,
@@ -44,7 +44,7 @@ internal sealed partial class SlidesMutationHandlers
             (float)operation.Rect.Y,
             (float)operation.Rect.Width,
             (float)operation.Rect.Height);
-        NameInserted(shape, operation.Kind);
+        NameInserted(shape, operation.Geometry);
         if (operation.Text is not null)
         {
             shape.TextFrame!.Text = operation.Text;

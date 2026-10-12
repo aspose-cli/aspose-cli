@@ -42,12 +42,12 @@ internal static class SlidesPlaceholders
     internal static string? Role(PlaceholderType? type) => type switch
     {
         null => null,
-        PlaceholderType.Title or PlaceholderType.CenteredTitle => "title",
-        PlaceholderType.Body or PlaceholderType.Object => "body",
-        PlaceholderType.Subtitle => "subtitle",
-        PlaceholderType.Footer => "footer",
-        PlaceholderType.DateAndTime => "date",
-        PlaceholderType.SlideNumber => "slide-number",
+        PlaceholderType.Title or PlaceholderType.CenteredTitle => SlidesPlaceholderRoles.Title,
+        PlaceholderType.Body or PlaceholderType.Object => SlidesPlaceholderRoles.Body,
+        PlaceholderType.Subtitle => SlidesPlaceholderRoles.Subtitle,
+        PlaceholderType.Footer => SlidesPlaceholderRoles.Footer,
+        PlaceholderType.DateAndTime => SlidesPlaceholderRoles.Date,
+        PlaceholderType.SlideNumber => SlidesPlaceholderRoles.SlideNumber,
         _ => type.Value.ToString().ToLowerInvariant(),
     };
 }

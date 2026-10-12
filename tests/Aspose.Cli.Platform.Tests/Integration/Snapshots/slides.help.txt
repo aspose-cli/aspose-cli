@@ -42,7 +42,7 @@ Arguments:
   <file>  Presentation file path.
 
 Options:
-  --to <to>                      Target presentation export format. PNG and JPEG use 192 DPI; use slides render for custom dimensions. Default: the --out extension's format. Values: gif, html, html5, jpeg, md, odp, pdf, png, ppt, pptm, pptx, svg, tiff, xps.
+  --to <to>                      Target presentation export format. PNG and JPEG use 192 DPI; use 'slides render' for custom dimensions. Default: the --out extension's format. Values: gif, html, html5, jpeg, md, odp, pdf, png, ppt, pptm, pptx, svg, tiff, xps.
   --slides <slides>              Slides to process: 1-based numbers and ranges such as 1-3,7,9-, or all. Default: every slide.
   -o, --out <out>                Output path; defaults to a sibling using the target extension; several slides as images write <stem>.<slide>.<ext> beside it.
   --overwrite                    Replace the output file if it already exists.
@@ -214,7 +214,7 @@ Arguments:
 Options:
   --slides <slides>              Slides to process: 1-based numbers and ranges such as 1-3,7,9-, or all. Default: the first 10 slides.
   --content <full|shapes|text>   Projection depth: how much of each slide to return. [default: shapes]
-  --max-chars <max-chars>        Maximum characters returned, counting every returned title, text, run, note and comment, repeats included. Range: 1-10000000. [default: 20000]
+  --max-chars <max-chars>        Maximum characters returned, counting every returned title, text, run, paragraph, table cell, chart label, footer, note and comment, repeats included. Range: 1-10000000. [default: 20000]
   --notes                        Include speaker notes for returned slides.
   --password <password>          Password for the presentation. Discouraged: visible in the process list; prefer --password-env.
   --password-env <password-env>  Name of an environment variable holding the password for the presentation.

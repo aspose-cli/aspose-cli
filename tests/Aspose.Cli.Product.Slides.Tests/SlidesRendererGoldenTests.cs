@@ -216,7 +216,7 @@ public sealed class SlidesRendererGoldenTests
                 {
                     Slide = 1, SlideId = 256, Title = "Welcome", Text = ["Welcome", "Agenda"],
                     Shapes = [new SlidesShapeData { ShapeId = 2, Kind = "autoShape", Text = "Shape text", Rect = rect }],
-                    Notes = "Say hello", ContentTruncated = false,
+                    Notes = new SlidesNotesData { Text = "Say hello" }, ContentTruncated = false,
                 },
                 new SlidesSlideData
                 {

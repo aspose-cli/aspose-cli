@@ -166,7 +166,7 @@ internal static class OperationSamples
         new("slides", """{"op":"copy_slide","slide":1}"""),
         new("slides", """{"op":"insert_chart","slide":2,"kind":"column","rect":{"x":72,"y":72,"width":144,"height":72},"categories":["A","B"],"series":[{"name":"Sales","values":[1,2]}],"title":"Plot"}"""),
         new("slides", """{"op":"insert_image","slide":2,"path":"image.png","rect":{"x":72,"y":72,"width":144,"height":72},"altText":"Logo"}"""),
-        new("slides", """{"op":"insert_shape","slide":2,"kind":"rectangle","rect":{"x":72,"y":72,"width":144,"height":72},"text":"Box","style":{"fillColor":"#FF0000","line":"#00FF00","bold":true,"color":"#123456","eastAsianFont":"SimSun","font":"Arial","latinFont":"Arial","fontSize":20}}"""),
+        new("slides", """{"op":"insert_shape","slide":2,"geometry":"rectangle","rect":{"x":72,"y":72,"width":144,"height":72},"text":"Box","style":{"fillColor":"#FF0000","line":"#00FF00","bold":true,"color":"#123456","eastAsianFont":"SimSun","font":"Arial","latinFont":"Arial","fontSize":20}}"""),
         new("slides", """{"op":"insert_table","slide":2,"rect":{"x":72,"y":72,"width":144,"height":72},"rowCount":2,"columnCount":2,"values":[["a","b"],["c","d"]]}"""),
         new("slides", """{"op":"move_slide","slide":2,"to":1}"""),
         new("slides", """{"op":"replace_text","find":"Second","replace":"Next"}"""),

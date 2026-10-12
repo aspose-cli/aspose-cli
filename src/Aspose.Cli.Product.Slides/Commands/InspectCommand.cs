@@ -79,7 +79,7 @@ internal static class InspectCommand
     private static void DetailTables(SlidesInspectResult result, TableSurface surface)
     {
         ResultText.Table(surface, "sections", result.Sections, ["name", "id", "start slide"],
-            static section => [section.Name, section.SectionId, TableText.Int(section.StartSlide)]);
+            static section => [section.Name, section.SectionId, section.StartSlide is int start ? TableText.Int(start) : null]);
         ResultText.Table(surface, "masters", result.Masters, ["name", "slides"],
             static master => [master.Name, TableText.Int(master.SlideCount)]);
         ResultText.Table(surface, "layouts", result.Layouts, ["name", "master", "slides"],

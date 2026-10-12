@@ -53,7 +53,7 @@ public sealed class SlidesModuleTests
             new InsertShapeOp
             {
                 Slide = 2,
-                Kind = "rounded-rectangle",
+                Geometry = "rounded-rectangle",
                 Rect = new SlidesRectInput { X = 400, Y = 120, Width = 200, Height = 80 },
                 Text = "Key point",
                 Style = new SlidesShapeStyleInput { FillColor = "#E0F2FE", Color = "#0F172A", Bold = true },
