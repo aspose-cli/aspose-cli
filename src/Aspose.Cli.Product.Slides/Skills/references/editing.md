@@ -56,8 +56,11 @@ data-label text. A picture has no text, so a text style on it fails with `OPS_IN
 - `format_shape` `font` names one font for Latin, East Asian and complex-script text;
   `latinFont` and `eastAsianFont` set the font of their script in its place. To return text to
   the template's fonts, see [design system](design-system.md).
-- `set_body` paragraphs take their level's bullet; give a paragraph `"bullet": false` to write it
-  plain, as a Markdown paragraph is. `set_text` keeps the placeholder's bullets on every line.
+- A `set_body` paragraph with a `list` is an item at the list's `level`, with the bullet the
+  placeholder gives that level (a bullet of its own where the level has none), or numbered with
+  `"kind": "number"`; a paragraph without `list` is
+  plain, as a Markdown paragraph is. `slides read --content full` reports each paragraph's
+  `list` the same way. `set_text` keeps the placeholder's bullets on every line.
 - A shape's text in `slides read`, `slides search` and `extract --what text` includes its table
   cells, group children and SmartArt nodes. Extracted text and notes put each paragraph on its
   own line; lines are separated by line feeds.

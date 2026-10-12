@@ -181,8 +181,13 @@ internal sealed partial class SlidesMutationHandlers
             SlidesAuthoring.Body(Slide).TextFrame,
             operation.Paragraphs.Select(static input => new AuthoredParagraph(
                 [new AuthoredRun(input.Text)],
-                input.Level - 1,
-                input.Bullet ? ParagraphList.Inherit : ParagraphList.None)));
+                input.List is { } list ? list.Level - 1 : 0,
+                input.List switch
+                {
+                    null => ParagraphList.None,
+                    { Kind: "number" } => ParagraphList.Numbered,
+                    _ => ParagraphList.Bullet,
+                })));
 
         return default;
     }

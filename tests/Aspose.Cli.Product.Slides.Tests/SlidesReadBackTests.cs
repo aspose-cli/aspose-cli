@@ -106,6 +106,84 @@ public sealed class SlidesReadBackTests
         Assert.All(result.Applied, static outcome => Assert.Equal(1, outcome.ItemsAffected));
     }
 
+    [Fact]
+    public void SetBody_ListsReadBackAsWritten()
+    {
+        using var fixture = new SlidesEngineFixture();
+        string input = Outline(fixture, "lists.pptx");
+        string output = fixture.File("lists.out.pptx");
+        SlidesEdit.Run(fixture.Session, new SlidesEditRequest
+        {
+            Input = input,
+            Batch = new SlidesOpsBatch
+            {
+                Ops =
+                [
+                    new SetBodyOp
+                    {
+                        Slide = 2,
+                        Paragraphs =
+                        [
+                            new SlidesParagraphInput { Text = "Plain" },
+                            new SlidesParagraphInput { Text = "Point", List = new SlidesListInput { Level = 1 } },
+                            new SlidesParagraphInput { Text = "Step", List = new SlidesListInput { Kind = "number", Level = 1 } },
+                            new SlidesParagraphInput { Text = "Inner", List = new SlidesListInput { Kind = "bullet", Level = 2 } },
+                        ],
+                    },
+                ],
+            },
+            Output = TestOutput.At(output),
+        });
+
+        SlidesReadResult read = SlidesRead.Run(fixture.Session, new SlidesReadRequest
+        {
+            Input = output,
+            Slides = PageRange.Parse("2"),
+            Content = SlidesReadContents.Full,
+        });
+
+        SlidesParagraphData[] paragraphs = Assert.Single(read.Slides[0].Shapes, static shape => shape.Placeholder == SlidesPlaceholderRoles.Body).Paragraphs!.ToArray();
+        Assert.Equal(
+            [null, "bullet/1", "number/1", "bullet/2"],
+            paragraphs.Select(static paragraph => paragraph.List is { } list ? $"{list.Kind}/{list.Level}" : null));
+    }
+
+    [Fact]
+    public void SetBody_ListItemWhereTheBodyDefinesNoBullet_StatesItsOwn()
+    {
+        using var fixture = new SlidesEngineFixture();
+        string input = fixture.File("blank.pptx");
+        using (var presentation = new Presentation())
+        {
+            presentation.Slides[0].LayoutSlide = presentation.LayoutSlides.GetByType(SlideLayoutType.Blank);
+            presentation.Save(input, SaveFormat.Pptx);
+        }
+
+        string output = fixture.File("blank.out.pptx");
+        SlidesEdit.Run(fixture.Session, new SlidesEditRequest
+        {
+            Input = input,
+            Batch = new SlidesOpsBatch
+            {
+                Ops =
+                [
+                    new SetBodyOp
+                    {
+                        Slide = 1,
+                        Paragraphs = [new SlidesParagraphInput { Text = "Point", List = new SlidesListInput { Level = 1 } }],
+                    },
+                ],
+            },
+            Output = TestOutput.At(output),
+        });
+
+        SlidesReadResult read = SlidesRead.Run(fixture.Session, new SlidesReadRequest { Input = output, Content = SlidesReadContents.Full });
+
+        SlidesParagraphData paragraph = Assert.Single(
+            read.Slides[0].Shapes.Where(static shape => !shape.EvaluationWatermark && shape.Paragraphs is not null).SelectMany(static shape => shape.Paragraphs!));
+        Assert.Equal(("bullet", 1), (paragraph.List!.Kind, paragraph.List.Level));
+    }
+
     private static string Outline(SlidesEngineFixture fixture, string name)
     {
         string markdown = fixture.File(name + ".md");

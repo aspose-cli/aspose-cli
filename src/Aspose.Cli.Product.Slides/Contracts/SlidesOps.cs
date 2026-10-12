@@ -74,19 +74,31 @@ public sealed record SlidesSlideSizeInput
     [Minimum(SlidesSlideSizePresets.MinimumSide), Maximum(SlidesSlideSizePresets.MaximumSide)] public double? Height { get; init; }
 }
 
-/// <summary>One body paragraph; its bullets and spacing come from the placeholder's level.</summary>
+/// <summary>One body paragraph; its spacing comes from the placeholder's level.</summary>
 public sealed record SlidesParagraphInput
 {
     [ReadBack("read-result.schema.json#/$defs/slidesParagraphData/properties/text")]
     public required string Text { get; init; }
 
-    /// <summary>The 1-based outline level, 1 for a top-level paragraph.</summary>
-    [ReadBack("read-result.schema.json#/$defs/slidesParagraphData/properties/level")]
-    [Minimum(1), Maximum(9)] public int Level { get; init; } = 1;
+    /// <summary>
+    /// Makes the paragraph a list item at the list's 1-based level, with the bullet the
+    /// placeholder defines for that level (a bullet of its own where the level defines none), or
+    /// numbered; without it the paragraph is plain text at the top level.
+    /// </summary>
+    [MistakenFor("bullet", "level", "listLevel")]
+    public SlidesListInput? List { get; init; }
+}
 
-    /// <summary>Whether the paragraph shows its level's bullet; false writes a plain paragraph without one.</summary>
-    [ReadBack("read-result.schema.json#/$defs/slidesParagraphData/properties/bullet")]
-    public bool Bullet { get; init; } = true;
+/// <summary>The list a paragraph belongs to, as a read reports it.</summary>
+public sealed record SlidesListInput
+{
+    /// <summary>Whether the item shows its level's bullet or a number; the bullet when omitted.</summary>
+    [ReadBack("read-result.schema.json#/$defs/slidesListData/properties/kind")]
+    [AllowedValues("bullet", "number")] public string? Kind { get; init; }
+
+    /// <summary>The paragraph's 1-based level in the list.</summary>
+    [ReadBack("read-result.schema.json#/$defs/slidesListData/properties/level")]
+    [Minimum(1), Maximum(9)] public required int Level { get; init; }
 }
 
 /// <summary>Visual styling of a slide shape and its text; it must set at least one property.</summary>

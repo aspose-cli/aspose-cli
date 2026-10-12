@@ -37,7 +37,7 @@
         "command": "edit",
         "inputSchema": "v2/slides/ops",
         "operationSchema": "aspose-cli schema v2/slides/ops --operation <op>",
-        "contractFingerprint": "sha256:bb28de536185f61673aff8134e483a62e92817e785f7a34c605803922fc3574c",
+        "contractFingerprint": "sha256:83a37ecd2f8e9d7bfa8f328a21eae0942b01027581ec730a635507699bcd2510",
         "maximumOperationCount": 10000,
         "ops": [
           "copy_slide",
@@ -4965,8 +4965,34 @@
             }
           }
         },
+        "slidesListInput": {
+          "description": "The list a paragraph belongs to, as a read reports it.",
+          "type": "object",
+          "required": [
+            "level"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "description": "Whether the item shows its level's bullet or a number; the bullet when omitted.",
+              "type": "string",
+              "enum": [
+                "bullet",
+                "number"
+              ],
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/slides/read-result.schema.json#/$defs/slidesListData/properties/kind"
+            },
+            "level": {
+              "description": "The paragraph's 1-based level in the list.",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9,
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/slides/read-result.schema.json#/$defs/slidesListData/properties/level"
+            }
+          }
+        },
         "slidesParagraphInput": {
-          "description": "One body paragraph; its bullets and spacing come from the placeholder's level.",
+          "description": "One body paragraph; its spacing comes from the placeholder's level.",
           "type": "object",
           "required": [
             "text"
@@ -4977,19 +5003,9 @@
               "type": "string",
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/slides/read-result.schema.json#/$defs/slidesParagraphData/properties/text"
             },
-            "level": {
-              "description": "The 1-based outline level, 1 for a top-level paragraph.",
-              "type": "integer",
-              "minimum": 1,
-              "maximum": 9,
-              "default": 1,
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/slides/read-result.schema.json#/$defs/slidesParagraphData/properties/level"
-            },
-            "bullet": {
-              "description": "Whether the paragraph shows its level's bullet; false writes a plain paragraph without one.",
-              "type": "boolean",
-              "default": true,
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/slides/read-result.schema.json#/$defs/slidesParagraphData/properties/bullet"
+            "list": {
+              "description": "Makes the paragraph a list item at the list's 1-based level, with the bullet the placeholder defines for that level (a bullet of its own where the level defines none), or numbered; without it the paragraph is plain text at the top level.",
+              "$ref": "#/$defs/slidesListInput"
             }
           }
         },
@@ -5326,6 +5342,30 @@
             }
           }
         },
+        "slidesListData": {
+          "description": "The list a paragraph belongs to, as set_body sets it.",
+          "type": "object",
+          "required": [
+            "kind",
+            "level"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "description": "Whether the paragraph shows a bullet or a number.",
+              "type": "string",
+              "enum": [
+                "bullet",
+                "number"
+              ]
+            },
+            "level": {
+              "description": "The paragraph's 1-based level in the list.",
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        },
         "slidesNotesData": {
           "description": "A slide's speaker notes.",
           "type": "object",
@@ -5344,9 +5384,7 @@
           "description": "One paragraph of a shape's text.",
           "type": "object",
           "required": [
-            "text",
-            "level",
-            "bullet"
+            "text"
           ],
           "additionalProperties": false,
           "properties": {
@@ -5354,14 +5392,9 @@
               "description": "The paragraph's text.",
               "type": "string"
             },
-            "level": {
-              "description": "The 1-based outline level, 1 for a top-level paragraph.",
-              "type": "integer",
-              "minimum": 1
-            },
-            "bullet": {
-              "description": "Whether the paragraph shows a bullet.",
-              "type": "boolean"
+            "list": {
+              "description": "A list paragraph's list: bullets or numbers, and its 1-based level; omitted for a paragraph without either.",
+              "$ref": "#/$defs/slidesListData"
             }
           }
         },
@@ -5473,7 +5506,7 @@
               }
             },
             "paragraphs": {
-              "description": "The paragraphs of a text shape with their outline level and bullet; only with --content full, and omitted for a shape without text of its own.",
+              "description": "The paragraphs of a text shape with the list each one belongs to; only with --content full, and omitted for a shape without text of its own.",
               "type": "array",
               "items": {
                 "$ref": "#/$defs/slidesParagraphData"

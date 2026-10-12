@@ -8,7 +8,7 @@ This page covers what is specific to presentations.
 `slides edit --verify` reads the staged output back and reports `verification` for the slides
 each operation addressed when the batch started. It reads back the slide order (`insert_slide`,
 `delete_slides`, `move_slide`, `copy_slide`, `import_slides`), titles, shape text, body
-paragraphs with their levels and bullets, speaker notes, layouts, hidden slides, footers,
+paragraphs with their `list`, speaker notes, layouts, hidden slides, footers,
 transitions, sections, document properties, the slide size, and for `replace_text` how often
 its find text and replacement occur in its scope. `format_shape`, `set_shape_bounds`,
 `set_background`, `delete_shape`, the inserted pictures, shapes, tables and charts,

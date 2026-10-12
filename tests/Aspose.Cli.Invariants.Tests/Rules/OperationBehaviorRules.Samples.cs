@@ -171,7 +171,7 @@ internal static class OperationSamples
         new("slides", """{"op":"move_slide","slide":2,"to":1}"""),
         new("slides", """{"op":"replace_text","find":"Second","replace":"Next"}"""),
         new("slides", """{"op":"set_background","slides":"1","color":"#336699"}"""),
-        new("slides", """{"op":"set_body","slide":2,"paragraphs":[{"text":"First"},{"text":"Inner","level":2,"bullet":false}]}"""),
+        new("slides", """{"op":"set_body","slide":2,"paragraphs":[{"text":"First"},{"text":"Inner","list":{"kind":"number","level":2}}]}"""),
         new("slides", """{"op":"set_footer","slides":"1-2","text":"Foot","showNumber":true,"showDate":true}"""),
         new("slides", """{"op":"set_notes","slide":1,"text":"Notes"}"""),
         new("slides", """{"op":"set_properties","title":"Edited","author":"Tester","subject":"Subj","keywords":"Keys","company":"Corp"}"""),

@@ -16,6 +16,9 @@ public sealed class MistakeRecoveryCliTests : IDisposable
     [InlineData("slides", "a.pptx", """{"op":"replace_text","find":"30","replacement":"15"}""", "replace")]
     [InlineData("slides", "a.pptx", """{"op":"insert_chart","slide":1,"type":"bar"}""", "kind")]
     [InlineData("slides", "a.pptx", """{"op":"insert_chart","slide":1,"box":{}}""", "rect")]
+    [InlineData("slides", "a.pptx", """{"op":"set_body","slide":1,"paragraphs":[{"text":"x","bullet":true}]}""", "list")]
+    [InlineData("slides", "a.pptx", """{"op":"set_body","slide":1,"paragraphs":[{"text":"x","level":2}]}""", "list")]
+    [InlineData("slides", "a.pptx", """{"op":"set_body","slide":1,"paragraphs":[{"text":"x","listLevel":2}]}""", "list")]
     [InlineData("cells", "a.xlsx", """{"op":"set_style","range":"A1","style":{"bold":true}}""", "format_range")]
     [InlineData("pdf", "a.pdf", """{"op":"add_watermark","text":"DRAFT"}""", "add_watermark_text")]
     public void EditOperationMistake_SuggestsTheNameThatWorks(string product, string file, string operation, string suggestion)
