@@ -48,7 +48,7 @@
         "command": "edit",
         "inputSchema": "v2/words/ops",
         "operationSchema": "aspose-cli schema v2/words/ops --operation <op>",
-        "contractFingerprint": "sha256:2b98824d435e26c835c06b69d31e61402b139f89850262088c0cd9ed56737f32",
+        "contractFingerprint": "sha256:d8be5a3fe2a7d5e5e51a74d4c069c3bc6ddcf644a5bda872d711d48a91184fc3",
         "maximumOperationCount": 10000,
         "ops": [
           "accept_revisions",
@@ -3234,13 +3234,13 @@
         },
         "revisions": {
           "description": "The revisions the comparison found, counted by type.",
-          "$ref": "#/$defs/revisionCounts"
+          "$ref": "#/$defs/wordsRevisionCounts"
         },
         "samples": {
           "description": "The first revisions the comparison found.",
           "type": "array",
           "items": {
-            "$ref": "#/$defs/revisionSample"
+            "$ref": "#/$defs/wordsRevisionSample"
           }
         },
         "output": {
@@ -3260,7 +3260,7 @@
         }
       },
       "$defs": {
-        "revisionCounts": {
+        "wordsRevisionCounts": {
           "description": "Counts by revision type.",
           "type": "object",
           "required": [
@@ -3293,7 +3293,7 @@
             }
           }
         },
-        "revisionSample": {
+        "wordsRevisionSample": {
           "description": "One revision the comparison found.",
           "type": "object",
           "required": [
@@ -3399,845 +3399,6 @@
           "type": "array",
           "items": {
             "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
-          }
-        }
-      }
-    },
-    "v2/words/document-info": {
-      "$schema": "https://json-schema.org/draft/2020-12/schema",
-      "$id": "https://schemas.aspose.com/aspose-cli/v2/words/document-info.schema.json",
-      "description": "Structural information returned by words inspect.",
-      "type": "object",
-      "required": [
-        "schema",
-        "schemaVersion",
-        "input",
-        "document"
-      ],
-      "additionalProperties": false,
-      "properties": {
-        "schema": {
-          "description": "URI of the JSON schema this result conforms to.",
-          "const": "https://schemas.aspose.com/aspose-cli/v2/words/document-info.schema.json"
-        },
-        "schemaVersion": {
-          "description": "Version of this result contract.",
-          "const": 2
-        },
-        "input": {
-          "description": "The inspected document.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
-        },
-        "document": {
-          "description": "The summary every inspect returns, whatever details it asks for.",
-          "$ref": "#/$defs/documentSummary"
-        },
-        "sections": {
-          "description": "Each section's page setup and headers and footers; returned with --detail sections.",
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/sectionData"
-          }
-        },
-        "outline": {
-          "description": "The headings in document order; returned with --detail outline.",
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/outlineItem"
-          }
-        },
-        "styles": {
-          "description": "The names of the styles the document defines, in ordinal order; returned with --detail styles.",
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "fields": {
-          "description": "The fields in every story; returned with --detail fields.",
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/fieldData"
-          }
-        },
-        "bookmarks": {
-          "description": "The bookmark names, in ordinal order; returned with --detail bookmarks.",
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "comments": {
-          "description": "The comments, replies included; returned with --detail comments.",
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/commentData"
-          }
-        },
-        "revisions": {
-          "description": "The tracked changes in document order, one entry per change; returned with --detail revisions. A replacement is a deletion followed by an insertion. document.revisionCount counts the revisions the document stores, one per run, paragraph mark or other changed node, so it can exceed the entries here.",
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/revisionData"
-          }
-        },
-        "images": {
-          "description": "The embedded images in every story; returned with --detail images.",
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/imageData"
-          }
-        },
-        "tables": {
-          "description": "The tables; returned with --detail tables.",
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/tableData"
-          }
-        },
-        "properties": {
-          "description": "The title, author, subject and keywords document properties by name, null for one the document does not set; returned with --detail properties.",
-          "type": "object",
-          "additionalProperties": {
-            "type": [
-              "string",
-              "null"
-            ]
-          }
-        },
-        "fonts": {
-          "description": "The fonts the document's text is drawn with, per character script; not the font table. Returned with --detail fonts.",
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        },
-        "license": {
-          "description": "License mode the engine ran under; omitted when it ran licensed.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/license.schema.json"
-        },
-        "warnings": {
-          "description": "Warnings the agent is expected to act on (for example EVALUATION_MODE: tell the user about the evaluation watermark). Omitted when empty.",
-          "type": "array",
-          "items": {
-            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
-          }
-        }
-      },
-      "$defs": {
-        "commentData": {
-          "description": "One comment.",
-          "type": "object",
-          "required": [
-            "author",
-            "text"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "author": {
-              "description": "The comment's author.",
-              "type": "string"
-            },
-            "text": {
-              "description": "The comment's text.",
-              "type": "string"
-            },
-            "block": {
-              "description": "The 1-based body block the comment is anchored in.",
-              "type": "integer",
-              "minimum": 1
-            }
-          }
-        },
-        "documentSummary": {
-          "description": "The summary of a document that every inspect returns.",
-          "type": "object",
-          "required": [
-            "sectionCount",
-            "blockCount",
-            "paragraphCount",
-            "tableCount",
-            "pageCount",
-            "wordCount",
-            "revisionsPresent",
-            "revisionCount",
-            "revisionAuthors",
-            "commentCount",
-            "protection",
-            "signed",
-            "hasMacros"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "sectionCount": {
-              "description": "The number of sections.",
-              "type": "integer",
-              "minimum": 0
-            },
-            "blockCount": {
-              "description": "The number of blocks: the paragraphs and tables directly in section bodies.",
-              "type": "integer",
-              "minimum": 0
-            },
-            "paragraphCount": {
-              "description": "The number of paragraph blocks.",
-              "type": "integer",
-              "minimum": 0
-            },
-            "tableCount": {
-              "description": "The number of table blocks.",
-              "type": "integer",
-              "minimum": 0
-            },
-            "pageCount": {
-              "description": "The number of pages in the document's layout.",
-              "type": "integer",
-              "minimum": 0
-            },
-            "wordCount": {
-              "description": "The word count the document's built-in properties record.",
-              "type": "integer",
-              "minimum": 0
-            },
-            "revisionsPresent": {
-              "description": "Whether the document holds tracked changes.",
-              "type": "boolean"
-            },
-            "revisionCount": {
-              "description": "The revisions the document stores, one per run, paragraph mark or other changed node; list the changes with --detail revisions.",
-              "type": "integer",
-              "minimum": 0
-            },
-            "revisionAuthors": {
-              "description": "The distinct authors of the tracked changes, in ordinal order.",
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            },
-            "commentCount": {
-              "description": "The comments in the document, replies included; list them with --detail comments.",
-              "type": "integer",
-              "minimum": 0
-            },
-            "protection": {
-              "description": "The editing restriction: none, or the protect operation mode that sets it; every SDK protection type maps to one of these.",
-              "type": "string",
-              "enum": [
-                "none",
-                "readOnly",
-                "comments",
-                "trackedChanges",
-                "forms"
-              ]
-            },
-            "signed": {
-              "description": "Whether the document carries a digital signature.",
-              "type": "boolean"
-            },
-            "hasMacros": {
-              "description": "Whether the document holds macros (a VBA project); an output other than docm, dotm, doc, dot or wordml drops them and reports MACROS_DROPPED.",
-              "type": "boolean"
-            }
-          }
-        },
-        "fieldData": {
-          "description": "One field in any story.",
-          "type": "object",
-          "required": [
-            "type",
-            "scope"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "type": {
-              "description": "The SDK's name of the field type, such as FieldDate.",
-              "type": "string"
-            },
-            "scope": {
-              "description": "The story that holds the field, named as query search names its scopes.",
-              "type": "string",
-              "enum": [
-                "body",
-                "headersFooters",
-                "footnotes",
-                "comments"
-              ]
-            },
-            "block": {
-              "description": "The body block that holds the field, or that anchors the comment or note holding it; absent in headers and footers.",
-              "type": "integer",
-              "minimum": 1
-            },
-            "code": {
-              "description": "The field code, such as DATE with its switches.",
-              "type": "string"
-            },
-            "result": {
-              "description": "The result a reader sees, with the results of nested fields in place of their codes.",
-              "type": "string"
-            }
-          }
-        },
-        "headerFooterData": {
-          "description": "One header or footer of a section, named as set_header, set_footer and set_page_numbers name it: its location and kind, and its visible text as paragraphs.",
-          "type": "object",
-          "required": [
-            "location",
-            "kind",
-            "paragraphs"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "location": {
-              "description": "Whether it is a header or a footer, as set_page_numbers names it.",
-              "type": "string",
-              "enum": [
-                "header",
-                "footer"
-              ]
-            },
-            "kind": {
-              "description": "Which pages it shows on, as set_header and set_footer name it.",
-              "type": "string",
-              "enum": [
-                "primary",
-                "first",
-                "even"
-              ]
-            },
-            "paragraphs": {
-              "description": "The visible text of each paragraph, as set_header and set_footer take it.",
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            }
-          }
-        },
-        "imageData": {
-          "description": "One embedded image in any story; its size is in points.",
-          "type": "object",
-          "required": [
-            "scope",
-            "width",
-            "height"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "scope": {
-              "description": "The story that holds the image, named as query search names its scopes.",
-              "type": "string",
-              "enum": [
-                "body",
-                "headersFooters",
-                "footnotes",
-                "comments"
-              ]
-            },
-            "block": {
-              "description": "The body block that holds the image, or that anchors the comment or note holding it; absent in headers and footers.",
-              "type": "integer",
-              "minimum": 1
-            },
-            "name": {
-              "description": "The name of the shape that holds the image.",
-              "type": "string"
-            },
-            "width": {
-              "description": "The width in points.",
-              "type": "number",
-              "minimum": 0
-            },
-            "height": {
-              "description": "The height in points.",
-              "type": "number",
-              "minimum": 0
-            }
-          }
-        },
-        "marginData": {
-          "description": "Page margins in points.",
-          "type": "object",
-          "required": [
-            "top",
-            "right",
-            "bottom",
-            "left"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "top": {
-              "description": "The top margin.",
-              "type": "number"
-            },
-            "right": {
-              "description": "The right margin.",
-              "type": "number"
-            },
-            "bottom": {
-              "description": "The bottom margin.",
-              "type": "number"
-            },
-            "left": {
-              "description": "The left margin.",
-              "type": "number"
-            }
-          }
-        },
-        "outlineItem": {
-          "description": "One heading in document order.",
-          "type": "object",
-          "required": [
-            "block",
-            "headingLevel",
-            "text"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "block": {
-              "description": "The 1-based block of the heading paragraph.",
-              "type": "integer",
-              "minimum": 1
-            },
-            "headingLevel": {
-              "description": "The heading level, 1 for Heading 1.",
-              "type": "integer",
-              "minimum": 1
-            },
-            "text": {
-              "description": "The heading's text.",
-              "type": "string"
-            }
-          }
-        },
-        "revisionData": {
-          "description": "One tracked change in document order: its 1-based number, which accept_revisions and reject_revisions accept, its type, author, the date the document records and the text it inserts, deletes or moves.",
-          "type": "object",
-          "required": [
-            "revision",
-            "type",
-            "author"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "revision": {
-              "description": "The 1-based number of the change in this list, which the revisions of accept_revisions and reject_revisions accept.",
-              "type": "integer",
-              "minimum": 1
-            },
-            "type": {
-              "description": "The kind of change.",
-              "type": "string",
-              "enum": [
-                "insertion",
-                "deletion",
-                "formatChange",
-                "styleDefinitionChange",
-                "moving"
-              ]
-            },
-            "author": {
-              "description": "The change's author.",
-              "type": "string"
-            },
-            "date": {
-              "description": "The date and time the document records, as ISO 8601 yyyy-MM-ddTHH:mm:ss without a time zone; absent when none is recorded.",
-              "type": "string"
-            },
-            "scope": {
-              "description": "The story that holds the change, named as query search names its scopes; absent for style definition changes.",
-              "type": "string",
-              "enum": [
-                "body",
-                "headersFooters",
-                "footnotes",
-                "comments"
-              ]
-            },
-            "block": {
-              "description": "The body block that holds the change, or that anchors the comment or note holding it; absent in headers and footers and for style definition changes.",
-              "type": "integer",
-              "minimum": 1
-            },
-            "text": {
-              "description": "The text an insertion adds, a deletion removes or a move relocates; a longer text is cut to 300 characters and an ellipsis; absent for format and style definition changes.",
-              "type": "string"
-            }
-          }
-        },
-        "sectionData": {
-          "description": "One document section.",
-          "type": "object",
-          "required": [
-            "section",
-            "orientation",
-            "widthPoints",
-            "heightPoints",
-            "margins",
-            "headersFooters"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "section": {
-              "description": "The 1-based section number that section operations accept.",
-              "type": "integer",
-              "minimum": 1
-            },
-            "orientation": {
-              "description": "The orientation of the section's pages.",
-              "type": "string",
-              "enum": [
-                "portrait",
-                "landscape"
-              ]
-            },
-            "widthPoints": {
-              "description": "The page width in points.",
-              "type": "number",
-              "minimum": 0
-            },
-            "heightPoints": {
-              "description": "The page height in points.",
-              "type": "number",
-              "minimum": 0
-            },
-            "margins": {
-              "description": "The page margins.",
-              "$ref": "#/$defs/marginData"
-            },
-            "headersFooters": {
-              "description": "The headers and footers the section defines itself; a kind it does not define continues from the previous section.",
-              "type": "array",
-              "items": {
-                "$ref": "#/$defs/headerFooterData"
-              }
-            }
-          }
-        },
-        "tableData": {
-          "description": "One table block.",
-          "type": "object",
-          "required": [
-            "block",
-            "rowCount",
-            "columnCount"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "block": {
-              "description": "The table's 1-based block.",
-              "type": "integer",
-              "minimum": 1
-            },
-            "rowCount": {
-              "description": "The number of rows.",
-              "type": "integer",
-              "minimum": 0
-            },
-            "columnCount": {
-              "description": "The number of cells in the widest row.",
-              "type": "integer",
-              "minimum": 0
-            },
-            "style": {
-              "description": "The table style the table uses, accepted by insert_table's style; omitted for the default Table Normal style.",
-              "type": "string",
-              "minLength": 1
-            }
-          }
-        }
-      }
-    },
-    "v2/words/document-read": {
-      "$schema": "https://json-schema.org/draft/2020-12/schema",
-      "$id": "https://schemas.aspose.com/aspose-cli/v2/words/document-read.schema.json",
-      "description": "Windowed block projection returned by words query blocks. Its window counts blocks: the total is the blocks the range, section and scope select. window.next starts again at a block whose content was truncated and doubles --max-chars when that block alone exceeded the budget.",
-      "type": "object",
-      "required": [
-        "schema",
-        "schemaVersion",
-        "input",
-        "scope",
-        "blockCount",
-        "blocks",
-        "window"
-      ],
-      "additionalProperties": false,
-      "properties": {
-        "schema": {
-          "description": "URI of the JSON schema this result conforms to.",
-          "const": "https://schemas.aspose.com/aspose-cli/v2/words/document-read.schema.json"
-        },
-        "schemaVersion": {
-          "description": "Version of this result contract.",
-          "const": 2
-        },
-        "input": {
-          "description": "The document read.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
-        },
-        "scope": {
-          "description": "The projection, as --scope chose it.",
-          "type": "string",
-          "enum": [
-            "text",
-            "outline",
-            "full"
-          ]
-        },
-        "blockCount": {
-          "description": "The document's block count, whatever the range, section and scope select.",
-          "type": "integer",
-          "minimum": 0
-        },
-        "blocks": {
-          "description": "The blocks of this window, in document order.",
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/blockData"
-          }
-        },
-        "window": {
-          "description": "The window of the read or search: how much it returned and how to continue.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/result-window.schema.json"
-        },
-        "license": {
-          "description": "License mode the engine ran under; omitted when it ran licensed.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/license.schema.json"
-        },
-        "warnings": {
-          "description": "Warnings the agent is expected to act on (for example EVALUATION_MODE: tell the user about the evaluation watermark). Omitted when empty.",
-          "type": "array",
-          "items": {
-            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
-          }
-        }
-      },
-      "$defs": {
-        "blockData": {
-          "description": "A paragraph or table directly owned by a section body.",
-          "type": "object",
-          "required": [
-            "block",
-            "type",
-            "section",
-            "contentTruncated"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "block": {
-              "description": "The 1-based block number that operation block addresses accept.",
-              "type": "integer",
-              "minimum": 1
-            },
-            "type": {
-              "description": "Whether the block is a paragraph or a table.",
-              "type": "string",
-              "enum": [
-                "paragraph",
-                "table"
-              ]
-            },
-            "section": {
-              "description": "The 1-based section that holds the block.",
-              "type": "integer",
-              "minimum": 1
-            },
-            "listLabel": {
-              "description": "The number Word draws before a numbered list paragraph, such as 6.2; bullets are not reported. The paragraph's text leaves it out; search snippets, find and heading addresses, extracted text and table cells read it before the text, followed by a space.",
-              "type": "string"
-            },
-            "text": {
-              "description": "A paragraph's visible text.",
-              "type": "string"
-            },
-            "style": {
-              "description": "The name of a paragraph's style.",
-              "type": "string"
-            },
-            "headingLevel": {
-              "description": "A heading paragraph's level, 1 for Heading 1.",
-              "type": "integer",
-              "minimum": 1
-            },
-            "runs": {
-              "description": "The runs of the visible text, in order: their text joins to the paragraph's text, without field codes, deleted text or anchored comments and footnotes. Returned in full scope.",
-              "type": "array",
-              "items": {
-                "$ref": "#/$defs/runData"
-              }
-            },
-            "paragraphFormat": {
-              "description": "The paragraph's indents, spacing and alignment, returned in full scope.",
-              "$ref": "#/$defs/paragraphFormatData"
-            },
-            "images": {
-              "description": "The images in a paragraph.",
-              "type": "array",
-              "items": {
-                "$ref": "#/$defs/blockImageData"
-              }
-            },
-            "breakAfter": {
-              "description": "The break that follows this block: a page break, including one that starts the next paragraph, or a section break after the last block of a section.",
-              "type": "string",
-              "enum": [
-                "page",
-                "section"
-              ]
-            },
-            "rowCount": {
-              "description": "A table's number of rows.",
-              "type": "integer",
-              "minimum": 0
-            },
-            "columnCount": {
-              "description": "The number of cells in a table's widest row.",
-              "type": "integer",
-              "minimum": 0
-            },
-            "cells": {
-              "description": "The text of each cell by row; a numbered list paragraph in a cell starts with its number and a space.",
-              "type": "array",
-              "items": {
-                "type": "array",
-                "items": {
-                  "type": "string"
-                }
-              }
-            },
-            "contentTruncated": {
-              "description": "Returned document text shares the max-chars budget, including repeated projections. Re-read this item with a larger budget for omitted content.",
-              "type": "boolean"
-            }
-          }
-        },
-        "blockImageData": {
-          "description": "One image in a paragraph block; its size is in points.",
-          "type": "object",
-          "required": [
-            "block",
-            "width",
-            "height"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "block": {
-              "description": "The 1-based block that holds the image.",
-              "type": "integer",
-              "minimum": 1
-            },
-            "name": {
-              "description": "The name of the shape that holds the image.",
-              "type": "string"
-            },
-            "width": {
-              "description": "The width in points.",
-              "type": "number",
-              "minimum": 0
-            },
-            "height": {
-              "description": "The height in points.",
-              "type": "number",
-              "minimum": 0
-            }
-          }
-        },
-        "paragraphFormatData": {
-          "description": "The format a paragraph has, from its own settings and its style, in points; returned in full scope.",
-          "type": "object",
-          "required": [
-            "alignment",
-            "leftIndent",
-            "rightIndent",
-            "firstLineIndent",
-            "spaceBefore",
-            "spaceAfter",
-            "lineSpacingRule",
-            "lineSpacing"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "alignment": {
-              "description": "Such as left, center, right, justify or distributed.",
-              "type": "string"
-            },
-            "leftIndent": {
-              "description": "The left indent.",
-              "type": "number"
-            },
-            "rightIndent": {
-              "description": "The right indent.",
-              "type": "number"
-            },
-            "firstLineIndent": {
-              "description": "The first line's indent; negative for a hanging indent.",
-              "type": "number"
-            },
-            "spaceBefore": {
-              "description": "The space before the paragraph.",
-              "type": "number"
-            },
-            "spaceAfter": {
-              "description": "The space after the paragraph.",
-              "type": "number"
-            },
-            "lineSpacingRule": {
-              "description": "How lineSpacing is measured.",
-              "type": "string",
-              "enum": [
-                "atLeast",
-                "exactly",
-                "multiple"
-              ]
-            },
-            "lineSpacing": {
-              "description": "Lines for the multiple rule, where 1 is single spacing; points otherwise.",
-              "type": "number"
-            }
-          }
-        },
-        "runData": {
-          "description": "One run of a paragraph's visible text and its formatting, returned in full scope.",
-          "type": "object",
-          "required": [
-            "text"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "text": {
-              "description": "The run's text.",
-              "type": "string"
-            },
-            "font": {
-              "description": "The East Asian font when the run starts with a Chinese, Japanese or Korean character, otherwise the Latin font.",
-              "type": "string"
-            },
-            "latinFont": {
-              "description": "The font of the run's Latin text.",
-              "type": "string"
-            },
-            "eastAsianFont": {
-              "description": "The font of the run's Chinese, Japanese and Korean text.",
-              "type": "string"
-            },
-            "size": {
-              "description": "The font size in points.",
-              "type": "number"
-            },
-            "bold": {
-              "description": "Whether the run is bold.",
-              "type": "boolean"
-            },
-            "italic": {
-              "description": "Whether the run is italic.",
-              "type": "boolean"
-            },
-            "color": {
-              "description": "A #RRGGBB color.",
-              "type": "string"
-            }
           }
         }
       }
@@ -4425,7 +3586,7 @@
           "description": "The written files.",
           "type": "array",
           "items": {
-            "$ref": "#/$defs/extractedItem"
+            "$ref": "#/$defs/wordsExtractedItem"
           }
         },
         "license": {
@@ -4441,7 +3602,7 @@
         }
       },
       "$defs": {
-        "extractedItem": {
+        "wordsExtractedItem": {
           "description": "One extracted file.",
           "type": "object",
           "required": [
@@ -4474,6 +3635,552 @@
               "description": "The 1-based block the image or table comes from.",
               "type": "integer",
               "minimum": 1
+            }
+          }
+        }
+      }
+    },
+    "v2/words/inspect-result": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "$id": "https://schemas.aspose.com/aspose-cli/v2/words/inspect-result.schema.json",
+      "description": "Structural information returned by words inspect.",
+      "type": "object",
+      "required": [
+        "schema",
+        "schemaVersion",
+        "input",
+        "document"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "schema": {
+          "description": "URI of the JSON schema this result conforms to.",
+          "const": "https://schemas.aspose.com/aspose-cli/v2/words/inspect-result.schema.json"
+        },
+        "schemaVersion": {
+          "description": "Version of this result contract.",
+          "const": 2
+        },
+        "input": {
+          "description": "The inspected document.",
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
+        },
+        "document": {
+          "description": "The summary every inspect returns, whatever details it asks for.",
+          "$ref": "#/$defs/wordsDocumentSummary"
+        },
+        "sections": {
+          "description": "Each section's page setup and headers and footers; returned with --detail sections.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/wordsSectionData"
+          }
+        },
+        "outline": {
+          "description": "The headings in document order; returned with --detail outline.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/wordsOutlineItem"
+          }
+        },
+        "styles": {
+          "description": "The names of the styles the document defines, in ordinal order; returned with --detail styles.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "fields": {
+          "description": "The fields in every story; returned with --detail fields.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/wordsFieldData"
+          }
+        },
+        "bookmarks": {
+          "description": "The bookmark names, in ordinal order; returned with --detail bookmarks.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "comments": {
+          "description": "The comments, replies included; returned with --detail comments.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/wordsCommentData"
+          }
+        },
+        "revisions": {
+          "description": "The tracked changes in document order, one entry per change; returned with --detail revisions. A replacement is a deletion followed by an insertion. document.revisionCount counts the revisions the document stores, one per run, paragraph mark or other changed node, so it can exceed the entries here.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/wordsRevisionData"
+          }
+        },
+        "images": {
+          "description": "The embedded images in every story; returned with --detail images.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/wordsImageData"
+          }
+        },
+        "tables": {
+          "description": "The tables; returned with --detail tables.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/wordsTableData"
+          }
+        },
+        "properties": {
+          "description": "The title, author, subject and keywords document properties by name, null for one the document does not set; returned with --detail properties.",
+          "type": "object",
+          "additionalProperties": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "fonts": {
+          "description": "The fonts the document's text is drawn with, per character script; not the font table. Returned with --detail fonts.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "license": {
+          "description": "License mode the engine ran under; omitted when it ran licensed.",
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/license.schema.json"
+        },
+        "warnings": {
+          "description": "Warnings the agent is expected to act on (for example EVALUATION_MODE: tell the user about the evaluation watermark). Omitted when empty.",
+          "type": "array",
+          "items": {
+            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
+          }
+        }
+      },
+      "$defs": {
+        "wordsCommentData": {
+          "description": "One comment.",
+          "type": "object",
+          "required": [
+            "author",
+            "text"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "author": {
+              "description": "The comment's author.",
+              "type": "string"
+            },
+            "text": {
+              "description": "The comment's text.",
+              "type": "string"
+            },
+            "block": {
+              "description": "The 1-based body block the comment is anchored in.",
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        },
+        "wordsDocumentSummary": {
+          "description": "The summary of a document that every inspect returns.",
+          "type": "object",
+          "required": [
+            "sectionCount",
+            "blockCount",
+            "paragraphCount",
+            "tableCount",
+            "pageCount",
+            "wordCount",
+            "revisionsPresent",
+            "revisionCount",
+            "revisionAuthors",
+            "commentCount",
+            "protection",
+            "signed",
+            "hasMacros"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "sectionCount": {
+              "description": "The number of sections.",
+              "type": "integer",
+              "minimum": 0
+            },
+            "blockCount": {
+              "description": "The number of blocks: the paragraphs and tables directly in section bodies.",
+              "type": "integer",
+              "minimum": 0
+            },
+            "paragraphCount": {
+              "description": "The number of paragraph blocks.",
+              "type": "integer",
+              "minimum": 0
+            },
+            "tableCount": {
+              "description": "The number of table blocks.",
+              "type": "integer",
+              "minimum": 0
+            },
+            "pageCount": {
+              "description": "The number of pages in the document's layout.",
+              "type": "integer",
+              "minimum": 0
+            },
+            "wordCount": {
+              "description": "The word count the document's built-in properties record.",
+              "type": "integer",
+              "minimum": 0
+            },
+            "revisionsPresent": {
+              "description": "Whether the document holds tracked changes.",
+              "type": "boolean"
+            },
+            "revisionCount": {
+              "description": "The revisions the document stores, one per run, paragraph mark or other changed node; list the changes with --detail revisions.",
+              "type": "integer",
+              "minimum": 0
+            },
+            "revisionAuthors": {
+              "description": "The distinct authors of the tracked changes, in ordinal order.",
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "commentCount": {
+              "description": "The comments in the document, replies included; list them with --detail comments.",
+              "type": "integer",
+              "minimum": 0
+            },
+            "protection": {
+              "description": "The editing restriction: none, or the protect operation mode that sets it; every SDK protection type maps to one of these.",
+              "type": "string",
+              "enum": [
+                "none",
+                "readOnly",
+                "comments",
+                "trackedChanges",
+                "forms"
+              ]
+            },
+            "signed": {
+              "description": "Whether the document carries a digital signature.",
+              "type": "boolean"
+            },
+            "hasMacros": {
+              "description": "Whether the document holds macros (a VBA project); an output other than docm, dotm, doc, dot or wordml drops them and reports MACROS_DROPPED.",
+              "type": "boolean"
+            }
+          }
+        },
+        "wordsFieldData": {
+          "description": "One field in any story.",
+          "type": "object",
+          "required": [
+            "type",
+            "scope"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "description": "The SDK's name of the field type, such as FieldDate.",
+              "type": "string"
+            },
+            "scope": {
+              "description": "The story that holds the field, named as query search names its scopes.",
+              "type": "string",
+              "enum": [
+                "body",
+                "headersFooters",
+                "footnotes",
+                "comments"
+              ]
+            },
+            "block": {
+              "description": "The body block that holds the field, or that anchors the comment or note holding it; absent in headers and footers.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "code": {
+              "description": "The field code, such as DATE with its switches.",
+              "type": "string"
+            },
+            "result": {
+              "description": "The result a reader sees, with the results of nested fields in place of their codes.",
+              "type": "string"
+            }
+          }
+        },
+        "wordsHeaderFooterData": {
+          "description": "One header or footer of a section, named as set_header, set_footer and set_page_numbers name it: its location and kind, and its visible text as paragraphs.",
+          "type": "object",
+          "required": [
+            "location",
+            "kind",
+            "paragraphs"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "location": {
+              "description": "Whether it is a header or a footer, as set_page_numbers names it.",
+              "type": "string",
+              "enum": [
+                "header",
+                "footer"
+              ]
+            },
+            "kind": {
+              "description": "Which pages it shows on, as set_header and set_footer name it.",
+              "type": "string",
+              "enum": [
+                "primary",
+                "first",
+                "even"
+              ]
+            },
+            "paragraphs": {
+              "description": "The visible text of each paragraph, as set_header and set_footer take it.",
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "wordsImageData": {
+          "description": "One embedded image in any story; its size is in points.",
+          "type": "object",
+          "required": [
+            "scope",
+            "width",
+            "height"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "scope": {
+              "description": "The story that holds the image, named as query search names its scopes.",
+              "type": "string",
+              "enum": [
+                "body",
+                "headersFooters",
+                "footnotes",
+                "comments"
+              ]
+            },
+            "block": {
+              "description": "The body block that holds the image, or that anchors the comment or note holding it; absent in headers and footers.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "name": {
+              "description": "The name of the shape that holds the image.",
+              "type": "string"
+            },
+            "width": {
+              "description": "The width in points.",
+              "type": "number",
+              "minimum": 0
+            },
+            "height": {
+              "description": "The height in points.",
+              "type": "number",
+              "minimum": 0
+            }
+          }
+        },
+        "wordsMarginData": {
+          "description": "Page margins in points.",
+          "type": "object",
+          "required": [
+            "top",
+            "right",
+            "bottom",
+            "left"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "top": {
+              "description": "The top margin.",
+              "type": "number"
+            },
+            "right": {
+              "description": "The right margin.",
+              "type": "number"
+            },
+            "bottom": {
+              "description": "The bottom margin.",
+              "type": "number"
+            },
+            "left": {
+              "description": "The left margin.",
+              "type": "number"
+            }
+          }
+        },
+        "wordsOutlineItem": {
+          "description": "One heading in document order.",
+          "type": "object",
+          "required": [
+            "block",
+            "headingLevel",
+            "text"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "block": {
+              "description": "The 1-based block of the heading paragraph.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "headingLevel": {
+              "description": "The heading level, 1 for Heading 1.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "text": {
+              "description": "The heading's text.",
+              "type": "string"
+            }
+          }
+        },
+        "wordsRevisionData": {
+          "description": "One tracked change in document order: its 1-based number, which accept_revisions and reject_revisions accept, its type, author, the date the document records and the text it inserts, deletes or moves.",
+          "type": "object",
+          "required": [
+            "revision",
+            "type",
+            "author"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "revision": {
+              "description": "The 1-based number of the change in this list, which the revisions of accept_revisions and reject_revisions accept.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "type": {
+              "description": "The kind of change.",
+              "type": "string",
+              "enum": [
+                "insertion",
+                "deletion",
+                "formatChange",
+                "styleDefinitionChange",
+                "moving"
+              ]
+            },
+            "author": {
+              "description": "The change's author.",
+              "type": "string"
+            },
+            "date": {
+              "description": "The date and time the document records, as ISO 8601 yyyy-MM-ddTHH:mm:ss without a time zone; absent when none is recorded.",
+              "type": "string"
+            },
+            "scope": {
+              "description": "The story that holds the change, named as query search names its scopes; absent for style definition changes.",
+              "type": "string",
+              "enum": [
+                "body",
+                "headersFooters",
+                "footnotes",
+                "comments"
+              ]
+            },
+            "block": {
+              "description": "The body block that holds the change, or that anchors the comment or note holding it; absent in headers and footers and for style definition changes.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "text": {
+              "description": "The text an insertion adds, a deletion removes or a move relocates; a longer text is cut to 300 characters and an ellipsis; absent for format and style definition changes.",
+              "type": "string"
+            }
+          }
+        },
+        "wordsSectionData": {
+          "description": "One document section.",
+          "type": "object",
+          "required": [
+            "section",
+            "orientation",
+            "widthPoints",
+            "heightPoints",
+            "margins",
+            "headersFooters"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "section": {
+              "description": "The 1-based section number that section operations accept.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "orientation": {
+              "description": "The orientation of the section's pages.",
+              "type": "string",
+              "enum": [
+                "portrait",
+                "landscape"
+              ]
+            },
+            "widthPoints": {
+              "description": "The page width in points.",
+              "type": "number",
+              "minimum": 0
+            },
+            "heightPoints": {
+              "description": "The page height in points.",
+              "type": "number",
+              "minimum": 0
+            },
+            "margins": {
+              "description": "The page margins.",
+              "$ref": "#/$defs/wordsMarginData"
+            },
+            "headersFooters": {
+              "description": "The headers and footers the section defines itself; a kind it does not define continues from the previous section.",
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/wordsHeaderFooterData"
+              }
+            }
+          }
+        },
+        "wordsTableData": {
+          "description": "One table block.",
+          "type": "object",
+          "required": [
+            "block",
+            "rowCount",
+            "columnCount"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "block": {
+              "description": "The table's 1-based block.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "rowCount": {
+              "description": "The number of rows.",
+              "type": "integer",
+              "minimum": 0
+            },
+            "columnCount": {
+              "description": "The number of cells in the widest row.",
+              "type": "integer",
+              "minimum": 0
+            },
+            "style": {
+              "description": "The table style the table uses, accepted by insert_table's style; omitted for the default Table Normal style.",
+              "type": "string",
+              "minLength": 1
             }
           }
         }
@@ -4688,11 +4395,11 @@
             "author": {
               "type": "string",
               "minLength": 1,
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/document-info.schema.json#/$defs/commentData/properties/author"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/inspect-result.schema.json#/$defs/wordsCommentData/properties/author"
             },
             "text": {
               "type": "string",
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/document-info.schema.json#/$defs/commentData/properties/text"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/inspect-result.schema.json#/$defs/wordsCommentData/properties/text"
             }
           }
         },
@@ -4728,7 +4435,7 @@
             },
             "pageSetup": {
               "description": "Page setup applied over the neighbouring section's.",
-              "$ref": "#/$defs/pageSetupInput"
+              "$ref": "#/$defs/wordsPageSetupInput"
             }
           },
           "allOf": [
@@ -5110,11 +4817,11 @@
             },
             "bold": {
               "type": "boolean",
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/document-read.schema.json#/$defs/runData/properties/bold"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/read-result.schema.json#/$defs/wordsRunData/properties/bold"
             },
             "italic": {
               "type": "boolean",
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/document-read.schema.json#/$defs/runData/properties/italic"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/read-result.schema.json#/$defs/wordsRunData/properties/italic"
             },
             "underline": {
               "type": "boolean",
@@ -5124,30 +4831,30 @@
               "description": "The font size in points.",
               "type": "number",
               "exclusiveMinimum": 0,
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/document-read.schema.json#/$defs/runData/properties/size"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/read-result.schema.json#/$defs/wordsRunData/properties/size"
             },
             "color": {
               "description": "A #RRGGBB or named color.",
               "type": "string",
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/document-read.schema.json#/$defs/runData/properties/color"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/read-result.schema.json#/$defs/wordsRunData/properties/color"
             },
             "font": {
               "description": "The font of Latin and East Asian text.",
               "type": "string",
               "minLength": 1,
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/document-read.schema.json#/$defs/runData/properties/font"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/read-result.schema.json#/$defs/wordsRunData/properties/font"
             },
             "latinFont": {
               "description": "The font of Latin text, in place of font's.",
               "type": "string",
               "minLength": 1,
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/document-read.schema.json#/$defs/runData/properties/latinFont"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/read-result.schema.json#/$defs/wordsRunData/properties/latinFont"
             },
             "eastAsianFont": {
               "description": "The font of Chinese, Japanese and Korean text, in place of font's.",
               "type": "string",
               "minLength": 1,
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/document-read.schema.json#/$defs/runData/properties/eastAsianFont"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/read-result.schema.json#/$defs/wordsRunData/properties/eastAsianFont"
             },
             "highlight": {
               "description": "A #RRGGBB or named highlight color.",
@@ -5214,7 +4921,7 @@
                 "page",
                 "section"
               ],
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/document-read.schema.json#/$defs/blockData/properties/breakAfter"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/read-result.schema.json#/$defs/wordsBlockData/properties/breakAfter"
             }
           }
         },
@@ -5247,7 +4954,7 @@
               "description": "The field code, such as DATE.",
               "type": "string",
               "minLength": 1,
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/document-info.schema.json#/$defs/fieldData/properties/code"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/inspect-result.schema.json#/$defs/wordsFieldData/properties/code"
             }
           }
         },
@@ -5279,7 +4986,7 @@
             },
             "text": {
               "type": "string",
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/document-read.schema.json#/$defs/runData/properties/text"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/read-result.schema.json#/$defs/wordsRunData/properties/text"
             },
             "url": {
               "$ref": "#/$defs/webLink",
@@ -5323,13 +5030,13 @@
               "description": "The width in points; the image's own when omitted.",
               "type": "number",
               "exclusiveMinimum": 0,
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/document-read.schema.json#/$defs/blockImageData/properties/width"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/read-result.schema.json#/$defs/wordsBlockImageData/properties/width"
             },
             "height": {
               "description": "The height in points; the image's own when omitted.",
               "type": "number",
               "exclusiveMinimum": 0,
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/document-read.schema.json#/$defs/blockImageData/properties/height"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/read-result.schema.json#/$defs/wordsBlockImageData/properties/height"
             },
             "inline": {
               "description": "Whether the image sits in the text line rather than floating with square wrapping.",
@@ -5400,7 +5107,7 @@
               "type": "array",
               "minItems": 1,
               "items": {
-                "$ref": "#/$defs/paragraphInput"
+                "$ref": "#/$defs/wordsParagraphInput"
               }
             }
           }
@@ -5435,14 +5142,14 @@
               "type": "integer",
               "minimum": 1,
               "maximum": 32767,
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/document-read.schema.json#/$defs/blockData/properties/rowCount"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/read-result.schema.json#/$defs/wordsBlockData/properties/rowCount"
             },
             "columnCount": {
               "description": "The column count; Word allows at most 63.",
               "type": "integer",
               "minimum": 1,
               "maximum": 63,
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/document-read.schema.json#/$defs/blockData/properties/columnCount"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/read-result.schema.json#/$defs/wordsBlockData/properties/columnCount"
             },
             "cells": {
               "description": "Cell text by row, then column; cells beyond it stay empty.",
@@ -5453,13 +5160,13 @@
                   "type": "string"
                 }
               },
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/document-read.schema.json#/$defs/blockData/properties/cells"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/read-result.schema.json#/$defs/wordsBlockData/properties/cells"
             },
             "style": {
               "description": "An existing table style.",
               "type": "string",
               "minLength": 1,
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/document-info.schema.json#/$defs/tableData/properties/style"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/inspect-result.schema.json#/$defs/wordsTableData/properties/style"
             }
           }
         },
@@ -5582,7 +5289,7 @@
                 "trackedChanges",
                 "forms"
               ],
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/document-info.schema.json#/$defs/documentSummary/properties/protection"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/inspect-result.schema.json#/$defs/wordsDocumentSummary/properties/protection"
             },
             "passwordEnv": {
               "description": "The environment variable that holds the protection password; no password when omitted.",
@@ -5882,7 +5589,7 @@
                 "even"
               ],
               "default": "primary",
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/document-info.schema.json#/$defs/headerFooterData/properties/kind"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/inspect-result.schema.json#/$defs/wordsHeaderFooterData/properties/kind"
             },
             "paragraphs": {
               "description": "Plain paragraphs, one per item, in the paragraph and character format of the first paragraph they replace, such as its alignment, or in Word's Header or Footer style when there is none.",
@@ -5890,7 +5597,7 @@
               "items": {
                 "type": "string"
               },
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/document-info.schema.json#/$defs/headerFooterData/properties/paragraphs"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/inspect-result.schema.json#/$defs/wordsHeaderFooterData/properties/paragraphs"
             },
             "markdown": {
               "type": "string",
@@ -5943,7 +5650,7 @@
                 "even"
               ],
               "default": "primary",
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/document-info.schema.json#/$defs/headerFooterData/properties/kind"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/inspect-result.schema.json#/$defs/wordsHeaderFooterData/properties/kind"
             },
             "paragraphs": {
               "description": "Plain paragraphs, one per item, in the paragraph and character format of the first paragraph they replace, such as its alignment, or in Word's Header or Footer style when there is none.",
@@ -5951,7 +5658,7 @@
               "items": {
                 "type": "string"
               },
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/document-info.schema.json#/$defs/headerFooterData/properties/paragraphs"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/inspect-result.schema.json#/$defs/wordsHeaderFooterData/properties/paragraphs"
             },
             "markdown": {
               "type": "string",
@@ -6055,7 +5762,7 @@
               "x-readBack": "not-state"
             },
             "setup": {
-              "$ref": "#/$defs/pageSetupInput"
+              "$ref": "#/$defs/wordsPageSetupInput"
             }
           }
         },
@@ -6075,19 +5782,19 @@
             },
             "title": {
               "type": "string",
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/document-info.schema.json#/properties/properties/additionalProperties"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/inspect-result.schema.json#/properties/properties/additionalProperties"
             },
             "author": {
               "type": "string",
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/document-info.schema.json#/properties/properties/additionalProperties"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/inspect-result.schema.json#/properties/properties/additionalProperties"
             },
             "subject": {
               "type": "string",
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/document-info.schema.json#/properties/properties/additionalProperties"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/inspect-result.schema.json#/properties/properties/additionalProperties"
             },
             "keywords": {
               "type": "string",
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/document-info.schema.json#/properties/properties/additionalProperties"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/inspect-result.schema.json#/properties/properties/additionalProperties"
             },
             "custom": {
               "description": "Custom properties by name; a null value removes the property.",
@@ -6125,7 +5832,7 @@
             "style": {
               "type": "string",
               "minLength": 1,
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/document-read.schema.json#/$defs/blockData/properties/style"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/read-result.schema.json#/$defs/wordsBlockData/properties/style"
             }
           }
         },
@@ -6189,7 +5896,7 @@
             },
             "text": {
               "type": "string",
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/document-read.schema.json#/$defs/blockData/properties/text"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/read-result.schema.json#/$defs/wordsBlockData/properties/text"
             }
           }
         },
@@ -6241,7 +5948,25 @@
             }
           }
         },
-        "marginInput": {
+        "pages": {
+          "type": "string",
+          "description": "1-based pages and ranges separated by commas, such as 1-3,7,9-; a range with no end runs to the last page, and a range must not end before it starts.",
+          "pattern": "^\\s*0*[1-9][0-9]*(-(0*[1-9][0-9]*)?)?(\\s*,\\s*0*[1-9][0-9]*(-(0*[1-9][0-9]*)?)?)*\\s*$"
+        },
+        "position": {
+          "type": "string",
+          "enum": [
+            "before",
+            "after"
+          ]
+        },
+        "webLink": {
+          "type": "string",
+          "description": "An absolute http://, https:// or mailto: URL.",
+          "format": "uri",
+          "pattern": "^(http://|https://|mailto:)"
+        },
+        "wordsMarginInput": {
           "description": "Page margins in points; omitted margins keep their values.",
           "type": "object",
           "additionalProperties": false,
@@ -6264,7 +5989,7 @@
             }
           }
         },
-        "pageSetupInput": {
+        "wordsPageSetupInput": {
           "description": "Page size, orientation, margins and column settings; omitted settings keep their values.",
           "type": "object",
           "additionalProperties": false,
@@ -6278,7 +6003,7 @@
                 "letter",
                 "legal"
               ],
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/document-info.schema.json#/$defs/sectionData/properties/widthPoints"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/inspect-result.schema.json#/$defs/wordsSectionData/properties/widthPoints"
             },
             "orientation": {
               "type": "string",
@@ -6286,11 +6011,11 @@
                 "portrait",
                 "landscape"
               ],
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/document-info.schema.json#/$defs/sectionData/properties/orientation"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/inspect-result.schema.json#/$defs/wordsSectionData/properties/orientation"
             },
             "margins": {
-              "$ref": "#/$defs/marginInput",
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/document-info.schema.json#/$defs/sectionData/properties/margins"
+              "$ref": "#/$defs/wordsMarginInput",
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/inspect-result.schema.json#/$defs/wordsSectionData/properties/margins"
             },
             "columnCount": {
               "type": "integer",
@@ -6299,12 +6024,7 @@
             }
           }
         },
-        "pages": {
-          "type": "string",
-          "description": "1-based pages and ranges separated by commas, such as 1-3,7,9-; a range with no end runs to the last page, and a range must not end before it starts.",
-          "pattern": "^\\s*0*[1-9][0-9]*(-(0*[1-9][0-9]*)?)?(\\s*,\\s*0*[1-9][0-9]*(-(0*[1-9][0-9]*)?)?)*\\s*$"
-        },
-        "paragraphInput": {
+        "wordsParagraphInput": {
           "description": "One paragraph supplied to an insertion operation.",
           "type": "object",
           "required": [
@@ -6314,13 +6034,13 @@
           "properties": {
             "text": {
               "type": "string",
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/document-read.schema.json#/$defs/blockData/properties/text"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/read-result.schema.json#/$defs/wordsBlockData/properties/text"
             },
             "style": {
               "description": "An existing paragraph style. Without it, the paragraph continues the paragraph before the insertion point, or with listLevel the existing item at that level it joins, as Word's Enter does: its indents, spacing, alignment and the run format of its last text, or after a heading the heading style's next style.",
               "type": "string",
               "minLength": 1,
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/document-read.schema.json#/$defs/blockData/properties/style"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/read-result.schema.json#/$defs/wordsBlockData/properties/style"
             },
             "listLevel": {
               "description": "Makes the paragraph a list item at this level. When the anchor is a list item, it joins the anchor's list if that list defines the level, else the list of the nearest item at this level under the same parent, and without style continues that list's nearest existing item at this level, if any, with the indents it sets on itself. When the anchor is no list item, or no such list exists, it joins one new bullet list.",
@@ -6330,19 +6050,6 @@
               "x-readBack": "unread"
             }
           }
-        },
-        "position": {
-          "type": "string",
-          "enum": [
-            "before",
-            "after"
-          ]
-        },
-        "webLink": {
-          "type": "string",
-          "description": "An absolute http://, https:// or mailto: URL.",
-          "format": "uri",
-          "pattern": "^(http://|https://|mailto:)"
         },
         "wordsTarget": {
           "description": "A block address: exactly one of block, blocks, bookmark, heading or find.",
@@ -6413,6 +6120,299 @@
         }
       }
     },
+    "v2/words/read-result": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "$id": "https://schemas.aspose.com/aspose-cli/v2/words/read-result.schema.json",
+      "description": "Windowed block projection returned by words query blocks. Its window counts blocks: the total is the blocks the range, section and scope select. window.next starts again at a block whose content was truncated and doubles --max-chars when that block alone exceeded the budget.",
+      "type": "object",
+      "required": [
+        "schema",
+        "schemaVersion",
+        "input",
+        "scope",
+        "blockCount",
+        "blocks",
+        "window"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "schema": {
+          "description": "URI of the JSON schema this result conforms to.",
+          "const": "https://schemas.aspose.com/aspose-cli/v2/words/read-result.schema.json"
+        },
+        "schemaVersion": {
+          "description": "Version of this result contract.",
+          "const": 2
+        },
+        "input": {
+          "description": "The document read.",
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
+        },
+        "scope": {
+          "description": "The projection, as --scope chose it.",
+          "type": "string",
+          "enum": [
+            "text",
+            "outline",
+            "full"
+          ]
+        },
+        "blockCount": {
+          "description": "The document's block count, whatever the range, section and scope select.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "blocks": {
+          "description": "The blocks of this window, in document order.",
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/wordsBlockData"
+          }
+        },
+        "window": {
+          "description": "The window of the read or search: how much it returned and how to continue.",
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/result-window.schema.json"
+        },
+        "license": {
+          "description": "License mode the engine ran under; omitted when it ran licensed.",
+          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/license.schema.json"
+        },
+        "warnings": {
+          "description": "Warnings the agent is expected to act on (for example EVALUATION_MODE: tell the user about the evaluation watermark). Omitted when empty.",
+          "type": "array",
+          "items": {
+            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
+          }
+        }
+      },
+      "$defs": {
+        "wordsBlockData": {
+          "description": "A paragraph or table directly owned by a section body.",
+          "type": "object",
+          "required": [
+            "block",
+            "type",
+            "section",
+            "contentTruncated"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "block": {
+              "description": "The 1-based block number that operation block addresses accept.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "type": {
+              "description": "Whether the block is a paragraph or a table.",
+              "type": "string",
+              "enum": [
+                "paragraph",
+                "table"
+              ]
+            },
+            "section": {
+              "description": "The 1-based section that holds the block.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "listLabel": {
+              "description": "The number Word draws before a numbered list paragraph, such as 6.2; bullets are not reported. The paragraph's text leaves it out; search snippets, find and heading addresses, extracted text and table cells read it before the text, followed by a space.",
+              "type": "string"
+            },
+            "text": {
+              "description": "A paragraph's visible text.",
+              "type": "string"
+            },
+            "style": {
+              "description": "The name of a paragraph's style.",
+              "type": "string"
+            },
+            "headingLevel": {
+              "description": "A heading paragraph's level, 1 for Heading 1.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "runs": {
+              "description": "The runs of the visible text, in order: their text joins to the paragraph's text, without field codes, deleted text or anchored comments and footnotes. Returned in full scope.",
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/wordsRunData"
+              }
+            },
+            "paragraphFormat": {
+              "description": "The paragraph's indents, spacing and alignment, returned in full scope.",
+              "$ref": "#/$defs/wordsParagraphFormatData"
+            },
+            "images": {
+              "description": "The images in a paragraph.",
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/wordsBlockImageData"
+              }
+            },
+            "breakAfter": {
+              "description": "The break that follows this block: a page break, including one that starts the next paragraph, or a section break after the last block of a section.",
+              "type": "string",
+              "enum": [
+                "page",
+                "section"
+              ]
+            },
+            "rowCount": {
+              "description": "A table's number of rows.",
+              "type": "integer",
+              "minimum": 0
+            },
+            "columnCount": {
+              "description": "The number of cells in a table's widest row.",
+              "type": "integer",
+              "minimum": 0
+            },
+            "cells": {
+              "description": "The text of each cell by row; a numbered list paragraph in a cell starts with its number and a space.",
+              "type": "array",
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            },
+            "contentTruncated": {
+              "description": "Returned document text shares the max-chars budget, including repeated projections. Re-read this item with a larger budget for omitted content.",
+              "type": "boolean"
+            }
+          }
+        },
+        "wordsBlockImageData": {
+          "description": "One image in a paragraph block; its size is in points.",
+          "type": "object",
+          "required": [
+            "block",
+            "width",
+            "height"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "block": {
+              "description": "The 1-based block that holds the image.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "name": {
+              "description": "The name of the shape that holds the image.",
+              "type": "string"
+            },
+            "width": {
+              "description": "The width in points.",
+              "type": "number",
+              "minimum": 0
+            },
+            "height": {
+              "description": "The height in points.",
+              "type": "number",
+              "minimum": 0
+            }
+          }
+        },
+        "wordsParagraphFormatData": {
+          "description": "The format a paragraph has, from its own settings and its style, in points; returned in full scope.",
+          "type": "object",
+          "required": [
+            "alignment",
+            "leftIndent",
+            "rightIndent",
+            "firstLineIndent",
+            "spaceBefore",
+            "spaceAfter",
+            "lineSpacingRule",
+            "lineSpacing"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "alignment": {
+              "description": "Such as left, center, right, justify or distributed.",
+              "type": "string"
+            },
+            "leftIndent": {
+              "description": "The left indent.",
+              "type": "number"
+            },
+            "rightIndent": {
+              "description": "The right indent.",
+              "type": "number"
+            },
+            "firstLineIndent": {
+              "description": "The first line's indent; negative for a hanging indent.",
+              "type": "number"
+            },
+            "spaceBefore": {
+              "description": "The space before the paragraph.",
+              "type": "number"
+            },
+            "spaceAfter": {
+              "description": "The space after the paragraph.",
+              "type": "number"
+            },
+            "lineSpacingRule": {
+              "description": "How lineSpacing is measured.",
+              "type": "string",
+              "enum": [
+                "atLeast",
+                "exactly",
+                "multiple"
+              ]
+            },
+            "lineSpacing": {
+              "description": "Lines for the multiple rule, where 1 is single spacing; points otherwise.",
+              "type": "number"
+            }
+          }
+        },
+        "wordsRunData": {
+          "description": "One run of a paragraph's visible text and its formatting, returned in full scope.",
+          "type": "object",
+          "required": [
+            "text"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "text": {
+              "description": "The run's text.",
+              "type": "string"
+            },
+            "font": {
+              "description": "The East Asian font when the run starts with a Chinese, Japanese or Korean character, otherwise the Latin font.",
+              "type": "string"
+            },
+            "latinFont": {
+              "description": "The font of the run's Latin text.",
+              "type": "string"
+            },
+            "eastAsianFont": {
+              "description": "The font of the run's Chinese, Japanese and Korean text.",
+              "type": "string"
+            },
+            "size": {
+              "description": "The font size in points.",
+              "type": "number"
+            },
+            "bold": {
+              "description": "Whether the run is bold.",
+              "type": "boolean"
+            },
+            "italic": {
+              "description": "Whether the run is italic.",
+              "type": "boolean"
+            },
+            "color": {
+              "description": "A #RRGGBB color.",
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
     "v2/words/render-result": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "$id": "https://schemas.aspose.com/aspose-cli/v2/words/render-result.schema.json",
@@ -6443,7 +6443,7 @@
           "type": "array",
           "minItems": 1,
           "items": {
-            "$ref": "#/$defs/pageOutput"
+            "$ref": "#/$defs/wordsPageOutput"
           }
         },
         "dpi": {
@@ -6465,7 +6465,7 @@
         }
       },
       "$defs": {
-        "pageOutput": {
+        "wordsPageOutput": {
           "description": "One rendered page.",
           "type": "object",
           "required": [
@@ -6626,7 +6626,7 @@
           "description": "The written parts, in document order.",
           "type": "array",
           "items": {
-            "$ref": "#/$defs/splitOutput"
+            "$ref": "#/$defs/wordsSplitOutput"
           }
         },
         "license": {
@@ -6642,7 +6642,7 @@
         }
       },
       "$defs": {
-        "splitOutput": {
+        "wordsSplitOutput": {
           "description": "One split output.",
           "type": "object",
           "required": [

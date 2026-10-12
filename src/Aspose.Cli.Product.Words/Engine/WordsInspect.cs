@@ -9,11 +9,11 @@ namespace Aspose.Cli.Product.Words.Engine;
 internal static class WordsInspect
 {
     /// <summary>Returns structural metadata for a document.</summary>
-    internal static DocumentInfoResult Run(WordsSession session, DocumentInfoRequest request)
+    internal static WordsInspectResult Run(WordsSession session, WordsInspectRequest request)
     {
         LicenseState state = session.Outputs.License;
         using LoadedDocument loaded = session.Loader.Open(request.Input, request.Password);
-        DocumentInfoResult result = InfoProjection.Project(loaded, request.Input, request);
+        WordsInspectResult result = InfoProjection.Project(loaded, request.Input, request);
         return result with
         {
             License = EnvelopeParts.License(state),

@@ -74,7 +74,7 @@ public sealed class WordsModuleTests
         ProductResourceCatalog resources =
             ProductCatalog.Build([new WordsModule()]).Resources;
         JsonNode schema = JsonNode.Parse(resources.Read("v2/words/ops"))!;
-        string[] declaredSizes = schema["$defs"]!["pageSetupInput"]!["properties"]!
+        string[] declaredSizes = schema["$defs"]!["wordsPageSetupInput"]!["properties"]!
             ["size"]!["enum"]!.AsArray()
             .Select(static value => value!.GetValue<string>())
             .ToArray();

@@ -62,10 +62,10 @@ internal static partial class ContractRules
         [("v2/words/ops", "format_text", "size")] = Points,
         [("v2/words/ops", "insert_image", "height")] = Points,
         [("v2/words/ops", "insert_image", "width")] = Points,
-        [("v2/words/ops", "marginInput", "bottom")] = Points,
-        [("v2/words/ops", "marginInput", "left")] = Points,
-        [("v2/words/ops", "marginInput", "right")] = Points,
-        [("v2/words/ops", "marginInput", "top")] = Points,
+        [("v2/words/ops", "wordsMarginInput", "bottom")] = Points,
+        [("v2/words/ops", "wordsMarginInput", "left")] = Points,
+        [("v2/words/ops", "wordsMarginInput", "right")] = Points,
+        [("v2/words/ops", "wordsMarginInput", "top")] = Points,
         [("v2/words/ops", "set_default_font", "size")] = Points,
     };
 

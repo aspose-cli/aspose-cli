@@ -72,7 +72,7 @@ internal static class CompareCommand
         if (result.Samples.Count > 0)
         {
             var table = new TextTable("type", "sample");
-            foreach (RevisionSample sample in result.Samples)
+            foreach (WordsRevisionSample sample in result.Samples)
             {
                 table.AddRow(sample.Type, sample.Text);
             }

@@ -159,7 +159,7 @@ internal sealed partial class WordsMutationHandlers
         Paragraph? before = (operation.Position == "after" ? Anchor : Anchor.PreviousSibling) as Paragraph;
         Aspose.Words.Lists.List? created = null;
         var continued = new Dictionary<Paragraph, Paragraph?>();
-        foreach (ParagraphInput input in operation.Paragraphs)
+        foreach (WordsParagraphInput input in operation.Paragraphs)
         {
             Aspose.Words.Lists.List? list = null;
             Paragraph? peer = null;

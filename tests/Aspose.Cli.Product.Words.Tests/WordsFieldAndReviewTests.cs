@@ -128,7 +128,7 @@ public sealed class WordsFieldAndReviewTests
         string input = fixture.Temp.File("toc-fields.docx");
         source.Save(input, SaveFormat.Docx);
 
-        DocumentInfoResult info = WordsInspect.Run(fixture.Session, new DocumentInfoRequest { Input = input, Details = ["fields"] });
+        WordsInspectResult info = WordsInspect.Run(fixture.Session, new WordsInspectRequest { Input = input, Details = ["fields"] });
 
         Assert.All(info.Fields!, static field => Assert.DoesNotContain(field.Result!, static c => c is '\u0013' or '\u0014' or '\u0015'));
         Assert.Equal("Scope\t2\rTerms\t2", Assert.Single(info.Fields!, static field => field.Type == "FieldTOC").Result);
@@ -176,7 +176,7 @@ public sealed class WordsFieldAndReviewTests
         string input = fixture.Temp.File("stories.docx");
         source.Save(input, SaveFormat.Docx);
 
-        DocumentInfoResult info = WordsInspect.Run(fixture.Session, new DocumentInfoRequest { Input = input, Details = ["fields", "images"] });
+        WordsInspectResult info = WordsInspect.Run(fixture.Session, new WordsInspectRequest { Input = input, Details = ["fields", "images"] });
 
         Assert.Equal(
             ["FieldMergeField:body:1", "FieldPage:headersFooters:"],
@@ -276,7 +276,7 @@ public sealed class WordsFieldAndReviewTests
     {
         using var fixture = new WordsFixture();
         string input = CreateReviewedContract(fixture);
-        IReadOnlyList<RevisionData> listed = WordsInspect.Run(fixture.Session, new DocumentInfoRequest { Input = input, Details = ["revisions"] }).Revisions!;
+        IReadOnlyList<WordsRevisionData> listed = WordsInspect.Run(fixture.Session, new WordsInspectRequest { Input = input, Details = ["revisions"] }).Revisions!;
         Assert.Equal(Enumerable.Range(1, listed.Count), listed.Select(static revision => revision.Revision));
         int[] Numbers(params string[] texts) => [.. listed.Where(revision => texts.Contains(revision.Text)).Select(static revision => revision.Revision)];
         string output = fixture.Temp.File("decided.docx");

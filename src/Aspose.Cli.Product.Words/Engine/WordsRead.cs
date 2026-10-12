@@ -9,7 +9,7 @@ namespace Aspose.Cli.Product.Words.Engine;
 internal static class WordsRead
 {
     /// <summary>Reads a bounded structural projection of a document.</summary>
-    internal static DocumentReadResult Run(WordsSession session, DocumentReadRequest request)
+    internal static WordsReadResult Run(WordsSession session, WordsReadRequest request)
     {
         LicenseState state = session.Outputs.License;
         using LoadedDocument loaded = session.Loader.Open(request.Input, request.Password);

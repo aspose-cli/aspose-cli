@@ -54,7 +54,7 @@ internal static class WordsSplit
                 throw new InvalidOperationException($"words split does not divide by {request.Plan.By}.");
         }
 
-        IReadOnlyList<SplitOutput> outputs = writer.Commit();
+        IReadOnlyList<WordsSplitOutput> outputs = writer.Commit();
         return new WordsSplitResult
         {
             Input = InfoProjection.Source(request.Input, loaded),

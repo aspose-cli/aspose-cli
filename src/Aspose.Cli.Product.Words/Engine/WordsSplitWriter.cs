@@ -52,10 +52,10 @@ internal sealed class WordsSplitWriter : IDisposable
         _parts.Add(new StagedPart(index, source, target));
     }
 
-    public IReadOnlyList<SplitOutput> Commit()
+    public IReadOnlyList<WordsSplitOutput> Commit()
     {
         IReadOnlyList<PublishedFile> files = _transaction.Commit();
-        return _parts.Select((part, index) => new SplitOutput
+        return _parts.Select((part, index) => new WordsSplitOutput
         {
             Index = part.Index,
             Source = part.Source,

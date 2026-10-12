@@ -7,8 +7,6 @@ using Aspose.Words;
 using Aspose.Words.Drawing;
 using Aspose.Words.Fields;
 using Aspose.Words.Tables;
-using ContractFieldData = Aspose.Cli.Product.Words.Contracts.FieldData;
-using ContractImageData = Aspose.Cli.Product.Words.Contracts.ImageData;
 
 namespace Aspose.Cli.Product.Words.Engine.Mapping;
 
@@ -20,7 +18,7 @@ internal static class InfoProjection
     // The most characters of a revision's text; a longer text ends with an ellipsis.
     private const int RevisionTextLimit = 300;
 
-    public static DocumentInfoResult Project(LoadedDocument loaded, string path, DocumentInfoRequest request)
+    public static WordsInspectResult Project(LoadedDocument loaded, string path, WordsInspectRequest request)
     {
         Document document = loaded.Document;
         var index = new DocumentBlockIndex(document, loaded.Evaluation);
@@ -30,10 +28,10 @@ internal static class InfoProjection
         document.UpdateWordCount();
         var warnings = new List<Warning>();
 
-        return new DocumentInfoResult
+        return new WordsInspectResult
         {
             Input = Source(path, loaded),
-            Document = new DocumentSummary
+            Document = new WordsDocumentSummary
             {
                 SectionCount = document.Sections.Count,
                 BlockCount = index.Count,
@@ -50,19 +48,19 @@ internal static class InfoProjection
                 Signed = loaded.Format.HasDigitalSignature,
                 HasMacros = loaded.Format.HasMacros,
             },
-            Sections = details.Contains(InfoDetails.Sections) ? Sections(document, loaded.Evaluation) : null,
-            Outline = details.Contains(InfoDetails.Outline) || request.IncludePreview ? Outline(index, warnings) : null,
-            Styles = details.Contains(InfoDetails.Styles) ? document.Styles.Cast<Style>()
+            Sections = details.Contains(WordsInspectDetails.Sections) ? Sections(document, loaded.Evaluation) : null,
+            Outline = details.Contains(WordsInspectDetails.Outline) || request.IncludePreview ? Outline(index, warnings) : null,
+            Styles = details.Contains(WordsInspectDetails.Styles) ? document.Styles.Cast<Style>()
                 .Select(static s => s.Name).Order(StringComparer.Ordinal).ToArray() : null,
-            Fields = details.Contains(InfoDetails.Fields) ? Fields(document, index, warnings) : null,
-            Bookmarks = details.Contains(InfoDetails.Bookmarks) ? document.Range.Bookmarks.Cast<Bookmark>()
+            Fields = details.Contains(WordsInspectDetails.Fields) ? Fields(document, index, warnings) : null,
+            Bookmarks = details.Contains(WordsInspectDetails.Bookmarks) ? document.Range.Bookmarks.Cast<Bookmark>()
                 .Select(static b => b.Name).Order(StringComparer.Ordinal).ToArray() : null,
-            Comments = details.Contains(InfoDetails.Comments) ? Comments(document, index, warnings) : null,
-            Revisions = details.Contains(InfoDetails.Revisions) ? Revisions(document, index, warnings) : null,
-            Images = details.Contains(InfoDetails.Images) ? Images(document, index, warnings) : null,
-            Tables = details.Contains(InfoDetails.Tables) ? Tables(index) : null,
-            Properties = details.Contains(InfoDetails.Properties) ? Properties(document) : null,
-            Fonts = details.Contains(InfoDetails.Fonts) ? WordsFonts.Used(document) : null,
+            Comments = details.Contains(WordsInspectDetails.Comments) ? Comments(document, index, warnings) : null,
+            Revisions = details.Contains(WordsInspectDetails.Revisions) ? Revisions(document, index, warnings) : null,
+            Images = details.Contains(WordsInspectDetails.Images) ? Images(document, index, warnings) : null,
+            Tables = details.Contains(WordsInspectDetails.Tables) ? Tables(index) : null,
+            Properties = details.Contains(WordsInspectDetails.Properties) ? Properties(document) : null,
+            Fonts = details.Contains(WordsInspectDetails.Fonts) ? WordsFonts.Used(document) : null,
             // Last, so it holds the caps the detail lists above disclosed.
             Warnings = warnings.Count == 0 ? null : warnings,
         };
@@ -71,14 +69,14 @@ internal static class InfoProjection
     public static InputInfo Source(string path, LoadedDocument loaded) =>
         FileObjects.Input(path, loaded.FormatId, loaded.Format.IsEncrypted);
 
-    private static IReadOnlyList<SectionData> Sections(Document document, bool evaluation) =>
-        document.Sections.Cast<Section>().Select((section, index) => new SectionData
+    private static IReadOnlyList<WordsSectionData> Sections(Document document, bool evaluation) =>
+        document.Sections.Cast<Section>().Select((section, index) => new WordsSectionData
         {
             Section = index + 1,
-            Orientation = section.PageSetup.Orientation == Orientation.Landscape ? PageOrientations.Landscape : PageOrientations.Portrait,
+            Orientation = section.PageSetup.Orientation == Orientation.Landscape ? WordsPageOrientations.Landscape : WordsPageOrientations.Portrait,
             WidthPoints = section.PageSetup.PageWidth,
             HeightPoints = section.PageSetup.PageHeight,
-            Margins = new MarginData
+            Margins = new WordsMarginData
             {
                 Top = section.PageSetup.TopMargin,
                 Right = section.PageSetup.RightMargin,
@@ -88,7 +86,7 @@ internal static class InfoProjection
             HeadersFooters = section.HeadersFooters.Cast<HeaderFooter>().Select(headerFooter =>
             {
                 (string location, string kind) = WordsStories.PlaceOf(headerFooter);
-                return new HeaderFooterData
+                return new WordsHeaderFooterData
                 {
                     Location = location,
                     Kind = kind,
@@ -101,13 +99,13 @@ internal static class InfoProjection
             }).ToArray(),
         }).ToArray();
 
-    private static IReadOnlyList<OutlineItem> Outline(DocumentBlockIndex index, List<Warning> warnings) =>
+    private static IReadOnlyList<WordsOutlineItem> Outline(DocumentBlockIndex index, List<Warning> warnings) =>
         Capped(
             index.Entries.Where(static entry => entry.Node is Paragraph p && HeadingLevel(p) is not null).ToArray(),
             static entry =>
             {
                 var paragraph = (Paragraph)entry.Node;
-                return new OutlineItem
+                return new WordsOutlineItem
                 {
                     Block = entry.Index,
                     HeadingLevel = HeadingLevel(paragraph)!.Value,
@@ -118,10 +116,10 @@ internal static class InfoProjection
             "Read every heading in windows with 'words query blocks --scope outline'.",
             warnings);
 
-    private static IReadOnlyList<ContractFieldData> Fields(Document document, DocumentBlockIndex index, List<Warning> warnings) =>
+    private static IReadOnlyList<WordsFieldData> Fields(Document document, DocumentBlockIndex index, List<Warning> warnings) =>
         Capped(
             document.Range.Fields.Cast<Field>().ToArray(),
-            field => new ContractFieldData
+            field => new WordsFieldData
             {
                 Type = field.Type.ToString(),
                 Scope = WordsStories.StoryOf(field.Start),
@@ -133,10 +131,10 @@ internal static class InfoProjection
             "Split the document with 'words split --by sections' and inspect each part with '--detail fields'.",
             warnings);
 
-    private static IReadOnlyList<CommentData> Comments(Document document, DocumentBlockIndex index, List<Warning> warnings) =>
+    private static IReadOnlyList<WordsCommentData> Comments(Document document, DocumentBlockIndex index, List<Warning> warnings) =>
         Capped(
             document.GetChildNodes(NodeType.Comment, true).Cast<Comment>().ToArray(),
-            comment => new CommentData
+            comment => new WordsCommentData
             {
                 Author = comment.Author,
                 Text = WordsText.Of(comment),
@@ -156,7 +154,7 @@ internal static class InfoProjection
     /// definition change is listed on its own; a move is joined by <see cref="Moves"/>. A
     /// deletion followed by an insertion stays two entries.
     /// </summary>
-    private static IReadOnlyList<RevisionData> Revisions(Document document, DocumentBlockIndex index, List<Warning> warnings)
+    private static IReadOnlyList<WordsRevisionData> Revisions(Document document, DocumentBlockIndex index, List<Warning> warnings)
     {
         (RevisionChange Change, int Number)[] changes = [.. RevisionChanges(document).Select(static (change, at) => (change, at + 1))];
         return Capped(
@@ -325,11 +323,11 @@ internal static class InfoProjection
         _ => null,
     };
 
-    private static RevisionData Entry(Revision revision, int number, string? text, DocumentBlockIndex index)
+    private static WordsRevisionData Entry(Revision revision, int number, string? text, DocumentBlockIndex index)
     {
         bool style = revision.RevisionType == RevisionType.StyleDefinitionChange;
         text = text is null ? null : TextSearch.Truncate(WordsText.Clean(text), RevisionTextLimit);
-        return new RevisionData
+        return new WordsRevisionData
         {
             Revision = number,
             Type = RevisionTypeName(revision.RevisionType),
@@ -355,10 +353,10 @@ internal static class InfoProjection
         _ => throw new ArgumentOutOfRangeException(nameof(type), type, "Unmapped revision type."),
     };
 
-    private static IReadOnlyList<ContractImageData> Images(Document document, DocumentBlockIndex index, List<Warning> warnings) =>
+    private static IReadOnlyList<WordsImageData> Images(Document document, DocumentBlockIndex index, List<Warning> warnings) =>
         Capped(
             document.GetChildNodes(NodeType.Shape, true).Cast<Shape>().Where(static shape => shape.HasImage).ToArray(),
-            shape => new ContractImageData
+            shape => new WordsImageData
             {
                 Scope = WordsStories.StoryOf(shape),
                 Block = index.FindBlock(shape),
@@ -389,11 +387,11 @@ internal static class InfoProjection
         return source.Take(ListLimit).Select(project).ToArray();
     }
 
-    private static IReadOnlyList<TableData> Tables(DocumentBlockIndex index) =>
+    private static IReadOnlyList<WordsTableData> Tables(DocumentBlockIndex index) =>
         index.Entries.Where(static entry => entry.Node is Table).Select(static entry =>
         {
             var table = (Table)entry.Node;
-            return new TableData
+            return new WordsTableData
             {
                 Block = entry.Index,
                 RowCount = table.Rows.Count,

@@ -28,7 +28,7 @@ internal static class WordsRender
         IReadOnlyList<int> pages = RenderSelection.Resolve(request.Pages, loaded.Document.PageCount, ErrorCodes.PageNotFound, "page");
         IReadOnlyList<string> paths = request.Output.Parts(pages);
         using OutputSet<Document> transaction = session.Outputs.BeginSet([request.Output.Directory], "words-render");
-        var outputs = new List<PageOutput>(pages.Count);
+        var outputs = new List<WordsPageOutput>(pages.Count);
         foreach ((int page, string path) in pages.Zip(paths))
         {
             PageInfo info = loaded.Document.GetPageInfo(page - 1);
@@ -37,7 +37,7 @@ internal static class WordsRender
             RenderPixelGuard.EnsureFits(session.Budgets, width, height, request.Dpi, RenderHint);
             SaveOptions options = WordsSavePipeline.Options(request.Output.Format.Id, pages: [page], dpi: request.Dpi);
             StagedOutput staged = transaction.Stage(path, request.Output.Overwrite, loaded.Document, temp => loaded.Document.Save(temp, options), rendering: true, pages: [page]);
-            outputs.Add(new PageOutput { Page = page, Output = FileObjects.Output(staged.Published, request.Output.Format, encrypted: false) });
+            outputs.Add(new WordsPageOutput { Page = page, Output = FileObjects.Output(staged.Published, request.Output.Format, encrypted: false) });
         }
 
         loaded.Resources.ThrowIfFailed();

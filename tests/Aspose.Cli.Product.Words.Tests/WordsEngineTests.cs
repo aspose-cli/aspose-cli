@@ -31,7 +31,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
             paragraph.AppendChild(run);
         }
         document.Save(input);
-        BlockData block = Assert.Single(WordsRead.Run(_fixture.Session, new DocumentReadRequest
+        WordsBlockData block = Assert.Single(WordsRead.Run(_fixture.Session, new WordsReadRequest
         {
             Input = input,
             Blocks = PageRange.Parse("1"),
@@ -48,19 +48,19 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
     {
         string input = _fixture.CreateReport();
 
-        DocumentInfoResult info = WordsInspect.Run(_fixture.Session, new DocumentInfoRequest
+        WordsInspectResult info = WordsInspect.Run(_fixture.Session, new WordsInspectRequest
         {
             Input = input,
             Details = ["outline", "tables", "bookmarks"],
         });
-        DocumentReadResult first = WordsRead.Run(_fixture.Session, new DocumentReadRequest
+        WordsReadResult first = WordsRead.Run(_fixture.Session, new WordsReadRequest
         {
             Input = input,
             Scope = "full",
             MaxBlocks = 2,
             MaxCharacters = 1000,
         });
-        DocumentReadResult rest = WordsRead.Run(_fixture.Session, new DocumentReadRequest
+        WordsReadResult rest = WordsRead.Run(_fixture.Session, new WordsReadRequest
         {
             Input = input,
             Blocks = PageRange.Parse("3-"),
@@ -71,7 +71,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
 
         Assert.Equal(info.Document.BlockCount, first.Blocks.Count + rest.Blocks.Count);
         Assert.Equal(1, info.Outline![0].Block);
-        BlockData table = Assert.Single(rest.Blocks, block => block.Type == "table");
+        WordsBlockData table = Assert.Single(rest.Blocks, block => block.Type == "table");
         Assert.Equal(2, table.RowCount);
         Assert.Equal(2, table.ColumnCount);
         Assert.Equal("Metric", table.Cells![0][0]);
@@ -98,7 +98,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
         string input = _fixture.Temp.File("headings.docx");
         document.Save(input, SaveFormat.Docx);
 
-        DocumentInfoResult info = WordsInspect.Run(_fixture.Session, new DocumentInfoRequest { Input = input, Details = ["outline"] });
+        WordsInspectResult info = WordsInspect.Run(_fixture.Session, new WordsInspectRequest { Input = input, Details = ["outline"] });
 
         Assert.Equal(1000, info.Outline!.Count);
         Warning warning = Assert.Single(info.Warnings!, static warning => warning.Code == WarningCodes.ListTruncated);
@@ -113,7 +113,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
         string input = _fixture.CreateReport();
 
         CliException read = Assert.Throws<CliException>(() =>
-            WordsRead.Run(_fixture.Session, new DocumentReadRequest { Input = input, Blocks = PageRange.Parse("99") }));
+            WordsRead.Run(_fixture.Session, new WordsReadRequest { Input = input, Blocks = PageRange.Parse("99") }));
         CliException edit = Assert.Throws<CliException>(() => WordsEdit.Run(
             _fixture.Session,
             new WordsEditRequest
@@ -180,14 +180,14 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
     public void ABlockRangeOutsideTheSection_IsBlockNotFoundNamingTheSectionBlocks()
     {
         string input = _fixture.CreateTwoSectionDocument();
-        int[] second = WordsRead.Run(_fixture.Session, new DocumentReadRequest { Input = input, Section = 2 })
+        int[] second = WordsRead.Run(_fixture.Session, new WordsReadRequest { Input = input, Section = 2 })
             .Blocks.Select(static block => block.Block).ToArray();
 
         CliException read = Assert.Throws<CliException>(() =>
-            WordsRead.Run(_fixture.Session, new DocumentReadRequest { Input = input, Section = 2, Blocks = PageRange.Parse("1") }));
-        DocumentReadResult overlapping = WordsRead.Run(
+            WordsRead.Run(_fixture.Session, new WordsReadRequest { Input = input, Section = 2, Blocks = PageRange.Parse("1") }));
+        WordsReadResult overlapping = WordsRead.Run(
             _fixture.Session,
-            new DocumentReadRequest
+            new WordsReadRequest
             {
                 Input = input,
                 Section = 2,
@@ -209,7 +209,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
         string input = _fixture.CreateReport();
 
         CliException section = Assert.Throws<CliException>(() =>
-            WordsRead.Run(_fixture.Session, new DocumentReadRequest { Input = input, Section = 5 }));
+            WordsRead.Run(_fixture.Session, new WordsReadRequest { Input = input, Section = 5 }));
         CliException occurrence = Assert.Throws<CliException>(() => Edit(input, "occurrence",
             new SetTextOp { At = new WordsTarget { Find = "revenue", Nth = 5 }, Text = "x" }));
 
@@ -309,10 +309,10 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
             {
                 Ops =
                 [
-                    new InsertParagraphsOp { At = new WordsTarget { Block = 1 }, Position = "after", Paragraphs = [new ParagraphInput { Text = "After heading." }] },
-                    new InsertParagraphsOp { At = new WordsTarget { Block = 3 }, Position = "before", Paragraphs = [new ParagraphInput { Text = "Inserted clause." }] },
-                    new InsertParagraphsOp { At = new WordsTarget { Block = 4 }, Position = "before", Paragraphs = [new ParagraphInput { Text = "After a revision." }] },
-                    new InsertParagraphsOp { At = new WordsTarget { Block = 4 }, Position = "after", Paragraphs = [new ParagraphInput { Text = "Styled.", Style = "Quote" }] },
+                    new InsertParagraphsOp { At = new WordsTarget { Block = 1 }, Position = "after", Paragraphs = [new WordsParagraphInput { Text = "After heading." }] },
+                    new InsertParagraphsOp { At = new WordsTarget { Block = 3 }, Position = "before", Paragraphs = [new WordsParagraphInput { Text = "Inserted clause." }] },
+                    new InsertParagraphsOp { At = new WordsTarget { Block = 4 }, Position = "before", Paragraphs = [new WordsParagraphInput { Text = "After a revision." }] },
+                    new InsertParagraphsOp { At = new WordsTarget { Block = 4 }, Position = "after", Paragraphs = [new WordsParagraphInput { Text = "Styled.", Style = "Quote" }] },
                 ],
             },
             Output = TestOutput.At(output),
@@ -353,7 +353,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
             Input = input,
             Batch = new WordsOpsBatch
             {
-                Ops = [new InsertParagraphsOp { At = new WordsTarget { Block = 2 }, Position = "before", Paragraphs = [new ParagraphInput { Text = "Inserted clause." }] }],
+                Ops = [new InsertParagraphsOp { At = new WordsTarget { Block = 2 }, Position = "before", Paragraphs = [new WordsParagraphInput { Text = "Inserted clause." }] }],
             },
             Output = TestOutput.At(output),
             TrackChanges = true,
@@ -387,7 +387,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
             Input = input,
             Batch = new WordsOpsBatch
             {
-                Ops = [new InsertParagraphsOp { At = new WordsTarget { Block = 1 }, Position = "after", Paragraphs = [new ParagraphInput { Text = "Inserted clause." }] }],
+                Ops = [new InsertParagraphsOp { At = new WordsTarget { Block = 1 }, Position = "after", Paragraphs = [new WordsParagraphInput { Text = "Inserted clause." }] }],
             },
             Output = TestOutput.At(output),
         });
@@ -412,10 +412,10 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
         builder.Write("Clause text.");
         builder.Document.Save(input);
 
-        DocumentReadResult full = WordsRead.Run(_fixture.Session, new DocumentReadRequest { Input = input, Scope = "full" });
-        DocumentReadResult text = WordsRead.Run(_fixture.Session, new DocumentReadRequest { Input = input, Scope = "text" });
+        WordsReadResult full = WordsRead.Run(_fixture.Session, new WordsReadRequest { Input = input, Scope = "full" });
+        WordsReadResult text = WordsRead.Run(_fixture.Session, new WordsReadRequest { Input = input, Scope = "text" });
 
-        ParagraphFormatData format = full.Blocks.Single(static block => block.Text == "Clause text.").ParagraphFormat!;
+        WordsParagraphFormatData format = full.Blocks.Single(static block => block.Text == "Clause text.").ParagraphFormat!;
         Assert.Equal(("justify", 20d, -10d, 8d, "multiple", 1.5),
             (format.Alignment, format.LeftIndent, format.FirstLineIndent, format.SpaceAfter, format.LineSpacingRule, format.LineSpacing));
         Assert.All(text.Blocks, static block => Assert.Null(block.ParagraphFormat));
@@ -434,10 +434,10 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
         builder.Write(" for 员工");
         builder.Document.Save(input);
 
-        DocumentReadResult full = WordsRead.Run(_fixture.Session, new DocumentReadRequest { Input = input, Scope = "full" });
+        WordsReadResult full = WordsRead.Run(_fixture.Session, new WordsReadRequest { Input = input, Scope = "full" });
 
         // The SDK's single font name is that of the run's first character.
-        IReadOnlyList<RunData> runs = full.Blocks.Single(static block => block.Text == "员工手册 (Handbook) for 员工").Runs!;
+        IReadOnlyList<WordsRunData> runs = full.Blocks.Single(static block => block.Text == "员工手册 (Handbook) for 员工").Runs!;
         Assert.Equal(
             [("KaiTi", "Georgia", "KaiTi"), ("Georgia", "Georgia", "KaiTi")],
             runs.Select(static run => (run.Font, run.LatinFont, run.EastAsianFont)));
@@ -504,7 +504,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
             Output = TestOutput.At(output),
         });
 
-        DocumentReadResult full = WordsRead.Run(_fixture.Session, new DocumentReadRequest { Input = output, Scope = "full" });
+        WordsReadResult full = WordsRead.Run(_fixture.Session, new WordsReadRequest { Input = output, Scope = "full" });
         Assert.Equal(
             [("Arial", "SimSun"), ("SimHei", "SimSun")],
             full.Blocks.Where(static block => block.Text?.StartsWith('第') == true).Select(static block => (block.Runs![0].LatinFont, block.Runs![0].EastAsianFont)));
@@ -560,7 +560,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
         builder.Write("User body");
         document.Save(input);
 
-        DocumentReadResult read = WordsRead.Run(_fixture.Session, new DocumentReadRequest
+        WordsReadResult read = WordsRead.Run(_fixture.Session, new WordsReadRequest
         {
             Input = input,
             Scope = "text",
@@ -582,7 +582,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
         string markdown = _fixture.Temp.File("banner-source.md");
         File.WriteAllText(markdown, "Contents\n\n# One\n\nSee [the source](https://example.com/source).\n");
         string input = _fixture.Temp.File("banner-source.docx");
-        WordsCreate.Run(_fixture.Session, new NewDocumentRequest { Output = TestOutput.At(input), MarkdownPath = markdown });
+        WordsCreate.Run(_fixture.Session, new WordsCreateRequest { Output = TestOutput.At(input), MarkdownPath = markdown });
         string[] original = BlockTexts(input);
         string appended = _fixture.Temp.File("banner-appended.docx");
         string merged = _fixture.Temp.File("banner-merged.docx");
@@ -618,7 +618,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
     }
 
     private string[] BlockTexts(string path) =>
-        WordsRead.Run(_fixture.Session, new DocumentReadRequest { Input = path, MaxBlocks = 1000 })
+        WordsRead.Run(_fixture.Session, new WordsReadRequest { Input = path, MaxBlocks = 1000 })
             .Blocks.Select(static block => block.Text ?? $"table {block.RowCount}x{block.ColumnCount}").ToArray();
 
     /// <summary>A single page is refused an output without an extension, as several pages are.</summary>
@@ -719,12 +719,12 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
         string output = _fixture.Temp.File("reencrypted.docx");
 
         CliException missing = Assert.Throws<CliException>(() =>
-            WordsInspect.Run(_fixture.Session, new DocumentInfoRequest { Input = input }));
+            WordsInspect.Run(_fixture.Session, new WordsInspectRequest { Input = input }));
         CliException wrong = Assert.Throws<CliException>(() =>
-            WordsInspect.Run(_fixture.Session, new DocumentInfoRequest { Input = input, Password = new Secret("wrong") }));
-        DocumentInfoResult opened = WordsInspect.Run(
+            WordsInspect.Run(_fixture.Session, new WordsInspectRequest { Input = input, Password = new Secret("wrong") }));
+        WordsInspectResult opened = WordsInspect.Run(
             _fixture.Session,
-            new DocumentInfoRequest
+            new WordsInspectRequest
             {
                 Input = input,
                 Password = new Secret(inputPassword),
@@ -742,7 +742,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
         Assert.Equal(ErrorCodes.PasswordInvalid, wrong.Code);
         Assert.True(opened.Document.BlockCount > 0);
         Assert.True(opened.Input.Encrypted);
-        Assert.False(WordsInspect.Run(_fixture.Session, new DocumentInfoRequest { Input = _fixture.CreateReport("plain-report.docx") }).Input.Encrypted);
+        Assert.False(WordsInspect.Run(_fixture.Session, new WordsInspectRequest { Input = _fixture.CreateReport("plain-report.docx") }).Input.Encrypted);
         Assert.True(FileFormatUtil.DetectFileFormat(output).IsEncrypted);
         var reopened = new Document(output, new LoadOptions { Password = outputPassword });
         Assert.Contains("Encrypted portable document", reopened.GetText(), StringComparison.Ordinal);
@@ -765,7 +765,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
         File.WriteAllBytes(input, bytes);
 
         CliException inspection = Assert.Throws<CliException>(() =>
-            WordsInspect.Run(_fixture.Session, new DocumentInfoRequest { Input = input }));
+            WordsInspect.Run(_fixture.Session, new WordsInspectRequest { Input = input }));
         CliException conversion = Assert.Throws<CliException>(() =>
             WordsConvert.Run(_fixture.Session, new WordsConvertRequest
             {
@@ -827,7 +827,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
             Assert.False(File.Exists(output));
         }
 
-        Assert.True(WordsInspect.Run(_fixture.Session, new DocumentInfoRequest { Input = input }).Document.BlockCount > 0);
+        Assert.True(WordsInspect.Run(_fixture.Session, new WordsInspectRequest { Input = input }).Document.BlockCount > 0);
         Assert.Equal(original, File.ReadAllBytes(input));
     }
 
@@ -859,7 +859,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
                 {
                     At = new WordsTarget { Block = 1 },
                     Position = "after",
-                    Paragraphs = [new ParagraphInput { Text = "Inserted" }],
+                    Paragraphs = [new WordsParagraphInput { Text = "Inserted" }],
                 },
                 new SetTextOp { At = new WordsTarget { Block = 2 }, Text = "Original second block changed" },
             ],
@@ -871,7 +871,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
             Batch = batch,
             Output = TestOutput.At(output, overwrite: false),
         });
-        DocumentReadResult read = WordsRead.Run(_fixture.Session, new DocumentReadRequest
+        WordsReadResult read = WordsRead.Run(_fixture.Session, new WordsReadRequest
         {
             Input = output,
             Scope = "text",
@@ -928,7 +928,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
                 {
                     At = new WordsTarget { Block = 3 },
                     Position = "after",
-                    Paragraphs = [new ParagraphInput { Text = "Delta clause." }],
+                    Paragraphs = [new WordsParagraphInput { Text = "Delta clause." }],
                 },
             ],
         };
@@ -976,7 +976,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
     public void AddWatermark_DrawsEastAsianTextOfACreatedDocumentInAnEastAsianFont()
     {
         string input = _fixture.Temp.File($"created-{Guid.NewGuid():N}.docx");
-        WordsCreate.Run(_fixture.Session, new NewDocumentRequest { Output = TestOutput.At(input) });
+        WordsCreate.Run(_fixture.Session, new WordsCreateRequest { Output = TestOutput.At(input) });
         string output = _fixture.Temp.File($"created-watermarked-{Guid.NewGuid():N}.docx");
 
         WordsEdit.Run(

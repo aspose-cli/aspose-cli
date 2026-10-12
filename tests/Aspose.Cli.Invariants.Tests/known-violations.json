@@ -808,11 +808,11 @@
       "actual": "styleData.size: a font size is named fontSize; styleData.bg: a fill is named fillColor"
     },
     {
-      "case": "C-R20 | v2/words/document-read fixednames",
+      "case": "C-R20 | v2/words/read-result fixednames",
       "invariant": "C-R20",
       "rule": "C-R20",
       "cause": "font-size-not-named-font-size",
-      "actual": "runData.size: a font size is named fontSize"
+      "actual": "wordsRunData.size: a font size is named fontSize"
     },
     {
       "case": "C-R20 | v2/words/ops#define_style fixednames",
@@ -1074,7 +1074,7 @@
       "actual": "paperSize: a page size is named pageSize"
     },
     {
-      "case": "C-R20 | v2/words/ops#pageSetupInput fixednames",
+      "case": "C-R20 | v2/words/ops#wordsPageSetupInput fixednames",
       "invariant": "C-R20",
       "rule": "C-R20",
       "cause": "page-size-not-named-page-size",
@@ -1169,7 +1169,7 @@
       "invariant": "C-R20",
       "rule": "C-R20",
       "cause": "size-names-font-and-page-size",
-      "actual": "enum in pageSetupInput; number in define_style, format_text, set_default_font"
+      "actual": "enum in wordsPageSetupInput; number in define_style, format_text, set_default_font"
     },
     {
       "case": "C-R20 | v2/cells/ops#import_range secrets",
@@ -1239,21 +1239,21 @@
       "invariant": "C-R20",
       "rule": "C-R20",
       "cause": "variant-field-named-type",
-      "actual": "revisionSample.type: a variant named type, not kind"
+      "actual": "wordsRevisionSample.type: a variant named type, not kind"
     },
     {
-      "case": "C-R20 | v2/words/document-info variants",
+      "case": "C-R20 | v2/words/inspect-result variants",
       "invariant": "C-R20",
       "rule": "C-R20",
       "cause": "variant-field-named-type",
-      "actual": "revisionData.type: a variant named type, not kind"
+      "actual": "wordsRevisionData.type: a variant named type, not kind"
     },
     {
-      "case": "C-R20 | v2/words/document-read variants",
+      "case": "C-R20 | v2/words/read-result variants",
       "invariant": "C-R20",
       "rule": "C-R20",
       "cause": "variant-field-named-type",
-      "actual": "blockData.type: a variant named type, not kind"
+      "actual": "wordsBlockData.type: a variant named type, not kind"
     },
     {
       "case": "C-R19 | words add_watermark applied twice",
@@ -1274,21 +1274,21 @@
       "invariant": "C-R17",
       "rule": "C-R17",
       "cause": "words-enum-values-camel-case",
-      "actual": "revisionSample.type: enum values formatChange, styleDefinitionChange are not lowercase kebab-case"
+      "actual": "wordsRevisionSample.type: enum values formatChange, styleDefinitionChange are not lowercase kebab-case"
     },
     {
-      "case": "C-R17 | v2/words/document-info",
+      "case": "C-R17 | v2/words/inspect-result",
       "invariant": "C-R17",
       "rule": "C-R17",
       "cause": "words-enum-values-camel-case",
-      "actual": "documentSummary.protection: enum values readOnly, trackedChanges are not lowercase kebab-case; fieldData.scope: enum values headersFooters are not lowercase kebab-case; imageData.scope: enum values headersFooters are not lowercase kebab-cas..."
+      "actual": "wordsDocumentSummary.protection: enum values readOnly, trackedChanges are not lowercase kebab-case; wordsFieldData.scope: enum values headersFooters are not lowercase kebab-case; wordsImageData.scope: enum values headersFooters are not lowe..."
     },
     {
-      "case": "C-R17 | v2/words/document-read",
+      "case": "C-R17 | v2/words/read-result",
       "invariant": "C-R17",
       "rule": "C-R17",
       "cause": "words-enum-values-camel-case",
-      "actual": "paragraphFormatData.lineSpacingRule: enum values atLeast are not lowercase kebab-case"
+      "actual": "wordsParagraphFormatData.lineSpacingRule: enum values atLeast are not lowercase kebab-case"
     },
     {
       "case": "C-R17 | v2/words/edit-result",
@@ -1368,18 +1368,18 @@
       "actual": "level: minimum 0, not 1"
     },
     {
-      "case": "C-R18 | v2/words/ops#paragraphInput",
+      "case": "C-R18 | v2/words/ops#wordsParagraphInput",
       "invariant": "C-R18",
       "rule": "C-R18",
       "cause": "words-list-level-zero-based",
       "actual": "listLevel: minimum 0, not 1"
     },
     {
-      "case": "C-R33 | v2/words/document-info none",
+      "case": "C-R33 | v2/words/inspect-result none",
       "invariant": "C-R33",
       "rule": "C-R33",
       "cause": "words-protection-none",
-      "actual": "documentSummary.protection: \"none\" as a value; omit the field instead"
+      "actual": "wordsDocumentSummary.protection: \"none\" as a value; omit the field instead"
     },
     {
       "case": "C-R33 | v2/words/edit-result none",
@@ -1403,11 +1403,11 @@
       "actual": "mode: read back as protection; mode: writes enum(comments,forms,readOnly,trackedChanges), reads enum(comments,forms,none,readOnly,trackedChanges)"
     },
     {
-      "case": "C-R33 | v2/words/document-info names",
+      "case": "C-R33 | v2/words/inspect-result names",
       "invariant": "C-R33",
       "rule": "C-R33",
       "cause": "words-revision-names-and-dates",
-      "actual": "documentSummary.revisionsPresent: a boolean says \"contains\" as has<Noun> and a state as an adjective; revisionData.date: a timestamp without format date-time"
+      "actual": "wordsDocumentSummary.revisionsPresent: a boolean says \"contains\" as has<Noun> and a state as an adjective; wordsRevisionData.date: a timestamp without format date-time"
     },
     {
       "case": "C-R17 | words query search values",

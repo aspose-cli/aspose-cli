@@ -90,12 +90,12 @@ internal static class WordsStories
     /// <c>even</c>.
     /// </summary>
     internal static (string Location, string Kind) PlaceOf(HeaderFooter headerFooter) => (
-        headerFooter.IsHeader ? HeaderFooterLocations.Header : HeaderFooterLocations.Footer,
+        headerFooter.IsHeader ? WordsHeaderFooterLocations.Header : WordsHeaderFooterLocations.Footer,
         headerFooter.HeaderFooterType switch
         {
-            HeaderFooterType.HeaderFirst or HeaderFooterType.FooterFirst => HeaderFooterKinds.First,
-            HeaderFooterType.HeaderEven or HeaderFooterType.FooterEven => HeaderFooterKinds.Even,
-            _ => HeaderFooterKinds.Primary,
+            HeaderFooterType.HeaderFirst or HeaderFooterType.FooterFirst => WordsHeaderFooterKinds.First,
+            HeaderFooterType.HeaderEven or HeaderFooterType.FooterEven => WordsHeaderFooterKinds.Even,
+            _ => WordsHeaderFooterKinds.Primary,
         });
 
     /// <summary>The 1-based number of the section that holds a node.</summary>

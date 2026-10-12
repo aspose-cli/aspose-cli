@@ -7,21 +7,21 @@ internal static class InspectCommand
 {
     private static readonly Dictionary<string, string> DetailNotes = new(StringComparer.Ordinal)
     {
-        [InfoDetails.Outline] = "headings",
-        [InfoDetails.Sections] = "page setup, headers and footers",
-        [InfoDetails.Properties] = "title, author, subject and keywords",
+        [WordsInspectDetails.Outline] = "headings",
+        [WordsInspectDetails.Sections] = "page setup, headers and footers",
+        [WordsInspectDetails.Properties] = "title, author, subject and keywords",
     };
 
-    public static CommandDefinition<DocumentInfoRequest, DocumentInfoResult> Create()
+    public static CommandDefinition<WordsInspectRequest, WordsInspectResult> Create()
     {
         var sample = new SampleOption("the heading outline, as with --detail outline");
-        var detail = new DetailOption(InfoDetails.All, DetailNotes);
+        var detail = new DetailOption(WordsInspectDetails.All, DetailNotes);
         return new(
             "inspect",
             "Show document structure, safety state and metadata.",
             new CommandTraits { Input = WordsInputs.Document, UsesFonts = true },
             [.. sample.Options, .. detail.Options],
-            (parse, standard) => new DocumentInfoRequest
+            (parse, standard) => new WordsInspectRequest
             {
                 Input = standard.Input,
                 IncludePreview = sample.Read(parse),
@@ -43,9 +43,9 @@ internal static class InspectCommand
         };
     }
 
-    internal static void Table(DocumentInfoResult result, TableSurface surface)
+    internal static void Table(WordsInspectResult result, TableSurface surface)
     {
-        DocumentSummary document = result.Document;
+        WordsDocumentSummary document = result.Document;
         ResultText.Input(surface, result.Input);
         surface.Out.WriteLine(
             $"sections: {document.SectionCount}   blocks: {document.BlockCount} "
@@ -57,7 +57,7 @@ internal static class InspectCommand
 
     /// <summary>Each section --detail asked for, under its own heading.</summary>
     private static void RenderDetails(
-        DocumentInfoResult result,
+        WordsInspectResult result,
         TableSurface surface)
     {
         RenderSections(result.Sections, surface);
@@ -88,7 +88,7 @@ internal static class InspectCommand
     }
 
     // Page setup, then the header and footer paragraphs of every section that has any.
-    private static void RenderSections(IReadOnlyList<SectionData>? sections, TableSurface surface)
+    private static void RenderSections(IReadOnlyList<WordsSectionData>? sections, TableSurface surface)
     {
         if (sections is null || !ResultText.Section(surface, "sections", sections.Count == 0))
         {
@@ -96,7 +96,7 @@ internal static class InspectCommand
         }
 
         var table = new TextTable("section", "orientation", "page size", "margins (t/r/b/l)");
-        foreach (SectionData section in sections)
+        foreach (WordsSectionData section in sections)
         {
             table.AddRow(
                 TableText.Int(section.Section),
@@ -108,9 +108,9 @@ internal static class InspectCommand
 
         table.WriteTo(surface.Out, surface.Format);
         var headersFooters = new TextTable("section", "location", "kind", "paragraphs");
-        foreach (SectionData section in sections)
+        foreach (WordsSectionData section in sections)
         {
-            foreach (HeaderFooterData item in section.HeadersFooters)
+            foreach (WordsHeaderFooterData item in section.HeadersFooters)
             {
                 headersFooters.AddRow(TableText.Int(section.Section), item.Location, item.Kind, string.Join(" | ", item.Paragraphs));
             }

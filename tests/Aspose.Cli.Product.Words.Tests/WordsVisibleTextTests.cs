@@ -24,7 +24,7 @@ public sealed class WordsVisibleTextTests : IClassFixture<WordsFixture>
     {
         string input = CreateAnnotatedParagraph();
 
-        DocumentReadResult read = WordsRead.Run(_fixture.Session, new DocumentReadRequest { Input = input, Scope = "text" });
+        WordsReadResult read = WordsRead.Run(_fixture.Session, new WordsReadRequest { Input = input, Scope = "text" });
 
         Assert.Equal(Visible, read.Blocks[0].Text);
     }
@@ -34,7 +34,7 @@ public sealed class WordsVisibleTextTests : IClassFixture<WordsFixture>
     {
         string input = CreateAnnotatedParagraph();
 
-        DocumentReadResult read = WordsRead.Run(_fixture.Session, new DocumentReadRequest { Input = input, Scope = "full" });
+        WordsReadResult read = WordsRead.Run(_fixture.Session, new WordsReadRequest { Input = input, Scope = "full" });
 
         Assert.Equal(Visible, string.Concat(read.Blocks[0].Runs!.Select(static run => run.Text)));
     }
@@ -92,7 +92,7 @@ public sealed class WordsVisibleTextTests : IClassFixture<WordsFixture>
         string input = _fixture.Temp.File("comment-field.docx");
         document.Save(input, SaveFormat.Docx);
 
-        DocumentInfoResult info = WordsInspect.Run(_fixture.Session, new DocumentInfoRequest { Input = input, Details = ["comments"] });
+        WordsInspectResult info = WordsInspect.Run(_fixture.Session, new WordsInspectRequest { Input = input, Details = ["comments"] });
 
         Assert.Equal("See the source", Assert.Single(info.Comments!).Text);
     }
@@ -102,7 +102,7 @@ public sealed class WordsVisibleTextTests : IClassFixture<WordsFixture>
     {
         string input = CreateNumberedClauses();
 
-        DocumentReadResult read = WordsRead.Run(_fixture.Session, new DocumentReadRequest { Input = input, Scope = "full" });
+        WordsReadResult read = WordsRead.Run(_fixture.Session, new WordsReadRequest { Input = input, Scope = "full" });
 
         Assert.Equal(["1.", "1.1", "1.2"], read.Blocks.Select(static block => block.ListLabel));
         Assert.Equal("First clause", read.Blocks[1].Text);

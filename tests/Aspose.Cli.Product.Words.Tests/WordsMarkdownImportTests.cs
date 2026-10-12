@@ -15,7 +15,7 @@ public sealed class WordsMarkdownImportTests
         string markdown = fixture.Temp.File("bid.md");
         File.WriteAllText(markdown, "# Chapter one\n\nBody text.\n");
         string created = fixture.Temp.File("bid.docx");
-        WordsCreate.Run(fixture.Session, new NewDocumentRequest { Output = TestOutput.At(created), MarkdownPath = markdown });
+        WordsCreate.Run(fixture.Session, new WordsCreateRequest { Output = TestOutput.At(created), MarkdownPath = markdown });
         string output = fixture.Temp.File("bid-toc.docx");
 
         WordsEdit.Run(fixture.Session, new WordsEditRequest
@@ -29,7 +29,7 @@ public sealed class WordsMarkdownImportTests
                     {
                         At = new WordsTarget { Block = 1 },
                         Position = "before",
-                        Paragraphs = [new ParagraphInput { Text = "Contents", Style = "Title" }, new ParagraphInput { Text = "Bid 2026", Style = "Subtitle" }],
+                        Paragraphs = [new WordsParagraphInput { Text = "Contents", Style = "Title" }, new WordsParagraphInput { Text = "Bid 2026", Style = "Subtitle" }],
                     },
                     new InsertTocOp { At = new WordsTarget { Block = 1 }, Position = "before" },
                 ],
@@ -37,7 +37,7 @@ public sealed class WordsMarkdownImportTests
             Output = TestOutput.At(output),
         });
 
-        DocumentInfoResult info = WordsInspect.Run(fixture.Session, new DocumentInfoRequest { Input = output, Details = ["outline"] });
+        WordsInspectResult info = WordsInspect.Run(fixture.Session, new WordsInspectRequest { Input = output, Details = ["outline"] });
         Assert.Equal(["Chapter one"], info.Outline!.Select(static item => item.Text));
         string toc = new Document(output).Range.Fields.Cast<Aspose.Words.Fields.Field>()
             .Single(static field => field.Type == Aspose.Words.Fields.FieldType.FieldTOC).Result;
@@ -55,7 +55,7 @@ public sealed class WordsMarkdownImportTests
         File.WriteAllText(markdown, "施行。~~原《守则》~~同时废止。\n\n施行。<del>原《守则》</del>同时废止。\n");
         string output = fixture.Temp.File("struck.docx");
 
-        WordsCreate.Run(fixture.Session, new NewDocumentRequest { Output = TestOutput.At(output), MarkdownPath = markdown });
+        WordsCreate.Run(fixture.Session, new WordsCreateRequest { Output = TestOutput.At(output), MarkdownPath = markdown });
 
         Paragraph[] paragraphs = [.. new Document(output).FirstSection.Body.Paragraphs.Cast<Paragraph>().TakeLast(2)];
         Assert.Equal("施行。~~原《守则》~~同时废止。", paragraphs[0].GetText().TrimEnd('\r'));
@@ -71,7 +71,7 @@ public sealed class WordsMarkdownImportTests
         File.WriteAllText(markdown, string.Concat(Enumerable.Repeat("甲，乙。", 120)) + "\n");
         string output = fixture.Temp.File("clauses.docx");
 
-        WordsCreate.Run(fixture.Session, new NewDocumentRequest { Output = TestOutput.At(output), MarkdownPath = markdown });
+        WordsCreate.Run(fixture.Session, new WordsCreateRequest { Output = TestOutput.At(output), MarkdownPath = markdown });
 
         IReadOnlyList<string> lines = WordsFixture.LayoutLines(new Document(output));
         Assert.True(lines.Count > 4, string.Join(" | ", lines));
@@ -86,7 +86,7 @@ public sealed class WordsMarkdownImportTests
         File.WriteAllText(markdown, "# Brief\n\nPlain **bold** and `code`.\n");
         string output = fixture.Temp.File("brief.docx");
 
-        WordsCreate.Run(fixture.Session, new NewDocumentRequest { Output = TestOutput.At(output), MarkdownPath = markdown });
+        WordsCreate.Run(fixture.Session, new WordsCreateRequest { Output = TestOutput.At(output), MarkdownPath = markdown });
 
         var document = new Document(output);
         Section section = Assert.Single(document.Sections.Cast<Section>());
@@ -122,7 +122,7 @@ public sealed class WordsMarkdownImportTests
         File.WriteAllText(markdown, "# Report\n\n![Completion](chart.png)\n");
         string output = fixture.Temp.File("report.docx");
 
-        WordsCreate.Run(fixture.Session, new NewDocumentRequest { Output = TestOutput.At(output), MarkdownPath = markdown });
+        WordsCreate.Run(fixture.Session, new WordsCreateRequest { Output = TestOutput.At(output), MarkdownPath = markdown });
 
         var document = new Document(output);
         PageSetup page = document.FirstSection.PageSetup;
@@ -138,9 +138,9 @@ public sealed class WordsMarkdownImportTests
         string markdown = fixture.Temp.File("fonts.md");
         File.WriteAllText(markdown, "# Title\n\nHello 你好\n");
         string output = fixture.Temp.File("fonts.docx");
-        WordsCreate.Run(fixture.Session, new NewDocumentRequest { Output = TestOutput.At(output), MarkdownPath = markdown });
+        WordsCreate.Run(fixture.Session, new WordsCreateRequest { Output = TestOutput.At(output), MarkdownPath = markdown });
 
-        DocumentInfoResult info = WordsInspect.Run(fixture.Session, new DocumentInfoRequest { Input = output, Details = ["fonts"] });
+        WordsInspectResult info = WordsInspect.Run(fixture.Session, new WordsInspectRequest { Input = output, Details = ["fonts"] });
 
         Assert.Equal(["Calibri", "Microsoft YaHei"], info.Fonts);
     }

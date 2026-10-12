@@ -8,7 +8,7 @@ namespace Aspose.Cli.Product.Words.Commands;
 
 internal static class CreateCommand
 {
-    public static CommandDefinition<NewDocumentRequest, WordsCreateResult> Create()
+    public static CommandDefinition<WordsCreateRequest, WordsCreateResult> Create()
     {
         var blank = new Option<bool>("--blank") { Description = "Create a blank document." };
         var markdown = new Option<string?>("--markdown") { Description = "Create from a Markdown file." }.WithInput(InputKind.File);
@@ -44,7 +44,7 @@ internal static class CreateCommand
                 string? templatePath = standard.InputFile(template);
                 ResolvedOutput output = standard.Output;
                 Secret? encryptPassword = standard.EncryptPassword();
-                return new NewDocumentRequest
+                return new WordsCreateRequest
                 {
                     Output = output,
                     MarkdownPath = markdownPath,

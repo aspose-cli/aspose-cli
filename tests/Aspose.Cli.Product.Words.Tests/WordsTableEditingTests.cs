@@ -84,7 +84,7 @@ public sealed class WordsTableEditingTests : IClassFixture<WordsFixture>
         Font expectedFont = retainedParagraph.Runs.Count == 0
             ? retainedParagraph.ParagraphBreakFont
             : retainedParagraph.Runs[0].Font;
-        int tableBlock = Assert.Single(WordsInspect.Run(_fixture.Session, new DocumentInfoRequest
+        int tableBlock = Assert.Single(WordsInspect.Run(_fixture.Session, new WordsInspectRequest
         {
             Input = input,
             Details = ["tables"],
@@ -442,7 +442,7 @@ public sealed class WordsTableEditingTests : IClassFixture<WordsFixture>
 
         document.Save(input);
 
-        IReadOnlyList<TableData> tables = WordsInspect.Run(_fixture.Session, new DocumentInfoRequest { Input = input, Details = ["tables"] }).Tables!;
+        IReadOnlyList<WordsTableData> tables = WordsInspect.Run(_fixture.Session, new WordsInspectRequest { Input = input, Details = ["tables"] }).Tables!;
         Assert.Equal(["Table Grid", null], tables.Select(static table => table.Style));
 
         WordsEdit.Run(_fixture.Session, new WordsEditRequest
@@ -455,7 +455,7 @@ public sealed class WordsTableEditingTests : IClassFixture<WordsFixture>
             Output = TestOutput.At(output),
         });
 
-        IReadOnlyList<TableData> changed = WordsInspect.Run(_fixture.Session, new DocumentInfoRequest { Input = output, Details = ["tables"] }).Tables!;
+        IReadOnlyList<WordsTableData> changed = WordsInspect.Run(_fixture.Session, new WordsInspectRequest { Input = output, Details = ["tables"] }).Tables!;
         Assert.Equal(["Table Grid", null, "Table Grid"], changed.Select(static table => table.Style));
         Assert.Equal(StyleIdentifier.TableGrid, new Document(output).GetChildNodes(NodeType.Table, true).Cast<Table>().Last().StyleIdentifier);
     }
@@ -618,7 +618,7 @@ public sealed class WordsTableEditingTests : IClassFixture<WordsFixture>
             if (PageSpan(document) is var (first, last) && first < last)
             {
                 document.Save(path);
-                return (path, Assert.Single(WordsInspect.Run(_fixture.Session, new DocumentInfoRequest { Input = path, Details = ["tables"] }).Tables!).Block);
+                return (path, Assert.Single(WordsInspect.Run(_fixture.Session, new WordsInspectRequest { Input = path, Details = ["tables"] }).Tables!).Block);
             }
         }
 

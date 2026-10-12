@@ -61,7 +61,7 @@ internal static partial class ContractRules
     private static readonly Dictionary<(string Schema, string Definition, string Field), string> PageSizeFields = new()
     {
         [("v2/cells/ops", "set_page_setup", "paperSize")] = "pageSize",
-        [("v2/words/ops", "pageSetupInput", "size")] = "pageSize",
+        [("v2/words/ops", "wordsPageSetupInput", "size")] = "pageSize",
     };
 
     private static readonly HashSet<string> FillNames = new(StringComparer.Ordinal) { "bg", "bgColor", "background", "backgroundColor", "fill", "fillColour" };
