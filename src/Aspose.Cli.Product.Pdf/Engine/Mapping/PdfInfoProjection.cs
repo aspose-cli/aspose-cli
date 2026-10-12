@@ -11,34 +11,34 @@ namespace Aspose.Cli.Product.Pdf.Engine.Mapping;
 
 internal static class PdfInfoProjection
 {
-    public static PdfInfoResult Project(LoadedPdf loaded, string path, PdfInfoRequest request)
+    public static PdfInspectResult Project(LoadedPdf loaded, string path, PdfInspectRequest request)
     {
         Document document = loaded.Document;
         HashSet<string> details = new(request.Details ?? [], StringComparer.Ordinal);
         bool includePages = request.IncludePreview;
         PdfFormSummary form = Form(document);
         PdfSignatureInfo[] signatures = Signatures(document);
-        PdfOutlineItem[]? outline = details.Contains(InfoDetails.Outline) ? Outline(document) : null;
+        PdfOutlineItem[]? outline = details.Contains(PdfInspectDetails.Outline) ? Outline(document) : null;
         var warnings = new List<Warning>();
-        if (includePages && document.Pages.Count > PdfInfoResult.PagePreviewLimit)
+        if (includePages && document.Pages.Count > PdfInspectResult.PagePreviewLimit)
         {
             warnings.Add(EnvelopeParts.ListTruncated(
                 "pages",
-                PdfInfoResult.PagePreviewLimit,
+                PdfInspectResult.PagePreviewLimit,
                 document.Pages.Count,
                 "'pdf.distinctPageSizes' counts the size of every page."));
         }
 
-        if (outline?.Length == PdfInfoResult.OutlineLimit && PdfMutationSupport.CountOutline(document.Outlines) is int total and > PdfInfoResult.OutlineLimit)
+        if (outline?.Length == PdfInspectResult.OutlineLimit && PdfMutationSupport.CountOutline(document.Outlines) is int total and > PdfInspectResult.OutlineLimit)
         {
             warnings.Add(EnvelopeParts.ListTruncated(
                 "outline",
-                PdfInfoResult.OutlineLimit,
+                PdfInspectResult.OutlineLimit,
                 total,
                 "Split at top-level bookmarks with 'aspose-cli pdf split --by bookmarks' and inspect each part's outline."));
         }
 
-        var result = new PdfInfoResult
+        var result = new PdfInspectResult
         {
             Input = Source(path, loaded),
             Pdf = new PdfSummary
@@ -58,13 +58,13 @@ internal static class PdfInfoProjection
             Pages = includePages ? Pages(document) : null,
             PageLabels = PageLabels(document),
             Outline = outline,
-            Forms = details.Contains(InfoDetails.Forms) ? form : null,
-            Attachments = details.Contains(InfoDetails.Attachments) ? Attachments(document) : null,
-            Fonts = details.Contains(InfoDetails.Fonts) ? Fonts(document) : null,
-            Permissions = details.Contains(InfoDetails.Permissions) ? Permissions(loaded) : null,
-            Signatures = details.Contains(InfoDetails.Signatures) ? signatures : null,
-            Layers = details.Contains(InfoDetails.Layers) ? Layers(document) : null,
-            Metadata = details.Contains(InfoDetails.Metadata) ? Metadata(document) : null,
+            Forms = details.Contains(PdfInspectDetails.Forms) ? form : null,
+            Attachments = details.Contains(PdfInspectDetails.Attachments) ? Attachments(document) : null,
+            Fonts = details.Contains(PdfInspectDetails.Fonts) ? Fonts(document) : null,
+            Permissions = details.Contains(PdfInspectDetails.Permissions) ? Permissions(loaded) : null,
+            Signatures = details.Contains(PdfInspectDetails.Signatures) ? signatures : null,
+            Layers = details.Contains(PdfInspectDetails.Layers) ? Layers(document) : null,
+            Metadata = details.Contains(PdfInspectDetails.Metadata) ? Metadata(document) : null,
             Warnings = warnings.Count == 0 ? null : warnings,
         };
 
@@ -100,7 +100,7 @@ internal static class PdfInfoProjection
     }
 
     private static PdfPageInfo[] Pages(Document document) =>
-        Enumerable.Range(1, Math.Min(document.Pages.Count, PdfInfoResult.PagePreviewLimit))
+        Enumerable.Range(1, Math.Min(document.Pages.Count, PdfInspectResult.PagePreviewLimit))
             .Select(pageNumber => Page(document.Pages[pageNumber]))
             .ToArray();
 
@@ -181,7 +181,7 @@ internal static class PdfInfoProjection
         int position = 0;
         foreach (OutlineItemCollection item in items)
         {
-            if (results.Count >= PdfInfoResult.OutlineLimit)
+            if (results.Count >= PdfInspectResult.OutlineLimit)
             {
                 return;
             }

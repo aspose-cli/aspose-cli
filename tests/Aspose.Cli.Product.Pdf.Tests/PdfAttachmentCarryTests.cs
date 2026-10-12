@@ -53,7 +53,7 @@ public sealed class PdfAttachmentCarryTests : IDisposable
         string second = WriteDocument(fixture.File("second.pdf"), pages: 1, ("same.csv", Second));
         string output = fixture.File("merged.pdf");
 
-        PdfWriteResult result = PdfMerge.Run(fixture.Session, new PdfMergeRequest
+        PdfMergeResult result = PdfMerge.Run(fixture.Session, new PdfMergeRequest
         {
             Output = TestOutput.At(output),
             InputPaths = [first, second],
@@ -103,7 +103,7 @@ public sealed class PdfAttachmentCarryTests : IDisposable
         string plain = fixture.CreateDocument("plain.pdf", pages: 1);
         string merged = fixture.File("merged.pdf");
 
-        PdfWriteResult merge = PdfMerge.Run(fixture.Session, new PdfMergeRequest
+        PdfMergeResult merge = PdfMerge.Run(fixture.Session, new PdfMergeRequest
         {
             Output = TestOutput.At(merged),
             InputPaths = [plain, portfolio],
@@ -141,7 +141,7 @@ public sealed class PdfAttachmentCarryTests : IDisposable
         string plain = fixture.CreateDocument("plain.pdf", pages: 1);
         string merged = fixture.File("merged.pdf");
 
-        PdfWriteResult merge = PdfMerge.Run(fixture.Session, new PdfMergeRequest
+        PdfMergeResult merge = PdfMerge.Run(fixture.Session, new PdfMergeRequest
         {
             Output = TestOutput.At(merged),
             InputPaths = [plain, annotated],
@@ -167,7 +167,7 @@ public sealed class PdfAttachmentCarryTests : IDisposable
         string second = fixture.CreateDocument("second.pdf", pages: 1);
         string merged = fixture.File("merged.pdf");
 
-        PdfWriteResult merge = PdfMerge.Run(fixture.Session, new PdfMergeRequest
+        PdfMergeResult merge = PdfMerge.Run(fixture.Session, new PdfMergeRequest
         {
             Output = TestOutput.At(merged),
             InputPaths = [first, second],
@@ -192,7 +192,7 @@ public sealed class PdfAttachmentCarryTests : IDisposable
         string input = WriteDocument(fixture.File("a.pdf"), pages: 1, ("a.csv", First));
         string merged = fixture.File("merged.pdf");
 
-        PdfWriteResult result = PdfMerge.Run(fixture.Session, new PdfMergeRequest
+        PdfMergeResult result = PdfMerge.Run(fixture.Session, new PdfMergeRequest
         {
             Output = TestOutput.At(merged),
             InputPaths = [input, input],
@@ -225,7 +225,7 @@ public sealed class PdfAttachmentCarryTests : IDisposable
         string[] expected = [Entry("same.csv", First), Entry("same.csv", Second)];
         Assert.Equal(expected, Attachments(input));
 
-        PdfWriteResult merge = PdfMerge.Run(fixture.Session, new PdfMergeRequest
+        PdfMergeResult merge = PdfMerge.Run(fixture.Session, new PdfMergeRequest
         {
             Output = TestOutput.At(merged),
             InputPaths = [plain, input],
@@ -251,7 +251,7 @@ public sealed class PdfAttachmentCarryTests : IDisposable
         string second = WriteDocument(fixture.File("second.pdf"), pages: 1, (string.Empty, Second));
         string merged = fixture.File("merged.pdf");
 
-        PdfWriteResult result = PdfMerge.Run(fixture.Session, new PdfMergeRequest
+        PdfMergeResult result = PdfMerge.Run(fixture.Session, new PdfMergeRequest
         {
             Output = TestOutput.At(merged),
             InputPaths = [first, second],

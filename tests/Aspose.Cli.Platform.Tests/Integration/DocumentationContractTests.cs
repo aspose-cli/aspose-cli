@@ -50,7 +50,7 @@ public sealed class DocumentationContractTests(DocumentationContractFixture fixt
     [InlineData("aspose-cli preview status")]
     [InlineData("aspose-cli docs cells/editing")]
     [InlineData("aspose-cli docs pdf/forms-security")]
-    [InlineData("aspose-cli schema v2/pdf/pdf-info")]
+    [InlineData("aspose-cli schema v2/pdf/inspect-result")]
     [InlineData("aspose-cli schema <id>")]
     [InlineData("aspose-cli cells edit book.xlsx --ops '{\"ops\":[{\"op\":\"set_values\", \"values\":[[\"--opaque\"]]}]}' --in-place")]
     [InlineData("aspose-cli cells convert source.csv --to xlsx --out=\"path with spaces.xlsx\"")]

@@ -175,7 +175,7 @@ public sealed class PdfNavigationTests
         string first = CreateNavigationDocument(fixture, "first.pdf");
         string second = fixture.CreateDocument("second.pdf", pages: 1);
 
-        PdfWriteResult result = PdfMerge.Run(fixture.Session, new PdfMergeRequest
+        PdfMergeResult result = PdfMerge.Run(fixture.Session, new PdfMergeRequest
         {
             Output = TestOutput.At(fixture.File("merged.pdf")),
             InputPaths = [first, second],
@@ -199,7 +199,7 @@ public sealed class PdfNavigationTests
         string first = CreateNavigationDocument(fixture, "first.pdf");
         string second = CreateAttachmentOnlyNameTree(fixture, "second.pdf");
 
-        PdfWriteResult result = PdfMerge.Run(fixture.Session, new PdfMergeRequest
+        PdfMergeResult result = PdfMerge.Run(fixture.Session, new PdfMergeRequest
         {
             Output = TestOutput.At(fixture.File("merged.pdf")),
             InputPaths = [first, second],

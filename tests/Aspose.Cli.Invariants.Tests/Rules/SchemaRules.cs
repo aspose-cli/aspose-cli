@@ -94,7 +94,7 @@ internal static partial class ContractRules
         [("v2/slides/ops", "set_transition.kind")] = "a transition of kind none removes the slide's transition; the rule names it",
         [("v2/slides/read-result", "slidesTransitionData.kind")] = "reads back the transition kind none that set_transition writes",
         [("v2/pdf/ops", "pdfPageLabelRange.style")] = "a page-label range of style none labels its pages with the prefix alone, a numbering style of its own",
-        [("v2/pdf/pdf-info", "pdfPageLabelInfo.style")] = "reads back the page-label style none that set_page_labels writes",
+        [("v2/pdf/inspect-result", "pdfPageLabelInfo.style")] = "reads back the page-label style none that set_page_labels writes",
     };
 
     /// <summary>C-R33: boolean names that say "contains" or a state without has&lt;Noun&gt; or an adjective.</summary>

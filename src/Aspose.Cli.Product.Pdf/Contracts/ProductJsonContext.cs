@@ -5,11 +5,12 @@ namespace Aspose.Cli.Generated;
 
 /// <summary>Source-generated serialization metadata for PDF contracts.</summary>
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull, WriteIndented = true)]
-[JsonSerializable(typeof(Product.Pdf.Contracts.PdfInfoResult))]
+[JsonSerializable(typeof(Product.Pdf.Contracts.PdfInspectResult))]
 [JsonSerializable(typeof(Product.Pdf.Contracts.PdfReadResult))]
 [JsonSerializable(typeof(Product.Pdf.Contracts.PdfConvertResult))]
 [JsonSerializable(typeof(Product.Pdf.Contracts.PdfRenderResult))]
-[JsonSerializable(typeof(Product.Pdf.Contracts.PdfWriteResult))]
+[JsonSerializable(typeof(Product.Pdf.Contracts.PdfCreateResult))]
+[JsonSerializable(typeof(Product.Pdf.Contracts.PdfMergeResult))]
 [JsonSerializable(typeof(Product.Pdf.Contracts.PdfSplitResult))]
 [JsonSerializable(typeof(Product.Pdf.Contracts.PdfExtractResult))]
 [JsonSerializable(typeof(Product.Pdf.Contracts.PdfEditResult))]

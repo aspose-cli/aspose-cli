@@ -20,7 +20,7 @@ public sealed class PdfConformanceTests
 
         Assert.True(second.Signature.Signed);
         Assert.NotEqual(first.Signature.Name, second.Signature.Name);
-        PdfInfoResult info = PdfInfo.Run(fixture.Session, new PdfInfoRequest { Input = second.Output.Path, Details = ["signatures"] });
+        PdfInspectResult info = PdfInfo.Run(fixture.Session, new PdfInspectRequest { Input = second.Output.Path, Details = ["signatures"] });
         Assert.Contains(info.Signatures!, signature => signature.Name == second.Signature.Name && signature.Signed);
     }
 
@@ -86,7 +86,7 @@ public sealed class PdfConformanceTests
             <input type="checkbox" name="urgent"/> Urgent
             </form></body></html>
             """);
-        string form = PdfCreate.Run(fixture.Session, new NewPdfRequest { Output = TestOutput.At(fixture.File("form.pdf")), HtmlPath = html }).Output.Path;
+        string form = PdfCreate.Run(fixture.Session, new PdfCreateRequest { Output = TestOutput.At(fixture.File("form.pdf")), HtmlPath = html }).Output.Path;
         string output = fixture.File("form.pdfa.pdf");
 
         CliException error = Assert.Throws<CliException>(() => PdfConvert.Run(fixture.Session, new PdfConvertRequest
@@ -202,7 +202,7 @@ public sealed class PdfConformanceTests
             [("license-scan.png", "image/png"), ("untyped.png", "application/octet-stream")],
             MediaTypes(archive));
 
-        (string, string?)[] MediaTypes(string path) => [.. PdfInfo.Run(fixture.Session, new PdfInfoRequest { Input = path, Details = ["attachments"] }).Attachments!
+        (string, string?)[] MediaTypes(string path) => [.. PdfInfo.Run(fixture.Session, new PdfInspectRequest { Input = path, Details = ["attachments"] }).Attachments!
             .Select(static item => (item.Name, item.MimeType))];
     }
 
@@ -284,10 +284,10 @@ public sealed class PdfConformanceTests
             Input = CreateArchivable(fixture),
             Output = TestOutput.At(fixture.File("archive.pdf"), format: "pdfa-2b"),
         }).Outputs).Path;
-        var request = new PdfInfoRequest { Input = output, Details = ["metadata"] };
+        var request = new PdfInspectRequest { Input = output, Details = ["metadata"] };
 
-        PdfInfoResult first = PdfInfo.Run(fixture.Session, request);
-        PdfInfoResult second = PdfInfo.Run(fixture.Session, request);
+        PdfInspectResult first = PdfInfo.Run(fixture.Session, request);
+        PdfInspectResult second = PdfInfo.Run(fixture.Session, request);
 
         Assert.Equal("pdfa-2b", first.Pdf.PdfaProfile);
         Assert.False(first.Pdf.Tagged);
@@ -304,7 +304,7 @@ public sealed class PdfConformanceTests
         using var fixture = new PdfEngineFixture();
         string input = fixture.CreateDocument("plain.pdf", pages: 1);
 
-        PdfInfoResult result = PdfInfo.Run(fixture.Session, new PdfInfoRequest { Input = input, Details = ["metadata"] });
+        PdfInspectResult result = PdfInfo.Run(fixture.Session, new PdfInspectRequest { Input = input, Details = ["metadata"] });
 
         Assert.DoesNotContain(result.Metadata!.Keys, static key => key.StartsWith("xmp:", StringComparison.Ordinal));
         Assert.NotEqual("Tagged PDF", result.Metadata["title"]);

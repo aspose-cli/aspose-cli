@@ -37,7 +37,7 @@ public sealed class PdfSignTests
         Assert.Equal(2, result.Page);
         Assert.Equal(visible, result.Rect is not null);
 
-        var info = PdfInfo.Run(fixture.Session, new PdfInfoRequest
+        var info = PdfInfo.Run(fixture.Session, new PdfInspectRequest
         {
             Input = output,
             Details = ["signatures"],

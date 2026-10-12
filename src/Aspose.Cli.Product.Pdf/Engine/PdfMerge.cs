@@ -10,7 +10,7 @@ namespace Aspose.Cli.Product.Pdf.Engine;
 /// <summary>Merges PDF inputs into one document: <c>pdf merge</c>.</summary>
 internal static class PdfMerge
 {
-    internal static PdfWriteResult Run(PdfSession session, PdfMergeRequest request)
+    internal static PdfMergeResult Run(PdfSession session, PdfMergeRequest request)
     {
         if (request.InputPaths.Count < 2)
         {
@@ -81,7 +81,7 @@ internal static class PdfMerge
             warnings.Add(degraded);
         }
 
-        return new PdfWriteResult
+        return new PdfMergeResult
         {
             Action = "merge",
             Output = FileObjects.Output(written, request.Output.Format, encrypted),

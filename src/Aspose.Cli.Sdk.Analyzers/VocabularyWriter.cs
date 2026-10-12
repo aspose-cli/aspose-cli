@@ -422,7 +422,7 @@ internal sealed class VocabularyWriter(
         {
             return readBack.ConstructorArguments.FirstOrDefault().Value is string path && ReadPath.IsMatch(path)
                 ? path
-                : Invalid(property, "[ReadBack] names a read path '<schema>.schema.json#<JSON Pointer>', such as 'pdf-info.schema.json#/$defs/pdfPageInfo/properties/rotation'");
+                : Invalid(property, "[ReadBack] names a read path '<schema>.schema.json#<JSON Pointer>', such as 'inspect-result.schema.json#/$defs/pdfPageInfo/properties/rotation'");
         }
 
         return Has(property, _notReadBack) ? "unread"

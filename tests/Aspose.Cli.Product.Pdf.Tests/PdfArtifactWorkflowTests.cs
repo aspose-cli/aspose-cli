@@ -38,7 +38,7 @@ public sealed class PdfArtifactWorkflowTests
         string markdown = fixture.File("appendix.md");
         File.WriteAllText(markdown, "# Delivery appendix\n\nReadiness evidence.");
         string output = fixture.File("appendix.pdf");
-        PdfCreate.Run(fixture.Session, new NewPdfRequest
+        PdfCreate.Run(fixture.Session, new PdfCreateRequest
         {
             Output = TestOutput.At(output),
             TextPath = markdown,
@@ -65,7 +65,7 @@ public sealed class PdfArtifactWorkflowTests
         File.WriteAllLines(text, ["Opening\tline", .. Enumerable.Range(2, 90).Select(static line => $"Line {line}")]);
         string output = fixture.File("long.pdf");
 
-        PdfCreate.Run(fixture.Session, new NewPdfRequest
+        PdfCreate.Run(fixture.Session, new PdfCreateRequest
         {
             Output = TestOutput.At(output),
             TextPath = text,
@@ -97,7 +97,7 @@ public sealed class PdfArtifactWorkflowTests
         File.WriteAllText(text, "Created by the PDF workflow");
         string created = fixture.File("created.pdf");
 
-        PdfCreate.Run(fixture.Session, new NewPdfRequest
+        PdfCreate.Run(fixture.Session, new PdfCreateRequest
         {
             Output = TestOutput.At(created),
             TextPath = text,
@@ -229,7 +229,7 @@ public sealed class PdfArtifactWorkflowTests
 
         Assert.Equal(
             ["1:East-arabic2 2:South-roman-lower5", "1:East-arabic1 2:South-roman-lower6"],
-            split.Outputs.Select(part => string.Join(" ", PdfInfo.Run(fixture.Session, new PdfInfoRequest { Input = part.Output.Path }).PageLabels!
+            split.Outputs.Select(part => string.Join(" ", PdfInfo.Run(fixture.Session, new PdfInspectRequest { Input = part.Output.Path }).PageLabels!
                 .Select(static label => $"{label.StartPage}:{label.Prefix}{label.Style}{label.StartingValue}"))));
     }
 
