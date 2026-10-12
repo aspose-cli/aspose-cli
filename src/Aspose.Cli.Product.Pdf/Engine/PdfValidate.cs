@@ -26,7 +26,7 @@ internal static class PdfValidate
             Input = PdfInfoProjection.Source(filePath, loaded),
             Profile = request.Profile.ToLowerInvariant(),
             Valid = valid,
-            Issues = problems.Take(ListedIssues).Select(static problem => problem.ToString()).ToArray(),
+            Issues = problems.Take(ListedIssues).Select(static problem => problem.ToIssue()).ToArray(),
             License = EnvelopeParts.License(state),
             Warnings = problems.Count > ListedIssues
                 ? [EnvelopeParts.ListTruncated(

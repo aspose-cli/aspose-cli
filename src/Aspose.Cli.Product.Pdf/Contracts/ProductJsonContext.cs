@@ -14,8 +14,6 @@ namespace Aspose.Cli.Generated;
 [JsonSerializable(typeof(Product.Pdf.Contracts.PdfSplitResult))]
 [JsonSerializable(typeof(Product.Pdf.Contracts.PdfExtractResult))]
 [JsonSerializable(typeof(Product.Pdf.Contracts.PdfEditResult))]
-[JsonSerializable(typeof(Product.Pdf.Contracts.PdfFormResult))]
-[JsonSerializable(typeof(Product.Pdf.Contracts.PdfFormExportResult))]
 [JsonSerializable(typeof(Product.Pdf.Contracts.PdfSearchResult))]
 [JsonSerializable(typeof(Product.Pdf.Contracts.PdfValidateResult))]
 [JsonSerializable(typeof(Product.Pdf.Contracts.PdfSignResult))]

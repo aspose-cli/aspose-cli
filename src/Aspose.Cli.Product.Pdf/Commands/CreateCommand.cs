@@ -22,8 +22,8 @@ internal static class CreateCommand
             Description = "Let the HTML importer request the network resources trusted --from-html input names; the result lists every address. Local references stay beneath the HTML directory.",
         };
         var text = new Option<string?>("--from-text") { Description = "UTF-8 text or Markdown input file." }.WithInput(InputKind.File);
-        var pageSize = new Option<string>("--page-size") { DefaultValueFactory = _ => "A4", Description = "Page size of the new PDF." }.WithInput(InputKind.None);
-        pageSize.AcceptOnlyFromAmong([.. PdfPageSizes.Names]);
+        var pageSize = new Option<string>("--page-size") { DefaultValueFactory = _ => PageSizePresets.A4, Description = "Page size of the new PDF." }.WithInput(InputKind.None);
+        pageSize.AcceptOnlyFromAmong([.. PdfCreateRequest.PageSizes]);
         var margins = new Option<string>("--margins") { DefaultValueFactory = _ => "36", Description = "One value or top,right,bottom,left in points." }.WithInput(InputKind.None);
         return new(
             "create",
@@ -61,16 +61,16 @@ internal static class CreateCommand
                     HtmlPath = htmlPath,
                     AllowNetworkResources = parse.GetValue(allowNetwork),
                     TextPath = textPath,
-                    PageSize = parse.GetValue(pageSize) ?? "A4",
+                    PageSize = parse.GetValue(pageSize) ?? PageSizePresets.A4,
                     Margins = ParseMargins(parse.GetValue(margins) ?? "36"),
                 };
             },
-            static (result, surface) => ResultText.Produced(surface, result.Output, result.Action))
+            static (result, surface) => ResultText.Produced(surface, result.Output, "create"))
         {
             Examples =
             [
                 "pdf create scans.pdf --from-images page1.png page2.png",
-                "pdf create notes.pdf --from-text notes.md --page-size Letter --margins 54",
+                "pdf create notes.pdf --from-text notes.md --page-size letter --margins 54",
             ],
             Links =
             [

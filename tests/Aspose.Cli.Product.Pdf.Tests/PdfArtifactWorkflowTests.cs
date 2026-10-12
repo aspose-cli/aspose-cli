@@ -27,7 +27,7 @@ public sealed class PdfArtifactWorkflowTests
 
         PdfPageOutput page = Assert.Single(result.Outputs);
         Assert.Equal(2, page.Page);
-        Assert.Equal(output, page.Output.Path);
+        Assert.Equal(output, page.Path);
         Assert.True(new FileInfo(output).Length > 100);
     }
 
@@ -42,7 +42,7 @@ public sealed class PdfArtifactWorkflowTests
         {
             Output = TestOutput.At(output),
             TextPath = markdown,
-            PageSize = "Letter",
+            PageSize = "letter",
             Margins = new PdfMargins(72, 54, 60, 90),
         });
 
@@ -69,7 +69,7 @@ public sealed class PdfArtifactWorkflowTests
         {
             Output = TestOutput.At(output),
             TextPath = text,
-            PageSize = "Letter",
+            PageSize = "letter",
             Margins = new PdfMargins(72, 54, 60, 90),
         });
 
@@ -131,8 +131,8 @@ public sealed class PdfArtifactWorkflowTests
         Assert.Equal(2, split.Outputs.Count);
         Assert.All(split.Outputs, part =>
         {
-            Assert.True(File.Exists(part.Output.Path));
-            using var document = new Document(part.Output.Path);
+            Assert.True(File.Exists(part.Path));
+            using var document = new Document(part.Path);
             Assert.Single(document.Pages);
         });
     }
@@ -153,7 +153,7 @@ public sealed class PdfArtifactWorkflowTests
         Assert.Equal(["1-3", "1,3-4", "2"], split.Outputs.Select(static part => part.Pages));
         Assert.Equal(
             ["region.1.pdf", "region.2.pdf", "region.3.pdf"],
-            split.Outputs.Select(static part => Path.GetFileName(part.Output.Path)));
+            split.Outputs.Select(static part => Path.GetFileName(part.Path)));
     }
 
     [Fact]
@@ -185,11 +185,11 @@ public sealed class PdfArtifactWorkflowTests
 
         Assert.Equal(
             ["East(1) > East details(2)", "South(1) > South details(2)"],
-            byBookmarks.Outputs.Select(static part => Outline(part.Output.Path)));
+            byBookmarks.Outputs.Select(static part => Outline(part.Path)));
         // A bookmark whose parent opens a page of another part moves up to the top level.
         Assert.Equal(
             ["East(1)", "East details(1)", "South(1)", "South details(1)"],
-            byPage.Outputs.Select(static part => Outline(part.Output.Path)));
+            byPage.Outputs.Select(static part => Outline(part.Path)));
         Warning degraded = Assert.Single(byBookmarks.Warnings!, static warning => warning.Code.Name == "NAVIGATION_DEGRADED");
         Assert.StartsWith("1 bookmark(s), 0 link(s) and 0 named destination(s)", degraded.Message, StringComparison.Ordinal);
     }
@@ -229,7 +229,7 @@ public sealed class PdfArtifactWorkflowTests
 
         Assert.Equal(
             ["1:East-arabic2 2:South-roman-lower5", "1:East-arabic1 2:South-roman-lower6"],
-            split.Outputs.Select(part => string.Join(" ", PdfInfo.Run(fixture.Session, new PdfInspectRequest { Input = part.Output.Path }).PageLabels!
+            split.Outputs.Select(part => string.Join(" ", PdfInfo.Run(fixture.Session, new PdfInspectRequest { Input = part.Path }).PageLabels!
                 .Select(static label => $"{label.StartPage}:{label.Prefix}{label.Style}{label.StartingValue}"))));
     }
 
@@ -268,11 +268,13 @@ public sealed class PdfArtifactWorkflowTests
         }
         byte[] original = File.ReadAllBytes(input);
         string directory = fixture.File("extracted");
-        PdfExtractResult result = PdfExtract.Assets(fixture.Session, new PdfExtractRequest { Input = input, Output = new ResolvedDirectory(directory), What = "attachments" });
+        PdfExtractResult result = PdfExtract.Run(fixture.Session, new PdfExtractRequest { Input = input, Output = new ResolvedDirectory(directory), What = "attachments" });
 
-        Assert.Equal(2, result.Items.Count);
-        var evidence = Assert.Single(result.Items, item => item.Name == "evidence.bin");
-        var emptyItem = Assert.Single(result.Items, item => item.Name == "empty.txt");
+        Assert.Equal(2, result.Outputs.Count);
+        var evidence = Assert.Single(result.Outputs, item => Path.GetFileName(item.Path) == "evidence.bin");
+        var emptyItem = Assert.Single(result.Outputs, item => Path.GetFileName(item.Path) == "empty.txt");
+        Assert.All(result.Outputs, static item => Assert.Null(item.Page));
+        Assert.Equal(["bin", "txt"], result.Outputs.Select(static item => item.Format).Order());
         Assert.Equal(payload.LongLength, evidence.SizeBytes);
         Assert.Equal(payload, File.ReadAllBytes(evidence.Path));
         Assert.Equal(0, emptyItem.SizeBytes);
@@ -305,7 +307,7 @@ public sealed class PdfArtifactWorkflowTests
         string unrelated = Path.Combine(output, "keep.txt");
         File.WriteAllText(unrelated, "Unrelated original file");
 
-        CliException error = Assert.Throws<CliException>(() => PdfExtract.Assets(session, new PdfExtractRequest { Input = input, Output = new ResolvedDirectory(output), What = "attachments" }));
+        CliException error = Assert.Throws<CliException>(() => PdfExtract.Run(session, new PdfExtractRequest { Input = input, Output = new ResolvedDirectory(output), What = "attachments" }));
 
         Assert.Equal(ErrorCodes.ExtractBudgetExceeded, error.Code);
         Assert.Equal(original, File.ReadAllBytes(input));

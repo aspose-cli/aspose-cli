@@ -103,7 +103,7 @@ internal sealed class PdfEditModel : IOperationModel<PdfOp>
         RedactTextOp => new NoEffect(NoEffectReasons.NoMatch,
             $"Operation {operation.Id} (redact_text) matched no text on the pages searched, so nothing was redacted there.")
         {
-            Hint = "Search the pages with 'pdf query search' and the same pattern. When the text shows on the page but is not found, "
+            Hint = "Search the pages with 'pdf search' and the same pattern. When the text shows on the page but is not found, "
                 + "its extracted text differs, for example by spaces between characters: match it with a regular expression "
                 + "that allows them (\\s*), or cover it with redact_area.",
         },

@@ -5,7 +5,7 @@ using static Aspose.Cli.Product.Pdf.Engine.PdfEngineSupport;
 
 namespace Aspose.Cli.Product.Pdf.Engine;
 
-/// <summary>Reads a bounded page-text window: <c>pdf query pages</c>.</summary>
+/// <summary>Reads a bounded page-text window: <c>pdf read</c>.</summary>
 internal static class PdfRead
 {
     internal static PdfReadResult Run(PdfSession session, PdfReadRequest request)
@@ -27,7 +27,7 @@ internal static class PdfRead
             }
 
             Page page = loaded.Document.Pages[pageNumber];
-            string text = ExtractText(page, request.Mode);
+            string text = ExtractText(page, request.Content);
             bool truncated = text.Length > remaining;
             string projected = truncated ? text[..remaining] : text;
             pages.Add(new PdfPageText
@@ -57,7 +57,7 @@ internal static class PdfRead
         return new PdfReadResult
         {
             Input = PdfInfoProjection.Source(filePath, loaded),
-            Mode = request.Mode,
+            Content = request.Content,
             PageCount = loaded.Document.Pages.Count,
             Pages = pages,
             Window = new ResultWindow

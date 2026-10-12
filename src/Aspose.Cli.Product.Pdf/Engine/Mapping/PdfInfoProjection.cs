@@ -16,7 +16,8 @@ internal static class PdfInfoProjection
         Document document = loaded.Document;
         HashSet<string> details = new(request.Details ?? [], StringComparer.Ordinal);
         bool includePages = request.IncludePreview;
-        PdfFormSummary form = Form(document);
+        bool fieldsTruncated = false;
+        PdfFormInfo? form = details.Contains(PdfInspectDetails.Forms) ? PdfForms.Project(document, out fieldsTruncated) : null;
         PdfSignatureInfo[] signatures = Signatures(document);
         PdfOutlineItem[]? outline = details.Contains(PdfInspectDetails.Outline) ? Outline(document) : null;
         var warnings = new List<Warning>();
@@ -38,6 +39,15 @@ internal static class PdfInfoProjection
                 "Split at top-level bookmarks with 'aspose-cli pdf split --by bookmarks' and inspect each part's outline."));
         }
 
+        if (form is not null && fieldsTruncated)
+        {
+            warnings.Add(EnvelopeParts.ListTruncated(
+                "forms.fields",
+                PdfInspectResult.FieldLimit,
+                form.FieldCount,
+                "Fill or export the form as a whole with 'aspose-cli pdf extract --what forms --form-format json --out-dir <dir>'."));
+        }
+
         var result = new PdfInspectResult
         {
             Input = Source(path, loaded),
@@ -50,7 +60,7 @@ internal static class PdfInfoProjection
                 Linearized = document.IsLinearized,
                 Tagged = false,
                 PdfaProfile = DeclaredPdfa(document.PdfFormat),
-                FormType = form.Type,
+                FormType = FormKind(document),
                 AttachmentCount = document.EmbeddedFiles.Count,
                 Signed = signatures.Any(static item => item.Signed),
                 PasswordType = OpenedWith(loaded),
@@ -58,13 +68,13 @@ internal static class PdfInfoProjection
             Pages = includePages ? Pages(document) : null,
             PageLabels = PageLabels(document),
             Outline = outline,
-            Forms = details.Contains(PdfInspectDetails.Forms) ? form : null,
+            Forms = form,
             Attachments = details.Contains(PdfInspectDetails.Attachments) ? Attachments(document) : null,
             Fonts = details.Contains(PdfInspectDetails.Fonts) ? Fonts(document) : null,
             Permissions = details.Contains(PdfInspectDetails.Permissions) ? Permissions(loaded) : null,
             Signatures = details.Contains(PdfInspectDetails.Signatures) ? signatures : null,
             Layers = details.Contains(PdfInspectDetails.Layers) ? Layers(document) : null,
-            Metadata = details.Contains(PdfInspectDetails.Metadata) ? Metadata(document) : null,
+            Properties = details.Contains(PdfInspectDetails.Properties) ? Properties(document) : null,
             Warnings = warnings.Count == 0 ? null : warnings,
         };
 
@@ -199,18 +209,9 @@ internal static class PdfInfoProjection
         }
     }
 
-    private static PdfFormSummary Form(Document document)
-    {
-        bool xfa = document.Form.HasXfa;
-        string type = xfa ? PdfFormKinds.Xfa : document.Form.Count > 0 ? PdfFormKinds.Acro : PdfFormKinds.None;
-        return new PdfFormSummary
-        {
-            Type = type,
-            // A radio group's buttons share its name and are one field.
-            FieldCount = document.Form.Fields.Select(static field => field.FullName).Distinct(StringComparer.Ordinal).Count(),
-            ReadOnly = xfa,
-        };
-    }
+    /// <summary>The kind of the document's form, or null when it has none.</summary>
+    private static string? FormKind(Document document) =>
+        document.Form.HasXfa ? PdfFormKinds.Xfa : document.Form.Count > 0 ? PdfFormKinds.Acro : null;
 
     private static PdfAttachmentInfo[] Attachments(Document document) =>
         document.EmbeddedFiles
@@ -241,12 +242,12 @@ internal static class PdfInfoProjection
     }
 
     /// <summary>
-    /// The password the file was opened with; a file with only an owner password opened without
-    /// one reports none.
+    /// The password the file was opened with, or null when it needed none: a file with only an
+    /// owner password opened without one needed none.
     /// </summary>
-    private static string OpenedWith(LoadedPdf loaded) =>
-        loaded.PasswordType == PasswordType.User && !loaded.HasOpenPassword
-            ? "none"
+    private static string? OpenedWith(LoadedPdf loaded) =>
+        loaded.PasswordType == PasswordType.None || (loaded.PasswordType == PasswordType.User && !loaded.HasOpenPassword)
+            ? null
             : loaded.PasswordType.ToString().ToLowerInvariant();
 
     /// <summary>
@@ -315,7 +316,7 @@ internal static class PdfInfoProjection
             .Order(StringComparer.Ordinal)
             .ToArray()!;
 
-    private static IReadOnlyDictionary<string, string?> Metadata(Document document)
+    private static IReadOnlyDictionary<string, string?> Properties(Document document)
     {
         var values = new SortedDictionary<string, string?>(StringComparer.Ordinal)
         {

@@ -304,7 +304,9 @@ public abstract class ProductContractTests<TModule>
         ProductDefinition definition = Assert.Single(catalog.Products);
         Type outcome = Assert.Single(
             definition.Outputs.Select(static output => output.ResultType).Distinct(),
-            static type => typeof(IPartialOutcome).IsAssignableFrom(type));
+            // A partial outcome that applies operations, as an edit does; a check such as a
+            // validation that fails completes partially too, but applies nothing.
+            static type => typeof(IPartialOutcome).IsAssignableFrom(type) && type.GetProperty("Applied") is not null);
 
         PropertyInfo? applied = outcome.GetProperty("Applied");
         Assert.NotNull(applied);

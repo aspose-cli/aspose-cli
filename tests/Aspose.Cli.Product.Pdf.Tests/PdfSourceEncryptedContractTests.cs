@@ -57,7 +57,8 @@ public sealed class PdfSourceEncryptedContractTests : IDisposable
         var problems = new List<string>();
         foreach ((string name, bool encrypted, CliResult result) in runs)
         {
-            if (result.ExitCode != 0)
+            // A validation that finds the file not conforming completes with exit 8.
+            if (result.ExitCode != 0 && !(result.ExitCode == 8 && name.StartsWith("pdf validate ", StringComparison.Ordinal)))
             {
                 problems.Add($"{name} failed: {result.StdErr}");
                 continue;
@@ -72,8 +73,8 @@ public sealed class PdfSourceEncryptedContractTests : IDisposable
     private static string[][] Commands(string file) =>
     [
         ["pdf", "inspect", file],
-        ["pdf", "query", "pages", file],
-        ["pdf", "query", "search", file, "--pattern", "Encrypted"],
+        ["pdf", "read", file],
+        ["pdf", "search", file, "--pattern", "Encrypted"],
         ["pdf", "render", file, "--out", $"{file}.png", "--overwrite"],
         ["pdf", "validate", file, "--profile", "pdfa-1b"],
         ["pdf", "extract", file, "--what", "text", "--out-dir", $"{file}-text"],

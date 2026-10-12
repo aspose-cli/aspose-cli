@@ -392,16 +392,16 @@ public sealed record RedactAreaOp : PdfOp
 [Operation("set_metadata")]
 public sealed record SetMetadataOp : PdfOp
 {
-    [ReadBack("inspect-result.schema.json#/properties/metadata/additionalProperties")]
+    [ReadBack("inspect-result.schema.json#/properties/properties/additionalProperties")]
     public string? Title { get; init; }
 
-    [ReadBack("inspect-result.schema.json#/properties/metadata/additionalProperties")]
+    [ReadBack("inspect-result.schema.json#/properties/properties/additionalProperties")]
     public string? Author { get; init; }
 
-    [ReadBack("inspect-result.schema.json#/properties/metadata/additionalProperties")]
+    [ReadBack("inspect-result.schema.json#/properties/properties/additionalProperties")]
     public string? Subject { get; init; }
 
-    [ReadBack("inspect-result.schema.json#/properties/metadata/additionalProperties")]
+    [ReadBack("inspect-result.schema.json#/properties/properties/additionalProperties")]
     public string? Keywords { get; init; }
 
     /// <summary>Custom document information entries by name.</summary>
@@ -557,7 +557,7 @@ public sealed record SetFormFieldOp : PdfOp
     /// The value to set; null clears the field: a radio group selects no button, a check box
     /// is unchecked and any other field is emptied.
     /// </summary>
-    [ReadBack("form-result.schema.json#/$defs/pdfFormField/properties/value")]
+    [ReadBack("inspect-result.schema.json#/$defs/pdfFormField/properties/value")]
     public required string? Value { get; init; }
 }
 

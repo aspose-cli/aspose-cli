@@ -45,6 +45,10 @@ public sealed class PdfEngineFixture : IDisposable
 
     public string File(string fileName) => Temp.File(fileName);
 
+    /// <summary>The form and its fields, as <c>pdf inspect --detail forms</c> reports them.</summary>
+    public PdfFormInfo Forms(string path) =>
+        PdfInfo.Run(Session, new PdfInspectRequest { Input = path, Details = [PdfInspectDetails.Forms] }).Forms!;
+
     public string CreateDocument(string fileName = "document.pdf", int pages = 2)
     {
         string path = File(fileName);

@@ -35,14 +35,14 @@ public sealed class PdfEngineTests
         PdfInspectResult info = PdfInfo.Run(fixture.Session, new PdfInspectRequest
         {
             Input = path,
-            Details = ["outline", "forms", "attachments", "fonts", "permissions", "signatures", "layers", "metadata"],
+            Details = ["outline", "forms", "attachments", "fonts", "permissions", "signatures", "layers", "properties"],
         });
         using var writer = new StringWriter();
         Commands.InspectCommand.Table(info, new Sdk.Extensibility.Output.TableSurface(writer, format));
         string text = writer.ToString();
 
         string heading = format == Sdk.Extensibility.Output.TableFormat.Markdown ? "### " : string.Empty;
-        foreach (string section in new[] { "outline", "forms", "attachments", "fonts", "permissions", "signatures", "layers", "metadata" })
+        foreach (string section in new[] { "outline", "forms", "attachments", "fonts", "permissions", "signatures", "layers", "properties" })
         {
             Assert.Contains(heading + section, text, StringComparison.Ordinal);
         }
@@ -69,11 +69,11 @@ public sealed class PdfEngineTests
 
         PdfCreateResult result = PdfCreate.Run(fixture.Session, new PdfCreateRequest { Output = TestOutput.At(fixture.File("report.pdf")), HtmlPath = input });
 
-        PdfInspectResult info = PdfInfo.Run(fixture.Session, new PdfInspectRequest { Input = result.Output.Path, Details = ["metadata"] });
-        Assert.Equal("2026 Q3 运营报告 & East", info.Metadata!["title"]);
-        Assert.Null(info.Metadata["author"]);
-        Assert.Null(info.Metadata["subject"]);
-        Assert.DoesNotContain(info.Metadata.Keys, static key => key.StartsWith("xmp:", StringComparison.Ordinal));
+        PdfInspectResult info = PdfInfo.Run(fixture.Session, new PdfInspectRequest { Input = result.Output.Path, Details = ["properties"] });
+        Assert.Equal("2026 Q3 运营报告 & East", info.Properties!["title"]);
+        Assert.Null(info.Properties["author"]);
+        Assert.Null(info.Properties["subject"]);
+        Assert.DoesNotContain(info.Properties.Keys, static key => key.StartsWith("xmp:", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -105,10 +105,10 @@ public sealed class PdfEngineTests
 
         PdfCreateResult result = PdfCreate.Run(fixture.Session, new PdfCreateRequest { Output = TestOutput.At(fixture.File("notes.pdf")), TextPath = input });
 
-        PdfInspectResult info = PdfInfo.Run(fixture.Session, new PdfInspectRequest { Input = result.Output.Path, Details = ["metadata"] });
-        Assert.Null(info.Metadata!["title"]);
-        Assert.Null(info.Metadata["author"]);
-        Assert.Null(info.Metadata["subject"]);
+        PdfInspectResult info = PdfInfo.Run(fixture.Session, new PdfInspectRequest { Input = result.Output.Path, Details = ["properties"] });
+        Assert.Null(info.Properties!["title"]);
+        Assert.Null(info.Properties["author"]);
+        Assert.Null(info.Properties["subject"]);
     }
 
     [Fact]
@@ -184,17 +184,17 @@ public sealed class PdfEngineTests
     /// margins the room for the image equals the image.
     /// </summary>
     [Theory]
-    [InlineData(210, 297, "A4", "36")]
-    [InlineData(297, 210, "A4", "36")]
-    [InlineData(216, 279, "Letter", "36")]
-    [InlineData(100, 300, "A4", "36")]
-    [InlineData(210, 297, "A4", "0")]
-    [InlineData(297, 210, "A4", "0")]
-    [InlineData(216, 279, "Letter", "0")]
-    [InlineData(279, 216, "Letter", "0")]
-    [InlineData(210, 297, "A4", "10,50,90,20")]
-    [InlineData(300, 100, "A4", "10,50,90,20")]
-    [InlineData(100, 300, "Letter", "10,50,90,20")]
+    [InlineData(210, 297, "a4", "36")]
+    [InlineData(297, 210, "a4", "36")]
+    [InlineData(216, 279, "letter", "36")]
+    [InlineData(100, 300, "a4", "36")]
+    [InlineData(210, 297, "a4", "0")]
+    [InlineData(297, 210, "a4", "0")]
+    [InlineData(216, 279, "letter", "0")]
+    [InlineData(279, 216, "letter", "0")]
+    [InlineData(210, 297, "a4", "10,50,90,20")]
+    [InlineData(300, 100, "a4", "10,50,90,20")]
+    [InlineData(100, 300, "letter", "10,50,90,20")]
     public void Create_FromImages_KeepsAnImageThatFillsItsMarginBoxOnOnePage(int width, int height, string pageSize, string margins)
     {
         using var fixture = new PdfEngineFixture();
@@ -376,9 +376,9 @@ public sealed class PdfEngineTests
             document.Save(path);
         }
 
-        PdfInspectResult result = PdfInfo.Run(fixture.Session, new PdfInspectRequest { Input = path, Details = ["metadata"] });
+        PdfInspectResult result = PdfInfo.Run(fixture.Session, new PdfInspectRequest { Input = path, Details = ["properties"] });
 
-        Assert.Equal(expected, result.Metadata!["creationDate"]);
+        Assert.Equal(expected, result.Properties!["creationDate"]);
     }
 
     [Fact]
@@ -413,12 +413,12 @@ public sealed class PdfEngineTests
         {
             Input = path,
             IncludePreview = true,
-            Details = ["outline", "forms", "attachments", "fonts", "permissions", "signatures", "layers", "metadata"],
+            Details = ["outline", "forms", "attachments", "fonts", "permissions", "signatures", "layers", "properties"],
         });
 
         Assert.Equal("pdf", result.Input.Format);
         Assert.Equal(2, result.Pdf.PageCount);
-        Assert.Equal("none", result.Pdf.FormType);
+        Assert.Null(result.Pdf.FormType);
         Assert.Equal(2, result.Pdf.DistinctPageSizes.Count);
         Assert.Equal(2, result.Pages!.Count);
         Assert.Collection(
@@ -444,19 +444,51 @@ public sealed class PdfEngineTests
                 Assert.Equal("1/1", item.Index);
                 Assert.Null(item.Page);
             });
-        Assert.Equal("none", result.Forms!.Type);
+        Assert.Null(result.Forms!.Kind);
+        Assert.Null(result.Pdf.FormType);
+        Assert.Empty(result.Forms.Fields);
         Assert.Empty(result.Attachments!);
         Assert.NotEmpty(result.Fonts!);
         Assert.True(result.Permissions!.OwnerAccess);
         Assert.Empty(result.Signatures!);
         Assert.Empty(result.Layers!);
-        Assert.Contains("producer", result.Metadata!.Keys);
+        Assert.Contains("producer", result.Properties!.Keys);
+    }
+
+    [Fact]
+    public void Info_ListsTheFirstFormFieldsWithTheirValuesAndSaysWhenThereAreMore()
+    {
+        using var fixture = new PdfEngineFixture();
+        string path = fixture.CreateDocument(pages: 1);
+        using (var document = new Document(path))
+        {
+            for (int index = 0; index <= PdfInspectResult.FieldLimit; index++)
+            {
+                var field = new TextBoxField(document.Pages[1], new Rectangle(10, 10, 60, 20))
+                {
+                    PartialName = $"field{index:0000}",
+                    Value = $"value {index}",
+                };
+                document.Form.Add(field, 1);
+            }
+
+            document.Save(path);
+        }
+
+        PdfInspectResult result = PdfInfo.Run(fixture.Session, new PdfInspectRequest { Input = path, Details = [PdfInspectDetails.Forms] });
+
+        Assert.Equal(PdfInspectResult.FieldLimit + 1, result.Forms!.FieldCount);
+        Assert.Equal(PdfInspectResult.FieldLimit, result.Forms.Fields.Count);
+        Assert.Equal(("field0000", "text", "value 0"), (result.Forms.Fields[0].Name, result.Forms.Fields[0].Kind, result.Forms.Fields[0].Value));
+        Warning truncated = Assert.Single(result.Warnings!, static warning => warning.Code == WarningCodes.ListTruncated);
+        Assert.Equal("forms.fields", truncated.Location);
+        Assert.Contains($"{PdfInspectResult.FieldLimit + 1}", truncated.Message, StringComparison.Ordinal);
     }
 
     [Theory]
-    [InlineData("plain")]
+    [InlineData("text")]
     [InlineData("layout")]
-    public void Read_ProjectsSelectedPagesInBothModes(string mode)
+    public void Read_ProjectsSelectedPagesInBothContents(string mode)
     {
         using var fixture = new PdfEngineFixture();
         string path = fixture.CreateDocument(pages: 3);
@@ -465,11 +497,11 @@ public sealed class PdfEngineTests
         {
             Input = path,
             Pages = CliPageRange.Parse("2-3"),
-            Mode = mode,
+            Content = mode,
             MaxCharacters = 20_000,
         });
 
-        Assert.Equal(mode, result.Mode);
+        Assert.Equal(mode, result.Content);
         Assert.Equal(3, result.PageCount);
         Assert.Equal(new ResultWindow { Unit = "page", Returned = 2, Total = 2, Truncated = false }, result.Window);
         Assert.Contains("Portable PDF page 2", result.Pages[0].Text, StringComparison.Ordinal);
@@ -550,7 +582,7 @@ public sealed class PdfEngineTests
 
         Assert.True(normal.Pdf.Encrypted);
         // The file has only an owner password, so it opened without one.
-        Assert.Equal("none", normal.Pdf.PasswordType);
+        Assert.Null(normal.Pdf.PasswordType);
         Assert.False(normal.Permissions!.HasOpenPassword);
         Assert.True(normal.Permissions.HasOwnerPassword);
         Assert.False(normal.Permissions.OwnerAccess);
@@ -630,7 +662,7 @@ public sealed class PdfEngineTests
         var result = PdfInfo.Run(fixture.Session, new PdfInspectRequest { Input = path, Details = ["forms"] });
 
         Assert.Equal("xfa", result.Pdf.FormType);
-        Assert.Equal("xfa", result.Forms!.Type);
+        Assert.Equal("xfa", result.Forms!.Kind);
         Assert.True(result.Forms.ReadOnly);
     }
 

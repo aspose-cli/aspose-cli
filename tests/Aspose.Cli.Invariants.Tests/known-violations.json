@@ -766,13 +766,6 @@
       "actual": "targets outside <unit>/<address>: add_comment Sheet1!A1; add_conditional_format Sheet1!B2:B3; add_sheet Extra; add_sparkline Sheet1!C2; format_range Sheet1!A1:B1; set_autofilter Sheet1!A1:B3; set_borders Sheet1!A1:B3; set_formula Sheet1!C2;..."
     },
     {
-      "case": "C-R10 | pdf sign declared",
-      "invariant": "C-R10",
-      "rule": "C-R10",
-      "cause": "certificate-password-has-no-stdin",
-      "actual": "pdf sign --certificate-password: the secret has no --certificate-password-stdin."
-    },
-    {
       "case": "C-R38 | src/Aspose.Cli.Product.Cells",
       "invariant": "C-R38",
       "rule": "C-R38",
@@ -869,27 +862,6 @@
       "rule": "C-R34",
       "cause": "help-examples-and-links-not-declared",
       "actual": "has no Learn more"
-    },
-    {
-      "case": "C-R34 | pdf query forms",
-      "invariant": "C-R34",
-      "rule": "C-R34",
-      "cause": "help-examples-and-links-not-declared",
-      "actual": "has 0 examples; at least 2; has no Learn more"
-    },
-    {
-      "case": "C-R34 | pdf query pages",
-      "invariant": "C-R34",
-      "rule": "C-R34",
-      "cause": "help-examples-and-links-not-declared",
-      "actual": "has 0 examples; at least 2; has no Learn more"
-    },
-    {
-      "case": "C-R34 | pdf query search",
-      "invariant": "C-R34",
-      "rule": "C-R34",
-      "cause": "help-examples-and-links-not-declared",
-      "actual": "has 0 examples; at least 2; has no Learn more"
     },
     {
       "case": "C-R34 | words query blocks",
@@ -1130,20 +1102,6 @@
       "actual": "outputs[]: lacks format, fingerprint"
     },
     {
-      "case": "C-R31 | v2/pdf/render-result outputs",
-      "invariant": "C-R31",
-      "rule": "C-R31",
-      "cause": "outputs-shapes-differ",
-      "actual": "outputs[]: lacks path, format, sizeBytes, fingerprint; outputs[]: not flat (output)"
-    },
-    {
-      "case": "C-R31 | v2/pdf/split-result outputs",
-      "invariant": "C-R31",
-      "rule": "C-R31",
-      "cause": "outputs-shapes-differ",
-      "actual": "outputs[]: lacks path, format, sizeBytes, fingerprint; outputs[]: not flat (output); outputs[]: index, pages, bookmark beside the file fields, not one unit field"
-    },
-    {
       "case": "C-R31 | v2/words/render-result outputs",
       "invariant": "C-R31",
       "rule": "C-R31",
@@ -1242,67 +1200,11 @@
       "actual": "setup.size \"letter\" does not read back as widthPoints in words inspect"
     },
     {
-      "case": "C-R12 | pdf extract declared",
-      "invariant": "C-R12",
-      "rule": "C-R12",
-      "cause": "pdf-extract-has-out-and-out-dir",
-      "actual": "pdf extract has both --out and --out-dir."
-    },
-    {
-      "case": "same-name-option | --out-dir",
-      "invariant": "same-name-option",
-      "rule": "C-R07",
-      "cause": "pdf-extract-has-out-and-out-dir",
-      "actual": "--out-dir: 2 different required flags: optional (pdf extract) | required (pdf split, slides extract, words extract, words split)"
-    },
-    {
-      "case": "C-R36 | pdf extract --to",
-      "invariant": "C-R36",
-      "rule": "C-R36",
-      "cause": "pdf-extract-to-lists-form-data-formats",
-      "actual": "pdf extract --to lists fdf, json, xfdf; convertFormats is docx, epub, html, jpeg, md, pdfa-1b, pdfa-2b, pdfa-3b, png, pptx, svg, tiff, txt, xlsx, xps."
-    },
-    {
-      "case": "C-R33 | v2/pdf/form-result none",
-      "invariant": "C-R33",
-      "rule": "C-R33",
-      "cause": "pdf-none-enum-values",
-      "actual": "type: \"none\" as a value; omit the field instead"
-    },
-    {
-      "case": "C-R33 | v2/pdf/inspect-result none",
-      "invariant": "C-R33",
-      "rule": "C-R33",
-      "cause": "pdf-none-enum-values",
-      "actual": "pdfFormSummary.type: \"none\" as a value; omit the field instead; pdfSummary.formType: \"none\" as a value; omit the field instead; pdfSummary.passwordType: \"none\" as a value; omit the field instead"
-    },
-    {
-      "case": "C-R17 | pdf create values",
-      "invariant": "C-R17",
-      "rule": "C-R17",
-      "cause": "pdf-page-size-values-not-kebab",
-      "actual": "pdf create --page-size: values not in lowercase kebab case: A3, A4, Legal, Letter."
-    },
-    {
       "case": "C-R17 | v2/pdf/ops#pageSize",
       "invariant": "C-R17",
       "rule": "C-R17",
       "cause": "pdf-page-size-values-uppercase",
       "actual": "the schema: enum values A3, A4, Letter, Legal are not lowercase kebab-case"
-    },
-    {
-      "case": "C-R08 | pdf query pages",
-      "invariant": "C-R08",
-      "rule": "C-R08",
-      "cause": "pdf-pages-mode-option",
-      "actual": "pdf query pages --mode: a banned name; name what the value chooses: --content, --scope or --detail."
-    },
-    {
-      "case": "C-R15 | pdf query forms declared",
-      "invariant": "C-R15",
-      "rule": "C-R15",
-      "cause": "pdf-query-forms-has-no-budget",
-      "actual": "pdf query forms reads content but has no --max-<unit> budget."
     },
     {
       "case": "C-R21 | pdf crop_pages reads back",
@@ -1389,13 +1291,6 @@
       "actual": "custom: no read reports it"
     },
     {
-      "case": "C-R24 | pdf validate of a PDF that is not PDF/A",
-      "invariant": "C-R24",
-      "rule": "C-R24",
-      "cause": "pdf-validate-failure-exits-0",
-      "actual": "exit 0, expected 8"
-    },
-    {
       "case": "C-R28 | pdf code names",
       "invariant": "C-R28",
       "rule": "C-R28",
@@ -1410,13 +1305,6 @@
       "actual": "cells query is a command group below the product; its subcommands are a third level.; cells query range is a third command level; a product command is `aspose-cli <product> <verb> <file...>`.; cells query search is a third command level; a ..."
     },
     {
-      "case": "C-R01 | pdf",
-      "invariant": "C-R01",
-      "rule": "C-R01",
-      "cause": "query-is-a-third-command-level",
-      "actual": "pdf query is a command group below the product; its subcommands are a third level.; pdf query forms is a third command level; a product command is `aspose-cli <product> <verb> <file...>`.; pdf query pages is a third command level; a product..."
-    },
-    {
       "case": "C-R01 | words",
       "invariant": "C-R01",
       "rule": "C-R01",
@@ -1429,13 +1317,6 @@
       "rule": "C-R02",
       "cause": "query-is-a-third-command-level",
       "actual": "cells query: 'query' is not a product verb (inspect, read, search, create, edit, convert, render, compare, extract, split, merge, sign, validate)."
-    },
-    {
-      "case": "C-R02 | pdf",
-      "invariant": "C-R02",
-      "rule": "C-R02",
-      "cause": "query-is-a-third-command-level",
-      "actual": "pdf query: 'query' is not a product verb (inspect, read, search, create, edit, convert, render, compare, extract, split, merge, sign, validate)."
     },
     {
       "case": "C-R02 | words",
@@ -1464,13 +1345,6 @@
       "rule": "C-R32",
       "cause": "search-hit-text-named-snippet-or-value",
       "actual": "hits[] does not require text (it has value)"
-    },
-    {
-      "case": "C-R32 | v2/pdf/search-result hits",
-      "invariant": "C-R32",
-      "rule": "C-R32",
-      "cause": "search-hit-text-named-snippet-or-value",
-      "actual": "hits[] does not require text (it has snippet)"
     },
     {
       "case": "C-R32 | v2/words/search-result hits",
@@ -1569,20 +1443,6 @@
       "rule": "C-R20",
       "cause": "variant-field-named-type",
       "actual": "chartInfo.type: a variant named type, not kind; validationInfo.type: a variant named type, not kind"
-    },
-    {
-      "case": "C-R20 | v2/pdf/form-result variants",
-      "invariant": "C-R20",
-      "rule": "C-R20",
-      "cause": "variant-field-named-type",
-      "actual": "type: a variant named type, not kind; pdfFormField.type: a variant named type, not kind"
-    },
-    {
-      "case": "C-R20 | v2/pdf/inspect-result variants",
-      "invariant": "C-R20",
-      "rule": "C-R20",
-      "cause": "variant-field-named-type",
-      "actual": "pdfFormSummary.type: a variant named type, not kind"
     },
     {
       "case": "C-R20 | v2/words/compare-result variants",

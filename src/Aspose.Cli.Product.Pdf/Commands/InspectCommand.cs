@@ -9,9 +9,9 @@ internal static class InspectCommand
     private static readonly Dictionary<string, string> DetailNotes = new(StringComparer.Ordinal)
     {
         [PdfInspectDetails.Outline] = $"bookmarks, up to {PdfInspectResult.OutlineLimit}",
-        [PdfInspectDetails.Forms] = "form type and field count",
+        [PdfInspectDetails.Forms] = $"form kind and each field's value, up to {PdfInspectResult.FieldLimit} fields",
         [PdfInspectDetails.Layers] = "optional content layer names",
-        [PdfInspectDetails.Metadata] = "document information such as title and author",
+        [PdfInspectDetails.Properties] = "document information such as title and author",
     };
 
     public static CommandDefinition<PdfInspectRequest, PdfInspectResult> Create()
@@ -20,7 +20,7 @@ internal static class InspectCommand
         var detail = new DetailOption(PdfInspectDetails.All, DetailNotes);
         return new(
             "inspect",
-            "Show PDF structure, security state and metadata.",
+            "Show PDF structure, security state and properties.",
             new CommandTraits { Input = PdfInputs.Document },
             [.. sample.Options, .. detail.Options],
             (parse, standard) => new PdfInspectRequest
@@ -53,8 +53,8 @@ internal static class InspectCommand
             $"pages: {pdf.PageCount}   version: {pdf.Version}   encrypted: {TableText.YesNo(pdf.Encrypted)}   "
             + $"tagged: {TableText.YesNo(pdf.Tagged)}   PDF/A declared: {pdf.PdfaProfile ?? TableText.Missing}");
         surface.Out.WriteLine(
-            $"form: {pdf.FormType}   attachments: {pdf.AttachmentCount}   signed: {TableText.YesNo(pdf.Signed)}   "
-            + $"password access: {pdf.PasswordType}");
+            $"form: {pdf.FormType ?? TableText.Missing}   attachments: {pdf.AttachmentCount}   signed: {TableText.YesNo(pdf.Signed)}   "
+            + $"password access: {pdf.PasswordType ?? TableText.Missing}");
         if (pdf.DistinctPageSizes.Count > 0)
         {
             surface.Out.WriteLine(
@@ -106,7 +106,28 @@ internal static class InspectCommand
         if (result.Forms is { } forms)
         {
             ResultText.Section(surface, "forms");
-            surface.Out.WriteLine($"{forms.Type}: {forms.FieldCount} field(s){(forms.ReadOnly ? ", read-only" : string.Empty)}");
+            surface.Out.WriteLine($"{forms.Kind ?? TableText.Missing}: {forms.FieldCount} field(s){(forms.ReadOnly ? ", read-only" : string.Empty)}");
+            if (forms.Fields.Count > 0)
+            {
+                var table = new TextTable("name", "kind", "value", "accepts", "page", "rectangle", "flags");
+                foreach (PdfFormField field in forms.Fields)
+                {
+                    table.AddRow(
+                        field.Name,
+                        field.Kind,
+                        field.Value,
+                        string.Join(", ", field.Options ?? []),
+                        field.Page?.ToString(CultureInfo.InvariantCulture),
+                        field.Rect is { } rect ? PdfText.Rectangle(rect) : null,
+                        string.Join(", ", new[]
+                        {
+                            field.ReadOnly ? "read-only" : null,
+                            field.Required ? "required" : null,
+                        }.Where(static value => value is not null)));
+                }
+
+                table.WriteTo(surface.Out, surface.Format);
+            }
         }
 
         ResultText.Table(surface, "attachments", result.Attachments, ["name", "type", "size"],
@@ -141,6 +162,6 @@ internal static class InspectCommand
             ]);
         ResultText.List(surface, "layers", result.Layers);
 
-        ResultText.Properties(surface, "metadata", result.Metadata);
+        ResultText.Properties(surface, "properties", result.Properties);
     }
 }

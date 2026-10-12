@@ -43,10 +43,11 @@ public static class FileObjects
     }
 
     /// <summary>
-    /// Describes a companion file the engine wrote beside an output, such as a script of an
-    /// HTML5 deck; its format is its file extension.
+    /// Describes a file whose format is its file extension: a companion the engine wrote beside
+    /// an output, such as a script of an HTML5 deck, or a file an extraction took out of a
+    /// document, such as an image, a table or an attachment.
     /// </summary>
-    /// <param name="file">The companion as its publication wrote it.</param>
+    /// <param name="file">The file as its publication wrote it.</param>
     public static OutputInfo Companion(PublishedFile file)
     {
         ArgumentNullException.ThrowIfNull(file);

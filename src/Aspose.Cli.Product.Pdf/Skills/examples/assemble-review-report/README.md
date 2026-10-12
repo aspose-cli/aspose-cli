@@ -13,17 +13,17 @@ it and reviews it.
 ```powershell
 aspose-cli pdf create cover.pdf --from-html cover.html --output-format json
 aspose-cli pdf create body.pdf --from-text body.md --output-format json
-aspose-cli pdf query forms cover.pdf --output-format json
+aspose-cli pdf inspect cover.pdf --detail forms --output-format json
 aspose-cli pdf merge cover.pdf body.pdf --out assembled.pdf --output-format json
 aspose-cli pdf edit assembled.pdf --ops assemble-ops.json --out review.pdf --output-format json
 aspose-cli pdf edit review.pdf --ops cover-values.json --out review.filled.pdf --output-format json
 aspose-cli pdf convert review.filled.pdf --to pdfa-2b --out review.archive.pdf --output-format json
 aspose-cli pdf validate review.archive.pdf --profile pdfa-2b --output-format json
-aspose-cli pdf query pages review.archive.pdf --output-format json
+aspose-cli pdf read review.archive.pdf --output-format json
 aspose-cli review review.archive.pdf --out review.archive.review --output-format json
 ```
 
-With your own documents, read the field names from `pdf query forms` and adjust
+With your own documents, read the field names from `pdf inspect --detail forms` and adjust
 `cover-values.json`; when the form is XFA or has no fields, skip the fill and
 convert `review.pdf` instead.
 

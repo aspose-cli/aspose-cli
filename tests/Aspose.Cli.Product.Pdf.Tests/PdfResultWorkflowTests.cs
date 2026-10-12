@@ -48,10 +48,14 @@ public sealed class PdfResultWorkflowTests : IDisposable
         JsonNode extract = Succeeds(_workspace.Run(
             "pdf", "extract", "report.pdf", "--what", "text", "--out-dir", "text", "--output-format", "json"));
         Assert.Equal("text", extract["what"]!.GetValue<string>());
-        Assert.NotEmpty(extract["items"]!.AsArray());
+        Assert.NotEmpty(extract["outputs"]!.AsArray());
 
-        JsonNode validate = Succeeds(_workspace.Run(
-            "pdf", "validate", "report.pdf", "--profile", "pdfa-1b", "--output-format", "json"));
+        CliResult validated = _workspace.Run(
+            "pdf", "validate", "report.pdf", "--profile", "pdfa-1b", "--output-format", "json");
+        // The report is not PDF/A: the check completes and exits 8.
+        Assert.True(validated.ExitCode == 8, validated.StdErr);
+        JsonNode validate = JsonNode.Parse(validated.StdOut)!;
+        Assert.False(validate["valid"]!.GetValue<bool>());
         Assert.Equal("pdfa-1b", validate["profile"]!.GetValue<string>());
 
         WriteCertificate(_workspace.File("signer.pfx"));

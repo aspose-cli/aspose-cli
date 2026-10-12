@@ -84,7 +84,6 @@ public sealed class PdfOutputEncryptionTests : IDisposable
     {
         JsonNode result = Succeeds(Run("pdf", "split", "owner-only.pdf", "--by", "pages", "--every", "1", "--out-dir", "parts"));
 
-        Assert.All(result["outputs"]!.AsArray(), part => Assert.False(part!["output"]!["encrypted"]!.GetValue<bool>()));
         Assert.All(Directory.GetFiles(_workspace.File("parts")), part => Assert.False(Encrypted(part)));
         Assert.Contains("ENCRYPTION_REMOVED", Codes(result));
     }
@@ -100,7 +99,6 @@ public sealed class PdfOutputEncryptionTests : IDisposable
                 "--by", "pages", "--every", "1", "--out-dir", "parts")));
 
         Assert.True(merged["output"]!["encrypted"]!.GetValue<bool>());
-        Assert.All(split["outputs"]!.AsArray(), part => Assert.True(part!["output"]!["encrypted"]!.GetValue<bool>()));
         string[] written = [_workspace.File("merged.pdf"), .. Directory.GetFiles(_workspace.File("parts"))];
         Assert.Equal(3, written.Length);
         Assert.All(written, path => OpensOnlyWith(path, UserPassword));
@@ -181,7 +179,7 @@ public sealed class PdfOutputEncryptionTests : IDisposable
         Encrypt("form.pdf", "locked-form.pdf", user: UserPassword);
         JsonNode[] results = new JsonNode[4];
         Parallel.Invoke(
-            () => results[0] = Succeeds(Run("pdf", "extract", "locked-form.pdf", "--password-env", "PDF_USER", "--what", "forms", "--out", "fields.json")),
+            () => results[0] = Succeeds(Run("pdf", "extract", "locked-form.pdf", "--password-env", "PDF_USER", "--what", "forms", "--form-format", "json", "--out-dir", "fields")),
             () => results[1] = Succeeds(Run("pdf", "extract", "locked.pdf", "--password-env", "PDF_USER", "--what", "text", "--out-dir", "text")),
             () => results[2] = Succeeds(Run("pdf", "convert", "locked.pdf", "--password-env", "PDF_USER", "--to", "png", "--out", "page.png")),
             () => results[3] = Succeeds(Run("pdf", "render", "locked.pdf", "--password-env", "PDF_USER", "--out", "render.png")));
@@ -229,7 +227,6 @@ public sealed class PdfOutputEncryptionTests : IDisposable
         Assert.Equal(5, written.Length);
         Assert.All(written, OpensOnlyWithTheNewPassword);
         Assert.All(results[..3], result => Assert.True(result["output"]!["encrypted"]!.GetValue<bool>()));
-        Assert.All(results[3]["outputs"]!.AsArray(), part => Assert.True(part!["output"]!["encrypted"]!.GetValue<bool>()));
         Assert.All(results, result => Assert.DoesNotContain("ENCRYPTION_REMOVED", Codes(result)));
         Assert.All(results, result => Assert.DoesNotContain(NewPassword, result.ToJsonString(), StringComparison.Ordinal));
     }

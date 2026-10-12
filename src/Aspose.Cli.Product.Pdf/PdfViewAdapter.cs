@@ -50,7 +50,7 @@ internal sealed class PdfViewAdapter : IProductViewAdapter<PdfSession>
         {
             Input = filePath,
             Pages = inspected == 0 ? null : PageRange.Parse($"1-{inspected}"),
-            Mode = PdfReadModes.Plain,
+            Content = PdfReadContents.Text,
             MaxCharacters = 1_000_000,
             Password = request.Password,
         });
@@ -129,7 +129,7 @@ internal sealed class PdfViewAdapter : IProductViewAdapter<PdfSession>
             findings.Add(PdfReviewChecks.TextCovered.Finding(
                 $"{page.CoveredTextFragments} text fragment(s) lie under an opaque box, such as a redaction cover, so the page does not show them although the file still contains them.",
                 $"page {page.Page}",
-                "Compare the page image with the text 'pdf query pages' reads. When a redaction moved the text beside a removed value under its cover, redact the source document and create the PDF again; that text cannot be moved back in the PDF.",
+                "Compare the page image with the text 'pdf read' reads. When a redaction moved the text beside a removed value under its cover, redact the source document and create the PDF again; that text cannot be moved back in the PDF.",
                 PdfViews.PagePart(page.Page)));
         }
     }
@@ -219,7 +219,7 @@ internal sealed class PdfViewAdapter : IProductViewAdapter<PdfSession>
         return new TextAnalysis(emptyPages, lowUtilizationPages);
     }
 
-    /// <summary>The pages <c>pdf query pages</c> reports as SCANNED_PAGES_SUSPECTED, one finding each.</summary>
+    /// <summary>The pages <c>pdf read</c> reports as SCANNED_PAGES_SUSPECTED, one finding each.</summary>
     private static IReadOnlyList<int> AnalyzeScannedPages(
         PdfReadResult read,
         ICollection<ReviewFinding> findings)
@@ -283,16 +283,12 @@ internal sealed class PdfViewAdapter : IProductViewAdapter<PdfSession>
         {
             return new FormAnalysis(0, 0);
         }
-        PdfFormResult form = PdfForms.Read(session, new PdfFormReadRequest
+        int fieldsWithoutPage;
+        using (LoadedPdf loaded = session.Loader.Open(filePath, password))
         {
-            Input = filePath,
-            Password = password,
-        });
-        int fieldsWithoutPage = form.Fields
-            .Where(field => field.Page is null or < 1 || field.Page > pages)
-            .Select(static field => field.Name)
-            .Distinct(StringComparer.Ordinal)
-            .Count();
+            fieldsWithoutPage = PdfForms.FieldsWithoutPage(loaded.Document, pages);
+        }
+
         findings.Add(PdfReviewChecks.FormAppearanceReviewRequired.Finding(
             $"The PDF contains {formFields} form field(s); inspect every rendered field appearance for stale, clipped, or missing values.",
             "document",

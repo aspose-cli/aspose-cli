@@ -1,6 +1,4 @@
 using Aspose.Cli.Sdk.IO;
-using Aspose.Cli.Sdk.Licensing;
-using Aspose.Cli.Sdk.Results;
 using Aspose.Pdf;
 using Aspose.Pdf.Forms;
 using static Aspose.Cli.Product.Pdf.Engine.PdfEngineSupport;
@@ -8,87 +6,75 @@ using static Aspose.Cli.Product.Pdf.Engine.PdfEngineSupport;
 namespace Aspose.Cli.Product.Pdf.Engine;
 
 /// <summary>
-/// Reads AcroForm and XFA fields (<c>pdf query forms</c>) and exports form data
+/// Projects AcroForm and XFA fields (<c>pdf inspect --detail forms</c>) and exports form data
 /// (<c>pdf extract --what forms</c>); the field helpers serve editing too.
 /// </summary>
 internal static class PdfForms
 {
-    internal static PdfFormResult Read(PdfSession session, PdfFormReadRequest request)
+    /// <summary>
+    /// The document's form and its first <see cref="PdfInspectResult.FieldLimit"/> fields, one
+    /// per field name in ordinal order; <paramref name="truncated"/> is set when there are more.
+    /// </summary>
+    internal static PdfFormInfo Project(Document document, out bool truncated)
     {
-        string filePath = request.Input;
-        LicenseState state = session.Outputs.License;
-        using LoadedPdf loaded = session.Loader.Open(filePath, request.Password);
-        Form form = loaded.Document.Form;
-        var unpaged = new List<string>();
-        var fields = form.Fields.OrderBy(static field => field.FullName, StringComparer.Ordinal)
-            .Select(field => Project(loaded.Document, field, unpaged))
-            .ToArray();
-        if (unpaged.Count > 0)
+        Form form = document.Form;
+        IGrouping<string, Field>[] named = [.. form.Fields
+            .GroupBy(static field => field.FullName, StringComparer.Ordinal)
+            .OrderBy(static group => group.Key, StringComparer.Ordinal)];
+        truncated = named.Length > PdfInspectResult.FieldLimit;
+        return new PdfFormInfo
         {
-            // A field on a page evaluation mode hides is listed without its page.
-            session.Outputs.ReadInput(loaded.Document);
-        }
-
-        return new PdfFormResult
-        {
-            Input = PdfInfoProjection.Source(filePath, loaded),
-            Type = form.HasXfa ? PdfFormKinds.Xfa : form.Count > 0 ? PdfFormKinds.Acro : PdfFormKinds.None,
+            Kind = form.HasXfa ? PdfFormKinds.Xfa : form.Count > 0 ? PdfFormKinds.Acro : null,
+            // A radio group's buttons share its name and are one field.
+            FieldCount = named.Length,
             ReadOnly = form.HasXfa,
-            Fields = fields,
-            License = EnvelopeParts.License(state),
+            Fields = [.. named.Take(PdfInspectResult.FieldLimit).Select(group => Project(document, group.Key, group.First()))],
         };
     }
 
     /// <summary>
-    /// Projects one field. A check box reports its appearance states and, when it has exactly
-    /// one state besides Off, that state as the value that checks it. The engine lists a radio
-    /// group as one field per button under the group's name; each reports the group's selected
-    /// value as its value, the group's values as its options and its own value as the one that
-    /// selects it, and each has its own rectangle. A field whose page evaluation mode hides is
-    /// added to <paramref name="unpaged"/>.
+    /// Projects one field. A check box reports its appearance states as the values it accepts.
+    /// The engine lists a radio group as one field per button under the group's name; the
+    /// group is projected once, with its selected value and the values of its buttons, and
+    /// without a page, since each button has its own.
     /// </summary>
-    private static PdfFormField Project(Document document, Field field, List<string> unpaged)
+    private static PdfFormField Project(Document document, string name, Field field)
     {
-        int? page = PageOf(field, unpaged);
-        IReadOnlyList<string>? options = null;
-        IReadOnlyList<string>? states = null;
-        string? onValue = null;
-        string? value = field.Value;
-        switch (field)
+        Field projected = RadioGroup(field) ?? field;
+        bool radio = projected is RadioButtonField;
+        int? page = radio ? null : PageOf(field);
+        IReadOnlyList<string>? options = projected switch
         {
-            case ChoiceField choice:
-                options = ChoiceValues(choice);
-                break;
-            case CheckboxField checkbox:
-                IReadOnlyList<string> allowed = CheckboxStates(checkbox);
-                string[] on = allowed.Where(static state => state != CheckboxOff).ToArray();
-                states = allowed.Count > 0 ? allowed : null;
-                onValue = on.Length == 1 ? on[0] : null;
-                break;
-            case RadioButtonOptionField button:
-                RadioButtonField? group = RadioGroup(button);
-                options = group is null ? null : ChoiceValues(group);
-                value = group?.Value ?? value;
-                onValue = string.IsNullOrEmpty(button.OptionName) ? null : button.OptionName;
-                break;
-        }
-
+            ChoiceField choice => ChoiceValues(choice),
+            CheckboxField checkbox when CheckboxStates(checkbox) is { Count: > 0 } states => states,
+            _ => null,
+        };
         return new PdfFormField
         {
-            Name = field.FullName,
-            Type = FieldType(field),
-            Value = value,
+            Name = name,
+            Kind = FieldKind(projected),
+            Value = projected.Value,
             Options = options,
-            States = states,
-            OnValue = onValue,
-            ReadOnly = field.ReadOnly,
-            Required = field.Required,
+            ReadOnly = projected.ReadOnly,
+            Required = projected.Required,
             Page = page,
             Rect = page is int number && field.Rect is { } rect ? ToContractRect(document.Pages[number], rect) : null,
         };
     }
 
-    private static int? PageOf(Field field, List<string> unpaged)
+    /// <summary>
+    /// How many field names have a widget, or a radio button, that lies on no page among the
+    /// first <paramref name="pages"/>: review reports them as unresolved.
+    /// </summary>
+    internal static int FieldsWithoutPage(Document document, int pages) =>
+        document.Form.Fields
+            .Where(field => PageOf(field) is not int page || page > pages)
+            .Select(static field => field.FullName)
+            .Distinct(StringComparer.Ordinal)
+            .Count();
+
+    /// <summary>The page of the field's widget, or null when it has none or evaluation mode hides it.</summary>
+    private static int? PageOf(Field field)
     {
         try
         {
@@ -96,7 +82,6 @@ internal static class PdfForms
         }
         catch (Exception exception) when (PdfEvaluationProfile.IsPageLimit(exception))
         {
-            unpaged.Add(field.FullName);
             return null;
         }
     }
@@ -122,42 +107,32 @@ internal static class PdfForms
     /// Maps an engine field class to the product vocabulary. Specialized text boxes
     /// (date, number, password, barcode, rich text, file selection) are text fields.
     /// </summary>
-    private static string FieldType(Field field) => field switch
+    private static string FieldKind(Field field) => field switch
     {
-        TextBoxField => PdfFormFieldTypes.Text,
-        CheckboxField => PdfFormFieldTypes.Checkbox,
-        RadioButtonField => PdfFormFieldTypes.Radio,
-        RadioButtonOptionField => PdfFormFieldTypes.RadioOption,
-        ComboBoxField => PdfFormFieldTypes.ComboBox,
-        ListBoxField => PdfFormFieldTypes.ListBox,
-        ButtonField => PdfFormFieldTypes.Button,
-        SignatureField => PdfFormFieldTypes.Signature,
-        _ => PdfFormFieldTypes.Other,
+        TextBoxField => PdfFormFieldKinds.Text,
+        CheckboxField => PdfFormFieldKinds.Checkbox,
+        RadioButtonField => PdfFormFieldKinds.Radio,
+        ComboBoxField => PdfFormFieldKinds.ComboBox,
+        ListBoxField => PdfFormFieldKinds.ListBox,
+        ButtonField => PdfFormFieldKinds.Button,
+        SignatureField => PdfFormFieldKinds.Signature,
+        _ => PdfFormFieldKinds.Other,
     };
 
-    internal static PdfFormExportResult Export(PdfSession session, PdfFormExportRequest request)
+    /// <summary>Exports the AcroForm data as one JSON, FDF or XFDF file of the extraction.</summary>
+    internal static PublishedFile Export(Document document, FormatDescriptor format, ExtractionGuard guard)
     {
-        string filePath = request.Input;
-        LicenseState state = session.Outputs.License;
-        using LoadedPdf loaded = session.Loader.Open(filePath, request.Password);
-        EnsureAcroForm(loaded.Document);
-        PublishedFile written = session.Outputs.WriteExtracted(request.Output.Path, request.Output.Overwrite, temp =>
+        EnsureAcroForm(document);
+        using var data = new MemoryStream();
+        var facade = new Aspose.Pdf.Facades.Form(document);
+        switch (format.Id)
         {
-            var facade = new Aspose.Pdf.Facades.Form(loaded.Document);
-            using FileStream stream = File.Create(temp);
-            switch (request.Output.Format.Id)
-            {
-                case "json": facade.ExportJson(stream, indented: true); break;
-                case "fdf": facade.ExportFdf(stream); break;
-                case "xfdf": facade.ExportXfdf(stream); break;
-                default: throw new InvalidOperationException($"'{request.Output.Format.Id}' is not a form data format.");
-            }
-        });
-        return new PdfFormExportResult
-        {
-            Input = PdfInfoProjection.Source(filePath, loaded),
-            Output = FileObjects.Output(written, request.Output.Format, encrypted: false),
-            License = EnvelopeParts.License(state),
-        };
+            case "json": facade.ExportJson(data, indented: true); break;
+            case "fdf": facade.ExportFdf(data); break;
+            case "xfdf": facade.ExportXfdf(data); break;
+            default: throw new InvalidOperationException($"'{format.Id}' is not a form data format.");
+        }
+
+        return guard.StageAllBytes("form" + (format.OutputExtension ?? format.Extensions[0]), data.ToArray());
     }
 }

@@ -39,8 +39,10 @@ appearances the profile rejects, such as the radio groups of a form made with
 `flatten_forms` edit, which ends their fillability, then convert again. PDF/A must
 embed every font, so a font missing here fails the conversion; pass the
 delivered fonts with `--font-dir`. `pdf validate` checks only the selected
-profile, not signatures, redaction or permissions. Each `issues` entry reads
-`clause (severity, page N): message`. `pdf inspect` reports only the profile a file
+profile, not signatures, redaction or permissions. Each `issues` entry gives
+the `clause` it breaks, its `severity`, `page` and `message`, and whether a
+`pdf convert` to the profile can fix it (`convertible`); a file that does not
+conform exits 8. `pdf inspect` reports only the profile a file
 declares, as `pdf.pdfaProfile`; a declaration is not a check.
 
 ## Other formats

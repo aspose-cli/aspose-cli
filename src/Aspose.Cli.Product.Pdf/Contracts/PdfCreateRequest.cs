@@ -5,6 +5,9 @@ namespace Aspose.Cli.Product.Pdf.Contracts;
 /// <summary>Options for creating one PDF from exactly one source family.</summary>
 public sealed record PdfCreateRequest
 {
+    /// <summary>The page size presets <c>pdf create --page-size</c> accepts.</summary>
+    public static IReadOnlyList<string> PageSizes { get; } = [PageSizePresets.A3, PageSizePresets.A4, PageSizePresets.Letter, PageSizePresets.Legal];
+
     /// <summary>The resolved output: its format, path and overwrite permission.</summary>
     public required ResolvedOutput Output { get; init; }
     public IReadOnlyList<string>? ImagePaths { get; init; }
@@ -15,7 +18,8 @@ public sealed record PdfCreateRequest
 
     /// <summary>A UTF-8 text file, read as Markdown when its extension is <c>.md</c>.</summary>
     public string? TextPath { get; init; }
-    public string PageSize { get; init; } = "A4";
+    /// <summary>The page size preset (<c>--page-size</c>), one of <see cref="PageSizes"/>.</summary>
+    public string PageSize { get; init; } = PageSizePresets.A4;
     public PdfMargins Margins { get; init; } = PdfMargins.Default;
 
     /// <summary>The password the output opens with (<c>--encrypt</c>), or null to write it without one.</summary>

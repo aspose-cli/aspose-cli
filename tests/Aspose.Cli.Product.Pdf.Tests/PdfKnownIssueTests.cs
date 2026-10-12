@@ -309,6 +309,26 @@ public sealed class PdfKnownIssueTests
     }
 
     [LicensedFact]
+    public void PdfaValidationLog_RepeatsAProblemAndMarksItBothConvertibleAndNot()
+    {
+        using var fixture = new PdfEngineFixture();
+        using var document = new Document(fixture.CreateDocument(pages: 1));
+        using var log = new MemoryStream();
+        document.Validate(log, PdfFormat.PDF_A_2B);
+        log.Position = 0;
+        var entries = System.Xml.Linq.XDocument.Load(log).Descendants("Problem")
+            .Select(static problem => (Problem: $"{(string?)problem.Attribute("Clause")}|{(string?)problem.Attribute("Page")}|{problem.Value}", Convertible: (string?)problem.Attribute("Convertable")))
+            .ToArray();
+        string[] contradicted = [.. entries.GroupBy(static entry => entry.Problem)
+            .Where(static group => group.Any(static entry => entry.Convertible == "True") && group.Any(static entry => entry.Convertible == "False"))
+            .Select(static group => group.Key)];
+        KnownIssue.Reproduces(
+            "PDF-PDFA-LOG-REPEATS",
+            contradicted.Length > 0,
+            $"the log has {entries.Length} entries, of which no problem is marked both convertible and not");
+    }
+
+    [LicensedFact]
     public void TextSearch_ReadsAGapBetweenRunsAsASpace()
     {
         using var fixture = new PdfEngineFixture();

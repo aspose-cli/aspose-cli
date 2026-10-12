@@ -7,16 +7,21 @@ using Aspose.Cli.Sdk.IO;
 namespace Aspose.Cli.Product.Pdf.Commands;
 
 /// <summary>
-/// Extracts assets, text or tables into a directory, or with <c>--what forms</c> exports form
-/// data to a file; each has its own request and result, so the result is their common base.
+/// Extracts images, attachments, text, tables or form data into a directory;
+/// <c>--form-format</c> chooses the format of the form data.
 /// </summary>
 internal static class ExtractCommand
 {
-    public static CommandDefinition<IPdfExtractRequest, ResultEnvelope> Create()
+    public static CommandDefinition<PdfExtractRequest, PdfExtractResult> Create()
     {
-        var what = new Option<string>("--what") { Required = true, Description = "What to extract; forms exports the form data to one file." }.WithInput(InputKind.None);
-        what.AcceptOnlyFromAmong([.. PdfExtractKinds.All, "forms"]);
+        var what = new Option<string>("--what") { Required = true, Description = "What to extract; forms writes the form data to one file." }.WithInput(InputKind.None);
+        what.AcceptOnlyFromAmong([.. PdfExtractKinds.All]);
         var pages = new PartRangeOption("page", "every page", onlyWith: "--what images, text or tables");
+        var formFormat = new Option<string?>("--form-format")
+        {
+            Description = "Form data format; required with --what forms, and only with it.",
+        }.WithInput(InputKind.None);
+        formFormat.AcceptOnlyFromAmong([.. PdfFormats.FormData.Select(static format => format.Id)]);
         var bom = new Option<bool>("--bom")
         {
             Description = "Start each table's CSV with a UTF-8 byte order mark, so Excel reads its non-English text "
@@ -28,57 +33,41 @@ internal static class ExtractCommand
             new CommandTraits
             {
                 Input = PdfInputs.Document,
-                Output = OutputTarget.FileOrDirectory(
-                    "Form-data output file; only with --what forms. Default extension follows --to.",
-                    "Safe extraction directory; required unless --what forms."),
-                Target = TargetFormat.Among(
-                    "Form export format; only with --what forms. Default: the --out extension's.",
-                    PdfFormats.FormData),
+                Output = OutputTarget.Directory("Safe extraction directory."),
             },
-            [what, .. pages.Options, bom],
+            [what, formFormat, .. pages.Options, bom],
             (parse, standard) =>
             {
                 // Every usage check runs before the input is resolved or read.
                 string kind = parse.GetRequiredValue(what);
                 string? pageText = pages.Read(parse);
                 bool byteOrderMark = parse.GetValue(bom);
-                if (byteOrderMark && kind != "tables")
+                if (byteOrderMark && kind != PdfExtractKinds.Tables)
                 {
                     throw CliErrors.OptionInvalid("--bom", $"--what {kind} writes no CSV tables", "Drop --bom.");
                 }
 
-                if (string.Equals(kind, "forms", StringComparison.Ordinal))
+                FormatDescriptor? format = parse.GetValue(formFormat) is { } id
+                    ? PdfFormats.FormData.Single(candidate => candidate.Id == id)
+                    : null;
+                if (kind == PdfExtractKinds.Forms)
                 {
-                    if (pageText is not null || standard.RequestedOutputDirectory is not null)
+                    if (format is null)
                     {
-                        throw CliErrors.OptionInvalid("--what", $"forms cannot be combined with {pages.Name} or --out-dir", "Use --what forms --to <json|fdf|xfdf> and optionally --out.");
+                        throw CliErrors.OptionInvalid("--form-format", "is required with --what forms", "Use --form-format json, fdf or xfdf.");
                     }
-
-                    if (!standard.TargetRequested && standard.RequestedOutputPath() is null)
-                    {
-                        throw CliErrors.OptionInvalid("--to", "is required with --what forms", "Use --to json, --to fdf or --to xfdf.");
-                    }
-
-                    return new PdfFormExportRequest
-                    {
-                        Input = standard.Input,
-                        Output = standard.Output,
-                        Password = standard.InputPassword,
-                    };
                 }
-
-                string? formOption = standard.TargetRequested ? "--to" : standard.RequestedOutputPath() is not null ? "--out" : null;
-                if (formOption is not null)
+                else if (format is not null)
                 {
                     throw CliErrors.OptionInvalid(
-                        formOption,
-                        "it applies to form data and is valid only with --what forms",
-                        $"Name the directory that receives the {kind} with --out-dir instead.");
+                        "--form-format",
+                        "it chooses the format of form data and is valid only with --what forms",
+                        $"Drop --form-format; --what {kind} writes its files in their own formats.");
                 }
 
-                if (string.Equals(kind, "attachments", StringComparison.Ordinal) && pageText is not null)
+                if (kind is PdfExtractKinds.Attachments or PdfExtractKinds.Forms && pageText is not null)
                 {
-                    throw CliErrors.OptionInvalid(pages.Name, "attachments belong to the document rather than individual pages", $"Omit {pages.Name} when extracting attachments.");
+                    throw CliErrors.OptionInvalid(pages.Name, $"{kind} belong to the document rather than individual pages", $"Omit {pages.Name} when extracting {kind}.");
                 }
 
                 PageRange? range = pages.ReadRange(parse);
@@ -91,20 +80,16 @@ internal static class ExtractCommand
                     Pages = range,
                     Password = standard.InputPassword,
                     ByteOrderMark = byteOrderMark,
+                    FormFormat = format,
                 };
             },
-            table: null)
+            Table)
         {
-            Renderers =
-            [
-                ProductOutputDefinition.Create<PdfExtractResult>(Table),
-                ProductOutputDefinition.Create<PdfFormExportResult>(Table),
-            ],
             Examples =
             [
                 "pdf extract report.pdf --what images --out-dir images",
                 "pdf extract report.pdf --what tables --pages 2-4 --bom --out-dir tables",
-                "pdf extract form.pdf --what forms --out form.json",
+                "pdf extract form.pdf --what forms --form-format json --out-dir form-data",
             ],
             Links =
             [
@@ -116,10 +101,7 @@ internal static class ExtractCommand
 
     internal static void Table(PdfExtractResult result, TableSurface surface)
     {
-        ResultText.Files(surface, "extracted", $"{result.What} item", [.. result.Items.Select(static item =>
-            new ProducedFile(item.Page is { } page ? $"page {page}" : null, item.Path, item.Kind, item.SizeBytes))]);
+        ResultText.Files(surface, "extracted", $"{result.What} item", [.. result.Outputs.Select(static item =>
+            new ProducedFile(item.Page is { } page ? $"page {page}" : null, item.Path, item.Format, item.SizeBytes))]);
     }
-
-    internal static void Table(PdfFormExportResult result, TableSurface surface) =>
-        ResultText.Produced(surface, result.Output, "form data");
 }

@@ -3,7 +3,8 @@
     "id": "pdf",
     "verbs": [
       "inspect",
-      "query",
+      "read",
+      "search",
       "convert",
       "render",
       "create",
@@ -41,7 +42,7 @@
         "command": "edit",
         "inputSchema": "v2/pdf/ops",
         "operationSchema": "aspose-cli schema v2/pdf/ops --operation <op>",
-        "contractFingerprint": "sha256:e1c652e49ea0bf1c20e238046692893f26292e2f6eabb1a8ed245c0f482acef8",
+        "contractFingerprint": "sha256:183b743fbbd3e7724eaaaae4493a907ce7de448512652b049e545404440b23bf",
         "maximumOperationCount": 10000,
         "ops": [
           "add_attachment",
@@ -818,12 +819,12 @@
             "recursive": false,
             "hidden": false,
             "hasDefault": true,
-            "default": "A4",
+            "default": "a4",
             "allowedValues": [
-              "A3",
-              "A4",
-              "Legal",
-              "Letter"
+              "a3",
+              "a4",
+              "legal",
+              "letter"
             ],
             "secret": false,
             "valueSource": "command-line",
@@ -1188,24 +1189,7 @@
             "description": "Check the input, the output and the options, then stop without running the command or writing any file. A dry run that succeeds does not guarantee that the command succeeds."
           },
           {
-            "name": "--out",
-            "aliases": [
-              "-o"
-            ],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Form-data output file; only with --what forms. Default extension follows --to."
-          },
-          {
-            "name": "--out-dir",
+            "name": "--form-format",
             "aliases": [],
             "type": "string",
             "minimumArity": 1,
@@ -1214,10 +1198,29 @@
             "recursive": false,
             "hidden": false,
             "hasDefault": false,
+            "allowedValues": [
+              "fdf",
+              "json",
+              "xfdf"
+            ],
+            "secret": false,
+            "valueSource": "command-line",
+            "description": "Form data format; required with --what forms, and only with it."
+          },
+          {
+            "name": "--out-dir",
+            "aliases": [],
+            "type": "string",
+            "minimumArity": 1,
+            "maximumArity": 1,
+            "required": true,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": false,
             "allowedValues": [],
             "secret": false,
             "valueSource": "command-line",
-            "description": "Safe extraction directory; required unless --what forms."
+            "description": "Safe extraction directory."
           },
           {
             "name": "--overwrite",
@@ -1302,25 +1305,6 @@
             "description": "Read the password for the PDF from the first line of stdin."
           },
           {
-            "name": "--to",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [
-              "fdf",
-              "json",
-              "xfdf"
-            ],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Form export format; only with --what forms. Default: the --out extension's."
-          },
-          {
             "name": "--what",
             "aliases": [],
             "type": "string",
@@ -1339,7 +1323,7 @@
             ],
             "secret": false,
             "valueSource": "command-line",
-            "description": "What to extract; forms exports the form data to one file."
+            "description": "What to extract; forms writes the form data to one file."
           }
         ],
         "arguments": [
@@ -1362,7 +1346,7 @@
         "path": "pdf inspect",
         "name": "inspect",
         "aliases": [],
-        "description": "Show PDF structure, security state and metadata.",
+        "description": "Show PDF structure, security state and properties.",
         "hidden": false,
         "options": [
           {
@@ -1380,14 +1364,14 @@
               "fonts",
               "forms",
               "layers",
-              "metadata",
               "outline",
               "permissions",
+              "properties",
               "signatures"
             ],
             "secret": false,
             "valueSource": "command-line",
-            "description": "Extra sections to include; repeat for more. outline: bookmarks, up to 200; forms: form type and field count; layers: optional content layer names; metadata: document information such as title and author."
+            "description": "Extra sections to include; repeat for more. outline: bookmarks, up to 200; forms: form kind and each field's value, up to 500 fields; layers: optional content layer names; properties: document information such as title and author."
           },
           {
             "name": "--password",
@@ -1668,93 +1652,31 @@
         ]
       },
       {
-        "path": "pdf query",
-        "name": "query",
+        "path": "pdf read",
+        "name": "read",
         "aliases": [],
-        "description": "Query bounded PDF pages, forms or text matches.",
-        "hidden": false,
-        "options": [],
-        "arguments": []
-      },
-      {
-        "path": "pdf query forms",
-        "name": "forms",
-        "aliases": [],
-        "description": "List PDF form fields and current values.",
+        "description": "Read a bounded page-text window.",
         "hidden": false,
         "options": [
           {
-            "name": "--password",
+            "name": "--content",
             "aliases": [],
             "type": "string",
             "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": true,
-            "valueSource": "command-line",
-            "description": "Password for the PDF. Discouraged: visible in the process list; prefer --password-env."
-          },
-          {
-            "name": "--password-env",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": true,
-            "valueSource": "environment-variable-name",
-            "description": "Name of an environment variable holding the password for the PDF."
-          },
-          {
-            "name": "--password-stdin",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
             "maximumArity": 1,
             "required": false,
             "recursive": false,
             "hidden": false,
             "hasDefault": true,
+            "default": "text",
             "allowedValues": [
-              "false",
-              "true"
+              "layout",
+              "text"
             ],
-            "secret": true,
-            "valueSource": "stdin",
-            "description": "Read the password for the PDF from the first line of stdin."
-          }
-        ],
-        "arguments": [
-          {
-            "name": "file",
-            "type": "string",
-            "inputKind": "file",
-            "valueSource": "command-line",
             "secret": false,
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": true,
-            "hasDefault": false,
-            "allowedValues": [],
-            "description": "PDF document to open."
-          }
-        ]
-      },
-      {
-        "path": "pdf query pages",
-        "name": "pages",
-        "aliases": [],
-        "description": "Read a bounded page-text window.",
-        "hidden": false,
-        "options": [
+            "valueSource": "command-line",
+            "description": "How each page is returned: in reading order, or with the spacing of the page kept."
+          },
           {
             "name": "--max-chars",
             "aliases": [],
@@ -1772,25 +1694,6 @@
             "description": "Maximum characters returned, counting the text of the returned pages. Range: 1-10000000."
           },
           {
-            "name": "--mode",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "plain",
-            "allowedValues": [
-              "layout",
-              "plain"
-            ],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Text projection: whether the text keeps the spacing of the page."
-          },
-          {
             "name": "--pages",
             "aliases": [],
             "type": "string",
@@ -1852,178 +1755,6 @@
             "secret": true,
             "valueSource": "stdin",
             "description": "Read the password for the PDF from the first line of stdin."
-          }
-        ],
-        "arguments": [
-          {
-            "name": "file",
-            "type": "string",
-            "inputKind": "file",
-            "valueSource": "command-line",
-            "secret": false,
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": true,
-            "hasDefault": false,
-            "allowedValues": [],
-            "description": "PDF document to open."
-          }
-        ]
-      },
-      {
-        "path": "pdf query search",
-        "name": "search",
-        "aliases": [],
-        "description": "Search PDF text and return page rectangles.",
-        "hidden": false,
-        "options": [
-          {
-            "name": "--case-sensitive",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "false",
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Match letter case exactly."
-          },
-          {
-            "name": "--max-hits",
-            "aliases": [],
-            "type": "integer",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "100",
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Maximum returned hits. Range: 1-10000."
-          },
-          {
-            "name": "--pages",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Pages to process: 1-based numbers and ranges such as 1-3,7,9-, or all. Default: every page."
-          },
-          {
-            "name": "--password",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": true,
-            "valueSource": "command-line",
-            "description": "Password for the PDF. Discouraged: visible in the process list; prefer --password-env."
-          },
-          {
-            "name": "--password-env",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": true,
-            "valueSource": "environment-variable-name",
-            "description": "Name of an environment variable holding the password for the PDF."
-          },
-          {
-            "name": "--password-stdin",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": true,
-            "valueSource": "stdin",
-            "description": "Read the password for the PDF from the first line of stdin."
-          },
-          {
-            "name": "--pattern",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": true,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Text to find, or a regular expression with --regex."
-          },
-          {
-            "name": "--regex",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "false",
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Treat the pattern as a culture-invariant regular expression with a one-second budget."
-          },
-          {
-            "name": "--skip",
-            "aliases": [],
-            "type": "integer",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "0",
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Matches to pass over before the returned hits; a truncated search's window.next sets it."
           }
         ],
         "arguments": [
@@ -2250,6 +1981,178 @@
         ]
       },
       {
+        "path": "pdf search",
+        "name": "search",
+        "aliases": [],
+        "description": "Search PDF text and return page rectangles.",
+        "hidden": false,
+        "options": [
+          {
+            "name": "--case-sensitive",
+            "aliases": [],
+            "type": "boolean",
+            "minimumArity": 0,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": true,
+            "default": "false",
+            "allowedValues": [
+              "false",
+              "true"
+            ],
+            "secret": false,
+            "valueSource": "command-line",
+            "description": "Match letter case exactly."
+          },
+          {
+            "name": "--max-hits",
+            "aliases": [],
+            "type": "integer",
+            "minimumArity": 1,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": true,
+            "default": "100",
+            "allowedValues": [],
+            "secret": false,
+            "valueSource": "command-line",
+            "description": "Maximum returned hits. Range: 1-10000."
+          },
+          {
+            "name": "--pages",
+            "aliases": [],
+            "type": "string",
+            "minimumArity": 1,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": false,
+            "allowedValues": [],
+            "secret": false,
+            "valueSource": "command-line",
+            "description": "Pages to process: 1-based numbers and ranges such as 1-3,7,9-, or all. Default: every page."
+          },
+          {
+            "name": "--password",
+            "aliases": [],
+            "type": "string",
+            "minimumArity": 1,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": false,
+            "allowedValues": [],
+            "secret": true,
+            "valueSource": "command-line",
+            "description": "Password for the PDF. Discouraged: visible in the process list; prefer --password-env."
+          },
+          {
+            "name": "--password-env",
+            "aliases": [],
+            "type": "string",
+            "minimumArity": 1,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": false,
+            "allowedValues": [],
+            "secret": true,
+            "valueSource": "environment-variable-name",
+            "description": "Name of an environment variable holding the password for the PDF."
+          },
+          {
+            "name": "--password-stdin",
+            "aliases": [],
+            "type": "boolean",
+            "minimumArity": 0,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": true,
+            "allowedValues": [
+              "false",
+              "true"
+            ],
+            "secret": true,
+            "valueSource": "stdin",
+            "description": "Read the password for the PDF from the first line of stdin."
+          },
+          {
+            "name": "--pattern",
+            "aliases": [],
+            "type": "string",
+            "minimumArity": 1,
+            "maximumArity": 1,
+            "required": true,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": false,
+            "allowedValues": [],
+            "secret": false,
+            "valueSource": "command-line",
+            "description": "Text to find, or a regular expression with --regex."
+          },
+          {
+            "name": "--regex",
+            "aliases": [],
+            "type": "boolean",
+            "minimumArity": 0,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": true,
+            "default": "false",
+            "allowedValues": [
+              "false",
+              "true"
+            ],
+            "secret": false,
+            "valueSource": "command-line",
+            "description": "Treat the pattern as a culture-invariant regular expression with a one-second budget."
+          },
+          {
+            "name": "--skip",
+            "aliases": [],
+            "type": "integer",
+            "minimumArity": 1,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": true,
+            "default": "0",
+            "allowedValues": [],
+            "secret": false,
+            "valueSource": "command-line",
+            "description": "Matches to pass over before the returned hits; a truncated search's window.next sets it."
+          }
+        ],
+        "arguments": [
+          {
+            "name": "file",
+            "type": "string",
+            "inputKind": "file",
+            "valueSource": "command-line",
+            "secret": false,
+            "minimumArity": 1,
+            "maximumArity": 1,
+            "required": true,
+            "hasDefault": false,
+            "allowedValues": [],
+            "description": "PDF document to open."
+          }
+        ]
+      },
+      {
         "path": "pdf sign",
         "name": "sign",
         "aliases": [],
@@ -2278,7 +2181,7 @@
             "type": "string",
             "minimumArity": 1,
             "maximumArity": 1,
-            "required": true,
+            "required": false,
             "recursive": false,
             "hidden": false,
             "hasDefault": false,
@@ -2286,6 +2189,24 @@
             "secret": true,
             "valueSource": "environment-variable-name",
             "description": "Name of an environment variable holding the password for the PKCS#12 certificate."
+          },
+          {
+            "name": "--certificate-password-stdin",
+            "aliases": [],
+            "type": "boolean",
+            "minimumArity": 0,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": true,
+            "allowedValues": [
+              "false",
+              "true"
+            ],
+            "secret": true,
+            "valueSource": "stdin",
+            "description": "Read the password for the PKCS#12 certificate from the first line of stdin."
           },
           {
             "name": "--contact",
@@ -2479,7 +2400,7 @@
             "allowedValues": [],
             "secret": false,
             "valueSource": "command-line",
-            "description": "Visible rectangle x,y,width,height in PDF points; default 36,36,180,60."
+            "description": "Visible rectangle x,y,width,height in PDF points from the page's top-left corner, as redact_area and 'pdf render --grid' measure. Default: 180x60, 36 points from the bottom-left corner, smaller on a page too small for it."
           },
           {
             "name": "--visible",
@@ -2933,6 +2854,13 @@
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
+      "code": "PDFA_NONCONFORMANCE",
+      "owner": "pdf",
+      "severity": "warning",
+      "category": "verification",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
       "code": "PDF_ATTACHMENT_MISMATCH",
       "owner": "pdf",
       "severity": "warning",
@@ -3038,11 +2966,11 @@
           "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
         },
         "outputs": {
-          "description": "The files written: one, or one per page for an image format.",
+          "description": "The files written: one, or one per page for an image format, each with its page.",
           "type": "array",
           "minItems": 1,
           "items": {
-            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/output.schema.json"
+            "$ref": "#/$defs/pdfPageOutput"
           }
         },
         "pages": {
@@ -3060,6 +2988,43 @@
             "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
           }
         }
+      },
+      "$defs": {
+        "pdfPageOutput": {
+          "description": "One file a command wrote, and the page of the PDF it holds when it holds one.",
+          "type": "object",
+          "required": [
+            "path",
+            "format",
+            "sizeBytes",
+            "fingerprint"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "path": {
+              "description": "Absolute path of the produced file.",
+              "type": "string"
+            },
+            "format": {
+              "description": "Format id of the produced file, e.g. png.",
+              "type": "string"
+            },
+            "sizeBytes": {
+              "description": "File size in bytes.",
+              "type": "integer",
+              "minimum": 0
+            },
+            "fingerprint": {
+              "description": "SHA-256 identity of the published file.",
+              "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/file-fingerprint.schema.json"
+            },
+            "page": {
+              "description": "The 1-based page the file holds or comes from; absent when it holds no single page, as a whole-document file, an attachment or form data does.",
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        }
       }
     },
     "v2/pdf/create-result": {
@@ -3070,7 +3035,6 @@
       "required": [
         "schema",
         "schemaVersion",
-        "action",
         "output",
         "inputs"
       ],
@@ -3083,13 +3047,6 @@
         "schemaVersion": {
           "description": "Version of this result contract.",
           "const": 2
-        },
-        "action": {
-          "description": "The command that wrote the PDF: always create.",
-          "type": "string",
-          "enum": [
-            "create"
-          ]
         },
         "output": {
           "description": "The PDF written.",
@@ -3235,14 +3192,14 @@
     "v2/pdf/extract-result": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "$id": "https://schemas.aspose.com/aspose-cli/v2/pdf/extract-result.schema.json",
-      "description": "Result of pdf extract for images, attachments, text or tables.",
+      "description": "Result of pdf extract: the files it wrote into the output directory.",
       "type": "object",
       "required": [
         "schema",
         "schemaVersion",
         "input",
         "what",
-        "items"
+        "outputs"
       ],
       "additionalProperties": false,
       "properties": {
@@ -3265,14 +3222,15 @@
             "images",
             "attachments",
             "text",
-            "tables"
+            "tables",
+            "forms"
           ]
         },
-        "items": {
-          "description": "Each file written into the output directory.",
+        "outputs": {
+          "description": "Each file written into the output directory, in order: an image or table with the page it comes from, the text of the selected pages, an attachment under its own file name, or the form data.",
           "type": "array",
           "items": {
-            "$ref": "#/$defs/pdfExtractedItem"
+            "$ref": "#/$defs/pdfPageOutput"
           }
         },
         "license": {
@@ -3288,290 +3246,38 @@
         }
       },
       "$defs": {
-        "pdfExtractedItem": {
-          "description": "One extracted PDF asset or text file.",
+        "pdfPageOutput": {
+          "description": "One file a command wrote, and the page of the PDF it holds when it holds one.",
           "type": "object",
           "required": [
             "path",
-            "kind",
-            "sizeBytes"
+            "format",
+            "sizeBytes",
+            "fingerprint"
           ],
           "additionalProperties": false,
           "properties": {
             "path": {
-              "description": "Absolute path of the file written.",
+              "description": "Absolute path of the produced file.",
               "type": "string"
             },
-            "kind": {
-              "description": "What the file holds.",
-              "type": "string",
-              "enum": [
-                "image",
-                "attachment",
-                "text",
-                "table"
-              ]
+            "format": {
+              "description": "Format id of the produced file, e.g. png.",
+              "type": "string"
             },
             "sizeBytes": {
-              "description": "The file's size in bytes.",
+              "description": "File size in bytes.",
               "type": "integer",
               "minimum": 0
+            },
+            "fingerprint": {
+              "description": "SHA-256 identity of the published file.",
+              "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/file-fingerprint.schema.json"
             },
             "page": {
-              "description": "The 1-based page the item comes from; absent for an attachment.",
+              "description": "The 1-based page the file holds or comes from; absent when it holds no single page, as a whole-document file, an attachment or form data does.",
               "type": "integer",
               "minimum": 1
-            },
-            "name": {
-              "description": "The attachment's name in the PDF; absent for other items.",
-              "type": "string"
-            },
-            "rect": {
-              "description": "Where a table lies on its page; absent for other items.",
-              "$ref": "#/$defs/pdfRect"
-            },
-            "confidence": {
-              "description": "How sure the engine is that a table was found, from 0 to 1; absent for other items.",
-              "type": "number",
-              "minimum": 0,
-              "maximum": 1
-            }
-          }
-        },
-        "pdfRect": {
-          "description": "A rectangle in points from the top-left corner of the page.",
-          "type": "object",
-          "required": [
-            "x",
-            "y",
-            "width",
-            "height"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "x": {
-              "description": "Distance of the left edge from the page's left edge.",
-              "type": "number"
-            },
-            "y": {
-              "description": "Distance of the top edge from the page's top edge.",
-              "type": "number"
-            },
-            "width": {
-              "description": "The width.",
-              "type": "number",
-              "minimum": 0
-            },
-            "height": {
-              "description": "The height.",
-              "type": "number",
-              "minimum": 0
-            }
-          }
-        }
-      }
-    },
-    "v2/pdf/form-export-result": {
-      "$schema": "https://json-schema.org/draft/2020-12/schema",
-      "$id": "https://schemas.aspose.com/aspose-cli/v2/pdf/form-export-result.schema.json",
-      "description": "Result of pdf extract --what forms, which exports the form data to a file.",
-      "type": "object",
-      "required": [
-        "schema",
-        "schemaVersion",
-        "input",
-        "output"
-      ],
-      "additionalProperties": false,
-      "properties": {
-        "schema": {
-          "description": "URI of the JSON schema this result conforms to.",
-          "const": "https://schemas.aspose.com/aspose-cli/v2/pdf/form-export-result.schema.json"
-        },
-        "schemaVersion": {
-          "description": "Version of this result contract.",
-          "const": 2
-        },
-        "input": {
-          "description": "The PDF whose form data was exported.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
-        },
-        "output": {
-          "description": "The form-data file written: JSON, FDF or XFDF.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/output.schema.json"
-        },
-        "license": {
-          "description": "License mode the engine ran under; omitted when it ran licensed.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/license.schema.json"
-        },
-        "warnings": {
-          "description": "Warnings the agent is expected to act on (for example EVALUATION_MODE: tell the user about the evaluation watermark). Omitted when empty.",
-          "type": "array",
-          "items": {
-            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
-          }
-        }
-      }
-    },
-    "v2/pdf/form-result": {
-      "$schema": "https://json-schema.org/draft/2020-12/schema",
-      "$id": "https://schemas.aspose.com/aspose-cli/v2/pdf/form-result.schema.json",
-      "description": "The form fields pdf query forms lists.",
-      "type": "object",
-      "required": [
-        "schema",
-        "schemaVersion",
-        "input",
-        "type",
-        "readOnly",
-        "fields"
-      ],
-      "additionalProperties": false,
-      "properties": {
-        "schema": {
-          "description": "URI of the JSON schema this result conforms to.",
-          "const": "https://schemas.aspose.com/aspose-cli/v2/pdf/form-result.schema.json"
-        },
-        "schemaVersion": {
-          "description": "Version of this result contract.",
-          "const": 2
-        },
-        "input": {
-          "description": "The PDF read.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
-        },
-        "type": {
-          "description": "The kind of form: none, an AcroForm or an XFA form.",
-          "type": "string",
-          "enum": [
-            "none",
-            "acro",
-            "xfa"
-          ]
-        },
-        "readOnly": {
-          "description": "Whether the form's fields cannot be filled.",
-          "type": "boolean"
-        },
-        "fields": {
-          "description": "Each field, and each button of a radio group, in document order.",
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/pdfFormField"
-          }
-        },
-        "license": {
-          "description": "License mode the engine ran under; omitted when it ran licensed.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/license.schema.json"
-        },
-        "warnings": {
-          "description": "Warnings the agent is expected to act on (for example EVALUATION_MODE: tell the user about the evaluation watermark). Omitted when empty.",
-          "type": "array",
-          "items": {
-            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
-          }
-        }
-      },
-      "$defs": {
-        "pdfFormField": {
-          "description": "One form field, or one button of a radio group.",
-          "type": "object",
-          "required": [
-            "name",
-            "type",
-            "readOnly",
-            "required"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "name": {
-              "description": "The field's full name, which set_form_field accepts.",
-              "type": "string"
-            },
-            "type": {
-              "description": "The field kind, such as text, checkbox, or radio-option for one button of a radio group.",
-              "type": "string",
-              "enum": [
-                "text",
-                "checkbox",
-                "radio",
-                "radio-option",
-                "combobox",
-                "listbox",
-                "button",
-                "signature",
-                "other"
-              ]
-            },
-            "value": {
-              "description": "The field's value; for a radio button, the value its group has selected.",
-              "type": "string"
-            },
-            "options": {
-              "description": "The values a choice field accepts; for a radio button, the values of its group, which set_form_field accepts under the group's name.",
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            },
-            "states": {
-              "description": "A check box's appearance states, Off first; set_form_field accepts only these.",
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            },
-            "onValue": {
-              "description": "The value that checks a check box, when it has exactly one state besides Off, or that selects a radio button.",
-              "type": "string"
-            },
-            "readOnly": {
-              "description": "Whether the field cannot be filled.",
-              "type": "boolean"
-            },
-            "required": {
-              "description": "Whether the form requires a value for the field.",
-              "type": "boolean"
-            },
-            "page": {
-              "description": "The page of the field's widget; absent when it has none or, in evaluation mode, lies past the pages the engine shows, which EVALUATION_INPUT_TRUNCATED then discloses.",
-              "type": "integer",
-              "minimum": 1
-            },
-            "rect": {
-              "description": "The field's widget on that page, in points from its top-left corner; for a radio button, the button. Present only with page.",
-              "$ref": "#/$defs/pdfRect"
-            }
-          }
-        },
-        "pdfRect": {
-          "description": "A rectangle in points from the top-left corner of the page.",
-          "type": "object",
-          "required": [
-            "x",
-            "y",
-            "width",
-            "height"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "x": {
-              "description": "Distance of the left edge from the page's left edge.",
-              "type": "number"
-            },
-            "y": {
-              "description": "Distance of the top edge from the page's top edge.",
-              "type": "number"
-            },
-            "width": {
-              "description": "The width.",
-              "type": "number",
-              "minimum": 0
-            },
-            "height": {
-              "description": "The height.",
-              "type": "number",
-              "minimum": 0
             }
           }
         }
@@ -3630,8 +3336,8 @@
           }
         },
         "forms": {
-          "description": "The interactive form, with --detail forms.",
-          "$ref": "#/$defs/pdfFormSummary"
+          "description": "The interactive form and its fields' values, with --detail forms.",
+          "$ref": "#/$defs/pdfFormInfo"
         },
         "attachments": {
           "description": "The embedded files, with --detail attachments.",
@@ -3665,8 +3371,8 @@
             "type": "string"
           }
         },
-        "metadata": {
-          "description": "Document information and XMP properties as the file stores them, with --detail metadata; XMP keys start with xmp:. creationDate and modificationDate are ISO 8601 with a fraction of a second only when it is not zero, as XMP writes dates (2026-10-01T06:01:53Z): in UTC ending in Z when the stored date states an offset, without Z when it states none, and the stored text unchanged when it is not a PDF date.",
+        "properties": {
+          "description": "Document information and XMP properties as the file stores them, with --detail properties; XMP keys start with xmp:. creationDate and modificationDate are ISO 8601 with a fraction of a second only when it is not zero, as XMP writes dates (2026-10-01T06:01:53Z): in UTC ending in Z when the stored date states an offset, without Z when it states none, and the stored text unchanged when it is not a PDF date.",
           "type": "object",
           "additionalProperties": {
             "type": [
@@ -3764,33 +3470,99 @@
             }
           }
         },
-        "pdfFormSummary": {
-          "description": "The document's interactive form.",
+        "pdfFormField": {
+          "description": "One form field; a radio group is one field, however many buttons it has.",
           "type": "object",
           "required": [
-            "type",
-            "fieldCount",
-            "readOnly"
+            "name",
+            "kind",
+            "readOnly",
+            "required"
           ],
           "additionalProperties": false,
           "properties": {
-            "type": {
-              "description": "The kind of form: none, an AcroForm or an XFA form.",
+            "name": {
+              "description": "The field's full name, which set_form_field accepts.",
+              "type": "string"
+            },
+            "kind": {
+              "description": "The field kind, such as text, checkbox or radio.",
               "type": "string",
               "enum": [
-                "none",
+                "text",
+                "checkbox",
+                "radio",
+                "combobox",
+                "listbox",
+                "button",
+                "signature",
+                "other"
+              ]
+            },
+            "value": {
+              "description": "The field's value; for a radio group, the value of its selected button.",
+              "type": "string"
+            },
+            "options": {
+              "description": "The values set_form_field accepts for the field: a choice field's or a radio group's values, or a check box's appearance states, Off first; absent for a field that takes any text.",
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "readOnly": {
+              "description": "Whether the field cannot be filled.",
+              "type": "boolean"
+            },
+            "required": {
+              "description": "Whether the form requires a value for the field.",
+              "type": "boolean"
+            },
+            "page": {
+              "description": "The page of the field's widget; absent for a radio group, whose buttons each have their own, for a field without a widget, and in evaluation mode for a widget past the pages the engine shows, which EVALUATION_INPUT_TRUNCATED then discloses.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "rect": {
+              "description": "The field's widget on that page, in points from its top-left corner. Present only with page.",
+              "$ref": "#/$defs/pdfRect"
+            }
+          }
+        },
+        "pdfFormInfo": {
+          "description": "The document's interactive form and its fields.",
+          "type": "object",
+          "required": [
+            "fieldCount",
+            "readOnly",
+            "fields"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "description": "The kind of form, an AcroForm or an XFA form; absent when the file has none.",
+              "type": "string",
+              "enum": [
                 "acro",
                 "xfa"
               ]
             },
             "fieldCount": {
-              "description": "The number of field names, so a radio group is one field however many buttons pdf query forms lists for it; review counts fields the same way.",
+              "description": "The number of field names, so a radio group is one field however many buttons it has; review counts fields the same way.",
               "type": "integer",
               "minimum": 0
             },
             "readOnly": {
               "description": "Whether the form's fields cannot be filled.",
               "type": "boolean"
+            },
+            "fields": {
+              "description": "The first fields in order of their names, one per field name; a LIST_TRUNCATED warning names fieldCount when there are more.",
+              "type": "array",
+              "maxItems": 500,
+              "items": {
+                "$ref": "#/$defs/pdfFormField"
+              }
             }
           }
         },
@@ -4002,6 +3774,37 @@
             }
           }
         },
+        "pdfRect": {
+          "description": "A rectangle in points from the top-left corner of the page.",
+          "type": "object",
+          "required": [
+            "x",
+            "y",
+            "width",
+            "height"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "x": {
+              "description": "Distance of the left edge from the page's left edge.",
+              "type": "number"
+            },
+            "y": {
+              "description": "Distance of the top edge from the page's top edge.",
+              "type": "number"
+            },
+            "width": {
+              "description": "The width.",
+              "type": "number",
+              "minimum": 0
+            },
+            "height": {
+              "description": "The height.",
+              "type": "number",
+              "minimum": 0
+            }
+          }
+        },
         "pdfSignatureInfo": {
           "description": "One signature field and the verification state the engine reports.",
           "type": "object",
@@ -4035,10 +3838,8 @@
             "encrypted",
             "linearized",
             "tagged",
-            "formType",
             "attachmentCount",
-            "signed",
-            "passwordType"
+            "signed"
           ],
           "additionalProperties": false,
           "properties": {
@@ -4076,10 +3877,9 @@
               "pattern": "^pdfa-[1-4][abuef]?$"
             },
             "formType": {
-              "description": "The kind of interactive form the file has: none, an AcroForm or an XFA form.",
+              "description": "The kind of interactive form the file has, an AcroForm or an XFA form; absent when it has none.",
               "type": "string",
               "enum": [
-                "none",
                 "acro",
                 "xfa"
               ]
@@ -4094,10 +3894,9 @@
               "type": "boolean"
             },
             "passwordType": {
-              "description": "The password this run opened the file with: none when it needed none (an unencrypted file, or one with only an owner password), user for the open password, owner for the owner password, also when it is the open password too. permissions.hasOpenPassword and hasOwnerPassword state which passwords the file has.",
+              "description": "The password this run opened the file with: user for the open password, owner for the owner password, also when it is the open password too; absent when it needed none (an unencrypted file, or one with only an owner password). permissions.hasOpenPassword and hasOwnerPassword state which passwords the file has.",
               "type": "string",
               "enum": [
-                "none",
                 "user",
                 "owner"
               ]
@@ -4114,7 +3913,6 @@
       "required": [
         "schema",
         "schemaVersion",
-        "action",
         "output",
         "inputs"
       ],
@@ -4127,13 +3925,6 @@
         "schemaVersion": {
           "description": "Version of this result contract.",
           "const": 2
-        },
-        "action": {
-          "description": "The command that wrote the PDF: always merge.",
-          "type": "string",
-          "enum": [
-            "merge"
-          ]
         },
         "output": {
           "description": "The PDF written.",
@@ -5195,7 +4986,7 @@
                 "string",
                 "null"
               ],
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/pdf/form-result.schema.json#/$defs/pdfFormField/properties/value"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/pdf/inspect-result.schema.json#/$defs/pdfFormField/properties/value"
             }
           }
         },
@@ -5215,19 +5006,19 @@
             },
             "title": {
               "type": "string",
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/pdf/inspect-result.schema.json#/properties/metadata/additionalProperties"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/pdf/inspect-result.schema.json#/properties/properties/additionalProperties"
             },
             "author": {
               "type": "string",
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/pdf/inspect-result.schema.json#/properties/metadata/additionalProperties"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/pdf/inspect-result.schema.json#/properties/properties/additionalProperties"
             },
             "subject": {
               "type": "string",
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/pdf/inspect-result.schema.json#/properties/metadata/additionalProperties"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/pdf/inspect-result.schema.json#/properties/properties/additionalProperties"
             },
             "keywords": {
               "type": "string",
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/pdf/inspect-result.schema.json#/properties/metadata/additionalProperties"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/pdf/inspect-result.schema.json#/properties/properties/additionalProperties"
             },
             "custom": {
               "description": "Custom document information entries by name.",
@@ -5443,13 +5234,13 @@
     "v2/pdf/read-result": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "$id": "https://schemas.aspose.com/aspose-cli/v2/pdf/read-result.schema.json",
-      "description": "Windowed page text returned by pdf query pages.",
+      "description": "Windowed page text returned by pdf read.",
       "type": "object",
       "required": [
         "schema",
         "schemaVersion",
         "input",
-        "mode",
+        "content",
         "pageCount",
         "pages",
         "window"
@@ -5468,11 +5259,11 @@
           "description": "The PDF read.",
           "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
         },
-        "mode": {
-          "description": "How the text was extracted: plain reading order, or layout, which keeps the page's spacing.",
+        "content": {
+          "description": "What was returned of each page, as --content chose: text in reading order, or layout, which keeps the page's spacing.",
           "type": "string",
           "enum": [
-            "plain",
+            "text",
             "layout"
           ]
         },
@@ -5567,7 +5358,7 @@
           "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
         },
         "outputs": {
-          "description": "Each written image, in page order.",
+          "description": "Each written image and the page it shows, in page order.",
           "type": "array",
           "items": {
             "$ref": "#/$defs/pdfPageOutput"
@@ -5597,22 +5388,37 @@
       },
       "$defs": {
         "pdfPageOutput": {
-          "description": "One rendered PDF page.",
+          "description": "One file a command wrote, and the page of the PDF it holds when it holds one.",
           "type": "object",
           "required": [
-            "page",
-            "output"
+            "path",
+            "format",
+            "sizeBytes",
+            "fingerprint"
           ],
           "additionalProperties": false,
           "properties": {
+            "path": {
+              "description": "Absolute path of the produced file.",
+              "type": "string"
+            },
+            "format": {
+              "description": "Format id of the produced file, e.g. png.",
+              "type": "string"
+            },
+            "sizeBytes": {
+              "description": "File size in bytes.",
+              "type": "integer",
+              "minimum": 0
+            },
+            "fingerprint": {
+              "description": "SHA-256 identity of the published file.",
+              "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/file-fingerprint.schema.json"
+            },
             "page": {
-              "description": "The 1-based page rendered.",
+              "description": "The 1-based page the file holds or comes from; absent when it holds no single page, as a whole-document file, an attachment or form data does.",
               "type": "integer",
               "minimum": 1
-            },
-            "output": {
-              "description": "The image written for the page.",
-              "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/output.schema.json"
             }
           }
         },
@@ -5653,7 +5459,7 @@
     "v2/pdf/search-result": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "$id": "https://schemas.aspose.com/aspose-cli/v2/pdf/search-result.schema.json",
-      "description": "The bounded text search of pdf query search.",
+      "description": "The bounded text search of pdf search.",
       "type": "object",
       "required": [
         "schema",
@@ -5741,7 +5547,7 @@
           "type": "object",
           "required": [
             "page",
-            "snippet",
+            "text",
             "rect",
             "occurrence"
           ],
@@ -5752,7 +5558,7 @@
               "type": "integer",
               "minimum": 1
             },
-            "snippet": {
+            "text": {
               "description": "The matched text.",
               "type": "string"
             },
@@ -5917,10 +5723,10 @@
           "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
         },
         "outputs": {
-          "description": "Each part written, in order.",
+          "description": "Each part written, in order; its number is the one in its file name.",
           "type": "array",
           "items": {
-            "$ref": "#/$defs/pdfSplitOutput"
+            "$ref": "#/$defs/pdfPartOutput"
           }
         },
         "license": {
@@ -5936,32 +5742,39 @@
         }
       },
       "$defs": {
-        "pdfSplitOutput": {
-          "description": "One part of a split PDF.",
+        "pdfPartOutput": {
+          "description": "The PDF written for one part of a split, and the pages of the source it holds.",
           "type": "object",
           "required": [
-            "index",
-            "pages",
-            "output"
+            "path",
+            "format",
+            "sizeBytes",
+            "fingerprint",
+            "pages"
           ],
           "additionalProperties": false,
           "properties": {
-            "index": {
-              "description": "The part's 1-based position.",
+            "path": {
+              "description": "Absolute path of the produced file.",
+              "type": "string"
+            },
+            "format": {
+              "description": "Format id of the produced file, e.g. png.",
+              "type": "string"
+            },
+            "sizeBytes": {
+              "description": "File size in bytes.",
               "type": "integer",
-              "minimum": 1
+              "minimum": 0
+            },
+            "fingerprint": {
+              "description": "SHA-256 identity of the published file.",
+              "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/file-fingerprint.schema.json"
             },
             "pages": {
-              "description": "The part's pages as range text, such as 1-3 or 1-3,7.",
-              "type": "string"
-            },
-            "bookmark": {
-              "description": "The title of the bookmark the part starts at, with --by bookmarks.",
-              "type": "string"
-            },
-            "output": {
-              "description": "The PDF written for the part.",
-              "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/output.schema.json"
+              "description": "The source pages the part holds, as range text such as 1-3 or 1-3,7.",
+              "type": "string",
+              "pattern": "^[1-9][0-9]*(-[1-9][0-9]*)?(,[1-9][0-9]*(-[1-9][0-9]*)?)*$"
             }
           }
         }
@@ -6012,7 +5825,7 @@
           "type": "array",
           "maxItems": 100,
           "items": {
-            "type": "string"
+            "$ref": "#/$defs/pdfComplianceIssue"
           }
         },
         "license": {
@@ -6024,6 +5837,49 @@
           "type": "array",
           "items": {
             "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
+          }
+        }
+      },
+      "$defs": {
+        "pdfComplianceIssue": {
+          "description": "One problem a PDF/A check found, with the clause of the standard it breaks; the details.problems of a failed PDF/A conversion lists the same objects.",
+          "type": "object",
+          "required": [
+            "code",
+            "message",
+            "severity",
+            "convertible"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "code": {
+              "description": "What kind of issue this is: always PDFA_NONCONFORMANCE.",
+              "type": "string",
+              "enum": [
+                "PDFA_NONCONFORMANCE"
+              ]
+            },
+            "message": {
+              "description": "The problem as the engine states it.",
+              "type": "string"
+            },
+            "clause": {
+              "description": "The clause of the PDF/A standard the problem breaks, such as 6.3.4; absent when the engine names none.",
+              "type": "string"
+            },
+            "severity": {
+              "description": "How serious the engine rates the problem, such as error or warning.",
+              "type": "string"
+            },
+            "page": {
+              "description": "The 1-based page the problem is on; absent when it concerns the whole document.",
+              "type": "integer",
+              "minimum": 1
+            },
+            "convertible": {
+              "description": "Whether pdf convert --to the profile can fix the problem.",
+              "type": "boolean"
+            }
           }
         }
       }

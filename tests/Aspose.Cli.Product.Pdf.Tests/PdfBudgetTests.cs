@@ -13,15 +13,15 @@ public sealed class PdfBudgetTests
         using var fixture = new PdfEngineFixture();
         string input = fixture.CreateRawDocument("images.pdf", pages: 2, imagePages: new HashSet<int> { 1, 2 });
 
-        PdfExtractResult result = PdfExtract.Assets(fixture.Session, new PdfExtractRequest
+        PdfExtractResult result = PdfExtract.Run(fixture.Session, new PdfExtractRequest
         {
             Input = input,
             Output = new ResolvedDirectory(fixture.File("images")),
             What = "images",
         });
 
-        Assert.Equal([1, 2], result.Items.Select(static item => item.Page));
-        Assert.All(result.Items, static item =>
+        Assert.Equal([1, 2], result.Outputs.Select(static item => item.Page));
+        Assert.All(result.Outputs, static item =>
         {
             Assert.Equal(new FileInfo(item.Path).Length, item.SizeBytes);
             Assert.Equal(new byte[] { 0x89, 0x50, 0x4E, 0x47 }, File.ReadAllBytes(item.Path)[..4]);
@@ -36,12 +36,12 @@ public sealed class PdfBudgetTests
         string converted = fixture.File("blank-first.txt");
 
         PdfConvert.Run(fixture.Session, new PdfConvertRequest { Input = input, Output = TestOutput.At(converted, format: "txt") });
-        string extracted = Assert.Single(PdfExtract.Assets(fixture.Session, new PdfExtractRequest
+        string extracted = Assert.Single(PdfExtract.Run(fixture.Session, new PdfExtractRequest
         {
             Input = input,
             Output = new ResolvedDirectory(fixture.File("blank-first")),
             What = "text",
-        }).Items).Path;
+        }).Outputs).Path;
 
         foreach (string text in new[] { File.ReadAllText(converted), File.ReadAllText(extracted) })
         {
@@ -59,7 +59,7 @@ public sealed class PdfBudgetTests
         string input = fixture.CreateRawDocument("bomb.pdf", pages: 1, imagePages: new HashSet<int> { 1 }, imageSide: 60_000);
         string output = fixture.File("bomb");
 
-        CliException error = Assert.Throws<CliException>(() => PdfExtract.Assets(fixture.Session, new PdfExtractRequest
+        CliException error = Assert.Throws<CliException>(() => PdfExtract.Run(fixture.Session, new PdfExtractRequest
         {
             Input = input,
             Output = new ResolvedDirectory(output),
@@ -77,12 +77,12 @@ public sealed class PdfBudgetTests
         using var fixture = new PdfEngineFixture();
         string image = fixture.File("mark.png");
         string source = fixture.CreateRawDocument("with-image.pdf", pages: 1, imagePages: new HashSet<int> { 1 });
-        string extracted = Assert.Single(PdfExtract.Assets(fixture.Session, new PdfExtractRequest
+        string extracted = Assert.Single(PdfExtract.Run(fixture.Session, new PdfExtractRequest
         {
             Input = source,
             Output = new ResolvedDirectory(fixture.File("mark")),
             What = "images",
-        }).Items).Path;
+        }).Outputs).Path;
         File.Copy(extracted, image);
         string input = fixture.CreateDocument("pages.pdf", pages: 3);
 

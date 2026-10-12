@@ -35,8 +35,8 @@ public sealed class PdfAttachmentCarryTests : IDisposable
             ["a.csv", "b.csv"],
             inspect.Json()["attachments"]!.AsArray().Select(static item => item!["name"]!.GetValue<string>()).Order(StringComparer.Ordinal));
         Assert.True(extract.ExitCode == 0, extract.StdErr);
-        Dictionary<string, string> paths = extract.Json()["items"]!.AsArray().ToDictionary(
-            static item => item!["name"]!.GetValue<string>(),
+        Dictionary<string, string> paths = extract.Json()["outputs"]!.AsArray().ToDictionary(
+            static item => Path.GetFileName(item!["path"]!.GetValue<string>()),
             static item => item!["path"]!.GetValue<string>(),
             StringComparer.Ordinal);
         Assert.Equal(First, File.ReadAllBytes(paths["a.csv"]));
@@ -81,7 +81,7 @@ public sealed class PdfAttachmentCarryTests : IDisposable
         });
 
         Assert.Equal(3, result.Outputs.Count);
-        Assert.All(result.Outputs, part => Assert.Equal([Entry("a.csv", First), Entry("b.csv", Second)], Attachments(part.Output.Path)));
+        Assert.All(result.Outputs, part => Assert.Equal([Entry("a.csv", First), Entry("b.csv", Second)], Attachments(part.Path)));
         Assert.Null(result.Warnings);
     }
 
@@ -116,7 +116,7 @@ public sealed class PdfAttachmentCarryTests : IDisposable
         });
 
         Assert.Equal([Entry("a.csv", First), Entry("b.csv", Second)], Attachments(merged));
-        Assert.All(split.Outputs, part => Assert.Equal([Entry("a.csv", First), Entry("b.csv", Second)], Attachments(part.Output.Path)));
+        Assert.All(split.Outputs, part => Assert.Equal([Entry("a.csv", First), Entry("b.csv", Second)], Attachments(part.Path)));
         Warning mergeWarning = Assert.Single(merge.Warnings!, static warning => warning.Code.Name == "LOSSY_CONVERSION");
         Assert.Contains("portfolio", mergeWarning.Message, StringComparison.Ordinal);
         Assert.Contains(portfolio, mergeWarning.Location, StringComparison.Ordinal);
@@ -154,7 +154,7 @@ public sealed class PdfAttachmentCarryTests : IDisposable
         });
 
         Assert.Equal(First, AnnotationFile(merged, page: 3));
-        Assert.Equal(First, AnnotationFile(Assert.Single(split.Outputs).Output.Path, page: 1));
+        Assert.Equal(First, AnnotationFile(Assert.Single(split.Outputs).Path, page: 1));
         Assert.Null(merge.Warnings);
         Assert.Null(split.Warnings);
     }
@@ -238,7 +238,7 @@ public sealed class PdfAttachmentCarryTests : IDisposable
         });
 
         Assert.Equal(expected, Attachments(merged));
-        Assert.All(split.Outputs, part => Assert.Equal(expected, Attachments(part.Output.Path)));
+        Assert.All(split.Outputs, part => Assert.Equal(expected, Attachments(part.Path)));
         Assert.Null(merge.Warnings);
         Assert.Null(split.Warnings);
     }
@@ -298,7 +298,7 @@ public sealed class PdfAttachmentCarryTests : IDisposable
 
         // The outputs keep the inputs' open password.
         Assert.Equal([Entry("a.csv", First), Entry("b.csv", Second)], Attachments(merged, "open-sesame"));
-        Assert.All(split.Outputs, part => Assert.Equal([Entry("a.csv", First)], Attachments(part.Output.Path, "open-sesame")));
+        Assert.All(split.Outputs, part => Assert.Equal([Entry("a.csv", First)], Attachments(part.Path, "open-sesame")));
     }
 
     public void Dispose() => _workspace.Dispose();

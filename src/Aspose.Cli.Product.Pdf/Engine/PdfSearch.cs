@@ -9,7 +9,7 @@ using static Aspose.Cli.Product.Pdf.Engine.PdfEngineSupport;
 
 namespace Aspose.Cli.Product.Pdf.Engine;
 
-/// <summary>Searches page text and returns page rectangles: <c>pdf query search</c>.</summary>
+/// <summary>Searches page text and returns page rectangles: <c>pdf search</c>.</summary>
 internal static class PdfSearch
 {
     /// <summary>The most characters a search hit's context shows on each side of the match.</summary>
@@ -41,7 +41,7 @@ internal static class PdfSearch
             {
                 if (pageText is null)
                 {
-                    pageText = ExtractText(page, PdfReadModes.Plain);
+                    pageText = ExtractText(page, PdfReadContents.Text);
                     found = matching.Matches(pageText);
                 }
 
@@ -62,7 +62,7 @@ internal static class PdfSearch
                 if (!hits.Offer(() => new PdfSearchHit
                 {
                     Page = number,
-                    Snippet = fragment.Text,
+                    Text = fragment.Text,
                     Context = Context(current - 1, fragment.Text),
                     Rect = ToContractRect(page, fragment.Rectangle),
                     Occurrence = current,

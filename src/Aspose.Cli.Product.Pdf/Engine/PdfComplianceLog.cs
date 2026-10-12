@@ -20,6 +20,40 @@ internal sealed record PdfComplianceProblem(
             : Severity;
         return Clause is { } clause ? $"{clause} ({where}): {Message}" : $"({where}): {Message}";
     }
+
+    /// <summary>The problem as a result reports it.</summary>
+    public PdfComplianceIssue ToIssue() => new()
+    {
+        Code = PdfDiagnostics.PdfaNonconformance.Code,
+        Message = Message,
+        Clause = Clause,
+        Severity = Severity,
+        Page = Page,
+        Convertible = Convertible,
+    };
+
+    /// <summary>The problem as <c>details.problems</c> lists it, in the shape of <see cref="ToIssue"/>.</summary>
+    public JsonObject ToDetails()
+    {
+        var details = new JsonObject
+        {
+            ["code"] = PdfDiagnostics.PdfaNonconformance.Code,
+            ["message"] = Message,
+        };
+        if (Clause is { } clause)
+        {
+            details["clause"] = clause;
+        }
+
+        details["severity"] = Severity;
+        if (Page is { } page)
+        {
+            details["page"] = page;
+        }
+
+        details["convertible"] = Convertible;
+        return details;
+    }
 }
 
 /// <summary>
@@ -82,9 +116,14 @@ internal static class PdfComplianceLog
         details: new JsonObject
         {
             ["profile"] = profile,
-            ["problems"] = new JsonArray(problems.Take(20).Select(static problem => (JsonNode?)problem.ToString()).ToArray()),
+            ["problems"] = new JsonArray(problems.Take(20).Select(static problem => (JsonNode?)problem.ToDetails()).ToArray()),
         });
 
+    /// <summary>
+    /// The problems of the log, each once. The log lists a problem once for every use of the
+    /// object it concerns, and marks it convertible on only one of those entries
+    /// (PDF-PDFA-LOG-REPEATS): a problem is convertible when any of its entries says so.
+    /// </summary>
     internal static IReadOnlyList<PdfComplianceProblem> Parse(MemoryStream log)
     {
         if (log.Length == 0)
@@ -103,6 +142,8 @@ internal static class PdfComplianceLog
                 !string.Equals((string?)problem.Attribute("Convertable"), "False", StringComparison.OrdinalIgnoreCase),
                 problem.Value.Trim(),
                 problem.Parent?.Name.LocalName))
+            .GroupBy(static problem => problem with { Convertible = false })
+            .Select(static entries => entries.Key with { Convertible = entries.Any(static entry => entry.Convertible) })
             .ToArray();
     }
 }

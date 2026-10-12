@@ -53,6 +53,9 @@ internal static class SameNameOptions
     [
         new("--by", OptionAspect.AllowedValues,
             "C-R07: each split divides at its own product's boundaries, a subset of pages, bookmarks, sections and heading1."),
+        new("--content", OptionAspect.AllowedValues | OptionAspect.Default,
+            "C-R07: what each unit a read carries is the product's own, and so is its default: "
+            + "a pdf read gives a page's text in reading order or with its spacing kept, a slides read each slide to a depth of its own."),
         new("--detail", OptionAspect.AllowedValues,
             "C-R07: each product's inspect lists its own sections. Kept on purpose: slides media covers audio and video, "
             + "so it stays apart from the images of words."),

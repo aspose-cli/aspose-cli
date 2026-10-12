@@ -195,7 +195,7 @@ fails, delete the issue's section, the code that names it and the test, then upd
   `radio`) and drops their `value` attributes: a check box is checked with `Yes` and radio buttons
   take the values `Item0`, `Item1` and so on. `HtmlLoadOptions` has no option to keep them.
 - **CLI behavior:** `pdf create --from-html` warns `LOSSY_CONVERSION` with the generated names;
-  `pdf query forms` gives every field's `page` and `rect`.
+  `pdf inspect --detail forms` gives each field's `page` and `rect`.
 - **Workaround:** match each generated field to the label beside it by its `rect` before filling.
 - **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
 
@@ -229,6 +229,16 @@ fails, delete the issue's section, the code that names it and the test, then upd
 - **Workaround:** flatten the named fields (`flatten_forms`) before converting.
 - **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
 
+### PDF-PDFA-LOG-REPEATS
+
+- **Defect:** the PDF/A log that `Document.Validate` writes lists a problem once for every use
+  of the object it concerns, and marks it convertible (`Convertable="True"`) on only one of
+  those entries: a font that is not embedded is reported as both fixable and not on the same
+  page, although converting to the profile embeds it.
+- **CLI behavior:** none visible: `pdf validate` and the PDF/A conversion errors list each
+  problem once, as convertible when any of its entries says so.
+- **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
+
 ### PDF-TEXT-GAP-SPACE
 
 - **Defect:** text extraction and `TextFragmentAbsorber` read a horizontal gap of about a
@@ -237,7 +247,7 @@ fails, delete the issue's section, the code that names it and the test, then upd
   such a gap between East Asian text and digits or Latin letters (automatic spacing), so
   `2026年10月31日` in a Word-made PDF extracts as `2026年 10月 31日` (two spaces in the plain
   mode) and a search for it finds nothing.
-- **CLI behavior:** literal patterns of `pdf query search` and `redact_text`, and the
+- **CLI behavior:** literal patterns of `pdf search` and `redact_text`, and the
   `redact_text` verification, also match with up to two spaces, never a line break, wherever an
   East Asian character meets a character that is not East Asian, such as a digit or Latin letter.
   A `redact_text` operation that matches nothing

@@ -1,3 +1,4 @@
+using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using Aspose.Cli.Sdk.Errors;
 using Xunit;
@@ -36,9 +37,32 @@ public sealed class PdfConformanceTests
         Assert.NotEmpty(result.Issues);
         Assert.All(result.Issues, static issue =>
         {
-            Assert.DoesNotContain("<", issue, StringComparison.Ordinal);
-            Assert.Matches(new Regex(@"^[\d.]+ \((error|warning)(, page \d+)?\): \S"), issue);
+            Assert.Equal("PDFA_NONCONFORMANCE", issue.Code);
+            Assert.DoesNotContain("<", issue.Message, StringComparison.Ordinal);
+            Assert.NotEmpty(issue.Message);
+            Assert.Matches(new Regex(@"^[\d.]+$"), issue.Clause!);
+            Assert.True(issue.Severity is "error" or "warning", issue.Severity);
+            Assert.True(issue.Page is null or > 0);
         });
+    }
+
+    [Fact]
+    public void Validate_ListsEachProblemOnceAndAsConvertibleWhenAConversionFixesIt()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.CreateDocument("plain.pdf", pages: 2);
+
+        PdfValidateResult result = PdfValidate.Run(fixture.Session, new PdfValidateRequest { Input = input, Profile = "pdfa-2b" });
+
+        Assert.False(result.Valid);
+        Assert.Equal(
+            result.Issues.Count,
+            result.Issues.Select(static issue => (issue.Clause, issue.Severity, issue.Page, issue.Message)).Distinct().Count());
+        Assert.Equal([1, 2], result.Issues.Select(static issue => issue.Page ?? 0).Order());
+        Assert.All(result.Issues, static issue => Assert.True(issue.Convertible, issue.Message));
+        string output = fixture.File("plain.pdfa.pdf");
+        PdfConvert.Run(fixture.Session, new PdfConvertRequest { Input = input, Output = TestOutput.At(output, format: "pdfa-2b") });
+        Assert.True(PdfValidate.Run(fixture.Session, new PdfValidateRequest { Input = output, Profile = "pdfa-2b" }).Valid);
     }
 
     [Fact]
@@ -56,7 +80,11 @@ public sealed class PdfConformanceTests
 
         Assert.Equal("PDFA_CONVERSION_FAILED", error.Code.Name);
         Assert.Contains("1 problem(s) cannot be fixed automatically", error.Message, StringComparison.Ordinal);
-        Assert.Single(error.Details!["problems"]!.AsArray());
+        JsonObject problem = Assert.IsType<JsonObject>(Assert.Single(error.Details!["problems"]!.AsArray()));
+        Assert.Equal("PDFA_NONCONFORMANCE", problem["code"]!.GetValue<string>());
+        Assert.False(problem["convertible"]!.GetValue<bool>());
+        Assert.NotEmpty(problem["message"]!.GetValue<string>());
+        Assert.NotNull(problem["severity"]);
     }
 
     [Fact]
@@ -96,7 +124,7 @@ public sealed class PdfConformanceTests
         }));
 
         Assert.Equal("PDFA_CONVERSION_FAILED", error.Code.Name);
-        Assert.Contains("6.3.3", Assert.Single(error.Details!["problems"]!.AsArray())!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.Equal("6.3.3", Assert.Single(error.Details!["problems"]!.AsArray())!["clause"]!.GetValue<string>());
         Assert.Contains("'radio'", error.Hint, StringComparison.Ordinal);
         // Text fields and check boxes, whose appearances have a state each, conform as they are.
         Assert.DoesNotContain("'company'", error.Hint, StringComparison.Ordinal);
@@ -284,18 +312,18 @@ public sealed class PdfConformanceTests
             Input = CreateArchivable(fixture),
             Output = TestOutput.At(fixture.File("archive.pdf"), format: "pdfa-2b"),
         }).Outputs).Path;
-        var request = new PdfInspectRequest { Input = output, Details = ["metadata"] };
+        var request = new PdfInspectRequest { Input = output, Details = ["properties"] };
 
         PdfInspectResult first = PdfInfo.Run(fixture.Session, request);
         PdfInspectResult second = PdfInfo.Run(fixture.Session, request);
 
         Assert.Equal("pdfa-2b", first.Pdf.PdfaProfile);
         Assert.False(first.Pdf.Tagged);
-        Assert.Equal("2", first.Metadata!["xmp:pdfaid:part"]);
-        Assert.Equal("B", first.Metadata["xmp:pdfaid:conformance"]);
-        Assert.DoesNotContain("xmp:pdfuaid:part", first.Metadata.Keys);
-        Assert.Equal("Quarterly results", first.Metadata["title"]);
-        Assert.Equal(first.Metadata, second.Metadata);
+        Assert.Equal("2", first.Properties!["xmp:pdfaid:part"]);
+        Assert.Equal("B", first.Properties["xmp:pdfaid:conformance"]);
+        Assert.DoesNotContain("xmp:pdfuaid:part", first.Properties.Keys);
+        Assert.Equal("Quarterly results", first.Properties["title"]);
+        Assert.Equal(first.Properties, second.Properties);
     }
 
     [Fact]
@@ -304,10 +332,10 @@ public sealed class PdfConformanceTests
         using var fixture = new PdfEngineFixture();
         string input = fixture.CreateDocument("plain.pdf", pages: 1);
 
-        PdfInspectResult result = PdfInfo.Run(fixture.Session, new PdfInspectRequest { Input = input, Details = ["metadata"] });
+        PdfInspectResult result = PdfInfo.Run(fixture.Session, new PdfInspectRequest { Input = input, Details = ["properties"] });
 
-        Assert.DoesNotContain(result.Metadata!.Keys, static key => key.StartsWith("xmp:", StringComparison.Ordinal));
-        Assert.NotEqual("Tagged PDF", result.Metadata["title"]);
+        Assert.DoesNotContain(result.Properties!.Keys, static key => key.StartsWith("xmp:", StringComparison.Ordinal));
+        Assert.NotEqual("Tagged PDF", result.Properties["title"]);
         Assert.Null(result.Pdf.PdfaProfile);
     }
 

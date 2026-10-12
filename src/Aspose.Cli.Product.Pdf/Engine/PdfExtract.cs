@@ -11,20 +11,12 @@ using DrawingImageFormat = Aspose.Pdf.Drawing.ImageFormat;
 namespace Aspose.Cli.Product.Pdf.Engine;
 
 /// <summary>
-/// Extracts bounded images, attachments, text or tables into a directory, or exports form
-/// data: <c>pdf extract</c>.
+/// Extracts bounded images, attachments, text, tables or form data into a directory:
+/// <c>pdf extract</c>.
 /// </summary>
 internal static class PdfExtract
 {
-    internal static ResultEnvelope Run(PdfSession session, IPdfExtractRequest request) => request switch
-    {
-        PdfFormExportRequest forms => PdfForms.Export(session, forms),
-        PdfExtractRequest assets => Assets(session, assets),
-        _ => throw new ArgumentException($"'{request.GetType().Name}' is not a PDF extraction request.", nameof(request)),
-    };
-
-    /// <summary>Extracts images, attachments, text or tables into the requested directory.</summary>
-    internal static PdfExtractResult Assets(PdfSession session, PdfExtractRequest request)
+    internal static PdfExtractResult Run(PdfSession session, PdfExtractRequest request)
     {
         string filePath = request.Input;
         LicenseState state = session.Outputs.License;
@@ -32,12 +24,14 @@ internal static class PdfExtract
         IReadOnlyList<int> pages = request.Pages?.Resolve(loaded.Document.Pages.Count)
             ?? Enumerable.Range(1, loaded.Document.Pages.Count).ToArray();
         using ExtractionGuard guard = session.Outputs.BeginExtraction(request.Output.Path, request.Output.Overwrite);
-        IReadOnlyList<PdfExtractedItem> items = request.What switch
+        IReadOnlyList<(PublishedFile File, int? Page)> files = request.What switch
         {
-            "images" => ExtractImages(loaded.Document, pages, guard, session.Budgets),
-            "attachments" => ExtractAttachments(loaded.Document, guard),
-            "text" => ExtractTextArtifact(loaded.Document, pages, guard),
-            "tables" => ExtractTables(loaded.Document, pages, guard, request.ByteOrderMark),
+            PdfExtractKinds.Images => ExtractImages(loaded.Document, pages, guard, session.Budgets),
+            PdfExtractKinds.Attachments => ExtractAttachments(loaded.Document, guard),
+            PdfExtractKinds.Text => [(guard.StageAllBytes("document.txt", Encoding.UTF8.GetBytes(DocumentText(loaded.Document, pages))), null)],
+            PdfExtractKinds.Tables => ExtractTables(loaded.Document, pages, guard, request.ByteOrderMark),
+            PdfExtractKinds.Forms => [(PdfForms.Export(loaded.Document, request.FormFormat
+                ?? throw new InvalidOperationException("Form data is extracted in a format the command chose."), guard), null)],
             _ => throw new InvalidOperationException("The extraction registry and handler are out of sync."),
         };
         guard.Commit();
@@ -45,18 +39,18 @@ internal static class PdfExtract
         {
             Input = PdfInfoProjection.Source(filePath, loaded),
             What = request.What,
-            Items = items,
+            Outputs = [.. files.Select(static item => new PdfPageOutput(FileObjects.Companion(item.File)) { Page = item.Page })],
             License = EnvelopeParts.License(state),
         };
     }
 
-    private static IReadOnlyList<PdfExtractedItem> ExtractImages(
+    private static IReadOnlyList<(PublishedFile File, int? Page)> ExtractImages(
         Document document,
         IReadOnlyList<int> pages,
         ExtractionGuard guard,
         ResourceBudgetLedger budgets)
     {
-        var items = new List<PdfExtractedItem>();
+        var items = new List<(PublishedFile File, int? Page)>();
         int number = 0;
         foreach (int pageNumber in pages)
         {
@@ -75,24 +69,18 @@ internal static class PdfExtract
                 using var encoded = new MemoryStream();
                 placement.Save(encoded, DrawingImageFormat.Png);
                 byte[] bytes = encoded.ToArray();
-                items.Add(new PdfExtractedItem
-                {
-                    Path = guard.WriteAllBytes($"image-{++number:000}.png", bytes),
-                    Kind = "image",
-                    SizeBytes = bytes.LongLength,
-                    Page = pageNumber,
-                });
+                items.Add((guard.StageAllBytes($"image-{++number:000}.png", bytes), pageNumber));
             }
         }
 
         return items;
     }
 
-    private static IReadOnlyList<PdfExtractedItem> ExtractAttachments(
+    private static IReadOnlyList<(PublishedFile File, int? Page)> ExtractAttachments(
         Document document,
         ExtractionGuard guard)
     {
-        var items = new List<PdfExtractedItem>();
+        var items = new List<(PublishedFile File, int? Page)>();
         foreach (FileSpecification file in document.EmbeddedFiles.OrderBy(
                      static item => item.UnicodeName ?? item.Name,
                      StringComparer.Ordinal))
@@ -101,8 +89,7 @@ internal static class PdfExtract
             long declaredLength = file.Contents.CanSeek
                 ? file.Contents.Length
                 : 0;
-            long writtenLength = 0;
-            string path = guard.Write(
+            PublishedFile written = guard.Stage(
                 name,
                 declaredLength,
                 output =>
@@ -110,46 +97,21 @@ internal static class PdfExtract
                     // budget-allow: ExtractionGuard supplies a BudgetWriteStream
                     // bounded by the remaining extraction byte budget.
                     file.Contents.CopyTo(output);
-                    writtenLength = output.Length;
                 },
                 flatten: true);
-            items.Add(new PdfExtractedItem
-            {
-                Path = path,
-                Kind = "attachment",
-                SizeBytes = writtenLength,
-                Name = name,
-            });
+            items.Add((written, null));
         }
 
         return items;
     }
 
-    private static IReadOnlyList<PdfExtractedItem> ExtractTextArtifact(
-        Document document,
-        IReadOnlyList<int> pages,
-        ExtractionGuard guard)
-    {
-        byte[] bytes = Encoding.UTF8.GetBytes(DocumentText(document, pages));
-        string path = guard.WriteAllBytes("document.txt", bytes);
-        return
-        [
-            new PdfExtractedItem
-            {
-                Path = path,
-                Kind = "text",
-                SizeBytes = bytes.LongLength,
-            },
-        ];
-    }
-
-    private static IReadOnlyList<PdfExtractedItem> ExtractTables(
+    private static IReadOnlyList<(PublishedFile File, int? Page)> ExtractTables(
         Document document,
         IReadOnlyList<int> pages,
         ExtractionGuard guard,
         bool byteOrderMark)
     {
-        var items = new List<PdfExtractedItem>();
+        var items = new List<(PublishedFile File, int? Page)>();
         int number = 0;
         foreach (int pageNumber in pages)
         {
@@ -168,16 +130,7 @@ internal static class PdfExtract
                 }
 
                 byte[] bytes = [.. byteOrderMark ? Encoding.UTF8.Preamble : [], .. Encoding.UTF8.GetBytes(csv.ToString())];
-                string path = guard.WriteAllBytes($"table-{++number:000}.csv", bytes);
-                items.Add(new PdfExtractedItem
-                {
-                    Path = path,
-                    Kind = "table",
-                    SizeBytes = bytes.LongLength,
-                    Page = pageNumber,
-                    Rect = ToContractRect(page, table.Rectangle),
-                    Confidence = 0.5,
-                });
+                items.Add((guard.StageAllBytes($"table-{++number:000}.csv", bytes), pageNumber));
             }
         }
 
