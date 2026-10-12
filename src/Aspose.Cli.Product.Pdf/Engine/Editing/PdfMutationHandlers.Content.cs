@@ -20,11 +20,12 @@ internal sealed partial class PdfMutationHandlers
             {
                 Background = operation.Layer == PdfLayers.Under,
                 Opacity = operation.Opacity,
-                RotateAngle = operation.Rotation,
+                // The engine turns a stamp counterclockwise; the operation's rotation is clockwise.
+                RotateAngle = -operation.Rotation,
                 HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment = VerticalAlignment.Center,
             };
-            stamp.TextState.FontSize = (float)operation.Size;
+            stamp.TextState.FontSize = (float)operation.FontSize;
             stamp.TextState.ForegroundColor = ParseColor(operation.Color);
             if (operation.Font is not null)
             {
@@ -69,10 +70,10 @@ internal sealed partial class PdfMutationHandlers
         int ordinal = operation.Start;
         foreach (int number in pages)
         {
-            string text = operation.Format
+            string text = operation.Text
                 .Replace("{n}", ordinal.ToString(CultureInfo.InvariantCulture), StringComparison.Ordinal)
                 .Replace("{N}", _document.Pages.Count.ToString(CultureInfo.InvariantCulture), StringComparison.Ordinal);
-            AddTextStamp(_document.Pages[number], text, operation.Position, operation.Font);
+            AddTextStamp(_document.Pages[number], text, operation.Placement, operation.Font);
             ordinal++;
         }
 
@@ -80,10 +81,10 @@ internal sealed partial class PdfMutationHandlers
     }
 
     public ValueTuple Apply(AddHeaderTextOp operation) =>
-        MarginText(operation.Text, operation.Pages, operation.Position, operation.Font);
+        MarginText(operation.Text, operation.Pages, operation.Placement, operation.Font);
 
     public ValueTuple Apply(AddFooterTextOp operation) =>
-        MarginText(operation.Text, operation.Pages, operation.Position, operation.Font);
+        MarginText(operation.Text, operation.Pages, operation.Placement, operation.Font);
 
     public ValueTuple Apply(AddStampImageOp operation)
     {
@@ -102,7 +103,7 @@ internal sealed partial class PdfMutationHandlers
         return default;
     }
 
-    public ValueTuple Apply(AddLinkOp operation)
+    public ValueTuple Apply(AddHyperlinkOp operation)
     {
         Page page = PageAt(_document, operation.Page);
         var annotation = new LinkAnnotation(page, ToPdfRect(page, operation.Rect))
@@ -120,7 +121,7 @@ internal sealed partial class PdfMutationHandlers
         foreach (int number in pages)
         {
             Page page = _document.Pages[number];
-            TextFragmentCollection fragments = MatchText(page, operation.Pattern, operation.Regex, caseSensitive: true,
+            TextFragmentCollection fragments = MatchText(page, operation.Find, operation.Regex, caseSensitive: true,
                 static reason => new OperationInvalidException(reason));
             if (fragments.Count == 0)
             {

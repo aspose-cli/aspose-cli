@@ -36,14 +36,14 @@ The error envelope, exit codes and shared codes are in
   engine does not enforce them, so the edit was applied (or, with `--dry-run`,
   would be). Filling fields needs `fillForms`, `annotate` or `modify`; inserting,
   moving, rotating or deleting pages and adding bookmarks need `assemble` or
-  `modify`; other changes need `modify`; `encrypt` and `decrypt` always need the
+  `modify`; other changes need `modify`; `encrypt_document` and `decrypt_document` always need the
   owner password. Confirm the owner authorized the change. The hint says whether
   the output keeps the input's encryption, is decrypted, carries the
-  passwords and permissions of an `encrypt` operation, or opens only with the
+  passwords and permissions of an `encrypt_document` operation, or opens only with the
   `--encrypt` password. A merge or split that keeps an input's open password
   warns it too, saying which passwords and permissions the output has
   ([encryption](forms-security.md#encryption)).
 - `ENCRYPTION_REMOVED`: an input was encrypted and the output is not, as after a
-  convert to a document or text format, a `decrypt`, or a merge or split of an
+  convert to a document or text format, a `decrypt_document`, or a merge or split of an
   input with only an owner password. Images and extracted files never warn. Pass `--encrypt-env` where the
   output must stay protected ([encryption](forms-security.md#encryption)).

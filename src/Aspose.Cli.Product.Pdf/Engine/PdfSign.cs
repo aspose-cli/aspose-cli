@@ -108,7 +108,7 @@ internal static class PdfSign
     /// The signing facade's rectangle of a rectangle measured from the top-left corner of the
     /// visible page. The facade places its rectangle in the page's unrotated space from the
     /// lower-left corner, but on a page turned by 90 or 270 degrees it swaps the rectangle's
-    /// x with y and width with height first, so the swap is undone here.
+    /// x with y and width with height first (PDF-SIGN-RECT-ROTATED), so the swap is undone here.
     /// </summary>
     private static DrawingRectangle EngineRect(Page page, PdfSignatureRect rect)
     {

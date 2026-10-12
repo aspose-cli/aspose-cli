@@ -11,7 +11,7 @@ internal sealed partial class PdfMutationHandlers
     public ValueTuple Apply(RotatePagesOp operation)
     {
         IReadOnlyList<int> pages = Resolve(_document, operation.Pages);
-        Rotation rotation = operation.Angle switch
+        Rotation rotation = operation.Rotation switch
         {
             0 => Rotation.None,
             90 => Rotation.on90,
@@ -71,11 +71,11 @@ internal sealed partial class PdfMutationHandlers
         return remaining >= at ? remaining + moved.Length : remaining;
     }
 
-    public ValueTuple Apply(InsertPagesFromOp operation)
+    public ValueTuple Apply(ImportPagesOp operation)
     {
         EnsureInsertionPosition(_document, operation.At);
 
-        Secret? password = OperationSecrets.Resolve(_secrets, operation.PasswordEnv);
+        Secret? password = OperationSecrets.Resolve(_secrets, operation.SourcePasswordEnv);
         using LoadedPdf source = OpenSource(operation.Path, password);
         IReadOnlyList<int> pages = operation.Pages is null
             ? Enumerable.Range(1, source.Document.Pages.Count).ToArray()
@@ -85,7 +85,7 @@ internal sealed partial class PdfMutationHandlers
         return default;
     }
 
-    // The source's password comes from the operation's passwordEnv, not a command option.
+    // The source's password comes from the operation's sourcePasswordEnv, not a command option.
     private LoadedPdf OpenSource(string path, Secret? password)
     {
         try
@@ -94,16 +94,16 @@ internal sealed partial class PdfMutationHandlers
         }
         catch (CliException error) when (CliErrors.IsPasswordError(error))
         {
-            throw CliErrors.ForOperationSource(error, "passwordEnv");
+            throw CliErrors.ForOperationSource(error, "sourcePasswordEnv");
         }
     }
 
-    public ValueTuple Apply(InsertBlankPageOp operation)
+    public ValueTuple Apply(InsertPageOp operation)
     {
         EnsureInsertionPosition(_document, operation.At);
 
         Page page = _document.Pages.Insert(operation.At);
-        (double width, double height) = PdfPageSizes.Dimensions(operation.Size);
+        (double width, double height) = operation.PageSize?.Dimensions() ?? PageSizePresets.Dimensions(PageSizePresets.A4);
         page.SetPageSize(width, height);
         return default;
     }
@@ -131,7 +131,7 @@ internal sealed partial class PdfMutationHandlers
 
     public ValueTuple Apply(SetPageSizeOp operation)
     {
-        (double width, double height) = PdfPageSizes.Dimensions(operation.Size);
+        (double width, double height) = operation.PageSize.Dimensions();
         IReadOnlyList<int> pages = Resolve(_document, operation.Pages);
         foreach (int number in pages)
         {
@@ -143,6 +143,9 @@ internal sealed partial class PdfMutationHandlers
             else
             {
                 page.SetPageSize(width, height);
+                // The engine sets the media box alone; a crop box the page had would keep showing the
+                // old size, so the visible page becomes the whole new page.
+                page.CropBox = page.MediaBox;
             }
 
         }

@@ -13,8 +13,8 @@ namespace Aspose.Cli.Product.Pdf.Engine.Editing;
 /// The objects of a PDF each operation can change, as the SDK snapshots them around the
 /// operation (<see cref="IOperationModel{TOp}.Snapshot"/>): the pages it selects (<c>page/3</c>,
 /// by the rotation, boxes, annotations and resources, and the content for a redaction), the page order (by page
-/// identity), the document information and XMP entries (<c>metadata/title</c>,
-/// <c>metadata/xmp:dc:title</c>), the bookmarks (<c>bookmark/1/2</c>), the attachments
+/// identity), the document information and XMP entries (<c>property/title</c>,
+/// <c>property/xmp:dc:title</c>), the bookmarks (<c>bookmark/1/2</c>), the attachments
 /// (<c>attachment/notes.txt</c>), the page labels (<c>page-label/1</c>), the form fields
 /// (<c>field/name</c>), the encryption (<c>security/encryption</c>) and, for optimize, the
 /// images and fonts of every page (<c>page/1/image/1</c>, <c>page/1/font/1</c>).
@@ -49,19 +49,6 @@ internal sealed class PdfSnapshots(Document document, PdfPageIdentities pages, F
         return state;
     }
 
-    /// <summary>The document information entries <c>pdf inspect</c> reports, by the name it reports them under.</summary>
-    private static readonly Dictionary<string, string> InfoNames = new(StringComparer.Ordinal)
-    {
-        ["Title"] = "title",
-        ["Author"] = "author",
-        ["Subject"] = "subject",
-        ["Keywords"] = "keywords",
-        ["Creator"] = "creator",
-        ["Producer"] = "producer",
-        ["CreationDate"] = "creationDate",
-        ["ModDate"] = "modificationDate",
-    };
-
     /// <summary>
     /// The document information entries Aspose.PDF writes into every PDF it saves, licensed or
     /// not, whatever the document held: the library as creator and producer, and the time of the
@@ -75,9 +62,9 @@ internal sealed class PdfSnapshots(Document document, PdfPageIdentities pages, F
 
     public OperationSnapshot Apply(MovePagesOp operation) => PageOrder();
 
-    public OperationSnapshot Apply(InsertPagesFromOp operation) => PageOrder();
+    public OperationSnapshot Apply(ImportPagesOp operation) => PageOrder();
 
-    public OperationSnapshot Apply(InsertBlankPageOp operation) => PageOrder();
+    public OperationSnapshot Apply(InsertPageOp operation) => PageOrder();
 
     public OperationSnapshot Apply(CropPagesOp operation) => Pages(operation.Pages);
 
@@ -95,15 +82,15 @@ internal sealed class PdfSnapshots(Document document, PdfPageIdentities pages, F
 
     public OperationSnapshot Apply(AddStampImageOp operation) => Page(operation.Page);
 
-    public OperationSnapshot Apply(AddLinkOp operation) => Page(operation.Page);
+    public OperationSnapshot Apply(AddHyperlinkOp operation) => Page(operation.Page);
 
     public OperationSnapshot Apply(RedactTextOp operation) => Pages(operation.Pages, content: true);
 
     public OperationSnapshot Apply(RedactAreaOp operation) => Page(operation.Page, content: true);
 
-    public OperationSnapshot Apply(SetMetadataOp operation) => Metadata();
+    public OperationSnapshot Apply(SetPropertiesOp operation) => Metadata();
 
-    public OperationSnapshot Apply(RemoveMetadataOp operation) => Metadata();
+    public OperationSnapshot Apply(ClearPropertiesOp operation) => Metadata();
 
     /// <summary>
     /// The bookmarks at the level the new one joins, with what lies below its parent: appending
@@ -117,7 +104,7 @@ internal sealed class PdfSnapshots(Document document, PdfPageIdentities pages, F
 
     public OperationSnapshot Apply(AddAttachmentOp operation) => Attachments();
 
-    public OperationSnapshot Apply(RemoveAttachmentOp operation) => Attachments();
+    public OperationSnapshot Apply(DeleteAttachmentOp operation) => Attachments();
 
     public OperationSnapshot Apply(SetPageLabelsOp operation)
     {
@@ -135,9 +122,9 @@ internal sealed class PdfSnapshots(Document document, PdfPageIdentities pages, F
 
     public OperationSnapshot Apply(FlattenFormsOp operation) => Fields(operation.Fields);
 
-    public OperationSnapshot Apply(EncryptPdfOp operation) => Security();
+    public OperationSnapshot Apply(EncryptDocumentOp operation) => Security();
 
-    public OperationSnapshot Apply(DecryptPdfOp operation) => Security();
+    public OperationSnapshot Apply(DecryptDocumentOp operation) => Security();
 
     /// <summary>
     /// What optimizing changes that a reader of the file can see: each image a page draws,
@@ -145,7 +132,7 @@ internal sealed class PdfSnapshots(Document document, PdfPageIdentities pages, F
     /// whether it is embedded. Removing unused objects and compressing streams store the same
     /// content in fewer bytes and change no object.
     /// </summary>
-    public OperationSnapshot Apply(OptimizePdfOp operation)
+    public OperationSnapshot Apply(OptimizeDocumentOp operation)
     {
         var snapshot = new OperationSnapshot();
         for (int number = 1; number <= document.Pages.Count; number++)
@@ -214,22 +201,17 @@ internal sealed class PdfSnapshots(Document document, PdfPageIdentities pages, F
     private OperationSnapshot Metadata()
     {
         var snapshot = new OperationSnapshot();
-        var addresses = new HashSet<string>(StringComparer.Ordinal);
         foreach (string key in document.Info.Keys.Order(StringComparer.Ordinal).Where(static key => !SaveStamped.Contains(key)))
         {
-            if (document.Info[key] is not { Length: > 0 } value)
+            if (document.Info[key] is { Length: > 0 } value && PdfPropertyNames.Reported(key) is { } name)
             {
-                continue;
+                snapshot.Add("property/" + name, value);
             }
-
-            string address = "metadata/" + (InfoNames.TryGetValue(key, out string? name) ? name : key);
-            // A custom key may spell a reported name, such as 'title' beside 'Title'.
-            snapshot.Add(addresses.Add(address) ? address : $"metadata/info:{key}", value);
         }
 
         foreach ((string key, XmpValue value) in document.Metadata)
         {
-            snapshot.Add($"metadata/xmp:{key}", value.ToString() ?? string.Empty);
+            snapshot.Add($"property/xmp:{key}", value.ToString() ?? string.Empty);
         }
 
         return snapshot;

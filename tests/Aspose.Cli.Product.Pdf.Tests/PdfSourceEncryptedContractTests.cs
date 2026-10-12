@@ -33,7 +33,7 @@ public sealed class PdfSourceEncryptedContractTests : IDisposable
         File.WriteAllText(_workspace.File("text.txt"), "Encrypted source.\n");
         File.WriteAllText(
             _workspace.File("encrypt.json"),
-            $$"""{"ops":[{"op":"encrypt","userPasswordEnv":"{{UserPassword}}","ownerPasswordEnv":"{{OwnerPassword}}"}]}""");
+            $$"""{"ops":[{"op":"encrypt_document","userPasswordEnv":"{{UserPassword}}","ownerPasswordEnv":"{{OwnerPassword}}"}]}""");
         Succeeds(_workspace.Run("pdf", "create", "plain.pdf", "--from-text", "text.txt", "--license", license, "--output-format", "json"));
         Succeeds(_workspace.RunWithEnv(passwords, "pdf", "edit", "plain.pdf", "--ops", "encrypt.json", "--out", "locked.pdf", "--license", license, "--output-format", "json"));
 

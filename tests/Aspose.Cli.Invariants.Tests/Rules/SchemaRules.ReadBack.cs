@@ -121,7 +121,12 @@ internal static partial class ContractRules
         {
             yield return $"{field}: read back as {readName}";
         }
-        string written = PublishedSchema.Shape(schemaId, schema);
+        // A field of named entries, such as custom properties, reads back entry by entry where the
+        // read reports each of them: its entries take the value domain of the read's entry.
+        string written = path.EndsWith("/additionalProperties", StringComparison.Ordinal)
+            && PublishedSchema.Resolve(schemaId, schema).Node["additionalProperties"] is JsonObject entry
+                ? PublishedSchema.Shape(schemaId, entry)
+                : PublishedSchema.Shape(schemaId, schema);
         string reported = PublishedSchema.Shape(read.SchemaId, read.Node);
         if (written != reported)
         {

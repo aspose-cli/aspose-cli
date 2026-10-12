@@ -54,7 +54,7 @@ inputs of type `email`, `tel`, `url`, `time`, `datetime-local`, `month`, `week`,
 `LOSSY_CONVERSION` lists both. Use `type="text"` for an input that must stay a
 field, read the fields with `pdf inspect --detail forms` and match each field's `rect` to
 its label before filling. The HTML `<title>` becomes the PDF title; a PDF made from HTML or
-Markdown has no author or subject until a `set_metadata` edit sets them.
+Markdown has no author or subject until a `set_properties` edit sets them.
 
 `pdf create --from-images` puts each image on its own page of `--page-size`,
 turned to landscape for an image wider than it is tall. The image keeps its

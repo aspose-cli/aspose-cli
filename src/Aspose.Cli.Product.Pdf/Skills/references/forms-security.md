@@ -42,7 +42,7 @@ flattens every button of that group.
 
 ## Encryption
 
-`encrypt` and `decrypt` are edit operations whose ops name environment
+`encrypt_document` and `decrypt_document` are edit operations whose ops name environment
 variables, never password values (`aspose-cli docs editing`). For a password to
 open the output and no restrictions, `create`, `edit`, `merge` and `split` take
 `--encrypt-env` (or `--encrypt-stdin`); on `edit` it applies after the
@@ -69,8 +69,8 @@ output with `pdf inspect --detail permissions`: `print`, `copy` and the other
 permission fields state what the file grants readers without the owner
 password, also when `--password-env` opened it with the owner password, and
 `ownerAccess` whether this run may change the file regardless of them.
-`set_metadata` with text beyond Latin-1, such as Chinese, is refused on an
-encrypted input unless an `encrypt` operation follows it in the same batch.
+`set_properties` with text beyond Latin-1, such as Chinese, is refused on an
+encrypted input unless an `encrypt_document` operation follows it in the same batch.
 `hasOpenPassword` and `hasOwnerPassword` state which passwords the file has, and
 `passwordType` which one this run opened it with: a file with only an owner
 password opens with none, so `passwordType` is absent, and anyone can open it within its permissions; a

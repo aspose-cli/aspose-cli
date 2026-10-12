@@ -139,7 +139,7 @@ fails, delete the issue's section, the code that names it and the test, then upd
 - **CLI behavior:** `move_pages` retargets navigation to and from the moved pages exactly, except
   a destination with a coordinate of 0, which it leaves without a target and counts in
   `NAVIGATION_DEGRADED`.
-- **Workaround:** re-create the counted bookmarks and links with `add_bookmark` and `add_link`.
+- **Workaround:** re-create the counted bookmarks and links with `add_bookmark` and `add_hyperlink`.
 - **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
 
 ### PDF-PDFA-ATTACHMENT-TYPE
@@ -185,7 +185,7 @@ fails, delete the issue's section, the code that names it and the test, then upd
   `Aspose`, whatever the source states; the HTML `title` element is ignored.
 - **CLI behavior:** `pdf create --from-html` takes the title from the HTML `title` element and
   `--from-text` Markdown leaves it empty; both leave the author and subject empty.
-- **Workaround:** set the other fields with a `set_metadata` edit.
+- **Workaround:** set the other fields with a `set_properties` edit.
 - **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
 
 ### PDF-HTML-FORM-NAMES
@@ -291,12 +291,12 @@ fails, delete the issue's section, the code that names it and the test, then upd
   set in a session whose save encrypts the file is written with only the low byte of each
   character, so text beyond Latin-1, such as `采购申请`, reads back garbled. Entries read from the
   file and entries written to a file saved without encryption are kept.
-- **CLI behavior:** a `pdf edit` batch that has `set_metadata` and `encrypt` saves the edited
+- **CLI behavior:** a `pdf edit` batch that has `set_properties` and `encrypt_document` saves the edited
   document without encryption, reopens it and encrypts that copy; so does every PDF command
-  given `--encrypt-env`. On an encrypted input, `set_metadata` with text beyond Latin-1 that
-  neither a later `encrypt` nor `--encrypt-env` follows is refused with `OPS_INVALID`, because
+  given `--encrypt-env`. On an encrypted input, `set_properties` with text beyond Latin-1 that
+  neither a later `encrypt_document` nor `--encrypt-env` follows is refused with `OPS_INVALID`, because
   the CLI cannot encrypt a copy with passwords it does not all know.
-- **Workaround:** add `encrypt` after `set_metadata` in the same batch, or pass `--encrypt-env`.
+- **Workaround:** add `encrypt_document` after `set_properties` in the same batch, or pass `--encrypt-env`.
 - **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
 
 ### PDF-RENDER-THIN-GLYPH
@@ -309,6 +309,17 @@ fails, delete the issue's section, the code that names it and the test, then upd
   150 DPI. `pdf render`, `pdf convert` to images and the `preview` pages draw at the resolution
   they use.
 - **Workaround:** render the page with `pdf render --dpi 300` or higher.
+- **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
+
+### PDF-SIGN-RECT-ROTATED
+
+- **Defect:** `PdfFileSignature.Sign(page, visible, rectangle, signature)` places the rectangle in
+  the page's unrotated space from its lower-left corner, but on a page rotated by 90 or 270
+  degrees it first swaps the rectangle's x with y and its width with height; on a page rotated by
+  180 degrees it does not swap them.
+- **CLI behavior:** `pdf sign --rect` measures from the top-left corner of the visible page, and
+  the CLI swaps the rectangle back before it signs a page rotated by 90 or 270 degrees, so the
+  signature lies where `--rect` names on every rotation.
 - **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
 
 ## Aspose.Slides.NET6.CrossPlatform 26.9.0

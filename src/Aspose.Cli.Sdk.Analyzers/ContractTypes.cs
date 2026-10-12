@@ -65,6 +65,7 @@ internal static class ContractTypes
         ["MinimumAttribute"] = ["Integer", "Number"],
         ["MaximumAttribute"] = ["Integer", "Number"],
         ["ExclusiveMinimumAttribute"] = ["Integer", "Number"],
+        ["MultipleOfAttribute"] = ["Integer", "Number"],
         ["AllowedValuesAttribute"] = ["String", "Integer", "Number", "Boolean"],
         ["JsonScalarAttribute"] = ["Any"],
         ["MinLengthAttribute"] = ["String"],

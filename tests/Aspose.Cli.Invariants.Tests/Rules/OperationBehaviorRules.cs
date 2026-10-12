@@ -460,17 +460,24 @@ internal static partial class ContractRules
                 state = (OperationRuns.Read(workspace, sample.Product, source, open, schemaId), OperationRuns.Read(workspace, sample.Product, output, open, schemaId));
                 reads[schemaId] = state;
             }
-            foreach (JsonNode? value in written)
+            // A field of named entries, such as custom properties, writes each entry into the
+            // dictionary its read path names: every entry reads back under its own key there.
+            string[] pointer = path.Split('/');
+            (string Read, JsonNode? Value)[] entries = [.. written.SelectMany(value =>
+                pointer[^1] == "additionalProperties" && value is JsonObject named
+                    ? named.Select(entry => ($"{pointer[^2]}.{entry.Key}", entry.Value))
+                    : [(read, value)])];
+            foreach ((string target, JsonNode? value) in entries)
             {
-                (string Location, JsonNode? Value)[] hits = [.. Locate(state.After, read).Where(hit => OperationRuns.Holds(value, hit.Value))];
+                (string Location, JsonNode? Value)[] hits = [.. Locate(state.After, target).Where(hit => OperationRuns.Holds(value, hit.Value))];
                 if (hits.Any(hit => IsNew(state.Before, state.After, hit.Location, value)))
                 {
                     continue;
                 }
                 string command = state.After[0]!["command"]!.GetValue<string>();
                 string problem = hits.Length == 0
-                    ? $"{field} {OperationRuns.Show(value)} does not read back as {read} in {command}"
-                    : $"{field} {OperationRuns.Show(value)} does not read back as a new {read}: {hits[0].Location} held it before";
+                    ? $"{field} {OperationRuns.Show(value)} does not read back as {target} in {command}"
+                    : $"{field} {OperationRuns.Show(value)} does not read back as a new {target}: {hits[0].Location} held it before";
                 if (value?.GetValueKind() is JsonValueKind.String or JsonValueKind.Object or JsonValueKind.Array
                     && Elsewhere(state.Before, state.After, value).FirstOrDefault() is { } elsewhere)
                 {

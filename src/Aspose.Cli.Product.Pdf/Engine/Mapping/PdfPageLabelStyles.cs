@@ -10,12 +10,12 @@ internal static class PdfPageLabelStyles
 {
     private static readonly (string Style, NumberingStyle Value)[] Styles =
     [
-        ("arabic", NumberingStyle.NumeralsArabic),
-        ("roman-upper", NumberingStyle.NumeralsRomanUppercase),
-        ("roman-lower", NumberingStyle.NumeralsRomanLowercase),
-        ("letters-upper", NumberingStyle.LettersUppercase),
-        ("letters-lower", NumberingStyle.LettersLowercase),
-        ("none", NumberingStyle.None),
+        (PageNumberStyles.Decimal, NumberingStyle.NumeralsArabic),
+        (PageNumberStyles.RomanUpper, NumberingStyle.NumeralsRomanUppercase),
+        (PageNumberStyles.RomanLower, NumberingStyle.NumeralsRomanLowercase),
+        (PageNumberStyles.LettersUpper, NumberingStyle.LettersUppercase),
+        (PageNumberStyles.LettersLower, NumberingStyle.LettersLowercase),
+        (PageNumberStyles.None, NumberingStyle.None),
     ];
 
     /// <summary>The style name of an engine numbering style.</summary>

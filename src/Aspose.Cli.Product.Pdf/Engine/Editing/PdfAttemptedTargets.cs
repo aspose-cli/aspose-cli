@@ -15,9 +15,9 @@ internal sealed class PdfAttemptedTargets : IPdfOpHandler<IReadOnlyList<string>>
 
     public IReadOnlyList<string> Apply(MovePagesOp operation) => Pages(operation.Pages);
 
-    public IReadOnlyList<string> Apply(InsertPagesFromOp operation) => Page(operation.At);
+    public IReadOnlyList<string> Apply(ImportPagesOp operation) => Page(operation.At);
 
-    public IReadOnlyList<string> Apply(InsertBlankPageOp operation) => Page(operation.At);
+    public IReadOnlyList<string> Apply(InsertPageOp operation) => Page(operation.At);
 
     public IReadOnlyList<string> Apply(CropPagesOp operation) => Pages(operation.Pages);
 
@@ -35,13 +35,13 @@ internal sealed class PdfAttemptedTargets : IPdfOpHandler<IReadOnlyList<string>>
 
     public IReadOnlyList<string> Apply(AddStampImageOp operation) => Page(operation.Page);
 
-    public IReadOnlyList<string> Apply(AddLinkOp operation) => Page(operation.Page);
+    public IReadOnlyList<string> Apply(AddHyperlinkOp operation) => Page(operation.Page);
 
     public IReadOnlyList<string> Apply(RedactTextOp operation) => Pages(operation.Pages);
 
     public IReadOnlyList<string> Apply(RedactAreaOp operation) => Page(operation.Page);
 
-    public IReadOnlyList<string> Apply(SetMetadataOp operation) =>
+    public IReadOnlyList<string> Apply(SetPropertiesOp operation) =>
     [
         .. new (string Name, string? Value)[]
             {
@@ -51,20 +51,20 @@ internal sealed class PdfAttemptedTargets : IPdfOpHandler<IReadOnlyList<string>>
                 ("keywords", operation.Keywords),
             }
             .Where(static item => item.Value is not null)
-            .Select(static item => "metadata/" + item.Name),
-        .. (operation.Custom?.Keys ?? []).Select(static key => "metadata/" + key),
+            .Select(static item => "property/" + item.Name),
+        .. (operation.Custom?.Keys ?? []).Select(static key => "property/" + key),
     ];
 
-    public IReadOnlyList<string> Apply(RemoveMetadataOp operation) => ["metadata/all"];
+    public IReadOnlyList<string> Apply(ClearPropertiesOp operation) => ["property/all"];
 
     public IReadOnlyList<string> Apply(AddBookmarkOp operation) => [$"bookmark/{operation.Parent ?? "all"}"];
 
     public IReadOnlyList<string> Apply(DeleteBookmarksOp operation) =>
-        operation.All ? ["bookmark/all"] : [.. operation.Indexes!.Select(static index => $"bookmark/{index}")];
+        operation.Bookmarks is null ? ["bookmark/all"] : [.. operation.Bookmarks.Select(static address => $"bookmark/{address}")];
 
     public IReadOnlyList<string> Apply(AddAttachmentOp operation) => [$"attachment/{operation.Name ?? Path.GetFileName(operation.Path)}"];
 
-    public IReadOnlyList<string> Apply(RemoveAttachmentOp operation) => [$"attachment/{operation.Name}"];
+    public IReadOnlyList<string> Apply(DeleteAttachmentOp operation) => [$"attachment/{operation.Name}"];
 
     public IReadOnlyList<string> Apply(SetPageLabelsOp operation) =>
         [.. operation.Ranges.Select(static range => $"page-label/{range.StartPage}")];
@@ -74,11 +74,11 @@ internal sealed class PdfAttemptedTargets : IPdfOpHandler<IReadOnlyList<string>>
     public IReadOnlyList<string> Apply(FlattenFormsOp operation) =>
         operation.Fields is null ? ["field/all"] : [.. operation.Fields.Select(static name => $"field/{name}")];
 
-    public IReadOnlyList<string> Apply(EncryptPdfOp operation) => [Security];
+    public IReadOnlyList<string> Apply(EncryptDocumentOp operation) => [Security];
 
-    public IReadOnlyList<string> Apply(DecryptPdfOp operation) => [Security];
+    public IReadOnlyList<string> Apply(DecryptDocumentOp operation) => [Security];
 
-    public IReadOnlyList<string> Apply(OptimizePdfOp operation) => ["page/all"];
+    public IReadOnlyList<string> Apply(OptimizeDocumentOp operation) => ["page/all"];
 
     private const string Security = "security/encryption";
 

@@ -66,7 +66,7 @@ public sealed class PdfHardeningTests
         CliException error = Assert.Throws<CliException>(() => PdfEdit.Run(fixture.Session, new PdfEditRequest
         {
             Input = input,
-            Batch = new PdfOpsBatch { Ops = [new RedactTextOp { Pattern = pattern, Regex = true }] },
+            Batch = new PdfOpsBatch { Ops = [new RedactTextOp { Find = pattern, Regex = true }] },
             Output = TestOutput.At(output),
         }));
         Assert.Equal(ErrorCodes.OperationTimeout, error.Code);
@@ -76,7 +76,7 @@ public sealed class PdfHardeningTests
     [Theory]
     [InlineData(null, "PASSWORD_REQUIRED")]
     [InlineData("wrong", "PASSWORD_INVALID")]
-    public void InsertPagesFrom_AnEncryptedSourcesPasswordErrorPointsAtPasswordEnv(string? password, string code)
+    public void ImportPages_AnEncryptedSourcesPasswordErrorPointsAtSourcePasswordEnv(string? password, string code)
     {
         using var fixture = new PdfEngineFixture();
         string source = fixture.CreateEncryptedDocument("user-secret", "owner-secret", $"encrypted-{code}.pdf");
@@ -86,14 +86,14 @@ public sealed class PdfHardeningTests
         CliException error = Assert.Throws<CliException>(() => PdfEdit.Run(fixture.Session, new PdfEditRequest
         {
             Input = input,
-            Batch = new PdfOpsBatch { Ops = [new InsertPagesFromOp { Path = source, At = 1, PasswordEnv = password is null ? null : "SOURCE_PWD" }] },
+            Batch = new PdfOpsBatch { Ops = [new ImportPagesOp { Path = source, At = 1, SourcePasswordEnv = password is null ? null : "SOURCE_PWD" }] },
             Output = TestOutput.At(output),
             OpSecrets = password is null ? null : new Dictionary<string,
             Secret> { ["SOURCE_PWD"] = new(password) },
         }));
 
         Assert.Equal(code, error.Code.Name);
-        Assert.Contains("\"passwordEnv\"", error.Hint, StringComparison.Ordinal);
+        Assert.Contains("\"sourcePasswordEnv\"", error.Hint, StringComparison.Ordinal);
         Assert.DoesNotContain("--password-env", error.Hint, StringComparison.Ordinal);
         Assert.Equal(source, error.Details!["path"]!.GetValue<string>());
         Assert.False(File.Exists(output));
@@ -110,7 +110,7 @@ public sealed class PdfHardeningTests
         CliException error = Assert.Throws<CliException>(() => PdfEdit.Run(fixture.Session, new PdfEditRequest
         {
             Input = input,
-            Batch = new PdfOpsBatch { Ops = [new RedactTextOp { Pattern = pattern, Regex = true }] },
+            Batch = new PdfOpsBatch { Ops = [new RedactTextOp { Find = pattern, Regex = true }] },
             Output = TestOutput.At(output),
         }));
         Assert.Contains("empty string", error.Message, StringComparison.Ordinal);

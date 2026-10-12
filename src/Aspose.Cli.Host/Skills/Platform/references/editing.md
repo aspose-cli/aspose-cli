@@ -10,7 +10,7 @@ The generated schema is the only field reference. Ask it instead of guessing:
 
 ```powershell
 aspose-cli capabilities pdf edit --output-format json
-aspose-cli schema v2/pdf/ops --operation set_metadata
+aspose-cli schema v2/pdf/ops --operation set_properties
 aspose-cli schema v2/pdf/ops
 ```
 
@@ -39,7 +39,7 @@ A PDF batch, for example:
 ```json
 {
   "ops": [
-    { "id": "title", "op": "set_metadata", "title": "Quarterly report" },
+    { "id": "title", "op": "set_properties", "title": "Quarterly report" },
     { "op": "add_page_numbers" }
   ]
 }

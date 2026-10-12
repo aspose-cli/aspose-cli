@@ -120,13 +120,12 @@ internal static class PdfInfoProjection
             .GroupBy(static size => size)
             .Select(static group => new PdfPageSizeSummary
             {
-                WidthPoints = group.Key.Width,
-                HeightPoints = group.Key.Height,
+                PageSize = PageSizeInfo.Of(group.Key.Width, group.Key.Height),
                 PageCount = group.Count(),
             })
             .OrderByDescending(static size => size.PageCount)
-            .ThenBy(static size => size.WidthPoints)
-            .ThenBy(static size => size.HeightPoints)
+            .ThenBy(static size => size.PageSize.Width)
+            .ThenBy(static size => size.PageSize.Height)
             .ToArray();
 
     private static PdfPageLabelInfo[] PageLabels(Document document) =>
@@ -138,7 +137,7 @@ internal static class PdfInfoProjection
                 return new PdfPageLabelInfo
                 {
                     StartPage = pageIndex + 1,
-                    Style = PdfPageLabelStyles.ToStyle(label.NumberingStyle),
+                    NumberStyle = PdfPageLabelStyles.ToStyle(label.NumberingStyle),
                     Prefix = string.IsNullOrEmpty(label.Prefix) ? null : label.Prefix,
                     StartingValue = label.StartingValue,
                 };
@@ -148,8 +147,7 @@ internal static class PdfInfoProjection
     private static PdfPageInfo Page(Page page) => new()
     {
         Page = page.Number,
-        WidthPoints = Round(page.GetPageRect(considerRotation: true).Width),
-        HeightPoints = Round(page.GetPageRect(considerRotation: true).Height),
+        PageSize = PageSizeInfo.Of(Round(page.GetPageRect(considerRotation: true).Width), Round(page.GetPageRect(considerRotation: true).Height)),
         Rotation = Degrees(page.Rotate),
         MediaBox = Box(page.MediaBox),
         CropBox = Box(page.CropBox),
@@ -202,7 +200,7 @@ internal static class PdfInfoProjection
             {
                 Title = item.Title ?? string.Empty,
                 Level = level,
-                Index = index,
+                Bookmark = index,
                 Page = PdfNavigationCensus.DestinationPage(item) is > 0 and int page ? page : null,
             });
             AppendOutline(item, level + 1, index, results);
@@ -329,6 +327,12 @@ internal static class PdfInfoProjection
             ["subject"] = EmptyToNull(document.Info.Subject),
             ["title"] = EmptyToNull(document.Info.Title),
         };
+
+        // A custom entry is reported under its own key, as set_properties custom names it.
+        foreach (string key in document.Info.Keys.Order(StringComparer.Ordinal).Where(static key => PdfPropertyNames.Standard(key) is null))
+        {
+            values[key] = EmptyToNull(document.Info[key]);
+        }
 
         foreach ((string key, XmpValue value) in document.Metadata)
         {

@@ -122,7 +122,7 @@ public sealed class PdfSignTests
         {
             Aspose.Pdf.Page page = document.Pages.Add();
             page.SetPageSize(width, height);
-            page.Rotate = rotation switch { 90 => Aspose.Pdf.Rotation.on90, 270 => Aspose.Pdf.Rotation.on270, _ => Aspose.Pdf.Rotation.None };
+            page.Rotate = rotation switch { 90 => Aspose.Pdf.Rotation.on90, 180 => Aspose.Pdf.Rotation.on180, 270 => Aspose.Pdf.Rotation.on270, _ => Aspose.Pdf.Rotation.None };
             document.Save(input);
         }
 

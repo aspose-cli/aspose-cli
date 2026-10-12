@@ -9,7 +9,7 @@ namespace Aspose.Cli.Sdk.Operations;
 /// The state of the objects of a document that one operation can change, which a product takes
 /// before and after the operation (<see cref="IOperationModel{TOp}.Snapshot"/>). Each object has
 /// an address in the <c>&lt;unit&gt;/&lt;address&gt;</c> vocabulary, such as <c>page/3</c> or
-/// <c>metadata/title</c>, and a state: any text that differs exactly when the object differs,
+/// <c>property/title</c>, and a state: any text that differs exactly when the object differs,
 /// such as a digest of its content. The SDK compares the two snapshots; an object counts as
 /// changed when its state differs, or when it is in only one of them.
 /// </summary>

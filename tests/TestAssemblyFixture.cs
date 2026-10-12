@@ -25,6 +25,17 @@ public sealed class ProcessRedirectionCollection
 }
 
 /// <summary>
+/// Tests that read what a document engine writes into every document it saves, such as the PDF
+/// engine's modification date, which it leaves out of a document saved while other documents of
+/// the process are saved. They run alone, after the parallel tests.
+/// </summary>
+[Xunit.CollectionDefinition(Name, DisableParallelization = true)]
+public sealed class EngineSaveStampsCollection
+{
+    public const string Name = "Engine save stamps";
+}
+
+/// <summary>
 /// The result schema coverage check of a product's tests. It runs alone and last, after every
 /// other test of the process has made its CLI runs (<see cref="ResultSchemaCoverageOrderer"/>).
 /// </summary>

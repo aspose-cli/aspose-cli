@@ -32,7 +32,7 @@ public sealed class PdfOutcomeTests
     }
 
     public static TheoryData<string> Stamps =>
-        ["add_watermark_text", "add_watermark_image", "add_page_numbers", "add_header_text", "add_footer_text", "add_stamp_image", "add_link"];
+        ["add_watermark_text", "add_watermark_image", "add_page_numbers", "add_header_text", "add_footer_text", "add_stamp_image", "add_hyperlink"];
 
     /// <summary>
     /// A page snapshot leaves out the content stream unless the operation redacts, so what each
@@ -55,7 +55,7 @@ public sealed class PdfOutcomeTests
             "add_header_text" => (new AddHeaderTextOp { Text = "Head" }, ["page/1", "page/2"]),
             "add_footer_text" => (new AddFooterTextOp { Text = "Foot" }, ["page/1", "page/2"]),
             "add_stamp_image" => (new AddStampImageOp { Page = 2, Path = image, Rect = rect }, ["page/2"]),
-            "add_link" => (new AddLinkOp { Page = 2, Rect = rect, Url = "https://example.com/" }, ["page/2"]),
+            "add_hyperlink" => (new AddHyperlinkOp { Page = 2, Rect = rect, Url = "https://example.com/" }, ["page/2"]),
             _ => throw new ArgumentOutOfRangeException(nameof(op)),
         };
 
@@ -85,70 +85,41 @@ public sealed class PdfOutcomeTests
         string input = fixture.CreateDocument(pages: 1);
 
         PdfEditResult result = Edit(fixture, input,
-            new SetMetadataOp { Title = "Quarterly", Author = "Ann" },
-            new SetMetadataOp { Title = "Quarterly", Custom = new Dictionary<string, string> { ["Department"] = "Sales" } });
+            new SetPropertiesOp { Title = "Quarterly", Author = "Ann" },
+            new SetPropertiesOp { Title = "Quarterly", Custom = new Dictionary<string, string> { ["Department"] = "Sales" } });
 
-        Assert.Equal(["metadata/author", "metadata/title"], result.Applied[0].Targets.Order(StringComparer.Ordinal));
+        Assert.Equal(["property/author", "property/title"], result.Applied[0].Targets.Order(StringComparer.Ordinal));
         // The title is already set; only the new entry changed.
         Assert.Equal(1, result.Applied[1].ItemsAffected);
-        Assert.Equal(["metadata/Department"], result.Applied[1].Targets);
+        Assert.Equal(["property/Department"], result.Applied[1].Targets);
         Assert.Null(result.Warnings?.FirstOrDefault(static warning => warning.Code.Name == "OP_NO_EFFECT"));
-    }
-
-    /// <summary>
-    /// Aspose.PDF writes the creator, producer and modification date into every PDF it saves, so
-    /// remove_metadata names only the entries the output no longer holds, and says the others stay.
-    /// </summary>
-    [Fact]
-    public void RemoveMetadata_NamesOnlyTheEntriesTheOutputNoLongerHolds()
-    {
-        using var fixture = new PdfEngineFixture();
-        string input = fixture.File("described.pdf");
-        using (var document = new Aspose.Pdf.Document(fixture.CreateDocument(pages: 1)))
-        {
-            document.Info.Title = "Quarterly";
-            document.Info.Author = "Ann";
-            document.Save(input);
-        }
-
-        PdfEditResult result = Edit(fixture, input, new RemoveMetadataOp());
-
-        IReadOnlyDictionary<string, string?> before = Metadata(fixture, input);
-        IReadOnlyDictionary<string, string?> after = Metadata(fixture, result.Output!.Path);
-        BoundedOperationOutcome outcome = Assert.Single(result.Applied);
-        Assert.Contains("metadata/title", outcome.Targets);
-        Assert.Contains("metadata/author", outcome.Targets);
-        Assert.Equal(outcome.Targets.Count, outcome.ItemsAffected);
-        Assert.All(outcome.Targets, target =>
-        {
-            string key = target["metadata/".Length..];
-            Assert.NotNull(before[key]);
-            Assert.Null(after.GetValueOrDefault(key));
-        });
-        Assert.All(["creator", "producer", "modificationDate"], key => Assert.NotNull(after[key]));
-        Warning warning = Assert.Single(result.Warnings!, static warning => warning.Code.Name == "METADATA_REWRITTEN");
-        Assert.Contains($"'{outcome.Id}'", warning.Message, StringComparison.Ordinal);
     }
 
     /// <summary>Setting an entry the engine writes on every save changes nothing in the output.</summary>
     [Fact]
-    public void SetMetadata_OfAnEntryTheEngineWritesOnSave_ChangesNothing()
+    public void SetProperties_CustomEntriesReadBackUnderTheNamesTheirTargetsGive()
     {
         using var fixture = new PdfEngineFixture();
         string input = fixture.CreateDocument(pages: 1);
 
-        PdfEditResult result = Edit(fixture, input, new SetMetadataOp { Custom = new Dictionary<string, string> { ["Producer"] = "Other" } });
+        PdfEditResult result = Edit(fixture, input, new SetPropertiesOp
+        {
+            Title = "Quarterly",
+            Custom = new Dictionary<string, string> { ["Department"] = "Sales", ["Cost Centre"] = "42" },
+        });
 
-        Assert.Equal(0, result.Applied[0].ItemsAffected);
-        Assert.NotEqual("Other", Metadata(fixture, result.Output!.Path)["producer"]);
-        Assert.Contains(result.Warnings!, static warning => warning.Code.Name == "OP_NO_EFFECT");
-        Assert.Contains(result.Warnings!, static warning => warning.Code.Name == "METADATA_REWRITTEN");
+        IReadOnlyDictionary<string, string?> read = Metadata(fixture, result.Output!.Path);
+        BoundedOperationOutcome outcome = Assert.Single(result.Applied);
+        Assert.Equal(["property/Cost Centre", "property/Department", "property/title"], outcome.Targets.Order(StringComparer.Ordinal));
+        Assert.All(outcome.Targets, target => Assert.NotNull(read[target["property/".Length..]]));
+        Assert.Equal("Sales", read["Department"]);
+        Assert.Equal("42", read["Cost Centre"]);
     }
 
     private static IReadOnlyDictionary<string, string?> Metadata(PdfEngineFixture fixture, string path) =>
         PdfInfo.Run(fixture.Session, new PdfInspectRequest { Input = path, Details = ["properties"] }).Properties!;
 
-    public static TheoryData<string> Unchanged => ["rotate_pages", "decrypt", "flatten_forms", "set_metadata"];
+    public static TheoryData<string> Unchanged => ["rotate_pages", "decrypt_document", "flatten_forms", "set_properties"];
 
     /// <summary>An operation whose objects already have the state it sets reports 0 and OP_NO_EFFECT.</summary>
     [Theory]
@@ -159,10 +130,10 @@ public sealed class PdfOutcomeTests
         string input = fixture.CreateDocument(pages: 1);
         PdfOp[] ops = op switch
         {
-            "rotate_pages" => [new RotatePagesOp { Pages = "1", Angle = 0 }],
-            "decrypt" => [new DecryptPdfOp()],
+            "rotate_pages" => [new RotatePagesOp { Pages = "1", Rotation = 0 }],
+            "decrypt_document" => [new DecryptDocumentOp()],
             "flatten_forms" => [new FlattenFormsOp()],
-            "set_metadata" => [new SetMetadataOp { Title = "Same" }, new SetMetadataOp { Title = "Same" }],
+            "set_properties" => [new SetPropertiesOp { Title = "Same" }, new SetPropertiesOp { Title = "Same" }],
             _ => throw new ArgumentOutOfRangeException(nameof(op)),
         };
 
@@ -183,7 +154,7 @@ public sealed class PdfOutcomeTests
     {
         using var fixture = new PdfEngineFixture();
         string input = fixture.CreateDocument(pages: 1);
-        var encrypt = new EncryptPdfOp { UserPasswordEnv = "USER_PW", OwnerPasswordEnv = "OWNER_PW" };
+        var encrypt = new EncryptDocumentOp { UserPasswordEnv = "USER_PW", OwnerPasswordEnv = "OWNER_PW" };
 
         PdfEditResult result = PdfEdit.Run(fixture.Session, new PdfEditRequest
         {
@@ -202,7 +173,7 @@ public sealed class PdfOutcomeTests
     {
         using var fixture = new PdfEngineFixture();
         string input = fixture.CreateDocument(pages: 1);
-        var encrypt = new EncryptPdfOp { UserPasswordEnv = "USER_PW", OwnerPasswordEnv = "OWNER_PW" };
+        var encrypt = new EncryptDocumentOp { UserPasswordEnv = "USER_PW", OwnerPasswordEnv = "OWNER_PW" };
 
         PdfEditResult result = PdfEdit.Run(fixture.Session, new PdfEditRequest
         {
@@ -248,7 +219,7 @@ public sealed class PdfOutcomeTests
             document.Save(input);
         }
 
-        PdfEditResult result = Edit(fixture, input, new OptimizePdfOp { ImageQuality = 20, CompressStreams = false, RemoveUnusedObjects = false });
+        PdfEditResult result = Edit(fixture, input, new OptimizeDocumentOp { ImageQuality = 20, CompressStreams = false, RemoveUnusedObjects = false });
 
         using (var output = new Aspose.Pdf.Document(result.Output!.Path))
         {

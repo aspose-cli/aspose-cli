@@ -192,7 +192,7 @@ Kept on purpose:
   mistyped one gets a suggestion (C-R35, C-B14).
 - `capabilities` lists no `examples[]` or `errorDetailsKeys[]`: examples belong to help (C-R34),
   and the error `details` keys are described once, in the error envelope schema (C-R25).
-- On an encrypted PDF input, `set_metadata` with text beyond Latin-1 and no later `encrypt` or
+- On an encrypted PDF input, `set_properties` with text beyond Latin-1 and no later `encrypt_document` or
   `--encrypt-env` is still refused rather than reported applied while the engine writes garbled text
   ([PDF-ENCRYPTED-INFO-TEXT](KNOWN-ISSUES.md#pdf-encrypted-info-text), C-R30).
 

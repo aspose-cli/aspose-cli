@@ -187,6 +187,25 @@ public sealed class ExclusiveMinimumAttribute(double value) : ValueConstraintAtt
     public override void Describe(JsonObject schema) => schema["exclusiveMinimum"] = Value;
 }
 
+/// <summary>A positive number every allowed number is a whole multiple of, such as 90 for quarter turns.</summary>
+[AttributeUsage(AttributeTargets.Property)]
+public sealed class MultipleOfAttribute(double value) : ValueConstraintAttribute
+{
+    /// <summary>The number every allowed number is a multiple of.</summary>
+    public double Value { get; } = value > 0
+        ? value
+        : throw new ArgumentOutOfRangeException(nameof(value), value, "A multiple is positive.");
+
+    /// <inheritdoc />
+    public override string? Check(object value) =>
+        Number(value) / Value is var quotient && quotient == Math.Floor(quotient) && !double.IsInfinity(quotient)
+            ? null
+            : $"must be a multiple of {Text(Value)}";
+
+    /// <inheritdoc />
+    public override void Describe(JsonObject schema) => schema["multipleOf"] = Value;
+}
+
 /// <summary>The fewest items an array may hold; 1 means it must not be empty.</summary>
 [AttributeUsage(AttributeTargets.Property, AllowMultiple = true)]
 public sealed class MinItemsAttribute(int count) : ValueConstraintAttribute

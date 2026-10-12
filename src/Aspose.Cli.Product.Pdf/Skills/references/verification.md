@@ -15,16 +15,16 @@ checked, even when part of its effect was.
 
 | Operation | Read back | Issue code |
 | --- | --- | --- |
-| `set_form_field` | the field holds the value set, or is clear after `null` | `PDF_FIELD_VALUE_MISMATCH` |
-| `flatten_forms` | no field of a flattened name remains, or no field at all without `fields` | `PDF_FIELD_NOT_FLATTENED` |
-| `redact_text` | the pattern no longer matches the text of its pages | `PDF_REDACTED_TEXT_FOUND` |
-| `add_bookmark` | its index holds its title and page | `PDF_BOOKMARK_MISMATCH` |
-| `add_bookmark`, `delete_bookmarks` | the bookmark count | `PDF_BOOKMARK_MISMATCH` |
-| `set_metadata` | each document information entry set | `PDF_METADATA_MISMATCH` |
-| `add_attachment`, `remove_attachment` | an attachment of the name holds the embedded length, or none has the name | `PDF_ATTACHMENT_MISMATCH` |
-| `insert_blank_page`, `insert_pages_from`, `delete_pages`, `move_pages` | the page count | `PDF_PAGE_COUNT_MISMATCH` |
+| `set_form_field` | the field holds the value set, or is clear after `null` | `FIELD_VALUE_MISMATCH` |
+| `flatten_forms` | no field of a flattened name remains, or no field at all without `fields` | `FIELD_NOT_FLATTENED` |
+| `redact_text` | the pattern no longer matches the text of its pages | `REDACTED_TEXT_FOUND` |
+| `add_bookmark` | its address holds its title and page | `BOOKMARK_MISMATCH` |
+| `add_bookmark`, `delete_bookmarks` | the bookmark count | `BOOKMARK_MISMATCH` |
+| `set_properties` | each document information entry set | `PROPERTIES_MISMATCH` |
+| `add_attachment`, `delete_attachment` | an attachment of the name holds the embedded length, or none has the name | `ATTACHMENT_MISMATCH` |
+| `insert_page`, `import_pages`, `delete_pages`, `move_pages` | the page count | `PAGE_COUNT_MISMATCH` |
 
-`PDF_VERIFICATION_INCOMPLETE` reports a page a `redact_text` pattern could not be
+`VERIFICATION_INCOMPLETE` reports a page a `redact_text` pattern could not be
 checked on within its time budget; search that page with `pdf search`.
 A `redact_text` pattern that matched nothing passes its check, and no check
 catches text a redaction moved under its cover; act on `OP_NO_EFFECT`,
@@ -37,7 +37,7 @@ and page-scoped redactions and bookmark pages are not checked after a page
 operation renumbers the pages. `add_attachment` with a name the document already
 uses adds a second attachment of that name. Other operations (stamps,
 watermarks, links, `redact_area`, page geometry, page labels,
-`remove_metadata`, encryption, `optimize`) have no reliable read-back and are
+`clear_properties`, encryption, `optimize_document`) have no reliable read-back and are
 not checked: render or search the output for them. In evaluation mode the
 matches inside the watermark sentence the engine stamps on each page do not
 count as remaining redacted text.

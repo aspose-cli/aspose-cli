@@ -426,7 +426,7 @@ public sealed class PdfEngineTests
             label =>
             {
                 Assert.Equal(1, label.StartPage);
-                Assert.Equal("roman-lower", label.Style);
+                Assert.Equal("roman-lower", label.NumberStyle);
                 Assert.Equal("A-", label.Prefix);
                 Assert.Equal(1, label.StartingValue);
             });
@@ -435,13 +435,13 @@ public sealed class PdfEngineTests
             item =>
             {
                 Assert.Equal("First page", item.Title);
-                Assert.Equal("1", item.Index);
+                Assert.Equal("1", item.Bookmark);
                 Assert.Equal(1, item.Page);
             },
             item =>
             {
                 Assert.Equal(2, item.Level);
-                Assert.Equal("1/1", item.Index);
+                Assert.Equal("1/1", item.Bookmark);
                 Assert.Null(item.Page);
             });
         Assert.Null(result.Forms!.Kind);
