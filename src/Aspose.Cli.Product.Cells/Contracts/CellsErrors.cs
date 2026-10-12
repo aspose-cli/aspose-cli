@@ -17,7 +17,7 @@ public static class CellsErrors
         string firstSheet) => CliErrors.EvaluationLimit(
         $"Evaluation mode can export only the first worksheet '{firstSheet}' to {format}; requested worksheet '{requestedSheet}' was not exported and no output was written.",
         "Aspose.Cells",
-        "explicitly choose the first worksheet with --sheet",
+        "explicitly choose the first worksheet with --sheets 1",
         new JsonObject
         {
             ["format"] = format,
@@ -25,25 +25,14 @@ public static class CellsErrors
             ["available"] = new JsonArray(firstSheet),
         });
 
-    internal static CliException RangeInvalid(string spec, string reason) => new(
-        CellsDiagnostics.RangeInvalid,
+    /// <summary>
+    /// An A1 reference that does not parse. It is an operation field's mistake wherever the parser
+    /// meets one; a command that parses an option with it reports <c>OPTION_INVALID</c> instead.
+    /// </summary>
+    internal static CliException RangeInvalid(string spec, string reason) => CliErrors.OperationValueInvalid(
         $"Invalid range '{spec}': {reason}",
-        hint: "Use A1 notation such as 'B2:D10', a single cell such as 'C5', or a sheet-qualified range such as 'Sales!A1:C10'.",
-        details: new JsonObject { ["range"] = spec, ["reason"] = reason });
-
-    internal static CliException RangeTooLarge(
-        long requestedCells,
-        int maxCells,
-        string suggestion) => new(
-        CellsDiagnostics.RangeTooLarge,
-        $"The request covers {requestedCells} cells which exceeds the limit of {maxCells}.",
-        hint: suggestion,
-        details: new JsonObject
-        {
-            ["actual"] = requestedCells,
-            ["limit"] = maxCells,
-            ["unit"] = "cells",
-        });
+        reason,
+        "Use A1 notation such as 'B2:D10', a single cell such as 'C5', or a sheet-qualified range such as 'Sales!A1:C10'.");
 
     internal static CliException RenderEmpty(string sheetName) => new(
         CellsDiagnostics.RenderEmpty,
@@ -56,7 +45,7 @@ public static class CellsErrors
         string engineMessage) => CliErrors.RenderFailed(
         $"Sheet '{sheetName}'",
         engineMessage,
-        "An embedded chart or picture on this sheet defeats the renderer. Render another sheet, or deliver the sheet's data with 'aspose-cli cells query range' or 'aspose-cli cells convert'.",
+        "An embedded chart or picture on this sheet defeats the renderer. Render another sheet, or deliver the sheet's data with 'aspose-cli cells read' or 'aspose-cli cells convert'.",
         new JsonObject { ["sheet"] = sheetName });
 
     /// <summary>A delimited text input is not UTF-8 and names no encoding.</summary>

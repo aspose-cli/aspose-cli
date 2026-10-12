@@ -40,8 +40,8 @@ public sealed class CellsImportCliTests : IClassFixture<CellsImportCliTests.Sour
             edited["applied"]!.AsArray().Select(static item => item!["targets"]![0]!.GetValue<string>()));
         Assert.Equal(source, File.ReadAllBytes(_workspace.File("eu.xlsx")));
         JsonNode read = _workspace.Run(
-            "cells", "query", "range", "report.xlsx", "--sheet", "Report", "--range", "A1:H6",
-            "--scope", "full", "--output-format", "json").Json();
+            "cells", "read", "report.xlsx", "--sheet", "Report", "--range", "A1:H6",
+            "--content", "full", "--output-format", "json").Json();
         JsonArray rows = read["sheet"]!["cells"]!.AsArray();
         JsonNode Cell(string address)
         {
@@ -77,7 +77,7 @@ public sealed class CellsImportCliTests : IClassFixture<CellsImportCliTests.Sour
             """
             {"ops":[
               {"op":"import_sheet","sheet":"Rates","path":"eu.xlsx"},
-              {"op":"import_sheet","sheet":"Totals","path":"eu.xlsx","name":"EU","position":0},
+              {"op":"import_sheet","sheet":"Totals","path":"eu.xlsx","name":"EU","at":1},
               {"op":"import_sheet","path":"it.csv","name":"IT"}
             ]}
             """).Succeeded();
@@ -89,14 +89,14 @@ public sealed class CellsImportCliTests : IClassFixture<CellsImportCliTests.Sour
         Assert.Contains("Rates", names);
         Assert.Contains("IT", names);
         JsonArray eu = _workspace.Run(
-            "cells", "query", "range", "report.xlsx", "--sheet", "EU", "--range", "B4:B5",
-            "--scope", "formulas", "--output-format", "json").Json()["sheet"]!["cells"]!.AsArray();
+            "cells", "read", "report.xlsx", "--sheet", "EU", "--range", "B4:B5",
+            "--content", "formulas", "--output-format", "json").Json()["sheet"]!["cells"]!.AsArray();
         Assert.Equal("=SUM(B2:B3)", eu[0]![0]!["f"]!.GetValue<string>());
         // The imported Rates sheet is the one the formula now reads: 2000.5 * 2.
         Assert.Equal("=B4*Rates!A1", eu[1]![0]!["f"]!.GetValue<string>());
         Assert.Equal(4001, eu[1]![0]!["v"]!.GetValue<double>());
         JsonArray it = _workspace.Run(
-            "cells", "query", "range", "report.xlsx", "--sheet", "IT", "--range", "A3:B3", "--output-format", "json")
+            "cells", "read", "report.xlsx", "--sheet", "IT", "--range", "A3:B3", "--output-format", "json")
             .Json()["sheet"]!["cells"]!.AsArray();
         Assert.Equal("ES", it[0]![0]!["v"]!.GetValue<string>());
         Assert.Equal(7, it[0]![1]!["v"]!.GetValue<double>());

@@ -14,9 +14,9 @@ internal static class SheetOps
         int index = workbook.Worksheets.Add();
         Worksheet sheet = workbook.Worksheets[index];
         sheet.Name = op.Name;
-        if (op.Position is { } position)
+        if (op.At is { } at)
         {
-            sheet.MoveTo(position);
+            sheet.MoveTo(at - 1);
         }
 
         return 1;
@@ -57,8 +57,8 @@ internal static class SheetOps
     {
         // The engine re-scopes cross-sheet and 3-D references to the new tab
         // order. A position past the last sheet is clamped to the end, matching
-        // add_sheet's positioning; the parser guarantees position >= 0.
-        sheet.MoveTo(op.Position);
+        // add_sheet's positioning; the parser guarantees to >= 1.
+        sheet.MoveTo(op.To - 1);
         return null;
     }
 

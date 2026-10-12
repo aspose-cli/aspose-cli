@@ -133,7 +133,7 @@ public sealed class CliCatalog
 }
 
 /// <summary>One command of the catalog.</summary>
-/// <param name="Words">The path after the executable name, such as <c>cells query range</c>; empty for the root.</param>
+/// <param name="Words">The path after the executable name, such as <c>cells read</c>; empty for the root.</param>
 /// <param name="Hidden">Whether help hides the command.</param>
 /// <param name="Product">The product that owns the command, or null for a platform command.</param>
 /// <param name="Options">The command's own options; the root lists the recursive global ones.</param>

@@ -6,8 +6,11 @@ public static class CellsCellSideTypes
     /// <summary>An empty cell.</summary>
     public const string Empty = "empty";
 
-    /// <summary>A number, including a date's serial.</summary>
+    /// <summary>A number.</summary>
     public const string Number = "number";
+
+    /// <summary>A date or time, reported as an ISO 8601 string.</summary>
+    public const string DateTime = "datetime";
 
     /// <summary>Text.</summary>
     public const string String = "string";

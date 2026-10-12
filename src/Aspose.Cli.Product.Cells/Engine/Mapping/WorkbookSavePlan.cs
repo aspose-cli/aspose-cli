@@ -14,7 +14,7 @@ internal sealed record WorkbookSavePlan(string FormatId, SaveFormat Format, Save
     /// option the caller passed (<see cref="Sdk.Extensibility.Commanding.StandardInvocation.EncryptPassword()"/>).
     /// </remarks>
     internal static WorkbookSavePlan Create(FormatDescriptor output, LicenseState licenseState,
-        Secret? encryptPassword = null, Secret? inputPassword = null, int? selectedSheet = null, bool byteOrderMark = false)
+        Secret? encryptPassword = null, Secret? inputPassword = null, IReadOnlyList<int>? selectedSheets = null, bool byteOrderMark = false)
     {
         string formatId = output.Id;
         bool encryptable = output.Protectable;
@@ -33,7 +33,7 @@ internal sealed record WorkbookSavePlan(string FormatId, SaveFormat Format, Save
                 Encoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: byteOrderMark),
             },
             "md" => new MarkdownSaveOptions { FormatStrategy = CellValueFormatStrategy.None },
-            "pdf" when selectedSheet is { } sheet => new PdfSaveOptions { SheetSet = new SheetSet([sheet]) },
+            "pdf" when selectedSheets is { } sheets => new PdfSaveOptions { SheetSet = new SheetSet([.. sheets]) },
             _ => null,
         };
         Secret? password = encryptPassword ?? (encryptable ? inputPassword : null);

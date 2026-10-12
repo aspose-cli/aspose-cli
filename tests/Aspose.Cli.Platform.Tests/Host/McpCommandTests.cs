@@ -32,7 +32,7 @@ public sealed class McpCommandTests
     }
 
     [Theory]
-    [InlineData("cells", "query", "range", "input.xlsx")]
+    [InlineData("cells", "read", "input.xlsx")]
     [InlineData("pdf", "edit", "input.pdf", "--ops", "{\"ops\":[]}", "--out", "out.pdf")]
     [InlineData("schema", "v2/pdf/inspect-result")]
     [InlineData("doctor")]
@@ -132,7 +132,7 @@ public sealed class McpCommandTests
             null,
             120));
         Assert.Throws<McpCommandException>(() => runner.Validate(
-            ["cells", "query", "range"],
+            ["cells", "read"],
             new string('x', McpCommandRunner.MaximumInputBytes + 1),
             120));
         Assert.Throws<McpCommandException>(() => runner.Validate(["cells"], null, 0));

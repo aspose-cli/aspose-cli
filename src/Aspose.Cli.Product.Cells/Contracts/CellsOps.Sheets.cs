@@ -12,9 +12,12 @@ public sealed record AddSheetOp : CellsOp
     [ReadBack("inspect-result.schema.json#/$defs/cellsSheetInfo/properties/name")]
     [Pattern(@"\S")] public required string Name { get; init; }
 
-    /// <summary>The zero-based position; appended when omitted.</summary>
-    [ReadBack("inspect-result.schema.json#/$defs/cellsSheetInfo/properties/position")]
-    [Minimum(0)] public int? Position { get; init; }
+    /// <summary>
+    /// The 1-based position in the tab order, as inspect reports a sheet's position; appended when
+    /// omitted, or when past the last sheet.
+    /// </summary>
+    [MistakenFor("position")]
+    [Minimum(1)] public int? At { get; init; }
 }
 
 /// <summary>Renames the sheet the operation's sheet field names.</summary>
@@ -58,9 +61,12 @@ public sealed record SetActiveSheetOp : CellsOp;
 [AtLeastOneOf("sheet")]
 public sealed record MoveSheetOp : CellsOp
 {
-    /// <summary>The zero-based destination in the tab order; a value past the last sheet moves it to the end.</summary>
-    [ReadBack("inspect-result.schema.json#/$defs/cellsSheetInfo/properties/position")]
-    [Minimum(0)] public required int Position { get; init; }
+    /// <summary>
+    /// The 1-based destination in the tab order, as inspect reports a sheet's position; a value
+    /// past the last sheet moves it to the end.
+    /// </summary>
+    [MistakenFor("position")]
+    [Minimum(1)] public required int To { get; init; }
 }
 
 /// <summary>Freezes the panes above and left of a cell: B2 freezes row 1 and column A, and A1 unfreezes.</summary>

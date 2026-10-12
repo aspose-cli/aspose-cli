@@ -4,7 +4,7 @@ using Aspose.Cli.Sdk.IO;
 namespace Aspose.Cli.Product.Cells.Engine.Mapping;
 
 /// <summary>
-/// Builds the <c>cells query range</c> projection: resolves the requested sheet,
+/// Builds the <c>cells read</c> projection: resolves the requested sheet,
 /// applies the cell budget to pick the returned range, and materializes the row-major
 /// cell matrix (with the pooled style dictionary in style-bearing scopes).
 /// Mirrors <see cref="InfoProjection"/> so the engine stays a thin orchestrator.
@@ -31,15 +31,15 @@ internal static class ReadProjection
             "items",
             phase: "projection");
 
-        StylePool? stylePool = CellsReadScopes.IncludesStyles(request.Scope) ? new StylePool(workbook) : null;
+        StylePool? stylePool = CellsReadContents.IncludesStyles(request.Content) ? new StylePool(workbook) : null;
         IReadOnlyList<IReadOnlyList<CellsCellData>>? cells = window is { } resolvedWindow
-            ? BuildCells(sheet, resolvedWindow, request.Scope, stylePool)
+            ? BuildCells(sheet, resolvedWindow, request.Content, stylePool)
             : null;
 
         var projection = new CellsSheetProjection
         {
             Name = sheet.Name,
-            Position = sheet.Index,
+            Position = sheet.Index + 1,
             UsedRange = usedRange is { } used ? A1.FormatRange(used) : null,
             Range = window is { } w ? A1.FormatRange(w) : null,
             Cells = cells,
@@ -67,9 +67,9 @@ internal static class ReadProjection
     }
 
     private static IReadOnlyList<IReadOnlyList<CellsCellData>> BuildCells(
-        Worksheet sheet, RangeRef window, string scope, StylePool? stylePool)
+        Worksheet sheet, RangeRef window, string content, StylePool? stylePool)
     {
-        bool includeFormulas = CellsReadScopes.IncludesFormulas(scope);
+        bool includeFormulas = CellsReadContents.IncludesFormulas(content);
         var rows = new List<IReadOnlyList<CellsCellData>>(window.RowCount);
 
         for (int row = window.Start.Row; row <= window.End.Row; row++)

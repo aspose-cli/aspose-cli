@@ -18,4 +18,4 @@ To build in front of the user, start the preview first, hand over its `url`,
 then edit in three to five batches (data, structure, formats, charts, polish)
 so each save narrates the build (`aspose-cli docs cells/design-system`,
 section 11). The preview is the user's view; your own verification still uses
-`query range`, `review` and `render` (`aspose-cli docs cells/verification`).
+`read`, `review` and `render` (`aspose-cli docs cells/verification`).

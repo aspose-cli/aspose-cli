@@ -99,7 +99,7 @@ public sealed class CellsImportTests : IClassFixture<CellsFixture>
 
         using Workbook result = Apply(
             _fixture.CreateSalesWorkbook("sheet.xlsx"),
-            $$"""{ "op": "import_sheet", "sheet": "Totals", "path": {{Json(source)}}, "name": "EU", "position": 1 }""");
+            $$"""{ "op": "import_sheet", "sheet": "Totals", "path": {{Json(source)}}, "name": "EU", "at": 2 }""");
 
         Assert.Equal("EU", result.Worksheets[1].Name);
         Aspose.Cells.Cells cells = result.Worksheets["EU"].Cells;

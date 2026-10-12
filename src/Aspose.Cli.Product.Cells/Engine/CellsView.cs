@@ -140,7 +140,7 @@ internal static class CellsView
                 render = new SheetRender(sheet, options);
                 window = new Warning(CellsDiagnostics.SheetPartiallyRendered, $"Worksheet '{sheet.Name}' is too large for one review image; only rows 1-{rows} of {lastRow + 1} were rendered.")
                 {
-                    Hint = $"Check the rest with 'cells render --sheet \"{sheet.Name}\" --range' windows, or trust 'cells query' for the data.",
+                    Hint = $"Check the rest with 'cells render --range' windows of the sheet, or trust 'cells read' for the data.",
                     Location = sheet.Name,
                     AffectsCompleteness = true,
                 };

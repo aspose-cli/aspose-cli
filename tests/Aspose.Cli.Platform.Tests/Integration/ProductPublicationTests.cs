@@ -107,7 +107,7 @@ public sealed class ProductPublicationTests
         workspace.Run("cells", "create", "input.xlsx", "--sheets", "First,Second").Succeeded();
         workspace.Run("cells", "edit", "input.xlsx", "--set", "First!A1=1", "--set", "Second!A1=2", "--in-place").Succeeded();
         File.WriteAllText(workspace.File("render.Second.png"), "existing second sheet");
-        CliResult result = workspace.Run(["cells", "render", "input.xlsx", "--all-sheets", "--out", "render.png", "--output-format", "json",
+        CliResult result = workspace.Run(["cells", "render", "input.xlsx", "--sheets", "all", "--out", "render.png", "--output-format", "json",
             .. (supervised ? new[] { "--timeout", "30" } : Array.Empty<string>())]);
         Assert.Equal(5, result.ExitCode);
         Assert.False(File.Exists(workspace.File("render.First.png")));

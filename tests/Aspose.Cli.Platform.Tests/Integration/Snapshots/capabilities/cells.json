@@ -3,7 +3,8 @@
     "id": "cells",
     "verbs": [
       "inspect",
-      "query",
+      "read",
+      "search",
       "create",
       "edit",
       "compare",
@@ -37,7 +38,7 @@
         "command": "edit",
         "inputSchema": "v2/cells/ops",
         "operationSchema": "aspose-cli schema v2/cells/ops --operation <op>",
-        "contractFingerprint": "sha256:f8ddae6661cd8f0418f0b0499a88076a8be45ac9d287616f6e6f7cc68973d781",
+        "contractFingerprint": "sha256:c5e7bef4dfd77bf03ac3a8c09be90ee68b17f5a149e6ef7e161639d88e3c4d29",
         "maximumOperationCount": 10000,
         "ops": [
           "add_comment",
@@ -352,9 +353,7 @@
           ".markdown",
           ".md"
         ],
-        "aliases": [
-          "markdown"
-        ],
+        "aliases": [],
         "uses": [
           "convert"
         ],
@@ -650,11 +649,11 @@
         "path": "cells compare",
         "name": "compare",
         "aliases": [],
-        "description": "Compare stored workbook values and optional formula text; dates use raw serial numbers.",
+        "description": "Compare stored workbook values and optional formula text; dates are ISO 8601.",
         "hidden": false,
         "options": [
           {
-            "name": "--compare",
+            "name": "--content",
             "aliases": [],
             "type": "string",
             "minimumArity": 1,
@@ -1037,7 +1036,7 @@
             "description": "Read the password for the workbook from the first line of stdin."
           },
           {
-            "name": "--sheet",
+            "name": "--sheets",
             "aliases": [],
             "type": "string",
             "minimumArity": 1,
@@ -1049,7 +1048,7 @@
             "allowedValues": [],
             "secret": false,
             "valueSource": "command-line",
-            "description": "Convert only this sheet (supported for csv, tsv, md, pdf)."
+            "description": "Sheets to process: 1-based numbers and ranges such as 1-3,7,9-, or all. Default: every sheet, except a CSV, TSV or Markdown output, which holds the active sheet and takes one selected sheet; a PDF takes any selection."
           },
           {
             "name": "--to",
@@ -1634,22 +1633,6 @@
             "description": "Read the password for the workbook from the first line of stdin."
           },
           {
-            "name": "--preview-rows",
-            "aliases": [],
-            "type": "integer",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "5",
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Number of preview rows per sheet. Range: 1-100."
-          },
-          {
             "name": "--sample",
             "aliases": [],
             "type": "boolean",
@@ -1666,7 +1649,23 @@
             ],
             "secret": false,
             "valueSource": "command-line",
-            "description": "Include a bounded sample: display values of the first --preview-rows rows and up to 20 columns of each sheet, from A1. Default: off."
+            "description": "Include a bounded sample: display values of the first --sample-rows rows and up to 20 columns of each sheet, from A1. Default: off."
+          },
+          {
+            "name": "--sample-rows",
+            "aliases": [],
+            "type": "integer",
+            "minimumArity": 1,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": true,
+            "default": "5",
+            "allowedValues": [],
+            "secret": false,
+            "valueSource": "command-line",
+            "description": "Number of sample rows per sheet. Only with --sample. Range: 1-100."
           }
         ],
         "arguments": [
@@ -1686,21 +1685,33 @@
         ]
       },
       {
-        "path": "cells query",
-        "name": "query",
-        "aliases": [],
-        "description": "Read bounded workbook data without mutating the source file.",
-        "hidden": false,
-        "options": [],
-        "arguments": []
-      },
-      {
-        "path": "cells query range",
-        "name": "range",
+        "path": "cells read",
+        "name": "read",
         "aliases": [],
         "description": "Read cell data of one sheet as a windowed projection.",
         "hidden": false,
         "options": [
+          {
+            "name": "--content",
+            "aliases": [],
+            "type": "string",
+            "minimumArity": 1,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": true,
+            "default": "values",
+            "allowedValues": [
+              "formulas",
+              "full",
+              "styles",
+              "values"
+            ],
+            "secret": false,
+            "valueSource": "command-line",
+            "description": "What each cell carries besides its value and type: its formula f, its styleId and the style pool, or both."
+          },
           {
             "name": "--max-cells",
             "aliases": [],
@@ -1778,7 +1789,7 @@
             "allowedValues": [],
             "secret": false,
             "valueSource": "command-line",
-            "description": "Window to read, e.g. A1:F50 or Sales!A1:F50. Default: the used range, subject to --max-cells."
+            "description": "Window to read, e.g. A1:F50 or Sales!A1:F50, or all. Default: the used range, subject to --max-cells."
           },
           {
             "name": "--scan-range",
@@ -1793,27 +1804,6 @@
             "allowedValues": [],
             "secret": false,
             "valueSource": "command-line"
-          },
-          {
-            "name": "--scope",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "values",
-            "allowedValues": [
-              "formulas",
-              "full",
-              "styles",
-              "values"
-            ],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Projection scope: formulas adds f; the style scope adds styleId and the style pool."
           },
           {
             "name": "--sheet",
@@ -1848,223 +1838,12 @@
         ]
       },
       {
-        "path": "cells query search",
-        "name": "search",
-        "aliases": [],
-        "description": "Find cells whose value or formula matches a pattern.",
-        "hidden": false,
-        "options": [
-          {
-            "name": "--case-sensitive",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "false",
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Match letter case exactly."
-          },
-          {
-            "name": "--max-hits",
-            "aliases": [],
-            "type": "integer",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "100",
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Maximum returned hits. Range: 1-10000."
-          },
-          {
-            "name": "--password",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": true,
-            "valueSource": "command-line",
-            "description": "Password for the workbook. Discouraged: visible in the process list; prefer --password-env."
-          },
-          {
-            "name": "--password-env",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": true,
-            "valueSource": "environment-variable-name",
-            "description": "Name of an environment variable holding the password for the workbook."
-          },
-          {
-            "name": "--password-stdin",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": true,
-            "valueSource": "stdin",
-            "description": "Read the password for the workbook from the first line of stdin."
-          },
-          {
-            "name": "--pattern",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": true,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Text to find, or a regular expression with --regex."
-          },
-          {
-            "name": "--regex",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "false",
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Treat the pattern as a culture-invariant regular expression with a one-second budget."
-          },
-          {
-            "name": "--scope",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "values",
-            "allowedValues": [
-              "both",
-              "formulas",
-              "values"
-            ],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Where to search: the cell results, the formula text or both."
-          },
-          {
-            "name": "--sheet",
-            "aliases": [],
-            "type": "string",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": false,
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Restrict to one sheet. Default: all sheets."
-          },
-          {
-            "name": "--skip",
-            "aliases": [],
-            "type": "integer",
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "0",
-            "allowedValues": [],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Matches to pass over before the returned hits; a truncated search's window.next sets it."
-          }
-        ],
-        "arguments": [
-          {
-            "name": "file",
-            "type": "string",
-            "inputKind": "file",
-            "valueSource": "command-line",
-            "secret": false,
-            "minimumArity": 1,
-            "maximumArity": 1,
-            "required": true,
-            "hasDefault": false,
-            "allowedValues": [],
-            "description": "Workbook to search."
-          }
-        ]
-      },
-      {
         "path": "cells render",
         "name": "render",
         "aliases": [],
-        "description": "Render a sheet, a range, or every visible sheet to images.",
+        "description": "Render sheets, or a range of one, to images.",
         "hidden": false,
         "options": [
-          {
-            "name": "--all-sheets",
-            "aliases": [],
-            "type": "boolean",
-            "minimumArity": 0,
-            "maximumArity": 1,
-            "required": false,
-            "recursive": false,
-            "hidden": false,
-            "hasDefault": true,
-            "default": "false",
-            "allowedValues": [
-              "false",
-              "true"
-            ],
-            "secret": false,
-            "valueSource": "command-line",
-            "description": "Render every visible sheet, one image per sheet named <out-base>.<Sheet><ext>."
-          },
           {
             "name": "--dpi",
             "aliases": [],
@@ -2212,10 +1991,10 @@
             "allowedValues": [],
             "secret": false,
             "valueSource": "command-line",
-            "description": "Render only this range, e.g. A1:G20 or Sales!A1:G20."
+            "description": "Render only this range of one sheet, e.g. A1:G20 or Sales!A1:G20, or all."
           },
           {
-            "name": "--sheet",
+            "name": "--sheets",
             "aliases": [],
             "type": "string",
             "minimumArity": 1,
@@ -2227,7 +2006,7 @@
             "allowedValues": [],
             "secret": false,
             "valueSource": "command-line",
-            "description": "Sheet to render. Default: every visible sheet, at most 20 per run."
+            "description": "Sheets to process: 1-based numbers and ranges such as 1-3,7,9-, or all. Default: every visible sheet, at most 20 per run."
           },
           {
             "name": "--to",
@@ -2262,6 +2041,198 @@
             "hasDefault": false,
             "allowedValues": [],
             "description": "Workbook to render."
+          }
+        ]
+      },
+      {
+        "path": "cells search",
+        "name": "search",
+        "aliases": [],
+        "description": "Find cells whose value or formula matches a pattern.",
+        "hidden": false,
+        "options": [
+          {
+            "name": "--case-sensitive",
+            "aliases": [],
+            "type": "boolean",
+            "minimumArity": 0,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": true,
+            "default": "false",
+            "allowedValues": [
+              "false",
+              "true"
+            ],
+            "secret": false,
+            "valueSource": "command-line",
+            "description": "Match letter case exactly."
+          },
+          {
+            "name": "--content",
+            "aliases": [],
+            "type": "string",
+            "minimumArity": 1,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": true,
+            "default": "values",
+            "allowedValues": [
+              "all",
+              "formulas",
+              "values"
+            ],
+            "secret": false,
+            "valueSource": "command-line",
+            "description": "What to search: the cell results, the formula text or all of both."
+          },
+          {
+            "name": "--max-hits",
+            "aliases": [],
+            "type": "integer",
+            "minimumArity": 1,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": true,
+            "default": "100",
+            "allowedValues": [],
+            "secret": false,
+            "valueSource": "command-line",
+            "description": "Maximum returned hits. Range: 1-10000."
+          },
+          {
+            "name": "--password",
+            "aliases": [],
+            "type": "string",
+            "minimumArity": 1,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": false,
+            "allowedValues": [],
+            "secret": true,
+            "valueSource": "command-line",
+            "description": "Password for the workbook. Discouraged: visible in the process list; prefer --password-env."
+          },
+          {
+            "name": "--password-env",
+            "aliases": [],
+            "type": "string",
+            "minimumArity": 1,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": false,
+            "allowedValues": [],
+            "secret": true,
+            "valueSource": "environment-variable-name",
+            "description": "Name of an environment variable holding the password for the workbook."
+          },
+          {
+            "name": "--password-stdin",
+            "aliases": [],
+            "type": "boolean",
+            "minimumArity": 0,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": true,
+            "allowedValues": [
+              "false",
+              "true"
+            ],
+            "secret": true,
+            "valueSource": "stdin",
+            "description": "Read the password for the workbook from the first line of stdin."
+          },
+          {
+            "name": "--pattern",
+            "aliases": [],
+            "type": "string",
+            "minimumArity": 1,
+            "maximumArity": 1,
+            "required": true,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": false,
+            "allowedValues": [],
+            "secret": false,
+            "valueSource": "command-line",
+            "description": "Text to find, or a regular expression with --regex."
+          },
+          {
+            "name": "--regex",
+            "aliases": [],
+            "type": "boolean",
+            "minimumArity": 0,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": true,
+            "default": "false",
+            "allowedValues": [
+              "false",
+              "true"
+            ],
+            "secret": false,
+            "valueSource": "command-line",
+            "description": "Treat the pattern as a culture-invariant regular expression with a one-second budget."
+          },
+          {
+            "name": "--sheet",
+            "aliases": [],
+            "type": "string",
+            "minimumArity": 1,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": false,
+            "allowedValues": [],
+            "secret": false,
+            "valueSource": "command-line",
+            "description": "Restrict to one sheet. Default: all sheets."
+          },
+          {
+            "name": "--skip",
+            "aliases": [],
+            "type": "integer",
+            "minimumArity": 1,
+            "maximumArity": 1,
+            "required": false,
+            "recursive": false,
+            "hidden": false,
+            "hasDefault": true,
+            "default": "0",
+            "allowedValues": [],
+            "secret": false,
+            "valueSource": "command-line",
+            "description": "Matches to pass over before the returned hits; a truncated search's window.next sets it."
+          }
+        ],
+        "arguments": [
+          {
+            "name": "file",
+            "type": "string",
+            "inputKind": "file",
+            "valueSource": "command-line",
+            "secret": false,
+            "minimumArity": 1,
+            "maximumArity": 1,
+            "required": true,
+            "hasDefault": false,
+            "allowedValues": [],
+            "description": "Workbook to search."
           }
         ]
       }
@@ -2427,13 +2398,6 @@
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
-      "code": "CELLS_SHEET_PARTIALLY_RENDERED",
-      "owner": "cells",
-      "severity": "warning",
-      "category": "warning",
-      "detailsSchemaId": "v2/common/diagnostic-details"
-    },
-    {
       "code": "CHART_NOT_FOUND",
       "owner": "cells",
       "severity": "error",
@@ -2537,22 +2501,6 @@
       "detailsSchemaId": "v2/common/not-found-details"
     },
     {
-      "code": "RANGE_INVALID",
-      "owner": "cells",
-      "severity": "error",
-      "exitCode": 4,
-      "category": "validation",
-      "detailsSchemaId": "v2/common/diagnostic-details"
-    },
-    {
-      "code": "RANGE_TOO_LARGE",
-      "owner": "cells",
-      "severity": "error",
-      "exitCode": 4,
-      "category": "validation",
-      "detailsSchemaId": "v2/common/diagnostic-details"
-    },
-    {
       "code": "RENDER_EMPTY",
       "owner": "cells",
       "severity": "error",
@@ -2588,6 +2536,13 @@
       "exitCode": 4,
       "category": "validation",
       "detailsSchemaId": "v2/common/not-found-details"
+    },
+    {
+      "code": "SHEET_PARTIALLY_RENDERED",
+      "owner": "cells",
+      "severity": "warning",
+      "category": "warning",
+      "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
       "code": "TEXT_TABLE_LAYOUT",
@@ -2680,7 +2635,7 @@
           }
         },
         "cellsCellSide": {
-          "description": "One side of a changed cell: its canonical stored value and optional formula. Dates are raw numeric serials; an absent empty side is omitted.",
+          "description": "One side of a changed cell: its canonical stored value and optional formula. Dates are ISO 8601 strings; an absent empty side is omitted.",
           "type": "object",
           "required": [
             "t"
@@ -2688,18 +2643,19 @@
           "additionalProperties": false,
           "properties": {
             "t": {
-              "description": "Stored type: empty, number, string, boolean or error. Dates are numbers.",
+              "description": "Stored type: empty, number, datetime, string, boolean or error.",
               "type": "string",
               "enum": [
                 "empty",
                 "number",
+                "datetime",
                 "string",
                 "boolean",
                 "error"
               ]
             },
             "v": {
-              "description": "Canonical stored value: a number (raw Excel serials regardless of date formatting), a string, a boolean or an error literal; omitted for an empty cell."
+              "description": "Canonical stored value: a number, an ISO 8601 string for a date or time (local, without an offset, as a read reports it), a string, a boolean or an error literal; omitted for an empty cell. Two cells holding the same serial are equal whether or not one is formatted as a date."
             },
             "f": {
               "description": "Formula, when present and in scope.",
@@ -2738,6 +2694,7 @@
                 "t": {
                   "enum": [
                     "string",
+                    "datetime",
                     "error"
                   ]
                 },
@@ -2867,9 +2824,13 @@
           "description": "The produced output file.",
           "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/output.schema.json"
         },
-        "sheet": {
-          "description": "Sheet the conversion was limited to, when --sheet was given.",
-          "type": "string"
+        "sheets": {
+          "description": "The sheets the conversion was limited to, in workbook order, when --sheets selected some.",
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          }
         },
         "license": {
           "description": "License mode the engine ran under; omitted when it ran licensed.",
@@ -3045,7 +3006,7 @@
           }
         },
         "cellsCellSide": {
-          "description": "One side of a changed cell: its canonical stored value and optional formula. Dates are raw numeric serials; an absent empty side is omitted.",
+          "description": "One side of a changed cell: its canonical stored value and optional formula. Dates are ISO 8601 strings; an absent empty side is omitted.",
           "type": "object",
           "required": [
             "t"
@@ -3053,18 +3014,19 @@
           "additionalProperties": false,
           "properties": {
             "t": {
-              "description": "Stored type: empty, number, string, boolean or error. Dates are numbers.",
+              "description": "Stored type: empty, number, datetime, string, boolean or error.",
               "type": "string",
               "enum": [
                 "empty",
                 "number",
+                "datetime",
                 "string",
                 "boolean",
                 "error"
               ]
             },
             "v": {
-              "description": "Canonical stored value: a number (raw Excel serials regardless of date formatting), a string, a boolean or an error literal; omitted for an empty cell."
+              "description": "Canonical stored value: a number, an ISO 8601 string for a date or time (local, without an offset, as a read reports it), a string, a boolean or an error literal; omitted for an empty cell. Two cells holding the same serial are equal whether or not one is formatted as a date."
             },
             "f": {
               "description": "Formula, when present and in scope.",
@@ -3103,6 +3065,7 @@
                 "t": {
                   "enum": [
                     "string",
+                    "datetime",
                     "error"
                   ]
                 },
@@ -3362,7 +3325,7 @@
             "sheet",
             "index",
             "name",
-            "type"
+            "kind"
           ],
           "additionalProperties": false,
           "properties": {
@@ -3371,16 +3334,16 @@
               "type": "string"
             },
             "index": {
-              "description": "The zero-based index of the chart on its sheet, as update_chart and delete_chart take it.",
+              "description": "The 1-based index of the chart on its sheet, as update_chart and delete_chart take it.",
               "type": "integer",
-              "minimum": 0
+              "minimum": 1
             },
             "name": {
               "description": "The chart's name.",
               "type": "string"
             },
-            "type": {
-              "description": "The chart type: a create_chart type such as column, or the lower-camel engine name of a type outside that vocabulary, such as columnStacked.",
+            "kind": {
+              "description": "The chart kind: a create_chart type such as column, or the lower-camel engine name of a type outside that vocabulary, such as columnStacked.",
               "type": "string",
               "anyOf": [
                 {
@@ -3526,9 +3489,9 @@
               "type": "string"
             },
             "position": {
-              "description": "Zero-based position in the tab order, as add_sheet and move_sheet take it.",
+              "description": "1-based position in the tab order, as add_sheet and move_sheet take it.",
               "type": "integer",
-              "minimum": 0
+              "minimum": 1
             },
             "usedRange": {
               "description": "A1 range covering all cells that hold data (e.g. A1:G120); omitted for empty sheets.",
@@ -3690,7 +3653,7 @@
           "required": [
             "sheet",
             "range",
-            "type"
+            "kind"
           ],
           "additionalProperties": false,
           "properties": {
@@ -3702,8 +3665,8 @@
               "description": "A1 range the validation applies to.",
               "type": "string"
             },
-            "type": {
-              "description": "The validation type: a set_validation type such as list or wholeNumber, or the lower-camel engine name of a type outside that vocabulary, such as anyValue.",
+            "kind": {
+              "description": "The validation kind: a set_validation type such as list or wholeNumber, or the lower-camel engine name of a type outside that vocabulary, such as anyValue.",
               "type": "string",
               "anyOf": [
                 {
@@ -3730,7 +3693,7 @@
             "name",
             "sheetCount",
             "sheets",
-            "hasVba",
+            "hasMacros",
             "definedNameCount",
             "structureProtected",
             "structurePasswordProtected"
@@ -3753,7 +3716,7 @@
                 "$ref": "#/$defs/cellsSheetInfo"
               }
             },
-            "hasVba": {
+            "hasMacros": {
               "description": "true when the workbook contains VBA macros.",
               "type": "boolean"
             },
@@ -4152,11 +4115,11 @@
               "pattern": "\\S",
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsSheetInfo/properties/name"
             },
-            "position": {
-              "description": "The zero-based position; appended when omitted.",
+            "at": {
+              "description": "The 1-based position in the tab order, as inspect reports a sheet's position; appended when omitted, or when past the last sheet.",
               "type": "integer",
-              "minimum": 0,
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsSheetInfo/properties/position"
+              "minimum": 1,
+              "x-readBack": "not-state"
             }
           }
         },
@@ -4366,7 +4329,7 @@
                 "scatter",
                 "area"
               ],
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsChartInfo/properties/type"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsChartInfo/properties/kind"
             },
             "dataRange": {
               "description": "The data to plot, including headers, such as A1:C5. It may name another sheet, such as Data!A1:C5, so a chart on a dashboard sheet can plot a data sheet.",
@@ -4589,9 +4552,9 @@
               "x-readBack": "not-state"
             },
             "index": {
-              "description": "The zero-based index of the chart on the sheet.",
+              "description": "The 1-based index of the chart on the sheet, as inspect --detail charts lists it.",
               "type": "integer",
-              "minimum": 0,
+              "minimum": 1,
               "x-readBack": "not-state"
             },
             "name": {
@@ -5037,11 +5000,11 @@
               "pattern": "\\S",
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsSheetInfo/properties/name"
             },
-            "position": {
-              "description": "The zero-based position of the new sheet; appended when omitted.",
+            "at": {
+              "description": "The 1-based position of the new sheet in the tab order, as inspect reports a sheet's position; appended when omitted, or when past the last sheet.",
               "type": "integer",
-              "minimum": 0,
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsSheetInfo/properties/position"
+              "minimum": 1,
+              "x-readBack": "not-state"
             },
             "passwordEnv": {
               "description": "The environment variable that holds the source's open password, for an encrypted source.",
@@ -5198,7 +5161,7 @@
           "type": "object",
           "required": [
             "op",
-            "position"
+            "to"
           ],
           "additionalProperties": false,
           "properties": {
@@ -5213,11 +5176,11 @@
               "type": "string",
               "x-readBack": "not-state"
             },
-            "position": {
-              "description": "The zero-based destination in the tab order; a value past the last sheet moves it to the end.",
+            "to": {
+              "description": "The 1-based destination in the tab order, as inspect reports a sheet's position; a value past the last sheet moves it to the end.",
               "type": "integer",
-              "minimum": 0,
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsSheetInfo/properties/position"
+              "minimum": 1,
+              "x-readBack": "not-state"
             }
           },
           "allOf": [
@@ -6114,7 +6077,7 @@
                 "textLength",
                 "custom"
               ],
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsValidationInfo/properties/type"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsValidationInfo/properties/kind"
             },
             "operator": {
               "type": "string",
@@ -6434,9 +6397,9 @@
               "x-readBack": "not-state"
             },
             "index": {
-              "description": "The zero-based index of the chart on the sheet.",
+              "description": "The 1-based index of the chart on the sheet, as inspect --detail charts lists it.",
               "type": "integer",
-              "minimum": 0,
+              "minimum": 1,
               "x-readBack": "not-state"
             },
             "name": {
@@ -6464,7 +6427,7 @@
                 "scatter",
                 "area"
               ],
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsChartInfo/properties/type"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/cells/inspect-result.schema.json#/$defs/cellsChartInfo/properties/kind"
             },
             "seriesInRows": {
               "description": "Whether series are plotted from rows rather than columns.",
@@ -6979,13 +6942,13 @@
     "v2/cells/read-result": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "$id": "https://schemas.aspose.com/aspose-cli/v2/cells/read-result.schema.json",
-      "description": "Result of aspose-cli cells query range: a budgeted projection of one sheet's cell data. The envelope's window counts cells: how many the read returned, how many the read covers, and for a planned scan (a default read over the used range, or a page generated for an explicit range too large for one read) the ready-to-run command that returns the next page. The file on disk remains the primary artifact — this JSON is a view of it, never a round-trip format.",
+      "description": "Result of aspose-cli cells read: a budgeted projection of one sheet's cell data. The envelope's window counts cells: how many the read returned, how many the read covers, and for a read over the cell budget the ready-to-run command that returns the next page. The file on disk remains the primary artifact — this JSON is a view of it, never a round-trip format.",
       "type": "object",
       "required": [
         "schema",
         "schemaVersion",
         "input",
-        "scope",
+        "content",
         "sheet",
         "window"
       ],
@@ -7003,8 +6966,8 @@
           "description": "The projected file.",
           "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
         },
-        "scope": {
-          "description": "The scope that was projected.",
+        "content": {
+          "description": "What each cell carries, as --content chose it.",
           "type": "string",
           "enum": [
             "values",
@@ -7018,7 +6981,7 @@
           "$ref": "#/$defs/cellsSheetProjection"
         },
         "styles": {
-          "description": "Style pool referenced by styleId in cells; present only for the styles and full scopes. Pooling styles keeps repeated formatting from bloating the payload.",
+          "description": "Style pool referenced by styleId in cells; present only for the styles and full contents. Pooling styles keeps repeated formatting from bloating the payload.",
           "type": "object",
           "additionalProperties": {
             "$ref": "#/$defs/cellsStyleData"
@@ -7065,11 +7028,11 @@
               ]
             },
             "f": {
-              "description": "Formula in A1 notation (with leading =); only in formula-bearing scopes.",
+              "description": "Formula in A1 notation (with leading =); only with formulas content.",
               "type": "string"
             },
             "styleId": {
-              "description": "Key into the style pool; only in style-bearing scopes.",
+              "description": "Key into the style pool; only with styles content.",
               "type": "string"
             }
           },
@@ -7143,9 +7106,9 @@
               "type": "string"
             },
             "position": {
-              "description": "Zero-based position in the tab order, as add_sheet and move_sheet take it.",
+              "description": "1-based position in the tab order, as add_sheet and move_sheet take it.",
               "type": "integer",
-              "minimum": 0
+              "minimum": 1
             },
             "usedRange": {
               "description": "A1 range covering all data on the sheet; omitted when empty.",
@@ -7253,14 +7216,13 @@
     "v2/cells/render-result": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "$id": "https://schemas.aspose.com/aspose-cli/v2/cells/render-result.schema.json",
-      "description": "Result of aspose-cli cells render: a visual image of one sheet (or a range of it), the primary way for an agent to \"look at\" a spreadsheet.",
+      "description": "Result of aspose-cli cells render: visual images of sheets (or a range of one), the primary way for an agent to \"look at\" a spreadsheet.",
       "type": "object",
       "required": [
         "schema",
         "schemaVersion",
         "input",
-        "output",
-        "sheet"
+        "outputs"
       ],
       "additionalProperties": false,
       "properties": {
@@ -7276,16 +7238,16 @@
           "description": "The rendered input file.",
           "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
         },
-        "output": {
-          "description": "The produced image file.",
-          "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/output.schema.json"
-        },
-        "sheet": {
-          "description": "Name of the rendered sheet.",
-          "type": "string"
+        "outputs": {
+          "description": "The image of each rendered sheet, in workbook order: one file for one sheet, the --out path itself, or <stem>.<sheet>.<ext> per sheet.",
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/cellsSheetOutput"
+          }
         },
         "range": {
-          "description": "A1 range that was rendered; omitted when the whole sheet was rendered.",
+          "description": "A1 range that was rendered; omitted when whole sheets were rendered.",
           "type": "string"
         },
         "dpi": {
@@ -7293,13 +7255,6 @@
           "type": "integer",
           "minimum": 36,
           "maximum": 1200
-        },
-        "outputs": {
-          "description": "Per-sheet output files of a render of every visible sheet, the default or --all-sheets, in workbook order. Omitted for a render of a named sheet or a range. When present, output and sheet describe the first rendered sheet — a stable summary for single-output consumers.",
-          "type": "array",
-          "items": {
-            "$ref": "#/$defs/cellsSheetOutput"
-          }
         },
         "license": {
           "description": "License mode the engine ran under; omitted when it ran licensed.",
@@ -7315,12 +7270,14 @@
       },
       "$defs": {
         "cellsSheetOutput": {
-          "description": "One rendered sheet of a render of every visible sheet.",
+          "description": "The image of one rendered sheet.",
           "type": "object",
           "required": [
             "sheet",
             "path",
-            "sizeBytes"
+            "format",
+            "sizeBytes",
+            "fingerprint"
           ],
           "additionalProperties": false,
           "properties": {
@@ -7329,13 +7286,21 @@
               "type": "string"
             },
             "path": {
-              "description": "Absolute path of the produced image file.",
+              "description": "Absolute path of the produced file.",
+              "type": "string"
+            },
+            "format": {
+              "description": "Format id of the produced file, e.g. png.",
               "type": "string"
             },
             "sizeBytes": {
-              "description": "Size of the produced image file in bytes.",
+              "description": "File size in bytes.",
               "type": "integer",
               "minimum": 0
+            },
+            "fingerprint": {
+              "description": "SHA-256 identity of the published file.",
+              "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/file-fingerprint.schema.json"
             }
           }
         }
@@ -7344,7 +7309,7 @@
     "v2/cells/search-result": {
       "$schema": "https://json-schema.org/draft/2020-12/schema",
       "$id": "https://schemas.aspose.com/aspose-cli/v2/cells/search-result.schema.json",
-      "description": "Result of aspose-cli cells query search: one window of cell hits for a pattern. Hits are ordered by sheet then row-major, so output is deterministic; the envelope's window counts the returned hits and, when more match, carries the command that returns the next ones.",
+      "description": "Result of aspose-cli cells search: one window of cell hits for a pattern. Hits are ordered by sheet then row-major, so output is deterministic; the envelope's window counts the returned hits and, when more match, carries the command that returns the next ones.",
       "type": "object",
       "required": [
         "schema",
@@ -7402,7 +7367,7 @@
           "required": [
             "sheet",
             "cell",
-            "value"
+            "text"
           ],
           "additionalProperties": false,
           "properties": {
@@ -7414,7 +7379,7 @@
               "description": "Cell address, e.g. B7.",
               "type": "string"
             },
-            "value": {
+            "text": {
               "description": "Display value of the cell (truncated for long text).",
               "type": "string"
             },

@@ -625,7 +625,6 @@ public sealed class CliContractTests : IDisposable
     [Theory]
     [InlineData("")]
     [InlineData("cells")]
-    [InlineData("cells query")]
     [InlineData("app")]
     public void GroupWithoutACommand_PrintsItsHelpAndListsItsCommands(string group)
     {
@@ -787,7 +786,7 @@ public sealed class CliContractTests : IDisposable
     }
 
     [Theory]
-    [InlineData("cells query range", "--scan-range", true)]
+    [InlineData("cells read", "--scan-range", true)]
     [InlineData("cells convert", "--out", false)]
     public void Capabilities_PublishWhetherAnOptionIsHidden(string command, string option, bool hidden)
     {
@@ -800,7 +799,7 @@ public sealed class CliContractTests : IDisposable
     }
 
     [Theory]
-    [InlineData("cells query range a.xlsx --sacn-range", "--scan-range")]
+    [InlineData("cells read a.xlsx --sacn-range", "--scan-range")]
     public void UnknownOption_NeverSuggestsAHiddenOption(string commandLine, string hidden)
     {
         CliResult result = _workspace.Run([.. commandLine.Split(' '), "--output-format", "json"]);

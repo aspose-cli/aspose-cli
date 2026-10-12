@@ -3,10 +3,9 @@ using System.Text.Json.Serialization;
 namespace Aspose.Cli.Product.Cells.Contracts;
 
 /// <summary>
-/// Result of <c>aspose-cli cells query range</c>: a budgeted projection of one sheet's
+/// Result of <c>aspose-cli cells read</c>: a budgeted projection of one sheet's
 /// cell data. The envelope's window counts cells: how many the read returned, how many
-/// the read covers, and for a planned scan (a default read over the used range, or a page
-/// generated for an explicit range too large for one read) the ready-to-run command that
+/// the read covers, and for a read over the cell budget the ready-to-run command that
 /// returns the next page. The file on disk remains the primary artifact — this JSON is a
 /// view of it, never a round-trip format.
 /// </summary>
@@ -16,17 +15,17 @@ public sealed record CellsReadResult() : WindowedResultEnvelope("read-result", 2
     [JsonPropertyOrder(-49)]
     public required InputInfo Input { get; init; }
 
-    /// <summary>The scope that was projected.</summary>
+    /// <summary>What each cell carries, as <c>--content</c> chose it.</summary>
     [JsonPropertyOrder(-48)]
-    [AllowedValues(typeof(CellsReadScopes))]
-    public required string Scope { get; init; }
+    [AllowedValues(typeof(CellsReadContents))]
+    public required string Content { get; init; }
 
     /// <summary>Projection of the requested sheet.</summary>
     public required CellsSheetProjection Sheet { get; init; }
 
     /// <summary>
     /// Style pool referenced by <c>styleId</c> in cells; present only for the
-    /// <c>styles</c> and <c>full</c> scopes. Pooling styles keeps repeated
+    /// <c>styles</c> and <c>full</c> contents. Pooling styles keeps repeated
     /// formatting from bloating the payload.
     /// </summary>
     public IReadOnlyDictionary<string, CellsStyleData>? Styles { get; init; }
@@ -38,8 +37,8 @@ public sealed record CellsSheetProjection
     /// <summary>Sheet name, exactly as shown in Excel.</summary>
     public required string Name { get; init; }
 
-    /// <summary>Zero-based position in the tab order, as add_sheet and move_sheet take it.</summary>
-    [Minimum(0)]
+    /// <summary>1-based position in the tab order, as add_sheet and move_sheet take it.</summary>
+    [Minimum(1)]
     public required int Position { get; init; }
 
     /// <summary>A1 range covering all data on the sheet; omitted when empty.</summary>
@@ -76,10 +75,10 @@ public sealed record CellsCellData
     [AllowedValues(typeof(CellsCellValueTypes))]
     public required string T { get; init; }
 
-    /// <summary>Formula in A1 notation (with leading <c>=</c>); only in formula-bearing scopes.</summary>
+    /// <summary>Formula in A1 notation (with leading <c>=</c>); only with formulas content.</summary>
     public string? F { get; init; }
 
-    /// <summary>Key into the style pool; only in style-bearing scopes.</summary>
+    /// <summary>Key into the style pool; only with styles content.</summary>
     public string? StyleId { get; init; }
 }
 

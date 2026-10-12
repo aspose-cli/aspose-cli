@@ -358,7 +358,7 @@ public sealed record ProductFormatCapabilities
 /// <summary>One command or subcommand in a product grammar.</summary>
 public sealed record CommandCapabilities
 {
-    /// <summary>Full command path, e.g. <c>cells query range</c>.</summary>
+    /// <summary>Full command path, e.g. <c>cells read</c>.</summary>
     public required string Path { get; init; }
 
     /// <summary>The command's own name, the last word of its path.</summary>

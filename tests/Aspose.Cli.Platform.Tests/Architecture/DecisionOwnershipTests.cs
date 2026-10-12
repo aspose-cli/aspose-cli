@@ -234,7 +234,7 @@ public sealed partial class DecisionOwnershipTests
     }
 
     [Theory]
-    [InlineData("cells query range", "--scan-range")]
+    [InlineData("cells read", "--scan-range")]
     public void D3_Capabilities_MarkAHiddenOptionHidden(string command, string option)
     {
         JsonObject[] declared = [.. CommandOptions(command).Where(item => item["name"]?.GetValue<string>() == option)];
@@ -253,7 +253,7 @@ public sealed partial class DecisionOwnershipTests
     {
         using var workspace = new TempWorkspace();
 
-        CliResult result = workspace.Run("cells", "query", "range", "missing.xlsx", "--scan-rang", "A1", "--output-format", "json");
+        CliResult result = workspace.Run("cells", "read", "missing.xlsx", "--scan-rang", "A1", "--output-format", "json");
 
         Assert.Equal(2, result.ExitCode);
         Assert.DoesNotContain("--scan-range", result.StdErr, StringComparison.Ordinal);

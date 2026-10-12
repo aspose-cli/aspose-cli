@@ -235,7 +235,7 @@ public sealed class CellsOperationsTests : IClassFixture<CellsFixture>
                 Input = result.Output.Path,
                 SheetName = "Data",
                 Range = global::Aspose.Cli.Product.Cells.Contracts.Addressing.A1.ParseRange("B2:B3").Range,
-                Scope = CellsReadScopes.Full,
+                Content = CellsReadContents.Full,
                 MaxCells = 10,
             });
         Assert.False(read.Styles![Assert.IsType<string>(read.Sheet.Cells![0][0].StyleId)].Locked);
@@ -331,7 +331,7 @@ public sealed class CellsOperationsTests : IClassFixture<CellsFixture>
                 Input = result.Output.Path,
                 SheetName = "Data",
                 Range = global::Aspose.Cli.Product.Cells.Contracts.Addressing.A1.ParseRange("B2:B2").Range,
-                Scope = CellsReadScopes.Full,
+                Content = CellsReadContents.Full,
                 MaxCells = 10,
             });
         string styleId = Assert.IsType<string>(read.Sheet.Cells![0][0].StyleId);
@@ -438,7 +438,7 @@ public sealed class CellsOperationsTests : IClassFixture<CellsFixture>
 
         string output = Apply(
             seeded,
-            """{ "ops": [ { "op": "update_chart", "sheet": "Data", "index": 0, "title": "Revised" } ] }""",
+            """{ "ops": [ { "op": "update_chart", "sheet": "Data", "index": 1, "title": "Revised" } ] }""",
             "axis-explicit.out.xlsx").Output!.Path;
 
         Assert.Equal("50", ReadValueAxisMinimum(output));

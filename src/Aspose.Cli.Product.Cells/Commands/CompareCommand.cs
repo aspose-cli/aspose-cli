@@ -18,7 +18,7 @@ internal static class CompareCommand
 
     public static CommandDefinition<CellsCompareRequest, CellsCompareResult> Create()
     {
-        var compare = new Option<string>("--compare")
+        var compare = new Option<string>("--content")
         {
             Description = "What to compare; formulas adds the formula text to the cell results.",
             DefaultValueFactory = _ => CompareFormulas,
@@ -31,7 +31,7 @@ internal static class CompareCommand
         }.InRange(MinMaxDiffs, MaxMaxDiffs);
         return new(
             "compare",
-            "Compare stored workbook values and optional formula text; dates use raw serial numbers.",
+            "Compare stored workbook values and optional formula text; dates are ISO 8601.",
             new CommandTraits
             {
                 Input = new InputDocument("Baseline workbook.", "the baseline file", "left"),
@@ -56,7 +56,7 @@ internal static class CompareCommand
             Examples =
             [
                 "cells compare old.xlsx new.xlsx --output-format json",
-                "cells compare old.xlsx new.xlsx --compare values --max-diffs 50",
+                "cells compare old.xlsx new.xlsx --content values --max-diffs 50",
             ],
             Links =
             [

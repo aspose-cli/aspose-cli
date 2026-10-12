@@ -138,7 +138,7 @@ internal sealed class CellsViewAdapter : IProductViewAdapter<CellsSession>
                     hint: "Tell the user. Delete the row before anything reads the file as data, or export it again with a license."));
             }
         }
-        if (info.Workbook.HasVba)
+        if (info.Workbook.HasMacros)
         {
             findings.Add(CellsReviewChecks.VbaPresent.Finding(
                 "Workbook contains VBA; static PNG evidence does not exercise macros.",

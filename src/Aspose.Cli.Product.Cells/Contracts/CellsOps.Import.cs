@@ -74,9 +74,12 @@ public sealed record ImportSheetOp : CellsOp
     [ReadBack("inspect-result.schema.json#/$defs/cellsSheetInfo/properties/name")]
     [Pattern(@"\S")] public string? Name { get; init; }
 
-    /// <summary>The zero-based position of the new sheet; appended when omitted.</summary>
-    [ReadBack("inspect-result.schema.json#/$defs/cellsSheetInfo/properties/position")]
-    [Minimum(0)] public int? Position { get; init; }
+    /// <summary>
+    /// The 1-based position of the new sheet in the tab order, as inspect reports a sheet's
+    /// position; appended when omitted, or when past the last sheet.
+    /// </summary>
+    [MistakenFor("position")]
+    [Minimum(1)] public int? At { get; init; }
 
     /// <summary>The environment variable that holds the source's open password, for an encrypted source.</summary>
     [SecretEnv] public string? PasswordEnv { get; init; }

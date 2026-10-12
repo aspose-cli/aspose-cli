@@ -9,8 +9,8 @@ public sealed record CellsInspectRequest
     /// <summary>Include a small sample of display values per sheet.</summary>
     public bool IncludePreview { get; init; }
 
-    /// <summary>Number of preview rows per sheet.</summary>
-    public int PreviewRows { get; init; } = 5;
+    /// <summary>Number of sample rows per sheet.</summary>
+    public int SampleRows { get; init; } = 5;
 
     /// <summary>Extra detail sections to include (see <c>CellsInspectDetails</c>).</summary>
     public IReadOnlyList<string>? Details { get; init; }

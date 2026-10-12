@@ -1,4 +1,5 @@
 using System.CommandLine;
+using Aspose.Cli.Sdk.Addressing;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.Extensibility.Output;
@@ -11,10 +12,10 @@ internal static class ConvertCommand
 {
     public static CommandDefinition<CellsConvertRequest, CellsConvertResult> Create()
     {
-        var sheet = new Option<string?>("--sheet")
+        var sheets = new PartRangeOption("sheet", "every sheet, except a CSV, TSV or Markdown output, which holds "
+            + "the active sheet and takes one selected sheet; a PDF takes any selection")
         {
-            Description = $"Convert only this sheet (supported for {string.Join(", ", CellsFormats.SheetScoped)}).",
-        }.WithInput(InputKind.None);
+        };
         var encoding = new Option<string?>("--encoding")
         {
             Description = "Text encoding of a CSV or TSV input, such as gb18030, big5, shift_jis or windows-1252. "
@@ -44,20 +45,21 @@ internal static class ConvertCommand
                     $"Target format: {string.Join(", ", CellsFormats.Definitions.IdsFor(FormatUse.Convert))}.",
                     CellsFormats.Definitions),
             },
-            [sheet, encoding, culture, bom],
+            [.. sheets.Options, encoding, culture, bom],
             (parse, standard) =>
             {
                 ResolvedOutput output = standard.Output;
                 string format = output.Format.Id;
                 string? encodingName = parse.GetValue(encoding);
                 string? cultureName = parse.GetValue(culture);
-                string? sheetName = parse.GetValue(sheet);
-                if (sheetName is not null && !CellsFormats.SheetScoped.Contains(format))
+                (PageRange? read, string? text) = CellsInputs.SheetSelection(sheets, parse);
+                PageRange? selection = read is { } range && !ReferenceEquals(range, PageRange.All) ? range : null;
+                if ((selection is not null || text is not null) && !CellsFormats.SheetScoped.Contains(format))
                 {
                     throw CliErrors.OptionInvalid(
-                        "--sheet",
+                        sheets.Name,
                         $"the '{format}' format always converts the whole workbook",
-                        $"Drop --sheet, or use one of: {string.Join(", ", CellsFormats.SheetScoped)}.");
+                        $"Drop {sheets.Name}, or use one of: {string.Join(", ", CellsFormats.SheetScoped)}.");
                 }
 
                 bool byteOrderMark = parse.GetValue(bom);
@@ -71,7 +73,8 @@ internal static class ConvertCommand
                 {
                     Input = standard.Input,
                     Output = output,
-                    SheetName = sheetName,
+                    Sheets = selection,
+                    SheetsText = text,
                     Password = standard.InputPassword,
                     EncryptPassword = encryptPassword,
                     TextImport = encodingName is null && cultureName is null
@@ -100,5 +103,5 @@ internal static class ConvertCommand
     }
 
     internal static void Table(CellsConvertResult convert, TableSurface surface) =>
-        ResultText.Produced(surface, convert.Output, convert.Sheet is null ? null : $"sheet {convert.Sheet}");
+        ResultText.Produced(surface, convert.Output, convert.Sheets is null ? null : $"sheets {string.Join(", ", convert.Sheets)}");
 }

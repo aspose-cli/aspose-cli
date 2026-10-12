@@ -47,7 +47,7 @@ internal static class CellsOpenCalculation
                 + $"shown differ from the stored ones ({empty} were stored without a result).")
         {
             Hint = "The values shown are the engine's, as Excel shows them on opening. Save the workbook with 'cells edit' "
-                + "to store them, or read with --scope formulas to see the formulas.",
+                + "to store them, or read with --content formulas to see the formulas.",
         };
     }
 

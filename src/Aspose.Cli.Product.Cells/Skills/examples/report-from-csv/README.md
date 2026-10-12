@@ -10,11 +10,11 @@ aspose-cli cells convert sales.csv --to xlsx --out report.xlsx --overwrite --out
 aspose-cli cells edit report.xlsx --ops ops.json --in-place --output-format json
 
 # 3. Verify numerically (totals are engine-recalculated)...
-aspose-cli cells query range report.xlsx --sheet sales --range E1:E6 --scope formulas --output-format json
+aspose-cli cells read report.xlsx --sheet sales --range E1:E6 --content formulas --output-format json
 
 # 4. ...and visually, then deliver as PDF.
 aspose-cli review report.xlsx --out report.review --output-format json
-aspose-cli cells convert report.xlsx --to pdf --sheet sales --overwrite --output-format json
+aspose-cli cells convert report.xlsx --to pdf --sheets 1 --overwrite --output-format json
 ```
 
 This CSV is a plain table: its header is row 1 and step 1 reports no

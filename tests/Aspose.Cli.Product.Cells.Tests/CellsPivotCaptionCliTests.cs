@@ -124,7 +124,7 @@ public sealed class CellsPivotCaptionCliTests : IDisposable
 
     /// <summary>The Pivot sheet's cells in the range as display strings, empty for an empty cell.</summary>
     private string[][] Read(string range) =>
-        [.. _workspace.Run("cells", "query", "range", "report.xlsx", "--sheet", "Pivot", "--range", range, "--output-format", "json")
+        [.. _workspace.Run("cells", "read", "report.xlsx", "--sheet", "Pivot", "--range", range, "--output-format", "json")
             .Json()["sheet"]!["cells"]!.AsArray()
             .Select(static row => row!.AsArray()
                 .Select(static cell => cell!["v"] is { } value ? value.ToString() : string.Empty)

@@ -37,8 +37,8 @@ The field names of these operations are the ones most often guessed wrong:
 ```json
 { "ops": [
   { "op": "rename_sheet", "sheet": "Sheet1", "to": "Data" },
-  { "op": "add_sheet", "name": "Summary", "position": 0 },
-  { "op": "move_sheet", "sheet": "Data", "position": 0 },
+  { "op": "add_sheet", "name": "Summary", "at": 1 },
+  { "op": "move_sheet", "sheet": "Data", "to": 1 },
   { "op": "sort_range", "sheet": "Data", "range": "A1:D100", "hasHeader": true,
     "by": [ { "column": "C", "order": "desc" }, { "column": "A" } ] },
   { "op": "insert_rows", "sheet": "Data", "at": 2, "count": 3 },
@@ -126,7 +126,7 @@ cells:
 { "ops": [
   { "op": "import_range", "sheet": "Report", "path": "eu_raw.xlsx",
     "from": "Totals!A2:D8", "to": "F2" },
-  { "op": "import_sheet", "path": "us_raw.csv", "name": "US", "position": 1 },
+  { "op": "import_sheet", "path": "us_raw.csv", "name": "US", "at": 2 },
   { "op": "set_formula", "sheet": "Report", "range": "J2:J8", "formula": "=SUM(F2:I2)" }
 ] }
 ```
@@ -137,8 +137,8 @@ cells:
   like `copy_range`.
 - `import_sheet` takes the source sheet from the operation's `sheet`, the
   source's first sheet when omitted, and names the new sheet after it unless
-  `name` is given. A name the workbook already uses is refused; `position` is
-  0-based, appended when omitted. The sheet keeps its charts, tables, pivots,
+  `name` is given. A name the workbook already uses is refused; `at` is
+  1-based, appended when omitted. The sheet keeps its charts, tables, pivots,
   comments, validation and conditional formats.
 - Imported formulas keep their sheet names: a reference to another source
   sheet points at the sheet of that name in this workbook, or becomes `#REF!`.
@@ -218,7 +218,7 @@ cells:
 - Two or more value fields are columns, as in Excel, after any column fields.
   With a column field, the grand-total column of each value field reads
   `Total <caption>` in every language; no pivot caption holds that word.
-- `query range` the target area to read the aggregated numbers.
+- `read` the target area to read the aggregated numbers.
 
 ## Conditional formatting
 

@@ -60,6 +60,12 @@ public sealed class PartRangeOption
     /// <summary>The option name, such as <c>--pages</c>.</summary>
     public string Name => _range.Name;
 
+    /// <summary>
+    /// What to do instead of a selection that is not one, such as naming the part through another
+    /// option; it leads the hint of the error. Null for the selection syntax alone.
+    /// </summary>
+    public string? InvalidHint { get; init; }
+
     /// <summary>The option, for a product command's option list.</summary>
     public IReadOnlyList<Option> Options { get; }
 
@@ -73,7 +79,7 @@ public sealed class PartRangeOption
     /// <summary>The parsed range, or null when the option is omitted.</summary>
     /// <exception cref="Errors.CliException"><c>OPTION_INVALID</c> when the value is not a selection.</exception>
     public PageRange? ReadRange(ParseResult parse) =>
-        Read(parse) is { } text ? PageRange.ParseOption(Name, text) : null;
+        Read(parse) is { } text ? PageRange.ParseOption(Name, text, InvalidHint) : null;
 
     /// <summary>The outputs for which an option's selection narrows the engine's reads; null for every output.</summary>
     private sealed record Narrowing(Func<FormatDescriptor, bool>? ForOutput);

@@ -8,29 +8,24 @@ using Aspose.Cli.Sdk.IO;
 namespace Aspose.Cli.Product.Cells.Commands;
 
 /// <summary>
-/// <c>cells render</c> — draw a sheet (or a range of it) as an image.
+/// <c>cells render</c> — draw sheets (or a range of one) as images.
 /// This is how an agent "looks at" a spreadsheet to verify layout and charts.
 /// </summary>
 internal static class RenderCommand
 {
     public static CommandDefinition<CellsRenderRequest, CellsRenderResult> Create()
     {
-        var sheet = new Option<string?>("--sheet")
+        var sheets = new PartRangeOption("sheet", $"every visible sheet, at most {RenderSelection.MaximumParts} per run")
         {
-            Description = $"Sheet to render. Default: every visible sheet, at most {RenderSelection.MaximumParts} per run.",
-        }.WithInput(InputKind.None);
-        var rangeOption = new Option<string?>("--range")
-        {
-            Description = "Render only this range, e.g. A1:G20 or Sales!A1:G20.",
-        }.WithInput(InputKind.None);
-        var allSheetsOption = new Option<bool>("--all-sheets")
-        {
-            Description = "Render every visible sheet, one image per sheet named <out-base>.<Sheet><ext>.",
         };
+        var rangeOption = new Option<string?>(SheetRangeInput.RangeOption)
+        {
+            Description = "Render only this range of one sheet, e.g. A1:G20 or Sales!A1:G20, or all.",
+        }.WithInput(InputKind.None);
         var dpi = new DpiOption();
         return new(
             "render",
-            "Render a sheet, a range, or every visible sheet to images.",
+            "Render sheets, or a range of one, to images.",
             new CommandTraits
             {
                 Input = CellsInputs.Workbook("Workbook to render."),
@@ -39,37 +34,29 @@ internal static class RenderCommand
                 UsesFonts = true,
                 Target = TargetFormat.Render(CellsFormats.Definitions),
             },
-            [sheet, rangeOption, allSheetsOption, .. dpi.Options],
+            [.. sheets.Options, rangeOption, .. dpi.Options],
             (parse, standard) =>
             {
                 ResolvedOutput output = standard.Output;
                 int resolution = dpi.Read(parse);
-                bool allSheets = parse.GetValue(allSheetsOption);
-                if (allSheets && parse.GetValue(sheet) is not null)
+                (PageRange? selection, string? text) = CellsInputs.SheetSelection(sheets, parse);
+                RangeSpec? range = SheetRangeInput.Parse(parse.GetValue(rangeOption));
+                if (range?.SheetName is not null && selection is not null)
                 {
                     throw CliErrors.OptionInvalid(
-                        "--all-sheets",
-                        "cannot be combined with --sheet",
-                        "Choose one: render every visible sheet (--all-sheets) or one named sheet (--sheet).");
+                        sheets.Name,
+                        "the range already names its sheet",
+                        "Qualify the sheet in one place only: drop --sheets, or the sheet name of --range.");
                 }
 
-                if (allSheets && parse.GetValue(rangeOption) is not null)
-                {
-                    throw CliErrors.OptionInvalid(
-                        "--all-sheets",
-                        "cannot be combined with --range",
-                        "Choose one: render every visible sheet (--all-sheets) or a window of one sheet (--range).");
-                }
-
-                (string? sheetName, RangeRef? range) = SheetRangeInput.Resolve(
-                    parse.GetValue(sheet), parse.GetValue(rangeOption));
                 return new CellsRenderRequest
                 {
                     Input = standard.Input,
                     Output = output,
-                    SheetName = sheetName,
-                    Range = range,
-                    AllSheets = allSheets,
+                    Sheets = selection,
+                    SheetsText = text,
+                    SheetName = range?.SheetName,
+                    Range = range?.Range,
                     Dpi = resolution,
                     Password = standard.InputPassword,
                 };
@@ -79,8 +66,8 @@ internal static class RenderCommand
             Examples =
             [
                 "cells render book.xlsx --range Sales!A1:G20 --out sales.png",
-                "cells render book.xlsx --sheet Dashboard --out dashboard.png",
-                "cells render book.xlsx --all-sheets --out check.png",
+                "cells render book.xlsx --sheets 2 --out dashboard.png",
+                "cells render book.xlsx --sheets all --out check.png",
             ],
             Links =
             [
@@ -92,33 +79,19 @@ internal static class RenderCommand
 
     internal static void Table(CellsRenderResult render, TableSurface surface)
     {
-        if (render.Outputs is { } outputs)
-        {
-            // The --all-sheets shape: the per-sheet list IS the result, so a
-            // human sees every produced file, not just the first-sheet summary.
-            string? dpi = render.Dpi is { } value ? TableText.Int(value) + " dpi" : null;
-            ResultText.Files(surface, "rendered", "sheet", [.. outputs.Select(output =>
-                new ProducedFile(output.Sheet, output.Path, render.Output.Format, output.SizeBytes, dpi))]);
-
-            return;
-        }
-
-        ResultText.Produced(surface, render.Output, Describe(render));
-    }
-
-    private static string Describe(CellsRenderResult render)
-    {
-        var parts = new List<string>(3) { $"sheet {render.Sheet}" };
+        var notes = new List<string>(2);
         if (render.Range is { } range)
         {
-            parts.Add($"range {range}");
+            notes.Add($"range {range}");
         }
 
         if (render.Dpi is { } dpi)
         {
-            parts.Add(TableText.Int(dpi) + " dpi");
+            notes.Add(TableText.Int(dpi) + " dpi");
         }
 
-        return string.Join(", ", parts);
+        string? note = notes.Count == 0 ? null : string.Join(", ", notes);
+        ResultText.Files(surface, "rendered", "sheet", [.. render.Outputs.Select(output =>
+            new ProducedFile(output.Sheet, output.Path, output.Format, output.SizeBytes, note))]);
     }
 }

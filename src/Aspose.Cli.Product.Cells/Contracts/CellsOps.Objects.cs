@@ -13,7 +13,7 @@ namespace Aspose.Cli.Product.Cells.Contracts;
 [Operation("create_chart")]
 public sealed record CreateChartOp : CellsOp
 {
-    [ReadBack("inspect-result.schema.json#/$defs/cellsChartInfo/properties/type")]
+    [ReadBack("inspect-result.schema.json#/$defs/cellsChartInfo/properties/kind")]
     [AllowedValues(typeof(CellsChartTypes))] public required string Type { get; init; }
 
     /// <summary>
@@ -311,8 +311,8 @@ public sealed record CreateTableOp : CellsOp
 [DependentRequired("seriesInRows", "dataRange")]
 public sealed record UpdateChartOp : CellsOp
 {
-    /// <summary>The zero-based index of the chart on the sheet.</summary>
-    [Minimum(0)] public int? Index { get; init; }
+    /// <summary>The 1-based index of the chart on the sheet, as inspect --detail charts lists it.</summary>
+    [Minimum(1)] public int? Index { get; init; }
 
     /// <summary>The chart name.</summary>
     [NotState]
@@ -325,7 +325,7 @@ public sealed record UpdateChartOp : CellsOp
     [NotReadBack]
     [A1Reference] public string? DataRange { get; init; }
 
-    [ReadBack("inspect-result.schema.json#/$defs/cellsChartInfo/properties/type")]
+    [ReadBack("inspect-result.schema.json#/$defs/cellsChartInfo/properties/kind")]
     [AllowedValues(typeof(CellsChartTypes))] public string? Type { get; init; }
 
     /// <summary>Whether series are plotted from rows rather than columns.</summary>
@@ -361,8 +361,8 @@ public sealed record UpdateChartOp : CellsOp
 [ExactlyOneOf("index", "name")]
 public sealed record DeleteChartOp : CellsOp
 {
-    /// <summary>The zero-based index of the chart on the sheet.</summary>
-    [Minimum(0)] public int? Index { get; init; }
+    /// <summary>The 1-based index of the chart on the sheet, as inspect --detail charts lists it.</summary>
+    [Minimum(1)] public int? Index { get; init; }
 
     /// <summary>The chart name.</summary>
     [NotState]

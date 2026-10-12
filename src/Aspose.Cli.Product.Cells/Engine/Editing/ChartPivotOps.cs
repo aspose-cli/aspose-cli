@@ -411,7 +411,7 @@ internal static class ChartPivotOps
         int count = sheet.Charts.Count;
         if (index is { } wanted)
         {
-            return wanted < count ? wanted : throw ChartIndexNotFound(sheet, wanted);
+            return wanted <= count ? wanted - 1 : throw ChartIndexNotFound(sheet, wanted);
         }
 
         var names = new string[count];
@@ -430,14 +430,14 @@ internal static class ChartPivotOps
             1 => matches[0],
             0 => throw CliErrors.NotFound(CellsDiagnostics.ChartNotFound, "chart", name!, names),
             _ => throw new OperationInvalidException(
-                $"{matches.Count} charts on sheet '{sheet.Name}' are named '{name}', at indexes {string.Join(", ", matches)}",
-                hint: "Address the chart by its zero-based 'index' instead of 'name'."),
+                $"{matches.Count} charts on sheet '{sheet.Name}' are named '{name}', at indexes {string.Join(", ", matches.Select(static match => match + 1))}",
+                hint: "Address the chart by its 1-based 'index' instead of 'name'."),
         };
     }
 
     /// <summary>
     /// <c>CHART_NOT_FOUND</c> for an index past the sheet's charts. Chart indexes are
-    /// zero-based, so the message and hint state the sheet's own index range.
+    /// 1-based, so the message and hint state the sheet's own index range.
     /// </summary>
     private static CliException ChartIndexNotFound(Worksheet sheet, int index)
     {
@@ -449,7 +449,7 @@ internal static class ChartPivotOps
             count,
             count == 0
                 ? $"Sheet '{sheet.Name}' has no chart; select the sheet that holds it."
-                : $"Use a zero-based index from 0 through {count - 1}, or address the chart by 'name'.");
+                : $"Use a 1-based index from 1 through {count}, or address the chart by 'name'.");
     }
 
     /// <summary>

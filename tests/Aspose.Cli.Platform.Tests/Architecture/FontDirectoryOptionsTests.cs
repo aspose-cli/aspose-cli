@@ -22,8 +22,8 @@ public sealed class FontDirectoryOptionsTests
     private static readonly Dictionary<string, bool> FontDependence = new(StringComparer.Ordinal)
     {
         ["cells inspect"] = false,
-        ["cells query range"] = false,
-        ["cells query search"] = false,
+        ["cells read"] = false,
+        ["cells search"] = false,
         ["cells create"] = false,
         ["cells edit"] = true, // auto-fit measures text; --verify renders
         ["cells compare"] = false,

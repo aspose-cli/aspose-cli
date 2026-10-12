@@ -6,7 +6,7 @@ using static Aspose.Cli.Product.Cells.Engine.CellsEngineSupport;
 
 namespace Aspose.Cli.Product.Cells.Engine;
 
-/// <summary><c>cells query range</c>: a windowed projection of one sheet's cells (ladder step two).</summary>
+/// <summary><c>cells read</c>: a windowed projection of one sheet's cells (ladder step two).</summary>
 internal static class CellsRead
 {
     public static CellsReadResult Run(CellsSession session, CellsReadRequest request)
@@ -24,7 +24,7 @@ internal static class CellsRead
         return new CellsReadResult
         {
             Input = BuildSource(request.Input, loaded),
-            Scope = request.Scope,
+            Content = request.Content,
             Sheet = sheet,
             Styles = styles,
             // The window's next is left unset: the read command spells the follow-up

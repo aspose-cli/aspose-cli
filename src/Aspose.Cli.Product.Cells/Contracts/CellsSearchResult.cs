@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 namespace Aspose.Cli.Product.Cells.Contracts;
 
 /// <summary>
-/// Result of <c>aspose-cli cells query search</c>: one window of cell hits for a pattern.
+/// Result of <c>aspose-cli cells search</c>: one window of cell hits for a pattern.
 /// Hits are ordered by sheet then row-major, so output is deterministic; the envelope's
 /// window counts the returned hits and, when more match, carries the command that returns
 /// the next ones.
@@ -33,7 +33,7 @@ public sealed record CellsSearchHit
     public required string Cell { get; init; }
 
     /// <summary>Display value of the cell (truncated for long text).</summary>
-    public required string Value { get; init; }
+    public required string Text { get; init; }
 
     /// <summary>Formula, when the cell has one.</summary>
     public string? Formula { get; init; }

@@ -19,7 +19,7 @@ namespace Aspose.Cli.Product.Cells.Engine;
 /// content sheet it prints carries none of the workbook's marks.</item>
 /// <item>A render of one sheet is published with the workbook only when that sheet is a warning
 /// sheet; the marks then name every visible warning sheet of the workbook.</item>
-/// <item>A render of every sheet (<c>--all-sheets</c>) names every visible warning sheet, as the
+/// <item>A render of every sheet (<c>--sheets all</c>) names every visible warning sheet, as the
 /// images do.</item>
 /// <item>A CSV, TSV or Markdown export names the evaluation notice only; the active warning sheet
 /// it would export is skipped by the command before (<c>ACTIVE_SHEET_SKIPPED</c>).</item>

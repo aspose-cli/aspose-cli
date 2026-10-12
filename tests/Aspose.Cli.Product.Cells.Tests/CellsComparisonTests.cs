@@ -32,6 +32,29 @@ public sealed class CellsComparisonTests
     }
 
     [Fact]
+    public void ADifferingDate_IsReportedAsIso8601()
+    {
+        using var left = new Workbook();
+        using var right = new Workbook();
+        Dated(left.Worksheets[0].Cells["A1"], new DateTime(2026, 4, 3));
+        Dated(right.Worksheets[0].Cells["A1"], new DateTime(2026, 4, 3, 9, 30, 0));
+
+        CellsCellDiff diff = Assert.Single(Assert.Single(Compare(left, right).Sheets).Cells!);
+
+        Assert.Equal(("datetime", "2026-04-03"), (diff.Left!.T, diff.Left.V));
+        Assert.Equal(("datetime", "2026-04-03T09:30:00"), (diff.Right!.T, diff.Right.V));
+
+        static void Dated(Cell cell, DateTime value)
+        {
+            cell.PutValue(value);
+            Style style = cell.GetStyle();
+            style.Custom = "yyyy-mm-dd hh:mm";
+            cell.SetStyle(style);
+            Assert.Equal(CellValueType.IsDateTime, cell.Type);
+        }
+    }
+
+    [Fact]
     public void ErrorAndLiteralText_AreDifferentStoredTypes()
     {
         using var left = new Workbook();

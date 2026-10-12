@@ -1,11 +1,12 @@
 using System.CommandLine;
+using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.Extensibility.Output;
 using Aspose.Cli.Sdk.Text;
 
 namespace Aspose.Cli.Product.Cells.Commands;
 
 /// <summary>
-/// <c>cells query search</c>: finds cells whose value or formula matches a
+/// <c>cells search</c>: finds cells whose value or formula matches a
 /// pattern, without dumping whole sheets. Hits are budgeted (<c>--max-hits</c>)
 /// so a search over a 40-sheet workbook stays affordable for an agent.
 /// </summary>
@@ -13,14 +14,15 @@ internal static class SearchCommand
 {
     private const string InValues = "values";
     private const string InFormulas = "formulas";
-    private const string InBoth = "both";
+    private const string InAll = "all";
 
     public static CommandDefinition<CellsSearchRequest, CellsSearchResult> Create()
     {
         var search = new SearchOptions(new SearchScopeGrammar(
-            "Where to search: the cell results, the formula text or both.",
-            [InValues, InFormulas, InBoth],
-            InValues));
+            "What to search: the cell results, the formula text or all of both.",
+            [InValues, InFormulas, InAll],
+            InValues,
+            "--content"));
         var sheet = new Option<string?>("--sheet") { Description = "Restrict to one sheet. Default: all sheets." }.WithInput(InputKind.None);
         return new(
             "search",
@@ -37,7 +39,7 @@ internal static class SearchCommand
                     In = query.Scope switch
                     {
                         InFormulas => CellsSearchIn.Formulas,
-                        InBoth => CellsSearchIn.Both,
+                        InAll => CellsSearchIn.All,
                         _ => CellsSearchIn.Values,
                     },
                     SheetName = parse.GetValue(sheet),
@@ -58,8 +60,13 @@ internal static class SearchCommand
             },
             Examples =
             [
-                "cells query search book.xlsx --pattern TODO --output-format json",
-                "cells query search book.xlsx --pattern SUM --scope formulas --max-hits 10",
+                "cells search book.xlsx --pattern TODO --output-format json",
+                "cells search book.xlsx --pattern SUM --content formulas --max-hits 10",
+            ],
+            Links =
+            [
+                CommandHelpLink.Docs(CellsModule.Manifest, "overview", "what each Cells command is for"),
+                new("aspose-cli docs reading", "reading every product within bounded windows"),
             ],
         };
     }
@@ -71,10 +78,10 @@ internal static class SearchCommand
         if (search.Hits.Count > 0)
         {
             surface.Out.WriteLine();
-            var table = new TextTable("sheet", "cell", "value");
+            var table = new TextTable("sheet", "cell", "text");
             foreach (CellsSearchHit hit in search.Hits)
             {
-                table.AddRow(hit.Sheet, hit.Cell, hit.Value);
+                table.AddRow(hit.Sheet, hit.Cell, hit.Text);
             }
 
             table.WriteTo(surface.Out, surface.Format);

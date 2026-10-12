@@ -43,15 +43,15 @@ internal static class PrintedPages
 
     /// <summary>
     /// Warns about the visible charts a PDF of <paramref name="workbook"/> splits across pages:
-    /// those of sheet <paramref name="selectedSheet"/>, or of every visible sheet; null when none.
+    /// those of the sheets <paramref name="selectedSheets"/> holds, or of every visible sheet; null when none.
     /// </summary>
-    internal static Warning? SplitChartsWarning(Workbook workbook, int? selectedSheet)
+    internal static Warning? SplitChartsWarning(Workbook workbook, IReadOnlyList<int>? selectedSheets)
     {
         var split = new List<string>();
         var sheets = new HashSet<string>(StringComparer.Ordinal);
         foreach (Worksheet sheet in workbook.Worksheets)
         {
-            if (selectedSheet is { } selected ? sheet.Index != selected : !sheet.IsVisible)
+            if (selectedSheets is { } selected ? !selected.Contains(sheet.Index) : !sheet.IsVisible)
             {
                 continue;
             }

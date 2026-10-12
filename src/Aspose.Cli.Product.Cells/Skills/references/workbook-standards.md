@@ -68,7 +68,7 @@ aspose-cli cells edit book.xlsx --in-place --ops '{"ops":[
 
 A format only bites on a real value: `set_values` types exactly what you
 send, so `"2026-04-03"` stays text and ignores a date format. Write dates
-as `=DATE(2026,4,3)` formulas or date serials — `query range` shows
+as `=DATE(2026,4,3)` formulas or date serials — `read` shows
 `"t": "datetime"` when you got it right.
 
 The CSV import is the exception, and the contrast decides how much work you
@@ -78,13 +78,13 @@ owe: `convert` coerces ISO-8601 dates into real datetimes *and* applies
 ```sh
 printf 'id,opened,amount\n1,2026-03-02,1200\n' > tickets.csv
 aspose-cli cells convert tickets.csv --to xlsx
-aspose-cli cells query range tickets.xlsx --sheet tickets --range B2 --scope full --output-format json
+aspose-cli cells read tickets.xlsx --sheet tickets --range B2 --content full --output-format json
 # -> {"v":"2026-03-02","t":"datetime"}, style numberFormat "yyyy-mm-dd"
 ```
 
 The identical string through `set_values` stays `"t": "string"` forever. Only
 ISO-8601 input is verified here; ambiguous forms like `03/04/2026` are not —
-`query range` the column back and check `t` rather than assuming either way.
+`read` the column back and check `t` rather than assuming either way.
 
 ## Fonts and headers
 
@@ -108,7 +108,7 @@ aspose-cli cells edit book.xlsx --in-place --ops '{"ops":[
 
 **A bigger font does not re-fit its row.** `format_range {"size":16}` on a
 title leaves the row at its old height and the render comes back with the
-glyph tops shaved off — on every sheet you did it to. `query range` cannot catch
+glyph tops shaved off — on every sheet you did it to. `read` cannot catch
 this: the value is perfectly intact. Auto-fit the row by OMITTING `height`:
 
 ```sh

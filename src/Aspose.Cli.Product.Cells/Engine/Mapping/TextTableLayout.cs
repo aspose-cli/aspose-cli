@@ -223,7 +223,7 @@ internal static class TextTableLayout
         string rows = finding.Rows.Count == 1 ? "row 1 looks" : $"rows 1-{finding.Rows.Count} look";
         return Build(
             $"The table header is probably row {header}; {rows} like a title, notes or empty lines, not data.",
-            $"Read the header with 'cells query range <file> --sheet \"{sheetName}\" --range A{header}:{lastColumn}{header}' and start data ranges, formulas and sorts at row {header + 1}, not row 2.",
+            $"Read the header with 'cells read <file> --sheet \"{sheetName}\" --range A{header}:{lastColumn}{header}' and start data ranges, formulas and sorts at row {header + 1}, not row 2.",
             RowReference(1, finding.Rows.Count));
     }
 
