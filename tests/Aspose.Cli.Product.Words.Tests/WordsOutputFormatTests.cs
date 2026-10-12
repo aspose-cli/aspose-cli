@@ -21,7 +21,7 @@ public sealed class WordsOutputFormatTests
         document.Save(input, source == "wordml" ? SaveFormat.WordML : source == "flatopc" ? SaveFormat.FlatOpc : SaveFormat.Docx);
 
         CliResult edited = workspace.Run(
-            "words", "edit", Path.GetFileName(input), "--ops", "{\"ops\":[{\"op\":\"update_fields\"}]}",
+            "words", "edit", Path.GetFileName(input), "--ops", "{\"ops\":[{\"op\":\"refresh_fields\"}]}",
             "--out", output, "--output-format", "json");
 
         Assert.True(edited.ExitCode == 0, edited.StdErr);

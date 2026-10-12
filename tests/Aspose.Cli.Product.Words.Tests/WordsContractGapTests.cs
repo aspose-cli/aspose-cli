@@ -27,8 +27,8 @@ public sealed class WordsContractGapTests
                         Position = "after",
                         Paragraphs =
                         [
-                            new WordsParagraphInput { Text = "Point", ListLevel = 0 },
-                            new WordsParagraphInput { Text = "Detail", ListLevel = 1 },
+                            new WordsParagraphInput { Text = "Point", ListLevel = 1 },
+                            new WordsParagraphInput { Text = "Detail", ListLevel = 2 },
                             new WordsParagraphInput { Text = "Plain" },
                         ],
                     },
@@ -127,8 +127,8 @@ public sealed class WordsContractGapTests
                         Position = "after",
                         Paragraphs =
                         [
-                            new WordsParagraphInput { Text = "New clause", ListLevel = 1 },
-                            new WordsParagraphInput { Text = "New chapter", ListLevel = 0 },
+                            new WordsParagraphInput { Text = "New clause", ListLevel = 2 },
+                            new WordsParagraphInput { Text = "New chapter", ListLevel = 1 },
                         ],
                     },
                 ],
@@ -170,7 +170,7 @@ public sealed class WordsContractGapTests
                     {
                         At = new WordsTarget { Find = "First" },
                         Position = "after",
-                        Paragraphs = [new WordsParagraphInput { Text = "New sub", ListLevel = 1 }],
+                        Paragraphs = [new WordsParagraphInput { Text = "New sub", ListLevel = 2 }],
                     },
                     new InsertParagraphsOp
                     {
@@ -178,15 +178,15 @@ public sealed class WordsContractGapTests
                         Position = "after",
                         Paragraphs =
                         [
-                            new WordsParagraphInput { Text = "Later sub", ListLevel = 1 },
-                            new WordsParagraphInput { Text = "Third", ListLevel = 0 },
+                            new WordsParagraphInput { Text = "Later sub", ListLevel = 2 },
+                            new WordsParagraphInput { Text = "Third", ListLevel = 1 },
                         ],
                     },
                     new InsertParagraphsOp
                     {
                         At = new WordsTarget { Find = "Second" },
                         Position = "before",
-                        Paragraphs = [new WordsParagraphInput { Text = "Between", ListLevel = 0 }],
+                        Paragraphs = [new WordsParagraphInput { Text = "Between", ListLevel = 1 }],
                     },
                 ],
             },
@@ -241,7 +241,7 @@ public sealed class WordsContractGapTests
                     {
                         At = new WordsTarget { Find = "First" },
                         Position = "after",
-                        Paragraphs = [new WordsParagraphInput { Text = "Detail", ListLevel = 1 }],
+                        Paragraphs = [new WordsParagraphInput { Text = "Detail", ListLevel = 2 }],
                     },
                 ],
             },
@@ -290,7 +290,7 @@ public sealed class WordsContractGapTests
                     {
                         At = new WordsTarget { Find = "Chapter" },
                         Position = "after",
-                        Paragraphs = [new WordsParagraphInput { Text = "First detail", ListLevel = 1 }],
+                        Paragraphs = [new WordsParagraphInput { Text = "First detail", ListLevel = 2 }],
                     },
                 ],
             },
@@ -346,8 +346,8 @@ public sealed class WordsContractGapTests
                         Position = markdown ? "after" : "before",
                         Paragraphs =
                         [
-                            new WordsParagraphInput { Text = "Detail one", ListLevel = 1 },
-                            new WordsParagraphInput { Text = "Detail two", ListLevel = 1 },
+                            new WordsParagraphInput { Text = "Detail one", ListLevel = 2 },
+                            new WordsParagraphInput { Text = "Detail two", ListLevel = 2 },
                         ],
                     },
                 ],
@@ -402,7 +402,7 @@ public sealed class WordsContractGapTests
                     {
                         At = new WordsTarget { Find = "Detail" },
                         Position = "after",
-                        Paragraphs = [new WordsParagraphInput { Text = "New detail", ListLevel = 1 }],
+                        Paragraphs = [new WordsParagraphInput { Text = "New detail", ListLevel = 2 }],
                     },
                 ],
             },

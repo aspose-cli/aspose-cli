@@ -9,7 +9,7 @@
     },
     {
       "op": "add_comment",
-      "at": { "heading": "Termination" },
+      "target": { "heading": "Termination" },
       "author": "Legal Ops",
       "text": "Updated notice period for review."
     }

@@ -51,14 +51,14 @@ shows no images.
 - A numbered list paragraph's number, such as `6.2`, is its block's
   `listLabel`, and its block `text` leaves it out. Everywhere else the text
   starts with the number and a space: search hit text and patterns,
-  `find`/`heading` addresses, extracted text and table `cells`. So
+  `find`/`heading` addresses, extracted text and table `values`. So
   `"find": "6.2 "` addresses clause 6.2, a search pattern anchored with `^`
   must allow for the number, and `replace_text` and `set_text` change only
   the text after it.
 - `search --scope` and the `replace_text` op share one scope vocabulary:
   `body`, `headers-footers`, `footnotes` (with endnotes), `comments` and `all`.
 - Read fields use the edit vocabulary: a table block's `rowCount`,
-  `columnCount` and `cells` and a paragraph's `text` and `style` can be
+  `columnCount` and `values` and a paragraph's `text` and `style` can be
   written back through `insert_table` and `insert_paragraphs` under the same
   names.
 

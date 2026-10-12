@@ -280,7 +280,7 @@ public sealed class OperationCatalog<TOp>
     /// The operation most likely meant by an entry whose op name the vocabulary does not declare,
     /// or null: the operation that declares the name a common mistake for it; else, among the
     /// names closest to it, the first whose operation accepts every field the entry gives, else
-    /// the closest name. A name alone cannot tell <c>add_watermark</c> with a text field from one
+    /// the closest name. A name alone cannot tell <c>set_watermark</c> with a text field from one
     /// with an image; the fields the caller wrote can.
     /// </summary>
     /// <param name="name">The unknown op name.</param>
@@ -455,7 +455,26 @@ public sealed class OperationCatalog<TOp>
             ? OperationErrors.UnknownAt(ids[index], failure.Message, DefaultHint,
                 Mistake.Of(name, Names, meant: Closest(name, ops[index])))
             : OperationErrors.InvalidAt(
-                ids[index], KnownNameAt(ops, index), failure.Message, DefaultHint, field: failure as AllowedFieldsException);
+                ids[index], KnownNameAt(ops, index), failure.Message, KindHint(KnownNameAt(ops, index), failure) ?? DefaultHint, field: failure as AllowedFieldsException);
+
+    /// <summary>
+    /// For a field of an operation whose value has the wrong kind, what the field is, from its
+    /// description, before the default hint: an <c>at</c> that is a section number in one
+    /// operation and a block address in another is otherwise only "must be a whole number".
+    /// </summary>
+    private string? KindHint(string? name, JsonException failure)
+    {
+        if (failure is not ValueKindException { Field: var field } || name is null
+            || _byName[name].Record.Properties.FirstOrDefault(property => property.Name == field) is not { Description: { Length: > 0 } description })
+        {
+            return null;
+        }
+
+        string meaning = description.StartsWith("The ", StringComparison.Ordinal) || description.StartsWith("A ", StringComparison.Ordinal) || description.StartsWith("An ", StringComparison.Ordinal)
+            ? $"'{field}' is {char.ToLowerInvariant(description[0])}{description[1..]}"
+            : $"'{field}': {description}";
+        return $"{meaning.TrimEnd('.')}. {DefaultHint}";
+    }
 
     private string? KnownNameAt(JsonElement ops, int index) =>
         NameAt(ops, index) is { } name && _byName.ContainsKey(name) ? name : null;

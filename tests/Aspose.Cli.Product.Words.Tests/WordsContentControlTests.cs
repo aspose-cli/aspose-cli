@@ -55,7 +55,7 @@ public sealed class WordsContentControlTests : IClassFixture<WordsFixture>
             Input = input,
             Batch = new WordsOpsBatch
             {
-                Ops = [new SetTextOp { At = new WordsTarget { Block = 3 }, Text = "Replaced" }],
+                Ops = [new SetTextOp { Target = new WordsTarget { Block = 3 }, Text = "Replaced" }],
             },
             Output = TestOutput.At(output),
         });

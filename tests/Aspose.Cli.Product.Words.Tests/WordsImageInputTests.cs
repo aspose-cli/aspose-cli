@@ -53,11 +53,11 @@ public sealed class WordsImageInputTests
         CliException error = Assert.Throws<CliException>(() => WordsEdit.Run(fixture.Session, new WordsEditRequest
         {
             Input = input,
-            Batch = new WordsOpsBatch { Ops = [new AddWatermarkOp { ImagePath = image }] },
+            Batch = new WordsOpsBatch { Ops = [new SetWatermarkOp { Path = image }] },
             Output = TestOutput.At(output),
         }));
 
-        AssertInvalidOperation(error, 0, "add_watermark", image);
+        AssertInvalidOperation(error, 0, "set_watermark", image);
         Assert.False(File.Exists(output));
     }
 
@@ -72,7 +72,7 @@ public sealed class WordsImageInputTests
         WordsEdit.Run(fixture.Session, new WordsEditRequest
         {
             Input = input,
-            Batch = new WordsOpsBatch { Ops = [new AddWatermarkOp { ImagePath = image }] },
+            Batch = new WordsOpsBatch { Ops = [new SetWatermarkOp { Path = image }] },
             Output = TestOutput.At(output),
         });
 

@@ -10,7 +10,7 @@ public sealed class ProductPublicationTests
 {
     public static TheoryData<string, string, string[], string> EditCases => new()
     {
-        { "words", "docx", ["--from-text", "source.txt"], """{"ops":[{"op":"set_text","at":{"find":"Anchor"},"text":"Edited"}]}""" },
+        { "words", "docx", ["--from-text", "source.txt"], """{"ops":[{"op":"set_text","target":{"find":"Anchor"},"text":"Edited"}]}""" },
         { "slides", "pptx", ["--from-markdown", "source.md"], """{"ops":[{"op":"set_title","slide":1,"text":"Edited"}]}""" },
         { "pdf", "pdf", ["--from-text", "source.txt"], """{"ops":[{"op":"set_properties","title":"Edited"}]}""" },
     };
@@ -89,7 +89,7 @@ public sealed class ProductPublicationTests
         using var workspace = new TempWorkspace();
         string input = CreateInput(workspace, "words", "docx", ["--from-text", "source.txt"]);
         CliResult edited = workspace.Run(["words", "edit", input,
-            "--ops", """{"ops":[{"op":"set_text","at":{"find":"Anchor"},"text":"Edited"}]}""",
+            "--ops", """{"ops":[{"op":"set_text","target":{"find":"Anchor"},"text":"Edited"}]}""",
             "--out", workspace.File("edited.docx"), "--verify", "--output-format", "json",
             .. (supervised ? new[] { "--timeout", "30" } : Array.Empty<string>())]);
         edited.Succeeded();

@@ -25,8 +25,8 @@ internal static class WordsEdit
     /// <summary>The operations whose effect is a field, protection or revision count the verification compares.</summary>
     private static readonly FrozenSet<string> StateOps = FrozenSet.Create(
         StringComparer.Ordinal,
-        "insert_toc", "insert_hyperlink", "insert_field", "set_page_numbers", "update_fields", "mail_merge",
-        "protect", "unprotect", "accept_revisions", "reject_revisions");
+        "insert_toc", "insert_hyperlink", "insert_field", "set_page_numbers", "refresh_fields", "mail_merge",
+        "protect_document", "unprotect_document", "accept_revisions", "reject_revisions");
 
     /// <summary>Applies a validated operation batch and commits it atomically.</summary>
     internal static WordsEditResult Run(WordsSession session, WordsEditRequest request)
@@ -143,7 +143,7 @@ internal static class WordsEdit
     private static bool IsTrackable(WordsOp op) => op is ReplaceTextOp or SetTextOp or InsertParagraphsOp
         or InsertMarkdownOp or DeleteBlocksOp or InsertBreakOp { Kind: "page" } or InsertImageOp or InsertTableOp
         or SetTableCellOp or RepeatTableRowOp or InsertTocOp or InsertBookmarkOp or InsertHyperlinkOp or InsertFieldOp
-        or AddCommentOp or RemoveCommentsOp or AppendDocumentOp;
+        or AddCommentOp or DeleteCommentsOp or ImportSectionsOp;
 
     private static IReadOnlyList<BoundedOperationOutcome> ApplyOperations(
         WordsSession session,
@@ -418,7 +418,7 @@ internal static class WordsEdit
             {
                 // LOSSY_CONVERSION discloses restrictions a non-Word output cannot keep.
                 Hint = WordsFormats.IsWord(format)
-                    ? "Confirm the change is authorized. The output keeps the restrictions unless the batch changed them with protect or unprotect."
+                    ? "Confirm the change is authorized. The output keeps the restrictions unless the batch changed them with protect_document or unprotect_document."
                     : "Confirm the change is authorized.",
             });
         }

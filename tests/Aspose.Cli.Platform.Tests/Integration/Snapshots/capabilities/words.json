@@ -49,20 +49,18 @@
         "command": "edit",
         "inputSchema": "v2/words/ops",
         "operationSchema": "aspose-cli schema v2/words/ops --operation <op>",
-        "contractFingerprint": "sha256:a9236e330146480e28529a3c8e166206b9653834a0321a44734a7613273678d8",
+        "contractFingerprint": "sha256:d494706fa3b780aaea1d6b1e6e5056627aa1eff92b48ab39452d3c916390b632",
         "maximumOperationCount": 10000,
         "ops": [
           "accept_revisions",
           "add_comment",
-          "add_section",
-          "add_watermark",
-          "append_document",
-          "apply_list",
           "define_style",
           "delete_blocks",
+          "delete_comments",
           "delete_section",
-          "format_table",
+          "delete_watermark",
           "format_text",
+          "import_sections",
           "insert_bookmark",
           "insert_break",
           "insert_field",
@@ -70,26 +68,28 @@
           "insert_image",
           "insert_markdown",
           "insert_paragraphs",
+          "insert_section",
           "insert_table",
           "insert_toc",
           "mail_merge",
-          "protect",
+          "protect_document",
+          "refresh_fields",
           "reject_revisions",
-          "remove_comments",
-          "remove_watermark",
           "repeat_table_row",
           "replace_text",
           "set_default_font",
           "set_footer",
           "set_header",
+          "set_list",
           "set_page_numbers",
           "set_page_setup",
           "set_properties",
           "set_style",
           "set_table_cell",
+          "set_table_pagination",
           "set_text",
-          "unprotect",
-          "update_fields"
+          "set_watermark",
+          "unprotect_document"
         ]
       }
     ],
@@ -3080,14 +3080,6 @@
       "detailsSchemaId": "v2/common/not-found-details"
     },
     {
-      "code": "DOCUMENT_HAS_REVISIONS",
-      "owner": "words",
-      "severity": "error",
-      "exitCode": 3,
-      "category": "input",
-      "detailsSchemaId": "v2/common/diagnostic-details"
-    },
-    {
       "code": "FIELD_COUNT_CHANGED",
       "owner": "words",
       "severity": "warning",
@@ -3135,6 +3127,14 @@
       "owner": "words",
       "severity": "warning",
       "category": "verification",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
+      "code": "REVISIONS_UNRESOLVED",
+      "owner": "words",
+      "severity": "error",
+      "exitCode": 3,
+      "category": "input",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
@@ -3508,9 +3508,9 @@
               "description": "The written document's editing restriction, as the protect operation mode that sets it; every SDK protection type maps to one of these. Absent for a document without one.",
               "type": "string",
               "enum": [
-                "readOnly",
+                "read-only",
                 "comments",
-                "trackedChanges",
+                "tracked-changes",
                 "forms"
               ]
             }
@@ -3832,9 +3832,9 @@
               "description": "The editing restriction, as the protect operation mode that sets it; every SDK protection type maps to one of these. Absent for a document without one.",
               "type": "string",
               "enum": [
-                "readOnly",
+                "read-only",
                 "comments",
-                "trackedChanges",
+                "tracked-changes",
                 "forms"
               ]
             },
@@ -4079,8 +4079,7 @@
           "required": [
             "section",
             "orientation",
-            "widthPoints",
-            "heightPoints",
+            "pageSize",
             "margins",
             "headersFooters"
           ],
@@ -4099,15 +4098,9 @@
                 "landscape"
               ]
             },
-            "widthPoints": {
-              "description": "The page width in points.",
-              "type": "number",
-              "minimum": 0
-            },
-            "heightPoints": {
-              "description": "The page height in points.",
-              "type": "number",
-              "minimum": 0
+            "pageSize": {
+              "description": "The size of the section's pages as laid out, wider than high in landscape, and the preset it matches.",
+              "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/page-size.schema.json"
             },
             "margins": {
               "description": "The page margins.",
@@ -4147,8 +4140,8 @@
               "type": "integer",
               "minimum": 0
             },
-            "style": {
-              "description": "The table style the table uses, accepted by insert_table's style; omitted for the default Table Normal style.",
+            "tableStyle": {
+              "description": "The table style the table uses, accepted by insert_table's tableStyle; omitted for the default Table Normal style.",
               "type": "string",
               "minLength": 1
             }
@@ -4192,31 +4185,25 @@
                 "$ref": "#/$defs/add_comment"
               },
               {
-                "$ref": "#/$defs/add_section"
-              },
-              {
-                "$ref": "#/$defs/add_watermark"
-              },
-              {
-                "$ref": "#/$defs/append_document"
-              },
-              {
-                "$ref": "#/$defs/apply_list"
-              },
-              {
                 "$ref": "#/$defs/define_style"
               },
               {
                 "$ref": "#/$defs/delete_blocks"
               },
               {
+                "$ref": "#/$defs/delete_comments"
+              },
+              {
                 "$ref": "#/$defs/delete_section"
               },
               {
-                "$ref": "#/$defs/format_table"
+                "$ref": "#/$defs/delete_watermark"
               },
               {
                 "$ref": "#/$defs/format_text"
+              },
+              {
+                "$ref": "#/$defs/import_sections"
               },
               {
                 "$ref": "#/$defs/insert_bookmark"
@@ -4240,6 +4227,9 @@
                 "$ref": "#/$defs/insert_paragraphs"
               },
               {
+                "$ref": "#/$defs/insert_section"
+              },
+              {
                 "$ref": "#/$defs/insert_table"
               },
               {
@@ -4249,16 +4239,13 @@
                 "$ref": "#/$defs/mail_merge"
               },
               {
-                "$ref": "#/$defs/protect"
+                "$ref": "#/$defs/protect_document"
+              },
+              {
+                "$ref": "#/$defs/refresh_fields"
               },
               {
                 "$ref": "#/$defs/reject_revisions"
-              },
-              {
-                "$ref": "#/$defs/remove_comments"
-              },
-              {
-                "$ref": "#/$defs/remove_watermark"
               },
               {
                 "$ref": "#/$defs/repeat_table_row"
@@ -4276,6 +4263,9 @@
                 "$ref": "#/$defs/set_header"
               },
               {
+                "$ref": "#/$defs/set_list"
+              },
+              {
                 "$ref": "#/$defs/set_page_numbers"
               },
               {
@@ -4291,13 +4281,16 @@
                 "$ref": "#/$defs/set_table_cell"
               },
               {
+                "$ref": "#/$defs/set_table_pagination"
+              },
+              {
                 "$ref": "#/$defs/set_text"
               },
               {
-                "$ref": "#/$defs/unprotect"
+                "$ref": "#/$defs/set_watermark"
               },
               {
-                "$ref": "#/$defs/update_fields"
+                "$ref": "#/$defs/unprotect_document"
               }
             ]
           }
@@ -4346,7 +4339,7 @@
           "type": "object",
           "required": [
             "op",
-            "at",
+            "target",
             "author",
             "text"
           ],
@@ -4358,7 +4351,7 @@
             "op": {
               "const": "add_comment"
             },
-            "at": {
+            "target": {
               "$ref": "#/$defs/wordsTarget",
               "x-readBack": "not-state"
             },
@@ -4370,216 +4363,6 @@
             "text": {
               "type": "string",
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/inspect-result.schema.json#/$defs/wordsCommentData/properties/text"
-            }
-          }
-        },
-        "add_section": {
-          "description": "Adds an empty section at the start, the end or after a section.",
-          "type": "object",
-          "required": [
-            "op"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "id": {
-              "$ref": "#/$defs/id"
-            },
-            "op": {
-              "const": "add_section"
-            },
-            "position": {
-              "type": "string",
-              "enum": [
-                "start",
-                "end",
-                "after"
-              ],
-              "default": "end",
-              "x-readBack": "not-state"
-            },
-            "after": {
-              "description": "The 1-based section the new section follows; set exactly when position is after.",
-              "type": "integer",
-              "minimum": 1,
-              "x-readBack": "not-state"
-            },
-            "pageSetup": {
-              "description": "Page setup applied over the neighbouring section's.",
-              "$ref": "#/$defs/wordsPageSetupInput"
-            }
-          },
-          "allOf": [
-            {
-              "if": {
-                "properties": {
-                  "position": {
-                    "const": "after"
-                  }
-                },
-                "required": [
-                  "position"
-                ]
-              },
-              "then": {
-                "required": [
-                  "after"
-                ]
-              },
-              "else": {
-                "not": {
-                  "required": [
-                    "after"
-                  ]
-                }
-              }
-            }
-          ]
-        },
-        "add_watermark": {
-          "description": "Adds a text or image watermark; color and font apply to a text watermark only.",
-          "type": "object",
-          "required": [
-            "op"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "id": {
-              "$ref": "#/$defs/id"
-            },
-            "op": {
-              "const": "add_watermark"
-            },
-            "text": {
-              "description": "The watermark text; Word holds at most 200 characters.",
-              "type": "string",
-              "minLength": 1,
-              "maxLength": 200,
-              "x-readBack": "unread"
-            },
-            "imagePath": {
-              "description": "The watermark image, relative to the working directory.",
-              "type": "string",
-              "minLength": 1,
-              "pattern": "\\S",
-              "x-readBack": "unread"
-            },
-            "faded": {
-              "description": "Semi-transparent text or a washed-out image.",
-              "type": "boolean",
-              "default": true,
-              "x-readBack": "unread"
-            },
-            "color": {
-              "description": "A #RRGGBB or named text color.",
-              "type": "string",
-              "x-readBack": "unread"
-            },
-            "font": {
-              "description": "The text font; when omitted, East Asian text takes the default East Asian font of a Chinese, Japanese or Korean document, or else Microsoft YaHei.",
-              "type": "string",
-              "minLength": 1,
-              "x-readBack": "unread"
-            }
-          },
-          "allOf": [
-            {
-              "oneOf": [
-                {
-                  "required": [
-                    "text"
-                  ]
-                },
-                {
-                  "required": [
-                    "imagePath"
-                  ]
-                }
-              ]
-            },
-            {
-              "dependentRequired": {
-                "color": [
-                  "text"
-                ]
-              }
-            },
-            {
-              "dependentRequired": {
-                "font": [
-                  "text"
-                ]
-              }
-            }
-          ]
-        },
-        "append_document": {
-          "description": "Appends the sections of a local document, each with the headers and footers it defines; a kind it does not define continues from the section before it.",
-          "type": "object",
-          "required": [
-            "op",
-            "path"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "id": {
-              "$ref": "#/$defs/id"
-            },
-            "op": {
-              "const": "append_document"
-            },
-            "path": {
-              "description": "The document, relative to the working directory.",
-              "type": "string",
-              "minLength": 1,
-              "pattern": "\\S",
-              "x-readBack": "not-state"
-            },
-            "importFormatMode": {
-              "description": "Which definition a style both documents name takes: the appended document's (keepSource) or this document's (useDestination). Headers and footers are not styles and come with their sections either way.",
-              "type": "string",
-              "enum": [
-                "keepSource",
-                "useDestination"
-              ],
-              "default": "keepSource",
-              "x-readBack": "not-state"
-            }
-          }
-        },
-        "apply_list": {
-          "description": "Makes the paragraphs of target blocks one new bullet or numbered list.",
-          "type": "object",
-          "required": [
-            "op",
-            "target",
-            "kind"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "id": {
-              "$ref": "#/$defs/id"
-            },
-            "op": {
-              "const": "apply_list"
-            },
-            "target": {
-              "$ref": "#/$defs/wordsTarget",
-              "x-readBack": "not-state"
-            },
-            "kind": {
-              "type": "string",
-              "enum": [
-                "bullet",
-                "number"
-              ],
-              "x-readBack": "unread"
-            },
-            "level": {
-              "type": "integer",
-              "minimum": 0,
-              "maximum": 8,
-              "default": 0,
-              "x-readBack": "unread"
             }
           }
         },
@@ -4626,7 +4409,7 @@
               "minLength": 1,
               "x-readBack": "unread"
             },
-            "size": {
+            "fontSize": {
               "description": "The font size in points.",
               "type": "number",
               "exclusiveMinimum": 0,
@@ -4637,8 +4420,8 @@
               "x-readBack": "unread"
             },
             "color": {
-              "description": "A #RRGGBB or named color.",
-              "type": "string",
+              "description": "The text color, as #RRGGBB.",
+              "$ref": "#/$defs/color",
               "x-readBack": "unread"
             },
             "spaceBefore": {
@@ -4676,6 +4459,28 @@
             }
           }
         },
+        "delete_comments": {
+          "description": "Deletes comments: all, or one author's.",
+          "type": "object",
+          "required": [
+            "op"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/id"
+            },
+            "op": {
+              "const": "delete_comments"
+            },
+            "author": {
+              "description": "The author whose comments are deleted; a name no comment has changes nothing and reports OP_NO_EFFECT.",
+              "type": "string",
+              "minLength": 1,
+              "x-readBack": "not-state"
+            }
+          }
+        },
         "delete_section": {
           "description": "Deletes one section; a document keeps at least one.",
           "type": "object",
@@ -4698,12 +4503,11 @@
             }
           }
         },
-        "format_table": {
-          "description": "Sets how one table block breaks across pages; omitted settings keep their values. keepTogether true also stops rows breaking, so it cannot be combined with allowRowBreakAcrossPages true.",
+        "delete_watermark": {
+          "description": "Deletes the document watermark.",
           "type": "object",
           "required": [
-            "op",
-            "at"
+            "op"
           ],
           "additionalProperties": false,
           "properties": {
@@ -4711,60 +4515,9 @@
               "$ref": "#/$defs/id"
             },
             "op": {
-              "const": "format_table"
-            },
-            "at": {
-              "$ref": "#/$defs/wordsTarget",
-              "x-readBack": "not-state"
-            },
-            "keepTogether": {
-              "description": "true keeps the whole table on one page when it fits: no row breaks across pages, and every paragraph keeps with the next except the last paragraph of each last-row cell. false clears keep-with-next on those same paragraphs and leaves the row setting.",
-              "type": "boolean",
-              "x-readBack": "unread"
-            },
-            "allowRowBreakAcrossPages": {
-              "description": "Whether the text of each row may split across a page break.",
-              "type": "boolean",
-              "x-readBack": "unread"
-            },
-            "headerRowCount": {
-              "description": "The first rows repeated as a heading on every page the table spans; 0 clears it. At most the table's row count.",
-              "type": "integer",
-              "minimum": 0,
-              "x-readBack": "unread"
-            },
-            "keepWithNext": {
-              "description": "Whether the last paragraph of each last-row cell keeps with the paragraph after the table, keeping the table with it.",
-              "type": "boolean",
-              "x-readBack": "unread"
+              "const": "delete_watermark"
             }
-          },
-          "allOf": [
-            {
-              "anyOf": [
-                {
-                  "required": [
-                    "keepTogether"
-                  ]
-                },
-                {
-                  "required": [
-                    "allowRowBreakAcrossPages"
-                  ]
-                },
-                {
-                  "required": [
-                    "headerRowCount"
-                  ]
-                },
-                {
-                  "required": [
-                    "keepWithNext"
-                  ]
-                }
-              ]
-            }
-          ]
+          }
         },
         "format_text": {
           "description": "Applies character formatting to the runs of target blocks; omitted settings keep their values.",
@@ -4797,15 +4550,15 @@
               "type": "boolean",
               "x-readBack": "unread"
             },
-            "size": {
+            "fontSize": {
               "description": "The font size in points.",
               "type": "number",
               "exclusiveMinimum": 0,
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/read-result.schema.json#/$defs/wordsRunData/properties/size"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/read-result.schema.json#/$defs/wordsRunData/properties/fontSize"
             },
             "color": {
-              "description": "A #RRGGBB or named color.",
-              "type": "string",
+              "description": "The text color, as #RRGGBB.",
+              "$ref": "#/$defs/color",
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/read-result.schema.json#/$defs/wordsRunData/properties/color"
             },
             "font": {
@@ -4827,9 +4580,50 @@
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/read-result.schema.json#/$defs/wordsRunData/properties/eastAsianFont"
             },
             "highlight": {
-              "description": "A #RRGGBB or named highlight color.",
-              "type": "string",
+              "description": "The highlight color, as #RRGGBB.",
+              "$ref": "#/$defs/color",
               "x-readBack": "unread"
+            }
+          }
+        },
+        "import_sections": {
+          "description": "Appends the sections of a local document, each with the headers and footers it defines; a kind it does not define continues from the section before it.",
+          "type": "object",
+          "required": [
+            "op",
+            "path"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/id"
+            },
+            "op": {
+              "const": "import_sections"
+            },
+            "path": {
+              "description": "The document, relative to the working directory.",
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S",
+              "x-readBack": "not-state"
+            },
+            "formatting": {
+              "description": "Which definition a style both documents name takes: the imported document's (keep-source) or this document's (use-destination). Headers and footers are not styles and come with their sections either way.",
+              "type": "string",
+              "enum": [
+                "keep-source",
+                "use-destination"
+              ],
+              "default": "keep-source",
+              "x-readBack": "not-state"
+            },
+            "sourcePasswordEnv": {
+              "description": "The environment variable that holds the source document's open password, for an encrypted source.",
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S",
+              "x-readBack": "not-state"
             }
           }
         },
@@ -5082,8 +4876,40 @@
             }
           }
         },
+        "insert_section": {
+          "description": "Inserts an empty section before or after a section.",
+          "type": "object",
+          "required": [
+            "op",
+            "at",
+            "position"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/id"
+            },
+            "op": {
+              "const": "insert_section"
+            },
+            "at": {
+              "description": "The 1-based section number the new section goes before or after, as position says.",
+              "type": "integer",
+              "minimum": 1,
+              "x-readBack": "not-state"
+            },
+            "position": {
+              "$ref": "#/$defs/position",
+              "x-readBack": "not-state"
+            },
+            "pageSetup": {
+              "description": "Page setup applied over the neighbouring section's.",
+              "$ref": "#/$defs/wordsPageSetupInput"
+            }
+          }
+        },
         "insert_table": {
-          "description": "Inserts a table at a block boundary; cells must fit the table's rows and columns.",
+          "description": "Inserts a table at a block boundary; values must fit the table's rows and columns.",
           "type": "object",
           "required": [
             "op",
@@ -5121,7 +4947,7 @@
               "maximum": 63,
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/read-result.schema.json#/$defs/wordsBlockData/properties/columnCount"
             },
-            "cells": {
+            "values": {
               "description": "Cell text by row, then column; cells beyond it stay empty.",
               "type": "array",
               "items": {
@@ -5130,13 +4956,13 @@
                   "type": "string"
                 }
               },
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/read-result.schema.json#/$defs/wordsBlockData/properties/cells"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/read-result.schema.json#/$defs/wordsBlockData/properties/values"
             },
-            "style": {
+            "tableStyle": {
               "description": "An existing table style.",
               "type": "string",
               "minLength": 1,
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/inspect-result.schema.json#/$defs/wordsTableData/properties/style"
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/inspect-result.schema.json#/$defs/wordsTableData/properties/tableStyle"
             }
           }
         },
@@ -5175,7 +5001,7 @@
           }
         },
         "mail_merge": {
-          "description": "Runs a mail merge from a data file or inline rows: one copy of the document per row, or one region repeated per row.",
+          "description": "Runs a mail merge from a data file or items: one copy of the document per row, or one region repeated per row.",
           "type": "object",
           "required": [
             "op"
@@ -5195,7 +5021,7 @@
               "pattern": "\\S",
               "x-readBack": "not-state"
             },
-            "inline": {
+            "items": {
               "description": "Merge rows of field values by field name, read as a data file's are: a number or Boolean merges as its JSON text.",
               "type": "array",
               "minItems": 1,
@@ -5229,19 +5055,19 @@
                 },
                 {
                   "required": [
-                    "inline"
+                    "items"
                   ]
                 }
               ]
             }
           ]
         },
-        "protect": {
+        "protect_document": {
           "description": "Restricts editing of the document.",
           "type": "object",
           "required": [
             "op",
-            "mode"
+            "protection"
           ],
           "additionalProperties": false,
           "properties": {
@@ -5249,14 +5075,15 @@
               "$ref": "#/$defs/id"
             },
             "op": {
-              "const": "protect"
+              "const": "protect_document"
             },
-            "mode": {
+            "protection": {
+              "description": "The editing restriction.",
               "type": "string",
               "enum": [
-                "readOnly",
+                "read-only",
                 "comments",
-                "trackedChanges",
+                "tracked-changes",
                 "forms"
               ],
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/inspect-result.schema.json#/$defs/wordsDocumentSummary/properties/protection"
@@ -5266,6 +5093,31 @@
               "type": "string",
               "minLength": 1,
               "pattern": "\\S",
+              "x-readBack": "not-state"
+            }
+          }
+        },
+        "refresh_fields": {
+          "description": "Refreshes the tables of contents, or every field and the page layout.",
+          "type": "object",
+          "required": [
+            "op"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/id"
+            },
+            "op": {
+              "const": "refresh_fields"
+            },
+            "what": {
+              "type": "string",
+              "enum": [
+                "all",
+                "toc"
+              ],
+              "default": "all",
               "x-readBack": "not-state"
             }
           }
@@ -5299,44 +5151,6 @@
                 "minimum": 1
               },
               "x-readBack": "not-state"
-            }
-          }
-        },
-        "remove_comments": {
-          "description": "Removes comments: all, or one author's.",
-          "type": "object",
-          "required": [
-            "op"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "id": {
-              "$ref": "#/$defs/id"
-            },
-            "op": {
-              "const": "remove_comments"
-            },
-            "author": {
-              "description": "The author whose comments are removed; a name no comment has changes nothing and reports OP_NO_EFFECT.",
-              "type": "string",
-              "minLength": 1,
-              "x-readBack": "not-state"
-            }
-          }
-        },
-        "remove_watermark": {
-          "description": "Removes the document watermark.",
-          "type": "object",
-          "required": [
-            "op"
-          ],
-          "additionalProperties": false,
-          "properties": {
-            "id": {
-              "$ref": "#/$defs/id"
-            },
-            "op": {
-              "const": "remove_watermark"
             }
           }
         },
@@ -5438,7 +5252,7 @@
               "default": false,
               "x-readBack": "not-state"
             },
-            "matchCase": {
+            "caseSensitive": {
               "type": "boolean",
               "default": false,
               "x-readBack": "not-state"
@@ -5501,7 +5315,7 @@
               "minLength": 1,
               "x-readBack": "unread"
             },
-            "size": {
+            "fontSize": {
               "description": "The font size in points; sizes are kept when omitted.",
               "type": "number",
               "exclusiveMinimum": 0,
@@ -5652,6 +5466,44 @@
             }
           ]
         },
+        "set_list": {
+          "description": "Makes the paragraphs of target blocks one new bullet or numbered list.",
+          "type": "object",
+          "required": [
+            "op",
+            "target",
+            "kind"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/id"
+            },
+            "op": {
+              "const": "set_list"
+            },
+            "target": {
+              "$ref": "#/$defs/wordsTarget",
+              "x-readBack": "not-state"
+            },
+            "kind": {
+              "type": "string",
+              "enum": [
+                "bullet",
+                "number"
+              ],
+              "x-readBack": "unread"
+            },
+            "level": {
+              "description": "The 1-based list level.",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9,
+              "default": 1,
+              "x-readBack": "unread"
+            }
+          }
+        },
         "set_page_numbers": {
           "description": "Adds or aligns a PAGE field in the primary header or footer and sets page numbering.",
           "type": "object",
@@ -5691,14 +5543,16 @@
               "default": "center",
               "x-readBack": "unread"
             },
-            "format": {
+            "numberStyle": {
+              "description": "How the page numbers are written; the section's numbering keeps its style when omitted.",
               "type": "string",
               "enum": [
                 "decimal",
-                "upperRoman",
-                "lowerRoman",
-                "upperLetter",
-                "lowerLetter"
+                "roman-upper",
+                "roman-lower",
+                "letters-upper",
+                "letters-lower",
+                "none"
               ],
               "x-readBack": "unread"
             },
@@ -5711,11 +5565,10 @@
           }
         },
         "set_page_setup": {
-          "description": "Applies page setup to one section, or to every section.",
+          "description": "Applies page setup to one section, or to every section; omitted settings keep their values.",
           "type": "object",
           "required": [
-            "op",
-            "setup"
+            "op"
           ],
           "additionalProperties": false,
           "properties": {
@@ -5731,10 +5584,55 @@
               "minimum": 1,
               "x-readBack": "not-state"
             },
-            "setup": {
-              "$ref": "#/$defs/wordsPageSetupInput"
+            "pageSize": {
+              "description": "The page size: a preset, or its width and height in points; the orientation decides which side is long, so a landscape page is wider than it is high.",
+              "$ref": "#/$defs/pageSizeInput",
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/inspect-result.schema.json#/$defs/wordsSectionData/properties/pageSize"
+            },
+            "orientation": {
+              "type": "string",
+              "enum": [
+                "portrait",
+                "landscape"
+              ],
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/inspect-result.schema.json#/$defs/wordsSectionData/properties/orientation"
+            },
+            "margins": {
+              "$ref": "#/$defs/wordsMarginInput",
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/inspect-result.schema.json#/$defs/wordsSectionData/properties/margins"
+            },
+            "columnCount": {
+              "type": "integer",
+              "minimum": 1,
+              "x-readBack": "unread"
             }
-          }
+          },
+          "allOf": [
+            {
+              "anyOf": [
+                {
+                  "required": [
+                    "pageSize"
+                  ]
+                },
+                {
+                  "required": [
+                    "orientation"
+                  ]
+                },
+                {
+                  "required": [
+                    "margins"
+                  ]
+                },
+                {
+                  "required": [
+                    "columnCount"
+                  ]
+                }
+              ]
+            }
+          ]
         },
         "set_properties": {
           "description": "Sets built-in and custom document properties; omitted properties keep their values.",
@@ -5811,9 +5709,9 @@
           "type": "object",
           "required": [
             "op",
-            "at",
+            "target",
             "row",
-            "col",
+            "column",
             "text"
           ],
           "additionalProperties": false,
@@ -5824,7 +5722,7 @@
             "op": {
               "const": "set_table_cell"
             },
-            "at": {
+            "target": {
               "$ref": "#/$defs/wordsTarget",
               "x-readBack": "not-state"
             },
@@ -5833,7 +5731,7 @@
               "minimum": 1,
               "x-readBack": "not-state"
             },
-            "col": {
+            "column": {
               "type": "integer",
               "minimum": 1,
               "x-readBack": "not-state"
@@ -5844,12 +5742,80 @@
             }
           }
         },
+        "set_table_pagination": {
+          "description": "Sets how one table block breaks across pages; omitted settings keep their values. keepTogether true also stops rows breaking, so it cannot be combined with allowRowBreakAcrossPages true.",
+          "type": "object",
+          "required": [
+            "op",
+            "target"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/id"
+            },
+            "op": {
+              "const": "set_table_pagination"
+            },
+            "target": {
+              "$ref": "#/$defs/wordsTarget",
+              "x-readBack": "not-state"
+            },
+            "keepTogether": {
+              "description": "true keeps the whole table on one page when it fits: no row breaks across pages, and every paragraph keeps with the next except the last paragraph of each last-row cell. false clears keep-with-next on those same paragraphs and leaves the row setting.",
+              "type": "boolean",
+              "x-readBack": "unread"
+            },
+            "allowRowBreakAcrossPages": {
+              "description": "Whether the text of each row may split across a page break.",
+              "type": "boolean",
+              "x-readBack": "unread"
+            },
+            "headerRowCount": {
+              "description": "The first rows repeated as a heading on every page the table spans; 0 clears it. At most the table's row count.",
+              "type": "integer",
+              "minimum": 0,
+              "x-readBack": "unread"
+            },
+            "keepWithNext": {
+              "description": "Whether the last paragraph of each last-row cell keeps with the paragraph after the table, keeping the table with it.",
+              "type": "boolean",
+              "x-readBack": "unread"
+            }
+          },
+          "allOf": [
+            {
+              "anyOf": [
+                {
+                  "required": [
+                    "keepTogether"
+                  ]
+                },
+                {
+                  "required": [
+                    "allowRowBreakAcrossPages"
+                  ]
+                },
+                {
+                  "required": [
+                    "headerRowCount"
+                  ]
+                },
+                {
+                  "required": [
+                    "keepWithNext"
+                  ]
+                }
+              ]
+            }
+          ]
+        },
         "set_text": {
           "description": "Replaces the inline content of paragraph blocks, or the text a bookmark encloses.",
           "type": "object",
           "required": [
             "op",
-            "at",
+            "target",
             "text"
           ],
           "additionalProperties": false,
@@ -5860,7 +5826,7 @@
             "op": {
               "const": "set_text"
             },
-            "at": {
+            "target": {
               "$ref": "#/$defs/wordsTarget",
               "x-readBack": "not-state"
             },
@@ -5870,7 +5836,84 @@
             }
           }
         },
-        "unprotect": {
+        "set_watermark": {
+          "description": "Sets the text or image watermark, replacing any the document has; color and font apply to a text watermark only.",
+          "type": "object",
+          "required": [
+            "op"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/id"
+            },
+            "op": {
+              "const": "set_watermark"
+            },
+            "text": {
+              "description": "The watermark text; Word holds at most 200 characters.",
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 200,
+              "x-readBack": "unread"
+            },
+            "path": {
+              "description": "The watermark image, relative to the working directory.",
+              "type": "string",
+              "minLength": 1,
+              "pattern": "\\S",
+              "x-readBack": "unread"
+            },
+            "faded": {
+              "description": "Semi-transparent text or a washed-out image.",
+              "type": "boolean",
+              "default": true,
+              "x-readBack": "unread"
+            },
+            "color": {
+              "description": "The text color, as #RRGGBB.",
+              "$ref": "#/$defs/color",
+              "x-readBack": "unread"
+            },
+            "font": {
+              "description": "The text font; when omitted, East Asian text takes the default East Asian font of a Chinese, Japanese or Korean document, or else Microsoft YaHei.",
+              "type": "string",
+              "minLength": 1,
+              "x-readBack": "unread"
+            }
+          },
+          "allOf": [
+            {
+              "oneOf": [
+                {
+                  "required": [
+                    "text"
+                  ]
+                },
+                {
+                  "required": [
+                    "path"
+                  ]
+                }
+              ]
+            },
+            {
+              "dependentRequired": {
+                "color": [
+                  "text"
+                ]
+              }
+            },
+            {
+              "dependentRequired": {
+                "font": [
+                  "text"
+                ]
+              }
+            }
+          ]
+        },
+        "unprotect_document": {
           "description": "Removes document protection.",
           "type": "object",
           "required": [
@@ -5882,7 +5925,7 @@
               "$ref": "#/$defs/id"
             },
             "op": {
-              "const": "unprotect"
+              "const": "unprotect_document"
             },
             "passwordEnv": {
               "description": "The environment variable that holds the protection password.",
@@ -5893,30 +5936,68 @@
             }
           }
         },
-        "update_fields": {
-          "description": "Updates the tables of contents, or every field and the page layout.",
+        "color": {
+          "type": "string",
+          "pattern": "^#[0-9A-Fa-f]{6}$"
+        },
+        "pageSizeInput": {
+          "description": "The size of a page in points (72 per inch) as an operation sets it: a preset, in portrait, or both the width and the height. A read reports it as a page size under the same names.",
           "type": "object",
-          "required": [
-            "op"
-          ],
           "additionalProperties": false,
           "properties": {
-            "id": {
-              "$ref": "#/$defs/id"
-            },
-            "op": {
-              "const": "update_fields"
-            },
-            "what": {
+            "preset": {
+              "description": "The preset, in portrait; omitted when the width and height are given.",
               "type": "string",
               "enum": [
-                "all",
-                "toc"
-              ],
-              "default": "all",
-              "x-readBack": "not-state"
+                "a3",
+                "a4",
+                "a5",
+                "letter",
+                "legal",
+                "tabloid"
+              ]
+            },
+            "width": {
+              "description": "The page width in points, given with the height instead of a preset.",
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "height": {
+              "description": "The page height in points, given with the width instead of a preset.",
+              "type": "number",
+              "exclusiveMinimum": 0
             }
-          }
+          },
+          "allOf": [
+            {
+              "oneOf": [
+                {
+                  "required": [
+                    "preset"
+                  ]
+                },
+                {
+                  "required": [
+                    "width"
+                  ]
+                }
+              ]
+            },
+            {
+              "dependentRequired": {
+                "width": [
+                  "height"
+                ]
+              }
+            },
+            {
+              "dependentRequired": {
+                "height": [
+                  "width"
+                ]
+              }
+            }
+          ]
         },
         "pages": {
           "type": "string",
@@ -5964,16 +6045,10 @@
           "type": "object",
           "additionalProperties": false,
           "properties": {
-            "size": {
-              "type": "string",
-              "enum": [
-                "a3",
-                "a4",
-                "a5",
-                "letter",
-                "legal"
-              ],
-              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/inspect-result.schema.json#/$defs/wordsSectionData/properties/widthPoints"
+            "pageSize": {
+              "description": "The page size: a preset, or its width and height in points; the orientation decides which side is long, so a landscape page is wider than it is high.",
+              "$ref": "#/$defs/pageSizeInput",
+              "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/inspect-result.schema.json#/$defs/wordsSectionData/properties/pageSize"
             },
             "orientation": {
               "type": "string",
@@ -6013,10 +6088,10 @@
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/read-result.schema.json#/$defs/wordsBlockData/properties/style"
             },
             "listLevel": {
-              "description": "Makes the paragraph a list item at this level. When the anchor is a list item, it joins the anchor's list if that list defines the level, else the list of the nearest item at this level under the same parent, and without style continues that list's nearest existing item at this level, if any, with the indents it sets on itself. When the anchor is no list item, or no such list exists, it joins one new bullet list.",
+              "description": "Makes the paragraph a list item at this 1-based level. When the anchor is a list item, it joins the anchor's list if that list defines the level, else the list of the nearest item at this level under the same parent, and without style continues that list's nearest existing item at this level, if any, with the indents it sets on itself. When the anchor is no list item, or no such list exists, it joins one new bullet list.",
               "type": "integer",
-              "minimum": 0,
-              "maximum": 8,
+              "minimum": 1,
+              "maximum": 9,
               "x-readBack": "unread"
             }
           }
@@ -6238,7 +6313,7 @@
               "type": "integer",
               "minimum": 0
             },
-            "cells": {
+            "values": {
               "description": "The text of each cell by row; a numbered list paragraph in a cell starts with its number and a space.",
               "type": "array",
               "items": {
@@ -6363,7 +6438,7 @@
               "description": "The font of the run's Chinese, Japanese and Korean text.",
               "type": "string"
             },
-            "size": {
+            "fontSize": {
               "description": "The font size in points.",
               "type": "number"
             },

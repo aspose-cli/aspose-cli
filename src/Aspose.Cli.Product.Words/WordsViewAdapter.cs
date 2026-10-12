@@ -81,7 +81,7 @@ internal sealed class WordsViewAdapter : IProductViewAdapter<WordsSession>
             findings.Add(WordsReviewChecks.CommentsPresent.Finding(
                 $"The document contains {info.Document.CommentCount} comment(s).",
                 "document",
-                "Disclose the comments; remove them with remove_comments only when the user asks."));
+                "Disclose the comments; remove them with delete_comments only when the user asks."));
         }
 
         return new ProductReviewAssessment

@@ -74,8 +74,7 @@ internal static class InfoProjection
         {
             Section = index + 1,
             Orientation = section.PageSetup.Orientation == Orientation.Landscape ? WordsPageOrientations.Landscape : WordsPageOrientations.Portrait,
-            WidthPoints = section.PageSetup.PageWidth,
-            HeightPoints = section.PageSetup.PageHeight,
+            PageSize = PageSizeInfo.Of(section.PageSetup.PageWidth, section.PageSetup.PageHeight),
             Margins = new WordsMarginData
             {
                 Top = section.PageSetup.TopMargin,
@@ -396,7 +395,7 @@ internal static class InfoProjection
                 Block = entry.Index,
                 RowCount = table.Rows.Count,
                 ColumnCount = table.Rows.Count == 0 ? 0 : table.Rows.Cast<Row>().Max(static row => row.Cells.Count),
-                Style = table.StyleIdentifier == StyleIdentifier.TableNormal || string.IsNullOrEmpty(table.StyleName)
+                TableStyle = table.StyleIdentifier == StyleIdentifier.TableNormal || string.IsNullOrEmpty(table.StyleName)
                     ? null
                     : table.StyleName,
             };

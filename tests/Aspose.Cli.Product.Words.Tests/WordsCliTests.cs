@@ -37,7 +37,7 @@ public sealed class WordsCliTests : IDisposable
             """
             {
               "ops": [
-                { "op": "set_text", "at": { "block": 2 }, "text": "Updated clause." },
+                { "op": "set_text", "target": { "block": 2 }, "text": "Updated clause." },
                 { "op": "insert_toc", "at": { "block": 2 }, "position": "after" },
                 { "op": "set_header", "paragraphs": ["Document header"] }
               ]
@@ -184,7 +184,7 @@ public sealed class WordsCliTests : IDisposable
         string records = string.Join(",", Enumerable.Range(1, 5).Select(static index => $$"""{ "Name": "Person {{index}}" }"""));
 
         CliResult result = _workspace.RunWithInput(
-            $$"""{ "ops": [ { "op": "mail_merge", "inline": [{{records}}] } ] }""",
+            $$"""{ "ops": [ { "op": "mail_merge", "items": [{{records}}] } ] }""",
             "words", "edit", "letter.docx", "--ops", "-", "--out", "letters.docx",
             "--verify", "--license-mode", "evaluation", "--output-format", "json");
 

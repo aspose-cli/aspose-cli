@@ -81,7 +81,7 @@ internal static class InspectCommand
         ResultText.Table(surface, "images", result.Images, ["block", "name", "size"],
             static image => [WordsText.Block(image.Block), image.Name, $"{TableText.Points(image.Width)} x {TableText.Points(image.Height)} pt"]);
         ResultText.Table(surface, "tables", result.Tables, ["block", "rows", "columns", "style"],
-            static item => [TableText.Int(item.Block), TableText.Int(item.RowCount), TableText.Int(item.ColumnCount), item.Style]);
+            static item => [TableText.Int(item.Block), TableText.Int(item.RowCount), TableText.Int(item.ColumnCount), item.TableStyle]);
         ResultText.Properties(surface, "properties", result.Properties);
     }
 
@@ -99,7 +99,7 @@ internal static class InspectCommand
             table.AddRow(
                 TableText.Int(section.Section),
                 section.Orientation,
-                $"{TableText.Points(section.WidthPoints)} x {TableText.Points(section.HeightPoints)} pt",
+                $"{section.PageSize.Preset ?? "custom"} {TableText.Points(section.PageSize.Width)} x {TableText.Points(section.PageSize.Height)} pt",
                 $"{TableText.Points(section.Margins.Top)}/{TableText.Points(section.Margins.Right)}/"
                 + $"{TableText.Points(section.Margins.Bottom)}/{TableText.Points(section.Margins.Left)} pt");
         }

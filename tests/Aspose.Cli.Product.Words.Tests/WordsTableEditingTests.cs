@@ -97,10 +97,10 @@ public sealed class WordsTableEditingTests : IClassFixture<WordsFixture>
             {
                 Ops = content == "successive"
                     ? [
-                        new SetTableCellOp { At = new WordsTarget { Block = tableBlock }, Row = 1, Col = 1, Text = "29 Oct 2026" },
-                        new SetTableCellOp { At = new WordsTarget { Block = tableBlock }, Row = 1, Col = 1, Text = "30 Oct 2026" },
+                        new SetTableCellOp { Target = new WordsTarget { Block = tableBlock }, Row = 1, Column = 1, Text = "29 Oct 2026" },
+                        new SetTableCellOp { Target = new WordsTarget { Block = tableBlock }, Row = 1, Column = 1, Text = "30 Oct 2026" },
                     ]
-                    : [new SetTableCellOp { At = new WordsTarget { Block = tableBlock }, Row = 1, Col = 1, Text = "30 Oct 2026" }],
+                    : [new SetTableCellOp { Target = new WordsTarget { Block = tableBlock }, Row = 1, Column = 1, Text = "30 Oct 2026" }],
             },
             Output = TestOutput.At(output),
             TrackChanges = trackChanges,
@@ -443,20 +443,20 @@ public sealed class WordsTableEditingTests : IClassFixture<WordsFixture>
         document.Save(input);
 
         IReadOnlyList<WordsTableData> tables = WordsInspect.Run(_fixture.Session, new WordsInspectRequest { Input = input, Details = ["tables"] }).Tables!;
-        Assert.Equal(["Table Grid", null], tables.Select(static table => table.Style));
+        Assert.Equal(["Table Grid", null], tables.Select(static table => table.TableStyle));
 
         WordsEdit.Run(_fixture.Session, new WordsEditRequest
         {
             Input = input,
             Batch = new WordsOpsBatch
             {
-                Ops = [new InsertTableOp { At = new WordsTarget { Block = tables[1].Block }, Position = "after", RowCount = 1, ColumnCount = 1, Style = tables[0].Style }],
+                Ops = [new InsertTableOp { At = new WordsTarget { Block = tables[1].Block }, Position = "after", RowCount = 1, ColumnCount = 1, TableStyle = tables[0].TableStyle }],
             },
             Output = TestOutput.At(output),
         });
 
         IReadOnlyList<WordsTableData> changed = WordsInspect.Run(_fixture.Session, new WordsInspectRequest { Input = output, Details = ["tables"] }).Tables!;
-        Assert.Equal(["Table Grid", null, "Table Grid"], changed.Select(static table => table.Style));
+        Assert.Equal(["Table Grid", null, "Table Grid"], changed.Select(static table => table.TableStyle));
         Assert.Equal(StyleIdentifier.TableGrid, new Document(output).GetChildNodes(NodeType.Table, true).Cast<Table>().Last().StyleIdentifier);
     }
 
@@ -472,7 +472,7 @@ public sealed class WordsTableEditingTests : IClassFixture<WordsFixture>
             Input = input,
             Batch = new WordsOpsBatch
             {
-                Ops = [new FormatTableOp { At = new WordsTarget { Block = tableBlock }, KeepTogether = true }],
+                Ops = [new SetTablePaginationOp { Target = new WordsTarget { Block = tableBlock }, KeepTogether = true }],
             },
             Output = TestOutput.At(output),
         });
@@ -504,7 +504,7 @@ public sealed class WordsTableEditingTests : IClassFixture<WordsFixture>
             Input = input,
             Batch = new WordsOpsBatch
             {
-                Ops = [new FormatTableOp { At = at, KeepTogether = true, HeaderRowCount = 3 }],
+                Ops = [new SetTablePaginationOp { Target = at, KeepTogether = true, HeaderRowCount = 3 }],
             },
             Output = TestOutput.At(kept),
         });
@@ -516,8 +516,8 @@ public sealed class WordsTableEditingTests : IClassFixture<WordsFixture>
             {
                 Ops =
                 [
-                    new FormatTableOp { At = at, KeepTogether = false, AllowRowBreakAcrossPages = true, HeaderRowCount = 1 },
-                    new FormatTableOp { At = at, KeepWithNext = true },
+                    new SetTablePaginationOp { Target = at, KeepTogether = false, AllowRowBreakAcrossPages = true, HeaderRowCount = 1 },
+                    new SetTablePaginationOp { Target = at, KeepWithNext = true },
                 ],
             },
             Output = TestOutput.At(output),
@@ -545,7 +545,7 @@ public sealed class WordsTableEditingTests : IClassFixture<WordsFixture>
             Input = input,
             Batch = new WordsOpsBatch
             {
-                Ops = [new FormatTableOp { At = new WordsTarget { Block = tableBlock }, HeaderRowCount = 7 }],
+                Ops = [new SetTablePaginationOp { Target = new WordsTarget { Block = tableBlock }, HeaderRowCount = 7 }],
             },
             Output = TestOutput.At(output),
         }));
@@ -557,12 +557,12 @@ public sealed class WordsTableEditingTests : IClassFixture<WordsFixture>
             Input = input,
             Batch = new WordsOpsBatch
             {
-                Ops = [new FormatTableOp { At = new WordsTarget { Block = 1 }, KeepTogether = true }],
+                Ops = [new SetTablePaginationOp { Target = new WordsTarget { Block = 1 }, KeepTogether = true }],
             },
             Output = TestOutput.At(output),
         }));
         Assert.Equal(ErrorCodes.OpsInvalid, notTable.Code);
-        Assert.Contains("format_table must target one table block", notTable.Message, StringComparison.Ordinal);
+        Assert.Contains("set_table_pagination must target one table block", notTable.Message, StringComparison.Ordinal);
         Assert.False(File.Exists(output));
     }
 
@@ -576,7 +576,7 @@ public sealed class WordsTableEditingTests : IClassFixture<WordsFixture>
             Input = input,
             Batch = new WordsOpsBatch
             {
-                Ops = [new FormatTableOp { At = new WordsTarget { Block = tableBlock }, KeepTogether = true }],
+                Ops = [new SetTablePaginationOp { Target = new WordsTarget { Block = tableBlock }, KeepTogether = true }],
             },
             Output = TestOutput.At(_fixture.Temp.File("format-table-tracked-changed.docx")),
             TrackChanges = true,
@@ -584,7 +584,7 @@ public sealed class WordsTableEditingTests : IClassFixture<WordsFixture>
         }));
 
         Assert.Equal(ErrorCodes.OptionInvalid, error.Code);
-        Assert.Contains("format_table", error.Message, StringComparison.Ordinal);
+        Assert.Contains("set_table_pagination", error.Message, StringComparison.Ordinal);
     }
 
     /// <summary>

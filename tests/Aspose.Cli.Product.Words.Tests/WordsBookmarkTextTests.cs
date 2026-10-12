@@ -44,7 +44,7 @@ public sealed class WordsBookmarkTextTests
 
     private static WordsOpsBatch Batch(string bookmark, string text) => new()
     {
-        Ops = [new SetTextOp { At = new WordsTarget { Bookmark = bookmark }, Text = text }],
+        Ops = [new SetTextOp { Target = new WordsTarget { Bookmark = bookmark }, Text = text }],
     };
 
     private static IEnumerable<Paragraph> Paragraphs(Document document) =>

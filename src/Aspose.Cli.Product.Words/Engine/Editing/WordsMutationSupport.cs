@@ -10,22 +10,21 @@ internal static class WordsMutationSupport
 {
     internal static void ApplyPageSetup(Section section, WordsPageSetupInput setup)
     {
-        if (setup.Size is not null)
-        {
-            section.PageSetup.PaperSize = setup.Size.ToLowerInvariant() switch
-            {
-                "a3" => PaperSize.A3,
-                "a4" => PaperSize.A4,
-                "a5" => PaperSize.A5,
-                "letter" => PaperSize.Letter,
-                "legal" => PaperSize.Legal,
-                _ => throw Invalid($"unknown paper size '{setup.Size}'"),
-            };
-        }
-
+        // The orientation first: the SDK swaps the page's width and height when it changes it.
         if (setup.Orientation is not null)
         {
-            section.PageSetup.Orientation = setup.Orientation == "landscape" ? Orientation.Landscape : Orientation.Portrait;
+            section.PageSetup.Orientation = setup.Orientation == WordsPageOrientations.Landscape ? Orientation.Landscape : Orientation.Portrait;
+        }
+
+        // The orientation decides which side is long: a landscape page is wider than it is high,
+        // so the pageSize and orientation a read reports write back the same page.
+        if (setup.PageSize is { } size)
+        {
+            (double width, double height) = size.Dimensions();
+            (double shorter, double longer) = (Math.Min(width, height), Math.Max(width, height));
+            bool landscape = section.PageSetup.Orientation == Orientation.Landscape;
+            section.PageSetup.PageWidth = landscape ? longer : shorter;
+            section.PageSetup.PageHeight = landscape ? shorter : longer;
         }
 
         if (setup.Margins is not null)
@@ -96,17 +95,8 @@ internal static class WordsMutationSupport
         _ => throw Invalid($"unknown alignment '{alignment}'"),
     };
 
-    internal static Color ParseColor(string value)
-    {
-        try
-        {
-            return ColorTranslator.FromHtml(value);
-        }
-        catch (Exception exception) when (exception is ArgumentException or FormatException)
-        {
-            throw Invalid($"invalid color '{value}'");
-        }
-    }
+    /// <summary>A #RRGGBB color, as the operation schema accepts it.</summary>
+    internal static Color ParseColor(string value) => ColorTranslator.FromHtml(value);
 
     /// <summary>A style of the document by name; a missing name is STYLE_NOT_FOUND listing the document's styles.</summary>
     internal static Style GetStyle(Document document, string name) =>

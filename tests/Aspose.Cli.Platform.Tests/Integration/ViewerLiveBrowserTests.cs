@@ -56,7 +56,7 @@ public sealed class ViewerLiveBrowserTests : IDisposable
                 + " document.querySelector(\"[data-part-id='page-1']\").dataset.probe = 'page'; }");
 
             _workspace.RunWithInput(
-                """{"ops":[{"op":"set_text","at":{"block":100},"text":"EDITED_PARAGRAPH"}]}""",
+                """{"ops":[{"op":"set_text","target":{"block":100},"text":"EDITED_PARAGRAPH"}]}""",
                 "words", "edit", "report.docx", "--ops", "-", "--in-place", "--output-format", "json").Succeeded();
 
             await Expect(page.Locator(".av-part[data-changed='true']")).ToHaveCountAsync(1);

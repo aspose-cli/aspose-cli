@@ -16,7 +16,7 @@ internal sealed partial class WordsMutationHandlers
 {
     public long Apply(InsertTableOp operation)
     {
-        Style? style = operation.Style is null ? null : GetStyle(_document, operation.Style);
+        Style? style = operation.TableStyle is null ? null : GetStyle(_document, operation.TableStyle);
 
         // One table, then per row a row node and per cell a cell, a paragraph and a run.
         _loader.EnsureNodeCapacity(_document, 1 + ((long)operation.RowCount * (1 + (3L * operation.ColumnCount))));
@@ -31,8 +31,8 @@ internal sealed partial class WordsMutationHandlers
                 row.AppendChild(cell);
                 var paragraph = new Paragraph(_document);
                 cell.AppendChild(paragraph);
-                string text = operation.Cells is not null && rowIndex < operation.Cells.Count && columnIndex < operation.Cells[rowIndex].Count
-                    ? operation.Cells[rowIndex][columnIndex]
+                string text = operation.Values is not null && rowIndex < operation.Values.Count && columnIndex < operation.Values[rowIndex].Count
+                    ? operation.Values[rowIndex][columnIndex]
                     : string.Empty;
                 paragraph.AppendChild(new Run(_document, text));
             }
@@ -55,12 +55,12 @@ internal sealed partial class WordsMutationHandlers
             throw Invalid("set_table_cell must target one table block");
         }
 
-        if (operation.Row > table.Rows.Count || operation.Col > table.Rows[operation.Row - 1].Cells.Count)
+        if (operation.Row > table.Rows.Count || operation.Column > table.Rows[operation.Row - 1].Cells.Count)
         {
-            throw Invalid($"table cell {operation.Row},{operation.Col} is outside the table");
+            throw Invalid($"table cell {operation.Row},{operation.Column} is outside the table");
         }
 
-        Cell cell = table.Rows[operation.Row - 1].Cells[operation.Col - 1];
+        Cell cell = table.Rows[operation.Row - 1].Cells[operation.Column - 1];
         // The terminal paragraph owns the cell marker and must survive tracked replacement.
         Paragraph paragraph = cell.LastParagraph;
         if (paragraph is null)
@@ -215,11 +215,11 @@ internal sealed partial class WordsMutationHandlers
     /// follows the Aspose.Words guidance: rows do not break, and every paragraph keeps with the
     /// next except the end-of-cell paragraphs of the last row, which keepWithNext owns.
     /// </summary>
-    public long Apply(FormatTableOp operation)
+    public long Apply(SetTablePaginationOp operation)
     {
         if (Nodes.Count != 1 || Nodes[0] is not Table table)
         {
-            throw Invalid("format_table must target one table block");
+            throw Invalid("set_table_pagination must target one table block");
         }
 
         Row[] rows = table.Rows.Cast<Row>().ToArray();
@@ -279,14 +279,14 @@ internal sealed partial class WordsMutationHandlers
             && cell.LastParagraph == paragraph;
     }
 
-    public long Apply(ApplyListOp operation)
+    public long Apply(SetListOp operation)
     {
         List list = _document.Lists.Add(operation.Kind == "bullet" ? ListTemplate.BulletDefault : ListTemplate.NumberDefault);
         long count = 0;
         foreach (Paragraph paragraph in Nodes.SelectMany(Paragraphs))
         {
             paragraph.ListFormat.List = list;
-            paragraph.ListFormat.ListLevelNumber = operation.Level;
+            paragraph.ListFormat.ListLevelNumber = operation.Level - 1;
             count++;
         }
 

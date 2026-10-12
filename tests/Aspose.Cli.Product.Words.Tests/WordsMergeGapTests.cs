@@ -66,7 +66,7 @@ public sealed class WordsMergeGapTests
             return new Document(output).Sections[0].Body.GetText();
         }
 
-        string inline = Merge($"\"inline\":[{Row}]", "inline.docx");
+        string inline = Merge($"\"items\":[{Row}]", "inline.docx");
 
         Assert.Contains("Ava 28000.50 true", inline, StringComparison.Ordinal);
         Assert.Equal(inline, Merge($"\"path\":{JsonSerializer.Serialize(path)}", "file.docx"));
@@ -86,7 +86,7 @@ public sealed class WordsMergeGapTests
                 Input = input,
                 Batch = new WordsOpsBatch
                 {
-                    Ops = [new MailMergeOp { Inline = [new Dictionary<string, object?> { ["Name"] = "Ava", ["Salary"] = 28000.5, ["Active"] = true }] }],
+                    Ops = [new MailMergeOp { Items = [new Dictionary<string, object?> { ["Name"] = "Ava", ["Salary"] = 28000.5, ["Active"] = true }] }],
                 },
                 Output = TestOutput.At(output),
             });
@@ -115,7 +115,7 @@ public sealed class WordsMergeGapTests
                 Input = input,
                 Batch = new WordsOpsBatch
                 {
-                    Ops = [new MailMergeOp { Inline = [new Dictionary<string, object?> { ["name"] = "Ava", [quoted ?? "Photo"] = null }] }],
+                    Ops = [new MailMergeOp { Items = [new Dictionary<string, object?> { ["name"] = "Ava", [quoted ?? "Photo"] = null }] }],
                 },
                 Output = TestOutput.At(output),
             });
@@ -142,7 +142,7 @@ public sealed class WordsMergeGapTests
                     [
                         new MailMergeOp
                         {
-                            Inline =
+                            Items =
                             [
                                 new Dictionary<string, object?> { ["Name"] = "A", ["Salary"] = "1" },
                                 new Dictionary<string, object?> { ["Name"] = "B", ["Salary"] = null, ["Bonus"] = "2" },
@@ -194,7 +194,7 @@ public sealed class WordsMergeGapTests
             new WordsEditRequest
             {
                 Input = input,
-                Batch = new WordsOpsBatch { Ops = [new MailMergeOp { Inline = rows }] },
+                Batch = new WordsOpsBatch { Ops = [new MailMergeOp { Items = rows }] },
                 Output = TestOutput.At(output),
             });
 
@@ -220,7 +220,7 @@ public sealed class WordsMergeGapTests
                     [
                         new MailMergeOp
                         {
-                            Inline = [new Dictionary<string, object?> { ["name"] = "Ava", ["Salary"] = "", ["Unused"] = null }],
+                            Items = [new Dictionary<string, object?> { ["name"] = "Ava", ["Salary"] = "", ["Unused"] = null }],
                         },
                     ],
                 },
@@ -266,7 +266,7 @@ public sealed class WordsMergeGapTests
             new WordsEditRequest
             {
                 Input = input,
-                Batch = new WordsOpsBatch { Ops = [new MailMergeOp { Regions = true, Inline = [first, second] }] },
+                Batch = new WordsOpsBatch { Ops = [new MailMergeOp { Regions = true, Items = [first, second] }] },
                 Output = TestOutput.At(output),
             });
 

@@ -56,17 +56,17 @@ internal static partial class ContractRules
         [("v2/slides/ops", "slidesSlideSizeInput", "height")] = Points,
         [("v2/slides/ops", "slidesSlideSizeInput", "width")] = Points,
 
-        [("v2/words/ops", "define_style", "size")] = Points,
+        [("v2/words/ops", "define_style", "fontSize")] = Points,
         [("v2/words/ops", "define_style", "spaceAfter")] = Points,
         [("v2/words/ops", "define_style", "spaceBefore")] = Points,
-        [("v2/words/ops", "format_text", "size")] = Points,
+        [("v2/words/ops", "format_text", "fontSize")] = Points,
         [("v2/words/ops", "insert_image", "height")] = Points,
         [("v2/words/ops", "insert_image", "width")] = Points,
         [("v2/words/ops", "wordsMarginInput", "bottom")] = Points,
         [("v2/words/ops", "wordsMarginInput", "left")] = Points,
         [("v2/words/ops", "wordsMarginInput", "right")] = Points,
         [("v2/words/ops", "wordsMarginInput", "top")] = Points,
-        [("v2/words/ops", "set_default_font", "size")] = Points,
+        [("v2/words/ops", "set_default_font", "fontSize")] = Points,
     };
 
     /// <summary>The measured fields of one ops definition that do not name their non-point unit, and listed fields it no longer has.</summary>

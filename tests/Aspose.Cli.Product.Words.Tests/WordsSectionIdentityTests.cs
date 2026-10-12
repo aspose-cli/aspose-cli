@@ -22,7 +22,7 @@ public sealed class WordsSectionIdentityTests
             Ops =
             [
                 new DeleteSectionOp { Section = 1 },
-                new SetTextOp { At = new WordsTarget { Find = "First" }, Text = "Lost" },
+                new SetTextOp { Target = new WordsTarget { Find = "First" }, Text = "Lost" },
             ],
         };
         WordsEditResult Run() => WordsEdit.Run(fixture.Session, new WordsEditRequest
@@ -119,14 +119,14 @@ public sealed class WordsSectionIdentityTests
             {
                 Ops =
                 [
-                    new AddSectionOp { Position = "start" },
+                    new InsertSectionOp { At = 1, Position = "before" },
                     new DeleteSectionOp { Section = 2 },
                     new SetHeaderOp { Section = 3, Paragraphs = ["Head"] },
                     new SetFooterOp { Section = 3, Paragraphs = ["Foot"] },
-                    new SetPageSetupOp { Section = 3, Setup = new WordsPageSetupInput { Orientation = "landscape" } },
+                    new SetPageSetupOp { Section = 3, Orientation = "landscape" },
                     new SetPageNumbersOp { Section = 3, Start = 7 },
-                    new SetTextOp { At = new WordsTarget { Find = "Third" }, Text = "Safe" },
-                    new AddSectionOp { Position = "after", After = 1 },
+                    new SetTextOp { Target = new WordsTarget { Find = "Third" }, Text = "Safe" },
+                    new InsertSectionOp { At = 1, Position = "after" },
                 ],
             },
             Output = TestOutput.At(output),
@@ -174,7 +174,7 @@ public sealed class WordsSectionIdentityTests
             Input = input,
             Batch = new WordsOpsBatch
             {
-                Ops = [new AddSectionOp { Position = "start" }, new SetHeaderOp { Paragraphs = ["All"] }],
+                Ops = [new InsertSectionOp { At = 1, Position = "before" }, new SetHeaderOp { Paragraphs = ["All"] }],
             },
             Output = TestOutput.At(output),
         });

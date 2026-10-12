@@ -6,8 +6,8 @@ namespace Aspose.Cli.Product.Words.Contracts;
 /// </summary>
 public static class WordsProtectionModes
 {
-    public const string ReadOnly = "readOnly";
+    public const string ReadOnly = "read-only";
     public const string Comments = "comments";
-    public const string TrackedChanges = "trackedChanges";
+    public const string TrackedChanges = "tracked-changes";
     public const string Forms = "forms";
 }

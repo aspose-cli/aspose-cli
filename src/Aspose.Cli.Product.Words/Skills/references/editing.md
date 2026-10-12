@@ -11,8 +11,9 @@ aspose-cli schema v2/words/ops --operation insert_table
 
 ## Addresses
 
-- A block address (`at`, or `target` for `apply_list`, `delete_blocks`,
-  `format_text` and `set_style`) is exactly one of `block`, `blocks`,
+- A block address (`at`, or `target` for `set_text`, `delete_blocks`,
+  `set_table_cell`, `set_table_pagination`, `format_text`, `set_style`,
+  `set_list` and `add_comment`) is exactly one of `block`, `blocks`,
   `bookmark`, `heading` or `find`. `find` matches blocks whose visible text
   contains the given text, ignoring case, and `heading` does the same among
   heading paragraphs; `nth` picks the match (the first by default). When
@@ -30,7 +31,7 @@ aspose-cli schema v2/words/ops --operation insert_table
 
 ## Batch semantics
 
-- Every address, including numbered sections and `add_section.after`,
+- Every address, including numbered sections and `insert_section.after`,
   resolves to the document as it was before the first operation. An omitted
   section means every original section. Inserted content and sections cannot
   be targeted later in the same batch.
@@ -41,8 +42,8 @@ aspose-cli schema v2/words/ops --operation insert_table
 - `--track-changes` requires `--author` and records content insertions and
   deletions: `replace_text`, `set_text`, `insert_*` (page breaks only, not
   section breaks), `delete_blocks`, `set_table_cell`, `repeat_table_row`,
-  `append_document`. A tracked batch can also hold `add_comment` and
-  `remove_comments`: a comment is a review annotation of its own, so it is added
+  `import_sections`. A tracked batch can also hold `add_comment` and
+  `delete_comments`: a comment is a review annotation of its own, so it is added
   or removed outright and is never listed as a revision. Every other operation
   would change the document without a revision, so a tracked batch that
   contains one fails with `OPTION_INVALID` before anything changes; run it in a
@@ -53,7 +54,7 @@ aspose-cli schema v2/words/ops --operation insert_table
 - `set_text` replaces the inline content of paragraphs and keeps their style
   and paragraph format; as typing over it in Word does, the new text takes the
   font of the first text it replaces. Use `set_table_cell` for table cells.
-  With `"at": {"bookmark": "Name"}`, or
+  With `"target": {"bookmark": "Name"}`, or
   `--set bookmark:Name=text`, it replaces only the text the bookmark encloses,
   anywhere including table cells: the bookmark and the rest of its paragraph
   remain, the new text takes the format of the bookmark's first run, and a
@@ -86,13 +87,13 @@ aspose-cli schema v2/words/ops --operation insert_table
 | Task | Operations |
 |---|---|
 | Change text | `replace_text` (literal or regex, by scope), `set_text` (paragraph or bookmark text), `set_table_cell` (one 1-based cell), `repeat_table_row` (one copy of a `{{key}}` template row per item) |
-| Add content | `insert_paragraphs` (styled paragraphs, list items), `insert_markdown`, `insert_table`, `insert_image`, `insert_hyperlink`, `insert_field` (inserts and updates the field), `insert_toc`, `insert_bookmark` (a paragraph's visible text), `append_document` |
+| Add content | `insert_paragraphs` (styled paragraphs, list items), `insert_markdown`, `insert_table`, `insert_image`, `insert_hyperlink`, `insert_field` (inserts and updates the field), `insert_toc`, `insert_bookmark` (a paragraph's visible text), `import_sections` |
 | Remove content | `delete_blocks` |
-| Styles and formatting | `set_style` (apply an existing style), `define_style` (create or update one), `format_text` (runs of target blocks), `format_table` (how one table breaks across pages), `apply_list` (one new bullet or numbered list), `set_default_font` |
-| Sections and pages | `insert_break` (page break, or split the section), `add_section`, `delete_section` (never the last one), `set_page_setup`, `set_header`, `set_footer`, `set_page_numbers`, `add_watermark` (text in `font`; East Asian text otherwise in the default East Asian font of a Chinese, Japanese or Korean document, or else Microsoft YaHei), `remove_watermark` |
-| Review annotations | `add_comment`, `remove_comments`, `accept_revisions`, `reject_revisions` |
-| Fields and data | `update_fields` (tables of contents, or every field and the layout), `mail_merge` ([mail merge](mail-merge.md)) |
-| Document state | `set_properties`, `protect`, `unprotect` |
+| Styles and formatting | `set_style` (apply an existing style), `define_style` (create or update one), `format_text` (runs of target blocks), `set_table_pagination` (how one table breaks across pages), `set_list` (one new bullet or numbered list), `set_default_font` |
+| Sections and pages | `insert_break` (page break, or split the section), `insert_section`, `delete_section` (never the last one), `set_page_setup`, `set_header`, `set_footer`, `set_page_numbers`, `set_watermark` (text in `font`; East Asian text otherwise in the default East Asian font of a Chinese, Japanese or Korean document, or else Microsoft YaHei), `delete_watermark` |
+| Review annotations | `add_comment`, `delete_comments`, `accept_revisions`, `reject_revisions` |
+| Fields and data | `refresh_fields` (tables of contents, or every field and the layout), `mail_merge` ([mail merge](mail-merge.md)) |
+| Document state | `set_properties`, `protect_document`, `unprotect_document` |
 
 ## Recipe: insert several pieces in reading order
 
@@ -100,8 +101,8 @@ Insertions at the same anchor stack against it: each `after` insertion lands
 directly after the anchor, ahead of earlier ones, and each `before` insertion
 lands directly before it, behind earlier ones. To keep the batch order as the
 reading order, anchor every piece `before` the block that should follow them.
-`insert_table`'s `style` names an existing table style; `inspect --detail
-tables` shows the `style` each table uses, so a new table can match the
+`insert_table`'s `tableStyle` names an existing table style; `inspect --detail
+tables` shows the `tableStyle` each table uses, so a new table can match the
 document's tables.
 
 ```json
@@ -110,8 +111,8 @@ document's tables.
     { "op": "insert_paragraphs", "at": { "find": "Revenue increased" }, "position": "before",
       "paragraphs": [ { "text": "Key figures", "style": "Heading 3" }, { "text": "Figures are in thousands." } ] },
     { "op": "insert_table", "at": { "find": "Revenue increased" }, "position": "before",
-      "rowCount": 2, "columnCount": 2, "cells": [ [ "Metric", "Value" ], [ "Revenue", "120" ] ],
-      "style": "Table Grid" }
+      "rowCount": 2, "columnCount": 2, "values": [ [ "Metric", "Value" ], [ "Revenue", "120" ] ],
+      "tableStyle": "Table Grid" }
   ]
 }
 ```
@@ -168,14 +169,14 @@ font.
   "ops": [
     { "op": "define_style", "name": "Normal", "font": "Microsoft YaHei" },
     { "op": "insert_table", "at": { "block": 2 }, "position": "after",
-      "rowCount": 1, "columnCount": 2, "cells": [ [ "Term", "Value" ] ] }
+      "rowCount": 1, "columnCount": 2, "values": [ [ "Term", "Value" ] ] }
   ]
 }
 ```
 
 ## Tables across pages
 
-`format_table` sets how the one table `at` addresses breaks across pages;
+`set_table_pagination` sets how the one table `target` addresses breaks across pages;
 omitted settings keep their values:
 
 - `keepTogether: true` keeps the whole table on one page when it fits: no row
@@ -195,7 +196,7 @@ omitted settings keep their values:
 set.
 
 ```json
-{ "ops": [ { "op": "format_table", "at": { "find": "Action items" }, "keepTogether": true, "headerRowCount": 1 } ] }
+{ "ops": [ { "op": "set_table_pagination", "target": { "find": "Action items" }, "keepTogether": true, "headerRowCount": 1 } ] }
 ```
 
 ## Headers, footers and page numbers
@@ -208,8 +209,8 @@ and font of the first paragraph they replace, including one a section
 continues from an earlier section, or take Word's Header or Footer style when
 there is none; `insert_paragraphs` instead takes
 `{"text": ..., "style": ...}` objects. Markdown takes the document's styles. Apply footer text before `set_page_numbers`.
-`append_document` brings the appended document's sections with the headers
-and footers they define, and `importFormatMode` decides only styles. A
+`import_sections` brings the appended document's sections with the headers
+and footers they define, and `formatting` decides only styles. A
 section that defines no header or footer of a kind continues the one before
 it, so after appending a chapter whose template had a header, the next
 appended chapter without one shows that header too. Check the result with
@@ -222,10 +223,10 @@ one should restart.
 
 ## Protection and encryption
 
-- Editing restrictions (`protect`) are not encryption: they guide Word's user
+- Editing restrictions (`protect_document`) are not encryption: they guide Word's user
   interface and do not bind the CLI. Editing a restricted document succeeds,
   reports `PROTECTION_NOT_ENFORCED` and keeps the restrictions in a Word
-  format output. `unprotect`
+  format output. `unprotect_document`
   with `passwordEnv` checks the password and fails with `PASSWORD_INVALID`
   when it is wrong; without `passwordEnv` it removes the restrictions whatever
   their password, so use it only when the user owns that decision.
@@ -250,7 +251,7 @@ restrictions it cannot keep; restrict a PDF with the `encrypt` operation of
 `aspose-cli pdf edit`.
 A `txt` or `md` output also writes comment text into the body and
 deleted text beside inserted text, each reported by its own `LOSSY_CONVERSION`
-(`words convert` reports them too); add `remove_comments`, and
+(`words convert` reports them too); add `delete_comments`, and
 `accept_revisions` or `reject_revisions` as the reviewer decides, to the same
 batch to leave them out. A `txt` output is the body text: it leaves out
 headers, footers and page numbers, and lays each table row out on one line

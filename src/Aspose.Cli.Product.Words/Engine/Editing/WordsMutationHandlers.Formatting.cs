@@ -27,9 +27,9 @@ internal sealed partial class WordsMutationHandlers
                 run.Font.Underline = operation.Underline.Value ? Underline.Single : Underline.None;
             }
 
-            if (operation.Size is not null)
+            if (operation.FontSize is not null)
             {
-                run.Font.Size = operation.Size.Value;
+                run.Font.Size = operation.FontSize.Value;
             }
 
             SetFonts(run.Font, operation.Font, operation.LatinFont, operation.EastAsianFont);
@@ -71,9 +71,9 @@ internal sealed partial class WordsMutationHandlers
         }
 
         SetFonts(style.Font, operation.Font, operation.LatinFont, operation.EastAsianFont);
-        if (operation.Size is not null)
+        if (operation.FontSize is not null)
         {
-            style.Font.Size = operation.Size.Value;
+            style.Font.Size = operation.FontSize.Value;
         }
 
         if (operation.Bold is not null)
@@ -106,9 +106,9 @@ internal sealed partial class WordsMutationHandlers
             if (style.Type is StyleType.Paragraph or StyleType.Character)
             {
                 SetFonts(style.Font, operation.Font, operation.LatinFont, operation.EastAsianFont);
-                if (operation.Size is not null)
+                if (operation.FontSize is not null)
                 {
-                    style.Font.Size = operation.Size.Value;
+                    style.Font.Size = operation.FontSize.Value;
                 }
             }
         }

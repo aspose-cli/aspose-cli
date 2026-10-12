@@ -68,7 +68,7 @@ public sealed class WordsVerificationIssueTests
             new WordsEditRequest
             {
                 Input = fixture.CreateReport(),
-                Batch = new WordsOpsBatch { Ops = [new ProtectOp { Mode = "readOnly" }] },
+                Batch = new WordsOpsBatch { Ops = [new ProtectDocumentOp { Protection = "read-only" }] },
                 Output = TestOutput.At(fixture.Temp.File("protection.txt")),
                 Verify = true,
             });
@@ -77,7 +77,7 @@ public sealed class WordsVerificationIssueTests
         Assert.True(result.HasFailures);
         VerificationIssue issue = Assert.Single(result.Verification.Issues);
         Assert.Equal("PROTECTION_CHANGED", issue.Code);
-        Assert.Contains("expected readOnly, found none", issue.Message, StringComparison.Ordinal);
+        Assert.Contains("expected read-only, found none", issue.Message, StringComparison.Ordinal);
         Assert.Contains("save to docx", issue.Hint, StringComparison.Ordinal);
     }
 
@@ -90,7 +90,7 @@ public sealed class WordsVerificationIssueTests
             new WordsEditRequest
             {
                 Input = fixture.CreateReport(),
-                Batch = new WordsOpsBatch { Ops = [new ReplaceTextOp { Find = "twelve", Replace = "ten" }, new ProtectOp { Id = "lock", Mode = "readOnly" }] },
+                Batch = new WordsOpsBatch { Ops = [new ReplaceTextOp { Find = "twelve", Replace = "ten" }, new ProtectDocumentOp { Id = "lock", Protection = "read-only" }] },
                 Output = TestOutput.At(fixture.Temp.File("checked.docx")),
                 Verify = true,
             });

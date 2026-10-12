@@ -10,8 +10,8 @@ internal static class WordsDiagnostics
     internal static readonly ErrorCode AnchorNotFound = ErrorCode.NotFound("ANCHOR_NOT_FOUND");
     internal static readonly ErrorCode RevisionNotFound = ErrorCode.NotFound("REVISION_NOT_FOUND");
     internal static readonly ErrorCode MergeDataInvalid = Validation("MERGE_DATA_INVALID");
-    internal static readonly ErrorCode DocumentHasRevisions =
-        new("DOCUMENT_HAS_REVISIONS", ExitCode.InputError);
+    internal static readonly ErrorCode RevisionsUnresolved =
+        new("REVISIONS_UNRESOLVED", ExitCode.InputError);
 
     internal static readonly WarningCode TrackedChangesPresent = new("TRACKED_CHANGES_PRESENT");
     internal static readonly WarningCode MacrosDropped = new("MACROS_DROPPED");
@@ -30,7 +30,7 @@ internal static class WordsDiagnostics
         DiagnosticDescriptor.Error(AnchorNotFound),
         DiagnosticDescriptor.Error(RevisionNotFound),
         DiagnosticDescriptor.Error(MergeDataInvalid),
-        DiagnosticDescriptor.Error(DocumentHasRevisions),
+        DiagnosticDescriptor.Error(RevisionsUnresolved),
         DiagnosticDescriptor.Warning(TrackedChangesPresent),
         DiagnosticDescriptor.Warning(MacrosDropped),
         DiagnosticDescriptor.Warning(LayoutMayDiffer),

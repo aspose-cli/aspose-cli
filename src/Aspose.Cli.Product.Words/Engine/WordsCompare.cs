@@ -28,7 +28,7 @@ internal static class WordsCompare
         if (leftLoaded.Document.Revisions.Count > 0 || rightLoaded.Document.Revisions.Count > 0)
         {
             throw new CliException(
-                WordsDiagnostics.DocumentHasRevisions,
+                WordsDiagnostics.RevisionsUnresolved,
                 "Words comparison requires both source documents to have no existing revisions.",
                 hint: "List the revisions with 'aspose-cli words inspect <file> --detail revisions'. "
                     + "Accept or reject revisions explicitly in copies of both documents, then compare again.");

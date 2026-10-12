@@ -63,7 +63,7 @@ public sealed class WordsSetTextFormatTests
         AssertFont(run, "Arial", 11);
     }
 
-    private static readonly WordsOpsBatch SetLiability = new() { Ops = [new SetTextOp { At = new WordsTarget { Find = "liability" }, Text = NewText }] };
+    private static readonly WordsOpsBatch SetLiability = new() { Ops = [new SetTextOp { Target = new WordsTarget { Find = "liability" }, Text = NewText }] };
 
     private static Run SetText(WordsFixture fixture, WordsEditRequest request)
     {

@@ -129,13 +129,8 @@ public sealed record WordsSectionData
     [AllowedValues(typeof(WordsPageOrientations))]
     public required string Orientation { get; init; }
 
-    /// <summary>The page width in points.</summary>
-    [Minimum(0)]
-    public required double WidthPoints { get; init; }
-
-    /// <summary>The page height in points.</summary>
-    [Minimum(0)]
-    public required double HeightPoints { get; init; }
+    /// <summary>The size of the section's pages as laid out, wider than high in landscape, and the preset it matches.</summary>
+    public required PageSizeInfo PageSize { get; init; }
 
     /// <summary>The page margins.</summary>
     public required WordsMarginData Margins { get; init; }
@@ -324,9 +319,9 @@ public sealed record WordsTableData
     public required int ColumnCount { get; init; }
 
     /// <summary>
-    /// The table style the table uses, accepted by insert_table's style; omitted for the default
+    /// The table style the table uses, accepted by insert_table's tableStyle; omitted for the default
     /// Table Normal style.
     /// </summary>
     [MinLength(1)]
-    public string? Style { get; init; }
+    public string? TableStyle { get; init; }
 }

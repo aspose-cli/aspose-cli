@@ -198,7 +198,7 @@ public sealed class WordsFieldAndReviewTests
             Batch = new WordsOpsBatch
             {
                 Ops = Enumerable.Range(1, 3)
-                    .Select(static block => (WordsOp)new AddCommentOp { At = new WordsTarget { Block = block }, Author = "A", Text = "Note" })
+                    .Select(static block => (WordsOp)new AddCommentOp { Target = new WordsTarget { Block = block }, Author = "A", Text = "Note" })
                     .ToArray(),
             },
             Output = TestOutput.At(commented),
@@ -210,7 +210,7 @@ public sealed class WordsFieldAndReviewTests
             new WordsEditRequest
             {
                 Input = commented,
-                Batch = new WordsOpsBatch { Ops = [new RemoveCommentsOp()] },
+                Batch = new WordsOpsBatch { Ops = [new DeleteCommentsOp()] },
                 Output = TestOutput.At(output),
             });
 
@@ -385,7 +385,7 @@ public sealed class WordsFieldAndReviewTests
             Input = input,
             Batch = new WordsOpsBatch
             {
-                Ops = [new AcceptRevisionsOp { Author = "Li" }, new RemoveCommentsOp { Author = "Li" }],
+                Ops = [new AcceptRevisionsOp { Author = "Li" }, new DeleteCommentsOp { Author = "Li" }],
             },
             Output = TestOutput.At(output),
         });
@@ -397,7 +397,7 @@ public sealed class WordsFieldAndReviewTests
         Assert.All(warnings, static warning => Assert.Equal("no-match", warning.Details!["reason"]!.GetValue<string>()));
         Assert.Contains("accept_revisions", warnings[0].Message, StringComparison.Ordinal);
         Assert.Contains("'Li (B)'", warnings[0].Hint, StringComparison.Ordinal);
-        Assert.Contains("remove_comments", warnings[1].Message, StringComparison.Ordinal);
+        Assert.Contains("delete_comments", warnings[1].Message, StringComparison.Ordinal);
         Assert.Equal(6, new Document(output).Revisions.Count);
     }
 }

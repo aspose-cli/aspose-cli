@@ -50,7 +50,7 @@ public sealed class WordsAllocationBudgetTests
             new WordsEditRequest
             {
                 Input = input,
-                Batch = new WordsOpsBatch { Ops = [new MailMergeOp { Inline = rows }] },
+                Batch = new WordsOpsBatch { Ops = [new MailMergeOp { Items = rows }] },
                 Output = TestOutput.At(output),
             }));
 
@@ -83,7 +83,7 @@ public sealed class WordsAllocationBudgetTests
                 Input = input,
                 Batch = new WordsOpsBatch
                 {
-                    Ops = [new MailMergeOp { Regions = true, Inline = [new Dictionary<string, object?> { ["Name"] = "Ava" }] }],
+                    Ops = [new MailMergeOp { Regions = true, Items = [new Dictionary<string, object?> { ["Name"] = "Ava" }] }],
                 },
                 Output = TestOutput.At(output),
             }));
@@ -107,7 +107,7 @@ public sealed class WordsAllocationBudgetTests
             new WordsEditRequest
             {
                 Input = input,
-                Batch = new WordsOpsBatch { Ops = [new AddWatermarkOp { ImagePath = missing }] },
+                Batch = new WordsOpsBatch { Ops = [new SetWatermarkOp { Path = missing }] },
                 Output = TestOutput.At(fixture.Temp.File("watermarked.docx")),
             }));
 
@@ -131,7 +131,7 @@ public sealed class WordsAllocationBudgetTests
             new WordsEditRequest
             {
                 Input = input,
-                Batch = new WordsOpsBatch { Ops = [new AddWatermarkOp { ImagePath = image }] },
+                Batch = new WordsOpsBatch { Ops = [new SetWatermarkOp { Path = image }] },
                 Output = TestOutput.At(fixture.Temp.File("watermarked.docx")),
             }));
 
