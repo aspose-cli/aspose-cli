@@ -44,9 +44,9 @@ public sealed class OperationVocabularyAttribute(string schemaId) : Attribute
 /// <param name="path">
 /// The schema of the property the read reports, as a URI reference relative to the product's
 /// operation schema: the read result's schema file and a JSON Pointer into it, such as
-/// <c>pdf-info.schema.json#/$defs/pdfPageInfo/properties/rotation</c>. A pointer that ends in a
+/// <c>inspect-result.schema.json#/$defs/pdfPageInfo/properties/rotation</c>. A pointer that ends in a
 /// dictionary's <c>additionalProperties</c>, such as
-/// <c>pdf-info.schema.json#/properties/metadata/additionalProperties</c>, is the entry named
+/// <c>inspect-result.schema.json#/properties/metadata/additionalProperties</c>, is the entry named
 /// after the field. The operation schema publishes it resolved against its own <c>$id</c>, like
 /// the absolute <c>$ref</c> of one schema to another.
 /// </param>

@@ -1,0 +1,307 @@
+using System.Text.Json.Serialization;
+
+namespace Aspose.Cli.Product.Pdf.Contracts;
+
+/// <summary>Structural information returned by <c>pdf inspect</c>.</summary>
+public sealed record PdfInspectResult() : EngineResultEnvelope("inspect-result", 2)
+{
+    /// <summary>The most pages <see cref="Pages"/> lists.</summary>
+    public const int PagePreviewLimit = 20;
+
+    /// <summary>The most bookmarks <see cref="Outline"/> lists.</summary>
+    public const int OutlineLimit = 200;
+
+    /// <summary>The inspected PDF.</summary>
+    [JsonPropertyOrder(-49)]
+    public required InputInfo Input { get; init; }
+
+    /// <summary>The document summary every inspection reports.</summary>
+    public required PdfSummary Pdf { get; init; }
+
+    /// <summary>
+    /// The first pages' geometry with <c>--sample</c>; a <c>LIST_TRUNCATED</c> warning names the
+    /// page count when there are more.
+    /// </summary>
+    [MaxItems(PagePreviewLimit)]
+    public IReadOnlyList<PdfPageInfo>? Pages { get; init; }
+
+    /// <summary>The page-label ranges, when the file has any.</summary>
+    public IReadOnlyList<PdfPageLabelInfo>? PageLabels { get; init; }
+
+    /// <summary>
+    /// Bookmarks in reading order, depth first, with <c>--detail outline</c>; a
+    /// <c>LIST_TRUNCATED</c> warning names the total when there are more.
+    /// </summary>
+    [MaxItems(OutlineLimit)]
+    public IReadOnlyList<PdfOutlineItem>? Outline { get; init; }
+
+    /// <summary>The interactive form, with <c>--detail forms</c>.</summary>
+    public PdfFormSummary? Forms { get; init; }
+
+    /// <summary>The embedded files, with <c>--detail attachments</c>.</summary>
+    public IReadOnlyList<PdfAttachmentInfo>? Attachments { get; init; }
+
+    /// <summary>The distinct font resources, with <c>--detail fonts</c>.</summary>
+    public IReadOnlyList<PdfFontInfo>? Fonts { get; init; }
+
+    /// <summary>The passwords and permissions, with <c>--detail permissions</c>.</summary>
+    public PdfPermissionInfo? Permissions { get; init; }
+
+    /// <summary>The signature fields, with <c>--detail signatures</c>.</summary>
+    public IReadOnlyList<PdfSignatureInfo>? Signatures { get; init; }
+
+    /// <summary>The names of the optional content layers, with <c>--detail layers</c>.</summary>
+    public IReadOnlyList<string>? Layers { get; init; }
+
+    /// <summary>
+    /// Document information and XMP properties as the file stores them, with
+    /// <c>--detail metadata</c>; XMP keys start with <c>xmp:</c>. <c>creationDate</c> and
+    /// <c>modificationDate</c> are ISO 8601 with a fraction of a second only when it is not zero,
+    /// as XMP writes dates (<c>2026-10-01T06:01:53Z</c>): in UTC ending in <c>Z</c> when the stored
+    /// date states an offset, without <c>Z</c> when it states none, and the stored text unchanged
+    /// when it is not a PDF date.
+    /// </summary>
+    public IReadOnlyDictionary<string, string?>? Metadata { get; init; }
+}
+
+/// <summary>The PDF summary every inspection reports.</summary>
+public sealed record PdfSummary
+{
+    /// <summary>How many pages the document has.</summary>
+    [Minimum(0)]
+    public required int PageCount { get; init; }
+
+    /// <summary>Each distinct page size and how many pages have it.</summary>
+    public required IReadOnlyList<PdfPageSizeSummary> DistinctPageSizes { get; init; }
+
+    /// <summary>The PDF version the file declares, such as <c>1.7</c>.</summary>
+    public required string Version { get; init; }
+
+    /// <summary>Whether the file is encrypted.</summary>
+    public required bool Encrypted { get; init; }
+
+    /// <summary>Whether the file is linearized for fast web view.</summary>
+    public required bool Linearized { get; init; }
+
+    /// <summary>Whether the file is tagged, with a logical structure for accessibility.</summary>
+    public required bool Tagged { get; init; }
+
+    /// <summary>
+    /// The PDF/A profile the file declares in its metadata, such as <c>pdfa-2b</c>; absent when it
+    /// declares none. A declaration is not a check: <c>pdf validate --profile</c> verifies conformance.
+    /// </summary>
+    [Pattern("^pdfa-[1-4][abuef]?$")]
+    public string? PdfaProfile { get; init; }
+
+    /// <summary>The kind of interactive form the file has: none, an AcroForm or an XFA form.</summary>
+    [AllowedValues(typeof(PdfFormKinds))]
+    public required string FormType { get; init; }
+
+    /// <summary>How many files are embedded in the document.</summary>
+    [Minimum(0)]
+    public required int AttachmentCount { get; init; }
+
+    /// <summary>Whether the file has a signed signature field.</summary>
+    public required bool Signed { get; init; }
+
+    /// <summary>
+    /// The password this run opened the file with: <c>none</c> when it needed none (an unencrypted
+    /// file, or one with only an owner password), <c>user</c> for the open password, <c>owner</c>
+    /// for the owner password, also when it is the open password too. <c>permissions.hasOpenPassword</c> and <c>hasOwnerPassword</c> state
+    /// which passwords the file has.
+    /// </summary>
+    [AllowedValues("none", "user", "owner")]
+    public required string PasswordType { get; init; }
+}
+
+/// <summary>One distinct page size and how many pages of the document have it.</summary>
+public sealed record PdfPageSizeSummary
+{
+    /// <summary>The page width in points.</summary>
+    [ExclusiveMinimum(0)]
+    public required double WidthPoints { get; init; }
+
+    /// <summary>The page height in points.</summary>
+    [ExclusiveMinimum(0)]
+    public required double HeightPoints { get; init; }
+
+    /// <summary>How many pages have this size.</summary>
+    [Minimum(1)]
+    public required int PageCount { get; init; }
+}
+
+/// <summary>One page's stable geometry in PDF points.</summary>
+public sealed record PdfPageInfo
+{
+    /// <summary>The 1-based page number that operations address.</summary>
+    [Minimum(1)]
+    public required int Page { get; init; }
+
+    /// <summary>The width of the visible page in points.</summary>
+    [ExclusiveMinimum(0)]
+    public required double WidthPoints { get; init; }
+
+    /// <summary>The height of the visible page in points.</summary>
+    [ExclusiveMinimum(0)]
+    public required double HeightPoints { get; init; }
+
+    /// <summary>Clockwise page rotation in degrees.</summary>
+    [AllowedValues(0, 90, 180, 270)]
+    public required int Rotation { get; init; }
+
+    /// <summary>The page's media box, the full physical page.</summary>
+    public required PdfBox MediaBox { get; init; }
+
+    /// <summary>The page's crop box, the region a viewer shows.</summary>
+    public required PdfBox CropBox { get; init; }
+}
+
+/// <summary>One page-label range, addressed by its 1-based starting page.</summary>
+public sealed record PdfPageLabelInfo
+{
+    /// <summary>The 1-based page the range starts at.</summary>
+    [Minimum(1)]
+    public required int StartPage { get; init; }
+
+    /// <summary>The numbering style, one of the values <c>set_page_labels</c> accepts.</summary>
+    [AllowedValues("arabic", "roman-upper", "roman-lower", "letters-upper", "letters-lower", "none")]
+    public required string Style { get; init; }
+
+    /// <summary>The text put before each label's number; absent when there is none.</summary>
+    public string? Prefix { get; init; }
+
+    /// <summary>The number the range's first page shows.</summary>
+    [Minimum(0)]
+    public required int StartingValue { get; init; }
+}
+
+/// <summary>A PDF rectangle in points, using left, bottom, right and top coordinates.</summary>
+public sealed record PdfBox
+{
+    /// <summary>The left edge.</summary>
+    public required double Left { get; init; }
+
+    /// <summary>The bottom edge.</summary>
+    public required double Bottom { get; init; }
+
+    /// <summary>The right edge.</summary>
+    public required double Right { get; init; }
+
+    /// <summary>The top edge.</summary>
+    public required double Top { get; init; }
+}
+
+/// <summary>One bookmark of the document's outline.</summary>
+public sealed record PdfOutlineItem
+{
+    /// <summary>The bookmark's title.</summary>
+    public required string Title { get; init; }
+
+    /// <summary>The bookmark's depth: 1 for a top-level bookmark.</summary>
+    [Minimum(1)]
+    public required int Level { get; init; }
+
+    /// <summary>
+    /// The bookmark's 1-based positions from the top level down, joined by '/': <c>2/1</c> is the
+    /// first child of the second top-level bookmark. <c>delete_bookmarks.indexes</c> and
+    /// <c>add_bookmark.parent</c> accept it.
+    /// </summary>
+    [Pattern("^[1-9][0-9]*(/[1-9][0-9]*)*$")]
+    public required string Index { get; init; }
+
+    /// <summary>The page the bookmark opens; omitted when its destination is not a page of the document.</summary>
+    [Minimum(1)]
+    public int? Page { get; init; }
+}
+
+/// <summary>The document's interactive form.</summary>
+public sealed record PdfFormSummary
+{
+    /// <summary>The kind of form: none, an AcroForm or an XFA form.</summary>
+    [AllowedValues(typeof(PdfFormKinds))]
+    public required string Type { get; init; }
+
+    /// <summary>
+    /// The number of field names, so a radio group is one field however many buttons
+    /// <c>pdf query forms</c> lists for it; review counts fields the same way.
+    /// </summary>
+    [Minimum(0)]
+    public required int FieldCount { get; init; }
+
+    /// <summary>Whether the form's fields cannot be filled.</summary>
+    public required bool ReadOnly { get; init; }
+}
+
+/// <summary>One embedded file.</summary>
+public sealed record PdfAttachmentInfo
+{
+    /// <summary>The attachment's file name, which <c>remove_attachment</c> accepts.</summary>
+    public required string Name { get; init; }
+
+    /// <summary>The attachment's media type; absent when the file does not state one.</summary>
+    public string? MimeType { get; init; }
+
+    /// <summary>The attachment's size in bytes; absent when the file does not state it.</summary>
+    [Minimum(0)]
+    public long? SizeBytes { get; init; }
+}
+
+/// <summary>One distinct PDF font resource.</summary>
+public sealed record PdfFontInfo
+{
+    /// <summary>The font's name as the file stores it.</summary>
+    public required string Name { get; init; }
+
+    /// <summary>Whether the font program is embedded in the file.</summary>
+    public required bool Embedded { get; init; }
+
+    /// <summary>Whether only the glyphs the document uses are embedded.</summary>
+    public required bool Subset { get; init; }
+}
+
+/// <summary>The passwords and permissions of an opened PDF.</summary>
+public sealed record PdfPermissionInfo
+{
+    /// <summary>Whether the file needs a password to open.</summary>
+    public required bool HasOpenPassword { get; init; }
+
+    /// <summary>
+    /// Whether the file has an owner password, which lifts its permissions; it may also be the
+    /// open password, as <c>--encrypt</c> writes it.
+    /// </summary>
+    public required bool HasOwnerPassword { get; init; }
+
+    /// <summary>
+    /// Whether this run may change the file regardless of its permissions: it is not encrypted or
+    /// was opened with the owner password. The permissions below still state what the file grants readers.
+    /// </summary>
+    public required bool OwnerAccess { get; init; }
+
+    /// <summary>
+    /// Whether the file lets readers print it. Like every permission below, this is what the file
+    /// grants anyone without the owner password, whatever password this run used; true for a file
+    /// that is not encrypted.
+    /// </summary>
+    public required bool Print { get; init; }
+
+    /// <summary>Whether the file lets readers copy or extract its text and images.</summary>
+    public required bool Copy { get; init; }
+
+    /// <summary>Whether the file lets readers change its content.</summary>
+    public required bool Modify { get; init; }
+
+    /// <summary>Whether the file lets readers add or change annotations and fill form fields.</summary>
+    public required bool Annotate { get; init; }
+
+    /// <summary>Whether the file lets readers fill its form fields, even when annotate is false.</summary>
+    public required bool FillForms { get; init; }
+
+    /// <summary>Whether the file lets accessibility tools extract its text and images.</summary>
+    public required bool ExtractAccessibility { get; init; }
+
+    /// <summary>Whether the file lets readers insert, delete, rotate and move pages and create bookmarks.</summary>
+    public required bool Assemble { get; init; }
+
+    /// <summary>Whether the file lets readers print it at full quality; when false and print is true, printing may be degraded.</summary>
+    public required bool PrintHighResolution { get; init; }
+}

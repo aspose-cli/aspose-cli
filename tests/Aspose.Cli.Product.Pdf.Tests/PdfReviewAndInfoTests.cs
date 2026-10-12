@@ -23,7 +23,7 @@ public sealed class PdfReviewAndInfoTests
             document.Save(path);
         }
 
-        PdfPageInfo page = Assert.Single(PdfInfo.Run(fixture.Session, new PdfInfoRequest { Input = path, IncludePreview = true }).Pages!);
+        PdfPageInfo page = Assert.Single(PdfInfo.Run(fixture.Session, new PdfInspectRequest { Input = path, IncludePreview = true }).Pages!);
 
         Assert.Equal(degrees, page.Rotation);
     }
@@ -368,7 +368,7 @@ public sealed class PdfReviewAndInfoTests
             document.Save(input);
         }
 
-        PdfInfoResult info = PdfInfo.Run(fixture.Session, new PdfInfoRequest { Input = input, Details = ["forms"] });
+        PdfInspectResult info = PdfInfo.Run(fixture.Session, new PdfInspectRequest { Input = input, Details = ["forms"] });
         JsonNode result = Review(workspace, input);
 
         Assert.Equal(2, info.Forms!.FieldCount);

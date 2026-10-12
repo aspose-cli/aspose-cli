@@ -146,7 +146,7 @@ public sealed class PdfOutcomeTests
     }
 
     private static IReadOnlyDictionary<string, string?> Metadata(PdfEngineFixture fixture, string path) =>
-        PdfInfo.Run(fixture.Session, new PdfInfoRequest { Input = path, Details = ["metadata"] }).Metadata!;
+        PdfInfo.Run(fixture.Session, new PdfInspectRequest { Input = path, Details = ["metadata"] }).Metadata!;
 
     public static TheoryData<string> Unchanged => ["rotate_pages", "decrypt", "flatten_forms", "set_metadata"];
 

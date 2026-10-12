@@ -52,7 +52,7 @@ aspose-cli pdf query search report.final.pdf --pattern DRAFT --output-format jso
 
 Choose page ranges from the inspected page count and compare the text with the
 expected content. Search is not OCR. `metadata` reports the values stored in the
-file; `aspose-cli schema v2/pdf/pdf-info` describes how its dates are written.
+file; `aspose-cli schema v2/pdf/inspect-result` describes how its dates are written.
 
 For redaction, search every relevant page, inspect the redacted regions in the
 review images, and check images, annotations, metadata and attachments as

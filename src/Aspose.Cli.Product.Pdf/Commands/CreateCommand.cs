@@ -2,13 +2,14 @@ using System.CommandLine;
 using System.Globalization;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Extensibility;
+using Aspose.Cli.Sdk.Extensibility.Output;
 using Aspose.Cli.Sdk.IO;
 
 namespace Aspose.Cli.Product.Pdf.Commands;
 
 internal static class CreateCommand
 {
-    public static CommandDefinition<NewPdfRequest, PdfWriteResult> Create()
+    public static CommandDefinition<PdfCreateRequest, PdfCreateResult> Create()
     {
         var images = new Option<string[]>("--from-images")
         {
@@ -52,7 +53,7 @@ internal static class CreateCommand
                 string? textPath = standard.InputFile(text);
                 ResolvedOutput output = standard.Output;
                 Secret? encryptPassword = standard.EncryptPassword();
-                return new NewPdfRequest
+                return new PdfCreateRequest
                 {
                     Output = output,
                     EncryptPassword = encryptPassword,
@@ -64,7 +65,7 @@ internal static class CreateCommand
                     Margins = ParseMargins(parse.GetValue(margins) ?? "36"),
                 };
             },
-            PdfText.Written)
+            static (result, surface) => ResultText.Produced(surface, result.Output, result.Action))
         {
             Examples =
             [

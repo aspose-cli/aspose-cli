@@ -34,7 +34,7 @@ public sealed class McpCommandTests
     [Theory]
     [InlineData("cells", "query", "range", "input.xlsx")]
     [InlineData("pdf", "edit", "input.pdf", "--ops", "{\"ops\":[]}", "--out", "out.pdf")]
-    [InlineData("schema", "v2/pdf/pdf-info")]
+    [InlineData("schema", "v2/pdf/inspect-result")]
     [InlineData("doctor")]
     [InlineData("docs", "pdf/forms-security")]
     [InlineData("fonts", "list")]

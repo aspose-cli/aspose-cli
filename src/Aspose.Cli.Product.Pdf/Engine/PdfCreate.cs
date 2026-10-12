@@ -12,7 +12,7 @@ namespace Aspose.Cli.Product.Pdf.Engine;
 /// <summary>Creates one PDF from images, HTML, text or Markdown: <c>pdf create</c>.</summary>
 internal static class PdfCreate
 {
-    internal static PdfWriteResult Run(PdfSession session, NewPdfRequest request)
+    internal static PdfCreateResult Run(PdfSession session, PdfCreateRequest request)
     {
         int sources = request.ImagePaths is { Count: > 0 } ? 1 : 0;
         sources += request.HtmlPath is null ? 0 : 1;
@@ -69,7 +69,7 @@ internal static class PdfCreate
             warnings.Add(losses);
         }
 
-        return new PdfWriteResult
+        return new PdfCreateResult
         {
             Action = "create",
             Output = FileObjects.Output(written, request.Output.Format, encrypted),
@@ -88,7 +88,7 @@ internal static class PdfCreate
     /// save.
     /// </summary>
     private static Document CreateFromImages(
-        IReadOnlyList<string> paths, IReadOnlyList<byte[]> contents, NewPdfRequest request)
+        IReadOnlyList<string> paths, IReadOnlyList<byte[]> contents, PdfCreateRequest request)
     {
         var document = new Document();
         try
@@ -150,7 +150,7 @@ internal static class PdfCreate
     };
 
     private static Document CreateFromHtml(
-        string path, NewPdfRequest request, HtmlImportResources resources)
+        string path, PdfCreateRequest request, HtmlImportResources resources)
     {
         string fullPath = Path.GetFullPath(path);
         if (!File.Exists(fullPath))
@@ -245,7 +245,7 @@ internal static class PdfCreate
         };
     }
 
-    private static Document CreateFromText(string path, bool markdown, NewPdfRequest request)
+    private static Document CreateFromText(string path, bool markdown, PdfCreateRequest request)
     {
         string fullPath = Path.GetFullPath(path);
         if (!File.Exists(fullPath))
@@ -344,7 +344,7 @@ internal static class PdfCreate
         }
     }
 
-    private static IReadOnlyList<InputInfo> CreationInputs(NewPdfRequest request)
+    private static IReadOnlyList<InputInfo> CreationInputs(PdfCreateRequest request)
     {
         IEnumerable<string> paths = request.ImagePaths
             ?? (request.HtmlPath is not null ? [request.HtmlPath] : [request.TextPath!]);
@@ -354,7 +354,7 @@ internal static class PdfCreate
     /// <summary>Checks every creation input and returns the HTML input's bytes, if any, and the images' bytes.</summary>
     private static (byte[]? Html, IReadOnlyList<byte[]> Images) EnsureCreationInputs(
         ResourceBudgetLedger resourceBudgets,
-        NewPdfRequest request)
+        PdfCreateRequest request)
     {
         IReadOnlyList<string> paths = request.ImagePaths
             ?? (request.HtmlPath is not null ? [request.HtmlPath] : [request.TextPath!]);

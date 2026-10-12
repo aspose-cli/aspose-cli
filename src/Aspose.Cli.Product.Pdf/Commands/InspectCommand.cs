@@ -8,22 +8,22 @@ internal static class InspectCommand
 {
     private static readonly Dictionary<string, string> DetailNotes = new(StringComparer.Ordinal)
     {
-        [InfoDetails.Outline] = $"bookmarks, up to {PdfInfoResult.OutlineLimit}",
-        [InfoDetails.Forms] = "form type and field count",
-        [InfoDetails.Layers] = "optional content layer names",
-        [InfoDetails.Metadata] = "document information such as title and author",
+        [PdfInspectDetails.Outline] = $"bookmarks, up to {PdfInspectResult.OutlineLimit}",
+        [PdfInspectDetails.Forms] = "form type and field count",
+        [PdfInspectDetails.Layers] = "optional content layer names",
+        [PdfInspectDetails.Metadata] = "document information such as title and author",
     };
 
-    public static CommandDefinition<PdfInfoRequest, PdfInfoResult> Create()
+    public static CommandDefinition<PdfInspectRequest, PdfInspectResult> Create()
     {
-        var sample = new SampleOption($"the size and rotation of each page, up to {PdfInfoResult.PagePreviewLimit} pages");
-        var detail = new DetailOption(InfoDetails.All, DetailNotes);
+        var sample = new SampleOption($"the size and rotation of each page, up to {PdfInspectResult.PagePreviewLimit} pages");
+        var detail = new DetailOption(PdfInspectDetails.All, DetailNotes);
         return new(
             "inspect",
             "Show PDF structure, security state and metadata.",
             new CommandTraits { Input = PdfInputs.Document },
             [.. sample.Options, .. detail.Options],
-            (parse, standard) => new PdfInfoRequest
+            (parse, standard) => new PdfInspectRequest
             {
                 Input = standard.Input,
                 IncludePreview = sample.Read(parse),
@@ -45,7 +45,7 @@ internal static class InspectCommand
         };
     }
 
-    internal static void Table(PdfInfoResult result, TableSurface surface)
+    internal static void Table(PdfInspectResult result, TableSurface surface)
     {
         PdfSummary pdf = result.Pdf;
         ResultText.Input(surface, result.Input);
@@ -93,7 +93,7 @@ internal static class InspectCommand
     }
 
     /// <summary>The sections --detail asked for, in the order the JSON result lists them.</summary>
-    private static void Sections(PdfInfoResult result, TableSurface surface)
+    private static void Sections(PdfInspectResult result, TableSurface surface)
     {
         ResultText.Table(surface, "outline", result.Outline, ["index", "title", "page"],
             static item =>

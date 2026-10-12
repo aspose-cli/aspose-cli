@@ -46,7 +46,7 @@ public sealed class PdfHardeningTests
         using (new FileStream(source, FileMode.Open, FileAccess.Read,
                    FileShare.ReadWrite | FileShare.Delete, 1, FileOptions.DeleteOnClose))
         {
-            PdfCreate.Run(fixture.Session, new NewPdfRequest { Output = TestOutput.At(output), TextPath = source });
+            PdfCreate.Run(fixture.Session, new PdfCreateRequest { Output = TestOutput.At(output), TextPath = source });
         }
 
         using var created = new Document(output);
@@ -167,7 +167,7 @@ public sealed class PdfHardeningTests
         string input = fixture.File("truncated-xref.pdf");
         File.WriteAllBytes(input, bytes[..(xref + 6)]);
 
-        var result = PdfInfo.Run(fixture.Session, new PdfInfoRequest { Input = input });
+        var result = PdfInfo.Run(fixture.Session, new PdfInspectRequest { Input = input });
 
         Assert.Equal(2, result.Pdf.PageCount);
         Assert.Equal("pdf", result.Input.Format);

@@ -34,10 +34,10 @@ internal sealed class PdfViewAdapter : IProductViewAdapter<PdfSession>
         ViewRenderRequest request,
         ViewManifest rendered)
     {
-        PdfInfoResult info = PdfInfo.Run(session, new PdfInfoRequest
+        PdfInspectResult info = PdfInfo.Run(session, new PdfInspectRequest
         {
             Input = filePath,
-            Details = [InfoDetails.Forms],
+            Details = [PdfInspectDetails.Forms],
             Password = request.Password,
         });
         int inspected = rendered.Parts.Count;
@@ -318,10 +318,10 @@ internal sealed class PdfViewAdapter : IProductViewAdapter<PdfSession>
         {
             return 0;
         }
-        IReadOnlyList<PdfFontInfo> fonts = PdfInfo.Run(session, new PdfInfoRequest
+        IReadOnlyList<PdfFontInfo> fonts = PdfInfo.Run(session, new PdfInspectRequest
         {
             Input = filePath,
-            Details = [InfoDetails.Fonts],
+            Details = [PdfInspectDetails.Fonts],
             Password = password,
         }).Fonts ?? [];
         int unembeddedFonts = fonts.Count(static font =>

@@ -137,7 +137,7 @@ public sealed class PdfRendererGoldenTests
     [Fact]
     public void Info_WithEmptyDetails_SaysMissingUnderEachHeading()
     {
-        PdfInfoResult result = Info() with
+        PdfInspectResult result = Info() with
         {
             Outline = [], Attachments = [], Fonts = [], Signatures = [], Layers = [],
             Metadata = new Dictionary<string, string?>(),
@@ -176,8 +176,8 @@ public sealed class PdfRendererGoldenTests
     [Fact]
     public void Info_WithoutDetails_PrintsOnlyTheSummary()
     {
-        PdfInfoResult info = Info();
-        PdfInfoResult result = info with { Pdf = info.Pdf with { DistinctPageSizes = [] } };
+        PdfInspectResult info = Info();
+        PdfInspectResult result = info with { Pdf = info.Pdf with { DistinctPageSizes = [] } };
 
         string text = RenderedText.Of(surface => InspectCommand.Table(result, surface), TableFormat.Plain);
 
@@ -260,7 +260,7 @@ public sealed class PdfRendererGoldenTests
             text);
     }
 
-    private static PdfInfoResult Info() => new()
+    private static PdfInspectResult Info() => new()
     {
         Input = new InputInfo { Path = @"C:\docs\in.pdf", Format = "pdf", SizeBytes = 20_000, Fingerprint = new FileFingerprint { Sha256 = new string('0', 64) }, Encrypted = false },
         Pdf = new PdfSummary
@@ -282,9 +282,9 @@ public sealed class PdfRendererGoldenTests
         },
     };
 
-    private static PdfInfoResult InfoWithDetails()
+    private static PdfInspectResult InfoWithDetails()
     {
-        PdfInfoResult info = Info();
+        PdfInspectResult info = Info();
         return info with
         {
             Pdf = info.Pdf with { PdfaProfile = "PDF/A-2b" },

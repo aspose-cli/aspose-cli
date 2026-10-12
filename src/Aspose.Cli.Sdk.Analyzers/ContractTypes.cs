@@ -17,7 +17,7 @@ internal static class ContractTypes
 
     /// <summary>
     /// A read path relative to the operation schema: a schema file of the same owner and a JSON
-    /// Pointer into it, such as <c>pdf-info.schema.json#/$defs/pdfPageInfo/properties/rotation</c>.
+    /// Pointer into it, such as <c>inspect-result.schema.json#/$defs/pdfPageInfo/properties/rotation</c>.
     /// </summary>
     internal static readonly Regex ReadPath = new(@"^[a-z0-9]+(-[a-z0-9]+)*\.schema\.json#(/[^/]+)+$",RegexOptions.CultureInvariant);
 

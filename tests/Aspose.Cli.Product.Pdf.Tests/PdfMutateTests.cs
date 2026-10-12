@@ -73,7 +73,7 @@ public sealed class PdfMutateTests
         PdfRect rect = Assert.Single(PdfSearch.Run(fixture.Session, Find(input, "SECRET")).Hits).Rect;
         double width = angle is 90 or 270 ? 570 : 380;
         double height = angle is 90 or 270 ? 380 : 570;
-        PdfPageInfo geometry = Assert.Single(PdfInfo.Run(fixture.Session, new PdfInfoRequest { Input = input, IncludePreview = true }).Pages!);
+        PdfPageInfo geometry = Assert.Single(PdfInfo.Run(fixture.Session, new PdfInspectRequest { Input = input, IncludePreview = true }).Pages!);
         Assert.Equal(width, geometry.WidthPoints);
         Assert.Equal(height, geometry.HeightPoints);
         Assert.InRange(rect.X, 0, width - rect.Width);
@@ -121,7 +121,7 @@ public sealed class PdfMutateTests
         });
 
         Assert.All(
-            PdfInfo.Run(fixture.Session, new PdfInfoRequest { Input = output, IncludePreview = true }).Pages!,
+            PdfInfo.Run(fixture.Session, new PdfInspectRequest { Input = output, IncludePreview = true }).Pages!,
             static page => Assert.Equal(0, page.Rotation));
     }
 
@@ -241,7 +241,7 @@ public sealed class PdfMutateTests
             Output = TestOutput.At(output),
         });
 
-        PdfInfoResult info = PdfInfo.Run(fixture.Session, new PdfInfoRequest { Input = output });
+        PdfInspectResult info = PdfInfo.Run(fixture.Session, new PdfInspectRequest { Input = output });
         PdfPageLabelInfo label = Assert.Single(info.PageLabels!, item => item.Prefix == "R-");
         Assert.Equal(startPage, label.StartPage);
         Assert.Equal(7, label.StartingValue);
@@ -302,7 +302,7 @@ public sealed class PdfMutateTests
             Assert.All(firstEdit.Applied, outcome => Assert.Equal(OpStatuses.Ok, outcome.Status));
         }
 
-        PdfInfoResult info = PdfInfo.Run(fixture.Session, new PdfInfoRequest { Input = first, Details = ["attachments"] });
+        PdfInspectResult info = PdfInfo.Run(fixture.Session, new PdfInspectRequest { Input = first, Details = ["attachments"] });
         string[] attachmentNames = info.Attachments!.Select(static item => item.Name).ToArray();
         Assert.Equal([logicalName, Path.GetFileName(defaultNamedAttachment)], attachmentNames);
         Assert.DoesNotContain(namedAttachment, attachmentNames);
@@ -456,7 +456,7 @@ public sealed class PdfMutateTests
         {
             Assert.True(opened.IsEncrypted);
         }
-        PdfInfoResult encryptedInfo = PdfInfo.Run(fixture.Session, new PdfInfoRequest
+        PdfInspectResult encryptedInfo = PdfInfo.Run(fixture.Session, new PdfInspectRequest
         {
             Input = encrypted,
             Password = new Secret("reader"),
@@ -1357,7 +1357,7 @@ public sealed class PdfMutateTests
         new(document.Outlines) { Title = title, Destination = new FitExplicitDestination(document.Pages[page]) };
 
     private static PdfOutlineItem[] OutlineOf(PdfEngineFixture fixture, string path) =>
-        [.. PdfInfo.Run(fixture.Session, new PdfInfoRequest { Input = path, Details = ["outline"] }).Outline!];
+        [.. PdfInfo.Run(fixture.Session, new PdfInspectRequest { Input = path, Details = ["outline"] }).Outline!];
 
     [Fact]
     public void PageTargets_PastTheDocumentReportThePageCount()
@@ -1505,7 +1505,7 @@ public sealed class PdfMutateTests
         Assert.Equal(["agree", "color", "multi"], available.Order(StringComparer.Ordinal));
         Assert.Equal(3, error.Details["availableCount"]!.GetValue<int>());
         Assert.Equal(
-            PdfInfo.Run(fixture.Session, new PdfInfoRequest { Input = input, Details = ["forms"] }).Forms!.FieldCount,
+            PdfInfo.Run(fixture.Session, new PdfInspectRequest { Input = input, Details = ["forms"] }).Forms!.FieldCount,
             error.Details["availableCount"]!.GetValue<int>());
     }
 

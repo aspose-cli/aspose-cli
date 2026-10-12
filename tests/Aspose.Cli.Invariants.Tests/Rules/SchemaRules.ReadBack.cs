@@ -130,7 +130,7 @@ internal static partial class ContractRules
     }
 
     /// <summary>
-    /// The id of a read path's schema, such as <c>v2/pdf/pdf-info</c>, and the name the read
+    /// The id of a read path's schema, such as <c>v2/pdf/inspect-result</c>, and the name the read
     /// reports the field under: the pointer's last property, or the field's own name for a
     /// dictionary's entry.
     /// </summary>

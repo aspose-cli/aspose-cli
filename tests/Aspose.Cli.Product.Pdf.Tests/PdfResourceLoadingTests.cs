@@ -76,7 +76,7 @@ public sealed class PdfResourceLoadingTests
             + "</body></html>");
 
         CliException refused = Assert.Throws<CliException>(() =>
-            PdfCreate.Run(fixture.Session, new NewPdfRequest { Output = TestOutput.At(output), HtmlPath = input }));
+            PdfCreate.Run(fixture.Session, new PdfCreateRequest { Output = TestOutput.At(output), HtmlPath = input }));
 
         Assert.Equal(ErrorCodes.FeatureUnsupported, refused.Code);
         Assert.Contains("network address", refused.Message, StringComparison.Ordinal);
@@ -98,7 +98,7 @@ public sealed class PdfResourceLoadingTests
             </body></html>
             """);
 
-        PdfWriteResult result = PdfCreate.Run(fixture.Session, new NewPdfRequest { Output = TestOutput.At(output), HtmlPath = input });
+        PdfCreateResult result = PdfCreate.Run(fixture.Session, new PdfCreateRequest { Output = TestOutput.At(output), HtmlPath = input });
 
         Assert.True(result.Output.SizeBytes > 0);
         Assert.True(server.RequestCount == 0, string.Join("; ", server.Requests));
@@ -114,7 +114,7 @@ public sealed class PdfResourceLoadingTests
         File.WriteAllText(input, $"# Report\n\n![chart]({server.Url}/chart.png)\n");
 
         CliException refused = Assert.Throws<CliException>(() =>
-            PdfCreate.Run(fixture.Session, new NewPdfRequest { Output = TestOutput.At(output), TextPath = input }));
+            PdfCreate.Run(fixture.Session, new PdfCreateRequest { Output = TestOutput.At(output), TextPath = input }));
 
         Assert.Equal(ErrorCodes.FeatureUnsupported, refused.Code);
         Assert.False(File.Exists(output));
@@ -142,7 +142,7 @@ public sealed class PdfResourceLoadingTests
         {
             if (use == "create")
             {
-                PdfCreate.Run(fixture.Session, new NewPdfRequest { Output = TestOutput.At(output), ImagePaths = [image] });
+                PdfCreate.Run(fixture.Session, new PdfCreateRequest { Output = TestOutput.At(output), ImagePaths = [image] });
                 return;
             }
             PdfOp op = use == "stamp"
@@ -177,7 +177,7 @@ public sealed class PdfResourceLoadingTests
             <img src="../outside.png" width="30" height="30"></body></html>
             """);
 
-        PdfWriteResult result = PdfCreate.Run(fixture.Session, new NewPdfRequest { Output = TestOutput.At(output), HtmlPath = input });
+        PdfCreateResult result = PdfCreate.Run(fixture.Session, new PdfCreateRequest { Output = TestOutput.At(output), HtmlPath = input });
 
         Assert.Contains(result.Warnings!, warning =>
             warning.Code == WarningCodes.RemoteResourcesBlocked && warning.AffectsCompleteness);
@@ -220,7 +220,7 @@ public sealed class PdfResourceLoadingTests
             + "</body></html>");
 
         CliException refused = Assert.Throws<CliException>(() =>
-            PdfCreate.Run(fixture.Session, new NewPdfRequest { Output = TestOutput.At(output), HtmlPath = input }));
+            PdfCreate.Run(fixture.Session, new PdfCreateRequest { Output = TestOutput.At(output), HtmlPath = input }));
 
         Assert.Equal(ErrorCodes.FeatureUnsupported, refused.Code);
         Assert.Contains("script", refused.Message, StringComparison.Ordinal);
@@ -244,7 +244,7 @@ public sealed class PdfResourceLoadingTests
         File.WriteAllText(input, $"<html><head>{markup}</head><body><p>Local content</p></body></html>");
 
         CliException refused = Assert.Throws<CliException>(() =>
-            PdfCreate.Run(fixture.Session, new NewPdfRequest { Output = TestOutput.At(output), HtmlPath = input }));
+            PdfCreate.Run(fixture.Session, new PdfCreateRequest { Output = TestOutput.At(output), HtmlPath = input }));
 
         Assert.Equal(ErrorCodes.FeatureUnsupported, refused.Code);
         Assert.Contains(name, refused.Message, StringComparison.Ordinal);
@@ -360,7 +360,7 @@ public sealed class PdfResourceLoadingTests
         string input = fixture.File("input.md");
         File.WriteAllText(input, "# Report\n");
 
-        CliException rejected = Assert.Throws<CliException>(() => PdfCreate.Run(fixture.Session, new NewPdfRequest
+        CliException rejected = Assert.Throws<CliException>(() => PdfCreate.Run(fixture.Session, new PdfCreateRequest
         {
             Output = TestOutput.At(fixture.File("output.pdf")),
             TextPath = input,

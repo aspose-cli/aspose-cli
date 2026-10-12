@@ -1270,7 +1270,7 @@
       "actual": "type: \"none\" as a value; omit the field instead"
     },
     {
-      "case": "C-R33 | v2/pdf/pdf-info none",
+      "case": "C-R33 | v2/pdf/inspect-result none",
       "invariant": "C-R33",
       "rule": "C-R33",
       "cause": "pdf-none-enum-values",
@@ -1578,7 +1578,7 @@
       "actual": "type: a variant named type, not kind; pdfFormField.type: a variant named type, not kind"
     },
     {
-      "case": "C-R20 | v2/pdf/pdf-info variants",
+      "case": "C-R20 | v2/pdf/inspect-result variants",
       "invariant": "C-R20",
       "rule": "C-R20",
       "cause": "variant-field-named-type",

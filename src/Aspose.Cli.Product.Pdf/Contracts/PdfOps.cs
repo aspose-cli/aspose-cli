@@ -33,28 +33,28 @@ public sealed record PdfRectInput
 /// <summary>What a reader may do without the owner password; everything omitted is denied.</summary>
 public sealed record PdfPermissionsInput
 {
-    [ReadBack("pdf-info.schema.json#/$defs/pdfPermissionInfo/properties/print")]
+    [ReadBack("inspect-result.schema.json#/$defs/pdfPermissionInfo/properties/print")]
     public bool Print { get; init; }
 
-    [ReadBack("pdf-info.schema.json#/$defs/pdfPermissionInfo/properties/copy")]
+    [ReadBack("inspect-result.schema.json#/$defs/pdfPermissionInfo/properties/copy")]
     public bool Copy { get; init; }
 
-    [ReadBack("pdf-info.schema.json#/$defs/pdfPermissionInfo/properties/modify")]
+    [ReadBack("inspect-result.schema.json#/$defs/pdfPermissionInfo/properties/modify")]
     public bool Modify { get; init; }
 
-    [ReadBack("pdf-info.schema.json#/$defs/pdfPermissionInfo/properties/annotate")]
+    [ReadBack("inspect-result.schema.json#/$defs/pdfPermissionInfo/properties/annotate")]
     public bool Annotate { get; init; }
 
-    [ReadBack("pdf-info.schema.json#/$defs/pdfPermissionInfo/properties/fillForms")]
+    [ReadBack("inspect-result.schema.json#/$defs/pdfPermissionInfo/properties/fillForms")]
     public bool FillForms { get; init; }
 
-    [ReadBack("pdf-info.schema.json#/$defs/pdfPermissionInfo/properties/extractAccessibility")]
+    [ReadBack("inspect-result.schema.json#/$defs/pdfPermissionInfo/properties/extractAccessibility")]
     public bool ExtractAccessibility { get; init; }
 
-    [ReadBack("pdf-info.schema.json#/$defs/pdfPermissionInfo/properties/assemble")]
+    [ReadBack("inspect-result.schema.json#/$defs/pdfPermissionInfo/properties/assemble")]
     public bool Assemble { get; init; }
 
-    [ReadBack("pdf-info.schema.json#/$defs/pdfPermissionInfo/properties/printHighResolution")]
+    [ReadBack("inspect-result.schema.json#/$defs/pdfPermissionInfo/properties/printHighResolution")]
     public bool PrintHighResolution { get; init; }
 }
 
@@ -62,19 +62,19 @@ public sealed record PdfPermissionsInput
 public sealed record PdfPageLabelRange
 {
     /// <summary>The 1-based page where the range starts.</summary>
-    [ReadBack("pdf-info.schema.json#/$defs/pdfPageLabelInfo/properties/startPage")]
+    [ReadBack("inspect-result.schema.json#/$defs/pdfPageLabelInfo/properties/startPage")]
     [Minimum(1)] public required int StartPage { get; init; }
 
     [AllowedValues("arabic", "roman-upper", "roman-lower", "letters-upper", "letters-lower", "none")]
-    [ReadBack("pdf-info.schema.json#/$defs/pdfPageLabelInfo/properties/style")]
+    [ReadBack("inspect-result.schema.json#/$defs/pdfPageLabelInfo/properties/style")]
     public string Style { get; init; } = "arabic";
 
     /// <summary>Text placed before each label value.</summary>
-    [ReadBack("pdf-info.schema.json#/$defs/pdfPageLabelInfo/properties/prefix")]
+    [ReadBack("inspect-result.schema.json#/$defs/pdfPageLabelInfo/properties/prefix")]
     public string? Prefix { get; init; }
 
     /// <summary>The label value of the start page.</summary>
-    [ReadBack("pdf-info.schema.json#/$defs/pdfPageLabelInfo/properties/startingValue")]
+    [ReadBack("inspect-result.schema.json#/$defs/pdfPageLabelInfo/properties/startingValue")]
     [Minimum(0)] public int StartingValue { get; init; } = 1;
 }
 
@@ -110,7 +110,7 @@ public sealed record RotatePagesOp : PdfOp
     [PageRange] public required string Pages { get; init; }
 
     /// <summary>The rotation in degrees, clockwise; 0 sets a page upright.</summary>
-    [ReadBack("pdf-info.schema.json#/$defs/pdfPageInfo/properties/rotation")]
+    [ReadBack("inspect-result.schema.json#/$defs/pdfPageInfo/properties/rotation")]
     [AllowedValues(0, 90, 180, 270)] public required int Angle { get; init; }
 }
 
@@ -156,7 +156,7 @@ public sealed record InsertBlankPageOp : PdfOp
     /// <summary>The 1-based position of the new page, at most the page count plus one.</summary>
     [Minimum(1)] public required int At { get; init; }
 
-    [ReadBack("pdf-info.schema.json#/$defs/pdfPageInfo/properties/widthPoints")]
+    [ReadBack("inspect-result.schema.json#/$defs/pdfPageInfo/properties/widthPoints")]
     [PdfPageSize] public string Size { get; init; } = "A4";
 }
 
@@ -170,7 +170,7 @@ public sealed record CropPagesOp : PdfOp
     [NotState]
     [AllowedValues("media", "crop")] public string Box { get; init; } = "crop";
 
-    [ReadBack("pdf-info.schema.json#/$defs/pdfPageInfo/properties/cropBox")]
+    [ReadBack("inspect-result.schema.json#/$defs/pdfPageInfo/properties/cropBox")]
     public required PdfRectInput Rect { get; init; }
 }
 
@@ -180,7 +180,7 @@ public sealed record SetPageSizeOp : PdfOp
 {
     [PageRange] public required string Pages { get; init; }
 
-    [ReadBack("pdf-info.schema.json#/$defs/pdfPageInfo/properties/widthPoints")]
+    [ReadBack("inspect-result.schema.json#/$defs/pdfPageInfo/properties/widthPoints")]
     [PdfPageSize] public required string Size { get; init; }
 
     /// <summary>Whether the content is scaled to the new size rather than kept at its position.</summary>
@@ -392,16 +392,16 @@ public sealed record RedactAreaOp : PdfOp
 [Operation("set_metadata")]
 public sealed record SetMetadataOp : PdfOp
 {
-    [ReadBack("pdf-info.schema.json#/properties/metadata/additionalProperties")]
+    [ReadBack("inspect-result.schema.json#/properties/metadata/additionalProperties")]
     public string? Title { get; init; }
 
-    [ReadBack("pdf-info.schema.json#/properties/metadata/additionalProperties")]
+    [ReadBack("inspect-result.schema.json#/properties/metadata/additionalProperties")]
     public string? Author { get; init; }
 
-    [ReadBack("pdf-info.schema.json#/properties/metadata/additionalProperties")]
+    [ReadBack("inspect-result.schema.json#/properties/metadata/additionalProperties")]
     public string? Subject { get; init; }
 
-    [ReadBack("pdf-info.schema.json#/properties/metadata/additionalProperties")]
+    [ReadBack("inspect-result.schema.json#/properties/metadata/additionalProperties")]
     public string? Keywords { get; init; }
 
     /// <summary>Custom document information entries by name.</summary>
@@ -426,10 +426,10 @@ public sealed record RemoveMetadataOp : PdfOp
 [Operation("add_bookmark")]
 public sealed record AddBookmarkOp : PdfOp
 {
-    [ReadBack("pdf-info.schema.json#/$defs/pdfOutlineItem/properties/title")]
+    [ReadBack("inspect-result.schema.json#/$defs/pdfOutlineItem/properties/title")]
     [MinLength(1)] public required string Title { get; init; }
 
-    [ReadBack("pdf-info.schema.json#/$defs/pdfOutlineItem/properties/page")]
+    [ReadBack("inspect-result.schema.json#/$defs/pdfOutlineItem/properties/page")]
     [Minimum(1)] public required int Page { get; init; }
 
     /// <summary>
@@ -507,7 +507,7 @@ public sealed record AddAttachmentOp : PdfOp
     [InputPath] public required string Path { get; init; }
 
     /// <summary>The stable attachment name; the file name when omitted, never its local path.</summary>
-    [ReadBack("pdf-info.schema.json#/$defs/pdfAttachmentInfo/properties/name")]
+    [ReadBack("inspect-result.schema.json#/$defs/pdfAttachmentInfo/properties/name")]
     [MinLength(1)] public string? Name { get; init; }
 
     [NotReadBack]
@@ -518,7 +518,7 @@ public sealed record AddAttachmentOp : PdfOp
     /// read to identify it and PDF/A-3 keeps; none when omitted.
     /// </summary>
     [Pattern(@"^[A-Za-z0-9][A-Za-z0-9!#$&^_.+-]*/[A-Za-z0-9][A-Za-z0-9!#$&^_.+-]*$", Meaning = "must be a media type, such as \"image/png\"")]
-    [ReadBack("pdf-info.schema.json#/$defs/pdfAttachmentInfo/properties/mimeType")]
+    [ReadBack("inspect-result.schema.json#/$defs/pdfAttachmentInfo/properties/mimeType")]
     public string? MimeType { get; init; }
 }
 

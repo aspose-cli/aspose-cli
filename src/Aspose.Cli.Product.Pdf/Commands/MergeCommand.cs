@@ -1,11 +1,12 @@
 using System.CommandLine;
 using Aspose.Cli.Sdk.Extensibility;
+using Aspose.Cli.Sdk.Extensibility.Output;
 
 namespace Aspose.Cli.Product.Pdf.Commands;
 
 internal static class MergeCommand
 {
-    public static CommandDefinition<PdfMergeRequest, PdfWriteResult> Create()
+    public static CommandDefinition<PdfMergeRequest, PdfMergeResult> Create()
     {
         var inputs = new Argument<string[]>("files")
         {
@@ -40,7 +41,7 @@ internal static class MergeCommand
                     EncryptPassword = standard.EncryptPassword(),
                 };
             },
-            PdfText.Written)
+            static (result, surface) => ResultText.Produced(surface, result.Output, result.Action))
         {
             Examples =
             [
