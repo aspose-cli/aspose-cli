@@ -32,13 +32,6 @@
       "actual": "written back unchanged, itemsAffected is above 0 and there is no OP_NO_EFFECT warning"
     },
     {
-      "case": "C-R31 | v2/slides/convert-result outputs",
-      "invariant": "C-R31",
-      "rule": "C-R31",
-      "cause": "slides-convert-output-items-carry-encrypted",
-      "actual": "outputs[]: encrypted beside the file fields, a field of a single output and no unit"
-    },
-    {
       "case": "C-R39 | slides format_shape round trip",
       "invariant": "C-R39",
       "rule": "C-R39",

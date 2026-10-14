@@ -293,7 +293,7 @@ public sealed class ResultSchemaSetTests
         Assert.True(new ResultSchemaSet("test", [root, item], SdkSchemaCatalog.Schemas).TryRead("v2/test/files", out string? document));
         JsonObject page = JsonNode.Parse(document)!["$defs"]!["samplePageFile"]!.AsObject();
         Assert.Equal(["page", "path", "format", "sizeBytes", "fingerprint"], page["required"]!.AsArray().Select(static name => name!.GetValue<string>()));
-        Assert.Equal(["page", "path", "format", "sizeBytes", "fingerprint"], page["properties"]!.AsObject().Select(static pair => pair.Key));
+        Assert.Equal(["page", "path", "format", "sizeBytes", "fingerprint", "encrypted"], page["properties"]!.AsObject().Select(static pair => pair.Key));
     }
 
     [Fact]

@@ -440,6 +440,52 @@ public sealed class CellsCliTests : IDisposable
         Assert.Equal("Only", Assert.Single(single["outputs"]!.AsArray())!["sheet"]!.GetValue<string>());
     }
 
+    /// <summary>
+    /// The hint of an empty sheet's <c>RENDER_EMPTY</c> names the <c>--sheets</c> position of a
+    /// sheet that has data, and the render it gives succeeds.
+    /// </summary>
+    [Fact]
+    public void Render_OfAnEmptySheet_HintsTheSheetsSelectionOfOneWithData()
+    {
+        File.WriteAllText(_workspace.File("ops.json"), """{"ops":[{"op":"set_values","sheet":"Data","range":"A1","values":[["data"]]}]}""");
+        Assert.Equal(0, _workspace.Run("cells", "create", "book.xlsx", "--sheets", "Blank,Data", "--output-format", "json").ExitCode);
+        Assert.Equal(0, _workspace.Run("cells", "edit", "book.xlsx", "--ops", "ops.json", "--in-place", "--output-format", "json").ExitCode);
+
+        CliResult empty = _workspace.Run("cells", "render", "book.xlsx", "--sheets", "1", "--out", "blank.png", "--output-format", "json");
+
+        JsonNode error = JsonNode.Parse(empty.StdErr)!["error"]!;
+        Assert.Equal("RENDER_EMPTY", error["code"]!.GetValue<string>());
+        System.Text.RegularExpressions.Match hinted = System.Text.RegularExpressions.Regex.Match(error["hint"]!.GetValue<string>(), @"--sheets (\S+) for 'Data'");
+        Assert.True(hinted.Success, error["hint"]!.GetValue<string>());
+        JsonNode rendered = _workspace.Run("cells", "render", "book.xlsx", "--sheets", hinted.Groups[1].Value, "--out", "data.png", "--output-format", "json").Json();
+        Assert.Equal("Data", Assert.Single(rendered["outputs"]!.AsArray())!["sheet"]!.GetValue<string>());
+    }
+
+    /// <summary>
+    /// Beside an empty sheet, the warning sheet an evaluation save adds holds only the notice, which
+    /// is not data: the hint of <c>RENDER_EMPTY</c> says no other sheet has data instead of pointing to it.
+    /// </summary>
+    [Fact]
+    public void Render_OfAnEmptySheet_DoesNotHintTheEvaluationWarningSheet()
+    {
+        using (var workbook = new Aspose.Cells.Workbook())
+        {
+            workbook.Worksheets[0].Name = "Blank";
+            Aspose.Cells.Worksheet warning = workbook.Worksheets[workbook.Worksheets.Add()];
+            warning.Name = "Evaluation Warning";
+            warning.Cells["A1"].PutValue("Evaluation Only. Created with Aspose.Cells for .NET.");
+            workbook.Save(_workspace.File("book.xlsx"));
+        }
+
+        CliResult empty = _workspace.Run("cells", "render", "book.xlsx", "--sheets", "1", "--out", "blank.png", "--output-format", "json");
+
+        JsonNode error = JsonNode.Parse(empty.StdErr)!["error"]!;
+        string hint = error["hint"]!.GetValue<string>();
+        Assert.Equal("RENDER_EMPTY", error["code"]!.GetValue<string>());
+        Assert.StartsWith("No other sheet has data to render", hint, StringComparison.Ordinal);
+        Assert.DoesNotContain("--sheets", hint, StringComparison.Ordinal);
+    }
+
     /// <summary>The one warning of <paramref name="result"/> with <paramref name="code"/>.</summary>
     private static JsonNode Warning(JsonNode result, string code) =>
         Assert.Single(result["warnings"]!.AsArray(), warning => warning!["code"]!.GetValue<string>() == code)!;

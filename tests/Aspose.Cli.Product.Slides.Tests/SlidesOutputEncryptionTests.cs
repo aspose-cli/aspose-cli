@@ -126,6 +126,10 @@ public sealed class SlidesOutputEncryptionTests : IDisposable
         JsonNode result = Succeeds(Run("slides", "convert", "locked.pptx", "--password-env", "SLIDES_PASSWORD", "--to", "png", "--out", "slide.png"));
 
         Assert.DoesNotContain("ENCRYPTION_REMOVED", Codes(result));
+        // Each image names its slide, as a render's does, and a PNG reports no encryption.
+        JsonArray outputs = result["outputs"]!.AsArray();
+        Assert.Equal(Enumerable.Range(1, outputs.Count), outputs.Select(static output => output!["slide"]!.GetValue<int>()));
+        Assert.All(outputs, output => Assert.Null(output!["encrypted"]));
     }
 
     private CliResult Run(params string[] arguments) =>

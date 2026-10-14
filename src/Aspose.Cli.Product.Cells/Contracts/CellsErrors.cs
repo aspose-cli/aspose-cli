@@ -34,10 +34,16 @@ public static class CellsErrors
         reason,
         "Use A1 notation such as 'B2:D10', a single cell such as 'C5', or a sheet-qualified range such as 'Sales!A1:C10'.");
 
-    internal static CliException RenderEmpty(string sheetName) => new(
+    /// <summary>
+    /// A sheet that draws nothing. The hint selects <paramref name="withData"/>, the first other
+    /// sheet that holds data, by the position <c>--sheets</c> takes, or says that none does.
+    /// </summary>
+    internal static CliException RenderEmpty(string sheetName, (int Position, string Name)? withData) => new(
         CellsDiagnostics.RenderEmpty,
         $"Sheet '{sheetName}' has no content to render.",
-        hint: "Choose a sheet that has data with --sheet; 'aspose-cli cells inspect' lists each sheet's used range.",
+        hint: withData is { } other
+            ? $"Render a sheet that has data, such as --sheets {other.Position} for '{other.Name}'; 'aspose-cli cells inspect' lists each sheet's used range."
+            : "No other sheet has data to render either: write some with 'aspose-cli cells edit' first; 'aspose-cli cells inspect' lists each sheet's used range.",
         details: new JsonObject { ["sheet"] = sheetName });
 
     internal static CliException RenderFailed(

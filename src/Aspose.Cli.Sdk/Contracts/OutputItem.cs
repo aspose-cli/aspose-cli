@@ -2,7 +2,7 @@ namespace Aspose.Cli.Sdk.Contracts;
 
 /// <summary>
 /// One file of an output written as several files, the item of a flat <c>outputs</c> list:
-/// <c>{&lt;unit&gt;?, path, format, sizeBytes, fingerprint}</c>. A product derives one record per
+/// <c>{&lt;unit&gt;?, path, format, sizeBytes, fingerprint, encrypted?}</c>. A product derives one record per
 /// unit, such as a page, that declares only the unit member, and builds it from the
 /// <see cref="OutputInfo"/> <c>FileObjects.Output</c> describes; the record may be inherited
 /// across assemblies.
@@ -18,6 +18,7 @@ public abstract record OutputItem
         Format = file.Format;
         SizeBytes = file.SizeBytes;
         Fingerprint = file.Fingerprint;
+        Encrypted = file.Encrypted;
     }
 
     /// <summary>Absolute path of the produced file.</summary>
@@ -32,4 +33,10 @@ public abstract record OutputItem
 
     /// <summary>SHA-256 identity of the published file.</summary>
     public FileFingerprint Fingerprint { get; init; }
+
+    /// <summary>
+    /// <c>true</c> when the produced file is encrypted and opens only with its password;
+    /// omitted when its format cannot carry a password.
+    /// </summary>
+    public bool? Encrypted { get; init; }
 }

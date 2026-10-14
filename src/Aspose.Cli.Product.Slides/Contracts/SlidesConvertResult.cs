@@ -12,10 +12,10 @@ public sealed record SlidesConvertResult() : EngineResultEnvelope("convert-resul
     [JsonPropertyOrder(-50)]
     public required InputInfo Input { get; init; }
 
-    /// <summary>The written files: one per slide for an image format, otherwise one, with any companion files the format needs.</summary>
+    /// <summary>The written files: one per slide, each with its slide, for an image format; otherwise one, with any companion files the format needs.</summary>
     [JsonPropertyOrder(-49)]
     [MinItems(1)]
-    public required IReadOnlyList<OutputInfo> Outputs { get; init; }
+    public required IReadOnlyList<SlidesSlideOutput> Outputs { get; init; }
 
     /// <summary>The <c>--slides</c> selection that was converted, normalized; omitted when every slide was.</summary>
     [PageRange]
