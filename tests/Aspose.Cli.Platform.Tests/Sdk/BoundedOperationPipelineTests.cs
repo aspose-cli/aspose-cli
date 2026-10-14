@@ -265,9 +265,13 @@ public sealed class BoundedOperationPipelineTests
     {
         TestBatch batch = Catalog.Prepare(new TestBatch { Ops = [Set(1), Note(), Set(2)] });
 
-        IReadOnlyList<BoundedOperationOutcome> outcomes = Run(batch, bestEffort: true, (op, _) => op is NoteOp
-            ? throw new OperationInvalidException("the note has no anchor")
-            : new AppliedOperation(1, ["test/value"]));
+        IReadOnlyList<BoundedOperationOutcome> outcomes = Run(batch, bestEffort: true, static op =>
+        {
+            if (op is NoteOp)
+            {
+                throw new OperationInvalidException("the note has no anchor");
+            }
+        });
 
         Assert.Equal([OpStatuses.Ok, OpStatuses.Failed, OpStatuses.Ok], outcomes.Select(static item => item.Status));
         Assert.Equal(ErrorCodes.OpsInvalid.Name, outcomes[1].Error!.Code);
@@ -278,7 +282,7 @@ public sealed class BoundedOperationPipelineTests
     public void Run_KeepsADomainFailureCodeAndDetailsAndAddsItsPosition()
     {
         TestBatch batch = Catalog.Prepare(new TestBatch { Ops = [Note()] });
-        Func<TestOp, int, AppliedOperation> missingPage = (_, _) =>
+        Action<TestOp> missingPage = static _ =>
             throw CliErrors.NotFoundAt(ErrorCodes.PageNotFound, "page", "4", 3);
 
         CliException error = Assert.Throws<CliException>(() => Run(batch, bestEffort: false, missingPage));
@@ -299,12 +303,13 @@ public sealed class BoundedOperationPipelineTests
         TestBatch batch = Catalog.Prepare(new TestBatch { Ops = [Set(1), Note()] });
         int applied = 0;
 
-        CliException error = Assert.Throws<CliException>(() => Run(batch, bestEffort, (op, _) =>
+        CliException error = Assert.Throws<CliException>(() => Run(batch, bestEffort, op =>
         {
             applied++;
-            return op is NoteOp
-                ? throw new EngineOpException("engine failed", new InvalidOperationException())
-                : new AppliedOperation(1, []);
+            if (op is NoteOp)
+            {
+                throw new EngineOpException("engine failed", new InvalidOperationException());
+            }
         }));
 
         Assert.Equal(ErrorCodes.FeatureUnsupported, error.Code);
@@ -332,7 +337,7 @@ public sealed class BoundedOperationPipelineTests
     {
         TestBatch batch = Catalog.Prepare(new TestBatch { Ops = [Note()] });
 
-        Exception thrown = Assert.ThrowsAny<Exception>(() => Run(batch, bestEffort: true, (_, _) => throw cause));
+        Exception thrown = Assert.ThrowsAny<Exception>(() => Run(batch, bestEffort: true, _ => throw cause));
 
         Assert.Same(cause, thrown);
     }
@@ -344,9 +349,13 @@ public sealed class BoundedOperationPipelineTests
     {
         string missing = Path.Combine(Path.GetTempPath(), "missing-picture.png");
         TestBatch batch = Catalog.Prepare(new TestBatch { Ops = [Set(1), new LinkOp { Path = missing }] });
-        AppliedOperation Apply(TestOp op, int index) => op is LinkOp
-            ? throw new FileNotFoundException("Could not find file.", missing)
-            : new AppliedOperation(1, []);
+        void Apply(TestOp op)
+        {
+            if (op is LinkOp)
+            {
+                throw new FileNotFoundException("Could not find file.", missing);
+            }
+        }
 
         if (bestEffort)
         {
@@ -374,10 +383,13 @@ public sealed class BoundedOperationPipelineTests
         var missing = new FileNotFoundException("Could not load file or assembly 'Imaging'.", "Imaging, Version=1.0.0.0");
         int applied = 0;
 
-        Exception thrown = Assert.ThrowsAny<Exception>(() => Run(batch, bestEffort: true, (op, _) =>
+        Exception thrown = Assert.ThrowsAny<Exception>(() => Run(batch, bestEffort: true, op =>
         {
             applied++;
-            return op is LinkOp ? throw missing : new AppliedOperation(1, []);
+            if (op is LinkOp)
+            {
+                throw missing;
+            }
         }));
 
         Assert.Same(missing, thrown);
@@ -410,7 +422,7 @@ public sealed class BoundedOperationPipelineTests
     {
         TestBatch batch = Catalog.Prepare(new TestBatch { Ops = [Note()] });
 
-        CliException error = Assert.Throws<CliException>(() => Run(batch, bestEffort: false, (_, _) =>
+        CliException error = Assert.Throws<CliException>(() => Run(batch, bestEffort: false, _ =>
             throw new EngineOpException("in use", cause)));
 
         Assert.Equal(ErrorCodes.FeatureUnsupported, error.Code);
@@ -423,82 +435,29 @@ public sealed class BoundedOperationPipelineTests
     {
         TestBatch batch = Catalog.Prepare(new TestBatch { Ops = [Note()] });
 
-        CliException error = Assert.Throws<CliException>(() => Run(batch, bestEffort: false, (_, _) =>
+        CliException error = Assert.Throws<CliException>(() => Run(batch, bestEffort: false, static _ =>
             throw new EngineOpException("truncated", new EndOfStreamException("Unable to read beyond the end."))));
 
         Assert.Equal(EngineErrors.EngineFailed("any", new InvalidOperationException()).Hint, error.Hint);
     }
 
-    private static string[] Targets(int count) => [.. Enumerable.Range(1, count).Select(static index => $"test/item/{index}")];
+    private static IReadOnlyList<BoundedOperationOutcome> Run(TestBatch batch, bool bestEffort, Action<TestOp> apply) =>
+        BoundedOperationRunner.Run(Catalog, batch.Ops, bestEffort, deadline: null, new Model(apply)).Outcomes;
 
-    [Fact]
-    public void Run_ListsUpToTheMaximumTargetsAsTheyAre()
+    /// <summary>A document of one value that each operation that applies changes.</summary>
+    private sealed class Model(Action<TestOp> apply) : IOperationModel<TestOp>
     {
-        TestBatch batch = Catalog.Prepare(new TestBatch { Ops = [Note()] });
+        private int _version;
 
-        IReadOnlyList<BoundedOperationOutcome> outcomes = BoundedOperationRunner.Run(
-            Catalog, batch.Ops, bestEffort: false, deadline: null,
-            static (_, _) => new AppliedOperation(BoundedOperationOutcome.MaximumTargets, Targets(BoundedOperationOutcome.MaximumTargets)),
-            static (_, _) => ["test/attempted"],
-            static (_, _) => throw new InvalidOperationException("An outcome of 100 targets needs no degenerate form."));
+        public OperationSnapshot Snapshot(TestOp operation) =>
+            new OperationSnapshot().Add("test/value", _version.ToString(System.Globalization.CultureInfo.InvariantCulture));
 
-        Assert.Equal(100, BoundedOperationOutcome.MaximumTargets);
-        Assert.Equal(Targets(100), Assert.Single(outcomes).Targets);
+        public void Apply(TestOp operation)
+        {
+            apply(operation);
+            _version++;
+        }
+
+        public IReadOnlyList<string> AttemptedTargets(TestOp operation) => ["test/attempted"];
     }
-
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void Run_ListsTheDegenerateFormOfMoreThanTheMaximumTargets(bool failed)
-    {
-        TestBatch batch = Catalog.Prepare(new TestBatch { Ops = [Note()] });
-        IReadOnlyList<string>? received = null;
-
-        IReadOnlyList<BoundedOperationOutcome> outcomes = BoundedOperationRunner.Run(
-            Catalog, batch.Ops, bestEffort: true, deadline: null,
-            (_, _) => failed ? throw new OperationInvalidException("the note has no anchor") : new AppliedOperation(101, Targets(101)),
-            static (_, _) => Targets(101),
-            (op, targets) =>
-            {
-                Assert.IsType<NoteOp>(op);
-                received = targets;
-                return ["test/all"];
-            });
-
-        Assert.Equal(failed ? OpStatuses.Failed : OpStatuses.Ok, Assert.Single(outcomes).Status);
-        Assert.Equal(["test/all"], outcomes[0].Targets);
-        Assert.Equal(Targets(101), received);
-    }
-
-    public static TheoryData<string[]> InvalidDegenerateForms() => new() { Array.Empty<string>(), Targets(101) };
-
-    [Theory]
-    [MemberData(nameof(InvalidDegenerateForms))]
-    public void Run_RefusesADegenerateFormThatIsEmptyOrTooLong(string[] degenerate)
-    {
-        TestBatch batch = Catalog.Prepare(new TestBatch { Ops = [Note()] });
-
-        InvalidOperationException error = Assert.Throws<InvalidOperationException>(() => BoundedOperationRunner.Run(
-            Catalog, batch.Ops, bestEffort: false, deadline: null,
-            static (_, _) => new AppliedOperation(150, Targets(150)),
-            static (_, _) => ["test/attempted"],
-            (_, _) => degenerate));
-
-        Assert.Contains("'note'", error.Message, StringComparison.Ordinal);
-    }
-
-    [Fact]
-    public void Run_RefusesMoreThanTheMaximumTargetsWithoutADegenerateForm()
-    {
-        TestBatch batch = Catalog.Prepare(new TestBatch { Ops = [Note()] });
-
-        InvalidOperationException error = Assert.Throws<InvalidOperationException>(() => Run(batch, bestEffort: false,
-            static (_, _) => new AppliedOperation(101, Targets(101))));
-
-        Assert.Contains("'note'", error.Message, StringComparison.Ordinal);
-    }
-
-    private static IReadOnlyList<BoundedOperationOutcome> Run(
-        TestBatch batch, bool bestEffort, Func<TestOp, int, AppliedOperation> apply) =>
-        BoundedOperationRunner.Run(Catalog, batch.Ops, bestEffort, deadline: null, apply, static (_, _) => ["test/attempted"]);
 }
