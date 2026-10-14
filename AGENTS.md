@@ -69,7 +69,7 @@ the fixed distribution identity; the generated projections and the solution come
 | D8 | Input loading: recognition, passwords, corruption | The SDK load result and error translation; a product supplies the engine call and an exception classifier | `InputLoadingOwnershipTests` |
 | D9 | Read and write vocabulary | Each operation field declares whether it is state and where a read result reports it (`[ReadBack]`, `[NotReadBack]`, `[ReadBackByPosition]`, `[NotState]`, or the vocabulary's `Addresses`); the ops schema publishes it as the field's `x-readBack`. Planned: one object model per product, where the fields an operation writes are a subset of the read result with the same names and meanings | The operation generator (`APCLI012`) refuses an unclassified field; invariant C-R21 checks each declared read path's name and value domain and reads back what each sample wrote |
 | D10 | Human-readable output | SDK `ResultText`: sections, produced files, touched parts and the verification; a missing value is `-` | `ResultTextTests`, the product renderer golden tests, `TableRendererCoverageTests`, `ProductRendererCoverageTests` |
-| D11 | Structure | Three places per command paired on the menu; acyclic SDK layers; one-way product layers | `SdkLayeringTests` (SDK); analyzer `APCLI009` (product layers) |
+| D11 | Structure | Three places per command paired on the menu; acyclic SDK layers; one-way product layers | `SdkLayeringTests` (SDK); analyzer `APCLI009` (product layers); `ContractFileLayoutTests` (one request and one result per command, each in a file named after it; a type several commands use in its own file; contract types named `<Product>…`) |
 
 ## Gates
 
