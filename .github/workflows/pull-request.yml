@@ -54,6 +54,8 @@ jobs:
           done <<< "$subjects"
           exit $status
       - name: Require approval to add a known violation
+        # Runs when an earlier check failed too, so every approval the change needs shows at once.
+        if: ${{ !cancelled() }}
         env:
           HEAD: ${{ github.event.pull_request.head.sha }}
           APPROVED: ${{ contains(github.event.pull_request.labels.*.name, 'quality-exception') }}
@@ -98,6 +100,8 @@ jobs:
             exit 1
           fi
       - name: Require approval to drop a generated invariant case
+        # Runs when an earlier check failed too, so every approval the change needs shows at once.
+        if: ${{ !cancelled() }}
         env:
           HEAD: ${{ github.event.pull_request.head.sha }}
           APPROVED: ${{ contains(github.event.pull_request.labels.*.name, 'quality-exception') }}
