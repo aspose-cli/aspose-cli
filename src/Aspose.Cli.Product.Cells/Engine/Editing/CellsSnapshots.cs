@@ -8,6 +8,7 @@ using Aspose.Cells.Drawing;
 using Aspose.Cells.Pivot;
 using Aspose.Cells.Tables;
 using Aspose.Cli.Product.Cells.Engine.Mapping;
+using Aspose.Cli.Sdk.Addressing;
 using Aspose.Cli.Sdk.Operations;
 
 namespace Aspose.Cli.Product.Cells.Engine.Editing;
@@ -244,69 +245,29 @@ internal sealed class CellsSnapshots(Workbook workbook, Func<CellsOp, bool> appl
 
     // ----- addresses -------------------------------------------------------------------------------
 
+    /// <summary>
+    /// The '!' that ends the sheet of a cell, row, column or name address, which a sheet's name
+    /// there escapes as %21, so the first '!' ends the sheet.
+    /// </summary>
+    private const char SheetEnd = '!';
+
     /// <summary>The address of a cell, such as <c>cell/Sales!B2</c>.</summary>
     internal static string CellAddress(Worksheet sheet, int row, int column) =>
-        $"cell/{SheetPart(sheet.Name)}!{A1.FormatCell(new CellRef(row, column))}";
+        $"cell/{TargetName.Escape(sheet.Name, SheetEnd)}!{A1.FormatCell(new CellRef(row, column))}";
 
     /// <summary>The address of a range of cells, such as <c>cell/Sales!B2:D10</c>, for an operation that did not apply.</summary>
-    internal static string RangeAddress(string sheet, string range) => $"cell/{SheetPart(sheet)}!{range}";
-
-    /// <summary>
-    /// A name as one segment of an address, with only the characters that would break the
-    /// address escaped as %XX of their UTF-8 bytes: a slash, a percent sign, a control character,
-    /// and white space at the start or end. Any other character, such as '!', an apostrophe, a
-    /// CJK letter or an inner space, stays as it is.
-    /// </summary>
-    internal static string Named(string name)
-    {
-        int first = 0;
-        while (first < name.Length && char.IsWhiteSpace(name[first]))
-        {
-            first++;
-        }
-
-        int last = name.Length - 1;
-        while (last >= first && char.IsWhiteSpace(name[last]))
-        {
-            last--;
-        }
-
-        var segment = new StringBuilder(name.Length);
-        for (int index = 0; index < name.Length; index++)
-        {
-            char character = name[index];
-            if (character is '/' or '%' || char.IsControl(character) || index < first || index > last)
-            {
-                foreach (byte value in Encoding.UTF8.GetBytes(character.ToString()))
-                {
-                    segment.Append(CultureInfo.InvariantCulture, $"%{value:X2}");
-                }
-            }
-            else
-            {
-                segment.Append(character);
-            }
-        }
-
-        return segment.ToString();
-    }
-
-    /// <summary>
-    /// A sheet's name before the '!' of a cell, row, column or name address: as <see cref="Named"/>
-    /// writes it, with its own '!' escaped as %21 too, so the first '!' ends the sheet.
-    /// </summary>
-    internal static string SheetPart(string sheet) => Named(sheet).Replace("!", "%21", StringComparison.Ordinal);
+    internal static string RangeAddress(string sheet, string range) => $"cell/{TargetName.Escape(sheet, SheetEnd)}!{range}";
 
     /// <summary>The address of an object of one sheet, such as <c>autofilter/Sales</c>.</summary>
     internal static string Address(string unit, Worksheet sheet) => Address(unit, sheet.Name);
 
     /// <summary>The address of an object of a named sheet, such as <c>autofilter/Sales</c>.</summary>
-    internal static string Address(string unit, string sheet) => $"{unit}/{Named(sheet)}";
+    internal static string Address(string unit, string sheet) => $"{unit}/{TargetName.Escape(sheet)}";
 
-    private static string Unit(string unit, Worksheet sheet) => $"{unit}:{Named(sheet.Name)}";
+    private static string Unit(string unit, Worksheet sheet) => $"{unit}:{TargetName.Escape(sheet.Name)}";
 
     private static string Indexed(string unit, Worksheet sheet, int index) =>
-        string.Create(CultureInfo.InvariantCulture, $"{unit}/{Named(sheet.Name)}/{index + 1}");
+        string.Create(CultureInfo.InvariantCulture, $"{unit}/{TargetName.Escape(sheet.Name)}/{index + 1}");
 
     // ----- helpers ---------------------------------------------------------------------------------
 
@@ -387,7 +348,7 @@ internal sealed class CellsSnapshots(Workbook workbook, Func<CellsOp, bool> appl
                 && area.StartColumn <= range.End.Column && area.EndColumn >= range.Start.Column)
             {
                 string text = A1.FormatRange(new RangeRef(new CellRef(area.StartRow, area.StartColumn), new CellRef(area.EndRow, area.EndColumn)));
-                snapshot.Add($"merge/{SheetPart(sheet.Name)}!{text}", "merged");
+                snapshot.Add($"merge/{TargetName.Escape(sheet.Name, SheetEnd)}!{text}", "merged");
             }
         }
     }
@@ -449,7 +410,7 @@ internal sealed class CellsSnapshots(Workbook workbook, Func<CellsOp, bool> appl
         foreach (Comment comment in sheet.Comments)
         {
             snapshot.Add(
-                $"comment/{SheetPart(sheet.Name)}!{A1.FormatCell(new CellRef(comment.Row, comment.Column))}",
+                $"comment/{TargetName.Escape(sheet.Name, SheetEnd)}!{A1.FormatCell(new CellRef(comment.Row, comment.Column))}",
                 Join(comment.Author, comment.Note));
         }
 
@@ -640,13 +601,13 @@ internal sealed class CellsSnapshots(Workbook workbook, Func<CellsOp, bool> appl
 
         foreach (ListObject table in sheet.ListObjects)
         {
-            objects.Add(new Anchored("table", table, null, $"table/{Named(table.DisplayName)}",
+            objects.Add(new Anchored("table", table, null, $"table/{TargetName.Escape(table.DisplayName)}",
                 Where(Area(table.StartRow, table.StartColumn, table.EndRow, table.EndColumn))));
         }
 
         foreach (PivotTable pivot in sheet.PivotTables)
         {
-            objects.Add(new Anchored("pivot", pivot, null, $"pivot/{Named(sheet.Name)}/{Named(pivot.Name)}", Where(pivot.TableRange1)));
+            objects.Add(new Anchored("pivot", pivot, null, $"pivot/{TargetName.Escape(sheet.Name)}/{TargetName.Escape(pivot.Name)}", Where(pivot.TableRange1)));
         }
 
         return objects;
@@ -683,16 +644,16 @@ internal sealed class CellsSnapshots(Workbook workbook, Func<CellsOp, bool> appl
             : start ? at : at - 1;
 
     private static string LineAddress(Worksheet sheet, bool rows, int line) => rows
-        ? string.Create(CultureInfo.InvariantCulture, $"row/{SheetPart(sheet.Name)}!{line + 1}")
-        : $"column/{SheetPart(sheet.Name)}!{A1.ColumnName(line)}";
+        ? string.Create(CultureInfo.InvariantCulture, $"row/{TargetName.Escape(sheet.Name, SheetEnd)}!{line + 1}")
+        : $"column/{TargetName.Escape(sheet.Name, SheetEnd)}!{A1.ColumnName(line)}";
 
     /// <summary>The address of an object of a sheet by the cells it covers, such as <c>merge/Sales!A1:C1</c>.</summary>
     private static string AreaAddress(string unit, Worksheet sheet, CellArea area) =>
-        $"{unit}/{SheetPart(sheet.Name)}!{A1.FormatRange(new RangeRef(new CellRef(area.StartRow, area.StartColumn), new CellRef(area.EndRow, area.EndColumn)))}";
+        $"{unit}/{TargetName.Escape(sheet.Name, SheetEnd)}!{A1.FormatRange(new RangeRef(new CellRef(area.StartRow, area.StartColumn), new CellRef(area.EndRow, area.EndColumn)))}";
 
     /// <summary>A validation's address by the areas it applies to, such as <c>validation/Sales!B2:B9</c>.</summary>
     private static string ValidationAddress(Worksheet sheet, IEnumerable<CellArea> areas) =>
-        $"validation/{SheetPart(sheet.Name)}!" + string.Join(",", areas.Select(static area =>
+        $"validation/{TargetName.Escape(sheet.Name, SheetEnd)}!" + string.Join(",", areas.Select(static area =>
             A1.FormatRange(new RangeRef(new CellRef(area.StartRow, area.StartColumn), new CellRef(area.EndRow, area.EndColumn)))));
 
     /// <summary>
@@ -713,7 +674,7 @@ internal sealed class CellsSnapshots(Workbook workbook, Func<CellsOp, bool> appl
         var snapshot = new OperationSnapshot();
         for (int row = first - 1; row <= (last ?? first) - 1; row++)
         {
-            snapshot.Add(string.Create(CultureInfo.InvariantCulture, $"row/{SheetPart(sheet.Name)}!{row + 1}"), RowFacts(sheet, row));
+            snapshot.Add(string.Create(CultureInfo.InvariantCulture, $"row/{TargetName.Escape(sheet.Name, SheetEnd)}!{row + 1}"), RowFacts(sheet, row));
         }
 
         return snapshot;
@@ -725,7 +686,7 @@ internal sealed class CellsSnapshots(Workbook workbook, Func<CellsOp, bool> appl
         var snapshot = new OperationSnapshot();
         for (int column = A1.ParseColumn(first); column <= A1.ParseColumn(last ?? first); column++)
         {
-            snapshot.Add($"column/{SheetPart(sheet.Name)}!{A1.ColumnName(column)}", ColumnFacts(sheet, column));
+            snapshot.Add($"column/{TargetName.Escape(sheet.Name, SheetEnd)}!{A1.ColumnName(column)}", ColumnFacts(sheet, column));
         }
 
         return snapshot;
@@ -794,8 +755,8 @@ internal sealed class CellsSnapshots(Workbook workbook, Func<CellsOp, bool> appl
         var snapshot = new OperationSnapshot();
         foreach (Name name in workbook.Worksheets.Names)
         {
-            string scope = name.SheetIndex > 0 ? SheetPart(workbook.Worksheets[name.SheetIndex - 1].Name) + "!" : string.Empty;
-            snapshot.Add($"name/{scope}{Named(name.Text)}", name.RefersTo ?? string.Empty);
+            string scope = name.SheetIndex > 0 ? TargetName.Escape(workbook.Worksheets[name.SheetIndex - 1].Name, SheetEnd) + "!" : string.Empty;
+            snapshot.Add($"name/{scope}{TargetName.Escape(name.Text)}", name.RefersTo ?? string.Empty);
         }
 
         return snapshot;
@@ -875,7 +836,7 @@ internal sealed class CellsSnapshots(Workbook workbook, Func<CellsOp, bool> appl
         var snapshot = new OperationSnapshot();
         foreach (ListObject table in sheet.ListObjects)
         {
-            snapshot.Add($"table/{Named(table.DisplayName)}", Join(
+            snapshot.Add($"table/{TargetName.Escape(table.DisplayName)}", Join(
                 table.StartRow, table.StartColumn, table.EndRow, table.EndColumn, table.TableStyleType, table.TableStyleName, table.ShowTotals));
         }
 
@@ -955,7 +916,7 @@ internal sealed class CellsSnapshots(Workbook workbook, Func<CellsOp, bool> appl
                 }
             }
 
-            snapshot.Add($"pivot/{Named(sheet.Name)}/{Named(pivot.Name)}", state.ToString());
+            snapshot.Add($"pivot/{TargetName.Escape(sheet.Name)}/{TargetName.Escape(pivot.Name)}", state.ToString());
         }
 
         return snapshot;

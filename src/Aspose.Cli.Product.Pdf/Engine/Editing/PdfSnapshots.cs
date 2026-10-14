@@ -208,13 +208,13 @@ internal sealed class PdfSnapshots(Document document, PdfPageIdentities pages, F
         {
             if (document.Info[key] is { Length: > 0 } value && PdfPropertyNames.Reported(key) is { } name)
             {
-                snapshot.Add("property/" + name, value);
+                snapshot.Add("property/" + TargetName.Escape(name), value);
             }
         }
 
         foreach ((string key, XmpValue value) in document.Metadata)
         {
-            snapshot.Add($"property/xmp:{key}", value.ToString() ?? string.Empty);
+            snapshot.Add($"property/xmp:{TargetName.Escape(key)}", value.ToString() ?? string.Empty);
         }
 
         return snapshot;
@@ -253,7 +253,7 @@ internal sealed class PdfSnapshots(Document document, PdfPageIdentities pages, F
             .Select(static file => (Name: AttachmentName(file), File: file))
             .Where(static item => item.Name is not null)
             .Select(static item => (
-                $"attachment/{item.Name}",
+                $"attachment/{TargetName.Escape(item.Name!)}",
                 string.Create(CultureInfo.InvariantCulture,
                     $"{item.File.Description}|{item.File.MIMEType}|{(item.File.Contents is { CanSeek: true } contents ? contents.Length : -1)}"))));
 
@@ -264,7 +264,7 @@ internal sealed class PdfSnapshots(Document document, PdfPageIdentities pages, F
     private OperationSnapshot Fields(IReadOnlyList<string>? names) =>
         new OperationSnapshot().AddSequence("field", document.Form.Fields
             .Where(field => !string.IsNullOrWhiteSpace(field.FullName) && (names is null || names.Contains(field.FullName, StringComparer.Ordinal)))
-            .Select(static field => ($"field/{field.FullName}", $"{field.GetType().Name}|{(PdfForms.RadioGroup(field) ?? field).Value}")));
+            .Select(static field => ($"field/{TargetName.Escape(field.FullName)}", $"{field.GetType().Name}|{(PdfForms.RadioGroup(field) ?? field).Value}")));
 
     /// <summary>
     /// Whether the document is encrypted and, when it is, with the encryption an operation set

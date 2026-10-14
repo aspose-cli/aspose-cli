@@ -162,35 +162,8 @@ internal sealed class SlidesSnapshots(Presentation presentation, SlidesMutationH
     internal static string ShapeAddress(int number, long shapeId) =>
         string.Create(CultureInfo.InvariantCulture, $"{SlideUnit}/{number}/shape/{shapeId}");
 
-    /// <summary>
-    /// A section's address by its name, with only the characters that would break the address
-    /// escaped as %XX of their UTF-8 bytes: a slash, a percent sign, a control character, and
-    /// white space at the start or end. Any other character, such as a CJK letter or an inner
-    /// space, stays as it is.
-    /// </summary>
-    internal static string SectionAddress(string name)
-    {
-        var address = new StringBuilder("section/");
-        for (int index = 0; index < name.Length; index++)
-        {
-            char character = name[index];
-            bool edge = char.IsWhiteSpace(character)
-                && (name[..index].All(char.IsWhiteSpace) || name[(index + 1)..].All(char.IsWhiteSpace));
-            if (character is '/' or '%' || char.IsControl(character) || edge)
-            {
-                foreach (byte value in Encoding.UTF8.GetBytes(character.ToString()))
-                {
-                    address.Append(CultureInfo.InvariantCulture, $"%{value:X2}");
-                }
-            }
-            else
-            {
-                address.Append(character);
-            }
-        }
-
-        return address.ToString();
-    }
+    /// <summary>A section's address by its name, such as <c>section/Q3 plan</c>.</summary>
+    internal static string SectionAddress(string name) => $"section/{TargetName.Escape(name)}";
 
     internal static string NotesAddress(int number) => string.Create(CultureInfo.InvariantCulture, $"{SlideUnit}/{number}/notes");
 

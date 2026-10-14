@@ -52,7 +52,7 @@ internal sealed class PdfAttemptedTargets : IPdfOpHandler<IReadOnlyList<string>>
             }
             .Where(static item => item.Value is not null)
             .Select(static item => "property/" + item.Name),
-        .. (operation.Custom?.Keys ?? []).Select(static key => "property/" + key),
+        .. (operation.Custom?.Keys ?? []).Select(static key => "property/" + TargetName.Escape(key)),
     ];
 
     public IReadOnlyList<string> Apply(ClearPropertiesOp operation) => ["property/all"];
@@ -62,17 +62,17 @@ internal sealed class PdfAttemptedTargets : IPdfOpHandler<IReadOnlyList<string>>
     public IReadOnlyList<string> Apply(DeleteBookmarksOp operation) =>
         operation.Bookmarks is null ? ["bookmark/all"] : [.. operation.Bookmarks.Select(static address => $"bookmark/{address}")];
 
-    public IReadOnlyList<string> Apply(AddAttachmentOp operation) => [$"attachment/{operation.Name ?? Path.GetFileName(operation.Path)}"];
+    public IReadOnlyList<string> Apply(AddAttachmentOp operation) => [$"attachment/{TargetName.Escape(operation.Name ?? Path.GetFileName(operation.Path))}"];
 
-    public IReadOnlyList<string> Apply(DeleteAttachmentOp operation) => [$"attachment/{operation.Name}"];
+    public IReadOnlyList<string> Apply(DeleteAttachmentOp operation) => [$"attachment/{TargetName.Escape(operation.Name)}"];
 
     public IReadOnlyList<string> Apply(SetPageLabelsOp operation) =>
         [.. operation.Ranges.Select(static range => $"page-label/{range.StartPage}")];
 
-    public IReadOnlyList<string> Apply(SetFormFieldOp operation) => [$"field/{operation.Name}"];
+    public IReadOnlyList<string> Apply(SetFormFieldOp operation) => [$"field/{TargetName.Escape(operation.Name)}"];
 
     public IReadOnlyList<string> Apply(FlattenFormsOp operation) =>
-        operation.Fields is null ? ["field/all"] : [.. operation.Fields.Select(static name => $"field/{name}")];
+        operation.Fields is null ? ["field/all"] : [.. operation.Fields.Select(static name => $"field/{TargetName.Escape(name)}")];
 
     public IReadOnlyList<string> Apply(EncryptDocumentOp operation) => [Security];
 

@@ -227,7 +227,7 @@ internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
                     field is null
                         ? $"form field '{name}' is not in the output"
                         : $"form field '{name}' reads '{actual}' in the output, not '{expected.Value}'",
-                    location: $"field/{name}",
+                    location: $"field/{TargetName.Escape(name)}",
                     hint: "Read the field with 'pdf inspect --detail forms' and check the value against the field's options."));
             }
         }
@@ -366,7 +366,7 @@ internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
                     PdfDiagnostics.PropertiesMismatch,
                     [expected.Id],
                     $"document information '{key}' reads '{actual}' in the output, not '{expected.Value}'",
-                    location: $"property/{PdfPropertyNames.Reported(key)}",
+                    location: $"property/{TargetName.Escape(PdfPropertyNames.Reported(key) ?? key)}",
                     hint: "Inspect the output with 'pdf inspect --detail properties'."));
             }
         }
@@ -412,7 +412,7 @@ internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
                     PdfDiagnostics.AttachmentMismatch,
                     [id],
                     problem,
-                    location: $"attachment/{name}",
+                    location: $"attachment/{TargetName.Escape(name)}",
                     hint: "List the attachments with 'pdf inspect --detail attachments' and extract them with 'pdf extract --what attachments' to compare."));
             }
         }
