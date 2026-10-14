@@ -112,6 +112,9 @@ internal static partial class ContractRules
 
     private static readonly string[] FileCore = ["path", "format", "sizeBytes", "fingerprint"];
 
+    /// <summary>The fields a single file object has beyond <see cref="FileCore"/>, which an outputs item does not carry.</summary>
+    private static readonly string[] SingleFileFields = ["encrypted"];
+
     private const string OperationOutcome = "v2/common/operation-outcome";
     private const string ErrorEnvelope = "v2/common/error";
 
@@ -678,7 +681,11 @@ internal static partial class ContractRules
         }
     }
 
-    /// <summary>The differences of a multi-file list from a flat <c>{&lt;unit&gt;?, path, format, sizeBytes, fingerprint}</c>, all but the unit required.</summary>
+    /// <summary>
+    /// The differences of a multi-file list from a flat <c>{&lt;unit&gt;?, path, format, sizeBytes, fingerprint}</c>,
+    /// all but the unit required. A field of the single produced file, such as its optional
+    /// <c>encrypted</c>, is no unit: an item that declares one has a shape of its own.
+    /// </summary>
     private static IEnumerable<string> Outputs(string id, SchemaProperty property)
     {
         (string listId, JsonObject list) = PublishedSchema.Resolve(id, property.Schema);
@@ -704,7 +711,12 @@ internal static partial class ContractRules
                     && (shape.StartsWith("object", StringComparison.Ordinal) || shape.StartsWith("array", StringComparison.Ordinal)))
                 .Select(static pair => pair.Key),
         ];
-        string[] extra = [.. declared.Where(name => !FileCore.Contains(name) && !nested.Contains(name))];
+        string[] fileFields = [.. declared.Where(static name => SingleFileFields.Contains(name))];
+        string[] extra = [.. declared.Where(name => !FileCore.Contains(name) && !nested.Contains(name) && !fileFields.Contains(name))];
+        if (fileFields.Length > 0)
+        {
+            yield return $"{property.Path}[]: {string.Join(", ", fileFields)} beside the file fields, a field of a single output and no unit";
+        }
         if (missing.Length > 0)
         {
             yield return $"{property.Path}[]: lacks {string.Join(", ", missing)}";
