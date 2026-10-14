@@ -107,7 +107,7 @@ internal sealed class WordsEditModel : IOperationModel<WordsOp>
         return operation switch
         {
             SetPropertiesOp => ["property/all"],
-            DefineStyleOp define => [WordsSnapshots.StyleAddress(define.Name)],
+            DefineStyleOp define => [WordsReadBack.StyleAddress(define.Name)],
             SetDefaultFontOp => ["style/all"],
             SetWatermarkOp or DeleteWatermarkOp => [WordsSnapshots.WatermarkAddress],
             ProtectDocumentOp or UnprotectDocumentOp => [WordsSnapshots.ProtectionAddress],

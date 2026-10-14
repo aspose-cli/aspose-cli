@@ -1,14 +1,15 @@
 using Aspose.Words;
 using Aspose.Words.Drawing;
 using Aspose.Words.Fields;
+using Aspose.Words.Properties;
 using Aspose.Words.Tables;
 
 namespace Aspose.Cli.Product.Words.Engine.Mapping;
 
 /// <summary>
 /// The state the edit operations write, read back under the names the operations set it with:
-/// a style's definition, the watermark, a section's page numbering, how a table breaks across
-/// pages, a paragraph's list, and the hyperlinks of a paragraph's runs.
+/// styles, document properties, the watermark, page numbering, table pagination, lists, hyperlinks
+/// and what a saved document keeps. Edit snapshots, <c>--verify</c> and named addresses use these.
 /// </summary>
 internal static class WordsReadBack
 {
@@ -49,8 +50,11 @@ internal static class WordsReadBack
 
     /// <summary>Every style the document defines, by name.</summary>
     internal static IReadOnlyList<WordsStyleData> Styles(Document document) =>
-    [
-        .. document.Styles.Cast<Style>().OrderBy(static style => style.Name, StringComparer.Ordinal).Select(static style => new WordsStyleData
+        [.. StylesInDocumentOrder(document).Select(static style => style.Read).OrderBy(static style => style.Name, StringComparer.Ordinal)];
+
+    /// <summary>Every style the document defines, in the order the document holds them, with what a read reports of it.</summary>
+    internal static IEnumerable<(Style Style, WordsStyleData Read)> StylesInDocumentOrder(Document document) =>
+        document.Styles.Cast<Style>().Select(static style => (style, new WordsStyleData
         {
             Name = style.Name,
             Kind = style.Type switch
@@ -69,8 +73,7 @@ internal static class WordsReadBack
             Color = style.Font is { } font ? Hex(font.Color) : null,
             SpaceBefore = style.Type == StyleType.Paragraph ? style.ParagraphFormat.SpaceBefore : null,
             SpaceAfter = style.Type == StyleType.Paragraph ? style.ParagraphFormat.SpaceAfter : null,
-        }),
-    ];
+        }));
 
     /// <summary>A section's page numbering and the PAGE field of its primary header, else footer.</summary>
     internal static WordsPageNumbersData PageNumbers(Section section)
@@ -165,6 +168,34 @@ internal static class WordsReadBack
     /// <summary>The keys a read reports the built-in title, author, subject and keywords under.</summary>
     internal static readonly string[] StandardProperties = ["title", "author", "subject", "keywords"];
 
+    /// <summary>
+    /// The title, author, subject and keywords, then every custom property, each under the key a
+    /// read reports it under (<see cref="PropertyKey"/>), with its value and its type.
+    /// </summary>
+    internal static IEnumerable<(string Key, string? Value, PropertyType Type)> Properties(Document document)
+    {
+        BuiltInDocumentProperties builtIn = document.BuiltInDocumentProperties;
+        return StandardProperties
+            .Zip([builtIn.Title, builtIn.Author, builtIn.Subject, builtIn.Keywords], static (key, value) => (key, (string?)value, PropertyType.String))
+            .Concat(document.CustomDocumentProperties.Select(static property => (PropertyKey(property.Name), property.Value?.ToString(), property.Type)));
+    }
+
+    /// <summary>The address of a style, by the name a read reports it under.</summary>
+    internal static string StyleAddress(string name) => Address("style", name);
+
+    /// <summary>The address of a document property, by the key a read reports it under.</summary>
+    internal static string PropertyAddress(string key) => Address("property", key);
+
+    // The one place a named object's address is made: its unit and its name, escaped.
+    private static string Address(string unit, string name) => $"{unit}/{TargetName.Escape(name)}";
+
+    /// <summary>
+    /// What a saved document keeps that inspect reports and <c>--verify</c> compares after save and
+    /// reopen: its field and revision counts and its editing restriction, as the protect mode that sets it.
+    /// </summary>
+    internal static WordsSavedState Saved(Document document) =>
+        new(document.Range.Fields.Count, document.Revisions.Count, WordsProtection.ToMode(document.ProtectionType));
+
     /// <summary>The prefix of the key of a custom property whose name is a standard key.</summary>
     internal const string CustomPrefix = "custom:";
 
@@ -182,3 +213,6 @@ internal static class WordsReadBack
     internal static string? Hex(System.Drawing.Color color) =>
         color.IsEmpty || color.A == 0 ? null : $"#{color.ToArgb() & 0xffffff:X6}";
 }
+
+/// <summary>The state of a saved document that <see cref="WordsReadBack.Saved"/> reads.</summary>
+internal readonly record struct WordsSavedState(int FieldCount, int RevisionCount, string? Protection);

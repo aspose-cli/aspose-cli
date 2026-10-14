@@ -141,29 +141,25 @@ internal sealed partial class WordsSnapshots(LoadedDocument loaded) : IWordsOpHa
         return state;
     }
 
+    /// <summary>Every style in document order: as a read reports it, and what of it a read does not report.</summary>
     private OperationSnapshot Styles()
     {
         var snapshot = new OperationSnapshot();
-        foreach (Style style in _document.Styles)
+        foreach ((Style style, WordsStyleData read) in WordsReadBack.StylesInDocumentOrder(_document))
         {
-            snapshot.Add(StyleAddress(style.Name), WordsDigest.OfStyle(style));
+            snapshot.Add(WordsReadBack.StyleAddress(read.Name), $"{read}|{WordsDigest.OfStyleBeyondRead(style)}");
         }
 
         return snapshot;
     }
 
-    /// <summary>The title, author, subject and keywords, and every custom property by its own name.</summary>
+    /// <summary>The document properties as a read reports them, each with its type.</summary>
     private OperationSnapshot Properties()
     {
-        BuiltInDocumentProperties builtIn = _document.BuiltInDocumentProperties;
-        var snapshot = new OperationSnapshot()
-            .Add("property/title", builtIn.Title ?? string.Empty)
-            .Add("property/author", builtIn.Author ?? string.Empty)
-            .Add("property/subject", builtIn.Subject ?? string.Empty)
-            .Add("property/keywords", builtIn.Keywords ?? string.Empty);
-        foreach (DocumentProperty property in _document.CustomDocumentProperties)
+        var snapshot = new OperationSnapshot();
+        foreach ((string key, string? value, PropertyType type) in WordsReadBack.Properties(_document))
         {
-            snapshot.Add(PropertyAddress(property.Name), $"{property.Type}|{property.Value}");
+            snapshot.Add(WordsReadBack.PropertyAddress(key), $"{type}|{value}");
         }
 
         return snapshot;
@@ -202,13 +198,9 @@ internal sealed partial class WordsSnapshots(LoadedDocument loaded) : IWordsOpHa
 
         string protection = DocumentProtection().Match(settings).Value;
         return new OperationSnapshot().Add(
-            ProtectionAddress, $"{_document.ProtectionType}|{WordsDigest.Hash(Encoding.UTF8.GetBytes(protection))}");
+            ProtectionAddress, $"{WordsProtection.ToMode(_document.ProtectionType)}|{WordsDigest.Hash(Encoding.UTF8.GetBytes(protection))}");
     }
 
     [GeneratedRegex(@"<w:documentProtection\b[^>]*>", RegexOptions.CultureInvariant)]
     private static partial Regex DocumentProtection();
-
-    internal static string StyleAddress(string name) => $"style/{TargetName.Escape(name)}";
-
-    internal static string PropertyAddress(string name) => $"property/{TargetName.Escape(WordsReadBack.PropertyKey(name))}";
 }

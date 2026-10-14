@@ -25,6 +25,7 @@ internal static class InfoProjection
         NodeCollection paragraphs = document.GetChildNodes(NodeType.Paragraph, true);
         NodeCollection tables = document.GetChildNodes(NodeType.Table, true);
         document.UpdateWordCount();
+        WordsSavedState saved = WordsReadBack.Saved(document);
         var warnings = new List<Warning>();
 
         return new WordsInspectResult
@@ -38,12 +39,12 @@ internal static class InfoProjection
                 TableCount = tables.Count,
                 PageCount = document.PageCount,
                 WordCount = document.BuiltInDocumentProperties.Words,
-                HasRevisions = document.Revisions.Count > 0,
-                RevisionCount = document.Revisions.Count,
+                HasRevisions = saved.RevisionCount > 0,
+                RevisionCount = saved.RevisionCount,
                 RevisionAuthors = document.Revisions.Cast<Revision>().Select(static r => r.Author)
                     .Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray(),
                 CommentCount = document.GetChildNodes(NodeType.Comment, true).Count,
-                Protection = WordsProtection.ToMode(document.ProtectionType),
+                Protection = saved.Protection,
                 Signed = loaded.Format.HasDigitalSignature,
                 HasMacros = loaded.Format.HasMacros,
                 Watermark = WordsReadBack.Watermark(document),
@@ -415,16 +416,10 @@ internal static class InfoProjection
     /// <summary>The built-in title, author, subject and keywords, and every custom property by its own name.</summary>
     private static IReadOnlyDictionary<string, string?> Properties(Document document)
     {
-        var properties = new SortedDictionary<string, string?>(StringComparer.Ordinal)
+        var properties = new SortedDictionary<string, string?>(StringComparer.Ordinal);
+        foreach ((string key, string? value, _) in WordsReadBack.Properties(document))
         {
-            ["title"] = document.BuiltInDocumentProperties.Title,
-            ["author"] = document.BuiltInDocumentProperties.Author,
-            ["subject"] = document.BuiltInDocumentProperties.Subject,
-            ["keywords"] = document.BuiltInDocumentProperties.Keywords,
-        };
-        foreach (Aspose.Words.Properties.DocumentProperty property in document.CustomDocumentProperties)
-        {
-            properties[WordsReadBack.PropertyKey(property.Name)] = property.Value?.ToString();
+            properties[key] = value;
         }
 
         return properties;
