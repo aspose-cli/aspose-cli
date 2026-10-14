@@ -16,15 +16,17 @@ diffed.
 
 | Rung | Command | Answers |
 |------|---------|---------|
-| 1. Structure | `<product> inspect` | Counts, names, ids, properties; `--detail` adds the sections you name, `--sample` a bounded sample |
+| 1. Structure | `<product> inspect` | Counts, names, ids, properties; `--detail` adds the sections you name and, where offered, `--sample` a bounded sample |
 | 2. Window | `cells read`, `pdf read`, `slides read`, `words read` | The content of a selected range, pages, slides or blocks |
 | 3. Search | `cells search`, `pdf search`, `slides search`, `words search` | Where a pattern occurs |
 | 4. Look | `review`, `<product> render` | What data cannot show: layout, clipping, overlap, charts |
 
-Take addresses (sheet names, page and slide numbers, block numbers, shape ids)
-from rung 1 before reading rung 2. Each product overview names its inspect
-details and read scopes (`words read --content`); `--help` lists each command's selection and budget
-options with their defaults.
+Take addresses (sheet names, page, slide and block numbers) from rung 1
+before reading rung 2; a read reports the finer ones, such as shape ids.
+Every `read` takes `--content` for how much of each unit it returns, and
+`cells search` takes it for what to search. Each product overview names its
+inspect details and read depths; `--help` lists each command's selection and
+budget options with their defaults.
 
 Fields a read returns use the edit vocabulary: a value read under a name is
 written back by the operation field of the same name

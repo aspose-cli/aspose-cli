@@ -5,12 +5,12 @@ using Xunit;
 namespace Aspose.Cli.Architecture.Tests;
 
 /// <summary>
-/// What the Skills say an edit outcome means holds for every product (C-R38). An operation that
-/// changed nothing is named by its <c>OP_NO_EFFECT</c> warning; <c>itemsAffected</c> is the count
-/// the product reports, which the C-R30 invariant cases show is not yet a before-and-after
-/// comparison everywhere, so no Skill tells an agent that a count of 0 means nothing changed.
-/// When an operation changed more parts than <c>targets</c> holds, it names a coarser address
-/// such as the document root.
+/// What the Skills say an edit outcome means holds for every product (C-R38). Every product applies
+/// its batches through the SDK snapshot runner, so <c>itemsAffected</c> is the number of objects that
+/// changed and is 0 exactly when the operation warns <c>OP_NO_EFFECT</c>
+/// (<c>OperationBehaviorRules</c> checks that on every operation sample); <c>targets</c> past the cap
+/// cover each unit with one range or <c>&lt;unit&gt;/all</c>, and a failed operation reports the
+/// targets it attempted (<c>BoundedOperationModelTests</c>).
 /// </summary>
 public sealed partial class EditOutcomeDocumentationTests
 {
@@ -18,38 +18,45 @@ public sealed partial class EditOutcomeDocumentationTests
         Path.Combine(RepositoryPaths.Root, "src", "Aspose.Cli.Host", "Skills", "Platform", "references", "editing.md");
 
     [Fact]
-    public void PlatformSkill_ReadsNoEffectFromTheWarning()
+    public void PlatformSkill_ReadsTheOutcomeAsWhatChanged()
     {
-        string[] paragraphs = Paragraphs(Editing);
+        string outcome = Section(Editing, "## Reading the outcome");
+        string[] items = [.. ListItems(outcome)];
 
-        Assert.True(paragraphs.Any(static paragraph => paragraph.Contains("`itemsAffected`", StringComparison.Ordinal)
-                && paragraph.Contains("`OP_NO_EFFECT`", StringComparison.Ordinal)),
-            $"A paragraph of {Path.GetRelativePath(RepositoryPaths.Root, Editing)} that describes `itemsAffected` says that "
-            + "`OP_NO_EFFECT` is what names an operation that changed nothing.");
-        Assert.True(paragraphs.Any(static paragraph => paragraph.Contains("`targets`", StringComparison.Ordinal)
-                && paragraph.Contains("root", StringComparison.OrdinalIgnoreCase)),
-            $"A paragraph of {Path.GetRelativePath(RepositoryPaths.Root, Editing)} that describes `targets` says that an "
-            + "operation that changed more parts than the list holds names a coarser address, such as the document root.");
+        Assert.True(items.Any(static item => item.StartsWith("`itemsAffected`", StringComparison.Ordinal)
+                && item.Contains("exactly when", StringComparison.Ordinal)
+                && Zero().IsMatch(item)
+                && item.Contains("`OP_NO_EFFECT`", StringComparison.Ordinal)),
+            $"The Reading the outcome section of {Path.GetRelativePath(RepositoryPaths.Root, Editing)} says that `itemsAffected` "
+            + "is 0 exactly when the operation changed nothing and warns `OP_NO_EFFECT`.");
+        Assert.True(items.Any(static item => item.StartsWith("`targets`", StringComparison.Ordinal)
+                && item.Contains("`<unit>/all`", StringComparison.Ordinal)
+                && !item.Contains("root", StringComparison.OrdinalIgnoreCase)),
+            $"The Reading the outcome section of {Path.GetRelativePath(RepositoryPaths.Root, Editing)} says that `targets` past "
+            + "the cap names one range or `<unit>/all` per unit, not the document root.");
+        Assert.True(items.Any(static item => item.Contains("failed", StringComparison.Ordinal)
+                && item.Contains("`targets`", StringComparison.Ordinal)
+                && item.Contains("attempted", StringComparison.Ordinal)),
+            $"The Reading the outcome section of {Path.GetRelativePath(RepositoryPaths.Root, Editing)} says that a failed "
+            + "operation's `targets` are the addresses it attempted, not ones it changed.");
     }
 
+    /// <summary>
+    /// The files of a command that writes several follow the encryption rule of a single output,
+    /// and each <c>outputs[]</c> entry reports <c>encrypted</c> as <c>output</c> does.
+    /// </summary>
     [Fact]
-    public void NoSkill_ReadsAZeroCountAsNoChange()
+    public void PlatformSkill_AppliesTheEncryptionRuleToEveryFileOfOutputs()
     {
-        string[] claims =
-        [
-            .. Directory.EnumerateFiles(Path.Combine(RepositoryPaths.Root, "src"), "*.md", SearchOption.AllDirectories)
-                .Where(static file => file.Split(Path.DirectorySeparatorChar).Contains("Skills"))
-                .SelectMany(static file => Paragraphs(file)
-                    .SelectMany(static paragraph => SentenceEnd().Split(paragraph))
-                    .Where(static sentence => sentence.Contains("`itemsAffected`", StringComparison.Ordinal)
-                        && Zero().IsMatch(sentence)
-                        && NoChange().IsMatch(sentence))
-                    .Select(sentence => $"{Path.GetRelativePath(RepositoryPaths.Root, file)}: {sentence.Trim()}")),
-        ];
+        string encryption = Assert.Single(Paragraphs(Editing), static paragraph => paragraph.Contains("`ENCRYPTION_REMOVED`", StringComparison.Ordinal)
+            && paragraph.Contains("password", StringComparison.Ordinal));
 
-        Assert.True(claims.Length == 0,
-            "No Skill says that `itemsAffected` 0 means an operation changed nothing; `OP_NO_EFFECT` says that:"
-            + Environment.NewLine + string.Join(Environment.NewLine, claims));
+        Assert.True(encryption.Contains("`outputs[]`", StringComparison.Ordinal) && encryption.Contains("same rule", StringComparison.Ordinal),
+            $"The encryption paragraph of {Path.GetRelativePath(RepositoryPaths.Root, Editing)} says that the files a command lists "
+            + $"in `outputs[]` follow the same rule: {encryption}");
+        Assert.True(encryption.Contains("each `outputs[]` entry", StringComparison.Ordinal) && !encryption.Contains("omit", StringComparison.Ordinal),
+            $"The encryption paragraph of {Path.GetRelativePath(RepositoryPaths.Root, Editing)} says that each `outputs[]` entry "
+            + $"reports `encrypted` as `output` does: {encryption}");
     }
 
     /// <summary>
@@ -100,6 +107,20 @@ public sealed partial class EditOutcomeDocumentationTests
     [GeneratedRegex(@"(?<![0-9.])0(?![0-9]|\.[0-9])")]
     private static partial Regex Zero();
 
-    [GeneratedRegex(@"changed nothing|nothing changed|no change", RegexOptions.IgnoreCase)]
-    private static partial Regex NoChange();
+    /// <summary>The text of a section, from its heading to the next heading of any level.</summary>
+    private static string Section(string path, string heading)
+    {
+        string text = File.ReadAllText(path).ReplaceLineEndings("\n");
+        int start = text.IndexOf(heading + "\n", StringComparison.Ordinal);
+        Assert.True(start >= 0, $"{Path.GetRelativePath(RepositoryPaths.Root, path)} has a {heading} section.");
+        int end = text.IndexOf("\n#", start + heading.Length, StringComparison.Ordinal);
+        return end < 0 ? text[start..] : text[start..end];
+    }
+
+    /// <summary>The items of the bulleted lists in a text, each on one line without its marker.</summary>
+    private static IEnumerable<string> ListItems(string text) =>
+        ListItem().Split("\n" + text).Skip(1).Select(static item => item.Split("\n\n")[0].Replace('\n', ' ').Trim());
+
+    [GeneratedRegex(@"\n- ")]
+    private static partial Regex ListItem();
 }
