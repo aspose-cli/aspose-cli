@@ -13,10 +13,14 @@ public sealed class WordsModuleTests
     protected override IReadOnlyList<ProductSchemaSample> CanonicalInputs { get; } =
         [new(WordsOp.Catalog.SchemaId, WordsOperationSample.Batch)];
 
-    protected override IReadOnlyDictionary<string, string> Homonyms { get; } =
-        new Dictionary<string, string>(StringComparer.Ordinal)
+    protected override IReadOnlyDictionary<(string Schema, string Pointer), string> Homonyms { get; } =
+        new Dictionary<(string Schema, string Pointer), string>
         {
-            ["kind"] = "An extracted item's kind names what was extracted, not a list, break or header kind.",
+            [("v2/words/compare-result", "#/$defs/wordsRevisionSample/properties/kind")] = "A difference's kind (insertion, deletion, move or format change), not a list, break or header kind.",
+            [("v2/words/extract-result", "#/$defs/wordsExtractedItem/properties/kind")] = "An extracted item's kind names what was extracted, not a list, break or header kind.",
+            [("v2/words/inspect-result", "#/$defs/wordsStyleData/properties/kind")] = "A style's kind (paragraph, character, table or list), not a list, break or header kind.",
+            [("v2/words/inspect-result", "#/$defs/wordsRevisionData/properties/kind")] = "A revision's kind (insertion, deletion, move or format change), not a list, break or header kind.",
+            [("v2/words/read-result", "#/$defs/wordsBlockData/properties/kind")] = "A read block's kind says whether it is a paragraph or a table, not a list, break or header kind.",
         };
 
     [Fact]
