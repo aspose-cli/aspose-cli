@@ -223,14 +223,39 @@ public sealed partial class KnownViolationsTests
     [GeneratedRegex("^[a-z0-9]+(-[a-z0-9]+)*$")]
     private static partial Regex CausePattern();
 
+    /// <summary>
+    /// Every generated case runs: the cases that the shard classes' theories select add up to all
+    /// cases, so a shard without its class (a new product's, say) fails here instead of running
+    /// nothing; every sample theory selects cases; and every product the fixtures name has cases
+    /// in its shard and its format shard.
+    /// </summary>
     [Fact]
-    public void EveryShardHasCases()
+    public void EveryCaseRunsInAShardClass()
     {
-        string[] shards = [InvariantCases.Platform, InvariantCases.Contract, .. ScenarioFixtures.Products, .. ScenarioFixtures.Products.Select(static product => product + "-formats")];
-        foreach (string shard in shards)
+        var selected = new HashSet<string>(StringComparer.Ordinal);
+        var empty = new List<string>();
+        foreach ((Type type, MemberDataAttribute data) in typeof(KnownViolationsTests).Assembly.GetTypes()
+            .SelectMany(static type => type.GetMethods().SelectMany(method => method.GetCustomAttributes(typeof(MemberDataAttribute), false)
+                .Cast<MemberDataAttribute>().Select(data => (type, data))))
+            .Where(static pair => pair.data.MemberType == typeof(InvariantCases)))
         {
-            Assert.NotEmpty(InvariantCases.Sample(shard));
+            var rows = (IEnumerable<ITheoryDataRow>)typeof(InvariantCases).GetMethod(data.MemberName)!.Invoke(null, data.Arguments)!;
+            string[] ids = [.. rows.Select(static row => (string)row.GetData()[0]!)];
+            selected.UnionWith(ids);
+            if (ids.Length == 0 && data.MemberName == nameof(InvariantCases.Sample))
+            {
+                empty.Add($"{type.Name}: {data.MemberName}({string.Join(", ", data.Arguments)})");
+            }
         }
+        InvariantCase[] unrun = [.. InvariantCases.All.Values.Where(item => !selected.Contains(item.Id)).OrderBy(static item => item.Id, StringComparer.Ordinal)];
+        Assert.True(unrun.Length == 0,
+            $"{unrun.Length} generated cases run in no shard class; add a class for the shards "
+            + $"{string.Join(", ", unrun.Select(static item => item.Shard).Distinct())} (first: {string.Join(", ", unrun.Take(3).Select(static item => item.Id))})");
+        Assert.True(empty.Count == 0, "Sample theories that select no case: " + string.Join("; ", empty));
+
+        string[] expected = [InvariantCases.Platform, InvariantCases.Contract, .. ScenarioFixtures.Products, .. ScenarioFixtures.Products.Select(static product => product + "-formats")];
+        string[] missing = [.. expected.Where(shard => !InvariantCases.All.Values.Any(item => item.Shard == shard && !item.Slow))];
+        Assert.True(missing.Length == 0, $"The shards {string.Join(", ", missing)} have no unmarked cases.");
         Assert.NotEmpty(InvariantCases.Exhaustive(InvariantCases.FormatMatrix));
     }
 }
