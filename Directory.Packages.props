@@ -4,7 +4,15 @@
        from eng/products.json into eng/generated/ProductVersions.props. -->
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <!-- Lets a version below lift a package an engine SDK brings in transitively. -->
+    <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
   </PropertyGroup>
+
+  <!-- Transitive packages pinned past a published advisory. -->
+  <ItemGroup>
+    <!-- Engine SDKs bring 9.0.0; CVE-2026-84008 and CVE-2026-70162 are fixed in 10.0.13. -->
+    <PackageVersion Include="System.Security.Cryptography.Pkcs" Version="10.0.13" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageVersion Include="System.CommandLine" Version="2.0.9" />
