@@ -43,7 +43,8 @@ them Windows PowerShell 5.1 (the customer installer's runtime), the pinned Chrom
 built playwright.ps1 provisions, and the license.
 
 Skipped tests are listed after the run, with licensed cases called out, and so is every test
-that ran longer than 10 seconds without a category.
+without a category that ran longer than the slow-test limit, $slowTestSeconds below, the one
+place that limit is stated.
 
 -CiLike runs the tests the way the CI runner does, to catch before a push the failures that only
 CI would see. The test processes it starts, and the processes they start, get:
@@ -108,6 +109,7 @@ $builtExecutable = Join-Path $layout.SourceRoot (
 $env:ASPOSE_CLI_TEST_EXECUTABLE = $builtExecutable
 
 $categories = @('Installer', 'Browser', 'Slow')
+# The slow-test limit: an uncategorized test that runs longer is reported to be marked Slow.
 $slowTestSeconds = 10
 # The customer installer tests and their inputs.
 $installerInputs = @('install.ps1', 'scripts/install-local.ps1', 'tests/Aspose.Cli.Installer.Tests/')
