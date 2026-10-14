@@ -10,6 +10,33 @@ namespace Aspose.Cli.IntegrationTests;
 
 public sealed class ReleaseNoticesTests
 {
+    /// <summary>
+    /// Every release carries the repository's LICENSE byte for byte. A release with no deployed
+    /// package runs quickly, so a LICENSE change is checked by the fast tests.
+    /// </summary>
+    [Fact]
+    public void TheReleaseCarriesTheRepositoryLicenseByteForByte()
+    {
+        using var directory = new TempDirectory();
+        string deps = directory.File("app.deps.json");
+        string assets = directory.File("project.assets.json");
+        string packagesLock = directory.File("packages.lock.json");
+        string runtimeLock = directory.File("runtime-packs.lock.json");
+        File.WriteAllText(deps, new JsonObject { ["libraries"] = new JsonObject() }.ToJsonString());
+        File.WriteAllText(assets, new JsonObject { ["packageFolders"] = new JsonObject() }.ToJsonString());
+        File.WriteAllText(packagesLock, new JsonObject { ["version"] = 1, ["dependencies"] = new JsonObject() }.ToJsonString());
+        File.WriteAllText(runtimeLock, new JsonObject { ["schemaVersion"] = 1, ["runtimePacks"] = new JsonArray() }.ToJsonString());
+        string output = directory.File("output");
+        // The notices index goes beside the package notices, whose directory a release with
+        // packages creates.
+        Directory.CreateDirectory(Path.Combine(output, "notices"));
+
+        CliResult result = Collect(directory, output, deps, assets, packagesLock, runtimeLock);
+
+        Assert.True(result.ExitCode == 0, result.StdOut + result.StdErr);
+        Assert.Equal(File.ReadAllBytes(Path.Combine(RepositoryPaths.Root, "LICENSE")), File.ReadAllBytes(Path.Combine(output, "LICENSE")));
+    }
+
     [Category(TestCategory.Slow)]
     [Fact]
     public void DeployedPackagesAndRuntimePreserveLegalBytesAndRejectArchiveTampering()
@@ -43,7 +70,6 @@ public sealed class ReleaseNoticesTests
         Directory.CreateDirectory(output);
         CliResult result = Collect(output);
         Assert.True(result.ExitCode == 0, result.StdOut + result.StdErr);
-        Assert.Equal(File.ReadAllBytes(Path.Combine(RepositoryPaths.Root, "LICENSE")), File.ReadAllBytes(Path.Combine(output, "LICENSE")));
         Assert.Equal(original, File.ReadAllBytes(Path.Combine(output, "notices/fixture.engine/1.2.3/License/LICENSE.txt")));
         Assert.Equal(original, File.ReadAllBytes(Path.Combine(output, "notices/microsoft.netcore.app.runtime.win-x64/10.0.10/THIRD-PARTY-NOTICES.txt")));
         Assert.Equal("Fixture author\n\n" + File.ReadAllText(Path.Combine(RepositoryPaths.Root, "eng/notices/MIT.txt")),
@@ -104,19 +130,21 @@ public sealed class ReleaseNoticesTests
             return archive;
         }
 
-        CliResult Collect(string target)
-        {
-            string common = Path.Combine(RepositoryPaths.Root, "scripts/release-common.ps1");
-            string notices = Path.Combine(RepositoryPaths.Root, "scripts/release-notices.ps1");
-            // Print a failure plainly: redirected pwsh serializes its error stream as CLIXML.
-            string script = $"$ErrorActionPreference='Stop'; try {{ . {Literal(common)}; . {Literal(notices)}; "
-                + $"Write-ReleaseNotices -RepositoryRoot {Literal(RepositoryPaths.Root)} -OutputRoot {Literal(target)} -DependenciesPath {Literal(deps)} -AssetsPath {Literal(assets)} "
-                + $"-PackagesLockPath {Literal(packagesLock)} -RuntimePacksLockPath {Literal(runtimeLock)} }} "
-                + "catch { [Console]::Out.WriteLine($_.Exception.Message); exit 1 }";
-            string shell = ToolPath.Require("pwsh");
-            return new CliProcess(shell, CliEnvironment.Evaluation(directory.File("config")), TimeSpan.FromSeconds(30))
-                .Run(directory.Path, args: ["-NoLogo", "-NoProfile", "-NonInteractive", "-EncodedCommand", Convert.ToBase64String(Encoding.Unicode.GetBytes(script))]);
-        }
+        CliResult Collect(string target) => ReleaseNoticesTests.Collect(directory, target, deps, assets, packagesLock, runtimeLock);
+    }
+
+    private static CliResult Collect(TempDirectory directory, string target, string deps, string assets, string packagesLock, string runtimeLock)
+    {
+        string common = Path.Combine(RepositoryPaths.Root, "scripts/release-common.ps1");
+        string notices = Path.Combine(RepositoryPaths.Root, "scripts/release-notices.ps1");
+        // Print a failure plainly: redirected pwsh serializes its error stream as CLIXML.
+        string script = $"$ErrorActionPreference='Stop'; try {{ . {Literal(common)}; . {Literal(notices)}; "
+            + $"Write-ReleaseNotices -RepositoryRoot {Literal(RepositoryPaths.Root)} -OutputRoot {Literal(target)} -DependenciesPath {Literal(deps)} -AssetsPath {Literal(assets)} "
+            + $"-PackagesLockPath {Literal(packagesLock)} -RuntimePacksLockPath {Literal(runtimeLock)} }} "
+            + "catch { [Console]::Out.WriteLine($_.Exception.Message); exit 1 }";
+        string shell = ToolPath.Require("pwsh");
+        return new CliProcess(shell, CliEnvironment.Evaluation(directory.File("config")), TimeSpan.FromSeconds(30))
+            .Run(directory.Path, args: ["-NoLogo", "-NoProfile", "-NonInteractive", "-EncodedCommand", Convert.ToBase64String(Encoding.Unicode.GetBytes(script))]);
     }
 
     private static string Flat(CliResult result) =>
