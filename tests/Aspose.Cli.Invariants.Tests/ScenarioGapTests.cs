@@ -42,4 +42,56 @@ public sealed class ScenarioGapTests
         Assert.DoesNotContain("encrypt", removals);
         Assert.DoesNotContain("delete", removals);
     }
+
+    /// <summary>A file a step writes under the project directory <c>.aspose/</c> counts as written; only the run's license is ignored.</summary>
+    [Fact]
+    public void FileWrittenBesideTheProjectLicense_IsReported()
+    {
+        Scenario scenario = Scenario.Parse("""
+            {
+              "name": "a write into the project directory",
+              "files": { "book.xlsx": { "fixture": "cells.xlsx" } },
+              "steps": [
+                {
+                  "args": ["cells", "convert", "book.xlsx", "--to", "csv", "--out", ".aspose/out.csv"],
+                  "expect": { "exitCode": 0, "files": { "nothingWritten": true } }
+                }
+              ]
+            }
+            """);
+
+        ScenarioOutcome outcome = ScenarioRunner.Run(scenario);
+
+        ScenarioProblem problem = Assert.Single(outcome.Problems, static problem => problem.Check == ScenarioRunner.FilesCheck);
+        Assert.Equal("wrote .aspose/out.csv", problem.Message);
+    }
+
+    /// <summary>A rule's snapshot compares a file beside the project license; only the license is left out.</summary>
+    [Fact]
+    public void RuleSnapshot_HoldsAFileBesideTheProjectLicense()
+    {
+        using var workspace = new RuleWorkspace();
+        workspace.Seed(".aspose/notes.txt", "written by a run");
+        workspace.Seed(ScenarioLicense.ProjectLicense, "not a license");
+
+        IReadOnlyDictionary<string, string> snapshot = workspace.Snapshot();
+
+        Assert.Contains(".aspose/notes.txt", snapshot.Keys);
+        Assert.DoesNotContain(ScenarioLicense.ProjectLicense, snapshot.Keys);
+    }
+
+    /// <summary>What an interrupted run leaves includes a publication staging directory and a file beside the project license.</summary>
+    [Fact]
+    public void RuleLeftovers_NameStagingAndProjectDirectoryEntries()
+    {
+        using var workspace = new RuleWorkspace();
+        workspace.Seed("input.docx", "seeded");
+        workspace.Seed(ScenarioLicense.ProjectLicense, "not a license");
+        workspace.Seed(".aspose/notes.txt", "left");
+        workspace.Seed(".aspose-publication-1a2b/part.tmp", "left");
+
+        Assert.Equal(
+            [".aspose-publication-1a2b", ".aspose-publication-1a2b/part.tmp", ".aspose/notes.txt"],
+            workspace.Leftovers(["input.docx"]));
+    }
 }

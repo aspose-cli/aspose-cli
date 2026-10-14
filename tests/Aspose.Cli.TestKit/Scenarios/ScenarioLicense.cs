@@ -9,8 +9,11 @@ namespace Aspose.Cli.TestKit.Scenarios;
 /// </summary>
 public static class ScenarioLicense
 {
-    /// <summary>The workspace directory that holds the project license; never compared or reported as written.</summary>
+    /// <summary>The workspace directory that holds the project license.</summary>
     public const string ProjectDirectory = ".aspose";
+
+    /// <summary>The project license's workspace-relative path; the one file a snapshot never compares or reports as written.</summary>
+    public const string ProjectLicense = ProjectDirectory + "/license.lic";
 
     /// <summary>Whether this run's CLI invocations are licensed.</summary>
     public static bool Licensed => TestLicense.Path is not null;
