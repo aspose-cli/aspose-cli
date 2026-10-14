@@ -150,7 +150,14 @@ weaken a check or remove a supported operation to make a test pass.
   appears and numbered addresses ascend within a unit; named objects such as `style/` and
   `property/` keep the snapshot's order. A removed object and a changed one can share a number,
   one in the input and one in the output, and then the targets list one address fewer than
-  `itemsAffected` counts.
+  `itemsAffected` counts. A name in an address escapes only what would break the address: `/`,
+  `%`, control characters and leading and trailing white space, each as the `%XX` of its UTF-8
+  bytes; every other character, such as Chinese text or a space inside the name, stays as it is
+  (`section/业绩回顾 Results`, `section/%20Q3 %2F plan 100%25%20`), and an empty name is `%00`,
+  so the address always names something. Every product escapes this way through the SDK's
+  `TargetName.Escape`, PDF attachment, field and property addresses included. In a Cells address
+  that puts a sheet before a `!`, such as `cell/Sheet!A1`, the sheet name's own `!` is `%21` too,
+  so the first `!` ends the sheet.
 
 ## Contract conventions
 
@@ -169,6 +176,13 @@ This section holds only what a test cannot judge.
   a singular noun acts on one object.
 - **Units in names (C-R20).** A field or option measured in anything but points names its unit
   (`widthChars`, `scalePercent`, `durationMs`, `dpi`).
+- **One name, one shape (C-R20).** A field name has one type within a product's ops and across
+  products, except a field that takes the shape of the object it names: `at`, `to`, `first`,
+  `last` and `values` (a sheet position or a cell anchor, a row number or a column letter, a
+  section number or a block address, a table's grid or a chart series' array). Such an exception,
+  within a product or across products, lists exactly the definitions that declare the field and
+  fails once the schemas no longer match it (`ShapedByTheirObject` and its cross-product lists in
+  `SchemaRules`), so giving one of these names a new shape is a decision, not a default.
 - **One fact, one code (C-R28).** Two codes never name the same fact, and one code never covers
   two. `ANCHOR_NOT_FOUND` (a heading or text that a search did not find) and `BLOCK_NOT_FOUND` (a
   block number beyond the document) are different facts and stay separate.

@@ -78,17 +78,27 @@ A PDF batch, for example:
 
 Each operation has one `applied[]` entry with its `id`, `op`, `status`,
 `itemsAffected` and `targets` (`aspose-cli schema v2/common/operation-outcome`).
-`targets` lists the addresses the operation changed; when it changed more
-parts than the list holds, it names a coarser address instead, such as the
-document root or a range.
+The CLI reads the objects each operation can change before and after it, so
+both fields state what actually changed:
 
-`itemsAffected` is the count of items the product reports the operation
-changed. Do not conclude from that count alone whether an operation took
-effect. An operation the CLI knows changed nothing, such as a replacement
-that matched no text, warns `OP_NO_EFFECT` with its `details.id`,
-`details.op` and `details.reason`; act on that warning. The absence of the
-warning does not prove the change: read the changed parts back before you
-report it (`aspose-cli docs verification`).
+- `itemsAffected` is the number of objects the operation changed. It is 0
+  exactly when the operation changed nothing, and then the operation warns
+  `OP_NO_EFFECT` with its `details.id`, `details.op` and `details.reason`:
+  a replacement that matched no text, say, or a value written again over the
+  same value. Act on that warning.
+- `targets` lists the addresses of the objects the operation changed, where
+  the output holds them, or where the input held an object the batch
+  removed; an operation that changed nothing lists none. Past 100 addresses
+  it lists one coarser address per unit instead: a range such as
+  `page/1-150`, or `<unit>/all` for objects named rather than numbered, such
+  as cells or styles.
+- A failed operation (`status: "failed"`, kept by `--best-effort`) changed
+  nothing: its `itemsAffected` is 0 without an `OP_NO_EFFECT` warning, and
+  its `targets` are the addresses it attempted, which need not exist, such as
+  `page/2-99` in a three-page document.
+
+The outcome says what changed, not that it is what you meant: read the
+changed parts back before you report them (`aspose-cli docs verification`).
 
 A product Skill says when its edits reopen the output before publishing it;
 where a product offers `--verify`, it adds a semantic check described in the
@@ -127,13 +137,16 @@ same rule: prefer the `-env` and `-stdin` forms, such as `--password-env`,
 `--encrypt-env` and `--password-stdin`; the plain forms are visible in the
 process list.
 
-An output made from an encrypted input keeps the input's password when the
-product can encrypt that output format (the command offers `--encrypt-env`
-for it) and no such option gives a new one; `output.encrypted` states whether
-the written file is encrypted. A document output the product cannot encrypt
-is written unencrypted with an `ENCRYPTION_REMOVED` warning; tell the user before you
-deliver it. Images and the files `extract` writes never warn. The product
-Skill says which of its outputs can be encrypted.
+An output made from an encrypted input takes the password an `--encrypt-env`
+style option gives. Without one, an output in a format the product can
+encrypt keeps the input's password. A command that writes several files into
+`outputs[]`, such as `split`, applies the same rule to every file. `encrypted`
+on `output` and on each `outputs[]` entry, present for a format the product
+can encrypt, states whether that written file is encrypted. A document output
+the product cannot encrypt is written unencrypted with an
+`ENCRYPTION_REMOVED` warning; tell the user before you deliver it. Images and
+the files `extract` writes never warn. The product Skill says which of its
+outputs can be encrypted.
 
 ## When a target is not found
 
