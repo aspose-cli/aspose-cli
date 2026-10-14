@@ -9,12 +9,6 @@ public sealed class PdfModuleTests
 {
     protected override IReadOnlyList<ProductSchemaSample> CanonicalInputs => [new(PdfOp.Catalog.SchemaId, CanonicalOps)];
 
-    protected override IReadOnlyDictionary<string, string> Homonyms { get; } =
-        new Dictionary<string, string>(StringComparer.Ordinal)
-        {
-            ["rotation"] = "Both turn clockwise, but a page turns a quarter turn at a time, 0 to 270 degrees, while add_watermark_text turns its text by any angle.",
-        };
-
     [Fact]
     public void OperationBatch_RejectsNullOperations()
     {

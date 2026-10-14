@@ -11,12 +11,16 @@ public sealed class CellsModuleTests
     protected override IReadOnlyList<ProductSchemaSample> CanonicalInputs { get; } =
         [new(CellsOp.Catalog.SchemaId, CellsOpsSample.Batch)];
 
-    protected override IReadOnlyDictionary<string, string> Homonyms { get; } =
-        new Dictionary<string, string>(StringComparer.Ordinal)
+    protected override IReadOnlyDictionary<(string Schema, string Pointer), string> Homonyms { get; } =
+        new Dictionary<(string Schema, string Pointer), string>
         {
-            ["left"] = "a diff or verification change's value in the first file, not a page margin",
-            ["right"] = "a diff or verification change's value in the second file, not a page margin",
-            ["position"] = "a sheet's place in the tab order, which insert_sheet and move_sheet take as at and to, not a legend placement",
+            [("v2/cells/compare-result", "#/$defs/cellsCellDiff/properties/left")] = "a differing cell as the first file holds it, not a page margin",
+            [("v2/cells/compare-result", "#/$defs/cellsCellDiff/properties/right")] = "a differing cell as the second file holds it, not a page margin",
+            [("v2/cells/edit-result", "#/$defs/cellsVerifiedCellChange/properties/left")] = "a verified cell change's cell before the edit, not a page margin",
+            [("v2/cells/edit-result", "#/$defs/cellsVerifiedCellChange/properties/right")] = "a verified cell change's cell after the edit, not a page margin",
+            [("v2/cells/edit-result", "#/$defs/cellsVerificationOtherChange/properties/left")] = "another verified change's cell before the edit, not a page margin",
+            [("v2/cells/edit-result", "#/$defs/cellsVerificationOtherChange/properties/right")] = "another verified change's cell after the edit, not a page margin",
+            [("v2/cells/inspect-result", "#/$defs/cellsSheetInfo/properties/position")] = "a sheet's place in the tab order, which insert_sheet and move_sheet take as at and to, not a legend placement",
         };
 
     [Theory]

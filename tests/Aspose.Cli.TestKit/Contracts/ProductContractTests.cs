@@ -138,11 +138,14 @@ public abstract class ProductContractTests<TModule>
     protected abstract IReadOnlyList<ProductSchemaSample> CanonicalInputs { get; }
 
     /// <summary>
-    /// Field names a listed result object shares with an operation field while meaning
-    /// something else, each with the reason; see <see cref="ListedObjects_ShareTheOperationVocabulary"/>.
+    /// The fields of listed result objects that share a name with an operation field while
+    /// meaning something else, each by its result schema and the JSON pointer of the property,
+    /// with the reason; see <see cref="ListedObjects_ShareTheOperationVocabulary"/>. An exemption
+    /// covers that one property, so another field of the name, in the same result or another, is
+    /// still compared.
     /// </summary>
-    protected virtual IReadOnlyDictionary<string, string> Homonyms { get; } =
-        new Dictionary<string, string>(StringComparer.Ordinal);
+    protected virtual IReadOnlyDictionary<(string Schema, string Pointer), string> Homonyms { get; } =
+        new Dictionary<(string Schema, string Pointer), string>();
 
     /// <summary>Ensures the module produces an equivalent pure definition repeatedly.</summary>
     [Fact]
@@ -521,7 +524,8 @@ public abstract class ProductContractTests<TModule>
     /// the operations accept and, where both state allowed values, only values they accept, so
     /// what is read can be written back under the same name. Result metadata outside lists is
     /// not a document object and is not compared; a genuine homonym is named in
-    /// <see cref="Homonyms"/> with its reason.
+    /// <see cref="Homonyms"/> by its schema and property with its reason, and an exemption that
+    /// covers no mismatch any more fails.
     /// </summary>
     [Fact]
     public void ListedObjects_ShareTheOperationVocabulary()
@@ -537,37 +541,16 @@ public abstract class ProductContractTests<TModule>
             return;
         }
 
-        var edit = new Dictionary<string, List<FieldShape>>(StringComparer.Ordinal);
-        foreach (string id in operationSchemas)
-        {
-            JsonObject document = JsonNode.Parse(catalog.Resources.Read(id))!.AsObject();
-            CollectFields(document, document, listed: true, edit, []);
-        }
-
-        var mismatches = new List<string>();
-        foreach (string id in catalog.Resources.GetProduct(definition.Manifest.Id).SchemaIds
-            .Except(operationSchemas, StringComparer.Ordinal))
-        {
-            var read = new Dictionary<string, List<FieldShape>>(StringComparer.Ordinal);
-            JsonObject document = JsonNode.Parse(catalog.Resources.Read(id))!.AsObject();
-            CollectFields(document, document, listed: false, read, []);
-            foreach ((string name, List<FieldShape> shapes) in read)
-            {
-                if (name is "op" or "id" || Homonyms.ContainsKey(name)
-                    || !edit.TryGetValue(name, out List<FieldShape>? accepted))
-                {
-                    continue;
-                }
-
-                foreach (FieldShape shape in shapes.Where(shape => !accepted.Any(shape.FitsIn)).Distinct())
-                {
-                    mismatches.Add(
-                        $"{id}: '{name}' is {shape}, but operations accept {string.Join(" or ", accepted.Distinct())}");
-                }
-            }
-        }
-
-        Assert.True(mismatches.Count == 0, string.Join(Environment.NewLine, mismatches));
+        string[] mismatches =
+        [
+            .. OperationVocabulary.Mismatches(
+                operationSchemas.Select(id => JsonNode.Parse(catalog.Resources.Read(id))!.AsObject()),
+                catalog.Resources.GetProduct(definition.Manifest.Id).SchemaIds
+                    .Except(operationSchemas, StringComparer.Ordinal)
+                    .Select(id => (id, JsonNode.Parse(catalog.Resources.Read(id))!.AsObject())),
+                Homonyms),
+        ];
+        Assert.True(mismatches.Length == 0, string.Join(Environment.NewLine, mismatches));
     }
 
     /// <summary>
@@ -671,123 +654,6 @@ public abstract class ProductContractTests<TModule>
             ? string.Join(" | ", reasons)
             : "the document level is invalid: " + json[..Math.Min(json.Length, 160)];
     }
-
-    /// <summary>The JSON types and allowed values one schema states for a named field.</summary>
-    private sealed record FieldShape(string Types, string? Values)
-    {
-        public bool FitsIn(FieldShape accepted)
-        {
-            string[] offered = accepted.Types.Split('|');
-            bool typeFits = Types.Length == 0 || accepted.Types.Length == 0
-                || Types.Split('|').All(type =>
-                    offered.Contains(type) || (type == "integer" && offered.Contains("number")));
-            return typeFits
-                && (Values is null || accepted.Values is null
-                    || Values.Split('|').All(accepted.Values.Split('|').Contains));
-        }
-
-        public override string ToString() =>
-            (Types.Length == 0 ? "untyped" : Types) + (Values is null ? string.Empty : $" [{Values}]");
-
-        public static FieldShape Of(JsonObject schema)
-        {
-            IEnumerable<string> types = schema["type"] switch
-            {
-                JsonValue single => [single.GetValue<string>()],
-                JsonArray several => several.Select(static type => type!.GetValue<string>()),
-                _ => [],
-            };
-            JsonNode?[]? values = schema["enum"] is JsonArray allowed ? [.. allowed]
-                : schema["const"] is JsonNode fixedValue ? [fixedValue] : null;
-            return new FieldShape(
-                string.Join('|', types.Where(static type => type != "null").Order(StringComparer.Ordinal)),
-                values is null ? null : string.Join('|', values
-                    .Where(static value => value is not null)
-                    .Select(static value => value!.ToJsonString())
-                    .Order(StringComparer.Ordinal)));
-        }
-    }
-
-    /// <summary>
-    /// Collects the named properties of <paramref name="node"/> and everything below it,
-    /// following local references once each; a property counts only once the walk is inside a
-    /// listed object (below an array's items) unless <paramref name="listed"/> starts true.
-    /// </summary>
-    private static void CollectFields(
-        JsonObject document,
-        JsonNode node,
-        bool listed,
-        Dictionary<string, List<FieldShape>> fields,
-        HashSet<string> followed)
-    {
-        if (node is JsonArray array)
-        {
-            foreach (JsonNode? child in array)
-            {
-                if (child is not null)
-                {
-                    CollectFields(document, child, listed, fields, followed);
-                }
-            }
-
-            return;
-        }
-
-        if (node is not JsonObject schema)
-        {
-            return;
-        }
-
-        if (schema["$ref"] is JsonValue reference
-            && reference.GetValue<string>() is { } target
-            && target.StartsWith("#/$defs/", StringComparison.Ordinal)
-            && followed.Add($"{listed}:{target}"))
-        {
-            CollectFields(document, document["$defs"]![target["#/$defs/".Length..]]!, listed, fields, followed);
-        }
-
-        foreach ((string key, JsonNode? child) in schema)
-        {
-            if (child is null || key is "$defs" or "$ref")
-            {
-                continue;
-            }
-
-            if (key == "properties" && child is JsonObject properties)
-            {
-                foreach ((string name, JsonNode? value) in properties)
-                {
-                    if (value is not JsonObject property)
-                    {
-                        continue;
-                    }
-
-                    if (listed)
-                    {
-                        if (!fields.TryGetValue(name, out List<FieldShape>? shapes))
-                        {
-                            fields[name] = shapes = [];
-                        }
-
-                        shapes.Add(FieldShape.Of(Resolve(document, property)));
-                    }
-
-                    CollectFields(document, property, listed, fields, followed);
-                }
-
-                continue;
-            }
-
-            CollectFields(document, child, listed || key is "items" or "prefixItems", fields, followed);
-        }
-    }
-
-    private static JsonObject Resolve(JsonObject document, JsonObject property) =>
-        property["$ref"] is JsonValue reference
-        && reference.GetValue<string>() is { } target
-        && target.StartsWith("#/$defs/", StringComparison.Ordinal)
-            ? document["$defs"]![target["#/$defs/".Length..]]!.AsObject()
-            : property;
 
     private static string ResourceSchemaId(string schema)
     {
