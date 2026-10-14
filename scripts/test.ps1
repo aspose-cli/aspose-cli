@@ -12,9 +12,9 @@ the fast feedback loop:
   composed launcher through the TestKit, so a change under src/ or to the TestKit reaches every
   test project, a change inside a test project reaches that project, a repository file that a
   test project lists as a RepositoryInput item (such as README.md) reaches that project, other
-  documentation and repository metadata (*.md, .github/, LICENSE*, .gitignore, .gitattributes,
-  .editorconfig) reach nothing, and any other change (build inputs, eng/, scripts/,
-  install.ps1) reaches every project. Pull-request CI uses it; master pushes run Fast.
+  documentation and repository metadata (*.md, .github/, LICENSE*, .gitignore, .gitattributes)
+  reach nothing, and any other change (build inputs, .editorconfig, whose analyzer severities
+  are build input, eng/, scripts/, install.ps1) reaches every project. Pull-request CI uses it; master pushes run Fast.
 - Affected adds the Browser and Slow tests of the projects a change reaches: a change under src/
   or to the TestKit adds them to every test project, a change inside a test project to that
   project, and a change to a RepositoryInput to the test projects that list it. Installer inputs
@@ -163,12 +163,13 @@ function Get-ChangedPaths {
 }
 
 # Documentation and repository metadata outside the projects, which reach only the test projects
-# that list them as a RepositoryInput.
+# that list them as a RepositoryInput. .editorconfig is not among them: the compiler reads its
+# analyzer severities, so it is a build input.
 function Test-DocumentationPath {
     param([Parameter(Mandatory)][string] $Path)
     $name = $Path.Split('/')[-1]
     return $Path -like '*.md' -or (Test-PathPrefix $Path @('.github/')) -or $name -like 'LICENSE*' -or
-        $name -in @('.gitignore', '.gitattributes', '.editorconfig')
+        $name -in @('.gitignore', '.gitattributes')
 }
 
 # The repository files outside the projects that each test project reads, from its RepositoryInput items.
