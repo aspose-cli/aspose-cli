@@ -26,11 +26,13 @@ public sealed record SkillOperationDocument(string Source, int Line, string Json
 /// is quoted (<c>'...'</c> or <c>"..."</c>, possibly over several lines) or a PowerShell here-string
 /// (<c>@'...'@</c>, <c>@"..."@</c>) and starts with <c>{</c> or <c>[</c> is an operation document,
 /// unquoted with the quoting rules of the enclosing fence (PowerShell for a <c>powershell</c> or
-/// <c>pwsh</c> fence, POSIX shell otherwise).</item>
+/// <c>pwsh</c> fence, POSIX shell otherwise). So is the body that <c>--ops -</c> reads from
+/// standard input: a heredoc the command's line opens, or in a PowerShell fence a here-string
+/// piped into the command.</item>
 /// <item>An <c>--ops</c> value naming a <c>*.json</c> file is a reference. In a Markdown file
 /// under <c>examples/</c>, whose commands run next to their files, the file must exist beside
-/// it; elsewhere such names stand for the reader's own file. <c>-</c> (stdin), variables and
-/// placeholders are not read.</item>
+/// it; elsewhere such names stand for the reader's own file. Variables, placeholders and a
+/// <c>-</c> fed from anything but a heredoc or a piped here-string are not read.</item>
 /// </list>
 /// </summary>
 public static class SkillOperationDocuments
@@ -122,7 +124,18 @@ public static class SkillOperationDocuments
             string trimmedValue = value!.Trim();
             string? command = CommandWord(markdown, match.Index);
             string beside = Path.Combine(Path.GetDirectoryName(file)!, trimmedValue);
-            if (quoted && (trimmedValue.StartsWith('{') || trimmedValue.StartsWith('[')))
+            if (!quoted && trimmedValue == "-")
+            {
+                if (StandardInput(lines, fences, line, powerShell, out int bodyLine, out string? stdinError) is { } body)
+                {
+                    documents.Add(new SkillOperationDocument(file, bodyLine + 1, body, command));
+                }
+                else if (stdinError is not null)
+                {
+                    problems.Add($"{location}: --ops - {stdinError}");
+                }
+            }
+            else if (quoted && (trimmedValue.StartsWith('{') || trimmedValue.StartsWith('[')))
             {
                 documents.Add(new SkillOperationDocument(file, line + 1, value, command));
             }
@@ -136,6 +149,58 @@ public static class SkillOperationDocuments
             }
         }
     }
+
+    /// <summary>
+    /// The document a command on <paramref name="line"/> reads with <c>--ops -</c>: the body of
+    /// the POSIX heredoc the line opens (<c>&lt;&lt;'EOF'</c>, <c>&lt;&lt;EOF</c> or
+    /// <c>&lt;&lt;-EOF</c>), or, in a PowerShell fence, of the here-string piped into it
+    /// (<c>@'</c> … <c>'@ | aspose-cli …</c>); null, without an error, when the line reads standard
+    /// input from anything else. <paramref name="bodyLine"/> is the body's first line, 0-based.
+    /// </summary>
+    private static string? StandardInput(string[] lines, string?[] fences, int line, bool powerShell, out int bodyLine, out string? error)
+    {
+        bodyLine = line + 1;
+        error = null;
+        if (powerShell)
+        {
+            Match pipe = HereStringPipe.Match(lines[line]);
+            if (!pipe.Success)
+            {
+                return null;
+            }
+            string opening = "@" + pipe.Groups[1].Value;
+            for (int start = line - 1; start >= 0 && fences[start] is not null; start--)
+            {
+                if (lines[start].TrimEnd().EndsWith(opening, StringComparison.Ordinal))
+                {
+                    bodyLine = start + 1;
+                    return string.Join('\n', lines[(start + 1)..line]);
+                }
+            }
+            error = "here-string has no start";
+            return null;
+        }
+
+        Match heredoc = Heredoc.Match(lines[line]);
+        if (!heredoc.Success)
+        {
+            return null;
+        }
+        string terminator = heredoc.Groups[3].Value;
+        for (int end = line + 1; end < lines.Length && fences[end] is not null; end++)
+        {
+            if (lines[end].Trim() == terminator)
+            {
+                return string.Join('\n', lines[(line + 1)..end]);
+            }
+        }
+        error = "heredoc is not terminated";
+        return null;
+    }
+
+    private static readonly Regex Heredoc = new(@"<<(-?)\s*(['""]?)(\w+)\2", RegexOptions.CultureInvariant);
+
+    private static readonly Regex HereStringPipe = new(@"^\s*(['""])@\s*\|", RegexOptions.CultureInvariant);
 
     /// <summary>The word after the last <c>aspose-cli</c> of the command line that holds <paramref name="index"/>, or null.</summary>
     private static string? CommandWord(string text, int index)
