@@ -5,8 +5,9 @@
   </PropertyGroup>
 
   <!-- Repository files outside the projects that these tests read; scripts/test.ps1 runs this project when one changes.
-       The contract rules read the help snapshots (C-R34) and the README (C-R04). -->
+       The contract rules read the help snapshots (C-R34), and the README and KNOWN-ISSUES.md (C-R04, C-R38). -->
   <ItemGroup>
+    <RepositoryInput Include="..\..\KNOWN-ISSUES.md" />
     <RepositoryInput Include="..\..\README.md" />
     <RepositoryInput Include="..\Aspose.Cli.Platform.Tests\Integration\Snapshots\cells.help.txt" />
     <RepositoryInput Include="..\Aspose.Cli.Platform.Tests\Integration\Snapshots\host.help.txt" />

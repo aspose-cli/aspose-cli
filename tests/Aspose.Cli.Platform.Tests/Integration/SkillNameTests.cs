@@ -6,151 +6,16 @@ using Xunit;
 namespace Aspose.Cli.IntegrationTests;
 
 /// <summary>
-/// The names a Skill or the README teaches exist in this build (C-R38), so deleting or renaming a
-/// code, option, operation or command leaves no stale reference behind; the C# sources are read by
-/// the C-R38 invariant cases. Four kinds of name are checked, each in
-/// inline code outside fenced blocks: an <c>UPPER_SNAKE</c> code is a diagnostic or review check
-/// that capabilities lists; a <c>--option</c> is an option of some command; a <c>snake_case</c>
-/// name is an operation of some product; and a snippet that starts with a command path, such as
-/// <c>cells convert data.csv --to xlsx</c>, parses against the tree as
-/// <c>aspose-cli &lt;snippet&gt;</c>, or with a placeholder names only existing options. A
-/// placeholder (<c>&lt;name&gt;</c>) is removed and the names around it are still checked, such as
-/// the option of <c>--pages &lt;range&gt;</c>; environment variables (<c>ASPOSE_*</c>) are skipped.
-/// Each kind of name is checked at least once, and every Skill set and the README have names
-/// checked. Commands written with <c>aspose-cli</c> are already checked by
-/// <see cref="SkillInstallTests"/> and <see cref="DocumentationContractTests"/>. Every JSON
-/// document they show validates against the schema the CLI serves (see
-/// <see cref="JsonBlocks_ValidateAgainstTheSchemaTheyShow"/>).
+/// Every JSON document a Skill or the README shows validates against the schema the CLI serves
+/// (see <see cref="JsonBlocks_ValidateAgainstTheSchemaTheyShow"/>). The names a Skill, the README
+/// and the C# sources write (codes, options and their values, operations and their fields,
+/// commands) are checked by one reader, the C-R38 invariant cases of the invariant tests.
 /// </summary>
-public sealed partial class SkillNameTests(DocumentationContractFixture fixture)
-    : IClassFixture<DocumentationContractFixture>, IDisposable
+public sealed partial class SkillNameTests : IDisposable
 {
-    /// <summary>Snake-case words a Skill writes that are values, not operation names, with why.</summary>
-    private static readonly Dictionary<string, string> NotOperations = new(StringComparer.Ordinal)
-    {
-        ["shift_jis"] = "a text encoding name that cells convert --encoding accepts",
-    };
-
     private readonly TempWorkspace _workspace = new();
 
     public void Dispose() => _workspace.Dispose();
-
-    [Fact]
-    public void InlineNames_ExistInThisBuild()
-    {
-        JsonNode capabilities = Capabilities();
-        HashSet<string> codes =
-        [
-            .. capabilities["diagnostics"]!.AsArray().Select(static diagnostic => diagnostic!["code"]!.GetValue<string>()),
-            .. capabilities["products"]!.AsArray()
-                .SelectMany(static product => product!["review"]?["checks"]?.AsArray() ?? [])
-                .Select(static check => check!["code"]!.GetValue<string>()),
-        ];
-        HashSet<string> options =
-        [
-            .. capabilities["commands"]!.AsArray()
-                .SelectMany(static command => command!["options"]!.AsArray())
-                .SelectMany(static option => option!["aliases"]!.AsArray().Select(static alias => alias!.GetValue<string>())
-                    .Append(option!["name"]!.GetValue<string>())),
-        ];
-        HashSet<string> operations =
-        [
-            .. capabilities["products"]!.AsArray()
-                .SelectMany(static product => product!["operations"]?.AsArray() ?? [])
-                .SelectMany(static operation => operation!["ops"]!.AsArray().Select(static op => op!.GetValue<string>())),
-        ];
-        HashSet<string> roots =
-        [
-            .. capabilities["commands"]!.AsArray()
-                .Select(static command => command!["path"]!.GetValue<string>().Split(' '))
-                .Where(static words => words.Length == 2)
-                .Select(static words => words[1]),
-        ];
-
-        var problems = new List<string>();
-        // How many names of each kind each Skill set checked, so a rule that stops matching fails.
-        var checkedNames = new Dictionary<(string Skills, NameKind Kind), int>();
-        foreach ((string file, int line, string written) in InlineCode())
-        {
-            string where = $"{Path.GetRelativePath(RepositoryPaths.Root, file)}:{line}: `{written}`";
-            // A placeholder stands for a value the reader supplies; the names around it are still checked.
-            string code = Placeholder().Replace(written, string.Empty).Trim();
-            bool placeholders = code.Length != written.Trim().Length;
-            NameKind? kind = null;
-            if (UpperSnake().IsMatch(code))
-            {
-                if (code.StartsWith("ASPOSE_", StringComparison.Ordinal))
-                {
-                    continue;
-                }
-                kind = NameKind.Code;
-                if (!codes.Contains(code))
-                {
-                    problems.Add($"{where} is no diagnostic or review check of this build");
-                }
-            }
-            else if (OptionSnippet().Match(code) is { Success: true } option)
-            {
-                kind = NameKind.Option;
-                if (!options.Contains(option.Groups["name"].Value))
-                {
-                    problems.Add($"{where} is no option of any command");
-                }
-            }
-            else if (LowerSnake().IsMatch(code))
-            {
-                kind = NameKind.Operation;
-                if (!operations.Contains(code) && !NotOperations.ContainsKey(code))
-                {
-                    problems.Add($"{where} is no operation of any product");
-                }
-            }
-            else if (code.Split(' ', 2) is [{ } first, _] && roots.Contains(first))
-            {
-                kind = NameKind.Command;
-                if (placeholders)
-                {
-                    // A command with a placeholder cannot parse; each option it names must still exist.
-                    problems.AddRange(OptionToken().Matches(code).Select(static match => match.Groups["name"].Value)
-                        .Where(name => !options.Contains(name))
-                        .Select(name => $"{where}: {name} is no option of any command"));
-                }
-                else if (fixture.Validator.ValidateCommand("aspose-cli " + code) is { } problem)
-                {
-                    problems.Add($"{where}: {problem}");
-                }
-            }
-
-            if (kind is { } counted)
-            {
-                (string, NameKind) key = (SkillSetOf(file), counted);
-                checkedNames[key] = checkedNames.GetValueOrDefault(key) + 1;
-            }
-        }
-
-        string counts = string.Join(", ", checkedNames.OrderBy(static pair => pair.Key.Skills, StringComparer.Ordinal)
-            .ThenBy(static pair => pair.Key.Kind)
-            .Select(static pair => $"{pair.Key.Skills} {pair.Key.Kind}: {pair.Value}"));
-        NameKind[] unmatched = [.. Enum.GetValues<NameKind>().Where(kind => !checkedNames.Keys.Any(key => key.Kind == kind))];
-        Assert.True(unmatched.Length == 0,
-            $"No Skill names a {string.Join(" or ", unmatched)} the rule recognizes, so it checks nothing; the inline-code rules stopped matching ({counts}).");
-        string[] silent = [.. DocumentFiles().Select(SkillSetOf).Distinct(StringComparer.Ordinal)
-            .Where(skills => !checkedNames.Keys.Any(key => key.Skills == skills))];
-        Assert.True(silent.Length == 0,
-            $"The rule checks no name of {string.Join(", ", silent)} ({counts}).");
-
-        Assert.True(problems.Count == 0,
-            "Every code, option, operation and command a Skill or the README names exists in this build:" + Environment.NewLine
-            + string.Join(Environment.NewLine, problems));
-    }
-
-    private enum NameKind
-    {
-        Code,
-        Option,
-        Operation,
-        Command,
-    }
 
     /// <summary>The project whose Skills hold a file, such as <c>Aspose.Cli.Product.Pdf</c>, or the README's name.</summary>
     private static string SkillSetOf(string file) =>
@@ -353,36 +218,6 @@ public sealed partial class SkillNameTests(DocumentationContractFixture fixture)
     private static IEnumerable<string> DocumentFiles() =>
         SkillFiles().Append(Path.Combine(RepositoryPaths.Root, "README.md"));
 
-    /// <summary>Inline code spans outside fenced blocks, with their line, other than <c>aspose-cli</c> commands.</summary>
-    private static IEnumerable<(string File, int Line, string Code)> InlineCode()
-    {
-        foreach (string file in DocumentFiles())
-        {
-            string[] lines = File.ReadAllText(file).ReplaceLineEndings("\n").Split('\n');
-            bool fenced = false;
-            for (int index = 0; index < lines.Length; index++)
-            {
-                if (lines[index].TrimStart().StartsWith("```", StringComparison.Ordinal))
-                {
-                    fenced = !fenced;
-                    continue;
-                }
-                if (fenced)
-                {
-                    continue;
-                }
-                foreach (Match span in InlineSpan().Matches(lines[index]))
-                {
-                    string code = span.Groups["code"].Value.Trim();
-                    if (code.Length > 0 && !code.StartsWith("aspose-cli", StringComparison.Ordinal))
-                    {
-                        yield return (file, index + 1, code);
-                    }
-                }
-            }
-        }
-    }
-
     /// <summary>
     /// Every fenced <c>json</c> block, and every indented code block that starts like JSON
     /// (<c>{</c>, <c>[</c> or <c>"</c>), with the line its JSON starts on.
@@ -426,24 +261,4 @@ public sealed partial class SkillNameTests(DocumentationContractFixture fixture)
     /// <summary>The first line of an indented code block that starts like JSON.</summary>
     [GeneratedRegex(@"^ {4,}[{\[""]")]
     private static partial Regex IndentedJson();
-
-    [GeneratedRegex(@"(?<!`)`(?<code>[^`]+)`(?!`)")]
-    private static partial Regex InlineSpan();
-
-    [GeneratedRegex(@"^[A-Z][A-Z0-9]*(?:_[A-Z0-9]+)+$")]
-    private static partial Regex UpperSnake();
-
-    [GeneratedRegex(@"^[a-z][a-z0-9]*(?:_[a-z0-9]+)+$")]
-    private static partial Regex LowerSnake();
-
-    [GeneratedRegex(@"^(?<name>--[a-z][a-z0-9-]*)(?:[ =].*)?$")]
-    private static partial Regex OptionSnippet();
-
-    /// <summary>An option named anywhere in a snippet.</summary>
-    [GeneratedRegex(@"(?<![\w-])(?<name>--[a-z][a-z0-9-]*)")]
-    private static partial Regex OptionToken();
-
-    /// <summary>A placeholder such as <c>&lt;range&gt;</c> or <c>&lt;out.pdf&gt;</c>.</summary>
-    [GeneratedRegex(@"<[^<>\s][^<>]*>")]
-    private static partial Regex Placeholder();
 }
