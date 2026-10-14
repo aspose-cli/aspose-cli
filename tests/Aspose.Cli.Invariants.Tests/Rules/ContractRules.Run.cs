@@ -219,14 +219,25 @@ internal sealed partial class RuleWorkspace : IDisposable
         }
         string exit = output.Result.ReplaceLineEndings("\n").Split('\n').LastOrDefault(static line => line.StartsWith("exit=", StringComparison.Ordinal))
             ?? throw new InvalidOperationException($"The interrupt helper reported no exit code: {error.Result}");
-        string[] left =
+        return (int.Parse(exit["exit=".Length..], CultureInfo.InvariantCulture), Leftovers(invocation.Files.Keys));
+    }
+
+    /// <summary>
+    /// The workspace entries, files and directories, beside <paramref name="seeded"/>, the project
+    /// license and the project directory that holds it, sorted: what a run left behind, such as a
+    /// <c>.aspose-publication-*</c> staging directory or a file beside the license.
+    /// </summary>
+    public string[] Leftovers(IEnumerable<string> seeded)
+    {
+        HashSet<string> kept = new(seeded, StringComparer.OrdinalIgnoreCase);
+        return
         [
             .. Directory.EnumerateFileSystemEntries(Root, "*", SearchOption.AllDirectories)
                 .Select(path => Path.GetRelativePath(Root, path).Replace('\\', '/'))
-                .Where(path => !path.StartsWith(ScenarioLicense.ProjectDirectory, StringComparison.OrdinalIgnoreCase) && !invocation.Files.ContainsKey(path))
+                .Where(path => !IsProjectLicense(path) && !path.Equals(ScenarioLicense.ProjectDirectory, StringComparison.OrdinalIgnoreCase)
+                    && !kept.Contains(path))
                 .Order(StringComparer.Ordinal),
         ];
-        return (int.Parse(exit["exit=".Length..], CultureInfo.InvariantCulture), left);
     }
 
     /// <summary>Content hashes by relative path of the workspace and the configuration directory, without the project license.</summary>
@@ -238,7 +249,7 @@ internal sealed partial class RuleWorkspace : IDisposable
             foreach (string path in Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories))
             {
                 string relative = prefix + Path.GetRelativePath(root, path).Replace('\\', '/');
-                if (!relative.StartsWith(ScenarioLicense.ProjectDirectory + "/", StringComparison.OrdinalIgnoreCase))
+                if (!IsProjectLicense(relative))
                 {
                     files[relative] = FileHashes.Sha256(path);
                 }
@@ -246,6 +257,9 @@ internal sealed partial class RuleWorkspace : IDisposable
         }
         return files;
     }
+
+    private static bool IsProjectLicense(string relative) =>
+        relative.Equals(ScenarioLicense.ProjectLicense, StringComparison.OrdinalIgnoreCase);
 
     /// <summary>The paths a run created, changed or deleted, sorted.</summary>
     public static string[] Written(IReadOnlyDictionary<string, string> before, IReadOnlyDictionary<string, string> after) =>

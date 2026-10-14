@@ -403,7 +403,7 @@ public static partial class ScenarioRunner
         foreach (string path in Directory.EnumerateFiles(workspace.Path, "*", SearchOption.AllDirectories))
         {
             string relative = Normalize(Path.GetRelativePath(workspace.Path, path));
-            if (!relative.StartsWith(ScenarioLicense.ProjectDirectory + "/", StringComparison.OrdinalIgnoreCase))
+            if (!relative.Equals(ScenarioLicense.ProjectLicense, StringComparison.OrdinalIgnoreCase))
             {
                 files[relative] = FileHashes.Sha256(path);
             }
