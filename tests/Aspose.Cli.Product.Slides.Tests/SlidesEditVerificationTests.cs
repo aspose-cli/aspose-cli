@@ -65,7 +65,7 @@ public sealed class SlidesEditVerificationTests
         var verifier = new SlidesEditVerifier(edited, _ => target, evaluation: false);
         SlidesAuthoring.Title(edited.Slides[0]).TextFrame.Text = "Changed";
 
-        verifier.Record(operation, new AppliedOperation(1, ["slide/1/shape/2"]));
+        verifier.Record(operation, AppliedOperations.Changed(SlidesOp.Catalog, operation, 1));
         // The output read back still holds the original title.
         VerificationFacts facts = verifier.Verify(output);
 

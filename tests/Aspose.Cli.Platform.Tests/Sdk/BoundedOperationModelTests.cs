@@ -280,6 +280,44 @@ public sealed class BoundedOperationModelTests
         Assert.Empty(applied.Changed);
     }
 
+    /// <summary>
+    /// Only the SDK says what an operation changed: a product cannot construct, default or
+    /// rewrite an <see cref="AppliedOperation"/>, so every count and target it reports comes from
+    /// the snapshots of its <see cref="IOperationModel{TOp}"/>.
+    /// </summary>
+    [Fact]
+    public void AppliedOperation_IsConstructedOnlyByTheSdk()
+    {
+        Type type = typeof(AppliedOperation);
+        const System.Reflection.BindingFlags Everything = System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic
+            | System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.Static;
+
+        Assert.False(type.IsValueType, "A struct can be constructed as default by anyone.");
+        Assert.True(type.IsSealed);
+        Assert.All(type.GetConstructors(Everything), static constructor => Assert.True(constructor.IsAssembly || constructor.IsPrivate, constructor.ToString()));
+        Assert.DoesNotContain(type.GetMethods(Everything), static method =>
+            (method.IsPublic || method.IsFamily || method.IsFamilyOrAssembly)
+            && (method.ReturnType == typeof(AppliedOperation) || method.Name.StartsWith("set_", StringComparison.Ordinal)));
+    }
+
+    [Fact]
+    public void Run_ListsUpToTheMaximumTargetsAsTheyAre()
+    {
+        var model = new Model(static (_, document) =>
+        {
+            for (int index = 0; index < document.Pages.Count; index++)
+            {
+                document.Pages[index] += "'";
+            }
+        });
+        model.Pages.AddRange(Enumerable.Range(4, BoundedOperationOutcome.MaximumTargets - 3).Select(static page => $"p{page}"));
+
+        AppliedBatch applied = BoundedOperationRunner.Run(Catalog, Batch(new SetOp { Value = 1 }), bestEffort: false, deadline: null, model);
+
+        Assert.Equal(100, BoundedOperationOutcome.MaximumTargets);
+        Assert.Equal(Enumerable.Range(1, 100).Select(static page => $"page/{page}"), Assert.Single(applied.Outcomes).Targets);
+    }
+
     /// <summary>Records each operation; the second one's record throws.</summary>
     private sealed class Verifier : IEditVerifier<TestOp>
     {

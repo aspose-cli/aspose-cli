@@ -6,19 +6,30 @@ using Aspose.Cli.Sdk.IO;
 namespace Aspose.Cli.Sdk.Operations;
 
 /// <summary>What one successfully applied operation changed.</summary>
-/// <param name="ItemsAffected">Number of product-owned items changed.</param>
-/// <param name="Targets">Stable product-owned addresses of the changed items.</param>
 /// <remarks>
-/// The SDK builds it from the snapshots an <see cref="IOperationModel{TOp}"/> takes. Until every
-/// product applies its batches through one, a product that still counts for itself constructs it
-/// too; once the last one has moved, the constructor becomes internal to the SDK.
+/// Only the SDK constructs it, from the snapshots an <see cref="IOperationModel{TOp}"/> takes
+/// before and after the operation: a product supplies the snapshots and counts nothing.
 /// </remarks>
-public readonly record struct AppliedOperation(long ItemsAffected, IReadOnlyList<string> Targets);
+public sealed class AppliedOperation
+{
+    internal AppliedOperation(long itemsAffected, IReadOnlyList<string> targets)
+    {
+        ItemsAffected = itemsAffected;
+        Targets = targets;
+    }
+
+    /// <summary>Number of product-owned items changed.</summary>
+    public long ItemsAffected { get; }
+
+    /// <summary>Stable product-owned addresses of the changed items.</summary>
+    public IReadOnlyList<string> Targets { get; }
+}
 
 /// <summary>
-/// Applies a validated batch in order and reports one outcome per operation. An outcome lists
-/// at most <see cref="BoundedOperationOutcome.MaximumTargets"/> targets: one that changed more parts lists the product's
-/// degenerate form instead, never a prefix of the parts.
+/// Applies a validated batch in order through the product's <see cref="IOperationModel{TOp}"/>
+/// and reports one outcome per operation. An outcome lists at most
+/// <see cref="BoundedOperationOutcome.MaximumTargets"/> targets: one that changed more parts lists
+/// one range per unit that covers them all instead, never a prefix of the parts.
 /// </summary>
 /// <remarks>
 /// Handlers resolve and check their targets before they change the document, so an
@@ -31,43 +42,6 @@ public readonly record struct AppliedOperation(long ItemsAffected, IReadOnlyList
 public static class BoundedOperationRunner
 {
     private const string BestEffortHint = "Fix or remove this operation, then retry the batch.";
-
-    /// <summary>Runs every operation of a validated batch.</summary>
-    /// <param name="catalog">The vocabulary the batch was validated against.</param>
-    /// <param name="operations">Validated operations with assigned ids.</param>
-    /// <param name="bestEffort">Whether a rejected operation is recorded instead of stopping the batch.</param>
-    /// <param name="deadline">Invocation deadline checked before every operation.</param>
-    /// <param name="apply">Applies one operation; receives its zero-based index.</param>
-    /// <param name="attemptedTargets">Addresses reported for an operation that failed; receives its index.</param>
-    /// <param name="degenerateTargets">
-    /// The product's degenerate form of an operation's targets when it lists more than
-    /// <see cref="BoundedOperationOutcome.MaximumTargets"/>: the document root address, such as <c>document</c>, or range
-    /// addresses that cover every changed part, never a category address with a meaning of its
-    /// own; receives the operation and its full list. A product whose operations never list that
-    /// many omits it.
-    /// </param>
-    /// <exception cref="InvalidOperationException">
-    /// An operation lists more than <see cref="BoundedOperationOutcome.MaximumTargets"/> targets without a degenerate form,
-    /// or the degenerate form is empty or as long.
-    /// </exception>
-    public static IReadOnlyList<BoundedOperationOutcome> Run<TOp>(
-        OperationCatalog<TOp> catalog,
-        IReadOnlyList<TOp> operations,
-        bool bestEffort,
-        OperationDeadline? deadline,
-        Func<TOp, int, AppliedOperation> apply,
-        Func<TOp, int, IReadOnlyList<string>> attemptedTargets,
-        Func<TOp, IReadOnlyList<string>, IReadOnlyList<string>>? degenerateTargets = null)
-        where TOp : BoundedOperation
-    {
-        ArgumentNullException.ThrowIfNull(apply);
-        ArgumentNullException.ThrowIfNull(attemptedTargets);
-        return Execute(
-            catalog, operations, bestEffort, deadline, apply.Method.Module.Assembly, apply,
-            (operation, index, name) => Bounded(operation, name, attemptedTargets(operation, index), degenerateTargets),
-            (operation, name, applied) => Bounded(operation, name, applied.Targets, degenerateTargets),
-            applied: null);
-    }
 
     /// <summary>
     /// Runs every operation of a validated batch through the product's object model: the SDK
@@ -149,8 +123,7 @@ public static class BoundedOperationRunner
 
                 return new AppliedOperation(changes.Count, [.. changes.Select(static change => change.Address).Distinct(StringComparer.Ordinal)]);
             },
-            (operation, _, _) => Covered(model.AttemptedTargets(operation)),
-            (_, _, applied) => Covered(applied.Targets),
+            operation => Covered(model.AttemptedTargets(operation)),
             (operation, id, name, applied) =>
             {
                 if (applied.ItemsAffected == 0)
@@ -265,9 +238,8 @@ public static class BoundedOperationRunner
         OperationDeadline? deadline,
         Assembly product,
         Func<TOp, int, AppliedOperation> apply,
-        Func<TOp, int, string, IReadOnlyList<string>> attemptedTargets,
-        Func<TOp, string, AppliedOperation, IReadOnlyList<string>> appliedTargets,
-        Action<TOp, string, string, AppliedOperation>? applied)
+        Func<TOp, IReadOnlyList<string>> attemptedTargets,
+        Action<TOp, string, string, AppliedOperation> applied)
         where TOp : BoundedOperation
     {
         ArgumentNullException.ThrowIfNull(catalog);
@@ -284,7 +256,7 @@ public static class BoundedOperationRunner
                 ?? throw new ArgumentException("Every operation of a validated batch has an id.", nameof(operations));
             deadline?.ThrowIfExpired("operations");
             CliException? rejection = null;
-            AppliedOperation done = default;
+            AppliedOperation? done = null;
             try
             {
                 done = apply(operation, index);
@@ -323,15 +295,17 @@ public static class BoundedOperationRunner
 
             if (rejection is null)
             {
+                // Nothing was rejected, so the operation applied and the model said what it changed.
+                AppliedOperation result = done!;
                 outcomes.Add(new BoundedOperationOutcome
                 {
                     Id = id,
                     Op = name,
                     Status = OpStatuses.Ok,
-                    ItemsAffected = done.ItemsAffected,
-                    Targets = appliedTargets(operation, name, done),
+                    ItemsAffected = result.ItemsAffected,
+                    Targets = Covered(result.Targets),
                 });
-                applied?.Invoke(operation, id, name, done);
+                applied(operation, id, name, result);
                 continue;
             }
 
@@ -345,32 +319,12 @@ public static class BoundedOperationRunner
                 Op = name,
                 Status = OpStatuses.Failed,
                 ItemsAffected = 0,
-                Targets = attemptedTargets(operation, index, name),
+                Targets = attemptedTargets(operation),
                 Error = rejection.ToEnvelope().Error with { Hint = rejection.Hint ?? BestEffortHint },
             });
         }
 
         return outcomes;
-    }
-
-    private static IReadOnlyList<string> Bounded<TOp>(
-        TOp operation,
-        string name,
-        IReadOnlyList<string> targets,
-        Func<TOp, IReadOnlyList<string>, IReadOnlyList<string>>? degenerateTargets)
-    {
-        if (targets.Count <= BoundedOperationOutcome.MaximumTargets)
-        {
-            return targets;
-        }
-
-        IReadOnlyList<string> degenerate = degenerateTargets?.Invoke(operation, targets)
-            ?? throw new InvalidOperationException(
-                $"Operation '{name}' lists {targets.Count} targets, more than {BoundedOperationOutcome.MaximumTargets}, and its product declares no degenerate form.");
-        return degenerate.Count is > 0 and <= BoundedOperationOutcome.MaximumTargets
-            ? degenerate
-            : throw new InvalidOperationException(
-                $"The degenerate form of operation '{name}' lists {degenerate.Count} targets; it must list 1 to {BoundedOperationOutcome.MaximumTargets}.");
     }
 
     private static bool Declares(IReadOnlyList<string> inputs, string file)

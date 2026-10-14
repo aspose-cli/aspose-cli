@@ -185,8 +185,9 @@ public sealed class PdfEditVerificationTests
 
         // Bookmark 9 does not exist, so the new bookmark's index cannot be computed; the SDK
         // runner then leaves the operation unchecked.
-        Assert.Throws<InvalidOperationException>(() => verifier.Record(
-            new AddBookmarkOp { Id = "op-0001", Title = "Orphan", Page = 1, Parent = "9" }, new AppliedOperation(1, [])));
+        var orphan = new AddBookmarkOp { Id = "op-0001", Title = "Orphan", Page = 1, Parent = "9" };
+        AppliedOperation applied = AppliedOperations.Changed(PdfOp.Catalog, orphan, 1);
+        Assert.Throws<InvalidOperationException>(() => verifier.Record(orphan, applied));
     }
 
     [Fact]
@@ -202,7 +203,8 @@ public sealed class PdfEditVerificationTests
 
         using var document = new Document(input);
         var verifier = new PdfEditVerifier(document);
-        verifier.Record(new RedactTextOp { Id = "op-0001", Find = "(a+)+$", Regex = true }, new AppliedOperation(0, []));
+        var redact = new RedactTextOp { Id = "op-0001", Find = "(a+)+$", Regex = true };
+        verifier.Record(redact, AppliedOperations.Changed(PdfOp.Catalog, redact, 0));
 
         VerificationFacts verification = verifier.Verify(document, fixture.LicenseState, deadline: null);
 
@@ -255,7 +257,8 @@ public sealed class PdfEditVerificationTests
             _ => throw new ArgumentOutOfRangeException(nameof(operation)),
         };
 
-        verifier.Record(op with { Id = "op-0001" }, new AppliedOperation(affected, []));
+        PdfOp identified = op with { Id = "op-0001" };
+        verifier.Record(identified, AppliedOperations.Changed(PdfOp.Catalog, identified, affected));
         VerificationFacts verification = verifier.Verify(document, fixture.LicenseState, deadline: null);
 
         Assert.Contains(verification.Issues, issue => issue.Code == code);
@@ -271,9 +274,8 @@ public sealed class PdfEditVerificationTests
         using var document = new Document(input);
         var verifier = new PdfEditVerifier(document);
 
-        verifier.Record(
-            new SetPropertiesOp { Id = "op-0001", Title = "Quarterly", Custom = new Dictionary<string, string> { ["Department"] = "Sales" } },
-            new AppliedOperation(2, []));
+        var properties = new SetPropertiesOp { Id = "op-0001", Title = "Quarterly", Custom = new Dictionary<string, string> { ["Department"] = "Sales" } };
+        verifier.Record(properties, AppliedOperations.Changed(PdfOp.Catalog, properties, 2));
         VerificationFacts verification = verifier.Verify(document, fixture.LicenseState, deadline: null);
 
         Assert.Equal(
