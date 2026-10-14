@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text.RegularExpressions;
 using Aspose.Cli.Sdk.Diagnostics;
+using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Pdf;
@@ -18,7 +19,8 @@ namespace Aspose.Cli.Product.Pdf.Engine.Editing;
 /// information, attachments and the page count. The batch is checked as a whole: an
 /// expectation a later operation supersedes (the same field, key or attachment set again, the
 /// outline or the pages renumbered) is dropped, and an operation is reported as checked only
-/// when every effect it recorded was read back.
+/// when every effect it recorded was read back. The output is read as <c>pdf inspect</c> reads it
+/// (<see cref="PdfInfoProjection"/>), and an issue is located under the object's address there.
 /// </summary>
 internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
 {
@@ -81,21 +83,9 @@ internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
                     redact.Pages is null ? null : PdfMutationSupport.Resolve(document, redact.Pages)));
                 break;
             case SetPropertiesOp metadata:
-                Expect(metadata.Title, "Title");
-                Expect(metadata.Author, "Author");
-                Expect(metadata.Subject, "Subject");
-                Expect(metadata.Keywords, "Keywords");
-                foreach ((string key, string value) in metadata.Custom ?? new Dictionary<string, string>())
+                foreach ((string key, string value) in PdfPropertyNames.Written(metadata))
                 {
-                    Expect(value, key);
-                }
-
-                void Expect(string? value, string key)
-                {
-                    if (value is not null)
-                    {
-                        Replace(_metadata, key, new Expected<string>(id, value));
-                    }
+                    Replace(_metadata, key, new Expected<string>(id, value));
                 }
 
                 break;
@@ -114,10 +104,8 @@ internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
                 }
 
                 // The stream the handler embedded, never the source file again.
-                Replace(_addedAttachments, added, new Expected<long?>(id, document.EmbeddedFiles
-                    .LastOrDefault(file => (file.UnicodeName ?? file.Name) == added)?.Contents is { CanSeek: true } contents
-                        ? contents.Length
-                        : null));
+                Replace(_addedAttachments, added, new Expected<long?>(id, PdfInfoProjection.AttachmentEntries(document)
+                    .LastOrDefault(entry => entry.Info.Name == added).File is { } file ? PdfInfoProjection.Unreported.Length(file) : null));
                 break;
             case DeleteAttachmentOp attachment:
                 Drop(_addedAttachments, attachment.Name);
@@ -214,11 +202,14 @@ internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
 
     private void VerifyFields(Document output, List<VerificationIssue> issues)
     {
+        Dictionary<string, Field> fields = PdfForms.Named(output)
+            .Where(static item => item.Name is not null)
+            .ToDictionary(static item => item.Name, static item => item.Field, StringComparer.Ordinal);
         foreach ((string name, Expected<string> expected) in _fields)
         {
             _checked.Add(expected.Id);
-            Field? field = output.Form.Fields.FirstOrDefault(item => string.Equals(item.FullName, name, StringComparison.Ordinal));
-            string? actual = field is null ? null : (PdfForms.RadioGroup(field) ?? field).Value;
+            Field? field = fields.GetValueOrDefault(name);
+            string? actual = field is null ? null : PdfForms.State(field).Value;
             if (!string.Equals(actual, expected.Value, StringComparison.Ordinal))
             {
                 issues.Add(Issue(
@@ -227,7 +218,7 @@ internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
                     field is null
                         ? $"form field '{name}' is not in the output"
                         : $"form field '{name}' reads '{actual}' in the output, not '{expected.Value}'",
-                    location: $"field/{TargetName.Escape(name)}",
+                    location: PdfInfoProjection.Address("field", name),
                     hint: "Read the field with 'pdf inspect --detail forms' and check the value against the field's options."));
             }
         }
@@ -239,6 +230,7 @@ internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
         foreach (Expected<IReadOnlyList<string>?> flatten in _flattened)
         {
             _checked.Add(flatten.Id);
+            // In the order of the document's fields, which a read lists by name.
             string[] remaining = [.. output.Form.Fields
                 .Select(static field => field.FullName)
                 .Where(name => flatten.Value?.Contains(name, StringComparer.Ordinal) ?? true)
@@ -335,10 +327,11 @@ internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
                 hint: "Compare 'pdf inspect --detail outline' of the input and the output."));
         }
 
+        Dictionary<string, (PdfOutlineItem Item, int Destination)> outline = PdfInfoProjection.Outline(output.Outlines, parent: null, int.MaxValue, int.MaxValue)
+            .ToDictionary(static entry => entry.Item.Bookmark, StringComparer.Ordinal);
         foreach (BookmarkExpectation bookmark in _bookmarks)
         {
-            OutlineItemCollection? item = Find(output.Outlines, bookmark.Index);
-            int? page = item is null ? null : PdfNavigationCensus.DestinationPage(item);
+            (PdfOutlineItem? item, int page) = outline.GetValueOrDefault(bookmark.Index);
             if (item is null || !string.Equals(item.Title, bookmark.Title, StringComparison.Ordinal)
                 || (bookmark.Page is { } expected && page != expected))
             {
@@ -359,14 +352,14 @@ internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
         foreach ((string key, Expected<string> expected) in _metadata)
         {
             _checked.Add(expected.Id);
-            string? actual = output.Info.TryGetValue(key, out string? stored) ? stored : null;
+            string? actual = PdfInfoProjection.Unreported.Info(output, key);
             if (!string.Equals(actual ?? string.Empty, expected.Value, StringComparison.Ordinal))
             {
                 issues.Add(Issue(
                     PdfDiagnostics.PropertiesMismatch,
                     [expected.Id],
                     $"document information '{key}' reads '{actual}' in the output, not '{expected.Value}'",
-                    location: $"property/{TargetName.Escape(PdfPropertyNames.Reported(key) ?? key)}",
+                    location: PdfInfoProjection.PropertyAddress(key),
                     hint: "Inspect the output with 'pdf inspect --detail properties'."));
             }
         }
@@ -383,16 +376,16 @@ internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
             return;
         }
 
-        ILookup<string, FileSpecification> present = output.EmbeddedFiles
-            .Where(static file => !string.IsNullOrEmpty(file.UnicodeName ?? file.Name))
-            .ToLookup(static file => (file.UnicodeName ?? file.Name)!, StringComparer.Ordinal);
+        ILookup<string, FileSpecification> present = PdfInfoProjection.AttachmentEntries(output)
+            .Where(static entry => entry.Info.Name.Length > 0)
+            .ToLookup(static entry => entry.Info.Name, static entry => entry.File, StringComparer.Ordinal);
         foreach ((string name, Expected<long?> expected) in _addedAttachments)
         {
             _checked.Add(expected.Id);
             FileSpecification[] files = [.. present[name]];
             string? problem = files.Length == 0
                 ? $"attachment '{name}' is not in the output"
-                : expected.Value is long size && !files.Any(file => Length(file) is not long actual || actual == size)
+                : expected.Value is long size && !files.Any(file => PdfInfoProjection.Unreported.Length(file) is not long actual || actual == size)
                     ? string.Create(CultureInfo.InvariantCulture, $"no attachment named '{name}' in the output holds the {size} byte(s) it added")
                     : null;
             Report(name, expected.Id, problem);
@@ -412,7 +405,7 @@ internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
                     PdfDiagnostics.AttachmentMismatch,
                     [id],
                     problem,
-                    location: $"attachment/{TargetName.Escape(name)}",
+                    location: PdfInfoProjection.Address("attachment", name),
                     hint: "List the attachments with 'pdf inspect --detail attachments' and extract them with 'pdf extract --what attachments' to compare."));
             }
         }
@@ -441,27 +434,16 @@ internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
     }
 
     /// <summary>The index of the bookmark add_bookmark just appended below <paramref name="parent"/>.</summary>
-    private static string NewBookmarkIndex(Document document, string? parent) =>
-        parent is null || Find(document.Outlines, parent) is not null
-            ? PdfMutationSupport.NewBookmarkIndex(document, parent)
-            : throw new InvalidOperationException($"Bookmark {parent} was not found.");
-
-    private static OutlineItemCollection? Find(IEnumerable<OutlineItemCollection> items, string index)
+    private static string NewBookmarkIndex(Document document, string? parent)
     {
-        OutlineItemCollection? found = null;
-        IEnumerable<OutlineItemCollection> level = items;
-        foreach (string part in index.Split('/'))
+        try
         {
-            found = level.Skip(int.Parse(part, CultureInfo.InvariantCulture) - 1).FirstOrDefault();
-            if (found is null)
-            {
-                return null;
-            }
-
-            level = found;
+            return PdfMutationSupport.NewBookmarkIndex(document, parent);
         }
-
-        return found;
+        catch (CliException exception)
+        {
+            throw new InvalidOperationException($"Bookmark {parent} was not found.", exception);
+        }
     }
 
     private static int Count(Regex pattern, string text) => pattern.Matches(text).Count(static match => match.Length > 0);
@@ -473,10 +455,6 @@ internal sealed class PdfEditVerifier : IEditVerifier<PdfOp>
         page.Accept(absorber);
         return absorber.TextFragments.Count == 0 ? null : absorber.TextFragments[1].Text;
     }
-
-    /// <summary>The attachment's length when its stream can tell it without being read.</summary>
-    private static long? Length(FileSpecification file) =>
-        file.Contents is { CanSeek: true } contents ? contents.Length : null;
 
     private sealed record Expected<T>(string Id, T Value);
 

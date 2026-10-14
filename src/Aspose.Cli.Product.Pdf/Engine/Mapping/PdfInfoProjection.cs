@@ -9,8 +9,22 @@ using Aspose.Pdf.Text;
 
 namespace Aspose.Cli.Product.Pdf.Engine.Mapping;
 
+/// <summary>
+/// The state of a PDF as <c>pdf inspect</c> reports it. Editing reads the same state from here:
+/// the snapshots of an operation and the expectations its verification reads back are this
+/// projection's values, and the objects are named by <see cref="Address"/>.
+/// </summary>
 internal static class PdfInfoProjection
 {
+    /// <summary>
+    /// The address of a named object, such as <c>attachment/notes.txt</c>: its unit and its name as
+    /// a read reports it, escaped by <see cref="TargetName.Escape"/>.
+    /// </summary>
+    internal static string Address(string unit, string name) => $"{unit}/{TargetName.Escape(name)}";
+
+    /// <summary>The address of the document information entry <paramref name="key"/>, by the name a read reports it under.</summary>
+    internal static string PropertyAddress(string key) => Address("property", PdfPropertyNames.Reported(key) ?? key);
+
     public static PdfInspectResult Project(LoadedPdf loaded, string path, PdfInspectRequest request)
     {
         Document document = loaded.Document;
@@ -140,7 +154,7 @@ internal static class PdfInfoProjection
             .ThenBy(static size => size.PageSize.Height)
             .ToArray();
 
-    private static PdfPageLabelInfo[] PageLabels(Document document) =>
+    internal static PdfPageLabelInfo[] PageLabels(Document document) =>
         document.PageLabels.GetPages()
             .Order()
             .Select(pageIndex =>
@@ -156,7 +170,7 @@ internal static class PdfInfoProjection
             })
             .ToArray();
 
-    private static PdfPageInfo Page(Page page) => new()
+    internal static PdfPageInfo Page(Page page) => new()
     {
         Page = page.Number,
         PageSize = PageSizeInfo.Of(Round(page.GetPageRect(considerRotation: true).Width), Round(page.GetPageRect(considerRotation: true).Height)),
@@ -194,37 +208,46 @@ internal static class PdfInfoProjection
 
     private static double Round(double value) => Math.Round(value, 3, MidpointRounding.AwayFromZero);
 
-    private static PdfOutlineItem[] Outline(Document document)
-    {
-        var results = new List<PdfOutlineItem>();
-        AppendOutline(document.Outlines, level: 1, parentIndex: null, results);
-        return results.ToArray();
-    }
+    private static PdfOutlineItem[] Outline(Document document) =>
+        [.. Outline(document.Outlines, parent: null, levels: int.MaxValue, PdfInspectResult.OutlineLimit).Select(static entry => entry.Item)];
 
-    private static void AppendOutline(
-        IEnumerable<OutlineItemCollection> items,
-        int level,
-        string? parentIndex,
-        List<PdfOutlineItem> results)
+    /// <summary>
+    /// The bookmarks of <paramref name="items"/>, which lie below the bookmark at
+    /// <paramref name="parent"/> (the top level when null), in outline order down to
+    /// <paramref name="levels"/> levels and at most <paramref name="limit"/> of them; the level of
+    /// <paramref name="items"/> is 1. Each comes with the page its destination stores, which is
+    /// not 1 or more when it opens no page of the document (<see cref="PdfOutlineItem.Page"/> is then null).
+    /// </summary>
+    internal static List<(PdfOutlineItem Item, int Destination)> Outline(IEnumerable<OutlineItemCollection> items, string? parent, int levels, int limit)
     {
-        int position = 0;
-        foreach (OutlineItemCollection item in items)
+        var results = new List<(PdfOutlineItem Item, int Destination)>();
+        Append(items, parent, depth: 1);
+        return results;
+
+        void Append(IEnumerable<OutlineItemCollection> siblings, string? above, int depth)
         {
-            if (results.Count >= PdfInspectResult.OutlineLimit)
+            int position = 0;
+            foreach (OutlineItemCollection item in siblings)
             {
-                return;
-            }
+                if (results.Count >= limit)
+                {
+                    return;
+                }
 
-            position++;
-            string index = PdfMutationSupport.OutlineIndex(parentIndex, position);
-            results.Add(new PdfOutlineItem
-            {
-                Title = item.Title ?? string.Empty,
-                Level = level,
-                Bookmark = index,
-                Page = PdfNavigationCensus.DestinationPage(item) is > 0 and int page ? page : null,
-            });
-            AppendOutline(item, level + 1, index, results);
+                string index = PdfMutationSupport.OutlineIndex(above, ++position);
+                int destination = PdfNavigationCensus.DestinationPage(item);
+                results.Add((new PdfOutlineItem
+                {
+                    Title = item.Title ?? string.Empty,
+                    Level = depth,
+                    Bookmark = index,
+                    Page = destination > 0 ? destination : null,
+                }, destination));
+                if (depth < levels)
+                {
+                    Append(item, index, depth + 1);
+                }
+            }
         }
     }
 
@@ -248,16 +271,18 @@ internal static class PdfInfoProjection
         });
 
     private static PdfAttachmentInfo[] Attachments(Document document) =>
+        [.. AttachmentEntries(document).Select(static entry => entry.Info).OrderBy(static item => item.Name, StringComparer.Ordinal)];
+
+    /// <summary>The attachments in the order the engine lists them, each as a read reports it, with its file.</summary>
+    internal static IEnumerable<(PdfAttachmentInfo Info, FileSpecification File)> AttachmentEntries(Document document) =>
         document.EmbeddedFiles
-            .Select(static file => new PdfAttachmentInfo
+            .Select(static file => (Info: new PdfAttachmentInfo
             {
                 Name = file.UnicodeName ?? file.Name ?? string.Empty,
                 MimeType = string.IsNullOrWhiteSpace(file.MIMEType) ? null : file.MIMEType,
                 SizeBytes = file.Params?.Size,
                 Description = string.IsNullOrWhiteSpace(file.Description) ? null : file.Description,
-            })
-            .OrderBy(static item => item.Name, StringComparer.Ordinal)
-            .ToArray();
+            }, File: file));
 
     private static PdfFontInfo[] Fonts(Document document)
     {
@@ -351,33 +376,46 @@ internal static class PdfInfoProjection
             .Order(StringComparer.Ordinal)
             .ToArray()!;
 
-    private static IReadOnlyDictionary<string, string?> Properties(Document document)
+    /// <summary>The document properties by the names a read reports them under.</summary>
+    internal static IReadOnlyDictionary<string, string?> Properties(Document document)
     {
-        var values = new SortedDictionary<string, string?>(StringComparer.Ordinal)
+        var values = new SortedDictionary<string, string?>(StringComparer.Ordinal);
+        foreach ((string name, string? value) in PropertyEntries(document))
         {
-            ["author"] = EmptyToNull(document.Info.Author),
-            ["creationDate"] = InfoDate(document.Info, "CreationDate"),
-            ["creator"] = EmptyToNull(document.Info.Creator),
-            ["keywords"] = EmptyToNull(document.Info.Keywords),
-            ["modificationDate"] = InfoDate(document.Info, "ModDate"),
-            ["producer"] = EmptyToNull(document.Info.Producer),
-            ["subject"] = EmptyToNull(document.Info.Subject),
-            ["title"] = EmptyToNull(document.Info.Title),
-        };
-
-        // A custom entry is reported under its own key, as set_properties custom names it.
-        foreach (string key in document.Info.Keys.Order(StringComparer.Ordinal).Where(static key => PdfPropertyNames.Standard(key) is null))
-        {
-            values[key] = EmptyToNull(document.Info[key]);
-        }
-
-        foreach ((string key, XmpValue value) in document.Metadata)
-        {
-            values["xmp:" + key] = XmpText(value);
+            values[name] = value;
         }
 
         return values;
     }
+
+    /// <summary>
+    /// The document information entries, every standard one and each custom one under its own
+    /// key, as set_properties custom names it, in the order of their keys; then the XMP entries.
+    /// </summary>
+    internal static IEnumerable<(string Name, string? Value)> PropertyEntries(Document document)
+    {
+        DocumentInfo info = document.Info;
+        return PdfPropertyNames.Standards
+            .Select(entry => (entry.Key, entry.Name, Value: StandardValue(info, entry.Key)))
+            .Concat(info.Keys.Where(static key => PdfPropertyNames.Standard(key) is null).Select(key => (Key: key, Name: key, Value: InfoText(info[key]))))
+            .OrderBy(static entry => entry.Key, StringComparer.Ordinal)
+            .Select(static entry => (entry.Name, entry.Value))
+            .Concat(document.Metadata.Select(static entry => ("xmp:" + entry.Key, XmpText(entry.Value))));
+    }
+
+    /// <summary>A document information text as a read reports it: blank text is no value.</summary>
+    internal static string? InfoText(string? value) => string.IsNullOrWhiteSpace(value) ? null : value;
+
+    private static string? StandardValue(DocumentInfo info, string key) => key switch
+    {
+        "Title" => InfoText(info.Title),
+        "Author" => InfoText(info.Author),
+        "Subject" => InfoText(info.Subject),
+        "Keywords" => InfoText(info.Keywords),
+        "Creator" => InfoText(info.Creator),
+        "Producer" => InfoText(info.Producer),
+        _ => InfoDate(info, key),
+    };
 
     private static string? Date(DateTime value) =>
         value == default ? null : Iso(value.ToUniversalTime());
@@ -468,5 +506,50 @@ internal static class PdfInfoProjection
         }
     }
 
-    private static string? EmptyToNull(string? value) => string.IsNullOrWhiteSpace(value) ? null : value;
+    /// <summary>
+    /// What an edit compares that a read reports coarser or not at all: the text the document
+    /// stores, which a read trims, normalizes or leaves out, and the parts of an object no read
+    /// reports. The objects are those a read names, under the same addresses.
+    /// </summary>
+    internal static class Unreported
+    {
+        /// <summary>
+        /// The document information entries a read reports, each by the name it reports and the
+        /// text the document stores, in the order of their keys, then every XMP entry by its stored
+        /// value; an empty entry is one the document does not hold.
+        /// </summary>
+        internal static IEnumerable<(string Name, string Address, string Stored)> Properties(Document document)
+        {
+            foreach (string key in document.Info.Keys.Order(StringComparer.Ordinal))
+            {
+                if (document.Info[key] is { Length: > 0 } stored && PdfPropertyNames.Reported(key) is { } name)
+                {
+                    yield return (name, Address("property", name), stored);
+                }
+            }
+
+            foreach ((string key, XmpValue value) in document.Metadata)
+            {
+                yield return ("xmp:" + key, $"property/xmp:{TargetName.Escape(key)}", value.ToString() ?? string.Empty);
+            }
+        }
+
+        /// <summary>The text the document information entry <paramref name="key"/> stores, or null when there is none.</summary>
+        internal static string? Info(Document document, string key) => document.Info.TryGetValue(key, out string? stored) ? stored : null;
+
+        /// <summary>An attachment's stored description, media type and length (-1 when its stream cannot tell it).</summary>
+        internal static string Attachment(FileSpecification file) =>
+            string.Create(CultureInfo.InvariantCulture, $"{file.Description}|{file.MIMEType}|{Length(file) ?? -1}");
+
+        /// <summary>The attachment's length when its stream can tell it without being read.</summary>
+        internal static long? Length(FileSpecification file) => file.Contents is { CanSeek: true } contents ? contents.Length : null;
+
+        /// <summary>A page's stored rotation and boxes, which a read reports rounded and from the media box.</summary>
+        internal static string Geometry(Page page) =>
+            string.Create(CultureInfo.InvariantCulture, $"{page.Rotate}|{Box(page.MediaBox)}|{Box(page.CropBox)}");
+
+        /// <summary>A rectangle as the document stores it.</summary>
+        internal static string Box(Rectangle? box) =>
+            box is null ? "-" : string.Create(CultureInfo.InvariantCulture, $"{box.LLX},{box.LLY},{box.URX},{box.URY}");
+    }
 }

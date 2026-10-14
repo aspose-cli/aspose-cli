@@ -18,9 +18,7 @@ internal static class PdfForms
     internal static PdfFormInfo Project(Document document, out bool truncated)
     {
         Form form = document.Form;
-        IGrouping<string, Field>[] named = [.. form.Fields
-            .GroupBy(static field => field.FullName, StringComparer.Ordinal)
-            .OrderBy(static group => group.Key, StringComparer.Ordinal)];
+        (string Name, Field Field)[] named = [.. Named(document)];
         truncated = named.Length > PdfInspectResult.FieldLimit;
         return new PdfFormInfo
         {
@@ -28,8 +26,22 @@ internal static class PdfForms
             // A radio group's buttons share its name and are one field.
             FieldCount = named.Length,
             ReadOnly = form.HasXfa,
-            Fields = [.. named.Take(PdfInspectResult.FieldLimit).Select(group => Project(document, group.Key, group.First()))],
+            Fields = [.. named.Take(PdfInspectResult.FieldLimit).Select(item => Project(document, item.Name, item.Field))],
         };
+    }
+
+    /// <summary>The field names in ordinal order, each with the field a read projects: the first of its name.</summary>
+    internal static IEnumerable<(string Name, Field Field)> Named(Document document) =>
+        document.Form.Fields
+            .GroupBy(static field => field.FullName, StringComparer.Ordinal)
+            .OrderBy(static group => group.Key, StringComparer.Ordinal)
+            .Select(static group => (group.Key, group.First()));
+
+    /// <summary>The kind and value a read reports for a field; a radio button reports its group's.</summary>
+    internal static (string Kind, string? Value) State(Field field)
+    {
+        Field projected = RadioGroup(field) ?? field;
+        return (FieldKind(projected), projected.Value);
     }
 
     /// <summary>
@@ -49,11 +61,12 @@ internal static class PdfForms
             CheckboxField checkbox when CheckboxStates(checkbox) is { Count: > 0 } states => states,
             _ => null,
         };
+        (string kind, string? value) = State(field);
         return new PdfFormField
         {
             Name = name,
-            Kind = FieldKind(projected),
-            Value = projected.Value,
+            Kind = kind,
+            Value = value,
             Options = options,
             ReadOnly = projected.ReadOnly,
             Required = projected.Required,
