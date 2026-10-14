@@ -57,6 +57,7 @@ public sealed class MistakeRecoveryCliTests : IDisposable
     [InlineData("cells edit a.xlsx --set Sheet1!A1=5 --out x.pdf", "--out", "Must be one of: .xlsx,", "then run 'aspose-cli cells convert <that file> --to pdf' for pdf")]
     [InlineData("slides edit a.pptx --ops ops.json --out x.pdf", "--out", "Must be one of: .pptx,", "then run 'aspose-cli slides convert <that file> --to pdf' for pdf")]
     [InlineData("slides create x.ppt --from-markdown deck.md", "file", "Must be one of: .pptx,", "then run 'aspose-cli slides convert <that file> --to ppt' for ppt")]
+    [InlineData("cells create x.pdf", "file", "Must be one of: .xlsx,", "then run 'aspose-cli cells convert <that file> --to pdf' for pdf")]
     [InlineData("pdf edit a.pdf --ops ops.json --out x.md", "--out", "Must be one of: .pdf.", "then run 'aspose-cli pdf convert <that file> --to md' for md")]
     [InlineData("pdf create x.md --from-text deck.md", "file", "Must be one of: .pdf.", "then run 'aspose-cli pdf convert <that file> --to md' for md")]
     [InlineData("words edit a.docx --set bookmark:A=x --out x.pdf", "--out", "Must be one of: .doc,", "then run 'aspose-cli words convert <that file> --to pdf' for pdf")]

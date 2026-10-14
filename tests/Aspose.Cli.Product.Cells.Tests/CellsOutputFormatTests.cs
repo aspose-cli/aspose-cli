@@ -70,6 +70,11 @@ public sealed class CellsOutputFormatTests : IClassFixture<CellsFixture>
     [InlineData("book.xltx", "xltx")]
     [InlineData("book.XLTM", "xltm")]
     [InlineData("book.htm", "html")]
+    [InlineData("book.xlsx", "xlsx")]
+    [InlineData("book.xls", "xls")]
+    [InlineData("book.ods", "ods")]
+    [InlineData("book.csv", "csv")]
+    [InlineData("book.mhtml", "mhtml")]
     public void ACreatedWorkbook_IsTheFormatItsExtensionNames(string path, string format)
     {
         using var workspace = new TempWorkspace();
@@ -93,6 +98,37 @@ public sealed class CellsOutputFormatTests : IClassFixture<CellsFixture>
         Assert.Contains("\"USAGE_ERROR\"", refused.StdErr, StringComparison.Ordinal);
         Assert.Contains(".xlsx", refused.StdErr, StringComparison.Ordinal);
         Assert.Empty(Directory.GetFileSystemEntries(workspace.Path));
+    }
+
+    [Theory]
+    [InlineData("book.pdf", "pdf")]
+    [InlineData("book.md", "md")]
+    [InlineData("book.json", "json")]
+    [InlineData("book.xps", "xps")]
+    public void ACreatedWorkbookInAFormatEditCannotWrite_IsRefused_AndPointsToTheConvertThatWritesIt(string path, string format)
+    {
+        using var workspace = new TempWorkspace();
+
+        CliResult refused = workspace.Run("cells", "create", path, "--output-format", "json");
+
+        Assert.Equal(2, refused.ExitCode);
+        System.Text.Json.Nodes.JsonNode error = System.Text.Json.Nodes.JsonNode.Parse(refused.StdErr)!["error"]!;
+        Assert.Equal("USAGE_ERROR", error["code"]!.GetValue<string>());
+        Assert.Equal(format, error["details"]!["format"]!.GetValue<string>());
+        Assert.Equal(
+            [".xlsx", ".xltx", ".xlsm", ".xltm", ".xlsb", ".xls", ".ods", ".csv", ".txt", ".tsv", ".html", ".htm", ".mhtml"],
+            error["details"]!["available"]!.AsArray().Select(static extension => extension!.GetValue<string>()));
+        Assert.Empty(Directory.GetFileSystemEntries(workspace.Path));
+        string convert = $"aspose-cli cells convert <that file> --to {format}";
+        Assert.Equal($"Give file one of these extensions, then run '{convert}' for {format}.", error["hint"]!.GetValue<string>());
+
+        // The hint works as written: create a workbook, then run the convert it names.
+        CliResult kept = workspace.Run("cells", "create", "book.xlsx", "--output-format", "json");
+        Assert.True(kept.ExitCode == 0, kept.StdErr);
+        string[] converting = convert.Replace("<that file>", "book.xlsx", StringComparison.Ordinal).Split(' ')[1..];
+        CliResult converted = workspace.Run([.. converting, "--out", path, "--output-format", "json"]);
+        Assert.True(converted.ExitCode == 0, converted.StdErr);
+        Assert.Equal(format, System.Text.Json.Nodes.JsonNode.Parse(converted.StdOut)!["output"]!["format"]!.GetValue<string>());
     }
 
     private CellsEditResult Apply(string source, string output) =>
