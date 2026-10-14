@@ -30,4 +30,25 @@
     <PackageReference Include="xunit.v3.extensibility.core" />
   </ItemGroup>
 
+  <!-- A RepositoryInput names a repository file outside this project that its tests read, so that
+       scripts/test.ps1 runs the project when the file changes: one that is missing, outside the
+       repository or inside this project (whose changes reach it already) is a mistake. -->
+  <Target Name="CheckRepositoryInputs" BeforeTargets="CoreCompile" Condition="'@(RepositoryInput)' != ''">
+    <PropertyGroup>
+      <_RepositoryRoot>$([MSBuild]::NormalizeDirectory('$(MSBuildThisFileDirectory)..'))</_RepositoryRoot>
+    </PropertyGroup>
+    <ItemGroup>
+      <_RepositoryInputCheck Include="@(RepositoryInput->'%(FullPath)')">
+        <FromRoot>$([MSBuild]::MakeRelative('$(_RepositoryRoot)', '%(FullPath)'))</FromRoot>
+        <FromProject>$([MSBuild]::MakeRelative('$(MSBuildProjectDirectory)\', '%(FullPath)'))</FromProject>
+      </_RepositoryInputCheck>
+    </ItemGroup>
+    <Error ContinueOnError="ErrorAndContinue" Condition="!Exists('%(_RepositoryInputCheck.Identity)')"
+           Text="RepositoryInput '%(_RepositoryInputCheck.Identity)' does not exist." />
+    <Error ContinueOnError="ErrorAndContinue" Condition="$([System.String]::Copy('%(_RepositoryInputCheck.FromRoot)').StartsWith('..')) Or $([System.IO.Path]::IsPathRooted('%(_RepositoryInputCheck.FromRoot)'))"
+           Text="RepositoryInput '%(_RepositoryInputCheck.Identity)' lies outside the repository; a test reads only repository files." />
+    <Error ContinueOnError="ErrorAndContinue" Condition="!$([System.String]::Copy('%(_RepositoryInputCheck.FromProject)').StartsWith('..')) And !$([System.IO.Path]::IsPathRooted('%(_RepositoryInputCheck.FromProject)'))"
+           Text="RepositoryInput '%(_RepositoryInputCheck.Identity)' lies inside $(MSBuildProjectName), whose changes already reach it; remove the item." />
+  </Target>
+
 </Project>
