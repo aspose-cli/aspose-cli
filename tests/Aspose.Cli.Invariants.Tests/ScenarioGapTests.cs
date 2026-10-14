@@ -94,4 +94,27 @@ public sealed class ScenarioGapTests
             [".aspose-publication-1a2b", ".aspose-publication-1a2b/part.tmp", ".aspose/notes.txt"],
             workspace.Leftovers(["input.docx"]));
     }
+
+    /// <summary>A hidden text in a file the step wrote is reported, not only one in stdout or stderr.</summary>
+    [Fact]
+    public void HiddenTextInAWrittenFile_IsReported()
+    {
+        Scenario scenario = Scenario.Parse("""
+            {
+              "name": "a secret copied into the output",
+              "files": { "in.csv": { "text": "name\nHidden-I3-5e1d\n" } },
+              "steps": [
+                {
+                  "args": ["cells", "convert", "in.csv", "--to", "tsv", "--out", "out.tsv"],
+                  "expect": { "exitCode": 0, "hidden": ["Hidden-I3-5e1d"] }
+                }
+              ]
+            }
+            """);
+
+        ScenarioOutcome outcome = ScenarioRunner.Run(scenario);
+
+        ScenarioProblem problem = Assert.Single(outcome.Problems, static problem => problem.Check == ScenarioRunner.HiddenCheck);
+        Assert.Equal("the hidden text appears in out.tsv", problem.Message);
+    }
 }

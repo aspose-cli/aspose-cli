@@ -67,7 +67,7 @@ one-operation document for the product's `edit --ops`; `markdown` and `text` are
 | `json` | Every assertion `{ "path", "equals" \| "contains" \| "exists" }` holds on the step's JSON document: the result, or the error envelope for a failure. Paths are dotted with indexes, such as `error.details.suggestions` or `outputs[0].format`; `contains` tests an array item or a substring |
 | `files` | `present` files exist, `absent` files do not, `unchanged` files keep their bytes, with `nothingWritten` no file is created, changed or deleted, and with `nothingInstalled` none in the user configuration directory or the CLI's installation directory either |
 | `reopens` | Each file opens again with `<product> inspect`; the product is the one routing assigns to the file's extension, else the command's own product when it reads the extension, or `product:path` names it. Any other file must be non-empty and carry its format's signature where one is known (images, PDF, PostScript, HTML, SVG and the ZIP packages XPS and EPUB), since a product that only declares an unrouted extension does not judge another product's output. `@result` stands for every file of the result's `output.path`, `outputs[].path` and `outputs[].output.path` |
-| `hidden` | None of the texts, such as secret values, appears in stdout or stderr |
+| `hidden` | None of the texts, such as secret values, appears in stdout, stderr or a file the step created or changed, as UTF-8 or UTF-16 in its bytes or in an entry of the ZIP package it is |
 
 ## Contract checks
 

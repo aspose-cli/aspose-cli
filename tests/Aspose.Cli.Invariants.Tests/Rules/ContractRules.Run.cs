@@ -261,13 +261,9 @@ internal sealed partial class RuleWorkspace : IDisposable
     private static bool IsProjectLicense(string relative) =>
         relative.Equals(ScenarioLicense.ProjectLicense, StringComparison.OrdinalIgnoreCase);
 
-    /// <summary>The paths a run created, changed or deleted, sorted.</summary>
+    /// <summary>The paths a run created, changed or deleted, sorted (<see cref="ScenarioRunner.Written"/>).</summary>
     public static string[] Written(IReadOnlyDictionary<string, string> before, IReadOnlyDictionary<string, string> after) =>
-    [
-        .. after.Where(pair => !before.TryGetValue(pair.Key, out string? hash) || hash != pair.Value).Select(static pair => pair.Key)
-            .Concat(before.Keys.Where(key => !after.ContainsKey(key)))
-            .Order(StringComparer.Ordinal),
-    ];
+        ScenarioRunner.Written(before, after);
 
     /// <summary>A message with the workspace's random path replaced, so it reads the same in every run.</summary>
     public string Clean(string message) =>
