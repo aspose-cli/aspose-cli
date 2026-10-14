@@ -131,8 +131,11 @@ internal static partial class ContractRules
             : null;
 
     /// <summary>
-    /// Whether the <c>[MistakenFor]</c> table reads the sources right: every declaration placed,
-    /// some of each kind read, and each standing for an operation or field its product's ops schema has.
+    /// Whether the table of mistaken names reads the sources right: every declaration placed, some
+    /// of each kind read, each operation or field one its product's ops schema has, and each
+    /// command one this build has. A command's mistaken names are also typed once each: the CLI
+    /// must suggest exactly the commands the table reads them as standing for, so a name read as
+    /// belonging to another command that exists fails too.
     /// </summary>
     private static IEnumerable<string> MistakenReading(CliCatalog catalog, MistakenNames mistaken)
     {
@@ -140,13 +143,36 @@ internal static partial class ContractRules
         {
             yield return problem;
         }
-        if (!mistaken.Names.Any(static name => name.IsOperation) || !mistaken.Names.Any(static name => !name.IsOperation))
+        foreach (MistakenKind kind in Enum.GetValues<MistakenKind>().Where(kind => !mistaken.Names.Any(name => name.Kind == kind)))
         {
-            yield return "the reading finds no [MistakenFor] of an operation or of a field, so it stopped matching";
+            yield return $"the reading finds no mistaken name of a {kind.ToString().ToLowerInvariant()}, so it stopped matching";
+        }
+        foreach (IGrouping<(string? Product, string Name), MistakenName> typed in mistaken.Names
+            .Where(static name => name.Kind == MistakenKind.Command)
+            .GroupBy(static name => (name.Product, name.Name)))
+        {
+            string[] meant = [.. typed.Select(static name => name.Meant).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal)];
+            using var workspace = new TempWorkspace();
+            CliResult result = workspace.Run(typed.Key.Product!, typed.Key.Name, "--output-format", "json");
+            string[] suggested = JsonNode.Parse(result.StdErr.Length > 0 ? result.StdErr : result.StdOut)?["error"]?["details"]?["suggestions"] is JsonArray suggestions
+                ? [.. suggestions.Select(static suggestion => suggestion!.GetValue<string>())]
+                : [];
+            if (!suggested.Take(meant.Length).Order(StringComparer.Ordinal).SequenceEqual(meant, StringComparer.Ordinal))
+            {
+                yield return $"'aspose-cli {typed.Key.Product} {typed.Key.Name}' suggests [{string.Join(", ", suggested)}] first, but the table reads it as standing for [{string.Join(", ", meant)}]";
+            }
         }
         var fields = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal);
         foreach (MistakenName name in mistaken.Names)
         {
+            if (name.Kind == MistakenKind.Command)
+            {
+                if (!catalog.Commands.Any(command => command.Words == name.Meant))
+                {
+                    yield return $"{name.Where}: MistakenFor = [\"{name.Name}\"] reads as standing for the command '{name.Meant}', which this build does not have";
+                }
+                continue;
+            }
             CliProduct? product = catalog.Products.FirstOrDefault(product => product.Id == name.Product);
             if (product?.OpsSchemaId is null)
             {
@@ -195,8 +221,11 @@ internal static partial class ContractRules
             (null, "capabilities --sumary", "capabilities --summary", "'capabilities' has no option '--sumary'"),
             (null, "cells inspect book.xlsx --version", "cells inspect book.xlsx --verbose", "'cells inspect' has no option '--version'"),
             (null, "license status extra", "license status --product pdf", "'license status' has no command 'extra'"),
+            (null, "cells query book.xlsx", "cells read book.xlsx", "'cells' has no command 'query'; it is a mistaken name of 'cells read' or 'cells search'"),
         ];
-        // A declaration added to a product's sources joins the table: on an operation and on a field.
+        // A declaration added to a product's sources joins the table: on an operation and on a
+        // field as an attribute, on a command as the initializer of its definition. A method named
+        // MistakenFor, declared or called, declares nothing.
         const string Declared = """
             /// <summary>An operation.</summary>
             [Operation("set_sample")]
@@ -204,14 +233,35 @@ internal static partial class ContractRules
             public sealed record SetSampleOp : SampleOp
             {
                 /// <summary>A field.</summary>
-                [MistakenFor("oldName", "otherName")]
-                [NotState] public required string NewName { get; init; }
+                [ReadBack("result.schema.json#/$defs/sample/properties/newName"), MistakenFor("oldName", "otherName")]
+                public required string NewName { get; init; }
+            }
+
+            internal static class LookupCommand
+            {
+                public static CommandDefinition<LookupRequest, LookupResult> Create() =>
+                    new(
+                        "lookup",
+                        "Look a value up.",
+                        new CommandTraits(),
+                        [],
+                        static (parse, standard) => new LookupRequest(),
+                        Table)
+                    {
+                        MistakenFor = ["find", "seek"],
+                    };
+
+                public static IReadOnlyList<string> MistakenFor(this Command command) => command.MistakenFor();
             }
             """;
         var declarationProblems = new List<string>();
         string[] declared = [.. MistakenNames.ReadFile("sample", "Sample.cs", Declared, declarationProblems)
-            .Select(static name => $"{name.Name}>{name.Meant}:{(name.IsOperation ? "operation" : "field")}")];
-        string[] expected = ["old_sample>set_sample:operation", "oldName>newName:field", "otherName>newName:field"];
+            .Select(static name => $"{name.Name}>{name.Meant}:{name.Kind.ToString().ToLowerInvariant()}")];
+        string[] expected =
+        [
+            "old_sample>set_sample:operation", "oldName>newName:field", "otherName>newName:field",
+            "find>sample lookup:command", "seek>sample lookup:command",
+        ];
         if (!declared.SequenceEqual(expected, StringComparer.Ordinal) || declarationProblems.Count > 0)
         {
             yield return $"the [MistakenFor] reading of a sample reads [{string.Join(", ", declared)}] with [{string.Join("; ", declarationProblems)}], not [{string.Join(", ", expected)}]";
@@ -520,7 +570,7 @@ internal static partial class ContractRules
                     bare.Add($"{id} {verb}");
                     if (_catalog.Commands.FirstOrDefault(command => command.Words == $"{id} {verb}") is not { } command)
                     {
-                        problems.Add($"'{id}' has no command '{verb}'");
+                        problems.Add(NoCommand(id, verb));
                     }
                     else if (command.Subcommands.Count > 0 && match.Groups["next"] is { Success: true } next
                         && !command.Subcommands.Contains(next.Value))
@@ -579,6 +629,12 @@ internal static partial class ContractRules
             exempted.Add(start);
             return true;
         }
+
+        /// <summary>That <paramref name="parent"/> has no command <paramref name="token"/>, and the commands a product declares it mistaken for.</summary>
+        private string NoCommand(string parent, string token) =>
+            _mistaken.Commands(parent, token).ToArray() is { Length: > 0 } meant
+                ? $"'{parent}' has no command '{token}'; it is a mistaken name of '{string.Join("' or '", meant)}'"
+                : $"'{parent}' has no command '{token}'";
 
         /// <summary>Whether a product id and the word after it start a command path.</summary>
         private bool StartsCommand(string product, string word, HashSet<string> exempted)
@@ -678,13 +734,13 @@ internal static partial class ContractRules
                         resolved = false;
                         if (command.Words.Length > 0)
                         {
-                            yield return $"'{command.Words}' has no command '{token}'";
+                            yield return NoCommand(command.Words, token);
                         }
                     }
                     else if (command.Words.Length > 0 && command.Arguments.Count == 0)
                     {
                         // A command that takes no argument has nothing a word after it could be.
-                        yield return $"'{command.Words}' has no command '{token}'";
+                        yield return NoCommand(command.Words, token);
                     }
                     break;
                 }
