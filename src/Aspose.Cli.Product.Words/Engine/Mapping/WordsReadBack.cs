@@ -169,14 +169,14 @@ internal static class WordsReadBack
     internal const string CustomPrefix = "custom:";
 
     /// <summary>
-    /// The key a read reports a custom property under, which its target address also uses: its
-    /// name, with the characters an address cannot hold escaped, and <c>custom:</c> before a name
-    /// that is a standard key, or that itself starts with <c>custom:</c>.
+    /// The key a read reports a custom property under, which its target address escapes: its
+    /// name as it is, with <c>custom:</c> before a name that is a standard key, or that itself
+    /// starts with <c>custom:</c>.
     /// </summary>
     internal static string PropertyKey(string name) =>
         StandardProperties.Contains(name, StringComparer.Ordinal) || name.StartsWith(CustomPrefix, StringComparison.Ordinal)
-            ? CustomPrefix + TargetName.Escape(name)
-            : TargetName.Escape(name);
+            ? CustomPrefix + name
+            : name;
 
     /// <summary>A color as #RRGGBB, or null for an automatic or empty one.</summary>
     internal static string? Hex(System.Drawing.Color color) =>

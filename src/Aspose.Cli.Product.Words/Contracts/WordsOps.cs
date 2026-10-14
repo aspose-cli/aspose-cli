@@ -651,9 +651,8 @@ public sealed record SetPropertiesOp : WordsOp
 
     /// <summary>
     /// Custom properties by name; a null value removes the property. <c>words inspect --detail
-    /// properties</c> reports each under its name, with <c>/</c>, <c>%</c>, control characters and
-    /// leading and trailing white space escaped as UTF-8 <c>%XX</c>, and a custom property a
-    /// document already has under a standard key's name as <c>custom:</c> and that name. A name
+    /// properties</c> reports each under its name as it is, and a custom property a document
+    /// already has under a standard key's name as <c>custom:</c> and that name. A name
     /// must not be title, author, subject or keywords in any case, which the fields above set, and
     /// must not start with <c>custom:</c>.
     /// </summary>
