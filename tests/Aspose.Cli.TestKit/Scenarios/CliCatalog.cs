@@ -109,7 +109,8 @@ public sealed class CliCatalog
         option["secret"]!.GetValue<bool>(),
         option["valueSource"]!.GetValue<string>(),
         Strings(option["allowedValues"]),
-        option["recursive"]!.GetValue<bool>());
+        option["recursive"]!.GetValue<bool>(),
+        option["inputKind"]?.GetValue<string>());
 
     private static CliArgument ReadArgument(JsonNode argument) => new(
         argument["inputKind"]?.GetValue<string>(),
@@ -164,7 +165,8 @@ public sealed record CliCommand(
 
 /// <summary>
 /// One option of a command; a hidden one is left out of help and suggestions, and a recursive one
-/// is taken by every command below its own.
+/// is taken by every command below its own. <see cref="InputKind"/> says what its value names
+/// when the command reads it, such as <c>file</c> or <c>json-source</c>.
 /// </summary>
 public sealed record CliOption(
     string Name,
@@ -174,7 +176,8 @@ public sealed record CliOption(
     bool Secret,
     string ValueSource,
     IReadOnlyList<string> AllowedValues,
-    bool Recursive);
+    bool Recursive,
+    string? InputKind = null);
 
 /// <summary>One positional argument of a command.</summary>
 public sealed record CliArgument(string? InputKind, int MaximumArity, bool Required);

@@ -32,12 +32,14 @@ internal sealed class Invocation
     /// creates has the product's own extension, an option with allowed values takes the product's
     /// own format when it allows it (a convert keeps its format) and the first value otherwise,
     /// and the few required free-form options take a fixed valid value. An edit gets the
-    /// product's valid operation document and a create its source text. A command that opens a
-    /// browser by default gets <c>--no-open</c>.
+    /// product's valid operation document and a create its source text. An <c>open</c> command,
+    /// which opens a browser by default, gets <see cref="NoOpen"/>.
     /// </summary>
     /// <param name="command">The command to invoke.</param>
     /// <param name="omit">An option the caller supplies itself.</param>
-    /// <exception cref="InvalidOperationException">A required option has no value rule.</exception>
+    /// <exception cref="InvalidOperationException">
+    /// A required option has no value rule, or an <c>open</c> command has no <see cref="NoOpen"/>.
+    /// </exception>
     public static Invocation For(CliCommand command, string? omit = null)
     {
         string product = command.Product ?? ScenarioFixtures.Products.First();
@@ -65,10 +67,13 @@ internal sealed class Invocation
         {
             invocation.Fill(command, product, extension, option);
         }
-        if (command.Has("--no-open"))
+        if (command.Verb == OpenVerb)
         {
-            // A test never opens the user's browser.
-            invocation.Args.Add("--no-open");
+            // A test never opens the user's browser; an open command without the option fails
+            // rather than opening one.
+            invocation.Args.Add(command.Has(NoOpen)
+                ? NoOpen
+                : throw new InvalidOperationException($"{command} opens a browser and has no {NoOpen}."));
         }
         return invocation;
     }
@@ -87,42 +92,118 @@ internal sealed class Invocation
         Args[index] = replacement;
     }
 
-    // Options that no single declaration requires, but that the command needs to run: an edit
-    // needs operations, a create something to create from, an extract a directory for files, a
-    // convert without --out the format to write and a signature its certificate's password.
-    private static bool IsImplied(CliCommand command, CliOption option, string? omit) =>
-        (command.Verb, option.Name) is ("edit", "--ops") or ("extract", "--out-dir") or ("convert", "--to")
-        // The certificate password comes from its variable unless the case passes it another way.
-        || ((command.Verb, option.Name) is ("sign", "--certificate-password-env") && omit?.StartsWith("--certificate-password", StringComparison.Ordinal) != true)
-        || (command.Verb == "create" && option.Name == command.Options
-            .Select(static candidate => candidate.Name)
-            .FirstOrDefault(static name => name is "--markdown" or "--from-markdown" or "--from-text"));
+    /// <summary>
+    /// The options that no declaration requires but that a command of a verb needs to run, each
+    /// with the file it reads (null for a value rule of <see cref="Fill"/>): a convert without
+    /// --out names the format it writes, and a create from a source reads the first of these it
+    /// has. Each must name an option some command has (<see cref="ImpliedRulesMatchTheCatalog"/>),
+    /// so a renamed option fails rather than leaving its commands without it.
+    /// </summary>
+    internal static readonly (string Verb, string Option, string? File, string? Fixture)[] ImpliedByVerb =
+    [
+        ("convert", "--to", null, null),
+        ("create", "--from-markdown", "source.md", "markdown"),
+        ("create", "--from-text", "source.txt", "text"),
+    ];
+
+    /// <summary>
+    /// Whether a command needs an option that it does not declare required. From the command tree:
+    /// an operations document (input kind <c>json-source</c>), and the environment variable of the
+    /// password of a required file input (<c>--certificate</c> and its
+    /// <c>--certificate-password-env</c>) unless the case passes the password another way
+    /// (<paramref name="omit"/>). By verb: <see cref="ImpliedByVerb"/>, where a create takes only
+    /// its first source.
+    /// </summary>
+    private static bool IsImplied(CliCommand command, CliOption option, string? omit)
+    {
+        if (option.InputKind == JsonSource)
+        {
+            return true;
+        }
+        if (PasswordOf(command, option) is { } secured)
+        {
+            return omit?.StartsWith(secured.Name + "-password", StringComparison.Ordinal) != true;
+        }
+        return option.Name == ImpliedByVerb
+            .Where(rule => rule.Verb == command.Verb && command.Has(rule.Option))
+            .Select(static rule => rule.Option)
+            .FirstOrDefault();
+    }
+
+    /// <summary>The verb of the commands that open a browser by default.</summary>
+    private const string OpenVerb = "open";
+
+    /// <summary>The flag of an <see cref="OpenVerb"/> command that keeps the browser closed.</summary>
+    internal const string NoOpen = "--no-open";
+
+    /// <summary>The input kind of an option whose value is an operations document.</summary>
+    private const string JsonSource = "json-source";
+
+    /// <summary>The required file input whose password <paramref name="option"/> names the variable of, or null.</summary>
+    private static CliOption? PasswordOf(CliCommand command, CliOption option) =>
+        option.ValueSource == "environment-variable-name"
+            ? command.Options.FirstOrDefault(input => input.Required && input.InputKind == "file" && option.Name == input.Name + "-password-env")
+            : null;
+
+    /// <summary>
+    /// The rules of <see cref="ImpliedByVerb"/> that no command of the catalog matches, the
+    /// create commands with file sources none of them names, and the open commands without
+    /// <see cref="NoOpen"/>: each means an option was renamed.
+    /// </summary>
+    internal static IEnumerable<string> ImpliedRulesMatchTheCatalog(IReadOnlyList<CliCommand> commands)
+    {
+        foreach ((string verb, string option, _, _) in ImpliedByVerb)
+        {
+            if (!commands.Any(command => command.Verb == verb && command.Has(option)))
+            {
+                yield return $"no {verb} command has {option}, which the invocation rules imply";
+            }
+        }
+        foreach (CliCommand command in commands.Where(static command => command.Arguments.Any(static argument => argument.Required && argument.InputKind != "file")
+            && command.Options.Any(static option => option.InputKind == "file" && !option.Required)))
+        {
+            if (!ImpliedByVerb.Any(rule => rule.Verb == command.Verb && command.Has(rule.Option)))
+            {
+                yield return $"{command} creates its argument from file options none of the invocation rules names";
+            }
+        }
+        if (!commands.Any(static command => command.Verb == OpenVerb))
+        {
+            yield return $"no command has the verb {OpenVerb}, whose commands the invocation keeps from opening a browser";
+        }
+        foreach (CliCommand command in commands.Where(static command => command.Verb == OpenVerb && !command.Has(NoOpen)))
+        {
+            yield return $"{command} opens a browser and has no {NoOpen}";
+        }
+    }
 
     private void Fill(CliCommand command, string product, string extension, CliOption option)
     {
+        if (option.InputKind == JsonSource)
+        {
+            Files["ops.json"] = new ScenarioFile { Fixture = $"{product}.ops" };
+            Add(option.Name, "ops.json");
+            return;
+        }
+        if (PasswordOf(command, option) is not null)
+        {
+            Env[CertificateVariable] = ScenarioFixtures.Password;
+            Add(option.Name, CertificateVariable);
+            return;
+        }
+        if (ImpliedByVerb.FirstOrDefault(rule => rule.Verb == command.Verb && rule.Option == option.Name) is { File: { } file, Fixture: { } fixture })
+        {
+            Files[file] = new ScenarioFile { Fixture = fixture };
+            Add(option.Name, file);
+            return;
+        }
         switch (option.Name)
         {
-            case "--ops":
-                Files["ops.json"] = new ScenarioFile { Fixture = $"{product}.ops" };
-                Add(option.Name, "ops.json");
-                return;
-            case "--markdown" or "--from-markdown":
-                Files["source.md"] = new ScenarioFile { Fixture = "markdown" };
-                Add(option.Name, "source.md");
-                return;
-            case "--from-text":
-                Files["source.txt"] = new ScenarioFile { Fixture = "text" };
-                Add(option.Name, "source.txt");
-                return;
             case "--pattern":
                 Add(option.Name, "Hello");
                 return;
             case "--out":
                 Add(option.Name, "output." + extension);
-                return;
-            case "--by" when option.AllowedValues.Contains("pages"):
-                // A split by pages runs on every fixture, which has no bookmarks or headings.
-                Add(option.Name, "pages");
                 return;
             case "--out-dir":
                 Add(option.Name, "output");
@@ -131,10 +212,12 @@ internal sealed class Invocation
                 Files["certificate.pfx"] = new ScenarioFile { Fixture = "certificate.pfx" };
                 Add(option.Name, "certificate.pfx");
                 return;
-            case "--certificate-password-env":
-                Env[CertificateVariable] = ScenarioFixtures.Password;
-                Add(option.Name, CertificateVariable);
-                return;
+        }
+        if (option.AllowedValues.Contains("pages"))
+        {
+            // A split by pages runs on every fixture, which has no bookmarks or headings.
+            Add(option.Name, "pages");
+            return;
         }
         if (option.AllowedValues.Count > 0)
         {
