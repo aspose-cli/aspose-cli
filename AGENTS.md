@@ -215,7 +215,9 @@ Kept on purpose:
   `Integration/Snapshots` are split per product.
 - A test that changes process-wide state joins its serial collection in
   `tests/TestAssemblyFixture.cs`. A test project that reads a repository file outside the
-  projects lists it as a `RepositoryInput` item.
+  projects lists it as a `RepositoryInput` item; the build rejects an item that is missing,
+  outside the repository or inside its own project, and `RepositoryInputTests` requires one for
+  every documentation file a test names.
 - Runs never read `%APPDATA%\aspose-cli`, project `.aspose` files or `ASPOSE_*` settings; only
   `ASPOSE_CLI_TEST_*` variables pass through. Keep license contents out of logs and fixtures.
 
