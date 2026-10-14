@@ -80,7 +80,7 @@ internal static class CellsRender
             Range = renderedRange,
             Dpi = CellsEngineFormats.IsRaster(request.Output.Format.Id) ? request.Dpi : null,
             License = EnvelopeParts.License(licenseState),
-            Warnings = loaded.Warnings(loaded.SkippedSheetWarning(defaulted), sheetsSkipped),
+            Warnings = loaded.Warnings(loaded.SkippedSheetWarning(defaulted, "Pass --sheets with the sheet's position from inspect to render another sheet."), sheetsSkipped),
         };
     }
 

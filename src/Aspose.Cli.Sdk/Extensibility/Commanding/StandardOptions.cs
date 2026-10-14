@@ -602,8 +602,8 @@ public partial class StandardInvocation
 
     /// <summary>
     /// Restates a password error about one of the two documents a command reads with that
-    /// document's own password option, which the loader that raised it cannot know; returns
-    /// any other error unchanged.
+    /// document's own password option, which the loader that raised it cannot know, and one
+    /// about any other document with both options; returns any other error unchanged.
     /// </summary>
     internal CliException ForPairedInput(CliException error)
     {
@@ -617,9 +617,14 @@ public partial class StandardInvocation
             string.Equals(path, _input, StringComparison.Ordinal) ? (_options.Input, _options.InputPassword)
             : string.Equals(path, _other, StringComparison.Ordinal) ? (_options.Other, _options.OtherPassword)
             : (null, null);
-        return argument is null || password is null
-            ? error
-            : CliErrors.ForInput(error, argument.Name, password.EnvironmentOption);
+        if (argument is not null && password is not null)
+        {
+            return CliErrors.ForInput(error, argument.Name, password.EnvironmentOption);
+        }
+
+        return _options.InputPassword is { } first && _options.OtherPassword is { } second
+            ? CliErrors.ForPairedCommand(error, first.EnvironmentOption, second.EnvironmentOption)
+            : error;
     }
 
     /// <summary>The parameter naming the output file and the value the caller gave it, or null when none was named.</summary>

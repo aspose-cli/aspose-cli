@@ -138,9 +138,12 @@ handle these effects:
   or `convert` to a multi-sheet format keeps the warning sheet active unless
   a `set_active_sheet` in the batch succeeded. A command that names its sheet
   or covers every sheet does not warn.
-  The sheet you made active is not recorded anywhere, so pass `--sheet` (or
-  `"sheet"`) for any other one, and take names from `inspect`, never from
-  sheet order.
+  The sheet you made active is not recorded anywhere, so name any other one
+  yourself: `--sheets` with the sheet's `position` for `convert` and `render`,
+  and the sheet's `name` for `read --sheet` and an operation's `"sheet"` in
+  `edit`; the workbook preview shows the active sheet, so read another one with
+  `cells read --sheet`. Take both from `inspect`; never guess a position from
+  the order you created the sheets in.
 - Each further save adds another ("Evaluation Warning (1)", ...); `inspect`
   lists them. Do not delete them.
 - Data outputs carry the notice as content, and the `EVALUATION_MODE` message

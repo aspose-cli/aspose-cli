@@ -486,6 +486,37 @@ public sealed class CellsCliTests : IDisposable
         Assert.DoesNotContain("--sheets", hint, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// When an evaluation save left its warning sheet active, the hint of the
+    /// <c>ACTIVE_SHEET_SKIPPED</c> each command warns names the way that command chooses a sheet:
+    /// <c>--sheets</c> for a convert, an operation's <c>"sheet"</c> for an edit, and <c>--sheet</c>
+    /// for a read.
+    /// </summary>
+    [Fact]
+    public void Evaluation_TheSkippedSheetHintNamesHowEachCommandChoosesASheet()
+    {
+        _ = _workspace.Run("cells", "create", "book.xlsx", "--sheets", "One,Two", "--output-format", "json").Json();
+        File.WriteAllText(_workspace.File("ops.json"), """{"ops":[{"op":"set_values","range":"A1","values":[["edited"]]}]}""");
+
+        string Hint(params string[] args) =>
+            Warning(_workspace.Run([.. args, "--output-format", "json"]).Json(), "ACTIVE_SHEET_SKIPPED")["hint"]!.GetValue<string>();
+        string convert = Hint("cells", "convert", "book.xlsx", "--to", "csv", "--out", "book.csv");
+        string edit = Hint("cells", "edit", "book.xlsx", "--ops", "ops.json", "--out", "edited.xlsx");
+        string read = Hint("cells", "read", "book.xlsx");
+
+        Assert.Contains("--sheets", convert, StringComparison.Ordinal);
+        Assert.Contains("position", convert, StringComparison.Ordinal);
+        // Done as the hint says, with the position inspect gives, the convert writes that sheet;
+        // evaluation mode exports only the first worksheet to a text format.
+        JsonNode sheets = _workspace.Run("cells", "inspect", "book.xlsx", "--output-format", "json").Json()["workbook"]!["sheets"]!;
+        string position = sheets.AsArray().Single(static sheet => sheet!["name"]!.GetValue<string>() == "One")!["position"]!.ToJsonString();
+        Assert.Equal(0, _workspace.Run("cells", "convert", "book.xlsx", "--to", "csv", "--sheets", position, "--out", "one.csv", "--output-format", "json").ExitCode);
+        Assert.Contains("\"sheet\"", edit, StringComparison.Ordinal);
+        Assert.DoesNotContain("--sheet", edit, StringComparison.Ordinal);
+        Assert.Contains("--sheet ", read, StringComparison.Ordinal);
+        Assert.Contains("name", read, StringComparison.Ordinal);
+    }
+
     /// <summary>The one warning of <paramref name="result"/> with <paramref name="code"/>.</summary>
     private static JsonNode Warning(JsonNode result, string code) =>
         Assert.Single(result["warnings"]!.AsArray(), warning => warning!["code"]!.GetValue<string>() == code)!;

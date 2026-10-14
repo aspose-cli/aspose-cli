@@ -36,10 +36,14 @@ internal sealed record LoadedWorkbook(Workbook Workbook, WorkbookResources Resou
     /// <summary>
     /// The <c>ACTIVE_SHEET_SKIPPED</c> warning when <paramref name="defaultedToActiveSheet"/>,
     /// that is when the command read or wrote the active sheet because no sheet was named;
-    /// null for a command that named its sheet or covers every sheet.
+    /// null for a command that named its sheet or covers every sheet. Its hint is
+    /// <paramref name="chooseSheet"/>, how this command chooses another sheet: by its position or
+    /// by its name, each as inspect lists it.
     /// </summary>
-    internal Warning? SkippedSheetWarning(bool defaultedToActiveSheet) =>
-        defaultedToActiveSheet ? EvaluationSheetSkipped?.Warning : null;
+    internal Warning? SkippedSheetWarning(bool defaultedToActiveSheet, string chooseSheet) =>
+        defaultedToActiveSheet && EvaluationSheetSkipped?.Warning is { } warning
+            ? warning with { Hint = chooseSheet }
+            : null;
 
     /// <summary>
     /// Before a save that writes the whole workbook, activates the evaluation warning sheet the

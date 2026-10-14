@@ -187,6 +187,17 @@ public static partial class CliErrors
             details: new JsonObject { ["path"] = path, ["argument"] = input });
     }
 
+    /// <summary>
+    /// Restates a password error about a document that is neither of the two inputs a command
+    /// reads with a hint that names both inputs' password options, since the command has no
+    /// single one.
+    /// </summary>
+    internal static CliException ForPairedCommand(CliException error, string inputOption, string otherOption) => CliException.Create(
+        error.Code,
+        error.Message,
+        hint: PasswordHint(error.Code, operationField: null, $"{inputOption} <NAME> or {otherOption}") + " Use the option of the input the password opens.",
+        details: error.Details?.DeepClone() as JsonObject);
+
     /// <summary>Whether <paramref name="error"/> is <c>PASSWORD_REQUIRED</c> or <c>PASSWORD_INVALID</c>.</summary>
     public static bool IsPasswordError(CliException error) =>
         error.Code == ErrorCodes.PasswordRequired || error.Code == ErrorCodes.PasswordInvalid;
@@ -206,8 +217,7 @@ public static partial class CliErrors
             ? $"{lead}name that variable in the operation's \"{operationField}\" field."
             : passwordEnvironmentOption is not null
                 ? $"{lead}retry with {passwordEnvironmentOption} <NAME>."
-                : $"{lead}retry with --password-env <NAME>; a command with several inputs names the option "
-                    + "per input, such as --left-password-env.";
+                : $"{lead}retry with --password-env <NAME>.";
     }
 
     public static CliException FileAccessDenied(string path) => CliException.Create(

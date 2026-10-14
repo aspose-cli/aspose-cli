@@ -55,7 +55,7 @@ internal static class CellsEdit
         IReadOnlyList<BoundedOperationOutcome> applied = batchOutcome.Outcomes;
         bool defaultedToActiveSheet = model.DefaultedToActiveSheet;
         IReadOnlyList<Cell> formulaAnchors = model.FormulaAnchors;
-        Warning? skippedSheet = loaded.SkippedSheetWarning(defaultedToActiveSheet);
+        Warning? skippedSheet = loaded.SkippedSheetWarning(defaultedToActiveSheet, "Give each operation its \"sheet\", the sheet's name from inspect, to address another sheet.");
         Warning? unenforced = protection.Warning(output.Format);
         Warning? relativeLinks = RelativeLinkWarning(workbook, linksBefore);
         Warning? unknownFunctions = UnknownFunctions.Warning(workbook, formulaAnchors);
