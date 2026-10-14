@@ -19,11 +19,27 @@ namespace Aspose.Cli.Invariants.Tests;
 /// </summary>
 internal static partial class ContractRules
 {
+    /// <summary>What a mistaken name stands for.</summary>
+    internal enum MistakenKind
+    {
+        /// <summary>An operation, by its name.</summary>
+        Operation,
+
+        /// <summary>A field, by its JSON name.</summary>
+        Field,
+
+        /// <summary>A command, by its path such as <c>cells read</c>.</summary>
+        Command,
+    }
+
     /// <summary>
-    /// One name a <c>[MistakenFor]</c> declares: the product, the name, what it stands for (an
-    /// operation, or a field by its JSON name) and the file that declares it.
+    /// One name a product declares mistaken: the product, the name, what it stands for and the
+    /// file that declares it.
     /// </summary>
-    internal sealed record MistakenName(string? Product, string Name, string Meant, bool IsOperation, string Where);
+    internal sealed record MistakenName(string? Product, string Name, string Meant, MistakenKind Kind, string Where)
+    {
+        public bool IsOperation => Kind == MistakenKind.Operation;
+    }
 
     /// <summary>The <c>[MistakenFor]</c> declarations of the product sources, and the problems reading them.</summary>
     internal sealed record MistakenNames(IReadOnlyList<MistakenName> Names, IReadOnlyList<string> Problems)
@@ -40,8 +56,15 @@ internal static partial class ContractRules
 
         /// <summary>The fields a mistaken field name stands for in a product.</summary>
         public IEnumerable<string> Fields(string? product, string name) =>
-            Names.Where(mistaken => !mistaken.IsOperation && Same(mistaken.Product, product)
+            Names.Where(mistaken => mistaken.Kind == MistakenKind.Field && Same(mistaken.Product, product)
                     && string.Equals(mistaken.Name, name, StringComparison.OrdinalIgnoreCase))
+                .Select(static mistaken => mistaken.Meant)
+                .Distinct(StringComparer.Ordinal);
+
+        /// <summary>The commands below <paramref name="parent"/>, such as <c>cells</c>, that a mistaken command name stands for.</summary>
+        public IEnumerable<string> Commands(string parent, string name) =>
+            Names.Where(mistaken => mistaken.Kind == MistakenKind.Command && mistaken.Name == name
+                    && mistaken.Meant.StartsWith(parent + " ", StringComparison.Ordinal))
                 .Select(static mistaken => mistaken.Meant)
                 .Distinct(StringComparer.Ordinal);
 
@@ -68,12 +91,15 @@ internal static partial class ContractRules
         }
 
         /// <summary>
-        /// Reads the declarations of one file: the attributes written before a declaration, on its
-        /// line or on the lines above, apply to it; a record or class declaration is an operation
-        /// that its <c>[Operation("...")]</c> names, any other declaration a property whose JSON
-        /// name is its <c>[JsonPropertyName]</c> or its camel-cased name. Every <c>MistakenFor(</c>
-        /// of the text must be read, so a declaration this reading cannot place is a problem
-        /// rather than a name silently left out.
+        /// Reads the declarations of one file, by their syntax rather than by the name alone, so a
+        /// method named <c>MistakenFor</c> declares nothing. A <c>[MistakenFor(...)]</c> attribute
+        /// applies to the declaration it is written before, on its line or on the lines above: a
+        /// record or class declaration is an operation that its <c>[Operation("...")]</c> names,
+        /// any other declaration a property whose JSON name is its <c>[JsonPropertyName]</c> or its
+        /// camel-cased name. Every such attribute of the text must be read, so a declaration this
+        /// reading cannot place is a problem rather than a name silently left out. A
+        /// <c>MistakenFor = [...]</c> initializer belongs to the command definition the nearest
+        /// <c>new(</c> before it creates, named by its first string, under the product.
         /// </summary>
         public static IEnumerable<MistakenName> ReadFile(string? product, string where, string source, List<string> problems)
         {
@@ -126,7 +152,7 @@ internal static partial class ContractRules
                         }
                         else
                         {
-                            names.AddRange(mistaken.Select(name => new MistakenName(product, name, operation, IsOperation: true, where)));
+                            names.AddRange(mistaken.Select(name => new MistakenName(product, name, operation, MistakenKind.Operation, where)));
                         }
                     }
                     else if (PropertyName().Match(rest) is { Success: true } property)
@@ -134,7 +160,7 @@ internal static partial class ContractRules
                         string field = attributes.Select(static attribute => JsonNameAttribute().Match(attribute))
                             .FirstOrDefault(static match => match.Success)?.Groups["name"].Value
                             ?? JsonNamingPolicy.CamelCase.ConvertName(property.Groups["name"].Value);
-                        names.AddRange(mistaken.Select(name => new MistakenName(product, name, field, IsOperation: false, where)));
+                        names.AddRange(mistaken.Select(name => new MistakenName(product, name, field, MistakenKind.Field, where)));
                     }
                     else
                     {
@@ -143,10 +169,22 @@ internal static partial class ContractRules
                 }
                 attributes.Clear();
             }
-            int written = MistakenAttribute().Matches(source).Count;
+            int written = MistakenAttributeInSource().Matches(source).Count;
             if (written != read)
             {
-                problems.Add($"{where}: writes MistakenFor( {written} time(s) but {read} were read before a declaration");
+                problems.Add($"{where}: writes [MistakenFor(...)] {written} time(s) but {read} were read before a declaration");
+            }
+            foreach (Match initializer in MistakenInitializer().Matches(source))
+            {
+                string[] declaredNames = [.. Literal().Matches(initializer.Groups["names"].Value).Select(static literal => literal.Groups["text"].Value)];
+                Match? created = DefinitionCreation().Matches(source[..initializer.Index]).LastOrDefault();
+                if (product is null || created is null)
+                {
+                    problems.Add($"{where}: MistakenFor = [{string.Join(", ", declaredNames)}] initializes no command definition of a product");
+                    continue;
+                }
+                string command = $"{product} {created.Groups["name"].Value}";
+                names.AddRange(declaredNames.Select(name => new MistakenName(product, name, command, MistakenKind.Command, where)));
             }
             return names;
         }
@@ -547,9 +585,21 @@ internal static partial class ContractRules
         }
     }
 
-    /// <summary>A <c>MistakenFor(...)</c> attribute and its name literals.</summary>
-    [GeneratedRegex(@"(?<![\w.])MistakenFor\((?<names>[^)]*)\)")]
+    /// <summary>A <c>MistakenFor(...)</c> attribute inside an attribute list, first or after another, and its name literals.</summary>
+    [GeneratedRegex(@"(?<=^|,)\s*MistakenFor\((?<names>[^)]*)\)")]
     private static partial Regex MistakenAttribute();
+
+    /// <summary>A <c>MistakenFor(</c> attribute in a source: in an attribute list, after its <c>[</c> or the attributes before it.</summary>
+    [GeneratedRegex(@"\[\s*(?:[\w.]+(?:\([^()]*\))?\s*,\s*)*MistakenFor\(")]
+    private static partial Regex MistakenAttributeInSource();
+
+    /// <summary>A <c>MistakenFor = [...]</c> property initializer and its name literals.</summary>
+    [GeneratedRegex(@"(?<![\w.])MistakenFor\s*=\s*\[(?<names>[^\]]*)\]")]
+    private static partial Regex MistakenInitializer();
+
+    /// <summary>The creation of a command definition, <c>new(</c> or <c>new CommandDefinition&lt;...&gt;(</c>, and the command name it starts with.</summary>
+    [GeneratedRegex(@"\bnew(?:\s+\w+(?:<[^>]*>)?)?\(\s*""(?<name>[a-z][a-z0-9-]*)""")]
+    private static partial Regex DefinitionCreation();
 
     [GeneratedRegex(@"(?<![\w.])Operation\(\s*""(?<name>[^""]+)""\s*\)")]
     private static partial Regex OperationAttribute();
