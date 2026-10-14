@@ -206,7 +206,8 @@ Kept on purpose:
 
 ## Tests
 
-- xUnit v3 with real engines and CLI child processes. A test that takes several seconds carries
+- xUnit v3 with real engines and CLI child processes. A test longer than the slow-test limit of
+  `scripts/test.ps1`, which reports every uncategorized one, carries
   `[Category(TestCategory.Slow)]`; installer and Playwright tests carry `Installer` and
   `Browser`.
 - Tests call handlers directly with real requests, whose `Input` is `required`; production code
