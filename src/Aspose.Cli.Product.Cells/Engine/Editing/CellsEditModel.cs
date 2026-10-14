@@ -1,4 +1,5 @@
 using Aspose.Cells;
+using Aspose.Cli.Sdk.Addressing;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Operations;
 using Aspose.Cli.Sdk.IO;
@@ -83,8 +84,8 @@ internal sealed class CellsEditModel : IOperationModel<CellsOp>
 
     private static string WorkbookAddress(CellsOp operation) => operation switch
     {
-        DefineNameOp define => $"name/{CellsSnapshots.Named(define.Name)}",
-        DeleteNameOp delete => $"name/{CellsSnapshots.Named(delete.Name)}",
+        DefineNameOp define => $"name/{TargetName.Escape(define.Name)}",
+        DeleteNameOp delete => $"name/{TargetName.Escape(delete.Name)}",
         SetDefaultFontOp => "workbook/default-font",
         ProtectWorkbookOp or UnprotectWorkbookOp => "workbook/protection",
         InsertSheetOp insert => CellsSnapshots.Address("sheet", insert.Name),

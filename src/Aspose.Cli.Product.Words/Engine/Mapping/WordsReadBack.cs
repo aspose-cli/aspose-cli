@@ -175,47 +175,8 @@ internal static class WordsReadBack
     /// </summary>
     internal static string PropertyKey(string name) =>
         StandardProperties.Contains(name, StringComparer.Ordinal) || name.StartsWith(CustomPrefix, StringComparison.Ordinal)
-            ? CustomPrefix + Escape(name)
-            : Escape(name);
-
-    /// <summary>
-    /// A name as an address holds it: <c>/</c>, <c>%</c>, control characters and leading and
-    /// trailing white space as UTF-8 <c>%XX</c>; everything else as it is.
-    /// </summary>
-    internal static string Escape(string name)
-    {
-        int start = 0;
-        while (start < name.Length && char.IsWhiteSpace(name[start]))
-        {
-            start++;
-        }
-
-        int end = name.Length;
-        while (end > start && char.IsWhiteSpace(name[end - 1]))
-        {
-            end--;
-        }
-
-        var text = new System.Text.StringBuilder();
-        for (int index = 0; index < name.Length; index++)
-        {
-            char character = name[index];
-            bool edge = index < start || index >= end;
-            if (edge || character is '/' or '%' || char.IsControl(character))
-            {
-                foreach (byte value in System.Text.Encoding.UTF8.GetBytes(character.ToString()))
-                {
-                    text.Append('%').Append(value.ToString("X2", System.Globalization.CultureInfo.InvariantCulture));
-                }
-            }
-            else
-            {
-                text.Append(character);
-            }
-        }
-
-        return text.Length == 0 ? "%00" : text.ToString();
-    }
+            ? CustomPrefix + TargetName.Escape(name)
+            : TargetName.Escape(name);
 
     /// <summary>A color as #RRGGBB, or null for an automatic or empty one.</summary>
     internal static string? Hex(System.Drawing.Color color) =>

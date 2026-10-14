@@ -208,7 +208,7 @@ internal sealed partial class WordsSnapshots(LoadedDocument loaded) : IWordsOpHa
     [GeneratedRegex(@"<w:documentProtection\b[^>]*>", RegexOptions.CultureInvariant)]
     private static partial Regex DocumentProtection();
 
-    internal static string StyleAddress(string name) => $"style/{WordsReadBack.Escape(name)}";
+    internal static string StyleAddress(string name) => $"style/{TargetName.Escape(name)}";
 
     internal static string PropertyAddress(string name) => $"property/{WordsReadBack.PropertyKey(name)}";
 }
