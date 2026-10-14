@@ -1,5 +1,5 @@
 using System.Globalization;
-using System.Text;
+using Aspose.Cli.Sdk.Errors;
 
 namespace Aspose.Cli.Sdk.Extensibility.Commanding;
 
@@ -33,7 +33,7 @@ public sealed class ContinuationCommand
     public ContinuationCommand Argument(string value)
     {
         ArgumentNullException.ThrowIfNull(value);
-        _tokens.Add(Quote(value));
+        _tokens.Add(CommandLineText.Quote(value));
         return this;
     }
 
@@ -43,7 +43,7 @@ public sealed class ContinuationCommand
         ArgumentException.ThrowIfNullOrWhiteSpace(name);
         ArgumentNullException.ThrowIfNull(value);
         _tokens.Add(name);
-        _tokens.Add(Quote(value));
+        _tokens.Add(CommandLineText.Quote(value));
         return this;
     }
 
@@ -65,34 +65,4 @@ public sealed class ContinuationCommand
 
     /// <summary>Returns the command line, ending with <c>--output-format json</c>.</summary>
     public override string ToString() => string.Join(' ', _tokens.Append("--output-format").Append("json"));
-
-    /// <summary>
-    /// Leaves a token bare when it holds only characters no common shell treats specially;
-    /// otherwise wraps it in double quotes and escapes the characters that stay special there.
-    /// </summary>
-    internal static string Quote(string value)
-    {
-        ArgumentNullException.ThrowIfNull(value);
-        if (value.Length > 0 && value.All(IsSafe))
-        {
-            return value;
-        }
-
-        var quoted = new StringBuilder(value.Length + 2).Append('"');
-        foreach (char character in value)
-        {
-            if (character is '"' or '$' or '`')
-            {
-                quoted.Append('\\');
-            }
-
-            quoted.Append(character);
-        }
-
-        return quoted.Append('"').ToString();
-    }
-
-    private static bool IsSafe(char character) =>
-        char.IsAsciiLetterOrDigit(character)
-        || character is '-' or '_' or '.' or '/' or ':' or ',' or '+' or '=';
 }

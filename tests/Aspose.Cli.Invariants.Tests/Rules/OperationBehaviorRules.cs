@@ -264,7 +264,7 @@ internal static partial class ContractRules
     private static IEnumerable<InvariantCase> R15Run(CliCatalog catalog)
     {
         foreach (CliCommand command in catalog.Commands.Where(static command => !command.Hidden && command.Product is not null
-            && (command.Tokens.Contains("query") || command.Verb is "read" or "search")))
+            && command.Verb is "read" or "search"))
         {
             bool search = command.Has("--pattern");
             string? selection = SelectionUnits.Keys.FirstOrDefault(command.Has);

@@ -290,12 +290,9 @@ internal sealed class DefinitionPurityWalker : OperationWalker
                 "Activator" or "Build" or "Describe" or "DetectFormat"
                 or "Diagnostics" or "Formats" or "Guard" or "Json" or "View";
         }
-        if (typeName.StartsWith(
-                "Aspose.Cli.Sdk.Extensibility.Commanding.CommandMenu<",
-                StringComparison.Ordinal)
-            || typeName == "Aspose.Cli.Sdk.Extensibility.Commanding.ProductMenu")
+        if (typeName == "Aspose.Cli.Sdk.Extensibility.Commanding.ProductMenu")
         {
-            return member is "Command" or "Group";
+            return member == "Command";
         }
         return typeName switch
         {

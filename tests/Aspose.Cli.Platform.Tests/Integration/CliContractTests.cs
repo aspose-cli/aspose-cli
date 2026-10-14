@@ -711,6 +711,104 @@ public sealed class CliContractTests : IDisposable
         Assert.StartsWith($"Did you mean '{suggestion}'", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// The <c>query</c> group no product has any more is refused, with whatever followed it, and
+    /// suggests the product's <c>read</c> and <c>search</c> first: the commands that replaced it.
+    /// </summary>
+    [Theory]
+    [InlineData("cells query", "cells")]
+    [InlineData("cells query sheets a.xlsx", "cells")]
+    [InlineData("pdf query pages a.pdf", "pdf")]
+    [InlineData("slides query", "slides")]
+    [InlineData("words query paragraphs a.docx", "words")]
+    public void RemovedQueryGroup_SuggestsReadAndSearch(string commandLine, string product)
+    {
+        CliResult result = _workspace.Run([.. commandLine.Split(' '), "--output-format", "json"]);
+
+        Assert.Equal(2, result.ExitCode);
+        Assert.Empty(result.StdOut);
+        JsonNode error = Parse(result.StdErr)["error"]!;
+        Assert.Equal("USAGE_ERROR", error["code"]!.GetValue<string>());
+        Assert.StartsWith($"'query' is not a command of 'aspose-cli {product}'.", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
+        string[] available = [.. error["details"]!["available"]!.AsArray().Select(static item => item!.GetValue<string>())];
+        Assert.Contains($"{product} inspect", available);
+        Assert.DoesNotContain($"{product} query", available);
+        Assert.Equal(
+            [$"{product} read", $"{product} search"],
+            error["details"]!["suggestions"]!.AsArray().Select(static item => item!.GetValue<string>()).Take(2));
+        string hint = error["hint"]!.GetValue<string>();
+        Assert.StartsWith($"Did you mean '{product} read'", hint, StringComparison.Ordinal);
+        Assert.Contains($"'{product} search'", hint, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// The old form <c>&lt;product&gt; query read|search …</c> is refused too, with <c>--help</c>
+    /// as well: the parser finds the command after <c>query</c>, so it is suggested first, the
+    /// other replacement after it, and the hint ends with the command line without <c>query</c>,
+    /// which runs.
+    /// </summary>
+    [Theory]
+    [InlineData("cells create a.xlsx", "cells query read a.xlsx", "cells", "read", "search", "aspose-cli cells read a.xlsx --output-format json")]
+    [InlineData("cells create a.xlsx;cells convert a.xlsx --to pdf --out a.pdf", "pdf query search a.pdf --pattern x", "pdf", "search", "read", "aspose-cli pdf search a.pdf --pattern x --output-format json")]
+    [InlineData(null, "words query read --help", "words", "read", "search", "aspose-cli words read --help --output-format json")]
+    public void RemovedQueryGroup_BeforeItsCommand_HintsTheCommandLineWithoutQuery(
+        string? setup, string commandLine, string product, string command, string other, string corrected)
+    {
+        foreach (string step in setup?.Split(';') ?? [])
+        {
+            CliResult created = _workspace.Run(step.Split(' '));
+            Assert.True(created.ExitCode == 0, created.StdErr);
+        }
+
+        JsonNode error = RefusedQuery(commandLine, product, command, other);
+        string hint = error["hint"]!.GetValue<string>();
+        Assert.EndsWith($"Run '{corrected}'.", hint, StringComparison.Ordinal);
+        Assert.Null(error["details"]!["errors"]);
+
+        // The help a corrected --help prints is not JSON, so it runs without asking for JSON.
+        string line = hint[(hint.LastIndexOf("Run '", StringComparison.Ordinal) + 5)..^2];
+        CliResult run = _workspace.RunCommandLine(line.Contains(" --help", StringComparison.Ordinal)
+            ? line.Replace(" --output-format json", string.Empty, StringComparison.Ordinal)
+            : line);
+        Assert.True(run.ExitCode == 0, $"'{line}' exited {run.ExitCode}: {run.StdErr}");
+    }
+
+    /// <summary>
+    /// When the command line without <c>query</c> still does not parse, the hint offers no command
+    /// line to run, and the error states the other problems beside <c>query</c>, in
+    /// <c>details.errors</c> as every usage error with several problems does.
+    /// </summary>
+    [Theory]
+    [InlineData("slides query read", "slides", "Required argument missing for command: 'read'.")]
+    [InlineData("cells query read a.xlsx --bogus", "cells", "Unrecognized command or argument '--bogus'.")]
+    public void RemovedQueryGroup_BeforeACommandLineThatStillFails_ReportsEveryProblem(string commandLine, string product, string problem)
+    {
+        JsonNode error = RefusedQuery(commandLine, product, "read", "search");
+
+        Assert.Equal(
+            [$"'query' is not a command of 'aspose-cli {product}'.", problem],
+            error["details"]!["errors"]!.AsArray().Select(static item => item!.GetValue<string>()));
+        Assert.Contains(problem, error["message"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.DoesNotContain("Run 'aspose-cli", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
+    }
+
+    private JsonNode RefusedQuery(string commandLine, string product, string command, string other)
+    {
+        CliResult result = _workspace.Run([.. commandLine.Split(' '), "--output-format", "json"]);
+
+        Assert.Equal(2, result.ExitCode);
+        Assert.Empty(result.StdOut);
+        JsonNode error = Parse(result.StdErr)["error"]!;
+        Assert.Equal("USAGE_ERROR", error["code"]!.GetValue<string>());
+        Assert.StartsWith($"'query' is not a command of 'aspose-cli {product}'.", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.Contains($"{product} inspect", error["details"]!["available"]!.AsArray().Select(static item => item!.GetValue<string>()));
+        Assert.Equal(
+            [$"{product} {command}", $"{product} {other}"],
+            error["details"]!["suggestions"]!.AsArray().Select(static item => item!.GetValue<string>()).Take(2));
+        Assert.StartsWith($"Did you mean '{product} {command}'", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
+        return error;
+    }
+
     [Fact]
     public void UnknownOption_SuggestsTheClosestOptionsOfTheCommand()
     {

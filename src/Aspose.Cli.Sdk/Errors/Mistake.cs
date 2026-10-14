@@ -55,10 +55,29 @@ public sealed class Mistake
         IEnumerable<string> available,
         string? meant = null,
         bool fieldNames = false,
+        Func<string, string>? keyOf = null) =>
+        Of(requested, available, meant is null ? Array.Empty<string>() : [meant], fieldNames, keyOf);
+
+    /// <summary>
+    /// Describes a request that names nothing among <paramref name="available"/> and that
+    /// <paramref name="meant"/> declare a common mistake for, such as a command that no longer
+    /// exists and the commands that replace it.
+    /// </summary>
+    /// <param name="requested">The name as the caller wrote it.</param>
+    /// <param name="available">The names that exist, in the order ties keep and details list them.</param>
+    /// <param name="meant">The names known to be meant, best first; they lead the suggestions.</param>
+    /// <param name="fieldNames">Whether the names are compound field names, as for the other overload.</param>
+    /// <param name="keyOf">The part of a name that is compared, as for the other overload.</param>
+    public static Mistake Of(
+        string requested,
+        IEnumerable<string> available,
+        IReadOnlyList<string> meant,
+        bool fieldNames = false,
         Func<string, string>? keyOf = null)
     {
         ArgumentNullException.ThrowIfNull(requested);
         ArgumentNullException.ThrowIfNull(available);
+        ArgumentNullException.ThrowIfNull(meant);
 
         string[] names = [.. available];
         keyOf ??= static name => name;
@@ -72,7 +91,7 @@ public sealed class Mistake
             .Select(key => byKey[key]);
         string[] suggestions =
         [
-            .. (meant is null ? closest : closest.Prepend(meant))
+            .. meant.Concat(closest)
                 .Distinct(StringComparer.Ordinal)
                 .Take(NameSuggestions.MaximumSuggestions),
         ];

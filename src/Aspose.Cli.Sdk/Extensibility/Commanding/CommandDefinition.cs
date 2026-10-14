@@ -27,8 +27,7 @@ namespace Aspose.Cli.Sdk.Extensibility.Commanding;
 /// <para>How a product command is written:</para>
 /// <list type="bullet">
 /// <item>The menu line in the product module pairs the definition factory with the handler:
-/// <c>.Command(RenderCommand.Create, DocumentRender.Run)</c>; <c>.Group("query", "…", query =&gt; query.Command(…))</c>
-/// nests a group. The menu lists only method groups; its order is the order of help and
+/// <c>.Command(RenderCommand.Create, DocumentRender.Run)</c>. The menu lists only method groups; its order is the order of help and
 /// capabilities. <c>.Describe(description, help)</c> gives the product command its help, and
 /// <c>.Guard((session, run) =&gt; …)</c> wraps every handler and view adapter call.</item>
 /// <item>The session is an immutable record of the dependencies the handlers share, built by the
@@ -102,6 +101,13 @@ public sealed class CommandDefinition<TRequest, TResult>
     /// </summary>
     public Func<ParseResult, TRequest, TResult, StandardInvocation, TResult>? Finish { get; init; }
 
+    /// <summary>
+    /// The names a caller may type for this command that name no command of its product, such as
+    /// a command that no longer exists. The parser refuses such a name, and the error suggests
+    /// first every command that declares it, in menu order; the name never runs a command.
+    /// </summary>
+    public IReadOnlyList<string> MistakenFor { get; init; } = [];
+
     /// <summary>Help examples, written after the executable name.</summary>
     public IReadOnlyList<string> Examples { get; init; } = [];
 
@@ -147,6 +153,7 @@ public sealed class CommandDefinition<TRequest, TResult>
         var options = new StandardOptions(_traits);
         Command command = options.CreateCommand(Name, Description, _parameters);
         command.SetAction(parse => context.Run(parse, scope => Execute(options, parse, scope, context, handler)));
+        CommandMistakes.Declare(command, MistakenFor);
         if (EncryptingDocument is { } encrypting)
         {
             ProtectionAdvice.Declare(command, encrypting);

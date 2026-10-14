@@ -68,9 +68,7 @@ public sealed class ProductMenuTests : IDisposable
         Command product = Menu().Build().CreateCommand(_hosts.Run);
 
         Assert.Equal(("menu", "A product in a menu."), (product.Name, product.Description));
-        Assert.Equal(["inspect", "query", "edit"], product.Subcommands.Select(static command => command.Name));
-        Assert.Equal(["read", "search"], product.Subcommands[1].Subcommands.Select(static command => command.Name));
-        Assert.Equal("Query the document.", product.Subcommands[1].Description);
+        Assert.Equal(["inspect", "read", "search", "edit"], product.Subcommands.Select(static command => command.Name));
         Assert.True(product.TryGetHelpMetadata(out CommandHelpMetadata? help));
         Assert.Equal(["aspose-cli menu inspect doc.test"], help!.Examples);
         Assert.Equal(["aspose-cli docs menu/editing"], help.LearnMore.Select(static link => link.Command));
@@ -78,7 +76,50 @@ public sealed class ProductMenuTests : IDisposable
         Assert.Equal(["aspose-cli menu inspect doc.test --font-dir fonts"], info!.Examples);
         Assert.Equal(
             ["--ops", "--if-match", "--best-effort", "--strict", "--out", "--overwrite", "--in-place", "--backup", "--dry-run"],
-            product.Subcommands[2].Options.Select(static option => option.Name).Take(9));
+            product.Subcommands[3].Options.Select(static option => option.Name).Take(9));
+    }
+
+    [Fact]
+    public void Command_CarriesTheNamesItsDefinitionIsMistakenFor()
+    {
+        Command product = Menu().Build().CreateCommand(_hosts.Run);
+
+        Assert.Equal(
+            [[], ["query"], ["query"], []],
+            product.Subcommands.Select(static command => command.MistakenNames()));
+    }
+
+    [Fact]
+    public void CreateCommand_RefusesANameMistakenForThatASiblingAnswersTo()
+    {
+        ProductDefinition definition = ExtProduct.Define<TestSession>(Manifest)
+            .Describe("A product in a menu.")
+            .Command(InspectCommand.Create, TestHandlers.Info)
+            .Command(MistakenForInspectCommand.Create, TestHandlers.Info)
+            .Complete()
+            .Build();
+
+        InvalidOperationException error = Assert.Throws<InvalidOperationException>(() => definition.CreateCommand(_hosts.Run));
+
+        Assert.Contains("'menu other' is mistaken for 'inspect'", error.Message, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData(" ")]
+    [InlineData("")]
+    public void MistakenFor_RefusesABlankName(string name)
+    {
+        InvalidOperationException error = Assert.Throws<InvalidOperationException>(() => CommandMistakes.Declare(new Command("read"), ["query", name]));
+
+        Assert.Contains("blank or its own name", error.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void MistakenFor_RefusesTheCommandsOwnName()
+    {
+        InvalidOperationException error = Assert.Throws<InvalidOperationException>(() => CommandMistakes.Declare(new Command("read"), ["read"]));
+
+        Assert.Contains("'read' is mistaken for 'read'", error.Message, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -138,18 +179,16 @@ public sealed class ProductMenuTests : IDisposable
     }
 
     [Fact]
-    public void Operations_ComeFromTheEditDefinitionsUnderTheirCommandPaths()
+    public void Operations_ComeFromTheEditDefinitionsUnderTheirCommandNames()
     {
         ProductDefinition definition = ExtProduct.Define<TestSession>(Manifest)
             .Describe("A product in a menu.")
             .Command(InspectCommand.Create, TestHandlers.Info)
             .Command(EditCommand.Create, TestHandlers.Edit)
-            .Group("batch", "Edit in batches.", static batch => batch
-                .Command(EditCommand.Create, TestHandlers.Edit))
             .Complete()
             .Build();
 
-        Assert.Equal(["edit", "batch edit"], definition.Operations.Select(static command => command.Descriptor.Command));
+        Assert.Equal(["edit"], definition.Operations.Select(static command => command.Descriptor.Command));
         Assert.All(definition.Operations, static command =>
         {
             Assert.Equal(TestOp.Catalog.Names, command.Descriptor.Ops);
@@ -283,9 +322,8 @@ public sealed class ProductMenuTests : IDisposable
                 return result;
             })
             .Command(InspectCommand.Create, TestHandlers.Info)
-            .Group("query", "Query the document.", static query => query
-                .Command(ReadCommand.Create, TestHandlers.Info)
-                .Command(SearchCommand.Create, TestHandlers.Search))
+            .Command(ReadCommand.Create, TestHandlers.Info)
+            .Command(SearchCommand.Create, TestHandlers.Search)
             .Command(EditCommand.Create, TestHandlers.Edit)
             .Complete();
 
@@ -414,7 +452,10 @@ public sealed class ProductMenuTests : IDisposable
             new CommandTraits { Input = Document },
             [],
             static (_, standard) => new InfoRequest { Input = standard.Input },
-            TestTables.Text);
+            TestTables.Text)
+        {
+            MistakenFor = ["query"],
+        };
     }
 
     /// <summary>A command whose handler returns one of several result types, each with its own renderer.</summary>
@@ -428,7 +469,23 @@ public sealed class ProductMenuTests : IDisposable
             static (_, standard) => new InfoRequest { Input = standard.Input },
             table: null)
         {
+            MistakenFor = ["query"],
             Renderers = [ProductOutputDefinition.Create<TextResult>(TestTables.Text), ProductOutputDefinition.Create<FoundResult>(TestTables.Found)],
+        };
+    }
+
+    /// <summary>A command mistaken for the name of <see cref="InspectCommand"/>, which that command answers to.</summary>
+    private static class MistakenForInspectCommand
+    {
+        public static CommandDefinition<InfoRequest, TextResult> Create() => new(
+            "other",
+            "Reads the document again.",
+            new CommandTraits { Input = Document },
+            [],
+            static (_, standard) => new InfoRequest { Input = standard.Input },
+            TestTables.Text)
+        {
+            MistakenFor = ["inspect"],
         };
     }
 

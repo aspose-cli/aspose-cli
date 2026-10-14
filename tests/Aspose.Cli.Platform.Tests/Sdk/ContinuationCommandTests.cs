@@ -1,5 +1,6 @@
 using Aspose.Cli.Sdk;
 using Aspose.Cli.Sdk.Addressing;
+using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Extensibility.Commanding;
 using Xunit;
 
@@ -33,7 +34,7 @@ public sealed class ContinuationCommandTests
     [InlineData("`cmd`", "\"\\`cmd\\`\"")]
     [InlineData("@list", "\"@list\"")]
     public void Quote_LeavesSafeTokensBareAndEscapesShellSpecials(string value, string expected) =>
-        Assert.Equal(expected, ContinuationCommand.Quote(value));
+        Assert.Equal(expected, CommandLineText.Quote(value));
 
     [Fact]
     public void After_ResumesAfterTheLastCompletePartAsRanges()

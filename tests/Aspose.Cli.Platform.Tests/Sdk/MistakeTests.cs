@@ -27,6 +27,15 @@ public sealed class MistakeTests
     }
 
     [Fact]
+    public void Of_PutsEveryMeantNameFirstInTheirOrder()
+    {
+        var mistake = Mistake.Of("query", ["inspect", "read", "search", "edit"], meant: ["read", "search"]);
+
+        Assert.Equal(["read", "search"], mistake.Suggestions.Take(2));
+        Assert.StartsWith("Did you mean 'read'", mistake.Question, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Of_ComparesByKeyAndSuggestsTheNamesAsPublished()
     {
         var options = Mistake.Of("--vresion", ["--help", "--version"], keyOf: static name => name.TrimStart('-'));

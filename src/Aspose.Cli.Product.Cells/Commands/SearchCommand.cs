@@ -48,6 +48,7 @@ internal static class SearchCommand
             },
             Table)
         {
+            MistakenFor = ["query"],
             Finish = static (_, request, result, standard) =>
             {
                 ContinuationCommand resume = standard.Continuation();

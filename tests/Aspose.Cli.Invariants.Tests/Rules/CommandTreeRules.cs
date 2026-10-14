@@ -385,12 +385,9 @@ internal static partial class ContractRules
         }
     }
 
-    /// <summary>
-    /// A product read or search: the verbs <c>read</c> and <c>search</c> and, while they remain,
-    /// the <c>query &lt;noun&gt;</c> commands that C-R01 and C-R02 fold into them.
-    /// </summary>
+    /// <summary>A product read or search: the verbs <c>read</c> and <c>search</c>.</summary>
     private static bool IsReadOrSearch(TreeCommand command) =>
-        command.Product is not null && (command.ProductVerb is "read" or "search" or "query");
+        command.Product is not null && command.ProductVerb is "read" or "search";
 
     // ----- C-R17 (options): allowed values are lowercase kebab case ------------------------------
 
