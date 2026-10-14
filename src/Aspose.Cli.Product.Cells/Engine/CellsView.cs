@@ -54,7 +54,7 @@ internal static class CellsView
                     },
                 ],
                 // The workbook view opens on the active sheet.
-                Warnings = loaded.Warnings(loaded.SkippedSheetWarning(defaultedToActiveSheet: true)),
+                Warnings = loaded.Warnings(loaded.SkippedSheetWarning(defaultedToActiveSheet: true, "Read another sheet with 'aspose-cli cells read --sheet' and the sheet's name from inspect.")),
             };
         }
 

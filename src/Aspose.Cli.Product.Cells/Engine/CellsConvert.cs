@@ -104,7 +104,7 @@ internal static class CellsConvert
             // Only a text export without --sheets writes one sheet chosen by default; the other
             // formats write every sheet.
             Warnings = EnvelopeParts.CombineWarnings([loaded.Resources.CoverageWarning, loaded.CalculatedOnOpen,
-                loaded.SkippedSheetWarning(selected is null && savePlan.WritesActiveSheetOnly), sheetsDropped, dataTruncated, formulasBroken, chartsSplit,
+                loaded.SkippedSheetWarning(selected is null && savePlan.WritesActiveSheetOnly, "Pass --sheets with the sheet's position from inspect to convert another sheet."), sheetsDropped, dataTruncated, formulasBroken, chartsSplit,
                 .. textLayout]),
         };
     }

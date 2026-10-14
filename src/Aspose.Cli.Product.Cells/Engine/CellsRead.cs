@@ -31,7 +31,7 @@ internal static class CellsRead
             // command, keeping the engine free of CLI syntax.
             Window = window,
             License = EnvelopeParts.License(licenseState),
-            Warnings = loaded.Warnings(loaded.SkippedSheetWarning(request.SheetName is null)),
+            Warnings = loaded.Warnings(loaded.SkippedSheetWarning(request.SheetName is null, "Pass --sheet with the sheet's name from inspect to read another sheet.")),
         };
     }
 }

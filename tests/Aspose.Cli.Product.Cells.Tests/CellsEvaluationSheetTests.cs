@@ -41,7 +41,7 @@ public sealed class CellsEvaluationSheetTests
 
         WorksheetCollection sheets = loaded.Workbook.Worksheets;
         string active = sheets[sheets.ActiveSheetIndex].Name;
-        Warning? skipped = loaded.SkippedSheetWarning(defaultedToActiveSheet: true);
+        Warning? skipped = loaded.SkippedSheetWarning(defaultedToActiveSheet: true, "Pass --sheet with the sheet's name from inspect to read another sheet.");
         if (state == LicenseState.Evaluation)
         {
             Assert.Equal("Data", active);

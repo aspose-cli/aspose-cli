@@ -128,6 +128,22 @@ public sealed class CommandDefinitionTests : IDisposable
         Assert.Equal(ErrorCodes.PasswordRequired, error.Code);
         Assert.Null(error.Details!["argument"]);
         Assert.Contains("--left-password-env", error.Hint, StringComparison.Ordinal);
+        Assert.Contains("--right-password-env", error.Hint, StringComparison.Ordinal);
+    }
+
+    /// <summary>A command that reads one document names its own password option, and no option of a command that reads two.</summary>
+    [Fact]
+    public void APasswordErrorOfASingleInputCommand_NamesItsOwnOption()
+    {
+        Command command = Create(
+            new CommandTraits { Input = Report },
+            (_, standard) => throw CliErrors.PasswordRequired(standard.Input));
+
+        CliException error = RunFailing(command, "report.test");
+
+        Assert.Equal(ErrorCodes.PasswordRequired, error.Code);
+        Assert.Contains("--password-env <NAME>", error.Hint, StringComparison.Ordinal);
+        Assert.DoesNotContain("--left-password-env", error.Hint, StringComparison.Ordinal);
     }
 
     [Fact]
