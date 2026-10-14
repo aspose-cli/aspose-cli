@@ -35,13 +35,13 @@ public static class CellsFormats
         FormatDescriptor.Declare("svg", FormatUse.Render, null, null, 2, false, ".svg"),
     ], CellsFormatRecognition.Rules);
 
-    /// <summary>Workbook formats whose edited output can be reopened and verified.</summary>
+    /// <summary>
+    /// The formats create and edit write: the workbook formats the engine both loads and saves,
+    /// so the output reopens as a workbook that can be read, verified and edited again. pdf, xps,
+    /// json and md are renditions it cannot load; convert writes them from one of these.
+    /// </summary>
     internal static IReadOnlyList<FormatDescriptor> Editable { get; } =
         [.. Definitions.Where(static format => format.Uses.HasFlag(FormatUse.Input | FormatUse.Convert))];
-
-    /// <summary>The formats a new workbook can be created in.</summary>
-    internal static IReadOnlyList<FormatDescriptor> Convertible { get; } =
-        [.. Definitions.Where(static format => format.Uses.HasFlag(FormatUse.Convert)).OrderBy(static format => format.ConvertOrder)];
 
     /// <summary>
     /// Convert formats that hold one worksheet by nature: they export the active sheet, so for

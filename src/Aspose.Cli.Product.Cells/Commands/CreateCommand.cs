@@ -20,7 +20,7 @@ internal static class CreateCommand
             "Create a new workbook.",
             new CommandTraits
             {
-                Output = OutputTarget.CreatedFile("Path of the workbook to create, e.g. report.xlsx.", CellsFormats.Convertible),
+                Output = OutputTarget.CreatedFile("Path of the workbook to create, e.g. report.xlsx.", CellsFormats.Editable),
                 Encrypt = CellsInputs.EncryptedWorkbook,
             },
             [sheets],
