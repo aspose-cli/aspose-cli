@@ -19,7 +19,7 @@ internal static class CreateCommand
             "Create a document from at most one content source, optionally inside a template; without either it is blank.",
             new CommandTraits
             {
-                Output = OutputTarget.CreatedFile("Document path to create.", WordsFormats.Writable),
+                Output = OutputTarget.CreatedFile("Document path to create.", WordsFormats.Editable),
                 Encrypt = WordsInputs.EncryptedDocument,
                 UsesFonts = true,
             },

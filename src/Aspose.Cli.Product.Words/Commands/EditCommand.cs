@@ -18,7 +18,7 @@ internal static class EditCommand
             ParseSet,
             static ops => new WordsOpsBatch { Ops = ops }),
         VerifyDescription = "Compare the staged document after save and reopen to report semantic verification.",
-        Writes = WordsFormats.Writable,
+        Writes = WordsFormats.Editable,
     };
 
     public static CommandDefinition<WordsEditRequest, WordsEditResult> Create()

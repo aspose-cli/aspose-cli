@@ -144,7 +144,7 @@ public sealed class WordsDisclosureTests
     }
 
     [Fact]
-    public void EditingIntoAFormatThatCannotHoldWordFeatures_DisclosesTheLoss()
+    public void EditingIntoAFormatThatCannotKeepTheRestrictions_DisclosesTheLoss()
     {
         using var fixture = new WordsFixture();
         var source = new Document();
@@ -154,10 +154,10 @@ public sealed class WordsDisclosureTests
         source.Save(input, SaveFormat.Docx);
         var batch = new WordsOpsBatch { Ops = [new ReplaceTextOp { Find = "Locked", Replace = "Changed" }] };
 
-        WordsEditResult text = WordsEdit.Run(fixture.Session, new WordsEditRequest { Input = input, Batch = batch, Output = TestOutput.At(fixture.Temp.File("edited.txt")) });
+        WordsEditResult text = WordsEdit.Run(fixture.Session, new WordsEditRequest { Input = input, Batch = batch, Output = TestOutput.At(fixture.Temp.File("edited.odt")) });
         WordsEditResult word = WordsEdit.Run(fixture.Session, new WordsEditRequest { Input = input, Batch = batch, Output = TestOutput.At(fixture.Temp.File("edited.docx")) });
 
-        // One LOSSY_CONVERSION names the restrictions; the format's own one names other features.
+        // OpenDocument text keeps the content but not Word's editing restrictions.
         Warning lost = Assert.Single(text.Warnings ?? [], static warning => warning.Code == WarningCodes.LossyConversion
             && Regex.IsMatch(warning.Message + warning.Hint, "restrict|protect", RegexOptions.IgnoreCase));
         Assert.Contains("cannot keep the read-only editing restrictions", lost.Message, StringComparison.Ordinal);
@@ -287,7 +287,8 @@ public sealed class WordsDisclosureTests
             Input = input,
             Output = TestOutput.At(convertedPath, format: format),
         });
-        WordsEditResult edited = WordsEdit.Run(fixture.Session, new WordsEditRequest
+        // Edit writes only the formats that keep revisions; convert writes the rest.
+        WordsEditResult? edited = Edits(format) ? WordsEdit.Run(fixture.Session, new WordsEditRequest
         {
             Input = input,
             Batch = new WordsOpsBatch
@@ -295,9 +296,9 @@ public sealed class WordsDisclosureTests
                 Ops = [new ReplaceTextOp { Find = "Other", Replace = "More" }],
             },
             Output = TestOutput.At(editedPath),
-        });
+        }) : null;
 
-        foreach (IReadOnlyList<Warning>? warnings in new[] { converted.Warnings, edited.Warnings })
+        foreach (IReadOnlyList<Warning>? warnings in edited is null ? [converted.Warnings] : new[] { converted.Warnings, edited.Warnings })
         {
             Assert.Equal(kept, (warnings ?? []).Any(static warning => warning.Code == WordsDiagnostics.TrackedChangesPresent));
             Assert.Equal(dropped, (warnings ?? []).Any(static warning => warning.Code == WarningCodes.LossyConversion
@@ -344,7 +345,7 @@ public sealed class WordsDisclosureTests
             Input = input,
             Output = TestOutput.At(fixture.Temp.File("converted." + format), format: format),
         });
-        WordsEditResult edited = WordsEdit.Run(fixture.Session, new WordsEditRequest
+        WordsEditResult? edited = Edits(format) ? WordsEdit.Run(fixture.Session, new WordsEditRequest
         {
             Input = input,
             Batch = new WordsOpsBatch
@@ -352,9 +353,9 @@ public sealed class WordsDisclosureTests
                 Ops = [new ReplaceTextOp { Find = "Other", Replace = "More" }],
             },
             Output = TestOutput.At(fixture.Temp.File("edited." + format)),
-        });
+        }) : null;
 
-        foreach (IReadOnlyList<Warning>? warnings in new[] { converted.Warnings, edited.Warnings })
+        foreach (IReadOnlyList<Warning>? warnings in edited is null ? [converted.Warnings] : new[] { converted.Warnings, edited.Warnings })
         {
             string[] messages = (warnings ?? []).Where(static warning => warning.Code == WarningCodes.LossyConversion)
                 .Select(static warning => warning.Message).ToArray();
@@ -430,20 +431,19 @@ public sealed class WordsDisclosureTests
             Input = input,
             Output = TestOutput.At(fixture.Temp.File("converted." + format), format: format),
         });
-        WordsEditResult edited = WordsEdit.Run(fixture.Session, new WordsEditRequest
-        {
-            Input = input,
-            Batch = new WordsOpsBatch
-            {
-                Ops = [new ReplaceTextOp { Find = "Macro", Replace = "Edited" }],
-            },
-            Output = TestOutput.At(fixture.Temp.File("edited." + format)),
-        });
-
         Assert.Equal(dropped, (converted.Warnings ?? []).Any(static warning => warning.Code == WordsDiagnostics.MacrosDropped));
-        Assert.Equal(dropped, (edited.Warnings ?? []).Any(static warning => warning.Code == WordsDiagnostics.MacrosDropped));
-        if (format is "docx" or "docm" or "doc")
+        if (Edits(format))
         {
+            WordsEditResult edited = WordsEdit.Run(fixture.Session, new WordsEditRequest
+            {
+                Input = input,
+                Batch = new WordsOpsBatch
+                {
+                    Ops = [new ReplaceTextOp { Find = "Macro", Replace = "Edited" }],
+                },
+                Output = TestOutput.At(fixture.Temp.File("edited." + format)),
+            });
+            Assert.Equal(dropped, (edited.Warnings ?? []).Any(static warning => warning.Code == WordsDiagnostics.MacrosDropped));
             Assert.Equal(!dropped, new Document(edited.Output!.Path).HasMacros);
         }
     }
@@ -616,4 +616,7 @@ public sealed class WordsDisclosureTests
         public string Identity => "fixed";
         public LicenseState EnsureApplied() => state;
     }
+
+    // Whether edit writes the format; the others are written only by convert.
+    private static bool Edits(string format) => WordsFormats.Editable.Any(written => written.Id == format);
 }

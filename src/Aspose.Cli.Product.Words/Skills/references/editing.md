@@ -243,20 +243,31 @@ one should restart.
 
 ## Save and verify
 
-Every output that can be loaded as a document is reopened before publication.
-An `--out` in `txt`, `md`, `html` or `html-fixed` reports `LOSSY_CONVERSION`:
-such a format cannot hold every Word feature, such as styles, headers or
-fields. Any output other than a Word format, `rtf`, `odt` or `ott` also
-reports `LOSSY_CONVERSION` for the tracked changes it cannot keep as revisions,
-and any output other than a Word format, PDF included, for the editing
-restrictions it cannot keep; restrict a PDF with the `encrypt` operation of
-`aspose-cli pdf edit`.
-A `txt` or `md` output also writes comment text into the body and
-deleted text beside inserted text, each reported by its own `LOSSY_CONVERSION`
-(`words convert` reports them too); add `delete_comments`, and
-`accept_revisions` or `reject_revisions` as the reviewer decides, to the same
-batch to leave them out. A `txt` output is the body text: it leaves out
-headers, footers and page numbers, and lays each table row out on one line
-with its cells in aligned columns. `--verify` adds the semantic checks described in
-[verification](verification.md); it does not render pages and cannot be used
-for outputs that are not documents.
+`edit` and `create` write only the formats that reopen as the same document:
+the Word formats (`doc`, `dot`, `docx`, `docm`, `dotx`, `dotm`, and Flat OPC
+or WordML `.xml`), `rtf`, `odt` and `ott`. Any other output, such as
+`--out report.pdf` or `notes.md`, or an in-place edit of such an input, is
+refused with `USAGE_ERROR` before anything is read; the hint names the
+convert to run on the edited copy:
+
+```powershell
+aspose-cli words edit contract.docx --ops ops.json --out revised.docx --verify --output-format json
+aspose-cli words convert revised.docx --to pdf --out revised.pdf --output-format json
+```
+
+Every output is reopened before publication. An `rtf`, `odt` or `ott` output
+reports `LOSSY_CONVERSION` for the editing restrictions it cannot keep.
+`words convert` to `txt`, `md`, `html` or `html-fixed` reports
+`LOSSY_CONVERSION`: such a format cannot hold every Word feature, such as
+styles, headers or fields. A convert to any format other than those `edit`
+writes also reports it for the tracked changes it cannot keep as revisions,
+and to any non-Word format, PDF included, for the editing restrictions it
+cannot keep; restrict a PDF with the `encrypt` operation of
+`aspose-cli pdf edit`. A `txt` or `md` convert also writes comment text into
+the body and deleted text beside inserted text, each reported by its own
+`LOSSY_CONVERSION`; run `delete_comments`, and `accept_revisions` or
+`reject_revisions` as the reviewer decides, in the edit before it to leave
+them out. A `txt` output is the body text: it leaves out headers, footers and
+page numbers, and lays each table row out on one line with its cells in
+aligned columns. `--verify` adds the semantic checks described in
+[verification](verification.md); it does not render pages.

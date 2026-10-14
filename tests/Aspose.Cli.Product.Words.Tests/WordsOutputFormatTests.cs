@@ -1,3 +1,4 @@
+using System.Text.Json.Nodes;
 using Aspose.Words;
 using Xunit;
 
@@ -10,8 +11,6 @@ public sealed class WordsOutputFormatTests
     [InlineData("docx", "out.xml", "flatopc")]
     [InlineData("wordml", "out.xml", "wordml")]
     [InlineData("flatopc", "out.XML", "flatopc")]
-    [InlineData("docx", "out.htm", "html")]
-    [InlineData("docx", "out.pdf", "pdf")]
     public void AnEditedDocument_KeepsTheSourceFormatThatOwnsTheOutputExtension(string source, string output, string expected)
     {
         using var workspace = new TempWorkspace();
@@ -26,6 +25,96 @@ public sealed class WordsOutputFormatTests
 
         Assert.True(edited.ExitCode == 0, edited.StdErr);
         Assert.Equal(expected, System.Text.Json.Nodes.JsonNode.Parse(edited.StdOut)!["output"]!["format"]!.GetValue<string>());
+    }
+
+    private const string RefreshFields = "{\"ops\":[{\"op\":\"refresh_fields\"}]}";
+
+    [Theory]
+    [InlineData("edit", "out.doc", "doc")]
+    [InlineData("edit", "out.dot", "dot")]
+    [InlineData("edit", "out.docm", "docm")]
+    [InlineData("edit", "out.dotx", "dotx")]
+    [InlineData("edit", "out.dotm", "dotm")]
+    [InlineData("edit", "out.rtf", "rtf")]
+    [InlineData("edit", "out.odt", "odt")]
+    [InlineData("edit", "out.ott", "ott")]
+    [InlineData("create", "out.docx", "docx")]
+    [InlineData("create", "out.doc", "doc")]
+    [InlineData("create", "out.xml", "flatopc")]
+    [InlineData("create", "out.rtf", "rtf")]
+    [InlineData("create", "out.odt", "odt")]
+    public void EditAndCreate_WriteTheFormatsThatKeepTheDocument(string verb, string output, string expected)
+    {
+        using var workspace = new TempWorkspace();
+        SaveClause(workspace.File("source.docx"));
+
+        CliResult written = workspace.Run([.. Command(verb, output), "--output-format", "json"]);
+
+        Assert.True(written.ExitCode == 0, written.StdErr);
+        Assert.Equal(expected, JsonNode.Parse(written.StdOut)!["output"]!["format"]!.GetValue<string>());
+    }
+
+    [Theory]
+    [InlineData("edit", "out.pdf", "pdf")]
+    [InlineData("edit", "out.md", "md")]
+    [InlineData("edit", "out.html", "html")]
+    [InlineData("edit", "out.txt", "txt")]
+    [InlineData("create", "out.pdf", "pdf")]
+    [InlineData("create", "out.md", "md")]
+    public void EditAndCreate_RefuseAFormatThatLosesTheDocument_AndPointToTheConvertThatWritesIt(string verb, string output, string format)
+    {
+        using var workspace = new TempWorkspace();
+        SaveClause(workspace.File("source.docx"));
+
+        CliResult refused = workspace.Run([.. Command(verb, output), "--output-format", "json"]);
+
+        Assert.Equal(2, refused.ExitCode);
+        JsonNode error = JsonNode.Parse(refused.StdErr)!["error"]!;
+        Assert.Equal("USAGE_ERROR", error["code"]!.GetValue<string>());
+        Assert.Equal(format, error["details"]!["format"]!.GetValue<string>());
+        Assert.Equal(
+            [".doc", ".dot", ".docx", ".docm", ".dotx", ".dotm", ".xml", ".rtf", ".odt", ".ott"],
+            error["details"]!["available"]!.AsArray().Select(static extension => extension!.GetValue<string>()));
+        Assert.False(File.Exists(workspace.File(output)));
+        string convert = $"aspose-cli words convert <that file> --to {format}";
+        Assert.Equal($"Give {(verb == "edit" ? "--out" : "file")} one of these extensions, then run '{convert}' for {format}.", error["hint"]!.GetValue<string>());
+
+        // The hint works as written: the same command to a .docx, then the convert it names.
+        CliResult kept = workspace.Run([.. Command(verb, "kept.docx"), "--output-format", "json"]);
+        Assert.True(kept.ExitCode == 0, kept.StdErr);
+        string[] converting = convert.Replace("<that file>", "kept.docx", StringComparison.Ordinal).Split(' ')[1..];
+        CliResult converted = workspace.Run([.. converting, "--out", output, "--output-format", "json"]);
+        Assert.True(converted.ExitCode == 0, converted.StdErr);
+        Assert.Equal(format, JsonNode.Parse(converted.StdOut)!["output"]!["format"]!.GetValue<string>());
+    }
+
+    [Fact]
+    public void EditOfAnInputItCannotWrite_IsRefusedInPlace_AndWritesTheEditedCopyItNames()
+    {
+        using var workspace = new TempWorkspace();
+        const string Notes = "# Notes\n\nClause one.\n";
+        File.WriteAllText(workspace.File("notes.md"), Notes);
+
+        CliResult refused = workspace.Run("words", "edit", "notes.md", "--in-place", "--ops", RefreshFields, "--output-format", "json");
+
+        Assert.Equal(2, refused.ExitCode);
+        JsonNode error = JsonNode.Parse(refused.StdErr)!["error"]!;
+        Assert.Equal("USAGE_ERROR", error["code"]!.GetValue<string>());
+        Assert.Equal("Name the output with --out and one of these extensions, then run 'aspose-cli words convert <that file> --to md' for md.", error["hint"]!.GetValue<string>());
+        Assert.Equal(Notes, File.ReadAllText(workspace.File("notes.md")));
+        CliResult copied = workspace.Run("words", "edit", "notes.md", "--ops", RefreshFields, "--out", "notes.docx", "--output-format", "json");
+        Assert.True(copied.ExitCode == 0, copied.StdErr);
+    }
+
+    private static string[] Command(string verb, string output) => verb == "edit"
+        ? ["words", "edit", "source.docx", "--ops", RefreshFields, "--out", output]
+        : ["words", "create", output];
+
+    private static void SaveClause(string path)
+    {
+        var document = new Document();
+        new DocumentBuilder(document).Write("Clause one.");
+        document.Save(path);
     }
 
     [Theory]
