@@ -71,5 +71,5 @@ public sealed class InvocationTests
 
     private static CliOption Option(
         string name, bool required = false, string? inputKind = null, string valueSource = "command-line", string[]? allowedValues = null) =>
-        new(name, "string", required, false, valueSource != "command-line", valueSource, allowedValues ?? [], false, inputKind);
+        new(name, "string", required, false, valueSource != "command-line", valueSource, allowedValues ?? [], false, MaximumArity: 1, Aliases: [], InputKind: inputKind);
 }

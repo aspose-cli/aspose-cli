@@ -81,9 +81,84 @@ internal sealed partial class RuleWorkspace : IDisposable
 
     public void Seed(string relative, string text) => Seed(relative, Encoding.UTF8.GetBytes(text));
 
-    /// <summary>Runs a command line as it is, with empty stdin.</summary>
-    public CliResult Execute(params string[] args) =>
-        new CliProcess(CliRunner.ExecutablePath, Environment()).Run(Root, string.Empty, args);
+    /// <summary>
+    /// The hint problems of the runs of a rule case's check (<see cref="CollectHintProblems"/>);
+    /// null outside one.
+    /// </summary>
+    private static readonly AsyncLocal<List<string>?> CaseHintProblems = new();
+
+    /// <summary>A test's replacement for what the CLI wrote, in the flow that set it; null to keep the CLI's.</summary>
+    private static readonly AsyncLocal<Func<CliResult, CliResult>?> ResultRewrite = new();
+
+    /// <summary>
+    /// Replaces what each run writes in this flow until disposed, so a test can give a rule run an
+    /// envelope the CLI does not write, such as one whose hint does not run.
+    /// </summary>
+    internal static IDisposable RewriteResults(Func<CliResult, CliResult> rewrite)
+    {
+        Func<CliResult, CliResult>? outer = ResultRewrite.Value;
+        ResultRewrite.Value = rewrite;
+        return new Restore(() => ResultRewrite.Value = outer);
+    }
+
+    private sealed class Restore(Action restore) : IDisposable
+    {
+        public void Dispose() => restore();
+    }
+
+    /// <summary>
+    /// Runs a rule case's check and appends, as problems of its invariant prefixed
+    /// <c>executable-hint:</c>, every hint of its JSON runs that does not run as written, so
+    /// known violations cover them by case.
+    /// </summary>
+    public static IReadOnlyList<ScenarioProblem> CollectHintProblems(string invariant, Func<IReadOnlyList<ScenarioProblem>> check)
+    {
+        List<string>? outer = CaseHintProblems.Value;
+        var collected = new List<string>();
+        CaseHintProblems.Value = collected;
+        try
+        {
+            IReadOnlyList<ScenarioProblem> problems = check();
+            lock (collected)
+            {
+                return
+                [
+                    .. problems,
+                    .. collected.Distinct(StringComparer.Ordinal)
+                        .Select(problem => new ScenarioProblem(0, invariant, ExecutableHints.Check + ": " + problem)),
+                ];
+            }
+        }
+        finally
+        {
+            CaseHintProblems.Value = outer;
+        }
+    }
+
+    /// <summary>Runs a command line as it is, with empty stdin; a JSON run's hints must run as written.</summary>
+    public CliResult Execute(params string[] args)
+    {
+        CliResult result = new CliProcess(CliRunner.ExecutablePath, Environment()).Run(Root, string.Empty, args);
+        if (ResultRewrite.Value is { } rewrite)
+        {
+            result = rewrite(result);
+        }
+        IReadOnlyList<string> hintProblems = RequestsJson(args)
+            ? [.. ExecutableHints.Problems(new HintRun(args, Root, ConfigRoot, _environment), result).Select(Stable)]
+            : [];
+        if (hintProblems.Count > 0 && CaseHintProblems.Value is { } collected)
+        {
+            lock (collected)
+            {
+                collected.AddRange(hintProblems);
+            }
+        }
+        return result;
+    }
+
+    private static bool RequestsJson(IReadOnlyList<string> args) =>
+        args.Select((arg, index) => arg == "--output-format=json" || (arg == "--output-format" && index + 1 < args.Count && args[index + 1] == "json"))
+            .Any(static requested => requested);
 
     /// <summary>Runs the invocation's arguments followed by <paramref name="extra"/>, with empty stdin.</summary>
     public CliResult Run(params string[] extra) =>
