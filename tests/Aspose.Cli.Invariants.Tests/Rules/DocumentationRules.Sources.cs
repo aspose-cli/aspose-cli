@@ -4,10 +4,16 @@ using System.Text;
 namespace Aspose.Cli.Invariants.Tests;
 
 /// <summary>
-/// The prose of the C# sources: every string literal, with adjacent literals joined by <c>+</c>
-/// read as one text and each interpolation hole read as <c>…</c>, and every documentation comment
-/// (<c>///</c>), which the schemas publish as descriptions, with its XML tags removed. A literal
-/// inside an interpolation hole is a text of its own.
+/// The one reader of the texts that name commands, options, codes, operations and fields. In the
+/// C# sources: every string literal (error messages, hints, help), with adjacent literals joined
+/// by <c>+</c> read as one text and each interpolation hole read as <c>…</c>, and every
+/// documentation comment (<c>///</c>), which the schemas publish as descriptions, with its XML
+/// tags removed. A literal inside an interpolation hole is a text of its own. In Markdown (the
+/// Skills, the README and <c>KNOWN-ISSUES.md</c>), which writes names as code: every inline code
+/// span outside fenced blocks, and every fenced block of a shell or of JSON, or of any other
+/// label or none that writes an <c>aspose-cli</c> command, as one text, its shell line continuations joined; a
+/// placeholder such as <c>&lt;range&gt;</c> reads as <c>…</c>, like a hole. Markdown prose and the
+/// other blocks, which show data (a CSV file, a layout sketch, an outline), are not read.
 /// </summary>
 internal static partial class ContractRules
 {
@@ -17,6 +23,47 @@ internal static partial class ContractRules
     private const string Hole = "…";
 
     private static List<SourceText> ReadSource(string source) => new SourceReader(source).Read();
+
+    /// <summary>The texts of a file by its kind: C# or Markdown.</summary>
+    private static List<SourceText> ReadTexts(string path) =>
+        path.EndsWith(".cs", StringComparison.OrdinalIgnoreCase)
+            ? ReadSource(File.ReadAllText(path))
+            : ReadMarkdown(File.ReadAllText(path));
+
+    /// <summary>The languages of the fenced blocks that show commands or JSON; a block of any other label, or none, is read when it writes an aspose-cli command.</summary>
+    private static readonly HashSet<string> ReadLanguages = new(["bash", "console", "json", "powershell", "ps1", "pwsh", "sh", "shell"], StringComparer.Ordinal);
+
+    private static List<SourceText> ReadMarkdown(string markdown)
+    {
+        var texts = new List<SourceText>();
+        string[] lines = markdown.ReplaceLineEndings("\n").Split('\n');
+        for (int index = 0; index < lines.Length; index++)
+        {
+            string trimmed = lines[index].TrimStart();
+            if (trimmed.StartsWith("```", StringComparison.Ordinal))
+            {
+                string language = trimmed[3..].Trim();
+                int start = index + 1;
+                int end = start;
+                while (end < lines.Length && !lines[end].TrimStart().StartsWith("```", StringComparison.Ordinal))
+                {
+                    end++;
+                }
+                string body = string.Join('\n', lines[start..end]);
+                if (ReadLanguages.Contains(language) || body.Contains("aspose-cli", StringComparison.Ordinal))
+                {
+                    texts.Add(new SourceText(start + 1, Placeholder().Replace(Continuation().Replace(body, " "), Hole)));
+                }
+                index = end;
+                continue;
+            }
+            foreach (System.Text.RegularExpressions.Match span in InlineSpan().Matches(lines[index]))
+            {
+                texts.Add(new SourceText(index + 1, Placeholder().Replace(span.Groups["code"].Value, Hole)));
+            }
+        }
+        return texts;
+    }
 
     private sealed class SourceReader(string source)
     {
@@ -336,6 +383,18 @@ internal static partial class ContractRules
             }
         }
     }
+
+    /// <summary>An inline code span of Markdown.</summary>
+    [System.Text.RegularExpressions.GeneratedRegex(@"(?<!`)`(?<code>[^`]+)`(?!`)")]
+    private static partial System.Text.RegularExpressions.Regex InlineSpan();
+
+    /// <summary>A shell line continuation: a backslash, backquote or caret ending the line.</summary>
+    [System.Text.RegularExpressions.GeneratedRegex(@"[ \t]*(?:`|\\|\^)\n[ \t]*")]
+    private static partial System.Text.RegularExpressions.Regex Continuation();
+
+    /// <summary>A placeholder such as <c>&lt;range&gt;</c> or <c>&lt;out.pdf&gt;</c>.</summary>
+    [System.Text.RegularExpressions.GeneratedRegex(@"<[^<>\s][^<>]*>")]
+    private static partial System.Text.RegularExpressions.Regex Placeholder();
 
     [System.Text.RegularExpressions.GeneratedRegex(@"</?c(?:ode)?>")]
     private static partial System.Text.RegularExpressions.Regex CodeTag();
