@@ -4705,6 +4705,93 @@ C-R38 | src/Aspose.Cli.Sdk bare commands
 C-R38 | src/Aspose.Cli.Sdk.Analyzers
 C-R38 | src/Aspose.Cli.Sdk.Analyzers bare commands
 C-R38 | written mistakes
+C-R39 | cells add_comment round trip
+C-R39 | cells add_conditional_format round trip
+C-R39 | cells add_sparkline round trip
+C-R39 | cells define_name round trip
+C-R39 | cells define_table round trip
+C-R39 | cells format_range round trip
+C-R39 | cells freeze_panes round trip
+C-R39 | cells group_columns round trip
+C-R39 | cells group_rows round trip
+C-R39 | cells import_sheet round trip
+C-R39 | cells insert_chart round trip
+C-R39 | cells insert_image round trip
+C-R39 | cells insert_pivot round trip
+C-R39 | cells insert_sheet round trip
+C-R39 | cells protect_sheet round trip
+C-R39 | cells rename_sheet round trip
+C-R39 | cells resize_columns round trip
+C-R39 | cells resize_rows round trip
+C-R39 | cells round-trip exemptions
+C-R39 | cells set_autofilter round trip
+C-R39 | cells set_borders round trip
+C-R39 | cells set_chart round trip
+C-R39 | cells set_comment round trip
+C-R39 | cells set_default_font round trip
+C-R39 | cells set_hyperlink round trip
+C-R39 | cells set_page_setup round trip
+C-R39 | cells set_print_area round trip
+C-R39 | cells set_sheet_view round trip
+C-R39 | cells set_sheet_visibility round trip
+C-R39 | cells set_tab_color round trip
+C-R39 | cells set_validation round trip
+C-R39 | pdf add_attachment round trip
+C-R39 | pdf add_bookmark round trip
+C-R39 | pdf add_hyperlink round trip
+C-R39 | pdf encrypt_document round trip
+C-R39 | pdf insert_page round trip
+C-R39 | pdf rotate_pages round trip
+C-R39 | pdf round-trip exemptions
+C-R39 | pdf set_form_field round trip
+C-R39 | pdf set_page_labels round trip
+C-R39 | pdf set_page_size round trip
+C-R39 | pdf set_properties round trip
+C-R39 | slides format_shape round trip
+C-R39 | slides insert_chart round trip
+C-R39 | slides insert_image round trip
+C-R39 | slides insert_section round trip
+C-R39 | slides insert_shape round trip
+C-R39 | slides insert_slide round trip
+C-R39 | slides insert_table round trip
+C-R39 | slides round-trip exemptions
+C-R39 | slides set_background round trip
+C-R39 | slides set_body round trip
+C-R39 | slides set_chart_data round trip
+C-R39 | slides set_footer round trip
+C-R39 | slides set_layout round trip
+C-R39 | slides set_notes round trip
+C-R39 | slides set_properties round trip
+C-R39 | slides set_shape_bounds round trip
+C-R39 | slides set_slide_hidden round trip
+C-R39 | slides set_slide_size round trip
+C-R39 | slides set_text round trip
+C-R39 | slides set_title round trip
+C-R39 | slides set_transition round trip
+C-R39 | words add_comment round trip
+C-R39 | words define_style round trip
+C-R39 | words format_text round trip
+C-R39 | words insert_break round trip
+C-R39 | words insert_field round trip
+C-R39 | words insert_hyperlink round trip
+C-R39 | words insert_image round trip
+C-R39 | words insert_paragraphs round trip
+C-R39 | words insert_section round trip
+C-R39 | words insert_table round trip
+C-R39 | words insert_toc round trip
+C-R39 | words protect_document round trip
+C-R39 | words round-trip exemptions
+C-R39 | words set_default_font round trip
+C-R39 | words set_footer round trip
+C-R39 | words set_header round trip
+C-R39 | words set_list round trip
+C-R39 | words set_page_numbers round trip
+C-R39 | words set_page_setup round trip
+C-R39 | words set_properties round trip
+C-R39 | words set_style round trip
+C-R39 | words set_table_pagination round trip
+C-R39 | words set_text round trip
+C-R39 | words set_watermark round trip
 corrupt-input | cells compare
 corrupt-input | cells convert
 corrupt-input | cells edit
