@@ -213,7 +213,7 @@ public sealed partial class KnownViolationsTests
     [Fact]
     public void EveryNumberedContractRuleHasCases()
     {
-        string[] numbered = [.. Enumerable.Range(1, 38).Select(static number => $"C-R{number:00}")];
+        string[] numbered = [.. Enumerable.Range(1, 39).Select(static number => $"C-R{number:00}")];
         Assert.Equal(numbered, ContractRules.All.Select(static rule => rule.Id));
         HashSet<string> checkedRules = [.. InvariantCases.All.Values.Select(static item => InvariantCases.RuleOf(item.Invariant))];
         string[] missing = [.. numbered.Where(rule => !checkedRules.Contains(rule))];

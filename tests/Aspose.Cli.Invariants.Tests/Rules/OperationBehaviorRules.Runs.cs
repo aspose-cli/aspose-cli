@@ -169,8 +169,9 @@ internal static partial class OperationRuns
         }
         foreach (CliCommand command in Probes(catalog, product))
         {
-            (JsonArray results, string[] seen) = ProbeWith(workspace, command, file, open, sheets);
-            sheets = command.Verb == "inspect" ? seen : sheets;
+            // A read of one sheet reads the active one here too, so that the first read of a
+            // schema in a test process reports what every later one does.
+            (JsonArray results, _) = ProbeWith(workspace, command, file, open, sheets);
             if (SchemaCommands.TryGetValue(schemaId, out string? found) && found == command.Words)
             {
                 return results;

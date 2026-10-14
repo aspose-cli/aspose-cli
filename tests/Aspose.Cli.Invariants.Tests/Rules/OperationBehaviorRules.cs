@@ -456,7 +456,7 @@ internal static partial class ContractRules
         foreach ((string field, string path) in fields)
         {
             JsonNode?[] written = [.. Written(operation, field.Split('.'))];
-            (string schemaId, string read) = ReadTarget(field, path);
+            string schemaId = ReadTarget(field, path).SchemaId;
             if (!reads.TryGetValue(schemaId, out (JsonArray Before, JsonArray After) state))
             {
                 state = (OperationRuns.Read(workspace, sample.Product, source, open, schemaId), OperationRuns.Read(workspace, sample.Product, output, open, schemaId));
@@ -464,12 +464,7 @@ internal static partial class ContractRules
             }
             // A field of named entries, such as custom properties, writes each entry into the
             // dictionary its read path names: every entry reads back under its own key there.
-            string[] pointer = path.Split('/');
-            (string Read, JsonNode? Value)[] entries = [.. written.SelectMany(value =>
-                pointer[^1] == "additionalProperties" && value is JsonObject named
-                    ? named.Select(entry => ($"{pointer[^2]}.{entry.Key}", entry.Value))
-                    : [(read, value)])];
-            foreach ((string target, JsonNode? value) in entries)
+            foreach ((_, string target, JsonNode? value) in written.SelectMany(value => ReadEntries(field, path, value)))
             {
                 (string Location, JsonNode? Value)[] hits = [.. Locate(state.After, target).Where(hit => OperationRuns.Holds(value, hit.Value))];
                 if (hits.Any(hit => IsNew(state.Before, state.After, hit.Location, value)))
@@ -492,31 +487,8 @@ internal static partial class ContractRules
     }
 
     /// <summary>The values an operation writes at a dotted field path, one per item of a list on the way.</summary>
-    private static IEnumerable<JsonNode?> Written(JsonNode? node, string[] path)
-    {
-        if (path.Length == 0)
-        {
-            yield return node;
-            yield break;
-        }
-        if (node is JsonArray items)
-        {
-            foreach (JsonNode? item in items)
-            {
-                foreach (JsonNode? value in Written(item, path))
-                {
-                    yield return value;
-                }
-            }
-        }
-        else if (node is JsonObject obj && obj.TryGetPropertyValue(path[0], out JsonNode? next))
-        {
-            foreach (JsonNode? value in Written(next, path[1..]))
-            {
-                yield return value;
-            }
-        }
-    }
+    private static IEnumerable<JsonNode?> Written(JsonNode? node, string[] path) =>
+        WrittenAt(node, path, []).Select(static item => item.Value);
 
     /// <summary>Every place a dotted read path ends, at any depth of any result, as <c>command: path</c>.</summary>
     private static IEnumerable<(string Location, JsonNode? Value)> Locate(JsonArray state, string read)
