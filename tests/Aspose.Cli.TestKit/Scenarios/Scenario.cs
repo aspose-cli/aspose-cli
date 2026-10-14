@@ -103,6 +103,10 @@ public sealed record ScenarioExpectation
     [JsonConverter(typeof(OneOrManyConverter<string>))]
     public IReadOnlyList<string>? Error { get; init; }
 
+    /// <summary>The error code a failure may have, or any of several; a success holds too.</summary>
+    [JsonConverter(typeof(OneOrManyConverter<string>))]
+    public IReadOnlyList<string>? RefusedOnlyWith { get; init; }
+
     /// <summary>Warning codes that the result must or must not carry.</summary>
     public ScenarioCodes? Warnings { get; init; }
 

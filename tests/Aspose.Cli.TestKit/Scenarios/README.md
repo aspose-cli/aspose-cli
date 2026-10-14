@@ -62,6 +62,7 @@ one-operation document for the product's `edit --ops`; `markdown` and `text` are
 | --- | --- |
 | `exitCode` | The exit code is this number, or one of an array of numbers |
 | `error` | The error envelope's code is this code, or one of an array of codes |
+| `refusedOnlyWith` | The step succeeds, or fails with this code or one of an array of codes |
 | `warnings` | `present` codes are all in the result's `warnings`, `absent` codes none |
 | `json` | Every assertion `{ "path", "equals" \| "contains" \| "exists" }` holds on the step's JSON document: the result, or the error envelope for a failure. Paths are dotted with indexes, such as `error.details.suggestions` or `outputs[0].format`; `contains` tests an array item or a substring |
 | `files` | `present` files exist, `absent` files do not, `unchanged` files keep their bytes, with `nothingWritten` no file is created, changed or deleted, and with `nothingInstalled` none in the user configuration directory or the CLI's installation directory either |

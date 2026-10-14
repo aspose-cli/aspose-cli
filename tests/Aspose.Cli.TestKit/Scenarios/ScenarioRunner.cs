@@ -136,6 +136,10 @@ public static partial class ScenarioRunner
         {
             report(ErrorCheck, $"{(error is null ? $"no error (exit {result.ExitCode})" : $"{error}: {Message(document, result)}")}, expected {string.Join(" or ", errors)}");
         }
+        if (expect.RefusedOnlyWith is { } refusals && error is not null && !refusals.Contains(error))
+        {
+            report(ErrorCheck, $"{error}: {Message(document, result)}, expected success or {string.Join(" or ", refusals)}");
+        }
         if (expect.Warnings is { } warnings)
         {
             string[] codes = [.. ScenarioContract.Codes(document?["warnings"])];
