@@ -1,0 +1,5 @@
+# Changes to the gates that judge every change need the owner's review.
+/tests/Aspose.Cli.Invariants.Tests/ @gordonge
+/tests/Aspose.Cli.TestKit/Scenarios/ @gordonge
+/.editorconfig @gordonge
+/.github/workflows/ @gordonge
