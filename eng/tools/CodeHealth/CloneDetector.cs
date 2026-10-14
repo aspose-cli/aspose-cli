@@ -59,6 +59,8 @@ internal static class CloneDetector
         }
 
         Dictionary<string, int> totals = new(StringComparer.Ordinal);
+        // Each file's units by declaration, built once for all the clones located in it.
+        Dictionary<SyntaxNode, string>?[] units = new Dictionary<SyntaxNode, string>?[sources.Count];
         foreach (List<int> group in WindowGroups(ids, files, fileEnd, minimumTokens))
         {
             for (int i = 0; i < group.Count; i++)
@@ -78,8 +80,8 @@ internal static class CloneDetector
                     }
                     string[] locations =
                     [
-                        Locate(sources[files[first]], tokens[first]),
-                        Locate(sources[files[second]], tokens[second]),
+                        Locate(sources[files[first]], units[files[first]] ??= UnitsByDeclaration(sources[files[first]]), tokens[first]),
+                        Locate(sources[files[second]], units[files[second]] ??= UnitsByDeclaration(sources[files[second]]), tokens[second]),
                     ];
                     Array.Sort(locations, StringComparer.Ordinal);
                     string key = locations[0] + " <-> " + locations[1];
@@ -155,11 +157,13 @@ internal static class CloneDetector
         return length;
     }
 
-    private static string Locate(ParsedSource source, SyntaxToken token)
-    {
-        Dictionary<SyntaxNode, string> units = source.Units
+    private static Dictionary<SyntaxNode, string> UnitsByDeclaration(ParsedSource source) =>
+        source.Units
             .Where(unit => unit.Body is not null)
             .ToDictionary(unit => unit.Declaration, unit => unit.Key);
+
+    private static string Locate(ParsedSource source, Dictionary<SyntaxNode, string> units, SyntaxToken token)
+    {
         foreach (SyntaxNode node in token.Parent!.AncestorsAndSelf())
         {
             if (units.TryGetValue(node, out string? key))

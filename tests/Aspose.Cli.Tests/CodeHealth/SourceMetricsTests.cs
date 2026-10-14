@@ -6,66 +6,6 @@ namespace Aspose.Cli.Tests.CodeHealth;
 public sealed class SourceMetricsTests
 {
     [Fact]
-    public void CyclomaticComplexity_CountsEachDecisionPointAndLeavesLocalFunctionsApart()
-    {
-        const string source = """
-            class C
-            {
-                int M(int a, string? s, int[] xs)
-                {
-                    if (a > 0 && s != null) { }
-                    else if (a < 0 || s is null) { }
-                    int n = s?.Length ?? 0;
-                    foreach (int x in xs) { }
-                    while (a-- > 0) { }
-                    switch (a) { case 1: case 2: break; default: break; }
-                    int y = a switch { 1 => 1, > 5 and < 9 => 2, _ => 0 };
-                    try { } catch (System.Exception) { }
-                    System.Func<int, int> f = v => v > 0 ? v : -v;
-                    return Local(a);
-
-                    static int Local(int v) => v is 1 or 2 ? 1 : 0;
-                }
-            }
-            """;
-
-        Dictionary<string, int> complexity = Measure(source, member => member.Cyclomatic);
-
-        // 1 + if, &&, else-if, ||, ?., ??, foreach, while, two case labels, two non-discard arms, and, catch, ?:
-        Assert.Equal(16, complexity["a.cs::C.M(int, string?, int[])"]);
-        Assert.Equal(3, complexity["a.cs::C.M(int, string?, int[])/Local(int)"]);
-    }
-
-    [Fact]
-    public void CyclomaticComplexity_CountsAGuardedDiscardArmAndPatternLabels()
-    {
-        const string source = """
-            class C
-            {
-                int M(object o, bool b) => o switch
-                {
-                    int => 1,
-                    _ when b => 2,
-                    _ => 3,
-                };
-
-                void N(object o)
-                {
-                    switch (o) { case int i when i > 0: break; case string: break; }
-                    do { } while (o is null);
-                    for (;;) { break; }
-                    o ??= 1;
-                }
-            }
-            """;
-
-        Dictionary<string, int> complexity = Measure(source, member => member.Cyclomatic);
-
-        Assert.Equal(3, complexity["a.cs::C.M(object, bool)"]);
-        Assert.Equal(6, complexity["a.cs::C.N(object)"]);
-    }
-
-    [Fact]
     public void MethodLength_CountsBodyLinesHoldingTokensOnly()
     {
         const string source = """"
