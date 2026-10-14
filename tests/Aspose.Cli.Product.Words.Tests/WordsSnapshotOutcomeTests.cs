@@ -209,7 +209,7 @@ public sealed class WordsSnapshotOutcomeTests
 
         Assert.Equal(["property/author"], Assert.Single(result.Applied).Targets);
         Assert.Equal("Custom title", properties["custom:title"]);
-        Assert.Equal("Spaced", properties["%20lead%2Fx%20"]);
+        Assert.Equal("Spaced", properties[" lead/x "]);
         Assert.Equal("Tester", properties["author"]);
     }
 

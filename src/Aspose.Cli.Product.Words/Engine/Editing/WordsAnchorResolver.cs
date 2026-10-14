@@ -239,7 +239,8 @@ internal static class WordsAnchorResolver
     internal static IReadOnlyList<string> Targets(DocumentBlockIndex index, IReadOnlyList<Node> nodes) =>
         [.. nodes.Select(index.FindBlock).OfType<int>().Distinct().Order().Select(static block => $"block/{block}")];
 
-    private static WordsTarget? TargetOf(WordsOp op) => op switch
+    /// <summary>The block address an operation names, or null for one that names none.</summary>
+    internal static WordsTarget? TargetOf(WordsOp op) => op switch
     {
         SetTextOp value => value.Target,
         InsertParagraphsOp value => value.At,

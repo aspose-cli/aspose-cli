@@ -210,5 +210,5 @@ internal sealed partial class WordsSnapshots(LoadedDocument loaded) : IWordsOpHa
 
     internal static string StyleAddress(string name) => $"style/{TargetName.Escape(name)}";
 
-    internal static string PropertyAddress(string name) => $"property/{WordsReadBack.PropertyKey(name)}";
+    internal static string PropertyAddress(string name) => $"property/{TargetName.Escape(WordsReadBack.PropertyKey(name))}";
 }

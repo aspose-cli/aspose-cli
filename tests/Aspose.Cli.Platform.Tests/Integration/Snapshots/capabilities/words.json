@@ -49,7 +49,7 @@
         "command": "edit",
         "inputSchema": "v2/words/ops",
         "operationSchema": "aspose-cli schema v2/words/ops --operation <op>",
-        "contractFingerprint": "sha256:8118fa98c0f2bab90664310cd9db87db639bc4a845f316935db4cbf0cf3caf5e",
+        "contractFingerprint": "sha256:644d53bb258e93a0e300ea956c9b9d72b78d1f279fac147147a156064f645359",
         "maximumOperationCount": 10000,
         "ops": [
           "accept_revisions",
@@ -5891,7 +5891,7 @@
               "x-readBack": "https://schemas.aspose.com/aspose-cli/v2/words/inspect-result.schema.json#/properties/properties/additionalProperties"
             },
             "custom": {
-              "description": "Custom properties by name; a null value removes the property. words inspect --detail properties reports each under its name, with /, %, control characters and leading and trailing white space escaped as UTF-8 %XX, and a custom property a document already has under a standard key's name as custom: and that name. A name must not be title, author, subject or keywords in any case, which the fields above set, and must not start with custom:.",
+              "description": "Custom properties by name; a null value removes the property. words inspect --detail properties reports each under its name as it is, and a custom property a document already has under a standard key's name as custom: and that name. A name must not be title, author, subject or keywords in any case, which the fields above set, and must not start with custom:.",
               "type": "object",
               "additionalProperties": {
                 "type": [

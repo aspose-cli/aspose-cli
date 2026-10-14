@@ -1,3 +1,4 @@
+using System.Globalization;
 using Aspose.Cli.Product.Words.Engine.Mapping;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Words;
@@ -77,8 +78,11 @@ internal sealed class WordsEditModel : IOperationModel<WordsOp>
     }
 
     /// <summary>
-    /// What a failed operation addressed: the blocks and sections it resolved before the batch,
-    /// or the part of the document it changes.
+    /// What a failed operation addressed: the blocks and sections it resolved before the batch;
+    /// for one whose address did not resolve, the block or section numbers it names as written,
+    /// which need not exist; otherwise the part of the document it changes. A heading, find text
+    /// or bookmark that matched no block names no block, so it attempted <c>block/all</c>, the
+    /// blocks it searched.
     /// </summary>
     public IReadOnlyList<string> AttemptedTargets(WordsOp operation)
     {
@@ -95,6 +99,11 @@ internal sealed class WordsEditModel : IOperationModel<WordsOp>
             return [.. blocks, .. sections];
         }
 
+        if (Named(operation) is { } named)
+        {
+            return [named];
+        }
+
         return operation switch
         {
             SetPropertiesOp => ["property/all"],
@@ -105,6 +114,31 @@ internal sealed class WordsEditModel : IOperationModel<WordsOp>
             SetPageSetupOp or SetHeaderOp or SetFooterOp or SetPageNumbersOp or InsertSectionOp or DeleteSectionOp => ["section/all"],
             _ => ["block/all"],
         };
+    }
+
+    /// <summary>The block number or range, or the section number, an operation names, or null when it names none.</summary>
+    private static string? Named(WordsOp operation)
+    {
+        if (WordsAnchorResolver.TargetOf(operation) is { } target)
+        {
+            return target switch
+            {
+                { Block: int block } => string.Create(CultureInfo.InvariantCulture, $"{WordsSnapshots.BlockUnit}/{block}"),
+                { Blocks: { } range } => $"{WordsSnapshots.BlockUnit}/{range}",
+                _ => null,
+            };
+        }
+
+        int? section = operation switch
+        {
+            InsertSectionOp insert => insert.At,
+            DeleteSectionOp delete => delete.Section,
+            SetPageSetupOp setup => setup.Section,
+            HeaderFooterOp part => part.Section,
+            SetPageNumbersOp numbers => numbers.Section,
+            _ => null,
+        };
+        return section is int number ? string.Create(CultureInfo.InvariantCulture, $"{WordsSnapshots.SectionUnit}/{number}") : null;
     }
 
     public NoEffect? Explain(WordsOp operation) => operation switch
