@@ -1,6 +1,6 @@
-using System.Text.Json;
 using Aspose.Cells;
-using Aspose.Cells.Charts;
+using Aspose.Cells.Pivot;
+using Aspose.Cells.Tables;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Results;
 
@@ -46,7 +46,7 @@ internal static class InfoProjection
             StructurePasswordProtected = Sheets.StructurePasswordProtected(workbook),
             Author = Normalize(workbook.BuiltInDocumentProperties.Author),
             Title = Normalize(workbook.BuiltInDocumentProperties.Title),
-            DefaultFont = new CellsDefaultFontInfo { Font = workbook.DefaultStyle.Font.Name, FontSize = workbook.DefaultStyle.Font.DoubleSize },
+            DefaultFont = DefaultFont(workbook),
             DefinedNames = WantsDetail(request, CellsInspectDetails.Names) ? BuildDefinedNames(workbook) : null,
             FormulaErrors = formulaErrors,
             Fonts = WantsDetail(request, CellsInspectDetails.Fonts) ? FontOps.UsedFonts(workbook) : null,
@@ -65,6 +65,13 @@ internal static class InfoProjection
         return (summary, errorsTruncated);
     }
 
+    /// <summary>The workbook's default font.</summary>
+    internal static CellsDefaultFontInfo DefaultFont(Workbook workbook) =>
+        new() { Font = workbook.DefaultStyle.Font.Name, FontSize = workbook.DefaultStyle.Font.DoubleSize };
+
+    /// <summary>Whether a sheet is protected with a password.</summary>
+    internal static bool PasswordProtected(Worksheet sheet) => sheet.IsProtected && sheet.Protection.IsProtectedWithPassword;
+
     private static bool WantsDetail(CellsInspectRequest request, string detail) =>
         request.Details is { } details && details.Contains(detail);
 
@@ -81,7 +88,7 @@ internal static class InfoProjection
             ColumnCount = usedRange?.ColumnCount ?? 0,
             Hidden = !sheet.IsVisible,
             Protected = sheet.IsProtected,
-            PasswordProtected = sheet.IsProtected && sheet.Protection.IsProtectedWithPassword,
+            PasswordProtected = PasswordProtected(sheet),
             ChartCount = sheet.Charts.Count,
             PivotTableCount = sheet.PivotTables.Count,
             // A used range implies data; its (0,0) origin makes End the old max row/column.
@@ -114,23 +121,8 @@ internal static class InfoProjection
         return rows;
     }
 
-    private static IReadOnlyList<CellsDefinedNameInfo> BuildDefinedNames(Workbook workbook)
-    {
-        var names = new List<CellsDefinedNameInfo>();
-        foreach (Name name in DefinedNames.Of(workbook))
-        {
-            // Once a name's target sheet is deleted the SDK returns a null
-            // RefersTo (26.9.0; the SDK is not nullable-annotated so the compiler
-            // misses it). RefersTo is a `required` contract field, so a null would
-            // be dropped by the null-ignoring serializer and vanish from the
-            // payload — a strict agent parser then sees a required key missing.
-            // Excel surfaces #REF! for exactly this broken state; emit that so the
-            // name still reports, honestly flagged as broken.
-            names.Add(new CellsDefinedNameInfo { Name = name.Text, RefersTo = name.RefersTo ?? "#REF!" });
-        }
-
-        return names;
-    }
+    private static IReadOnlyList<CellsDefinedNameInfo> BuildDefinedNames(Workbook workbook) =>
+        [.. DefinedNames.Of(workbook).Select(DefinedNames.Info)];
 
     /// <summary>How to read formula errors beyond a capped list.</summary>
     internal const string FormulaErrorsCappedHint =
@@ -165,91 +157,24 @@ internal static class InfoProjection
         return (errors, total);
     }
 
-    private static IReadOnlyList<CellsTableInfo> BuildTables(Workbook workbook)
-    {
-        var tables = new List<CellsTableInfo>();
-        foreach (Worksheet sheet in workbook.Worksheets)
-        {
-            foreach (var table in sheet.ListObjects)
-            {
-                tables.Add(ObjectProjection.Table(sheet, table));
-            }
-        }
+    private static IReadOnlyList<CellsTableInfo> BuildTables(Workbook workbook) =>
+        [.. workbook.Worksheets.Cast<Worksheet>().SelectMany(static sheet => sheet.ListObjects.Cast<ListObject>()
+            .Select(table => ObjectProjection.Table(sheet, table)))];
 
-        return tables;
-    }
+    private static IReadOnlyList<CellsChartInfo> BuildCharts(Workbook workbook) =>
+        [.. workbook.Worksheets.Cast<Worksheet>().SelectMany(static sheet => Enumerable.Range(0, sheet.Charts.Count)
+            .Select(index => ObjectProjection.Chart(sheet, sheet.Charts[index], index + 1)))];
 
-    private static IReadOnlyList<CellsChartInfo> BuildCharts(Workbook workbook)
-    {
-        var charts = new List<CellsChartInfo>();
-        foreach (Worksheet sheet in workbook.Worksheets)
-        {
-            for (int index = 0; index < sheet.Charts.Count; index++)
-            {
-                Chart chart = sheet.Charts[index];
-                charts.Add(ObjectProjection.Chart(sheet, chart, index + 1, VocabularyName(chart.Type)));
-            }
-        }
-
-        return charts;
-    }
-
-    private static IReadOnlyList<CellsPivotInfo> BuildPivots(Workbook workbook)
-    {
-        var pivots = new List<CellsPivotInfo>();
-        foreach (Worksheet sheet in workbook.Worksheets)
-        {
-            foreach (var pivot in sheet.PivotTables)
-            {
-                pivots.Add(ObjectProjection.Pivot(sheet, pivot, FormatArea(pivot.TableRange1)));
-            }
-        }
-
-        return pivots;
-    }
+    private static IReadOnlyList<CellsPivotInfo> BuildPivots(Workbook workbook) =>
+        [.. workbook.Worksheets.Cast<Worksheet>().SelectMany(static sheet => sheet.PivotTables.Cast<PivotTable>()
+            .Select(pivot => ObjectProjection.Pivot(sheet, pivot)))];
 
     // Budgeted like the formula-error scan: a very large validation set is capped.
-    private static IReadOnlyList<CellsValidationInfo> BuildValidations(Workbook workbook)
-    {
-        const int maxItems = 1000;
-        var validations = new List<CellsValidationInfo>();
-        foreach (Worksheet sheet in workbook.Worksheets)
-        {
-            foreach (var validation in sheet.Validations)
-            {
-                // A validation whose cells were all deleted applies to nothing.
-                if (validation.Areas is not { Length: > 0 } areas)
-                {
-                    continue;
-                }
-
-                if (validations.Count >= maxItems)
-                {
-                    return validations;
-                }
-
-                validations.Add(ObjectProjection.Validation(
-                    sheet, validation, areas, VocabularyName(validation.Type, JsonNamingPolicy.KebabCaseLower)));
-            }
-        }
-
-        return validations;
-    }
-
-    /// <summary>
-    /// Names an engine chart or validation type in the edit vocabulary. The insert_chart values
-    /// are the engine enum names in lower camel case and the set_validation values in lower
-    /// kebab case, so a kind the operations accept reads back as that value and any other kind
-    /// keeps its engine name in the same case.
-    /// </summary>
-    private static string VocabularyName<TEnum>(TEnum value, JsonNamingPolicy? policy = null)
-        where TEnum : struct, Enum =>
-        (policy ?? JsonNamingPolicy.CamelCase).ConvertName(value.ToString());
-
-    private static string FormatArea(CellArea area) =>
-        A1.FormatRange(new RangeRef(
-            new CellRef(area.StartRow, area.StartColumn),
-            new CellRef(area.EndRow, area.EndColumn)));
+    private static IReadOnlyList<CellsValidationInfo> BuildValidations(Workbook workbook) =>
+        [.. workbook.Worksheets.Cast<Worksheet>()
+            .SelectMany(static sheet => sheet.Validations.Cast<Validation>().Select(validation => ObjectProjection.Validation(sheet, validation)))
+            .OfType<CellsValidationInfo>()
+            .Take(1000)];
 
     private static string? Normalize(string? value) =>
         string.IsNullOrWhiteSpace(value) ? null : value;

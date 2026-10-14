@@ -376,7 +376,7 @@ internal static class ChartPivotOps
         // chart already plots, the same way, is left as it is.
         bool inRows = op.SeriesInRows is true;
         if (dataRange is not null
-            && ObjectProjection.Chart(sheet, chart, 1, string.Empty) is var current
+            && ObjectProjection.Chart(sheet, chart, 1) is var current
             && (current.DataRange != ObjectProjection.Reference(sheet, dataRange) || current.SeriesInRows != inRows))
         {
             chart.SetChartDataRange(dataRange, isVertical: !inRows);

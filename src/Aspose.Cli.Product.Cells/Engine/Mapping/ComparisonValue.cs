@@ -1,3 +1,4 @@
+using System.Globalization;
 using Aspose.Cells;
 
 namespace Aspose.Cli.Product.Cells.Engine.Mapping;
@@ -16,6 +17,19 @@ internal readonly record struct ComparisonValue(string Type, object? Value)
         CellValueType.IsError => new(CellsCellValueTypes.Error, cell.StringValue),
         CellValueType.IsString => new(CellsCellValueTypes.String, cell.StringValue),
         _ => throw new InvalidDataException("The workbook contains an unsupported comparison value type."),
+    };
+
+    /// <summary>
+    /// What a cell stores as an edit compares it: its formula, whatever the result, or else its
+    /// value; empty for an empty cell. A value of a type the comparison does not know is its text,
+    /// as a string's is, so an edit never fails on it.
+    /// </summary>
+    internal static string Stored(Cell cell) => cell.IsFormula ? "f|" + cell.Formula : cell.Type switch
+    {
+        CellValueType.IsNull => string.Empty,
+        CellValueType.IsNumeric or CellValueType.IsDateTime or CellValueType.IsBool or CellValueType.IsError =>
+            From(cell) is var value ? string.Create(CultureInfo.InvariantCulture, $"{value.Type}|{value.Value}") : string.Empty,
+        _ => CellsCellValueTypes.String + "|" + cell.StringValue,
     };
 
     /// <summary>One side of a difference: a date reported as ISO 8601, as a read reports it.</summary>
