@@ -163,7 +163,7 @@ public sealed class McpProtocolTests
         File.WriteAllBytes(input, bytes);
         await using var server = await McpTestServer.Start(temp.Path, temp.Path);
         string[] args = ["words", "inspect", "malformed.docx", "--output-format", "json"];
-        if (supervised) { args = ["--timeout", "15", .. args]; }
+        if (supervised) { args = ["--timeout", TestDeadline.CliTimeout, .. args]; }
 
         JsonNode reply = await server.Execute(args);
 

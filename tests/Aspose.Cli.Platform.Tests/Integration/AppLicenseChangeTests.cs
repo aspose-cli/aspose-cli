@@ -60,7 +60,7 @@ public sealed class AppLicenseChangeTests
     private static async Task AssertMode(Uri app, string product, string expected)
     {
         string mode = await ProductMode(app, product);
-        using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(20));
+        using var deadline = new CancellationTokenSource(TestDeadline.Hang);
         while (mode != expected && !deadline.IsCancellationRequested)
         {
             await Task.Delay(250);
@@ -71,7 +71,7 @@ public sealed class AppLicenseChangeTests
 
     private static async Task<string> ProductMode(Uri app, string product)
     {
-        using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
+        using var client = new HttpClient { Timeout = TestDeadline.Hang };
         JsonNode status = JsonNode.Parse(await client.GetStringAsync(new Uri(app, "/api/status")))!;
         return status["license"]!["products"]!.AsArray()
             .Single(item => item!["product"]!.GetValue<string>() == product)!["mode"]!.GetValue<string>();

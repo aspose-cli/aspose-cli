@@ -23,7 +23,7 @@ public sealed class PdfResourceLoadingTests
         const string html = "<html><body><p>Local brand</p><img src=\"brand.png\" width=\"30\" height=\"30\"></body></html>";
         File.WriteAllText(input, html);
         byte[] original = File.ReadAllBytes(input);
-        string[] supervision = worker ? ["--timeout", "30"] : [];
+        string[] supervision = worker ? ["--timeout", TestDeadline.CliTimeout] : [];
 
         CliResult result = workspace.Run(
             ["pdf", "create", output, "--from-html", input, "--output-format", "json", .. supervision]);

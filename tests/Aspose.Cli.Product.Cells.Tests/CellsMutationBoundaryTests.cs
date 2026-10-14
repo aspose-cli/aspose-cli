@@ -39,7 +39,7 @@ public sealed class CellsMutationBoundaryTests
         var args = new List<string> { "cells", "edit", "source.xlsx", "--ops", operations,
             "--out", "result.xlsx", "--max-input-bytes", "16384", "--output-format", "json" };
         if (bestEffort) { args.Add("--best-effort"); }
-        if (supervised) { args.AddRange(["--timeout", "60"]); }
+        if (supervised) { args.AddRange(["--timeout", TestDeadline.CliTimeout]); }
         CliResult edited = workspace.Run(args.ToArray());
         Assert.NotEqual(0, edited.ExitCode);
         Assert.Contains("FILE_TOO_LARGE", edited.StdErr, StringComparison.Ordinal);
@@ -55,7 +55,7 @@ public sealed class CellsMutationBoundaryTests
         var environment = new Dictionary<string, string?> { ["OLD_PASSWORD"] = "old-test-password", ["NEW_PASSWORD"] = "new-test-password" };
         CliResult create = workspace.RunWithEnv(environment, "cells", "create", "secret.xlsx", "--sheets", "Data", "--encrypt-env", "OLD_PASSWORD", "--output-format", "json");
         Assert.True(create.ExitCode == 0, create.StdErr);
-        var arguments = new List<string> { "cells", "edit", "secret.xlsx", "--password-env", "OLD_PASSWORD", "--set", "Data!A1=7", "--out", "edited.xlsx", "--timeout", "60", "--output-format", "json" };
+        var arguments = new List<string> { "cells", "edit", "secret.xlsx", "--password-env", "OLD_PASSWORD", "--set", "Data!A1=7", "--out", "edited.xlsx", "--timeout", TestDeadline.CliTimeout, "--output-format", "json" };
         if (changePassword) { arguments.AddRange(["--encrypt-env", "NEW_PASSWORD"]); }
         CliResult edit = workspace.RunWithEnv(environment, arguments.ToArray());
         Assert.True(edit.ExitCode == 0, edit.StdErr);
@@ -118,7 +118,7 @@ public sealed class CellsMutationBoundaryTests
     {
         using var workspace = new TempWorkspace();
         Assert.Equal(0, workspace.Run("cells", "create", "source.xlsx", "--sheets", "Data").ExitCode);
-        var args = new List<string> { "cells", "edit", "source.xlsx", "--set", "Data!A1==1/0", "--verify", "--timeout", "60", "--output-format", "json" };
+        var args = new List<string> { "cells", "edit", "source.xlsx", "--set", "Data!A1==1/0", "--verify", "--timeout", TestDeadline.CliTimeout, "--output-format", "json" };
         args.AddRange(inPlace ? ["--in-place"] : ["--out", "edited.xlsx"]);
         CliResult edited = workspace.Run(args.ToArray());
         Assert.True(edited.ExitCode == 8, edited.StdErr + edited.StdOut);

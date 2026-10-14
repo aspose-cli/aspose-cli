@@ -3,6 +3,7 @@ using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Serialization;
+using Aspose.Cli.TestKit;
 using System.CommandLine;
 using Xunit;
 using ExtProduct = Aspose.Cli.Sdk.Extensibility.Product;
@@ -181,7 +182,8 @@ public sealed class ProductFileRouterTests
                 new FileProbeOptions
                 {
                     MaxPrefixBytes = 8,
-                    RecognizerTimeout = TimeSpan.FromSeconds(1),
+                    // This part pins the prefix bound; the deadline only ends a hang.
+                    RecognizerTimeout = TestDeadline.Hang,
                 }).RouteAsync(unknown);
             Assert.Equal(8, observedPrefix);
         }
@@ -192,7 +194,8 @@ public sealed class ProductFileRouterTests
 
         var slow = new StaticRecognizer(async (_, cancellationToken) =>
         {
-            await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken);
+            // It never answers, so only the recognizer timeout ends it, however slow the machine.
+            await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
             return new FileRecognition { Kind = FileRecognitionKind.Match };
         });
         ProductCatalog timeoutRegistry =

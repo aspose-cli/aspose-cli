@@ -336,7 +336,7 @@ public sealed class WordsCliTests : IDisposable
     {
         byte[] bytes = "PK\x03\x04invalid synthetic docx"u8.ToArray();
         File.WriteAllBytes(_workspace.File("malformed.docx"), bytes);
-        string[] execution = supervised ? ["--timeout", "30"] : [];
+        string[] execution = supervised ? ["--timeout", TestDeadline.CliTimeout] : [];
         CliResult inspected = _workspace.Run(
             ["words", "inspect", "malformed.docx", "--output-format", "json", .. execution]);
         Assert.Equal(3, inspected.ExitCode);

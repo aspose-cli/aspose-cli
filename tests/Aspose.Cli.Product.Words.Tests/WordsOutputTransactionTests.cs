@@ -16,7 +16,7 @@ public sealed class WordsOutputTransactionTests
         string output = workspace.File("page.png");
         File.WriteAllText(workspace.File("page.2.png"), "existing second page");
         CliResult result = workspace.Run(["words", "render", input, "--pages", "1-2", "--out", output, "--dpi", "36", "--output-format", "json",
-            .. (supervised ? new[] { "--timeout", "30" } : Array.Empty<string>())]);
+            .. (supervised ? new[] { "--timeout", TestDeadline.CliTimeout } : Array.Empty<string>())]);
         Assert.Equal(5, result.ExitCode);
         Assert.Equal(string.Empty, result.StdOut);
         Assert.False(File.Exists(workspace.File("page.1.png")));

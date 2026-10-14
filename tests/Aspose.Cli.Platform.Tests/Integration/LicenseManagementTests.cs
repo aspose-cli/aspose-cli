@@ -85,14 +85,14 @@ public sealed class LicenseManagementTests
         string source = TestLicense.Path!;
         string sourceHash = FileHashes.Sha256(source);
         DateTime sourceTime = File.GetLastWriteTimeUtc(source);
-        CliResult selected = workspace.Run("license", "install", source, "--product", "words", "--timeout", "20", "--output-format", "json");
+        CliResult selected = workspace.Run("license", "install", source, "--product", "words", "--timeout", TestDeadline.CliTimeout, "--output-format", "json");
         Assert.True(selected.ExitCode == 0, selected.StdErr);
         JsonNode selectedStatus = JsonNode.Parse(selected.StdOut)!;
         Assert.All(selectedStatus["products"]!.AsArray(), product =>
             Assert.Equal(product!["product"]!.GetValue<string>() == "words" ? "licensed" : "evaluation",
                 product["mode"]!.GetValue<string>()));
 
-        CliResult installed = workspace.Run("license", "install", source, "--timeout", "20", "--output-format", "json");
+        CliResult installed = workspace.Run("license", "install", source, "--timeout", TestDeadline.CliTimeout, "--output-format", "json");
         Assert.True(installed.ExitCode == 0, installed.StdErr);
         Assert.All(JsonNode.Parse(installed.StdOut)!["products"]!.AsArray(), product =>
         {
@@ -105,12 +105,12 @@ public sealed class LicenseManagementTests
 
         string invalid = workspace.File("invalid.lic");
         File.WriteAllText(invalid, "not a license", Encoding.UTF8);
-        CliResult rejected = workspace.Run("license", "install", invalid, "--timeout", "20", "--output-format", "json");
+        CliResult rejected = workspace.Run("license", "install", invalid, "--timeout", TestDeadline.CliTimeout, "--output-format", "json");
         Assert.Equal(7, rejected.ExitCode);
         Assert.All(Directory.GetFiles(Path.Combine(workspace.ConfigDirectory, "licenses")), path =>
             Assert.Equal(sourceHash, FileHashes.Sha256(path)));
 
-        CliResult removed = workspace.Run("license", "remove", "--timeout", "20", "--output-format", "json");
+        CliResult removed = workspace.Run("license", "remove", "--timeout", TestDeadline.CliTimeout, "--output-format", "json");
         Assert.True(removed.ExitCode == 0, removed.StdErr);
         Assert.All(JsonNode.Parse(removed.StdOut)!["products"]!.AsArray(), product =>
         {

@@ -205,7 +205,7 @@ public sealed class PdfEngineTests
 
         CliResult created = workspace.Run(
             ["pdf", "create", output, "--from-images", image, "--page-size", pageSize, "--margins", margins,
-                "--timeout", "30", "--output-format", "json"]);
+                "--timeout", TestDeadline.CliTimeout, "--output-format", "json"]);
 
         Assert.True(created.ExitCode == 0, created.StdOut + created.StdErr);
         double[] sides = margins.Split(',').Select(static side => double.Parse(side, System.Globalization.CultureInfo.InvariantCulture)).ToArray();

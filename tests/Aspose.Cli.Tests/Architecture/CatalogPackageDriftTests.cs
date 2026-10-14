@@ -72,7 +72,7 @@ public sealed class CatalogPackageDriftTests : IDisposable
         using Process process = Process.Start(start)!;
         Task<string> output = process.StandardOutput.ReadToEndAsync();
         Task<string> error = process.StandardError.ReadToEndAsync();
-        Assert.True(process.WaitForExit(TimeSpan.FromSeconds(60)), "The catalog generator did not finish.");
+        Assert.True(process.WaitForExit(TestDeadline.Hang), "The catalog generator did not finish.");
         // Windows PowerShell wraps redirected error text at the console width.
         string text = (output.Result + error.Result)
             .Replace("\r", string.Empty, StringComparison.Ordinal)

@@ -292,7 +292,7 @@ public sealed class ProductLifecycleTests
 
         using Process process = Process.Start(start)
             ?? throw new InvalidOperationException("Could not start PowerShell.");
-        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+        using var timeout = new CancellationTokenSource(TestDeadline.Hang);
         Task<string> outputTask = process.StandardOutput.ReadToEndAsync(timeout.Token);
         Task<string> errorTask = process.StandardError.ReadToEndAsync(timeout.Token);
         try
@@ -303,7 +303,7 @@ public sealed class ProductLifecycleTests
         catch (OperationCanceledException)
         {
             if (!process.HasExited) { process.Kill(entireProcessTree: true); }
-            Assert.Fail("Product catalog generator or output drain exceeded the shared 30-second deadline.");
+            Assert.Fail($"Product catalog generator or output drain exceeded the {TestDeadline.Hang} hang deadline.");
         }
         string stdout = await outputTask;
         string stderr = await errorTask;
