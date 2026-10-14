@@ -13,4 +13,12 @@ internal static class DefinedNames
     public static IEnumerable<Name> Of(Workbook workbook) =>
         workbook.Worksheets.Names.Cast<Name>().Where(static name =>
             !name.Text.StartsWith("_xl", StringComparison.OrdinalIgnoreCase));
+
+    /// <summary>
+    /// A name as a read reports it. Once a name's target sheet is deleted the engine returns a
+    /// null RefersTo (26.9.0, not nullable-annotated); RefersTo is required, so a null would
+    /// vanish from the payload. Excel shows #REF! for exactly this broken state, so the name
+    /// reports that.
+    /// </summary>
+    public static CellsDefinedNameInfo Info(Name name) => new() { Name = name.Text, RefersTo = name.RefersTo ?? "#REF!" };
 }

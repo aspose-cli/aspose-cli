@@ -139,6 +139,48 @@ public sealed class CellsOutcomeTests : IClassFixture<CellsFixture>
             result.Applied.Select(static outcome => outcome.Targets));
     }
 
+    /// <summary>
+    /// An edit's targets and its verification name each object by the names a read of the output
+    /// reports, escaped as an address: white space at the ends, '%', '/' and the '!' that ends a
+    /// sheet included.
+    /// </summary>
+    [Fact]
+    public void TargetsAndVerification_NameObjectsAsAReadOfTheOutputDoes()
+    {
+        string path = Workbook("read-names", static workbook =>
+        {
+            Worksheet sheet = workbook.Worksheets[0];
+            sheet.Name = " Q3 100%! ";
+            sheet.Cells["A1"].PutValue("Region");
+            sheet.Cells["B1"].PutValue("Sales");
+            sheet.Cells["A2"].PutValue("East");
+            sheet.Cells["B2"].PutValue(3);
+            sheet.Cells["A3"].PutValue("West");
+            sheet.Cells["B3"].PutValue(5);
+        });
+
+        CellsEditResult edited = Apply(path, """
+            {"ops":[
+              {"op":"set_values","sheet":" Q3 100%! ","range":"B2","values":[[9]]},
+              {"op":"insert_pivot","sheet":" Q3 100%! ","sourceRange":"A1:B3","at":"E2","name":" P/1 100%! ","rows":["Region"],"values":[{"field":"Sales"}]}
+            ]}
+            """, verify: true);
+        CellsWorkbookSummary read = CellsInfo.Run(_fixture.Session, new CellsInspectRequest
+        {
+            Input = edited.Output!.Path,
+            Details = [CellsInspectDetails.Pivots],
+        }).Workbook;
+
+        string sheet = Assert.Single(read.Sheets).Name;
+        CellsPivotInfo pivot = Assert.Single(read.Pivots!);
+        Assert.Equal((" Q3 100%! ", " Q3 100%! ", " P/1 100%! "), (sheet, pivot.Sheet, pivot.Name));
+        Assert.Equal(
+            [["cell/%20Q3 100%25%21%20!B2"], ["pivot/%20Q3 100%25!%20/%20P%2F1 100%25!%20"]],
+            edited.Applied.Select(static outcome => outcome.Targets));
+        CellsVerifiedCellChange change = Assert.Single(edited.Verification!.DirectChanges, static change => change.Cell == "B2");
+        Assert.Equal(sheet, change.Sheet);
+    }
+
     [Fact]
     public void RenamingASheet_ChangesOneSheetAtItsNewName()
     {

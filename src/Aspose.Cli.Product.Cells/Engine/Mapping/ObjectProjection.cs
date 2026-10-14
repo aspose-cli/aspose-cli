@@ -106,32 +106,19 @@ internal static class ObjectProjection
         TotalsRow = table.ShowTotals,
     };
 
-    public static CellsChartInfo Chart(Worksheet sheet, Chart chart, int index, string kind)
+    /// <summary>A chart, the <paramref name="index"/>th of its sheet from 1.</summary>
+    public static CellsChartInfo Chart(Worksheet sheet, Chart chart, int index)
     {
         bool pie = ChartPivotOps.IsPieFamily(chart.Type);
         var series = chart.NSeries.Cast<Series>().ToList();
-        var plotted = new List<(string? Sheet, RangeRef Range)>();
-        foreach (Series item in series)
-        {
-            foreach (string? reference in new[] { item.Values, item.XValues, item.Name })
-            {
-                if (Parse(reference) is { } parsed)
-                {
-                    plotted.Add(parsed);
-                }
-            }
-        }
-
         return new CellsChartInfo
         {
             Sheet = sheet.Name,
             Index = index,
             Name = chart.Name,
-            Kind = kind,
+            Kind = VocabularyName(chart.Type),
             Title = chart.Title.IsAutoText ? null : Text(chart.Title.Text),
-            DataRange = plotted.Count == 0
-                ? null
-                : Reference(sheet, plotted[0].Sheet, Cover(plotted.Select(static item => item.Range))),
+            DataRange = ChartData(sheet, chart),
             SeriesInRows = SeriesInRows(series),
             Legend = new CellsChartLegend
             {
@@ -153,6 +140,15 @@ internal static class ObjectProjection
                 NumberFormat = series[0].DataLabels.NumberFormatLinked ? null : Text(series[0].DataLabels.NumberFormat),
             },
         };
+    }
+
+    /// <summary>The one range that covers what a chart's series plot, their names and categories included; null when they plot no range.</summary>
+    public static string? ChartData(Worksheet sheet, Chart chart)
+    {
+        var plotted = chart.NSeries.Cast<Series>()
+            .SelectMany(static item => new[] { item.Values, item.XValues, item.Name })
+            .Select(Parse).OfType<(string? Sheet, RangeRef Range)>().ToList();
+        return plotted.Count == 0 ? null : Reference(sheet, plotted[0].Sheet, Cover(plotted.Select(static item => item.Range)));
     }
 
     /// <summary>
@@ -192,7 +188,7 @@ internal static class ObjectProjection
         return hex.Length > 0 && hex.All(static color => color is not null) ? [.. hex.OfType<string>()] : null;
     }
 
-    public static CellsPivotInfo Pivot(Worksheet sheet, PivotTable pivot, string range)
+    public static CellsPivotInfo Pivot(Worksheet sheet, PivotTable pivot)
     {
         var values = new List<CellsPivotValueInfo>();
         foreach (PivotField field in pivot.DataFields)
@@ -210,7 +206,7 @@ internal static class ObjectProjection
         {
             Sheet = sheet.Name,
             Name = pivot.Name,
-            Range = range,
+            Range = Area(pivot.TableRange1),
             SourceRange = pivot.DataSource is [{ } source, ..] ? Reference(sheet, source) : null,
             Rows = Names(pivot.RowFields),
             Columns = Names(pivot.ColumnFields),
@@ -227,8 +223,14 @@ internal static class ObjectProjection
         }
     }
 
-    public static CellsValidationInfo Validation(Worksheet sheet, Validation validation, IEnumerable<CellArea> areas, string kind)
+    /// <summary>A validation, or null for one whose cells were all deleted: it applies to nothing.</summary>
+    public static CellsValidationInfo? Validation(Worksheet sheet, Validation validation)
     {
+        if (validation.Areas is not { Length: > 0 } areas)
+        {
+            return null;
+        }
+
         bool list = validation.Type == ValidationType.List;
         bool compares = validation.Type is not (ValidationType.List or ValidationType.Custom or ValidationType.AnyValue);
         string? formula = Text(validation.Formula1);
@@ -236,7 +238,7 @@ internal static class ObjectProjection
         {
             Sheet = sheet.Name,
             Range = string.Join(",", areas.Select(Area)),
-            Kind = kind,
+            Kind = VocabularyName(validation.Type, JsonNamingPolicy.KebabCaseLower),
             Operator = compares ? ValidationOps.FromOperator(validation.Operator) : null,
             Value1 = list ? null : Bound(formula),
             Value2 = compares && validation.Operator is OperatorType.Between or OperatorType.NotBetween ? Bound(validation.Formula2) : null,
@@ -247,6 +249,16 @@ internal static class ObjectProjection
             AllowBlank = validation.IgnoreBlank,
         };
     }
+
+    /// <summary>
+    /// Names an engine chart or validation type in the edit vocabulary. The insert_chart values
+    /// are the engine enum names in lower camel case and the set_validation values in lower
+    /// kebab case, so a kind the operations accept reads back as that value and any other kind
+    /// keeps its engine name in the same case.
+    /// </summary>
+    private static string VocabularyName<TEnum>(TEnum value, JsonNamingPolicy? policy = null)
+        where TEnum : struct, Enum =>
+        (policy ?? JsonNamingPolicy.CamelCase).ConvertName(value.ToString());
 
     /// <summary>
     /// The items of a list validation given as items, or null for one that reads a range: the
@@ -262,32 +274,31 @@ internal static class ObjectProjection
 
     // ----- the detail lists of their own ------------------------------------------------------
 
-    public static IReadOnlyList<CellsConditionalFormatInfo> ConditionalFormats(ResourceBudgetLedger budgets, Workbook workbook)
+    public static IReadOnlyList<CellsConditionalFormatInfo> ConditionalFormats(ResourceBudgetLedger budgets, Workbook workbook) =>
+        [.. workbook.Worksheets.Cast<Worksheet>().SelectMany(sheet => ConditionalFormats(sheet, () => budgets.Deadline.ThrowIfExpired("conditional-formats")))];
+
+    /// <summary>The rules of a sheet's conditional formats in order, each with the areas of its format.</summary>
+    /// <param name="sheet">The sheet.</param>
+    /// <param name="next">Called before each format, to stop a read past its deadline.</param>
+    public static IEnumerable<CellsConditionalFormatInfo> ConditionalFormats(Worksheet sheet, Action? next = null)
     {
-        var formats = new List<CellsConditionalFormatInfo>();
-        foreach (Worksheet sheet in workbook.Worksheets)
+        foreach (FormatConditionCollection conditions in sheet.ConditionalFormattings)
         {
-            foreach (FormatConditionCollection conditions in sheet.ConditionalFormattings)
+            next?.Invoke();
+            string range = string.Join(",", Enumerable.Range(0, conditions.RangeCount).Select(i => Area(conditions.GetCellArea(i))));
+            for (int i = 0; i < conditions.Count; i++)
             {
-                budgets.Deadline.ThrowIfExpired("conditional-formats");
-                string range = string.Join(",", Enumerable.Range(0, conditions.RangeCount).Select(i => Area(conditions.GetCellArea(i))));
-                for (int i = 0; i < conditions.Count; i++)
+                yield return new CellsConditionalFormatInfo
                 {
-                    CellsConditionalRuleInfo rule = ConditionalRule(conditions[i]);
-                    formats.Add(new CellsConditionalFormatInfo
-                    {
-                        Sheet = sheet.Name,
-                        Range = range,
-                        Rule = rule,
-                        MatchStyle = conditions[i].Type is FormatConditionType.ColorScale or FormatConditionType.DataBar or FormatConditionType.IconSet
-                            ? null
-                            : ConditionalStyle(conditions[i].Style),
-                    });
-                }
+                    Sheet = sheet.Name,
+                    Range = range,
+                    Rule = ConditionalRule(conditions[i]),
+                    MatchStyle = conditions[i].Type is FormatConditionType.ColorScale or FormatConditionType.DataBar or FormatConditionType.IconSet
+                        ? null
+                        : ConditionalStyle(conditions[i].Style),
+                };
             }
         }
-
-        return formats;
     }
 
     private static CellsConditionalRuleInfo ConditionalRule(FormatCondition condition) => condition.Type switch
@@ -350,121 +361,98 @@ internal static class ObjectProjection
         return read == new CellsConditionalStyle() ? null : read;
     }
 
-    public static IReadOnlyList<CellsSparklineInfo> Sparklines(ResourceBudgetLedger budgets, Workbook workbook)
+    public static IReadOnlyList<CellsSparklineInfo> Sparklines(ResourceBudgetLedger budgets, Workbook workbook) =>
+        [.. Each(budgets, workbook, "sparklines", static sheet => sheet.SparklineGroups.Cast<SparklineGroup>(), Sparkline).OfType<CellsSparklineInfo>()];
+
+    /// <summary>A sparkline group, or null for one without sparklines.</summary>
+    public static CellsSparklineInfo? Sparkline(Worksheet sheet, SparklineGroup group)
     {
-        var groups = new List<CellsSparklineInfo>();
-        foreach (Worksheet sheet in workbook.Worksheets)
+        Sparkline[] sparklines = [.. group.Sparklines.Cast<Sparkline>()];
+        if (sparklines.Length == 0)
         {
-            foreach (SparklineGroup group in sheet.SparklineGroups)
-            {
-                budgets.Deadline.ThrowIfExpired("sparklines");
-                Sparkline[] sparklines = [.. group.Sparklines.Cast<Sparkline>()];
-                if (sparklines.Length == 0)
-                {
-                    continue;
-                }
-
-                // Data this read cannot parse as one range is listed as the engine stores it,
-                // never left out.
-                var parsed = sparklines.Select(static sparkline => Parse(sparkline.DataRange)).ToList();
-                var data = parsed.OfType<(string? Sheet, RangeRef Range)>().ToList();
-
-                string kind = SparklineOps.FromType(group.Type) ?? group.Type.ToString().ToLowerInvariant();
-
-                groups.Add(new CellsSparklineInfo
-                {
-                    Sheet = sheet.Name,
-                    Kind = kind,
-                    Color = group.SeriesColor is { } color ? StylePool.ToHex(color.Color) : null,
-                    DataRange = data.Count < parsed.Count
-                        ? string.Join(",", sparklines.Select(static sparkline => (sparkline.DataRange ?? string.Empty).TrimStart('=')))
-                        : Covered([.. data.Select(static item => item.Range)]) is { } block
-                            ? Reference(sheet, data[0].Sheet, block)
-                            : string.Join(",", data.Select(item => Reference(sheet, item.Sheet, item.Range))),
-                    At = Covered([.. sparklines.Select(static sparkline =>
-                        new RangeRef(new CellRef(sparkline.Row, sparkline.Column), new CellRef(sparkline.Row, sparkline.Column)))]) is { } strip
-                        ? A1.FormatRange(strip)
-                        : string.Join(",", sparklines.Select(static sparkline => A1.FormatCell(new CellRef(sparkline.Row, sparkline.Column)))),
-                });
-            }
+            return null;
         }
 
-        return groups;
+        // Data this read cannot parse as one range is listed as the engine stores it, never left out.
+        var parsed = sparklines.Select(static sparkline => Parse(sparkline.DataRange)).ToList();
+        var data = parsed.OfType<(string? Sheet, RangeRef Range)>().ToList();
+        return new CellsSparklineInfo
+        {
+            Sheet = sheet.Name,
+            Kind = SparklineOps.FromType(group.Type) ?? group.Type.ToString().ToLowerInvariant(),
+            Color = group.SeriesColor is { } color ? StylePool.ToHex(color.Color) : null,
+            DataRange = data.Count < parsed.Count
+                ? string.Join(",", sparklines.Select(static sparkline => (sparkline.DataRange ?? string.Empty).TrimStart('=')))
+                : Covered([.. data.Select(static item => item.Range)]) is { } block
+                    ? Reference(sheet, data[0].Sheet, block)
+                    : string.Join(",", data.Select(item => Reference(sheet, item.Sheet, item.Range))),
+            At = Covered([.. sparklines.Select(static sparkline =>
+                new RangeRef(new CellRef(sparkline.Row, sparkline.Column), new CellRef(sparkline.Row, sparkline.Column)))]) is { } strip
+                ? A1.FormatRange(strip)
+                : string.Join(",", sparklines.Select(static sparkline => A1.FormatCell(new CellRef(sparkline.Row, sparkline.Column)))),
+        };
     }
 
-    public static IReadOnlyList<CellsImageInfo> Images(Workbook workbook)
-    {
-        var images = new List<CellsImageInfo>();
-        foreach (Worksheet sheet in workbook.Worksheets)
-        {
-            for (int i = 0; i < sheet.Pictures.Count; i++)
-            {
-                Picture picture = sheet.Pictures[i];
-                images.Add(new CellsImageInfo
-                {
-                    Sheet = sheet.Name,
-                    Index = i + 1,
-                    At = A1.FormatCell(new CellRef(picture.UpperLeftRow, picture.UpperLeftColumn)),
-                    // insert_image sizes in points; the engine keeps pixels at 96 per inch.
-                    Width = Math.Round(picture.Width * 72d / 96, 2),
-                    Height = Math.Round(picture.Height * 72d / 96, 2),
-                });
-            }
-        }
+    public static IReadOnlyList<CellsImageInfo> Images(Workbook workbook) =>
+        [.. workbook.Worksheets.Cast<Worksheet>().SelectMany(static sheet => Enumerable.Range(0, sheet.Pictures.Count)
+            .Select(index => Image(sheet, sheet.Pictures[index], index + 1)))];
 
-        return images;
+    /// <summary>A picture, the <paramref name="index"/>th of its sheet from 1.</summary>
+    public static CellsImageInfo Image(Worksheet sheet, Picture picture, int index) => new()
+    {
+        Sheet = sheet.Name,
+        Index = index,
+        At = A1.FormatCell(new CellRef(picture.UpperLeftRow, picture.UpperLeftColumn)),
+        // insert_image sizes in points; the engine keeps pixels at 96 per inch.
+        Width = Math.Round(picture.Width * 72d / 96, 2),
+        Height = Math.Round(picture.Height * 72d / 96, 2),
+    };
+
+    public static IReadOnlyList<CellsCommentInfo> Comments(ResourceBudgetLedger budgets, Workbook workbook) =>
+        [.. Each(budgets, workbook, "comments",
+            static sheet => sheet.Comments.Cast<Comment>().OrderBy(static item => item.Row).ThenBy(static item => item.Column), Comment)];
+
+    public static CellsCommentInfo Comment(Worksheet sheet, Comment comment) => new()
+    {
+        Sheet = sheet.Name,
+        Cell = A1.FormatCell(new CellRef(comment.Row, comment.Column)),
+        Text = comment.Note ?? string.Empty,
+        Author = Text(comment.Author),
+    };
+
+    public static IReadOnlyList<CellsHyperlinkInfo> Hyperlinks(ResourceBudgetLedger budgets, Workbook workbook) =>
+        [.. Each(budgets, workbook, "hyperlinks", static sheet => sheet.Hyperlinks.Cast<Hyperlink>(), Hyperlink)];
+
+    public static CellsHyperlinkInfo Hyperlink(Worksheet sheet, Hyperlink link)
+    {
+        bool internalLink = link.LinkType == TargetModeType.CellReference;
+        return new CellsHyperlinkInfo
+        {
+            Sheet = sheet.Name,
+            Range = Area(link.Area),
+            Url = internalLink ? null : Text(link.Address),
+            Target = internalLink ? Reference(sheet, link.Address) ?? Text(link.Address) : null,
+            Display = Text(link.TextToDisplay),
+        };
     }
 
-    public static IReadOnlyList<CellsCommentInfo> Comments(ResourceBudgetLedger budgets, Workbook workbook)
+    /// <summary>Each object of every sheet read in order, stopping a read past its deadline every 1024 objects.</summary>
+    private static IEnumerable<TInfo> Each<TObject, TInfo>(ResourceBudgetLedger budgets, Workbook workbook, string phase,
+        Func<Worksheet, IEnumerable<TObject>> objects, Func<Worksheet, TObject, TInfo> read)
     {
-        var comments = new List<CellsCommentInfo>();
+        int count = 0;
         foreach (Worksheet sheet in workbook.Worksheets)
         {
-            foreach (Comment comment in sheet.Comments.Cast<Comment>().OrderBy(static item => item.Row).ThenBy(static item => item.Column))
+            foreach (TObject item in objects(sheet))
             {
-                if (comments.Count % 1024 == 0)
+                if (count++ % 1024 == 0)
                 {
-                    budgets.Deadline.ThrowIfExpired("comments");
+                    budgets.Deadline.ThrowIfExpired(phase);
                 }
 
-                comments.Add(new CellsCommentInfo
-                {
-                    Sheet = sheet.Name,
-                    Cell = A1.FormatCell(new CellRef(comment.Row, comment.Column)),
-                    Text = comment.Note ?? string.Empty,
-                    Author = Text(comment.Author),
-                });
+                yield return read(sheet, item);
             }
         }
-
-        return comments;
-    }
-
-    public static IReadOnlyList<CellsHyperlinkInfo> Hyperlinks(ResourceBudgetLedger budgets, Workbook workbook)
-    {
-        var links = new List<CellsHyperlinkInfo>();
-        foreach (Worksheet sheet in workbook.Worksheets)
-        {
-            foreach (Hyperlink link in sheet.Hyperlinks)
-            {
-                if (links.Count % 1024 == 0)
-                {
-                    budgets.Deadline.ThrowIfExpired("hyperlinks");
-                }
-
-                bool internalLink = link.LinkType == TargetModeType.CellReference;
-                links.Add(new CellsHyperlinkInfo
-                {
-                    Sheet = sheet.Name,
-                    Range = Area(link.Area),
-                    Url = internalLink ? null : Text(link.Address),
-                    Target = internalLink ? Reference(sheet, link.Address) ?? Text(link.Address) : null,
-                    Display = Text(link.TextToDisplay),
-                });
-            }
-        }
-
-        return links;
     }
 
     /// <summary>

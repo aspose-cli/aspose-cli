@@ -1,22 +1,24 @@
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
-using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization.Metadata;
 using Aspose.Cells;
 using Aspose.Cells.Charts;
 using Aspose.Cells.Drawing;
 using Aspose.Cells.Pivot;
 using Aspose.Cells.Tables;
 using Aspose.Cli.Product.Cells.Engine.Mapping;
-using Aspose.Cli.Sdk.Addressing;
 using Aspose.Cli.Sdk.Operations;
 
 namespace Aspose.Cli.Product.Cells.Engine.Editing;
 
 /// <summary>
 /// The objects of a workbook one operation can change, as the SDK snapshots them around the
-/// operation (<see cref="IOperationModel{TOp}.Snapshot"/>), each at a <c>&lt;unit&gt;/&lt;address&gt;</c>
-/// address:
+/// operation (<see cref="IOperationModel{TOp}.Snapshot"/>), each at its <see cref="CellsAddresses"/>
+/// address and in the state a read reports it (<see cref="ObjectProjection"/>,
+/// <see cref="SheetLayoutProjection"/>, <see cref="InfoProjection"/>), so that what an operation
+/// counts is what a read of its output shows changed:
 /// <list type="bullet">
 /// <item>a cell (<c>cell/Sales!B2</c>) by its stored value, formula and style; an empty cell with the default style is absent;</item>
 /// <item>the sheets in tab order (<c>sheet/Sales</c>) by identity and name, a sheet's visibility, tab color, view, protection,
@@ -32,7 +34,10 @@ namespace Aspose.Cli.Product.Cells.Engine.Editing;
 /// <item>the workbook's default font, active sheet and structure protection (<c>workbook/default-font</c>,
 /// <c>workbook/active-sheet</c>, <c>workbook/protection</c>).</item>
 /// </list>
-/// A sheet is the one the operation names, resolved by name when the snapshot is taken.
+/// A sheet is the one the operation names, resolved by name when the snapshot is taken. What the
+/// engine keeps that a read does not report is added to the state where an operation can change
+/// it: an object's identity, a picture's data, a chart's or picture's anchor, a link's screen tip,
+/// a validation's prompts and the style facts a cell read leaves out.
 /// </summary>
 /// <param name="workbook">The workbook the batch edits.</param>
 /// <param name="applied">Whether an operation was already applied: a snapshot after it, not before.</param>
@@ -40,6 +45,8 @@ internal sealed class CellsSnapshots(Workbook workbook, Func<CellsOp, bool> appl
 {
     // Most cells a range snapshot reads cell by cell; a larger range reads the cells the sheet holds.
     private const long DenseLimit = 100_000;
+
+    private static readonly ProductJsonContext Json = ProductJsonContext.Default;
 
     // Identities of the objects the engine does not name, so a moved or renamed one is the same object.
     private static readonly ConditionalWeakTable<object, string> Identities = new();
@@ -70,32 +77,25 @@ internal sealed class CellsSnapshots(Workbook workbook, Func<CellsOp, bool> appl
 
     public OperationSnapshot Apply(UnmergeCellsOp operation) => Merges(operation, operation.Range);
 
-    public OperationSnapshot Apply(CopyRangeOp operation)
+    public OperationSnapshot Apply(CopyRangeOp operation) =>
+        Landing(operation, Sheets.ResolveRange(Sheet(operation), operation.From).Range, operation.To);
+
+    public OperationSnapshot Apply(ImportRangeOp operation) =>
+        Landing(operation, A1.ParseRange(operation.From).Range, operation.To);
+
+    /// <summary>The cells and merged areas where a range of the size of <paramref name="from"/> lands at <paramref name="to"/>.</summary>
+    private OperationSnapshot Landing(CellsSheetOp operation, RangeRef from, string to)
     {
-        Worksheet sheet = Sheet(operation);
-        (Worksheet fromSheet, RangeRef from) = Sheets.ResolveRange(sheet, operation.From);
-        (Worksheet toSheet, RangeRef to) = Sheets.ResolveRange(sheet, operation.To);
-        _ = fromSheet;
+        (Worksheet toSheet, RangeRef target) = Sheets.ResolveRange(Sheet(operation), to);
         var snapshot = new OperationSnapshot();
-        AddCells(snapshot, toSheet, Landed(to.Start, from));
-        AddMerges(snapshot, toSheet, Landed(to.Start, from));
+        AddCells(snapshot, toSheet, Landed(target.Start, from));
+        AddMerges(snapshot, toSheet, Landed(target.Start, from));
         return snapshot;
     }
 
-    public OperationSnapshot Apply(ImportRangeOp operation)
-    {
-        Worksheet sheet = Sheet(operation);
-        RangeRef from = A1.ParseRange(operation.From).Range;
-        (Worksheet toSheet, RangeRef to) = Sheets.ResolveRange(sheet, operation.To);
-        var snapshot = new OperationSnapshot();
-        AddCells(snapshot, toSheet, Landed(to.Start, from));
-        AddMerges(snapshot, toSheet, Landed(to.Start, from));
-        return snapshot;
-    }
+    public OperationSnapshot Apply(SetHyperlinkOp operation) => Hyperlinks(operation, operation.Cell);
 
-    public OperationSnapshot Apply(SetHyperlinkOp operation) => CellObjects(operation, operation.Cell, hyperlinks: true);
-
-    public OperationSnapshot Apply(DeleteHyperlinkOp operation) => CellObjects(operation, operation.Cell, hyperlinks: true);
+    public OperationSnapshot Apply(DeleteHyperlinkOp operation) => Hyperlinks(operation, operation.Cell);
 
     public OperationSnapshot Apply(AddCommentOp operation) => Comments(operation);
 
@@ -115,11 +115,11 @@ internal sealed class CellsSnapshots(Workbook workbook, Func<CellsOp, bool> appl
     public OperationSnapshot Apply(DeleteColumnsOp operation) =>
         Shift(operation, rows: false, A1.ParseColumn(operation.At), operation.Count, insert: false);
 
-    public OperationSnapshot Apply(ResizeRowsOp operation) => Rows(operation, operation.First, operation.Last);
+    public OperationSnapshot Apply(ResizeRowsOp operation) => Lines(operation, rows: true, operation.First - 1, (operation.Last ?? operation.First) - 1);
 
-    public OperationSnapshot Apply(GroupRowsOp operation) => Rows(operation, operation.First, operation.Last);
+    public OperationSnapshot Apply(GroupRowsOp operation) => Lines(operation, rows: true, operation.First - 1, (operation.Last ?? operation.First) - 1);
 
-    public OperationSnapshot Apply(UngroupRowsOp operation) => Rows(operation, operation.First, operation.Last);
+    public OperationSnapshot Apply(UngroupRowsOp operation) => Lines(operation, rows: true, operation.First - 1, (operation.Last ?? operation.First) - 1);
 
     public OperationSnapshot Apply(ResizeColumnsOp operation) => Columns(operation, operation.First, operation.Last);
 
@@ -135,7 +135,7 @@ internal sealed class CellsSnapshots(Workbook workbook, Func<CellsOp, bool> appl
 
     // The sheet keeps its place and identity: one change, at the new name.
     public OperationSnapshot Apply(RenameSheetOp operation) =>
-        One(Address("sheet", operation.Name), RenamedSheet(operation)?.Name ?? "-");
+        One(CellsAddresses.OfSheet("sheet", operation.Name), RenamedSheet(operation)?.Name ?? "-");
 
     // Before the rename the sheet has its old name, or is the active one; after it, the new name.
     private Worksheet? RenamedSheet(RenameSheetOp operation) =>
@@ -147,21 +147,20 @@ internal sealed class CellsSnapshots(Workbook workbook, Func<CellsOp, bool> appl
 
     public OperationSnapshot Apply(MoveSheetOp operation) => SheetOrder();
 
+    // A read reports a sheet hidden or not; very hidden is a state of its own.
     public OperationSnapshot Apply(SetSheetVisibilityOp operation) =>
-        One(Address("sheet", Sheet(operation)), Sheet(operation).VisibilityType.ToString());
+        Of(operation, "sheet", static sheet => sheet.VisibilityType.ToString());
 
+    // A read does not report the active sheet.
     public OperationSnapshot Apply(SetActiveSheetOp operation) =>
-        One("workbook/active-sheet", ActiveSheet());
+        One("workbook/active-sheet", workbook.Worksheets[workbook.Worksheets.ActiveSheetIndex].Name);
 
     public OperationSnapshot Apply(SetTabColorOp operation) => TabColor(operation);
 
     public OperationSnapshot Apply(ClearTabColorOp operation) => TabColor(operation);
 
-    public OperationSnapshot Apply(SetSheetViewOp operation)
-    {
-        Worksheet sheet = Sheet(operation);
-        return One(Address("sheet-view", sheet), Join(sheet.IsGridlinesVisible, sheet.Zoom, sheet.IsRowColumnHeadersVisible));
-    }
+    public OperationSnapshot Apply(SetSheetViewOp operation) =>
+        Of(operation, "sheet-view", static sheet => Read(SheetLayoutProjection.SheetView(sheet), Json.CellsSheetViewInfo));
 
     public OperationSnapshot Apply(FreezePanesOp operation) => FreezePanes(operation);
 
@@ -175,19 +174,14 @@ internal sealed class CellsSnapshots(Workbook workbook, Func<CellsOp, bool> appl
 
     public OperationSnapshot Apply(ClearPrintAreaOp operation) => PrintArea(operation);
 
-    public OperationSnapshot Apply(SetPageSetupOp operation)
-    {
-        Worksheet sheet = Sheet(operation);
-        PageSetup page = sheet.PageSetup;
-        // Margins as a read reports them, in points: the engine keeps centimetres, so a value
-        // written again in points may differ from the stored one in the last bits.
-        return One(Address("page-setup", sheet), Join(
-            page.Orientation, page.PaperSize, page.PaperWidth, page.PaperHeight, page.IsPercentScale, page.Zoom,
-            page.FitToPagesWide, page.FitToPagesTall, PageSetupOps.Points(page.TopMargin), PageSetupOps.Points(page.BottomMargin),
-            PageSetupOps.Points(page.LeftMargin), PageSetupOps.Points(page.RightMargin), PageSetupOps.Points(page.HeaderMargin),
-            PageSetupOps.Points(page.FooterMargin),
-            page.GetHeader(0), page.GetHeader(1), page.GetHeader(2), page.GetFooter(0), page.GetFooter(1), page.GetFooter(2)));
-    }
+    // The paper, scale and header texts as the engine keeps them: a read reports the paper's size,
+    // only the scale that applies, and no empty text.
+    public OperationSnapshot Apply(SetPageSetupOp operation) =>
+        Of(operation, "page-setup", static sheet => PageSetup(sheet.PageSetup));
+
+    private static string PageSetup(PageSetup page) => Join(Read(SheetLayoutProjection.PageSetup(page), Json.CellsPageSetupInfo),
+        page.PaperSize, page.PaperWidth, page.PaperHeight, page.IsPercentScale, page.Zoom, page.FitToPagesWide, page.FitToPagesTall,
+        page.GetHeader(0), page.GetHeader(1), page.GetHeader(2), page.GetFooter(0), page.GetFooter(1), page.GetFooter(2));
 
     public OperationSnapshot Apply(ProtectSheetOp operation) => SheetProtection(operation);
 
@@ -197,11 +191,8 @@ internal sealed class CellsSnapshots(Workbook workbook, Func<CellsOp, bool> appl
 
     public OperationSnapshot Apply(UnprotectWorkbookOp operation) => WorkbookProtection();
 
-    public OperationSnapshot Apply(SetDefaultFontOp operation)
-    {
-        Font font = workbook.DefaultStyle.Font;
-        return One("workbook/default-font", Join(font.Name, font.DoubleSize));
-    }
+    public OperationSnapshot Apply(SetDefaultFontOp operation) =>
+        One("workbook/default-font", Read(InfoProjection.DefaultFont(workbook), Json.CellsDefaultFontInfo));
 
     // ----- names and objects ---------------------------------------------------------------------
 
@@ -217,9 +208,20 @@ internal sealed class CellsSnapshots(Workbook workbook, Func<CellsOp, bool> appl
 
     public OperationSnapshot Apply(ClearConditionalFormatsOp operation) => ConditionalFormats(operation);
 
-    public OperationSnapshot Apply(AddSparklineOp operation) => Sparklines(operation);
+    public OperationSnapshot Apply(AddSparklineOp operation) => AddSparklineGroups(new OperationSnapshot(), Sheet(operation));
 
-    public OperationSnapshot Apply(DefineTableOp operation) => Tables(operation);
+    public OperationSnapshot Apply(DefineTableOp operation)
+    {
+        Worksheet sheet = Sheet(operation);
+        var snapshot = new OperationSnapshot();
+        foreach (ListObject table in sheet.ListObjects)
+        {
+            CellsTableInfo read = ObjectProjection.Table(sheet, table);
+            snapshot.Add(CellsAddresses.Table(read.Name), Join(Read(read, Json.CellsTableInfo), table.TableStyleType, table.TableStyleName));
+        }
+
+        return snapshot;
+    }
 
     public OperationSnapshot Apply(InsertChartOp operation) => Charts(operation);
 
@@ -231,53 +233,33 @@ internal sealed class CellsSnapshots(Workbook workbook, Func<CellsOp, bool> appl
 
     public OperationSnapshot Apply(RefreshPivotOp operation) => Pivots(operation);
 
+    // A picture by its identity and data too, so one replaced with another of the same size counts,
+    // and not by its place in the sheet's list, which its address names.
     public OperationSnapshot Apply(InsertImageOp operation)
     {
         Worksheet sheet = Sheet(operation);
-        return new OperationSnapshot().AddSequence(Unit("image", sheet), Enumerable.Range(0, sheet.Pictures.Count)
-            .Select(index =>
-            {
-                Picture picture = sheet.Pictures[index];
-                return (Indexed("image", sheet, index), Join(
-                    Identity(picture), Digest(picture.Data ?? []), picture.UpperLeftRow, picture.UpperLeftColumn, picture.Width, picture.Height));
-            }));
+        return new OperationSnapshot().AddSequence(CellsAddresses.Sequence("image", sheet.Name), Enumerable.Range(0, sheet.Pictures.Count)
+            .Select(index => (CellsAddresses.Indexed("image", sheet.Name, index),
+                Join(Identity(sheet.Pictures[index]), Convert.ToHexString(SHA256.HashData(sheet.Pictures[index].Data ?? [])),
+                    sheet.Pictures[index].UpperLeftRow, sheet.Pictures[index].UpperLeftColumn, sheet.Pictures[index].Width, sheet.Pictures[index].Height,
+                    Read(ObjectProjection.Image(sheet, sheet.Pictures[index], index + 1) with { Index = 0 }, Json.CellsImageInfo)))));
     }
-
-    // ----- addresses -------------------------------------------------------------------------------
-
-    /// <summary>
-    /// The '!' that ends the sheet of a cell, row, column or name address, which a sheet's name
-    /// there escapes as %21, so the first '!' ends the sheet.
-    /// </summary>
-    private const char SheetEnd = '!';
-
-    /// <summary>The address of a cell, such as <c>cell/Sales!B2</c>.</summary>
-    internal static string CellAddress(Worksheet sheet, int row, int column) =>
-        $"cell/{TargetName.Escape(sheet.Name, SheetEnd)}!{A1.FormatCell(new CellRef(row, column))}";
-
-    /// <summary>The address of a range of cells, such as <c>cell/Sales!B2:D10</c>, for an operation that did not apply.</summary>
-    internal static string RangeAddress(string sheet, string range) => $"cell/{TargetName.Escape(sheet, SheetEnd)}!{range}";
-
-    /// <summary>The address of an object of one sheet, such as <c>autofilter/Sales</c>.</summary>
-    internal static string Address(string unit, Worksheet sheet) => Address(unit, sheet.Name);
-
-    /// <summary>The address of an object of a named sheet, such as <c>autofilter/Sales</c>.</summary>
-    internal static string Address(string unit, string sheet) => $"{unit}/{TargetName.Escape(sheet)}";
-
-    private static string Unit(string unit, Worksheet sheet) => $"{unit}:{TargetName.Escape(sheet.Name)}";
-
-    private static string Indexed(string unit, Worksheet sheet, int index) =>
-        string.Create(CultureInfo.InvariantCulture, $"{unit}/{TargetName.Escape(sheet.Name)}/{index + 1}");
 
     // ----- helpers ---------------------------------------------------------------------------------
 
     private Worksheet Sheet(CellsSheetOp operation) => Sheets.Resolve(workbook, operation);
 
-    private OperationSnapshot Cells(CellsSheetOp operation, string range)
+    /// <summary>The one object of a unit the operation's sheet has, in its state.</summary>
+    private OperationSnapshot Of(CellsSheetOp operation, string unit, Func<Worksheet, string> state)
     {
         Worksheet sheet = Sheet(operation);
+        return One(CellsAddresses.OfSheet(unit, sheet.Name), state(sheet));
+    }
+
+    private OperationSnapshot Cells(CellsSheetOp operation, string range)
+    {
         var snapshot = new OperationSnapshot();
-        AddCells(snapshot, sheet, A1.ParseRange(range).Range);
+        AddCells(snapshot, Sheet(operation), A1.ParseRange(range).Range);
         return snapshot;
     }
 
@@ -313,13 +295,12 @@ internal sealed class CellsSnapshots(Workbook workbook, Func<CellsOp, bool> appl
             : sheet.Cells.Cast<Cell>().Where(cell => Inside(cell.Row, cell.Column, range));
         foreach (Cell cell in cells)
         {
-            string state = CellState(cell);
-            if (state.Length == 0 && StyleKey(cell.GetStyle()) == blank)
+            string state = ComparisonValue.Stored(cell);
+            string style = StyleKey(cell.GetStyle());
+            if (state.Length > 0 || style != blank)
             {
-                continue;
+                snapshot.Add(CellsAddresses.Cell(sheet.Name, cell.Row, cell.Column), state + "|" + style);
             }
-
-            snapshot.Add(CellAddress(sheet, cell.Row, cell.Column), state + "|" + StyleKey(cell.GetStyle()));
         }
     }
 
@@ -347,57 +328,37 @@ internal sealed class CellsSnapshots(Workbook workbook, Func<CellsOp, bool> appl
             if (area.StartRow <= range.End.Row && area.EndRow >= range.Start.Row
                 && area.StartColumn <= range.End.Column && area.EndColumn >= range.Start.Column)
             {
-                string text = A1.FormatRange(new RangeRef(new CellRef(area.StartRow, area.StartColumn), new CellRef(area.EndRow, area.EndColumn)));
-                snapshot.Add($"merge/{TargetName.Escape(sheet.Name, SheetEnd)}!{text}", "merged");
+                snapshot.Add(CellsAddresses.Area("merge", sheet.Name, area), "merged");
             }
         }
     }
 
-    /// <summary>The stored value and formula of a cell; empty for an empty cell.</summary>
-    internal static string CellState(Cell cell) => cell.IsFormula ? "f|" + cell.Formula : cell.Type switch
-    {
-        CellValueType.IsNull => cell.IsFormula ? "f|" + cell.Formula : string.Empty,
-        CellValueType.IsNumeric or CellValueType.IsDateTime => "n|" + cell.DoubleValue.ToString("R", CultureInfo.InvariantCulture) + Formula(cell),
-        CellValueType.IsBool => "b|" + (cell.BoolValue ? "1" : "0") + Formula(cell),
-        CellValueType.IsError => "e|" + cell.StringValue + Formula(cell),
-        _ => "s|" + cell.StringValue + Formula(cell),
-    };
+    /// <summary>
+    /// A text that differs exactly when two styles format a cell differently: the style a read
+    /// reports, and what the engine keeps that a read reports more coarsely or not at all (the kind
+    /// of underline, colors with their transparency, the fill pattern, the number format's id and
+    /// code, alignments outside the vocabulary, rotation, shrinking to fit, a hidden formula and
+    /// every border's line and color), so that copying or sorting such a style still counts.
+    /// </summary>
+    internal static string StyleKey(Style style) => Join(Read(StylePool.Map(style), Json.CellsStyleData),
+        style.Font.Underline, style.Font.Color.ToArgb(), style.Pattern, style.ForegroundColor.ToArgb(), style.BackgroundColor.ToArgb(),
+        style.Number, style.Custom, style.HorizontalAlignment, style.VerticalAlignment, style.RotationAngle, style.ShrinkToFit, style.IsFormulaHidden,
+        string.Join(";", ((BorderType[])[BorderType.TopBorder, BorderType.BottomBorder, BorderType.LeftBorder, BorderType.RightBorder,
+            BorderType.DiagonalDown, BorderType.DiagonalUp]).Select(edge => Join(style.Borders[edge].LineStyle, style.Borders[edge].Color.ToArgb()))));
 
-    private static string Formula(Cell cell) => cell.IsFormula ? "|f|" + cell.Formula : string.Empty;
-
-    /// <summary>A text that differs exactly when two styles format a cell differently.</summary>
-    internal static string StyleKey(Style style)
-    {
-        Font font = style.Font;
-        var key = new StringBuilder();
-        key.Append(font.Name).Append('|').Append(font.DoubleSize.ToString("R", CultureInfo.InvariantCulture))
-            .Append('|').Append(font.IsBold).Append(font.IsItalic).Append(font.Underline).Append(font.IsStrikeout)
-            .Append('|').Append(font.Color.ToArgb())
-            .Append('|').Append(style.Pattern).Append(style.ForegroundColor.ToArgb()).Append(style.BackgroundColor.ToArgb())
-            .Append('|').Append(style.Number).Append(style.Custom)
-            .Append('|').Append(style.HorizontalAlignment).Append(style.VerticalAlignment).Append(style.IsTextWrapped)
-            .Append(style.IndentLevel).Append(style.RotationAngle).Append(style.ShrinkToFit)
-            .Append('|').Append(style.IsLocked).Append(style.IsFormulaHidden);
-        foreach (BorderType edge in (BorderType[])[BorderType.TopBorder, BorderType.BottomBorder, BorderType.LeftBorder, BorderType.RightBorder,
-                     BorderType.DiagonalDown, BorderType.DiagonalUp])
-        {
-            Border border = style.Borders[edge];
-            key.Append('|').Append(border.LineStyle).Append(border.Color.ToArgb());
-        }
-
-        return key.ToString();
-    }
-
-    private OperationSnapshot CellObjects(CellsSheetOp operation, string cellText, bool hyperlinks)
+    // Links that share an address, such as two over one cell, are one object whose state is theirs
+    // in order: what a read reports of each, and its address, text and screen tip as the engine keeps them.
+    private OperationSnapshot Hyperlinks(CellsSheetOp operation, string cellText)
     {
         Worksheet sheet = Sheet(operation);
         CellRef cell = A1.ParseCell(cellText);
         var snapshot = new OperationSnapshot();
         AddCells(snapshot, sheet, new RangeRef(cell, cell));
-        if (hyperlinks)
+        foreach (IGrouping<string, string> same in sheet.Hyperlinks.Cast<Hyperlink>()
+            .Select(link => (Read: ObjectProjection.Hyperlink(sheet, link), State: Join(HyperlinkState(sheet, link), link.ScreenTip)))
+            .GroupBy(static item => CellsAddresses.At("hyperlink", item.Read.Sheet, item.Read.Range), static item => item.State, StringComparer.Ordinal))
         {
-            AddKeyed(snapshot, sheet.Hyperlinks.Cast<Hyperlink>().Select(link =>
-                (AreaAddress("hyperlink", sheet, link.Area), Join(link.Address, link.TextToDisplay, link.ScreenTip))));
+            snapshot.Add(same.Key, string.Join("\u001E", same));
         }
 
         return snapshot;
@@ -409,9 +370,8 @@ internal sealed class CellsSnapshots(Workbook workbook, Func<CellsOp, bool> appl
         var snapshot = new OperationSnapshot();
         foreach (Comment comment in sheet.Comments)
         {
-            snapshot.Add(
-                $"comment/{TargetName.Escape(sheet.Name, SheetEnd)}!{A1.FormatCell(new CellRef(comment.Row, comment.Column))}",
-                Join(comment.Author, comment.Note));
+            CellsCommentInfo read = ObjectProjection.Comment(sheet, comment);
+            snapshot.Add(CellsAddresses.At("comment", read.Sheet, read.Cell), CommentState(read, comment));
         }
 
         return snapshot;
@@ -433,7 +393,7 @@ internal sealed class CellsSnapshots(Workbook workbook, Func<CellsOp, bool> appl
         {
             for (int line = at; line < at + count; line++)
             {
-                snapshot.Add(LineAddress(sheet, rows, line), "line");
+                snapshot.Add(CellsAddresses.Line(sheet.Name, rows, line), "line");
             }
         }
 
@@ -474,7 +434,7 @@ internal sealed class CellsSnapshots(Workbook workbook, Func<CellsOp, bool> appl
         string Place(Anchored item, bool predicted) => item.Areas is null ? item.Address : string.Join(",", item.Areas
             .Select(area => predicted ? moved(area) : area)
             .OfType<CellArea>()
-            .Select(static area => Join(area.StartRow, area.StartColumn, area.EndRow, area.EndColumn)));
+            .Select(Where));
 
         // Each object after the operation with itself before it: the engine's own object first,
         // then what covers what the earlier one should.
@@ -531,87 +491,98 @@ internal sealed class CellsSnapshots(Workbook workbook, Func<CellsOp, bool> appl
     /// <summary>One object anchored on a sheet: its unit, the engine's own object where it keeps one, the areas it covers, its address and state.</summary>
     private sealed record Anchored(string Unit, object? Engine, IReadOnlyList<CellArea>? Areas, string Address, string State);
 
-    /// <summary>Every object anchored on the sheet that inserting or deleting lines can move, resize or remove.</summary>
+    /// <summary>
+    /// Every object anchored on the sheet that inserting or deleting lines can move, resize or
+    /// remove, each by where it is: what it covers, a link's or comment's content, a chart's
+    /// series and a sparkline's data.
+    /// </summary>
     private static List<Anchored> AnchoredObjects(Worksheet sheet)
     {
-        static string Where(CellArea area) => Join(area.StartRow, area.StartColumn, area.EndRow, area.EndColumn);
-
-        static CellArea Area(int startRow, int startColumn, int endRow, int endColumn) =>
-            CellArea.CreateCellArea(startRow, startColumn, endRow, endColumn);
-
         var objects = new List<Anchored>();
         foreach (Comment comment in sheet.Comments)
         {
-            CellArea cell = Area(comment.Row, comment.Column, comment.Row, comment.Column);
-            objects.Add(new Anchored("comment", comment, [cell], AreaAddress("comment", sheet, cell), Join(Where(cell), comment.Author, comment.Note)));
+            CellsCommentInfo read = ObjectProjection.Comment(sheet, comment);
+            objects.Add(new Anchored("comment", comment, [CellArea.CreateCellArea(comment.Row, comment.Column, comment.Row, comment.Column)],
+                CellsAddresses.At("comment", sheet.Name, read.Cell), CommentState(read, comment)));
         }
 
         foreach (Hyperlink link in sheet.Hyperlinks)
         {
-            objects.Add(new Anchored("hyperlink", link, [link.Area], AreaAddress("hyperlink", sheet, link.Area),
-                Join(Where(link.Area), link.Address, link.TextToDisplay)));
+            CellsHyperlinkInfo read = ObjectProjection.Hyperlink(sheet, link);
+            objects.Add(new Anchored("hyperlink", link, [link.Area], CellsAddresses.At("hyperlink", sheet.Name, read.Range), HyperlinkState(sheet, link)));
         }
 
         foreach (CellArea area in sheet.Cells.GetMergedAreas() ?? [])
         {
-            objects.Add(new Anchored("merge", null, [area], AreaAddress("merge", sheet, area), Where(area)));
+            objects.Add(new Anchored("merge", null, [area], CellsAddresses.Area("merge", sheet.Name, area), Where(area)));
         }
 
         foreach (Validation validation in sheet.Validations)
         {
-            // A validation whose cells were all deleted applies to nothing: it is gone.
-            if (validation.Areas is { Length: > 0 } areas)
+            if (ObjectProjection.Validation(sheet, validation) is { } read)
             {
-                objects.Add(new Anchored("validation", validation, areas, ValidationAddress(sheet, areas), string.Join(";", areas.Select(Where))));
+                objects.Add(new Anchored("validation", validation, validation.Areas, CellsAddresses.At("validation", sheet.Name, read.Range), read.Range));
             }
         }
 
         for (int index = 0; index < sheet.Charts.Count; index++)
         {
             Chart chart = sheet.Charts[index];
-            ChartShape shape = chart.ChartObject;
-            objects.Add(new Anchored("chart", chart, null, Indexed("chart", sheet, index), Join(
-                Where(Area(shape.UpperLeftRow, shape.UpperLeftColumn, shape.LowerRightRow, shape.LowerRightColumn)),
-                string.Join(";", chart.NSeries.Cast<Series>().Select(static series => Join(series.Name, series.Values, series.XValues))))));
+            objects.Add(new Anchored("chart", chart, null, CellsAddresses.Indexed("chart", sheet.Name, index),
+                Join(Anchor(chart.ChartObject), string.Join(";", chart.NSeries.Cast<Series>().Select(static series => Join(series.Name, series.Values, series.XValues))))));
         }
 
         for (int index = 0; index < sheet.Pictures.Count; index++)
         {
-            Picture picture = sheet.Pictures[index];
-            objects.Add(new Anchored("image", picture, null, Indexed("image", sheet, index),
-                Where(Area(picture.UpperLeftRow, picture.UpperLeftColumn, picture.LowerRightRow, picture.LowerRightColumn))));
+            objects.Add(new Anchored("image", sheet.Pictures[index], null, CellsAddresses.Indexed("image", sheet.Name, index), Anchor(sheet.Pictures[index])));
         }
 
-        int rule = 0;
-        foreach (FormatConditionCollection conditions in sheet.ConditionalFormattings)
-        {
-            string areas = string.Join(";", Enumerable.Range(0, conditions.RangeCount).Select(i => Where(conditions.GetCellArea(i))));
-            for (int condition = 0; condition < conditions.Count; condition++)
-            {
-                objects.Add(new Anchored("conditional-format", conditions[condition], null, Indexed("conditional-format", sheet, rule++), areas));
-            }
-        }
+        FormatCondition[] rules = Rules(sheet);
+        objects.AddRange(ObjectProjection.ConditionalFormats(sheet).Select((read, index) =>
+            new Anchored("conditional-format", rules[index], null, CellsAddresses.Indexed("conditional-format", sheet.Name, index), read.Range)));
 
         for (int index = 0; index < sheet.SparklineGroups.Count; index++)
         {
             SparklineGroup group = sheet.SparklineGroups[index];
-            objects.Add(new Anchored("sparkline-group", group, null, Indexed("sparkline-group", sheet, index), string.Join(";",
-                group.Sparklines.Cast<Sparkline>().Select(static line => Join(line.DataRange, line.Row, line.Column)))));
+            objects.Add(new Anchored("sparkline-group", group, null, CellsAddresses.Indexed("sparkline-group", sheet.Name, index), Sparklines(group)));
         }
 
         foreach (ListObject table in sheet.ListObjects)
         {
-            objects.Add(new Anchored("table", table, null, $"table/{TargetName.Escape(table.DisplayName)}",
-                Where(Area(table.StartRow, table.StartColumn, table.EndRow, table.EndColumn))));
+            CellsTableInfo read = ObjectProjection.Table(sheet, table);
+            objects.Add(new Anchored("table", table, null, CellsAddresses.Table(read.Name), read.Range));
         }
 
         foreach (PivotTable pivot in sheet.PivotTables)
         {
-            objects.Add(new Anchored("pivot", pivot, null, $"pivot/{TargetName.Escape(sheet.Name)}/{TargetName.Escape(pivot.Name)}", Where(pivot.TableRange1)));
+            CellsPivotInfo read = ObjectProjection.Pivot(sheet, pivot);
+            objects.Add(new Anchored("pivot", pivot, null, CellsAddresses.Pivot(read.Sheet, read.Name), read.Range));
         }
 
         return objects;
     }
+
+    // The rules of the sheet's conditional formats, in the order a read lists them.
+    private static FormatCondition[] Rules(Worksheet sheet) => [.. sheet.ConditionalFormattings.Cast<FormatConditionCollection>()
+        .SelectMany(static conditions => Enumerable.Range(0, conditions.Count).Select(index => conditions[index]))];
+
+    private static string Where(CellArea area) => Join(area.StartRow, area.StartColumn, area.EndRow, area.EndColumn);
+
+    // Where a chart or picture is anchored, which a read does not report whole.
+    private static string Anchor(Shape shape) => Join(shape.UpperLeftRow, shape.UpperLeftColumn, shape.LowerRightRow, shape.LowerRightColumn);
+
+    // A comment as a read reports it, and its author and text as the engine keeps them: a read
+    // leaves out an empty author and reports no text as an empty one.
+    private static string CommentState(CellsCommentInfo read, Comment comment) => Join(Read(read, Json.CellsCommentInfo), comment.Author, comment.Note);
+
+    // A link's cells and display as a read reports them, and its address and text as the engine
+    // keeps them: a read rewrites an address within the workbook as the operations take it.
+    private static string HyperlinkState(Worksheet sheet, Hyperlink link) =>
+        Join(Read(ObjectProjection.Hyperlink(sheet, link) with { Url = null, Target = null }, Json.CellsHyperlinkInfo), link.Address, link.TextToDisplay);
+
+    // A sparkline group's sparklines as the engine keeps them: a read reports the block they cover.
+    private static string Sparklines(SparklineGroup group) =>
+        string.Join(";", group.Sparklines.Cast<Sparkline>().Select(static line => Join(line.DataRange, line.Row, line.Column)));
 
     /// <summary>
     /// Where an area should land once <paramref name="count"/> lines are inserted or deleted at
@@ -643,130 +614,82 @@ internal sealed class CellsSnapshots(Workbook workbook, Func<CellsOp, bool> appl
             : index >= at + count ? index - count
             : start ? at : at - 1;
 
-    private static string LineAddress(Worksheet sheet, bool rows, int line) => rows
-        ? string.Create(CultureInfo.InvariantCulture, $"row/{TargetName.Escape(sheet.Name, SheetEnd)}!{line + 1}")
-        : $"column/{TargetName.Escape(sheet.Name, SheetEnd)}!{A1.ColumnName(line)}";
-
-    /// <summary>The address of an object of a sheet by the cells it covers, such as <c>merge/Sales!A1:C1</c>.</summary>
-    private static string AreaAddress(string unit, Worksheet sheet, CellArea area) =>
-        $"{unit}/{TargetName.Escape(sheet.Name, SheetEnd)}!{A1.FormatRange(new RangeRef(new CellRef(area.StartRow, area.StartColumn), new CellRef(area.EndRow, area.EndColumn)))}";
-
-    /// <summary>A validation's address by the areas it applies to, such as <c>validation/Sales!B2:B9</c>.</summary>
-    private static string ValidationAddress(Worksheet sheet, IEnumerable<CellArea> areas) =>
-        $"validation/{TargetName.Escape(sheet.Name, SheetEnd)}!" + string.Join(",", areas.Select(static area =>
-            A1.FormatRange(new RangeRef(new CellRef(area.StartRow, area.StartColumn), new CellRef(area.EndRow, area.EndColumn)))));
-
     /// <summary>
-    /// Adds objects addressed by what they cover; objects that share an address, such as two
-    /// links over one cell, are one object whose state is theirs in order.
+    /// Rows or columns from <paramref name="first"/> to <paramref name="last"/> (from 0), each by its
+    /// outline level and visibility as the sheet layout reads them and its height or width as the
+    /// engine keeps it: a read reports a size to two decimals, and none for a fitted row or a column
+    /// of the standard width.
     /// </summary>
-    private static void AddKeyed(OperationSnapshot snapshot, IEnumerable<(string Address, string State)> objects)
-    {
-        foreach (IGrouping<string, (string Address, string State)> same in objects.GroupBy(static item => item.Address, StringComparer.Ordinal))
-        {
-            snapshot.Add(same.Key, string.Join("\u001E", same.Select(static item => item.State)));
-        }
-    }
-
-    private OperationSnapshot Rows(CellsSheetOp operation, int first, int? last)
+    private OperationSnapshot Lines(CellsSheetOp operation, bool rows, int first, int last)
     {
         Worksheet sheet = Sheet(operation);
         var snapshot = new OperationSnapshot();
-        for (int row = first - 1; row <= (last ?? first) - 1; row++)
+        for (int index = first; index <= last; index++)
         {
-            snapshot.Add(string.Create(CultureInfo.InvariantCulture, $"row/{TargetName.Escape(sheet.Name, SheetEnd)}!{row + 1}"), RowFacts(sheet, row));
+            SheetLayoutProjection.Line line = SheetLayoutProjection.At(sheet, rows, index);
+            snapshot.Add(CellsAddresses.Line(sheet.Name, rows, index),
+                Join(rows ? sheet.Cells.GetRowHeight(index) : sheet.Cells.GetColumnWidth(index), line.Level, line.Hidden));
         }
 
         return snapshot;
     }
 
-    private OperationSnapshot Columns(CellsSheetOp operation, string first, string? last)
-    {
-        Worksheet sheet = Sheet(operation);
-        var snapshot = new OperationSnapshot();
-        for (int column = A1.ParseColumn(first); column <= A1.ParseColumn(last ?? first); column++)
-        {
-            snapshot.Add($"column/{TargetName.Escape(sheet.Name, SheetEnd)}!{A1.ColumnName(column)}", ColumnFacts(sheet, column));
-        }
+    private OperationSnapshot Columns(CellsSheetOp operation, string first, string? last) =>
+        Lines(operation, rows: false, A1.ParseColumn(first), A1.ParseColumn(last ?? first));
 
-        return snapshot;
-    }
-
-    private static string RowFacts(Worksheet sheet, int row)
-    {
-        return Join(sheet.Cells.GetRowHeight(row), sheet.Cells.GetGroupedRowOutlineLevel(row), sheet.Cells.IsRowHidden(row));
-    }
-
-    private static string ColumnFacts(Worksheet sheet, int column)
-    {
-        return Join(sheet.Cells.GetColumnWidth(column), sheet.Cells.GetGroupedColumnOutlineLevel(column), sheet.Cells.IsColumnHidden(column));
-    }
-
-    /// <summary>The sheets in tab order, each by its identity and name, and the names that refer to them.</summary>
+    /// <summary>The sheets in tab order, each by its identity and name.</summary>
     private OperationSnapshot SheetOrder() =>
         new OperationSnapshot().AddSequence("sheet", workbook.Worksheets.Cast<Worksheet>()
-            .Select(sheet => (Address("sheet", sheet), Join(Identity(sheet), sheet.Name))));
+            .Select(sheet => (CellsAddresses.OfSheet("sheet", sheet.Name), Join(Identity(sheet), sheet.Name))));
 
-    private string ActiveSheet() =>
-        workbook.Worksheets[workbook.Worksheets.ActiveSheetIndex].Name;
+    // The color with its transparency, which a read leaves out.
+    private OperationSnapshot TabColor(CellsSheetOp operation) =>
+        Of(operation, "tab-color", static sheet => Join(Read(SheetLayoutProjection.TabColor(sheet), Json.CellsTabColorInfo),
+            sheet.TabColor.IsEmpty ? null : sheet.TabColor.ToArgb()));
 
-    private OperationSnapshot TabColor(CellsSheetOp operation)
-    {
-        Worksheet sheet = Sheet(operation);
-        return One(Address("tab-color", sheet), sheet.TabColor.IsEmpty ? "-" : sheet.TabColor.ToArgb().ToString(CultureInfo.InvariantCulture));
-    }
+    // The rows and columns frozen too, which a read leaves out.
+    private OperationSnapshot FreezePanes(CellsSheetOp operation) =>
+        Of(operation, "freeze-panes", static sheet => Join(Read(SheetLayoutProjection.FreezePanes(sheet), Json.CellsFreezePanesInfo),
+            sheet.GetFreezedPanes(out _, out _, out int rows, out int columns) ? Join(rows, columns) : null));
 
-    private OperationSnapshot FreezePanes(CellsSheetOp operation)
-    {
-        Worksheet sheet = Sheet(operation);
-        return One(Address("freeze-panes", sheet), sheet.GetFreezedPanes(out int row, out int column, out int rows, out int columns)
-            ? Join(row, column, rows, columns)
-            : "-");
-    }
+    // The references as the engine keeps them: a read leaves out their absolute markers.
+    private OperationSnapshot AutoFilter(CellsSheetOp operation) =>
+        Of(operation, "autofilter", static sheet => Join(Read(SheetLayoutProjection.Autofilter(sheet), Json.CellsAutofilterInfo), sheet.AutoFilter.Range));
 
-    private OperationSnapshot AutoFilter(CellsSheetOp operation)
-    {
-        Worksheet sheet = Sheet(operation);
-        return One(Address("autofilter", sheet), sheet.AutoFilter.Range ?? "-");
-    }
+    private OperationSnapshot PrintArea(CellsSheetOp operation) =>
+        Of(operation, "print-area", static sheet => Join(Read(SheetLayoutProjection.PrintArea(sheet.PageSetup), Json.CellsPrintAreaInfo),
+            sheet.PageSetup.PrintArea, sheet.PageSetup.PrintTitleRows, sheet.PageSetup.PrintTitleColumns));
 
-    private OperationSnapshot PrintArea(CellsSheetOp operation)
-    {
-        Worksheet sheet = Sheet(operation);
-        PageSetup page = sheet.PageSetup;
-        return One(Address("print-area", sheet), Join(page.PrintArea, page.PrintTitleRows, page.PrintTitleColumns));
-    }
+    // The password and the actions allowed as the engine keeps them on an unprotected sheet too.
+    private OperationSnapshot SheetProtection(CellsSheetOp operation) =>
+        Of(operation, "protection", static sheet => Join(Read(SheetLayoutProjection.Protection(sheet), Json.CellsSheetProtectionInfo),
+            sheet.Protection.IsProtectedWithPassword, sheet.IsProtected ? null : string.Join(",", ProtectOps.Allowed(sheet.Protection))));
 
-    private OperationSnapshot SheetProtection(CellsSheetOp operation)
-    {
-        Worksheet sheet = Sheet(operation);
-        Protection protection = sheet.Protection;
-        return One(Address("protection", sheet), Join(
-            sheet.IsProtected, protection.IsProtectedWithPassword, protection.AllowFormattingCell, protection.AllowInsertingRow,
-            protection.AllowInsertingColumn, protection.AllowDeletingRow, protection.AllowDeletingColumn, protection.AllowSorting,
-            protection.AllowFiltering));
-    }
-
+    // The kind of protection and its password as the engine keeps them: a read reports the structure's only.
     private OperationSnapshot WorkbookProtection() =>
-        One("workbook/protection", Join(workbook.Settings.ProtectionType, workbook.IsWorkbookProtectedWithPassword));
+        One("workbook/protection", Join(Sheets.StructureProtected(workbook), Sheets.StructurePasswordProtected(workbook),
+            workbook.Settings.ProtectionType, workbook.IsWorkbookProtectedWithPassword));
 
     private OperationSnapshot Names()
     {
         var snapshot = new OperationSnapshot();
+        // Every name, the engine's own _xl names too; a broken name's reference, which a read
+        // reports as #REF!, is empty.
         foreach (Name name in workbook.Worksheets.Names)
         {
-            string scope = name.SheetIndex > 0 ? TargetName.Escape(workbook.Worksheets[name.SheetIndex - 1].Name, SheetEnd) + "!" : string.Empty;
-            snapshot.Add($"name/{scope}{TargetName.Escape(name.Text)}", name.RefersTo ?? string.Empty);
+            CellsDefinedNameInfo read = DefinedNames.Info(name);
+            snapshot.Add(CellsAddresses.Name(read.Name, name.SheetIndex > 0 ? workbook.Worksheets[name.SheetIndex - 1].Name : null),
+                name.RefersTo is null ? string.Empty : read.RefersTo);
         }
 
         return snapshot;
     }
 
     /// <summary>
-    /// The sheet's validations, each by the areas it applies to and its rule, tracked across the
-    /// operation (<see cref="Tracked"/>): a validation whose cells change is one change, and
-    /// replacing one with the same rule over the same cells changes nothing, wherever the engine
-    /// puts it in its list.
+    /// The sheet's validations, each as a read reports it with the prompts a read leaves out,
+    /// tracked across the operation (<see cref="Tracked"/>): a validation whose cells change is
+    /// one change, and replacing one with the same rule over the same cells changes nothing,
+    /// wherever the engine puts it in its list.
     /// </summary>
     private OperationSnapshot Validations(CellsSheetOp operation)
     {
@@ -774,149 +697,84 @@ internal sealed class CellsSnapshots(Workbook workbook, Func<CellsOp, bool> appl
         var objects = new List<Anchored>();
         foreach (Validation validation in sheet.Validations)
         {
-            // A validation whose cells were all deleted applies to nothing: it is gone.
-            if (validation.Areas is not { Length: > 0 } areas)
+            if (ObjectProjection.Validation(sheet, validation) is { } read)
             {
-                continue;
+                objects.Add(new Anchored("validation", validation, validation.Areas, CellsAddresses.At("validation", sheet.Name, read.Range),
+                    Join(Read(read, Json.CellsValidationInfo), validation.InCellDropDown, validation.ShowInput, validation.ShowError)));
             }
-
-            // The rule as a read reports it: the engine stores a list given as items as ="a,b" and
-            // reads it back as a,b, so the raw formula of the same list differs after a save.
-            CellsValidationInfo read = ObjectProjection.Validation(sheet, validation, areas, validation.Type.ToString());
-            objects.Add(new Anchored("validation", validation, areas, ValidationAddress(sheet, areas), Join(
-                read.Range, validation.Type, read.Operator, read.Value1, read.Value2, read.ListItems is { } items ? string.Join(",", items) : null,
-                read.ListSource, read.AllowBlank, validation.InCellDropDown, validation.ShowInput, read.InputMessage, validation.ShowError, read.ErrorMessage)));
         }
 
         return Tracked(operation, new OperationSnapshot(), objects, static area => area);
     }
 
+    // Each rule by its cells as a read reports them, and its kind, formulas and style as the engine
+    // keeps them: a read reports a rule in the operation's terms, which an engine rule may not have.
     private OperationSnapshot ConditionalFormats(CellsSheetOp operation)
     {
         Worksheet sheet = Sheet(operation);
-        // One object per rule, in the order a read lists them: the areas of its collection and the rule.
-        var rules = new List<string>();
-        foreach (FormatConditionCollection conditions in sheet.ConditionalFormattings)
-        {
-            var areas = new StringBuilder();
-            for (int area = 0; area < conditions.RangeCount; area++)
-            {
-                CellArea cells = conditions.GetCellArea(area);
-                areas.Append(Join(cells.StartRow, cells.StartColumn, cells.EndRow, cells.EndColumn)).Append(';');
-            }
-
-            for (int condition = 0; condition < conditions.Count; condition++)
-            {
-                FormatCondition rule = conditions[condition];
-                rules.Add(areas + Join(rule.Type, rule.Operator, rule.Formula1, rule.Formula2, StyleKey(rule.Style)));
-            }
-        }
-
-        return new OperationSnapshot().AddSequence(Unit("conditional-format", sheet),
-            rules.Select((state, index) => (Indexed("conditional-format", sheet, index), state)));
+        FormatCondition[] rules = Rules(sheet);
+        return new OperationSnapshot().AddSequence(CellsAddresses.Sequence("conditional-format", sheet.Name), ObjectProjection.ConditionalFormats(sheet)
+            .Select((read, index) => (CellsAddresses.Indexed("conditional-format", sheet.Name, index), Join(read.Range,
+                rules[index].Type, rules[index].Operator, rules[index].Formula1, rules[index].Formula2, StyleKey(rules[index].Style)))));
     }
 
-    private OperationSnapshot Sparklines(CellsSheetOp operation) => AddSparklineGroups(new OperationSnapshot(), Sheet(operation));
-
-    /// <summary>The sheet's sparkline groups in order, each by its kind, color and sparklines.</summary>
-    private static OperationSnapshot AddSparklineGroups(OperationSnapshot snapshot, Worksheet sheet)
-    {
-        return snapshot.AddSequence(Unit("sparkline-group", sheet), Enumerable.Range(0, sheet.SparklineGroups.Count)
-            .Select(index =>
-            {
-                SparklineGroup group = sheet.SparklineGroups[index];
-                string lines = string.Join(";", group.Sparklines.Cast<Sparkline>().Select(static line => Join(line.DataRange, line.Row, line.Column)));
-                return (Indexed("sparkline-group", sheet, index), Join(group.Type, group.SeriesColor.Color.ToArgb(), lines));
-            }));
-    }
-
-    private OperationSnapshot Tables(CellsSheetOp operation)
-    {
-        Worksheet sheet = Sheet(operation);
-        var snapshot = new OperationSnapshot();
-        foreach (ListObject table in sheet.ListObjects)
-        {
-            snapshot.Add($"table/{TargetName.Escape(table.DisplayName)}", Join(
-                table.StartRow, table.StartColumn, table.EndRow, table.EndColumn, table.TableStyleType, table.TableStyleName, table.ShowTotals));
-        }
-
-        return snapshot;
-    }
+    /// <summary>The sheet's sparkline groups in order, each as a read reports it, with its kind, color and sparklines as the engine keeps them.</summary>
+    private static OperationSnapshot AddSparklineGroups(OperationSnapshot snapshot, Worksheet sheet) =>
+        snapshot.AddSequence(CellsAddresses.Sequence("sparkline-group", sheet.Name), Enumerable.Range(0, sheet.SparklineGroups.Count)
+            .Select(index => (CellsAddresses.Indexed("sparkline-group", sheet.Name, index),
+                Join(Read(ObjectProjection.Sparkline(sheet, sheet.SparklineGroups[index]), Json.CellsSparklineInfo),
+                    sheet.SparklineGroups[index].Type, sheet.SparklineGroups[index].SeriesColor.Color.ToArgb(), Sparklines(sheet.SparklineGroups[index])))));
 
     private OperationSnapshot Charts(CellsSheetOp operation)
     {
         Worksheet sheet = Sheet(operation);
-        return new OperationSnapshot().AddSequence(Unit("chart", sheet), Enumerable.Range(0, sheet.Charts.Count)
-            .Select(index => (Indexed("chart", sheet, index), ChartState(sheet.Charts[index]))));
+        return new OperationSnapshot().AddSequence(CellsAddresses.Sequence("chart", sheet.Name), Enumerable.Range(0, sheet.Charts.Count)
+            .Select(index => (CellsAddresses.Indexed("chart", sheet.Name, index), ChartState(sheet, index))));
     }
 
-    /// <summary>A text that differs exactly when a chart differs in what the chart operations set.</summary>
-    internal static string ChartState(Chart chart)
+    /// <summary>
+    /// A chart as a read reports it, but for its place in the sheet's list, which its address names
+    /// (a chart after a deleted one keeps its state), and its axis titles; and what the engine keeps
+    /// that a read reports more coarsely or not at all: its identity and anchor, so that one deleted and another
+    /// inserted, or one moved, counts; its titles' texts and legend position; and each series' data,
+    /// colors and labels, and each pie slice's color, where a read reports one cover and one list.
+    /// </summary>
+    private static string ChartState(Worksheet sheet, int index)
     {
-        var state = new StringBuilder();
-        state.Append(Join(Identity(chart), chart.Type, chart.Name, chart.Title?.Text, chart.Title?.IsAutoText, chart.ShowLegend, chart.Legend.Position,
-            chart.CategoryAxis.Title?.Text, chart.ValueAxis.Title?.Text,
-            chart.ChartObject.UpperLeftRow, chart.ChartObject.UpperLeftColumn, chart.ChartObject.LowerRightRow, chart.ChartObject.LowerRightColumn));
+        Chart chart = sheet.Charts[index];
         bool pie = ChartPivotOps.IsPieFamily(chart.Type);
         bool scatter = chart.Type.ToString().StartsWith("Scatter", StringComparison.Ordinal);
-        foreach (Series series in chart.NSeries)
-        {
-            // Every place a series color is written and read back: the fill, the line, the
-            // markers of a scatter and the slices of a pie. Markers are read on a scatter only:
-            // reading them on a line chart gives it markers (probed on 26.9.0).
-            state.Append(';').Append(Join(series.Name, series.Values, series.XValues, series.Area.ForegroundColor.ToArgb(),
-                series.Border.Color.ToArgb(), scatter ? series.Marker.Area.ForegroundColor.ToArgb() : null,
-                scatter ? series.Marker.Border.Color.ToArgb() : null,
-                series.DataLabels.ShowValue, series.DataLabels.NumberFormat, series.DataLabels.NumberFormatLinked));
-            if (pie)
-            {
-                foreach (ChartPoint point in series.Points)
-                {
-                    state.Append(',').Append(point.Area.ForegroundColor.ToArgb().ToString(CultureInfo.InvariantCulture));
-                }
-            }
-        }
-
-        return state.ToString();
+        // Markers are read on a scatter only: reading them on a line chart gives it markers (probed on 26.9.0).
+        IEnumerable<string> series = chart.NSeries.Cast<Series>().Select(item => Join(item.Name, item.Values, item.XValues,
+            item.Area.ForegroundColor.ToArgb(), item.Border.Color.ToArgb(),
+            scatter ? item.Marker.Area.ForegroundColor.ToArgb() : null, scatter ? item.Marker.Border.Color.ToArgb() : null,
+            item.DataLabels.ShowValue, item.DataLabels.NumberFormat, item.DataLabels.NumberFormatLinked,
+            pie ? string.Join(",", item.Points.Cast<ChartPoint>().Select(static point => point.Area.ForegroundColor.ToArgb())) : null));
+        return Join(Identity(chart), Anchor(chart.ChartObject),
+            Read(ObjectProjection.Chart(sheet, chart, index + 1) with { Index = 0, AxisTitles = null }, Json.CellsChartInfo),
+            chart.Title?.Text, chart.Title?.IsAutoText, chart.Legend.Position, chart.CategoryAxis.Title?.Text, chart.ValueAxis.Title?.Text,
+            string.Join(";", series));
     }
 
+    // A pivot as a read reports it, but for its values and captions, with its source, grand total
+    // caption and fields as the engine keeps them, and the values it shows, which a refresh changes
+    // and a cell read reports.
     private OperationSnapshot Pivots(CellsSheetOp operation)
     {
         Worksheet sheet = Sheet(operation);
         var snapshot = new OperationSnapshot();
         foreach (PivotTable pivot in sheet.PivotTables)
         {
+            CellsPivotInfo read = ObjectProjection.Pivot(sheet, pivot);
             CellArea area = pivot.TableRange1;
-            var state = new StringBuilder(Join(pivot.Name, area.StartRow, area.StartColumn, area.EndRow, area.EndColumn,
-                string.Join(",", pivot.DataSource ?? []), pivot.GrandTotalName));
-            foreach (PivotField field in pivot.RowFields)
-            {
-                state.Append(";r:").Append(field.Name);
-            }
-
-            foreach (PivotField field in pivot.ColumnFields)
-            {
-                state.Append(";c:").Append(field.Name);
-            }
-
-            foreach (PivotField field in pivot.DataFields)
-            {
-                state.Append(";d:").Append(Join(field.Name, field.DisplayName, field.Function, field.NumberFormat));
-            }
-
-            // What a refresh changes: the values the pivot shows.
-            for (int row = area.StartRow; row <= area.EndRow; row++)
-            {
-                for (int column = area.StartColumn; column <= area.EndColumn; column++)
-                {
-                    if (sheet.Cells.CheckCell(row, column) is { } cell)
-                    {
-                        state.Append('|').Append(CellState(cell));
-                    }
-                }
-            }
-
-            snapshot.Add($"pivot/{TargetName.Escape(sheet.Name)}/{TargetName.Escape(pivot.Name)}", state.ToString());
+            string fields = string.Join(";", pivot.RowFields.Cast<PivotField>().Select(static field => "r:" + field.Name)
+                .Concat(pivot.ColumnFields.Cast<PivotField>().Select(static field => "c:" + field.Name))
+                .Concat(pivot.DataFields.Cast<PivotField>().Select(static field => "d:" + Join(field.Name, field.DisplayName, field.Function, field.NumberFormat))));
+            IEnumerable<string> shown = Enumerable.Range(area.StartRow, area.EndRow - area.StartRow + 1)
+                .SelectMany(row => Enumerable.Range(area.StartColumn, area.EndColumn - area.StartColumn + 1).Select(column => sheet.Cells.CheckCell(row, column)))
+                .OfType<Cell>().Select(ComparisonValue.Stored);
+            snapshot.Add(CellsAddresses.Pivot(read.Sheet, read.Name), Join(Read(read with { Values = null, Captions = string.Empty }, Json.CellsPivotInfo),
+                string.Join(",", pivot.DataSource ?? []), pivot.GrandTotalName, fields, string.Join("|", shown)));
         }
 
         return snapshot;
@@ -924,10 +782,11 @@ internal sealed class CellsSnapshots(Workbook workbook, Func<CellsOp, bool> appl
 
     private static OperationSnapshot One(string address, string state) => new OperationSnapshot().Add(address, state);
 
+    /// <summary>An object as a read reports it, as text.</summary>
+    private static string Read<T>(T? read, JsonTypeInfo<T> type) where T : class => JsonSerializer.Serialize(read!, type);
+
     private static string Identity(object item) =>
         Identities.GetValue(item, static _ => Interlocked.Increment(ref _nextIdentity).ToString(CultureInfo.InvariantCulture));
-
-    private static string Digest(byte[] data) => Convert.ToHexString(SHA256.HashData(data));
 
     private static string Join(params object?[] parts) =>
         string.Join("\u001F", parts.Select(static part => part switch

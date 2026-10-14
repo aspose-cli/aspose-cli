@@ -1,5 +1,5 @@
 using Aspose.Cells;
-using Aspose.Cli.Sdk.Addressing;
+using Aspose.Cli.Product.Cells.Engine.Mapping;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Operations;
 using Aspose.Cli.Sdk.IO;
@@ -67,8 +67,8 @@ internal sealed class CellsEditModel : IOperationModel<CellsOp>
         string? sheet = target?.Sheet ?? (operation is CellsSheetOp ? _workbook.Worksheets[_workbook.Worksheets.ActiveSheetIndex].Name : null);
         return (sheet, target?.Range) switch
         {
-            ({ } name, { } range) => [CellsSnapshots.RangeAddress(name, range)],
-            ({ } name, null) => [CellsSnapshots.Address("sheet", name)],
+            ({ } name, { } range) => [CellsAddresses.At("cell", name, range)],
+            ({ } name, null) => [CellsAddresses.OfSheet("sheet", name)],
             _ => [WorkbookAddress(operation)],
         };
     }
@@ -84,12 +84,12 @@ internal sealed class CellsEditModel : IOperationModel<CellsOp>
 
     private static string WorkbookAddress(CellsOp operation) => operation switch
     {
-        DefineNameOp define => $"name/{TargetName.Escape(define.Name)}",
-        DeleteNameOp delete => $"name/{TargetName.Escape(delete.Name)}",
+        DefineNameOp define => CellsAddresses.Name(define.Name),
+        DeleteNameOp delete => CellsAddresses.Name(delete.Name),
         SetDefaultFontOp => "workbook/default-font",
         ProtectWorkbookOp or UnprotectWorkbookOp => "workbook/protection",
-        InsertSheetOp insert => CellsSnapshots.Address("sheet", insert.Name),
-        ImportSheetOp import => CellsSnapshots.Address("sheet", import.Name ?? import.SourceSheet ?? Path.GetFileNameWithoutExtension(import.Path)),
+        InsertSheetOp insert => CellsAddresses.OfSheet("sheet", insert.Name),
+        ImportSheetOp import => CellsAddresses.OfSheet("sheet", import.Name ?? import.SourceSheet ?? Path.GetFileNameWithoutExtension(import.Path)),
         _ => "workbook/all",
     };
 

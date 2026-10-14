@@ -13,70 +13,85 @@ internal static class SheetLayoutProjection
     public static IReadOnlyList<CellsSheetLayoutInfo> Build(ResourceBudgetLedger budgets, Workbook workbook) =>
         [.. workbook.Worksheets.Cast<Worksheet>().Select(sheet => Build(budgets, sheet))];
 
-    private static CellsSheetLayoutInfo Build(ResourceBudgetLedger budgets, Worksheet sheet)
+    private static CellsSheetLayoutInfo Build(ResourceBudgetLedger budgets, Worksheet sheet) => new()
     {
-        PageSetup page = sheet.PageSetup;
+        Sheet = sheet.Name,
+        SheetView = SheetView(sheet),
+        TabColor = TabColor(sheet),
+        FreezePanes = FreezePanes(sheet),
+        RowHeights = NullIfEmpty(Runs(budgets, Sizes(sheet, rows: true),
+            static (first, last, height) => new CellsRowHeightInfo { First = first + 1, Last = last + 1, Height = height })),
+        ColumnWidths = NullIfEmpty(Runs(budgets, Sizes(sheet, rows: false),
+            static (first, last, width) => new CellsColumnWidthInfo { First = A1.ColumnName(first), Last = A1.ColumnName(last), WidthChars = width })),
+        RowGroups = NullIfEmpty(Groups(budgets, Levels(sheet, rows: true),
+            static (first, last, level, collapsed) => new CellsRowGroupInfo
+            {
+                First = first + 1, Last = last + 1, Level = level, Collapsed = collapsed,
+            })),
+        ColumnGroups = NullIfEmpty(Groups(budgets, Levels(sheet, rows: false),
+            static (first, last, level, collapsed) => new CellsColumnGroupInfo
+            {
+                First = A1.ColumnName(first), Last = A1.ColumnName(last), Level = level, Collapsed = collapsed,
+            })),
+        Autofilter = Autofilter(sheet),
+        Protection = Protection(sheet),
+        PrintArea = PrintArea(sheet.PageSetup),
+        PageSetup = PageSetup(sheet.PageSetup),
+    };
+
+    internal static CellsSheetViewInfo SheetView(Worksheet sheet) => new()
+    {
+        Gridlines = sheet.IsGridlinesVisible,
+        ZoomPercent = sheet.Zoom,
+        Headings = sheet.IsRowColumnHeadersVisible,
+    };
+
+    internal static CellsTabColorInfo? TabColor(Worksheet sheet) =>
+        StylePool.ToHex(sheet.TabColor) is { } tab ? new CellsTabColorInfo { Color = tab } : null;
+
+    internal static CellsFreezePanesInfo? FreezePanes(Worksheet sheet) =>
+        sheet.GetFreezedPanes(out int row, out int column, out _, out _)
+            ? new CellsFreezePanesInfo { Cell = A1.FormatCell(new CellRef(row, column)) }
+            : null;
+
+    internal static CellsAutofilterInfo? Autofilter(Worksheet sheet) =>
+        Reference(sheet.AutoFilter.Range) is { } filter ? new CellsAutofilterInfo { Range = filter } : null;
+
+    internal static CellsSheetProtectionInfo? Protection(Worksheet sheet) =>
+        sheet.IsProtected ? new CellsSheetProtectionInfo { Allow = Editing.ProtectOps.Allowed(sheet.Protection) } : null;
+
+    internal static CellsPageSetupInfo PageSetup(PageSetup page)
+    {
         bool fitsToPages = !page.IsPercentScale;
-        return new CellsSheetLayoutInfo
+        return new CellsPageSetupInfo
         {
-            Sheet = sheet.Name,
-            SheetView = new CellsSheetViewInfo
+            Orientation = page.Orientation == PageOrientationType.Landscape
+                ? CellsPageOrientations.Landscape
+                : CellsPageOrientations.Portrait,
+            PageSize = Editing.PageSetupOps.PageSize(page),
+            FitToWidth = fitsToPages ? page.FitToPagesWide : null,
+            FitToHeight = fitsToPages ? page.FitToPagesTall : null,
+            ScalePercent = fitsToPages ? null : page.Zoom,
+            Margins = new CellsMargins
             {
-                Gridlines = sheet.IsGridlinesVisible,
-                ZoomPercent = sheet.Zoom,
-                Headings = sheet.IsRowColumnHeadersVisible,
+                Top = Editing.PageSetupOps.Points(page.TopMargin),
+                Bottom = Editing.PageSetupOps.Points(page.BottomMargin),
+                Left = Editing.PageSetupOps.Points(page.LeftMargin),
+                Right = Editing.PageSetupOps.Points(page.RightMargin),
             },
-            TabColor = StylePool.ToHex(sheet.TabColor) is { } tab ? new CellsTabColorInfo { Color = tab } : null,
-            FreezePanes = sheet.GetFreezedPanes(out int row, out int column, out _, out _)
-                ? new CellsFreezePanesInfo { Cell = A1.FormatCell(new CellRef(row, column)) }
-                : null,
-            RowHeights = NullIfEmpty(Runs(budgets, RowSizes(sheet),
-                static (first, last, height) => new CellsRowHeightInfo { First = first + 1, Last = last + 1, Height = height })),
-            ColumnWidths = NullIfEmpty(Runs(budgets, ColumnSizes(sheet),
-                static (first, last, width) => new CellsColumnWidthInfo { First = A1.ColumnName(first), Last = A1.ColumnName(last), WidthChars = width })),
-            RowGroups = NullIfEmpty(Groups(budgets, RowLevels(sheet),
-                static (first, last, level, collapsed) => new CellsRowGroupInfo
-                {
-                    First = first + 1, Last = last + 1, Level = level, Collapsed = collapsed,
-                })),
-            ColumnGroups = NullIfEmpty(Groups(budgets, ColumnLevels(sheet),
-                static (first, last, level, collapsed) => new CellsColumnGroupInfo
-                {
-                    First = A1.ColumnName(first), Last = A1.ColumnName(last), Level = level, Collapsed = collapsed,
-                })),
-            Autofilter = Reference(sheet.AutoFilter.Range) is { } filter ? new CellsAutofilterInfo { Range = filter } : null,
-            Protection = sheet.IsProtected ? new CellsSheetProtectionInfo { Allow = Editing.ProtectOps.Allowed(sheet.Protection) } : null,
-            PrintArea = PrintArea(page),
-            PageSetup = new CellsPageSetupInfo
-            {
-                Orientation = page.Orientation == PageOrientationType.Landscape
-                    ? CellsPageOrientations.Landscape
-                    : CellsPageOrientations.Portrait,
-                PageSize = Editing.PageSetupOps.PageSize(page),
-                FitToWidth = fitsToPages ? page.FitToPagesWide : null,
-                FitToHeight = fitsToPages ? page.FitToPagesTall : null,
-                ScalePercent = fitsToPages ? null : page.Zoom,
-                Margins = new CellsMargins
-                {
-                    Top = Editing.PageSetupOps.Points(page.TopMargin),
-                    Bottom = Editing.PageSetupOps.Points(page.BottomMargin),
-                    Left = Editing.PageSetupOps.Points(page.LeftMargin),
-                    Right = Editing.PageSetupOps.Points(page.RightMargin),
-                },
-                HeaderMargin = Editing.PageSetupOps.Points(page.HeaderMargin),
-                FooterMargin = Editing.PageSetupOps.Points(page.FooterMargin),
-                HeaderCenter = Text(page.GetHeader(1)),
-                HeaderLeft = Text(page.GetHeader(0)),
-                HeaderRight = Text(page.GetHeader(2)),
-                FooterCenter = Text(page.GetFooter(1)),
-                FooterLeft = Text(page.GetFooter(0)),
-                FooterRight = Text(page.GetFooter(2)),
-            },
+            HeaderMargin = Editing.PageSetupOps.Points(page.HeaderMargin),
+            FooterMargin = Editing.PageSetupOps.Points(page.FooterMargin),
+            HeaderCenter = Text(page.GetHeader(1)),
+            HeaderLeft = Text(page.GetHeader(0)),
+            HeaderRight = Text(page.GetHeader(2)),
+            FooterCenter = Text(page.GetFooter(1)),
+            FooterLeft = Text(page.GetFooter(0)),
+            FooterRight = Text(page.GetFooter(2)),
         };
     }
 
     /// <summary>The print area and print titles, or null when the sheet has none of them.</summary>
-    private static CellsPrintAreaInfo? PrintArea(PageSetup page)
+    internal static CellsPrintAreaInfo? PrintArea(PageSetup page)
     {
         string? range = Reference(page.PrintArea);
         string? rows = Reference(page.PrintTitleRows);
@@ -86,31 +101,36 @@ internal static class SheetLayoutProjection
             : new CellsPrintAreaInfo { Range = range, TitleRows = rows, TitleColumns = columns };
     }
 
-    // The height of each row given one of its own rather than fitted to its content, by index.
-    private static IEnumerable<(int Index, double Size)> RowSizes(Worksheet sheet)
-    {
-        foreach (Row row in sheet.Cells.Rows)
-        {
-            if (!row.IsHeightMatched)
-            {
-                yield return (row.Index, Math.Round(row.Height, 2));
-            }
-        }
-    }
+    /// <summary>
+    /// A row or column as the layout reads it: its size when set apart (a row's height given
+    /// rather than fitted to its content, a column's width other than the sheet's standard width),
+    /// its outline level and whether it is hidden.
+    /// </summary>
+    internal readonly record struct Line(double? Size, int Level, bool Hidden);
 
-    // The width of each column other than the sheet's standard width, by index.
-    private static IEnumerable<(int Index, double Size)> ColumnSizes(Worksheet sheet)
-    {
-        double standard = Math.Round(sheet.Cells.StandardWidth, 2);
-        foreach (Column column in sheet.Cells.Columns)
-        {
-            double width = Math.Round(column.Width, 2);
-            if (width != standard)
-            {
-                yield return (column.Index, width);
-            }
-        }
-    }
+    /// <summary>The row or column at an index from 0; one the sheet keeps nothing for is the default.</summary>
+    internal static Line At(Worksheet sheet, bool rows, int index) =>
+        rows ? Of(sheet.Cells.CheckRow(index)) : Of(sheet, sheet.Cells.CheckColumn(index));
+
+    private static Line Of(Row? row) =>
+        row is null ? default : new(row.IsHeightMatched ? null : Math.Round(row.Height, 2), row.GroupLevel, row.IsHidden);
+
+    private static Line Of(Worksheet sheet, Column? column) =>
+        column is null ? default : new(
+            Math.Round(column.Width, 2) is var width && width != Math.Round(sheet.Cells.StandardWidth, 2) ? width : null,
+            column.GroupLevel, column.IsHidden);
+
+    // The rows or columns the sheet keeps, by index.
+    private static IEnumerable<(int Index, Line Line)> Lines(Worksheet sheet, bool rows) => rows
+        ? sheet.Cells.Rows.Cast<Row>().Select(static row => (row.Index, Of(row)))
+        : sheet.Cells.Columns.Cast<Column>().Select(column => (column.Index, Of(sheet, column)));
+
+    private static IEnumerable<(int Index, double Size)> Sizes(Worksheet sheet, bool rows) =>
+        Lines(sheet, rows).Where(static line => line.Line.Size is not null).Select(static line => (line.Index, line.Line.Size!.Value));
+
+    // The outline level and hidden state of each row or column that has a level, by index.
+    private static IEnumerable<(int Index, int Level, bool Hidden)> Levels(Worksheet sheet, bool rows) =>
+        Lines(sheet, rows).Where(static line => line.Line.Level > 0).Select(static line => (line.Index, line.Line.Level, line.Line.Hidden));
 
     // A run is adjacent rows or columns of one size.
     private static List<T> Runs<T>(ResourceBudgetLedger budgets, IEnumerable<(int Index, double Size)> sizes, Func<int, int, double, T> create)
@@ -141,29 +161,6 @@ internal static class SheetLayoutProjection
         }
 
         return runs;
-    }
-
-    // The outline level and hidden state of each row or column that has a level, by index.
-    private static IEnumerable<(int Index, int Level, bool Hidden)> RowLevels(Worksheet sheet)
-    {
-        foreach (Row row in sheet.Cells.Rows)
-        {
-            if (row.GroupLevel > 0)
-            {
-                yield return (row.Index, row.GroupLevel, row.IsHidden);
-            }
-        }
-    }
-
-    private static IEnumerable<(int Index, int Level, bool Hidden)> ColumnLevels(Worksheet sheet)
-    {
-        foreach (Column column in sheet.Cells.Columns)
-        {
-            if (column.GroupLevel > 0)
-            {
-                yield return (column.Index, column.GroupLevel, column.IsHidden);
-            }
-        }
     }
 
     // A group at level n is a run of adjacent rows or columns whose level is n or deeper.
