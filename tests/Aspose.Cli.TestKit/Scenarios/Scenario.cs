@@ -124,7 +124,7 @@ public sealed record ScenarioExpectation
     /// </summary>
     public IReadOnlyList<string>? Reopens { get; init; }
 
-    /// <summary>Texts, such as secret values, that must not appear in stdout or stderr.</summary>
+    /// <summary>Texts, such as secret values, that must not appear in stdout, stderr or a file the step created or changed.</summary>
     public IReadOnlyList<string>? Hidden { get; init; }
 }
 

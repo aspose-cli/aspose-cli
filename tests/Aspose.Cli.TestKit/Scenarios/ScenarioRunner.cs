@@ -173,8 +173,72 @@ public static partial class ScenarioRunner
             {
                 report(HiddenCheck, $"the hidden text appears in {(result.StdOut.Contains(hidden, StringComparison.Ordinal) ? "stdout" : "stderr")}");
             }
+            foreach (string written in Written(before, after).Where(static key => !key.StartsWith('<')))
+            {
+                if (hidden.Length > 0 && HiddenIn(workspace.File(written), hidden) is { } where)
+                {
+                    report(HiddenCheck, $"the hidden text appears in {written}{where}");
+                }
+            }
         }
     }
+
+    /// <summary>The paths of two snapshots that a run created, changed or deleted, sorted.</summary>
+    public static string[] Written(IReadOnlyDictionary<string, string> before, IReadOnlyDictionary<string, string> after)
+    {
+        ArgumentNullException.ThrowIfNull(before);
+        ArgumentNullException.ThrowIfNull(after);
+        return
+        [
+            .. after.Where(pair => !before.TryGetValue(pair.Key, out string? hash) || hash != pair.Value).Select(static pair => pair.Key)
+                .Concat(before.Keys.Where(key => !after.ContainsKey(key)))
+                .Order(StringComparer.Ordinal),
+        ];
+    }
+
+    /// <summary>
+    /// Where a file holds <paramref name="hidden"/> as UTF-8 or UTF-16 text, in its own bytes
+    /// (an empty string) or in an entry of the ZIP package it is (<c> (entry name)</c>), such as a
+    /// part of an Office document; null when it does not.
+    /// </summary>
+    private static string? HiddenIn(string path, string hidden)
+    {
+        if (!File.Exists(path))
+        {
+            return null;
+        }
+        byte[] bytes = File.ReadAllBytes(path);
+        if (Holds(bytes, hidden))
+        {
+            return string.Empty;
+        }
+        if (!bytes.AsSpan().StartsWith((ReadOnlySpan<byte>)[0x50, 0x4B, 0x03, 0x04]))
+        {
+            return null;
+        }
+        try
+        {
+            using var archive = new System.IO.Compression.ZipArchive(new MemoryStream(bytes), System.IO.Compression.ZipArchiveMode.Read);
+            foreach (System.IO.Compression.ZipArchiveEntry entry in archive.Entries)
+            {
+                using Stream stream = entry.Open();
+                using var content = new MemoryStream();
+                stream.CopyTo(content);
+                if (Holds(content.ToArray(), hidden))
+                {
+                    return $" ({entry.FullName})";
+                }
+            }
+        }
+        catch (InvalidDataException)
+        {
+            // Not a readable package; its own bytes were searched.
+        }
+        return null;
+    }
+
+    private static bool Holds(byte[] bytes, string text) =>
+        bytes.AsSpan().IndexOf(Encoding.UTF8.GetBytes(text)) >= 0 || bytes.AsSpan().IndexOf(Encoding.Unicode.GetBytes(text)) >= 0;
 
     private static string Message(JsonNode? document, CliResult result) =>
         document?["error"]?["message"]?.GetValue<string>() is { } message
@@ -214,15 +278,10 @@ public static partial class ScenarioRunner
             // Without nothingWritten, only the configuration and installation files are judged.
             bool Judged(string key) => files.NothingWritten == true
                 || key.StartsWith(ConfigurationPrefix, StringComparison.Ordinal) || key.StartsWith(InstallationPrefix, StringComparison.Ordinal);
-            string[] written =
-            [
-                .. after.Where(pair => !before.TryGetValue(pair.Key, out string? hash) || hash != pair.Value).Select(static pair => pair.Key),
-                .. before.Keys.Where(key => !after.ContainsKey(key)),
-            ];
-            written = [.. written.Where(Judged)];
+            string[] written = [.. Written(before, after).Where(Judged)];
             if (written.Length > 0)
             {
-                report(FilesCheck, $"wrote {string.Join(", ", written.Order(StringComparer.Ordinal).Take(5))}");
+                report(FilesCheck, $"wrote {string.Join(", ", written.Take(5))}");
             }
         }
     }
