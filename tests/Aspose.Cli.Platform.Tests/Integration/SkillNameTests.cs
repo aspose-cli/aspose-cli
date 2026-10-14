@@ -31,8 +31,13 @@ public sealed partial class SkillNameTests : IDisposable
     /// the ops schema of the Skill's product (any product's for the platform Skill and the
     /// README); and one member of a result (<c>"window": {...}</c>) against a member of that name
     /// in a result schema of the product or the shared ones. A block that is none of these fails,
-    /// so no JSON goes unchecked. The product contract tests validate the product operation
-    /// documents too, with the reasons a batch is refused.
+    /// so no JSON goes unchecked. The operation documents the platform Skill passes to a command's
+    /// <c>--ops</c>, inline or as a file beside an example (<see cref="SkillOperationDocuments"/>),
+    /// are judged the same way against the ops schema of the command's product. A block of the
+    /// platform Skill or the README that no command passes names no product, so it is valid when
+    /// some product's ops schema accepts it; naming its product would take a change of the
+    /// platform Skill's text. The product contract tests validate the product operation documents
+    /// too, with the reasons a batch is refused.
     /// </summary>
     [Fact]
     public void JsonBlocks_ValidateAgainstTheSchemaTheyShow()
@@ -44,11 +49,15 @@ public sealed partial class SkillNameTests : IDisposable
             .ToDictionary(static pair => pair.Product, static pair => pair.Schema, StringComparer.Ordinal);
         var members = new ResultMembers();
         var kinds = new HashSet<string>(StringComparer.Ordinal);
-        var problems = new List<string>();
-        foreach ((string file, int line, string json) in JsonBlocks())
+        IEnumerable<(string Where, string Json, string? Product)> documents = JsonBlocks()
+            .Select(static block => ($"{Path.GetRelativePath(RepositoryPaths.Root, block.File)}:{block.Line}", block.Json, ProductOf(block.File)));
+        (IReadOnlyList<SkillOperationDocument> passed, IReadOnlyList<string> unread) =
+            SkillOperationDocuments.Collect(Path.Combine(RepositoryPaths.Root, "src", "Aspose.Cli.Host", "Skills"));
+        var problems = new List<string>(unread);
+        foreach ((string where, string json, string? product) in documents.Concat(passed
+            .Where(static document => document.Command is not null)
+            .Select(document => (document.Location, document.Json, opsSchemas.ContainsKey(document.Command!) ? document.Command : null))))
         {
-            string where = $"{Path.GetRelativePath(RepositoryPaths.Root, file)}:{line}";
-            string? product = ProductOf(file);
             string text = json.Trim();
             bool member = text.StartsWith('"');
             JsonNode? node;
@@ -79,10 +88,16 @@ public sealed partial class SkillNameTests : IDisposable
                 kinds.Add("envelope");
                 candidates = [PublishedSchemas.IdOf(schema)];
             }
-            else if (node is JsonObject batch && (batch.ContainsKey("ops") || batch.ContainsKey("op")))
+            else if (node is JsonArray || (node is JsonObject batch && (batch.ContainsKey("ops") || batch.ContainsKey("op"))))
             {
-                kinds.Add(batch.ContainsKey("ops") ? "operations" : "operation");
-                node = batch.ContainsKey("ops") ? batch : new JsonObject { ["ops"] = new JsonArray(batch.DeepClone()) };
+                // A bare array is the batch's operations; one operation is a batch of one.
+                kinds.Add(node is JsonObject single && !single.ContainsKey("ops") ? "operation" : "operations");
+                node = node switch
+                {
+                    JsonArray array => new JsonObject { ["ops"] = array.DeepClone() },
+                    JsonObject one when !one.ContainsKey("ops") => new JsonObject { ["ops"] = new JsonArray(one.DeepClone()) },
+                    _ => node,
+                };
                 candidates = product is null ? [.. opsSchemas.Values] : [opsSchemas[product]];
             }
             else

@@ -3,8 +3,13 @@ using System.Text.RegularExpressions;
 
 namespace Aspose.Cli.TestKit;
 
-/// <summary>One operation document a Skill shows, with the file and line it starts on.</summary>
-public sealed record SkillOperationDocument(string Source, int Line, string Json)
+/// <summary>
+/// One operation document a Skill shows, with the file and line it starts on. A document an
+/// <c>--ops</c> argument passes, inline or as a file beside an example, also names the command
+/// word after <c>aspose-cli</c> (<see cref="Command"/>, such as <c>pdf</c>), so it can be judged
+/// by that product's schema; null for a fenced block or file no command passes.
+/// </summary>
+public sealed record SkillOperationDocument(string Source, int Line, string Json, string? Command = null)
 {
     public string Location => $"{Path.GetRelativePath(RepositoryPaths.Root, Source)}:{Line}";
 }
@@ -115,18 +120,42 @@ public static class SkillOperationDocuments
             }
 
             string trimmedValue = value!.Trim();
+            string? command = CommandWord(markdown, match.Index);
+            string beside = Path.Combine(Path.GetDirectoryName(file)!, trimmedValue);
             if (quoted && (trimmedValue.StartsWith('{') || trimmedValue.StartsWith('[')))
             {
-                documents.Add(new SkillOperationDocument(file, line + 1, value));
+                documents.Add(new SkillOperationDocument(file, line + 1, value, command));
             }
-            else if (trimmedValue.EndsWith(".json", StringComparison.OrdinalIgnoreCase)
-                && example
-                && !File.Exists(Path.Combine(Path.GetDirectoryName(file)!, trimmedValue)))
+            else if (trimmedValue.EndsWith(".json", StringComparison.OrdinalIgnoreCase) && example && !File.Exists(beside))
             {
                 problems.Add($"{location}: --ops names '{trimmedValue}', which is not beside this example.");
             }
+            else if (trimmedValue.EndsWith(".json", StringComparison.OrdinalIgnoreCase) && example)
+            {
+                documents.Add(new SkillOperationDocument(beside, 1, File.ReadAllText(beside), command));
+            }
         }
     }
+
+    /// <summary>The word after the last <c>aspose-cli</c> of the command line that holds <paramref name="index"/>, or null.</summary>
+    private static string? CommandWord(string text, int index)
+    {
+        int start = text.LastIndexOf("aspose-cli ", index, StringComparison.Ordinal);
+        if (start < 0)
+        {
+            return null;
+        }
+        // The command may continue over lines, but no blank line or fence lies between.
+        string between = text[start..index];
+        if (between.Contains("\n\n", StringComparison.Ordinal) || between.Contains("```", StringComparison.Ordinal))
+        {
+            return null;
+        }
+        Match word = CommandWordPattern.Match(text, start + "aspose-cli ".Length);
+        return word.Success && word.Index == start + "aspose-cli ".Length ? word.Value : null;
+    }
+
+    private static readonly Regex CommandWordPattern = new("[a-z]+", RegexOptions.CultureInvariant);
 
     private static void AddFencedJson(string file, string[] lines, int fenceLine, List<SkillOperationDocument> documents)
     {
