@@ -87,6 +87,8 @@ weaken a check or remove a supported operation to make a test pass.
   product defects by `cause`, per license mode (`modes`). A case passes only when its violations
   and their text match its entries, so a new, changed or fixed violation fails; delete an entry
   when its defect is fixed. Adding an entry or widening `modes` needs the owner's `quality-exception` label.
+  `generated-cases.txt` beside it lists every generated case id; deleting an id from it, so that a
+  case stops running, needs the same label.
 - **Analyzers.** Production code builds with the analyzers in the `[src/**.cs]` section of
   `.editorconfig` as errors; fix a violation rather than suppressing it. `src` projects write a
   documentation file, so documentation comments must be well formed.
