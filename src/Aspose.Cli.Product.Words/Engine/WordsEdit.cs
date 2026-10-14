@@ -210,13 +210,9 @@ internal static class WordsEdit
 
             if (request.Verify)
             {
-                var expected = new ExpectedDocumentState(
-                    document.Range.Fields.Count,
-                    document.Revisions.Count,
-                    WordsProtection.ToMode(document.ProtectionType),
-                    checkedOps);
+                WordsSavedState expected = WordsReadBack.Saved(document);
                 verification = write.Read(
-                    candidate => Verify(session, candidate, format, outputPassword, baseline!, expected));
+                    candidate => Verify(session, candidate, format, outputPassword, baseline!, expected, checkedOps));
             }
             transaction.Commit();
             output = FileObjects.Output(write.Published, written, encrypted: outputPassword is not null);
@@ -311,7 +307,7 @@ internal static class WordsEdit
         };
         for (int depth = 0; !string.IsNullOrEmpty(name) && depth < 32; depth++)
         {
-            if (styles.Contains(WordsSnapshots.StyleAddress(name)))
+            if (styles.Contains(WordsReadBack.StyleAddress(name)))
             {
                 return true;
             }
@@ -357,48 +353,22 @@ internal static class WordsEdit
         string format,
         Secret? outputPassword,
         Document baseline,
-        ExpectedDocumentState expected)
+        WordsSavedState expected,
+        IReadOnlyList<string> checkedOps)
     {
         var issues = new List<VerificationIssue>();
 
-        using LoadedDocument reopened = session.Loader.OpenPublishedCandidate(
-            candidatePath,
-            outputPassword);
-        int fieldCount = reopened.Document.Range.Fields.Count;
-        int revisionCount = reopened.Document.Revisions.Count;
-        string? protection = WordsProtection.ToMode(reopened.Document.ProtectionType);
-        if (fieldCount != expected.FieldCount)
-        {
-            issues.Add(VerificationIssues.Of(
-                WordsDiagnostics.FieldCountChanged,
-                $"Field count changed during save/reopen: expected {expected.FieldCount}, found {fieldCount}.",
-                hint: KeepStateHint("fields", format, WordsFormats.WordIds)));
-        }
-
-        if (revisionCount != expected.RevisionCount)
-        {
-            issues.Add(VerificationIssues.Of(
-                WordsDiagnostics.RevisionCountChanged,
-                $"Revision count changed during save/reopen: expected {expected.RevisionCount}, found {revisionCount}.",
-                hint: KeepStateHint("tracked revisions", format, WordsFormats.RevisionIds)));
-        }
-
-        if (!string.Equals(protection, expected.Protection, StringComparison.Ordinal))
-        {
-            issues.Add(VerificationIssues.Of(
-                WordsDiagnostics.ProtectionChanged,
-                $"Protection changed during save/reopen: expected {expected.Protection ?? "none"}, found {protection ?? "none"}.",
-                hint: KeepStateHint("protection", format, WordsFormats.WordIds)));
-        }
+        using LoadedDocument reopened = session.Loader.OpenPublishedCandidate(candidatePath, outputPassword);
+        WordsSavedState found = WordsReadBack.Saved(reopened.Document);
+        Compare(WordsDiagnostics.FieldCountChanged, "Field count", expected.FieldCount, found.FieldCount, "fields", WordsFormats.WordIds);
+        Compare(WordsDiagnostics.RevisionCountChanged, "Revision count", expected.RevisionCount, found.RevisionCount, "tracked revisions", WordsFormats.RevisionIds);
+        Compare(WordsDiagnostics.ProtectionChanged, "Protection", expected.Protection ?? "none", found.Protection ?? "none", "protection", WordsFormats.WordIds);
 
         Document comparisonBaseline = baseline.Clone();
         Document comparisonOutput = reopened.Document.Clone();
         comparisonBaseline.AcceptAllRevisions();
         comparisonOutput.AcceptAllRevisions();
-        comparisonBaseline.Compare(
-            comparisonOutput,
-            "Aspose CLI",
-            new DateTime(2000, 1, 1));
+        comparisonBaseline.Compare(comparisonOutput, "Aspose CLI", new DateTime(2000, 1, 1));
         bool semanticChanges = comparisonBaseline.Revisions.Count > 0;
         comparisonBaseline.Cleanup();
         comparisonOutput.Cleanup();
@@ -407,12 +377,21 @@ internal static class WordsEdit
         {
             Ok = issues.Count == 0,
             Issues = issues,
-            CheckedOps = expected.CheckedOps,
+            CheckedOps = checkedOps,
             SemanticChangesDetected = semanticChanges,
-            FieldCount = fieldCount,
-            RevisionCount = revisionCount,
-            Protection = protection,
+            FieldCount = found.FieldCount,
+            RevisionCount = found.RevisionCount,
+            Protection = found.Protection,
         };
+
+        void Compare<T>(DiagnosticDescriptor descriptor, string what, T wanted, T kept, string state, IReadOnlyList<string> keeping)
+        {
+            if (!EqualityComparer<T>.Default.Equals(wanted, kept))
+            {
+                issues.Add(VerificationIssues.Of(
+                    descriptor, $"{what} changed during save/reopen: expected {wanted}, found {kept}.", hint: KeepStateHint(state, format, keeping)));
+            }
+        }
     }
 
     /// <summary>
@@ -465,8 +444,6 @@ internal static class WordsEdit
 
         return EnvelopeParts.CombineWarnings(extra);
     }
-
-    private sealed record ExpectedDocumentState(int FieldCount, int RevisionCount, string? Protection, IReadOnlyList<string> CheckedOps);
 
     /// <summary>
     /// The ids, in batch order, of the applied operations whose effect verification reads back:

@@ -181,6 +181,24 @@ public sealed class WordsSnapshotOutcomeTests
     }
 
     [Fact]
+    public void DefineStyle_OfAnExistingTableStyle_OnlySpacing_ChangesTheStyle()
+    {
+        using var fixture = new WordsFixture();
+        string input = fixture.Temp.File("table-style.docx");
+        var document = new Document();
+        document.Styles.Add(StyleType.Table, "Grid X");
+        document.Save(input);
+
+        WordsEditResult result = Edit(fixture, input, new DefineStyleOp { Name = "Grid X", SpaceBefore = 18, SpaceAfter = 9 });
+
+        BoundedOperationOutcome outcome = Assert.Single(result.Applied);
+        Assert.Equal(OpStatuses.Ok, outcome.Status);
+        Assert.Equal(["style/Grid X"], outcome.Targets);
+        Assert.True(outcome.ItemsAffected > 0);
+        Assert.DoesNotContain(result.Warnings ?? [], static warning => warning.Code.Name == "OP_NO_EFFECT");
+    }
+
+    [Fact]
     public void SetPageSetup_OnlyTheColumnCount_ChangesTheSection()
     {
         using var fixture = new WordsFixture();

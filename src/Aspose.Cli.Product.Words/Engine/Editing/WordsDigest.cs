@@ -44,15 +44,18 @@ internal static class WordsDigest
         return Hash(text);
     }
 
-    /// <summary>The definition of a style: its kind, base and next style, font and paragraph format.</summary>
-    internal static string OfStyle(Style style)
+    /// <summary>
+    /// What a read does not report of a style (<see cref="Mapping.WordsReadBack.Styles"/>): its next and linked
+    /// style, the rest of its font, its color as stored, and its paragraph format, read for paragraph styles only.
+    /// </summary>
+    internal static string OfStyleBeyondRead(Style style)
     {
         var text = new StringBuilder();
-        Join(text, style.Type, style.BaseStyleName, style.NextParagraphStyleName, style.LinkedStyleName);
+        Join(text, style.NextParagraphStyleName, style.LinkedStyleName);
         // A list style has no font or paragraph format of its own.
         if (style.Font is { } font)
         {
-            Font(text, font);
+            Join(text, font.Italic, font.Underline, font.Color.ToArgb(), font.HighlightColor.ToArgb(), font.StrikeThrough, font.StyleName);
         }
 
         if (style.ParagraphFormat is { } format)

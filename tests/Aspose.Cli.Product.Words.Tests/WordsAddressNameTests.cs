@@ -43,6 +43,39 @@ public sealed class WordsAddressNameTests
     }
 
     [Fact]
+    public void NamesThatNeedEscaping_TargetTheAddressesTheReadGivesTheirObjects()
+    {
+        using var fixture = new WordsFixture();
+        const string name = " Q3 / plan 100% ";
+        WordsEditResult result = fixture.Disclosed(session => WordsEdit.Run(session, new WordsEditRequest
+        {
+            Input = fixture.CreateReport(),
+            Batch = new WordsOpsBatch
+            {
+                Ops =
+                [
+                    new DefineStyleOp { Name = name, Bold = true },
+                    new SetPropertiesOp { Custom = new Dictionary<string, string?> { [name] = "x" } },
+                ],
+            },
+            Output = TestOutput.At(fixture.Temp.File("escaped.docx")),
+            Verify = true,
+        }));
+        WordsInspectResult read = WordsInspect.Run(fixture.Session, new WordsInspectRequest
+        {
+            Input = result.Output!.Path,
+            Details = [WordsInspectDetails.Styles, WordsInspectDetails.Properties],
+        });
+
+        string style = Assert.Single(read.Styles!, static style => style.Name.Contains("plan 100%", StringComparison.Ordinal)).Name;
+        string property = Assert.Single(read.Properties!.Keys, static key => key.Contains("plan 100%", StringComparison.Ordinal));
+        Assert.Equal(
+            [[$"style/{TargetName.Escape(style)}"], [$"property/{TargetName.Escape(property)}"]],
+            result.Applied.Select(static outcome => outcome.Targets.ToArray()));
+        Assert.True(result.Verification!.Ok);
+    }
+
+    [Fact]
     public void FailedOperations_TargetTheBlocksAndSectionsTheyName()
     {
         using var fixture = new WordsFixture();
