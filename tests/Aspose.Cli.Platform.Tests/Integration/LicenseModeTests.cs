@@ -24,7 +24,7 @@ public sealed class LicenseModeTests : IDisposable
     public void EvaluationMode_ReadsNoSourceSoABrokenOneCannotFailIt(bool supervised)
     {
         ProjectLicense("<License>synthetic invalid fixture</License>"u8.ToArray());
-        string[] timeout = supervised ? ["--timeout", "60"] : [];
+        string[] timeout = supervised ? ["--timeout", TestDeadline.CliTimeout] : [];
 
         CliResult configured = _workspace.Run(
             ["words", "create", "configured.docx", "--from-markdown", "brief.md", "--output-format", "json", .. timeout]);

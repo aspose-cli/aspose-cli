@@ -35,7 +35,7 @@ public sealed class WordsResourceBoundaryTests
             ops = new[] { new { op = "insert_markdown", at = new { find = "Resource anchor" }, position = "after", markdown } },
         });
         string[] args = ["words", "edit", input, "--ops", ops, "--out", workspace.File("edited.docx"), "--output-format", "json",
-            .. supervised ? new[] { "--timeout", "30" } : Array.Empty<string>()];
+            .. supervised ? new[] { "--timeout", TestDeadline.CliTimeout } : Array.Empty<string>()];
         CliResult result = workspace.Run(args);
 
         Assert.True(result.ExitCode == 0, result.StdErr);
@@ -97,7 +97,7 @@ public sealed class WordsResourceBoundaryTests
         string extension = format == "html-fixed" ? "html" : format;
         string output = workspace.File($"export/result.{extension}");
         string[] args = ["words", format == "svg" ? "render" : "convert", workspace.File("source.html"),
-            "--to", format, "--out", output, "--output-format", "json", "--timeout", "30"];
+            "--to", format, "--out", output, "--output-format", "json", "--timeout", TestDeadline.CliTimeout];
         CliResult result = workspace.Run(args);
 
         Assert.True(result.ExitCode == 0, result.StdErr);

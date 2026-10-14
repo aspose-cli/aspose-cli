@@ -24,7 +24,7 @@ public sealed class StartupLicenseMcpTests
             Assert.NotNull(JsonNode.Parse(schemaExecution["stdout"]!.GetValue<string>())!["$schema"]);
 
             JsonNode created = await server.Execute(["words", "create", "brief.docx", "--from-markdown", "source.md",
-                "--timeout", "15", "--output-format", "table"]);
+                "--timeout", TestDeadline.CliTimeout, "--output-format", "table"]);
             AssertSuccess(created);
             Assert.True(File.Exists(Path.Combine(work, "brief.docx")));
             JsonNode createdExecution = created["result"]!["structuredContent"]!;

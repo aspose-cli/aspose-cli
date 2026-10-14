@@ -45,13 +45,13 @@ public sealed class UpdateHandoffTests
             """;
         string feed = Feed(workspace, script);
         var start = StartInfo(workspace, scratch,
-            ["update", "install", feed, "--output-format", "json", .. timed ? new[] { "--timeout", "20" } : Array.Empty<string>()]);
+            ["update", "install", feed, "--output-format", "json", .. timed ? new[] { "--timeout", TestDeadline.CliTimeout } : Array.Empty<string>()]);
         using Process cli = Process.Start(start)!;
         Task<string> stdout = cli.StandardOutput.ReadToEndAsync();
         Task<string> stderr = cli.StandardError.ReadToEndAsync();
         try
         {
-            await cli.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(25));
+            await cli.WaitForExitAsync().WaitAsync(TestDeadline.Hang);
             Assert.Equal(0, cli.ExitCode);
             // The installer deliberately stays alive until release; it must not retain CLI result pipes.
             string output = await stdout.WaitAsync(TimeSpan.FromSeconds(5));
@@ -78,7 +78,7 @@ public sealed class UpdateHandoffTests
             if (!cli.HasExited) { cli.Kill(entireProcessTree: true); }
         }
         await WaitForFile(complete);
-        using var cleanup = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        using var cleanup = new CancellationTokenSource(TestDeadline.Hang);
         while (Directory.EnumerateDirectories(scratch, "aspose-cli-update-*", SearchOption.AllDirectories).Any())
         { await Task.Delay(25, cleanup.Token); }
     }
@@ -135,7 +135,7 @@ public sealed class UpdateHandoffTests
     private static async Task WaitForFile(string path)
     {
         // The installer runs in Windows PowerShell 5.1, whose start can take many seconds on a loaded machine.
-        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(60));
+        using var timeout = new CancellationTokenSource(TestDeadline.Hang);
         while (!File.Exists(path)) { await Task.Delay(25, timeout.Token); }
     }
 

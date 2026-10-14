@@ -23,7 +23,7 @@ public sealed class CorruptInputDetectionTests
         using var workspace = new TempWorkspace();
         WriteWordDocumentNamedPdf(workspace);
         string[] args = ["pdf", "inspect", "renamed.pdf", "--output-format", "json"];
-        if (supervised) { args = ["--timeout", "60", .. args]; }
+        if (supervised) { args = ["--timeout", TestDeadline.CliTimeout, .. args]; }
 
         CliResult inspected = workspace.Run(args);
         CliResult reviewed = workspace.Run("review", "renamed.pdf", "--output-format", "json");

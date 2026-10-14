@@ -75,7 +75,7 @@ internal sealed class McpTestServer : IAsyncDisposable
     }
 
     internal Task<JsonNode> Execute(string[] args, string? stdin = null) =>
-        Request("tools/call", new { name = "execute", arguments = new { args, stdin, timeoutSeconds = 30 } });
+        Request("tools/call", new { name = "execute", arguments = new { args, stdin, timeoutSeconds = TestDeadline.CliTimeoutSeconds } });
 
     internal async Task<JsonNode> Request(string method, object parameters)
     {
@@ -83,7 +83,8 @@ internal sealed class McpTestServer : IAsyncDisposable
         await _process.StandardInput.WriteLineAsync(
             JsonSerializer.Serialize(new { jsonrpc = "2.0", id, method, @params = parameters }));
         await _process.StandardInput.FlushAsync();
-        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(40));
+        // Longer than the command's own timeout, so a slow command ends with its timeout error.
+        using var timeout = new CancellationTokenSource(TestDeadline.Hang);
         while (true)
         {
             string? line = await _process.StandardOutput.ReadLineAsync(timeout.Token);

@@ -905,10 +905,10 @@ public sealed partial class CustomerInstallerPowerShellTests : IDisposable, ICla
         using Process process = Process.Start(start)!;
         Task<string> output = process.StandardOutput.ReadToEndAsync();
         Task<string> error = process.StandardError.ReadToEndAsync();
-        if (!process.WaitForExit(TimeSpan.FromSeconds(90)))
+        if (!process.WaitForExit(TestDeadline.Hang))
         {
             process.Kill(entireProcessTree: true);
-            throw new TimeoutException("Installer blocked for 90 seconds; an interactive dialog may have been shown.");
+            throw new TimeoutException($"Installer blocked for {TestDeadline.Hang}; an interactive dialog may have been shown.");
         }
         Task.WaitAll(output, error);
         return new(process.ExitCode, output.Result, error.Result);
@@ -967,10 +967,10 @@ public sealed partial class CustomerInstallerPowerShellTests : IDisposable, ICla
         using Process process = Process.Start(start)!;
         Task<string> output = process.StandardOutput.ReadToEndAsync();
         Task<string> error = process.StandardError.ReadToEndAsync();
-        if (!process.WaitForExit(TimeSpan.FromSeconds(90)))
+        if (!process.WaitForExit(TestDeadline.Hang))
         {
             process.Kill(entireProcessTree: true);
-            throw new TimeoutException("Child process blocked for 90 seconds; an interactive dialog may have been shown.");
+            throw new TimeoutException($"Child process blocked for {TestDeadline.Hang}; an interactive dialog may have been shown.");
         }
         Task.WaitAll(output, error);
         return new(process.ExitCode, output.Result, error.Result);

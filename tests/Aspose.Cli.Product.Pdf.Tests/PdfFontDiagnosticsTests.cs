@@ -58,7 +58,7 @@ public sealed class PdfFontDiagnosticsTests
         string input = fixture.CreateRawDocument("blank.pdf", pages: 1, textPages: new HashSet<int>());
         byte[] original = File.ReadAllBytes(input);
         string output = workspace.File("review");
-        string[] supervision = worker ? ["--timeout", "30"] : [];
+        string[] supervision = worker ? ["--timeout", TestDeadline.CliTimeout] : [];
         // Both commands only read the input, so they run at once.
         CliResult fonts = null!, review = null!;
         Parallel.Invoke(

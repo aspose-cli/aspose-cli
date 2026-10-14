@@ -15,7 +15,7 @@ public sealed class InvocationWorkDirectoryTests
         string nested = workspace.File("relative work");
         Directory.CreateDirectory(nested);
         File.WriteAllText(Path.Combine(nested, "input.csv"), "Name,Value\nA,42\n");
-        string[] options = timed ? ["--timeout", "30"] : [];
+        string[] options = timed ? ["--timeout", TestDeadline.CliTimeout] : [];
         CliResult converted = workspace.Run(["cells", "convert", "input.csv", "--to", "xlsx", "--out", "result.xlsx",
             "--workdir", "relative work", "--output-format", "json", .. options]);
         Assert.True(converted.ExitCode == 0, converted.StdErr);
