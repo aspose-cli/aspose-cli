@@ -31,7 +31,7 @@ internal static partial class ContractRules
 
     /// <summary>
     /// The words split run of each <c>--by</c>: every item of its <c>outputs</c> names exactly one
-    /// unit beside the file fields, the same in every item, as the schema check cannot tell.
+    /// unit beside the file fields and <c>encrypted</c>, the same in every item, as the schema check cannot tell.
     /// </summary>
     private static IEnumerable<InvariantCase> SplitUnits(CliCatalog catalog)
     {
@@ -51,7 +51,7 @@ internal static partial class ContractRules
             string[][] units =
             [
                 .. (document["outputs"] as JsonArray ?? []).Select(static item =>
-                    item is JsonObject output ? output.Select(static pair => pair.Key).Where(static name => !FileCore.Contains(name)).ToArray() : []),
+                    item is JsonObject output ? output.Select(static pair => pair.Key).Where(static name => !FileCore.Contains(name) && name != "encrypted").ToArray() : []),
             ];
             string[] distinct = [.. units.SelectMany(static names => names).Distinct(StringComparer.Ordinal)];
             return units.Length == 0

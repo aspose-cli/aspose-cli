@@ -24,18 +24,3 @@ public sealed record SlidesRenderResult() : EngineResultEnvelope("render-result"
     [Maximum(20_000)]
     public int? Width { get; init; }
 }
-
-/// <summary>One rendered slide image.</summary>
-public sealed record SlidesSlideOutput : OutputItem
-{
-    /// <summary>Describes the image written for a slide.</summary>
-    /// <param name="file">The published image, as <c>FileObjects.Output</c> describes it.</param>
-    internal SlidesSlideOutput(OutputInfo file)
-        : base(file)
-    {
-    }
-
-    /// <summary>The 1-based slide number.</summary>
-    [Minimum(1)]
-    public required int Slide { get; init; }
-}

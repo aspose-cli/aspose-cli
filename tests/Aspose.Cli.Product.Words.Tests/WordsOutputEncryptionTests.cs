@@ -56,7 +56,18 @@ public sealed class WordsOutputEncryptionTests : IDisposable
         string[] parts = Directory.GetFiles(_workspace.File("parts"));
         Assert.NotEmpty(parts);
         Assert.All(parts, part => Assert.True(FileFormatUtil.DetectFileFormat(part).IsEncrypted));
+        Assert.Equal([true, true], PartsEncrypted(result));
         Assert.DoesNotContain("ENCRYPTION_REMOVED", Codes(result));
+    }
+
+    [Category(TestCategory.Slow)]
+    [Fact]
+    public void SplitOfAPlainDocument_ReportsEveryPartUnencrypted()
+    {
+        JsonNode result = Succeeds(Run("words", "split", "plain.docx", "--by", "heading1", "--out-dir", "parts"));
+
+        Assert.All(Directory.GetFiles(_workspace.File("parts")), part => Assert.False(FileFormatUtil.DetectFileFormat(part).IsEncrypted));
+        Assert.Equal([false, false], PartsEncrypted(result));
     }
 
     [Category(TestCategory.Slow)]
@@ -97,6 +108,10 @@ public sealed class WordsOutputEncryptionTests : IDisposable
         Assert.True(result.ExitCode == 0, result.StdErr + result.StdOut);
         return JsonNode.Parse(result.StdOut)!;
     }
+
+    /// <summary>The <c>encrypted</c> of each <c>outputs[]</c> item, which a DOCX part always reports.</summary>
+    private static bool[] PartsEncrypted(JsonNode result) =>
+        [.. result["outputs"]!.AsArray().Select(static output => output!["encrypted"]!.GetValue<bool>())];
 
     private static string[] Codes(JsonNode result) =>
         [.. result["warnings"]?.AsArray().Select(static warning => warning!["code"]!.GetValue<string>()) ?? []];

@@ -18,7 +18,7 @@ internal static class SlidesExport
         IReadOnlyList<int>? slides = request.Slides is null
             ? null
             : ResolveSlideRange(request.Slides, loaded.Presentation.Slides.Count);
-        IReadOnlyList<OutputInfo> outputs = ConvertOutputs(session, loaded, request, slides);
+        IReadOnlyList<SlidesSlideOutput> outputs = ConvertOutputs(session, loaded, request, slides);
         List<Warning> warnings = BuildConvertWarnings(loaded, request.Output.Format.Id);
         return new SlidesConvertResult
         {
@@ -30,7 +30,7 @@ internal static class SlidesExport
         };
     }
 
-    private static IReadOnlyList<OutputInfo> ConvertOutputs(
+    private static IReadOnlyList<SlidesSlideOutput> ConvertOutputs(
         SlidesSession session,
         LoadedPresentation loaded,
         SlidesConvertRequest request,
@@ -45,8 +45,7 @@ internal static class SlidesExport
                     loaded,
                     new SlidesRenderRequest { Input = request.Input, Output = request.Output },
                     selected,
-                    "slides-convert")
-                .Select(static item => item.File).ToArray();
+                    "slides-convert");
         }
         else
         {
@@ -60,11 +59,12 @@ internal static class SlidesExport
                 presentation.ProtectionManager.RemoveEncryption();
             }
 
-            return session.Outputs.Write(request.Output, presentation, encrypted, temp =>
+            IReadOnlyList<OutputInfo> written = session.Outputs.Write(request.Output, presentation, encrypted, temp =>
             {
                 Save(temp);
                 loaded.Resources.ThrowIfFailed();
             });
+            return [.. written.Select(static file => new SlidesSlideOutput(file))];
 
             void Save(string temp)
             {
@@ -112,8 +112,7 @@ internal static class SlidesExport
         LicenseState state = session.Outputs.License;
         using LoadedPresentation loaded = session.Loader.Open(request.Input, request.Password);
         IReadOnlyList<int> slides = RenderSelection.Resolve(request.Slides, loaded.Presentation.Slides.Count, SlidesDiagnostics.SlideNotFound, "slide");
-        SlidesSlideOutput[] outputs = [.. RenderImages(session, loaded, request, slides, "slides-render")
-            .Select(static item => new SlidesSlideOutput(item.File) { Slide = item.Slide })];
+        IReadOnlyList<SlidesSlideOutput> outputs = RenderImages(session, loaded, request, slides, "slides-render");
         return new SlidesRenderResult
         {
             Input = Source(request.Input, loaded),
@@ -127,7 +126,7 @@ internal static class SlidesExport
         };
     }
 
-    private static IReadOnlyList<(int Slide, OutputInfo File)> RenderImages(
+    private static IReadOnlyList<SlidesSlideOutput> RenderImages(
         SlidesSession session,
         LoadedPresentation loaded,
         SlidesRenderRequest request,
@@ -174,6 +173,6 @@ internal static class SlidesExport
 
         loaded.Resources.ThrowIfFailed();
         IReadOnlyList<PublishedFile> files = transaction.Commit();
-        return [.. targets.Select((number, index) => (number, FileObjects.Output(files[index], request.Output.Format, encrypted: false)))];
+        return [.. targets.Select((number, index) => new SlidesSlideOutput(FileObjects.Output(files[index], request.Output.Format, encrypted: false)) { Slide = number })];
     }
 }

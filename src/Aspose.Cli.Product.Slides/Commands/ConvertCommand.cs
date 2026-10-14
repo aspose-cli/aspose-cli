@@ -53,9 +53,12 @@ internal static class ConvertCommand
 
     internal static void Table(SlidesConvertResult result, TableSurface surface)
     {
-        foreach (var output in result.Outputs)
-        {
-            ResultText.Produced(surface, output, result.Slides is null ? null : $"slides {result.Slides}");
-        }
+        ResultText.Files(surface, "wrote", "file", [.. result.Outputs.Select(output =>
+            new ProducedFile(
+                output.Slide is { } slide ? $"slide {slide}" : null,
+                output.Path,
+                output.Format,
+                output.SizeBytes,
+                result.Slides is null ? null : $"slides {result.Slides}"))]);
     }
 }

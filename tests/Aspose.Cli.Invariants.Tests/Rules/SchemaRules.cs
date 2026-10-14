@@ -112,9 +112,6 @@ internal static partial class ContractRules
 
     private static readonly string[] FileCore = ["path", "format", "sizeBytes", "fingerprint"];
 
-    /// <summary>The fields a single file object has beyond <see cref="FileCore"/>, which an outputs item does not carry.</summary>
-    private static readonly string[] SingleFileFields = ["encrypted"];
-
     private const string OperationOutcome = "v2/common/operation-outcome";
     private const string ErrorEnvelope = "v2/common/error";
 
@@ -682,9 +679,8 @@ internal static partial class ContractRules
     }
 
     /// <summary>
-    /// The differences of a multi-file list from a flat <c>{&lt;unit&gt;?, path, format, sizeBytes, fingerprint}</c>,
-    /// all but the unit required. A field of the single produced file, such as its optional
-    /// <c>encrypted</c>, is no unit: an item that declares one has a shape of its own.
+    /// The differences of a multi-file list from a flat <c>{&lt;unit&gt;?, path, format, sizeBytes, fingerprint, encrypted?}</c>,
+    /// all required but the unit and <c>encrypted</c>, which a file reports when its format can carry a password (C-B11).
     /// </summary>
     private static IEnumerable<string> Outputs(string id, SchemaProperty property)
     {
@@ -711,15 +707,18 @@ internal static partial class ContractRules
                     && (shape.StartsWith("object", StringComparison.Ordinal) || shape.StartsWith("array", StringComparison.Ordinal)))
                 .Select(static pair => pair.Key),
         ];
-        string[] fileFields = [.. declared.Where(static name => SingleFileFields.Contains(name))];
-        string[] extra = [.. declared.Where(name => !FileCore.Contains(name) && !nested.Contains(name) && !fileFields.Contains(name))];
-        if (fileFields.Length > 0)
+        string[] extra = [.. declared.Where(name => !FileCore.Contains(name) && name != "encrypted" && !nested.Contains(name))];
+        if (!declared.Contains("encrypted"))
         {
-            yield return $"{property.Path}[]: {string.Join(", ", fileFields)} beside the file fields, a field of a single output and no unit";
+            missing = [.. missing, "encrypted"];
         }
         if (missing.Length > 0)
         {
             yield return $"{property.Path}[]: lacks {string.Join(", ", missing)}";
+        }
+        if (required.Contains("encrypted"))
+        {
+            yield return $"{property.Path}[]: encrypted required, though a format that cannot carry a password omits it";
         }
         if (optional.Length > 0)
         {

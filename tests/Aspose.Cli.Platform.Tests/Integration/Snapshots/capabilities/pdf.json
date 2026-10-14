@@ -3019,6 +3019,10 @@
               "description": "SHA-256 identity of the published file.",
               "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/file-fingerprint.schema.json"
             },
+            "encrypted": {
+              "description": "true when the produced file is encrypted and opens only with its password; omitted when its format cannot carry a password.",
+              "type": "boolean"
+            },
             "page": {
               "description": "The 1-based page the file holds or comes from; absent when it holds no single page, as a whole-document file, an attachment or form data does.",
               "type": "integer",
@@ -3274,6 +3278,10 @@
             "fingerprint": {
               "description": "SHA-256 identity of the published file.",
               "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/file-fingerprint.schema.json"
+            },
+            "encrypted": {
+              "description": "true when the produced file is encrypted and opens only with its password; omitted when its format cannot carry a password.",
+              "type": "boolean"
             },
             "page": {
               "description": "The 1-based page the file holds or comes from; absent when it holds no single page, as a whole-document file, an attachment or form data does.",
@@ -5431,6 +5439,10 @@
               "description": "SHA-256 identity of the published file.",
               "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/file-fingerprint.schema.json"
             },
+            "encrypted": {
+              "description": "true when the produced file is encrypted and opens only with its password; omitted when its format cannot carry a password.",
+              "type": "boolean"
+            },
             "page": {
               "description": "The 1-based page the file holds or comes from; absent when it holds no single page, as a whole-document file, an attachment or form data does.",
               "type": "integer",
@@ -5786,6 +5798,10 @@
             "fingerprint": {
               "description": "SHA-256 identity of the published file.",
               "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/file-fingerprint.schema.json"
+            },
+            "encrypted": {
+              "description": "true when the produced file is encrypted and opens only with its password; omitted when its format cannot carry a password.",
+              "type": "boolean"
             },
             "pages": {
               "description": "The source pages the part holds, as range text such as 1-3 or 1-3,7.",

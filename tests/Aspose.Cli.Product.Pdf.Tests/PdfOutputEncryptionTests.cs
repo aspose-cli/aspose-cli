@@ -85,7 +85,17 @@ public sealed class PdfOutputEncryptionTests : IDisposable
         JsonNode result = Succeeds(Run("pdf", "split", "owner-only.pdf", "--by", "pages", "--every", "1", "--out-dir", "parts"));
 
         Assert.All(Directory.GetFiles(_workspace.File("parts")), part => Assert.False(Encrypted(part)));
+        Assert.Equal([false, false], PartsEncrypted(result));
         Assert.Contains("ENCRYPTION_REMOVED", Codes(result));
+    }
+
+    [Category(TestCategory.Slow)]
+    [Fact]
+    public void SplitOfAPlainInput_ReportsEveryPartUnencrypted()
+    {
+        JsonNode result = Succeeds(Run("pdf", "split", "plain.pdf", "--by", "pages", "--every", "1", "--out-dir", "parts"));
+
+        Assert.Equal([false, false], PartsEncrypted(result));
     }
 
     [Category(TestCategory.Slow)]
@@ -99,6 +109,7 @@ public sealed class PdfOutputEncryptionTests : IDisposable
                 "--by", "pages", "--every", "1", "--out-dir", "parts")));
 
         Assert.True(merged["output"]!["encrypted"]!.GetValue<bool>());
+        Assert.Equal([true, true], PartsEncrypted(split));
         string[] written = [_workspace.File("merged.pdf"), .. Directory.GetFiles(_workspace.File("parts"))];
         Assert.Equal(3, written.Length);
         Assert.All(written, path => OpensOnlyWith(path, UserPassword));
@@ -185,6 +196,8 @@ public sealed class PdfOutputEncryptionTests : IDisposable
             () => results[3] = Succeeds(Run("pdf", "render", "locked.pdf", "--password-env", "PDF_USER", "--out", "render.png")));
 
         Assert.All(results, result => Assert.DoesNotContain("ENCRYPTION_REMOVED", Codes(result)));
+        // Images, text and form data cannot carry a password, so their files report no encryption.
+        Assert.All(results, result => Assert.All(result["outputs"]!.AsArray(), output => Assert.Null(output!["encrypted"])));
     }
 
     [Category(TestCategory.Slow)]
@@ -227,6 +240,7 @@ public sealed class PdfOutputEncryptionTests : IDisposable
         Assert.Equal(5, written.Length);
         Assert.All(written, OpensOnlyWithTheNewPassword);
         Assert.All(results[..3], result => Assert.True(result["output"]!["encrypted"]!.GetValue<bool>()));
+        Assert.Equal([true, true], PartsEncrypted(results[3]));
         Assert.All(results, result => Assert.DoesNotContain("ENCRYPTION_REMOVED", Codes(result)));
         Assert.All(results, result => Assert.DoesNotContain(NewPassword, result.ToJsonString(), StringComparison.Ordinal));
     }
@@ -305,6 +319,10 @@ public sealed class PdfOutputEncryptionTests : IDisposable
         Assert.True(result.ExitCode == 0, result.StdErr + result.StdOut);
         return JsonNode.Parse(result.StdOut)!;
     }
+
+    /// <summary>The <c>encrypted</c> of each <c>outputs[]</c> item, which a PDF part always reports.</summary>
+    private static bool[] PartsEncrypted(JsonNode result) =>
+        [.. result["outputs"]!.AsArray().Select(static output => output!["encrypted"]!.GetValue<bool>())];
 
     private static string[] Codes(JsonNode result) =>
         [.. result["warnings"]?.AsArray().Select(static warning => warning!["code"]!.GetValue<string>()) ?? []];

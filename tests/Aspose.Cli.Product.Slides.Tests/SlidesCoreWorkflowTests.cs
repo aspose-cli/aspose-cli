@@ -145,7 +145,7 @@ public sealed class SlidesCoreWorkflowTests
                 Slides = PageRange.Parse("1"),
             }));
 
-        OutputInfo artifact = Assert.Single(result.Outputs);
+        SlidesSlideOutput artifact = Assert.Single(result.Outputs);
         Assert.Equal(format, artifact.Format);
         Assert.True(File.Exists(artifact.Path));
         Assert.True(artifact.SizeBytes > 0);

@@ -2430,11 +2430,11 @@
           "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/input.schema.json"
         },
         "outputs": {
-          "description": "The written files: one per slide for an image format, otherwise one, with any companion files the format needs.",
+          "description": "The written files: one per slide, each with its slide, for an image format; otherwise one, with any companion files the format needs.",
           "type": "array",
           "minItems": 1,
           "items": {
-            "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/output.schema.json"
+            "$ref": "#/$defs/slidesSlideOutput"
           }
         },
         "slides": {
@@ -2451,6 +2451,47 @@
           "type": "array",
           "items": {
             "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/warning.schema.json"
+          }
+        }
+      },
+      "$defs": {
+        "slidesSlideOutput": {
+          "description": "One file a command wrote, and the slide it holds when it holds one.",
+          "type": "object",
+          "required": [
+            "path",
+            "format",
+            "sizeBytes",
+            "fingerprint"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "path": {
+              "description": "Absolute path of the produced file.",
+              "type": "string"
+            },
+            "format": {
+              "description": "Format id of the produced file, e.g. png.",
+              "type": "string"
+            },
+            "sizeBytes": {
+              "description": "File size in bytes.",
+              "type": "integer",
+              "minimum": 0
+            },
+            "fingerprint": {
+              "description": "SHA-256 identity of the published file.",
+              "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/file-fingerprint.schema.json"
+            },
+            "encrypted": {
+              "description": "true when the produced file is encrypted and opens only with its password; omitted when its format cannot carry a password.",
+              "type": "boolean"
+            },
+            "slide": {
+              "description": "The 1-based slide the file holds; absent when it holds no single slide, as a whole-deck file or a companion file the format writes beside it does.",
+              "type": "integer",
+              "minimum": 1
+            }
           }
         }
       }
@@ -5756,14 +5797,13 @@
       },
       "$defs": {
         "slidesSlideOutput": {
-          "description": "One rendered slide image.",
+          "description": "One file a command wrote, and the slide it holds when it holds one.",
           "type": "object",
           "required": [
             "path",
             "format",
             "sizeBytes",
-            "fingerprint",
-            "slide"
+            "fingerprint"
           ],
           "additionalProperties": false,
           "properties": {
@@ -5784,8 +5824,12 @@
               "description": "SHA-256 identity of the published file.",
               "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/file-fingerprint.schema.json"
             },
+            "encrypted": {
+              "description": "true when the produced file is encrypted and opens only with its password; omitted when its format cannot carry a password.",
+              "type": "boolean"
+            },
             "slide": {
-              "description": "The 1-based slide number.",
+              "description": "The 1-based slide the file holds; absent when it holds no single slide, as a whole-deck file or a companion file the format writes beside it does.",
               "type": "integer",
               "minimum": 1
             }

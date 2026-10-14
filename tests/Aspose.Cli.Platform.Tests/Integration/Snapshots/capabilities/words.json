@@ -6847,6 +6847,10 @@
               "description": "SHA-256 identity of the published file.",
               "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/file-fingerprint.schema.json"
             },
+            "encrypted": {
+              "description": "true when the produced file is encrypted and opens only with its password; omitted when its format cannot carry a password.",
+              "type": "boolean"
+            },
             "page": {
               "description": "The 1-based page.",
               "type": "integer",
@@ -7038,6 +7042,10 @@
             "fingerprint": {
               "description": "SHA-256 identity of the published file.",
               "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/file-fingerprint.schema.json"
+            },
+            "encrypted": {
+              "description": "true when the produced file is encrypted and opens only with its password; omitted when its format cannot carry a password.",
+              "type": "boolean"
             },
             "section": {
               "description": "The 1-based section the part holds; present with --by sections.",

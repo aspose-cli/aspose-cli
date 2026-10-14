@@ -64,7 +64,7 @@ internal static class CellsRender
 
         if (rendered.Count == 0)
         {
-            throw firstSkip ?? CellsErrors.RenderEmpty(Sheets.Resolve(workbook, sheetName: null).Name);
+            throw firstSkip ?? Empty(Sheets.Resolve(workbook, sheetName: null));
         }
 
         transaction.Commit();
@@ -150,6 +150,26 @@ internal static class CellsRender
         return (visible, false);
     }
 
+    /// <summary>
+    /// <c>RENDER_EMPTY</c> for <paramref name="sheet"/>, pointing to the first other sheet that
+    /// holds cell data or a drawing, leaving out the warning sheets an evaluation save added.
+    /// </summary>
+    private static CliException Empty(Worksheet sheet)
+    {
+        WorksheetCollection worksheets = sheet.Workbook.Worksheets;
+        for (int index = 0; index < worksheets.Count; index++)
+        {
+            Worksheet other = worksheets[index];
+            if (other.Index != sheet.Index && !CellsEvaluation.IsWarningSheet(other)
+                && (other.Cells.MaxDataRow >= 0 || other.Shapes.Count > 0))
+            {
+                return CellsErrors.RenderEmpty(sheet.Name, (index + 1, other.Name));
+            }
+        }
+
+        return CellsErrors.RenderEmpty(sheet.Name, withData: null);
+    }
+
     /// <summary>The 1-based positions a selection names, in workbook order, within the render limit.</summary>
     private static IReadOnlyList<int> Positions(Workbook workbook, CellsRenderRequest request) =>
         [.. Sheets.Selected(workbook, request.SheetsText, range: true,
@@ -194,7 +214,7 @@ internal static class CellsRender
         // blank sheet. Turn it into a clean, actionable error instead.
         if (render.PageCount == 0)
         {
-            throw CellsErrors.RenderEmpty(sheet.Name);
+            throw Empty(sheet);
         }
 
         try
