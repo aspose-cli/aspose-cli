@@ -3,7 +3,7 @@ namespace Aspose.Cli.Product.Pdf.Engine.Editing;
 /// <summary>
 /// The addresses an operation that failed attempted to change, in the vocabulary of
 /// <see cref="PdfSnapshots"/>: a page selection as written (<c>page/2-4</c>, <c>page/all</c>
-/// without one), and the named objects of the operation.
+/// without one), and the named objects of the operation, addressed by <see cref="PdfInfoProjection.Address"/>.
 /// </summary>
 internal sealed class PdfAttemptedTargets : IPdfOpHandler<IReadOnlyList<string>>
 {
@@ -42,18 +42,7 @@ internal sealed class PdfAttemptedTargets : IPdfOpHandler<IReadOnlyList<string>>
     public IReadOnlyList<string> Apply(RedactAreaOp operation) => Page(operation.Page);
 
     public IReadOnlyList<string> Apply(SetPropertiesOp operation) =>
-    [
-        .. new (string Name, string? Value)[]
-            {
-                ("title", operation.Title),
-                ("author", operation.Author),
-                ("subject", operation.Subject),
-                ("keywords", operation.Keywords),
-            }
-            .Where(static item => item.Value is not null)
-            .Select(static item => "property/" + item.Name),
-        .. (operation.Custom?.Keys ?? []).Select(static key => "property/" + TargetName.Escape(key)),
-    ];
+        [.. PdfPropertyNames.Written(operation).Select(static entry => PdfInfoProjection.PropertyAddress(entry.Key))];
 
     public IReadOnlyList<string> Apply(ClearPropertiesOp operation) => ["property/all"];
 
@@ -62,17 +51,17 @@ internal sealed class PdfAttemptedTargets : IPdfOpHandler<IReadOnlyList<string>>
     public IReadOnlyList<string> Apply(DeleteBookmarksOp operation) =>
         operation.Bookmarks is null ? ["bookmark/all"] : [.. operation.Bookmarks.Select(static address => $"bookmark/{address}")];
 
-    public IReadOnlyList<string> Apply(AddAttachmentOp operation) => [$"attachment/{TargetName.Escape(operation.Name ?? Path.GetFileName(operation.Path))}"];
+    public IReadOnlyList<string> Apply(AddAttachmentOp operation) => [PdfInfoProjection.Address("attachment", operation.Name ?? Path.GetFileName(operation.Path))];
 
-    public IReadOnlyList<string> Apply(DeleteAttachmentOp operation) => [$"attachment/{TargetName.Escape(operation.Name)}"];
+    public IReadOnlyList<string> Apply(DeleteAttachmentOp operation) => [PdfInfoProjection.Address("attachment", operation.Name)];
 
     public IReadOnlyList<string> Apply(SetPageLabelsOp operation) =>
         [.. operation.Ranges.Select(static range => $"page-label/{range.StartPage}")];
 
-    public IReadOnlyList<string> Apply(SetFormFieldOp operation) => [$"field/{TargetName.Escape(operation.Name)}"];
+    public IReadOnlyList<string> Apply(SetFormFieldOp operation) => [PdfInfoProjection.Address("field", operation.Name)];
 
     public IReadOnlyList<string> Apply(FlattenFormsOp operation) =>
-        operation.Fields is null ? ["field/all"] : [.. operation.Fields.Select(static name => $"field/{TargetName.Escape(name)}")];
+        operation.Fields is null ? ["field/all"] : [.. operation.Fields.Select(static name => PdfInfoProjection.Address("field", name))];
 
     public IReadOnlyList<string> Apply(EncryptDocumentOp operation) => [Security];
 

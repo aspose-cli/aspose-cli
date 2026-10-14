@@ -129,15 +129,7 @@ internal sealed class PdfEditModel : IOperationModel<PdfOp>
     /// </summary>
     private static void RefuseTextTheEncryptionGarbles(SetPropertiesOp metadata)
     {
-        string[] values =
-        [
-            metadata.Title ?? string.Empty,
-            metadata.Author ?? string.Empty,
-            metadata.Subject ?? string.Empty,
-            metadata.Keywords ?? string.Empty,
-            .. metadata.Custom?.Values ?? [],
-        ];
-        if (values.Any(static value => value.Any(static character => character > '\u00FF')))
+        if (PdfPropertyNames.Written(metadata).Any(static entry => entry.Value.Any(static character => character > '\u00FF')))
         {
             throw new OperationInvalidException(
                 "the input stays encrypted, and the PDF engine garbles document information with characters beyond Latin-1 that it writes into an encrypted file",

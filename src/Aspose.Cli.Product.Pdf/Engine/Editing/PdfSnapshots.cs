@@ -18,7 +18,9 @@ namespace Aspose.Cli.Product.Pdf.Engine.Editing;
 /// <c>property/xmp:dc:title</c>), the bookmarks (<c>bookmark/1/2</c>), the attachments
 /// (<c>attachment/notes.txt</c>), the page labels (<c>page-label/1</c>), the form fields
 /// (<c>field/name</c>), the encryption (<c>security/encryption</c>) and, for optimize, the
-/// images and fonts of every page (<c>page/1/image/1</c>, <c>page/1/font/1</c>).
+/// images and fonts of every page (<c>page/1/image/1</c>, <c>page/1/font/1</c>). What a read
+/// reports of these objects is the state <see cref="PdfInfoProjection"/> reads, and an object
+/// with a name is addressed by <see cref="PdfInfoProjection.Address"/>.
 /// </summary>
 internal sealed class PdfSnapshots(Document document, PdfPageIdentities pages, Func<string?> encryption) : IPdfOpHandler<OperationSnapshot>
 {
@@ -51,13 +53,13 @@ internal sealed class PdfSnapshots(Document document, PdfPageIdentities pages, F
     }
 
     /// <summary>
-    /// The document information entries Aspose.PDF writes into every PDF it saves, licensed or
-    /// not, whatever the document held: the library as creator and producer, and the time of the
-    /// save. No operation removes or sets them in the output. A save while other documents of the
-    /// process are saved leaves the date out (PDF-CONCURRENT-SAVE-MODDATE), which a command, run
-    /// in a process of its own, never meets.
+    /// The names of the document information entries Aspose.PDF writes into every PDF it saves,
+    /// licensed or not, whatever the document held: the library as creator and producer, and the
+    /// time of the save. No operation removes or sets them in the output. A save while other
+    /// documents of the process are saved leaves the date out (PDF-CONCURRENT-SAVE-MODDATE), which
+    /// a command, run in a process of its own, never meets.
     /// </summary>
-    internal static readonly IReadOnlySet<string> SaveStamped = new HashSet<string>(["Creator", "Producer", "ModDate"], StringComparer.Ordinal);
+    internal static readonly IReadOnlySet<string> SaveStamped = new HashSet<string>(["creator", "producer", "modificationDate"], StringComparer.Ordinal);
 
     public OperationSnapshot Apply(RotatePagesOp operation) => Pages(operation.Pages);
 
@@ -112,10 +114,9 @@ internal sealed class PdfSnapshots(Document document, PdfPageIdentities pages, F
     public OperationSnapshot Apply(SetPageLabelsOp operation)
     {
         var snapshot = new OperationSnapshot();
-        foreach (int index in document.PageLabels.GetPages().Order())
+        foreach (PdfPageLabelInfo label in PdfInfoProjection.PageLabels(document))
         {
-            PageLabel label = document.PageLabels.GetLabel(index);
-            snapshot.Add(Address("page-label", index + 1), $"{label.NumberingStyle}|{label.Prefix}|{label.StartingValue}");
+            snapshot.Add(Address("page-label", label.StartPage), $"{label.NumberStyle}|{label.Prefix}|{label.StartingValue}");
         }
 
         return snapshot;
@@ -197,24 +198,19 @@ internal sealed class PdfSnapshots(Document document, PdfPageIdentities pages, F
         new OperationSnapshot().AddSequence(PageUnit, Enumerable.Range(1, document.Pages.Count).Select(number => pages.Of(document.Pages[number])));
 
     /// <summary>
-    /// The document information and XMP entries as the output will hold them: an entry the engine
-    /// writes on every save (<see cref="SaveStamped"/>) is not one an operation changes, and an
-    /// empty entry is one the output does not report.
+    /// The document information and XMP entries as the output will hold them, by their stored
+    /// text: an entry the engine writes on every save (<see cref="SaveStamped"/>) is not one an
+    /// operation changes, and an empty entry is one the output does not report.
     /// </summary>
     private OperationSnapshot Metadata()
     {
         var snapshot = new OperationSnapshot();
-        foreach (string key in document.Info.Keys.Order(StringComparer.Ordinal).Where(static key => !SaveStamped.Contains(key)))
+        foreach ((string name, string address, string stored) in PdfInfoProjection.Unreported.Properties(document))
         {
-            if (document.Info[key] is { Length: > 0 } value && PdfPropertyNames.Reported(key) is { } name)
+            if (!SaveStamped.Contains(name))
             {
-                snapshot.Add("property/" + TargetName.Escape(name), value);
+                snapshot.Add(address, stored);
             }
-        }
-
-        foreach ((string key, XmpValue value) in document.Metadata)
-        {
-            snapshot.Add($"property/xmp:{TargetName.Escape(key)}", value.ToString() ?? string.Empty);
         }
 
         return snapshot;
@@ -223,48 +219,27 @@ internal sealed class PdfSnapshots(Document document, PdfPageIdentities pages, F
     /// <summary>
     /// The bookmarks of <paramref name="outline"/>, below the bookmark at <paramref name="parent"/>
     /// (the top level when null), in outline order down to <paramref name="levels"/> levels, each
-    /// by its index, level, title and page.
+    /// by its level, title and stored destination page.
     /// </summary>
-    private static OperationSnapshot Bookmarks(IEnumerable<OutlineItemCollection> outline, string? parent, int levels)
-    {
-        var items = new List<(string Address, string State)>();
-        Walk(outline, parent, depth: 1);
-        return new OperationSnapshot().AddSequence("bookmark", items);
+    private static OperationSnapshot Bookmarks(IEnumerable<OutlineItemCollection> outline, string? parent, int levels) =>
+        new OperationSnapshot().AddSequence("bookmark", PdfInfoProjection.Outline(outline, parent, levels, int.MaxValue)
+            .Select(static entry => ($"bookmark/{entry.Item.Bookmark}",
+                string.Create(CultureInfo.InvariantCulture, $"{entry.Item.Level}|{entry.Item.Title}|{entry.Destination}"))));
 
-        void Walk(IEnumerable<OutlineItemCollection> level, string? above, int depth)
-        {
-            int position = 0;
-            foreach (OutlineItemCollection item in level)
-            {
-                string index = OutlineIndex(above, ++position);
-                items.Add(($"bookmark/{index}", string.Create(CultureInfo.InvariantCulture,
-                    $"{depth}|{item.Title}|{PdfNavigationCensus.DestinationPage(item)}")));
-                if (depth < levels)
-                {
-                    Walk(item, index, depth + 1);
-                }
-            }
-        }
-    }
-
-    /// <summary>The attachments in order, each by its name, description, media type and length.</summary>
+    /// <summary>The named attachments in the order the engine lists them, each by its stored description, media type and length.</summary>
     private OperationSnapshot Attachments() =>
-        new OperationSnapshot().AddSequence("attachment", document.EmbeddedFiles
-            .Select(static file => (Name: AttachmentName(file), File: file))
-            .Where(static item => item.Name is not null)
-            .Select(static item => (
-                $"attachment/{TargetName.Escape(item.Name!)}",
-                string.Create(CultureInfo.InvariantCulture,
-                    $"{item.File.Description}|{item.File.MIMEType}|{(item.File.Contents is { CanSeek: true } contents ? contents.Length : -1)}"))));
+        new OperationSnapshot().AddSequence("attachment", PdfInfoProjection.AttachmentEntries(document)
+            .Where(static entry => entry.Info.Name.Length > 0)
+            .Select(static entry => (PdfInfoProjection.Address("attachment", entry.Info.Name), PdfInfoProjection.Unreported.Attachment(entry.File))));
 
     /// <summary>
     /// The form fields of the names an operation lists, or every field without a list, in order,
-    /// each by its kind and value; a flattened field is gone.
+    /// each by the kind and value a read reports; a flattened field is gone.
     /// </summary>
     private OperationSnapshot Fields(IReadOnlyList<string>? names) =>
         new OperationSnapshot().AddSequence("field", document.Form.Fields
             .Where(field => !string.IsNullOrWhiteSpace(field.FullName) && (names is null || names.Contains(field.FullName, StringComparer.Ordinal)))
-            .Select(static field => ($"field/{TargetName.Escape(field.FullName)}", $"{field.GetType().Name}|{(PdfForms.RadioGroup(field) ?? field).Value}")));
+            .Select(static field => (PdfInfoProjection.Address("field", field.FullName), PdfForms.State(field).ToString())));
 
     /// <summary>
     /// Whether the document is encrypted and, when it is, with the encryption an operation set
@@ -286,15 +261,15 @@ internal sealed class PdfSnapshots(Document document, PdfPageIdentities pages, F
     private static string Address(string unit, int number) => string.Create(CultureInfo.InvariantCulture, $"{unit}/{number}");
 
     /// <summary>
-    /// A digest of what an operation can change on a page: its rotation, boxes, annotations and
-    /// the forms and images it draws, which a stamp adds to; with <paramref name="content"/>, also
-    /// its content stream, which only a redaction rewrites in place. Reading the content stream
-    /// parses it, which costs as much again after every change, so the others leave it out.
+    /// A digest of what an operation can change on a page: its stored rotation and boxes, its annotations and the forms and images it draws, which a stamp adds to;
+    /// with <paramref name="content"/>, also its content stream, which only a redaction rewrites
+    /// in place. Reading the content stream parses it, which costs as much again after every
+    /// change, so the others leave it out.
     /// </summary>
     private static string PageState(Page page, bool content)
     {
         using var hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
-        Append(hash, string.Create(CultureInfo.InvariantCulture, $"{page.Rotate}|{Box(page.MediaBox)}|{Box(page.CropBox)}"));
+        Append(hash, PdfInfoProjection.Unreported.Geometry(page));
         if (content)
         {
             // Searching a page's text can wrap its content in a saved graphics state
@@ -307,7 +282,7 @@ internal sealed class PdfSnapshots(Document document, PdfPageIdentities pages, F
 
         foreach (Annotation annotation in page.Annotations)
         {
-            Append(hash, $"{annotation.GetType().Name}|{Box(annotation.Rect)}");
+            Append(hash, $"{annotation.GetType().Name}|{PdfInfoProjection.Unreported.Box(annotation.Rect)}");
         }
 
         foreach (XForm form in (IEnumerable<XForm>?)page.Resources.Forms ?? [])
@@ -322,9 +297,6 @@ internal sealed class PdfSnapshots(Document document, PdfPageIdentities pages, F
 
         return Convert.ToHexStringLower(hash.GetHashAndReset());
     }
-
-    private static string Box(Rectangle? box) =>
-        box is null ? "-" : string.Create(CultureInfo.InvariantCulture, $"{box.LLX},{box.LLY},{box.URX},{box.URY}");
 
     private static void Append(IncrementalHash hash, string text)
     {

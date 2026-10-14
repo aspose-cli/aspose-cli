@@ -1,5 +1,6 @@
 using Aspose.Cli.Product.Pdf.Contracts;
 using Aspose.Cli.Product.Pdf.Engine.Editing;
+using Aspose.Cli.Sdk.Addressing;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Pdf;
 using Aspose.Pdf.Forms;
@@ -78,6 +79,64 @@ public sealed class PdfTargetNameTests
         Assert.Equal([$"field/{Escaped}"], result.Applied[0].Targets);
         Assert.Equal(["field/missing 50%25%2Fy%20"], result.Applied[1].Targets);
         Assert.Equal(["field/missing 50%25%2Fy%20"], result.Applied[2].Targets);
+    }
+
+    /// <summary>
+    /// The targets of an edit and the locations of its verification name a field, an attachment
+    /// and a custom property with a name to escape exactly as the escaped name a read of the output
+    /// reports for the same object.
+    /// </summary>
+    [Fact]
+    public void TargetsAndVerification_NameObjectsAsTheReadOfTheOutputDoes()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.File("read-named.pdf");
+        using (var document = new Document())
+        {
+            Page page = document.Pages.Add();
+            document.Form.Add(new TextBoxField(page, new Rectangle(72, 650, 280, 680)) { PartialName = Name, Value = "Initial" });
+            document.Save(input);
+        }
+
+        string source = fixture.File("source.txt");
+        File.WriteAllText(source, "east,1\n");
+        PdfOp[] ops =
+        [
+            new SetFormFieldOp { Id = "op-0001", Name = Name, Value = "Contoso" },
+            new AddAttachmentOp { Id = "op-0002", Path = source, Name = Name },
+            new SetPropertiesOp { Id = "op-0003", Custom = new Dictionary<string, string> { [Name] = "v" } },
+        ];
+        string output = fixture.File("read-named.out.pdf");
+        PdfEditResult result = PdfEdit.Run(fixture.Session, new PdfEditRequest
+        {
+            Input = input,
+            Batch = new PdfOpsBatch { Ops = ops },
+            Output = TestOutput.At(output),
+            Verify = true,
+        });
+
+        PdfInspectResult read = PdfInfo.Run(fixture.Session, new PdfInspectRequest
+        {
+            Input = output,
+            Details = [PdfInspectDetails.Forms, PdfInspectDetails.Attachments, PdfInspectDetails.Properties],
+        });
+        string field = "field/" + TargetName.Escape(Assert.Single(read.Forms!.Fields).Name);
+        string attachment = "attachment/" + TargetName.Escape(Assert.Single(read.Attachments!).Name);
+        string property = "property/" + TargetName.Escape(Assert.Single(read.Properties!, static entry => entry.Value == "v").Key);
+        Assert.Equal([[field], [attachment], [property]], result.Applied.Select(static item => item.Targets));
+        Assert.True(result.Verification!.Ok, string.Join("; ", result.Verification.Issues.Select(static issue => issue.Message)));
+
+        // An output without these effects locates each issue under the same address.
+        using var unchanged = new Document(input);
+        var verifier = new PdfEditVerifier(unchanged);
+        foreach (PdfOp op in ops)
+        {
+            verifier.Record(op, AppliedOperations.Changed(PdfOp.Catalog, op, 1));
+        }
+
+        Assert.Equal(
+            new[] { attachment, field, property }.Order(StringComparer.Ordinal),
+            verifier.Verify(unchanged, fixture.LicenseState, deadline: null).Issues.Select(static issue => issue.Location).Order(StringComparer.Ordinal));
     }
 
     /// <summary>

@@ -471,6 +471,19 @@ internal static class PdfPropertyNames
         ("ModDate", "modificationDate", null),
     ];
 
+    /// <summary>Every standard entry, by its key and the name it is reported under.</summary>
+    internal static IEnumerable<(string Key, string Name)> Standards => Entries.Select(static entry => (entry.Key, entry.Name));
+
+    /// <summary>The entries an operation writes, by key: its standard fields, then its custom entries.</summary>
+    internal static IEnumerable<(string Key, string Value)> Written(SetPropertiesOp operation) =>
+        new (string Key, string? Value)[]
+        {
+            ("Title", operation.Title), ("Author", operation.Author), ("Subject", operation.Subject), ("Keywords", operation.Keywords),
+        }
+            .Concat((operation.Custom ?? new Dictionary<string, string>()).Select(static entry => (Key: entry.Key, Value: (string?)entry.Value)))
+            .Where(static entry => entry.Value is not null)
+            .Select(static entry => (entry.Key, entry.Value!));
+
     /// <summary>The standard entry a key or reported name spells in any case, or null for a custom key.</summary>
     internal static (string Key, string Name, string? Field)? Standard(string key) =>
         Entries.FirstOrDefault(entry => string.Equals(entry.Key, key, StringComparison.OrdinalIgnoreCase)
