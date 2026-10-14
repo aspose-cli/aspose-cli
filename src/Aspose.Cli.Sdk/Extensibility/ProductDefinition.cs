@@ -133,8 +133,7 @@ public static class Product
 /// <summary>Builds an immutable definition without access to the product catalog.</summary>
 /// <remarks>
 /// A product lists its commands as a menu: each <c>Command</c> line pairs a command definition
-/// with the static handler that serves it, and <c>Group</c> nests lines under a group command.
-/// The menu lines live in <c>Aspose.Cli.Sdk.Extensibility.Commanding.ProductMenu</c>; their
+/// with the static handler that serves it. The menu lines live in <c>Aspose.Cli.Sdk.Extensibility.Commanding.ProductMenu</c>; their
 /// order is the order of help and capabilities.
 /// </remarks>
 /// <typeparam name="TSession">The product's engine session.</typeparam>
@@ -328,6 +327,7 @@ public sealed class ProductDefinitionBuilder<TSession>
             product.Subcommands.Add(entry.Create(context));
         }
 
+        CommandMistakes.EnsureUnclaimed(product);
         return _help?.Invoke() is { } help ? product.WithExamples(help.Examples, help.Links) : product;
     }
 
@@ -355,7 +355,7 @@ public sealed class ProductDefinitionBuilder<TSession>
     }
 
     private IReadOnlyList<ProductOperationCommand> Operations() =>
-        Array.AsReadOnly(_menu.SelectMany(static entry => entry.Operations("")).ToArray());
+        Array.AsReadOnly(_menu.SelectMany(static entry => entry.Operations()).ToArray());
 
     private static FileRouteDefinition CreateFileRoutes(
         IReadOnlyList<FormatDescriptor> formats)

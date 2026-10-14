@@ -26,6 +26,7 @@ internal static class SearchCommand
             },
             Table)
         {
+            MistakenFor = ["query"],
             Examples =
             [
                 "slides search deck.pptx --pattern TODO --output-format json",

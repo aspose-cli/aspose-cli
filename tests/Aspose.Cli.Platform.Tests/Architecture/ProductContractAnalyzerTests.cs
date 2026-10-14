@@ -423,31 +423,11 @@ public sealed class ProductContractAnalyzerTests
                 return run();
             })
             .Command(RunCommand.Create, Handlers.Run)
-            .Group("query", "Query.", static query => query.Command(RunCommand.Create, Handlers.Run))
             """);
 
         ImmutableArray<Diagnostic> diagnostics = await Analyze(source);
 
         Assert.DoesNotContain(diagnostics, static item => item.Id == "APCLI007");
-    }
-
-    /// <summary>A group's lines are added while the definition is built, so its lambda is checked.</summary>
-    [Fact]
-    public async Task Apcli007_ReportsRuntimeWorkInAGroupOfTheMenu()
-    {
-        string source = MenuSource(
-            """
-            .Describe("Menu.")
-            .Group("query", "Query.", static query =>
-            {
-                _ = System.IO.File.Exists("group.txt");
-                query.Command(RunCommand.Create, Handlers.Run);
-            })
-            """);
-
-        Diagnostic diagnostic = Assert.Single(await Analyze(source), static item => item.Id == "APCLI007");
-
-        Assert.Contains("File.Exists", diagnostic.GetMessage(), StringComparison.Ordinal);
     }
 
     /// <summary>Only the help of <c>Describe</c> is deferred; its description is read in Define().</summary>

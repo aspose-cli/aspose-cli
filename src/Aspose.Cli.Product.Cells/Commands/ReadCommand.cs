@@ -68,6 +68,7 @@ internal static class ReadCommand
             },
             Table)
         {
+            MistakenFor = ["query"],
             // A read within the budget is complete. A read over it is a planned scan with
             // another page: of the used range by default, of the data inside an explicit
             // range, or of the region a generated page's command carries.

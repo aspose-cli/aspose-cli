@@ -30,6 +30,7 @@ internal static class SearchCommand
             },
             Table)
         {
+            MistakenFor = ["query"],
             Finish = static (_, request, result, standard) => result with
             {
                 Window = SearchOptions.Continue(request.Query, result.Window, standard.Continuation()),

@@ -24,7 +24,11 @@ public static partial class CliErrors
     /// </summary>
     /// <param name="problems">Each problem, one sentence each.</param>
     /// <param name="mistake">The first unknown command, option or value, if any.</param>
-    public static CliException Usage(IReadOnlyList<string> problems, Mistake? mistake = null)
+    /// <param name="corrected">
+    /// The arguments of the command line without the mistake, when that alone corrects it: the
+    /// hint ends with the command line they make, ready to run, in place of the advice to read help.
+    /// </param>
+    public static CliException Usage(IReadOnlyList<string> problems, Mistake? mistake = null, IReadOnlyList<string>? corrected = null)
     {
         ArgumentNullException.ThrowIfNull(problems);
         var details = new JsonObject();
@@ -40,7 +44,8 @@ public static partial class CliErrors
             message = $"{message} {mistake.MustBeOneOf()}";
         }
 
-        return CliException.Create(ErrorCodes.UsageError, message, mistake?.Hint(UsageHint) ?? UsageHint, details.Count == 0 ? null : details);
+        string next = corrected is null ? UsageHint : $"Run '{CommandLineText.Of(corrected)}'.";
+        return CliException.Create(ErrorCodes.UsageError, message, mistake?.Hint(next) ?? next, details.Count == 0 ? null : details);
     }
 
     /// <summary>

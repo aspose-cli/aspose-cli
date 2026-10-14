@@ -4,7 +4,7 @@ using Aspose.Cli.Sdk.Results;
 
 namespace Aspose.Cli.Sdk.Extensibility;
 
-/// <summary>The examples and links a product or group command shows below its description.</summary>
+/// <summary>The examples and links a product command shows below its description.</summary>
 /// <param name="Examples">Examples, written after the executable name.</param>
 /// <param name="Links">Links to further documentation.</param>
 public sealed record CommandHelp(IReadOnlyList<string> Examples, IReadOnlyList<CommandHelpLink> Links);
@@ -47,38 +47,15 @@ internal sealed record MenuContext<TSession>(
             selection);
 }
 
-/// <summary>One line of a product menu: a command, or a group of further lines.</summary>
+/// <summary>One line of a product menu: a command and the handler that serves it.</summary>
 internal interface IMenuEntry<TSession>
     where TSession : class
 {
     Command Create(MenuContext<TSession> context);
 
-    /// <summary>The table renderers the entry's commands declare.</summary>
+    /// <summary>The table renderers the entry's command declares.</summary>
     IEnumerable<ProductOutputDefinition> Outputs();
 
-    /// <summary>The operation documents the entry's commands apply, each under its command path.</summary>
-    /// <param name="parent">The path of the enclosing commands below the product, ending in a space, or empty.</param>
-    IEnumerable<ProductOperationCommand> Operations(string parent);
-}
-
-/// <summary>A named group of menu lines, such as <c>query</c>.</summary>
-internal sealed class MenuGroup<TSession>(string name, string description, IReadOnlyList<IMenuEntry<TSession>> entries)
-    : IMenuEntry<TSession>
-    where TSession : class
-{
-    public Command Create(MenuContext<TSession> context)
-    {
-        var group = new Command(name, description);
-        foreach (IMenuEntry<TSession> entry in entries)
-        {
-            group.Subcommands.Add(entry.Create(context));
-        }
-
-        return group;
-    }
-
-    public IEnumerable<ProductOutputDefinition> Outputs() => entries.SelectMany(static entry => entry.Outputs());
-
-    public IEnumerable<ProductOperationCommand> Operations(string parent) =>
-        entries.SelectMany(entry => entry.Operations($"{parent}{name} "));
+    /// <summary>The operation documents the entry's command applies, under its name.</summary>
+    IEnumerable<ProductOperationCommand> Operations();
 }
