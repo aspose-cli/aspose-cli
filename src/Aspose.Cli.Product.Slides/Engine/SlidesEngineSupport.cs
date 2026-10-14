@@ -70,23 +70,8 @@ internal static class SlidesEngineSupport
             }
             if (includeShapes)
             {
-                shapes.Add(new SlidesShapeData
+                shapes.Add(SlidesStateProjection.Shape(shape, text, full, ref remaining, ref contentTruncated) with
                 {
-                    ShapeId = shape.OfficeInteropShapeId,
-                    ShapeName = EmptyToNull(shape.Name),
-                    Kind = ShapeKind(shape),
-                    Placeholder = SlidesPlaceholders.Role(shape.Placeholder?.Type),
-                    Geometry = Geometry(shape),
-                    AltText = EmptyToNull(shape.AlternativeText),
-                    Text = text,
-                    Runs = full ? Runs(shape, ref remaining, ref contentTruncated) : null,
-                    Paragraphs = full ? SlidesStateProjection.Paragraphs(shape, ref remaining, ref contentTruncated) : null,
-                    FillColor = full ? SlidesStateProjection.FillColor(shape) : null,
-                    Line = full ? SlidesStateProjection.Line(shape) : null,
-                    RowCount = full && shape is ITable rows ? rows.Rows.Count : null,
-                    ColumnCount = full && shape is ITable columns ? columns.Columns.Count : null,
-                    Values = full && shape is ITable table ? SlidesStateProjection.Values(table, ref remaining, ref contentTruncated) : null,
-                    Chart = full && shape is IChart chart ? SlidesStateProjection.Chart(chart, ref remaining, ref contentTruncated) : null,
                     ZOrder = zOrder++,
                     HasOpaqueFill = SlidesReviewProjection.HasOpaqueFill(shape),
                     TextRect = full ? SlidesReviewProjection.TextRect(shape) : null,
@@ -94,13 +79,6 @@ internal static class SlidesEngineSupport
                     Backdrop = full ? SlidesReviewProjection.Backdrop(slide, shape) : null,
                     ChartTextColor = full ? SlidesReviewProjection.ChartTextColor(shape) : null,
                     EvaluationWatermark = IsEvaluationWatermark(shape),
-                    Rect = new SlidesRect
-                    {
-                        X = shape.X,
-                        Y = shape.Y,
-                        Width = shape.Width,
-                        Height = shape.Height,
-                    },
                 });
             }
         }
