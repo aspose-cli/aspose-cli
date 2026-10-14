@@ -124,7 +124,12 @@ public sealed class TempWorkspace : IDisposable
         CliResult result = new CliProcess(
             CliRunner.ExecutablePath,
             environment).Run(Path, standardInput, args: [.. args]);
-        return ValidateJsonContract(result, args);
+        result = ValidateJsonContract(result, args);
+        if (RequestsJson(args) && !IsSchemaCommand(args))
+        {
+            Scenarios.ExecutableHints.Require(new Scenarios.HintRun(args, Path, _configDirectory.Path, variables), result);
+        }
+        return result;
     }
 
     private static CliResult ValidateJsonContract(

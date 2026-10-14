@@ -9,7 +9,8 @@ namespace Aspose.Cli.TestKit.Scenarios;
 /// <summary>
 /// Runs a <see cref="Scenario"/> against the built CLI in a fresh <see cref="TempWorkspace"/>
 /// under the run's license mode (<see cref="ScenarioLicense"/>) and reports every unmet
-/// expectation and contract check (<see cref="ScenarioContract"/>) as a problem, rather than
+/// expectation, contract check (<see cref="ScenarioContract"/>) and hint that does not run
+/// (<see cref="ExecutableHints"/>) as a problem, rather than
 /// stopping at the first one.
 /// </summary>
 public static partial class ScenarioRunner
@@ -64,6 +65,10 @@ public static partial class ScenarioRunner
             CliResult result = Execute(workspace, args, step.Env, step.Stdin);
             IReadOnlyDictionary<string, string> after = Snapshot(workspace, installation);
             JsonNode? document = ScenarioContract.Check(args, result, Report);
+            foreach (string problem in ExecutableHints.Problems(new HintRun(args, workspace.Path, Path.GetDirectoryName(workspace.ConfigDirectory)!, Variables(step.Env)), document))
+            {
+                Report(ExecutableHints.Check, problem);
+            }
             if (step.Expect is { } expect)
             {
                 CheckExpectation(expect, workspace, args, result, document, before, after, Report);
@@ -98,11 +103,13 @@ public static partial class ScenarioRunner
         IReadOnlyDictionary<string, string>? env,
         string? stdin)
     {
-        Dictionary<string, string?>? variables = env?.ToDictionary(static pair => pair.Key, static pair => (string?)pair.Value);
-        var environment = CliEnvironment.Evaluation(Path.GetDirectoryName(workspace.ConfigDirectory)!, variables);
+        var environment = CliEnvironment.Evaluation(Path.GetDirectoryName(workspace.ConfigDirectory)!, Variables(env));
         // Standard input is always redirected, so a command never waits on the test's console.
         return new CliProcess(CliRunner.ExecutablePath, environment).Run(workspace.Path, stdin ?? string.Empty, [.. args]);
     }
+
+    private static Dictionary<string, string?>? Variables(IReadOnlyDictionary<string, string>? env) =>
+        env?.ToDictionary(static pair => pair.Key, static pair => (string?)pair.Value);
 
     private static string[] WithJsonOutput(IReadOnlyList<string> args) =>
         args.Any(static arg => arg is "--output-format" || arg.StartsWith("--output-format=", StringComparison.Ordinal))

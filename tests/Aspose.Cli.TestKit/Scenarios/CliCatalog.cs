@@ -110,6 +110,8 @@ public sealed class CliCatalog
         option["valueSource"]!.GetValue<string>(),
         Strings(option["allowedValues"]),
         option["recursive"]!.GetValue<bool>(),
+        option["maximumArity"]?.GetValue<int>() ?? 1,
+        Strings(option["aliases"]),
         option["inputKind"]?.GetValue<string>());
 
     private static CliArgument ReadArgument(JsonNode argument) => new(
@@ -165,8 +167,10 @@ public sealed record CliCommand(
 
 /// <summary>
 /// One option of a command; a hidden one is left out of help and suggestions, and a recursive one
-/// is taken by every command below its own. <see cref="InputKind"/> says what its value names
-/// when the command reads it, such as <c>file</c> or <c>json-source</c>.
+/// is taken by every command below its own. <see cref="MaximumArity"/> is the number of values it
+/// takes, 0 for a flag; <see cref="Aliases"/> are its other spellings, such as <c>-q</c>.
+/// <see cref="InputKind"/> says what its value names when the command reads it, such as
+/// <c>file</c> or <c>json-source</c>.
 /// </summary>
 public sealed record CliOption(
     string Name,
@@ -177,6 +181,8 @@ public sealed record CliOption(
     string ValueSource,
     IReadOnlyList<string> AllowedValues,
     bool Recursive,
+    int MaximumArity,
+    IReadOnlyList<string> Aliases,
     string? InputKind = null);
 
 /// <summary>One positional argument of a command.</summary>

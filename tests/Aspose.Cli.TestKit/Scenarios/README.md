@@ -78,7 +78,13 @@ Every step is also checked, whatever it expects, against the CLI's own catalog
   stderr, conforming to its schema, whose code is in the diagnostics catalog with the same exit
   code and whose details conform to the catalog's details schema;
 - `result-envelope`: a result is one JSON document conforming to the schema it names, and each
-  warning code is in the catalog. The raw `schema` and `docs` documents are exempt.
+  warning code is in the catalog. The raw `schema` and `docs` documents are exempt;
+- `executable-hint`: what each `error.hint` and `warnings[].hint` names runs as written
+  (`ExecutableHints`): a quoted or unquoted `aspose-cli` command runs on the step's own files in
+  a copy of its workspace, with `--dry-run` where the command has one, and must not fail with
+  `USAGE_ERROR`, `OPTION_INVALID` or `OPS_INVALID`; a JSON operation runs through the product's
+  `edit --ops … --dry-run`; an option named alone must be one of the step's command, with an
+  allowed value; and an operation named must be one of the product's.
 
 ## License mode
 

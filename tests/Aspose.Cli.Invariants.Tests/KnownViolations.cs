@@ -62,7 +62,9 @@ internal static class KnownViolations
         IReadOnlyList<ScenarioProblem> problems;
         try
         {
-            problems = item.Check?.Invoke() ?? ScenarioRunner.Run(item.Scenario!).Problems;
+            problems = item.Check is { } check
+                ? RuleWorkspace.CollectHintProblems(item.Invariant, check)
+                : ScenarioRunner.Run(item.Scenario!).Problems;
         }
         catch (InvalidOperationException exception) when (exception.Message.StartsWith("A scenario fixture", StringComparison.Ordinal))
         {
@@ -121,7 +123,7 @@ internal static class KnownViolations
 
     /// <summary>The invariant a problem breaks: a contract check names its own, an expectation the case's.</summary>
     public static string InvariantOf(InvariantCase item, string check) =>
-        check is ScenarioContract.NoInternalError or ScenarioContract.ErrorEnvelope or ScenarioContract.ResultEnvelope
+        check is ScenarioContract.NoInternalError or ScenarioContract.ErrorEnvelope or ScenarioContract.ResultEnvelope or ExecutableHints.Check
             ? check
             : item.Invariant;
 
