@@ -327,6 +327,18 @@ $licensePath = [Environment]::GetEnvironmentVariable($licenseVariable)
 if ($requireLicense -and ([string]::IsNullOrWhiteSpace($licensePath) -or -not (Test-Path -LiteralPath $licensePath -PathType Leaf))) {
     $missing += 'The Full scope needs ASPOSE_CLI_TEST_LICENSE_PATH to name an existing commercial license file.'
 }
+if ($CiLike) {
+    # The culture hook is compiled by this PowerShell against its own runtime, and every test
+    # process loads it: a runtime newer than the tests' target framework would make them fail to load it.
+    [xml] $buildProps = [IO.File]::ReadAllText((Join-Path $repoRoot 'Directory.Build.props'))
+    $targetFramework = [string]@($buildProps.Project.PropertyGroup.TargetFramework | Where-Object { $_ })[0]
+    if ($targetFramework -notmatch '^net(\d+)\.\d+$') { throw "Directory.Build.props declares no netN.M TargetFramework: '$targetFramework'." }
+    $targetMajor = [int]$Matches[1]
+    $hookRuntimeMajor = [Environment]::Version.Major
+    if ($hookRuntimeMajor -gt $targetMajor) {
+        $missing += "-CiLike compiles its culture hook against this PowerShell's .NET $([Environment]::Version), which the $targetFramework test processes cannot load. Run the script with a PowerShell on .NET $targetMajor or earlier."
+    }
+}
 if ($missing.Count -ne 0) {
     throw "Test prerequisites are missing:$([Environment]::NewLine)- $($missing -join "$([Environment]::NewLine)- ")"
 }
