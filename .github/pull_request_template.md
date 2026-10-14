@@ -4,7 +4,7 @@
 
 ## Test plan
 
-<!-- The commands you ran, whether they were licensed, and each project's result line, for example a licensed `scripts/test.ps1 -Configuration Release -Scope Full` (`-Scope Affected` without a license). Write "Not tested" with the reason if nothing ran. -->
+<!-- The commands you ran, whether they were licensed, and each project's result line, for example a licensed `scripts/test.ps1 -Configuration Release -Scope Changed -Base origin/master`. Write "Not tested" with the reason if nothing ran. -->
 
 ## Contract checklist
 
