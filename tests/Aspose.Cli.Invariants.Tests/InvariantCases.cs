@@ -54,6 +54,9 @@ internal static class InvariantCases
 
     private const string SecretVariable = "INVARIANT_SECRET";
 
+    /// <summary>The refusal of a password that does not open or unprotect what it is given.</summary>
+    private const string PasswordInvalid = "PASSWORD_INVALID";
+
     /// <summary>A password that opens no fixture; as a secret, it must never be printed either.</summary>
     private const string WrongPassword = "Invariant-Wrong-Secret-3b8d";
     private const string CorruptContent = "This is not a document.\n";
@@ -565,7 +568,11 @@ internal static class InvariantCases
         JsonNode definitions = JsonNode.Parse(catalog.SchemaText(product.OpsSchemaId))!["$defs"]!;
         string extension = ScenarioFixtures.PrimaryFormat(product.Id);
         string input = "input." + extension;
-        int[] outcomes = [0, .. ExitCodesOf(catalog, "input")];
+        // The fixture is not protected and the variable holds the fixture password: an operation
+        // that sets a password succeeds; one that removes a protection succeeds or refuses that
+        // password as the wrong one; nothing else.
+        int refused = catalog.Diagnostics[PasswordInvalid].ExitCode!.Value;
+        HashSet<string> removals = RemovalVerbs(catalog);
         foreach (string op in product.Ops)
         {
             if (definitions[op]?["properties"] is not JsonObject properties)
@@ -599,8 +606,25 @@ internal static class InvariantCases
             invocation.Files["ops.json"] = new ScenarioFile { Text = new JsonObject { ["ops"] = new JsonArray(operation) }.ToJsonString() };
             invocation.Env[SecretVariable] = ScenarioFixtures.Password;
             yield return Case(SecretHidden, $"{product.Id} edit {op}", product.Id, slow: false, invocation,
-                new ScenarioExpectation { ExitCode = outcomes, Hidden = [ScenarioFixtures.Password] });
+                removals.Contains(op.Split('_')[0])
+                    ? new ScenarioExpectation { ExitCode = [0, refused], RefusedOnlyWith = [PasswordInvalid], Hidden = [ScenarioFixtures.Password] }
+                    : new ScenarioExpectation { ExitCode = [0], Hidden = [ScenarioFixtures.Password] });
         }
+    }
+
+    /// <summary>
+    /// The operation verbs that undo another verb of the catalog, so they remove what it sets:
+    /// <c>un&lt;verb&gt;</c> beside <c>&lt;verb&gt;</c>, such as <c>unprotect</c>, and
+    /// <c>de&lt;x&gt;</c> beside <c>en&lt;x&gt;</c>, such as <c>decrypt</c>.
+    /// </summary>
+    internal static HashSet<string> RemovalVerbs(CliCatalog catalog)
+    {
+        HashSet<string> verbs = [.. catalog.Products.SelectMany(static product => product.Ops).Select(static op => op.Split('_')[0])];
+        return
+        [
+            .. verbs.Where(verb => (verb.StartsWith("un", StringComparison.Ordinal) && verbs.Contains(verb[2..]))
+                || (verb.StartsWith("de", StringComparison.Ordinal) && verbs.Contains("en" + verb[2..]))),
+        ];
     }
 
     // ----- (h) every successful write discloses evaluation mode -----------------------------
