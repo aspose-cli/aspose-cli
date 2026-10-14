@@ -46,8 +46,8 @@ Skipped tests are listed after the run, with licensed cases called out, and so i
 without a category that ran longer than the slow-test limit, $slowTestSeconds below, the one
 place that limit is stated.
 
--CiLike runs the tests the way the CI runner does, to catch before a push the failures that only
-CI would see. The test processes it starts, and the processes they start, get:
+-CiLike runs the tests the way the CI runner does, to reproduce locally a failure that only CI
+sees. The test processes it starts, and the processes they start, get:
 
 - no license: ASPOSE_CLI_TEST_LICENSE_PATH, the only license source of a test run, is removed,
   so the commercial SDKs run in evaluation mode and the licensed cases are skipped;
@@ -59,9 +59,7 @@ CI would see. The test processes it starts, and the processes they start, get:
   inlining that hides stack frames on a busy runner.
 
 The caller's environment is left unchanged, and -CiLike combines with Fast, Changed and Affected.
-Full requires a license, which CI never has, so it rejects -CiLike. Before a push, run:
-
-    scripts/test.ps1 -Configuration Release -Scope Changed -Base origin/master -CiLike
+Full requires a license, which CI never has, so it rejects -CiLike.
 #>
 [CmdletBinding()]
 param(

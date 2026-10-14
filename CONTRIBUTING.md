@@ -12,16 +12,17 @@ Windows x64 with a .NET 10 SDK at or above the version in `global.json`, PowerSh
 ## Build and test
 
 `scripts/test.ps1` builds once and runs the tests; its help describes the scopes. A licensed run
-needs `ASPOSE_CLI_TEST_LICENSE_PATH` set to a license file; CI has no license. Before a push:
+needs `ASPOSE_CLI_TEST_LICENSE_PATH` set to a license file. CI runs the `Changed` scope without
+a license, so before opening a pull request run the licensed cases it skips:
 
 ```powershell
-.\scripts\test.ps1 -Configuration Release -Scope Full
-.\scripts\test.ps1 -Configuration Release -Scope Changed -Base origin/master -CiLike
+.\scripts\test.ps1 -Configuration Release -Scope Changed -Base origin/master
 ```
 
-Without a license, run `-Scope Affected` instead of `Full`. After a catalog, identity or dependency
-change, run `scripts/sync.ps1`. After an intended change to help, capabilities or schemas, rerun
-`CliContractTests` with `ASPOSE_CLI_TEST_UPDATE_SNAPSHOTS=1` and review the snapshot diff.
+Run `-Scope Full` before a release and after an SDK update; `-CiLike` reproduces a CI failure
+locally. After a catalog, identity or dependency change, run `scripts/sync.ps1`. After an intended
+change to help, capabilities or schemas, rerun `CliContractTests` with
+`ASPOSE_CLI_TEST_UPDATE_SNAPSHOTS=1` and review the snapshot diff.
 `scripts/install-local.ps1` installs a development build.
 
 A test that a change adds or edits must fail without the change's `src/` code.

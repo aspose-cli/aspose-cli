@@ -60,7 +60,7 @@ jobs:
           Write-Host "PACKAGING $($changed.Count) packaging input(s) changed."
 
   # No license reaches CI: the commercial SDKs run in evaluation mode and the cases that need a
-  # license are skipped. The licensed Full scope runs locally before a push (CONTRIBUTING.md).
+  # license are skipped. The licensed cases run locally before a pull request (CONTRIBUTING.md).
   test:
     needs: plan
     runs-on: windows-latest
