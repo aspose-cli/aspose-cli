@@ -1,64 +1,15 @@
 using Aspose.Cli.Sdk.Contracts;
-using Aspose.Words;
 using Xunit;
 
 namespace Aspose.Cli.Product.Words.Tests;
 
 /// <summary>
-/// Plain text keeps no fields, revisions or protection, so a verified edit saved as
-/// <c>.txt</c> loses exactly the state each check compares.
+/// The checks a verified edit runs on the reopened output. OpenDocument text keeps fields and
+/// revisions but not editing restrictions, so a verified edit saved as <c>.odt</c> loses the
+/// protection the check compares.
 /// </summary>
 public sealed class WordsVerificationIssueTests
 {
-    [Fact]
-    public void Verify_ReportsFieldsLostOnReopen()
-    {
-        using var fixture = new WordsFixture();
-        var document = new Document();
-        var builder = new DocumentBuilder(document);
-        builder.Writeln("Revenue increased by twelve percent.");
-        builder.InsertField("DATE");
-        string input = fixture.Temp.File("fields.docx");
-        document.Save(input, SaveFormat.Docx);
-
-        VerificationIssue issue = VerifyAsText(fixture, new WordsEditRequest
-        {
-            Input = input,
-            Batch = ReplaceTwelve,
-            Output = TestOutput.At(fixture.Temp.File("fields.txt")),
-            Verify = true,
-        });
-
-        Assert.Equal("FIELD_COUNT_CHANGED", issue.Code);
-        // Evaluation mode adds a field of its own to every document it loads, so only the
-        // loss is fixed, not the counts.
-        System.Text.RegularExpressions.Match counts = System.Text.RegularExpressions.Regex.Match(
-            issue.Message, @"expected (\d+), found (\d+)");
-        Assert.True(counts.Success, issue.Message);
-        Assert.True(int.Parse(counts.Groups[2].Value) < int.Parse(counts.Groups[1].Value), issue.Message);
-        Assert.Equal("txt may not keep fields; save to docx or another Word format and verify again.", issue.Hint);
-        Assert.Null(issue.Location);
-    }
-
-    [Fact]
-    public void Verify_ReportsRevisionsLostOnReopen()
-    {
-        using var fixture = new WordsFixture();
-        VerificationIssue issue = VerifyAsText(fixture, new WordsEditRequest
-        {
-            Input = fixture.CreateReport(),
-            Batch = ReplaceTwelve,
-            Output = TestOutput.At(fixture.Temp.File("revisions.txt")),
-            Verify = true,
-            TrackChanges = true,
-            Author = "Reviewer",
-        });
-
-        Assert.Equal("REVISION_COUNT_CHANGED", issue.Code);
-        Assert.Contains("found 0", issue.Message, StringComparison.Ordinal);
-        Assert.Contains("save to docx", issue.Hint, StringComparison.Ordinal);
-    }
-
     [Fact]
     public void Verify_ReportsProtectionLostOnReopen()
     {
@@ -69,7 +20,7 @@ public sealed class WordsVerificationIssueTests
             {
                 Input = fixture.CreateReport(),
                 Batch = new WordsOpsBatch { Ops = [new ProtectDocumentOp { Protection = "read-only" }] },
-                Output = TestOutput.At(fixture.Temp.File("protection.txt")),
+                Output = TestOutput.At(fixture.Temp.File("protection.odt")),
                 Verify = true,
             });
 
@@ -78,7 +29,7 @@ public sealed class WordsVerificationIssueTests
         VerificationIssue issue = Assert.Single(result.Verification.Issues);
         Assert.Equal("PROTECTION_CHANGED", issue.Code);
         Assert.Contains("expected read-only, found none", issue.Message, StringComparison.Ordinal);
-        Assert.Contains("save to docx", issue.Hint, StringComparison.Ordinal);
+        Assert.Equal("odt may not keep protection; save to docx or another Word format and verify again.", issue.Hint);
     }
 
     [Fact]
@@ -155,13 +106,4 @@ public sealed class WordsVerificationIssueTests
     }
 
     private static readonly WordsOpsBatch ReplaceTwelve = new() { Ops = [new ReplaceTextOp { Find = "twelve", Replace = "ten" }] };
-
-    private static VerificationIssue VerifyAsText(WordsFixture fixture, WordsEditRequest request)
-    {
-        WordsEditResult result = WordsEdit.Run(fixture.Session, request);
-
-        Assert.Equal("ok", Assert.Single(result.Applied).Status);
-        Assert.False(result.Verification!.Ok);
-        return Assert.Single(result.Verification.Issues);
-    }
 }

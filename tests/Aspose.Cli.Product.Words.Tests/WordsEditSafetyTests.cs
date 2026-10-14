@@ -173,7 +173,7 @@ public sealed class WordsEditSafetyTests
         using var fixture = new WordsFixture();
         string input = fixture.CreateEncryptedDocument(OriginalPassword);
         byte[] original = File.ReadAllBytes(input);
-        string output = fixture.Temp.File("edited.txt");
+        string output = fixture.Temp.File("edited.rtf");
         // The write pipeline discloses the removed encryption, as the command template adds it.
         WordsEditResult result = fixture.Disclosed(session => WordsEdit.Run(session, new WordsEditRequest
         {
@@ -190,12 +190,12 @@ public sealed class WordsEditSafetyTests
         {
             Input = input,
             Batch = TextBatch(),
-            Output = TestOutput.At(fixture.Temp.File("invalid.txt")),
+            Output = TestOutput.At(fixture.Temp.File("invalid.rtf")),
             Password = new Secret(OriginalPassword),
             EncryptPassword = new Secret(ReplacementPassword),
             Options = new EditCommandOptions { DryRun = dryRun },
         }));
-        Assert.False(File.Exists(fixture.Temp.File("invalid.txt")));
+        Assert.False(File.Exists(fixture.Temp.File("invalid.rtf")));
     }
 
     [Fact]

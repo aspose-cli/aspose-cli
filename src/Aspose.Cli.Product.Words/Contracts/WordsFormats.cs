@@ -71,9 +71,19 @@ public static class WordsFormats
 
     public static bool IsLoad(string id) => LoadIds.Contains(id, StringComparer.Ordinal);
 
-    /// <summary>The formats create, edit and compare write: every convert format.</summary>
+    /// <summary>The formats compare writes its redline in: every convert format.</summary>
     internal static IReadOnlyList<FormatDescriptor> Writable { get; } =
         [.. Definitions.Where(static format => format.Uses.HasFlag(FormatUse.Convert)).OrderBy(static format => format.ConvertOrder)];
+
+    /// <summary>
+    /// The formats create and edit write: those that reopen as the document they saved, with its
+    /// styles, sections, headers, fields and tracked changes, so a later edit works on the same
+    /// document: the Word formats, RTF and OpenDocument text (<see cref="RevisionIds"/>). Every
+    /// other convert format is a fixed-page, web, text or e-book rendition that loses part of the
+    /// document; convert writes it from one of these.
+    /// </summary>
+    internal static IReadOnlyList<FormatDescriptor> Editable { get; } =
+        [.. Writable.Where(static format => KeepsRevisions(format.Id))];
 
     /// <summary>The format split writes every part in: docx.</summary>
     internal static IReadOnlyList<FormatDescriptor> SplitParts { get; } = [.. Definitions.Where(static format => format.Id == "docx")];

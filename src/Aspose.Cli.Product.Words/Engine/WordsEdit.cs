@@ -44,11 +44,6 @@ internal static class WordsEdit
         Secret? outputPassword = request.EncryptPassword
             ?? (loaded.Format.IsEncrypted && written.Protectable ? request.Password : null);
         SaveOptions saveOptions = WordsSavePipeline.Options(format, outputPassword);
-        if (request.Verify && !WordsFormats.IsLoad(format))
-        {
-            throw CliErrors.OptionInvalid("--verify", $"format '{format}' cannot be reopened as a document",
-                "Use a reloadable document output when requesting semantic verification.");
-        }
         InputInfo input = InfoProjection.Source(request.Input, loaded);
         FileFingerprints.EnsureUnchanged(request.Input, precondition.Fingerprint, input.Fingerprint);
         FileFingerprints.EnsureMatch(request.Input, request.Options.IfMatch, input.Fingerprint);
@@ -202,7 +197,8 @@ internal static class WordsEdit
                 {
                     try { document.Save(temp, saveOptions); }
                     finally { resources.ThrowIfFailed(); }
-                    if (!request.Verify && WordsFormats.IsLoad(format))
+                    // Every format edit writes is one the product loads (WordsFormats.Editable).
+                    if (!request.Verify)
                     {
                         using LoadedDocument reopened = session.Loader.OpenPublishedCandidate(temp, outputPassword);
                     }
