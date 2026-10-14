@@ -2,7 +2,7 @@ using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
 using Aspose.Slides;
-using Aspose.Slides.Charts;
+using static Aspose.Cli.Product.Slides.Engine.Mapping.SlidesStateProjection;
 using static Aspose.Cli.Product.Slides.Engine.SlidesEngineSupport;
 
 namespace Aspose.Cli.Product.Slides.Engine.Editing;
@@ -14,16 +14,14 @@ namespace Aspose.Cli.Product.Slides.Engine.Editing;
 /// of a slide (<c>slide/3/shape/7</c>, by shape id), a slide's speaker notes
 /// (<c>slide/3/notes</c>), the sections (<c>section/Intro</c>), the document properties
 /// (<c>property/title</c>) and the slide size (<c>presentation/slide-size</c>). A slide is
-/// addressed by its number in the presentation as the snapshot finds it.
+/// addressed by its number in the presentation as the snapshot finds it. The state, as the engine
+/// stores it, and the addresses come from <see cref="SlidesStateProjection"/>.
 /// </summary>
 /// <param name="presentation">The presentation being edited.</param>
 /// <param name="target">The operation's targets, resolved before the batch started.</param>
 internal sealed class SlidesSnapshots(Presentation presentation, SlidesMutationHandlers.ResolvedSlidesOp target)
     : ISlidesOpHandler<OperationSnapshot>
 {
-    /// <summary>The unit of a slide's address, whose changed ones are the slides the batch touched.</summary>
-    internal const string SlideUnit = "slide";
-
     public OperationSnapshot Apply(InsertSlideOp operation) => SlideOrder();
 
     public OperationSnapshot Apply(DeleteSlidesOp operation) => SlideOrder();
@@ -45,10 +43,7 @@ internal sealed class SlidesSnapshots(Presentation presentation, SlidesMutationH
     public OperationSnapshot Apply(SetTransitionOp operation) => WholeSlides();
 
     /// <summary>The sections, each by the id of its first slide; a new section splits nothing else.</summary>
-    public OperationSnapshot Apply(InsertSectionOp operation) =>
-        new OperationSnapshot().AddSequence("section", presentation.Sections.Select(static section => (
-            SectionAddress(section.Name),
-            section.StartedFromSlide is { } first ? Invariant(first.SlideId) : "-")));
+    public OperationSnapshot Apply(InsertSectionOp operation) => new OperationSnapshot().AddSequence("section", Sections(presentation));
 
     public OperationSnapshot Apply(SetTitleOp operation) => Shapes();
 
@@ -109,22 +104,22 @@ internal sealed class SlidesSnapshots(Presentation presentation, SlidesMutationH
         var snapshot = new OperationSnapshot();
         foreach ((string name, string? value) in Properties(presentation.DocumentProperties))
         {
-            snapshot.Add($"property/{name}", value ?? string.Empty);
+            snapshot.Add(PropertyAddress(name), value ?? string.Empty);
         }
 
         return snapshot;
     }
 
     public OperationSnapshot Apply(SetSlideSizeOp operation) =>
-        new OperationSnapshot().Add("presentation/slide-size", string.Create(
-            CultureInfo.InvariantCulture,
-            $"{presentation.SlideSize.Size.Width:R}x{presentation.SlideSize.Size.Height:R}"));
+        new OperationSnapshot().Add(SlideSizeAddress, SlideSize(presentation) is var size
+            ? string.Create(CultureInfo.InvariantCulture, $"{size.Width:R}x{size.Height:R}")
+            : string.Empty);
 
     private ISlide Slide => target.Slide!;
 
     /// <summary>The order of the slides, each by its id: inserting, deleting, copying or moving slides changes it.</summary>
     private OperationSnapshot SlideOrder() =>
-        new OperationSnapshot().AddSequence(SlideUnit, presentation.Slides.Select(static slide => Invariant(slide.SlideId)));
+        new OperationSnapshot().AddSequence(SlideUnit, SlideIds(presentation));
 
     /// <summary>The slides a multi-slide operation selects, each by everything it shows.</summary>
     private OperationSnapshot WholeSlides()
@@ -133,7 +128,7 @@ internal sealed class SlidesSnapshots(Presentation presentation, SlidesMutationH
         foreach (ISlide slide in target.Slides!.Where(presentation.Slides.Contains))
         {
             int number = Number(slide);
-            snapshot.Add(Address(number), SlideState(slide));
+            snapshot.Add(SlideAddress(number), SlideState(slide));
         }
 
         return snapshot;
@@ -157,126 +152,31 @@ internal sealed class SlidesSnapshots(Presentation presentation, SlidesMutationH
 
     private int Number(ISlide slide) => presentation.Slides.IndexOf(slide) + 1;
 
-    internal static string Address(int number) => string.Create(CultureInfo.InvariantCulture, $"{SlideUnit}/{number}");
-
-    internal static string ShapeAddress(int number, long shapeId) =>
-        string.Create(CultureInfo.InvariantCulture, $"{SlideUnit}/{number}/shape/{shapeId}");
-
-    /// <summary>A section's address by its name, such as <c>section/Q3 plan</c>.</summary>
-    internal static string SectionAddress(string name) => $"section/{TargetName.Escape(name)}";
-
-    internal static string NotesAddress(int number) => string.Create(CultureInfo.InvariantCulture, $"{SlideUnit}/{number}/notes");
-
     /// <summary>
     /// A digest of everything a slide shows that an operation can change: its layout, visibility,
     /// own background, transition, notes and each of its shapes.
     /// </summary>
-    internal static string SlideState(ISlide slide)
+    internal static string SlideState(ISlide slide) => Digest([
+        $"{Layout(slide) ?? "-"}|{LayoutPosition(slide)}",
+        slide.Hidden ? "hidden" : "shown",
+        StoredBackground(slide),
+        TransitionState(slide),
+        Notes(slide) ?? "-",
+        .. slide.Shapes.Select(static shape => $"{shape.OfficeInteropShapeId}|{ShapeState(shape)}"),
+    ]);
+
+    /// <summary>A digest of what an operation can change on a shape, as the engine stores it.</summary>
+    internal static string ShapeState(IShape shape) => Digest(StoredShape(shape));
+
+    private static string Digest(IEnumerable<string> facts)
     {
         using var hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
-        Append(hash, $"{slide.LayoutSlide?.MasterSlide?.Name}|{slide.LayoutSlide?.Name ?? "-"}|{Identity(slide.LayoutSlide)}");
-        Append(hash, slide.Hidden ? "hidden" : "shown");
-        Append(hash, string.Create(CultureInfo.InvariantCulture, $"{slide.Background.Type}|{Fill(slide.Background.FillFormat)}"));
-        Append(hash, string.Create(CultureInfo.InvariantCulture, $"{slide.SlideShowTransition.Type}|{slide.SlideShowTransition.Duration}"));
-        Append(hash, Notes(slide) ?? "-");
-        foreach (IShape shape in slide.Shapes)
+        foreach (string fact in facts)
         {
-            Append(hash, string.Create(CultureInfo.InvariantCulture, $"{shape.OfficeInteropShapeId}|{ShapeState(shape)}"));
+            hash.AppendData(Encoding.UTF8.GetBytes(fact));
+            hash.AppendData([0]);
         }
 
         return Convert.ToHexStringLower(hash.GetHashAndReset());
-    }
-
-    /// <summary>
-    /// A digest of what an operation can change on a shape: its kind, name, alternative text,
-    /// geometry, fill and line, its text with each paragraph's level and bullet and each run's
-    /// fonts, size, weight and color, and a chart's data and title.
-    /// </summary>
-    internal static string ShapeState(IShape shape)
-    {
-        using var hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
-        Append(hash, string.Create(CultureInfo.InvariantCulture,
-            $"{shape.GetType().Name}|{shape.Name}|{shape.AlternativeText}|{shape.X:R},{shape.Y:R},{shape.Width:R},{shape.Height:R}"));
-        foreach (IFillFormat fill in SlidesMutationHandlers.Fills(shape))
-        {
-            Append(hash, "fill|" + Fill(fill));
-        }
-
-        foreach (ILineFillFormat line in SlidesMutationHandlers.Lines(shape))
-        {
-            Append(hash, string.Create(CultureInfo.InvariantCulture, $"line|{line.FillType}|{Color(line.FillType, line.SolidFillColor.Color)}"));
-        }
-
-        foreach (ITextFrame frame in TextFrames(shape))
-        {
-            foreach (IParagraph paragraph in frame.Paragraphs)
-            {
-                Append(hash, string.Create(CultureInfo.InvariantCulture,
-                    $"paragraph|{paragraph.ParagraphFormat.Depth}|{paragraph.ParagraphFormat.Bullet.Type}"));
-                foreach (IPortion portion in paragraph.Portions)
-                {
-                    Append(hash, "run|" + portion.Text);
-                }
-            }
-        }
-
-        foreach (IBasePortionFormat format in SlidesMutationHandlers.TextFormats(shape) ?? [])
-        {
-            Append(hash, string.Create(CultureInfo.InvariantCulture,
-                $"format|{format.LatinFont?.FontName}|{format.EastAsianFont?.FontName}|{format.ComplexScriptFont?.FontName}|{format.FontHeight:R}|{format.FontBold}|{Fill(format.FillFormat)}"));
-        }
-
-        if (shape is IPictureFrame { PictureFormat.Picture.Image: { } image })
-        {
-            Append(hash, "image|" + Digest(image));
-        }
-
-        if (shape is IChart chart)
-        {
-            Append(hash, string.Create(CultureInfo.InvariantCulture, $"chart|{chart.Type}|{chart.HasTitle}|{chart.ChartTitle?.TextFrameForOverriding?.Text}"));
-            foreach (IChartCategory category in chart.ChartData.Categories)
-            {
-                Append(hash, "category|" + category.Value);
-            }
-
-            foreach (IChartSeries series in chart.ChartData.Series)
-            {
-                Append(hash, "series|" + series.Name.AsCells.FirstOrDefault()?.Value);
-                foreach (IChartDataPoint point in series.DataPoints)
-                {
-                    Append(hash, string.Create(CultureInfo.InvariantCulture, $"point|{point.XValue?.Data}|{point.YValue?.Data}|{point.Value?.Data}"));
-                }
-            }
-        }
-
-        return Convert.ToHexStringLower(hash.GetHashAndReset());
-    }
-
-    private static string Fill(IFillFormat fill) =>
-        fill.FillType == FillType.Picture
-            ? "Picture|" + (fill.PictureFillFormat.Picture.Image is { } image ? Digest(image) : "-")
-            : $"{fill.FillType}|{Color(fill.FillType, fill.SolidFillColor.Color)}";
-
-    /// <summary>A digest of a picture's bytes: two pictures of the same size differ by their content.</summary>
-    private static string Digest(IPPImage image) => Convert.ToHexStringLower(SHA256.HashData(image.BinaryData));
-
-    /// <summary>
-    /// Which layout a slide follows, among layouts of the same name under different masters: its
-    /// position among the presentation's layouts.
-    /// </summary>
-    private static string Identity(ILayoutSlide? layout) =>
-        layout?.Presentation is { } owner
-            ? owner.LayoutSlides.TakeWhile(item => !ReferenceEquals(item, layout)).Count().ToString(CultureInfo.InvariantCulture)
-            : "-";
-
-    private static string Color(FillType type, System.Drawing.Color color) =>
-        type == FillType.Solid ? color.ToArgb().ToString("X8", CultureInfo.InvariantCulture) : "-";
-
-    private static string Invariant(uint value) => value.ToString(CultureInfo.InvariantCulture);
-
-    private static void Append(IncrementalHash hash, string text)
-    {
-        hash.AppendData(Encoding.UTF8.GetBytes(text));
-        hash.AppendData([0]);
     }
 }

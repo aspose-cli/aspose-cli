@@ -22,8 +22,7 @@ internal static class SlidesInfo
         SlidesSlideInfo[] slides = presentation.Slides
             .Select((slide, index) => ProjectInfo(slide, index + 1, comments, request.IncludePreview))
             .ToArray();
-        double width = presentation.SlideSize.Size.Width;
-        double height = presentation.SlideSize.Size.Height;
+        SlidesSlideSizeInfo size = SlidesStateProjection.SlideSize(presentation);
         IReadOnlyList<SlidesMediaInfo>? media = Details(SlidesInspectDetails.Media) ? Media(presentation) : null;
 
         return new SlidesInspectResult
@@ -32,8 +31,8 @@ internal static class SlidesInfo
             Presentation = new SlidesPresentationSummary
             {
                 SlideCount = presentation.Slides.Count,
-                SlideSize = SlidesSlideSizeInfo.Of(width, height),
-                Orientation = width > height ? "landscape" : height > width ? "portrait" : "square",
+                SlideSize = size,
+                Orientation = size.Width > size.Height ? "landscape" : size.Height > size.Width ? "portrait" : "square",
                 MasterCount = presentation.Masters.Count,
                 LayoutCount = presentation.LayoutSlides.Count,
                 SectionCount = presentation.Sections.Count,

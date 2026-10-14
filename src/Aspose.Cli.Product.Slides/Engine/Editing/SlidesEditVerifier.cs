@@ -3,6 +3,7 @@ using System.Text.RegularExpressions;
 using Aspose.Cli.Sdk.Diagnostics;
 using Aspose.Cli.Sdk.Text;
 using Aspose.Slides;
+using static Aspose.Cli.Product.Slides.Engine.Mapping.SlidesStateProjection;
 using static Aspose.Cli.Product.Slides.Engine.SlidesEngineSupport;
 
 namespace Aspose.Cli.Product.Slides.Engine.Editing;
@@ -20,7 +21,8 @@ namespace Aspose.Cli.Product.Slides.Engine.Editing;
 /// unchecked, except that the slide order and the sections a later operation changes again carry
 /// the earlier operations into its expectation. An operation counts as checked only when every
 /// effect it recorded was read back. Evaluation mode reads longer text cut short, so it records
-/// no text, and an operation that sets or replaces text is then left unchecked.
+/// no text, and an operation that sets or replaces text is then left unchecked. Each effect is
+/// read as the read projection reports it (<see cref="SlidesStateProjection"/>).
 /// </summary>
 internal sealed class SlidesEditVerifier : IEditVerifier<SlidesOp>
 {
@@ -68,37 +70,17 @@ internal sealed class SlidesEditVerifier : IEditVerifier<SlidesOp>
         switch (operation)
         {
             case InsertSlideOp or DeleteSlidesOp or MoveSlideOp or CopySlideOp or ImportSlidesOp:
-                Expect(id, "order", SlidesDiagnostics.SlideOrderMismatch, "the slide order", null, SlideOrder);
+                Expect(id, "order", SlidesDiagnostics.SlideOrderMismatch, "the slide order", null, static presentation => string.Join(",", SlideIds(presentation)));
                 break;
             case SetSlideHiddenOp or SetLayoutOp:
-                foreach (uint slideId in Selected(operation))
-                {
-                    Expect(id, $"hidden/{slideId}", SlidesDiagnostics.SlideContentMismatch, "whether the slide is hidden", slideId,
-                        presentation => Slide(presentation, slideId)?.Hidden.ToString());
-                    Expect(id, $"layout/{slideId}", SlidesDiagnostics.SlideContentMismatch, "the slide's layout", slideId,
-                        presentation => Slide(presentation, slideId) is { LayoutSlide: { } layout }
-                            ? $"{layout.MasterSlide?.Name}|{layout.Name}"
-                            : null);
-                }
-
+                ExpectSlides(id, operation, "hidden", "whether the slide is hidden", static slide => slide.Hidden.ToString());
+                ExpectSlides(id, operation, "layout", "the slide's layout", Layout);
                 break;
             case SetFooterOp:
-                foreach (uint slideId in Selected(operation))
-                {
-                    Expect(id, $"footer/{slideId}", SlidesDiagnostics.SlideContentMismatch, "the slide's footer", slideId,
-                        presentation => Slide(presentation, slideId) is { } slide ? Footer(slide) : null);
-                }
-
+                ExpectSlides(id, operation, "footer", "the slide's footer", FooterState);
                 break;
             case SetTransitionOp:
-                foreach (uint slideId in Selected(operation))
-                {
-                    Expect(id, $"transition/{slideId}", SlidesDiagnostics.SlideContentMismatch, "the slide's transition", slideId,
-                        presentation => Slide(presentation, slideId)?.SlideShowTransition is { } transition
-                            ? string.Create(CultureInfo.InvariantCulture, $"{transition.Type}|{transition.Duration}")
-                            : null);
-                }
-
+                ExpectSlides(id, operation, "transition", "the slide's transition", TransitionState);
                 break;
             case SetTitleOp title:
                 ExpectText(id, title, "title", "the slide's title", static slide => Title(slide));
@@ -106,62 +88,40 @@ internal sealed class SlidesEditVerifier : IEditVerifier<SlidesOp>
             case SetNotesOp notes:
                 ExpectText(id, notes, "notes", "the slide's speaker notes", static slide => Notes(slide));
                 break;
-            case SetTextOp text:
-                if (_targets(text).ShapeId is long shapeId)
-                {
-                    ExpectText(id, text, $"shape/{shapeId}", $"the text of shape {Invariant(shapeId)}",
-                        slide => slide.Shapes.FirstOrDefault(shape => shape.OfficeInteropShapeId == shapeId) is { } shape ? ShapeText(shape) : null);
-                }
-                else
-                {
-                    _incomplete.Add(id);
-                }
-
+            case SetTextOp text when _targets(text).ShapeId is long shapeId:
+                ExpectText(id, text, $"shape/{shapeId}", $"the text of shape {Invariant(shapeId)}",
+                    slide => slide.Shapes.FirstOrDefault(shape => shape.OfficeInteropShapeId == shapeId) is { } shape ? ShapeText(shape) : null);
                 break;
-            case SetBodyOp body:
-                if (_targets(body).Slide is { } bodySlide)
-                {
-                    long bodyId = SlidesAuthoring.Body(bodySlide).OfficeInteropShapeId;
-                    ExpectText(id, body, $"shape/{bodyId}", $"the paragraphs of shape {Invariant(bodyId)}",
-                        slide => slide.Shapes.FirstOrDefault(shape => shape.OfficeInteropShapeId == bodyId) is IAutoShape { TextFrame: { } frame }
-                            ? Paragraphs(frame)
-                            : null);
-                }
-                else
-                {
-                    _incomplete.Add(id);
-                }
-
+            case SetBodyOp body when _targets(body).Slide is { } bodySlide:
+                long bodyId = SlidesAuthoring.Body(bodySlide).OfficeInteropShapeId;
+                ExpectText(id, body, $"shape/{bodyId}", $"the paragraphs of shape {Invariant(bodyId)}",
+                    slide => slide.Shapes.FirstOrDefault(shape => shape.OfficeInteropShapeId == bodyId) is { } shape
+                        ? ParagraphState(shape)
+                        : null);
                 break;
-            case SlidesReplaceTextOp replace:
-                if (_evaluation)
-                {
-                    _incomplete.Add(id);
-                    break;
-                }
-
+            case SlidesReplaceTextOp replace when !_evaluation:
                 Expect(id, $"replace/{id}", SlidesDiagnostics.SlideContentMismatch, "the text replace_text left in its scope", null,
                     presentation => Occurrences(presentation, replace));
                 break;
             case InsertSectionOp:
                 Expect(id, "sections", SlidesDiagnostics.SlideContentMismatch, "the sections", null, static presentation =>
-                    string.Join("\n", presentation.Sections.Select(static section =>
-                        $"{section.Name}|{section.StartedFromSlide?.SlideId.ToString(CultureInfo.InvariantCulture) ?? "-"}")));
+                    string.Join("\n", Sections(presentation).Select(static section => $"{section.Address}|{section.State}")));
                 break;
             case SlidesSetPropertiesOp:
                 foreach (string name in Properties(_presentation.DocumentProperties).Keys)
                 {
-                    Expect(id, $"property/{name}", SlidesDiagnostics.PresentationSettingMismatch, $"the {name} property", null,
+                    Expect(id, PropertyAddress(name), SlidesDiagnostics.PresentationSettingMismatch, $"the {name} property", null,
                         presentation => Properties(presentation.DocumentProperties)[name]);
                 }
 
                 break;
             case SetSlideSizeOp:
                 Expect(id, "slide-size", SlidesDiagnostics.PresentationSettingMismatch, "the slide size", null, static presentation =>
-                    string.Create(CultureInfo.InvariantCulture, $"{presentation.SlideSize.Size.Width:0.##}x{presentation.SlideSize.Size.Height:0.##}"));
+                    SlideSize(presentation) is var size ? string.Create(CultureInfo.InvariantCulture, $"{size.Width:0.##}x{size.Height:0.##}") : null);
                 break;
             default:
-                // Styles, pictures, shapes, tables, charts and backgrounds have no reliable read-back here.
+                // Styles, pictures, shapes, tables, charts and backgrounds have no reliable read-back here, nor
+                // text an evaluation read cuts short or an operation whose shape or slide is gone.
                 _incomplete.Add(id);
                 break;
         }
@@ -203,9 +163,21 @@ internal sealed class SlidesEditVerifier : IEditVerifier<SlidesOp>
             return;
         }
 
+        ExpectSlide(id, part, subject, slideId, read);
+    }
+
+    /// <summary>Expects what <paramref name="read"/> reads on each slide a multi-slide operation selected before the batch.</summary>
+    private void ExpectSlides(string id, SlidesOp operation, string part, string subject, Func<ISlide, string?> read)
+    {
+        foreach (ISlide selected in _targets(operation).Slides ?? [])
+        {
+            ExpectSlide(id, part, subject, selected.SlideId, read);
+        }
+    }
+
+    private void ExpectSlide(string id, string part, string subject, uint slideId, Func<ISlide, string?> read) =>
         Expect(id, $"{part}/{slideId}", SlidesDiagnostics.SlideContentMismatch, subject, slideId,
             presentation => Slide(presentation, slideId) is { } slide ? read(slide) : null);
-    }
 
     private void Expect(string id, string key, DiagnosticDescriptor code, string subject, uint? slideId, Func<Presentation, string?> read)
     {
@@ -242,23 +214,6 @@ internal sealed class SlidesEditVerifier : IEditVerifier<SlidesOp>
     /// <summary>The id of the slide a slide operation addressed, resolved before the batch.</summary>
     private uint? TargetSlideId(SlideTargetOp operation) => _targets(operation).Slide?.SlideId;
 
-    /// <summary>The ids of the slides a multi-slide operation selects, resolved before the batch.</summary>
-    private IEnumerable<uint> Selected(SlidesOp operation) =>
-        (_targets(operation).Slides ?? []).Select(static slide => slide.SlideId);
-
-    private static string SlideOrder(Presentation presentation) =>
-        string.Join(",", presentation.Slides.Select(static slide => slide.SlideId.ToString(CultureInfo.InvariantCulture)));
-
-    private static string Footer(ISlide slide) =>
-        $"{slide.HeaderFooterManager.IsFooterVisible}|{slide.HeaderFooterManager.IsSlideNumberVisible}|{slide.HeaderFooterManager.IsDateTimeVisible}|"
-        + string.Join("\n", slide.Shapes
-            .Where(static shape => shape.Placeholder?.Type == PlaceholderType.Footer)
-            .Select(static shape => (shape as IAutoShape)?.TextFrame?.Text));
-
-    private static string Paragraphs(ITextFrame frame) =>
-        string.Join("\n", frame.Paragraphs.Select(static paragraph => string.Create(CultureInfo.InvariantCulture,
-            $"{paragraph.Text}|{paragraph.ParagraphFormat.GetEffective().Depth}|{paragraph.ParagraphFormat.GetEffective().Bullet.Type}")));
-
     /// <summary>
     /// How often replace_text's find text, and its replacement when it is literal text, occur in
     /// the shapes and notes of its scope: the replaced text is gone and its replacement is there.
@@ -271,16 +226,10 @@ internal sealed class SlidesEditVerifier : IEditVerifier<SlidesOp>
         long replacements = 0;
         foreach (ISlide slide in presentation.Slides)
         {
-            IEnumerable<string?> texts = replace.Scope is SlidesSearchScopes.Shapes or SlidesSearchScopes.All
-                ? slide.Shapes.Where(static shape => !IsEvaluationWatermark(shape)).SelectMany(TextFrames).SelectMany(static frame => frame.Paragraphs).Select(static paragraph => paragraph.Text)
-                : [];
-            if (replace.Scope is SlidesSearchScopes.Notes or SlidesSearchScopes.All
-                && slide.NotesSlideManager.NotesSlide?.NotesTextFrame is { } notes)
-            {
-                texts = texts.Concat(notes.Paragraphs.Select(static paragraph => paragraph.Text));
-            }
-
-            foreach (string text in texts.OfType<string>())
+            foreach (string text in ParagraphTexts(
+                slide,
+                shapes: replace.Scope is SlidesSearchScopes.Shapes or SlidesSearchScopes.All,
+                notes: replace.Scope is SlidesSearchScopes.Notes or SlidesSearchScopes.All))
             {
                 found += regex is not null ? regex.Matches(text).Count : Count(text, replace.Find, comparison);
                 if (!replace.Regex && replace.Replace.Length > 0)
