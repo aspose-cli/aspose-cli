@@ -44,6 +44,8 @@ public sealed class CodeHealthReportTests
         File.WriteAllText(repository.File("src/a.cs"), Branchy);
         Commit(repository.Path, "fix(cli): branch on b");
         File.WriteAllText(repository.File("src/b.cs"), "class B { void N() { } }\n");
+        // Added to the index, a new file is tracked and measured before it is committed.
+        Git(repository.Path, "add", "src/b.cs");
 
         string measured = CodeHealthCommand.Run(CodeHealthCommand.Parse(["--json"]), repository.Path);
         string compared = CodeHealthCommand.Run(CodeHealthCommand.Parse(["--base", "HEAD~1", "--json"]), repository.Path);
@@ -65,6 +67,44 @@ public sealed class CodeHealthReportTests
         string markdown = CodeHealthCommand.Run(CodeHealthCommand.Parse(["--base", "HEAD~1"]), repository.Path);
         Assert.Contains("| cognitive | 1 | 3 | +2 |", markdown, StringComparison.Ordinal);
         Assert.Contains("## New members (3)", markdown, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Run_MeasuresTheTrackedFilesOfTheWorkingTreeOnly()
+    {
+        using TempDirectory repository = new();
+        Directory.CreateDirectory(repository.File("src"));
+        File.WriteAllText(repository.File("src/a.cs"), Simple);
+        File.WriteAllText(repository.File(".gitignore"), "src/ignored.cs\n");
+        Git(repository.Path, "init", "--quiet");
+        Commit(repository.Path, "feat: add a");
+        File.WriteAllText(repository.File("src/a.cs"), Branchy);
+        File.WriteAllText(repository.File("src/untracked.cs"), "class U { void N() { } }\n");
+        File.WriteAllText(repository.File("src/ignored.cs"), "class I { void N() { } }\n");
+
+        using JsonDocument report = JsonDocument.Parse(CodeHealthCommand.Run(CodeHealthCommand.Parse(["--json"]), repository.Path));
+
+        // The tracked file counts with its working-tree text; untracked and ignored files do not.
+        Assert.Equal(1, report.RootElement.GetProperty("totals").GetProperty("files").GetInt32());
+        Assert.Equal("src/a.cs::A.M(bool, bool)", report.RootElement.GetProperty("mostComplexMembers")[0].GetProperty("key").GetString());
+    }
+
+    [Fact]
+    public void Run_ReadsEveryCommittedFileOfTheBaseWhateverItsExportAttributes()
+    {
+        using TempDirectory repository = new();
+        Directory.CreateDirectory(repository.File("src"));
+        File.WriteAllText(repository.File("src/a.cs"), Simple);
+        File.WriteAllText(repository.File("src/hidden.cs"), "class H { void N() { } }\n");
+        File.WriteAllText(repository.File(".gitattributes"), "src/hidden.cs export-ignore\n");
+        Git(repository.Path, "init", "--quiet");
+        Commit(repository.Path, "feat: add a and h");
+
+        using JsonDocument comparison = JsonDocument.Parse(
+            CodeHealthCommand.Run(CodeHealthCommand.Parse(["--base", "HEAD", "--json"]), repository.Path));
+
+        Assert.Empty(comparison.RootElement.GetProperty("members").EnumerateArray());
+        Assert.Equal(2, comparison.RootElement.GetProperty("baseTotals").GetProperty("files").GetInt32());
     }
 
     [Theory]

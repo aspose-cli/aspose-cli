@@ -24,8 +24,7 @@ internal static class ReportWriter
         StringBuilder text = new();
         text.Append(Invariant($"# Code health of `{report.Source}` ({report.Revision})\n\n"));
         text.Append("A diagnostic: the numbers point to where to look, not to what to change. ")
-            .Append("Cognitive complexity charges each break in linear flow plus its nesting depth; ")
-            .Append("cyclomatic complexity counts decision points.\n\n");
+            .Append("Cognitive complexity charges each break in linear flow plus its nesting depth.\n\n");
         Table(text, "Totals", ["Measure", "Value"], report.Totals.Entries().Select(entry => new[] { entry.Name, Number(entry.Value) }));
         MemberTable(text, "Most complex members (cognitive)", report.MostComplexMembers);
         MemberTable(text, "Longest members (body lines)", report.LongestMembers);
@@ -77,10 +76,10 @@ internal static class ReportWriter
     }
 
     private static void MemberTable(StringBuilder text, string title, IReadOnlyList<MemberMetrics> members) =>
-        Table(text, title, ["Cognitive", "Cyclomatic", "Lines", "Params", "Member"],
+        Table(text, title, ["Cognitive", "Lines", "Params", "Member"],
             members.Select(member => member.HasBody
-                ? new[] { Number(member.Cognitive), Number(member.Cyclomatic), Number(member.Lines), Number(member.Parameters), Code(member.Key) }
-                : ["-", "-", "-", Number(member.Parameters), Code(member.Key)]));
+                ? new[] { Number(member.Cognitive), Number(member.Lines), Number(member.Parameters), Code(member.Key) }
+                : ["-", "-", Number(member.Parameters), Code(member.Key)]));
 
     private static void Table(StringBuilder text, string title, string[] headers, IEnumerable<string[]> rows)
     {

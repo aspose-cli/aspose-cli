@@ -5,10 +5,9 @@ namespace Aspose.Cli.CodeHealth;
 /// <param name="Path">The repository-relative path of the file that declares the unit.</param>
 /// <param name="HasBody">Whether the unit has a body; a signature-only unit carries just its parameters.</param>
 /// <param name="Cognitive">The cognitive complexity of the body.</param>
-/// <param name="Cyclomatic">The cyclomatic complexity of the body.</param>
 /// <param name="Lines">The body lines that hold code.</param>
 /// <param name="Parameters">The parameter count, or 0 when the unit has no parameter list.</param>
-internal sealed record MemberMetrics(string Key, string Path, bool HasBody, int Cognitive, int Cyclomatic, int Lines, int Parameters);
+internal sealed record MemberMetrics(string Key, string Path, bool HasBody, int Cognitive, int Lines, int Parameters);
 
 /// <summary>The metrics of one source file.</summary>
 /// <param name="Path">The repository-relative path with <c>/</c>.</param>
@@ -24,7 +23,7 @@ internal sealed record FileMetrics(string Path, int Lines, int Cognitive, int Me
 internal sealed record Clone(string Key, int Tokens);
 
 /// <summary>Repository-wide sums of a <see cref="Snapshot"/>.</summary>
-internal sealed record Totals(int Files, int Types, int Members, int Lines, int Cognitive, int Cyclomatic, int CloneTokens)
+internal sealed record Totals(int Files, int Types, int Members, int Lines, int Cognitive, int CloneTokens)
 {
     /// <summary>The totals' names and values, in report order.</summary>
     public IEnumerable<(string Name, int Value)> Entries() =>
@@ -34,7 +33,6 @@ internal sealed record Totals(int Files, int Types, int Members, int Lines, int 
         ("members", Members),
         ("lines", Lines),
         ("cognitive", Cognitive),
-        ("cyclomatic", Cyclomatic),
         ("cloneTokens", CloneTokens),
     ];
 }
@@ -69,6 +67,5 @@ internal sealed record Snapshot(IReadOnlyList<FileMetrics> Files, IReadOnlyList<
         Files.Sum(file => file.Members),
         Files.Sum(file => file.Lines),
         Files.Sum(file => file.Cognitive),
-        Members.Sum(member => member.Cyclomatic),
         Clones.Sum(clone => clone.Tokens));
 }

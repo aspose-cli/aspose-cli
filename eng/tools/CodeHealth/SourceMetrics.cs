@@ -40,13 +40,6 @@ internal sealed record ParsedSource(string Path, SourceText Text, CompilationUni
 /// so a flat <c>switch</c> or a chain of guard clauses scores low and nested branching high.
 /// </para>
 /// <para>
-/// <b>Cyclomatic complexity</b> of a body is 1 plus one for each <c>if</c>, <c>while</c>,
-/// <c>do</c>, <c>for</c>, <c>foreach</c>, <c>catch</c>, <c>case</c> label (not <c>default</c>),
-/// switch-expression arm (not a final <c>_</c> arm without <c>when</c>), <c>?:</c>, <c>&amp;&amp;</c>,
-/// <c>||</c>, <c>??</c>, <c>??=</c>, <c>?.</c>/<c>?[]</c>, and pattern <c>and</c>/<c>or</c>.
-/// A <c>when</c> clause, <c>else</c>, <c>goto</c> and <c>break</c> add nothing.
-/// </para>
-/// <para>
 /// <b>Method length</b> is the number of lines of the body, braces included, on which a token
 /// starts or continues; blank lines and comment-only lines do not count.
 /// </para>
@@ -88,8 +81,8 @@ internal static partial class SourceMetrics
     /// <summary>The metrics of every unit of <paramref name="source"/>, in document order.</summary>
     public static IReadOnlyList<MemberMetrics> MeasureMembers(ParsedSource source) =>
         source.Units.Select(unit => unit.Body is null
-            ? new MemberMetrics(unit.Key, source.Path, false, 0, 0, 0, unit.Parameters ?? 0)
-            : new MemberMetrics(unit.Key, source.Path, true, CognitiveComplexity(unit.Body), CyclomaticComplexity(unit.Body),
+            ? new MemberMetrics(unit.Key, source.Path, false, 0, 0, unit.Parameters ?? 0)
+            : new MemberMetrics(unit.Key, source.Path, true, CognitiveComplexity(unit.Body),
                 BodyLines(source.Text, unit.Body), unit.Parameters ?? 0))
             .ToList();
 
@@ -119,31 +112,6 @@ internal static partial class SourceMetrics
         CognitiveComplexityWalker walker = new();
         walker.Visit(body);
         return walker.Total;
-    }
-
-    /// <summary>1 plus the decision points of <paramref name="body"/>, outside nested local functions.</summary>
-    public static int CyclomaticComplexity(SyntaxNode body)
-    {
-        int complexity = 1;
-        foreach (SyntaxNode node in body.DescendantNodesAndSelf(OutsideLocalFunctions(body)))
-        {
-            complexity += node switch
-            {
-                SwitchExpressionArmSyntax { Pattern: DiscardPatternSyntax, WhenClause: null } => 0,
-                _ => node.Kind() switch
-                {
-                    SyntaxKind.IfStatement or SyntaxKind.WhileStatement or SyntaxKind.DoStatement
-                        or SyntaxKind.ForStatement or SyntaxKind.ForEachStatement or SyntaxKind.ForEachVariableStatement
-                        or SyntaxKind.CatchClause or SyntaxKind.ConditionalExpression
-                        or SyntaxKind.CaseSwitchLabel or SyntaxKind.CasePatternSwitchLabel or SyntaxKind.SwitchExpressionArm
-                        or SyntaxKind.LogicalAndExpression or SyntaxKind.LogicalOrExpression
-                        or SyntaxKind.CoalesceExpression or SyntaxKind.CoalesceAssignmentExpression
-                        or SyntaxKind.ConditionalAccessExpression or SyntaxKind.AndPattern or SyntaxKind.OrPattern => 1,
-                    _ => 0,
-                },
-            };
-        }
-        return complexity;
     }
 
     /// <summary>Lines of <paramref name="body"/> that hold a token, outside nested local functions.</summary>

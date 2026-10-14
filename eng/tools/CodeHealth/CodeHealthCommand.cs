@@ -57,7 +57,7 @@ internal static class CodeHealthCommand
     {
         Git git = new(root);
         string source = options.Source.Replace('\\', '/').Trim('/');
-        Snapshot head = Snapshot.Measure(WorkingTree(root, source));
+        Snapshot head = Snapshot.Measure(WorkingTree(git, root, source));
         if (options.Base is { } baseRevision)
         {
             Snapshot baseline = Snapshot.Measure(git.ReadTree(baseRevision, source));
@@ -103,17 +103,20 @@ internal static class CodeHealthCommand
             ? count
             : throw new ArgumentException($"--top needs a whole number, not '{value}'.");
 
-    /// <summary>The <c>.cs</c> files under <paramref name="source"/> on disk, outside <c>bin</c> and <c>obj</c>.</summary>
-    private static IEnumerable<(string Path, string Text)> WorkingTree(string root, string source)
+    /// <summary>
+    /// The <c>.cs</c> files under <paramref name="source"/> that git tracks, with their working-tree
+    /// text; untracked and ignored files, such as build output, do not count, nor does a tracked
+    /// file deleted from the working tree.
+    /// </summary>
+    private static IEnumerable<(string Path, string Text)> WorkingTree(Git git, string root, string source)
     {
         string directory = Path.Combine(root, source);
         if (!Directory.Exists(directory))
         {
             throw new ArgumentException($"The source directory does not exist: {directory}");
         }
-        return Directory.EnumerateFiles(directory, "*.cs", SearchOption.AllDirectories)
-            .Select(path => Path.GetRelativePath(root, path).Replace('\\', '/'))
-            .Where(path => !path.Split('/').Any(segment => segment is "bin" or "obj"))
+        return git.TrackedFiles(source)
+            .Where(path => File.Exists(Path.Combine(root, path)))
             .Select(path => (path, File.ReadAllText(Path.Combine(root, path), Encoding.UTF8)));
     }
 }

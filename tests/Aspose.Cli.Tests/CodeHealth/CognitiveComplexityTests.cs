@@ -35,7 +35,7 @@ public sealed class CognitiveComplexityTests
     }
 
     [Fact]
-    public void AFlatSwitchScoresOne_WhereCyclomaticCountsEveryCase()
+    public void AFlatSwitchScoresOne()
     {
         const string source = """
             class C
@@ -59,7 +59,6 @@ public sealed class CognitiveComplexityTests
 
         Assert.Equal(1, cognitive["a.cs::C.Words(int)"]);
         Assert.Equal(1, cognitive["a.cs::C.Arms(int)"]);
-        Assert.Equal(4, SourceMetrics.MeasureMembers(SourceMetrics.Parse("a.cs", source)).Single(member => member.Key == "a.cs::C.Words(int)").Cyclomatic);
     }
 
     [Fact]
