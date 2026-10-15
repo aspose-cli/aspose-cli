@@ -48,7 +48,9 @@ internal static class EditCommand
                 CommandHelpLink.Docs(SlidesModule.Manifest, "editing", "atomic presentation operations"),
                 CommandHelpLink.Schema<SlidesOp>("the operation JSON schema"),
                 CommandHelpLink.Docs(SlidesModule.Manifest, "verification", "what --verify reads back"),
-            ]);
+            ],
+            // Presentations merge by appending with the import_slides operation.
+            mistakenFor: ["merge"]);
 
     internal static void Table(SlidesEditResult result, TableSurface surface)
     {

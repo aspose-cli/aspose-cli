@@ -19,15 +19,18 @@ internal sealed class SlidesPresentationLoader(
     /// </summary>
     internal static readonly InputLoading Loading = new(
         "supported presentation",
-        $"Use one of: {string.Join(", ", SlidesFormats.LoadIds)}. Verify the file opens in a presentation editor and is not merely renamed.",
-        static exception => exception switch
-        {
-            InvalidPasswordException => LoadFailureKind.Password,
-            ArgumentException or InvalidOperationException => LoadFailureKind.Corrupt,
-            _ when exception.GetType().Assembly.GetName().Name?.StartsWith("Aspose.Slides", StringComparison.Ordinal) == true
-                => LoadFailureKind.Corrupt,
-            _ => LoadFailureKind.Other,
-        });
+        "Check that the file is complete, not truncated by an interrupted copy or download, and opens in a presentation editor. "
+            + $"A file merely renamed to a presentation extension ({string.Join(", ", SlidesFormats.LoadIds)}) does not load either.",
+        Classify);
+
+    private static LoadFailureKind Classify(Exception exception) => exception switch
+    {
+        InvalidPasswordException => LoadFailureKind.Password,
+        ArgumentException or InvalidOperationException => LoadFailureKind.Corrupt,
+        _ when exception.GetType().Assembly.GetName().Name?.StartsWith("Aspose.Slides", StringComparison.Ordinal) == true
+            => LoadFailureKind.Corrupt,
+        _ => LoadFailureKind.Other,
+    };
 
     public LoadedPresentation Open(string path, Secret? password)
     {
@@ -65,7 +68,18 @@ internal sealed class SlidesPresentationLoader(
             // One read that lets another process replace the file, as an in-place edit publishes;
             // the presentation may keep reading media from it while it is open.
             source = InputFiles.OpenRead(path);
-            IPresentationInfo info = PresentationFactory.Instance.GetPresentationInfo(source);
+            IPresentationInfo info;
+            try
+            {
+                info = PresentationFactory.Instance.GetPresentationInfo(source);
+            }
+            catch (Exception exception) when (Classify(exception) == LoadFailureKind.Corrupt)
+            {
+                // The engine cannot tell the format of what it read, which a package cut short
+                // or damaged gives: say so rather than repeat its "Unknown file format".
+                throw Loading.Unreadable(path, "its content is incomplete or damaged, so no presentation format can be read from it", exception);
+            }
+
             source.Position = 0;
             string format = SlidesEngineFormats.IdOf(info.LoadFormat);
             if (!SlidesFormats.LoadIds.Contains(format, StringComparer.Ordinal))

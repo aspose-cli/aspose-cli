@@ -368,4 +368,52 @@ public sealed class SlidesCliWorkflowTests : IDisposable
             .Single(static warning => warning!["code"]!.GetValue<string>() == "OP_NO_EFFECT")!;
         Assert.Contains(operation, warning["hint"]!.GetValue<string>(), StringComparison.Ordinal);
     }
+
+    [Fact]
+    public void TruncatedPresentation_IsReportedAsIncompleteRatherThanAnUnknownFormat()
+    {
+        using (var presentation = new Presentation())
+        {
+            presentation.Save(_workspace.File("whole.pptx"), SaveFormat.Pptx);
+        }
+
+        byte[] whole = File.ReadAllBytes(_workspace.File("whole.pptx"));
+        File.WriteAllBytes(_workspace.File("cut.pptx"), whole[..(whole.Length / 3)]);
+
+        CliResult inspect = _workspace.Run("slides", "inspect", "cut.pptx", "--output-format", "json");
+
+        JsonNode error = JsonNode.Parse(inspect.StdErr)!["error"]!;
+        Assert.Equal("FILE_CORRUPT", error["code"]!.GetValue<string>());
+        Assert.DoesNotContain("Unknown", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.Contains("incomplete", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.DoesNotContain("Use one of", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.Contains("truncated", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void SlidesMerge_SuggestsEdit()
+    {
+        CliResult merge = _workspace.Run("slides", "merge", "a.pptx", "b.pptx", "--output-format", "json");
+
+        JsonNode error = JsonNode.Parse(merge.StdErr)!["error"]!;
+        Assert.Equal("slides edit", error["details"]!["suggestions"]!.AsArray()[0]!.GetValue<string>());
+    }
+
+    [Fact]
+    public void ConvertedOdp_IsRecognizedAsAPresentationByReview()
+    {
+        CreateDeck(_workspace.File("deck.pptx"));
+        CliResult convert = _workspace.Run("slides", "convert", "deck.pptx", "--to", "odp", "--out", "deck.odp", "--output-format", "json");
+        Assert.True(convert.ExitCode == 0, convert.StdOut + convert.StdErr);
+
+        using (var archive = System.IO.Compression.ZipFile.OpenRead(_workspace.File("deck.odp")))
+        {
+            // OpenDocument requires the mimetype first and stored, where content sniffing reads it.
+            Assert.Equal("mimetype", archive.Entries[0].FullName);
+            Assert.Equal(archive.Entries[0].Length, archive.Entries[0].CompressedLength);
+        }
+
+        CliResult review = _workspace.Run("review", "deck.odp", "--out", "odp-review", "--output-format", "json");
+        Assert.True(review.ExitCode is 0 or 8, review.StdOut + review.StdErr);
+    }
 }
