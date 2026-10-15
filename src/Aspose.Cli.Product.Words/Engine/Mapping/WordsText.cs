@@ -38,9 +38,21 @@ internal static class WordsText
                     text.Append(number).Append(' ');
                 }
             },
-            paragraphEnd: () => text.Append(ControlChar.ParagraphBreakChar));
+            paragraphEnd: () => text.Append(ControlChar.ParagraphBreakChar),
+            placeholder: name => text.Append('{').Append(name).Append('}'));
         return Clean(text.ToString());
     }
+
+    /// <summary>
+    /// The fields a header or footer shows with another result on each page, which a text shows
+    /// as <c>{PAGE}</c> and the like: their stored result is only that of the last page laid out.
+    /// </summary>
+    private static readonly IReadOnlyDictionary<FieldType, string> PageVaryingFields = new Dictionary<FieldType, string>
+    {
+        [FieldType.FieldPage] = "PAGE",
+        [FieldType.FieldNumPages] = "NUMPAGES",
+        [FieldType.FieldSectionPages] = "SECTIONPAGES",
+    };
 
     /// <summary>
     /// The number Word draws before a numbered list paragraph, such as 6.2, or null for a bullet,
@@ -96,16 +108,33 @@ internal static class WordsText
         return runs;
     }
 
-    private static void Walk(Node node, Action<Run> visible, Action<Paragraph>? paragraphStart, Action? paragraphEnd, bool fieldResults = true)
+    private static void Walk(
+        Node node, Action<Run> visible, Action<Paragraph>? paragraphStart, Action? paragraphEnd, bool fieldResults = true, Action<string>? placeholder = null)
     {
         var fields = new FieldNesting();
         Append(node, isRoot: true);
 
         void Append(Node current, bool isRoot)
         {
+            if (fields.Skipping is { } skipped)
+            {
+                fields.Skipping = ReferenceEquals(current, skipped) ? null : skipped;
+                if (current is not CompositeNode || fields.Skipping is null)
+                {
+                    return;
+                }
+            }
+
             switch (current)
             {
                 case Comment or Footnote when !isRoot:
+                    return;
+                case FieldStart start when PageVaryingFields.TryGetValue(start.FieldType, out string? name)
+                    && !fields.InCode
+                    && start.GetAncestor(NodeType.HeaderFooter) is not null
+                    && start.GetField()?.End is { } end:
+                    placeholder?.Invoke(name);
+                    fields.Skipping = end;
                     return;
                 case FieldStart:
                     fields.Start();
@@ -172,6 +201,9 @@ internal static class WordsText
         private int _codes;
 
         internal bool InCode => _codes > 0;
+
+        /// <summary>The end of a page-varying header or footer field being skipped, code and result alike.</summary>
+        internal FieldEnd? Skipping { get; set; }
 
         internal bool InField => _fields.Count > 0;
 

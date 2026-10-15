@@ -45,6 +45,8 @@ shows no images.
 - Block text, `--content full` runs, search hit text and `heading`/`find`
   addresses use the text a reader sees: field results rather than field codes, without text a tracked
   change deletes, and without the comments and footnotes a paragraph anchors.
+  A header or footer field whose result changes from page to page (`PAGE`,
+  `NUMPAGES`, `SECTIONPAGES`) reads as its placeholder, such as `{PAGE}`.
   Read those with `inspect --detail comments` or `search --scope`, and
   tracked changes themselves with `inspect --detail revisions`
   ([revisions](references/revisions.md)).
