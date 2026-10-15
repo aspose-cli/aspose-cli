@@ -326,7 +326,7 @@ public sealed class OperationCatalog<TOp>
         }
         catch (OperationInvalidException rejection)
         {
-            return OperationErrors.InvalidAt(id, record.Name, rejection.Message, rejection.Hint ?? DefaultHint, value: rejection.Mistake);
+            return OperationErrors.InvalidAt(id, record.Name, rejection.Message, rejection.Hint ?? DefaultHint, value: rejection.Mistake, path: rejection.Path);
         }
         catch (CliException failure) when (!failure.IsInvocationFailure)
         {

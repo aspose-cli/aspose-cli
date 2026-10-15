@@ -35,10 +35,15 @@ internal static class OperationErrors
     /// </summary>
     internal static CliException InvalidAt(
         string id, string? name, string reason, string hint, ErrorCode? cause = null,
-        AllowedFieldsException? field = null, Mistake? value = null)
+        AllowedFieldsException? field = null, Mistake? value = null, string? path = null)
     {
         JsonObject details = Identify(id, name);
         details["reason"] = reason;
+        if (path is not null)
+        {
+            details["path"] = path;
+        }
+
         if (cause is not null)
         {
             details["cause"] = cause.Name;
