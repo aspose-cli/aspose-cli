@@ -1,4 +1,5 @@
 using Aspose.Cli.Product.Words.Engine.Mapping;
+using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Results;
@@ -29,6 +30,21 @@ internal static class WordsCreate
         };
     }
 
+    /// <summary>A template, which opens without a password: an encrypted one is refused with that advice.</summary>
+    private static LoadedDocument OpenTemplate(WordsSession session, string path)
+    {
+        try
+        {
+            return session.Loader.Open(path, null);
+        }
+        catch (CliException error) when (CliErrors.IsPasswordError(error))
+        {
+            throw CliErrors.WithoutPassword(error,
+                "'words create' cannot open an encrypted template. Ask the user for an unencrypted copy of the template, "
+                + "or decrypt it first, then pass that copy to --template.");
+        }
+    }
+
     /// <summary>
     /// A template (the built-in A4 design unless one is given) supplies styles, page setup,
     /// headers and footers; Markdown or text supplies the body. Content takes the
@@ -39,7 +55,7 @@ internal static class WordsCreate
         var sources = new List<LoadedDocument>();
         try
         {
-            LoadedDocument? template = request.TemplatePath is null ? null : session.Loader.Open(request.TemplatePath, null);
+            LoadedDocument? template = request.TemplatePath is null ? null : OpenTemplate(session, request.TemplatePath);
             if (template is not null)
             {
                 sources.Add(template);

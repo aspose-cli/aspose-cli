@@ -243,6 +243,25 @@ public static partial class CliErrors
     }
 
     /// <summary>
+    /// Restates a password error about a file the command opens with no password at all, such
+    /// as a template, with <paramref name="hint"/> in place of the advice to retry with a
+    /// password; the code and details stay.
+    /// </summary>
+    /// <param name="error">The <c>PASSWORD_REQUIRED</c> or <c>PASSWORD_INVALID</c> error the loader raised.</param>
+    /// <param name="hint">What to do instead, such as using an unencrypted copy.</param>
+    public static CliException WithoutPassword(CliException error, string hint)
+    {
+        ArgumentNullException.ThrowIfNull(error);
+        ArgumentException.ThrowIfNullOrWhiteSpace(hint);
+        if (!IsPasswordError(error))
+        {
+            throw new ArgumentException($"{error.Code.Name} is not a password error.", nameof(error));
+        }
+
+        return CliException.Create(error.Code, error.Message, hint, error.Details?.DeepClone() as JsonObject, error.Docs, error);
+    }
+
+    /// <summary>
     /// Restates a password error about one of the documents a command reads, naming the
     /// argument of that input in <c>details.argument</c> and its own password option in the hint.
     /// </summary>
