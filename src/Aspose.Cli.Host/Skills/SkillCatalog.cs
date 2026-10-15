@@ -242,9 +242,13 @@ internal sealed record BundledSkill(
                 exception);
         }
 
+        // A host loads every directory under its Skills root, so the stage and the backup stay
+        // beside the root, on the same volume for the moves, where no host reads them as Skills.
+        string transactionParent = Path.GetDirectoryName(parent)
+            ?? throw ManagedSkillConflict(target, "the Skills root has no parent directory for the installation's staging");
         string transaction = Guid.NewGuid().ToString("N");
-        string stage = Path.Combine(parent, $".aspose-skill-stage-{transaction}");
-        string backup = Path.Combine(parent, $".aspose-skill-backup-{transaction}");
+        string stage = Path.Combine(transactionParent, $".aspose-skill-stage-{transaction}");
+        string backup = Path.Combine(transactionParent, $".aspose-skill-backup-{transaction}");
         int files;
         bool oldMoved = false;
         bool newPublished = false;
