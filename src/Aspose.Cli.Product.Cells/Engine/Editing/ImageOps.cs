@@ -1,3 +1,4 @@
+using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Operations;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cells;
@@ -12,8 +13,8 @@ internal static class ImageOps
     {
         if (!File.Exists(op.Path))
         {
-            // The executor attaches the op index to this domain error.
-            throw new OperationInvalidException($"image file not found: {op.Path}");
+            // The runner attaches the operation's id and name, as for a missing image in every product.
+            throw CliErrors.FileNotFound(op.Path);
         }
 
         CellRef anchor = A1.ParseCell(op.At);

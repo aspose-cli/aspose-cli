@@ -228,6 +228,10 @@ internal static class CellsRender
             if (isRaster)
             {
                 EnsureRenderable(budgets, render, request.Dpi);
+                if (Large(sheet, render, request, printArea) is { } large)
+                {
+                    warnings.Add(large);
+                }
             }
 
             // The image shows the one sheet, which carries evaluation marks only when it is a
@@ -352,6 +356,38 @@ internal static class CellsRender
             Hint = $"Draw each other area on its own: {rest}",
             Location = sheet.Name,
             AffectsCompleteness = true,
+        };
+    }
+
+    /// <summary>The longest side, in pixels, of an image a viewer or a model still reads in full.</summary>
+    internal const int LargeImageSide = 10_000;
+
+    /// <summary>
+    /// The warning for a raster image longer than <see cref="LargeImageSide"/> on a side, with the
+    /// first window of the sheet to render instead; null for a smaller image.
+    /// </summary>
+    private static Warning? Large(Worksheet sheet, SheetRender render, CellsRenderRequest request, string? printArea)
+    {
+        float[] inches = render.GetPageSizeInch(0);
+        long width = (long)Math.Ceiling(inches[0] * request.Dpi);
+        long height = (long)Math.Ceiling(inches[1] * request.Dpi);
+        if (Math.Max(width, height) <= LargeImageSide)
+        {
+            return null;
+        }
+
+        // A window the size of one image's worth of the sheet's rows, by its share of the height.
+        RangeRef drawn = printArea is not null ? A1.ParseRange(printArea).Range
+            : Sheets.UsedRange(sheet) ?? new RangeRef(new CellRef(0, 0), new CellRef(0, 0));
+        int rows = Math.Max(1, (int)(drawn.RowCount * Math.Min(1d, (double)LargeImageSide / height)));
+        int columns = Math.Max(1, (int)(drawn.ColumnCount * Math.Min(1d, (double)LargeImageSide / width)));
+        string window = A1.FormatRange(new RangeRef(drawn.Start,
+            new CellRef(drawn.Start.Row + rows - 1, drawn.Start.Column + columns - 1)));
+        return new Warning(CellsDiagnostics.RenderImageLarge,
+            $"The image of worksheet '{sheet.Name}' is {width} x {height} pixels, more than {LargeImageSide} on a side, which image viewers and models scale down or cut.")
+        {
+            Hint = $"Render the sheet in windows with a sheet-qualified --range, such as aspose-cli cells render \"{request.Input}\" --range \"{Sheets.QuotedName(sheet.Name)}!{window}\", or lower --dpi.",
+            Location = sheet.Name,
         };
     }
 
