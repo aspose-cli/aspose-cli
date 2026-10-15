@@ -115,4 +115,36 @@ public sealed class WordsPageNumberTests : IClassFixture<WordsFixture>
         Assert.Equal(3, changed.Sections[0].PageSetup.PageStartingNumber);
         Assert.Equal(NumberStyle.LowercaseLetter, changed.Sections[0].PageSetup.PageNumberStyle);
     }
+    /// <summary>
+    /// WORDS-5: a header or footer field whose result differs from page to page reads as its
+    /// placeholder, such as {PAGE}, not as the result of the last page laid out; the same field
+    /// in the body reads as its result.
+    /// </summary>
+    [Fact]
+    public void PageFieldsOfAFooter_ReadAsPlaceholdersAndInTheBodyAsResults()
+    {
+        string input = _fixture.Temp.File("page-placeholders.docx");
+        var document = new Document();
+        var builder = new DocumentBuilder(document);
+        builder.Write("First page ");
+        builder.InsertField("PAGE");
+        builder.InsertBreak(BreakType.PageBreak);
+        builder.Write("Second page");
+        builder.MoveToHeaderFooter(HeaderFooterType.FooterPrimary);
+        builder.Write("Page ");
+        builder.InsertField("PAGE");
+        builder.Write(" of ");
+        builder.InsertField("NUMPAGES");
+        document.UpdateFields();
+        document.Save(input, SaveFormat.Docx);
+
+        WordsInspectResult inspected = WordsInspect.Run(_fixture.Session, new WordsInspectRequest { Input = input, Details = [WordsInspectDetails.Sections] });
+        WordsReadResult read = WordsRead.Run(_fixture.Session, new WordsReadRequest { Input = input });
+
+        WordsHeaderFooterData footer = Assert.Single(inspected.Sections![0].HeadersFooters, static item => item.Location == "footer" && item.Kind == "primary");
+        // Evaluation mode may append its sentence to the footer's paragraph.
+        Assert.Contains(footer.Paragraphs, static paragraph => paragraph.Text!.StartsWith("Page {PAGE} of {NUMPAGES}", StringComparison.Ordinal));
+        Assert.StartsWith("First page 1", read.Blocks[0].Text, StringComparison.Ordinal);
+    }
 }
+

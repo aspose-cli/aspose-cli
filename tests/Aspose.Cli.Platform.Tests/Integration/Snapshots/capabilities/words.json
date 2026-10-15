@@ -4108,7 +4108,7 @@
           "additionalProperties": false,
           "properties": {
             "text": {
-              "description": "The visible text.",
+              "description": "The visible text; a field whose result changes from page to page, such as PAGE or NUMPAGES, reads as its placeholder, such as {PAGE}.",
               "type": "string"
             },
             "style": {

@@ -231,7 +231,10 @@ public sealed record WordsHeaderFooterData
 /// <summary>A paragraph of a header or footer.</summary>
 public sealed record WordsParagraphData
 {
-    /// <summary>The visible text.</summary>
+    /// <summary>
+    /// The visible text; a field whose result changes from page to page, such as PAGE or
+    /// NUMPAGES, reads as its placeholder, such as {PAGE}.
+    /// </summary>
     public required string Text { get; init; }
 
     /// <summary>The name of the paragraph's style.</summary>
