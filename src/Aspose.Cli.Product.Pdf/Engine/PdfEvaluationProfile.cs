@@ -70,6 +70,30 @@ internal sealed class PdfEvaluationProfile : IEvaluationProfile<Document>
     public EvaluationMarks Inspect(Document document, string format, IReadOnlyCollection<int> pages) =>
         Notices(document, pages.Order().Take(PdfEvaluation.VisiblePages));
 
+    /// <summary>
+    /// The marks of a PDF a facade saved, such as a signed one, read from the file: the
+    /// document the facade worked on does not show the notice its save printed. Null for any
+    /// other format, whose marks the document shows, and for an encrypted file, which opens
+    /// only with its password, so the document stands in.
+    /// </summary>
+    public EvaluationMarks? InspectSaved(string path, string format)
+    {
+        if (!string.Equals(format, "pdf", StringComparison.Ordinal))
+        {
+            return null;
+        }
+
+        try
+        {
+            using var document = new Document(path);
+            return Inspect(document, format);
+        }
+        catch (InvalidPasswordException)
+        {
+            return null;
+        }
+    }
+
     private static EvaluationMarks Notices(Document document, IEnumerable<int> pages)
     {
         var products = new SortedSet<string>(StringComparer.Ordinal);

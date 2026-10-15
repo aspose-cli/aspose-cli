@@ -77,7 +77,7 @@ internal static class PdfSign
 
             facade.Sign(request.Page, request.Visible, rectangle, signature);
             facade.Save(temp);
-        }, encrypted: encrypted);
+        }, encrypted: encrypted, saved: true);
 
         // The staged candidate is the only readable copy before publication: a supervised
         // worker leaves the target to its parent, so reading it here would find nothing.
